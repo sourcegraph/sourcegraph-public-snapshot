@@ -346,10 +346,10 @@ var allCodeCompletionModels = slices.Concat([]string{"anthropic/" + anthropic.Cl
 	"fireworks/" + fireworks.DeepseekCoderV2LiteBase,
 	"fireworks/" + fireworks.CodeQwen7B,
 	"fireworks/" + fireworks.DeepseekCoder7b},
-	prefix("fireworks/", fireworks.FineTunedMixtralModelVariants),
-	prefix("fireworks/", fireworks.FineTunedLlamaModelVariants),
-	prefix("fireworks/", fireworks.FineTunedDeepseekLogsTrainedModelVariants),
-	prefix("fireworks/", fireworks.FineTunedDeepseekStackTrainedModelVariants))
+	prefixWithFireworks(fireworks.FineTunedMixtralModelVariants),
+	prefixWithFireworks(fireworks.FineTunedLlamaModelVariants),
+	prefixWithFireworks(fireworks.FineTunedDeepseekLogsTrainedModelVariants),
+	prefixWithFireworks(fireworks.FineTunedDeepseekStackTrainedModelVariants))
 
 func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 	switch scope {
@@ -406,10 +406,10 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 	}
 }
 
-func prefix(prefix string, models []string) []string {
+func prefixWithFireworks(models []string) []string {
 	result := make([]string, len(models))
 	for i := range models {
-		result[i] = prefix + models[i]
+		result[i] = "fireworks/" + models[i]
 	}
 	return result
 }
