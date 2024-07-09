@@ -297,6 +297,7 @@ func (c *Config) Load() {
 			fireworks.DeepseekCoder1p3b,
 			fireworks.DeepseekCoder7b,
 			fireworks.DeepseekCoderV2LiteBase,
+			fireworks.CodeQwen7B,
 		}, fireworks.FineTunedLlamaModelVariants, fireworks.FineTunedMixtralModelVariants, fireworks.FineTunedDeepseekLogsTrainedModelVariants, fireworks.FineTunedDeepseekStackTrainedModelVariants), ","),
 		"Fireworks models that can be used."))
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {

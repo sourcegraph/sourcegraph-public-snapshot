@@ -36,6 +36,7 @@ const Mixtral8x22Instruct = "accounts/fireworks/models/mixtral-8x22b-instruct"
 const DeepseekCoder1p3b = "accounts/sourcegraph/models/custom-deepseek-1p3b-base-hf-version"
 const DeepseekCoder7b = "accounts/sourcegraph/models/deepseek-coder-7b-base"
 const DeepseekCoderV2LiteBase = "accounts/sourcegraph/models/deepseek-coder-v2-lite-base"
+const CodeQwen7B = "accounts/sourcegraph/models/code-qwen-1p5-7b"
 
 const FineTunedFIMVariant1 = "fim-fine-tuned-model-variant-1"
 const FineTunedFIMVariant2 = "fim-fine-tuned-model-variant-2"

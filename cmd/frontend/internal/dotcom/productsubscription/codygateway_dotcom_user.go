@@ -344,6 +344,7 @@ var allCodeCompletionModels = slices.Concat([]string{"anthropic/" + anthropic.Cl
 	"fireworks/" + fireworks.StarcoderTwo7b,
 	"fireworks/" + fireworks.DeepseekCoder1p3b,
 	"fireworks/" + fireworks.DeepseekCoderV2LiteBase,
+	"fireworks/" + fireworks.CodeQwen7B,
 	"fireworks/" + fireworks.DeepseekCoder7b},
 	prefix("fireworks/", fireworks.FineTunedMixtralModelVariants),
 	prefix("fireworks/", fireworks.FineTunedLlamaModelVariants),
