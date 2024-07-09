@@ -8,9 +8,9 @@ go_library(
         "observability.go",
         "tar.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver",
     tags = [TAG_PLATFORM_SEARCH],
-    visibility = ["//visibility:public"],
+    visibility = ["//cmd/symbols:__subpackages__"],
     deps = [
         "//internal/api",
         "//internal/gitserver",

@@ -3,7 +3,7 @@ package rockskip
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"

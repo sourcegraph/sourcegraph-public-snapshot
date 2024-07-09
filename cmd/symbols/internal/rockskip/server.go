@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"

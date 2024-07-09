@@ -10,10 +10,11 @@ import (
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
-	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
-	symbolsParser "github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
+	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
+	symbolsParser "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/rockskip"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
@@ -22,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/rockskip"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )

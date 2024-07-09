@@ -8,11 +8,11 @@ go_library(
         "observability.go",
         "repository_fetcher.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher",
     tags = [TAG_PLATFORM_SEARCH],
-    visibility = ["//visibility:public"],
+    visibility = ["//cmd/symbols:__subpackages__"],
     deps = [
-        "//cmd/symbols/gitserver",
+        "//cmd/symbols/internal/gitserver",
         "//internal/api",
         "//internal/metrics",
         "//internal/observation",
@@ -32,7 +32,7 @@ go_test(
     embed = [":fetcher"],
     tags = [TAG_PLATFORM_SEARCH],
     deps = [
-        "//cmd/symbols/gitserver",
+        "//cmd/symbols/internal/gitserver",
         "//internal/api",
         "//internal/gitserver",
         "//internal/observation",
@@ -50,5 +50,5 @@ go_mockgen(
         "//:mockgen.test.yaml",
         "//:mockgen.temp.yaml",
     ],
-    deps = ["//cmd/symbols/gitserver"],
+    deps = ["//cmd/symbols/internal/gitserver"],
 )

@@ -11,7 +11,7 @@ import (
 	"io"
 	"sync"
 
-	gitserver1 "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
+	gitserver1 "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
@@ -19,8 +19,8 @@ import (
 
 // MockGitserverClient is a mock implementation of the GitserverClient
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver) used for unit
-// testing.
+// github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver) used
+// for unit testing.
 type MockGitserverClient struct {
 	// ChangedFilesFunc is an instance of a mock function object controlling
 	// the behavior of the method ChangedFiles.

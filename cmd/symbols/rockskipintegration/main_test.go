@@ -12,10 +12,11 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
-	symbolsgitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
-	symbolsParser "github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
-	symbolstypes "github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
+	symbolsgitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
+	symbolsParser "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/rockskip"
+	symbolstypes "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/dev/gitserverintegration"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
@@ -23,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/rockskip"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -51,6 +51,9 @@ func TestRockskipIntegration(t *testing.T) {
 	_, err = db.ExecContext(ctx, "INSERT INTO rockskip_repos (repo, last_accessed_at) VALUES ($1, NOW())", "github.com/sourcegraph/rockskiptest")
 	require.NoError(t, err)
 
+	// TODO: This should not use internals and instead be used like gitserver which exposes an actual server.
+	// Until we can untangle that, this test wll live here but it should move to
+	// dev/rockskipintegration later.
 	sgs := symbolsgitserver.NewClient(observationCtx, gs)
 	ctagsConfig := symbolstypes.LoadCtagsConfig(env.BaseConfig{})
 	// Try to find the universal ctags binary. In bazel, it will be provided by bazel.
