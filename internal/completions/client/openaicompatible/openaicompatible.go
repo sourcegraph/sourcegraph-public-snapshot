@@ -1,4 +1,4 @@
-package openai
+package openaicompatible
 
 import (
 	"bytes"
@@ -17,20 +17,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewClient(cli httpcli.Doer, endpoint, accessToken string, tokenManager tokenusage.Manager) types.CompletionsClient {
+func NewClient(cli httpcli.Doer, modelConfigInfo *types.ModelConfigInfo, tokenManager tokenusage.Manager) types.CompletionsClient {
 	return &openAIChatCompletionStreamClient{
-		cli:          cli,
-		accessToken:  accessToken,
-		endpoint:     endpoint,
-		tokenManager: tokenManager,
+		cli:             cli,
+		modelConfigInfo: modelConfigInfo,
+		tokenManager:    tokenManager,
 	}
 }
 
 type openAIChatCompletionStreamClient struct {
-	cli          httpcli.Doer
-	accessToken  string
-	endpoint     string
-	tokenManager tokenusage.Manager
+	cli             httpcli.Doer
+	modelConfigInfo *types.ModelConfigInfo
+	tokenManager    tokenusage.Manager
 }
 
 func (c *openAIChatCompletionStreamClient) Complete(
@@ -207,7 +205,10 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 		return nil, err
 	}
 
-	url, err := url.Parse(c.endpoint)
+	// TODO(slimsag): self-hosted-models: use OpenAICompatibleProvider
+	endpoint := c.modelConfigInfo.Provider.ServerSideConfig.GenericProvider.Endpoint
+	accessToken := c.modelConfigInfo.Provider.ServerSideConfig.GenericProvider.AccessToken
+	url, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse configured endpoint")
 	}
@@ -219,7 +220,7 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.accessToken)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
 
 	resp, err := c.cli.Do(req)
 	if err != nil {
@@ -262,7 +263,10 @@ func (c *openAIChatCompletionStreamClient) makeCompletionRequest(ctx context.Con
 	if err != nil {
 		return nil, err
 	}
-	url, err := url.Parse(c.endpoint)
+	// TODO(slimsag): self-hosted-models: use OpenAICompatibleProvider
+	endpoint := c.modelConfigInfo.Provider.ServerSideConfig.GenericProvider.Endpoint
+	accessToken := c.modelConfigInfo.Provider.ServerSideConfig.GenericProvider.AccessToken
+	url, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse configured endpoint")
 	}
@@ -274,7 +278,7 @@ func (c *openAIChatCompletionStreamClient) makeCompletionRequest(ctx context.Con
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.accessToken)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
 
 	resp, err := c.cli.Do(req)
 	if err != nil {

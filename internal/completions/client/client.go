@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/openaicompatible"
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -41,8 +42,7 @@ func getBasic(endpoint string, provider conftypes.CompletionsProviderName, acces
 		// Using the new "modelConfiguration" site config
 		// TODO(slimsag): self-hosted-models: this logic only handles Cody Enterprise with Self-hosted models
 		// Only in this case do we have modelConfigInfo != nil
-		_ = modelConfigInfo
-		return nil, errors.Newf("TODO: implement self-hosted-models")
+		return openaicompatible.NewClient(httpcli.UncachedExternalDoer, modelConfigInfo, *tokenManager), nil
 	}
 
 	switch provider {

@@ -1,14 +1,9 @@
-load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "openai",
-    srcs = [
-        "decoder.go",
-        "openai.go",
-    ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client/openai",
-    tags = [TAG_CODY_CORE],
+    name = "openaicompatible",
+    srcs = ["openaicompatible.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client/openaicompatible",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/completions/tokenizer",
@@ -17,23 +12,5 @@ go_library(
         "//internal/httpcli",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
-    ],
-)
-
-go_test(
-    name = "openai_test",
-    srcs = [
-        "decoder_test.go",
-        "openai_test.go",
-    ],
-    embed = [":openai"],
-    tags = [TAG_CODY_CORE],
-    deps = [
-        "//internal/completions/tokenusage",
-        "//internal/completions/types",
-        "@com_github_hexops_autogold_v2//:autogold",
-        "@com_github_sourcegraph_log//:log",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
     ],
 )
