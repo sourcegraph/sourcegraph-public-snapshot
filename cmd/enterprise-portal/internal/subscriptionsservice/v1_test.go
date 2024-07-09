@@ -243,6 +243,7 @@ func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 			Subscription: &subscriptionsv1.EnterpriseSubscription{
 				Id:             "80ca12e2-54b4-448c-a61a-390b1a9c1224",
 				InstanceDomain: "s1.sourcegraph.com",
+				DisplayName:    "My Test Subscription",
 			},
 			UpdateMask: nil,
 		})
@@ -252,6 +253,7 @@ func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 		h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultReturn([]*dotcomdb.SubscriptionAttributes{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
 		h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
 			assert.NotEmpty(t, opts.InstanceDomain)
+			assert.NotEmpty(t, opts.DisplayName)
 			assert.False(t, opts.ForceUpdate)
 			return &subscriptions.Subscription{}, nil
 		})
@@ -265,6 +267,7 @@ func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 			Subscription: &subscriptionsv1.EnterpriseSubscription{
 				Id:             "80ca12e2-54b4-448c-a61a-390b1a9c1224",
 				InstanceDomain: "s1.sourcegraph.com",
+				DisplayName:    "My Test Subscription", // should not be included
 			},
 			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"instance_domain"}},
 		})
@@ -274,6 +277,7 @@ func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 		h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultReturn([]*dotcomdb.SubscriptionAttributes{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
 		h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
 			assert.NotEmpty(t, opts.InstanceDomain)
+			assert.Empty(t, opts.DisplayName)
 			assert.False(t, opts.ForceUpdate)
 			return &subscriptions.Subscription{}, nil
 		})
