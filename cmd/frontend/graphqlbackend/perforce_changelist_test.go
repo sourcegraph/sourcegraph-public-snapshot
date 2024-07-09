@@ -174,6 +174,11 @@ func TestMaybeTransformP4Body(t *testing.T) {
 			expected: "Another commit message",
 		},
 		{
+			name:     "git-p4 tag no new line",
+			input:    "Another commit message[git-p4: depot-paths = \"//test-perms/\": change = 80999]",
+			expected: "Another commit message",
+		},
+		{
 			name:     "no tags",
 			input:    "A simple commit message without tags",
 			expected: "A simple commit message without tags",
