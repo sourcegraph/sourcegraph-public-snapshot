@@ -1,10 +1,12 @@
 load("@aspect_rules_js//js:defs.bzl", "js_library", "js_run_binary", "js_run_devserver")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("@npm//maintenance:tsconfig-to-swcconfig/package_json.bzl", tsconfig_to_swcconfig = "bin")
-load("@npm//maintenance:vite/package_json.bzl", "bin")
+load("@npm//internal/appliance/frontend/maintenance:tsconfig-to-swcconfig/package_json.bzl", tsconfig_to_swcconfig = "bin")
+load("@npm//internal/appliance/frontend/maintenance:vite/package_json.bzl", vite_bin = "bin")
 
-npm_link_all_packages()
+npm_link_all_packages(
+    name = "node_modules",
+)
 
 RUNTIME_DEPS = [
     "assets/cody.svg",
@@ -36,10 +38,13 @@ RUNTIME_DEPS = [
     ":node_modules/react-dom",
     ":node_modules/react-router-dom",
     ":node_modules/web-vitals",
+    ":node_modules/vite",
+    ":node_modules/std-env",
+    ":node_modules/rollup",
 ]
 
 DEV_DEPS = [
-    "vite.config.ts",
+    "vite.config.mts",
     ":node_modules/@vitejs/plugin-react",
     ":node_modules/vitest",
 ]
@@ -70,15 +75,15 @@ js_library(
 
 js_library(
     name = "vite.config",
-    srcs = ["vite.config.ts"],
+    srcs = ["vite.config.mts"],
     data = [
         ":node_modules/@vitejs/plugin-react",
-        "//:node_modules/vitest",
+        ":node_modules/vitest",
     ],
     visibility = ["//maintenance:__subpackages__"],
 )
 
-bin.vite_binary(
+vite_bin.vite_binary(
     name = "vite",
     chdir = package_name(),
     data = ["vite.config"],
@@ -103,7 +108,7 @@ js_run_binary(
 )
 
 # Hosts the production-bundled application in a web server
-bin.vite_binary(
+vite_bin.vite_binary(
     name = "preview",
     args = ["preview"],
     chdir = package_name(),

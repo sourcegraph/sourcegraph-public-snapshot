@@ -1,5 +1,5 @@
 {
-  "name": "operator-ui",
+  "name": "@sourcegraph/operator-ui",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -34,6 +34,8 @@
     "tsconfig-to-swcconfig": "2.4.0",
     "typescript": "^5.3.3",
     "vite": "^5.0.7",
-    "vitest": "^1.6.0"
+    "vitest": "^1.6.0",
+    "std-env": "^3.7.0",
+    "rollup": "^3.29.4"
   }
 }
