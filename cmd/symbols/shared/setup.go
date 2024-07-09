@@ -117,8 +117,8 @@ func loadRockskipConfig(baseConfig env.BaseConfig, ctags types.CtagsConfig, repo
 		LogQueries:              baseConfig.GetBool("LOG_QUERIES", "false", "print search queries to stdout"),
 		IndexRequestsQueueSize:  baseConfig.GetInt("INDEX_REQUESTS_QUEUE_SIZE", "1000", "how many index requests can be queued at once, at which point new requests will be rejected"),
 		MaxConcurrentlyIndexing: baseConfig.GetInt("ROCKSKIP_MAX_CONCURRENTLY_INDEXING", "4", "maximum number of repositories being indexed at a time (also limits ctags processes)"),
-		SymbolsCacheSize:        baseConfig.GetInt("SYMBOLS_CACHE_SIZE", "100000", "how many tuples of (path, symbol name, int ID) to cache in memory"),
-		PathSymbolsCacheSize:    baseConfig.GetInt("PATH_SYMBOLS_CACHE_SIZE", "10000", "how many sets of symbols for files to cache in memory"),
+		SymbolsCacheSize:        baseConfig.GetInt("SYMBOLS_CACHE_SIZE", "100000", "how many tuples of (path, symbol name, int ID) to cache in memory while indexing a specific repo"),
+		PathSymbolsCacheSize:    baseConfig.GetInt("PATH_SYMBOLS_CACHE_SIZE", "10000", "how many sets of symbols for files to cache in memory while indexing a specific repo"),
 		SearchLastIndexedCommit: baseConfig.GetBool("SEARCH_LAST_INDEXED_COMMIT", "false", "falls back to searching the most recently indexed commit if the requested commit is not indexed"),
 	}
 }
