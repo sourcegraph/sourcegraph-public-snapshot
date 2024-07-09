@@ -185,12 +185,24 @@ var sg = &cli.App{
 			printSkippedInDevWarning()
 		}
 
+		// Set up access to secrets
+		secretsStore, err := loadSecrets()
+		if err != nil {
+			std.Out.WriteWarningf("failed to open secrets: %s", err)
+		} else {
+			cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
+		}
+
 		// Set up analytics and hooks for each command - do this as the first context
 		// setup
 		if !cmd.Bool("disable-analytics") {
+			if err := analytics.InitIdentity(cmd.Context, std.Out, secretsStore); err != nil {
+				std.Out.WriteWarningf("Failed to persist identity for analytics, continuing: %s", err)
+			}
+
 			cmd.Context, err = analytics.WithContext(cmd.Context, cmd.App.Version)
 			if err != nil {
-				std.Out.WriteWarningf("Failed to initialize analytics: " + err.Error())
+				std.Out.WriteWarningf("Failed to initialize analytics: %s", err)
 			}
 
 			// Ensure analytics are persisted
@@ -203,7 +215,7 @@ var sg = &cli.App{
 		// Initialize context after analytics are set up
 		cmd.Context, err = usershell.Context(cmd.Context)
 		if err != nil {
-			std.Out.WriteWarningf("Unable to infer user shell context: " + err.Error())
+			std.Out.WriteWarningf("Unable to infer user shell context: %s", err)
 		}
 		cmd.Context = background.Context(cmd.Context, verbose)
 		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
@@ -224,14 +236,6 @@ var sg = &cli.App{
 		}
 		if configOverwriteFile == "" {
 			return errors.Newf("--overwrite must not be empty")
-		}
-
-		// Set up access to secrets
-		secretsStore, err := loadSecrets()
-		if err != nil {
-			std.Out.WriteWarningf("failed to open secrets: %s", err)
-		} else {
-			cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
 		}
 
 		// We always try to set this, since we often want to watch files, start commands, etc...
