@@ -162,7 +162,11 @@ var sg = &cli.App{
 		if bashCompletionsMode {
 			return nil
 		}
-
+		//
+		// if we're in CI we don't want analytics enabled
+		if os.Getenv("CI") == "true" {
+			cmd.Set("disable-analytics", "true")
+		}
 		// Lots of setup happens in Before - we want to make sure anything that
 		// we collect a generate a helpful message here if anything goes wrong.
 		defer func() {

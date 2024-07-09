@@ -33,16 +33,6 @@ func TestGetEmail(t *testing.T) {
 		}
 	})
 
-	t.Run("when CI=true identity is ci@sourcegraph.com", func(t *testing.T) {
-		os.Setenv("CI", "true")
-		t.Cleanup(func() {
-			os.Unsetenv("CI")
-		})
-		if email := emailfunc(); email != "ci@sourcegraph.com" {
-			t.Fatal("expected 'ci@sourcegraph.com' identity when CI=true")
-		}
-	})
-
 	t.Run("well formed", func(t *testing.T) {
 		err := os.WriteFile(whoamiPath, []byte(`{"email":"bananaphone@gmail.com"}`), 0o700)
 		if err != nil {
