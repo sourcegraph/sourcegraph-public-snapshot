@@ -65,6 +65,10 @@ func (s BitbucketServerSource) GitserverPushConfig(ctx context.Context, repo *ty
 	return GitserverPushConfig(ctx, repo, s.au)
 }
 
+func (s BitbucketServerSource) AuthenticationStrategy() AuthenticationStrategy {
+	return AuthenticationStrategyUserCredential
+}
+
 func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
 	switch a.(type) {
 	case *auth.OAuthBearerToken,

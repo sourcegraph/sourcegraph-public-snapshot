@@ -99,6 +99,10 @@ type ChangesetSource interface {
 	MergeChangeset(ctx context.Context, ch *Changeset, squash bool) error
 	// BuildCommitOpts builds the CreateCommitFromPatchRequest needed to commit and push the change to the code host.
 	BuildCommitOpts(repo *types.Repo, changeset *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest
+
+	// AuthenticationStrategy returns the authentication strategy used by the changeset source to authenticate requests
+	// to the code hosts.
+	AuthenticationStrategy() AuthenticationStrategy
 }
 
 // ChangesetNotMergeableError is returned by MergeChangeset if the changeset
