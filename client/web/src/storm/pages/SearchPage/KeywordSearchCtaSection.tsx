@@ -4,7 +4,7 @@ import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { Code, H2, Icon, Link, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
+import { Code, H2, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
 
