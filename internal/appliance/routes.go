@@ -8,10 +8,6 @@ import (
 
 func (a *Appliance) Routes() *mux.Router {
 	r := mux.NewRouter()
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
-	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/appliance", http.StatusFound)
-	})
 
 	r.Handle("/appliance/login", a.getLoginHandler()).Methods(http.MethodGet)
 	r.Handle("/appliance/login", a.postLoginHandler()).Methods(http.MethodPost)

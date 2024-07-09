@@ -13,6 +13,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	pb "github.com/sourcegraph/sourcegraph/internal/appliance/v1"
 	"github.com/sourcegraph/sourcegraph/internal/releaseregistry"

@@ -7,6 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
