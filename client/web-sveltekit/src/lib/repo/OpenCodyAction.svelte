@@ -9,12 +9,14 @@
     }
 </script>
 
-<Tooltip tooltip="Open Cody chat">
-    <button on:click={handleClick} aria-controls={CODY_SIDEBAR_ID} aria-expanded={$rightPanelOpen}>
-        <Icon icon={ISgCody} />
-        <span data-action-label>Cody</span>
-    </button>
-</Tooltip>
+{#if !$rightPanelOpen}
+    <Tooltip tooltip="Open Cody chat">
+        <button on:click={handleClick} aria-controls={CODY_SIDEBAR_ID} aria-expanded={$rightPanelOpen}>
+            <Icon icon={ISgCody} />
+            <span data-action-label>Cody</span>
+        </button>
+    </Tooltip>
+{/if}
 
 <style lang="scss">
     button {

@@ -154,6 +154,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                                     config={gitHubApp}
                                     refetch={refetchAll}
                                     gitHubAppKind={gitHubAppKind}
+                                    credentialID={node.credential?.id}
                                 />
                             ) : (
                                 <>
