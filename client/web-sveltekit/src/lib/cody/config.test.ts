@@ -7,7 +7,9 @@ import { CodyContextFiltersSchema, getFiltersFromCodyContextFilters } from './co
 describe('CodyContextFilters', () => {
     test('invalid re2 regex', async () => {
         const regexWithLookahead = '\\d(?=\\D)' // not supported in RE2
-        const result = await CodyContextFiltersSchema.safeParseAsync({ exclude: [{ repoNamePattern: regexWithLookahead }] })
+        const result = await CodyContextFiltersSchema.safeParseAsync({
+            exclude: [{ repoNamePattern: regexWithLookahead }],
+        })
         expect(result.success).toBe(false)
     })
 })
