@@ -197,12 +197,12 @@ var sg = &cli.App{
 		// setup
 		if !cmd.Bool("disable-analytics") {
 			if err := analytics.InitIdentity(cmd.Context, std.Out, secretsStore); err != nil {
-				std.Out.WriteWarningf("Failed to persist identity for analytics, continuing: " + err.Error())
+				std.Out.WriteWarningf("Failed to persist identity for analytics, continuing: %s", err)
 			}
 
 			cmd.Context, err = analytics.WithContext(cmd.Context, cmd.App.Version)
 			if err != nil {
-				std.Out.WriteWarningf("Failed to initialize analytics: " + err.Error())
+				std.Out.WriteWarningf("Failed to initialize analytics: %s", err)
 			}
 
 			// Ensure analytics are persisted
@@ -215,7 +215,7 @@ var sg = &cli.App{
 		// Initialize context after analytics are set up
 		cmd.Context, err = usershell.Context(cmd.Context)
 		if err != nil {
-			std.Out.WriteWarningf("Unable to infer user shell context: " + err.Error())
+			std.Out.WriteWarningf("Unable to infer user shell context: %s", err)
 		}
 		cmd.Context = background.Context(cmd.Context, verbose)
 		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
