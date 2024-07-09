@@ -122,7 +122,7 @@ func parseP4FusionCommitSubject(subject string) (string, error) {
 }
 
 // maybeTransformP4Body is used for special handling of perforce depots converted to git using
-// p4-fusion. We want to strip out the p4-fusion generated commit message and use the original
+// p4-fusion or git-p4. We want to strip out the generated commit message and use the original
 // We handle both p4-fusion and git-p4 so that we stripe the system message from both.
 func maybeTransformP4Body(ctx context.Context, repoResolver *RepositoryResolver, commit *gitdomain.Commit) *string {
 	if repoResolver.isPerforceDepot(ctx) {
