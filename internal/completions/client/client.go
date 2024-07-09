@@ -10,8 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/openaicompatible"
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -48,6 +50,14 @@ func getAPIProvider(modelConfigInfo types.ModelConfigInfo) (types.CompletionsCli
 	ssConfig := modelConfigInfo.Provider.ServerSideConfig
 	if ssConfig == nil {
 		return nil, errors.Errorf("no server-side config available for provider %q", modelConfigInfo.Provider.ID)
+	}
+
+	if conf.UseExperimentalModelConfiguration() {
+		// Using the new "modelConfiguration" site config
+		// TODO(slimsag): self-hosted-models: this logic only handles Cody Enterprise with Self-hosted models
+		// Only in this case do we have modelConfigInfo != nil
+		// TODO(slimsag): self-hosted-models: remove pointer
+		return openaicompatible.NewClient(httpcli.UncachedExternalDoer, &modelConfigInfo, *tokenManager), nil
 	}
 
 	// AWS Bedrock.
