@@ -123,7 +123,7 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 	require.NoError(t, err)
 	assert.Equal(t, currentSubscription.ID, got.ID)
 	assert.Equal(t, currentSubscription.InstanceDomain, got.InstanceDomain)
-	assert.Equal(t, subscriptions.DefaultSubscriptionDisplayName, got.DisplayName)
+	assert.Empty(t, got.DisplayName)
 	assert.NotZero(t, got.CreatedAt)
 	assert.NotZero(t, got.UpdatedAt)
 	assert.Nil(t, got.ArchivedAt) // not archived yet
@@ -195,7 +195,7 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 		})
 		require.NoError(t, err)
 		assert.Empty(t, got.InstanceDomain)
-		assert.Equal(t, subscriptions.DefaultSubscriptionDisplayName, got.DisplayName)
+		assert.Empty(t, got.DisplayName)
 		assert.Nil(t, got.ArchivedAt)
 
 		// Some fields cannot be updated in a force-update.

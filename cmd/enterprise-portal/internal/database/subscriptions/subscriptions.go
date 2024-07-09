@@ -14,9 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-// DefaultSubscriptionDisplayName is the default display name for a subscription.
-const DefaultSubscriptionDisplayName = "Unnamed subscription"
-
 // Subscription is an Enterprise subscription record.
 type Subscription struct {
 	// ID is the internal (unprefixed) UUID-format identifier for the subscription.
@@ -32,8 +29,11 @@ type Subscription struct {
 	// DisplayName is the human-friendly name of this subscription, e.g. "Acme, Inc."
 	//
 	// It must be unique across all currently un-archived subscriptions, unless
-	// it is the default (see defaultSubscriptionDisplayName)
-	DisplayName string `gorm:"size:256;not null;uniqueIndex:,where:archived_at IS NULL AND display_name != 'Unnamed subscription';default:'Unnamed subscription'"`
+	// it is not set.
+	//
+	// TODO: Clean up the database post-deploy and remove the 'Unnamed subscription'
+	// part of the constraint.
+	DisplayName string `gorm:"size:256;not null;uniqueIndex:,where:archived_at IS NULL AND display_name != 'Unnamed subscription' AND display_name != ''"`
 
 	// Timestamps representing the latest timestamps of key conditions related
 	// to this subscription.
@@ -192,12 +192,7 @@ func (opts UpsertSubscriptionOptions) Exec(ctx context.Context, db *pgxpool.Pool
 	b := upsert.New("enterprise_portal_subscriptions", "id", opts.ForceUpdate)
 	upsert.Field(b, "id", id)
 	upsert.Field(b, "instance_domain", opts.InstanceDomain)
-
-	// Special case: for display name, unset => use default value
-	if opts.DisplayName == "" && opts.ForceUpdate {
-		opts.DisplayName = DefaultSubscriptionDisplayName
-	}
-	upsert.Field(b, "display_name", opts.DisplayName, upsert.WithColumnDefault())
+	upsert.Field(b, "display_name", opts.DisplayName)
 
 	upsert.Field(b, "created_at", opts.CreatedAt,
 		upsert.WithColumnDefault(),
