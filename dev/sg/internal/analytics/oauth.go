@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"path"
 	"strconv"
 
@@ -18,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -137,7 +137,7 @@ func (th *tokenHandlerImpl) Exchange(ctx context.Context, code string, opts ...o
 }
 
 func (th *tokenHandlerImpl) OpenURL(url string) error {
-	return exec.Command("open", url).Start()
+	return open.URL(url)
 }
 
 func handleAuthResponse() (*url.URL, chan string, chan error, error) {
