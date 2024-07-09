@@ -32,10 +32,10 @@ def oci_deps():
     )
 
     # https://hub.docker.com/_/docker/tags?name=dind
-    # Tag: docker:26.1.3-dind
+    # Tag: docker:27.0.3-dind
     oci_pull(
         name = "upstream_dind_base",
-        digest = "sha256:ca2dd9db425230285567123ce06dbd3c2aed0eae23d58a1dd5787523a4329eea",
+        digest = "sha256:2632da0d24924b179adf1c2e6f4ea6fb866747e84baea6b2ffaa8bff982ce102",
         image = "index.docker.io/library/docker",
     )
 
