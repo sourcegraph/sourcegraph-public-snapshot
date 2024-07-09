@@ -8,10 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gorilla/mux"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -22,7 +20,9 @@ import (
 	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestGenerateRedirectURL(t *testing.T) {
@@ -154,7 +154,7 @@ func TestGithubAppHTTPAPI(t *testing.T) {
 	db.GitHubAppsFunc.SetDefaultReturn(mockGitHubAppsStore)
 
 	rcache.SetupForTest(t)
-	cache := rcache.NewWithTTL("test_cache", 200)
+	cache := rcache.NewWithTTL(redispool.Cache, "test_cache", 200)
 
 	mux := mux.NewRouter()
 	subrouter := mux.PathPrefix("/githubapp/").Subrouter()

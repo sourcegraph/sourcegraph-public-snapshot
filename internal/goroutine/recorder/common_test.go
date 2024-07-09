@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -17,7 +18,7 @@ func TestLoggerAndReaderHappyPaths(t *testing.T) {
 	rcache.SetupForTest(t)
 
 	// Create logger
-	c := rcache.NewWithTTL(keyPrefix, 1)
+	c := rcache.NewWithTTL(redispool.Cache, keyPrefix, 1)
 	recorder := New(log.NoOp(), "test", c)
 
 	// Create routines

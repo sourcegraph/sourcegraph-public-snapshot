@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -127,7 +128,7 @@ func NewInstallationAccessToken(
 	appAuthenticator auth.Authenticator,
 	encryptionKey encryption.Key, // Used to encrypt the token before caching it
 ) *InstallationAuthenticator {
-	cache := rcache.NewWithTTL("github_app_installation_token", 55*60)
+	cache := rcache.NewWithTTL(redispool.Cache, "github_app_installation_token", 55*60)
 	return &InstallationAuthenticator{
 		baseURL:          baseURL,
 		installationID:   installationID,

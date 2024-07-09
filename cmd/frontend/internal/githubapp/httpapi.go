@@ -34,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -79,7 +80,7 @@ func (srv *gitHubAppServer) registerRoutes(router *mux.Router) {
 
 // SetupGitHubAppRoutes registers the routes for the GitHub App setup API.
 func SetupGitHubAppRoutes(router *mux.Router, db database.DB) {
-	ghAppState := rcache.NewWithTTL("github_app_state", cacheTTLSeconds)
+	ghAppState := rcache.NewWithTTL(redispool.Cache, "github_app_state", cacheTTLSeconds)
 	appServer := &gitHubAppServer{
 		cache: ghAppState,
 		db:    db,

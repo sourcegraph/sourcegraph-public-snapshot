@@ -16,14 +16,19 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // outboundRequestsRedisFIFOList is a FIFO redis cache to store the requests.
-var outboundRequestsRedisFIFOList = rcache.NewFIFOListDynamic("outbound-requests", func() int {
-	return int(outboundRequestLogLimit())
-})
+var outboundRequestsRedisFIFOList = rcache.NewFIFOListDynamic(
+	redispool.Cache,
+	"outbound-requests",
+	func() int {
+		return int(outboundRequestLogLimit())
+	},
+)
 
 const sourcegraphPrefix = "github.com/sourcegraph/sourcegraph/"
 

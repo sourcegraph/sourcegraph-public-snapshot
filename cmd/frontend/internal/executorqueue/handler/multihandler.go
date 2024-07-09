@@ -20,6 +20,7 @@ import (
 	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -49,7 +50,7 @@ func NewMultiHandler(
 	batchesQueueHandler QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob],
 ) MultiHandler {
 	siteConfig := conf.Get().SiteConfiguration
-	dequeueCache := rcache.New(executortypes.DequeueCachePrefix)
+	dequeueCache := rcache.New(redispool.Cache, executortypes.DequeueCachePrefix)
 	dequeueCacheConfig := executortypes.DequeuePropertiesPerQueue
 	if siteConfig.ExecutorsMultiqueue != nil && siteConfig.ExecutorsMultiqueue.DequeueCacheConfig != nil {
 		dequeueCacheConfig = siteConfig.ExecutorsMultiqueue.DequeueCacheConfig

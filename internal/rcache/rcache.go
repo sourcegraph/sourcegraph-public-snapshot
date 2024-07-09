@@ -23,15 +23,6 @@ import (
 const dataVersion = "v2"
 const dataVersionToDelete = "v1"
 
-// StoreType for selecting Redis store types.
-type StoreType int
-
-const (
-	// Define constants for each store type.
-	CacheStore StoreType = iota // Default Redis cache
-	RedisStore                  // Specific Redis store
-)
-
 // DeleteOldCacheData deletes the rcache data in the given Redis instance
 // that's prefixed with dataVersionToDelete
 func DeleteOldCacheData(c redis.Conn) error {
@@ -42,32 +33,24 @@ func DeleteOldCacheData(c redis.Conn) error {
 type Cache struct {
 	keyPrefix  string
 	ttlSeconds int
-	storeType  StoreType // Updated field to use StoreType
+	_kv        redispool.KeyValue
 }
 
 // New creates a redis backed Cache
-func New(keyPrefix string) *Cache {
+func New(kv redispool.KeyValue, keyPrefix string) *Cache {
 	return &Cache{
 		keyPrefix: keyPrefix,
-		storeType: CacheStore,
-	}
-}
-
-// New creates a redis backed Cache
-func NewWithRedisStore(keyPrefix string) *Cache {
-	return &Cache{
-		keyPrefix: keyPrefix,
-		storeType: RedisStore,
+		_kv:       kv,
 	}
 }
 
 // NewWithTTL creates a redis backed Cache which expires values after
 // ttlSeconds.
-func NewWithTTL(keyPrefix string, ttlSeconds int) *Cache {
+func NewWithTTL(kv redispool.KeyValue, keyPrefix string, ttlSeconds int) *Cache {
 	return &Cache{
 		keyPrefix:  keyPrefix,
 		ttlSeconds: ttlSeconds,
-		storeType:  CacheStore,
+		_kv:        kv,
 	}
 }
 
@@ -208,7 +191,7 @@ func (r *Cache) ListAllKeys() []string {
 
 // FIFOList returns a FIFOList namespaced in r.
 func (r *Cache) FIFOList(key string, maxSize int) *FIFOList {
-	return NewFIFOList(r.rkeyPrefix()+key, maxSize)
+	return NewFIFOList(r.kv(), r.rkeyPrefix()+key, maxSize)
 }
 
 // SetHashItem sets a key in a HASH.
@@ -258,18 +241,20 @@ type TB interface {
 	Helper()
 }
 
-const TestAddr = "127.0.0.1:6379"
+const testAddr = "127.0.0.1:6379"
 
 // SetupForTest adjusts the globalPrefix and clears it out. You will have
-// conflicts if you do `t.Parallel()`
-func SetupForTest(t testing.TB) {
+// conflicts if you do `t.Parallel()`. You should always use the returned KeyValue
+// in tests. Ultimately, that will help us get rid of the global mock, and the conflicts
+// from running tests in parallel.
+func SetupForTest(t testing.TB) redispool.KeyValue {
 	t.Helper()
 
 	pool := &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", TestAddr)
+			return redis.Dial("tcp", testAddr)
 		},
 		TestOnBorrow: func(c redis.Conn, t time.Time) error {
 			_, err := c.Do("PING")
@@ -277,6 +262,10 @@ func SetupForTest(t testing.TB) {
 		},
 	}
 	kvMock = redispool.RedisKeyValue(pool)
+	t.Cleanup(func() {
+		pool.Close()
+		kvMock = nil
+	})
 
 	globalPrefix = "__test__" + t.Name()
 	c := pool.Get()
@@ -294,27 +283,21 @@ func SetupForTest(t testing.TB) {
 	if err != nil {
 		log15.Error("Could not clear test prefix", "name", t.Name(), "globalPrefix", globalPrefix, "error", err)
 	}
+
+	return kvMock
 }
 
 var kvMock redispool.KeyValue
 
 func (r *Cache) kv() redispool.KeyValue {
+	// TODO: We should refactor the SetupForTest method to return a KV, not mock
+	// a global thing.
+	// That can only work when all tests pass the redis connection directly to the
+	// tested methods though.
 	if kvMock != nil {
 		return kvMock
 	}
-	switch r.storeType {
-	case RedisStore:
-		return redispool.Store
-	default:
-		return redispool.Cache
-	}
-}
-
-func kv() redispool.KeyValue {
-	if kvMock != nil {
-		return kvMock
-	}
-	return redispool.Cache
+	return r._kv
 }
 
 var (
