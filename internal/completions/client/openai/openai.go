@@ -37,43 +37,40 @@ func (c *openAIChatCompletionStreamClient) Complete(
 	ctx context.Context,
 	logger log.Logger,
 	request types.CompletionRequest) (*types.CompletionResponse, error) {
-	feature := request.Feature
-	requestParams := request.Parameters
 
-	var resp *http.Response
-	var err error
+	var (
+		resp *http.Response
+		err  error
+	)
 	defer (func() {
 		if resp != nil {
 			resp.Body.Close()
 		}
 	})()
 
-	if feature == types.CompletionsFeatureCode {
-		resp, err = c.makeCompletionRequest(ctx, requestParams, false)
-	} else {
-		resp, err = c.makeRequest(ctx, requestParams, false)
+	switch request.Feature {
+	case types.CompletionsFeatureCode:
+		resp, err = c.makeCompletionRequest(ctx, request, false)
+	case types.CompletionsFeatureChat:
+		resp, err = c.makeRequest(ctx, request, false)
+	default:
+		return nil, errors.Errorf("unknown feature %q", request.Feature)
 	}
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	var response openaiResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
-
 	if len(response.Choices) == 0 {
-		// Empty response.
+		logger.Warn("no choices in OpenAI response")
 		return &types.CompletionResponse{}, nil
 	}
-	err = c.tokenManager.UpdateTokenCountsFromModelUsage(
-		response.Usage.PromptTokens,
-		response.Usage.CompletionTokens,
-		tokenizer.OpenAIModel+"/"+requestParams.Model,
-		string(feature),
-		tokenusage.OpenAI)
-	if err != nil {
+
+	usage := response.Usage
+	if err = c.recordTokenUsage(request, usage.PromptTokens, usage.CompletionTokens); err != nil {
 		logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 	}
 	return &types.CompletionResponse{
@@ -87,8 +84,6 @@ func (c *openAIChatCompletionStreamClient) Stream(
 	logger log.Logger,
 	request types.CompletionRequest,
 	sendEvent types.SendCompletionEvent) error {
-	feature := request.Feature
-	requestParams := request.Parameters
 
 	var resp *http.Response
 	var err error
@@ -98,18 +93,24 @@ func (c *openAIChatCompletionStreamClient) Stream(
 			resp.Body.Close()
 		}
 	})()
-	if feature == types.CompletionsFeatureCode {
-		resp, err = c.makeCompletionRequest(ctx, requestParams, true)
-	} else {
-		resp, err = c.makeRequest(ctx, requestParams, true)
+	switch request.Feature {
+	case types.CompletionsFeatureCode:
+		resp, err = c.makeCompletionRequest(ctx, request, true)
+	case types.CompletionsFeatureChat:
+		resp, err = c.makeRequest(ctx, request, true)
+	default:
+		return errors.Errorf("unknown feature %v", request.Feature)
 	}
 	if err != nil {
 		return err
 	}
+
 	dec := NewDecoder(resp.Body)
-	var content string
-	var ev types.CompletionResponse
-	var promptTokens, completionTokens int
+	var (
+		content                        string
+		ev                             types.CompletionResponse
+		promptTokens, completionTokens int
+	)
 
 	for dec.Scan() {
 		if ctx.Err() != nil && ctx.Err() == context.Canceled {
@@ -136,7 +137,7 @@ func (c *openAIChatCompletionStreamClient) Stream(
 		}
 
 		if len(event.Choices) > 0 {
-			if feature == types.CompletionsFeatureCode {
+			if request.Feature == types.CompletionsFeatureCode {
 				content += event.Choices[0].Text
 			} else {
 				content += event.Choices[0].Delta.Content
@@ -154,15 +155,25 @@ func (c *openAIChatCompletionStreamClient) Stream(
 	if dec.Err() != nil {
 		return dec.Err()
 	}
-	err = c.tokenManager.UpdateTokenCountsFromModelUsage(promptTokens, completionTokens, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature), tokenusage.OpenAI)
-	if err != nil {
+
+	if err = c.recordTokenUsage(request, promptTokens, completionTokens); err != nil {
 		logger.Warn("Failed to count tokens with the token manager %w", log.Error(err))
 	}
 	return nil
 }
 
+func (c *openAIChatCompletionStreamClient) recordTokenUsage(request types.CompletionRequest, promptTokens, completionTokens int) error {
+	feature := string(request.Feature)
+	model := request.Parameters.Model
+	label := tokenizer.OpenAIModel + "/" + model
+	return c.tokenManager.UpdateTokenCountsFromModelUsage(
+		promptTokens, completionTokens,
+		label, feature, tokenusage.OpenAI)
+}
+
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
-func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, request types.CompletionRequest, stream bool) (*http.Response, error) {
+	requestParams := request.Parameters
 	if requestParams.TopK < 0 {
 		requestParams.TopK = 0
 	}
@@ -234,7 +245,8 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 }
 
 // makeCompletionRequest formats the request and calls the completions endpoint for code_completion requests
-func (c *openAIChatCompletionStreamClient) makeCompletionRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+func (c *openAIChatCompletionStreamClient) makeCompletionRequest(ctx context.Context, request types.CompletionRequest, stream bool) (*http.Response, error) {
+	requestParams := request.Parameters
 	if requestParams.TopK < 0 {
 		requestParams.TopK = 0
 	}
@@ -286,68 +298,6 @@ func (c *openAIChatCompletionStreamClient) makeCompletionRequest(ctx context.Con
 	}
 
 	return resp, nil
-}
-
-// openAIChatCompletionsRequestParameters request object for openAI chat endpoint https://platform.openai.com/docs/api-reference/chat/create
-type openAIChatCompletionsRequestParameters struct {
-	Model            string             `json:"model"`                       // request.Model
-	Messages         []message          `json:"messages"`                    // request.Messages
-	Temperature      float32            `json:"temperature,omitempty"`       // request.Temperature
-	TopP             float32            `json:"top_p,omitempty"`             // request.TopP
-	N                int                `json:"n,omitempty"`                 // always 1
-	Stream           bool               `json:"stream,omitempty"`            // request.Stream
-	Stop             []string           `json:"stop,omitempty"`              // request.StopSequences
-	MaxTokens        int                `json:"max_tokens,omitempty"`        // request.MaxTokensToSample
-	PresencePenalty  float32            `json:"presence_penalty,omitempty"`  // unused
-	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"` // unused
-	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`        // unused
-	User             string             `json:"user,omitempty"`              // unused
-}
-
-// openAICompletionsRequestParameters payload for openAI completions endpoint https://platform.openai.com/docs/api-reference/completions/create
-type openAICompletionsRequestParameters struct {
-	Model            string             `json:"model"`                       // request.Model
-	Prompt           string             `json:"prompt"`                      // request.Messages[0] - formatted prompt expected to be the only message
-	Temperature      float32            `json:"temperature,omitempty"`       // request.Temperature
-	TopP             float32            `json:"top_p,omitempty"`             // request.TopP
-	N                int                `json:"n,omitempty"`                 // always 1
-	Stream           bool               `json:"stream,omitempty"`            // request.Stream
-	Stop             []string           `json:"stop,omitempty"`              // request.StopSequences
-	MaxTokens        int                `json:"max_tokens,omitempty"`        // request.MaxTokensToSample
-	PresencePenalty  float32            `json:"presence_penalty,omitempty"`  // unused
-	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"` // unused
-	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`        // unused
-	Suffix           string             `json:"suffix,omitempty"`            // unused
-	User             string             `json:"user,omitempty"`              // unused
-}
-
-type message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-type openaiUsage struct {
-	PromptTokens     int `json:"prompt_tokens"`
-	CompletionTokens int `json:"completion_tokens"`
-	TotalTokens      int `json:"total_tokens"`
-}
-
-type openaiChoiceDelta struct {
-	Content string `json:"content"`
-}
-
-type openaiChoice struct {
-	Delta        openaiChoiceDelta `json:"delta"`
-	Role         string            `json:"role"`
-	Text         string            `json:"text"`
-	FinishReason string            `json:"finish_reason"`
-}
-
-type openaiResponse struct {
-	// Usage is only available for non-streaming requests.
-	Usage   openaiUsage    `json:"usage"`
-	Model   string         `json:"model"`
-	Choices []openaiChoice `json:"choices"`
 }
 
 func getPrompt(messages []types.Message) (string, error) {
