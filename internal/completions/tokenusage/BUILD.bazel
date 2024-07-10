@@ -19,6 +19,7 @@ go_library(
     ],
     deps = [
         "//internal/rcache",
+        "//internal/redispool",
         "//lib/errors",
     ],
 )
@@ -34,5 +35,6 @@ go_test(
     deps = [
         ":tokenusage",
         "//internal/rcache",
+        "//internal/redispool",
     ],
 )

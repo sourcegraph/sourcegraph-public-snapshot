@@ -8,6 +8,7 @@ import (
 
 	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 var defaultTime = time.Date(2000, 1, 1, 1, 1, 1, 1, time.UTC)
@@ -77,7 +78,7 @@ func Test_multiqueueCacheCleaner_Handle(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			rcache.SetupForTest(t)
 			m := &multiqueueCacheCleaner{
-				cache:      rcache.New(executortypes.DequeueCachePrefix),
+				cache:      rcache.New(redispool.Cache, executortypes.DequeueCachePrefix),
 				windowSize: executortypes.DequeueTtl,
 			}
 			timeNow = func() time.Time {

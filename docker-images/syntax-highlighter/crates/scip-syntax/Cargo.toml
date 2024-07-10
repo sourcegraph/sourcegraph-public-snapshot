@@ -1,5 +1,7 @@
 [package]
 name = "scip-syntax"
+# NOTE(id: scip-syntax-version) For the time being, this version needs to be in sync with
+# the one used in /cmd/syntactic-code-intel-worker/shared/indexing_worker.go
 version = "0.1.0"
 edition = "2021"
 

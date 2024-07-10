@@ -27,8 +27,8 @@ type CodeNavService interface {
 	VisibleUploadsForPath(ctx context.Context, requestState codenav.RequestState) ([]uploadsshared.CompletedUpload, error)
 	SnapshotForDocument(ctx context.Context, repositoryID api.RepoID, commit api.CommitID, path core.RepoRelPath, uploadID int) (data []shared.SnapshotData, err error)
 	SCIPDocument(ctx context.Context, uploadID int, path core.RepoRelPath) (*scip.Document, error)
-	SyntacticUsages(ctx context.Context, args codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError)
-	SearchBasedUsages(ctx context.Context, args codenav.UsagesForSymbolArgs, previous *codenav.PreviousSyntacticSearch) ([]codenav.SearchBasedMatch, error)
+	SyntacticUsages(ctx context.Context, args codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError)
+	SearchBasedUsages(ctx context.Context, args codenav.UsagesForSymbolArgs, previous core.Option[codenav.PreviousSyntacticSearch]) ([]codenav.SearchBasedMatch, error)
 }
 
 var _ CodeNavService = &codenav.Service{}

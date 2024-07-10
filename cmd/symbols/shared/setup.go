@@ -10,10 +10,11 @@ import (
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
-	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
-	symbolsParser "github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
+	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
+	symbolsParser "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/rockskip"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
@@ -22,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/rockskip"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -117,8 +117,8 @@ func loadRockskipConfig(baseConfig env.BaseConfig, ctags types.CtagsConfig, repo
 		LogQueries:              baseConfig.GetBool("LOG_QUERIES", "false", "print search queries to stdout"),
 		IndexRequestsQueueSize:  baseConfig.GetInt("INDEX_REQUESTS_QUEUE_SIZE", "1000", "how many index requests can be queued at once, at which point new requests will be rejected"),
 		MaxConcurrentlyIndexing: baseConfig.GetInt("ROCKSKIP_MAX_CONCURRENTLY_INDEXING", "4", "maximum number of repositories being indexed at a time (also limits ctags processes)"),
-		SymbolsCacheSize:        baseConfig.GetInt("SYMBOLS_CACHE_SIZE", "100000", "how many tuples of (path, symbol name, int ID) to cache in memory"),
-		PathSymbolsCacheSize:    baseConfig.GetInt("PATH_SYMBOLS_CACHE_SIZE", "10000", "how many sets of symbols for files to cache in memory"),
+		SymbolsCacheSize:        baseConfig.GetInt("SYMBOLS_CACHE_SIZE", "100000", "how many tuples of (path, symbol name, int ID) to cache in memory while indexing a specific repo"),
+		PathSymbolsCacheSize:    baseConfig.GetInt("PATH_SYMBOLS_CACHE_SIZE", "10000", "how many sets of symbols for files to cache in memory while indexing a specific repo"),
 		SearchLastIndexedCommit: baseConfig.GetBool("SEARCH_LAST_INDEXED_COMMIT", "false", "falls back to searching the most recently indexed commit if the requested commit is not indexed"),
 	}
 }

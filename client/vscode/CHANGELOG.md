@@ -7,6 +7,12 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
+### Fixes
+
+## 2.2.17
+
+### Changes
+
 - Change the extension name from "Sourcegraph" to "Search by
   Sourcegraph" [#51790](https://github.com/sourcegraph/sourcegraph/pull/51790)
 - Remove the URL and Access Token settings because authentication is managed in the extension now. [#63559](https://github.com/sourcegraph/sourcegraph/pull/63559)

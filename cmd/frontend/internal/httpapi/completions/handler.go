@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	modelconfigSDK "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
@@ -29,6 +30,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/modelconfig"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -85,12 +87,15 @@ func newCompletionsHandler(
 		}
 
 		var version types.CompletionsVersion
-		versionParam := r.URL.Query().Get("api-version")
-		if versionParam == "" {
+		switch versionParam := r.URL.Query().Get("api-version"); versionParam {
+		case "":
 			version = types.CompletionsVersionLegacy
-		} else if versionParam == "1" {
+		case "1":
 			version = types.CompletionsV1
-		} else {
+		default:
+			logger.Warn(
+				"blocking request because unrecognized CompletionsVersion API param",
+				log.String("version", versionParam))
 			http.Error(w, "Unsupported API Version (Please update your client)", http.StatusNotAcceptable)
 			return
 		}
@@ -110,6 +115,7 @@ func newCompletionsHandler(
 		// JSON payload. And just have a zero-value CompletionRequestParameters, e.g. no prompt.
 		var requestParams types.CodyCompletionRequestParameters
 		if err := json.NewDecoder(r.Body).Decode(&requestParams); err != nil {
+			logger.Warn("malformed CodyCompletionRequestParameters", log.Error(err))
 			http.Error(w, "could not decode request body", http.StatusBadRequest)
 			return
 		}
@@ -137,7 +143,9 @@ func newCompletionsHandler(
 
 		// Use the user's access token for Cody Gateway on dotcom if PLG is enabled.
 		accessToken := completionsConfig.AccessToken
-		isProviderCodyGateway := completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
+		// TODO(slimsag): self-hosted-models: Note we are disabling Cody Gateway if "modelConfiguration" is in use currently.
+		// this logic only handles Cody Enterprise with Self-hosted models
+		isProviderCodyGateway := !conf.UseExperimentalModelConfiguration() && completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
 		if isDotcom && isProviderCodyGateway {
 			// Note: if we have no Authorization header, that's fine too, this will return an error
 			apiToken, _, err := authz.ParseAuthorizationHeader(r.Header.Get("Authorization"))
@@ -172,12 +180,31 @@ func newCompletionsHandler(
 			}
 		}
 
+		var modelConfigInfo *types.ModelConfigInfo
+		if conf.UseExperimentalModelConfiguration() {
+			// TODO(slimsag): self-hosted-models: this logic only handles Cody Enterprise with Self-hosted models
+			modelConfig, err := modelconfig.Get().Get()
+			if err != nil {
+				trace.Logger(ctx, logger).Info("UseExperimentalModelConfiguration - failed to load model configuration", log.Error(err))
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			requestModelRef := modelconfigSDK.ModelRef(requestParams.Model) // a verified modelref at this point
+			modelConfigInfo, err = types.NewModelConfigInfo(modelConfig, requestModelRef)
+			if err != nil {
+				trace.Logger(ctx, logger).Info("UseExperimentalModelConfiguration - failed to create model config info", log.Error(err))
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
 		completionClient, err := client.Get(
 			logger,
 			events,
 			completionsConfig.Endpoint,
 			completionsConfig.Provider,
 			accessToken,
+			modelConfigInfo,
 		)
 		l := trace.Logger(ctx, logger)
 		if err != nil {

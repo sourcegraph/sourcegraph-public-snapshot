@@ -13,8 +13,8 @@ func (c *closeWrapper) Close() error {
 	return nil
 }
 
-// NewExtraCloser returns wraps a ReadCloser with an extra close function
+// newExtraCloser returns wraps a ReadCloser with an extra close function
 // that will be called after the underlying ReadCloser has been closed.
-func NewExtraCloser(rc io.ReadCloser, close func()) io.ReadCloser {
+func newExtraCloser(rc io.ReadCloser, close func()) io.ReadCloser {
 	return &closeWrapper{ReadCloser: rc, close: close}
 }

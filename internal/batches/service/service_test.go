@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
 	"strings"
 	"testing"
 	"time"
@@ -1179,11 +1180,15 @@ index e5af166..d44c3fc 100644
 		t.Run("valid", func(t *testing.T) {
 			fakeSource.AuthenticatorIsValid = true
 			fakeSource.ValidateAuthenticatorCalled = false
+			validateArgs := ValidateAuthenticatorArgs{
+				ExternalServiceID:   "https://github.com/",
+				ExternalServiceType: extsvc.KindToType(extsvc.TypeGitHub),
+			}
 			if err := svc.ValidateAuthenticator(
 				ctx,
-				"https://github.com/",
-				extsvc.TypeGitHub,
 				&extsvcauth.OAuthBearerToken{Token: "test123"},
+				sources.AuthenticationStrategyUserCredential,
+				validateArgs,
 			); err != nil {
 				t.Fatal(err)
 			}
@@ -1194,11 +1199,15 @@ index e5af166..d44c3fc 100644
 		t.Run("invalid", func(t *testing.T) {
 			fakeSource.AuthenticatorIsValid = false
 			fakeSource.ValidateAuthenticatorCalled = false
+			validateArgs := ValidateAuthenticatorArgs{
+				ExternalServiceID:   "https://github.com/",
+				ExternalServiceType: extsvc.KindToType(extsvc.TypeGitHub),
+			}
 			if err := svc.ValidateAuthenticator(
 				ctx,
-				"https://github.com/",
-				extsvc.TypeGitHub,
 				&extsvcauth.OAuthBearerToken{Token: "test123"},
+				sources.AuthenticationStrategyUserCredential,
+				validateArgs,
 			); err == nil {
 				t.Fatal("unexpected nil-error returned from ValidateAuthenticator")
 			}

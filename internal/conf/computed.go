@@ -674,6 +674,12 @@ func HashedLicenseKeyWithPrefix(licenseKey string, prefix string) string {
 	return hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(prefix + licenseKey)))
 }
 
+// UseExperimentalModelConfiguration tells whether or not "modelConfiguration" has been specified
+// in the site configuration
+func UseExperimentalModelConfiguration() bool {
+	return Get().SiteConfig().ModelConfiguration != nil
+}
+
 // GetCompletionsConfig evaluates a complete completions configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
 func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.CompletionsConfig) {
@@ -931,12 +937,15 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		completionsConfig.SmartContextWindow = "enabled"
 	}
 
+	disableClientConfigAPI := completionsConfig.DisableClientConfigAPI != nil && *completionsConfig.DisableClientConfigAPI
+
 	computedConfig := &conftypes.CompletionsConfig{
 		Provider:               conftypes.CompletionsProviderName(completionsConfig.Provider),
 		AccessToken:            completionsConfig.AccessToken,
 		ChatModel:              completionsConfig.ChatModel,
 		ChatModelMaxTokens:     completionsConfig.ChatModelMaxTokens,
 		SmartContextWindow:     completionsConfig.SmartContextWindow,
+		DisableClientConfigAPI: disableClientConfigAPI,
 		FastChatModel:          completionsConfig.FastChatModel,
 		FastChatModelMaxTokens: completionsConfig.FastChatModelMaxTokens,
 		AzureUseDeprecatedCompletionsAPIForOldModels: completionsConfig.AzureUseDeprecatedCompletionsAPIForOldModels,

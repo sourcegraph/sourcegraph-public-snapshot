@@ -14,11 +14,13 @@ type svc struct{}
 func (svc) Name() string { return "searcher" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
-	return nil, []debugserver.Endpoint{GRPCWebUIDebugEndpoint()}
+	c := LoadConfig()
+
+	return c, []debugserver.Endpoint{GRPCWebUIDebugEndpoint(c.ListenAddress)}
 }
 
-func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, _ env.Config) error {
-	return Start(ctx, observationCtx, ready)
+func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, c env.Config) error {
+	return Start(ctx, observationCtx, ready, c.(*Config))
 }
 
 var Service service.Service = svc{}

@@ -26,7 +26,7 @@ func NewSyntacticindexingSchedulerJob() job.Job {
 }
 
 func (job *syntacticIndexingSchedulerJob) Description() string {
-	return ""
+	return "Scheduler job for codeintel syntactic indexing"
 }
 
 func (job *syntacticIndexingSchedulerJob) Config() []env.Config {
@@ -84,13 +84,12 @@ func newSchedulerJob(
 			if config != nil && config.CodeintelSyntacticIndexingEnabled {
 				return scheduler.Schedule(observationCtx, ctx, time.Now())
 			} else {
-				observationCtx.Logger.Info("Syntactic indexing is disabled")
 				return nil
 			}
 		}),
 		goroutine.WithName("codeintel.syntactic-indexing-background-scheduler"),
 		goroutine.WithDescription("schedule syntactic indexing jobs in the background"),
-		goroutine.WithInterval(time.Second*5),
+		goroutine.WithInterval(schedulerConfig.SchedulerInterval),
 		goroutine.WithOperation(observationCtx.Operation(observation.Op{
 			Name:              "codeintel.syntactic_indexing.HandleIndexSchedule",
 			MetricLabelValues: []string{"HandleIndexSchedule"},

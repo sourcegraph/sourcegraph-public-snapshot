@@ -64,7 +64,7 @@ type ForkableChangesetSource interface {
 type ChangesetSource interface {
 	// GitserverPushConfig returns an authenticated push config used for pushing
 	// commits to the code host.
-	GitserverPushConfig(*types.Repo) (*protocol.PushConfig, error)
+	GitserverPushConfig(context.Context, *types.Repo) (*protocol.PushConfig, error)
 	// WithAuthenticator returns a copy of the original Source configured to use
 	// the given authenticator, provided that authenticator type is supported by
 	// the code host.
@@ -99,6 +99,10 @@ type ChangesetSource interface {
 	MergeChangeset(ctx context.Context, ch *Changeset, squash bool) error
 	// BuildCommitOpts builds the CreateCommitFromPatchRequest needed to commit and push the change to the code host.
 	BuildCommitOpts(repo *types.Repo, changeset *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest
+
+	// AuthenticationStrategy returns the authentication strategy used by the changeset source to authenticate requests
+	// to the code hosts.
+	AuthenticationStrategy() AuthenticationStrategy
 }
 
 // ChangesetNotMergeableError is returned by MergeChangeset if the changeset

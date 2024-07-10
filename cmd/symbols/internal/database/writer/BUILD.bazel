@@ -11,10 +11,10 @@ go_library(
     tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//cmd/symbols:__subpackages__"],
     deps = [
-        "//cmd/symbols/gitserver",
         "//cmd/symbols/internal/api/observability",
         "//cmd/symbols/internal/database/store",
-        "//cmd/symbols/parser",
+        "//cmd/symbols/internal/gitserver",
+        "//cmd/symbols/internal/parser",
         "//internal/api",
         "//internal/diskcache",
         "//internal/gitserver/gitdomain",

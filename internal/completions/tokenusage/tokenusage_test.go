@@ -5,12 +5,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 func TestGetAllTokenUsageData(t *testing.T) {
 	rcache.SetupForTest(t)
 	manager := tokenusage.NewManager()
-	cache := rcache.NewWithTTL("LLMUsage", 1800)
+	cache := rcache.NewWithTTL(redispool.Store, "LLMUsage", 1800)
 	cache.SetInt("LLMUsage:model1:feature1:stream:input", 10)
 	cache.SetInt("LLMUsage:model1:feature1:stream:output", 20)
 
