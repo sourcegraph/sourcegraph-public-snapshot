@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	repogitserver "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/phabricator"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/purge"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/scheduler"
@@ -131,7 +130,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	routines := []goroutine.BackgroundRoutine{
 		makeGRPCServer(logger, server),
 		newUnclonedReposManager(ctx, logger, updateScheduler, store),
-		phabricator.NewRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker"), store),
 		// Run git fetches scheduler
 		updateScheduler,
 	}

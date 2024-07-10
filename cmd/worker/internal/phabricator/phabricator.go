@@ -27,7 +27,7 @@ const (
 
 var (
 	phabricatorUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_time_last_phabricator_sync",
+		Name: "src_phabricator_last_time_sync",
 		Help: "The last time a comprehensive Phabricator sync finished",
 	}, []string{tagID})
 )
