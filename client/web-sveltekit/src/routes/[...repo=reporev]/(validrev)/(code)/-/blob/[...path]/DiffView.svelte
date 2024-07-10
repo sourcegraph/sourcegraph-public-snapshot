@@ -19,11 +19,9 @@
 </script>
 
 <FileHeader type="blob" repoName={data.repoName} revision={data.revision} path={data.filePath}>
-    <svelte:fragment slot="icon">
-        {#if $commit.value?.blob}
-            <FileIcon file={$commit.value.blob} inline />
-        {/if}
-    </svelte:fragment>
+    {#if $commit.value?.blob}
+        <FileIcon slot="file-icon" file={$commit.value.blob} inline />
+    {/if}
 </FileHeader>
 
 <div class="info">

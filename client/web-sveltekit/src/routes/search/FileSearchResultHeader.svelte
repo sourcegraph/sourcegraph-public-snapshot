@@ -1,13 +1,13 @@
 <script lang="ts">
     import { highlightRanges } from '$lib/dom'
-    import { getFileMatchUrl, type ContentMatch, type PathMatch, type SymbolMatch } from '$lib/shared'
-    import CopyButton from '$lib/wildcard/CopyButton.svelte'
+    import DisplayPath from '$lib/path/DisplayPath.svelte'
+    import { pathHrefFactory } from '$lib/path/index'
+    import { getRevision, type ContentMatch, type PathMatch, type SymbolMatch } from '$lib/shared'
 
     import RepoRev from './RepoRev.svelte'
 
     export let result: ContentMatch | PathMatch | SymbolMatch
 
-    $: fileURL = getFileMatchUrl(result)
     $: rev = result.branches?.[0]
 
     $: matches =
@@ -16,34 +16,37 @@
             : []
 </script>
 
-<RepoRev repoName={result.repository} {rev} />
-<span class="interpunct">·</span>
-<span class="root">
-    {#key result}
-        <a class="path" href={fileURL} use:highlightRanges={{ ranges: matches }}>
-            {result.path}
-        </a>
-    {/key}
-    <span data-visible-on-focus><CopyButton value={result.path} label="Copy path to clipboard" /></span>
-</span>
+<div class="root">
+    <RepoRev repoName={result.repository} {rev} />
+    <span class="interpunct">·</span>
+    <!-- Wrap the path and the copy button in a span so they wrap together  -->
+    <span use:highlightRanges={{ ranges: matches }}>
+        <DisplayPath
+            path={result.path}
+            pathHref={pathHrefFactory({
+                repoName: result.repository,
+                revision: getRevision(result.branches, result.commit),
+                fullPath: result.path,
+                fullPathType: 'blob',
+            })}
+            showCopyButton
+        />
+    </span>
+</div>
 
 <style lang="scss">
     .root {
-        font-family: var(--code-font-family);
-        font-size: var(--code-font-size);
+        display: inline-flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
 
-        a,
-        span {
-            vertical-align: middle;
+        :global([data-path-container]) {
+            flex-flow: wrap;
         }
     }
 
     .interpunct {
-        margin: 0 0.5rem;
         color: var(--text-disabled);
-    }
-
-    .path {
-        color: var(--text-body);
     }
 </style>

@@ -33,10 +33,8 @@
 <style lang="scss">
     .copy-button {
         display: contents;
-        color: var(--text-muted);
-
         &:hover {
-            color: var(--body-color);
+            --icon-color: var(--body-color);
         }
     }
 </style>

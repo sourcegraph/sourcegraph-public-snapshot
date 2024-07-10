@@ -87,6 +87,21 @@
         entry => entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)
     )
     $: visibleNavEntryCount = viewableNavEntries.length
+    function grow(): boolean {
+        if (visibleNavEntryCount < viewableNavEntries.length) {
+            visibleNavEntryCount++
+            return true
+        }
+        return false
+    }
+    function shrink(): boolean {
+        if (visibleNavEntryCount > 0) {
+            visibleNavEntryCount--
+            return true
+        }
+        return false
+    }
+
     $: navEntriesToShow = viewableNavEntries.slice(0, visibleNavEntryCount)
     $: overflowNavEntries = viewableNavEntries.slice(visibleNavEntryCount)
     $: allMenuEntries = [...overflowNavEntries, ...menuEntries]
@@ -135,19 +150,7 @@
     </div>
 </GlobalHeaderPortal>
 
-<nav
-    aria-label="repository"
-    use:sizeToFit={{
-        grow() {
-            visibleNavEntryCount = Math.min(visibleNavEntryCount + 1, viewableNavEntries.length)
-            return visibleNavEntryCount < viewableNavEntries.length
-        },
-        shrink() {
-            visibleNavEntryCount = Math.max(visibleNavEntryCount - 1, 0)
-            return visibleNavEntryCount > 0
-        },
-    }}
->
+<nav aria-label="repository" use:sizeToFit={{ grow, shrink }}>
     <RepoMenu
         repoName={data.repoName}
         displayRepoName={data.displayRepoName}
