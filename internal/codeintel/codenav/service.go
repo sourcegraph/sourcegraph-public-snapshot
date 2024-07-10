@@ -1213,7 +1213,10 @@ func (s *Service) findSyntacticMatchesForCandidateFile(
 			if !scip.IsLocalSymbol(occ.Symbol) {
 				foundSyntacticMatch = true
 				syntacticMatches = append(syntacticMatches, SyntacticMatch{
-					Path:       filePath,
+					Path:  filePath,
+					Range: sourceCandidateRange,
+					// ^ Return results at the commit the match was found at, not at the commit
+					// where the syntactic upload was found.
 					Occurrence: occ,
 				})
 			}
@@ -1222,8 +1225,6 @@ func (s *Service) findSyntacticMatchesForCandidateFile(
 			searchBasedMatches = append(searchBasedMatches, SearchBasedMatch{
 				Path:  filePath,
 				Range: sourceCandidateRange,
-				// ^ Return results at the commit the match was found at, not at the commit
-				// where the syntactic upload was found.
 			})
 		}
 	}
@@ -1240,12 +1241,12 @@ type SearchBasedMatch struct {
 }
 
 type SyntacticMatch struct {
-	Path       core.RepoRelPath
+	Path core.RepoRelPath
+	// This Range is the range of the symbol in the requested commit,
+	// which can be different from the range of the symbol in the syntactic
+	// upload, iff it was adjusted by the git tree translator.
+	Range      scip.Range
 	Occurrence *scip.Occurrence
-}
-
-func (m *SyntacticMatch) Range() scip.Range {
-	return scip.NewRangeUnchecked(m.Occurrence.Range)
 }
 
 type SyntacticUsagesResult struct {

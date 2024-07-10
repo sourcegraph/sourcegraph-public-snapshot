@@ -54,7 +54,7 @@ func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Re
 			repository: repository,
 			revision:   revision,
 			path:       usage.Path,
-			range_:     usage.Range(),
+			range_:     usage.Range,
 		},
 	}
 }
