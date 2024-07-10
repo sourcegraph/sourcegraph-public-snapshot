@@ -284,8 +284,8 @@ func recommendedSettingsStarcoder2(modelRef, displayName, modelName string) type
 		Status:       types.ModelStatusStable,
 		Tier:         types.ModelTierEnterprise,
 		ContextWindow: types.ContextWindow{
-			MaxInputTokens:  8192,
-			MaxOutputTokens: 4000,
+			MaxInputTokens:  2048,
+			MaxOutputTokens: 2048,
 		},
 		ClientSideConfig: nil,
 		ServerSideConfig: nil,
@@ -303,8 +303,8 @@ func recommendedSettingsMistral(modelRef, displayName, modelName string) types.M
 		Status:       types.ModelStatusStable,
 		Tier:         types.ModelTierEnterprise,
 		ContextWindow: types.ContextWindow{
-			MaxInputTokens:  8192,
-			MaxOutputTokens: 4000,
+			MaxInputTokens:  2048,
+			MaxOutputTokens: 2048,
 		},
 		ClientSideConfig: nil,
 		ServerSideConfig: nil,
