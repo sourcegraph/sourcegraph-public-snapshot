@@ -17,7 +17,6 @@
     import { page } from '$app/stores'
     import { onClickOutside } from '$lib/dom'
     import Icon from '$lib/Icon.svelte'
-    import { mark } from '$lib/images'
     import MainNavigationLink from '$lib/navigation/MainNavigationLink.svelte'
     import Popover from '$lib/Popover.svelte'
     import SourcegraphLogo from '$lib/SourcegraphLogo.svelte'
@@ -62,7 +61,7 @@
         </button>
 
         <a href="/search">
-            <img src={mark} alt="Sourcegraph" width="25" height="25" />
+            <Icon icon={ISgMark} aria-label="Sourcegraph" aria-hidden="true" --icon-color="initial" />
         </a>
     </div>
 
@@ -79,7 +78,8 @@
                 </button>
 
                 <a href="/search" class="logo-link">
-                    <SourcegraphLogo width="9.1rem" />
+                    <!-- Match the size of the mark when the panel is closed so the mark doesn't shift -->
+                    <SourcegraphLogo height={24} />
                 </a>
             </div>
             <ul class="top-navigation">
@@ -182,7 +182,7 @@
             margin-left: 0;
         }
 
-        img:hover {
+        :global([data-icon]):hover {
             @keyframes spin {
                 50% {
                     transform: rotate(180deg) scale(1.2);
