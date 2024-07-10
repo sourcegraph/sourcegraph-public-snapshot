@@ -255,7 +255,6 @@ commands:
       - lib
       - internal
       - cmd/symbols
-      - internal/rockskip
 
   embeddings:
     cmd: |
