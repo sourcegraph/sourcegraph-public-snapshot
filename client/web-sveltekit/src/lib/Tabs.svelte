@@ -95,6 +95,7 @@
             border-bottom: 1px solid var(--border-color);
 
             .actions {
+                flex-shrink: 0;
                 margin-left: auto;
                 margin-right: var(--tabs-horizontal-spacing);
             }

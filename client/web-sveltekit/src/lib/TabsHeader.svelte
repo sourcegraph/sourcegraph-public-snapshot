@@ -64,12 +64,9 @@
     .tabs-header {
         --icon-color: var(--header-icon-color);
 
-        width: 100%;
-
         display: flex;
         align-items: stretch;
-        justify-content: var(--align-tabs, flex-start);
-        gap: var(--tabs-gap, 0);
+        justify-content: var(--tabs-header-align, flex-start);
     }
 
     [role='tab'] {

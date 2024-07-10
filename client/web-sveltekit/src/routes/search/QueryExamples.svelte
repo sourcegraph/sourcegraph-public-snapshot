@@ -89,7 +89,11 @@
 <style lang="scss">
     .container {
         flex: 1;
-        --align-tabs: center;
+        --tabs-header-align: center;
+
+        :global([data-tab-header]) {
+            width: 100%;
+        }
     }
 
     .columns {
