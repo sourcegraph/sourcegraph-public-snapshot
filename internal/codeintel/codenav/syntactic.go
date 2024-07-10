@@ -73,12 +73,7 @@ func findCandidateOccurrencesViaSearch(
 					inconsistentFilepaths = 1
 					continue
 				}
-				scipRange, err := scip.NewRange([]int32{
-					int32(matchRange.Start.Line),
-					int32(matchRange.Start.Column),
-					int32(matchRange.End.Line),
-					int32(matchRange.End.Column),
-				})
+				scipRange, err := scipFromResultRange(matchRange)
 				if err != nil {
 					trace.Warn("Failed to create scip range from match range",
 						log.String("error", err.Error()),
@@ -245,4 +240,13 @@ func sliceRangeFromReader(reader io.Reader, range_ scip.Range) (substr string, e
 		}
 	}
 	return "", errors.New("symbol range is out-of-bounds")
+}
+
+func scipFromResultRange(resultRange result.Range) (scip.Range, error) {
+	return scip.NewRange([]int32{
+		int32(resultRange.Start.Line),
+		int32(resultRange.Start.Column),
+		int32(resultRange.End.Line),
+		int32(resultRange.End.Column),
+	})
 }
