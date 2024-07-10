@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"net"
 	"sort"
 	"sync"
 	"time"
@@ -119,13 +120,35 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 	if err != nil {
 		return nil, err
 	}
+
 	logger := r.logger.Scoped("CreateAccessToken").
 		With(log.Int32("userID", uid))
 
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnAccessTokenChange(ctx, userID, args.Note, false); err != nil {
-			logger.Warn("Failed to send email to inform user of access token creation", log.Error(err))
-		}
+		go func() { // Send email in the background to avoid blocking the request.
+
+			// We want the goroutine that's responsible for sending the email in the background
+			// to survive past the request that triggered it.
+			//
+			// We do this by creating a new context that is only canceled after two minutes.
+			//
+			// (Two minutes seems like a reasonable time to wait for the email to be sent.)
+			c := context.WithoutCancel(ctx)
+			emailCtx, cancel := context.WithTimeout(c, 2*time.Minute)
+			defer cancel()
+
+			err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnAccessTokenChange(emailCtx, userID, args.Note, false)
+			if err != nil {
+				message := "Failed to send email to inform user of access token creation."
+
+				var opErr *net.OpError
+				if errors.As(err, &opErr) && opErr.Op == "dial" {
+					message = message + " (This error might indicate that your SMTP connection settings are incorrect. Please check your site configuration.)"
+				}
+
+				logger.Error(message, log.Error(err))
+			}
+		}()
 	}
 
 	return &createAccessTokenResult{id: marshalAccessTokenID(id), token: token}, err
@@ -212,9 +235,30 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		With(log.Int32("userID", token.SubjectUserID))
 
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnAccessTokenChange(ctx, token.SubjectUserID, token.Note, true); err != nil {
-			logger.Warn("Failed to send email to inform user of access token deletion", log.Error(err))
-		}
+		go func() { // Send email in the background to avoid blocking the request.
+
+			// We want the goroutine that's responsible for sending the email in the background
+			// to survive past the request that triggered it.
+			//
+			// We do this by creating a new context that is only canceled after two minutes.
+			//
+			// (Two minutes seems like a reasonable time to wait for the email to be sent.)
+			c := context.WithoutCancel(ctx)
+			emailCtx, cancel := context.WithTimeout(c, 2*time.Minute)
+			defer cancel()
+
+			err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnAccessTokenChange(emailCtx, token.SubjectUserID, token.Note, true)
+			if err != nil {
+				message := "Failed to send email to inform user of access token creation."
+
+				var opErr *net.OpError
+				if errors.As(err, &opErr) && opErr.Op == "dial" {
+					message = message + " (This error might indicate that your SMTP connection settings are incorrect. Please check your site configuration.)"
+				}
+
+				logger.Error(message, log.Error(err))
+			}
+		}()
 	}
 
 	return &EmptyResponse{}, nil
