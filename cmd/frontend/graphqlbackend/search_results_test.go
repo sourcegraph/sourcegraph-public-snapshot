@@ -194,10 +194,10 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				fileMatch("/foo.go"),
 			},
 			expectedDynamicFilterStrsRegexp: map[string]int{
-				`repo:^testRepo$`:  2,
-				`-file:_test\.go$`: 1,
-				`lang:go`:          2,
-				`type:path`:        2,
+				`repo:^testRepo$`:   2,
+				`-file:_test\.\w+$`: 1,
+				`lang:go`:           2,
+				`type:path`:         2,
 			},
 		},
 
@@ -221,11 +221,10 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				fileMatch("assets/javascripts/bootstrap.min.js"),
 			},
 			expectedDynamicFilterStrsRegexp: map[string]int{
-				`repo:^testRepo$`:  3,
-				`-file:\.min\.js$`: 1,
-				`-file:\.js\.map$`: 2,
-				`lang:javascript`:  1,
-				`type:path`:        3,
+				`repo:^testRepo$`:             3,
+				`-file:\.min\.js$|\.js\.map$`: 3,
+				`lang:javascript`:             1,
+				`type:path`:                   3,
 			},
 		},
 

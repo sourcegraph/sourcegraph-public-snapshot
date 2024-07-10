@@ -10,6 +10,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -35,37 +36,41 @@ var commonFileFilters = []struct {
 	label       string
 	regexp      *lazyregexp.Regexp
 	regexFilter string
-	globFilter  string
 }{
 	{
-		label:       "Exclude Go tests",
-		regexp:      lazyregexp.New(`_test\.go$`),
-		regexFilter: `-file:_test\.go$`,
-		globFilter:  `-file:**_test.go`,
+		label:       "Exclude _test.xx",
+		regexp:      lazyregexp.New(`_tests?\.\w+$`),
+		regexFilter: `-file:_test\.\w+$`,
 	},
 	{
-		label:       "Exclude Go vendor",
+		label:       "Exclude .test.xx",
+		regexp:      lazyregexp.New(`\.tests?\.\w+$`),
+		regexFilter: `-file:\.test\.\w+$`,
+	},
+	{
+		label:       "Exclude Ruby tests",
+		regexp:      lazyregexp.New(`_spec\.rb$`),
+		regexFilter: `-file:_spec\.rb$`,
+	},
+	{
+		label:       "Exclude vendor",
 		regexp:      lazyregexp.New(`(^|/)vendor/`),
 		regexFilter: `-file:(^|/)vendor/`,
-		globFilter:  `-file:vendor/** -file:**/vendor/**`,
+	},
+	{
+		label:       "Exclude third party",
+		regexp:      lazyregexp.New(`(^|/)third[_\-]?party/`),
+		regexFilter: `-file:(^|/)third[_\-]?party/`,
 	},
 	{
 		label:       "Exclude node_modules",
 		regexp:      lazyregexp.New(`(^|/)node_modules/`),
 		regexFilter: `-file:(^|/)node_modules/`,
-		globFilter:  `-file:node_modules/** -file:**/node_modules/**`,
 	},
 	{
 		label:       "Exclude minified JavaScript",
-		regexp:      lazyregexp.New(`\.min\.js$`),
-		regexFilter: `-file:\.min\.js$`,
-		globFilter:  `-file:**.min.js`,
-	},
-	{
-		label:       "Exclude JavaScript maps",
-		regexp:      lazyregexp.New(`\.js\.map$`),
-		regexFilter: `-file:\.js\.map$`,
-		globFilter:  `-file:**.js.map`,
+		regexp:      lazyregexp.New(`\.min\.js$|\.js\.map$`),
+		regexFilter: `-file:\.min\.js$|\.js\.map$`,
 	},
 }
 
