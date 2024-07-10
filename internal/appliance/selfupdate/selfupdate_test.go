@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -34,7 +35,7 @@ func TestReplaceTagNeverPanics(t *testing.T) {
 	require.Equal(t, ":4.5.6", updated)
 }
 
-func TestGetLatestTag_ReturnsLatestPublicVersion(t *testing.T) {
+func TestGetLatestTag_ReturnsLatestSupportedPublicVersion(t *testing.T) {
 	relregClient := NewMockReleaseRegistryClient()
 	selfUpdater := &SelfUpdate{
 		Logger:       logtest.Scoped(t),
@@ -48,7 +49,7 @@ func TestGetLatestTag_ReturnsLatestPublicVersion(t *testing.T) {
 		{Version: "v3.17.1", Public: true},
 	}, nil)
 
-	latest, err := selfUpdater.getLatestTag(context.Background())
+	latest, err := selfUpdater.getLatestTag(context.Background(), "4.3.0")
 	require.NoError(t, err)
 	require.Equal(t, "4.5.5", latest)
 }
@@ -73,9 +74,21 @@ func TestSelfUpdateLoop(t *testing.T) {
 	err = k8sClient.Create(ctx, dep)
 	require.NoError(t, err)
 
+	cfgMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      config.ConfigmapName,
+			Namespace: "default",
+			Annotations: map[string]string{
+				config.AnnotationKeyCurrentVersion: "4.3.0",
+			},
+		},
+	}
+	err = k8sClient.Create(ctx, cfgMap)
+	require.NoError(t, err)
+
 	relregClient := NewMockReleaseRegistryClient()
 	relregClient.ListVersionsFunc.SetDefaultReturn([]releaseregistry.ReleaseInfo{
-		{Version: "LATEST_AND_GREATEST", Public: true},
+		{Version: "4.5.7", Public: true},
 	}, nil)
 	selfUpdater := &SelfUpdate{
 		Interval:       time.Second,
@@ -96,7 +109,7 @@ func TestSelfUpdateLoop(t *testing.T) {
 		var dep appsv1.Deployment
 		name := types.NamespacedName{Name: "appliance", Namespace: "default"}
 		require.NoError(t, k8sClient.Get(ctx, name, &dep))
-		return strings.HasSuffix(dep.Spec.Template.Spec.Containers[0].Image, "LATEST_AND_GREATEST")
+		return strings.HasSuffix(dep.Spec.Template.Spec.Containers[0].Image, "4.5.7")
 	}, time.Second*5, time.Second)
 
 	cancel()
