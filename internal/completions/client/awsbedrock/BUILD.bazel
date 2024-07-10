@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "bedrock.go",
         "prompt.go",
+        "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client/awsbedrock",
     tags = [TAG_CODY_CORE],
