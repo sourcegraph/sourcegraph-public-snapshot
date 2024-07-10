@@ -1,6 +1,7 @@
 import { noop } from 'lodash'
 import { describe, expect, test } from 'vitest'
 
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -32,7 +33,7 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     sidebarCollapsed: false,
     isSourcegraphDotCom: true,
     options: {
-        version: 'V3',
+        version: LATEST_VERSION,
         patternType: SearchPatternType.standard,
         caseSensitive: false,
         trace: undefined,
