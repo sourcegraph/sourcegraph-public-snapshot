@@ -1,5 +1,5 @@
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 
 const devVersion = `v0.0.${Math.floor(Date.now() / 1000 - 1703122377)}`
 
