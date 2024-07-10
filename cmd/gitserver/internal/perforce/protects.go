@@ -165,7 +165,7 @@ func parseP4BrokerProtects(brokerProtects []byte) ([]*p4types.Protect, error) {
 	var protectsJson []byte
 	_, err := base64.StdEncoding.Decode(protectsJson, parsedBrokerResponse.Data)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to unescape protects response")
+		return nil, errors.Wrap(err, "failed to decode protects response")
 	}
 
 	return parseP4Protects(protectsJson)
