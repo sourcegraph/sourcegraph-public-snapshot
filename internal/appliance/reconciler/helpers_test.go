@@ -14,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/sourcegraph/log/logr"
@@ -39,9 +40,12 @@ func TestApplianceTestSuite(t *testing.T) {
 func (suite *ApplianceTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 
+	var k8sConfig *rest.Config
 	var err error
 	logger := logr.New(logtest.Scoped(suite.T()))
-	suite.k8sClient, suite.envtestCleanup, err = k8senvtest.SetupEnvtest(suite.ctx, logger, newReconciler)
+	k8sConfig, suite.envtestCleanup, err = k8senvtest.SetupEnvtest(suite.ctx, logger, newReconciler)
+	suite.Require().NoError(err)
+	suite.k8sClient, err = kubernetes.NewForConfig(k8sConfig)
 	suite.Require().NoError(err)
 }
 

@@ -10,8 +10,8 @@ import (
 
 	"github.com/bazelbuild/rules_go/go/runfiles"
 	"github.com/go-logr/logr"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -25,7 +25,7 @@ type KubernetesController interface {
 
 type NewController func(mgr ctrl.Manager) KubernetesController
 
-func SetupEnvtest(ctx context.Context, logger logr.Logger, newController NewController) (*kubernetes.Clientset, func() error, error) {
+func SetupEnvtest(ctx context.Context, logger logr.Logger, newController NewController) (*rest.Config, func() error, error) {
 	ctx, cancel := context.WithCancel(ctx)
 
 	kubeBuilderAssets, err := kubebuilderAssetPath()
@@ -61,11 +61,6 @@ func SetupEnvtest(ctx context.Context, logger logr.Logger, newController NewCont
 		cancel()
 		return nil, nil, err
 	}
-	k8sClient, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		cancel()
-		return nil, nil, err
-	}
 
 	controller := newController(ctrlMgr)
 	if err := controller.SetupWithManager(ctrlMgr); err != nil {
@@ -92,7 +87,7 @@ func SetupEnvtest(ctx context.Context, logger logr.Logger, newController NewCont
 		return <-ctrlMgrDone
 	}
 
-	return k8sClient, cleanup, nil
+	return cfg, cleanup, nil
 }
 
 func kubebuilderAssetPath() (string, error) {
