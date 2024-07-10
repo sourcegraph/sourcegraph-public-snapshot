@@ -1341,6 +1341,19 @@ func (s *Service) SearchBasedUsages(
 		}
 	}
 
+	return s.searchBasedUsagesInner(ctx, trace, args, symbolName, language, syntacticUploadID)
+}
+
+// searchBasedUsagesInner is extracted from SearchBasedUsages to allow
+// testing of the core logic, by only mocking the search client.
+func (s *Service) searchBasedUsagesInner(
+	ctx context.Context,
+	trace observation.TraceLogger,
+	args UsagesForSymbolArgs,
+	symbolName string,
+	language string,
+	syntacticUploadID core.Option[int],
+) (matches []SearchBasedMatch, err error) {
 	searchCoords := searchArgs{
 		repo:       args.Repo.Name,
 		commit:     args.Commit,
