@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -79,16 +78,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 }
 
 func initCodeintelDB(observationCtx *observation.Context, name string) (*sql.DB, error) {
-	// This is an internal service, so we rely on the
-	// frontend to do authz checks for user requests.
-	// Authz checks are enforced by the DB layer
-	//
-	// This call to SetProviders is here so that calls to GetProviders don't block.
-	// Relevant PR: https://github.com/sourcegraph/sourcegraph/pull/15755
-	// Relevant issue: https://github.com/sourcegraph/sourcegraph/issues/15962
-
-	authz.SetProviders(true, []authz.Provider{})
-
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
@@ -104,16 +93,6 @@ func initCodeintelDB(observationCtx *observation.Context, name string) (*sql.DB,
 }
 
 func initDB(observationCtx *observation.Context, name string) (*sql.DB, error) {
-	// This is an internal service, so we rely on the
-	// frontend to do authz checks for user requests.
-	// Authz checks are enforced by the DB layer
-	//
-	// This call to SetProviders is here so that calls to GetProviders don't block.
-	// Relevant PR: https://github.com/sourcegraph/sourcegraph/pull/15755
-	// Relevant issue: https://github.com/sourcegraph/sourcegraph/issues/15962
-
-	authz.SetProviders(true, []authz.Provider{})
-
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})

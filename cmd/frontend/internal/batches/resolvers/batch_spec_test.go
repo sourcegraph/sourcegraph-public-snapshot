@@ -56,6 +56,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, false).ID
 	adminID := bt.CreateTestUser(t, db, true).ID
 	orgID := bt.CreateTestOrg(t, db, orgname, userID).ID
+	bt.MockRepoPermissions(t, db, userID, repo.ID)
 
 	spec, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
 	if err != nil {
@@ -275,6 +276,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
 
 	rs, extSvc := bt.CreateTestRepos(t, ctx, db, 3)
+	bt.MockRepoPermissions(t, db, user.ID, rs[0].ID, rs[1].ID, rs[2].ID)
 
 	bstore := store.New(db, observation.TestContextTB(t), nil)
 
@@ -495,6 +497,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.ViewerCanAdminister = false
 	want.ViewerCanRetry = false
 	otherUser := bt.CreateTestUser(t, db, false)
+	bt.MockRepoPermissions(t, db, otherUser.ID, rs[0].ID, rs[1].ID, rs[2].ID)
 	otherUserCtx := actor.WithActor(ctx, actor.FromUser(otherUser.ID))
 	queryAndAssertBatchSpec(t, otherUserCtx, s, apiID, want)
 }

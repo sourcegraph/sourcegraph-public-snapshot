@@ -286,7 +286,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			ExternalServiceURL string `json:"external_service_url"`
 		}
 
-		_, providers := authz.GetProviders()
+		providers := authz.GetProviders()
 		infos := make([]providerInfo, len(providers))
 		for i, p := range providers {
 			_, id := extsvc.DecodeURN(p.URN())

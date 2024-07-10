@@ -13,6 +13,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -28,7 +29,7 @@ func TestGetUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Minute * 1)
@@ -215,20 +216,8 @@ func TestGetUploads(t *testing.T) {
 	}
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Enable permissions user mapping forces checking repository permissions
-		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty.
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				PermissionsUserMapping: &schema.PermissionsUserMapping{
-					Enabled: true,
-					BindID:  "email",
-				},
-			},
-		})
-		t.Cleanup(func() { conf.Mock(nil) })
-
-		uploads, totalCount, err := store.GetUploads(ctx,
+		// Use an actorless context to test permissions.
+		uploads, totalCount, err := store.GetUploads(context.Background(),
 			shared.GetUploadsOptions{
 				Limit: 1,
 			},
@@ -243,7 +232,7 @@ func TestGetUploads(t *testing.T) {
 }
 
 func TestGetUploadByID(t *testing.T) {
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
@@ -288,20 +277,8 @@ func TestGetUploadByID(t *testing.T) {
 	}
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Enable permissions user mapping forces checking repository permissions
-		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty.
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				PermissionsUserMapping: &schema.PermissionsUserMapping{
-					Enabled: true,
-					BindID:  "email",
-				},
-			},
-		})
-		t.Cleanup(func() { conf.Mock(nil) })
-
-		_, exists, err := store.GetUploadByID(ctx, 1)
+		// Use an actorless context to test permissions.
+		_, exists, err := store.GetUploadByID(context.Background(), 1)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -317,7 +294,7 @@ func TestGetUploadByIDDeleted(t *testing.T) {
 	store := New(observation.TestContextTB(t), db)
 
 	// Upload does not exist initially
-	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+	if _, exists, err := store.GetUploadByID(actor.WithInternalActor(context.Background()), 1); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if exists {
 		t.Fatal("unexpected record")
@@ -346,7 +323,7 @@ func TestGetUploadByIDDeleted(t *testing.T) {
 	insertUploads(t, db, expected)
 
 	// Should still not be queryable
-	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+	if _, exists, err := store.GetUploadByID(actor.WithInternalActor(context.Background()), 1); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if exists {
 		t.Fatal("unexpected record")
@@ -425,7 +402,7 @@ func TestGetCompletedUploadsByIDs(t *testing.T) {
 }
 
 func TestGetUploadsByIDs(t *testing.T) {
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
@@ -461,20 +438,8 @@ func TestGetUploadsByIDs(t *testing.T) {
 	})
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Enable permissions user mapping forces checking repository permissions
-		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty.
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				PermissionsUserMapping: &schema.PermissionsUserMapping{
-					Enabled: true,
-					BindID:  "email",
-				},
-			},
-		})
-		t.Cleanup(func() { conf.Mock(nil) })
-
-		indexes, err := store.GetUploadsByIDs(ctx, 1, 2, 3, 4)
+		// Use an actorless context to test permissions.
+		indexes, err := store.GetUploadsByIDs(context.Background(), 1, 2, 3, 4)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -567,7 +532,7 @@ func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("i=%d", i), func(t *testing.T) {
-			scanner, totalCount, err := store.GetVisibleUploadsMatchingMonikers(context.Background(), 50, makeCommit(1), []precise.QualifiedMonikerData{moniker}, testCase.limit, testCase.offset)
+			scanner, totalCount, err := store.GetVisibleUploadsMatchingMonikers(actor.WithInternalActor(context.Background()), 50, makeCommit(1), []precise.QualifiedMonikerData{moniker}, testCase.limit, testCase.offset)
 			if err != nil {
 				t.Fatalf("unexpected error getting scanner: %s", err)
 			}
@@ -637,7 +602,7 @@ func TestDefinitionDumps(t *testing.T) {
 	}
 
 	// Package does not exist initially
-	if uploads, err := store.GetCompletedUploadsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1}); err != nil {
+	if uploads, err := store.GetCompletedUploadsWithDefinitionsForMonikers(actor.WithInternalActor(context.Background()), []precise.QualifiedMonikerData{moniker1}); err != nil {
 		t.Fatalf("unexpected error getting package: %s", err)
 	} else if len(uploads) != 0 {
 		t.Fatal("unexpected record")
@@ -715,7 +680,7 @@ func TestDefinitionDumps(t *testing.T) {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
-	if uploads, err := store.GetCompletedUploadsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1}); err != nil {
+	if uploads, err := store.GetCompletedUploadsWithDefinitionsForMonikers(actor.WithInternalActor(context.Background()), []precise.QualifiedMonikerData{moniker1}); err != nil {
 		t.Fatalf("unexpected error getting package: %s", err)
 	} else if len(uploads) != 1 {
 		t.Fatal("expected one record")
@@ -723,7 +688,7 @@ func TestDefinitionDumps(t *testing.T) {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 
-	if uploads, err := store.GetCompletedUploadsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1, moniker2}); err != nil {
+	if uploads, err := store.GetCompletedUploadsWithDefinitionsForMonikers(actor.WithInternalActor(context.Background()), []precise.QualifiedMonikerData{moniker1, moniker2}); err != nil {
 		t.Fatalf("unexpected error getting package: %s", err)
 	} else if len(uploads) != 2 {
 		t.Fatal("expected two records")
@@ -734,20 +699,7 @@ func TestDefinitionDumps(t *testing.T) {
 	}
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Turning on explicit permissions forces checking repository permissions
-		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty and repo that dumps belong
-		// to are private.
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				PermissionsUserMapping: &schema.PermissionsUserMapping{
-					Enabled: true,
-					BindID:  "email",
-				},
-			},
-		})
-		t.Cleanup(func() { conf.Mock(nil) })
-
+		// Use an actorless context to test permissions.
 		if uploads, err := store.GetCompletedUploadsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1, moniker2}); err != nil {
 			t.Fatalf("unexpected error getting package: %s", err)
 		} else if len(uploads) != 0 {
@@ -765,7 +717,7 @@ func TestUploadAuditLogs(t *testing.T) {
 	insertUploads(t, db, shared.Upload{ID: 1})
 	updateUploads(t, db, shared.Upload{ID: 1, State: "deleting"})
 
-	logs, err := store.GetAuditLogsForUpload(context.Background(), 1)
+	logs, err := store.GetAuditLogsForUpload(actor.WithInternalActor(context.Background()), 1)
 	if err != nil {
 		t.Fatalf("unexpected error fetching audit logs: %s", err)
 	}
@@ -809,7 +761,7 @@ func TestDeleteUploads(t *testing.T) {
 		shared.Upload{ID: 5, Commit: makeCommit(1115), UploadedAt: t5, State: "uploading"}, // will be deleted
 	)
 
-	err := store.DeleteUploads(context.Background(), shared.DeleteUploadsOptions{
+	err := store.DeleteUploads(actor.WithInternalActor(context.Background()), shared.DeleteUploadsOptions{
 		States:       []string{"uploading"},
 		Term:         "",
 		VisibleAtTip: false,
@@ -818,7 +770,7 @@ func TestDeleteUploads(t *testing.T) {
 		t.Fatalf("unexpected error deleting uploads: %s", err)
 	}
 
-	uploads, totalCount, err := store.GetUploads(context.Background(), shared.GetUploadsOptions{Limit: 5})
+	uploads, totalCount, err := store.GetUploads(actor.WithInternalActor(context.Background()), shared.GetUploadsOptions{Limit: 5})
 	if err != nil {
 		t.Fatalf("unexpected error getting uploads: %s", err)
 	}
@@ -850,7 +802,7 @@ func TestDeleteUploadsWithIndexerKey(t *testing.T) {
 	insertUploads(t, db, shared.Upload{ID: 3, State: "queued", Indexer: "sourcegraph/scip-typescript"})
 	insertUploads(t, db, shared.Upload{ID: 4, State: "queued", Indexer: "sourcegraph/scip-typescript"})
 
-	err := store.DeleteUploads(context.Background(), shared.DeleteUploadsOptions{
+	err := store.DeleteUploads(actor.WithInternalActor(context.Background()), shared.DeleteUploadsOptions{
 		IndexerNames: []string{"scip-go"},
 		Term:         "",
 		VisibleAtTip: false,
@@ -859,7 +811,7 @@ func TestDeleteUploadsWithIndexerKey(t *testing.T) {
 		t.Fatalf("unexpected error deleting uploads: %s", err)
 	}
 
-	uploads, totalCount, err := store.GetUploads(context.Background(), shared.GetUploadsOptions{Limit: 5})
+	uploads, totalCount, err := store.GetUploads(actor.WithInternalActor(context.Background()), shared.GetUploadsOptions{Limit: 5})
 	if err != nil {
 		t.Fatalf("unexpected error getting uploads: %s", err)
 	}
@@ -889,7 +841,7 @@ func TestDeleteUploadByID(t *testing.T) {
 		shared.Upload{ID: 1, RepositoryID: 50},
 	)
 
-	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
+	if found, err := store.DeleteUploadByID(actor.WithInternalActor(context.Background()), 1); err != nil {
 		t.Fatalf("unexpected error deleting upload: %s", err)
 	} else if !found {
 		t.Fatalf("expected record to exist")
@@ -923,7 +875,7 @@ func TestDeleteUploadByIDMissingRow(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
+	if found, err := store.DeleteUploadByID(actor.WithInternalActor(context.Background()), 1); err != nil {
 		t.Fatalf("unexpected error deleting upload: %s", err)
 	} else if found {
 		t.Fatalf("unexpected record")
@@ -939,7 +891,7 @@ func TestDeleteUploadByIDNotCompleted(t *testing.T) {
 		shared.Upload{ID: 1, RepositoryID: 50, State: "uploading"},
 	)
 
-	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
+	if found, err := store.DeleteUploadByID(actor.WithInternalActor(context.Background()), 1); err != nil {
 		t.Fatalf("unexpected error deleting upload: %s", err)
 	} else if !found {
 		t.Fatalf("expected record to exist")
@@ -976,7 +928,7 @@ func TestReindexUploads(t *testing.T) {
 	insertUploads(t, db, shared.Upload{ID: 1, State: "completed"})
 	insertUploads(t, db, shared.Upload{ID: 2, State: "errored"})
 
-	if err := store.ReindexUploads(context.Background(), shared.ReindexUploadsOptions{
+	if err := store.ReindexUploads(actor.WithInternalActor(context.Background()), shared.ReindexUploadsOptions{
 		States:       []string{"errored"},
 		Term:         "",
 		RepositoryID: 0,
@@ -985,7 +937,7 @@ func TestReindexUploads(t *testing.T) {
 	}
 
 	// Upload has been marked for reindexing
-	if upload, exists, err := store.GetUploadByID(context.Background(), 2); err != nil {
+	if upload, exists, err := store.GetUploadByID(actor.WithInternalActor(context.Background()), 2); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if !exists {
 		t.Fatal("upload missing")
@@ -1004,7 +956,7 @@ func TestReindexUploadsWithIndexerKey(t *testing.T) {
 	insertUploads(t, db, shared.Upload{ID: 3, Indexer: "sourcegraph/scip-typescript"})
 	insertUploads(t, db, shared.Upload{ID: 4, Indexer: "sourcegraph/scip-typescript"})
 
-	if err := store.ReindexUploads(context.Background(), shared.ReindexUploadsOptions{
+	if err := store.ReindexUploads(actor.WithInternalActor(context.Background()), shared.ReindexUploadsOptions{
 		IndexerNames: []string{"scip-go"},
 		Term:         "",
 		RepositoryID: 0,
@@ -1017,7 +969,7 @@ func TestReindexUploadsWithIndexerKey(t *testing.T) {
 		1: true, 2: true,
 		3: false, 4: false,
 	} {
-		if upload, exists, err := store.GetUploadByID(context.Background(), id); err != nil {
+		if upload, exists, err := store.GetUploadByID(actor.WithInternalActor(context.Background()), id); err != nil {
 			t.Fatalf("unexpected error getting upload: %s", err)
 		} else if !exists {
 			t.Fatal("upload missing")
@@ -1040,7 +992,7 @@ func TestReindexUploadByID(t *testing.T) {
 	}
 
 	// Upload has been marked for reindexing
-	if upload, exists, err := store.GetUploadByID(context.Background(), 2); err != nil {
+	if upload, exists, err := store.GetUploadByID(actor.WithInternalActor(context.Background()), 2); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if !exists {
 		t.Fatal("upload missing")

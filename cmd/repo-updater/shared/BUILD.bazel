@@ -19,8 +19,6 @@ go_library(
         "//cmd/repo-updater/internal/repoupdater",
         "//cmd/repo-updater/internal/scheduler",
         "//internal/actor",
-        "//internal/authz",
-        "//internal/authz/providers",
         "//internal/batches",
         "//internal/batches/syncer",
         "//internal/codeintel/dependencies",
