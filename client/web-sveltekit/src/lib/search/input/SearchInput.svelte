@@ -137,7 +137,11 @@
     let userHasInteracted = !autoFocus
     const hasInteractedExtension = EditorView.updateListener.of(update => {
         if (!userHasInteracted) {
-            if (update.transactions.some(tr => tr.isUserEvent('select') || tr.isUserEvent('input') || tr.isUserEvent('delete'))) {
+            if (
+                update.transactions.some(
+                    tr => tr.isUserEvent('select') || tr.isUserEvent('input') || tr.isUserEvent('delete')
+                )
+            ) {
                 userHasInteracted = true
             }
         }

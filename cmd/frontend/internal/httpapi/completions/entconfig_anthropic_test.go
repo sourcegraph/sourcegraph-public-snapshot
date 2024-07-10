@@ -1,10 +1,9 @@
 package completions
 
 import (
-	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -12,27 +11,24 @@ import (
 )
 
 func testAPIProviderAnthropic(t *testing.T, infra *apiProviderTestInfra) {
-	// validAnthropicRequestData bundles the messages sent between major
-	// components of the Completions API.
-	type validAnthropicRequestData struct {
-		// InitialCompletionRequest is the request sent by the user to the
-		// Sourcegraph instance.
-		InitialCompletionRequest types.CodyCompletionRequestParameters
+	getValidTestData := func() completionsRequestTestData {
+		// Use the default completions configuration, which will use Claude for chat.
+		siteConfig := schema.SiteConfiguration{
+			CodyEnabled:                  pointers.Ptr(true),
+			CodyPermissions:              pointers.Ptr(false),
+			CodyRestrictUsersFeatureFlag: pointers.Ptr(false),
 
-		// OutboundAnthropicRequest is the data sent from this Sourcegraph
-		// instance to the API Provider (e.g. Anthropic, Cody Gateway, AWS
-		// Bedrock, etc.)
-		OutboundAnthropicRequest map[string]any
+			// LicenseKey is required in order to use Cody, but other than
+			// that we don't provide any "completions" configuration.
+			// This will default to Anthropic models.
+			LicenseKey:  "license-key",
+			Completions: nil,
+		}
 
-		// InboundAnthropicRequest is the response from the API Provider
-		// to the Sourcegraph instance.
-		InboundAnthropicRequest map[string]any
-	}
-
-	// getValidTestData returns a valid set of request data.
-	getValidTestData := func() validAnthropicRequestData {
 		initialCompletionRequest := types.CodyCompletionRequestParameters{
 			CompletionRequestParameters: types.CompletionRequestParameters{
+				// Model is unset. We expect it to default to the site config's ChatModel.
+				// Which based on the `Completions: nil` line above, will be "claude-3-sonnet-20240229".
 				Messages: []types.Message{
 					{
 						Speaker: "human",
@@ -46,7 +42,7 @@ func testAPIProviderAnthropic(t *testing.T, infra *apiProviderTestInfra) {
 		// Anthropic-specific request object we expect to see sent to Cody Gateway.
 		// See `anthropicRequestParameters`.
 		outboundAnthropicRequest := map[string]any{
-			"model": "claude-2.0",
+			"model": "claude-3-sonnet-20240229",
 			"messages": []map[string]any{
 				{
 					"role": "user",
@@ -64,7 +60,7 @@ func testAPIProviderAnthropic(t *testing.T, infra *apiProviderTestInfra) {
 		//
 		// The expected output is found also defined in the Anthropic completion provider codebase,
 		// as `anthropicNonStreamingResponse`.` But it's easier to keep those types unexported.
-		inboundAnthropicRequest := map[string]any{
+		inboundAnthropicResponse := map[string]any{
 			"content": []map[string]string{
 				{
 					"speak": "user",
@@ -78,111 +74,92 @@ func testAPIProviderAnthropic(t *testing.T, infra *apiProviderTestInfra) {
 			"stop_reason": "max_tokens",
 		}
 
-		return validAnthropicRequestData{
-			InitialCompletionRequest: initialCompletionRequest,
-			OutboundAnthropicRequest: outboundAnthropicRequest,
-			InboundAnthropicRequest:  inboundAnthropicRequest,
+		wantCompletionsResponse := types.CompletionResponse{
+			Completion: "you should totally rewrite it in Rust!",
+			StopReason: "max_tokens",
+			Logprobs:   nil,
+		}
+
+		return completionsRequestTestData{
+			SiteConfig:                   siteConfig,
+			UserCompletionRequest:        initialCompletionRequest,
+			WantRequestToLLMProvider:     outboundAnthropicRequest,
+			WantRequestToLLMProviderPath: "/v1/completions/anthropic-messages",
+			ResponseFromLLMProvider:      inboundAnthropicResponse,
+			WantCompletionResponse:       wantCompletionsResponse,
 		}
 	}
 
-	t.Run("WithDefaultConfig", func(t *testing.T) {
-		infra.SetSiteConfig(t, schema.SiteConfiguration{
-			CodyEnabled:                  pointers.Ptr(true),
-			CodyPermissions:              pointers.Ptr(false),
-			CodyRestrictUsersFeatureFlag: pointers.Ptr(false),
+	t.Run("TestDataIsValid", func(t *testing.T) {
+		// Just confirm that the stock test data works as expected,
+		// without any test-specific modifications.
+		data := getValidTestData()
 
-			// LicenseKey is required in order to use Cody, but other than
-			// that we don't provide any "completions" configuration.
-			// This will default to Anthropic models.
-			LicenseKey:  "license-key",
-			Completions: nil,
-		})
+		// Confirm that the test data is using the "default completions config".
+		require.Nil(t, data.SiteConfig.Completions)
 
-		// Confirm that the default configuration `Completions: nil` will use
-		// Cody Gateway as the LLM API Provider for the Anthropic models.
-		t.Run("ViaCodyGateway", func(t *testing.T) {
-			// The Model isn't included in the CompletionRequestParameters, so we have the getModelFn callback
-			// return claude-2. The Site Configuration will then route this to Cody Gateway (and not BYOK Anthropic),
-			// and we sanity check the request to Cody Gateway matches what is expected, and we serve a valid response.
-			infra.PushGetModelResult("anthropic/claude-2", nil)
-
-			// Generate some basic test data and confirm that the completions handler
-			// code works as expected.
-			testData := getValidTestData()
-
-			// Register our hook to verify Cody Gateway got called with
-			// the requested data.
-			infra.AssertCodyGatewayReceivesRequestWithResponse(
-				t, assertLLMRequestOptions{
-					WantRequestPath: "/v1/completions/anthropic-messages",
-					WantRequestObj:  &testData.OutboundAnthropicRequest,
-					OutResponseObj:  &testData.InboundAnthropicRequest,
-				})
-
-			status, responseBody := infra.CallChatCompletionAPI(t, testData.InitialCompletionRequest)
-
-			assert.Equal(t, http.StatusOK, status)
-			infra.AssertCompletionsResponse(t, responseBody, types.CompletionResponse{
-				Completion: "you should totally rewrite it in Rust!",
-				StopReason: "max_tokens",
-				Logprobs:   nil,
-			})
-		})
+		runCompletionsTest(t, infra, data)
 	})
 
-	t.Run("ViaBYOK", func(t *testing.T) {
+	t.Run("BYOK", func(t *testing.T) {
 		const (
 			anthropicAPIKeyInConfig      = "secret-api-key"
 			anthropicAPIEndpointInConfig = "https://byok.anthropic.com/path/from/config"
-			chatModelInConfig            = "anthropic/claude-3-opus"
-			codeModelInConfig            = "anthropic/claude-3-haiku"
+
+			chatModelInConfig     = "anthropic/claude-3-opus"
+			codeModelInConfig     = "anthropic/claude-3-haiku"
+			fastChatModelInConfig = "anthropic/fast-chat-model"
 		)
-
-		infra.SetSiteConfig(t, schema.SiteConfiguration{
-			CodyEnabled:                  pointers.Ptr(true),
-			CodyPermissions:              pointers.Ptr(false),
-			CodyRestrictUsersFeatureFlag: pointers.Ptr(false),
-
-			// LicenseKey is required in order to use Cody.
-			LicenseKey: "license-key",
-			Completions: &schema.Completions{
+		getBYOKSiteConfig := func() *schema.Completions {
+			return &schema.Completions{
 				Provider:    "anthropic",
 				AccessToken: anthropicAPIKeyInConfig,
 				Endpoint:    anthropicAPIEndpointInConfig,
 
 				ChatModel:       chatModelInConfig,
 				CompletionModel: codeModelInConfig,
-			},
+				FastChatModel:   fastChatModelInConfig,
+			}
+		}
+
+		t.Run("Chat", func(t *testing.T) {
+			testData := getValidTestData()
+			testData.SiteConfig.Completions = getBYOKSiteConfig()
+
+			// No set all of the other things that we expect to be impacted by that.
+			testData.WantRequestToLLMProvider["model"] = chatModelInConfig
+			testData.WantRequestToLLMProviderPath = "/path/from/config"
+
+			runCompletionsTest(t, infra, testData)
 		})
 
-		t.Run("ChatModel", func(t *testing.T) {
-			// Start with the stock test data, but customize it to reflect
-			// what we expect to see based on the site configuration.
+		t.Run("CustomModel", func(t *testing.T) {
 			testData := getValidTestData()
-			testData.OutboundAnthropicRequest["model"] = "anthropic/claude-3-opus"
+			testData.SiteConfig.Completions = getBYOKSiteConfig()
 
-			// Register our hook to verify Cody Gateway got called with
-			// the requested data.
-			infra.AssertGenericExternalAPIRequestWithResponse(
-				t, assertLLMRequestOptions{
-					WantRequestPath: "/path/from/config",
-					WantRequestObj:  &testData.OutboundAnthropicRequest,
-					OutResponseObj:  &testData.InboundAnthropicRequest,
-					WantHeaders: map[string]string{
-						// Yes, Anthropic's API uses "X-Api-Key" rather than the "Authorization" header. 🤷
-						"X-Api-Key": anthropicAPIKeyInConfig,
-					},
-				})
+			// BUG: Cody Enterprise doesn't support using any user-provided models.
+			// This confirms the current behavior which we want to change soon.
+			testData.UserCompletionRequest.Model = "anthropic/latest-and-greatest"
 
-			infra.PushGetModelResult(chatModelInConfig, nil)
-			status, responseBody := infra.CallChatCompletionAPI(t, testData.InitialCompletionRequest)
+			// Confirm the user-supplied model is ignored.
+			testData.WantRequestToLLMProvider["model"] = chatModelInConfig
+			testData.WantRequestToLLMProviderPath = "/path/from/config"
 
-			assert.Equal(t, http.StatusOK, status)
-			infra.AssertCompletionsResponse(t, responseBody, types.CompletionResponse{
-				Completion: "you should totally rewrite it in Rust!",
-				StopReason: "max_tokens",
-				Logprobs:   nil,
-			})
+			runCompletionsTest(t, infra, testData)
+		})
+
+		t.Run("FastChat", func(t *testing.T) {
+			testData := getValidTestData()
+			testData.SiteConfig.Completions = getBYOKSiteConfig()
+
+			// Flag the request as using the "FastChat" model.
+			testData.UserCompletionRequest.Fast = true
+
+			// No set all of the other things that we expect to be impacted by that.
+			testData.WantRequestToLLMProvider["model"] = fastChatModelInConfig
+			testData.WantRequestToLLMProviderPath = "/path/from/config"
+
+			runCompletionsTest(t, infra, testData)
 		})
 	})
 }

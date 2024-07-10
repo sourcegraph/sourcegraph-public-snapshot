@@ -18,6 +18,7 @@ import {
 import type { PageLoad } from './$types'
 import DotcomFooterLinks from './DotcomFooterLinks.svelte'
 import { DefaultSearchContext } from './page.gql'
+import { queryExampleDotcom, queryExampleEnterprise } from './queryExamples'
 
 type SearchStreamCacheEntry = Observable<AggregateStreamingSearchResults>
 
@@ -85,8 +86,10 @@ export const load: PageLoad = async ({ parent, url, depends }) => {
     const hasQuery = url.searchParams.has('q')
     const cachePolicy = getCachePolicyFromURL(url)
     const trace = url.searchParams.get('trace') ?? undefined
+    const sourcegraphDotComMode = window.context.sourcegraphDotComMode
 
-    const codyHref = window.context.sourcegraphDotComMode ? 'https://sourcegraph.com/cody' : '/cody'
+    const codyHref = sourcegraphDotComMode ? 'https://sourcegraph.com/cody' : '/cody'
+    const footer = sourcegraphDotComMode ? DotcomFooterLinks : null
 
     if (hasQuery) {
         const parsedQuery = parseExtendedSearchURL(url)
@@ -132,7 +135,7 @@ export const load: PageLoad = async ({ parent, url, depends }) => {
 
         return {
             codyHref,
-            footer: window.context.sourcegraphDotComMode ? DotcomFooterLinks : null,
+            footer,
             searchStream,
             queryFilters,
             queryFromURL: query,
@@ -152,7 +155,9 @@ export const load: PageLoad = async ({ parent, url, depends }) => {
         .catch(() => 'global')
     return {
         codyHref,
-        footer: window.context.sourcegraphDotComMode ? DotcomFooterLinks : null,
+        footer,
+        queryExample: sourcegraphDotComMode ? queryExampleDotcom() : queryExampleEnterprise(),
+        showExampleQueries: sourcegraphDotComMode,
         queryOptions: {
             query: `context:${defaultSearchContext} `,
         },
