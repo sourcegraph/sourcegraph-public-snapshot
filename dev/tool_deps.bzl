@@ -111,14 +111,14 @@ def tool_deps():
     http_archive(
         name = "src-cli-darwin-amd64",
         build_file_content = SRC_CLI_BUILDFILE.format("darwin-amd64"),
-        sha256 = "10c24717d97d54c7380011ce297bbd398242408ba11ad55b0952eb96a08bf84c",
+        sha256 = "ad5f13fbf63716c895ffc745e6247d7506feed1a8f120ee13742d516838b5474",
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_darwin_amd64.tar.gz".format(SRC_CLI_VERSION),
     )
 
     http_archive(
         name = "src-cli-darwin-arm64",
         build_file_content = SRC_CLI_BUILDFILE.format("darwin-arm64"),
-        sha256 = "d2100e9dce86036c405490b89ab0dec40ee427884dead883c4ba69cc474caf45",
+        sha256 = "b507b490a46243679f9ed0d6711429ceb5995f23fadf23a856b5cbc38adafbbc",
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_darwin_arm64.tar.gz".format(SRC_CLI_VERSION),
     )
 
