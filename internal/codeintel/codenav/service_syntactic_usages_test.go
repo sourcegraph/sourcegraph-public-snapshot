@@ -7,6 +7,7 @@ import (
 	genslices "github.com/life4/genesis/slices"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -68,9 +69,7 @@ func TestSearchBasedUsages_ResultWithoutSymbols(t *testing.T) {
 		context.Background(), observation.TestTraceLogger(log.NoOp()), UsagesForSymbolArgs{},
 		"symbol", "Java", core.None[int](),
 	)
-	if searchErr != nil {
-		t.Fatal(searchErr)
-	}
+	require.NoError(t, searchErr)
 	expectSearchRanges(t, usages, refRange, refRange2)
 }
 
@@ -94,9 +93,7 @@ func TestSearchBasedUsages_ResultWithSymbol(t *testing.T) {
 		context.Background(), observation.TestTraceLogger(log.NoOp()), UsagesForSymbolArgs{},
 		"symbol", "Java", core.None[int](),
 	)
-	if searchErr != nil {
-		t.Fatal(searchErr)
-	}
+	require.NoError(t, searchErr)
 	expectSearchRanges(t, usages, refRange, refRange2, defRange)
 	expectDefinitionRanges(t, usages, defRange)
 }
