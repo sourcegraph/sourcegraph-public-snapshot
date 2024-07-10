@@ -31,7 +31,7 @@ const config = {
     'client/web/dev/**/*',
     'graphql-schema-linter.config.js',
     // Generated code
-    'client/web/src/enterprise/site-admin/dotcom/productSubscriptions/enterpriseportalgen'
+    'client/web/src/enterprise/site-admin/dotcom/productSubscriptions/enterpriseportalgen/**'
   ],
   extends: ['@sourcegraph/eslint-config', 'plugin:storybook/recommended'],
   env: {
