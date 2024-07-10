@@ -14,6 +14,7 @@ import {
     type LangStatsInsightContentResult,
     type LangStatsInsightContentVariables,
     SearchPatternType,
+    SearchVersion,
 } from '../../../../../graphql-operations'
 import type { CategoricalChartContent } from '../../backend/code-insights-backend-types'
 
@@ -162,8 +163,8 @@ function quoteIfNeeded(value: string): string {
 }
 
 export const GET_LANG_STATS_GQL = gql`
-    query LangStatsInsightContent($query: String!) {
-        search(query: $query) {
+    query LangStatsInsightContent($query: String!, $version: SearchVersion) {
+        search(query: $query, version: $version) {
             results {
                 limitHit
             }
@@ -180,6 +181,7 @@ export const GET_LANG_STATS_GQL = gql`
 function fetchLangStatsInsight(query: string): Observable<LangStatsInsightContentResult> {
     return requestGraphQL<LangStatsInsightContentResult, LangStatsInsightContentVariables>(GET_LANG_STATS_GQL, {
         query,
+        version: SearchVersion.V3,
     }).pipe(map(dataOrThrowErrors))
 }
 
