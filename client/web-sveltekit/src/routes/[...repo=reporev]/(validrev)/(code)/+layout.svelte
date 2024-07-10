@@ -452,8 +452,6 @@
     }
 
     .bottom-panel {
-        --align-tabs: flex-start;
-
         display: flex;
         align-items: center;
         gap: 2rem;
