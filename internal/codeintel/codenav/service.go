@@ -1161,12 +1161,11 @@ func translateLookupRangeToCommit(
 	uploadCommit api.CommitID,
 	path core.RepoRelPath,
 	sourceRange scip.Range,
-) (targetRange scip.Range, _ *SyntacticUsagesError) {
+) (scip.Range, *SyntacticUsagesError) {
 	if gitTreeTranslator.GetSourceCommit() == uploadCommit {
 		return sourceRange, nil
 	}
-	var translated bool
-	tgtRange, translated, gitErr := gitTreeTranslator.GetTargetCommitRangeFromSourceRange(
+	targetRange, translated, gitErr := gitTreeTranslator.GetTargetCommitRangeFromSourceRange(
 		ctx, string(uploadCommit), path.RawValue(), shared.TranslateRange(sourceRange), false)
 	if gitErr != nil {
 		return sourceRange, &SyntacticUsagesError{
@@ -1177,7 +1176,7 @@ func translateLookupRangeToCommit(
 	if !translated {
 		return sourceRange, &SyntacticUsagesError{SU_FailedToAdjustRange, nil}
 	}
-	return tgtRange.ToSCIPRange(), nil
+	return targetRange.ToSCIPRange(), nil
 }
 
 func (s *Service) findSyntacticMatchesForCandidateFile(
