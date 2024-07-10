@@ -56,6 +56,7 @@ go_test(
     name = "completions_test",
     srcs = [
         "entconfig_anthropic_test.go",
+        "entconfig_awsbedrock_test.go",
         "entconfig_azureopenai_test.go",
         "entconfig_base_test.go",
         "get_model_test.go",
