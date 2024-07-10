@@ -21,8 +21,6 @@
     "sourcegraph": "workspace:*"
   },
   "dependencies": {
-    "@bufbuild/protobuf": "^1.10.0",
-    "@connectrpc/connect-query": "^1.4.1",
     "@sourcegraph/client-api": "workspace:*",
     "@sourcegraph/codeintellify": "workspace:*",
     "@sourcegraph/common": "workspace:*",
