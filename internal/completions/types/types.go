@@ -93,10 +93,6 @@ func NewModelConfigInfo(
 }
 
 type CompletionRequestParameters struct {
-	// Prompt exists only for backwards compatibility. Do not use it in new
-	// implementations. It will be removed once we are reasonably sure 99%
-	// of VSCode extension installations are upgraded to a new Cody version.
-	Prompt                                       string    `json:"prompt"`
 	Messages                                     []Message `json:"messages"`
 	MaxTokensToSample                            int       `json:"maxTokensToSample,omitempty"`
 	Temperature                                  float32   `json:"temperature,omitempty"`
@@ -136,7 +132,6 @@ func defaultStreamMode(feature CompletionsFeature) bool {
 
 func (p *CompletionRequestParameters) Attrs(feature CompletionsFeature) []attribute.KeyValue {
 	return []attribute.KeyValue{
-		attribute.Int("promptLength", len(p.Prompt)),
 		attribute.Int("numMessages", len(p.Messages)),
 		attribute.Int("maxTokensToSample", p.MaxTokensToSample),
 		attribute.Float64("temperature", float64(p.Temperature)),
