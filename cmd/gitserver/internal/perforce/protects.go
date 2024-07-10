@@ -3,7 +3,6 @@ package perforce
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"os"
 
@@ -142,7 +141,7 @@ type perforceJSONProtect struct {
 }
 
 type perforceBrokerJSONProtect struct {
-	Data string `json:"data"` // base64 encoded JSON
+	Data []byte `json:"data"` // base64 encoded JSON
 }
 
 // parseP4BrokerProtects decodes a `p4 protects` message returned from a
@@ -162,12 +161,7 @@ func parseP4BrokerProtects(brokerProtects []byte) ([]*p4types.Protect, error) {
 		return nil, errors.New("not a valid protects response")
 	}
 
-	protectsJson, err := base64.StdEncoding.DecodeString(parsedBrokerResponse.Data)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode protects response")
-	}
-
-	return parseP4Protects([]byte(protectsJson))
+	return parseP4Protects(parsedBrokerResponse.Data)
 }
 
 // parseP4Protects expects output from a `p4 protects` command called with
