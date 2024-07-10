@@ -3,7 +3,7 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 
 DOCSITE_VERSION = "1.9.4"
-SRC_CLI_VERSION = "5.3.0"
+SRC_CLI_VERSION = "5.4.0"
 KUBEBUILDER_ASSETS_VERSION = "1.28.0"
 CTAGS_VERSION = "6.0.0.2783f009"
 PACKER_VERSION = "1.8.3"
@@ -104,7 +104,7 @@ def tool_deps():
     http_archive(
         name = "src-cli-linux-amd64",
         build_file_content = SRC_CLI_BUILDFILE.format("linux-amd64"),
-        sha256 = "417a4329b0abf557a5fc36eedb626c53aaf886e48a49a594d98c095beaba0d02",
+        sha256 = "30973bab8258f49fd550e145ae2b398ef4cfbddc22716693d9360cab951dc5eb",
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_linux_amd64.tar.gz".format(SRC_CLI_VERSION),
     )
 
