@@ -285,6 +285,7 @@ func TestAPIProviders(t *testing.T) {
 	}{
 		{"BasicConfigChecks", testBasicConfiguration},
 		{"APIProvider-Anthropic", testAPIProviderAnthropic},
+		{"APIProvider-AWSBedrock", testAPIProviderAWSBedrock},
 		{"APIProvider-AzureOpenAI", testAPIProviderAzureOpenAI},
 	}
 	for _, testSuite := range testSuites {
