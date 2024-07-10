@@ -23,3 +23,9 @@
         {query}
     {/if}
 </code>
+
+<style lang="scss">
+    code {
+        font-size: inherit;
+    }
+</style>

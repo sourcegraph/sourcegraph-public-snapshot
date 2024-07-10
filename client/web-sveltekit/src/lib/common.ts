@@ -19,6 +19,7 @@ export {
     getPlatform,
 } from '@sourcegraph/common/src/util/browserDetection'
 export { dirname, basename } from '@sourcegraph/common/src/util/path'
+export { isDefined } from '@sourcegraph/common/src/types/utils'
 
 let highlightingLoaded = false
 
