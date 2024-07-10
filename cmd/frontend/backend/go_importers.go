@@ -64,7 +64,8 @@ func CountGoImporters(ctx context.Context, cli httpcli.Doer, repo api.RepoName) 
 
 	q.Query = countGoImportersGraphQLQuery
 	q.Variables = map[string]any{
-		"query": countGoImportersSearchQuery(repo),
+		"query":   countGoImportersSearchQuery(repo),
+		"version": "V3",
 	}
 
 	body, err := json.Marshal(q)
@@ -144,6 +145,6 @@ func countGoImportersSearchQuery(repo api.RepoName) string {
 }
 
 const countGoImportersGraphQLQuery = `
-query CountGoImporters($query: String!) {
-  search(query: $query) { results { matchCount } }
+query CountGoImporters($query: String!, $version: SearchVersion) {
+  search(query: $query, version: $version) { results { matchCount } }
 }`
