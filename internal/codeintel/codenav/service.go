@@ -1004,35 +1004,24 @@ func (s *Service) SCIPDocument(ctx context.Context, gitTreeTranslator GitTreeTra
 	if gitTreeTranslator.GetSourceCommit() == upload.GetCommit() {
 		return rawDocument, nil
 	}
-	droppedCount := 0
-	for i, occ := range rawDocument.Occurrences {
+	translated := make([]*scip.Occurrence, 0, len(rawDocument.Occurrences))
+	for _, occ := range rawDocument.Occurrences {
 		sourceRange := scip.NewRangeUnchecked(occ.Range)
 		sourceSharedRange := shared.TranslateRange(sourceRange)
 		// TODO: This will be ~quadratic in document size; see TODO(id: add-bulk-translation-api)
 		targetSharedRange, success, err := gitTreeTranslator.GetTargetCommitRangeFromSourceRange(
-			ctx, string(upload.GetCommit()), path.RawValue(), sourceSharedRange, true)
+			ctx, string(upload.GetCommit()), path.RawValue(), sourceSharedRange, true,
+		)
 		if err != nil {
-			// TODO: Better error handling
-			return nil, err
+			return nil, errors.Wrap(err, "While translating ranges between commits")
 		}
-		if success {
-			if targetRange := targetSharedRange.ToSCIPRange(); targetRange.Compare(sourceRange) != 0 {
-				rawDocument.Occurrences[i].Range = targetRange.SCIPRange()
-			}
-		} else {
-			droppedCount += 1
-			rawDocument.Occurrences[i] = nil
+		if !success {
+			continue
 		}
+		occ.Range = targetSharedRange.ToSCIPRange().SCIPRange()
+		translated = append(translated, occ)
 	}
-	if droppedCount > 0 {
-		newOccs := make([]*scip.Occurrence, 0, len(rawDocument.Occurrences)-droppedCount)
-		for _, occ := range rawDocument.Occurrences {
-			if occ != nil {
-				newOccs = append(newOccs, occ)
-			}
-		}
-		rawDocument.Occurrences = newOccs
-	}
+	rawDocument.Occurrences = translated
 	return rawDocument, nil
 }
 
