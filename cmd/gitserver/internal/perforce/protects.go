@@ -149,8 +149,8 @@ type perforceBrokerJSONProtect struct {
 // `p4broker` filter.
 //
 // It first decodes the "data" JSON field from the response, which should be
-// a URL encoded JSON string from an actual `p4 protects` command.
-// Once decoded, it delegates back to the parseP4Protects function to
+// a base64 JSON string from an actual `p4 protects` command.
+// Once decoded, it calls the parseP4Protects function to
 // parse the protects as normal.
 func parseP4BrokerProtects(brokerProtects []byte) ([]*p4types.Protect, error) {
 	var parsedBrokerResponse perforceBrokerJSONProtect
@@ -172,9 +172,6 @@ func parseP4BrokerProtects(brokerProtects []byte) ([]*p4types.Protect, error) {
 
 // parseP4Protects expects output from a `p4 protects` command called with
 // the `-Mj -ztag` flags, and returns a parsed list of protects.
-//
-// It also supports output returned from a `p4broker` proxy, but the message
-// returned from the broker must be URL encoded.
 func parseP4Protects(out []byte) ([]*p4types.Protect, error) {
 	protects := make([]*p4types.Protect, 0)
 
