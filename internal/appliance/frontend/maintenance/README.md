@@ -2,7 +2,7 @@
 
 ## Build
 
-This will produce the distributable `dist` folder in `bazel-bin/maintenance/dist`:
+This will produce the distributable `dist` folder in `bazel-bin/internal/appliance/frontend/maintenance/dist`:
 
     sg bazel build //internal/appliance/frontend/maintenance:build
 
