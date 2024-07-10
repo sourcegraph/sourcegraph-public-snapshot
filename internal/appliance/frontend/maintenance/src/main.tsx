@@ -11,6 +11,7 @@ import './index.css'
 import { Install } from './Install.tsx'
 import { Maintenance } from './Maintenance.tsx'
 import { Progress } from './Progress.tsx'
+import reportWebVitals from './reportWebVitals'
 import { ThemeProvider } from './Theme.tsx'
 import { WaitForAdmin } from './WaitForAdmin.tsx'
 
@@ -54,3 +55,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         </ThemeProvider>
     </React.StrictMode>
 )
+
+reportWebVitals(console.log)
