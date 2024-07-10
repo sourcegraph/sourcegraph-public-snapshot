@@ -211,7 +211,9 @@ npm_translate_lock(
     # See https://github.com/aspect-build/rules_js/issues/239
     # See `public-hoist-pattern[]=*eslint*` in the `.npmrc` of this monorepo.
     public_hoist_packages = {
-        "@typescript-eslint/eslint-plugin@5.62.0_1915693830": [""],
+        "@typescript-eslint/eslint-plugin@6.21.0_811259368": [""],
+        # TODO
+        # "@typescript-eslint/eslint-plugin@5.62.0_1915693830": [""],
         "@typescript-eslint/parser@5.56.0_qxbo2xm47qt6fxnlmgbosp4hva": [""],
         "eslint-config-prettier": [""],
         "eslint-plugin-ban": [""],
