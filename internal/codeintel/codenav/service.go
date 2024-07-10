@@ -1181,6 +1181,7 @@ func translateLookupRangeToCommit(
 
 func (s *Service) findSyntacticMatchesForCandidateFile(
 	ctx context.Context,
+	trace observation.TraceLogger,
 	gitTreeTranslator GitTreeTranslator,
 	upload core.UploadLike,
 	filePath core.RepoRelPath,
@@ -1226,9 +1227,9 @@ func (s *Service) findSyntacticMatchesForCandidateFile(
 			})
 		}
 	}
-	// TODO: Log this as Info if non-zero
-	_ = failedTranslationCount
-
+	if failedTranslationCount != 0 {
+		trace.Info("findSyntacticMatchesForCandidateFile", log.Int("failedTranslationCount", failedTranslationCount))
+	}
 	return syntacticMatches, searchBasedMatches, nil
 }
 
@@ -1314,7 +1315,7 @@ func (s *Service) SyntacticUsages(
 	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
 		// We're assuming the upload we found earlier contains the relevant SCIP document
 		// see NOTE(id: single-syntactic-upload)
-		syntacticMatches, _, err := s.findSyntacticMatchesForCandidateFile(ctx, gitTreeTranslator, upload, pair.Key, pair.Value)
+		syntacticMatches, _, err := s.findSyntacticMatchesForCandidateFile(ctx, trace, gitTreeTranslator, upload, pair.Key, pair.Value)
 		if err != nil {
 			// TODO: Errors that are not "no index found in the DB" should be reported
 			// TODO: Track metrics about how often this happens (GRAPH-693)
@@ -1448,7 +1449,7 @@ func (s *Service) searchBasedUsagesInner(
 	results := [][]SearchBasedMatch{}
 	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
 		if syntacticUpload != nil {
-			_, searchBasedMatches, err := s.findSyntacticMatchesForCandidateFile(ctx, gitTreeTranslator, syntacticUpload, pair.Key, pair.Value)
+			_, searchBasedMatches, err := s.findSyntacticMatchesForCandidateFile(ctx, trace, gitTreeTranslator, syntacticUpload, pair.Key, pair.Value)
 			if err == nil {
 				results = append(results, searchBasedMatches)
 				continue
