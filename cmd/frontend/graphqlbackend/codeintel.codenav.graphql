@@ -529,6 +529,8 @@ input SymbolNameComparator {
 A range inside a particular blob, describing a usage of a symbol,
 which can be used to locate other usages of the same symbol.
 
+The range must be an *exact match*.
+
 In general, a single range may correspond to multiple symbols.
 A caller can further drill down on a specific symbol using SymbolComparator.
 
