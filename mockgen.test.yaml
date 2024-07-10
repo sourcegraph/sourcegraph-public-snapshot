@@ -212,15 +212,6 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/policies
       interfaces:
         - UploadService
-- filename: internal/codeintel/codenav/mocks_test.go
-  sources:
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore
-      interfaces:
-        - LsifStore
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav
-      interfaces:
-        - UploadService
-        - GitTreeTranslator
 - filename: internal/codeintel/uploads/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
