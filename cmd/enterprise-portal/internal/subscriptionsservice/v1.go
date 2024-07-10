@@ -311,7 +311,8 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("subscription.id is required"))
 	}
 
-	// Double check with the dotcom DB that the subscription ID is valid.
+	// TEMPORARY: Double check with the dotcom DB that the subscription ID is valid.
+	// This currently ensures we never actually create new subscriptions.
 	subscriptionAttrs, err := s.store.ListDotcomEnterpriseSubscriptions(ctx, dotcomdb.ListEnterpriseSubscriptionsOptions{
 		SubscriptionIDs: []string{subscriptionID},
 	})
@@ -329,11 +330,16 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 		if v := req.Msg.GetSubscription().GetInstanceDomain(); v != "" {
 			opts.InstanceDomain = v
 		}
+		if v := req.Msg.GetSubscription().GetDisplayName(); v != "" {
+			opts.DisplayName = v
+		}
 	} else {
 		for _, p := range fieldPaths {
 			switch p {
 			case "instance_domain":
 				opts.InstanceDomain = req.Msg.GetSubscription().GetInstanceDomain()
+			case "display_name":
+				opts.DisplayName = req.Msg.GetSubscription().GetDisplayName()
 			case "*":
 				opts.ForceUpdate = true
 				opts.InstanceDomain = req.Msg.GetSubscription().GetInstanceDomain()

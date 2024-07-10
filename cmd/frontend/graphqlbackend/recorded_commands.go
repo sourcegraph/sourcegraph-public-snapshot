@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 )
 
@@ -50,7 +51,7 @@ func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *Recorde
 	if recordingConf == nil {
 		return graphqlutil.NewSliceConnectionResolver([]RecordedCommandResolver{}, 0, currentEnd), nil
 	}
-	store := rcache.NewFIFOList(wrexec.GetFIFOListKey(r.Name()), recordingConf.Size)
+	store := rcache.NewFIFOList(redispool.Cache, wrexec.GetFIFOListKey(r.Name()), recordingConf.Size)
 	empty, err := store.IsEmpty()
 	if err != nil {
 		return nil, err

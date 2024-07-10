@@ -32,10 +32,13 @@ type builder struct {
 // its final form to be consumed by the Sourcegraph instance and passed onto its
 // clients.
 func (b *builder) build() (*types.ModelConfiguration, error) {
-	if b.staticData == nil {
-		return nil, errors.New("no static data available")
+	baseConfig := &types.ModelConfiguration{}
+
+	// Static data is by definition always available, but won't be provided in
+	// some unit tests.
+	if b.staticData != nil {
+		baseConfig = b.staticData
 	}
-	baseConfig := b.staticData
 
 	// If we have newer data from Cody Gateway, use that instead of what is
 	// baked into our codebase.

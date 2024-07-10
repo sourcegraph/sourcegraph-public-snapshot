@@ -13,7 +13,9 @@ go_library(
     tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//cmd/enterprise-portal:__subpackages__"],
     deps = [
+        "//cmd/enterprise-portal/internal/database/internal/upsert",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_jackc_pgtype//:pgtype",
         "@com_github_jackc_pgx_v5//:pgx",
         "@com_github_jackc_pgx_v5//pgxpool",
@@ -31,6 +33,7 @@ go_test(
         ":subscriptions",
         "//cmd/enterprise-portal/internal/database/databasetest",
         "//cmd/enterprise-portal/internal/database/internal/tables",
+        "//lib/pointers",
         "@com_github_google_uuid//:uuid",
         "@com_github_jackc_pgx_v5//:pgx",
         "@com_github_stretchr_testify//assert",

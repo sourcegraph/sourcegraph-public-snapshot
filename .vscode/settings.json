@@ -36,7 +36,6 @@
   "editor.formatOnSave": true,
   "go.useLanguageServer": true,
   "gopls": {
-    "build.allowImplicitNetworkAccess": true,
     "local": "github.com/sourcegraph/sourcegraph"
   },
   "npm.packageManager": "pnpm",

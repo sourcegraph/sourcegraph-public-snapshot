@@ -62,7 +62,8 @@ func TestAzureDevOpsSource_GitserverPushConfig(t *testing.T) {
 		},
 	}
 
-	pushConfig, err := s.GitserverPushConfig(repo)
+	ctx := context.Background()
+	pushConfig, err := s.GitserverPushConfig(ctx, repo)
 	assert.Nil(t, err)
 	assert.NotNil(t, pushConfig)
 	assert.Equal(t, "https://user:pass@dev.azure.com/testorg/testproject/_git/testrepo", pushConfig.RemoteURL)

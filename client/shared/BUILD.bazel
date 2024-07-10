@@ -278,6 +278,7 @@ ts_project(
         "src/search/searchQueryState.tsx",
         "src/search/stream.ts",
         "src/search/suggestions/index.ts",
+        "src/search/types.ts",
         "src/settings/edit.ts",
         "src/settings/settings.tsx",
         "src/settings/temporary/TemporarySettings.ts",

@@ -43,7 +43,7 @@ type AzureOpenAIProviderConfig struct {
 	// for backwards compatibility, because not all Azure OpenAI models are available on the "newer" completions API.
 	//
 	// Moving forward, this information should be encoded in the ModelRef's APIVersionID instead.
-	UseDeprecatedCompletionsAPI bool
+	UseDeprecatedCompletionsAPI bool `json:"useDeprecatedCompletionsAPI"`
 }
 
 // GenericServiceProvider is an enum for describing the API provider to use

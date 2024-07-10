@@ -48,7 +48,7 @@ type codyGatewayClient struct {
 
 func (c *codyGatewayClient) Stream(
 	ctx context.Context, logger log.Logger, request types.CompletionRequest, sendEvent types.SendCompletionEvent) error {
-	cc, err := c.clientForParams(request.Feature, &request.Parameters)
+	cc, err := c.clientForParams(request.Feature, &request)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (c *codyGatewayClient) Stream(
 }
 
 func (c *codyGatewayClient) Complete(ctx context.Context, logger log.Logger, request types.CompletionRequest) (*types.CompletionResponse, error) {
-	cc, err := c.clientForParams(request.Feature, &request.Parameters)
+	cc, err := c.clientForParams(request.Feature, &request)
 	if err != nil {
 		return nil, err
 	}
@@ -78,9 +78,10 @@ func overwriteErrSource(err error) error {
 	return err
 }
 
-func (c *codyGatewayClient) clientForParams(feature types.CompletionsFeature, requestParams *types.CompletionRequestParameters) (types.CompletionsClient, error) {
+func (c *codyGatewayClient) clientForParams(feature types.CompletionsFeature, request *types.CompletionRequest) (types.CompletionsClient, error) {
 	// Extract provider and model from the Cody Gateway model format and override
 	// the request parameter's model.
+	requestParams := &request.Parameters
 	provider, model := getProviderFromGatewayModel(strings.ToLower(requestParams.Model))
 	requestParams.Model = model
 
