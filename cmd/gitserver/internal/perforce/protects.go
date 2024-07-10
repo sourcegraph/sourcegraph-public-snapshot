@@ -3,8 +3,8 @@ package perforce
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
-	"net/url"
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
@@ -158,7 +158,7 @@ func parseP4BrokerProtects(brokerProtects []byte) ([]*p4types.Protect, error) {
 		return nil, errors.New("not a valid protects response")
 	}
 
-	protectsJson, err := url.QueryUnescape(parsedBrokerResponse.Data)
+	protectsJson, err := base64.StdEncoding.DecodeString(parsedBrokerResponse.Data)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unescape protects response")
 	}

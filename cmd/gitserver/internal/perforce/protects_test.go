@@ -84,7 +84,7 @@ func TestParseP4Protects(t *testing.T) {
 }
 
 func TestParseP4BrokerProtects(t *testing.T) {
-	protectsOut := []byte(`{"data":"%7B%22depotFile%22%3A%22%2F%2F...%22%2C%22host%22%3A%22%2A%22%2C%22line%22%3A%221%22%2C%22perm%22%3A%22write%22%2C%22user%22%3A%22%2A%22%7D%0A%7B%22depotFile%22%3A%22%2F%2F...%22%2C%22host%22%3A%22%2A%22%2C%22line%22%3A%223%22%2C%22perm%22%3A%22read%22%2C%22user%22%3A%22petrilast%22%7D%0A%7B%22depotFile%22%3A%22%2F%2Ftestdepot%2F...%22%2C%22host%22%3A%22%2A%22%2C%22line%22%3A%224%22%2C%22perm%22%3A%22read%22%2C%22user%22%3A%22petrilast%22%7D","level":0}`)
+	protectsOut := []byte(`{"data":"eyJkZXBvdEZpbGUiOiIvLy4uLiIsImhvc3QiOiIqIiwibGluZSI6IjEiLCJwZXJtIjoid3JpdGUiLCJ1c2VyIjoiKiJ9CnsiZGVwb3RGaWxlIjoiLy8uLi4iLCJob3N0IjoiKiIsImxpbmUiOiIzIiwicGVybSI6InJlYWQiLCJ1c2VyIjoicGV0cmlsYXN0In0KeyJkZXBvdEZpbGUiOiIvL3Rlc3RkZXBvdC8uLi4iLCJob3N0IjoiKiIsImxpbmUiOiI0IiwicGVybSI6InJlYWQiLCJ1c2VyIjoicGV0cmlsYXN0In0=","level":0}`)
 
 	protects, err := parseP4Protects(protectsOut)
 	require.NoError(t, err)
