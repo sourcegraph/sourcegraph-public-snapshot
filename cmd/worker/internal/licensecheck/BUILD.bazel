@@ -41,10 +41,9 @@ go_test(
     deps = [
         "//internal/license",
         "//internal/licensing",
-        "//internal/redispool",
+        "//internal/rcache",
         "//lib/pointers",
         "@com_github_derision_test_glock//:glock",
-        "@com_github_gomodule_redigo//redis",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
     ],

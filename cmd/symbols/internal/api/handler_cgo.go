@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/squirrel"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/squirrel"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/chunk"
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"

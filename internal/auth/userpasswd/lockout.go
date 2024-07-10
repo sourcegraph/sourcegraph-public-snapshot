@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -58,10 +59,10 @@ func NewLockoutStore(failedThreshold int, lockoutPeriod, consecutivePeriod time.
 
 	return &lockoutStore{
 		failedThreshold: failedThreshold,
-		lockouts:        rcache.NewWithTTL("account_lockout", int(lockoutPeriod.Seconds())),
-		failedAttempts:  rcache.NewWithTTL("account_failed_attempts", int(consecutivePeriod.Seconds())),
-		unlockToken:     rcache.NewWithTTL("account_unlock_token", int(lockoutPeriod.Seconds())),
-		unlockEmailSent: rcache.NewWithTTL("account_lockout_email_sent", int(lockoutPeriod.Seconds())),
+		lockouts:        rcache.NewWithTTL(redispool.Cache, "account_lockout", int(lockoutPeriod.Seconds())),
+		failedAttempts:  rcache.NewWithTTL(redispool.Cache, "account_failed_attempts", int(consecutivePeriod.Seconds())),
+		unlockToken:     rcache.NewWithTTL(redispool.Cache, "account_unlock_token", int(lockoutPeriod.Seconds())),
+		unlockEmailSent: rcache.NewWithTTL(redispool.Cache, "account_lockout_email_sent", int(lockoutPeriod.Seconds())),
 		sendEmail:       sendEmailF,
 	}
 }

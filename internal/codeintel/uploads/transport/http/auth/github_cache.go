@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 type GitHubAuthCache struct {
@@ -13,7 +14,7 @@ type GitHubAuthCache struct {
 }
 
 var githubAuthCache = &GitHubAuthCache{
-	cache: rcache.NewWithTTL("codeintel.github-authz:", 60 /* seconds */),
+	cache: rcache.NewWithTTL(redispool.Cache, "codeintel.github-authz:", 60 /* seconds */),
 }
 
 func (c *GitHubAuthCache) Get(key string) (authorized bool, _ bool) {

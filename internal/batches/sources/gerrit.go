@@ -62,8 +62,12 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 
 // GitserverPushConfig returns an authenticated push config used for pushing
 // commits to the code host.
-func (s GerritSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(repo, s.client.Authenticator())
+func (s GerritSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(ctx, repo, s.client.Authenticator())
+}
+
+func (s GerritSource) AuthenticationStrategy() AuthenticationStrategy {
+	return AuthenticationStrategyUserCredential
 }
 
 // WithAuthenticator returns a copy of the original Source configured to use the

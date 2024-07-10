@@ -2,7 +2,7 @@
     import type { OffsetOptions, Placement } from '@floating-ui/dom'
     import type { Action } from 'svelte/action'
 
-    import { registerHotkey } from '$lib/Hotkey'
+    import { createHotkey } from '$lib/Hotkey'
 
     import { popover, onClickOutside, portal } from './dom'
 
@@ -22,20 +22,25 @@
     let popoverContainer: HTMLElement | null
     let delayTimer: ReturnType<typeof setTimeout>
 
-    if (closeOnEsc) {
-        registerHotkey({
-            keys: { key: 'Esc' },
-            ignoreInputFields: false,
-            handler: event => {
-                event.preventDefault()
-                close()
-                return false
-            },
-        })
-    }
+    const escHotkey = closeOnEsc
+        ? createHotkey({
+              keys: { key: 'Esc' },
+              ignoreInputFields: false,
+              handler: event => {
+                  event.preventDefault()
+                  close()
+                  return false
+              },
+          })
+        : null
 
     function toggle(open?: boolean): void {
         isOpen = open === undefined ? !isOpen : open
+        if (isOpen) {
+            escHotkey?.enable()
+        } else {
+            escHotkey?.disable()
+        }
     }
 
     function close(): void {

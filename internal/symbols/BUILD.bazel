@@ -17,7 +17,6 @@ go_library(
         "//internal/conf/conftypes",
         "//internal/endpoint",
         "//internal/grpc/defaults",
-        "//internal/limiter",
         "//internal/search",
         "//internal/search/result",
         "//internal/symbols/v1:symbols",

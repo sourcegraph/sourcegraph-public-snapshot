@@ -86,7 +86,7 @@ func testAPIProviderAnthropic(t *testing.T, infra *apiProviderTestInfra) {
 	}
 
 	t.Run("WithDefaultConfig", func(t *testing.T) {
-		infra.SetSiteConfig(schema.SiteConfiguration{
+		infra.SetSiteConfig(t, schema.SiteConfiguration{
 			CodyEnabled:                  pointers.Ptr(true),
 			CodyPermissions:              pointers.Ptr(false),
 			CodyRestrictUsersFeatureFlag: pointers.Ptr(false),
@@ -138,7 +138,7 @@ func testAPIProviderAnthropic(t *testing.T, infra *apiProviderTestInfra) {
 			codeModelInConfig            = "anthropic/claude-3-haiku"
 		)
 
-		infra.SetSiteConfig(schema.SiteConfiguration{
+		infra.SetSiteConfig(t, schema.SiteConfiguration{
 			CodyEnabled:                  pointers.Ptr(true),
 			CodyPermissions:              pointers.Ptr(false),
 			CodyRestrictUsersFeatureFlag: pointers.Ptr(false),

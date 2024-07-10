@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 // JobInfo contains information about a job, including all its routines.
@@ -74,7 +75,7 @@ const (
 const ttlSeconds = 604800 // 7 days
 
 func GetCache() *rcache.Cache {
-	return rcache.NewWithTTL(keyPrefix, ttlSeconds)
+	return rcache.NewWithTTL(redispool.Cache, keyPrefix, ttlSeconds)
 }
 
 // mergeStats returns the given stats updated with the given run data.

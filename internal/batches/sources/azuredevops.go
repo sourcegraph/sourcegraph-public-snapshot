@@ -57,8 +57,12 @@ func NewAzureDevOpsSource(ctx context.Context, svc *types.ExternalService, cf *h
 
 // GitserverPushConfig returns an authenticated push config used for pushing
 // commits to the code host.
-func (s AzureDevOpsSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(repo, s.client.Authenticator())
+func (s AzureDevOpsSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(ctx, repo, s.client.Authenticator())
+}
+
+func (s AzureDevOpsSource) AuthenticationStrategy() AuthenticationStrategy {
+	return AuthenticationStrategyUserCredential
 }
 
 // WithAuthenticator returns a copy of the original Source configured to use the

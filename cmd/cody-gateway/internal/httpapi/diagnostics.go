@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gomodule/redigo/redis"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/hook"
 	"github.com/sourcegraph/log/output"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/authbearer"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -26,7 +26,7 @@ import (
 // on "/-/..." paths. It should be placed before any authentication middleware, since
 // we do a simple auth on a static secret instead that is uniquely generated per
 // deployment.
-func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret string, sources *actor.Sources) http.Handler {
+func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, redisPool *redis.Pool, secret string, sources *actor.Sources) http.Handler {
 	baseLogger = baseLogger.Scoped("diagnostics")
 
 	hasValidSecret := func(l log.Logger, w http.ResponseWriter, r *http.Request) (yes bool) {
@@ -58,7 +58,7 @@ func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret stri
 				return
 			}
 
-			if err := healthz(r.Context()); err != nil {
+			if err := healthz(r.Context(), redisPool); err != nil {
 				logger.Error("check failed", log.Error(err))
 
 				w.WriteHeader(http.StatusInternalServerError)
@@ -110,9 +110,8 @@ func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret stri
 	})
 }
 
-func healthz(ctx context.Context) error {
+func healthz(ctx context.Context, rpool *redis.Pool) error {
 	// Check redis health
-	rpool := redispool.Cache.Pool()
 	rconn, err := rpool.GetContext(ctx)
 	if err != nil {
 		return errors.Wrap(err, "redis: failed to get conn")

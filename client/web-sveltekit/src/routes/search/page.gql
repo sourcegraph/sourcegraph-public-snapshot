@@ -1,0 +1,5 @@
+query DefaultSearchContext {
+    defaultSearchContext {
+        spec
+    }
+}
