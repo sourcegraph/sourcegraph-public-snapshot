@@ -70,7 +70,6 @@ js_library(
     name = "package_json",
     srcs = ["package.json"],
     visibility = ["//visibility:public"],
-    deps = [":node_modules/eslint-config-react-app"],
 )
 
 js_library(

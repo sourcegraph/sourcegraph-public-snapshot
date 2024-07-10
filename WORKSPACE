@@ -211,14 +211,12 @@ npm_translate_lock(
     # See https://github.com/aspect-build/rules_js/issues/239
     # See `public-hoist-pattern[]=*eslint*` in the `.npmrc` of this monorepo.
     public_hoist_packages = {
-        # Required, otherwise eslint-config-react-app appears to pull in 5.62.0.
-        # Perhaps there's a better way to deal with this?
-        "@typescript-eslint/eslint-plugin@6.21.0_811259368": [""],
+        "@typescript-eslint/eslint-plugin": [""],
         "@typescript-eslint/parser@5.56.0_qxbo2xm47qt6fxnlmgbosp4hva": [""],
         "eslint-config-prettier": [""],
         "eslint-plugin-ban": [""],
         "eslint-plugin-etc": [""],
-        "eslint-plugin-import@2.26.0_140798473": [""],
+        "eslint-plugin-import": [""],
         "eslint-plugin-jest-dom": [""],
         "eslint-plugin-jsdoc": [""],
         "eslint-plugin-jsx-a11y": [""],
