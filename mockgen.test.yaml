@@ -438,3 +438,8 @@
   package: analytics
   interfaces:
     - secretStore
+- filename: internal/appliance/selfupdate/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/appliance/selfupdate
+  package: selfupdate
+  interfaces:
+    - ReleaseRegistryClient

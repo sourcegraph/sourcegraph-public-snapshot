@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//internal/appliance",
         "//internal/appliance/reconciler",
+        "//internal/appliance/selfupdate",
         "//internal/appliance/v1:appliance",
         "//internal/debugserver",
         "//internal/env",

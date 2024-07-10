@@ -127,5 +127,6 @@ write_source_files(
         "//cmd/enterprise-portal/internal/subscriptionsservice:generate_mocks",
         "//dev/sg/internal/analytics:generate_mocks",
         "//cmd/symbols/internal/fetcher:generate_mocks",
+        "//internal/appliance/selfupdate:generate_mocks",
     ],
 )
