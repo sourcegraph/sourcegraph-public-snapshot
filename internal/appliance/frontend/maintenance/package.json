@@ -1,0 +1,34 @@
+{
+  "name": "@sourcegraph/operator-ui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.14.19",
+    "@mui/material": "^5.14.20",
+    "classnames": "^2.2.6",
+    "react": "18.1.0",
+    "react-dom": "18.1.0",
+    "react-router-dom": "^6.8.1",
+    "web-vitals": "2.1.4"
+  },
+  "devDependencies": {
+    "@types/node": "20.8.0",
+    "@types/react": "18.0.8",
+    "@types/react-dom": "18.0.2",
+    "@vitejs/plugin-react": "^3.1.0",
+    "rollup": "^4.18.1",
+    "std-env": "^3.7.0",
+    "tsconfig-to-swcconfig": "^2.7.0",
+    "typescript": "^5.0.2",
+    "vite": "^4.1.4",
+    "vitest": "1.0.0-beta.4"
+  }
+}

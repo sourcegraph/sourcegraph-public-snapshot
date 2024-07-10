@@ -2,15 +2,38 @@ package graphqlbackend
 
 import (
 	"context"
+	"flag"
 	"fmt"
+	"io"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
+	"os"
 	"sync"
 	"testing"
 
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/keegancsmith/sqlf"
+	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	if !testing.Verbose() {
+		log15.Root().SetHandler(log15.DiscardHandler())
+		log.SetOutput(io.Discard)
+		logtest.InitWithLevel(m, sglog.LevelNone)
+	} else {
+		logtest.Init(m)
+	}
+
+	txemail.DisableSilently()
+
+	os.Exit(m.Run())
+}
 
 var createTestUser = func() func(*testing.T, database.DB, bool) *types.User {
 	var mu sync.Mutex

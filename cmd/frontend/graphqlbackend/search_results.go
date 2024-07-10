@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchclient "github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
@@ -434,7 +435,7 @@ func (srs *searchResultsStats) ApproximateResultCount() string { return srs.JApp
 func (srs *searchResultsStats) Sparkline() []int32             { return srs.JSparkline }
 
 var (
-	searchResultsStatsCache   = rcache.NewWithTTL("search_results_stats", 3600) // 1h
+	searchResultsStatsCache   = rcache.NewWithTTL(redispool.Cache, "search_results_stats", 3600) // 1h
 	searchResultsStatsCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_graphql_search_results_stats_cache_hit",
 		Help: "Counts cache hits and misses for search results stats (e.g. sparklines).",

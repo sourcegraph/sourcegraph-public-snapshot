@@ -674,6 +674,12 @@ func HashedLicenseKeyWithPrefix(licenseKey string, prefix string) string {
 	return hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(prefix + licenseKey)))
 }
 
+// UseExperimentalModelConfiguration tells whether or not "modelConfiguration" has been specified
+// in the site configuration
+func UseExperimentalModelConfiguration() bool {
+	return Get().SiteConfig().ModelConfiguration != nil
+}
+
 // GetCompletionsConfig evaluates a complete completions configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
 func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.CompletionsConfig) {

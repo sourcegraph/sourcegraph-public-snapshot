@@ -11,7 +11,7 @@ import (
 )
 
 func Test_FIFOList_All_OK(t *testing.T) {
-	SetupForTest(t)
+	kv := SetupForTest(t)
 
 	type testcase struct {
 		key     string
@@ -54,7 +54,7 @@ func Test_FIFOList_All_OK(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		r := NewFIFOList(c.key, c.size)
+		r := NewFIFOList(kv, c.key, c.size)
 		t.Run(fmt.Sprintf("size %d with %d entries", c.size, len(c.inserts)), func(t *testing.T) {
 			for _, b := range c.inserts {
 				if err := r.Insert(b); err != nil {
@@ -80,7 +80,7 @@ func Test_FIFOList_All_OK(t *testing.T) {
 }
 
 func Test_FIFOList_Slice_OK(t *testing.T) {
-	SetupForTest(t)
+	kv := SetupForTest(t)
 
 	type testcase struct {
 		key     string
@@ -143,7 +143,7 @@ func Test_FIFOList_Slice_OK(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		r := NewFIFOList(c.key, c.size)
+		r := NewFIFOList(kv, c.key, c.size)
 		t.Run(fmt.Sprintf("size %d with %d entries, [%d,%d]", c.size, len(c.inserts), c.from, c.to), func(t *testing.T) {
 			for _, b := range c.inserts {
 				if err := r.Insert(b); err != nil {
@@ -162,9 +162,9 @@ func Test_FIFOList_Slice_OK(t *testing.T) {
 }
 
 func Test_NewFIFOListDynamic(t *testing.T) {
-	SetupForTest(t)
+	kv := SetupForTest(t)
 	maxSize := 3
-	r := NewFIFOListDynamic("a", func() int { return maxSize })
+	r := NewFIFOListDynamic(kv, "a", func() int { return maxSize })
 	for range 10 {
 		err := r.Insert([]byte("a"))
 		if err != nil {
@@ -198,8 +198,8 @@ func Test_NewFIFOListDynamic(t *testing.T) {
 }
 
 func Test_FIFOListContextCancellation(t *testing.T) {
-	SetupForTest(t)
-	r := NewFIFOList("a", 3)
+	kv := SetupForTest(t)
+	r := NewFIFOList(kv, "a", 3)
 	err := r.Insert([]byte("a"))
 	if err != nil {
 		t.Errorf("expected no error, got %q", err)
@@ -213,8 +213,8 @@ func Test_FIFOListContextCancellation(t *testing.T) {
 }
 
 func Test_FIFOListIsEmpty(t *testing.T) {
-	SetupForTest(t)
-	r := NewFIFOList("a", 3)
+	kv := SetupForTest(t)
+	r := NewFIFOList(kv, "a", 3)
 	empty, err := r.IsEmpty()
 	require.NoError(t, err)
 	assert.True(t, empty)

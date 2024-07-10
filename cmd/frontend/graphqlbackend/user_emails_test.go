@@ -20,14 +20,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func init() {
-	txemail.DisableSilently()
-}
 
 func TestUserEmail_ViewerCanManuallyVerify(t *testing.T) {
 	t.Parallel()

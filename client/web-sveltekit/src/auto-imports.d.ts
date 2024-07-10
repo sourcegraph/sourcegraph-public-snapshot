@@ -88,6 +88,8 @@ declare global {
   const ILucideWrapText: typeof import('~icons/lucide/wrap-text')['default']
   const ILucideX: typeof import('~icons/lucide/x')['default']
   const ILucidehevronLeft: typeof import('~icons/lucide/hevron-left')['default']
+  const IMdiFormatLetterCase: typeof import('~icons/mdi/format-letter-case')['default']
+  const IMdiRegex: typeof import('~icons/mdi/regex')['default']
   const IPhFileJpgLight: typeof import('~icons/ph/file-jpg-light')['default']
   const IPhFilePngLight: typeof import('~icons/ph/file-png-light')['default']
   const IPhGifFill: typeof import('~icons/ph/gif-fill')['default']

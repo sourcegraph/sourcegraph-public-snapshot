@@ -12,7 +12,7 @@ import (
 )
 
 func TestCache_namespace(t *testing.T) {
-	SetupForTest(t)
+	kv := SetupForTest(t)
 
 	type testcase struct {
 		prefix  string
@@ -46,7 +46,7 @@ func TestCache_namespace(t *testing.T) {
 
 	caches := make([]*Cache, len(cases))
 	for i, test := range cases {
-		caches[i] = New(test.prefix)
+		caches[i] = New(kv, test.prefix)
 		for k, v := range test.entries {
 			caches[i].Set(k, []byte(v))
 		}
@@ -71,9 +71,9 @@ func TestCache_namespace(t *testing.T) {
 }
 
 func TestCache_simple(t *testing.T) {
-	SetupForTest(t)
+	kv := SetupForTest(t)
 
-	c := New("some_prefix")
+	c := New(kv, "some_prefix")
 	_, ok := c.Get("a")
 	if ok {
 		t.Fatal("Initial Get should find nothing")
@@ -96,9 +96,9 @@ func TestCache_simple(t *testing.T) {
 }
 
 func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
-	SetupForTest(t)
+	kv := SetupForTest(t)
 
-	c := New("some_prefix")
+	c := New(kv, "some_prefix")
 	var aKeys, bKeys []string
 	var key string
 	for i := range 10 {
@@ -113,7 +113,7 @@ func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 		c.Set(key, []byte(strconv.Itoa(i)))
 	}
 
-	pool := kv().Pool()
+	pool := kv.Pool()
 
 	conn := pool.Get()
 	defer conn.Close()
@@ -145,9 +145,9 @@ func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 }
 
 func TestCache_Increase(t *testing.T) {
-	SetupForTest(t)
+	kv := SetupForTest(t)
 
-	c := NewWithTTL("some_prefix", 1)
+	c := NewWithTTL(kv, "some_prefix", 1)
 	c.Increase("a")
 
 	got, ok := c.Get("a")
@@ -164,9 +164,9 @@ func TestCache_Increase(t *testing.T) {
 }
 
 func TestCache_KeyTTL(t *testing.T) {
-	SetupForTest(t)
+	kv := SetupForTest(t)
 
-	c := NewWithTTL("some_prefix", 1)
+	c := NewWithTTL(kv, "some_prefix", 1)
 	c.Set("a", []byte("b"))
 
 	ttl, ok := c.KeyTTL("a")
@@ -187,22 +187,11 @@ func TestCache_KeyTTL(t *testing.T) {
 		t.Fatal("KeyTTL after setting invalid ttl should have found nothing")
 	}
 }
-func TestNewWithRedisStore(t *testing.T) {
-	SetupForTest(t)
-
-	// Create a Cache instance using NewWithRedisStore
-	c := NewWithRedisStore("test_prefix")
-
-	// Assert that the storeType field is RedisStore, indicating it uses the Redis store
-	if c.storeType != RedisStore {
-		t.Errorf("Expected storeType to be RedisStore, got %v", c.storeType)
-	}
-}
 
 func TestCache_SetWithTTL(t *testing.T) {
-	SetupForTest(t)
+	kv := SetupForTest(t)
 
-	c := NewWithTTL("some_prefix", 60)
+	c := NewWithTTL(kv, "some_prefix", 60)
 	c.SetWithTTL("a", []byte("b"), 30)
 	b, ok := c.Get("a")
 	if !ok {
@@ -233,10 +222,10 @@ func TestCache_SetWithTTL(t *testing.T) {
 }
 
 func TestCache_Hashes(t *testing.T) {
-	SetupForTest(t)
+	kv := SetupForTest(t)
 
 	// Test SetHashItem
-	c := NewWithTTL("simple_hash", 1)
+	c := NewWithTTL(kv, "simple_hash", 1)
 	err := c.SetHashItem("key", "hashKey1", "value1")
 	assert.NoError(t, err)
 	err = c.SetHashItem("key", "hashKey2", "value2")

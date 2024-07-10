@@ -254,7 +254,11 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                     setSuggestionsState(getSuggestionsState(update.state))
                     // Show suggestions after the user interacted with the input, either by
                     // moving the cursor (via keyboard or mouse) or by entering text.
-                    if (update.transactions.some(tr => tr.isUserEvent('select') || tr.isUserEvent('input'))) {
+                    if (
+                        update.transactions.some(
+                            tr => tr.isUserEvent('select') || tr.isUserEvent('input') || tr.isUserEvent('delete')
+                        )
+                    ) {
                         setShowSuggestions(true)
                     }
                 }),

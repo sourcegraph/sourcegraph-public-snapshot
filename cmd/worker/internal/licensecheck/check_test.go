@@ -11,27 +11,22 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/gomodule/redigo/redis"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func Test_calcDurationToWaitForNextHandle(t *testing.T) {
-	// Connect to local redis for testing, this is the same URL used in rcache.SetupForTest
-	store = redispool.NewKeyValue("127.0.0.1:6379", &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 5 * time.Second,
-	})
+	kv := rcache.SetupForTest(t)
 
 	cleanupStore := func() {
-		_ = store.Del(licensing.LicenseValidityStoreKey)
-		_ = store.Del(lastCalledAtStoreKey)
+		_ = kv.Del(licensing.LicenseValidityStoreKey)
+		_ = kv.Del(lastCalledAtStoreKey)
 	}
 
 	now := time.Now().Round(time.Second)
@@ -78,10 +73,10 @@ func Test_calcDurationToWaitForNextHandle(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			cleanupStore()
 			if test.lastCalledAt != "" {
-				_ = store.Set(lastCalledAtStoreKey, test.lastCalledAt)
+				_ = kv.Set(lastCalledAtStoreKey, test.lastCalledAt)
 			}
 
-			got, err := calcDurationSinceLastCalled(clock)
+			got, err := calcDurationSinceLastCalled(kv, clock)
 			if test.wantErr {
 				require.Error(t, err)
 			} else {
@@ -106,15 +101,11 @@ func mockDotcomURL(t *testing.T, u *string) {
 }
 
 func Test_licenseChecker(t *testing.T) {
-	// Connect to local redis for testing, this is the same URL used in rcache.SetupForTest
-	store = redispool.NewKeyValue("127.0.0.1:6379", &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 5 * time.Second,
-	})
+	kv := rcache.SetupForTest(t)
 
 	cleanupStore := func() {
-		_ = store.Del(licensing.LicenseValidityStoreKey)
-		_ = store.Del(lastCalledAtStoreKey)
+		_ = kv.Del(licensing.LicenseValidityStoreKey)
+		_ = kv.Del(lastCalledAtStoreKey)
 	}
 
 	siteID := "some-site-id"
@@ -159,6 +150,7 @@ func Test_licenseChecker(t *testing.T) {
 				token:  token,
 				doer:   doer,
 				logger: logtest.NoOp(t),
+				kv:     kv,
 			}
 
 			err := handler.Handle(context.Background())
@@ -168,12 +160,12 @@ func Test_licenseChecker(t *testing.T) {
 			require.False(t, doer.DoCalled)
 
 			// check result was set to true
-			valid, err := store.Get(licensing.LicenseValidityStoreKey).Bool()
+			valid, err := kv.Get(licensing.LicenseValidityStoreKey).Bool()
 			require.NoError(t, err)
 			require.True(t, valid)
 
 			// check last called at was set
-			lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
+			lastCalledAt, err := kv.Get(lastCalledAtStoreKey).String()
 			require.NoError(t, err)
 			require.NotEmpty(t, lastCalledAt)
 		})
@@ -238,6 +230,7 @@ func Test_licenseChecker(t *testing.T) {
 				token:  token,
 				doer:   doer,
 				logger: logtest.NoOp(t),
+				kv:     kv,
 			}
 
 			err := checker.Handle(context.Background())
@@ -245,25 +238,25 @@ func Test_licenseChecker(t *testing.T) {
 				require.Error(t, err)
 
 				// check result was NOT set
-				require.True(t, store.Get(licensing.LicenseValidityStoreKey).IsNil())
+				require.True(t, kv.Get(licensing.LicenseValidityStoreKey).IsNil())
 			} else {
 				require.NoError(t, err)
 
 				// check result was set
-				got, err := store.Get(licensing.LicenseValidityStoreKey).Bool()
+				got, err := kv.Get(licensing.LicenseValidityStoreKey).Bool()
 				require.NoError(t, err)
 				require.Equal(t, test.want, got)
 
 				// check result reason was set
 				if test.reason != nil {
-					got, err := store.Get(licensing.LicenseInvalidReason).String()
+					got, err := kv.Get(licensing.LicenseInvalidReason).String()
 					require.NoError(t, err)
 					require.Equal(t, *test.reason, got)
 				}
 			}
 
 			// check last called at was set
-			lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
+			lastCalledAt, err := kv.Get(lastCalledAtStoreKey).String()
 			require.NoError(t, err)
 			require.NotEmpty(t, lastCalledAt)
 

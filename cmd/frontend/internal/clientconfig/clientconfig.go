@@ -17,7 +17,7 @@ func GetForActor(ctx context.Context, logger log.Logger, db database.DB, actor *
 		// If the site config has "modelConfiguration" specified / non-null, then the site admin
 		// has opted into the new model configuration system, wants to use the new /.api/supported-llms
 		// endpoint for models, etc.
-		ModelsAPIEnabled: conf.Get().SiteConfig().ModelConfiguration != nil,
+		ModelsAPIEnabled: conf.UseExperimentalModelConfiguration(),
 	}
 
 	// 🚨 SECURITY: This code lets site admins restrict who has access to Cody at all via RBAC.

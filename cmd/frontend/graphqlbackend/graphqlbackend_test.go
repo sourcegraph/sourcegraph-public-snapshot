@@ -3,18 +3,13 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/base64"
-	"flag"
 	"fmt"
-	"io"
-	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 	"reflect"
 	"testing"
 
 	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
-	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,18 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func TestMain(m *testing.M) {
-	flag.Parse()
-	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
-		log.SetOutput(io.Discard)
-		logtest.InitWithLevel(m, sglog.LevelNone)
-	} else {
-		logtest.Init(m)
-	}
-	os.Exit(m.Run())
-}
 
 func BenchmarkPrometheusFieldName(b *testing.B) {
 	tests := [][3]string{

@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/oauthtoken"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -70,6 +71,7 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 	if opts.GroupsCacheTTL >= 0 {
 		cg = &cachedGroups{
 			cache: rcache.NewWithTTL(
+				redispool.Cache,
 				fmt.Sprintf("gh_groups_perms:%s:%s", codeHost.ServiceID, urn), int(opts.GroupsCacheTTL.Seconds()),
 			),
 		}

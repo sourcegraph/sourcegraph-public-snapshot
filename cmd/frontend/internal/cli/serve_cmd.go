@@ -209,7 +209,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	globals.WatchExternalURL()
 
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
-	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), logger, db) })
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), logger, db) })
 	goroutine.Go(func() { bg.ScheduleStoreTokenUsage(ctx, db) })
