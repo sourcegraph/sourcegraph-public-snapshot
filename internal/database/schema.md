@@ -3989,9 +3989,12 @@ Foreign-key constraints:
  version    | integer                  |           | not null | 1
  updated_at | timestamp with time zone |           | not null | now()
  paths      | text[]                   |           |          | 
+ ips        | text[]                   |           |          | 
 Indexes:
     "sub_repo_permissions_repo_id_user_id_version_uindex" UNIQUE, btree (repo_id, user_id, version)
     "sub_repo_perms_user_id" btree (user_id)
+Check constraints:
+    "ips_paths_length_check" CHECK (ips IS NULL OR array_length(ips, 1) = array_length(paths, 1) AND NOT (''::text = ANY (ips)))
 Foreign-key constraints:
     "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "sub_repo_permissions_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -3999,6 +4002,8 @@ Foreign-key constraints:
 ```
 
 Responsible for storing permissions at a finer granularity than repo
+
+**ips**: IP addresses corresponding to each path. IP in slot 0 in the array corresponds to path the in slot 0 of the path array, etc. NULL if not yet migrated, empty array for no IP restrictions.
 
 **paths**: Paths that begin with a minus sign (-) are exclusion paths.
 

@@ -26150,6 +26150,19 @@
       "Comment": "Responsible for storing permissions at a finer granularity than repo",
       "Columns": [
         {
+          "Name": "ips",
+          "Index": 8,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "IP addresses corresponding to each path. IP in slot 0 in the array corresponds to path the in slot 0 of the path array, etc. NULL if not yet migrated, empty array for no IP restrictions."
+        },
+        {
           "Name": "paths",
           "Index": 7,
           "TypeName": "text[]",
@@ -26238,6 +26251,13 @@
         }
       ],
       "Constraints": [
+        {
+          "Name": "ips_paths_length_check",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (ips IS NULL OR array_length(ips, 1) = array_length(paths, 1) AND NOT (''::text = ANY (ips)))"
+        },
         {
           "Name": "sub_repo_permissions_repo_id_fk",
           "ConstraintType": "f",
