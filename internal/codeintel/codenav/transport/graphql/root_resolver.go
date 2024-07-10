@@ -232,7 +232,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 		Path:        args.Path,
 		SymbolRange: args.Range,
 	}
-	var previousSyntacticSearch *codenav.PreviousSyntacticSearch
+	var previousSyntacticSearch core.Option[codenav.PreviousSyntacticSearch]
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
 		syntacticResult, prevSearch, err := r.svc.SyntacticUsages(ctx, usagesForSymbolArgs)
 		if err != nil {
@@ -252,7 +252,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 			numSyntacticResults = len(syntacticResult.Matches)
 			remainingCount = remainingCount - numSyntacticResults
-			previousSyntacticSearch = prevSearch
+			previousSyntacticSearch = core.Some[codenav.PreviousSyntacticSearch](prevSearch)
 		}
 	}
 

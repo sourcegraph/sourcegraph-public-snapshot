@@ -123,7 +123,7 @@ func (s *gcsStore) Get(ctx context.Context, key string) (_ io.ReadCloser, err er
 		return nil, errors.Wrap(err, "failed to get object")
 	}
 
-	return NewExtraCloser(rc, done), nil
+	return newExtraCloser(rc, done), nil
 }
 
 func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (_ int64, err error) {
@@ -229,7 +229,7 @@ func (s *gcsStore) create(ctx context.Context, bucket gcsBucketHandle) error {
 }
 
 func (s *gcsStore) deleteSources(ctx context.Context, bucket gcsBucketHandle, sources []string) error {
-	return ForEachString(sources, func(index int, source string) error {
+	return forEachString(sources, func(index int, source string) error {
 		if err := bucket.Object(source).Delete(ctx); err != nil {
 			return errors.Wrap(err, "failed to delete source object")
 		}

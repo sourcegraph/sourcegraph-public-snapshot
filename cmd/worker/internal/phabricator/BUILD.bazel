@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "phabricator",
+    srcs = [
+        "job.go",
+        "phabricator.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/phabricator",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//internal/actor",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/env",
+        "//internal/extsvc",
+        "//internal/extsvc/phabricator",
+        "//internal/goroutine",
+        "//internal/httpcli",
+        "//internal/observation",
+        "//internal/repos",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

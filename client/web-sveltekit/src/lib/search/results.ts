@@ -2,7 +2,6 @@ import { sortBy } from 'lodash'
 
 import {
     appendFilter,
-    buildSearchURLQuery,
     FilterKind,
     findFilter,
     getMatchUrl,
@@ -53,27 +52,15 @@ export function getRepositoryBadges(
 }
 
 function buildSearchURLQueryForTopic(queryState: QueryState, topic: string): string {
-    const query = appendFilter(queryState.query, 'repo', `has.topic(${topic})`)
-
-    return buildSearchURLQuery(
-        query,
-        queryState.patternType,
-        queryState.caseSensitive,
-        queryState.searchContext,
-        queryState.searchMode
-    )
+    return queryState
+        .setQuery(appendFilter(queryState.query, 'repo', `has.topic(${topic})`))
+        .toSearchURLQueryParamaters()
 }
 
 function buildSearchURLQueryForMeta(queryState: QueryState, key: string, value?: string): string {
-    const query = appendFilter(queryState.query, 'repo', value ? `has.meta(${key}:${value})` : `has.meta(${key})`)
-
-    return buildSearchURLQuery(
-        query,
-        queryState.patternType,
-        queryState.caseSensitive,
-        queryState.searchContext,
-        queryState.searchMode
-    )
+    return queryState
+        .setQuery(appendFilter(queryState.query, 'repo', value ? `has.meta(${key}:${value})` : `has.meta(${key})`))
+        .toSearchURLQueryParamaters()
 }
 
 export function getOwnerDisplayName(result: OwnerMatch): string {
@@ -106,14 +93,7 @@ export function buildSearchURLQueryForOwner(queryState: QueryState, result: Owne
         query = omitFilter(query, selectFilter)
     }
     query = appendFilter(query, 'file', `has.owner(${handle})`)
-
-    return buildSearchURLQuery(
-        query,
-        queryState.patternType,
-        queryState.caseSensitive,
-        queryState.searchContext,
-        queryState.searchMode
-    )
+    return queryState.setQuery(query).toSearchURLQueryParamaters()
 }
 
 function sumHighlightRanges(count: number, item: MatchGroup): number {

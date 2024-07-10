@@ -17,6 +17,8 @@ service SearcherService {
 // SearchRequest is set of parameters for a search.
 message SearchRequest {
   reserved 9;
+  reserved 6;
+  reserved "url";
 
   // repo is the name of the repo to search (e.g. "github.com/gorilla/mux")
   string repo = 1;
@@ -34,11 +36,6 @@ message SearchRequest {
   bool indexed = 4;
 
   PatternInfo pattern_info = 5;
-
-  // URL specifies the repository's Git remote URL (for gitserver). It is
-  // optional. See (gitserver.ExecRequest).URL for documentation on what it is
-  // used for.
-  string url = 6;
 
   // branch is used for structural search as an alternative to Commit
   // because Zoekt only takes branch names

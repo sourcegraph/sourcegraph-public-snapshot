@@ -41,10 +41,30 @@ func validateProvider(p types.Provider) error {
 	// data here, as it isn't clear if that is even a good idea
 	// in the first place. (e.g. we may not know the exact format
 	// of some 3rd party provider's configuration knob.)
+
+	// But there are some cases which are just too error prone to let slide...
+	if ssCfg := p.ServerSideConfig; ssCfg != nil {
+		// If using the "GenericProvider", we need to know the actual shape of the HTTP request
+		// to send!
+		if genCfg := ssCfg.GenericProvider; genCfg != nil {
+			if genCfg.ServiceName == "" {
+				return errors.New("no service name set for generic provider")
+			}
+		}
+	}
+
+	// BUG: We should verify the at the provider contains _some_
+	// server-side config. Since otherwise the provider cannot actually
+	// be used. However, we don't expect the Provider data exposed from
+	// the embedded binary or Cody Gateway to actually contain that
+	// server-side config because it doesn't make sense. So part of the
+	// rendering of data needs to fall back to using the Sourcegraph
+	// instance and its access token, etc.
+
 	return nil
 }
 
-func validateModelRef(ref types.ModelRef) error {
+func ValidateModelRef(ref types.ModelRef) error {
 	if ref == "" {
 		return errors.New("modelRef is blank")
 	}
@@ -77,7 +97,7 @@ func validateModel(m types.Model) error {
 	if l := len(m.DisplayName); l > 0 && l > maxDisplayNameLength {
 		return errors.Errorf("display name length: %d", l)
 	}
-	if err := validateModelRef(m.ModelRef); err != nil {
+	if err := ValidateModelRef(m.ModelRef); err != nil {
 		return errors.Wrap(err, "modelref")
 	}
 
@@ -210,7 +230,7 @@ func validateModelOverrides(overrides []types.ModelOverride) error {
 	seenModelRefs := map[types.ModelRef]bool{}
 	for _, override := range overrides {
 		// All models have a valid ModelRef.
-		if err := validateModelRef(override.ModelRef); err != nil {
+		if err := ValidateModelRef(override.ModelRef); err != nil {
 			return errors.Wrapf(err, "validating model ref %q", override.ModelRef)
 		}
 
@@ -240,13 +260,13 @@ func ValidateSiteConfig(doc *types.SiteModelConfiguration) error {
 	// that we expect to be supplied by Sourcegraph. So we just check if they
 	// are valid ModelRefs.
 	if defModels := doc.DefaultModels; defModels != nil {
-		if err := validateModelRef(defModels.Chat); err != nil {
+		if err := ValidateModelRef(defModels.Chat); err != nil {
 			return errors.Wrap(err, "default chat model")
 		}
-		if err := validateModelRef(defModels.CodeCompletion); err != nil {
+		if err := ValidateModelRef(defModels.CodeCompletion); err != nil {
 			return errors.Wrap(err, "default completion model")
 		}
-		if err := validateModelRef(defModels.FastChat); err != nil {
+		if err := ValidateModelRef(defModels.FastChat); err != nil {
 			return errors.Wrap(err, "default fast chat model")
 		}
 	}

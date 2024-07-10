@@ -11,6 +11,7 @@ go_library(
     tags = [TAG_CODY_CORE],
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/modelconfig/types",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",

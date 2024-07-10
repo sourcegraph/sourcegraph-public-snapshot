@@ -1187,7 +1187,7 @@ type UsagesForSymbolArgs struct {
 func (s *Service) SyntacticUsages(
 	ctx context.Context,
 	args UsagesForSymbolArgs,
-) (SyntacticUsagesResult, *PreviousSyntacticSearch, *SyntacticUsagesError) {
+) (SyntacticUsagesResult, PreviousSyntacticSearch, *SyntacticUsagesError) {
 	// The `nil` in the second argument is here, because `With` does not work with custom error types.
 	ctx, trace, endObservation := s.operations.syntacticUsages.With(ctx, nil, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoId", int(args.Repo.ID)),
@@ -1199,7 +1199,7 @@ func (s *Service) SyntacticUsages(
 
 	symbolsAtRange, uploadID, err := s.getSyntacticSymbolsAtRange(ctx, trace, args)
 	if err != nil {
-		return SyntacticUsagesResult{}, nil, err
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, err
 	}
 
 	// Overlapping symbolsAtRange should lead to the same display name, but be scored separately.
@@ -1207,7 +1207,7 @@ func (s *Service) SyntacticUsages(
 	searchSymbol := symbolsAtRange[0]
 	language, langErr := languageFromFilepath(trace, args.Path)
 	if langErr != nil {
-		return SyntacticUsagesResult{}, nil, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: langErr,
 		}
@@ -1215,7 +1215,7 @@ func (s *Service) SyntacticUsages(
 
 	symbolName, ok := nameFromGlobalSymbol(searchSymbol)
 	if !ok {
-		return SyntacticUsagesResult{}, nil, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: errors.New("can't find syntactic occurrences for locals via search"),
 		}
@@ -1228,7 +1228,7 @@ func (s *Service) SyntacticUsages(
 	}
 	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(ctx, trace, s.searchClient, searchCoords)
 	if searchErr != nil {
-		return SyntacticUsagesResult{}, nil, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: searchErr,
 		}
@@ -1249,7 +1249,7 @@ func (s *Service) SyntacticUsages(
 	}
 	return SyntacticUsagesResult{
 			Matches: slices.Concat(results...),
-		}, &PreviousSyntacticSearch{
+		}, PreviousSyntacticSearch{
 			UploadID:   uploadID,
 			SymbolName: symbolName,
 			Language:   language,
@@ -1303,7 +1303,7 @@ func languageFromFilepath(trace observation.TraceLogger, path core.RepoRelPath) 
 func (s *Service) SearchBasedUsages(
 	ctx context.Context,
 	args UsagesForSymbolArgs,
-	previousSyntacticSearch *PreviousSyntacticSearch,
+	previousSyntacticSearch core.Option[PreviousSyntacticSearch],
 ) (matches []SearchBasedMatch, err error) {
 	ctx, trace, endObservation := s.operations.searchBasedUsages.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoId", int(args.Repo.ID)),
@@ -1315,12 +1315,12 @@ func (s *Service) SearchBasedUsages(
 
 	var language string
 	var symbolName string
-	var syntacticUploadID *int
+	var syntacticUploadID core.Option[int]
 
-	if previousSyntacticSearch != nil {
-		language = previousSyntacticSearch.Language
-		symbolName = previousSyntacticSearch.SymbolName
-		syntacticUploadID = &previousSyntacticSearch.UploadID
+	if prev, isSome := previousSyntacticSearch.Get(); isSome {
+		language = prev.Language
+		symbolName = prev.SymbolName
+		syntacticUploadID = core.Some[int](prev.UploadID)
 	} else {
 		language, err = languageFromFilepath(trace, args.Path)
 		if err != nil {
@@ -1337,7 +1337,7 @@ func (s *Service) SearchBasedUsages(
 		if uploadErr != nil {
 			trace.Info("no syntactic upload found, return all search-based results", log.Error(err))
 		} else {
-			syntacticUploadID = &syntacticUpload.ID
+			syntacticUploadID = core.Some[int](syntacticUpload.ID)
 		}
 	}
 
@@ -1358,8 +1358,8 @@ func (s *Service) SearchBasedUsages(
 
 	results := [][]SearchBasedMatch{}
 	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
-		if syntacticUploadID != nil {
-			_, searchBasedMatches, err := s.findSyntacticMatchesForCandidateFile(ctx, *syntacticUploadID, pair.Key, pair.Value)
+		if synUploadId, isSome := syntacticUploadID.Get(); isSome {
+			_, searchBasedMatches, err := s.findSyntacticMatchesForCandidateFile(ctx, synUploadId, pair.Key, pair.Value)
 			if err == nil {
 				results = append(results, searchBasedMatches)
 				continue

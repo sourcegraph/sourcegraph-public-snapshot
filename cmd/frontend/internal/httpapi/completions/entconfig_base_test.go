@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/modelconfig"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -58,10 +59,13 @@ func (ti *apiProviderTestInfra) PushGetModelResult(model string, err error) {
 	ti.mockGetModelFn.PushResult(model, err)
 }
 
-func (ti *apiProviderTestInfra) SetSiteConfig(siteConfig schema.SiteConfiguration) {
+func (ti *apiProviderTestInfra) SetSiteConfig(t *testing.T, siteConfig schema.SiteConfiguration) {
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: siteConfig,
 	})
+	if err := modelconfig.ResetMock(); err != nil {
+		require.NoError(t, err)
+	}
 }
 
 func (ti *apiProviderTestInfra) CallChatCompletionAPI(t *testing.T, reqObj types.CodyCompletionRequestParameters) (int, string) {
@@ -225,6 +229,7 @@ func TestAPIProviders(t *testing.T) {
 	// Set up mocks.
 	logger := logtest.NoOp(t)
 	mockDB := dbmocks.NewMockDB()
+	require.NoError(t, modelconfig.InitMock())
 
 	mockGetModelFn := mockGetModelFn{}
 	eventRecorder := telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore())
@@ -281,7 +286,7 @@ func TestAPIProviders(t *testing.T) {
 func testBasicConfiguration(t *testing.T, infra *apiProviderTestInfra) {
 	t.Run("Errors", func(t *testing.T) {
 		t.Run("CodyNotEnabled", func(t *testing.T) {
-			infra.SetSiteConfig(schema.SiteConfiguration{})
+			infra.SetSiteConfig(t, schema.SiteConfiguration{})
 
 			{
 				status, respBody := infra.CallChatCompletionAPI(t, types.CodyCompletionRequestParameters{})
@@ -296,7 +301,7 @@ func testBasicConfiguration(t *testing.T, infra *apiProviderTestInfra) {
 		})
 
 		t.Run("NoCompletionsConfig", func(t *testing.T) {
-			infra.SetSiteConfig(schema.SiteConfiguration{
+			infra.SetSiteConfig(t, schema.SiteConfiguration{
 				CodyEnabled:                  pointers.Ptr(true),
 				CodyPermissions:              pointers.Ptr(false),
 				CodyRestrictUsersFeatureFlag: pointers.Ptr(false),
@@ -328,7 +333,7 @@ func testBasicConfiguration(t *testing.T, infra *apiProviderTestInfra) {
 	t.Run("WithDefaultModels", func(t *testing.T) {
 		// Set the site configuration to have Cody enabled (from the previous test,
 		// we were just missing the LicenseKey) but do not specify any completions.
-		infra.SetSiteConfig(schema.SiteConfiguration{
+		infra.SetSiteConfig(t, schema.SiteConfiguration{
 			CodyEnabled:                  pointers.Ptr(true),
 			CodyPermissions:              pointers.Ptr(false),
 			CodyRestrictUsersFeatureFlag: pointers.Ptr(false),

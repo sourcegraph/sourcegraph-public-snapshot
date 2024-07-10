@@ -36,6 +36,7 @@
     import { FileViewGitBlob, FileViewHighlightedFile } from './FileView.gql'
     import FileViewModeSwitcher from './FileViewModeSwitcher.svelte'
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
+    import OpenCodyAction from '$lib/repo/OpenCodyAction.svelte'
     import { CodeViewMode, toCodeViewMode } from './util'
 
     export let data: Extract<PageData, { type: 'FileView' }>
@@ -70,6 +71,7 @@
         revision,
         resolvedRevision: { commitID },
         revisionOverride,
+        isCodyAvailable,
     } = data)
     $: blobLoader.set(data.blob)
     $: highlightsLoader.set(data.highlights)
@@ -184,6 +186,9 @@
                 <OpenInCodeHostAction data={blob} lineOrPosition={data.lineOrPosition} />
             {/if}
             <Permalink {commitID} />
+            {#if $isCodyAvailable}
+                <OpenCodyAction />
+            {/if}
         </svelte:fragment>
         <svelte:fragment slot="actionmenu">
             <MenuLink href={rawURL} target="_blank">

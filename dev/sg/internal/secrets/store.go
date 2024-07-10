@@ -75,7 +75,15 @@ func LoadFromFile(filepath string) (*Store, error) {
 	}
 	defer f.Close()
 	dec := json.NewDecoder(f)
-	return s, dec.Decode(&s.m)
+	if err := dec.Decode(&s.m); err != nil {
+		// Ignore EOF which is returned when the file is empty, we just pretend the file isn't there.
+		// Note that invalid JSON might still return "unexpected EOF" and
+		// we let that one get through.
+		if !errors.Is(err, io.EOF) {
+			return nil, err
+		}
+	}
+	return s, nil
 }
 
 // Write serializes the store content in the given writer.

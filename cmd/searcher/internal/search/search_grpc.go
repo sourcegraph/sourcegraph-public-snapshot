@@ -13,12 +13,27 @@ import (
 	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 )
 
-type Server struct {
+type grpcServer struct {
 	Service *Service
 	proto.UnimplementedSearcherServiceServer
 }
 
-func (s *Server) Search(req *proto.SearchRequest, stream proto.SearcherService_SearchServer) error {
+func NewGRPCServer(svc *Service, exhaustiveRequestLoggingEnabled bool) proto.SearcherServiceServer {
+	var srv proto.SearcherServiceServer = &grpcServer{
+		Service: svc,
+	}
+	if exhaustiveRequestLoggingEnabled {
+		logger := svc.Logger.Scoped("gRPCRequestLogger")
+
+		srv = &loggingGRPCServer{
+			base:   srv,
+			logger: logger,
+		}
+	}
+	return srv
+}
+
+func (s *grpcServer) Search(req *proto.SearchRequest, stream proto.SearcherService_SearchServer) error {
 	var p protocol.Request
 	p.FromProto(req)
 

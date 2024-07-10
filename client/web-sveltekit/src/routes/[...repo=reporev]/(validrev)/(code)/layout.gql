@@ -1,3 +1,11 @@
+query CodyContextFiltersQuery {
+    site {
+        codyContextFilters(version: V1) {
+            raw
+        }
+    }
+}
+
 query GitHistoryQuery($repoName: String!, $revspec: String!, $first: Int, $afterCursor: String, $filePath: String) {
     repository(name: $repoName) {
         id

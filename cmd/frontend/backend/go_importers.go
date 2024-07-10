@@ -17,13 +17,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var MockCountGoImporters func(ctx context.Context, repo api.RepoName) (int, error)
 
 var (
-	goImportersCountCache = rcache.NewWithTTL("go-importers-count", 14400) // 4 hours
+	goImportersCountCache = rcache.NewWithTTL(redispool.Cache, "go-importers-count", 14400) // 4 hours
 )
 
 // CountGoImporters returns the number of Go importers for the repository's Go subpackages. This is

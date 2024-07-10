@@ -47,6 +47,7 @@ const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields 
     isSiteCredential,
     sshPublicKey:
         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+    gitHubApp: null,
 })
 
 export const Overview: StoryFn = () => (
