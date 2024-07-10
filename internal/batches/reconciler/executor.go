@@ -659,7 +659,7 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 
 			// If the authentication strategy for the original Push is not GitHub App, we want to make use
 			// of a commit signing GitHub app to sign the commit.
-			AsNonCredential: css.AuthenticationStrategy() == sources.AuthenticationStrategyGitHubApp,
+			AsNonCredential: css.AuthenticationStrategy() != sources.AuthenticationStrategyGitHubApp,
 			GitHubAppKind:   ghtypes.CommitSigningGitHubAppKind,
 		})
 		if err != nil {
@@ -670,6 +670,7 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 				}
 				// If we didn't find any GitHub Apps configured for this code host, it's a
 				// noop; commit signing is not set up for this code host.
+				e.logger.Warn("no Github App configured to sign commit, commit will not be verified")
 			default:
 				if rejectUnverifiedCommit {
 					return errors.Wrap(err, "failed to get GitHub App for commit verification")
