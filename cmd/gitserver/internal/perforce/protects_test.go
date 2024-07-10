@@ -86,7 +86,7 @@ func TestParseP4Protects(t *testing.T) {
 func TestParseP4BrokerProtects(t *testing.T) {
 	protectsOut := []byte(`{"data":"eyJkZXBvdEZpbGUiOiIvLy4uLiIsImhvc3QiOiIqIiwibGluZSI6IjEiLCJwZXJtIjoid3JpdGUiLCJ1c2VyIjoiKiJ9CnsiZGVwb3RGaWxlIjoiLy8uLi4iLCJob3N0IjoiKiIsImxpbmUiOiIzIiwicGVybSI6InJlYWQiLCJ1c2VyIjoicGV0cmlsYXN0In0KeyJkZXBvdEZpbGUiOiIvL3Rlc3RkZXBvdC8uLi4iLCJob3N0IjoiKiIsImxpbmUiOiI0IiwicGVybSI6InJlYWQiLCJ1c2VyIjoicGV0cmlsYXN0In0=","level":0}`)
 
-	protects, err := parseP4Protects(protectsOut)
+	protects, err := parseP4BrokerProtects(protectsOut)
 	require.NoError(t, err)
 
 	want := []*perforce.Protect{

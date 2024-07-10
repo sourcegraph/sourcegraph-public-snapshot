@@ -67,7 +67,11 @@ func P4ProtectsForUser(ctx context.Context, fs gitserverfs.FS, args P4ProtectsFo
 		return nil, nil
 	}
 
-	return parseP4Protects(out)
+	if os.Getenv("SRC_GITSERVER_P4_BROKER_ENABLED") != "" {
+		return parseP4BrokerProtects(out)
+	} else {
+		return parseP4Protects(out)
+	}
 }
 
 type P4ProtectsForDepotArguments struct {
@@ -187,9 +191,7 @@ func parseP4Protects(out []byte) ([]*p4types.Protect, error) {
 		}
 
 		if parsedLine.DepotFile == "" {
-			// If the depot file is empty, we assume that this is a response
-			// from a broker.
-			return parseP4BrokerProtects(line)
+			return nil, errors.New("not a valid protects response")
 		}
 
 		entityType := "user"
