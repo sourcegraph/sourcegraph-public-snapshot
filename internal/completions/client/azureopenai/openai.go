@@ -20,6 +20,7 @@ import (
 	"golang.org/x/net/http2"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
 	"github.com/sourcegraph/log"
 
@@ -54,6 +55,10 @@ type CompletionsClient interface {
 	GetChatCompletionsStream(ctx context.Context, body azopenai.ChatCompletionsOptions, options *azopenai.GetChatCompletionsStreamOptions) (azopenai.GetChatCompletionsStreamResponse, error)
 }
 
+// MockAzureAPIClientTransport is a hack enabling you to intercept the HTTP
+// client used by the Azure SDK. This should only be set by unit tests.
+var MockAzureAPIClientTransport httpcli.Doer
+
 func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
 	apiClient.mu.RLock()
 	if apiClient.client != nil && apiClient.endpoint == endpoint && apiClient.accessToken == accessToken {
@@ -70,6 +75,12 @@ func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
 			Transport: apiVersionClient("2023-05-15"),
 		},
 	}
+	// Replace the HTTP Transport with the mock Doer if applicable.
+	// The Azure SDK's Transporter interface is identical to our cli.Doer's.
+	if MockAzureAPIClientTransport != nil {
+		clientOpts.ClientOptions.Transport = MockAzureAPIClientTransport
+	}
+
 	var err error
 	if accessToken != "" {
 		credential := azcore.NewKeyCredential(accessToken)
@@ -168,6 +179,7 @@ func doChatCompletionsAPIAutocomplete(
 		return nil, toStatusCodeError(err)
 	}
 	if !hasValidFirstChatChoice(response.Choices) {
+		logger.Warn("response from Azure has no valid first chat choice")
 		return &types.CompletionResponse{}, nil
 	}
 	tokenManager := tokenusage.NewManager()
@@ -229,6 +241,7 @@ func doCompletionsAPIAutocomplete(
 	}
 	// Text and FinishReason are documented as REQUIRED but checking just to be safe
 	if !hasValidFirstCompletionsChoice(response.Choices) {
+		logger.Warn("response from Azure has no valid first completions choice")
 		return &types.CompletionResponse{}, nil
 	}
 	return &types.CompletionResponse{
@@ -248,6 +261,7 @@ func completeChat(
 		return nil, toStatusCodeError(err)
 	}
 	if !hasValidFirstChatChoice(response.Choices) {
+		logger.Warn("response from Azure has no valid chat choices")
 		return &types.CompletionResponse{}, nil
 	}
 	requestParams := request.Parameters

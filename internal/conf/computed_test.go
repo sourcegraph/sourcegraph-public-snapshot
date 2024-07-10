@@ -303,6 +303,23 @@ func TestCodyEnabled(t *testing.T) {
 			sc:   schema.SiteConfiguration{Completions: &schema.Completions{Enabled: pointers.Ptr(true), Model: "foobar"}},
 			want: true,
 		},
+		{
+			// Having the ModelConfiguration explicitly set will not be sufficient. The
+			// cody.enabled setting is still required.
+			name: "cody.enabled not set, modelconfig supplied",
+			sc: schema.SiteConfiguration{
+				ModelConfiguration: &schema.SiteModelConfiguration{},
+			},
+			want: false,
+		},
+		{
+			name: "cody.enabled not set, modelconfig supplied",
+			sc: schema.SiteConfiguration{
+				CodyEnabled:        pointers.Ptr(true),
+				ModelConfiguration: &schema.SiteModelConfiguration{},
+			},
+			want: true,
+		},
 	}
 
 	for _, test := range tests {
