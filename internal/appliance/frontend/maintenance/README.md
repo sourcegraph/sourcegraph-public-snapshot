@@ -4,7 +4,7 @@
 
 This will produce the distributable `dist` folder in `bazel-bin/maintenance/dist`:
 
-    bazel build //internal/appliance/frontend/maintenance:build
+    sg bazel build //internal/appliance/frontend/maintenance:build
 
 ## Local run
 
