@@ -1,8 +1,10 @@
 package azureopenai
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"io"
 	"net"
 	"net/http"
@@ -14,7 +16,9 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/google/uuid"
 	"github.com/pkoukk/tiktoken-go"
 	tiktoken_loader "github.com/pkoukk/tiktoken-go-loader"
 	"golang.org/x/net/http2"
@@ -40,6 +44,11 @@ var authProxyURL = os.Getenv("CODY_AZURE_OPENAI_IDENTITY_HTTP_PROXY")
 // prevents acquiring a new token on every request.
 // The client will refresh the token as needed.
 var apiClient completionsClient
+var startTokenRefresherOnce sync.Once
+
+type TokenResponse struct {
+	AccessToken string `json:"access_token"`
+}
 
 type completionsClient struct {
 	mu          sync.RWMutex
@@ -59,9 +68,116 @@ type CompletionsClient interface {
 // client used by the Azure SDK. This should only be set by unit tests.
 var MockAzureAPIClientTransport httpcli.Doer
 
-func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
+func getAccessToken(tokenRetrievalEndpoint, clientID, clientSecret string) (string, error) {
+	data := map[string]string{
+		"client_id":     clientID,
+		"client_secret": clientSecret,
+		"scope":         "azureopenai-readwrite",
+		"grant_type":    "client_credentials",
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return "", errors.New("error marshalling JSON: " + err.Error())
+	}
+
+	req, err := http.NewRequest("POST", tokenRetrievalEndpoint, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", errors.New("error creating request: " + err.Error())
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", errors.New("error making request: " + err.Error())
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.New("request failed with status: " + resp.Status)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.New("error reading response body: " + err.Error())
+	}
+
+	var tokenResponse TokenResponse
+	err = json.Unmarshal(body, &tokenResponse)
+	if err != nil {
+		return "", errors.New("error decoding response: " + err.Error())
+	}
+
+	return tokenResponse.AccessToken, nil
+}
+
+func startTokenRefresher(endpoint, tokenRetrievalEndpoint, clientID, clientSecret string, logger log.Logger) {
+	startTokenRefresherOnce.Do(func() {
+		ticker := time.NewTicker(29 * time.Minute)
+		go func() {
+			for {
+				<-ticker.C
+				refreshAccessToken(endpoint, tokenRetrievalEndpoint, clientID, clientSecret, logger)
+			}
+		}()
+	})
+}
+
+func refreshAccessToken(endpoint, tokenRetrievalEndpoint, clientID, clientSecret string, logger log.Logger) {
+	apiClient.mu.Lock()
+	defer apiClient.mu.Unlock()
+
+	accessToken, err := getAccessToken(tokenRetrievalEndpoint, clientID, clientSecret)
+	if err != nil {
+		logger.Warn("Failed to get the accessToken  %w", log.Error(err))
+		return
+	}
+
+	credential := azcore.NewKeyCredential(accessToken)
+	clientOpts := &azopenai.ClientOptions{
+		ClientOptions: azcore.ClientOptions{
+			Transport: apiVersionClient("2023-05-15"),
+			PerRetryPolicies: []policy.Policy{
+				&addHeadersPolicy{
+					headers: generateHeaders(accessToken),
+				},
+			},
+		},
+	}
+	apiClient.client, err = azopenai.NewClientWithKeyCredential(endpoint, credential, clientOpts)
+	if err != nil {
+		logger.Warn("Failed to reset Azure credentials %w", log.Error(err))
+		return
+	}
+	apiClient.endpoint = endpoint
+	apiClient.accessToken = accessToken
+}
+
+// Custom policy to add multiple headers and log the request
+type addHeadersPolicy struct {
+	headers map[string]string
+}
+
+func generateHeaders(bearerToken string) map[string]string {
+	return map[string]string{
+		"correlationId":      uuid.New().String(),
+		"dataClassification": "sensitive",
+		"dataSource":         "internet",
+		"Authorization":      "Bearer " + bearerToken,
+	}
+}
+func (p *addHeadersPolicy) Do(req *policy.Request) (*http.Response, error) {
+	for key, value := range p.headers {
+		req.Raw().Header.Set(key, value)
+	}
+	return req.Next()
+}
+
+func GetAPIClient(endpoint, accessToken, tokenRetrievalEndpoint, clientId, clientSecret string, logger log.Logger) (CompletionsClient, error) {
 	apiClient.mu.RLock()
-	if apiClient.client != nil && apiClient.endpoint == endpoint && apiClient.accessToken == accessToken {
+	if apiClient.client != nil && apiClient.endpoint == endpoint && apiClient.accessToken != "" {
 		apiClient.mu.RUnlock()
 		return apiClient.client, nil
 	}
@@ -70,18 +186,25 @@ func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
 	defer apiClient.mu.Unlock()
 
 	// API Versions and docs https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#completions
+	var err error
+	if tokenRetrievalEndpoint != "" && accessToken == "" {
+		accessToken, err = getAccessToken(tokenRetrievalEndpoint, clientId, clientSecret)
+		if err != nil {
+			logger.Warn("Failed to get the accessToken  %w", log.Error(err))
+			return nil, err
+		}
+		startTokenRefresher(endpoint, tokenRetrievalEndpoint, clientId, clientSecret, logger)
+	}
 	clientOpts := &azopenai.ClientOptions{
 		ClientOptions: azcore.ClientOptions{
 			Transport: apiVersionClient("2023-05-15"),
+			PerRetryPolicies: []policy.Policy{
+				&addHeadersPolicy{
+					headers: generateHeaders(accessToken),
+				},
+			},
 		},
 	}
-	// Replace the HTTP Transport with the mock Doer if applicable.
-	// The Azure SDK's Transporter interface is identical to our cli.Doer's.
-	if MockAzureAPIClientTransport != nil {
-		clientOpts.ClientOptions.Transport = MockAzureAPIClientTransport
-	}
-
-	var err error
 	if accessToken != "" {
 		credential := azcore.NewKeyCredential(accessToken)
 		apiClient.client, err = azopenai.NewClientWithKeyCredential(endpoint, credential, clientOpts)
@@ -122,10 +245,10 @@ func getCredentialOptions() (*azidentity.DefaultAzureCredentialOptions, error) {
 
 }
 
-type GetCompletionsAPIClientFunc func(endpoint, accessToken string) (CompletionsClient, error)
+type GetCompletionsAPIClientFunc func(endpoint, accessToken, tokenRetrievalEndpoint, clientId, clientSecret string, logger log.Logger) (CompletionsClient, error)
 
-func NewClient(getClient GetCompletionsAPIClientFunc, endpoint, accessToken string, tokenizer tokenusage.Manager) (types.CompletionsClient, error) {
-	client, err := getClient(endpoint, accessToken)
+func NewClient(getClient GetCompletionsAPIClientFunc, endpoint, accessToken, tokenRetrievalEndpoint, clientId, clientSecret string, tokenizer tokenusage.Manager, logger log.Logger) (types.CompletionsClient, error) {
+	client, err := getClient(endpoint, accessToken, tokenRetrievalEndpoint, clientId, clientSecret, logger)
 	if err != nil {
 		return nil, err
 	}

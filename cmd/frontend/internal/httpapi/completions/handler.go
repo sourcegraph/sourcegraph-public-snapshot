@@ -205,6 +205,9 @@ func newCompletionsHandler(
 			completionsConfig.Provider,
 			accessToken,
 			modelConfigInfo,
+			completionsConfig.TokenRetrievalEndpoint,
+			completionsConfig.ClientId,
+			completionsConfig.ClientSecret,
 		)
 		l := trace.Logger(ctx, logger)
 		if err != nil {

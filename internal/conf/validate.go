@@ -228,6 +228,8 @@ var siteConfigSecrets = []struct {
 	{readPath: `app.dotcomAuthToken`, editPaths: []string{"app", "dotcomAuthToken"}},
 	{readPath: `attribution\.gateway.accessToken`, editPaths: []string{"attribution.gateway", "accessToken"}},
 	{readPath: `scim\.authToken`, editPaths: []string{"scim.authToken"}},
+	{readPath: `completions.clientId`, editPaths: []string{"completions", "clientId"}},
+	{readPath: `completions.clientSecret`, editPaths: []string{"completions", "clientSecret"}},
 }
 
 // UnredactSecrets unredacts unchanged secrets back to their original value for

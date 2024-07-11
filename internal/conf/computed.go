@@ -965,6 +965,9 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		PerProUserCodeCompletionsDailyInteractionLimit:         completionsConfig.PerProUserCodeCompletionsDailyInteractionLimit,
 		AzureCompletionModel:                                   completionsConfig.AzureCompletionModel,
 		AzureChatModel:                                         completionsConfig.AzureChatModel,
+		TokenRetrievalEndpoint:                                 completionsConfig.TokenRetrievalEndpoint,
+		ClientId:                                               completionsConfig.ClientId,
+		ClientSecret:                                           completionsConfig.ClientSecret,
 	}
 
 	return computedConfig

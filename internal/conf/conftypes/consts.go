@@ -33,6 +33,9 @@ type CompletionsConfig struct {
 	PerProUserChatDailyInteractionLimit                    int
 	PerProUserCodeCompletionsDailyInteractionLimit         int
 	User                                                   string
+	TokenRetrievalEndpoint                                 string
+	ClientId                                               string
+	ClientSecret                                           string
 }
 
 type ConfigFeatures struct {

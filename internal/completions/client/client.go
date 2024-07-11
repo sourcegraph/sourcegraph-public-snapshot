@@ -26,15 +26,18 @@ func Get(
 	provider conftypes.CompletionsProviderName,
 	accessToken string,
 	modelConfigInfo *types.ModelConfigInfo,
+	tokenRetrievalEndpoint string,
+	clientId string,
+	clientSecret string,
 ) (types.CompletionsClient, error) {
-	client, err := getBasic(endpoint, provider, accessToken, modelConfigInfo)
+	client, err := getBasic(endpoint, provider, accessToken, modelConfigInfo, tokenRetrievalEndpoint, clientId, clientSecret, logger)
 	if err != nil {
 		return nil, err
 	}
 	return newObservedClient(logger, events, client), nil
 }
 
-func getBasic(endpoint string, provider conftypes.CompletionsProviderName, accessToken string, modelConfigInfo *types.ModelConfigInfo) (types.CompletionsClient, error) {
+func getBasic(endpoint string, provider conftypes.CompletionsProviderName, accessToken string, modelConfigInfo *types.ModelConfigInfo, tokenRetrievalEndpoint, clientId, clientSecret string, logger log.Logger) (types.CompletionsClient, error) {
 	tokenManager := tokenusage.NewManager()
 
 	if conf.UseExperimentalModelConfiguration() {
@@ -51,7 +54,7 @@ func getBasic(endpoint string, provider conftypes.CompletionsProviderName, acces
 	case conftypes.CompletionsProviderNameOpenAI:
 		return openai.NewClient(httpcli.UncachedExternalDoer, endpoint, accessToken, *tokenManager), nil
 	case conftypes.CompletionsProviderNameAzureOpenAI:
-		return azureopenai.NewClient(azureopenai.GetAPIClient, endpoint, accessToken, *tokenManager)
+		return azureopenai.NewClient(azureopenai.GetAPIClient, endpoint, accessToken, tokenRetrievalEndpoint, clientId, clientSecret, *tokenManager, logger)
 	case conftypes.CompletionsProviderNameGoogle:
 		return google.NewClient(httpcli.UncachedExternalDoer, endpoint, accessToken, false /* via gateway */)
 	case conftypes.CompletionsProviderNameSourcegraph:

@@ -106,6 +106,9 @@ type CompletionRequestParameters struct {
 	AzureChatModel                               string    `json:"azureChatModel,omitempty"`
 	AzureCompletionModel                         string    `json:"azureCompletionModel,omitempty"`
 	AzureUseDeprecatedCompletionsAPIForOldModels bool      `json:"azureUseDeprecatedCompletionsAPIForOldModels,omitempty"`
+	TokenRetrievalEndpoint                       string    `json:"tokenRetrievalEndpoint,omitempty"`
+	ClientID                                     string    `json:"clientId,omitempty"`
+	ClientSecret                                 string    `json:"clientSecret,omitempty"`
 }
 
 // IsStream returns whether a streaming response is requested. For backwards
