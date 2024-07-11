@@ -28,7 +28,7 @@ var addresses = func() struct {
 		Store string
 	}{}
 
-	fallback := env.Get("REDIS_ENDPOINT", "", "redis endpoint. Used as fallback if REDIS_CACHE_ENDPOINT or REDIS_STORE_ENDPOINT is not specified.")
+	fallback := env.Get("REDIS_ENDPOINT", "", "Redis endpoint. Used as fallback if neither REDIS_CACHE_ENDPOINT or REDIS_STORE_ENDPOINT are not specified.")
 
 	for _, addr := range []string{
 		env.Get("REDIS_CACHE_ENDPOINT", "", "redis used for cache data. Default redis-cache:6379"),

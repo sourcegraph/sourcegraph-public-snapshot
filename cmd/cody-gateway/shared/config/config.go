@@ -388,7 +388,7 @@ func (c *Config) Load() {
 
 	c.Environment = c.Get("CODY_GATEWAY_ENVIRONMENT", "dev", "Environment name.")
 
-	c.RedisEndpoint = c.Get("REDIS_ENDPOINT", "", "Redis endpoint to connect to for storing KV data.")
+	c.RedisEndpoint = c.Get("REDIS_ENDPOINT", "", "Redis endpoint. Used as fallback if neither REDIS_CACHE_ENDPOINT or REDIS_STORE_ENDPOINT are not specified.")
 }
 
 // loadFlaggingConfig loads the common set of flagging-related environment variables for
