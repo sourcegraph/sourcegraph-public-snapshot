@@ -92,10 +92,10 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	if err != nil {
 		return errors.Wrapf(err, "could not checkout release branch %q", releaseBranch)
 	}
-	//_, err = releaseGitRepoBranch.Push(cctx.Context)
-	//if err != nil {
-	//	return errors.Wrapf(err, "could not push release branch %q", releaseBranch)
-	//}
+	_, err = releaseGitRepoBranch.Push(cctx.Context)
+	if err != nil {
+		return errors.Wrapf(err, "could not push release branch %q", releaseBranch)
+	}
 
 	// generate and commit max string const and migration graph archive
 	err = replaceMaxVersion(cctx.Context, version)
@@ -106,14 +106,14 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "could not add consts.go to staged changes")
 	}
-	// _, err = releaseGitRepoBranch.Commit(cctx.Context, "chore: update max version")
-	// if err != nil {
-	// 	return errors.Wrap(err, "could not commit staged changes")
-	// }
-	// _, err = releaseGitRepoBranch.Push(cctx.Context)
-	// if err != nil {
-	// 	return errors.Wrap(err, "could not push staged changes")
-	// }
+	_, err = releaseGitRepoBranch.Commit(cctx.Context, "chore: update max version")
+	if err != nil {
+		return errors.Wrap(err, "could not commit staged changes")
+	}
+	_, err = releaseGitRepoBranch.Push(cctx.Context)
+	if err != nil {
+		return errors.Wrap(err, "could not push staged changes")
+	}
 
 	// generate new stitched migration archive
 	err = genStitchMigrationArchive(cctx.Context, version)
@@ -147,8 +147,8 @@ func replaceMaxVersion(ctx context.Context, newVersion string) error {
 		return errors.Wrap(err, "Comby (https://comby.dev/) is required for installation")
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Using Comby at %q", combyPath))
-
-	err = run.Cmd(ctx, "comby", "-in-place", "const maxVersionString = :[1]", fmt.Sprintf("const maxVersionString = %s", newVersion), "internal/database/migration/shared/data/cmd/generator/consts.go").Run().Wait()
+	noVNewVersion := strings.TrimPrefix(newVersion, "v")
+	err = run.Cmd(ctx, "comby", "-in-place", "\"const maxVersionString = :[1]\"", fmt.Sprintf("\"const maxVersionString = \\\"%s\\\"\"", noVNewVersion), "internal/database/migration/shared/data/cmd/generator/consts.go").Run().Wait()
 	if err != nil {
 		return errors.Wrap(err, "Could not run comby to change maxVersionString")
 	}
@@ -161,9 +161,9 @@ func genStitchMigrationArchive(ctx context.Context, newVersion string) error {
 	if err != nil {
 		return errors.Wrap(err, "Could not create git archive")
 	}
-	//err = run.Cmd(ctx, "CLOUDSDK_CORE_PROJECT=\"sourcegraph-ci\"", "gsutil", "cp", fmt.Sprintf("migrations-v%s", newVersion), "gs://schemas-migrations/migrations/").Run().Wait()
-	//if err != nil {
-	//	return errors.Wrap(err, "Could not push git archive to GCS")
-	//}
+	err = run.Cmd(ctx, "CLOUDSDK_CORE_PROJECT=\"sourcegraph-ci\"", "gsutil", "cp", fmt.Sprintf("migrations-%s", newVersion), "gs://schemas-migrations/migrations/").Run().Wait()
+	if err != nil {
+		return errors.Wrap(err, "Could not push git archive to GCS")
+	}
 	return nil
 }
