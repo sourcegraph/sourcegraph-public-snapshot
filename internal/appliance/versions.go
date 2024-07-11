@@ -87,7 +87,7 @@ func HighestVersionNoMoreThanNMinorFromBase(allVersions []string, currentVersion
 		}
 	}
 
-	// If we have already stepped forward 2 minor versions, we can return
+	// If we have already stepped forward n minor versions, we can return
 	if latestSupported.Minor() == current.Minor()+n {
 		return latestSupported.String(), nil
 	}
