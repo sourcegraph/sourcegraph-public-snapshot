@@ -156,7 +156,7 @@ func replaceMaxVersion(ctx context.Context, newVersion string) error {
 
 // TODO set timestamp during archive generation for cache
 func genStitchMigrationArchive(ctx context.Context, newVersion string) error {
-	err := run.Cmd(ctx, "git", "archive", "--format=tar.gz", "HEAD", "migrations", "-o", fmt.Sprintf("migrations-v%s.tar.gz", newVersion)).Run().Wait()
+	err := run.Cmd(ctx, "git", "archive", "--format=tar.gz", "HEAD", "migrations", "-o", fmt.Sprintf("migrations-%s.tar.gz", newVersion)).Run().Wait()
 	if err != nil {
 		return errors.Wrap(err, "Could not create git archive")
 	}
