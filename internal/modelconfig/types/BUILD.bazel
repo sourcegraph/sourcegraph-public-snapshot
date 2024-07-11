@@ -1,0 +1,23 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "types",
+    srcs = [
+        "configuration.go",
+        "documents.go",
+        "model.go",
+        "provider.go",
+        "refs.go",
+        "site_config.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/modelconfig/types",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "types_test",
+    srcs = ["refs_test.go"],
+    embed = [":types"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

@@ -28,13 +28,13 @@ type CloudSQLProxy struct {
 	PermissionsHelpPageURL string
 }
 
-func NewCloudSQLProxy(dbConnection string, iamUserEmail string, port int, permissionsHelpPageURL string) (*CloudSQLProxy, error) {
+func NewCloudSQLProxy(dbConnection string, iamUserEmail string, port int, permissionsHelpPageURL string) *CloudSQLProxy {
 	return &CloudSQLProxy{
 		DBInstanceConnectionName:  dbConnection,
 		ImpersonateServiceAccount: iamUserEmail,
 		Port:                      port,
 		PermissionsHelpPageURL:    permissionsHelpPageURL,
-	}, nil
+	}
 }
 
 func (p *CloudSQLProxy) Start(ctx context.Context, timeoutSeconds int) error {

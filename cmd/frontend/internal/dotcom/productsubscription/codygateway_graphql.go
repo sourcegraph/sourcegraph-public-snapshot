@@ -4,9 +4,13 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayevents"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -14,6 +18,18 @@ import (
 
 type codyGatewayAccessResolver struct {
 	sub *productSubscription
+}
+
+// NewCodyGatewayAccessResolver returns a new CodyGatewayAccessResolver for the
+// given product subscription. ONLY FOR TESTING, DO NOT USE - see package
+// 'dotcomproductsubscriptionstest', this should be removed when that package
+// is removed.
+func NewCodyGatewayAccessResolver(ctx context.Context, logger log.Logger, db database.DB, subID string) (*codyGatewayAccessResolver, error) {
+	sub, err := productSubscriptionByDBID(ctx, logger, db, subID, "access")
+	if err != nil {
+		return nil, err
+	}
+	return &codyGatewayAccessResolver{sub: sub}, nil
 }
 
 func (r codyGatewayAccessResolver) Enabled() bool { return r.sub.v.CodyGatewayAccess.Enabled }
@@ -48,15 +64,11 @@ func (r codyGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Context)
 		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
 		rateLimit.IntervalSeconds = *rateLimitOverrides.ChatRateLimit.RateIntervalSeconds
 	}
-	if rateLimitOverrides.ChatRateLimit.AllowedModels != nil {
-		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
-		rateLimit.AllowedModels = rateLimitOverrides.ChatRateLimit.AllowedModels
-	}
 
 	return &codyGatewayRateLimitResolver{
 		feature:     types.CompletionsFeatureChat,
 		actorID:     r.sub.UUID(),
-		actorSource: codygateway.ActorSourceProductSubscription,
+		actorSource: codygatewayactor.ActorSourceEnterpriseSubscription,
 		v:           rateLimit,
 		source:      source,
 	}, nil
@@ -92,15 +104,11 @@ func (r codyGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Context)
 		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
 		rateLimit.IntervalSeconds = *rateLimitOverrides.CodeRateLimit.RateIntervalSeconds
 	}
-	if rateLimitOverrides.CodeRateLimit.AllowedModels != nil {
-		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
-		rateLimit.AllowedModels = rateLimitOverrides.CodeRateLimit.AllowedModels
-	}
 
 	return &codyGatewayRateLimitResolver{
 		feature:     types.CompletionsFeatureCode,
 		actorID:     r.sub.UUID(),
-		actorSource: codygateway.ActorSourceProductSubscription,
+		actorSource: codygatewayactor.ActorSourceEnterpriseSubscription,
 		v:           rateLimit,
 		source:      source,
 	}, nil
@@ -136,14 +144,10 @@ func (r codyGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) (gra
 		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
 		rateLimit.IntervalSeconds = *rateLimitOverrides.EmbeddingsRateLimit.RateIntervalSeconds
 	}
-	if rateLimitOverrides.EmbeddingsRateLimit.AllowedModels != nil {
-		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
-		rateLimit.AllowedModels = rateLimitOverrides.EmbeddingsRateLimit.AllowedModels
-	}
 
 	return &codyGatewayRateLimitResolver{
 		actorID:     r.sub.UUID(),
-		actorSource: codygateway.ActorSourceProductSubscription,
+		actorSource: codygatewayactor.ActorSourceEnterpriseSubscription,
 		v:           rateLimit,
 		source:      source,
 	}, nil
@@ -151,7 +155,7 @@ func (r codyGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) (gra
 
 type codyGatewayRateLimitResolver struct {
 	actorID     string
-	actorSource codygateway.ActorSource
+	actorSource codygatewayactor.ActorSource
 	feature     types.CompletionsFeature
 	source      graphqlbackend.CodyGatewayRateLimitSource
 	v           licensing.CodyGatewayRateLimit
@@ -171,7 +175,7 @@ func (r *codyGatewayRateLimitResolver) IntervalSeconds() int32 { return r.v.Inte
 
 func (r codyGatewayRateLimitResolver) Usage(ctx context.Context) ([]graphqlbackend.CodyGatewayUsageDatapoint, error) {
 	var (
-		usage []SubscriptionUsage
+		usage []codygatewayevents.SubscriptionUsage
 		err   error
 	)
 	if r.feature != "" {

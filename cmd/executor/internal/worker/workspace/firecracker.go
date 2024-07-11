@@ -105,7 +105,7 @@ func setupLoopDevice(
 			// add the error to the bottom of the step's log output,
 			// but only if this isnt from exec.Command, as those get added
 			// by our logging wrapper
-			if !errors.HasType(err, &exec.ExitError{}) {
+			if !errors.HasType[*exec.ExitError](err) {
 				fmt.Fprint(handle, err.Error())
 			}
 			handle.Finalize(1)

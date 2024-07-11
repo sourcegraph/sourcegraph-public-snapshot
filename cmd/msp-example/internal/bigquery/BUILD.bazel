@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "bigquery",
+    srcs = ["bigquery.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/msp-example/internal/bigquery",
+    visibility = ["//cmd/msp-example:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "//lib/managedservicesplatform/bigquerywriter",
+        "//lib/managedservicesplatform/runtime",
+        "@com_google_cloud_go_bigquery//:bigquery",
+    ],
+)

@@ -52,7 +52,6 @@ function anyOf<T0, T1 extends T0, T2 extends Exclude<T0, T1>>(
     t1: (value: T0) => value is T1,
     t2: (value: Exclude<T0, T1>) => value is T2
 ): (value: T0) => value is T1 | T2
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function anyOf(...typeGuards: any[]): any {
     return (value: unknown) => typeGuards.some((guard: (value: unknown) => boolean) => guard(value))
 }

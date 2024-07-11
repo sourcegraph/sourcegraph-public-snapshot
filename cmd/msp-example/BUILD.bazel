@@ -11,7 +11,7 @@ go_library(
     tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:private"],
     deps = [
-        "//cmd/msp-example/internal/example",
+        "//cmd/msp-example/service",
         "//lib/managedservicesplatform/runtime",
     ],
 )

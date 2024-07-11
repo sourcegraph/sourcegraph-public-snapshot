@@ -396,6 +396,7 @@ func RepoUpdater() *monitoring.Dashboard {
 			},
 
 			shared.GitServer.NewClientGroup(containerName),
+			shared.GitServer.NewRepoClientGroup(containerName),
 
 			shared.Batches.NewDBStoreGroup(containerName),
 			shared.Batches.NewServiceGroup(containerName),

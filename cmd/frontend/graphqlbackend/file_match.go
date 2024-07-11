@@ -77,6 +77,14 @@ func (fm *FileMatchResolver) ChunkMatches() []chunkMatchResolver {
 	return r
 }
 
+func (fm *FileMatchResolver) PathMatches() []searchRangeResolver {
+	r := make([]searchRangeResolver, 0, len(fm.FileMatch.PathMatches))
+	for _, pm := range fm.FileMatch.PathMatches {
+		r = append(r, searchRangeResolver{pm})
+	}
+	return r
+}
+
 func (fm *FileMatchResolver) Languages() []string {
 	return fm.FileMatch.Languages()
 }

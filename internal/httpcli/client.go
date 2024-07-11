@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -83,7 +84,7 @@ type Factory struct {
 // redisCache is an HTTP cache backed by Redis. The TTL of a week is a balance
 // between caching values for a useful amount of time versus growing the cache
 // too large.
-var redisCache = rcache.NewWithTTL("http", 604800)
+var redisCache = rcache.NewWithTTL(redispool.Cache, "http", 604800)
 
 // CachedTransportOpt is the default transport cache - it will return values from
 // the cache where possible (avoiding a network request) and will additionally add

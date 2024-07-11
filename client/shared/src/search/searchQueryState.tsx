@@ -3,12 +3,13 @@ import React, { createContext } from 'react'
 import type { StoreApi, UseBoundStore } from 'zustand'
 
 import type { SearchPatternType } from '../graphql-operations'
-import { TelemetryV2Props } from '../telemetry'
+import type { TelemetryV2Props } from '../telemetry'
 
 import { type QueryState, type SubmitSearchParameters, toggleSubquery } from './helpers'
 import type { FilterType } from './query/filters'
 import { appendFilter, updateFilter } from './query/transformer'
 import { filterExists } from './query/validate'
+import { SearchMode } from './types'
 
 export type SearchQueryStateStore<T extends SearchQueryState = SearchQueryState> = UseBoundStore<T, StoreApi<T>>
 
@@ -43,11 +44,6 @@ export enum InitialParametersSource {
     URL,
 }
 
-export enum SearchMode {
-    Precise = 0,
-    SmartSearch = 1 << 0,
-}
-
 // Implemented in /web as navbar query state, /vscode as webview query state.
 export interface SearchQueryState {
     /**
@@ -69,6 +65,7 @@ export interface SearchQueryState {
     queryState: QueryState
     searchCaseSensitivity: boolean
     searchPatternType: SearchPatternType
+    defaultPatternType: SearchPatternType
     searchQueryFromURL: string
     searchMode: SearchMode
 

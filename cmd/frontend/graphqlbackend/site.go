@@ -660,6 +660,15 @@ func (c *codyLLMConfigurationResolver) ChatModelMaxTokens() *int32 {
 	}
 	return nil
 }
+func (c *codyLLMConfigurationResolver) SmartContextWindow() string {
+	if c.config.SmartContextWindow == "disabled" {
+		return "disabled"
+	}
+	return "enabled"
+}
+func (c *codyLLMConfigurationResolver) DisableClientConfigAPI() bool {
+	return c.config.DisableClientConfigAPI
+}
 
 func (c *codyLLMConfigurationResolver) FastChatModel() string { return c.config.FastChatModel }
 func (c *codyLLMConfigurationResolver) FastChatModelMaxTokens() *int32 {

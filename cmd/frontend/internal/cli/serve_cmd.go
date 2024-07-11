@@ -209,7 +209,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	globals.WatchExternalURL()
 
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
-	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), logger, db) })
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), logger, db) })
 	goroutine.Go(func() { bg.ScheduleStoreTokenUsage(ctx, db) })
@@ -321,8 +320,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	logger.Info(fmt.Sprintf("✱ Sourcegraph is ready at: %s", globals.ExternalURL()))
 	ready()
 
-	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
-	return nil
+	return goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 }
 
 func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {

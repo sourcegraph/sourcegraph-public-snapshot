@@ -110,7 +110,7 @@
               "minLength": 1
             },
             "disableSync": {
-              "description": "Disallow Sourcegraph from automatically syncing webhook config with the Bitbucket Server / Bitbucket Data Center instance. For details of how the webhook is configured, see our docs: https://sourcegraph.com/docs/admin/external_service/bitbucket_server#webhooks",
+              "description": "Disallow Sourcegraph from automatically syncing webhook config with the Bitbucket Server / Bitbucket Data Center instance. For details of how the webhook is configured, see our docs: https://sourcegraph.com/docs/admin/code_hosts/bitbucket_server#webhooks",
               "type": "boolean",
               "default": false
             }

@@ -14,9 +14,6 @@ const (
 	InternalTag = "internal"
 	// DevTag denotes licenses used in development environments
 	DevTag = "dev"
-	// GPTLLMAccessTag is the license tag that indicates that the licensed instance
-	// should be allowed by default to use GPT models in Cody Gateway.
-	GPTLLMAccessTag = "gpt"
 
 	// TelemetryEventsExportDisabledTag disables telemery events export EXCEPT
 	// for Cody-related events, which we are always allowed to export as part of

@@ -65,7 +65,7 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 	if args.Filter != nil && *args.Filter != "" {
 		filtered := impls[:0]
 		for _, loc := range impls {
-			if strings.Contains(loc.Path, *args.Filter) {
+			if strings.Contains(loc.Path.RawValue(), *args.Filter) {
 				filtered = append(filtered, loc)
 			}
 		}
@@ -122,7 +122,7 @@ func (r *gitBlobLSIFDataResolver) Prototypes(ctx context.Context, args *resolver
 	if args.Filter != nil && *args.Filter != "" {
 		filtered := prototypes[:0]
 		for _, loc := range prototypes {
-			if strings.Contains(loc.Path, *args.Filter) {
+			if strings.Contains(loc.Path.RawValue(), *args.Filter) {
 				filtered = append(filtered, loc)
 			}
 		}

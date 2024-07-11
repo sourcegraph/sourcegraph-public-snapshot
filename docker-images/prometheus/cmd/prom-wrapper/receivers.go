@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/Masterminds/semver"
 	amconfig "github.com/prometheus/alertmanager/config"
 	commoncfg "github.com/prometheus/common/config"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -72,7 +74,7 @@ var (
 // * Each alert level has a receiver, which has configuration for all channels for that level.
 // * Each alert level and owner combination has a receiver and route, which has configuration for all channels for that filter.
 // * Additional routes can route alerts based on `alerts.on`, but all alerts still fall through to the per-level receivers.
-func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, externalURL string, newProblem func(error)) ([]*amconfig.Receiver, []*amconfig.Route) {
+func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, externalURL string, newProblem func(error)) ([]amconfig.Receiver, []*amconfig.Route) {
 	// Receivers must be uniquely named. They route
 	var (
 		warningReceiver     = &amconfig.Receiver{Name: alertmanagerWarningReceiver}
@@ -212,11 +214,11 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 				apiURL = &amconfig.URL{URL: u}
 			}
 
-			var apiKEY amconfig.Secret
+			var apiKey amconfig.Secret
 			if notifier.Opsgenie.ApiKey != "" {
-				apiKEY = amconfig.Secret(notifier.Opsgenie.ApiKey)
+				apiKey = amconfig.Secret(notifier.Opsgenie.ApiKey)
 			} else {
-				apiKEY = amconfig.Secret(opsGenieAPIKey)
+				apiKey = amconfig.Secret(opsGenieAPIKey)
 			}
 
 			responders := make([]amconfig.OpsGenieConfigResponder, len(notifier.Opsgenie.Responders))
@@ -252,7 +254,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 			}
 
 			receiver.OpsGenieConfigs = append(receiver.OpsGenieConfigs, &amconfig.OpsGenieConfig{
-				APIKey: apiKEY,
+				APIKey: apiKey,
 				APIURL: apiURL,
 
 				Message:     notificationTitleTemplate,
@@ -342,7 +344,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 				continue
 			}
 			receiver.WebhookConfigs = append(receiver.WebhookConfigs, &amconfig.WebhookConfig{
-				URL: &amconfig.URL{URL: u},
+				URL: &amconfig.SecretURL{URL: u},
 				HTTPConfig: &commoncfg.HTTPClientConfig{
 					BasicAuth: &commoncfg.BasicAuth{
 						Username: notifier.Webhook.Username,
@@ -360,11 +362,14 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 		}
 	}
 
-	var additionalReceiversSlice []*amconfig.Receiver
-	for _, r := range additionalReceivers {
-		additionalReceiversSlice = append(additionalReceiversSlice, r)
+	// Sort for stability
+	additionalReceiversKeys := maps.Keys(additionalReceivers)
+	slices.Sort(additionalReceiversKeys)
+	var additionalReceiversSlice []amconfig.Receiver
+	for _, key := range additionalReceiversKeys {
+		additionalReceiversSlice = append(additionalReceiversSlice, *additionalReceivers[key])
 	}
-	return append(additionalReceiversSlice, warningReceiver, criticalReceiver),
+	return append(additionalReceiversSlice, *warningReceiver, *criticalReceiver),
 		append(additionalRoutes, defaultRoutes...)
 }
 

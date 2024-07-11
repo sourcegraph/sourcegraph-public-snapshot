@@ -28,6 +28,7 @@ go_library(
     deps = [
         "//internal/api/internalapi",
         "//internal/completions/client/anthropic",
+        "//internal/completions/client/google",
         "//internal/conf/confdefaults",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",

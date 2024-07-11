@@ -14,9 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// Anthropic model: https://docs.anthropic.com/en/docs/about-claude/models
 const Claude3Haiku = "claude-3-haiku-20240307"
 const Claude3Sonnet = "claude-3-sonnet-20240229"
 const Claude3Opus = "claude-3-opus-20240229"
+const Claude35Sonnet = "claude-3-5-sonnet-20240620"
 
 func NewClient(cli httpcli.Doer, apiURL, accessToken string, viaGateway bool, tokenManager tokenusage.Manager) types.CompletionsClient {
 
@@ -43,12 +45,10 @@ type anthropicClient struct {
 
 func (a *anthropicClient) Complete(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	version types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
 	logger log.Logger,
-) (*types.CompletionResponse, error) {
-	resp, err := a.makeRequest(ctx, requestParams, version, false)
+	request types.CompletionRequest) (*types.CompletionResponse, error) {
+
+	resp, err := a.makeRequest(ctx, request, false)
 	if err != nil {
 		return nil, err
 	}
@@ -58,15 +58,13 @@ func (a *anthropicClient) Complete(
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
+	if err = a.recordTokenUsage(request, response.Usage); err != nil {
+		return nil, err
+	}
 
 	completion := ""
 	for _, content := range response.Content {
 		completion += content.Text
-	}
-
-	err = a.tokenManager.UpdateTokenCountsFromModelUsage(response.Usage.InputTokens, response.Usage.OutputTokens, "anthropic/"+requestParams.Model, string(feature), tokenusage.Anthropic)
-	if err != nil {
-		return nil, err
 	}
 
 	return &types.CompletionResponse{
@@ -78,13 +76,11 @@ func (a *anthropicClient) Complete(
 
 func (a *anthropicClient) Stream(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	version types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
-	sendEvent types.SendCompletionEvent,
 	logger log.Logger,
-) error {
-	resp, err := a.makeRequest(ctx, requestParams, version, true)
+	request types.CompletionRequest,
+	sendEvent types.SendCompletionEvent) error {
+
+	resp, err := a.makeRequest(ctx, request, true)
 	if err != nil {
 		return err
 	}
@@ -124,8 +120,13 @@ func (a *anthropicClient) Stream(
 		case "message_delta":
 			if event.Delta != nil {
 				stopReason = event.Delta.StopReason
-				err = a.tokenManager.UpdateTokenCountsFromModelUsage(inputPromptTokens, event.Usage.OutputTokens, "anthropic/"+requestParams.Model, string(feature), tokenusage.Anthropic)
-				if err != nil {
+
+				// Build the usage data based on what we've seen.
+				usageData := anthropicMessagesResponseUsage{
+					InputTokens:  inputPromptTokens,
+					OutputTokens: event.Usage.OutputTokens,
+				}
+				if err = a.recordTokenUsage(request, usageData); err != nil {
 					logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 				}
 			}
@@ -145,7 +146,16 @@ func (a *anthropicClient) Stream(
 	return dec.Err()
 }
 
-func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, stream bool) (*http.Response, error) {
+func (a *anthropicClient) recordTokenUsage(request types.CompletionRequest, usage anthropicMessagesResponseUsage) error {
+	return a.tokenManager.UpdateTokenCountsFromModelUsage(
+		usage.InputTokens, usage.OutputTokens,
+		"anthropic/"+request.Parameters.Model, string(request.Feature),
+		tokenusage.Anthropic)
+}
+
+func (a *anthropicClient) makeRequest(ctx context.Context, request types.CompletionRequest, stream bool) (*http.Response, error) {
+	requestParams := request.Parameters
+	version := request.Version
 	convertedMessages := requestParams.Messages
 	stopSequences := removeWhitespaceOnlySequences(requestParams.StopSequences)
 	if version == types.CompletionsVersionLegacy {

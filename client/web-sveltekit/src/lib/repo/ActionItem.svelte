@@ -1,11 +1,11 @@
 <script lang="ts">
-    import Tooltip from '$lib/Tooltip.svelte'
-    import Icon from '$lib/Icon.svelte'
-    import type { Evaluated, ActionContribution } from '$lib/client-api'
-    import { Button } from '$lib/wildcard'
-    import { mdiHelpCircleOutline } from '@mdi/js'
     import type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+
+    import type { Evaluated, ActionContribution } from '$lib/client-api'
     import { isExternalLink } from '$lib/common'
+    import Icon from '$lib/Icon.svelte'
+    import Tooltip from '$lib/Tooltip.svelte'
+    import { Button } from '$lib/wildcard'
 
     type Action = Evaluated<ActionContribution>
 
@@ -99,7 +99,7 @@
             {content}
         </Button>
     {:else if action.title === '?'}
-        <Icon aria-hidden svgPath={mdiHelpCircleOutline} inline />
+        <Icon aria-hidden icon={ILucideCircleHelp} inline />
     {:else}
         {content}
     {/if}

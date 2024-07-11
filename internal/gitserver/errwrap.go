@@ -32,13 +32,6 @@ func convertGRPCErrorToGitDomainError(err error) error {
 	for _, detail := range st.Details() {
 		switch payload := detail.(type) {
 
-		case *proto.ExecStatusPayload:
-			return &CommandStatusError{
-				Message:    st.Message(),
-				Stderr:     payload.GetStderr(),
-				StatusCode: payload.GetStatusCode(),
-			}
-
 		case *proto.RepoNotFoundPayload:
 			return &gitdomain.RepoNotExistError{
 				Repo:            api.RepoName(payload.GetRepo()),
@@ -102,23 +95,6 @@ func (r *errorTranslatingCreateCommitFromPatchBinaryClient) Send(m *proto.Create
 
 func (r *errorTranslatingCreateCommitFromPatchBinaryClient) CloseAndRecv() (*proto.CreateCommitFromPatchBinaryResponse, error) {
 	res, err := r.GitserverService_CreateCommitFromPatchBinaryClient.CloseAndRecv()
-	return res, convertGRPCErrorToGitDomainError(err)
-}
-
-func (r *errorTranslatingClient) Exec(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error) {
-	cc, err := r.base.Exec(ctx, in, opts...)
-	if err != nil {
-		return nil, convertGRPCErrorToGitDomainError(err)
-	}
-	return &errorTranslatingExecClient{cc}, nil
-}
-
-type errorTranslatingExecClient struct {
-	proto.GitserverService_ExecClient
-}
-
-func (r *errorTranslatingExecClient) Recv() (*proto.ExecResponse, error) {
-	res, err := r.GitserverService_ExecClient.Recv()
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 
@@ -366,6 +342,23 @@ type errorTranslatingReadDirClient struct {
 
 func (r *errorTranslatingReadDirClient) Recv() (*proto.ReadDirResponse, error) {
 	res, err := r.GitserverService_ReadDirClient.Recv()
+	return res, convertGRPCErrorToGitDomainError(err)
+}
+
+func (r *errorTranslatingClient) CommitLog(ctx context.Context, in *proto.CommitLogRequest, opts ...grpc.CallOption) (proto.GitserverService_CommitLogClient, error) {
+	cc, err := r.base.CommitLog(ctx, in, opts...)
+	if err != nil {
+		return nil, convertGRPCErrorToGitDomainError(err)
+	}
+	return &errorTranslatingCommitLogClient{cc}, nil
+}
+
+type errorTranslatingCommitLogClient struct {
+	proto.GitserverService_CommitLogClient
+}
+
+func (r *errorTranslatingCommitLogClient) Recv() (*proto.CommitLogResponse, error) {
+	res, err := r.GitserverService_CommitLogClient.Recv()
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 

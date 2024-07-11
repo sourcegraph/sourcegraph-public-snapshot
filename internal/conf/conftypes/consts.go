@@ -6,11 +6,18 @@ type CompletionsConfig struct {
 	ChatModel          string
 	ChatModelMaxTokens int
 
+	SmartContextWindow     string
+	DisableClientConfigAPI bool
+
 	FastChatModel          string
 	FastChatModelMaxTokens int
 
 	CompletionModel          string
 	CompletionModelMaxTokens int
+
+	AzureCompletionModel                         string
+	AzureChatModel                               string
+	AzureUseDeprecatedCompletionsAPIForOldModels bool
 
 	AccessToken                                            string
 	Provider                                               CompletionsProviderName
@@ -25,7 +32,9 @@ type CompletionsConfig struct {
 	PerCommunityUserCodeCompletionsMonthlyInteractionLimit int
 	PerProUserChatDailyInteractionLimit                    int
 	PerProUserCodeCompletionsDailyInteractionLimit         int
+	User                                                   string
 }
+
 type ConfigFeatures struct {
 	Chat         bool
 	AutoComplete bool
@@ -38,6 +47,7 @@ type CompletionsProviderName string
 const (
 	CompletionsProviderNameAnthropic   CompletionsProviderName = "anthropic"
 	CompletionsProviderNameOpenAI      CompletionsProviderName = "openai"
+	CompletionsProviderNameGoogle      CompletionsProviderName = "google"
 	CompletionsProviderNameAzureOpenAI CompletionsProviderName = "azure-openai"
 	CompletionsProviderNameSourcegraph CompletionsProviderName = "sourcegraph"
 	CompletionsProviderNameFireworks   CompletionsProviderName = "fireworks"

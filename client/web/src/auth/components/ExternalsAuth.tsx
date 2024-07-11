@@ -15,14 +15,12 @@ export type AuthPages =
     | 'vscode-signup-page'
     | 'cloud-signup-page'
     | 'cody-marketing-page'
-    | 'get-cody-page'
     | 'try-cody-widget-blob'
     | 'try-cody-widget-repo'
 const v2Pages: { [p in AuthPages]: number } = {
     'vscode-signup-page': 0,
     'cloud-signup-page': 1,
     'cody-marketing-page': 2,
-    'get-cody-page': 3,
     'try-cody-widget-blob': 4,
     'try-cody-widget-repo': 5,
 }

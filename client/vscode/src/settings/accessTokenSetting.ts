@@ -1,33 +1,32 @@
 import * as vscode from 'vscode'
 
 import { isOlderThan, observeInstanceVersionNumber } from '../backend/instanceVersion'
-import { scretTokenKey } from '../webview/platform/AuthProvider'
+import { extensionContext } from '../extension'
+import { secretTokenKey } from '../webview/platform/AuthProvider'
 
 import { endpointHostnameSetting, endpointProtocolSetting } from './endpointSetting'
-import { readConfiguration } from './readConfiguration'
 
 // IMPORTANT: Call this function only once when extention is first activated
 export async function processOldToken(secretStorage: vscode.SecretStorage): Promise<void> {
-    // Process the token that lives in user configuration
-    // Move them to secrets and then remove them by setting it as undefined
-    const storageToken = await secretStorage.get(scretTokenKey)
+    // Process the token that used to live in user configuration
+    // Move it to secrets and then remove it from user configuration
+    const storageToken = await secretStorage.get(secretTokenKey)
     const oldToken = vscode.workspace.getConfiguration().get<string>('sourcegraph.accessToken') || ''
     if (!storageToken && oldToken.length > 8) {
-        await secretStorage.store(scretTokenKey, oldToken)
-        await removeOldAccessTokenSetting()
+        await secretStorage.store(secretTokenKey, oldToken)
+        await vscode.workspace
+            .getConfiguration()
+            .update('sourcegraph.accessToken', undefined, vscode.ConfigurationTarget.Global)
+        await vscode.workspace
+            .getConfiguration()
+            .update('sourcegraph.accessToken', undefined, vscode.ConfigurationTarget.Workspace)
     }
     return
 }
 
-export async function accessTokenSetting(secretStorage: vscode.SecretStorage): Promise<string> {
-    const currentToken = await secretStorage.get(scretTokenKey)
-    return currentToken || ''
-}
-
-export async function removeOldAccessTokenSetting(): Promise<void> {
-    await readConfiguration().update('accessToken', undefined, vscode.ConfigurationTarget.Global)
-    await readConfiguration().update('accessToken', undefined, vscode.ConfigurationTarget.Workspace)
-    return
+export async function getAccessToken(): Promise<string | undefined> {
+    const token = await extensionContext?.secrets.get(secretTokenKey)
+    return token
 }
 
 // Ensure that only one access token error message is shown at a time.
@@ -39,7 +38,7 @@ export async function handleAccessTokenError(badToken: string, endpointURL: stri
 
         const message = !badToken
             ? `A valid access token is required to connect to ${endpointURL}`
-            : `Connection to ${endpointURL} failed. Please try reloading VS Code if your Sourcegraph instance URL has been updated.`
+            : `Connection to ${endpointURL} failed. Please check your access token and network connection.`
 
         const version = await observeInstanceVersionNumber(badToken, endpointURL).toPromise()
         const supportsTokenCallback = version && isOlderThan(version, { major: 3, minor: 41 })

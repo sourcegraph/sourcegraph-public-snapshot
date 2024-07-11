@@ -52,6 +52,10 @@ export class ManifestBuilder<Input extends object> {
                 }
                 const result = builder(asset, output)
                 if (result) {
+                    if (key === '_marker') {
+                        manifest[key] = result
+                        continue
+                    }
                     if (manifest[key]) {
                         throw new Error(`Entry for '${key}' already exists`)
                     }

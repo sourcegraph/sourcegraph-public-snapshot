@@ -598,6 +598,7 @@ fragment RepositoryFields on Repository {
 	isDisabled
 	viewerPermission
 	stargazerCount
+	visibility
 	forkCount
 	diskUsage
 	repositoryTopics(first:100) {

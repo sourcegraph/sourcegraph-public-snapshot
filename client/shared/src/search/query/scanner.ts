@@ -613,3 +613,20 @@ export const succeedScan = (query: string): Token[] => {
     }
     return result.term
 }
+
+const patternScanner = zeroOrMore(
+    oneOf<Term>(
+        whitespace,
+        toPatternResult(quoted('/'), PatternKind.Regexp),
+        // We don't use scanPattern or literal here because we want to treat parenthesis as regular characters
+        toPatternResult(scanToken(/\S+/), PatternKind.Literal)
+    )
+)
+
+/**
+ * Scans the search query as a sequence of patterns only. This is used in situations where we don't want
+ * to interpret filters or keywords.
+ */
+export function scanSearchQueryAsPatterns(query: string): ScanResult<Token[]> {
+    return patternScanner(query, 0)
+}

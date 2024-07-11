@@ -188,7 +188,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoek
 		Trace:           policy.ShouldTrace(ctx),
 		MaxWallTime:     defaultTimeout,
 		ChunkMatches:    true,
-		UseBM25Scoring:  o.PatternType == query.SearchTypeCodyContext,
+		UseBM25Scoring:  o.PatternType == query.SearchTypeCodyContext && o.Typ == TextRequest,
 		NumContextLines: o.NumContextLines,
 	}
 

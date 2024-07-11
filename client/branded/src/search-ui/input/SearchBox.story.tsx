@@ -28,7 +28,8 @@ const defaultProps: SearchBoxProps = {
     telemetryRecorder: noOpTelemetryRecorder,
     queryState: { query: 'hello repo:test' },
     isSourcegraphDotCom: false,
-    patternType: SearchPatternType.standard,
+    patternType: SearchPatternType.keyword,
+    defaultPatternType: SearchPatternType.keyword,
     setPatternType: () => {},
     caseSensitive: false,
     setCaseSensitivity: () => {},
@@ -61,9 +62,19 @@ export const SearchBoxStory: StoryFn = () => (
                     <SearchBox {...defaultProps} patternType={SearchPatternType.regexp} />
                 </div>
 
+                <H2>Standard enabled</H2>
+                <div className="w-100 d-flex my-2">
+                    <SearchBox {...defaultProps} patternType={SearchPatternType.standard} />
+                </div>
+
                 <H2>Structural enabled</H2>
                 <div className="w-100 d-flex my-2">
                     <SearchBox {...defaultProps} patternType={SearchPatternType.structural} />
+                </div>
+
+                <H2>Default patterntype</H2>
+                <div className="w-100 d-flex my-2">
+                    <SearchBox {...defaultProps} defaultPatternType={SearchPatternType.standard} />
                 </div>
 
                 <H2>Case sensitivity enabled</H2>

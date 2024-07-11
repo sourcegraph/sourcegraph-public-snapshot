@@ -18,7 +18,7 @@ func (g *gitCLIBackend) SymbolicRefHead(ctx context.Context, short bool) (refNam
 	// TODO: implement refs_shorten_unambiguous_ref from git: https://sourcegraph.com/github.com/git/git/-/blob/refs.c?L1376,
 	// so QuickSymbolicRefHead can also be used when short=true.
 	if !short {
-		refName, err = QuickSymbolicRefHead(g.dir)
+		refName, err = quickSymbolicRefHead(g.dir)
 		if err == nil {
 			return refName, err
 		}
@@ -46,7 +46,7 @@ func (g *gitCLIBackend) SymbolicRefHead(ctx context.Context, short bool) (refNam
 }
 
 func (g *gitCLIBackend) RevParseHead(ctx context.Context) (sha api.CommitID, err error) {
-	shaStr, err := QuickRevParseHead(g.dir)
+	shaStr, err := quickRevParseHead(g.dir)
 	if err == nil {
 		return api.CommitID(shaStr), nil
 	}
@@ -78,9 +78,9 @@ func (g *gitCLIBackend) RevParseHead(ctx context.Context) (sha api.CommitID, err
 
 const headFileRefPrefix = "ref: "
 
-// QuickSymbolicRefHead best-effort mimics the execution of `git symbolic-ref HEAD`, but doesn't exec a child process.
+// quickSymbolicRefHead best-effort mimics the execution of `git symbolic-ref HEAD`, but doesn't exec a child process.
 // It just reads the .git/HEAD file from the bare git repository directory.
-func QuickSymbolicRefHead(dir common.GitDir) (string, error) {
+func quickSymbolicRefHead(dir common.GitDir) (string, error) {
 	// See if HEAD contains a commit hash and fail if so.
 	head, err := os.ReadFile(dir.Path("HEAD"))
 	if err != nil {
@@ -99,9 +99,9 @@ func QuickSymbolicRefHead(dir common.GitDir) (string, error) {
 	return string(headRef), nil
 }
 
-// QuickRevParseHead best-effort mimics the execution of `git rev-parse HEAD`, but doesn't exec a child process.
+// quickRevParseHead best-effort mimics the execution of `git rev-parse HEAD`, but doesn't exec a child process.
 // It just reads the relevant files from the bare git repository directory.
-func QuickRevParseHead(dir common.GitDir) (string, error) {
+func quickRevParseHead(dir common.GitDir) (string, error) {
 	// See if HEAD contains a commit hash and return it if so.
 	head, err := os.ReadFile(dir.Path("HEAD"))
 	if err != nil {

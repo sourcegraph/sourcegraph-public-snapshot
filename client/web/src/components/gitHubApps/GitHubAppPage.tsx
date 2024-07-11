@@ -188,7 +188,7 @@ export const GitHubAppPage: FC<Props> = ({
                             </AnchorLink>
                             . A private GitHub App can only be installed on the account that originally created it.{' '}
                             <Link
-                                to="/help/admin/external_service/github#multiple-installations"
+                                to="/help/admin/code_hosts/github#multiple-installations"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >

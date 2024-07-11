@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_mockgen.bzl", "go_mockgen")
+
+go_library(
+    name = "productsubscriptiontest",
+    srcs = ["mocks.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription/productsubscriptiontest",
+    visibility = ["//cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//cmd/cody-gateway/internal/actor/productsubscription",
+        "//lib/enterpriseportal/codyaccess/v1:codyaccess",
+        "@org_golang_google_grpc//:go_default_library",
+    ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = ["//cmd/cody-gateway/internal/actor/productsubscription"],
+)

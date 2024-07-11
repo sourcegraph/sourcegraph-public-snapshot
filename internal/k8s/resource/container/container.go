@@ -34,7 +34,11 @@ func NewContainer(name string, cfg config.StandardComponent, defaults config.Con
 			ctr.Env = append(ctr.Env, newSortedEnvVars(ctrConfig.EnvVars)...)
 
 			if ctrConfig.BestEffortQOS {
-				ctr.Resources = corev1.ResourceRequirements{}
+				// Preserve ephemeral-storage
+				delete(ctr.Resources.Requests, corev1.ResourceCPU)
+				delete(ctr.Resources.Requests, corev1.ResourceMemory)
+				delete(ctr.Resources.Limits, corev1.ResourceCPU)
+				delete(ctr.Resources.Limits, corev1.ResourceMemory)
 			} else if ctrConfig.Resources != nil {
 				ctr.Resources = *ctrConfig.Resources
 			}
@@ -143,10 +147,6 @@ func EnvVarsPostgresExporter(secretName string) []corev1.EnvVar {
 		{
 			Name:  "DATA_SOURCE_URI",
 			Value: "127.0.0.1:$(DATA_SOURCE_PORT)/$(DATA_SOURCE_DB)?sslmode=disable",
-		},
-		{
-			Name:  "PG_EXPORTER_EXTEND_QUERY_PATH",
-			Value: "/config/queries.yaml",
 		},
 	}
 }

@@ -8,6 +8,7 @@ go_library(
         "README.md",
         "config.lua",
         "embed.go",
+        "dotnet.lua",
         "go.lua",
         "indexes.lua",
         "java.lua",

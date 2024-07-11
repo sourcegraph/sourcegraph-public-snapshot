@@ -91,6 +91,11 @@ export interface StreamingSearchResultsListProps
 
     enableRepositoryMetadata?: boolean
     className?: string
+
+    /**
+     * Hide the file preview button in `FileContentSearchResult` and `FilePathSearchResult`
+     */
+    hideFilePreviewButton?: boolean
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -118,6 +123,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     enableRepositoryMetadata,
     queryExamplesPatternType = SearchPatternType.standard,
     className,
+    hideFilePreviewButton = false,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -154,6 +160,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                         settingsCascade={settingsCascade}
                                         openInNewTab={openMatchesInNewTab}
                                         containerClassName={resultClassName}
+                                        hideFilePreviewButton={hideFilePreviewButton}
                                     />
                                 )}
                                 {result.type === 'symbol' && (
@@ -180,6 +187,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                         telemetryService={telemetryService}
                                         telemetryRecorder={telemetryRecorder}
                                         settingsCascade={settingsCascade}
+                                        hideFilePreviewButton={hideFilePreviewButton}
                                     />
                                 )}
                             </PrefetchableFile>
@@ -259,6 +267,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             enableRepositoryMetadata,
             buildSearchURLQueryFromQueryState,
             logSearchResultClicked,
+            hideFilePreviewButton,
         ]
     )
 

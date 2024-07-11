@@ -19,15 +19,10 @@ import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 import type { WebHoverOverlayProps } from '../../../../components/WebHoverOverlay'
 import { syntaxHighlight } from '../highlight'
-import {
-    contains,
-    isInteractiveOccurrence,
-    occurrenceAt,
-    positionAtCmPosition,
-    rangeToCmSelection,
-    closestOccurrenceByCharacter,
-} from '../occurrence-utils'
+import { contains, interactiveOccurrenceAt, positionAtCmPosition, rangeToCmSelection } from '../occurrence-utils'
 import { isRegularEvent, locationToURL, positionToOffset } from '../utils'
+
+import { codeGraphData } from './occurrences'
 
 /**
  * Hover information received from a hover source.
@@ -138,10 +133,7 @@ export class CodeIntelAPIAdapter {
             return fromCache
         }
 
-        let occurrence = occurrenceAt(state, offset) ?? null
-        if (occurrence && !isInteractiveOccurrence(occurrence)) {
-            occurrence = null
-        }
+        const occurrence = interactiveOccurrenceAt(state, offset) ?? null
         const range = occurrence ? rangeToCmSelection(state.doc, occurrence.range) : null
         for (let i = range?.from ?? offset, to = range?.to ?? offset; i <= to; i++) {
             this.occurrenceCache.set(offset, { occurrence, range })
@@ -151,7 +143,11 @@ export class CodeIntelAPIAdapter {
     }
 
     public getDefinition(state: EditorState, occurrence: Occurrence): Promise<Definition> {
-        const occurrences = state.facet(syntaxHighlight).occurrences
+        // Prefer precise occurrences, but fall back to syntax highlighting for locals
+        let occurrences = state.facet(codeGraphData).at(0)?.occurrenceIndex
+        if (occurrences === undefined) {
+            occurrences = state.facet(syntaxHighlight).interactiveOccurrences
+        }
         const fromCache = this.definitionCache.get(occurrence)
         if (fromCache) {
             return fromCache
@@ -275,10 +271,7 @@ export class CodeIntelAPIAdapter {
                               .join('\n\n----\n\n')
                               .trimEnd()
                 const precise = isPrecise(result)
-                if (!precise && markdownContents.length > 0 && !isInteractiveOccurrence(occurrence)) {
-                    return null
-                }
-                if (markdownContents === '' && isInteractiveOccurrence(occurrence)) {
+                if (markdownContents === '') {
                     markdownContents = 'No hover information available'
                 }
                 return markdownContents
@@ -340,6 +333,9 @@ export class CodeIntelAPIAdapter {
                             disabledTitle:
                                 definition.type === 'none' ? 'No definition found' : 'You are at the definition',
                             command: 'open',
+                            telemetryProps: {
+                                feature: 'blob.goToDefinition',
+                            },
                         },
                     })
                 } else if (definition.type === 'initial') {
@@ -350,6 +346,9 @@ export class CodeIntelAPIAdapter {
                             title: 'Go to definition',
                             command: 'invokeFunction-new',
                             commandArguments: [() => this.goToDefinitionAtOccurrence(view, occurrence)],
+                            telemetryProps: {
+                                feature: 'blob.goToDefinition',
+                            },
                         },
                     })
                 } else {
@@ -377,6 +376,9 @@ export class CodeIntelAPIAdapter {
                                     return false
                                 },
                             ],
+                            telemetryProps: {
+                                feature: 'blob.goToDefinition',
+                            },
                         },
                     })
                 }
@@ -389,6 +391,9 @@ export class CodeIntelAPIAdapter {
                         commandArguments: [
                             () => this.config.openReferences(view, this.config.documentInfo, occurrence),
                         ],
+                        telemetryProps: {
+                            feature: 'blob.findReferences',
+                        },
                     },
                 })
 
@@ -402,6 +407,9 @@ export class CodeIntelAPIAdapter {
                             commandArguments: [
                                 () => this.config.openImplementations(view, this.config.documentInfo, occurrence),
                             ],
+                            telemetryProps: {
+                                feature: 'blob.findImplementations',
+                            },
                         },
                     })
                 }
@@ -412,6 +420,9 @@ export class CodeIntelAPIAdapter {
                         title: '?', // special marker for the MDI "Help" icon.
                         description: `Go to definition with ${modifierClickDescription}, long-click, or by pressing Enter with the keyboard. Display this popover by pressing Space with the keyboard.`,
                         command: '',
+                        telemetryProps: {
+                            feature: 'blob.goToDefinition.help',
+                        },
                     },
                 })
                 return actions
@@ -522,29 +533,15 @@ export function nextOccurrencePosition(
     direction: 'next' | 'previous' = 'next'
 ): number | null {
     const position = positionAtCmPosition(state.doc, from)
-    const table = state.facet(syntaxHighlight)
-    let occurrence = null
-    if (step === 'character') {
-        occurrence = closestOccurrenceByCharacter(
-            position.line,
-            table,
-            position,
-            direction === 'next'
-                ? occurrence => occurrence.range.start.isGreater(position)
-                : occurrence => occurrence.range.start.isSmaller(position)
-        )
-    } else {
-        const next = direction === 'next'
-        const start = position.line + (next ? 1 : -1)
-        const increment = next ? 1 : -1
 
-        for (let line = start; line >= 0 && line < table.lineIndex.length; line += increment) {
-            occurrence = closestOccurrenceByCharacter(line, table, position)
-            if (occurrence) {
-                break
-            }
-        }
+    // Use code graph data from the backend if it exists, otherwise
+    // fall back to syntax highlighting data
+    let occurrences = state.facet(codeGraphData).at(0)?.occurrenceIndex
+    if (occurrences === undefined) {
+        occurrences = state.facet(syntaxHighlight).interactiveOccurrences
     }
+
+    const occurrence = occurrences.next(position, step, direction)
     return occurrence ? positionToOffset(state.doc, occurrence.range.start) : null
 }
 

@@ -1237,7 +1237,7 @@ func Parse(in string, searchType SearchType) ([]Node, error) {
 
 	nodes, err := parser.parseOr()
 	if err != nil {
-		if errors.HasType(err, &ExpectedOperand{}) {
+		if errors.HasType[*ExpectedOperand](err) {
 			// The query may be unbalanced or malformed as in "(" or
 			// "x or" and expects an operand. Try harder to parse it.
 			if nodes, err := parser.tryFallbackParser(in); err == nil {

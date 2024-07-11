@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const skipSysReqsEnvVar = "SRC_SKIP_REQS"
@@ -57,6 +58,7 @@ func checkSysReqs(ctx context.Context, w io.Writer) error {
 
 	if failed != nil {
 		log15.Error("System requirement checks failed (see above for more information).", "failed", failed)
+		return errors.New("System requirement checks failed")
 	}
 	return nil
 }

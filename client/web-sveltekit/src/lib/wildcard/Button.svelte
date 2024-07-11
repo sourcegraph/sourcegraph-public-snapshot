@@ -15,6 +15,7 @@
         // but for some reason it's not recognized when using `svelte-check` and an error
         // is thrown instead.
         'data-testid'?: string
+        'data-scope-button'?: boolean
     } & HTMLButtonAttributes
 
     export let variant: $$Props['variant'] = 'primary'

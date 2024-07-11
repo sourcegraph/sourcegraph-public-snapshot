@@ -36,11 +36,10 @@ func TestStoreEnqueueSyncJobs(t *testing.T) {
 	services := generateExternalServices(10, mkExternalServices(now)...)
 
 	type testCase struct {
-		name            string
-		stored          types.ExternalServices
-		queued          func(types.ExternalServices) []int64
-		ignoreSiteAdmin bool
-		err             error
+		name   string
+		stored types.ExternalServices
+		queued func(types.ExternalServices) []int64
+		err    error
 	}
 
 	var testCases []testCase
@@ -59,15 +58,6 @@ func TestStoreEnqueueSyncJobs(t *testing.T) {
 			s.NextSyncAt = now.Add(10 * time.Second)
 		}),
 		queued: func(svcs types.ExternalServices) []int64 { return []int64{} },
-	})
-
-	testCases = append(testCases, testCase{
-		name: "ignore siteadmin repos",
-		stored: services.With(func(s *types.ExternalService) {
-			s.NextSyncAt = now.Add(10 * time.Second)
-		}),
-		ignoreSiteAdmin: true,
-		queued:          func(svcs types.ExternalServices) []int64 { return []int64{} },
 	})
 
 	{
@@ -110,7 +100,7 @@ func TestStoreEnqueueSyncJobs(t *testing.T) {
 				t.Fatalf("failed to setup store: %v", err)
 			}
 
-			err := store.EnqueueSyncJobs(ctx, tc.ignoreSiteAdmin)
+			err := store.EnqueueSyncJobs(ctx)
 			if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
 				t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 			}
@@ -206,36 +196,6 @@ func TestStoreEnqueueSingleSyncJob(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertSyncJobCount(t, store, 2)
-
-	// Test that cloud default external services don't get jobs enqueued (no-ops instead of errors)
-	q = sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")
-	if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-		t.Fatal(err)
-	}
-
-	service.CloudDefault = true
-	err = store.ExternalServiceStore().Upsert(ctx, &service)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = store.EnqueueSingleSyncJob(ctx, service.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertSyncJobCount(t, store, 2)
-
-	// Test that cloud default external services don't get jobs enqueued also when there are no job rows.
-	q = sqlf.Sprintf("DELETE FROM external_service_sync_jobs")
-	if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-		t.Fatal(err)
-	}
-
-	err = store.EnqueueSingleSyncJob(ctx, service.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertSyncJobCount(t, store, 0)
 }
 
 func assertSyncJobCount(t *testing.T, store repos.Store, want int) {
@@ -275,7 +235,7 @@ func TestStoreEnqueuingSyncJobsWhileExtSvcBeingDeleted(t *testing.T) {
 		},
 		"EnqueueSyncJobs": func(t *testing.T, ctx context.Context, store repos.Store, _ *types.ExternalService) {
 			t.Helper()
-			if err := store.EnqueueSyncJobs(ctx, false); err != nil {
+			if err := store.EnqueueSyncJobs(ctx); err != nil {
 				t.Fatal(err)
 			}
 		},

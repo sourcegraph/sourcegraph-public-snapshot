@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type mockDoer struct {
@@ -68,13 +69,21 @@ func TestValidAnthropicMessagesStream(t *testing.T) {
 
 	mockClient := getMockClient(linesToResponse(mockAnthropicMessagesResponseLines, "\n\n"))
 	events := []types.CompletionResponse{}
-	stream := true
-	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{
-		Stream: &stream,
-	}, func(event types.CompletionResponse) error {
+
+	sendEventFn := func(event types.CompletionResponse) error {
 		events = append(events, event)
 		return nil
-	}, logger)
+	}
+
+	compRequest := types.CompletionRequest{
+		Feature: types.CompletionsFeatureChat,
+		Version: types.CompletionsVersionLegacy,
+		Parameters: types.CompletionRequestParameters{
+			Stream: pointers.Ptr(true),
+		},
+	}
+
+	err := mockClient.Stream(context.Background(), logger, compRequest, sendEventFn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +95,15 @@ func TestInvalidAnthropicMessagesStream(t *testing.T) {
 	logger := log.Scoped("completions")
 
 	mockClient := getMockClient(linesToResponse(mockAnthropicInvalidResponseLines, "\r\n\r\n"))
-	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil }, logger)
+
+	compRequest := types.CompletionRequest{
+		Feature:    types.CompletionsFeatureChat,
+		Version:    types.CompletionsVersionLegacy,
+		Parameters: types.CompletionRequestParameters{},
+	}
+	sendEventFn := func(event types.CompletionResponse) error { return nil }
+
+	err := mockClient.Stream(context.Background(), logger, compRequest, sendEventFn)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -104,9 +121,15 @@ func TestErrStatusNotOK(t *testing.T) {
 		},
 	}, "", "", false, *tokenManager)
 
+	compRequest := types.CompletionRequest{
+		Feature:    types.CompletionsFeatureChat,
+		Version:    types.CompletionsVersionLegacy,
+		Parameters: types.CompletionRequestParameters{},
+	}
+
 	t.Run("Complete", func(t *testing.T) {
 		logger := log.Scoped("completions")
-		resp, err := mockClient.Complete(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{}, logger)
+		resp, err := mockClient.Complete(context.Background(), logger, compRequest)
 		require.Error(t, err)
 		assert.Nil(t, resp)
 
@@ -117,7 +140,11 @@ func TestErrStatusNotOK(t *testing.T) {
 
 	t.Run("Stream", func(t *testing.T) {
 		logger := log.Scoped("completions")
-		err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil }, logger)
+		sendEventFn := func(event types.CompletionResponse) error {
+			return nil
+		}
+
+		err := mockClient.Stream(context.Background(), logger, compRequest, sendEventFn)
 		require.Error(t, err)
 
 		autogold.Expect("Anthropic: unexpected status code 429: oh no, please slow down!").Equal(t, err.Error())
@@ -149,7 +176,15 @@ func TestCompleteApiToMessages(t *testing.T) {
 
 	t.Run("Complete", func(t *testing.T) {
 		logger := log.Scoped("completions")
-		resp, err := mockClient.Complete(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{Messages: messages}, logger)
+		compRequest := types.CompletionRequest{
+			Feature: types.CompletionsFeatureChat,
+			Version: types.CompletionsVersionLegacy,
+			Parameters: types.CompletionRequestParameters{
+				Messages: messages,
+			},
+		}
+
+		resp, err := mockClient.Complete(context.Background(), logger, compRequest)
 		require.Error(t, err)
 		assert.Nil(t, resp)
 
@@ -162,8 +197,16 @@ func TestCompleteApiToMessages(t *testing.T) {
 
 	t.Run("Stream", func(t *testing.T) {
 		logger := log.Scoped("completions")
-		stream := true
-		err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{Messages: messages, Stream: &stream}, func(event types.CompletionResponse) error { return nil }, logger)
+		compRequest := types.CompletionRequest{
+			Feature: types.CompletionsFeatureChat,
+			Version: types.CompletionsVersionLegacy,
+			Parameters: types.CompletionRequestParameters{
+				Messages: messages,
+				Stream:   pointers.Ptr(true),
+			},
+		}
+		sendEventFn := func(event types.CompletionResponse) error { return nil }
+		err := mockClient.Stream(context.Background(), logger, compRequest, sendEventFn)
 		require.Error(t, err)
 
 		assert.NotNil(t, response)

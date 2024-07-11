@@ -24,8 +24,8 @@ export const LanguageIcon: FC<LanguageIconProps> = props => {
     if (fileIcon) {
         return (
             <Icon
-                as={fileIcon.react.icon}
-                className={classNames(styles.icon, fileIcon.react.className, className)}
+                as={fileIcon.icon}
+                className={classNames(styles.icon, fileIcon.className, className)}
                 aria-hidden={true}
             />
         )

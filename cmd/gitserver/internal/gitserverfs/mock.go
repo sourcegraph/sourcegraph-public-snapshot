@@ -54,9 +54,6 @@ type MockFS struct {
 	// TempDirFunc is an instance of a mock function object controlling the
 	// behavior of the method TempDir.
 	TempDirFunc *FSTempDirFunc
-	// VisitReposFunc is an instance of a mock function object controlling
-	// the behavior of the method VisitRepos.
-	VisitReposFunc *FSVisitReposFunc
 }
 
 // NewMockFS creates a new mock of the FS interface. All methods return zero
@@ -120,11 +117,6 @@ func NewMockFS() *MockFS {
 		},
 		TempDirFunc: &FSTempDirFunc{
 			defaultHook: func(string) (r0 string, r1 error) {
-				return
-			},
-		},
-		VisitReposFunc: &FSVisitReposFunc{
-			defaultHook: func(func(api.RepoName, common.GitDir) (bool, error)) (r0 error) {
 				return
 			},
 		},
@@ -195,11 +187,6 @@ func NewStrictMockFS() *MockFS {
 				panic("unexpected invocation of MockFS.TempDir")
 			},
 		},
-		VisitReposFunc: &FSVisitReposFunc{
-			defaultHook: func(func(api.RepoName, common.GitDir) (bool, error)) error {
-				panic("unexpected invocation of MockFS.VisitRepos")
-			},
-		},
 	}
 }
 
@@ -242,9 +229,6 @@ func NewMockFSFrom(i FS) *MockFS {
 		},
 		TempDirFunc: &FSTempDirFunc{
 			defaultHook: i.TempDir,
-		},
-		VisitReposFunc: &FSVisitReposFunc{
-			defaultHook: i.VisitRepos,
 		},
 	}
 }
@@ -1466,105 +1450,4 @@ func (c FSTempDirFuncCall) Args() []interface{} {
 // invocation.
 func (c FSTempDirFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// FSVisitReposFunc describes the behavior when the VisitRepos method of the
-// parent MockFS instance is invoked.
-type FSVisitReposFunc struct {
-	defaultHook func(func(api.RepoName, common.GitDir) (bool, error)) error
-	hooks       []func(func(api.RepoName, common.GitDir) (bool, error)) error
-	history     []FSVisitReposFuncCall
-	mutex       sync.Mutex
-}
-
-// VisitRepos delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockFS) VisitRepos(v0 func(api.RepoName, common.GitDir) (bool, error)) error {
-	r0 := m.VisitReposFunc.nextHook()(v0)
-	m.VisitReposFunc.appendCall(FSVisitReposFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the VisitRepos method of
-// the parent MockFS instance is invoked and the hook queue is empty.
-func (f *FSVisitReposFunc) SetDefaultHook(hook func(func(api.RepoName, common.GitDir) (bool, error)) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// VisitRepos method of the parent MockFS instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *FSVisitReposFunc) PushHook(hook func(func(api.RepoName, common.GitDir) (bool, error)) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *FSVisitReposFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(func(api.RepoName, common.GitDir) (bool, error)) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *FSVisitReposFunc) PushReturn(r0 error) {
-	f.PushHook(func(func(api.RepoName, common.GitDir) (bool, error)) error {
-		return r0
-	})
-}
-
-func (f *FSVisitReposFunc) nextHook() func(func(api.RepoName, common.GitDir) (bool, error)) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *FSVisitReposFunc) appendCall(r0 FSVisitReposFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of FSVisitReposFuncCall objects describing the
-// invocations of this function.
-func (f *FSVisitReposFunc) History() []FSVisitReposFuncCall {
-	f.mutex.Lock()
-	history := make([]FSVisitReposFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// FSVisitReposFuncCall is an object that describes an invocation of method
-// VisitRepos on an instance of MockFS.
-type FSVisitReposFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 func(api.RepoName, common.GitDir) (bool, error)
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c FSVisitReposFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c FSVisitReposFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }

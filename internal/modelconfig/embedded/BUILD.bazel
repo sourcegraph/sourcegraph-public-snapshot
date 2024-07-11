@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "embedded",
+    srcs = ["embed.go"],
+    embedsrcs = ["models.json"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/modelconfig/embedded",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/modelconfig/types",
+        "//lib/errors",
+    ],
+)

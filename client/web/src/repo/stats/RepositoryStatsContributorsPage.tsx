@@ -50,7 +50,7 @@ import styles from './RepositoryStatsContributorsPage.module.scss'
 
 interface QuerySpec {
     revisionRange: string
-    after: string
+    after: string | null
     path: string
 }
 
@@ -190,7 +190,7 @@ const CONTRIBUTORS_QUERY = gql`
 
 const BATCH_COUNT = 20
 
-const equalOrEmpty = (a: string | undefined, b: string | undefined): boolean => a === b || (!a && !b)
+const equalOrEmpty = (a: string | null | undefined, b: string | null | undefined): boolean => a === b || (!a && !b)
 
 interface Props extends RepositoryStatsAreaPageProps, TelemetryV2Props {}
 
@@ -218,7 +218,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
     const queryParameters = new URLSearchParams(location.search)
     const spec: QuerySpec = {
         revisionRange: queryParameters.get('revisionRange') ?? '',
-        after: queryParameters.get('after') ?? '',
+        after: queryParameters.get('after'),
         path: queryParameters.get('path') ?? '',
     }
 

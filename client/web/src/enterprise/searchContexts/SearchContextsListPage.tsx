@@ -4,11 +4,9 @@ import { mdiMagnify, mdiPlus } from '@mdi/js'
 
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
-import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
-import { PageHeader, Link, Button, Icon, Alert } from '@sourcegraph/wildcard'
+import { Alert, Button, Icon, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
-import { CallToActionBanner } from '../../components/CallToActionBanner'
 import { Page } from '../../components/Page'
 
 import { SearchContextsList } from './SearchContextsList'
@@ -48,36 +46,16 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                         </div>
                     }
                     description={
-                        <>
-                            <span className="text-muted">
-                                Search code you care about with search contexts.{' '}
-                                <Link
-                                    to="/help/code_search/explanations/features#search-contexts"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    Learn more
-                                </Link>
-                            </span>
-                            {isSourcegraphDotCom && (
-                                <CallToActionBanner variant="filled" className="mb-0">
-                                    To search across your team's private repositories,{' '}
-                                    <Link
-                                        to="https://sourcegraph.com"
-                                        onClick={() => {
-                                            EVENT_LOGGER.log('ClickedOnEnterpriseCTA', { location: 'ContextsSettings' })
-                                            platformContext.telemetryRecorder.recordEvent(
-                                                'searchContexts.enterpriseCTA',
-                                                'click'
-                                            )
-                                        }}
-                                    >
-                                        get Sourcegraph Enterprise
-                                    </Link>
-                                    .
-                                </CallToActionBanner>
-                            )}
-                        </>
+                        <span className="text-muted">
+                            Search code you care about with search contexts.{' '}
+                            <Link
+                                to="/help/code-search/working/search_contexts"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Learn more
+                            </Link>
+                        </span>
                     }
                     className="mb-3"
                 >

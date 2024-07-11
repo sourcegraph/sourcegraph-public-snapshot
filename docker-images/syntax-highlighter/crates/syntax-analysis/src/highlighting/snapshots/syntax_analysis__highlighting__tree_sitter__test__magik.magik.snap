@@ -1,0 +1,760 @@
+---
+source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  # Some examples based on test cases here https://github.com/krn-robin/tree-sitter-magik/tree/main/test/corpus
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  
+  # Package
+//^^^^^^^^^ Comment
+  _package pp
+//^^^^^^^^ Keyword
+//         ^^ IdentifierNamespace
+  
+  # Literals
+//^^^^^^^^^^ Comment
+  _true
+//^^^^^ BooleanLiteral
+  _True
+//^^^^^ BooleanLiteral
+  _false
+//^^^^^^ BooleanLiteral
+  _maybe
+//^^^^^^ IdentifierBuiltin
+  0
+//^ NumericLiteral
+  65535
+//^^^^^ NumericLiteral
+  4294967295
+//^^^^^^^^^^ NumericLiteral
+  18446744073709551617
+//^^^^^^^^^^^^^^^^^^^^ NumericLiteral
+  0.0
+//^^^ NumericLiteral
+  655.35
+//^^^^^^ NumericLiteral
+  -65535
+//^ IdentifierOperator
+// ^^^^^ NumericLiteral
+  -655.35
+//^ IdentifierOperator
+// ^^^^^^ NumericLiteral
+  2e+2
+//^^^^ NumericLiteral
+  2.2e10
+//^^^^^^ NumericLiteral
+  :symbol
+//^^^^^^^ StringLiteral
+  :boolean?
+//^^^^^^^^^ StringLiteral
+  :kleenean??
+//^^^^^^^^^^^ StringLiteral
+  :int!internal
+//^^^^^^^^^^^^^ StringLiteral
+  :|piped|
+//^^^^^^^^ StringLiteral
+  {1,2,3}
+// ^ NumericLiteral
+//   ^ NumericLiteral
+//     ^ NumericLiteral
+  "string"
+//^^^^^^^^ StringLiteral
+  'string'
+//^^^^^^^^ StringLiteral
+  
+  ; Character
+//  ^^^^^^^^^ Identifier
+  %x
+//^^ CharacterLiteral
+  
+  _primitive 512
+//^^^^^^^^^^ Keyword
+//           ^^^ NumericLiteral
+  
+  # Assignments
+//^^^^^^^^^^^^^ Comment
+  a << 1.234
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^^^^^ NumericLiteral
+  b << b + a
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^ Identifier
+//       ^ IdentifierOperator
+//         ^ Identifier
+  c << "foo" + "bar" # Concat strings
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^^^^^ StringLiteral
+//           ^ IdentifierOperator
+//             ^^^^^ StringLiteral
+//                   ^^^^^^^^^^^^^^^^ Comment
+  b +<< a
+//^ Identifier
+//  ^^^ IdentifierOperator
+//      ^ Identifier
+  b ^<< 1
+//^ Identifier
+//  ^^^ IdentifierOperator
+//      ^ NumericLiteral
+  c +<< 1
+//^ Identifier
+//  ^^^ IdentifierOperator
+//      ^ NumericLiteral
+  d _orif<< a
+//^ Identifier
+//  ^^^^^^^ IdentifierOperator
+//          ^ Identifier
+  d _andif<< a
+//^ Identifier
+//  ^^^^^^^^ IdentifierOperator
+//           ^ Identifier
+  d _xorif<< a
+//^ Identifier
+//  ^^^^^^ IdentifierOperator
+//        ^^ IdentifierOperator
+//           ^ Identifier
+  (first, _gather rest) << roots(1, -6, -7, 60)
+// ^^^^^ Identifier
+//        ^^^^^^^ Keyword
+//                ^^^^ Identifier
+//                      ^^ IdentifierOperator
+//                         ^^^^^ IdentifierFunction
+//                               ^ NumericLiteral
+//                                  ^ IdentifierOperator
+//                                   ^ NumericLiteral
+//                                      ^ IdentifierOperator
+//                                       ^ NumericLiteral
+//                                          ^^ NumericLiteral
+  rootsvec << _allresults roots(1, -6, -7, 60)
+//^^^^^^^^ Identifier
+//         ^^ IdentifierOperator
+//            ^^^^^^^^^^^ Keyword
+//                        ^^^^^ IdentifierFunction
+//                              ^ NumericLiteral
+//                                 ^ IdentifierOperator
+//                                  ^ NumericLiteral
+//                                     ^ IdentifierOperator
+//                                      ^ NumericLiteral
+//                                         ^^ NumericLiteral
+  _global !current_view! << _unset
+//^^^^^^^ Keyword
+//        ^^^^^^^^^^^^^^ Identifier
+//                       ^^ IdentifierOperator
+//                          ^^^^^^ IdentifierNull
+  _global _constant !current_view! << _unset
+//^^^^^^^ Keyword
+//        ^^^^^^^^^ Keyword
+//                  ^^^^^^^^^^^^^^ Identifier
+//                                 ^^ IdentifierOperator
+//                                    ^^^^^^ IdentifierNull
+  
+  write(a)
+//^^^^^ IdentifierFunction
+//      ^ Identifier
+  
+  # Symbols
+//^^^^^^^^^ Comment
+  a << :hello
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^^^^^^ StringLiteral
+  b << :|hello world|
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^^^^^^^^^^^^^^ StringLiteral
+  
+  # Function calls
+//^^^^^^^^^^^^^^^^ Comment
+  :sym_func()
+//^^^^^^^^^ IdentifierFunction
+  some_func(1, 2)
+//^^^^^^^^^ IdentifierFunction
+//          ^ NumericLiteral
+//             ^ NumericLiteral
+  
+  # Objects
+//^^^^^^^^^ Comment
+  def_slotted_exemplar(:my_object,
+//^^^^^^^^^^^^^^^^^^^^ IdentifierBuiltin
+//                     ^^^^^^^^^^ StringLiteral
+   {
+      {:slot_a, 34},
+//     ^^^^^^^ StringLiteral
+//              ^^ NumericLiteral
+      {:slot_b, "hello"}
+//     ^^^^^^^ StringLiteral
+//              ^^^^^^^ StringLiteral
+   }, {:parent_object_a, :parent_object_b})
+//     ^^^^^^^^^^^^^^^^ StringLiteral
+//                       ^^^^^^^^^^^^^^^^ StringLiteral
+  
+  # Class directive
+//^^^^^^^^^^^^^^^^^ Comment
+  def_slotted_exemplar(:exemplar,
+//^^^^^^^^^^^^^^^^^^^^ IdentifierBuiltin
+//                     ^^^^^^^^^ StringLiteral
+                       {},
+                       {},
+                       {_class |com.gesmallworld.magik.language.MagikFinalisable|})
+//                      ^^^^^^ Keyword
+  
+  # Mixin
+//^^^^^^^ Comment
+  def_mixin(:my_mixin)
+//^^^^^^^^^ IdentifierBuiltin
+//          ^^^^^^^^^ StringLiteral
+  def_mixin(:my_variant_of_their_mixin,{their_mixin})
+//^^^^^^^^^ IdentifierBuiltin
+//          ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                      ^^^^^^^^^^^ Identifier
+  
+  my_mixin.define_shared_variable(:a_var,:test,:public)
+//^^^^^^^^ Identifier
+//        ^ IdentifierOperator
+//         ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                ^^^^^^ StringLiteral
+//                                       ^^^^^ StringLiteral
+//                                             ^^^^^^^ StringLiteral
+  
+  my_mixin.method(:a_var).value << :changed
+//^^^^^^^^ Identifier
+//        ^ IdentifierOperator
+//         ^^^^^^ IdentifierFunction
+//                ^^^^^^ StringLiteral
+//                       ^ IdentifierOperator
+//                        ^^^^^ Identifier
+//                              ^^ IdentifierOperator
+//                                 ^^^^^^^^ StringLiteral
+  
+  # Operators
+//^^^^^^^^^^^ Comment
+  x << a ** b
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^ Identifier
+//       ^^ IdentifierOperator
+//          ^ Identifier
+  x << a = b
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^ Identifier
+//       ^ IdentifierOperator
+//         ^ Identifier
+  x << a <> b
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^ Identifier
+//       ^^ IdentifierOperator
+//          ^ Identifier
+  x << a ~= b
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^ Identifier
+//       ^^ IdentifierOperator
+//          ^ Identifier
+  y << a _is b
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^ Identifier
+//       ^^^ IdentifierOperator
+//           ^ Identifier
+  y << a _isnt b
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^ Identifier
+//       ^^^^^ IdentifierOperator
+//             ^ Identifier
+  x << a >= b
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^ Identifier
+//       ^^ IdentifierOperator
+//          ^ Identifier
+  x << a _and b
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^ Identifier
+//       ^^^^ IdentifierOperator
+//            ^ Identifier
+  x << a _or b
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^ Identifier
+//       ^^^ IdentifierOperator
+//           ^ Identifier
+  x << a _mod b
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^ Identifier
+//       ^^^^ IdentifierOperator
+//            ^ Identifier
+  x << a _xor b
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^ Identifier
+//       ^^^^ IdentifierOperator
+//            ^ Identifier
+  x << a _div b
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^ Identifier
+//       ^^^^ IdentifierOperator
+//            ^ Identifier
+  x << _not a
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^^^^ IdentifierOperator
+//          ^ Identifier
+  
+  # Handling
+//^^^^^^^^^^ Comment
+  _handling error _with _default
+//^^^^^^^^^ Keyword
+//          ^^^^^ Identifier
+//                ^^^^^ Keyword
+//                      ^^^^^^^^ Keyword
+  
+  # Block
+//^^^^^^^ Comment
+  _block
+//^^^^^^ Keyword
+    _dynamic !terminal!
+//  ^^^^^^^^ Keyword
+//           ^^^^^^^^^^ Identifier
+    _dynamic !output!, !terminal!
+//  ^^^^^^^^ Keyword
+//           ^^^^^^^^ Identifier
+//                     ^^^^^^^^^^ Identifier
+  _endblock
+//^^^^^^^^^ Keyword
+  
+  _block
+//^^^^^^ Keyword
+    _if _true _then >> _unset _endif
+//  ^^^ Keyword
+//      ^^^^^ BooleanLiteral
+//            ^^^^^ Keyword
+//                  ^^ IdentifierOperator
+//                     ^^^^^^ IdentifierNull
+//                            ^^^^^^ Keyword
+  _endblock
+//^^^^^^^^^ Keyword
+  
+  _block @ label1?
+//^^^^^^ Keyword
+//       ^^^^^^^^^ Identifier
+      _lock _self
+//    ^^^^^ Keyword
+//          ^^^^^ IdentifierBuiltin
+          _return
+//        ^^^^^^^ Keyword
+      _endlock
+//    ^^^^^^^^ Keyword
+  _endblock
+//^^^^^^^^^ Keyword
+  
+  _block
+//^^^^^^ Keyword
+      _protect
+//    ^^^^^^^^ Keyword
+    stream.write("something")
+//  ^^^^^^ Identifier
+//        ^ IdentifierOperator
+//         ^^^^^ IdentifierFunction
+//               ^^^^^^^^^^^ StringLiteral
+   _protection
+// ^^^^^^^^^^^ Keyword
+    stream.close()
+//  ^^^^^^ Identifier
+//        ^ IdentifierOperator
+//         ^^^^^ IdentifierFunction
+   _endprotect
+// ^^^^^^^^^^^ Keyword
+  _endblock
+//^^^^^^^^^ Keyword
+  
+  # Catch
+//^^^^^^^ Comment
+  _catch :error
+//^^^^^^ Keyword
+//       ^^^^^^ StringLiteral
+    >> _true
+//  ^^ IdentifierOperator
+//     ^^^^^ BooleanLiteral
+  _endcatch
+//^^^^^^^^^ Keyword
+  
+  _catch "error"
+//^^^^^^ Keyword
+//       ^^^^^^^ StringLiteral
+    >> _true
+//  ^^ IdentifierOperator
+//     ^^^^^ BooleanLiteral
+  _endcatch
+//^^^^^^^^^ Keyword
+  
+  _catch @error
+//^^^^^^ Keyword
+//       ^^^^^^ Identifier
+    >> _true
+//  ^^ IdentifierOperator
+//     ^^^^^ BooleanLiteral
+  _endcatch
+//^^^^^^^^^ Keyword
+  
+  # Methods
+//^^^^^^^^^ Comment
+  _pragma(classify_level=restricted)
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierAttribute
+  _method my_object.my_method(a, b)
+//^^^^^^^ Keyword
+//        ^^^^^^^^^ IdentifierType
+//                 ^ IdentifierOperator
+//                  ^^^^^^^^^ IdentifierFunction
+//                            ^ IdentifierParameter
+//                               ^ IdentifierParameter
+   ## multi
+// ^^^^^^^^ Comment 138:1..140:17
+   ## line
+   ## documentation
+      _return a + b
+//    ^^^^^^^ Keyword
+//            ^ Identifier
+//              ^ IdentifierOperator
+//                ^ Identifier
+  _endmethod
+//^^^^^^^^^^ Keyword
+  
+  # Abstract Method
+//^^^^^^^^^^^^^^^^^ Comment
+  _abstract _method my_class.my_method
+//^^^^^^^^^ Keyword
+//          ^^^^^^^ Keyword
+//                  ^^^^^^^^ IdentifierType
+//                          ^ IdentifierOperator
+//                           ^^^^^^^^^ IdentifierFunction
+      ## whatever this method should do...
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  _endmethod
+//^^^^^^^^^^ Keyword
+  
+  # New method
+//^^^^^^^^^^^^ Comment
+  _method person.new(name, age)
+//^^^^^^^ Keyword
+//        ^^^^^^ IdentifierType
+//              ^ IdentifierOperator
+//               ^^^ IdentifierFunction
+//                   ^^^^ IdentifierParameter
+//                         ^^^ IdentifierParameter
+    _return _clone.init(name, age)
+//  ^^^^^^^ Keyword
+//          ^^^^^^ IdentifierBuiltin
+//                ^ IdentifierOperator
+//                 ^^^^ IdentifierFunction
+//                      ^^^^ Identifier
+//                            ^^^ Identifier
+  _endmethod
+//^^^^^^^^^^ Keyword
+  
+  # Initialise method.
+//^^^^^^^^^^^^^^^^^^^^ Comment
+  _private _method person.init(name, age)
+//^^^^^^^^ Keyword
+//         ^^^^^^^ Keyword
+//                 ^^^^^^ IdentifierType
+//                       ^ IdentifierOperator
+//                        ^^^^ IdentifierFunction
+//                             ^^^^ IdentifierParameter
+//                                   ^^^ IdentifierParameter
+      # Call the parent implementation.
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      _super.init(name, age)
+//    ^^^^^^ IdentifierBuiltin
+//          ^ IdentifierOperator
+//           ^^^^ IdentifierFunction
+//                ^^^^ Identifier
+//                      ^^^ Identifier
+      # Initialise the slots.
+//    ^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      .name << name
+//    ^^^^^ Identifier
+//          ^^ IdentifierOperator
+//             ^^^^ Identifier
+      .age << age
+//    ^^^^ Identifier
+//         ^^ IdentifierOperator
+//            ^^^ Identifier
+      _throw :error _with a, b
+//    ^^^^^^ Keyword
+//           ^^^^^^ StringLiteral
+//                  ^^^^^ Keyword
+//                        ^ Identifier
+//                           ^ Identifier
+  _return _self
+//^^^^^^^ Keyword
+//        ^^^^^ IdentifierBuiltin
+  _endmethod
+//^^^^^^^^^^ Keyword
+  
+  # Method calls
+//^^^^^^^^^^^^^^ Comment
+  object.getName
+//^^^^^^ Identifier
+//      ^ IdentifierOperator
+//       ^^^^^^^ Identifier
+  object.method()
+//^^^^^^ Identifier
+//      ^ IdentifierOperator
+//       ^^^^^^ IdentifierFunction
+  object.method<< _unset
+//^^^^^^ Identifier
+//      ^ IdentifierOperator
+//       ^^^^^^ Identifier
+//             ^^ IdentifierOperator
+//                ^^^^^^ IdentifierNull
+  object.method1.method2
+//^^^^^^ Identifier
+//      ^ IdentifierOperator
+//       ^^^^^^^ Identifier
+//              ^ IdentifierOperator
+//               ^^^^^^^ Identifier
+  
+  _thisthread.sleep(10)
+//^^^^^^^^^^^ Keyword
+//           ^ IdentifierOperator
+//            ^^^^^ IdentifierFunction
+//                  ^^ NumericLiteral
+  
+  # Iteration
+//^^^^^^^^^^^ Comment
+  _loop @outer_loop
+//^^^^^ Keyword
+//      ^^^^^^^^^^^ Identifier
+    _leave@outer_loop
+//  ^^^^^^ Keyword
+//        ^^^^^^^^^^^ Identifier
+    _continue@outer_loop
+//  ^^^^^^^^^ Keyword
+//           ^^^^^^^^^^^ Identifier
+  _endloop
+//^^^^^^^^ Keyword
+  
+  _block
+//^^^^^^ Keyword
+      _import x
+//    ^^^^^^^ Keyword
+//            ^ Identifier
+      _constant a1 << 0
+//    ^^^^^^^^^ Keyword
+//              ^^ Identifier
+//                 ^^ IdentifierOperator
+//                    ^ NumericLiteral
+      _constant _local a2 << 0
+//    ^^^^^^^^^ Keyword
+//              ^^^^^^ Keyword
+//                     ^^ Identifier
+//                        ^^ IdentifierOperator
+//                           ^ NumericLiteral
+      _local _constant a3 << 0
+//    ^^^^^^ Keyword
+//           ^^^^^^^^^ Keyword
+//                     ^^ Identifier
+//                        ^^ IdentifierOperator
+//                           ^ NumericLiteral
+   _local s << 0
+// ^^^^^^ Keyword
+//        ^ Identifier
+//          ^^ IdentifierOperator
+//             ^ NumericLiteral
+   _local i << 0
+// ^^^^^^ Keyword
+//        ^ Identifier
+//          ^^ IdentifierOperator
+//             ^ NumericLiteral
+   _while i <= 100
+// ^^^^^^ Keyword
+//        ^ Identifier
+//          ^^ IdentifierOperator
+//             ^^^ NumericLiteral
+   _loop
+// ^^^^^ Keyword
+          _leave _with (_unset, _unset)
+//        ^^^^^^ Keyword
+//               ^^^^^ Keyword
+//                      ^^^^^^ IdentifierNull
+//                              ^^^^^^ IdentifierNull
+    s +<< i
+//  ^ Identifier
+//    ^^^ IdentifierOperator
+//        ^ Identifier
+    i +<< 1
+//  ^ Identifier
+//    ^^^ IdentifierOperator
+//        ^ NumericLiteral
+   _endloop
+// ^^^^^^^^ Keyword
+  >> s
+//^^ IdentifierOperator
+//   ^ Identifier
+  _endblock
+//^^^^^^^^^ Keyword
+  
+  _method my_object.my_method(_gather values)
+//^^^^^^^ Keyword
+//        ^^^^^^^^^ IdentifierType
+//                 ^ IdentifierOperator
+//                  ^^^^^^^^^ IdentifierFunction
+//                            ^^^^^^^ Keyword
+//                                    ^^^^^^ IdentifierParameter
+    total << 0.0
+//  ^^^^^ Identifier
+//        ^^ IdentifierOperator
+//           ^^^ NumericLiteral
+    _for a _over values.elements()
+//  ^^^^ Keyword
+//       ^ Identifier
+//         ^^^^^ Keyword
+//               ^^^^^^ Identifier
+//                     ^ IdentifierOperator
+//                      ^^^^^^^^ IdentifierFunction
+    _loop
+//  ^^^^^ Keyword
+       total +<< a
+//     ^^^^^ Identifier
+//           ^^^ IdentifierOperator
+//               ^ Identifier
+       _continue _with _unset
+//     ^^^^^^^^^ Keyword
+//               ^^^^^ Keyword
+//                     ^^^^^^ IdentifierNull
+    _endloop
+//  ^^^^^^^^ Keyword
+    _try _with cond
+//  ^^^^ Keyword
+//       ^^^^^ Keyword
+//             ^^^^ Identifier
+    _when e
+//  ^^^^^ Keyword
+//        ^ Identifier
+    _endtry
+//  ^^^^^^^ Keyword
+    _return total
+//  ^^^^^^^ Keyword
+//          ^^^^^ Identifier
+  _endmethod
+//^^^^^^^^^^ Keyword
+  m << my_object.new()
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^^^^^^^^^ Identifier
+//              ^ IdentifierOperator
+//               ^^^ IdentifierFunction
+  x << m.my_method(1.0, 2, 3.0, 4)
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^ Identifier
+//      ^ IdentifierOperator
+//       ^^^^^^^^^ IdentifierFunction
+//                 ^^^ NumericLiteral
+//                      ^ NumericLiteral
+//                         ^^^ NumericLiteral
+//                              ^ NumericLiteral
+  
+  _iter _method my_object.even_elements()
+//^^^^^ Keyword
+//      ^^^^^^^ Keyword
+//              ^^^^^^^^^ IdentifierType
+//                       ^ IdentifierOperator
+//                        ^^^^^^^^^^^^^ IdentifierFunction
+    _for a _over _self.elements()
+//  ^^^^ Keyword
+//       ^ Identifier
+//         ^^^^^ Keyword
+//               ^^^^^ IdentifierBuiltin
+//                    ^ IdentifierOperator
+//                     ^^^^^^^^ IdentifierFunction
+    _loop
+//  ^^^^^ Keyword
+      _if a.even? _is _true
+//    ^^^ Keyword
+//        ^ Identifier
+//         ^ IdentifierOperator
+//          ^^^^^ Identifier
+//                ^^^ IdentifierOperator
+//                    ^^^^^ BooleanLiteral
+      _then
+//    ^^^^^ Keyword
+         _loopbody(a)
+//       ^^^^^^^^^ Keyword
+//                 ^ Identifier
+      _endif
+//    ^^^^^^ Keyword
+    _endloop
+//  ^^^^^^^^ Keyword
+  _endmethod
+//^^^^^^^^^^ Keyword
+  
+  _for _gather vals _over {:a,:b,:c}.fast_keys_and_elements()
+//^^^^ Keyword
+//     ^^^^^^^ Keyword
+//             ^^^^ Identifier
+//                  ^^^^^ Keyword
+//                         ^^ StringLiteral
+//                            ^^ StringLiteral
+//                               ^^ StringLiteral
+//                                  ^ IdentifierOperator
+//                                   ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+  _loop
+//^^^^^ Keyword
+    show(_scatter vals)
+//  ^^^^ IdentifierFunction
+//       ^^^^^^^^ Keyword
+//                ^^^^ Identifier
+  _endloop
+//^^^^^^^^ Keyword
+  
+  # Procedures
+//^^^^^^^^^^^^ Comment
+  my_procedure << _proc @my_procedure(a, b, _optional c)
+//^^^^^^^^^^^^ Identifier
+//             ^^ IdentifierOperator
+//                ^^^^^ Keyword
+//                      ^^^^^^^^^^^^^ IdentifierFunction
+//                                    ^ IdentifierParameter
+//                                       ^ IdentifierParameter
+//                                          ^^^^^^^^^ Keyword
+//                                                    ^ IdentifierParameter
+    _return a + b + c
+//  ^^^^^^^ Keyword
+//          ^ Identifier
+//            ^ IdentifierOperator
+//              ^ Identifier
+//                ^ IdentifierOperator
+//                  ^ Identifier
+  _endproc
+//^^^^^^^^ Keyword
+  x << my_procedure(1, 2, 3)
+//^ Identifier
+//  ^^ IdentifierOperator
+//     ^^^^^^^^^^^^ IdentifierFunction
+//                  ^ NumericLiteral
+//                     ^ NumericLiteral
+//                        ^ NumericLiteral
+  
+  # Regex
+//^^^^^^^ Comment
+  _if /Hello\,\s(\w)+!/.matches?("Hello, Magik!") _then
+//^^^ Keyword
+//    ^^^^^^^^^^^^^^^^^ StringLiteral
+//                     ^ IdentifierOperator
+//                      ^^^^^^^^ IdentifierFunction
+//                               ^^^^^^^^^^^^^^^ StringLiteral
+//                                                ^^^^^ Keyword
+      write("Got a match!")
+//    ^^^^^ IdentifierFunction
+//          ^^^^^^^^^^^^^^ StringLiteral
+  _endif
+//^^^^^^ Keyword

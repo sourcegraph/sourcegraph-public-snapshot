@@ -1,6 +1,5 @@
 <script lang="ts">
-    import { getProgressText } from '@sourcegraph/branded'
-
+    import { getProgressText } from '$lib/branded'
     import type { Progress } from '$lib/shared'
 
     export let state: 'error' | 'loading' | 'complete'

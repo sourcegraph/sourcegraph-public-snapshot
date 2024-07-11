@@ -23,8 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -92,9 +90,6 @@ type ServerOpts struct {
 	// The factory creates recordable commands with a set predicate, which is used to determine whether a
 	// particular command should be recorded or not.
 	RecordingCommandFactory *wrexec.RecordingCommandFactory
-
-	// Perforce is a plugin-like service attached to Server for all things Perforce.
-	Perforce *perforce.Service
 }
 
 func NewServer(opt *ServerOpts) *Server {
@@ -126,7 +121,6 @@ func NewServer(opt *ServerOpts) *Server {
 		locker:                  opt.Locker,
 		rpsLimiter:              opt.RPSLimiter,
 		recordingCommandFactory: opt.RecordingCommandFactory,
-		perforce:                opt.Perforce,
 		fs:                      opt.FS,
 
 		cloneLimiter: cloneLimiter,
@@ -192,9 +186,6 @@ type Server struct {
 	// The factory creates recordable commands with a set predicate, which is used to determine whether a
 	// particular command should be recorded or not.
 	recordingCommandFactory *wrexec.RecordingCommandFactory
-
-	// perforce is a plugin-like service attached to Server for all things perforce.
-	perforce *perforce.Service
 }
 
 // Stop cancels the running background jobs and returns when done.
@@ -303,8 +294,6 @@ func (s *Server) FetchRepository(ctx context.Context, repoName api.RepoName) (la
 func (s *Server) repoUpdateOrClone(ctx context.Context, repoName api.RepoName) error {
 	logger := s.logger.Scoped("repoUpdateOrClone")
 
-	dir := s.fs.RepoDir(repoName)
-
 	lock, ok := s.locker.TryAcquire(repoName, "starting fetch")
 	if !ok {
 		return ErrFetchInProgress
@@ -371,8 +360,6 @@ func (s *Server) repoUpdateOrClone(ctx context.Context, repoName api.RepoName) e
 				}
 			}
 
-			s.perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(repoName, dir))
-
 			return nil
 		}()
 	}()
@@ -405,32 +392,9 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, lock Reposito
 
 	logger := s.logger.Scoped("cloneRepo").With(log.String("repo", string(repo)))
 
-	syncer, err := func() (_ vcssyncer.VCSSyncer, err error) {
-		syncer, err := s.getVCSSyncer(ctx, repo)
-		if err != nil {
-			return nil, errors.Wrap(err, "get VCS syncer")
-		}
-
-		if err = s.rpsLimiter.Wait(ctx); err != nil {
-			return nil, err
-		}
-
-		remoteURL, err := s.getRemoteURL(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
-		if err := syncer.IsCloneable(ctx, repo); err != nil {
-			redactedErr := urlredactor.New(remoteURL).Redact(err.Error())
-			return nil, errors.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactedErr)
-		}
-
-		return syncer, nil
-	}()
+	syncer, err := s.getVCSSyncer(ctx, repo)
 	if err != nil {
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-		return err
+		return errors.Wrap(err, "get VCS syncer")
 	}
 
 	dir := s.fs.RepoDir(repo)
@@ -520,6 +484,11 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, lock Reposito
 		return errors.Wrapf(cloneErr, "clone failed. Output: %s", output.String())
 	}
 
+	// Set a separate timeout for post repo fetch actions, otherwise git commands
+	// that are run as part of that will have the default timeout of 1 minute,
+	// and we want this to succeed rather than be super fast.
+	ctx, cancel = context.WithTimeout(ctx, conf.GitLongCommandTimeout())
+	defer cancel()
 	if err := postRepoFetchActions(ctx, logger, s.fs, s.db, s.gitBackendSource(common.GitDir(tmpPath), repo), s.hostname, repo, common.GitDir(tmpPath), syncer); err != nil {
 		return err
 	}
@@ -737,6 +706,11 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, lock Repos
 			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, output.String())
 		}
 
+		// Set a separate timeout for post repo fetch actions, otherwise git commands
+		// that are run as part of that will have the default timeout of 1 minute,
+		// and we want this to succeed rather than be super fast.
+		ctx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
+		defer cancel()
 		return postRepoFetchActions(ctx, logger, s.fs, s.db, s.gitBackendSource(dir, repo), s.hostname, repo, dir, syncer)
 	}(ctx)
 

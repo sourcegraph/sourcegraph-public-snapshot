@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	modelconfigSDK "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
@@ -29,6 +30,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/modelconfig"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -59,13 +61,13 @@ func newCompletionsHandler(
 	feature types.CompletionsFeature,
 	rl RateLimiter,
 	traceFamily string,
-	getModel func(context.Context, types.CodyCompletionRequestParameters, *conftypes.CompletionsConfig) (string, error),
+	getModel getModelFn,
 ) http.Handler {
 	responseHandler := newSwitchingResponseHandler(logger, db, feature)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
-			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusMethodNotAllowed)
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 			return
 		}
 
@@ -73,7 +75,8 @@ func newCompletionsHandler(
 		defer cancel()
 
 		if isEnabled, reason := cody.IsCodyEnabled(ctx, db); !isEnabled {
-			http.Error(w, fmt.Sprintf("cody is not enabled: %s", reason), http.StatusUnauthorized)
+			errResponse := fmt.Sprintf("cody is not enabled: %s", reason)
+			http.Error(w, errResponse, http.StatusUnauthorized)
 			return
 		}
 
@@ -84,12 +87,15 @@ func newCompletionsHandler(
 		}
 
 		var version types.CompletionsVersion
-		versionParam := r.URL.Query().Get("api-version")
-		if versionParam == "" {
+		switch versionParam := r.URL.Query().Get("api-version"); versionParam {
+		case "":
 			version = types.CompletionsVersionLegacy
-		} else if versionParam == "1" {
+		case "1":
 			version = types.CompletionsV1
-		} else {
+		default:
+			logger.Warn(
+				"blocking request because unrecognized CompletionsVersion API param",
+				log.String("version", versionParam))
 			http.Error(w, "Unsupported API Version (Please update your client)", http.StatusNotAcceptable)
 			return
 		}
@@ -99,13 +105,17 @@ func newCompletionsHandler(
 		isDotcom := dotcom.SourcegraphDotComMode()
 		if !isDotcom {
 			if err := checkClientCodyIgnoreCompatibility(ctx, db, r); err != nil {
+				logger.Info("rejecting request due to CodyIngore compat", log.Error(err))
 				http.Error(w, err.Error(), err.statusCode)
 				return
 			}
 		}
 
+		// We don't perform any sort of validation. So we would silently accept a totally bogus
+		// JSON payload. And just have a zero-value CompletionRequestParameters, e.g. no prompt.
 		var requestParams types.CodyCompletionRequestParameters
 		if err := json.NewDecoder(r.Body).Decode(&requestParams); err != nil {
+			logger.Warn("malformed CodyCompletionRequestParameters", log.Error(err))
 			http.Error(w, "could not decode request body", http.StatusBadRequest)
 			return
 		}
@@ -113,7 +123,14 @@ func newCompletionsHandler(
 		// TODO: Model is not configurable but technically allowed in the request body right now.
 		var err error
 		requestParams.Model, err = getModel(ctx, requestParams, completionsConfig)
+		requestParams.User = completionsConfig.User
+		requestParams.AzureChatModel = completionsConfig.AzureChatModel
+		requestParams.AzureCompletionModel = completionsConfig.AzureCompletionModel
+		requestParams.AzureUseDeprecatedCompletionsAPIForOldModels = completionsConfig.AzureUseDeprecatedCompletionsAPIForOldModels
 		if err != nil {
+			// NOTE: We return the raw error to the user assuming that it contains relevant
+			// user-facing diagnostic information, and doesn't leak any internal details.
+			logger.Info("error fetching model", log.Error(err))
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -126,7 +143,9 @@ func newCompletionsHandler(
 
 		// Use the user's access token for Cody Gateway on dotcom if PLG is enabled.
 		accessToken := completionsConfig.AccessToken
-		isProviderCodyGateway := completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
+		// TODO(slimsag): self-hosted-models: Note we are disabling Cody Gateway if "modelConfiguration" is in use currently.
+		// this logic only handles Cody Enterprise with Self-hosted models
+		isProviderCodyGateway := !conf.UseExperimentalModelConfiguration() && completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
 		if isDotcom && isProviderCodyGateway {
 			// Note: if we have no Authorization header, that's fine too, this will return an error
 			apiToken, _, err := authz.ParseAuthorizationHeader(r.Header.Get("Authorization"))
@@ -161,12 +180,31 @@ func newCompletionsHandler(
 			}
 		}
 
+		var modelConfigInfo *types.ModelConfigInfo
+		if conf.UseExperimentalModelConfiguration() {
+			// TODO(slimsag): self-hosted-models: this logic only handles Cody Enterprise with Self-hosted models
+			modelConfig, err := modelconfig.Get().Get()
+			if err != nil {
+				trace.Logger(ctx, logger).Info("UseExperimentalModelConfiguration - failed to load model configuration", log.Error(err))
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			requestModelRef := modelconfigSDK.ModelRef(requestParams.Model) // a verified modelref at this point
+			modelConfigInfo, err = types.NewModelConfigInfo(modelConfig, requestModelRef)
+			if err != nil {
+				trace.Logger(ctx, logger).Info("UseExperimentalModelConfiguration - failed to create model config info", log.Error(err))
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
 		completionClient, err := client.Get(
 			logger,
 			events,
 			completionsConfig.Endpoint,
 			completionsConfig.Provider,
 			accessToken,
+			modelConfigInfo,
 		)
 		l := trace.Logger(ctx, logger)
 		if err != nil {
@@ -241,6 +279,9 @@ func newSwitchingResponseHandler(logger log.Logger, db database.DB, feature type
 func newStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
 	return func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
 		var eventWriter = sync.OnceValue[*streamhttp.Writer](func() *streamhttp.Writer {
+			// NOTE: The HTTP response defaults to 200 if not set explicitly before writing the response.
+			// This means that this function will never serve a non-OK response. (Which makes sense, since
+			// we don't know ahead of time if some later SSE event will fail.
 			eventWriter, err := streamhttp.NewWriter(w)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -315,14 +356,21 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 				f = ff
 			}
 		}
-		err := cc.Stream(ctx, feature, version, requestParams,
-			func(event types.CompletionResponse) error {
-				if !firstEventObserved {
-					firstEventObserved = true
-					timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
-				}
-				return f.Send(ctx, event)
-			}, logger)
+
+		// Build and send the completions request.
+		compReq := types.CompletionRequest{
+			Feature:    feature,
+			Version:    version,
+			Parameters: requestParams,
+		}
+		sendEventFn := func(event types.CompletionResponse) error {
+			if !firstEventObserved {
+				firstEventObserved = true
+				timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
+			}
+			return f.Send(ctx, event)
+		}
+		err := cc.Stream(ctx, logger, compReq, sendEventFn)
 		if err != nil {
 			l := trace.Logger(ctx, logger)
 
@@ -393,7 +441,12 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 // to the client.
 func newNonStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
 	return func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
-		completion, err := cc.Complete(ctx, feature, version, requestParams, logger)
+		compRequest := types.CompletionRequest{
+			Feature:    feature,
+			Version:    version,
+			Parameters: requestParams,
+		}
+		completion, err := cc.Complete(ctx, logger, compRequest)
 		if err != nil {
 			logFields := []log.Field{log.Error(err)}
 

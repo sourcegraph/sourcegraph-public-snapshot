@@ -1,12 +1,13 @@
 package diagram
 
 import (
+	"oss.terrastruct.com/d2/d2graph"
+	"oss.terrastruct.com/d2/d2oracle"
+
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/diagram/assets"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"oss.terrastruct.com/d2/d2graph"
-	"oss.terrastruct.com/d2/d2oracle"
 )
 
 func newBigQueryNode(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
@@ -66,7 +67,7 @@ func newInternetNode(graph *d2graph.Graph) (*d2graph.Graph, string, error) {
 
 func newLoadBalancerNode(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
 	// Create Cloud Armor rules also
-	if env.Category.IsProduction() && env.Domain.Cloudflare.ShouldProxy() {
+	if env.Category.IsProduction() && env.Domain != nil && env.Domain.Cloudflare.ShouldProxy() {
 		// create a container for the load balancer + cloud armor
 		graph, container, err := d2oracle.Create(graph, nil, "loadbalancer_container")
 		if err != nil {

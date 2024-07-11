@@ -1,12 +1,13 @@
 .history-item {
     display: flex;
     flex-direction: column;
-    background: var(--body-bg);
-    cursor: pointer;
-    padding: var(--spacing);
     margin-bottom: 0;
-    border-radius: 0.25rem;
+    padding: var(--spacing);
     border: none;
+    cursor: pointer;
+    border-radius: 0.25rem;
+    background: var(--body-bg);
+
     &:hover {
         background: var(--color-bg-1);
     }

@@ -1,8 +1,6 @@
 package codygateway
 
 import (
-	"time"
-
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 )
 
@@ -46,6 +44,9 @@ type EmbeddingsRequest struct {
 	Model string `json:"model"`
 	// Input is the list of strings to generate embeddings for.
 	Input []string `json:"input"`
+	// IsQuery is true if the request is used for querying, false if it used for indexing.
+	// TODO: Refactor this to use an enum to be more descriptive. This will require updating callers in bfg/embeddings.
+	IsQuery bool `json:"isQuery"`
 }
 
 type Embedding struct {
@@ -62,23 +63,6 @@ type EmbeddingsResponse struct {
 	Model string `json:"model"`
 	// ModelDimensions is the dimensionality of the embeddings model used.
 	ModelDimensions int `json:"dimensions"`
-}
-
-// ActorConcurrencyLimitConfig is the configuration for the concurrent requests
-// limit of an actor.
-type ActorConcurrencyLimitConfig struct {
-	// Percentage is the percentage of the daily rate limit to be used to compute the
-	// concurrency limit.
-	Percentage float32
-	// Interval is the time interval of the limit bucket.
-	Interval time.Duration
-}
-
-// ActorRateLimitNotifyConfig is the configuration for the rate limit
-// notifications of an actor.
-type ActorRateLimitNotifyConfig struct {
-	// SlackWebhookURL is the URL of the Slack webhook to send the alerts to.
-	SlackWebhookURL string
 }
 
 // AttributionRequest is request for attribution search.

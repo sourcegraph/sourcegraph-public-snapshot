@@ -10,6 +10,7 @@ go_library(
         "http.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/conf",
@@ -38,6 +39,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":releasecache"],
     tags = [
+        TAG_INFRA_DEVINFRA,
         "requires-network",
     ],
     deps = [

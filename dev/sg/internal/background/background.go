@@ -7,18 +7,18 @@ import (
 	"sync"
 	"time"
 
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 type key int
 
-var jobsKey key
+var (
+	jobsKey key
+	hasRun  bool
+)
 
 type backgroundJobs struct {
 	wg                sync.WaitGroup
@@ -73,12 +73,12 @@ func Run(ctx context.Context, job func(ctx context.Context, backgroundOutput *st
 // outputs from completed jobs. This should only be called when user command execution is
 // complete, and we are now waiting for background tasks to complete.
 func Wait(ctx context.Context, out *std.Output) {
+	if hasRun {
+		return
+	}
+	hasRun = true
 	jobs := loadFromContext(ctx)
 	pendingCount := int(jobs.stillRunningCount.Load())
-
-	_, span := analytics.StartSpan(ctx, "background_wait", "",
-		trace.WithAttributes(attribute.Int("jobs", pendingCount)))
-	defer span.End()
 
 	firstResultWithOutput := true
 	if jobs.verbose && pendingCount > 0 {
@@ -105,7 +105,6 @@ func Wait(ctx context.Context, out *std.Output) {
 	if jobs.verbose && pendingCount > 0 {
 		out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Background jobs done!"))
 	}
-	span.Succeeded()
 }
 
 func pluralize(single, plural string, count int) string {

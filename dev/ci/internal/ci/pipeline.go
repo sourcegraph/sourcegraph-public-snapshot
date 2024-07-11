@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/helpers"
 	"github.com/sourcegraph/sourcegraph/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/changed"
@@ -69,9 +70,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 	bk.FeatureFlags.ApplyEnv(env)
 
-	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease) {
-		env["PERCY_TARGET_BRANCH"] = c.Branch
 		// When we are building a release, we do not want to cache the client bundle.
 		//
 		// This is a defensive measure, as caching the client bundle is tricky when it comes to invalidating it.
@@ -108,7 +107,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				bzlCmd = strings.TrimSpace(strings.TrimPrefix(line, "!bazel"))
 
 				// sanitize the input
-				if err := verifyBazelCommand(bzlCmd); err != nil {
+				if err := helpers.VerifyBazelCommand(bzlCmd); err != nil {
 					return nil, errors.Wrapf(err, "cannot generate bazel-do")
 				}
 
@@ -154,7 +153,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		if c.Diff.Has(changed.ClientBrowserExtensions) {
 			ops.Merge(operations.NewNamedSet("Browser Extensions",
-				addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
+				addBrowserExtensionIntegrationTests(),
 			))
 		}
 
@@ -165,7 +164,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			CoreTestOperationsOptions{
 				IsMainBranch: buildOptions.Branch == "main",
 			},
-			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
+			addBrowserExtensionIntegrationTests(),
 			wait,
 			addBrowserExtensionReleaseSteps)
 
@@ -290,6 +289,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		if c.RunType.Is(
 			runtype.MainDryRun,
+			runtype.DockerImages,
 			runtype.MainBranch,
 			runtype.ReleaseBranch,
 			runtype.TaggedRelease,
@@ -307,7 +307,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(CoreTestOperations(buildOptions, changed.All, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
-			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun, runtype.CloudEphemeral),
+			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun, runtype.DockerImages, runtype.CloudEphemeral),
 			IsMainBranch:              true,
 		}))
 

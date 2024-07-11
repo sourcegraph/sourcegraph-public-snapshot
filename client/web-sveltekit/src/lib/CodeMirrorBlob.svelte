@@ -62,7 +62,6 @@
         },
         '.cm-gutterElement': {
             lineHeight: '1.54',
-            minWidth: '40px !important',
 
             '&:hover': {
                 color: 'var(--text-body)',
@@ -72,7 +71,8 @@
             padding: '0 1.5ex',
         },
         '.cm-line': {
-            lineHeight: '1.54',
+            lineHeight: 'var(--code-line-height)',
+            padding: '0',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
@@ -92,6 +92,8 @@
         },
         '.cm-tooltip': {
             border: 'none',
+            // For nice rounded corners in hover cards
+            borderRadius: 'var(--border-radius)',
         },
     })
 
@@ -122,6 +124,7 @@
 <script lang="ts">
     import '$lib/highlight.scss'
 
+    import { openSearchPanel } from '@codemirror/search'
     import { EditorState, type Extension } from '@codemirror/state'
     import { EditorView } from '@codemirror/view'
     import { createEventDispatcher, onMount } from 'svelte'
@@ -129,8 +132,10 @@
     import { browser } from '$app/environment'
     import { goto } from '$app/navigation'
     import type { LineOrPositionOrRange } from '$lib/common'
-    import type { CodeIntelAPI } from '$lib/shared'
+    import { type CodeIntelAPI, Occurrence } from '$lib/shared'
     import {
+        codeGraphData as codeGraphDataFacet,
+        type CodeGraphData,
         selectableLineNumbers,
         syntaxHighlight,
         type SelectedLineRange,
@@ -145,9 +150,13 @@
         lockFirstVisibleLine,
         temporaryTooltip,
         hideEmptyLastLine,
+        search,
+        debugOccurrences as debugOccurrencesFacet,
     } from '$lib/web'
 
     import BlameDecoration from './blame/BlameDecoration.svelte'
+    import { ReblameMarker } from './blame/reblame'
+    import { SearchPanel, keyboardShortcut } from './codemirror/inline-search'
     import { type Range, staticHighlights } from './codemirror/static-highlights'
     import {
         createCompartments,
@@ -156,10 +165,14 @@
         type ScrollSnapshot,
         getScrollSnapshot as getScrollSnapshot_internal,
     } from './codemirror/utils'
+    import { registerHotkey } from './Hotkey'
     import { goToDefinition, openImplementations, openReferences } from './repo/blob'
+    import { createLocalWritable } from './stores'
 
     export let blobInfo: BlobInfo
     export let highlights: string
+    export let codeGraphData: CodeGraphData[] = []
+    export let debugOccurrences: Occurrence[] = []
     export let wrapLines: boolean = false
     export let selectedLines: LineOrPositionOrRange | null = null
     export let codeIntelAPI: CodeIntelAPI | null
@@ -189,6 +202,21 @@
         staticHighlightExtension: null,
         blameDataExtension: null,
         blameColumnExtension: null,
+        searchExtension: null,
+        codeGraphExtension: null,
+        debugOccurrencesExtension: null,
+    })
+    const useFileSearch = createLocalWritable('blob.overrideBrowserFindOnPage', true)
+    registerHotkey({
+        keys: keyboardShortcut,
+        handler(event) {
+            if ($useFileSearch && view) {
+                event.preventDefault()
+                openSearchPanel(view)
+            }
+            // fall back to browser's find in page
+        },
+        allowDefault: true,
     })
 
     let container: HTMLDivElement | null = null
@@ -229,7 +257,18 @@
         : null
     $: lineWrapping = wrapLines ? EditorView.lineWrapping : null
     $: syntaxHighlighting = highlights ? syntaxHighlight.of({ content: blobInfo.content, lsif: highlights }) : null
+    $: codeGraph = codeGraphDataFacet.of(codeGraphData)
+    $: debugOccurrencesExtension = debugOccurrencesFacet.of(debugOccurrences)
     $: staticHighlightExtension = staticHighlights(staticHighlightRanges)
+    $: searchExtension = search({
+        overrideBrowserFindInPageShortcut: $useFileSearch,
+        onOverrideBrowserFindInPageToggle(enabled) {
+            useFileSearch.set(enabled)
+        },
+        createPanel(options) {
+            return new SearchPanel(options)
+        },
+    })
 
     $: blameColumnExtension = showBlame
         ? showBlameColumn({
@@ -241,6 +280,7 @@
                       },
                   }
               },
+              createReblameMarker: (...args) => new ReblameMarker(...args),
           })
         : null
     $: blameDataExtension = blameDataFacet(blameData)
@@ -253,8 +293,11 @@
             codeIntelExtension,
             lineWrapping,
             syntaxHighlighting,
+            codeGraphExtension: codeGraph,
             staticHighlightExtension,
             blameDataExtension,
+            searchExtension,
+            debugOccurrencesExtension,
         }
         if (view.state.sliceDoc() !== blobInfo.content) {
             view.setState(createEditorState(blobInfo, extensions))
@@ -290,9 +333,12 @@
                     codeIntelExtension,
                     lineWrapping,
                     syntaxHighlighting,
+                    codeGraphExtension: codeGraph,
                     staticHighlightExtension,
                     blameDataExtension,
                     blameColumnExtension,
+                    searchExtension,
+                    debugOccurrencesExtension,
                 }),
                 parent: container,
             })

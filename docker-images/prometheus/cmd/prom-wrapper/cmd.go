@@ -4,16 +4,34 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/sourcegraph/log"
+	"go.bobheadxi.dev/streamline/streamexec"
 )
 
 func runCmd(logger log.Logger, errs chan<- error, cmd *exec.Cmd) {
-	logger = logger.With(log.Strings("cmd", append([]string{cmd.Path}, cmd.Args...)))
-	logger.Info("running cmd")
-	if err := cmd.Run(); err != nil {
-		logger.Error("command exited", log.Error(err))
+	commandLog := logger.With(log.Strings("cmd", append([]string{cmd.Path}, cmd.Args...)))
+	commandLog.Info("running cmd")
+	s, err := streamexec.Start(cmd, streamexec.Combined|streamexec.ErrWithStderr)
+	if err != nil {
+		commandLog.Error("command exited", log.Error(err))
 		errs <- err
+		return
+	}
+	if err := s.Stream(func(line string) {
+		switch {
+		case strings.Contains(line, "level=warn"):
+			logger.Warn(line)
+		case strings.Contains(line, "level=error"):
+			logger.Error(line)
+		default:
+			logger.Info(line)
+		}
+	}); err != nil {
+		commandLog.Error("command exited", log.Error(err))
+		errs <- err
+		return
 	}
 }
 
@@ -25,8 +43,6 @@ func NewPrometheusCmd(promArgs []string, promPort string) *exec.Cmd {
 	}
 	cmd := exec.Command("/prometheus.sh", append(promFlags, promArgs...)...)
 	cmd.Env = os.Environ()
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
 	return cmd
 }
 
@@ -40,7 +56,5 @@ func NewAlertmanagerCmd(configPath string) *exec.Cmd {
 		cmd.Args = append(cmd.Args, "--cluster.listen-address=")
 	}
 	cmd.Env = os.Environ()
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
 	return cmd
 }

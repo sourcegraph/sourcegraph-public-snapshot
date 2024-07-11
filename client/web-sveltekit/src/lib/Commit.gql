@@ -8,6 +8,7 @@ fragment Commit on GitCommit {
         date
         person {
             name
+            email
             ...Avatar_Person
         }
     }

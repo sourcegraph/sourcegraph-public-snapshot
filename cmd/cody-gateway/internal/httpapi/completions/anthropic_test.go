@@ -114,8 +114,9 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 		ar := anthropicRequest{Model: "claude-2", Prompt: validPreamble + " " + longPrompt + "bad phrase"}
 		result, err := callShouldFlagRequest(t, ar, cfgWithBadPhrase)
 		require.NoError(t, err)
-		// for now, we should not flag requests purely because of bad phrases
-		require.False(t, result.IsFlagged())
+		// As of https://sourcegraph.slack.com/archives/C06062P5TS5/p1716896478893949?thread_ts=1716475553.409679&cid=C06062P5TS5), we consider bad phrases to be sufficient for flagging (and blocking)
+		require.True(t, result.IsFlagged())
+		require.True(t, result.shouldBlock)
 	})
 
 	t.Run("high prompt token count (above block limit)", func(t *testing.T) {

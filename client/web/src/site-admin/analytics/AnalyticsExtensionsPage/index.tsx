@@ -129,7 +129,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<Props> = ({ teleme
             dateRange: dateRange.value,
             color: 'var(--purple)',
             description:
-                'Our extensions allow users to complete their goals without switching tools and context. We’ve calculated the time saved by reducing context switching between tools.',
+                'Our search extensions allow users to complete their goals without switching tools and context. We’ve calculated the time saved by reducing context switching between tools.',
             value: totalEvents,
             items: [
                 {
@@ -181,7 +181,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<Props> = ({ teleme
 
     return (
         <>
-            <AnalyticsPageTitle>Extensions</AnalyticsPageTitle>
+            <AnalyticsPageTitle>Search extensions</AnalyticsPageTitle>
 
             <Card className="p-3 position-relative">
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">

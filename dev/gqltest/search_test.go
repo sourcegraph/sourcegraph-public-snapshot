@@ -98,9 +98,6 @@ type searchClient interface {
 	SearchFiles(query string) (*gqltestutil.SearchFileResults, error)
 	SearchAll(query string) ([]*gqltestutil.AnyResult, error)
 
-	UpdateSiteConfiguration(config *schema.SiteConfiguration, lastID int32) error
-	SiteConfiguration() (*schema.SiteConfiguration, int32, error)
-
 	OverwriteSettings(subjectID, contents string) error
 	AuthenticatedUserID() string
 
@@ -206,6 +203,25 @@ func testSearchClient(t *testing.T, client searchClient) {
 			if !strings.HasSuffix(r.File.Name, ".go") {
 				t.Fatalf("Found file name does not end with .go: %s", r.File.Name)
 			}
+		}
+	})
+
+	t.Run("path match ranges are returned", func(t *testing.T) {
+		results, err := client.SearchFiles("repo:^github.com/sgtest/go-diff$@f935979 type:path file:^\\.travis")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(results.Results) != 1 {
+			t.Fatal("expected 1 result")
+		}
+		pathMatches := results.Results[0].PathMatches
+		if len(pathMatches) != 1 {
+			t.Fatal("expected 1 path match")
+		}
+		pathMatch := pathMatches[0]
+		if pathMatch.Start.Character != 0 || pathMatch.End.Character != 7 {
+			t.Fatal("expected path match to cover range [0, 7)")
 		}
 	})
 
@@ -734,30 +750,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("structural search", func(t *testing.T) {
-		// Enable structural search.
-		siteConfig, lastID, err := client.SiteConfiguration()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		oldSiteConfig := new(schema.SiteConfiguration)
-		*oldSiteConfig = *siteConfig
-		defer func() {
-			_, lastID, err := client.SiteConfiguration()
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
-		siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{StructuralSearch: "enabled"}
-		err = client.UpdateSiteConfiguration(siteConfig, lastID)
-		if err != nil {
-			t.Fatal(err)
-		}
+		enableStructuralSearch(t)
 
 		tests := []struct {
 			name       string

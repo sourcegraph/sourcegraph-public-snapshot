@@ -83,11 +83,11 @@ export class PanelResizeHandleRegistry {
             const { body } = ownerDocument
 
             body.removeEventListener('contextmenu', PanelResizeHandleRegistry.handlePointerUp)
-            body.removeEventListener('mousedown', PanelResizeHandleRegistry.handlePointerDown)
+            body.removeEventListener('mousedown', PanelResizeHandleRegistry.handlePointerDown, { capture: true })
             body.removeEventListener('mouseleave', PanelResizeHandleRegistry.handlePointerMove)
             body.removeEventListener('mousemove', PanelResizeHandleRegistry.handlePointerMove)
             body.removeEventListener('touchmove', PanelResizeHandleRegistry.handlePointerMove)
-            body.removeEventListener('touchstart', PanelResizeHandleRegistry.handlePointerDown)
+            body.removeEventListener('touchstart', PanelResizeHandleRegistry.handlePointerDown, { capture: true })
         })
 
         window.removeEventListener('mouseup', PanelResizeHandleRegistry.handlePointerUp)
@@ -119,12 +119,18 @@ export class PanelResizeHandleRegistry {
                     const { body } = ownerDocument
 
                     if (count > 0) {
-                        body.addEventListener('mousedown', PanelResizeHandleRegistry.handlePointerDown)
+                        // Capturing to prevent any other listeners from being triggered when the user really wants
+                        // to resize a panel
+                        body.addEventListener('mousedown', PanelResizeHandleRegistry.handlePointerDown, {
+                            capture: true,
+                        })
                         body.addEventListener('mousemove', PanelResizeHandleRegistry.handlePointerMove)
                         body.addEventListener('touchmove', PanelResizeHandleRegistry.handlePointerMove, {
                             passive: false,
                         })
-                        body.addEventListener('touchstart', PanelResizeHandleRegistry.handlePointerDown)
+                        body.addEventListener('touchstart', PanelResizeHandleRegistry.handlePointerDown, {
+                            capture: true,
+                        })
                     }
                 })
             }
@@ -169,9 +175,6 @@ export class PanelResizeHandleRegistry {
     static handlePointerMove(event: ResizeEvent) {
         const { x, y } = getResizeEventCoordinates(event)
 
-        event.preventDefault()
-        event.stopImmediatePropagation()
-
         if (!PanelResizeHandleRegistry.isPointerDown) {
             const { target } = event
 
@@ -179,6 +182,11 @@ export class PanelResizeHandleRegistry {
             // at that point, the handles may not move with the pointer (depending on constraints)
             // but the same set of active handles should be locked until the pointer is released
             PanelResizeHandleRegistry.recalculateIntersectingHandles({ target, x, y })
+        } else {
+            // These are required to prevent default browser behavior when dragging started not precisely on the handle
+            // For example when starting to drag the history panel up, the file content would be selected without these
+            event.preventDefault()
+            event.stopImmediatePropagation()
         }
 
         PanelResizeHandleRegistry.updateResizeHandlerStates('move', event)

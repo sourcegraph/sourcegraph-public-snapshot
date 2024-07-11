@@ -155,7 +155,7 @@ func Test_HandleWithTerminalError(t *testing.T) {
 		job := queueIt(t, 9, series)
 		err := handler.Handle(ctx, logger, job)
 		require.ErrorIs(t, err, fakeErr)
-		incompletes, err := tss.LoadAggregatedIncompleteDatapoints(ctx, series.ID)
+		incompletes, err := tss.LoadIncompleteDatapoints(ctx, series.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -168,7 +168,7 @@ func Test_HandleWithTerminalError(t *testing.T) {
 		job := queueIt(t, 7, series)
 		err := handler.Handle(ctx, logger, job)
 		require.ErrorIs(t, err, fakeErr)
-		incompletes, err := tss.LoadAggregatedIncompleteDatapoints(ctx, series.ID)
+		incompletes, err := tss.LoadIncompleteDatapoints(ctx, series.ID)
 		if err != nil {
 			t.Fatal(err)
 		}

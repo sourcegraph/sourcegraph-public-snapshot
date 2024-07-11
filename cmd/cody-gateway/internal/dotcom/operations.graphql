@@ -18,53 +18,6 @@ fragment CodyGatewayAccessFields on CodyGatewayAccess {
     }
 }
 
-fragment ProductSubscriptionState on ProductSubscription {
-    id
-    uuid
-    account {
-        username
-    }
-    isArchived
-    codyGatewayAccess {
-        ...CodyGatewayAccessFields
-    }
-    activeLicense {
-        info {
-            tags
-        }
-    }
-}
-
-# CheckAccessToken returns traits of the product subscription associated with
-# the given access token.
-query CheckAccessToken($token: String!) {
-    dotcom {
-        productSubscriptionByAccessToken(accessToken: $token) {
-            ...ProductSubscriptionState
-        }
-    }
-}
-
-fragment ListProductSubscriptionFields on ProductSubscription {
-    ...ProductSubscriptionState
-    sourcegraphAccessTokens
-}
-
-query ListProductSubscriptions {
-    dotcom {
-        productSubscriptions {
-            totalCount
-            pageInfo {
-                endCursor
-                hasNextPage
-            }
-            nodes {
-                ...ListProductSubscriptionFields
-            }
-        }
-    }
-}
-
 fragment DotcomUserState on CodyGatewayDotcomUser {
     id
     username

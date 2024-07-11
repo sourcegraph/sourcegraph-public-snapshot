@@ -243,9 +243,6 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 					}
 					return nil, errors.Wrap(err, "gitserverClient.ReadDir.Next")
 				}
-				if fd.IsDir() {
-					continue
-				}
 				if _, ok := seen[fd.Name()]; ok {
 					continue
 				}
@@ -274,7 +271,7 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 
 		commit, err := h.gitserverClient.GetCommit(ctx, repo.Name, api.CommitID(upload.Commit))
 		if err != nil {
-			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 				return errCommitDoesNotExist
 			}
 			return errors.Wrap(err, "failed to determine commit date")
@@ -418,7 +415,7 @@ func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, git
 	}
 
 	var reason string
-	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+	if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 		reason = "commit not found"
 	} else if gitdomain.IsCloneInProgress(err) {
 		reason = "repository still cloning"

@@ -11,10 +11,6 @@ service RepoUpdaterService {
   rpc RepoUpdateSchedulerInfo(RepoUpdateSchedulerInfoRequest) returns (RepoUpdateSchedulerInfoResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // RepoLookup retrieves information about the repository on repoupdater.
-  rpc RepoLookup(RepoLookupRequest) returns (RepoLookupResponse) {
-    option idempotency_level = IDEMPOTENT;
-  }
   // EnqueueRepoUpdate requests that the named repository be updated in the near
   // future. It does not wait for the update.
   rpc EnqueueRepoUpdate(EnqueueRepoUpdateRequest) returns (EnqueueRepoUpdateResponse) {
@@ -60,28 +56,6 @@ message RepoQueueState {
   int64 total = 2;
   bool updating = 3;
   int64 priority = 4;
-}
-
-message RepoLookupRequest {
-  reserved 2;
-  reserved "update";
-
-  // Repo is the repository name to look up.
-  string repo = 1;
-}
-
-message RepoLookupResponse {
-  // Repo contains information about the repository, if it is found. If an error occurred, it is nil.
-  RepoInfo repo = 1;
-
-  // the repository host reported that the repository was not found
-  bool error_not_found = 2;
-  // the repository host rejected the client's authorization
-  bool error_unauthorized = 3;
-  // the repository host was temporarily unavailable (e.g., rate limit exceeded)
-  bool error_temporarily_unavailable = 4;
-  // the repository cannot be added because it doesn't fit restrictions.
-  string error_repo_denied = 5;
 }
 
 message RepoInfo {

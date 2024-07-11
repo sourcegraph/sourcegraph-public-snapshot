@@ -14,6 +14,7 @@ go_library(
         "status.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/docker-images/prometheus/cmd/prom-wrapper",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//visibility:private"],
     deps = [
         "//internal/conf",
@@ -35,7 +36,9 @@ go_library(
         "@com_github_prometheus_common//config",
         "@com_github_prometheus_common//model",
         "@com_github_sourcegraph_log//:log",
+        "@dev_bobheadxi_go_streamline//streamexec",
         "@in_gopkg_yaml_v2//:yaml_v2",
+        "@org_golang_x_exp//maps",
     ],
 )
 
@@ -48,6 +51,7 @@ go_binary(
     ],
     pure = "on",
     static = "on",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//visibility:public"],
 )
 
@@ -59,9 +63,13 @@ go_test(
         "silence_test.go",
     ],
     embed = [":prom-wrapper_lib"],
+    tags = [TAG_INFRA_RELEASE],
     deps = [
         "//internal/version",
         "//schema",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_prometheus_alertmanager//config",
+        "@com_github_stretchr_testify//require",
+        "@in_gopkg_yaml_v2//:yaml_v2",
     ],
 )

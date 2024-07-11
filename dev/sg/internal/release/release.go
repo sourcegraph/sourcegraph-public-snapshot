@@ -218,6 +218,7 @@ var Command = &cli.Command{
 				},
 			},
 		},
+		listReleaseCommand,
 	},
 }
 

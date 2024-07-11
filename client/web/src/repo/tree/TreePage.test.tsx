@@ -8,10 +8,9 @@ import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import type { AuthenticatedUser } from '../../auth'
-import { type RepositoryFields, RepositoryType } from '../../graphql-operations'
+import { RepositoryType, type RepositoryFields } from '../../graphql-operations'
 
-import { type Props, TreePage } from './TreePage'
+import { TreePage, type Props } from './TreePage'
 
 // TreePage has a dependency on the `perforceChangelistMapping` experimental feature
 // in order to build an appropriately-worded Commits button.
@@ -155,33 +154,6 @@ describe('TreePage', () => {
                 </MockedProvider>
             )
             expect(result.queryByTestId('repo-fork-badge')).toHaveTextContent('Fork')
-        })
-
-        it('Should display cody CTA', () => {
-            const repo = repoDefaults()
-            const props = treePagePropsDefaults(repo)
-            window.context = window.context || {}
-            window.context.codyEnabled = true
-            window.context.codyEnabledForCurrentUser = true
-
-            const mockUser = {
-                id: 'userID',
-                username: 'username',
-                emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
-                siteAdmin: true,
-            } as AuthenticatedUser
-
-            renderWithBrandedContext(
-                <MockedProvider>
-                    <TreePage {...{ ...props, isSourcegraphDotCom: true, authenticatedUser: mockUser }} />
-                </MockedProvider>
-            )
-
-            expect(screen.getByText('Try Cody on this repository')).toBeVisible()
-            expect(screen.getByText('Click the Ask Cody button above and to the right of this banner')).toBeVisible()
-            expect(
-                screen.getByText('Ask Cody a question like “Explain the structure of this repository”')
-            ).toBeVisible()
         })
     })
 })

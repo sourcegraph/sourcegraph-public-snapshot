@@ -85,7 +85,7 @@ export const workerPlugin: esbuild.Plugin = {
 
             return {
                 // It seems necessary to split this implementation into two modules.
-                // Trying to use a single module caused to worker to throw an inifinite recursion error.
+                // Trying to use a single module caused to worker to throw an infinite recursion error.
                 contents: `
                 import inlineWorker from '__inline-worker'
                      export default function Worker() {

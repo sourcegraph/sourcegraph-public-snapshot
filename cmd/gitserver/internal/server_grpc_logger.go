@@ -91,15 +91,12 @@ func (l *loggingGRPCServer) CreateCommitFromPatchBinary(server proto.GitserverSe
 }
 
 func createCommitFromPatchBinaryRequestMetadataToLogFields(req *proto.CreateCommitFromPatchBinaryRequest_Metadata) []log.Field {
-
 	return []log.Field{
 		log.String("repo", req.GetRepo()),
 		log.String("baseCommit", req.GetBaseCommit()),
 		log.String("targetRef", req.GetTargetRef()),
-		log.Bool("uniqueRef", req.GetUniqueRef()),
 		log.Object("commitInfo", patchCommitInfoToLogFields(req.GetCommitInfo())...),
 		log.Object("push", pushConfigToLogFields(req.GetPush())...),
-		log.Strings("gitApplyArgs", req.GetGitApplyArgs()),
 		log.String("pushRef", req.GetPushRef()),
 	}
 }
@@ -148,37 +145,6 @@ func (l *loggingGRPCServer) DiskInfo(ctx context.Context, request *proto.DiskInf
 	}()
 
 	return l.base.DiskInfo(ctx, request)
-}
-
-func (l *loggingGRPCServer) Exec(request *proto.ExecRequest, server proto.GitserverService_ExecServer) (err error) {
-	start := time.Now()
-
-	defer func() {
-		elapsed := time.Since(start)
-
-		doLog(
-			l.logger,
-			proto.GitserverService_Exec_FullMethodName,
-			status.Code(err),
-			trace.Context(server.Context()).TraceID,
-			elapsed,
-
-			execRequestToLogFields(request)...)
-	}()
-
-	return l.base.Exec(request, server)
-}
-
-func execRequestToLogFields(req *proto.ExecRequest) []log.Field {
-	return []log.Field{
-		log.String("repo", req.GetRepo()),
-		//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
-		log.String("ensureRevision", string(req.GetEnsureRevision())),
-		log.Strings("args", byteSlicesToStrings(req.GetArgs())),
-		log.Bool("noTimeout", req.GetNoTimeout()),
-
-		// 🚨SECURITY: We don't log the stdin field because it could 1) contain sensitive data 2) be very large.
-	}
 }
 
 func (l *loggingGRPCServer) GetObject(ctx context.Context, request *proto.GetObjectRequest) (response *proto.GetObjectResponse, err error) {
@@ -713,7 +679,7 @@ func blameRequestToLogFields(req *proto.BlameRequest) []log.Field {
 	return []log.Field{
 		log.String("repoName", req.GetRepoName()),
 		log.String("commit", req.GetCommit()),
-		log.String("path", req.GetPath()),
+		log.String("path", string(req.GetPath())),
 		log.Bool("ignoreWhitespace", req.GetIgnoreWhitespace()),
 		log.Object("range", blameRangeToLogFields(req.GetRange())...),
 	}
@@ -778,7 +744,7 @@ func readFileRequestToLogFields(req *proto.ReadFileRequest) []log.Field {
 	return []log.Field{
 		log.String("repoName", req.GetRepoName()),
 		log.String("commit", req.GetCommit()),
-		log.String("path", req.GetPath()),
+		log.String("path", string(req.GetPath())),
 	}
 }
 
@@ -1086,6 +1052,45 @@ func readDirRequestToLogFields(req *proto.ReadDirRequest) []log.Field {
 		log.String("commit", string(req.GetCommitSha())),
 		log.String("path", string(req.GetPath())),
 		log.Bool("recursive", req.GetRecursive()),
+	}
+}
+
+func (l *loggingGRPCServer) CommitLog(request *proto.CommitLogRequest, server proto.GitserverService_CommitLogServer) error {
+	start := time.Now()
+
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+			proto.GitserverService_CommitLog_FullMethodName,
+			status.Code(server.Context().Err()),
+			trace.Context(server.Context()).TraceID,
+			elapsed,
+
+			commitLogRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.CommitLog(request, server)
+}
+
+func commitLogRequestToLogFields(req *proto.CommitLogRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+		log.Strings("ranges", byteSlicesToStrings(req.GetRanges())),
+		log.Bool("allRefs", req.GetAllRefs()),
+		log.Time("after", req.GetAfter().AsTime()),
+		log.Time("before", req.GetBefore().AsTime()),
+		log.Int("maxCommits", int(req.GetMaxCommits())),
+		log.Int("skip", int(req.GetSkip())),
+		log.Bool("followOnlyFirstParent", req.GetFollowOnlyFirstParent()),
+		log.Bool("includeModifiedFiles", req.GetIncludeModifiedFiles()),
+		log.Int("order", int(req.GetOrder())),
+		log.String("messageQuery", string(req.GetMessageQuery())),
+		log.String("authorQuery", string(req.GetAuthorQuery())),
+		log.Bool("followPathRenames", req.GetFollowPathRenames()),
+		log.String("path", string(req.GetPath())),
 	}
 }
 

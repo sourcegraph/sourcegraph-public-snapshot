@@ -5,7 +5,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hexops/autogold/v2"
 	amconfig "github.com/prometheus/alertmanager/config"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2" // same as used in alertmanager
 
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -51,12 +54,13 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 		newAlerts []*schema.ObservabilityAlerts
 	}
 	tests := []struct {
-		name           string
-		args           args
-		wantProblems   []string // partial message matches
-		wantReceivers  int      // = 3 without additional receivers
-		wantRoutes     int      // = 2 without additional routes
-		wantRenderFail bool     // if rendered config is accepted by Alertmanager
+		name                string
+		args                args
+		wantProblems        []string // partial message matches
+		wantReceiversConfig autogold.Value
+		wantReceivers       int  // = 3 without additional receivers
+		wantRoutes          int  // = 2 without additional routes
+		wantRenderFail      bool // if rendered config is accepted by Alertmanager
 	}{
 		{
 			name: "invalid notifier",
@@ -66,7 +70,11 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 					Notifier: schema.Notifier{},
 				}},
 			},
-			wantProblems:  []string{"no configuration found"},
+			wantProblems: []string{"no configuration found"},
+			wantReceiversConfig: autogold.Expect(`- name: src-noop-receiver
+- name: src-warning-receiver
+- name: src-critical-receiver
+`),
 			wantReceivers: 3,
 			wantRoutes:    2,
 		},
@@ -84,6 +92,38 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 					},
 				}},
 			},
+			wantReceiversConfig: autogold.Expect(`- name: src-noop-receiver
+- name: src-warning-receiver
+  slack_configs:
+  - send_resolved: true
+    api_url: ""
+    username: Sourcegraph Alerts
+    color: '{{ if eq .Status "firing" }}#FFFF00{{ else }}#00FF00{{ end }}'
+    title: '{{ if eq .Status "firing" }}[{{ .CommonLabels.level | toUpper }}] {{ .CommonLabels.description
+      }}{{ else }}[RESOLVED] {{ .CommonLabels.description }}{{ end }}'
+    title_link: https://sourcegraph.com/docs/admin/observability/alerts#{{ .CommonLabels.service_name
+      }}-{{ .CommonLabels.name | reReplaceAll "_" "-" }}
+    text: '{{ if eq .Status "firing" }}{{ .CommonLabels.level | title }} alert ''{{
+      .CommonLabels.name }}'' is firing for service ''{{ .CommonLabels.service_name
+      }}'' ({{ .CommonLabels.owner }}).{{ else }}{{ .CommonLabels.level | title }}
+      alert ''{{ .CommonLabels.name }}'' for service ''{{ .CommonLabels.service_name
+      }}'' has resolved.{{ end }}'
+    short_fields: false
+    link_names: false
+    actions:
+    - type: button
+      text: Next steps
+      url: https://sourcegraph.com/docs/admin/observability/alerts#{{ .CommonLabels.service_name
+        }}-{{ .CommonLabels.name | reReplaceAll "_" "-" }}
+    - type: button
+      text: Dashboard
+      url: https://sourcegraph.com/-/debug/grafana/d/{{ .CommonLabels.service_name
+        }}/{{ .CommonLabels.service_name }}?viewPanel={{ .CommonLabels.grafana_panel_id
+        }}{{ $start := (index .Alerts 0).StartsAt.Unix }}{{ $end := (index .Alerts
+        0).EndsAt.Unix }}{{ if gt $end 0 }}&from={{ $start }}000&end={{ $end }}000{{
+        else }}&time={{ $start }}000&time.window=3600000{{ end }}
+- name: src-critical-receiver
+`),
 			wantReceivers:  3,
 			wantRoutes:     2,
 			wantRenderFail: true,
@@ -102,13 +142,62 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 				}, {
 					Level: "critical",
 					Notifier: schema.Notifier{
-						Slack: &schema.NotifierSlack{
-							Type: "slack",
-							Url:  "https://sourcegraph.com",
+						Email: &schema.NotifierEmail{
+							Type:    "email",
+							Address: "robert@sourcegraph.com",
 						},
 					},
 				}},
 			},
+			wantReceiversConfig: autogold.Expect(`- name: src-noop-receiver
+- name: src-warning-receiver
+  slack_configs:
+  - send_resolved: true
+    api_url: https://sourcegraph.com
+    username: Sourcegraph Alerts
+    color: '{{ if eq .Status "firing" }}#FFFF00{{ else }}#00FF00{{ end }}'
+    title: '{{ if eq .Status "firing" }}[{{ .CommonLabels.level | toUpper }}] {{ .CommonLabels.description
+      }}{{ else }}[RESOLVED] {{ .CommonLabels.description }}{{ end }}'
+    title_link: https://sourcegraph.com/docs/admin/observability/alerts#{{ .CommonLabels.service_name
+      }}-{{ .CommonLabels.name | reReplaceAll "_" "-" }}
+    text: '{{ if eq .Status "firing" }}{{ .CommonLabels.level | title }} alert ''{{
+      .CommonLabels.name }}'' is firing for service ''{{ .CommonLabels.service_name
+      }}'' ({{ .CommonLabels.owner }}).{{ else }}{{ .CommonLabels.level | title }}
+      alert ''{{ .CommonLabels.name }}'' for service ''{{ .CommonLabels.service_name
+      }}'' has resolved.{{ end }}'
+    short_fields: false
+    link_names: false
+    actions:
+    - type: button
+      text: Next steps
+      url: https://sourcegraph.com/docs/admin/observability/alerts#{{ .CommonLabels.service_name
+        }}-{{ .CommonLabels.name | reReplaceAll "_" "-" }}
+    - type: button
+      text: Dashboard
+      url: https://sourcegraph.com/-/debug/grafana/d/{{ .CommonLabels.service_name
+        }}/{{ .CommonLabels.service_name }}?viewPanel={{ .CommonLabels.grafana_panel_id
+        }}{{ $start := (index .Alerts 0).StartsAt.Unix }}{{ $end := (index .Alerts
+        0).EndsAt.Unix }}{{ if gt $end 0 }}&from={{ $start }}000&end={{ $end }}000{{
+        else }}&time={{ $start }}000&time.window=3600000{{ end }}
+- name: src-critical-receiver
+  email_configs:
+  - send_resolved: true
+    to: robert@sourcegraph.com
+    headers:
+      subject: '{{ if eq .Status "firing" }}[{{ .CommonLabels.level | toUpper }}]
+        {{ .CommonLabels.description }}{{ else }}[RESOLVED] {{ .CommonLabels.description
+        }}{{ end }}'
+    html: |-
+      <body>{{ if eq .Status "firing" }}{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' is firing for service '{{ .CommonLabels.service_name }}' ({{ .CommonLabels.owner }}).
+
+      For next steps, please refer to our documentation: https://sourcegraph.com/docs/admin/observability/alerts#{{ .CommonLabels.service_name }}-{{ .CommonLabels.name | reReplaceAll "_" "-" }}
+      For more details, please refer to the service dashboard: https://sourcegraph.com/-/debug/grafana/d/{{ .CommonLabels.service_name }}/{{ .CommonLabels.service_name }}?viewPanel={{ .CommonLabels.grafana_panel_id }}{{ $start := (index .Alerts 0).StartsAt.Unix }}{{ $end := (index .Alerts 0).EndsAt.Unix }}{{ if gt $end 0 }}&from={{ $start }}000&end={{ $end }}000{{ else }}&time={{ $start }}000&time.window=3600000{{ end }}{{ else }}{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' for service '{{ .CommonLabels.service_name }}' has resolved.{{ end }}</body>
+    text: |-
+      {{ if eq .Status "firing" }}{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' is firing for service '{{ .CommonLabels.service_name }}' ({{ .CommonLabels.owner }}).
+
+      For next steps, please refer to our documentation: https://sourcegraph.com/docs/admin/observability/alerts#{{ .CommonLabels.service_name }}-{{ .CommonLabels.name | reReplaceAll "_" "-" }}
+      For more details, please refer to the service dashboard: https://sourcegraph.com/-/debug/grafana/d/{{ .CommonLabels.service_name }}/{{ .CommonLabels.service_name }}?viewPanel={{ .CommonLabels.grafana_panel_id }}{{ $start := (index .Alerts 0).StartsAt.Unix }}{{ $end := (index .Alerts 0).EndsAt.Unix }}{{ if gt $end 0 }}&from={{ $start }}000&end={{ $end }}000{{ else }}&time={{ $start }}000&time.window=3600000{{ end }}{{ else }}{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' for service '{{ .CommonLabels.service_name }}' has resolved.{{ end }}
+`),
 			wantReceivers: 3,
 			wantRoutes:    2,
 		}, {
@@ -125,6 +214,39 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 					Owners: []string{"distribution"},
 				}},
 			},
+			wantReceiversConfig: autogold.Expect(`- name: src-noop-receiver
+- name: src-warning-on-distribution
+  slack_configs:
+  - send_resolved: true
+    api_url: https://sourcegraph.com
+    username: Sourcegraph Alerts
+    color: '{{ if eq .Status "firing" }}#FFFF00{{ else }}#00FF00{{ end }}'
+    title: '{{ if eq .Status "firing" }}[{{ .CommonLabels.level | toUpper }}] {{ .CommonLabels.description
+      }}{{ else }}[RESOLVED] {{ .CommonLabels.description }}{{ end }}'
+    title_link: https://sourcegraph.com/docs/admin/observability/alerts#{{ .CommonLabels.service_name
+      }}-{{ .CommonLabels.name | reReplaceAll "_" "-" }}
+    text: '{{ if eq .Status "firing" }}{{ .CommonLabels.level | title }} alert ''{{
+      .CommonLabels.name }}'' is firing for service ''{{ .CommonLabels.service_name
+      }}'' ({{ .CommonLabels.owner }}).{{ else }}{{ .CommonLabels.level | title }}
+      alert ''{{ .CommonLabels.name }}'' for service ''{{ .CommonLabels.service_name
+      }}'' has resolved.{{ end }}'
+    short_fields: false
+    link_names: false
+    actions:
+    - type: button
+      text: Next steps
+      url: https://sourcegraph.com/docs/admin/observability/alerts#{{ .CommonLabels.service_name
+        }}-{{ .CommonLabels.name | reReplaceAll "_" "-" }}
+    - type: button
+      text: Dashboard
+      url: https://sourcegraph.com/-/debug/grafana/d/{{ .CommonLabels.service_name
+        }}/{{ .CommonLabels.service_name }}?viewPanel={{ .CommonLabels.grafana_panel_id
+        }}{{ $start := (index .Alerts 0).StartsAt.Unix }}{{ $end := (index .Alerts
+        0).EndsAt.Unix }}{{ if gt $end 0 }}&from={{ $start }}000&end={{ $end }}000{{
+        else }}&time={{ $start }}000&time.window=3600000{{ end }}
+- name: src-warning-receiver
+- name: src-critical-receiver
+`),
 			wantReceivers: 4,
 			wantRoutes:    3,
 		}, {
@@ -151,6 +273,61 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 					Owners: []string{"distribution"},
 				}},
 			},
+			wantReceiversConfig: autogold.Expect(`- name: src-noop-receiver
+- name: src-warning-on-distribution
+  slack_configs:
+  - send_resolved: true
+    api_url: https://sourcegraph.com
+    username: Sourcegraph Alerts
+    color: '{{ if eq .Status "firing" }}#FFFF00{{ else }}#00FF00{{ end }}'
+    title: '{{ if eq .Status "firing" }}[{{ .CommonLabels.level | toUpper }}] {{ .CommonLabels.description
+      }}{{ else }}[RESOLVED] {{ .CommonLabels.description }}{{ end }}'
+    title_link: https://sourcegraph.com/docs/admin/observability/alerts#{{ .CommonLabels.service_name
+      }}-{{ .CommonLabels.name | reReplaceAll "_" "-" }}
+    text: '{{ if eq .Status "firing" }}{{ .CommonLabels.level | title }} alert ''{{
+      .CommonLabels.name }}'' is firing for service ''{{ .CommonLabels.service_name
+      }}'' ({{ .CommonLabels.owner }}).{{ else }}{{ .CommonLabels.level | title }}
+      alert ''{{ .CommonLabels.name }}'' for service ''{{ .CommonLabels.service_name
+      }}'' has resolved.{{ end }}'
+    short_fields: false
+    link_names: false
+    actions:
+    - type: button
+      text: Next steps
+      url: https://sourcegraph.com/docs/admin/observability/alerts#{{ .CommonLabels.service_name
+        }}-{{ .CommonLabels.name | reReplaceAll "_" "-" }}
+    - type: button
+      text: Dashboard
+      url: https://sourcegraph.com/-/debug/grafana/d/{{ .CommonLabels.service_name
+        }}/{{ .CommonLabels.service_name }}?viewPanel={{ .CommonLabels.grafana_panel_id
+        }}{{ $start := (index .Alerts 0).StartsAt.Unix }}{{ $end := (index .Alerts
+        0).EndsAt.Unix }}{{ if gt $end 0 }}&from={{ $start }}000&end={{ $end }}000{{
+        else }}&time={{ $start }}000&time.window=3600000{{ end }}
+  opsgenie_configs:
+  - send_resolved: true
+    api_key: hi-im-bob
+    api_url: https://ubclaunchpad.com
+    message: '{{ if eq .Status "firing" }}[{{ .CommonLabels.level | toUpper }}] {{
+      .CommonLabels.description }}{{ else }}[RESOLVED] {{ .CommonLabels.description
+      }}{{ end }}'
+    description: '{{ if eq .Status "firing" }}{{ .CommonLabels.level | title }} alert
+      ''{{ .CommonLabels.name }}'' is firing for service ''{{ .CommonLabels.service_name
+      }}'' ({{ .CommonLabels.owner }}).{{ else }}{{ .CommonLabels.level | title }}
+      alert ''{{ .CommonLabels.name }}'' for service ''{{ .CommonLabels.service_name
+      }}'' has resolved.{{ end }}'
+    source: https://sourcegraph.com/-/debug/grafana/d/{{ .CommonLabels.service_name
+      }}/{{ .CommonLabels.service_name }}?viewPanel={{ .CommonLabels.grafana_panel_id
+      }}{{ $start := (index .Alerts 0).StartsAt.Unix }}{{ $end := (index .Alerts 0).EndsAt.Unix
+      }}{{ if gt $end 0 }}&from={{ $start }}000&end={{ $end }}000{{ else }}&time={{
+      $start }}000&time.window=3600000{{ end }}
+    details:
+      Next steps: https://sourcegraph.com/docs/admin/observability/alerts#{{ .CommonLabels.service_name
+        }}-{{ .CommonLabels.name | reReplaceAll "_" "-" }}
+    tags: '{{ range $key, $value := .CommonLabels }}{{$key}}={{$value}},{{end}}'
+    priority: P2
+- name: src-warning-receiver
+- name: src-critical-receiver
+`),
 			wantReceivers: 4,
 			wantRoutes:    3,
 		},
@@ -167,7 +344,31 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 					Owners: []string{"distribution"},
 				}},
 			},
-
+			wantReceiversConfig: autogold.Expect(`- name: src-noop-receiver
+- name: src-warning-on-distribution
+  opsgenie_configs:
+  - send_resolved: true
+    message: '{{ if eq .Status "firing" }}[{{ .CommonLabels.level | toUpper }}] {{
+      .CommonLabels.description }}{{ else }}[RESOLVED] {{ .CommonLabels.description
+      }}{{ end }}'
+    description: '{{ if eq .Status "firing" }}{{ .CommonLabels.level | title }} alert
+      ''{{ .CommonLabels.name }}'' is firing for service ''{{ .CommonLabels.service_name
+      }}'' ({{ .CommonLabels.owner }}).{{ else }}{{ .CommonLabels.level | title }}
+      alert ''{{ .CommonLabels.name }}'' for service ''{{ .CommonLabels.service_name
+      }}'' has resolved.{{ end }}'
+    source: https://sourcegraph.com/-/debug/grafana/d/{{ .CommonLabels.service_name
+      }}/{{ .CommonLabels.service_name }}?viewPanel={{ .CommonLabels.grafana_panel_id
+      }}{{ $start := (index .Alerts 0).StartsAt.Unix }}{{ $end := (index .Alerts 0).EndsAt.Unix
+      }}{{ if gt $end 0 }}&from={{ $start }}000&end={{ $end }}000{{ else }}&time={{
+      $start }}000&time.window=3600000{{ end }}
+    details:
+      Next steps: https://sourcegraph.com/docs/admin/observability/alerts#{{ .CommonLabels.service_name
+        }}-{{ .CommonLabels.name | reReplaceAll "_" "-" }}
+    tags: '{{ range $key, $value := .CommonLabels }}{{$key}}={{$value}},{{end}}'
+    priority: P2
+- name: src-warning-receiver
+- name: src-critical-receiver
+`),
 			wantReceivers:  4,
 			wantRoutes:     3,
 			wantRenderFail: true,
@@ -189,6 +390,10 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 					return
 				}
 			}
+
+			receiversData, err := yaml.Marshal(receivers)
+			require.NoError(t, err)
+			tt.wantReceiversConfig.Equal(t, string(receiversData))
 			if len(receivers) != tt.wantReceivers {
 				t.Errorf("expected %d receivers, got %d", tt.wantReceivers, len(receivers))
 				return
@@ -210,11 +415,20 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 			}
 
 			// ensure configuration is valid
-			data, err := renderConfiguration(&amconfig.Config{
+			finalConfig, err := renderConfiguration(&amconfig.Config{
+				Global: &amconfig.GlobalConfig{
+					// Some global SMTP config is required to test email receivers
+					SMTPFrom:  "foo@foo.com",
+					SMTPHello: "foo.com",
+					SMTPSmarthost: amconfig.HostPort{
+						Host: "0.0.0.0",
+						Port: "1234",
+					},
+				},
 				Receivers: receivers,
 				Route:     newRootRoute(routes),
 			})
-			t.Log(string(data))
+			t.Log(string(finalConfig))
 			if err != nil && !tt.wantRenderFail {
 				t.Errorf("generated config is invalid: %s", err)
 			} else if err == nil && tt.wantRenderFail {

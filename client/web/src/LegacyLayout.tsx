@@ -1,12 +1,12 @@
-import { type FC, Suspense, useCallback, useLayoutEffect, useState } from 'react'
+import { Suspense, useCallback, useLayoutEffect, useState, type FC } from 'react'
 
 import classNames from 'classnames'
-import { matchPath, useLocation, Route, Routes, Navigate, type RouteObject } from 'react-router-dom'
+import { matchPath, Navigate, Route, Routes, useLocation, type RouteObject } from 'react-router-dom'
 
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
+import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -62,10 +62,8 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
 
     const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
-    const isSearchConsolePage = routeMatch?.startsWith('/search/console')
     const isSearchJobsPage = routeMatch?.startsWith(PageRoutes.SearchJobs)
     const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
-    const isCodySearchPage = routeMatch === PageRoutes.CodySearch
     const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
 
     // Since the access token callback page is rendered in a nested route, we can't use
@@ -100,14 +98,9 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit.toString()
     const isSignInOrUp =
         routeMatch &&
-        [
-            PageRoutes.SignIn,
-            PageRoutes.SignUp,
-            PageRoutes.PasswordReset,
-            PageRoutes.Welcome,
-            PageRoutes.RequestAccess,
-        ].includes(routeMatch as PageRoutes)
-    const isGetCodyPage = location.pathname === PageRoutes.GetCody.toString()
+        [PageRoutes.SignIn, PageRoutes.SignUp, PageRoutes.PasswordReset, PageRoutes.RequestAccess].includes(
+            routeMatch as PageRoutes
+        )
     const isPostSignUpPage = location.pathname === PageRoutes.PostSignUp.toString()
 
     const [newSearchNavigation] = useNewSearchNavigation()
@@ -188,9 +181,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         isSearchRelatedPage &&
         !isSearchHomepage &&
         !isCommunitySearchContextPage &&
-        !isSearchConsolePage &&
         !isSearchNotebooksPage &&
-        !isCodySearchPage &&
         !isSearchJobsPage
 
     return (
@@ -232,7 +223,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     telemetryRecorder={props.platformContext.telemetryRecorder}
                 />
             )}
-            {!isSiteInit && !isSignInOrUp && !isGetCodyPage && !isPostSignUpPage && (
+            {!isSiteInit && !isSignInOrUp && !isPostSignUpPage && (
                 <>
                     {newSearchNavigation ? (
                         <NewGlobalNavigationBar

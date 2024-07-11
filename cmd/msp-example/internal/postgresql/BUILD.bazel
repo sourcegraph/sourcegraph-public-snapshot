@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "postgresql",
+    srcs = ["postgresql.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/msp-example/internal/postgresql",
+    visibility = ["//cmd/msp-example:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "//lib/managedservicesplatform/runtime",
+    ],
+)

@@ -7,11 +7,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -26,9 +28,10 @@ func TestSnapshotForDocument(t *testing.T) {
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 	mockGitserverClient.DiffFunc.SetDefaultReturn(gitserver.NewDiffFileIterator(io.NopCloser(strings.NewReader(""))), nil)
+	mockSearchClient := client.NewMockSearchClient()
 
 	// Init service
-	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 	mockUploadSvc.GetCompletedUploadsByIDsFunc.SetDefaultReturn([]shared.CompletedUpload{{}}, nil)
 	mockRepoStore.GetFunc.SetDefaultReturn(&types.Repo{}, nil)
@@ -49,7 +52,7 @@ func TestSnapshotForDocument(t *testing.T) {
 		}},
 	}, nil)
 
-	data, err := svc.SnapshotForDocument(context.Background(), 0, "deadbeef", "burger.go", 0)
+	data, err := svc.SnapshotForDocument(context.Background(), 0, "deadbeef", repoRelPath("burger.go"), 0)
 	if err != nil {
 		t.Fatal(err)
 	}

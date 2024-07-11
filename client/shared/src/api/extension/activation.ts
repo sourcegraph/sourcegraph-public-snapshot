@@ -66,7 +66,7 @@ const DEPRECATED_EXTENSION_IDS = new Set(['sourcegraph/code-stats-insights', 'so
 
 export function activateExtensions(
     state: Pick<ExtensionHostState, 'activeExtensions' | 'contributions' | 'haveInitialExtensionsLoaded' | 'settings'>,
-    mainAPI: Remote<Pick<MainThreadAPI, 'logEvent'>>,
+    mainAPI: Remote<Pick<MainThreadAPI, 'logEvent' | 'getTelemetryRecorder'>>,
     createExtensionAPI: (extensionID: string) => typeof sourcegraph,
     mainThreadAPIInitializations: Observable<boolean>,
     /**
@@ -168,6 +168,10 @@ export function activateExtensions(
                                                 .catch(() => {
                                                     // noop
                                                 })
+                                            const telemetryRecorder = await mainAPI.getTelemetryRecorder()
+                                            telemetryRecorder.recordEvent('blob.extension', 'activate', {
+                                                privateMetadata: { extensionID: telemetryExtensionID },
+                                            })
                                         } catch (error) {
                                             logger.error(
                                                 `Fail to log ExtensionActivation event for extension ${id}:`,

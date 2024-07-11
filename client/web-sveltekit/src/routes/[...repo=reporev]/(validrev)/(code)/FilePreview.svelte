@@ -2,13 +2,13 @@
     import { createEventDispatcher } from 'svelte'
 
     import { preloadData } from '$app/navigation'
-    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import { Alert, Button } from '$lib/wildcard'
-    import FileView from './-/blob/[...path]/FileView.svelte'
-    import type { PageData } from './-/blob/[...path]/$types'
     import Icon from '$lib/Icon.svelte'
-    import { mdiClose } from '@mdi/js'
+    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { createPromiseStore } from '$lib/utils'
+    import { Alert, Button } from '$lib/wildcard'
+
+    import type { PageData } from './-/blob/[...path]/$types'
+    import FileView from './-/blob/[...path]/FileView.svelte'
 
     /**
      * The URL of the file to preview.
@@ -40,7 +40,7 @@
         <FileView data={$filePageData.value} embedded disableCodeIntel>
             <svelte:fragment slot="actions">
                 <Button variant="icon" aria-label="Close preview" on:click={() => dispatch('close')}>
-                    <Icon svgPath={mdiClose} aria-hidden inline />
+                    <Icon icon={ILucideX} aria-hidden inline />
                 </Button>
             </svelte:fragment>
         </FileView>

@@ -41,7 +41,7 @@ export const LicenseExpirationAlert: React.FunctionComponent<React.PropsWithChil
             variant="warning"
             className={classNames('align-items-center', className)}
         >
-            Your Sourcegraph license{' '}
+            The license for this Sourcegraph instance{' '}
             {
                 isProductLicenseExpired(expiresAt)
                     ? 'expired ' + formatRelativeExpirationDate(expiresAt) // 'Expired two months ago'

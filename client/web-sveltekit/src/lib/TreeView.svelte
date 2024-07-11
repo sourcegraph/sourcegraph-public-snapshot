@@ -1,8 +1,8 @@
 <svelte:options immutable />
 
 <script lang="ts" context="module">
-    import type { Writable } from 'svelte/store'
     import { setContext as setContextSvelte, getContext as getContextSvelte } from 'svelte'
+    import type { Writable } from 'svelte/store'
 
     import { updateTreeState, type TreeState, TreeStateUpdate } from './TreeView'
 
@@ -235,7 +235,6 @@
     }
 
     $: entries = treeProvider.getEntries() ?? []
-    $: isFlatList = entries.find(entry => treeProvider.isExpandable(entry)) === undefined
 
     // Make first tree item focusable if none is selected/focused
     $: if (!$treeState.focused && entries.length > 0) {
@@ -243,17 +242,11 @@
     }
 </script>
 
-<ul
-    role="tree"
-    bind:this={treeRoot}
-    on:keydown={handleKeydown}
-    on:click={handleClick}
-    data-tree-view-flat-list={isFlatList}
->
+<ul role="tree" bind:this={treeRoot} on:keydown={handleKeydown} on:click={handleClick}>
     {#each entries as entry (treeProvider.getNodeID(entry))}
         <TreeNode {entry} {treeProvider} on:scope-change>
-            <svelte:fragment let:entry let:toggle let:expanded>
-                <slot {entry} {toggle} {expanded} />
+            <svelte:fragment let:entry let:toggle let:expanded let:label>
+                <slot {entry} {toggle} {expanded} {label} />
             </svelte:fragment>
             <svelte:fragment slot="error" let:error>
                 <slot name="error" {error} />

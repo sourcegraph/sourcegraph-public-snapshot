@@ -12,9 +12,8 @@ import { createRoot, type Root } from 'react-dom/client'
 import type { NavigateFunction } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
+import { createElement } from '@sourcegraph/shared/src/util/dom'
 import { Button, Icon, Text } from '@sourcegraph/wildcard'
-
-import { createElement } from '../../../util/dom'
 
 import { CodeMirrorContainer } from './react-interop'
 

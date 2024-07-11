@@ -35,7 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func printConfigValidation(logger log.Logger) {
@@ -265,30 +264,10 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 					return false, errors.Wrapf(err, "marshaling extsvc config ([%v][%v])", key, i)
 				}
 
-				// When overriding external service config from a file we allow setting the value
-				// of the cloud_default column.
-				var cloudDefault bool
-				switch key {
-				case extsvc.KindGitHub:
-					var c schema.GitHubConnection
-					if err = json.Unmarshal(marshaledCfg, &c); err != nil {
-						return false, err
-					}
-					cloudDefault = c.CloudDefault
-
-				case extsvc.KindGitLab:
-					var c schema.GitLabConnection
-					if err = json.Unmarshal(marshaledCfg, &c); err != nil {
-						return false, err
-					}
-					cloudDefault = c.CloudDefault
-				}
-
 				toAdd[&types.ExternalService{
-					Kind:         key,
-					DisplayName:  fmt.Sprintf("%s #%d", key, i+1),
-					Config:       extsvc.NewUnencryptedConfig(string(marshaledCfg)),
-					CloudDefault: cloudDefault,
+					Kind:        key,
+					DisplayName: fmt.Sprintf("%s #%d", key, i+1),
+					Config:      extsvc.NewUnencryptedConfig(string(marshaledCfg)),
 				}] = true
 			}
 		}
@@ -364,7 +343,7 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 			if err != nil {
 				return false, err
 			}
-			update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &rawConfig, CloudDefault: &extSvc.CloudDefault}
+			update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &rawConfig}
 
 			if err := extsvcs.Update(ctx, ps, id, update); err != nil {
 				return false, errors.Wrap(err, "ExternalServices.Update")

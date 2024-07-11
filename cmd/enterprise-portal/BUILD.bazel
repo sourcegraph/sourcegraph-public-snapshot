@@ -2,11 +2,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:msp_delivery.bzl", "msp_delivery")
 
 go_library(
     name = "enterprise-portal_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/enterprise-portal/service",
@@ -17,6 +19,7 @@ go_library(
 go_binary(
     name = "enterprise-portal",
     embed = [":enterprise-portal_lib"],
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
 )
 
@@ -50,6 +53,7 @@ container_structure_test(
     driver = "docker",
     image = ":image",
     tags = [
+        TAG_INFRA_CORESERVICES,
         "exclusive",
         "requires-network",
     ],
@@ -59,4 +63,11 @@ oci_push(
     name = "candidate_push",
     image = ":image",
     repository = image_repository("enterprise-portal"),
+)
+
+msp_delivery(
+    name = "msp_deploy",
+    gcp_project = "enterprise-portal-prod-a7d9",
+    msp_service_id = "enterprise-portal",
+    repository = "us.gcr.io/sourcegraph-dev/enterprise-portal",
 )

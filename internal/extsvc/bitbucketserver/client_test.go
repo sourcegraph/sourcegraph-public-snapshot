@@ -441,6 +441,12 @@ func TestClient_LoadPullRequest(t *testing.T) {
 				t.Fatalf("error:\nhave: %q\nwant: %q", have, want)
 			}
 
+			if tc.name == "non existing pr" {
+				if err != ErrPullRequestNotFound {
+					t.Fatal("expected error, got nil")
+				}
+			}
+
 			if err != nil || tc.err != "<nil>" {
 				return
 			}

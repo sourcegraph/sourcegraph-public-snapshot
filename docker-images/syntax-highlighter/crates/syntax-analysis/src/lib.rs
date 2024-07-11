@@ -93,6 +93,7 @@ mod test {
     generate_tags_and_snapshot!(Scip, test_scip_python_comp, "python-repo-comp.py");
     generate_tags_and_snapshot!(All, test_tags_ruby, test_scip_ruby, "ruby-globals.rb");
     generate_tags_and_snapshot!(Scip, test_scip_java, "globals.java");
+    generate_tags_and_snapshot!(Scip, test_scip_java_package_info, "package-info.java");
     generate_tags_and_snapshot!(
         All,
         test_tags_typescript,
@@ -124,4 +125,6 @@ mod test {
 
     // Test that errors are returned in expected format
     generate_tags_and_snapshot!(Tags, test_tags_perl_example, "example.pl");
+
+    generate_tags_and_snapshot!(All, test_tags_magik, test_scip_magik, "globals.magik");
 }

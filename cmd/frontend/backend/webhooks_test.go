@@ -90,9 +90,9 @@ func TestCreateWebhook(t *testing.T) {
 		},
 		{
 			label:        "secrets are not supported for code host",
-			codeHostKind: extsvc.KindBitbucketCloud,
+			codeHostKind: extsvc.KindAzureDevOps,
 			secret:       &testSecret,
-			expectedErr:  errors.New("webhooks do not support secrets for code host kind BITBUCKETCLOUD"),
+			expectedErr:  errors.New("webhooks do not support secrets for code host kind AZUREDEVOPS"),
 		},
 	}
 

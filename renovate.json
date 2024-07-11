@@ -1,15 +1,4 @@
 {
   "$schema": "http://json.schemastore.org/renovate",
-  "extends": ["github>sourcegraph/renovate-config"],
-  "semanticCommits": "disabled",
-  "rebaseWhen": "never",
-  "prBodyNotes": ["Test plan: CI should pass with updated dependencies."],
-  "dependencyDashboardApproval": true,
-  "packageRules": [
-    {
-      "matchDepTypes": ["engines"],
-      "matchPackageNames": ["node"],
-      "rangeStrategy": "bump"
-    }
-  ]
+  "enabled": false
 }

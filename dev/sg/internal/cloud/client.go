@@ -120,11 +120,13 @@ func (c *Client) GetInstance(ctx context.Context, name string) (*Instance, error
 }
 
 func (c *Client) ListInstances(ctx context.Context, all bool) ([]*Instance, error) {
-	listReq := cloudapiv1.ListInstancesRequest{}
+	listReq := cloudapiv1.ListInstancesRequest{
+		InstanceFilter: &cloudapiv1.InstanceFilter{
+			Environment: pointers.Ptr(DevEnvironment),
+		},
+	}
 	if !all {
-		listReq.InstanceFilter = &cloudapiv1.InstanceFilter{
-			AdminEmail: &c.email,
-		}
+		listReq.InstanceFilter.AdminEmail = &c.email
 	}
 
 	req := newRequestWithToken(c.token, &listReq)

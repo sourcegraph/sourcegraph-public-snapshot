@@ -33,9 +33,16 @@ type observedClient struct {
 
 var _ types.CompletionsClient = (*observedClient)(nil)
 
-func (o *observedClient) Stream(ctx context.Context, feature types.CompletionsFeature, version types.CompletionsVersion, params types.CompletionRequestParameters, send types.SendCompletionEvent, logger log.Logger) (err error) {
+func (o *observedClient) Stream(ctx context.Context, logger log.Logger, request types.CompletionRequest, send types.SendCompletionEvent) (err error) {
+	feature := request.Feature
+	version := request.Version
+	params := request.Parameters
+
 	ctx, tr, endObservation := o.ops.stream.With(ctx, &err, observation.Args{
-		Attrs:             append(params.Attrs(feature), attribute.String("feature", string(feature)), attribute.Int("version", int(version))),
+		Attrs: append(
+			params.Attrs(feature),
+			attribute.String("feature", string(feature)),
+			attribute.Int("version", int(version))),
 		MetricLabelValues: []string{params.Model},
 	})
 	defer endObservation(1, observation.Args{})
@@ -50,12 +57,19 @@ func (o *observedClient) Stream(ctx context.Context, feature types.CompletionsFe
 		return send(event)
 	}
 
-	return o.inner.Stream(ctx, feature, version, params, tracedSend, logger)
+	return o.inner.Stream(ctx, logger, request, tracedSend)
 }
 
-func (o *observedClient) Complete(ctx context.Context, feature types.CompletionsFeature, version types.CompletionsVersion, params types.CompletionRequestParameters, logger log.Logger) (resp *types.CompletionResponse, err error) {
+func (o *observedClient) Complete(ctx context.Context, logger log.Logger, request types.CompletionRequest) (resp *types.CompletionResponse, err error) {
+	feature := request.Feature
+	version := request.Version
+	params := request.Parameters
+
 	ctx, _, endObservation := o.ops.complete.With(ctx, &err, observation.Args{
-		Attrs:             append(params.Attrs(feature), attribute.String("feature", string(feature)), attribute.Int("version", int(version))),
+		Attrs: append(
+			params.Attrs(feature),
+			attribute.String("feature", string(feature)),
+			attribute.Int("version", int(version))),
 		MetricLabelValues: []string{params.Model},
 	})
 	defer endObservation(1, observation.Args{})
@@ -66,7 +80,7 @@ func (o *observedClient) Complete(ctx context.Context, feature types.Completions
 		},
 	})
 
-	return o.inner.Complete(ctx, feature, version, params, logger)
+	return o.inner.Complete(ctx, logger, request)
 }
 
 type operations struct {

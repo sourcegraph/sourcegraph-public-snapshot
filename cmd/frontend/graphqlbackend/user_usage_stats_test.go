@@ -1,8 +1,10 @@
 package graphqlbackend
 
 import (
+	"context"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
@@ -47,6 +49,7 @@ func TestUser_UsageStatistics(t *testing.T) {
 					}
 				}
 			`,
+			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 		},
 	})
 }

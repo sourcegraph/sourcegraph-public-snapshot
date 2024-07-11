@@ -94,9 +94,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	})
 
 	// Go!
-	goroutine.MonitorBackgroundRoutines(ctx, append(worker, server)...)
-
-	return nil
+	return goroutine.MonitorBackgroundRoutines(ctx, append(worker, server)...)
 }
 
 func mustInitializeDB(observationCtx *observation.Context) *sql.DB {
@@ -153,5 +151,5 @@ func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) e
 }
 
 func isRequestError(err error) bool {
-	return errors.HasType(err, &smithyhttp.RequestSendError{})
+	return errors.HasType[*smithyhttp.RequestSendError](err)
 }

@@ -21,7 +21,13 @@ export async function createExtensionHostClientConnection(
     initData: Omit<InitData, 'initialSettings'>,
     platformContext: Pick<
         PlatformContext,
-        'settings' | 'updateSettings' | 'getGraphQLClient' | 'requestGraphQL' | 'telemetryService' | 'clientApplication'
+        | 'settings'
+        | 'updateSettings'
+        | 'getGraphQLClient'
+        | 'requestGraphQL'
+        | 'telemetryService'
+        | 'telemetryRecorder'
+        | 'clientApplication'
     >
 ): Promise<{
     subscription: Unsubscribable

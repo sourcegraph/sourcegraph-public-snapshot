@@ -298,6 +298,10 @@ type Notebook implements Node {
         """
         after: String
     ): NotebookStarConnection!
+    """
+    The default pattern type that is used to interpret queries that do not contain a patternType: filter.
+    """
+    patternType: SearchPatternType!
 }
 
 """

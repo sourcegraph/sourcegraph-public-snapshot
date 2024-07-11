@@ -13,13 +13,16 @@ spec:
   frontend:
     disabled: true
 
+  grafana:
+    disabled: true
+
   gitServer:
     disabled: true
 
   indexedSearch:
     disabled: true
 
-  indexedSearchIndexer:
+  openTelemetry:
     disabled: true
 
   pgsql:
@@ -49,4 +52,7 @@ spec:
     disabled: true
 
   worker:
+    disabled: true
+
+  prometheus:
     disabled: true

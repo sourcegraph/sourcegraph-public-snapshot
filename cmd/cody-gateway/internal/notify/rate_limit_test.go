@@ -11,31 +11,32 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 func TestThresholds(t *testing.T) {
 	th := Thresholds{
-		codygateway.ActorSourceDotcomUser:          []int{100},
-		codygateway.ActorSourceProductSubscription: []int{100, 90},
+		codygatewayactor.ActorSourceDotcomUser:             []int{100},
+		codygatewayactor.ActorSourceEnterpriseSubscription: []int{100, 90},
 	}
 	// Explicitly configured
-	autogold.Expect([]int{100}).Equal(t, th.Get(codygateway.ActorSourceDotcomUser))
+	autogold.Expect([]int{100}).Equal(t, th.Get(codygatewayactor.ActorSourceDotcomUser))
 	// Sorted
-	autogold.Expect([]int{90, 100}).Equal(t, th.Get(codygateway.ActorSourceProductSubscription))
+	autogold.Expect([]int{90, 100}).Equal(t, th.Get(codygatewayactor.ActorSourceEnterpriseSubscription))
 	// Defaults
-	autogold.Expect([]int{}).Equal(t, th.Get(codygateway.ActorSource("anonymous")))
+	autogold.Expect([]int{}).Equal(t, th.Get(codygatewayactor.ActorSource("anonymous")))
 }
 
 type mockActor struct {
 	id     string
 	name   string
-	source codygateway.ActorSource
+	source codygatewayactor.ActorSource
 }
 
-func (m *mockActor) GetID() string                      { return m.id }
-func (m *mockActor) GetName() string                    { return m.name }
-func (m *mockActor) GetSource() codygateway.ActorSource { return m.source }
+func (m *mockActor) GetID() string                           { return m.id }
+func (m *mockActor) GetName() string                         { return m.name }
+func (m *mockActor) GetSource() codygatewayactor.ActorSource { return m.source }
 
 func TestSlackRateLimitNotifier(t *testing.T) {
 	logger := logtest.NoOp(t)
@@ -92,7 +93,7 @@ func TestSlackRateLimitNotifier(t *testing.T) {
 				logger,
 				test.mockRedis(t),
 				"https://sourcegraph.com/",
-				Thresholds{codygateway.ActorSourceProductSubscription: []int{50, 80, 90}},
+				Thresholds{codygatewayactor.ActorSourceEnterpriseSubscription: []int{50, 80, 90}},
 				"https://hooks.slack.com",
 				func(ctx context.Context, url string, msg *slack.WebhookMessage) error {
 					alerted = true
@@ -104,7 +105,7 @@ func TestSlackRateLimitNotifier(t *testing.T) {
 				&mockActor{
 					id:     "foobar",
 					name:   "alice",
-					source: codygateway.ActorSourceProductSubscription,
+					source: codygatewayactor.ActorSourceEnterpriseSubscription,
 				},
 				codygateway.FeatureChatCompletions,
 				test.usageRatio,

@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/authbearer"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayevents"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -48,7 +48,7 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 				if err := a.EventLogger.LogEvent(
 					r.Context(),
 					events.Event{
-						Name:       codygateway.EventNameUnauthorized,
+						Name:       codygatewayevents.EventNameUnauthorized,
 						Source:     e.Source,
 						Identifier: "unknown",
 						Metadata: map[string]any{
@@ -78,7 +78,7 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 			err := a.EventLogger.LogEvent(
 				r.Context(),
 				events.Event{
-					Name:       codygateway.EventNameAccessDenied,
+					Name:       codygatewayevents.EventNameAccessDenied,
 					Source:     act.Source.Name(),
 					Identifier: act.ID,
 				},

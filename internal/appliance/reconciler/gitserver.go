@@ -9,7 +9,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
@@ -38,10 +37,7 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *conf
 	cfg := sg.Spec.GitServer
 	name := "gitserver"
 
-	defaultImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return err
-	}
+	defaultImage := config.GetDefaultImage(sg, name)
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
 		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{
@@ -55,11 +51,6 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *conf
 			},
 		},
 	})
-
-	storageSize, err := resource.ParseQuantity(cfg.StorageSize)
-	if err != nil {
-		return errors.Wrap(err, "parsing storage size")
-	}
 
 	ctr.Env = append(ctr.Env, container.EnvVarsRedis()...)
 	ctr.Env = append(ctr.Env, container.EnvVarsOtel()...)
@@ -76,8 +67,6 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *conf
 				Port: intstr.FromString("rpc"),
 			},
 		},
-		TimeoutSeconds:      5,
-		InitialDelaySeconds: 5,
 	}
 
 	ctr.VolumeMounts = []corev1.VolumeMount{
@@ -107,11 +96,14 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *conf
 	podTemplate.Template.Spec.ServiceAccountName = name
 	podTemplate.Template.Spec.Volumes = podVolumes
 
+	pvc, err := pvc.NewPersistentVolumeClaim("repos", sg.Namespace, sg.Spec.GitServer)
+	if err != nil {
+		return err
+	}
+
 	sset := statefulset.NewStatefulSet(name, sg.Namespace, sg.Spec.RequestedVersion)
 	sset.Spec.Template = podTemplate.Template
-	sset.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
-		pvc.NewPersistentVolumeClaim("repos", sg.Namespace, storageSize, sg.Spec.StorageClass.Name),
-	}
+	sset.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{pvc}
 
 	return reconcileObject(ctx, r, sg.Spec.GitServer, &sset, &appsv1.StatefulSet{}, sg, owner)
 }

@@ -203,7 +203,7 @@ func SanitizeEventURL(raw string) string {
 
 // Event contains information needed for logging an event.
 type Event struct {
-	ID                     int32
+	ID                     int64
 	Name                   string
 	URL                    string
 	UserID                 uint32

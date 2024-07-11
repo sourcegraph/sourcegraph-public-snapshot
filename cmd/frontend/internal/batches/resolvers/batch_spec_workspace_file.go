@@ -140,7 +140,7 @@ func (r *batchSpecWorkspaceFileResolver) Highlight(ctx context.Context, args *gr
 	return vfr.Highlight(ctx, args)
 }
 
-func (r *batchSpecWorkspaceFileResolver) ToGitBlob() (*graphqlbackend.GitTreeEntryResolver, bool) {
+func (r *batchSpecWorkspaceFileResolver) ToGitBlob() (*graphqlbackend.GitBlobResolver, bool) {
 	return nil, false
 }
 

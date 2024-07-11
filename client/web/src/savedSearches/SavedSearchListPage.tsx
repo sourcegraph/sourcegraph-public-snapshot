@@ -10,7 +10,7 @@ import { useCallbackRef } from 'use-callback-ref'
 
 import { logger } from '@sourcegraph/common'
 import type { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
@@ -29,14 +29,12 @@ import { usePageSwitcherPagination } from '../components/FilteredConnection/hook
 import { PageTitle } from '../components/PageTitle'
 import type { SavedSearchFields, SavedSearchesResult, SavedSearchesVariables } from '../graphql-operations'
 import type { NamespaceProps } from '../namespaces'
-import type { NamespaceAreaContext } from '../namespaces/NamespaceArea'
 import { deleteSavedSearch, savedSearchesQuery } from '../search/backend'
 import { useNavbarQueryState } from '../stores'
 
 import styles from './SavedSearchListPage.module.scss'
 
-interface NodeProps extends SearchPatternTypeProps, TelemetryV2Props {
-    namespaceType: NamespaceAreaContext['namespace']['__typename']
+interface NodeProps extends SearchPatternTypeProps, TelemetryV2Props, NamespaceProps {
     savedSearch: SavedSearchFields
     onDelete: () => void
     linkRef: React.MutableRefObject<HTMLAnchorElement | null> | null
@@ -72,7 +70,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                 .subscribe(() => {
                     EVENT_LOGGER.log('SavedSearchDeleted')
                     this.props.telemetryRecorder.recordEvent(
-                        `${this.props.namespaceType.toLowerCase()}.savedSearch`,
+                        `${this.props.namespace.__typename.toLowerCase()}.savedSearch`,
                         'delete'
                     )
                     this.setState({ isDeleting: false })
@@ -139,7 +137,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
     }
 }
 
-interface Props extends NamespaceProps {}
+interface Props extends NamespaceProps, TelemetryV2Props {}
 
 export const SavedSearchListPage: React.FunctionComponent<Props> = props => {
     React.useEffect(() => {
@@ -221,10 +219,11 @@ const SavedSearchListPageContent: React.FunctionComponent<React.PropsWithChildre
                     <SavedSearchNode
                         key={search.id}
                         linkRef={location.state?.description === search.description ? callbackReference : null}
-                        {...props}
+                        onDelete={props.onDelete}
+                        telemetryRecorder={props.telemetryRecorder}
+                        namespace={namespace}
                         patternType={searchPatternType}
                         savedSearch={search}
-                        namespaceType={namespace.__typename}
                     />
                 ))}
             </div>

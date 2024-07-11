@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "helpers",
+    srcs = ["bazeldo.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/ci/helpers",
+    tags = [TAG_INFRA_DEVINFRA],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)
+
+go_test(
+    name = "helpers_test",
+    srcs = ["bazeldo_test.go"],
+    embed = [":helpers"],
+    tags = [TAG_INFRA_DEVINFRA],
+)

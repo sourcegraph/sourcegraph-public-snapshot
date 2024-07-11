@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
@@ -86,7 +87,27 @@ func TestWebhooksHandler(t *testing.T) {
 		extsvc.KindBitbucketCloud,
 		"http://bitbucket.com",
 		u.ID,
-		types.NewUnencryptedSecret("bbcloudsecret"),
+		types.NewUnencryptedSecret("supersecretstring"),
+	)
+	require.NoError(t, err)
+
+	bbCloudWHOtherSecret, err := dbWebhooks.Create(
+		context.Background(),
+		"bb webhook",
+		extsvc.KindBitbucketCloud,
+		"http://bitbucket.com",
+		u.ID,
+		types.NewUnencryptedSecret("othersecret"),
+	)
+	require.NoError(t, err)
+
+	bbCloudWHNoSecret, err := dbWebhooks.Create(
+		context.Background(),
+		"bb webhook",
+		extsvc.KindBitbucketCloud,
+		"http://bitbucket.com",
+		u.ID,
+		nil,
 	)
 	require.NoError(t, err)
 
@@ -356,8 +377,8 @@ func TestWebhooksHandler(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 
-	t.Run("Bitbucket Cloud returns 200", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, bbCloudWH.UUID)
+	t.Run("Bitbucket Cloud returns 200 without secret", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, bbCloudWHNoSecret.UUID)
 
 		event := bitbucketcloud.PullRequestCommentCreatedEvent{}
 		payload, err := json.Marshal(event)
@@ -380,6 +401,42 @@ func TestWebhooksHandler(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 		logs, _, err := db.WebhookLogs(keyring.Default().WebhookLogKey).List(context.Background(), database.WebhookLogListOpts{
+			WebhookID: &bbCloudWHNoSecret.ID,
+		})
+		assert.NoError(t, err)
+		assert.Len(t, logs, 1)
+		for _, log := range logs {
+			assert.Equal(t, bbCloudWHNoSecret.ID, *log.WebhookID)
+		}
+		assert.Equal(t, bbCloudWHNoSecret.CodeHostURN, wh.codeHostURNReceived)
+		assert.Equal(t, &event, wh.eventReceived)
+	})
+
+	t.Run("Bitbucket Cloud returns 200 with correct secret", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, bbCloudWH.UUID)
+
+		payload, err := os.ReadFile("testdata/bitbucketcloud_body.json")
+		require.NoError(t, err)
+		wh := &fakeWebhookHandler{}
+		wr.handlers = map[string]eventHandlers{
+			extsvc.KindBitbucketCloud: {
+				"repo:push": []Handler{wh.handleEvent},
+			},
+		}
+
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		require.NoError(t, err)
+		req.Header.Set("X-Event-Key", "repo:push")
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("X-Event-Time", "Tue, 11 Jun 2024 10:19:00 GMT")
+		req.Header.Set("X-Hub-Signature", "sha256=4d0940b0224f927c796e6568837f4af66bd86845fcafab60a357feb2abc5561a")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		logs, _, err := db.WebhookLogs(keyring.Default().WebhookLogKey).List(context.Background(), database.WebhookLogListOpts{
 			WebhookID: &bbCloudWH.ID,
 		})
 		assert.NoError(t, err)
@@ -388,11 +445,36 @@ func TestWebhooksHandler(t *testing.T) {
 			assert.Equal(t, bbCloudWH.ID, *log.WebhookID)
 		}
 		assert.Equal(t, bbCloudWH.CodeHostURN, wh.codeHostURNReceived)
-		assert.Equal(t, &event, wh.eventReceived)
+		assert.Equal(t, "{dfeaae25-8168-466f-ade4-d07e6837dedf}", wh.eventReceived.(*bitbucketcloud.PushEvent).Repository.UUID)
+	})
+
+	t.Run("Bitbucket Cloud returns 400 with wrong secret", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, bbCloudWHOtherSecret.UUID)
+
+		payload, err := os.ReadFile("testdata/bitbucketcloud_body.json")
+		require.NoError(t, err)
+		wh := &fakeWebhookHandler{}
+		wr.handlers = map[string]eventHandlers{
+			extsvc.KindBitbucketCloud: {
+				"repo:push": []Handler{wh.handleEvent},
+			},
+		}
+
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		require.NoError(t, err)
+		req.Header.Set("X-Event-Key", "repo:push")
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("X-Event-Time", "Tue, 11 Jun 2024 10:19:00 GMT")
+		req.Header.Set("X-Hub-Signature", "sha256=4d0940b0224f927c796e6568837f4af66bd86845fcafab60a357feb2abc5561a")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 
 	t.Run("Bitbucket Cloud returns 404 not found if webhook event type unknown", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, bbCloudWH.UUID)
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, bbCloudWHNoSecret.UUID)
 
 		payload := []byte(`{"body": "text"}`)
 		require.NoError(t, err)

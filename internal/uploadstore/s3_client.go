@@ -128,7 +128,7 @@ func (s *s3Store) List(ctx context.Context, prefix string) (_ *iterator.Iterator
 }
 
 func (s *s3Store) Get(ctx context.Context, key string) (_ io.ReadCloser, err error) {
-	ctx, _, endObservation := s.operations.Get.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, traceLogger, endObservation := s.operations.Get.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("key", key),
 	}})
 	done := func() { endObservation(1, observation.Args{}) }
@@ -144,7 +144,7 @@ func (s *s3Store) Get(ctx context.Context, key string) (_ io.ReadCloser, err err
 			}
 
 			byteOffset += n
-			s.operations.Get.Logger.Warn("Transient error while reading payload", log.String("key", key), log.Error(err))
+			traceLogger.Warn("Transient error while reading payload", log.String("key", key), log.Error(err))
 
 			if n == 0 {
 				zeroReads++
@@ -158,7 +158,7 @@ func (s *s3Store) Get(ctx context.Context, key string) (_ io.ReadCloser, err err
 		}
 	})
 
-	return NewExtraCloser(io.NopCloser(reader), done), nil
+	return newExtraCloser(io.NopCloser(reader), done), nil
 }
 
 // ioCopyHook is a pointer to io.Copy. This function is replaced in unit tests so that we can
@@ -243,7 +243,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 	var m sync.Mutex
 	etags := map[int]*string{}
 
-	if err := ForEachString(sources, func(index int, source string) error {
+	if err := forEachString(sources, func(index int, source string) error {
 		partNumber := index + 1
 
 		copyResult, err := s.client.UploadPartCopy(ctx, &s3.UploadPartCopyInput{
@@ -366,7 +366,7 @@ func (s *s3Store) create(ctx context.Context) error {
 		Bucket: aws.String(s.bucket),
 	})
 
-	if errors.HasType(err, &s3types.BucketAlreadyExists{}) || errors.HasType(err, &s3types.BucketAlreadyOwnedByYou{}) {
+	if errors.HasType[*s3types.BucketAlreadyExists](err) || errors.HasType[*s3types.BucketAlreadyOwnedByYou](err) {
 		return nil
 	}
 
@@ -374,7 +374,7 @@ func (s *s3Store) create(ctx context.Context) error {
 }
 
 func (s *s3Store) deleteSources(ctx context.Context, bucket string, sources []string) error {
-	return ForEachString(sources, func(index int, source string) error {
+	return forEachString(sources, func(index int, source string) error {
 		if _, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 			Bucket: aws.String(bucket),
 			Key:    aws.String(source),

@@ -8,6 +8,8 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -84,7 +86,7 @@ func (u Upload) SizeStats() UploadSizeStats {
 // The State must be 'completed', see TODO(id: completed-state-check).
 type CompletedUpload struct {
 	ID                int        `json:"id"`
-	Commit            string     `json:"commit"`
+	Commit            string     `json:"commit"` // TODO: This type ought to be api.CommitID
 	Root              string     `json:"root"`
 	VisibleAtTip      bool       `json:"visibleAtTip"`
 	UploadedAt        time.Time  `json:"uploadedAt"`
@@ -95,12 +97,24 @@ type CompletedUpload struct {
 	ProcessAfter      *time.Time `json:"processAfter"`
 	NumResets         int        `json:"numResets"`
 	NumFailures       int        `json:"numFailures"`
-	RepositoryID      int        `json:"repositoryId"`
+	RepositoryID      int        `json:"repositoryId"` // TODO: This type ought to be api.RepoID, but that is 32-bit
 	RepositoryName    string     `json:"repositoryName"`
 	Indexer           string     `json:"indexer"`
 	IndexerVersion    string     `json:"indexerVersion"`
 	AssociatedIndexID *int       `json:"associatedIndex"`
 }
+
+var _ core.UploadLike = CompletedUpload{}
+
+func (u CompletedUpload) GetID() int {
+	return u.ID
+}
+
+func (u CompletedUpload) GetRoot() string {
+	return u.Root
+}
+
+func (u CompletedUpload) GetCommit() api.CommitID { return api.CommitID(u.Commit) }
 
 func (u *CompletedUpload) ConvertToUpload() Upload {
 	return Upload{
@@ -343,9 +357,9 @@ type UploadsWithRepositoryNamespace struct {
 }
 
 type UploadMatchingOptions struct {
-	RepositoryID int
-	Commit       string
-	Path         string
+	RepositoryID api.RepoID
+	Commit       api.CommitID
+	Path         core.RepoRelPath
 	// RootToPathMatching describes how the root for which a SCIP index was uploaded
 	// should be matched to the provided Path for a file or directory
 	//
@@ -358,15 +372,15 @@ type UploadMatchingOptions struct {
 	//
 	// Indexer must be shared.SyntacticIndexer for syntactic indexes to be considered.
 	//
-	// If Indexer is empty, then all uploads will be considered.
+	// If Indexer is empty, then all precise indexes will be considered.
 	Indexer string
 }
 
 func (u *UploadMatchingOptions) Attrs() []attribute.KeyValue {
 	return []attribute.KeyValue{
-		attribute.Int("repositoryID", u.RepositoryID),
-		attribute.String("commit", u.Commit),
-		attribute.String("path", u.Path),
+		attribute.Int("repositoryID", int(u.RepositoryID)),
+		attribute.String("commit", string(u.Commit)),
+		attribute.String("path", u.Path.RawValue()),
 		attribute.String("rootToPathMatching", string(u.RootToPathMatching)),
 		attribute.String("indexer", u.Indexer),
 	}

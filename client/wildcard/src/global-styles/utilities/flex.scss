@@ -14,6 +14,18 @@
     min-width: 0;
 }
 
+.flex-gap-1 {
+    gap: 0.25rem;
+}
+
+.flex-gap-2 {
+    gap: 0.5rem;
+}
+
+.flex-gap-4 {
+    gap: 1rem;
+}
+
 @each $breakpoint in map-keys($grid-breakpoints) {
     @include media-breakpoint-up($breakpoint) {
         $infix: breakpoint-infix($breakpoint, $grid-breakpoints);

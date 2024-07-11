@@ -64,6 +64,11 @@ type dbSubscriptions struct {
 	db database.DB
 }
 
+// For package dotcomproductsubscriptiontest only; DO NOT USE.
+func NewSubscriptionsDB(db database.DB) *dbSubscriptions {
+	return &dbSubscriptions{db: db}
+}
+
 // Create creates a new product subscription entry for the given user. It also
 // attempts to extract the Salesforce account number from the username following
 // the format "<name>-<account number>".
@@ -240,23 +245,23 @@ WHERE (%s)`, emailQueries, sqlf.Join(opt.sqlConditions(), ") AND ("))
 // dbSubscriptionsUpdate represents an update to a product subscription in the database. Each field
 // represents an update to the corresponding database field if the Go value is non-nil. If the Go
 // value is nil, the field remains unchanged in the database.
-type dbSubscriptionUpdate struct {
-	billingSubscriptionID *sql.NullString
-	codyGatewayAccess     *graphqlbackend.UpdateCodyGatewayAccessInput
+type DBSubscriptionUpdate struct {
+	BillingSubscriptionID *sql.NullString
+	CodyGatewayAccess     *graphqlbackend.UpdateCodyGatewayAccessInput
 }
 
 // Update updates a product subscription.
-func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscriptionUpdate) error {
+func (s dbSubscriptions) Update(ctx context.Context, id string, update DBSubscriptionUpdate) error {
 	logger := log.Scoped("dbSubscriptions.Update")
 	logger = trace.Logger(ctx, logger)
 
 	fieldUpdates := []*sqlf.Query{
 		sqlf.Sprintf("updated_at=now()"), // always update updated_at timestamp
 	}
-	if v := update.billingSubscriptionID; v != nil {
+	if v := update.BillingSubscriptionID; v != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("billing_subscription_id=%s", *v))
 	}
-	if access := update.codyGatewayAccess; access != nil {
+	if access := update.CodyGatewayAccess; access != nil {
 		if v := access.Enabled; v != nil {
 			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_enabled=%s", *v))
 		}

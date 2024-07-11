@@ -62,7 +62,6 @@ export const ENVIRONMENT_CONFIG = {
      * ----------------------------------------
      */
     SOURCEGRAPHDOTCOM_MODE: getEnvironmentBoolean('SOURCEGRAPHDOTCOM_MODE'),
-    CODY_APP: getEnvironmentBoolean('CODY_APP'),
 
     // Is reporting to Sentry enabled.
     ENABLE_SENTRY: getEnvironmentBoolean('ENABLE_SENTRY'),

@@ -12,7 +12,6 @@ go_library(
     deps = [
         "//internal/gitserver/gitdomain",
         "//lib/errors",
-        "@com_github_gorilla_schema//:schema",
     ],
 )
 

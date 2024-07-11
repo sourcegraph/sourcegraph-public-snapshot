@@ -1,17 +1,17 @@
 import assert from 'assert'
 
 import expect from 'expect'
-import { describe, afterEach, before, beforeEach, after } from 'mocha'
+import { after, afterEach, before, beforeEach, describe } from 'mocha'
 
 import { mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { siteID, siteGQLID } from './jscontext'
-import { createEditorAPI, isElementDisabled, percySnapshotWithVariants } from './utils'
+import { siteGQLID, siteID } from './jscontext'
+import { createEditorAPI, isElementDisabled } from './utils'
 
 describe('Code monitoring', () => {
     let driver: Driver
@@ -112,7 +112,6 @@ describe('Code monitoring', () => {
         it('is styled correctly', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring')
             await driver.page.waitForSelector('[data-testid="code-monitoring-page"]')
-            await percySnapshotWithVariants(driver.page, 'Code monitor list')
             await accessibilityAudit(driver.page)
         })
     })
@@ -122,8 +121,6 @@ describe('Code monitoring', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring/new')
             await driver.page.waitForSelector('[data-testid="name-input"]')
 
-            // Screenshot test disabled: https://github.com/sourcegraph/sourcegraph/issues/41743
-            // await percySnapshotWithVariants(driver.page, 'Code monitoring - Form')
             await accessibilityAudit(driver.page)
 
             await driver.page.type('[data-testid="name-input"]', 'test monitor')

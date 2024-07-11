@@ -2,7 +2,7 @@
     import { faker } from '@faker-js/faker'
     import { Story } from '@storybook/addon-svelte-csf'
 
-    import { type RepoPopoverFields, ExternalServiceKind } from '$testing/graphql-type-mocks'
+    import { type RepoPopoverFragment, ExternalServiceKind } from '$testing/graphql-type-mocks'
 
     import RepoPopover from './RepoPopover.svelte'
 
@@ -13,18 +13,18 @@
 
 <script lang="ts">
     faker.seed(1)
-    let repo: RepoPopoverFields = {
+    let repo: RepoPopoverFragment = {
         name: `${faker.lorem.word()} / ${faker.lorem.word()}`,
         description: faker.lorem.sentence(),
         stars: faker.datatype.number(),
-        tags: {
-            nodes: [
-                { name: faker.lorem.word() },
-                { name: faker.lorem.word() },
-                { name: faker.lorem.word() },
-                { name: faker.lorem.word() },
-            ],
-        },
+        topics: [
+            faker.lorem.word(),
+            faker.lorem.word(),
+            faker.lorem.word(),
+            faker.lorem.word(),
+            faker.lorem.word(),
+            faker.lorem.word(),
+        ],
         isPrivate: false,
         language: 'Go',
         externalServices: {
@@ -40,9 +40,11 @@
             subject: faker.lorem.sentence(),
             canonicalURL: faker.internet.url(),
             oid: '7b4d3ad230d9078a70219f2befa1be1fe00377a0',
+            abbreviatedOID: '7b4d3ad',
             author: {
                 date: new Date().toISOString(),
                 person: {
+                    __typename: 'Person',
                     displayName: `${faker.person.firstName()} ${faker.person.lastName()}`,
                     avatarURL: faker.internet.avatar(),
                     name: faker.internet.userName(),
@@ -54,9 +56,9 @@
 
 <Story name="Default">
     <h2>With header</h2>
-    <RepoPopover {repo} withHeader />
+    <RepoPopover data={repo} withHeader />
     <br />
     <br />
     <h2>Without header</h2>
-    <RepoPopover {repo} />
+    <RepoPopover data={repo} />
 </Story>

@@ -5,7 +5,6 @@
 - filename: internal/insights/discovery/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/insights/discovery
   interfaces:
-    - IndexableReposLister
     - RepoStore
 - filename: internal/insights/store/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/insights/store
@@ -135,7 +134,6 @@
   path: github.com/sourcegraph/sourcegraph/internal/gitserver/v1
   interfaces:
     - GitserverServiceClient
-    - GitserverService_ExecServer
     - GitserverService_ArchiveServer
     - GitserverService_ArchiveClient
     - GitserverService_BlameServer
@@ -150,6 +148,8 @@
     - GitserverService_ChangedFilesClient
     - GitserverService_ReadDirServer
     - GitserverService_ReadDirClient
+    - GitserverService_CommitLogServer
+    - GitserverService_CommitLogClient
 - filename: cmd/gitserver/internal/git/mock.go
   path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git
   interfaces:
@@ -158,6 +158,7 @@
     - BlameHunkReader
     - RefIterator
     - ReadDirIterator
+    - CommitLogIterator
 - filename: cmd/gitserver/internal/gitserverfs/mock.go
   path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs
   interfaces:
@@ -166,3 +167,12 @@
   path: github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/gitserver
   interfaces:
     - RepositoryServiceClient
+- filename: internal/codeintel/codenav/mocks_temp.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore
+      interfaces:
+        - LsifStore
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav
+      interfaces:
+        - UploadService
+        - GitTreeTranslator

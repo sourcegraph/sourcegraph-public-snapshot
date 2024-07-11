@@ -13,17 +13,31 @@ import (
 // each time. This will break Notion block links but it can't be helped, Notion
 // is hard to work with.
 func resetNotionPage(ctx context.Context, client *notionapi.Client, pageID, pageTitle string) error {
-	blocks, err := listPageBlocks(ctx, client, pageID)
-	if err != nil {
-		return errors.Wrap(err, "failed to list page blocks")
+	doReset := func() error {
+		blocks, err := listPageBlocks(ctx, client, pageID)
+		if err != nil {
+			return errors.Wrap(err, "failed to list page blocks")
+		}
+		if err := deleteBlocks(ctx, client, blocks); err != nil {
+			return errors.Wrap(err, "failed to delete blocks")
+		}
+		if err := setPageTitle(ctx, client, pageID, pageTitle); err != nil {
+			return errors.Wrap(err, "failed to set page title")
+		}
+		return nil
 	}
-	if err := deleteBlocks(ctx, client, blocks); err != nil {
-		return errors.Wrap(err, "failed to delete blocks")
+
+	// Blindly retry 3 times, because Notion is very unreliable. We need to
+	// retry because leaving a page in a partially deleted state is not good.
+	const resetRetries = 3
+	var err error
+	for i := 0; i < resetRetries; i += 1 {
+		err = doReset()
+		if err == nil {
+			break
+		}
 	}
-	if err := setPageTitle(ctx, client, pageID, pageTitle); err != nil {
-		return errors.Wrap(err, "failed to set page title")
-	}
-	return nil
+	return err
 }
 
 func listPageBlocks(ctx context.Context, client *notionapi.Client, pageID string) (notionapi.Blocks, error) {
@@ -57,11 +71,20 @@ func listPageBlocks(ctx context.Context, client *notionapi.Client, pageID string
 
 func deleteBlocks(ctx context.Context, client *notionapi.Client, blocks notionapi.Blocks) error {
 	// WARNING: this cannot be paralellized, the Notion API will complain about
-	// a page-save-conflict.
+	// a page-save-conflict. Ideally we can bulk-delete blocks, but that's not
+	// supported by Notion.
 	for _, block := range blocks {
-		_, err := client.Block.Delete(ctx, block.GetID())
+		// Blindly retry 3 times, because Notion is very unreliable.
+		const deleteRetryPerBlock = 3
+		var err error
+		for i := 0; i < deleteRetryPerBlock; i += 1 {
+			_, err = client.Block.Delete(ctx, block.GetID())
+			if err == nil {
+				break
+			}
+		}
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "delete block %q", block.GetID())
 		}
 	}
 	return nil

@@ -2,6 +2,7 @@ package outputtest
 
 import (
 	"strconv"
+	"sync"
 )
 
 // Buffer is used to test code that uses the `output` library to produce
@@ -14,6 +15,7 @@ import (
 // NOTE: Buffer is *not* complete and probably can't parse everything that
 // output produces. It should be extended as needed.
 type Buffer struct {
+	sync.Mutex
 	lines [][]byte
 
 	line   int
@@ -21,7 +23,13 @@ type Buffer struct {
 }
 
 func (t *Buffer) Write(b []byte) (int, error) {
+	t.Lock()
+	defer t.Unlock()
+
 	cur := 0
+
+	// Debug helper:
+	// fmt.Printf("b: %q\n", string(b))
 
 	for cur < len(b) {
 		switch b[cur] {
@@ -120,6 +128,9 @@ func (t *Buffer) writeToCurrentLine(b byte) {
 }
 
 func (t *Buffer) Lines() []string {
+	t.Lock()
+	defer t.Unlock()
+
 	var lines []string
 	for _, l := range t.lines {
 		lines = append(lines, string(l))

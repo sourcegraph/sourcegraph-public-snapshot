@@ -15,17 +15,13 @@ const (
 	Helm          = "helm"
 	Kustomize     = "kustomize"
 	K3s           = "k3s"
+	Appliance     = "appliance"
 )
 
 var mock string
 
-var forceType string // force a deploy type (can be injected with `go build -ldflags "-X ..."`)
-
 // Type tells the deployment type.
 func Type() string {
-	if forceType != "" {
-		return forceType
-	}
 	if mock != "" {
 		return mock
 	}
@@ -46,7 +42,7 @@ func Mock(val string) {
 func IsDeployTypeKubernetes(deployType string) bool {
 	switch deployType {
 	// includes older Kubernetes aliases for backwards compatibility
-	case "k8s", "cluster", Kubernetes, Helm, Kustomize, K3s:
+	case "k8s", "cluster", Kubernetes, Helm, Kustomize, K3s, Appliance:
 		return true
 	}
 

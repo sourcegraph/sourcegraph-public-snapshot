@@ -1,12 +1,13 @@
 <script lang="ts">
-    import { setContext, onMount } from 'svelte'
+    import { onMount, setContext } from 'svelte'
 
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
-    import { logoLight, logoDark } from '$lib/images'
+    import { logoDark, logoLight } from '$lib/images'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
-    import type { QueryStateStore, QueryState } from '$lib/search/state'
+    import type { QueryStateStore } from '$lib/search/state'
     import type { SearchPageContext } from '$lib/search/utils'
+    import { TELEMETRY_SEARCH_SOURCE_TYPE } from '$lib/shared'
     import { isLightTheme } from '$lib/stores'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
 
     import SearchHomeNotifications from './SearchHomeNotifications.svelte'
 
@@ -19,15 +20,13 @@
     })
 
     onMount(() => {
-        SVELTE_LOGGER.logViewEvent(SVELTE_TELEMETRY_EVENTS.ViewHomePage)
+        TELEMETRY_RECORDER.recordEvent('home', 'view')
     })
 
-    function handleSubmit(state: QueryState) {
-        SVELTE_LOGGER.log(
-            SVELTE_TELEMETRY_EVENTS.SearchSubmit,
-            { source: 'home', query: state.query },
-            { source: 'home', patternType: state.patternType }
-        )
+    function handleSubmit() {
+        TELEMETRY_RECORDER.recordEvent('search', 'submit', {
+            metadata: { source: TELEMETRY_SEARCH_SOURCE_TYPE['home'] },
+        })
     }
 </script>
 
@@ -38,13 +37,14 @@
             <SearchInput {queryState} autoFocus onSubmit={handleSubmit} />
             <SearchHomeNotifications />
         </div>
+        <slot />
     </div>
 </section>
 
 <style lang="scss">
     section {
         overflow-y: auto;
-        padding: 0 1rem;
+        padding: 3rem 1rem;
         display: flex;
         flex-direction: column;
         flex: 1;
@@ -52,12 +52,16 @@
     }
 
     div.content {
-        flex-shrink: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+        height: 100%;
         width: 100%;
         max-width: 64rem;
+        padding-top: 3rem;
+        flex-shrink: 0;
+
+        display: flex;
+        gap: 3rem;
+        flex-direction: column;
+        align-items: center;
 
         :global(.search-box) {
             align-self: stretch;
@@ -69,13 +73,11 @@
         display: flex;
         flex-direction: column;
         gap: 2rem;
+        z-index: 1;
     }
 
     img.logo {
         width: 20rem;
-        margin-top: 6rem;
         max-width: 90%;
-        min-height: 54px;
-        margin-bottom: 3rem;
     }
 </style>

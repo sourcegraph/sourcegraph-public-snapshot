@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	codycontext "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/context/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -40,6 +40,7 @@ func Init(
 		db,
 		services.GitserverClient,
 		contextClient,
+		observationCtx.Logger,
 	)
 
 	return nil

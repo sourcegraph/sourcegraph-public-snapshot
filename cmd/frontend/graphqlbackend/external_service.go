@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -294,6 +295,9 @@ func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externa
 		return &externalServiceAvailabilityStateResolver{unknown: &externalServiceUnknown{}}, nil
 	}
 
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+
 	source, err := repos.NewSource(
 		ctx,
 		log.Scoped("externalServiceResolver.CheckConnection"),
@@ -307,8 +311,14 @@ func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externa
 	}
 
 	if err := source.CheckConnection(ctx); err != nil {
+		reason := err.Error()
+
+		if checkErrCodeHostMaybeInaccessible(err) {
+			reason = fmt.Sprintf("%s\n\n%s", reason, codeHostInaccessibleWarning)
+		}
+
 		return &externalServiceAvailabilityStateResolver{
-			unavailable: &externalServiceUnavailable{suspectedReason: err.Error()},
+			unavailable: &externalServiceUnavailable{suspectedReason: reason},
 		}, nil
 	}
 

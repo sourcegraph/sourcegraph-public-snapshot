@@ -10,7 +10,7 @@ import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { createEditorAPI, isElementDisabled, percySnapshotWithVariants } from './utils'
+import { createEditorAPI, isElementDisabled } from './utils'
 
 describe('Settings', () => {
     let driver: Driver
@@ -120,8 +120,6 @@ describe('Settings', () => {
             // The editor API needs to be created before taking the screenshot
             // (waits for the editor to be ready)
             const editor = await createEditorAPI(driver, '.test-settings-file .test-editor')
-
-            await percySnapshotWithVariants(driver.page, 'Settings page')
             await accessibilityAudit(driver.page)
 
             // Replace with new settings

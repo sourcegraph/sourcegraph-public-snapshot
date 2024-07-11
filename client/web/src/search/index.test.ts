@@ -138,29 +138,6 @@ describe('search/index', () => {
             searchMode: SearchMode.Precise,
         })
     })
-
-    test('parseSearchURL preserves literal search compatibility', () => {
-        expect(parseSearchURL('q=/a literal pattern/&patternType=literal')).toStrictEqual({
-            query: 'content:"/a literal pattern/"',
-            patternType: SearchPatternType.standard,
-            caseSensitive: false,
-            searchMode: SearchMode.Precise,
-        })
-
-        expect(parseSearchURL('q=not /a literal pattern/&patternType=literal')).toStrictEqual({
-            query: 'not content:"/a literal pattern/"',
-            patternType: SearchPatternType.standard,
-            caseSensitive: false,
-            searchMode: SearchMode.Precise,
-        })
-
-        expect(parseSearchURL('q=un.*touched&patternType=literal')).toStrictEqual({
-            query: 'un.*touched',
-            patternType: SearchPatternType.standard,
-            caseSensitive: false,
-            searchMode: SearchMode.Precise,
-        })
-    })
 })
 
 describe('repoFilterForRepoRevision escapes values with spaces', () => {

@@ -124,9 +124,11 @@ func TestCheckAnomalies(t *testing.T) {
 	ctx := context.Background()
 
 	eventJSON, err := json.Marshal(struct {
-		SiteID string `json:"site_id,omitempty"`
+		SiteID    string `json:"site_id,omitempty"`
+		LicenseID string `json:"license_id,omitempty"`
 	}{
-		SiteID: siteID,
+		SiteID:    siteID,
+		LicenseID: licenseID,
 	})
 	require.NoError(t, err)
 

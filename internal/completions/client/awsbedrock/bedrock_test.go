@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_BedrockProvisionedThroughputModel(t *testing.T) {
+func TestBedrockProvisionedThroughputModel(t *testing.T) {
 	tests := []struct {
 		want           string
 		endpoint       string
@@ -51,7 +51,7 @@ func Test_BedrockProvisionedThroughputModel(t *testing.T) {
 	}
 }
 
-func Test_AwsConfigOptsForKeyConfig(t *testing.T) {
+func TestAWSConfigOptsForKeyConfig(t *testing.T) {
 
 	t.Run("With endpoint as URL", func(t *testing.T) {
 		endpoint := "https://example.com"
@@ -80,5 +80,4 @@ func Test_AwsConfigOptsForKeyConfig(t *testing.T) {
 		require.Equal(t, defaultConfig.Region, endpoint)
 
 	})
-
 }

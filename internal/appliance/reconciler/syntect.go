@@ -36,10 +36,7 @@ func (r *Reconciler) reconcileSyntectDeployment(ctx context.Context, sg *config.
 	name := "syntect-server"
 	cfg := sg.Spec.SyntectServer
 
-	defaultImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return err
-	}
+	defaultImage := config.GetDefaultImage(sg, "syntax-highlighter")
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
 		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{
@@ -76,6 +73,7 @@ func (r *Reconciler) reconcileSyntectDeployment(ctx context.Context, sg *config.
 
 	podTemplate := pod.NewPodTemplate(name, cfg)
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr}
+	podTemplate.Template.Spec.ServiceAccountName = name
 
 	dep := deployment.NewDeployment(name, sg.Namespace, sg.Spec.RequestedVersion)
 	dep.Spec.Replicas = pointers.Ptr(cfg.Replicas)

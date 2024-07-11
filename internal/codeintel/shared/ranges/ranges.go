@@ -98,16 +98,16 @@ func EncodeRanges(values []int32) (buf []byte, _ error) {
 
 // DecodeRanges decodes the output of `EncodeRanges`, transforming the result into a SCIP range
 // slice.
-func DecodeRanges(encoded []byte) ([]*scip.Range, error) {
+func DecodeRanges(encoded []byte) ([]scip.Range, error) {
 	flattenedRanges, err := DecodeFlattenedRanges(encoded)
 	if err != nil {
 		return nil, err
 	}
 
 	n := len(flattenedRanges)
-	ranges := make([]*scip.Range, 0, n/4)
+	ranges := make([]scip.Range, 0, n/4)
 	for i := 0; i < n; i += 4 {
-		ranges = append(ranges, scip.NewRange(flattenedRanges[i:i+4]))
+		ranges = append(ranges, scip.NewRangeUnchecked(flattenedRanges[i:i+4]))
 	}
 
 	return ranges, nil

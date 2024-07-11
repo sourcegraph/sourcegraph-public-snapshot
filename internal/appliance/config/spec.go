@@ -1,7 +1,6 @@
 package config
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,111 +27,75 @@ type DatabaseConnectionSpec struct {
 // BlobstoreSpec defines the desired state of Blobstore.
 type BlobstoreSpec struct {
 	StandardConfig
-
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 200Gi
-	StorageSize string `json:"storageSize,omitempty"`
 }
 
-// CodeInsightsDBSpec defines the desired state of Code Insights database.
-type CodeInsightsDBSpec struct {
-	// Disabled defines if Code Insights is enabled or not.
-	// Default: false
-	Disabled bool `json:"disabled,omitempty"`
-
-	// ExistingSecret is the name of an existing secret to use for CodeInsights DB credentials.
-	ExistingSecret string `json:"existingSecret,omitempty"`
-
-	// Database allows for custom database connection details.
-	Database *DatabaseConnectionSpec `json:"database,omitempty"`
-
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 200Gi
-	StorageSize string `json:"storageSize,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
+type CadvisorSpec struct {
+	StandardConfig
 }
 
-// CodeIntelDBSpec defines the desired state of Code Intel database.
-type CodeIntelDBSpec struct {
-	// Disabled defines if Code Intel is enabled or not.
-	// Default: false
-	Disabled bool `json:"disabled,omitempty"`
-
-	// ExistingSecret is the name of an existing secret to use for CodeIntel DB credentials.
-	ExistingSecret string `json:"existingSecret,omitempty"`
+type CodeDBSpec struct {
+	StandardConfig
 
 	// Database allows for custom database connection details.
-	Database *DatabaseConnectionSpec `json:"database,omitempty"`
-
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 200Gi
-	StorageSize string `json:"storageSize,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
+	DatabaseConnection *DatabaseConnectionSpec `json:"database,omitempty"`
 }
 
 type IngressSpec struct {
-	Disabled         bool              `json:"enabled,omitempty"`
 	Annotations      map[string]string `json:"annotations,omitempty"`
 	Host             string            `json:"host,omitempty"`
-	IngressClassName string            `json:"ingressClassName,omitempty"`
+	IngressClassName *string           `json:"ingressClassName,omitempty"`
 	TLSSecret        string            `json:"tlsSecret,omitempty"`
 }
 
-// FrontendSpec defines the desired state of Frontend.
 type FrontendSpec struct {
+	StandardConfig
+
+	Migrator bool `json:"migrator,omitempty"`
+
 	// Replicas defines the number of Frontend pod replicas.
 	// Default: 2
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// Ingress allows for changes to the custom Sourcegraph ingress.
 	Ingress *IngressSpec `json:"ingress,omitempty"`
-
-	// ExistingSecret is the name of an existing secret to use for Postgres credentials.
-	ExistingSecret string `json:"existingSecret,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 // GitServerSpec defines the desired state of GitServer.
 type GitServerSpec struct {
 	StandardConfig
 
-	// Replicas defines the number of Symbols pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
-
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 200Gi
-	StorageSize string `json:"storageSize,omitempty"`
 
 	// SSHSecret is the name of existing secret that contains SSH credentials to clone repositories.
 	// This secret generally contains keys such as `id_rsa` (private key) and `known_hosts`.
 	SSHSecret string `json:"sshSecret,omitempty"`
 }
 
-// IndexedSearchSpec defines the desired state of Index Search.
-type IndexedSearchSpec struct {
-	// Replicas defines the number of Index Search pod replicas.
+type GrafanaSpec struct {
+	StandardConfig
+
+	// Replicas defines the number of Grafana pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
 
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 200Gi
-	StorageSize string `json:"storageSize,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
+	ExistingConfigMap string `json:"existingConfigMap,omitempty"`
 }
 
-// IndexedSearchIndexerSpec defines the desired state of the Index Search Indexer.
-type IndexedSearchIndexerSpec struct {
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
+type IndexedSearchSpec struct {
+	StandardConfig
+
+	Replicas int32 `json:"replicas,omitempty"`
+}
+
+type OtelCollectorSpec struct {
+	StandardConfig
+}
+
+type JaegerSpec struct {
+	StandardConfig
+
+	Replicas int32 `json:"replicas,omitempty"`
 }
 
 // PGSQLSpec defines the desired state of the Postgres server.
@@ -141,15 +104,6 @@ type PGSQLSpec struct {
 
 	// DatabaseConnection allows for custom database connection details.
 	DatabaseConnection *DatabaseConnectionSpec `json:"database,omitempty"`
-
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 200Gi
-	StorageSize string `json:"storageSize,omitempty"`
-}
-
-type PostgresExporterSpec struct {
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 type PreciseCodeIntelSpec struct {
@@ -162,13 +116,16 @@ type PreciseCodeIntelSpec struct {
 	Replicas int32 `json:"replicas,omitempty"`
 }
 
+type PrometheusSpec struct {
+	StandardConfig
+
+	ExistingConfigMap string `json:"existingConfigMap,omitempty"`
+	Privileged        bool   `json:"privileged,omitempty"`
+}
+
 // RedisSpec defines the desired state of a Redis-based service.
 type RedisSpec struct {
 	StandardConfig
-
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 100Gi
-	StorageSize string `json:"storageSize,omitempty"`
 }
 
 // RepoUpdaterSpec defines the desired state of the Repo Updater service.
@@ -176,22 +133,12 @@ type RepoUpdaterSpec struct {
 	StandardConfig
 }
 
-// SearcherSpec defines the desired state of the Searcher service.
 type SearcherSpec struct {
-	// Disabled defines if Code Intel is enabled or not.
-	// Default: false
-	Disabled bool `json:"disabled,omitempty"`
+	StandardConfig
 
 	// Replicas defines the number of Searcher pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
-
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 26Gi
-	StorageSize string `json:"storageSize,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 // SymbolsSpec defines the desired state of the Symbols service.
@@ -201,10 +148,6 @@ type SymbolsSpec struct {
 	// Replicas defines the number of Symbols pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
-
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 12Gi
-	StorageSize string `json:"storageSize,omitempty"`
 }
 
 // SyntectServerSpec defines the desired state of the Syntect server service.
@@ -217,12 +160,11 @@ type SyntectServerSpec struct {
 }
 
 type WorkerSpec struct {
+	StandardConfig
+
 	// Replicas defines the number of Worker pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 type StorageClassSpec struct {
@@ -265,11 +207,13 @@ type SourcegraphSpec struct {
 	// Blobstore defines the desired state of the Blobstore service.
 	Blobstore BlobstoreSpec `json:"blobstore,omitempty"`
 
+	Cadvisor CadvisorSpec `json:"cadvisor,omitempty"`
+
 	// CodeInsights defines the desired state of the Code Insights service.
-	CodeInsights CodeInsightsDBSpec `json:"codeInsights,omitempty"`
+	CodeInsights CodeDBSpec `json:"codeInsights,omitempty"`
 
 	// CodeIntel defines the desired state of the Code Intel service.
-	CodeIntel CodeIntelDBSpec `json:"codeIntel,omitempty"`
+	CodeIntel CodeDBSpec `json:"codeIntel,omitempty"`
 
 	// Frontend defines the desired state of the Sourcegraph Frontend.
 	Frontend FrontendSpec `json:"frontend,omitempty"`
@@ -277,20 +221,22 @@ type SourcegraphSpec struct {
 	// GitServer defines the desired state of the GitServer service.
 	GitServer GitServerSpec `json:"gitServer,omitempty"`
 
+	Grafana GrafanaSpec `json:"grafana,omitempty"`
+
 	// IndexedSearch defines the desired state of the Indexed Search service.
 	IndexedSearch IndexedSearchSpec `json:"indexedSearch,omitempty"`
 
-	// IndexedSearchIndexer defines the desired state of the Indexed Search Indexer service.
-	IndexedSearchIndexer IndexedSearchIndexerSpec `json:"indexedSearchIndexer,omitempty"`
+	Jaeger JaegerSpec `json:"jaeger,omitempty"`
+
+	OtelCollector OtelCollectorSpec `json:"openTelemetry,omitempty"`
 
 	// PGSQL defines the desired state of the PostgreSQL database.
 	PGSQL PGSQLSpec `json:"pgsql,omitempty"`
 
-	// PostgresExporter defines the desired state of the Postgres exporter service.
-	PostgresExporter PostgresExporterSpec `json:"postgresExporter,omitempty"`
-
 	// PreciseCodeIntel defines the desired state of the Precise Code Intel service.
 	PreciseCodeIntel PreciseCodeIntelSpec `json:"preciseCodeIntel,omitempty"`
+
+	Prometheus PrometheusSpec `json:"prometheus,omitempty"`
 
 	// RedisCache defines the desired state of the Redis cache service.
 	RedisCache RedisSpec `json:"redisCache,omitempty"`
@@ -318,10 +264,18 @@ type SourcegraphSpec struct {
 	StorageClass StorageClassSpec `json:"storageClass,omitempty"`
 }
 
+// SetupStatus defines the observes status of the setup process.
+type SetupStatus struct {
+	Progress int32
+}
+
 // SourcegraphStatus defines the observed state of Sourcegraph
 type SourcegraphStatus struct {
 	// CurrentVersion is the version of Sourcegraph currently running.
 	CurrentVersion string `json:"currentVersion"`
+
+	// Setup tracks the progress of the setup process.
+	Setup SetupStatus `json:"setup,omitempty"`
 
 	// Represents the latest available observations of Sourcegraph's current state.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`

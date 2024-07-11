@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pod"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pvc"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/service"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *Reconciler) reconcileBlobstore(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
@@ -35,14 +34,7 @@ func (r *Reconciler) reconcileBlobstore(ctx context.Context, sg *config.Sourcegr
 }
 
 func buildBlobstorePersistentVolumeClaim(sg *config.Sourcegraph) (corev1.PersistentVolumeClaim, error) {
-	storage := sg.Spec.Blobstore.StorageSize
-	if _, err := resource.ParseQuantity(storage); err != nil {
-		return corev1.PersistentVolumeClaim{}, errors.Errorf("invalid blobstore storage size: %s", storage)
-	}
-
-	p := pvc.NewPersistentVolumeClaim("blobstore", sg.Namespace, resource.MustParse(storage), sg.Spec.StorageClass.Name)
-
-	return p, nil
+	return pvc.NewPersistentVolumeClaim("blobstore", sg.Namespace, sg.Spec.Blobstore)
 }
 
 func (r *Reconciler) reconcileBlobstorePersistentVolumeClaims(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
@@ -77,7 +69,7 @@ func (r *Reconciler) reconcileBlobstoreServices(ctx context.Context, sg *config.
 	return reconcileObject(ctx, r, sg.Spec.Blobstore, &s, &corev1.Service{}, sg, owner)
 }
 
-func buildBlobstoreDeployment(sg *config.Sourcegraph) (appsv1.Deployment, error) {
+func buildBlobstoreDeployment(sg *config.Sourcegraph) appsv1.Deployment {
 	name := "blobstore"
 
 	containerPorts := []corev1.ContainerPort{{
@@ -96,10 +88,7 @@ func buildBlobstoreDeployment(sg *config.Sourcegraph) (appsv1.Deployment, error)
 		},
 	}
 
-	defaultImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return appsv1.Deployment{}, err
-	}
+	defaultImage := config.GetDefaultImage(sg, name)
 	defaultContainer := container.NewContainer(name, sg.Spec.Blobstore, config.ContainerConfig{
 		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{
@@ -145,13 +134,10 @@ func buildBlobstoreDeployment(sg *config.Sourcegraph) (appsv1.Deployment, error)
 	)
 	defaultDeployment.Spec.Template = podTemplate.Template
 
-	return defaultDeployment, nil
+	return defaultDeployment
 }
 
 func (r *Reconciler) reconcileBlobstoreDeployments(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	d, err := buildBlobstoreDeployment(sg)
-	if err != nil {
-		return err
-	}
+	d := buildBlobstoreDeployment(sg)
 	return reconcileObject(ctx, r, sg.Spec.Blobstore, &d, &appsv1.Deployment{}, sg, owner)
 }

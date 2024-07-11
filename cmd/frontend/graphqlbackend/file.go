@@ -26,7 +26,7 @@ type FileResolver interface {
 	Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error)
 	Languages(ctx context.Context) ([]string, error)
 
-	ToGitBlob() (*GitTreeEntryResolver, bool)
+	ToGitBlob() (*GitBlobResolver, bool)
 	ToVirtualFile() (*VirtualFileResolver, bool)
 	ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool)
 }

@@ -120,6 +120,7 @@ WITH time_diffs AS (
 		name = 'license.check.api.success'
 		AND timestamp > %s::timestamptz - INTERVAL '48 hours'
 		AND argument->>'site_id' = %s
+		AND argument->>'license_id' = %s
 ),
 percentiles AS (
 	SELECT PERCENTILE_CONT (0.5) WITHIN GROUP (
@@ -161,7 +162,7 @@ func checkP50CallTimeForLicense(ctx context.Context, logger log.Logger, db datab
 		return
 	}
 
-	q := sqlf.Sprintf(percentileTimeDiffQuery, clock.Now().UTC(), *license.SiteID)
+	q := sqlf.Sprintf(percentileTimeDiffQuery, clock.Now().UTC(), *license.SiteID, license.ID)
 	timeDiff, ok, err := basestore.ScanFirstNullInt64(db.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
 	if err != nil {
 		logger.Error("error getting time difference from event_logs", log.Error(err))

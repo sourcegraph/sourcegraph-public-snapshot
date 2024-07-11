@@ -1,7 +1,6 @@
 <script lang="ts">
     // @sg EnableRollout
-    import { mdiMapSearch } from '@mdi/js'
-
+    import { afterNavigate, beforeNavigate } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
@@ -11,14 +10,26 @@
     import Readme from '$lib/repo/Readme.svelte'
     import { createPromiseStore } from '$lib/utils'
     import { Alert } from '$lib/wildcard'
+    import OpenCodyAction from '$lib/repo/OpenCodyAction.svelte'
+
+    import { getRepositoryPageContext } from '../../../../../context'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
+    const repositoryContext = getRepositoryPageContext()
     const treeEntriesWithCommitInfo = createPromiseStore<TreeEntryWithCommitInfo[]>()
 
     $: treeEntriesWithCommitInfo.set(data.treeEntriesWithCommitInfo)
+    $: isCodyAvailable = data.isCodyAvailable
+
+    afterNavigate(() => {
+        repositoryContext.set({ directoryPath: data.filePath })
+    })
+    beforeNavigate(() => {
+        repositoryContext.set({})
+    })
 </script>
 
 <svelte:head>
@@ -28,6 +39,9 @@
 <FileHeader type="tree" repoName={data.repoName} revision={data.revision} path={data.filePath}>
     <svelte:fragment slot="actions">
         <Permalink commitID={data.resolvedRevision.commitID} />
+        {#if isCodyAvailable}
+            <OpenCodyAction />
+        {/if}
     </svelte:fragment>
 </FileHeader>
 
@@ -39,7 +53,7 @@
         {#if result === null}
             <div class="error-wrapper">
                 <div class="circle">
-                    <Icon svgPath={mdiMapSearch} --icon-size="80px" />
+                    <Icon icon={ILucideSearchX} --icon-size="80px" />
                 </div>
                 <h2>Directory not found</h2>
             </div>

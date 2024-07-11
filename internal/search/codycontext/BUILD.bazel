@@ -5,7 +5,7 @@ go_library(
     name = "codycontext",
     srcs = [
         "job.go",
-        "query_transformer.go",
+        "query_parser.go",
         "stop_words.go",
         "string_set.go",
         "term_utils.go",
@@ -33,7 +33,7 @@ go_test(
     name = "codycontext_test",
     srcs = [
         "job_test.go",
-        "query_transformer_test.go",
+        "query_parser_test.go",
     ],
     embed = [":codycontext"],
     tags = [TAG_PLATFORM_SEARCH],

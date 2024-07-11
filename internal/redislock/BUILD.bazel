@@ -17,6 +17,10 @@ go_test(
     name = "redislock_test",
     srcs = ["redislock_test.go"],
     embed = [":redislock"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/redispool",
         "@com_github_derision_test_go_mockgen_v2//testutil/require",

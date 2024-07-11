@@ -73,7 +73,6 @@ type RedactedExternalService struct {
 	LastSyncAt     time.Time
 	NextSyncAt     time.Time
 	Unrestricted   bool
-	CloudDefault   bool
 	HasWebhooks    *bool
 	TokenExpiresAt *time.Time
 }
@@ -94,7 +93,6 @@ func convertExtSvcToRedacted(ctx context.Context, extSvc *types.ExternalService)
 		LastSyncAt:     extSvc.LastSyncAt,
 		NextSyncAt:     extSvc.NextSyncAt,
 		Unrestricted:   extSvc.Unrestricted,
-		CloudDefault:   extSvc.CloudDefault,
 		HasWebhooks:    extSvc.HasWebhooks,
 		TokenExpiresAt: extSvc.TokenExpiresAt,
 	}, nil

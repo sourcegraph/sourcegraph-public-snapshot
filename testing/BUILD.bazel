@@ -39,6 +39,7 @@ server_integration_test(
     ],
     port = "7080",
     runner_src = ":e2e_test.sh",
+    server_image = "//cmd/server:image_tarball",
 )
 
 # Warning, this targets explicitly exclude p4 subrepo perms tests as they're very heavy and time
@@ -54,7 +55,7 @@ server_integration_test(
         "$(location //dev/authtest:authtest_test)",  # actual test
     ],
     data = [
-        "//cmd/server:image_tarball",
+        "//cmd/server:no_client_bundle.image_tarball",
         "//dev/authtest:authtest_test",
         "//dev/gqltest:gqltest_test",
     ],
@@ -77,6 +78,7 @@ server_integration_test(
     ],
     port = "7081",
     runner_src = ":backend_integration_test.sh",
+    server_image = "//cmd/server:no_client_bundle.image_tarball",
 )
 
 # The perforce subrepo permission testing is really heayv, as it requires to add a new repo,
@@ -93,7 +95,7 @@ server_integration_test(
         "$(location //dev/gqltest:gqltest_test)",  # actual test
     ],
     data = [
-        "//cmd/server:image_tarball",
+        "//cmd/server:no_client_bundle.image_tarball",
         "//dev/authtest:authtest_test",
         "//dev/gqltest:gqltest_test",
     ],
@@ -116,6 +118,7 @@ server_integration_test(
     ],
     port = "7082",
     runner_src = ":backend_integration_test_p4.sh",
+    server_image = "//cmd/server:no_client_bundle.image_tarball",
     tags = [TAG_PLATFORM_SOURCE],
 )
 
@@ -131,7 +134,7 @@ server_integration_test(
         "$(location //testing/code-intel:repos.json)",
     ],
     data = [
-        "//cmd/server:image_tarball",
+        "//cmd/server:no_client_bundle.image_tarball",
         "//dev/codeintel-qa/cmd/clear",
         "//dev/codeintel-qa/cmd/download",
         "//dev/codeintel-qa/cmd/query",
@@ -166,6 +169,7 @@ server_integration_test(
     ],
     port = "7083",
     runner_src = ":codeintel_integration_test.sh",
+    server_image = "//cmd/server:no_client_bundle.image_tarball",
     tags = [
         "exclusive",
         "manual",
@@ -193,7 +197,7 @@ server_integration_test(
         "$(location //testing/code-intel:repos.json)",
     ],
     data = [
-        "//cmd/server:image_tarball",
+        "//cmd/server:no_client_bundle.image_tarball",
         "//dev/codeintel-qa/cmd/clear",
         "//dev/codeintel-qa/cmd/download",
         "//dev/codeintel-qa/cmd/query",
@@ -229,6 +233,7 @@ server_integration_test(
     ],
     port = "7083",
     runner_src = ":codeintel_integration_test.sh",
+    server_image = "//cmd/server:no_client_bundle.image_tarball",
     tags = [
         "manual",
         "no-sandbox",

@@ -11,6 +11,8 @@ var EphemeralCommand = cli.Command{
 		&buildEphemeralCommand,
 		&deleteEphemeralCommand,
 		&deployEphemeralCommand,
+		&dashboardEphemeralCommand,
+		&opsDashboardEphemeralCommand,
 		&leaseEphemeralCommand,
 		&listEphemeralCommand,
 		&listVersionsEphemeralCommand,

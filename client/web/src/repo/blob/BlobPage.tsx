@@ -14,7 +14,7 @@ import type { Optional } from 'utility-types'
 import type { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { NoopEditor } from '@sourcegraph/cody-shared'
-import { asError, type ErrorLike, isErrorLike, basename, SourcegraphURL } from '@sourcegraph/common'
+import { asError, basename, isErrorLike, SourcegraphURL, type ErrorLike } from '@sourcegraph/common'
 import {
     createActiveSpan,
     reactManualTracer,
@@ -22,10 +22,10 @@ import {
     useCurrentSpan,
 } from '@sourcegraph/observability-client'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
+import { HighlightResponseFormat, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
-import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { useExperimentalFeatures, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
@@ -49,7 +49,6 @@ import {
 import type { AuthenticatedUser } from '../../auth'
 import type { CodeIntelligenceProps } from '../../codeintel'
 import { FileContentEditor } from '../../cody/components/FileContentEditor'
-import { isCodyEnabled } from '../../cody/isCodyEnabled'
 import { useCodySidebar } from '../../cody/sidebar/Provider'
 import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
@@ -68,7 +67,6 @@ import { parseBrowserRepoURL, toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
 import { ToggleBlameAction } from '../actions/ToggleBlameAction'
 import { useBlameHunks, useBlameVisibility } from '../blame/hooks'
-import { TryCodyWidget } from '../components/TryCodyWidget/TryCodyWidget'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
 import type { HoverThresholdProps } from '../RepoContainer'
@@ -371,16 +369,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
-            {(props.isSourcegraphDotCom || isCodyEnabled()) && (
-                <TryCodyWidget
-                    telemetryService={props.telemetryService}
-                    telemetryRecorder={props.telemetryRecorder}
-                    type="blob"
-                    authenticatedUser={props.authenticatedUser}
-                    context={context}
-                    isSourcegraphDotCom={props.isSourcegraphDotCom}
-                />
-            )}
             {window.context.isAuthenticatedUser && (
                 <RepoHeaderContributionPortal
                     position="right"
@@ -594,6 +582,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                         onCopyNotebook={onCopyNotebook}
                         exportedFileName={basename(blobInfoOrError.filePath)}
                         className={styles.border}
+                        patternType={SearchPatternType.standard}
                     />
                 </React.Suspense>
             )}

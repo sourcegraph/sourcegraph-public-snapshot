@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "redislock",
+    srcs = ["mutex.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/redislock",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/errors",
+        "@com_github_go_redsync_redsync_v4//:redsync",
+        "@com_github_go_redsync_redsync_v4//redis/goredis/v9:goredis",
+        "@com_github_redis_go_redis_v9//:go-redis",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "redislock_test",
+    srcs = ["mutex_test.go"],
+    embed = [":redislock"],
+    deps = [
+        "@com_github_redis_go_redis_v9//:go-redis",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

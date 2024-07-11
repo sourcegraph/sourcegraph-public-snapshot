@@ -9,7 +9,7 @@ service ApplianceService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 
-  rpc GetApplianceStage(GetApplianceStageRequest) returns (GetApplianceStageResponse) {
+  rpc GetApplianceStatus(GetApplianceStatusRequest) returns (GetApplianceStatusResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -20,8 +20,8 @@ message GetApplianceVersionResponse {
   string version = 1;
 }
 
-message GetApplianceStageRequest {}
+message GetApplianceStatusRequest {}
 
-message GetApplianceStageResponse {
-  string stage = 1;
+message GetApplianceStatusResponse {
+  string status = 1;
 }

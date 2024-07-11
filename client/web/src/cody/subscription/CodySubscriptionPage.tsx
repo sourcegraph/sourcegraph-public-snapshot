@@ -1,20 +1,19 @@
-import React, { type ReactElement, useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, type ReactElement } from 'react'
 
-import { mdiArrowLeft, mdiInformationOutline, mdiTrendingUp, mdiCreditCardOutline } from '@mdi/js'
+import { mdiArrowLeft, mdiCreditCardOutline, mdiInformationOutline, mdiTrendingUp } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Badge,
     Button,
     ButtonLink,
-    Link,
     H1,
     H2,
     Icon,
+    Link,
     PageHeader,
     Text,
     Tooltip,
@@ -24,24 +23,22 @@ import {
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
-import { EventName } from '../../util/constants'
-import { CodyColorIcon } from '../chat/CodyPageIcon'
-import { isCodyEnabled } from '../isCodyEnabled'
-import { manageSubscriptionRedirectURL, isEmbeddedCodyProUIEnabled } from '../util'
+import { CodySubscriptionPlan } from '../../graphql-operations'
+import { CodyProRoutes } from '../codyProRoutes'
+import { ProIcon } from '../components/CodyIcon'
+import { PageHeaderIcon } from '../components/PageHeaderIcon'
+import { getManageSubscriptionPageURL, isEmbeddedCodyProUIEnabled, manageSubscriptionRedirectURL } from '../util'
 
 import { USER_CODY_PLAN } from './queries'
 
 import styles from './CodySubscriptionPage.module.scss'
 
 interface CodySubscriptionPageProps extends TelemetryV2Props {
-    isSourcegraphDotCom: boolean
     authenticatedUser?: AuthenticatedUser | null
 }
 
 export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageProps> = ({
-    isSourcegraphDotCom,
     authenticatedUser,
     telemetryRecorder,
 }) => {
@@ -49,7 +46,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
 
     const utm_source = parameters.get('utm_source')
     useEffect(() => {
-        EVENT_LOGGER.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source }, { utm_source })
         telemetryRecorder.recordEvent('cody.planSelection', 'view')
     }, [utm_source, telemetryRecorder])
 
@@ -60,7 +56,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
 
     useEffect(() => {
         if (!!data && !data?.currentUser) {
-            navigate('/sign-in?returnTo=/cody/subscription')
+            navigate(`/sign-in?returnTo=${CodyProRoutes.Subscription}`)
         }
     }, [data, navigate])
 
@@ -68,7 +64,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         throw dataError
     }
 
-    if (!isCodyEnabled() || !isSourcegraphDotCom || !data?.currentUser || !authenticatedUser) {
+    if (!window.context?.codyEnabledForCurrentUser || !data?.currentUser || !authenticatedUser) {
         return null
     }
 
@@ -77,31 +73,32 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     return (
         <>
             <Page className={classNames('d-flex flex-column')}>
-                <PageTitle title="Cody Subscription" />
+                <PageTitle title="Cody subscription" />
                 <PageHeader
-                    className="mb-4"
+                    className="my-4 d-inline-flex align-items-center"
                     actions={
                         isProUser && (
-                            <Button
+                            <ButtonLink
                                 variant="primary"
+                                to={getManageSubscriptionPageURL()}
                                 onClick={() => {
-                                    EVENT_LOGGER.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
-                                    window.location.href = manageSubscriptionRedirectURL
+                                    telemetryRecorder.recordEvent('cody.manageSubscription', 'click', {
+                                        metadata: { tier: 1 },
+                                    })
                                 }}
                             >
                                 <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />
                                 Manage subscription
-                            </Button>
+                            </ButtonLink>
                         )
                     }
                 >
-                    <PageHeader.Heading as="h2" styleAs="h1">
-                        <div className="d-inline-flex align-items-center">
-                            <CodyColorIcon width={40} height={40} className="mr-2" /> Subscription plans
-                        </div>
+                    <PageHeader.Heading as="h1" className="text-3xl font-medium">
+                        <PageHeaderIcon name="cody-logo" className="mr-3" />
+                        <Text as="span">Subscription plans</Text>
                     </PageHeader.Heading>
                 </PageHeader>
-                <Link to="/cody/manage" className="my-4">
+                <Link to={CodyProRoutes.Manage}>
                     <Icon className="mr-1 text-link" svgPath={mdiArrowLeft} aria-hidden={true} />
                     Back to Cody Dashboard
                 </Link>
@@ -119,13 +116,13 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="d-inline">
-                                    500
+                                    Unlimited
                                 </Text>{' '}
                                 <Text className="d-inline text-muted">autocompletions per month</Text>
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="d-inline">
-                                    20
+                                    200
                                 </Text>{' '}
                                 <Text className="d-inline text-muted">messages and commands per month</Text>
                             </div>
@@ -205,19 +202,19 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     <Text className="mb-0 text-muted d-inline">/month</Text>
                                 </div>
                                 {isProUser ? (
-                                    <Text
-                                        className="mb-0 text-muted d-inline cursor-pointer"
-                                        size="small"
+                                    <Link
+                                        to={getManageSubscriptionPageURL()}
+                                        className="mb-0 text-muted"
                                         onClick={() => {
-                                            EVENT_LOGGER.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
                                             telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                 metadata: { tier: 0 },
                                             })
-                                            window.location.href = manageSubscriptionRedirectURL
                                         }}
                                     >
-                                        Manage subscription
-                                    </Text>
+                                        <Text as="span" size="small">
+                                            Manage subscription
+                                        </Text>
+                                    </Link>
                                 ) : useEmbeddedCodyUI ? (
                                     <>
                                         <Button
@@ -227,22 +224,29 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                     metadata: { tier: 1, team: 1 },
                                                 })
-                                                window.location.href = manageSubscriptionRedirectURL // TODO: Use team link or argument
+                                                // We add ?seats=2 to the URL to initiate creating a team.
+                                                const url = new URL(
+                                                    CodyProRoutes.NewProSubscription,
+                                                    window.location.origin
+                                                )
+                                                url.searchParams.append('seats', '2')
+                                                window.location.href = url.toString()
                                             }}
                                         >
-                                            <span className={classNames(styles.proBadge, 'mr-1')} />
+                                            <ProIcon className="mr-1" />
                                             <span>Create a Cody Pro team</span>
                                         </Button>
                                         <Link
                                             className="text-center"
-                                            to="https://sourcegraph.com/contact/request-info?utm_source=cody_subscription_page"
+                                            to={CodyProRoutes.NewProSubscription}
                                             target="_blank"
                                             rel="noreferrer noopener"
-                                            onClick={() => {
+                                            onClick={event => {
+                                                event.preventDefault()
                                                 telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                     metadata: { tier: 1, team: 0 },
                                                 })
-                                                window.location.href = manageSubscriptionRedirectURL
+                                                navigate(CodyProRoutes.NewProSubscription)
                                             }}
                                         >
                                             Upgrade yourself to Pro
@@ -290,8 +294,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     LLM support
                                 </Text>
                                 <Text className="mb-1 text-muted">
-                                    Multiple LLM choices for chat
-                                    <Tooltip content="Claude Instant 1.2, Claude 2, ChatGPT 3.5 Turbo, ChatGPT 4 Turbo Preview">
+                                    More powerful LLMs for chat and commands
+                                    <Tooltip content="Everything in free, plus GPT-4o, GPT-4 Turbo, and Claude 3 Opus">
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
@@ -299,7 +303,16 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         />
                                     </Tooltip>
                                 </Text>
-                                <Text className="mb-0 text-muted">Default LLMs for commands and autocomplete</Text>
+                                <Text className="mb-1 text-muted">
+                                    Multiple LLM choices for chat and commands
+                                    <Tooltip content="Claude 3 (Sonnet, Haiku), Claude Sonnet 3.5, Gemini Flash and Pro, Mixtral">
+                                        <Icon
+                                            className="ml-1 text-muted"
+                                            svgPath={mdiInformationOutline}
+                                            aria-label="More info"
+                                        />
+                                    </Tooltip>
+                                </Text>
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="mb-3">
@@ -364,11 +377,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 to="https://sourcegraph.com/contact/request-info?utm_source=cody_subscription_page"
                                 target="_blank"
                                 onClick={() => {
-                                    EVENT_LOGGER.log(
-                                        EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
-                                        { tier: 'enterprise' },
-                                        { tier: 'enterprise' }
-                                    )
                                     telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                         metadata: { tier: 2 },
                                     })

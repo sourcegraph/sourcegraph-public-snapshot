@@ -203,7 +203,7 @@ func TestSSCAPIProxy(t *testing.T) {
 			// has no available SAMS identity.
 			t.Run("ErrorNoSAMSIdentity", func(t *testing.T) {
 				ctx := context.Background()
-				_, err := testHandler.getSAMSCredentialsForUser(ctx, testUserID)
+				_, _, err := testHandler.getSAMSCredentialsForUser(ctx, testUserID)
 				assert.ErrorContains(t, err, "user does not have a SAMS identity")
 			})
 
@@ -229,8 +229,11 @@ func TestSSCAPIProxy(t *testing.T) {
 
 			// Try to get the user's SAMS creds given this.
 			ctx := context.Background()
-			token, err := testHandler.getSAMSCredentialsForUser(ctx, testUserID)
+			ident, token, err := testHandler.getSAMSCredentialsForUser(ctx, testUserID)
 			require.NoError(t, err)
+
+			assert.Equal(t, validSAMSIdentity.ID, ident.ID)
+			assert.Equal(t, validSAMSIdentity.ServiceID, ident.ServiceID)
 
 			assert.Equal(t, testToken.AccessToken, token.AccessToken)
 			assert.Equal(t, testToken.RefreshToken, token.RefreshToken)

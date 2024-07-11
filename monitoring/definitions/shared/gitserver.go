@@ -88,3 +88,35 @@ func (gitServer) NewClientGroup(containerName string) monitoring.Group {
 		},
 	})
 }
+
+// src_gitserver_repositoryservice_client_total
+// src_gitserver_repositoryservice_client_duration_seconds_bucket
+// src_gitserver_repositoryservice_client_errors_total
+func (gitServer) NewRepoClientGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerSource, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "gitserver",
+			DescriptionRoot: "Gitserver Repository Service Client",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "gitserver_repositoryservice_client",
+				MetricDescriptionRoot: "client",
+				By:                    []string{"op", "scope"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}

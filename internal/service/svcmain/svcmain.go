@@ -29,20 +29,8 @@ import (
 // If your service cannot access site configuration, use SingleServiceMainWithoutConf
 // instead.
 func SingleServiceMain(svc sgservice.Service) {
-	liblog := log.Init(log.Resource{
-		Name:       env.MyName,
-		Version:    version.Version(),
-		InstanceID: hostname.Get(),
-	},
-		// Experimental: DevX is observing how sampling affects the errors signal.
-		log.NewSentrySinkWith(
-			log.SentrySink{
-				ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
-			},
-		),
-	)
-	logger := log.Scoped("sourcegraph")
-	run(liblog, logger, svc, nil)
+	liblog, logger := newLogger()
+	run(liblog, logger, []sgservice.Service{svc}, nil)
 }
 
 // OutOfBandConfiguration declares additional configuration that happens continuously,
@@ -60,7 +48,12 @@ type OutOfBandConfiguration struct {
 // service WITHOUT site configuration enabled by default. This is only useful for services
 // that are not part of the core Sourcegraph deployment, such as executors and managed
 // services. Use with care!
-func SingleServiceMainWithoutConf(svc sgservice.Service, oobConfig OutOfBandConfiguration) {
+func SingleServiceMainWithoutConf(svc sgservice.Service, otherServices []sgservice.Service, oobConfig OutOfBandConfiguration) {
+	liblog, logger := newLogger()
+	run(liblog, logger, append([]sgservice.Service{svc}, otherServices...), &oobConfig)
+}
+
+func newLogger() (*log.PostInitCallbacks, log.Logger) {
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
@@ -74,13 +67,13 @@ func SingleServiceMainWithoutConf(svc sgservice.Service, oobConfig OutOfBandConf
 		),
 	)
 	logger := log.Scoped("sourcegraph")
-	run(liblog, logger, svc, &oobConfig)
+	return liblog, logger
 }
 
 func run(
 	liblog *log.PostInitCallbacks,
 	logger log.Logger,
-	service sgservice.Service,
+	services []sgservice.Service,
 	// If nil, will use site config
 	oobConfig *OutOfBandConfiguration,
 ) {
@@ -108,38 +101,75 @@ func run(
 
 	profiler.Init(logger)
 
-	obctx := observation.ContextWithLogger(log.Scoped(service.Name()), observation.NewContext(logger))
+	obctx := observation.NewContext(logger)
 	ctx := context.Background()
 
-	// Run the service Configure func before env vars are locked.
-	serviceConfig, debugserverEndpoints := service.Configure()
+	allReady := make(chan struct{})
 
-	// Validate the service's configuration.
+	// Run the services' Configure funcs before env vars are locked.
+	var (
+		serviceConfigs          = make([]env.Config, len(services))
+		allDebugserverEndpoints []debugserver.Endpoint
+	)
+	for i, s := range services {
+		var debugserverEndpoints []debugserver.Endpoint
+		serviceConfigs[i], debugserverEndpoints = s.Configure()
+		allDebugserverEndpoints = append(allDebugserverEndpoints, debugserverEndpoints...)
+	}
+
+	// Validate each service's configuration.
 	//
 	// This cannot be done for executor, see the executorcmd package for details.
-	if serviceConfig != nil {
-		if err := serviceConfig.Validate(); err != nil {
-			logger.Fatal("invalid configuration", log.String("service", service.Name()), log.Error(err))
+	for i, c := range serviceConfigs {
+		if c == nil {
+			continue
+		}
+		if err := c.Validate(); err != nil {
+			logger.Fatal("invalid configuration", log.String("service", services[i].Name()), log.Error(err))
 		}
 	}
 
 	env.Lock()
 	env.HandleHelpFlag()
 
-	// Start the debug server. The ready boolean state it publishes will become true when
-	// the service reports ready.
-	ready := make(chan struct{})
-	go debugserver.NewServerRoutine(ready, debugserverEndpoints...).Start()
+	// Start the debug server. The ready boolean state it publishes will become true when *all*
+	// services report ready.
+	var allReadyWG sync.WaitGroup
+	var allDoneWG sync.WaitGroup
+	go debugserver.NewServerRoutine(allReady, allDebugserverEndpoints...).Start()
 
-	readyFunc := sync.OnceFunc(func() {
-		close(ready)
-	})
+	// Start the services.
+	for i := range services {
+		service := services[i]
+		serviceConfig := serviceConfigs[i]
+		allReadyWG.Add(1)
+		allDoneWG.Add(1)
+		go func() {
+			// TODO(sqs): TODO(single-binary): Consider using the goroutine package and/or the errgroup package to report
+			// errors and listen to signals to initiate cleanup in a consistent way across all
+			// services.
+			obctx := observation.ContextWithLogger(log.Scoped(service.Name()), obctx)
 
-	// Start the service.
-	// TODO: It's not clear or enforced but all the service.Start calls block until the service is completed
-	// This should be made explicit or refactored to accept to done channel or function in addition to ready.
-	err := service.Start(ctx, obctx, readyFunc, serviceConfig)
-	if err != nil {
-		logger.Fatal("failed to start service", log.String("service", service.Name()), log.Error(err))
+			// ensure ready is only called once and always call it.
+			ready := sync.OnceFunc(allReadyWG.Done)
+			defer ready()
+
+			// TODO: It's not clear or enforced but all the service.Start calls block until the service is completed
+			// This should be made explicit or refactored to accept to done channel or function in addition to ready.
+			err := service.Start(ctx, obctx, ready, serviceConfig)
+			allDoneWG.Done()
+			if err != nil {
+				logger.Fatal("failed to start service", log.String("service", service.Name()), log.Error(err))
+			}
+		}()
 	}
+
+	// Pass along the signal to the debugserver that all started services are ready.
+	go func() {
+		allReadyWG.Wait()
+		close(allReady)
+	}()
+
+	// wait for all services to stop
+	allDoneWG.Wait()
 }

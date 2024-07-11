@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -57,13 +56,6 @@ func RepoSourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL 
 		},
 	}
 
-	if dotcom.SourcegraphDotComMode() {
-		// We want to check these first as they'll be able to decode the majority of
-		// repos. If our cloud_default services are unable to decode the clone url then
-		// we fall back to going through all services until we find a match.
-		opt.OnlyCloudDefault = true
-	}
-
 	for {
 		svcs, err := db.ExternalServices().List(ctx, opt)
 		if err != nil {
@@ -82,12 +74,6 @@ func RepoSourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL 
 			if repoName != "" {
 				return repoName, nil
 			}
-		}
-
-		if opt.OnlyCloudDefault {
-			// Try again without narrowing down to cloud_default external services
-			opt.OnlyCloudDefault = false
-			continue
 		}
 
 		if len(svcs) < opt.Limit {

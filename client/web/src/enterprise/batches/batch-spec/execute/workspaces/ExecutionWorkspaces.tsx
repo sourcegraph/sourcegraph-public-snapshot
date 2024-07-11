@@ -103,7 +103,7 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<React.PropsWithChildr
                                     <>
                                         <div className={styles.videoContainer}>
                                             <video
-                                                className="w-100 percy-hide"
+                                                className="w-100"
                                                 autoPlay={true}
                                                 muted={true}
                                                 loop={true}

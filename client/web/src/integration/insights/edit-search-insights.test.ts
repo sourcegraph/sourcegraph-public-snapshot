@@ -9,7 +9,7 @@ import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testin
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, type WebIntegrationTestContext } from '../context'
-import { createEditorAPI, percySnapshotWithVariants } from '../utils'
+import { createEditorAPI } from '../utils'
 
 import { createJITMigrationToGQLInsightMetadataFixture } from './fixtures/insights-metadata'
 import { SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE } from './fixtures/runtime-insights'
@@ -295,8 +295,6 @@ describe('Code insight edit insight page', () => {
         await driver.page.waitForSelector(
             '[data-testid="line-chart__content"] [data-line-name="Imports of new graphql-operations types"] circle'
         )
-
-        await percySnapshotWithVariants(driver.page, 'Code insights edit page with search-based insight creation UI')
         await accessibilityAudit(driver.page)
 
         // Gather all filled inputs within a creation UI form.

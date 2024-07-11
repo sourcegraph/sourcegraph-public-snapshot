@@ -1,4 +1,8 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//wolfi-images:defs.bzl", "wolfi_base")
 
 go_library(
     name = "appliance_lib",
@@ -17,3 +21,35 @@ go_binary(
     embed = [":appliance_lib"],
     visibility = ["//visibility:public"],
 )
+
+pkg_tar(
+    name = "tar_appliance",
+    srcs = [":appliance"],
+)
+
+oci_image(
+    name = "image",
+    base = ":base_image",
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/appliance",
+    ],
+    tars = [":tar_appliance"],
+    user = "sourcegraph",
+    workdir = "/",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["appliance:candidate"],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("appliance"),
+)
+
+wolfi_base()

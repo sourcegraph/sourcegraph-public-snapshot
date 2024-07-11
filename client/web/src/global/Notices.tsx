@@ -6,10 +6,10 @@ import { renderMarkdown } from '@sourcegraph/common'
 import type { Notice } from '@sourcegraph/shared/src/schema/settings.schema'
 import { useSettings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { Alert, type AlertProps, Markdown } from '@sourcegraph/wildcard'
+import { Alert, Markdown, type AlertProps } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
-import { isEmailVerificationNeededForCody } from '../cody/isCodyEnabled'
+import { currentUserRequiresEmailVerificationForCody } from '../cody/util'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 
 import styles from './Notices.module.scss'
@@ -103,11 +103,11 @@ export const VerifyEmailNotices: React.FunctionComponent<VerifyEmailNoticesProps
     telemetryRecorder,
 }) => {
     useEffect(() => {
-        if (isEmailVerificationNeededForCody() && authenticatedUser) {
+        if (currentUserRequiresEmailVerificationForCody() && authenticatedUser) {
             telemetryRecorder.recordEvent('alert.verifyEmail', 'view')
         }
     }, [telemetryRecorder, authenticatedUser])
-    if (isEmailVerificationNeededForCody() && authenticatedUser) {
+    if (currentUserRequiresEmailVerificationForCody() && authenticatedUser) {
         return (
             <div className={classNames(styles.notices, className)}>
                 <NoticeAlert

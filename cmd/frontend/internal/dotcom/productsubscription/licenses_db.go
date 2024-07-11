@@ -58,6 +58,11 @@ type dbLicenses struct {
 	db database.DB
 }
 
+// For package dotcomproductsubscriptiontest only; DO NOT USE.
+func NewLicensesDB(db database.DB) *dbLicenses {
+	return &dbLicenses{db: db}
+}
+
 const createLicenseQuery = `
 INSERT INTO product_licenses(id, product_subscription_id, license_key, license_version, license_tags, license_user_count, license_expires_at, license_check_token, salesforce_sub_id, salesforce_opp_id)
 VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id

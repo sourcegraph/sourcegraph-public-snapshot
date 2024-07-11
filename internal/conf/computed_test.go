@@ -303,6 +303,23 @@ func TestCodyEnabled(t *testing.T) {
 			sc:   schema.SiteConfiguration{Completions: &schema.Completions{Enabled: pointers.Ptr(true), Model: "foobar"}},
 			want: true,
 		},
+		{
+			// Having the ModelConfiguration explicitly set will not be sufficient. The
+			// cody.enabled setting is still required.
+			name: "cody.enabled not set, modelconfig supplied",
+			sc: schema.SiteConfiguration{
+				ModelConfiguration: &schema.SiteModelConfiguration{},
+			},
+			want: false,
+		},
+		{
+			name: "cody.enabled not set, modelconfig supplied",
+			sc: schema.SiteConfiguration{
+				CodyEnabled:        pointers.Ptr(true),
+				ModelConfiguration: &schema.SiteModelConfiguration{},
+			},
+			want: true,
+		},
 	}
 
 	for _, test := range tests {
@@ -320,6 +337,8 @@ func TestGetCompletionsConfig(t *testing.T) {
 	zeroConfigDefaultWithLicense := &conftypes.CompletionsConfig{
 		ChatModel:                "anthropic/claude-3-sonnet-20240229",
 		ChatModelMaxTokens:       12000,
+		SmartContextWindow:       "enabled",
+		DisableClientConfigAPI:   false,
 		FastChatModel:            "anthropic/claude-3-haiku-20240307",
 		FastChatModelMaxTokens:   12000,
 		CompletionModel:          "fireworks/starcoder",
@@ -409,6 +428,8 @@ func TestGetCompletionsConfig(t *testing.T) {
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "claude-3-sonnet-20240229",
 				ChatModelMaxTokens:       12000,
+				SmartContextWindow:       "enabled",
+				DisableClientConfigAPI:   false,
 				FastChatModel:            "claude-3-haiku-20240307",
 				FastChatModelMaxTokens:   12000,
 				CompletionModel:          "claude-3-haiku-20240307",
@@ -424,16 +445,20 @@ func TestGetCompletionsConfig(t *testing.T) {
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Completions: &schema.Completions{
-					Enabled:         pointers.Ptr(true),
-					Provider:        "anthropic",
-					AccessToken:     "asdf",
-					ChatModel:       "claude-3-opus-20240229",
-					CompletionModel: "claude-instant-1.2",
+					Enabled:                pointers.Ptr(true),
+					Provider:               "anthropic",
+					AccessToken:            "asdf",
+					ChatModel:              "claude-3-opus-20240229",
+					SmartContextWindow:     "disabled",
+					DisableClientConfigAPI: pointers.Ptr(false),
+					CompletionModel:        "claude-instant-1.2",
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "claude-3-opus-20240229",
 				ChatModelMaxTokens:       12000,
+				SmartContextWindow:       "disabled",
+				DisableClientConfigAPI:   false,
 				FastChatModel:            "claude-3-haiku-20240307",
 				FastChatModelMaxTokens:   12000,
 				CompletionModel:          "claude-instant-1.2",
@@ -467,6 +492,8 @@ func TestGetCompletionsConfig(t *testing.T) {
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "gpt-4",
 				ChatModelMaxTokens:       7000,
+				SmartContextWindow:       "enabled",
+				DisableClientConfigAPI:   false,
 				FastChatModel:            "gpt-3.5-turbo",
 				FastChatModelMaxTokens:   16000,
 				CompletionModel:          "gpt-3.5-turbo-instruct",
@@ -482,17 +509,21 @@ func TestGetCompletionsConfig(t *testing.T) {
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Completions: &schema.Completions{
-					Provider:        "azure-openai",
-					AccessToken:     "asdf",
-					Endpoint:        "https://acmecorp.openai.azure.com",
-					ChatModel:       "gpt4-deployment",
-					FastChatModel:   "gpt35-turbo-deployment",
-					CompletionModel: "gpt35-turbo-deployment",
+					Provider:               "azure-openai",
+					AccessToken:            "asdf",
+					Endpoint:               "https://acmecorp.openai.azure.com",
+					ChatModel:              "gpt4-deployment",
+					SmartContextWindow:     "disabled",
+					DisableClientConfigAPI: pointers.Ptr(false),
+					FastChatModel:          "gpt35-turbo-deployment",
+					CompletionModel:        "gpt35-turbo-deployment",
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "gpt4-deployment",
 				ChatModelMaxTokens:       7000,
+				SmartContextWindow:       "disabled",
+				DisableClientConfigAPI:   false,
 				FastChatModel:            "gpt35-turbo-deployment",
 				FastChatModelMaxTokens:   7000,
 				CompletionModel:          "gpt35-turbo-deployment",
@@ -515,6 +546,8 @@ func TestGetCompletionsConfig(t *testing.T) {
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "accounts/fireworks/models/llama-v2-7b",
 				ChatModelMaxTokens:       3000,
+				SmartContextWindow:       "enabled",
+				DisableClientConfigAPI:   false,
 				FastChatModel:            "accounts/fireworks/models/llama-v2-7b",
 				FastChatModelMaxTokens:   3000,
 				CompletionModel:          "starcoder",
@@ -537,6 +570,8 @@ func TestGetCompletionsConfig(t *testing.T) {
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "anthropic.claude-v2",
 				ChatModelMaxTokens:       12000,
+				SmartContextWindow:       "enabled",
+				DisableClientConfigAPI:   false,
 				FastChatModel:            "anthropic.claude-instant-v1",
 				FastChatModelMaxTokens:   9000,
 				CompletionModel:          "anthropic.claude-instant-v1",
@@ -561,6 +596,8 @@ func TestGetCompletionsConfig(t *testing.T) {
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "anthropic.claude-3-haiku-20240307-v1:0-100k/arn:aws:bedrock:us-west-2:012345678901:provisioned-model/abcdefghijkl",
 				ChatModelMaxTokens:       100_000,
+				SmartContextWindow:       "enabled",
+				DisableClientConfigAPI:   false,
 				FastChatModel:            "anthropic.claude-v2",
 				FastChatModelMaxTokens:   12000,
 				CompletionModel:          "anthropic.claude-instant-v1",
@@ -600,6 +637,8 @@ func TestGetCompletionsConfig(t *testing.T) {
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "anthropic/claude-v1.3",
 				ChatModelMaxTokens:       9000,
+				SmartContextWindow:       "enabled",
+				DisableClientConfigAPI:   false,
 				FastChatModel:            "anthropic/claude-instant-1.3",
 				FastChatModelMaxTokens:   9000,
 				CompletionModel:          "anthropic/claude-instant-1.3",

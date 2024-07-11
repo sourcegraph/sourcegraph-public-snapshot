@@ -72,7 +72,6 @@ func NewDependencyIndexSchedulers(
 	uploadSvc UploadService,
 	depsSvc DependenciesService,
 	autoindexingSvc *Service,
-	repoUpdater RepoUpdaterClient,
 ) []goroutine.BackgroundRoutine {
 	return background.NewDependencyIndexSchedulers(
 		scopedContext("dependencies", observationCtx),
@@ -81,7 +80,6 @@ func NewDependencyIndexSchedulers(
 		depsSvc,
 		autoindexingSvc.store,
 		autoindexingSvc.indexEnqueuer,
-		repoUpdater,
 		DependenciesConfigInst,
 	)
 }

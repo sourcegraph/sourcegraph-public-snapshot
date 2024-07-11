@@ -174,13 +174,13 @@ func TestMergeSettings(t *testing.T) {
 		},
 		right: &schema.Settings{
 			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
-				ShowMultilineSearchConsole: pointers.Ptr(false),
+				BatchChangesExecution: pointers.Ptr(false),
 			},
 		},
 		expected: &schema.Settings{
 			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
-				CodeMonitoringWebHooks:     pointers.Ptr(true),
-				ShowMultilineSearchConsole: pointers.Ptr(false),
+				CodeMonitoringWebHooks: pointers.Ptr(true),
+				BatchChangesExecution:  pointers.Ptr(false),
 			},
 		},
 	}, {

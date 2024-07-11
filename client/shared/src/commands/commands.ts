@@ -17,7 +17,10 @@ import type { PlatformContext } from '../platform/context'
  * documentation.
  */
 export function registerBuiltinClientCommands(
-    context: Pick<PlatformContext, 'requestGraphQL' | 'telemetryService' | 'settings' | 'updateSettings'>,
+    context: Pick<
+        PlatformContext,
+        'requestGraphQL' | 'telemetryService' | 'telemetryRecorder' | 'settings' | 'updateSettings'
+    >,
     extensionHost: Remote<FlatExtensionHostAPI>,
     registerCommand: (entryToRegister: CommandEntry) => Unsubscribable
 ): Unsubscribable {
@@ -116,6 +119,8 @@ export function registerBuiltinClientCommands(
                 if (context.telemetryService) {
                     context.telemetryService.log(eventName, eventProperties)
                 }
+                // TODO (dadlerj): cannot log telemetry v2 events here as the name isn't a known string.
+                // TBD whether this is needed.
                 return Promise.resolve()
             },
         })

@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	repogitserver "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/phabricator"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/purge"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/scheduler"
@@ -84,7 +83,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// bit more to do in this method, though, and the process will be marked ready
 	// further down this function.
 
-	mustRegisterMetrics(log.Scoped("MustRegisterMetrics"), db, dotcom.SourcegraphDotComMode())
+	mustRegisterMetrics(log.Scoped("MustRegisterMetrics"), db)
 
 	store := repos.NewStore(logger.Scoped("store"), db)
 	{
@@ -109,7 +108,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		repos.ObservedSource(sourcerLogger, sourceMetrics),
 	)
 	syncer := repos.NewSyncer(observationCtx, store, src)
-	updateScheduler := scheduler.NewUpdateScheduler(logger, db, repogitserver.NewRepositoryServiceClient())
+	updateScheduler := scheduler.NewUpdateScheduler(logger, db, repogitserver.NewRepositoryServiceClient("repoupdater.scheduler"))
 	server := &repoupdater.Server{
 		Logger:    logger,
 		Store:     store,
@@ -130,8 +129,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	routines := []goroutine.BackgroundRoutine{
 		makeGRPCServer(logger, server),
-		newUnclonedReposManager(ctx, logger, dotcom.SourcegraphDotComMode(), updateScheduler, store),
-		phabricator.NewRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker"), store),
+		newUnclonedReposManager(ctx, logger, updateScheduler, store),
 		// Run git fetches scheduler
 		updateScheduler,
 	}
@@ -139,7 +137,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	routines = append(routines,
 		syncer.Routines(ctx, store, repos.RunOptions{
 			EnqueueInterval: conf.RepoListUpdateInterval,
-			IsDotCom:        dotcom.SourcegraphDotComMode(),
 			MinSyncInterval: conf.RepoListUpdateInterval,
 		})...,
 	)
@@ -180,9 +177,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// after being unblocked.
 	ready()
 
-	goroutine.MonitorBackgroundRoutines(ctx, routines...)
-
-	return nil
+	return goroutine.MonitorBackgroundRoutines(ctx, routines...)
 }
 
 func getDB(observationCtx *observation.Context) (database.DB, error) {
@@ -331,9 +326,7 @@ func watchSyncer(
 
 // newUnclonedReposManager creates a background routine that will periodically list
 // the uncloned repositories on gitserver and update the scheduler with the list.
-// It also ensures that if any of our indexable repos are missing from the cloned
-// list they will be added for cloning ASAP.
-func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegraphDotCom bool, sched *scheduler.UpdateScheduler, store repos.Store) goroutine.BackgroundRoutine {
+func newUnclonedReposManager(ctx context.Context, logger log.Logger, sched *scheduler.UpdateScheduler, store repos.Store) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
@@ -344,25 +337,7 @@ func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegra
 
 			baseRepoStore := database.ReposWith(logger, store)
 
-			if isSourcegraphDotCom {
-				// Fetch ALL indexable repos that are NOT cloned so that we can add them to the
-				// scheduler.
-				opts := database.ListSourcegraphDotComIndexableReposOptions{
-					CloneStatus: types.CloneStatusNotCloned,
-				}
-				indexable, err := baseRepoStore.ListSourcegraphDotComIndexableRepos(ctx, opts)
-				if err != nil {
-					return errors.Wrap(err, "listing indexable repos")
-				}
-				// Ensure that uncloned indexable repos are known to the scheduler
-				sched.EnsureScheduled(indexable)
-			}
-
-			// Next, move any repos managed by the scheduler that are uncloned to the front
-			// of the queue.
-			managed := sched.ListRepoIDs()
-
-			uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{IDs: managed, NoCloned: true})
+			uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{NoCloned: true})
 			if err != nil {
 				return errors.Wrap(err, "failed to fetch list of uncloned repositories")
 			}
@@ -393,7 +368,7 @@ func watchAuthzProviders(ctx context.Context, db database.DB) {
 	}()
 }
 
-func mustRegisterMetrics(logger log.Logger, db dbutil.DB, sourcegraphDotCom bool) {
+func mustRegisterMetrics(logger log.Logger, db dbutil.DB) {
 	scanCount := func(sql string) (float64, error) {
 		row := db.QueryRowContext(context.Background(), sql)
 		var count int64
@@ -482,7 +457,6 @@ select round((select cast(count(*) as float) from latest_state where state = 'er
 SELECT extract(epoch from max(now() - last_sync_at))
 FROM external_services AS es
 WHERE deleted_at IS NULL
-AND NOT cloud_default
 AND last_sync_at IS NOT NULL
 -- Exclude any external services that are currently syncing since it's possible they may sync for more
 -- than our max backoff time.
@@ -508,18 +482,10 @@ AND NOT EXISTS(SELECT FROM external_service_sync_jobs WHERE external_service_id 
 
 	// Count the number of repos owned by site level external services that haven't
 	// been fetched in 8 hours.
-	//
-	// We always return zero for Sourcegraph.com because we currently have a lot of
-	// repos owned by the Starburst service in this state and until that's resolved
-	// it would just be noise.
 	promauto.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_repoupdater_stale_repos",
 		Help: "The number of repos that haven't been fetched in at least 8 hours",
 	}, func() float64 {
-		if sourcegraphDotCom {
-			return 0
-		}
-
 		count, err := scanCount(`
 select count(*)
 from gitserver_repos
@@ -529,8 +495,7 @@ where last_fetched < now() - interval '8 hours'
              from external_service_repos
                       join external_services es on external_service_repos.external_service_id = es.id
                       join repo r on external_service_repos.repo_id = r.id
-             where not es.cloud_default
-               and gitserver_repos.repo_id = repo_id
+             where gitserver_repos.repo_id = repo_id
                and es.deleted_at is null
                and r.deleted_at is null
     )

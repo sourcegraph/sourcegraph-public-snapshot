@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -25,7 +24,7 @@ type fakeSourcer struct {
 	source sources.ChangesetSource
 }
 
-func (s *fakeSourcer) ForChangeset(ctx context.Context, tx sources.SourcerStore, ch *btypes.Changeset, as sources.AuthenticationStrategy, repo *types.Repo) (sources.ChangesetSource, error) {
+func (s *fakeSourcer) ForChangeset(_ context.Context, _ sources.SourcerStore, _ *btypes.Changeset, _ *types.Repo, _ sources.SourcerOpts) (sources.ChangesetSource, error) {
 	return s.source, s.err
 }
 
@@ -33,8 +32,12 @@ func (s *fakeSourcer) ForUser(ctx context.Context, tx sources.SourcerStore, uid 
 	return s.source, s.err
 }
 
-func (s *fakeSourcer) ForExternalService(ctx context.Context, tx sources.SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (sources.ChangesetSource, error) {
+func (s *fakeSourcer) ForExternalService(_ context.Context, _ sources.SourcerStore, _ auth.Authenticator, _ sources.SourcerOpts) (sources.ChangesetSource, error) {
 	return s.source, s.err
+}
+
+func (s *fakeSourcer) AuthenticationStrategy() sources.AuthenticationStrategy {
+	return s.source.AuthenticationStrategy()
 }
 
 // FakeChangesetSource is a fake implementation of the ChangesetSource
@@ -104,6 +107,8 @@ type FakeChangesetSource struct {
 
 	// IsArchivedPushErrorTrue is returned when IsArchivedPushError is invoked.
 	IsArchivedPushErrorTrue bool
+
+	authenticationStrategy sources.AuthenticationStrategy
 }
 
 var (
@@ -111,6 +116,10 @@ var (
 	_ sources.ArchivableChangesetSource = &FakeChangesetSource{}
 	_ sources.DraftChangesetSource      = &FakeChangesetSource{}
 )
+
+func (s *FakeChangesetSource) AuthenticationStrategy() sources.AuthenticationStrategy {
+	return s.authenticationStrategy
+}
 
 func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *sources.Changeset) (bool, error) {
 	s.CreateDraftChangesetCalled = true
@@ -283,8 +292,8 @@ func (s *FakeChangesetSource) CreateComment(ctx context.Context, c *sources.Chan
 	return s.Err
 }
 
-func (s *FakeChangesetSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
-	return sources.GitserverPushConfig(repo, s.CurrentAuthenticator)
+func (s *FakeChangesetSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
+	return sources.GitserverPushConfig(ctx, repo, s.CurrentAuthenticator)
 }
 
 func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (sources.ChangesetSource, error) {

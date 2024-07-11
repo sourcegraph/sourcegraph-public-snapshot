@@ -21,7 +21,7 @@ type Service[ConfigT any] interface {
 	Initialize(
 		ctx context.Context,
 		logger log.Logger,
-		contract Contract,
+		contract ServiceContract,
 		config ConfigT,
 	) (background.Routine, error)
 }
@@ -69,7 +69,7 @@ func Start[
 
 	// Load configuration variables from environment
 	config.Load(env)
-	ctr := contract.New(log.Scoped("msp.contract"), service, env)
+	ctr := contract.NewService(log.Scoped("msp.contract"), service, env)
 
 	// Fast-exit with configuration facts if requested
 	if *showHelp {
@@ -123,6 +123,9 @@ func Start[
 		log.Int("port", ctr.Port),
 		log.Bool("msp", ctr.MSP),
 		log.Bool("sentry", sentryEnabled))
-	background.Monitor(ctx, routine)
+	err = background.Monitor(ctx, routine)
+	if err != nil {
+		startLogger.Error("error stopping service routine", log.Error(err))
+	}
 	startLogger.Info("service stopped")
 }

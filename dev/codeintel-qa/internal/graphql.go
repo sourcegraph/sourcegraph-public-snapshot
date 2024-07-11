@@ -11,7 +11,10 @@ var (
 )
 
 func InitializeGraphQLClient() (err error) {
-	client, err = gqltestutil.NewClient(SourcegraphEndpoint, requestWriter.Write, responseWriter.Write)
+	client, err = gqltestutil.NewClient(SourcegraphEndpoint, gqltestutil.ClientOption{
+		GraphQLRequestLogger:  requestWriter.Write,
+		GraphQLResponseLogger: responseWriter.Write,
+	})
 	return err
 }
 

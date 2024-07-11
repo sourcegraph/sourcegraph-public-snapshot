@@ -1,11 +1,12 @@
+version: 2
 name: sprintf-to-itoa
 description: |
   This batch change uses [Comby](https://comby.dev) to replace `fmt.Sprintf` calls
   in Go code with the equivalent but clearer `strconv.Iota` call.
 
-# Find all repositories that contain the `fmt.Sprintf` statement using structural search
+# Find all repositories that contain the `fmt.Sprintf` statement using regular expression search
 on:
-  - repositoriesMatchingQuery: lang:go fmt.Sprintf("%d", :[v]) patterntype:structural
+  - repositoriesMatchingQuery: lang:go fmt.Sprintf\("%d", \w+\) patterntype:regexp
 
 steps:
   # Run Comby (https://comby.dev) to replace the Go statements...

@@ -1,20 +1,53 @@
 import * as vscode from 'vscode'
 
-import { readConfiguration } from './readConfiguration'
+import { extensionContext } from '../extension'
+
+const defaultEndpointURL = 'https://sourcegraph.com'
+
+const endpointKey = 'sourcegraph.url'
+
+async function removeOldEndpointURLSetting(): Promise<void> {
+    await vscode.workspace.getConfiguration().update(endpointKey, undefined, vscode.ConfigurationTarget.Global)
+    await vscode.workspace.getConfiguration().update(endpointKey, undefined, vscode.ConfigurationTarget.Workspace)
+    return
+}
 
 export function endpointSetting(): string {
-    const url = vscode.workspace.getConfiguration().get<string>('sourcegraph.url') || 'https://sourcegraph.com'
+    // get the URl from either, 1. extension local storage (new)
+    let url = extensionContext?.globalState.get<string>(endpointKey)
+    if (!url) {
+        // 2. settings.json (old)
+        url = vscode.workspace.getConfiguration().get<string>(endpointKey)
+        if (url) {
+            // if settings.json, migrate to extension local storage
+            extensionContext?.globalState.update(endpointKey, url).then(
+                () => {
+                    void removeOldEndpointURLSetting()
+                },
+                error => {
+                    console.error(error)
+                }
+            )
+        } else {
+            // or, 3. default value
+            url = defaultEndpointURL
+        }
+    }
     return removeEndingSlash(url)
 }
 
-export async function setEndpoint(newEndpoint: string): Promise<void> {
-    const newEndpointURL = newEndpoint ? removeEndingSlash(newEndpoint) : 'https://sourcegraph.com'
+export function setEndpoint(newEndpoint: string | undefined): void {
+    const newEndpointURL = newEndpoint ? removeEndingSlash(newEndpoint) : defaultEndpointURL
     const currentEndpointHostname = new URL(endpointSetting()).hostname
     const newEndpointHostname = new URL(newEndpointURL).hostname
     if (currentEndpointHostname !== newEndpointHostname) {
-        await readConfiguration().update('url', newEndpointURL)
+        extensionContext?.globalState.update(endpointKey, newEndpointURL).then(
+            () => {},
+            error => {
+                console.error(error)
+            }
+        )
     }
-    return
 }
 
 export function endpointHostnameSetting(): string {

@@ -14,7 +14,10 @@ import (
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	k8syamlapi "k8s.io/apimachinery/pkg/util/yaml"
-	"sigs.k8s.io/yaml"
+	k8syaml "sigs.k8s.io/yaml"
+
+	applianceyaml "github.com/sourcegraph/sourcegraph/internal/appliance/yaml"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func main() {
@@ -22,6 +25,7 @@ func main() {
 	helmTemplateExtraArgs := flag.String("helm-template-extra-args", "", "extra args to pass to `helm template`")
 	component := flag.String("component", "", "Which SG service to target (comma-separated list).")
 	goldenFile := flag.String("golden-file", "", "Which golden fixture to compare.")
+	diffArgs := flag.String("diff-args", "", "Extra arguments to pass to diff(1).")
 	noColor := flag.Bool("no-color", false, "Do not try to produce diffs in color. This is necessary for non-GNU diff users.")
 	flag.Parse()
 
@@ -63,8 +67,7 @@ func main() {
 		fmt.Fprintln(sortedGoldenFile, "---")
 
 		fmt.Fprintf(sortedHelmResourceFile, "# helm: %s/%s\n", helmObj.GetKind(), helmObj.GetName())
-		helmObjBytes, err := yaml.Marshal(helmObj)
-		must(err)
+		helmObjBytes := marshalYAMLNormalized(helmObj)
 		_, err = sortedHelmResourceFile.Write(helmObjBytes)
 		must(err)
 
@@ -74,8 +77,7 @@ func main() {
 				helmObj.GetKind() == goldenObj.GetKind() {
 
 				fmt.Fprintf(sortedGoldenFile, "# golden: %s/%s\n", helmObj.GetKind(), helmObj.GetName())
-				goldenBytes, err := yaml.Marshal(goldenObj)
-				must(err)
+				goldenBytes := marshalYAMLNormalized(goldenObj)
 				_, err = sortedGoldenFile.Write(goldenBytes)
 				must(err)
 
@@ -93,8 +95,7 @@ func main() {
 	for _, unmatchedGolden := range goldenResources.Resources {
 		fmt.Fprintln(sortedGoldenFile, "---")
 		fmt.Fprintf(sortedGoldenFile, "# golden: %s/%s\n", unmatchedGolden.GetKind(), unmatchedGolden.GetName())
-		goldenBytes, err := yaml.Marshal(unmatchedGolden)
-		must(err)
+		goldenBytes := marshalYAMLNormalized(unmatchedGolden)
 		_, err = sortedGoldenFile.Write(goldenBytes)
 		must(err)
 	}
@@ -102,7 +103,7 @@ func main() {
 	must(sortedHelmResourceFile.Close())
 	must(sortedGoldenFile.Close())
 
-	var diffCmdArgs []string
+	diffCmdArgs := strings.Fields(*diffArgs)
 	if !*noColor {
 		diffCmdArgs = append(diffCmdArgs, "--color=auto")
 	}
@@ -110,7 +111,26 @@ func main() {
 	diffCmd := exec.Command("diff", diffCmdArgs...)
 	diffCmd.Stdout = os.Stdout
 	diffCmd.Stderr = os.Stderr
-	must(diffCmd.Run())
+	if err := diffCmd.Run(); err != nil {
+		// diff exitting non-zero is business as usual. In this case, we want to
+		// allow the deferred cleanup to run.
+		if errors.Is(err, &exec.ExitError{}) {
+			return
+		}
+	}
+}
+
+// First, marshal a k8s object using the k8s yaml library. We have to use this
+// library because it uses jsonToYaml under the hood, and the k8s client-go
+// objects are json-tagged, not yaml-tagged. Then, convert multiline strings to
+// literals (so that large nested documents can be diffed line-by-line), and
+// normalize the indentation used (to avoid spurious whitespace diffs).
+func marshalYAMLNormalized(obj any) []byte {
+	yml, err := k8syaml.Marshal(obj)
+	must(err)
+	yml, err = applianceyaml.ConvertYAMLStringsToMultilineLiterals(yml)
+	must(err)
+	return yml
 }
 
 func parseHelmResources(helmTemplateExtraArgs, helmRepoRoot string, components []string) []*unstructured.Unstructured {

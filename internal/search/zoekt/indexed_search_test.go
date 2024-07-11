@@ -310,6 +310,7 @@ func TestIndexedSearch(t *testing.T) {
 			zoektParams := &search.ZoektParameters{
 				FileMatchLimit: tt.args.fileMatchLimit,
 				Select:         tt.args.selectPath,
+				Typ:            search.TextRequest,
 			}
 
 			zoektJob := &RepoSubsetTextSearchJob{

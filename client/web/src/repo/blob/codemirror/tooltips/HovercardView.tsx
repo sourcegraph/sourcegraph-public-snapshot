@@ -128,6 +128,7 @@ export class HovercardView implements TooltipView {
                         location={props.location}
                         onHoverShown={props.onHoverShown}
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                         extensionsController={NOOP_EXTENSION_CONTROLLER}
                         // Hover props
                         actionsOrError={actionsOrError}

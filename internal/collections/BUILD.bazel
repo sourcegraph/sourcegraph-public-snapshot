@@ -4,6 +4,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "collections",
     srcs = [
+        "ordered_set.go",
         "set.go",
         "slice_utils.go",
     ],
@@ -11,6 +12,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//lib/errors",
+        "@com_github_wk8_go_ordered_map_v2//:go-ordered-map",
         "@org_golang_x_exp//constraints",
         "@org_golang_x_exp//maps",
     ],
@@ -20,13 +22,16 @@ go_test(
     name = "collections_test",
     timeout = "short",
     srcs = [
+        "ordered_set_test.go",
         "set_test.go",
         "slice_utils_test.go",
     ],
+    data = glob(["testdata/**"]),
     embed = [":collections"],
     deps = [
         "@com_github_google_go_cmp//cmp",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_stretchr_testify//require",
+        "@net_pgregory_rapid//:rapid",
     ],
 )

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -69,12 +70,13 @@ func New(
 
 func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService_RecordEventsServer) (err error) {
 	var (
-		logger = sgtrace.Logger(stream.Context(), s.logger).
-			Scoped("RecordEvent")
+		logger = sgtrace.Logger(stream.Context(), s.logger).Scoped("RecordEvents")
 		// publisher is initialized once for RecordEventsRequestMetadata.
 		publisher *events.Publisher
 		// count of all processed events, collected at the end of a request
 		totalProcessedEvents int64
+		// use for logging very long-lasting batches
+		start = time.Now()
 	)
 
 	defer func() {
@@ -192,7 +194,16 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 		}
 	}
 
-	logger.Info("request done")
+	// Dangerously slow for a single batch, we're at risk of hitting other
+	// types of timeouts. Add an error for reporting purposes. We may need to
+	// ensure the exporting integration is using smaller batches.
+	if duration := time.Since(start); duration > 30*time.Second {
+		logger.Error("request done",
+			log.Error(errors.New("slow request")),
+			log.Duration("duration", duration))
+	} else {
+		logger.Info("request done")
+	}
 	return nil
 }
 
@@ -262,8 +273,18 @@ func (s *Server) RecordEvent(ctx context.Context, req *telemetrygatewayv1.Record
 		return nil, status.Errorf(codes.Internal, "unexpected publishing issue")
 	}
 	if err := results[0].PublishError; err != nil {
-		logger.Error("failed to publish event", log.Error(err))
-		return nil, status.Errorf(codes.Internal, "failed to publish event: %v", err)
+		errField := log.Error(err)
+		code := codes.Internal
+		if errors.IsContextCanceled(err) {
+			// Don't record an error for context canceled errors, since it's
+			// generally not very interesting - the client probably decided to
+			// cancel or time out. Instead, just record the error string, so
+			// that it doesn't go to Sentry.
+			errField = log.String("error", err.Error())
+			code = codes.Canceled
+		}
+		logger.Error("failed to publish event", errField)
+		return nil, status.Errorf(code, "failed to publish event: %v", err)
 	}
 
 	return &telemetrygatewayv1.RecordEventResponse{

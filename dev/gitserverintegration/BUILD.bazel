@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gitserverintegration",
+    srcs = ["testtools.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/gitserverintegration",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/gitserver/shared",
+        "//internal/api",
+        "//internal/database/dbmocks",
+        "//internal/gitserver",
+        "//internal/gitserver/v1:gitserver",
+        "//internal/grpc/defaults",
+        "//internal/observation",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//:go_default_library",
+    ],
+)

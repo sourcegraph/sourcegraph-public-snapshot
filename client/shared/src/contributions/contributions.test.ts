@@ -12,9 +12,9 @@ describe('getContributedActionItems', () => {
             getContributedActionItems(
                 {
                     actions: [
-                        { id: 'a', command: 'a', title: 'ta', description: 'da' },
-                        { id: 'b', command: 'b', title: 'tb', description: 'db' },
-                        { id: 'c', command: 'c', title: 'tc', description: 'dc' },
+                        { id: 'a', command: 'a', title: 'ta', description: 'da', telemetryProps: { feature: 'a' } },
+                        { id: 'b', command: 'b', title: 'tb', description: 'db', telemetryProps: { feature: 'b' } },
+                        { id: 'c', command: 'c', title: 'tc', description: 'dc', telemetryProps: { feature: 'c' } },
                     ],
                     menus: {
                         'editor/title': [{ action: 'b', alt: 'c' }, { action: 'a' }],
@@ -24,13 +24,13 @@ describe('getContributedActionItems', () => {
             )
         ).toEqual([
             {
-                action: { id: 'b', command: 'b', title: 'tb', description: 'db' },
+                action: { id: 'b', command: 'b', title: 'tb', description: 'db', telemetryProps: { feature: 'b' } },
                 active: true,
-                altAction: { id: 'c', command: 'c', title: 'tc', description: 'dc' },
+                altAction: { id: 'c', command: 'c', title: 'tc', description: 'dc', telemetryProps: { feature: 'c' } },
                 disabledWhen: false,
             },
             {
-                action: { id: 'a', command: 'a', title: 'ta', description: 'da' },
+                action: { id: 'a', command: 'a', title: 'ta', description: 'da', telemetryProps: { feature: 'a' } },
                 active: true,
                 altAction: undefined,
                 disabledWhen: false,

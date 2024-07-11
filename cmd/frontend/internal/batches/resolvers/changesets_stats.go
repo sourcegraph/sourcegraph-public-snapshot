@@ -65,6 +65,12 @@ func (r *changesetsStatsResolver) PercentComplete() int32 {
 	mergedAndClosed := float32(r.stats.Merged + r.stats.Closed)
 	// We don't count archived or deleted changesets when computing `percentComplete`.
 	noOfIncludedChangesets := float32(r.stats.Total - r.stats.Archived - r.stats.Deleted)
+
+	// To prevent an zero division, we check if the denominator is 0, if it is we return early.
+	// Usually this happens when all the changesets belonging to a batch change are archived or deleted.
+	if noOfIncludedChangesets == 0 {
+		return 100
+	}
 	return int32((mergedAndClosed / noOfIncludedChangesets) * 100)
 }
 

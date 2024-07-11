@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -146,7 +145,7 @@ func setZoektIndexed(t *testing.T, db DB, name api.RepoName) {
 func repoNamesFromRepos(repos []*types.Repo) []types.MinimalRepo {
 	rnames := make([]types.MinimalRepo, 0, len(repos))
 	for _, repo := range repos {
-		rnames = append(rnames, types.MinimalRepo{ID: repo.ID, Name: repo.Name})
+		rnames = append(rnames, types.MinimalRepo{ID: repo.ID, Name: repo.Name, ExternalRepo: repo.ExternalRepo})
 	}
 
 	return rnames
@@ -233,7 +232,7 @@ func upsertRepo(ctx context.Context, db DB, op InsertRepoOp) error {
 	// log_statement='mod'.
 	r, err := s.GetByName(ctx, op.Name)
 	if err != nil {
-		if !errors.HasType(err, &RepoNotFoundErr{}) {
+		if !errors.HasType[*RepoNotFoundErr](err) {
 			return err
 		}
 		insert = true // missing
@@ -1300,6 +1299,63 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 		{"Some", ReposListOptions{ExternalServiceIDs: []int64{service1.ID}}, mine},
 		{"Default", ReposListOptions{}, append(mine, yours...)},
 		{"NonExistant", ReposListOptions{ExternalServiceIDs: []int64{1000}}, nil},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			repos, err := db.Repos().List(ctx, test.opt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertJSONEqual(t, test.want, repos)
+		})
+	}
+}
+
+func TestRepos_List_ExternalServiceType(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := actor.WithInternalActor(context.Background())
+
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+
+	services := typestest.MakeExternalServices()
+	service1 := services[0]
+	service2 := services[1]
+	require.NotEqual(t, service1.Kind, service2.Kind)
+
+	if err := db.ExternalServices().Create(ctx, confGet, service1); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.ExternalServices().Create(ctx, confGet, service2); err != nil {
+		t.Fatal(err)
+	}
+
+	mine := types.Repos{typestest.MakeGithubRepo(service1)}
+	if err := db.Repos().Create(ctx, mine...); err != nil {
+		t.Fatal(err)
+	}
+
+	yours := types.Repos{typestest.MakeGitlabRepo(service2)}
+	if err := db.Repos().Create(ctx, yours...); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name string
+		opt  ReposListOptions
+		want []*types.Repo
+	}{
+		{"Some", ReposListOptions{ExternalServiceType: extsvc.KindToType(service1.Kind)}, mine},
+		{"Default", ReposListOptions{}, append(mine, yours...)},
+		{"NonExistant", ReposListOptions{ExternalServiceType: "unknown"}, nil},
 	}
 
 	for _, test := range tests {
@@ -2769,120 +2825,13 @@ func TestRepos_Create(t *testing.T) {
 	})
 }
 
-func TestListSourcegraphDotComIndexableRepos(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
+func TestRepoNotFoundFulfillsNotFound(t *testing.T) {
+	err := &RepoNotFoundErr{
+		ID:         api.RepoID(1),
+		Name:       api.RepoName("github.com/foo/bar"),
+		HashedName: api.RepoHashedName("github.com/foo/bar"),
 	}
-
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
-
-	reposToAdd := []types.Repo{
-		{
-			ID:    api.RepoID(1),
-			Name:  "github.com/foo/bar1",
-			Stars: 20,
-		},
-		{
-			ID:    api.RepoID(2),
-			Name:  "github.com/baz/bar2",
-			Stars: 30,
-		},
-		{
-			ID:      api.RepoID(3),
-			Name:    "github.com/baz/bar3",
-			Stars:   15,
-			Private: true,
-		},
-		{
-			ID:    api.RepoID(4),
-			Name:  "github.com/foo/bar4",
-			Stars: 1, // Not enough stars
-		},
-		{
-			ID:    api.RepoID(5),
-			Name:  "github.com/foo/bar5",
-			Stars: 400,
-			Blocked: &types.RepoBlock{
-				At:     time.Now().UTC().Unix(),
-				Reason: "Failed to index too many times.",
-			},
-		},
-	}
-
-	ctx := context.Background()
-	// Add an external service
-	_, err := db.ExecContext(
-		ctx,
-		`INSERT INTO external_services(id, kind, display_name, config, cloud_default) VALUES (1, 'github', 'github', '{}', true);`,
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, r := range reposToAdd {
-		blocked, err := json.Marshal(r.Blocked)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.ExecContext(ctx,
-			`INSERT INTO repo(id, name, stars, private, blocked) VALUES ($1, $2, $3, $4, NULLIF($5, 'null'::jsonb))`,
-			r.ID, r.Name, r.Stars, r.Private, blocked,
-		)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if r.Private {
-			if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES (1, $1, $2);`, r.ID, r.Name); err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		cloned := int(r.ID) > 1
-		cloneStatus := types.CloneStatusCloned
-		if !cloned {
-			cloneStatus = types.CloneStatusNotCloned
-		}
-		if _, err := db.ExecContext(ctx, `UPDATE gitserver_repos SET clone_status = $2, shard_id = 'test' WHERE repo_id = $1;`, r.ID, cloneStatus); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	for _, tc := range []struct {
-		name string
-		opts ListSourcegraphDotComIndexableReposOptions
-		want []api.RepoID
-	}{
-		{
-			name: "no opts",
-			want: []api.RepoID{2, 1, 3},
-		},
-		{
-			name: "only uncloned",
-			opts: ListSourcegraphDotComIndexableReposOptions{CloneStatus: types.CloneStatusNotCloned},
-			want: []api.RepoID{1},
-		},
-	} {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			repos, err := db.Repos().ListSourcegraphDotComIndexableRepos(ctx, tc.opts)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			have := make([]api.RepoID, 0, len(repos))
-			for _, r := range repos {
-				have = append(have, r.ID)
-			}
-
-			if diff := cmp.Diff(tc.want, have, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("mismatch (-want +have):\n%s", diff)
-			}
-		})
-	}
+	require.True(t, errcode.IsNotFound(err))
 }
 
 func TestRepoStore_Metadata(t *testing.T) {

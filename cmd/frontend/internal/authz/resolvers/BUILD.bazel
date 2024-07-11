@@ -31,6 +31,7 @@ go_library(
         "//internal/gqlutil",
         "//internal/licensing",
         "//internal/observation",
+        "//internal/trace",
         "//internal/types",
         "//lib/errors",
         "//lib/pointers",

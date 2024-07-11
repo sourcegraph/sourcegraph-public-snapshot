@@ -45,9 +45,6 @@ var CodyClientInstalledEventID = "000018021981"
 // CodyClientInstalledV3EventID is the HubSpot ID for the new event which support custom properties.
 var CodyClientInstalledV3EventID = "pe2762526_codyinstall"
 
-// AppDownloadButtonClickedEventID is the HubSpot Event ID for when a user clicks on a button to download Cody App.
-var AppDownloadButtonClickedEventID = "000019179879"
-
 var client *hubspot.Client
 
 // HasAPIKey returns true if a HubspotAPI key is present. A subset of requests require a HubSpot API key.

@@ -8,3 +8,4 @@
 # details.
 # Docs: https://nodejs.org/en/docs/guides/debugging-getting-started/#command-line-options
 run:debug -- --node_options=--inspect-brk
+test:debug --test_env=NODE_OPTIONS=--inspect-brk

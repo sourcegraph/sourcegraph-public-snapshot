@@ -1,7 +1,6 @@
 package authz
 
 import (
-	"cmp"
 	"fmt"
 	"strings"
 	"time"
@@ -200,7 +199,7 @@ type UserPendingPermissions struct {
 
 // GenerateSortedIDsSlice returns a sorted slice of the IDs set.
 func (p *UserPendingPermissions) GenerateSortedIDsSlice() []int32 {
-	return p.IDs.Sorted(cmp.Less[int32])
+	return collections.SortedSetValues(p.IDs)
 }
 
 func (p *UserPendingPermissions) Attrs() []attribute.KeyValue {

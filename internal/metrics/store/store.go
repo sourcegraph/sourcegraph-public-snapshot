@@ -74,7 +74,7 @@ func (d *distributedStore) Gather() ([]*dto.MetricFamily, error) {
 	mfs := []*dto.MetricFamily{}
 	for _, metrics := range encodedMetrics {
 		// Decode each metrics blob separately.
-		dec := expfmt.NewDecoder(strings.NewReader(metrics), expfmt.FmtText)
+		dec := expfmt.NewDecoder(strings.NewReader(metrics), expfmt.NewFormat(expfmt.TypeTextPlain))
 		for {
 			var mf dto.MetricFamily
 			if err := dec.Decode(&mf); err != nil {
@@ -96,7 +96,7 @@ func (d *distributedStore) Ingest(instance string, mfs []*dto.MetricFamily) erro
 
 	// First, encode the metrics to text format so we can store them.
 	var enc bytes.Buffer
-	encoder := expfmt.NewEncoder(&enc, expfmt.FmtText)
+	encoder := expfmt.NewEncoder(&enc, expfmt.NewFormat(expfmt.TypeTextPlain))
 
 	for _, a := range mfs {
 		if err := encoder.Encode(a); err != nil {

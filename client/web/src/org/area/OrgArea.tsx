@@ -4,31 +4,31 @@ import type * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, Routes, type NavigateFunction } from 'react-router-dom'
-import { combineLatest, merge, type Observable, of, Subject, Subscription } from 'rxjs'
+import { Subject, Subscription, combineLatest, merge, of, type Observable } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
-import { type ErrorLike, isErrorLike, asError, logger } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { asError, isErrorLike, logger, type ErrorLike } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, ErrorMessage } from '@sourcegraph/wildcard'
+import { ErrorMessage, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { requestGraphQL } from '../../backend/graphql'
 import type { BatchChangesProps } from '../../batches'
-import type { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
+import type { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
 import { RouteError } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
-import type { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
+import type { OrgAreaOrganizationFields, OrganizationResult, OrganizationVariables } from '../../graphql-operations'
 import type { NamespaceProps } from '../../namespaces'
 import type { RouteV6Descriptor } from '../../util/contributions'
 import type { OrgSettingsAreaRoute } from '../settings/OrgSettingsArea'
 import type { OrgSettingsSidebarItems } from '../settings/OrgSettingsSidebar'
 
-import { type OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
+import { OrgHeader, type OrgAreaHeaderNavItem } from './OrgHeader'
 import { OrgInvitationPageLegacy } from './OrgInvitationPageLegacy'
 
 function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizationFields> {
@@ -138,11 +138,6 @@ export interface OrgAreaRouteContext
 
     orgSettingsSideBarItems: OrgSettingsSidebarItems
     orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
-
-    license: {
-        isCodeSearchEnabled: boolean
-        isCodyEnabled: boolean
-    }
 }
 
 /**
@@ -249,10 +244,6 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             useBreadcrumb: this.state.useBreadcrumb,
             orgSettingsAreaRoutes: this.props.orgSettingsAreaRoutes,
             orgSettingsSideBarItems: this.props.orgSettingsSideBarItems,
-            license: {
-                isCodeSearchEnabled: Boolean(window.context.licenseInfo?.features.codeSearch),
-                isCodyEnabled: Boolean(window.context.licenseInfo?.features.cody),
-            },
         }
 
         if (this.props.location.pathname === `/organizations/${this.props.orgName}/invitation`) {

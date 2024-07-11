@@ -3,9 +3,9 @@ package main
 import (
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
 
-	"github.com/sourcegraph/sourcegraph/cmd/msp-example/internal/example"
+	"github.com/sourcegraph/sourcegraph/cmd/msp-example/service"
 )
 
 func main() {
-	runtime.Start(example.Service{})
+	runtime.Start(service.Service{})
 }

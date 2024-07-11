@@ -15,7 +15,7 @@ func TestOpenAIRequestGetTokenCount(t *testing.T) {
 		req := openaiRequest{Stream: true}
 		r := strings.NewReader(openaiStreamingResponse)
 		handler := &OpenAIHandlerMethods{}
-		promptUsage, completionUsage := handler.parseResponseAndUsage(logger, req, r)
+		promptUsage, completionUsage := handler.parseResponseAndUsage(logger, req, r, true)
 
 		assert.Equal(t, 427, promptUsage.tokens)
 		assert.Equal(t, 12, completionUsage.tokens)
@@ -25,7 +25,7 @@ func TestOpenAIRequestGetTokenCount(t *testing.T) {
 		req := openaiRequest{Stream: false}
 		r := strings.NewReader(openaiNonStreamingResponse)
 		handler := &OpenAIHandlerMethods{}
-		promptUsage, completionUsage := handler.parseResponseAndUsage(logger, req, r)
+		promptUsage, completionUsage := handler.parseResponseAndUsage(logger, req, r, false)
 
 		assert.Equal(t, 12, promptUsage.tokens)
 		assert.Equal(t, 9, completionUsage.tokens)

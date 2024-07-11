@@ -4,11 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"slices"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -16,12 +12,17 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -60,7 +61,7 @@ func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.
 		return nil, err
 	}
 
-	dbTokens := newDBTokens(r.DB)
+	dbTokens := NewTokensDB(r.DB)
 	userID, err := dbTokens.LookupDotcomUserIDByAccessToken(ctx, args.Token)
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -141,7 +142,7 @@ func (r codyUserGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Cont
 	return &codyGatewayRateLimitResolver{
 		feature:     types.CompletionsFeatureChat,
 		actorID:     r.user.Username,
-		actorSource: codygateway.ActorSourceDotcomUser,
+		actorSource: codygatewayactor.ActorSourceDotcomUser,
 		source:      rateLimitSource,
 		v:           rateLimit,
 	}, nil
@@ -161,7 +162,7 @@ func (r codyUserGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Cont
 	return &codyGatewayRateLimitResolver{
 		feature:     types.CompletionsFeatureCode,
 		actorID:     r.user.Username,
-		actorSource: codygateway.ActorSourceDotcomUser,
+		actorSource: codygatewayactor.ActorSourceDotcomUser,
 		source:      rateLimitSource,
 		v:           rateLimit,
 	}, nil
@@ -188,7 +189,7 @@ func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) 
 
 	return &codyGatewayRateLimitResolver{
 		actorID:     r.user.Username,
-		actorSource: codygateway.ActorSourceDotcomUser,
+		actorSource: codygatewayactor.ActorSourceDotcomUser,
 		source:      graphqlbackend.CodyGatewayRateLimitSourcePlan,
 		v:           rateLimit,
 	}, nil
@@ -224,13 +225,8 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 		}
 	}
 
-	// Apply override for testing if set
-	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
-		limit = 1
-	}
-
 	return licensing.CodyGatewayRateLimit{
-		AllowedModels:   []string{"openai/text-embedding-ada-002", "sourcegraph/st-multi-qa-mpnet-base-dot-v1"},
+		AllowedModels:   []string{"openai/text-embedding-ada-002", "sourcegraph/st-multi-qa-mpnet-base-dot-v1", "sourcegraph/st-multi-qa-mpnet-metadata"},
 		Limit:           limit,
 		IntervalSeconds: intervalSeconds,
 	}, nil
@@ -240,16 +236,6 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, scope types.CompletionsFeature) (licensing.CodyGatewayRateLimit, graphqlbackend.CodyGatewayRateLimitSource, error) {
 	var limit *int
 	var err error
-
-	// Apply override for testing if set.
-	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
-		return licensing.CodyGatewayRateLimit{
-			// For this special tester user, just allow all models a Pro user can get.
-			AllowedModels:   allowedModels(scope, true),
-			Limit:           1,
-			IntervalSeconds: math.MaxInt32,
-		}, graphqlbackend.CodyGatewayRateLimitSourceOverride, nil
-	}
 
 	// Apply overrides first.
 	source := graphqlbackend.CodyGatewayRateLimitSourceOverride
@@ -278,8 +264,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	if err != nil {
 		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Wrap(err, "error fetching user's cody subscription")
 	}
-
-	models := allowedModels(scope, subscription.ApplyProRateLimits)
+	models := allowedModels(scope, true)
 	if limit == nil && cfg != nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		// Update the allowed models based on the user's plan.
@@ -343,6 +328,29 @@ func getSelfServeUsageLimits(scope types.CompletionsFeature, isProUser bool, cfg
 	return oneDayInSeconds, nil, nil
 }
 
+var allCodeCompletionModels = slices.Concat([]string{"anthropic/" + anthropic.Claude3Haiku,
+	"anthropic/claude-instant-v1",
+	"anthropic/claude-instant-1",
+	"anthropic/claude-instant-1.2-cyan",
+	"anthropic/claude-instant-1.2",
+	"google/" + google.Gemini15Flash,
+	"google/" + google.Gemini15FlashLatest,
+	"google/" + google.Gemini15Flash001,
+	"google/" + google.GeminiPro,
+	"google/" + google.GeminiProLatest,
+	"fireworks/starcoder",
+	"fireworks/" + fireworks.Llama213bCode,
+	"fireworks/" + fireworks.StarcoderTwo15b,
+	"fireworks/" + fireworks.StarcoderTwo7b,
+	"fireworks/" + fireworks.DeepseekCoder1p3b,
+	"fireworks/" + fireworks.DeepseekCoderV2LiteBase,
+	"fireworks/" + fireworks.CodeQwen7B,
+	"fireworks/" + fireworks.DeepseekCoder7b},
+	prefixWithFireworks(fireworks.FineTunedMixtralModelVariants),
+	prefixWithFireworks(fireworks.FineTunedLlamaModelVariants),
+	prefixWithFireworks(fireworks.FineTunedDeepseekLogsTrainedModelVariants),
+	prefixWithFireworks(fireworks.FineTunedDeepseekStackTrainedModelVariants))
+
 func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 	switch scope {
 	case types.CompletionsFeatureChat:
@@ -360,9 +368,10 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			}
 		}
 
-		return []string{
+		chatModels := []string{
 			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/" + anthropic.Claude3Sonnet,
+			"anthropic/" + anthropic.Claude35Sonnet,
 			"anthropic/" + anthropic.Claude3Opus,
 			"fireworks/" + fireworks.Mixtral8x7bInstruct,
 			"fireworks/" + fireworks.Mixtral8x22Instruct,
@@ -370,6 +379,14 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"openai/gpt-4o",
 			"openai/gpt-4-turbo",
 			"openai/gpt-4-turbo-preview",
+			"google/" + google.Gemini15FlashLatest,
+			"google/" + google.Gemini15ProLatest,
+			"google/" + google.GeminiProLatest,
+			"google/" + google.Gemini15Flash001,
+			"google/" + google.Gemini15Pro001,
+			"google/" + google.Gemini15Flash,
+			"google/" + google.Gemini15Pro,
+			"google/" + google.GeminiPro,
 
 			// Remove after the Claude 3 rollout is complete
 			"anthropic/claude-2",
@@ -380,22 +397,21 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1",
 		}
+		return chatModels
+
 	case types.CompletionsFeatureCode:
-		return []string{
-			"anthropic/" + anthropic.Claude3Haiku,
-			"anthropic/claude-instant-v1",
-			"anthropic/claude-instant-1",
-			"anthropic/claude-instant-1.2-cyan",
-			"anthropic/claude-instant-1.2",
-			"fireworks/starcoder",
-			"fireworks/" + fireworks.Llama213bCode,
-			"fireworks/" + fireworks.StarcoderTwo15b,
-			"fireworks/" + fireworks.StarcoderTwo7b,
-			"fireworks/" + fireworks.Mixtral8x7bFineTunedModel,
-		}
+		return allCodeCompletionModels
 	default:
 		return []string{}
 	}
+}
+
+func prefixWithFireworks(models []string) []string {
+	result := make([]string, len(models))
+	for i := range models {
+		result[i] = "fireworks/" + models[i]
+	}
+	return result
 }
 
 func (r CodyGatewayDotcomUserResolver) CodyGatewayRateLimitStatusByUserName(ctx context.Context, args *graphqlbackend.CodyGatewayRateLimitStatusByUserNameArgs) (*[]graphqlbackend.RateLimitStatus, error) {

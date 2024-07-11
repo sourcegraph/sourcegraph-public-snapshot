@@ -1,14 +1,15 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .responsive-container {
-    @media (--sm-breakpoint-down) {
-        flex-direction: column;
-        align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1px;
 
-        > div {
-            border: none !important;
-            align-items: center;
-        }
+    background-color: var(--border-color);
+    > * {
+        flex: 1;
+        min-width: 300px;
+        background-color: var(--color-bg-1);
     }
 }
 
@@ -23,54 +24,19 @@
     font-weight: 600;
 }
 
-.counter {
-    font-size: 1.25rem;
-}
-
-.ide-name {
-    font-size: 1rem;
-}
-
-.modal {
-    width: 50rem;
-}
-
-.release-stage {
-    color: var(--gray-07);
-}
-
-.ide-header {
-    padding: calc(var(--spacer) * 0.5);
-    margin: calc(var(--spacer) * -0.5);
-    border-radius: var(--border-radius);
-}
-
-.ide-header:hover {
-    cursor: pointer;
-    background: var(--subtle-bg);
-}
-
-.upgrade-to-pro-banner {
-    background-color: #f8eceb;
-    border-radius: 0.375rem;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.03), 0 1px 1px 0 rgba(0, 0, 0, 0.05);
-
-    :global(.theme-dark) & {
-        background-color: var(--color-bg-1);
-    }
-}
-
-.dont-lose-cody-pro-banner {
-    background: linear-gradient(0deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)),
-        linear-gradient(90deg, #7048e8 0%, #4ac1e8 32.21%, #4d0b79 65.39%, #ff5543 104.43%), #eff2f5;
-    border-radius: 0.375rem;
-    :global(.theme-dark) & {
-        background: linear-gradient(0deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.9) 100%),
-            linear-gradient(90deg, #7048e8 0%, #4ac1e8 32.21%, #4d0b79 65.39%, #ff5543 104.43%);
-        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.03), 0 1px 1px 0 rgba(0, 0, 0, 0.05);
-    }
-}
-
 .credit-card-emoji {
     font-size: 2rem;
+}
+
+.cody-pro-gradient-text {
+    font-family: Inter, sans-serif;
+    font-size: 1.75rem;
+    font-style: normal;
+
+    font-weight: 700;
+    line-height: 136%; /* 38.08px */
+
+    background: linear-gradient(20deg, #ec4d49, #7048e8 49%, #4ac1e8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }

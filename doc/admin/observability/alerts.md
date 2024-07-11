@@ -1484,7 +1484,6 @@ Generated query for critical alert: `max((sum by (instance, cmd) (src_gitserver_
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> gitserver: 0.02s+ echo test command duration for 30s
-- <span class="badge badge-critical">critical</span> gitserver: 1s+ echo test command duration for 1m0s
 
 **Next steps**
 
@@ -1496,8 +1495,7 @@ Generated query for critical alert: `max((sum by (instance, cmd) (src_gitserver_
 
 ```json
 "observability.silenceAlerts": [
-  "warning_gitserver_echo_command_duration_test",
-  "critical_gitserver_echo_command_duration_test"
+  "warning_gitserver_echo_command_duration_test"
 ]
 ```
 
@@ -1507,8 +1505,6 @@ Generated query for critical alert: `max((sum by (instance, cmd) (src_gitserver_
 <summary>Technical details</summary>
 
 Generated query for warning alert: `max((max(src_gitserver_echo_duration_seconds)) >= 0.02)`
-
-Generated query for critical alert: `max((max(src_gitserver_echo_duration_seconds)) >= 1)`
 
 </details>
 
@@ -3307,7 +3303,7 @@ Generated query for warning alert: `max((max(src_codeintel_commit_graph_queued_d
 **Next steps**
 
 - **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-- **Otherwise:** Increase the API rate limit to [GitHub](https://sourcegraph.com/docs/admin/external_service/github#github-com-rate-limits), [GitLab](https://sourcegraph.com/docs/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://sourcegraph.com/docs/admin/external_service/bitbucket_server#internal-rate-limits).
+- **Otherwise:** Increase the API rate limit to [GitHub](https://sourcegraph.com/docs/admin/code_hosts/github#github-com-rate-limits), [GitLab](https://sourcegraph.com/docs/admin/code_hosts/gitlab#internal-rate-limits) or [Bitbucket Server](https://sourcegraph.com/docs/admin/code_hosts/bitbucket_server#internal-rate-limits).
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-perms-syncer-outdated-perms).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 

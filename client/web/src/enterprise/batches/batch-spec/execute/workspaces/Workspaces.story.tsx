@@ -17,7 +17,6 @@ const config: Meta = {
 export default config
 
 const queryWorkspacesList: typeof _queryWorkspacesList = () =>
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     of(mockWorkspaces(50).node.workspaceResolution!.workspaces)
 
 export const WorkspacesStory: StoryFn = () => (

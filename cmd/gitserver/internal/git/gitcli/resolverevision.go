@@ -40,7 +40,7 @@ func (g *gitCLIBackend) revParse(ctx context.Context, spec string) (api.CommitID
 
 	stdout, err := io.ReadAll(r)
 	if err != nil {
-		var e *CommandFailedError
+		var e *commandFailedError
 		if errors.As(err, &e) && e.ExitStatus == 128 && (bytes.Contains(e.Stderr, []byte("bad revision")) ||
 			bytes.Contains(e.Stderr, []byte("unknown revision")) ||
 			bytes.Contains(e.Stderr, []byte("expected commit type"))) {

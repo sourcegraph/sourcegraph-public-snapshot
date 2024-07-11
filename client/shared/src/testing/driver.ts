@@ -1,24 +1,23 @@
 import * as os from 'os'
 import * as path from 'path'
 
-import realPercySnapshot from '@percy/puppeteer'
 import delay from 'delay'
 import expect from 'expect'
 import * as jsonc from 'jsonc-parser'
 import { escapeRegExp } from 'lodash'
 import { readFile } from 'mz/fs'
 import puppeteer, {
-    type PageEventObject,
-    type Page,
-    type Serializable,
-    type LaunchOptions,
-    type ConsoleMessage,
-    type Target,
-    type BrowserLaunchArgumentOptions,
     type BrowserConnectOptions,
+    type BrowserLaunchArgumentOptions,
+    type ConsoleMessage,
+    type LaunchOptions,
+    type Page,
+    type PageEventObject,
+    type Serializable,
+    type Target,
 } from 'puppeteer'
-import { from, fromEvent, merge, Subscription } from 'rxjs'
-import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
+import { Subscription, from, fromEvent, merge } from 'rxjs'
+import { concatAll, filter, map, mergeAll, mergeMap, takeUntil } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
 import { isDefined, logger } from '@sourcegraph/common'
@@ -37,7 +36,7 @@ import type { Settings } from '../settings/settings'
 
 import { getConfig } from './config'
 import { formatPuppeteerConsoleMessage } from './console'
-import { readEnvironmentBoolean, retry } from './utils'
+import { retry } from './utils'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -55,28 +54,6 @@ export const extractStyles = (page: puppeteer.Page): Promise<string> =>
             ''
         )
     )
-
-interface CommonSnapshotOptions {
-    widths?: number[]
-    minHeight?: number
-    percyCSS?: string
-    enableJavaScript?: boolean
-    devicePixelRatio?: number
-    scope?: string
-}
-
-export const percySnapshot = async (
-    page: puppeteer.Page,
-    name: string,
-    options: CommonSnapshotOptions = {}
-): Promise<void> => {
-    if (!readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })) {
-        return Promise.resolve()
-    }
-
-    const pageStyles = await extractStyles(page)
-    return realPercySnapshot(page, name, { ...options, percyCSS: pageStyles.concat(options.percyCSS || '') })
-}
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
 
@@ -723,7 +700,6 @@ export class Driver {
     /**
      * Finds the first HTML element matching the text using the regular expressions returned in
      * {@link findElementRegexpStrings}.
-     *
      * @param options specifies additional parameters for finding the element. If you want to wait
      * until the element appears, specify the `wait` field (which can contain additional inner
      * options for how long to wait).

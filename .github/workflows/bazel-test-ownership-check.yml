@@ -1,0 +1,86 @@
+name: Bazel Test Ownership Check
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  checks:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    outputs:
+      below-threshold: ${{ steps.gh-script.outputs.below-threshold }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: bazel-contrib/setup-bazel@f92f4331c746b9ed98df1006c54ca22660834359  # SECURITY: pin third-party action hashes
+        with:
+          bazelisk-cache: true
+      - id: bazel-query
+        name: Check test ownership percentage
+        run: |
+          bazel version 2>&1 > /dev/null
+          printf "PERCENTAGE=" >> "$GITHUB_OUTPUT"
+          ./dev/check-test-ownership.sh | tee -a "$GITHUB_OUTPUT"
+      - id: gh-script
+        uses: actions/github-script@v7
+        env:
+          PERCENTAGE: ${{ steps.bazel-query.outputs.PERCENTAGE }}
+        with:
+          script: |
+            const belowThresholdMessage = `> [!WARNING]
+            > **Test ownership level below 70% on this branch.**
+            >
+            > We aim to have ~70% of Bazel test targets to help us (dev-infra) and you get insight into the impact of tests on CI times. This is a non-blocking requirement, but keeping on top of test attribution to maintain this threshold is appreciated.
+            >
+            > See the list of tag variable names to use [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/tools/build_rules/prelude_bazel), and reach out to [#discuss-dev-infra](https://sourcegraph.slack.com/archives/C04MYFW01NV) if you need to add/change this list.
+            >
+            > See an example of how to use the variables [here](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%4070d2439+f:dev/build-tracker/BUILD.bazel+TAG_INFRA_DEVINFRA&patternType=keyword&sm=0).
+
+            <!-- bazel-check-marker -->`
+
+            const aboveThresholdMessage = `:heavy_check_mark: **Test ownership >= 70% again, thank you!**
+            <!-- bazel-check-marker -->`
+
+            const percentage = parseInt(process.env.PERCENTAGE)
+
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            })
+
+            let existingComment = comments.find(comment => comment.body.endsWith('<!-- bazel-check-marker -->'))
+
+            if (percentage < 70) {
+              if (!existingComment) {
+                existingComment = await github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: belowThresholdMessage
+                })
+              } else {
+                await github.rest.issues.updateComment({
+                  comment_id: existingComment.id,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: belowThresholdMessage
+                })
+              }
+              core.setOutput('below-threshold', 'true')
+              core.setFailed(`Test ownership is below 70% threshold. See the comment here for more info: ${existingComment.html_url}`)
+            } else if (existingComment) {
+              await github.rest.issues.updateComment({
+                comment_id: existingComment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: aboveThresholdMessage
+              })
+            }
+
+  report_failure:
+    needs: [checks]
+    if: ${{ failure() && needs.checks.outputs.below-threshold != 'true' }}
+    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@main
+    secrets: inherit

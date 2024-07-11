@@ -7,6 +7,7 @@ import { ContributableMenu } from '@sourcegraph/client-api'
 
 import type { FlatExtensionHostAPI } from '../api/contract'
 import { pretendProxySubscribable, pretendRemote } from '../api/util'
+import { noOpTelemetryRecorder } from '../telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { extensionsController } from '../testing/searchTestHelpers'
 
@@ -42,6 +43,9 @@ describe('ActionItem', () => {
                                                         label: 'Action A',
                                                         description: 'This is Action A',
                                                     },
+                                                    telemetryProps: {
+                                                        feature: 'a',
+                                                    },
                                                 },
                                             ],
                                             menus: {
@@ -58,6 +62,7 @@ describe('ActionItem', () => {
                     }}
                     platformContext={NOOP_PLATFORM_CONTEXT}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             )
         })

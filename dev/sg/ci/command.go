@@ -80,6 +80,7 @@ sg ci build --help
 		bazelCommand,
 		statusCommand,
 		buildCommand,
+		listBuildsCommand,
 		logsCommand,
 		docsCommand,
 		openCommand,

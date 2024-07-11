@@ -14,6 +14,7 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/conc/pool"
+	"go.bobheadxi.dev/streamline/pipe"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -336,16 +337,18 @@ func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
 				if !errors.Is(err, syscall.Errno(0x3)) {
 					panic(errors.Wrapf(err, "failed to get process group ID for %s (PID %d)", sc.opts.name, sc.Cmd.Process.Pid))
 				}
+			} else {
 				// note the minus sign; this signals that we want to kill the whole process group
-			} else if err := syscall.Kill(-pgid, syscall.SIGINT); err != nil {
-				panic(errors.Wrapf(err, "failed kill process group ID %d for cmd %s ", pgid, sc.opts.name))
+				if err := syscall.Kill(-pgid, syscall.SIGINT); err != nil {
+					panic(errors.Wrapf(err, "failed kill process group ID %d for cmd %s ", pgid, sc.opts.name))
+				}
+				<-sc.Exit()
 			}
 		}
-
 		cancel()
 	}
-	// Register an interrput handler
-	interrupt.Register(sc.cancel)
+	// Register an interrupt handler
+	interrupt.RegisterConcurrent(sc.cancel)
 
 	sc.Cmd = opts.exec
 	sc.Cmd.Dir = opts.dir
@@ -403,14 +406,22 @@ func (sc *startedCmd) getOutputWriter(ctx context.Context, opts *outputOptions, 
 			close(opts.start)
 		}
 
-		writers = append(writers, newBufferedCmdLogger(ctx, sc.opts.name, std.Out.Output, opts.start))
+		writers = append(writers, newOutputPipe(ctx, sc.opts.name, std.Out.Output, opts.start))
 	}
 
 	if sgConn != nil {
-		sink := func(data string) {
-			sgConn.Write([]byte(fmt.Sprintf("%s: %s\n", sc.opts.name, data)))
-		}
-		writers = append(writers, process.NewLogger(ctx, sink))
+		w, stream := pipe.NewStream()
+		go func() {
+			err := stream.Stream(func(line string) {
+				_, _ = sgConn.Write([]byte(fmt.Sprintf("%s: %s\n", sc.opts.name, line)))
+			})
+			_ = w.CloseWithError(err)
+		}()
+		go func() {
+			<-ctx.Done()
+			_ = w.CloseWithError(ctx.Err())
+		}()
+		writers = append(writers, w)
 	}
 
 	return io.MultiWriter(writers...)
@@ -421,6 +432,7 @@ func (sc *startedCmd) Exit() <-chan error {
 		sc.result = make(chan error)
 		go func() {
 			sc.result <- sc.Wait()
+			close(sc.result)
 		}()
 	}
 	return sc.result

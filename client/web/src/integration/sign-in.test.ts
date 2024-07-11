@@ -6,7 +6,6 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 
 import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { percySnapshotWithVariants } from './utils'
 
 describe('SignIn', () => {
     let driver: Driver
@@ -39,8 +38,6 @@ describe('SignIn', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/sign-in')
         await driver.page.waitForSelector('#username-or-email')
         await driver.page.waitForSelector('input[name="password"]')
-
-        await percySnapshotWithVariants(driver.page, 'Sign in page')
         await accessibilityAudit(driver.page)
     })
 })

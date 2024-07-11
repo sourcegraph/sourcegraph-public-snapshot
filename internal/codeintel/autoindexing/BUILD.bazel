@@ -62,7 +62,6 @@ go_test(
         "//internal/database/dbmocks",
         "//internal/gitserver",
         "//internal/observation",
-        "//internal/repoupdater/protocol",
         "//internal/types",
         "//lib/codeintel/autoindex/config",
         "@com_github_google_go_cmp//cmp",

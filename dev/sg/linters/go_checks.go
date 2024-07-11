@@ -71,6 +71,8 @@ func lintLoggingLibraries() *linter {
 			"cmd/frontend/internal/app/otlpadapter",
 			// Legacy and special case handling of panics in background routines
 			"lib/background/goroutine.go",
+			// Need to make a logger shim for the OpenFGA server
+			"lib/managedservicesplatform/iam/openfga_server.go",
 		},
 		ErrorFunc: func(bannedImport string) error {
 			return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/log" instead`,

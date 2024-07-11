@@ -1,22 +1,17 @@
 import { dirname } from 'path'
 
 import { from } from 'rxjs'
+import { readable, derived, type Readable } from 'svelte/store'
 
+import { CodyContextFiltersSchema, getFiltersFromCodyContextFilters } from '$lib/cody/config'
 import type { LineOrPositionOrRange } from '$lib/common'
-import { getGraphQLClient, infinityQuery, mapOrThrow } from '$lib/graphql'
-import { GitRefType } from '$lib/graphql-types'
+import { getGraphQLClient, infinityQuery, type GraphQLClient } from '$lib/graphql'
 import { ROOT_PATH, fetchSidebarFileTree } from '$lib/repo/api/tree'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
-import {
-    GitHistoryQuery,
-    LastCommitQuery,
-    RepositoryGitCommits,
-    RepositoryGitRefs,
-    RepoPage_PreciseCodeIntel,
-} from './layout.gql'
+import { CodyContextFiltersQuery, GitHistoryQuery, LastCommitQuery, RepoPage_PreciseCodeIntel } from './layout.gql'
 
 const HISTORY_COMMITS_PER_PAGE = 20
 const REFERENCES_PER_PAGE = 20
@@ -24,7 +19,8 @@ const REFERENCES_PER_PAGE = 20
 export const load: LayoutLoad = async ({ parent, params }) => {
     const client = getGraphQLClient()
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
-    const parentPath = params.path ? dirname(params.path) : ROOT_PATH
+    const filePath = params.path ? decodeURIComponent(params.path) : ''
+    const parentPath = filePath ? dirname(filePath) : ROOT_PATH
     const resolvedRevision = resolveRevision(parent, revision)
 
     // Prefetch the sidebar file tree for the parent path.
@@ -42,12 +38,18 @@ export const load: LayoutLoad = async ({ parent, params }) => {
 
     return {
         fileTree,
+        filePath,
         parentPath,
-        lastCommit: client.query(LastCommitQuery, {
-            repoName,
-            revspec: revision,
-            filePath: params.path ?? '',
-        }),
+        isCodyAvailable: createCodyAvailableStore(client, repoName),
+        lastCommit: resolvedRevision
+            .then(revspec =>
+                client.query(LastCommitQuery, {
+                    repoName,
+                    revspec,
+                    filePath,
+                })
+            )
+            .then(result => result.data?.repository?.lastCommit?.ancestors.nodes[0]),
         // Fetches the most recent commits for current blob, tree or repo root
         commitHistory: infinityQuery({
             client,
@@ -56,7 +58,7 @@ export const load: LayoutLoad = async ({ parent, params }) => {
                 resolvedRevision.then(revspec => ({
                     repoName,
                     revspec,
-                    filePath: params.path ?? '',
+                    filePath,
                     first: HISTORY_COMMITS_PER_PAGE,
                     afterCursor: null as string | null,
                 }))
@@ -103,7 +105,7 @@ export const load: LayoutLoad = async ({ parent, params }) => {
                     resolvedRevision.then(revspec => ({
                         repoName,
                         revspec,
-                        filePath: params.path ?? '',
+                        filePath,
                         first: REFERENCES_PER_PAGE,
                         // Line and character are 1-indexed, but the API expects 0-indexed
                         line: lineOrPosition.line - 1,
@@ -150,65 +152,64 @@ export const load: LayoutLoad = async ({ parent, params }) => {
                     }
                 },
             }),
-        // Repository pickers queries (branch, tags and commits)
-        getRepoBranches: (searchTerm: string) =>
-            getGraphQLClient()
-                .query(RepositoryGitRefs, {
-                    repoName,
-                    query: searchTerm,
-                    type: GitRefType.GIT_BRANCH,
-                })
-                .then(
-                    mapOrThrow(({ data, error }) => {
-                        if (!data?.repository?.gitRefs) {
-                            throw new Error(error?.message)
-                        }
-
-                        return data.repository.gitRefs
-                    })
-                ),
-        getRepoTags: (searchTerm: string) =>
-            getGraphQLClient()
-                .query(RepositoryGitRefs, {
-                    repoName,
-                    query: searchTerm,
-                    type: GitRefType.GIT_TAG,
-                })
-                .then(
-                    mapOrThrow(({ data, error }) => {
-                        if (!data?.repository?.gitRefs) {
-                            throw new Error(error?.message)
-                        }
-
-                        return data.repository.gitRefs
-                    })
-                ),
-        getRepoCommits: (searchTerm: string) =>
-            parent().then(({ resolvedRevision }) =>
-                getGraphQLClient()
-                    .query(RepositoryGitCommits, {
-                        repoName,
-                        query: searchTerm,
-                        revision: resolvedRevision.commitID,
-                    })
-                    .then(
-                        mapOrThrow(({ data }) => {
-                            let nodes = data?.repository?.ancestorCommits?.ancestors.nodes ?? []
-
-                            // If we got a match for the OID, add it to the list if it doesn't already exist.
-                            // We double check that the OID contains the search term because we cannot search
-                            // specifically by OID, and an empty string resolves to HEAD.
-                            const commitByHash = data?.repository?.commitByHash
-                            if (
-                                commitByHash &&
-                                commitByHash.oid.includes(searchTerm) &&
-                                !nodes.some(node => node.oid === commitByHash.oid)
-                            ) {
-                                nodes = [commitByHash, ...nodes]
-                            }
-                            return { nodes }
-                        })
-                    )
-            ),
     }
+}
+
+/**
+ * Returns a store that indicates whether Cody is available for the current user and repository.
+ * If cody is not enabled on the instance or for the current user, the store will always return false.
+ * If this is sourcegraph.com, the store will always return true.
+ * Otherwise we'll check the site configuration to see if Cody is disabled for the current repository.
+ * Initially the store will return false until the site configuration is loaded. If there is an
+ * error loading the site configuration or processing it, the store will return false.
+ */
+function createCodyAvailableStore(client: GraphQLClient, repoName: string): Readable<boolean> {
+    if (!window.context.codyEnabledOnInstance || !window.context.codyEnabledForCurrentUser) {
+        return readable(false)
+    }
+
+    // Cody is always enabled on sourcegraph.com
+    if (window.context.sourcegraphDotComMode) {
+        return readable(true)
+    }
+
+    // On enterprise instances, we check whether the site config disables
+    // cody for specific repos.
+
+    const queryResult = readable(
+        // First check the cache to see if Cody is disabled for the current repo.
+        client.readQuery(CodyContextFiltersQuery, {}),
+        set => {
+            // Then update the store with the latest data.
+            client.query(CodyContextFiltersQuery, {}, { requestPolicy: 'network-only' }).then(set)
+        }
+    )
+
+    // NOTE: The way this is implemented won't trigger a GraphQL on data prefetching. This is intentional
+    // (for now) because we don't want to refetch the data for every data preload.
+    return derived(queryResult, ($codyContextFilters, set) => {
+        if (!$codyContextFilters || $codyContextFilters.error) {
+            // Cody context filters are not available, disable Cody
+            set(false)
+            return
+        }
+        const filters = $codyContextFilters.data?.site.codyContextFilters.raw
+        if (!filters) {
+            // Cody context filters are not defined, enable Cody
+            set(true)
+            return
+        }
+
+        CodyContextFiltersSchema.safeParseAsync(filters).then(result => {
+            if (!result.success) {
+                // codyContextFilters cannot be parsed properly, disable Cody
+                // TODO: log error with sentry
+                set(false)
+                return
+            }
+            if (result.data) {
+                set(getFiltersFromCodyContextFilters(result.data)(repoName))
+            }
+        })
+    })
 }

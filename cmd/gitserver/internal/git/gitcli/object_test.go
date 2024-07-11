@@ -55,24 +55,24 @@ func TestGitCLIBackend_GetObject(t *testing.T) {
 	// Unknown revision.
 	_, err = backend.GetObject(ctx, "master2")
 	require.Error(t, err)
-	require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 
 	// Unknown commit.
 	_, err = backend.GetObject(ctx, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
 	require.Error(t, err)
-	require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 
 	// Invalid commit sha (invalid hex format).
 	_, err = backend.GetObject(ctx, "notacommitsha")
 	require.Error(t, err)
-	require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 
 	t.Run("HEAD in empty repo", func(t *testing.T) {
 		backend := BackendWithRepoCommands(t)
 
 		_, err := backend.GetObject(ctx, "HEAD")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 }
 

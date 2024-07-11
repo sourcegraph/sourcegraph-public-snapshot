@@ -74,7 +74,6 @@ const MOCKS = new WildcardMockLink([
 ])
 
 const queryWorkspacesList: typeof _queryWorkspacesList = () =>
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     of(mockWorkspaces(50).node.workspaceResolution!.workspaces)
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })

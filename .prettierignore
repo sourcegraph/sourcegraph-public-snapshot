@@ -51,6 +51,7 @@ client/web-sveltekit/**/*.gql.ts
 client/web-sveltekit/**/graphql-operations.ts
 client/web-sveltekit/**/graphql-types.ts
 client/web-sveltekit/**/graphql-type-mocks.ts
+client/web-sveltekit/src/auto-imports.d.ts
 *.module.scss.d.ts
 .vscode-test
 
@@ -65,3 +66,10 @@ wolfi-images/*.lock.json
 
 # This is downloaded from upstream directly and should not be modified
 dev/linearhooks/internal/lineargql/schema.graphql
+
+# This is an embedded external minified library and should not be modified
+internal/appliance/web/static/script/htmx.min.js
+internal/appliance/web/static/script/bootstrap.bundle.min.js
+
+# Generated code
+client/web/src/enterprise/site-admin/dotcom/productSubscriptions/enterpriseportalgen/**

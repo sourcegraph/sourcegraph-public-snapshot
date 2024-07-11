@@ -6,9 +6,9 @@ import (
 	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"strings"
 
-	"github.com/go-enry/go-enry/v2"
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 )
 
 // rule represents a transformation function on a Basic query. Transformation
@@ -442,7 +442,7 @@ func langPatterns(b query.Basic) *query.Basic {
 	var lang string // store the first pattern that matches a recognized language.
 	isNegated := false
 	newPattern := query.MapPattern(rawPatternTree, func(value string, negated bool, annotation query.Annotation) query.Node {
-		langAlias, ok := enry.GetLanguageByAlias(value)
+		langAlias, ok := languages.GetLanguageByNameOrAlias(value)
 		if !ok || changed {
 			return query.Pattern{
 				Value:      value,

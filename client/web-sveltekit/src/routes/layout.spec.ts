@@ -30,6 +30,82 @@ test('has user menu', async ({ sg, page }) => {
     await expect(page.getByRole('heading', { name: 'Signed in as @test' })).toBeVisible()
 })
 
+test.describe('cody top level navigation', () => {
+    const topNavName = 'Cody'
+
+    ;[
+        {
+            name: 'sourcegraph.com, signed out',
+            context: { sourcegraphDotComMode: true },
+            signedIn: false,
+            expectedTopNav: '/cody',
+            expectedSubNav: false,
+        },
+        {
+            name: 'sourcegraph.com, signed in',
+            context: { sourcegraphDotComMode: true },
+            signedIn: true,
+            expectedTopNav: '/cody/chat',
+            expectedSubNav: {
+                'Web Chat': '/cody/chat',
+                Dashboard: '/cody/manage',
+            },
+        },
+        {
+            name: 'enterprise, no user cody',
+            context: { sourcegraphDotComMode: false, codyEnabledOnInstance: true, codyEnabledForCurrentUser: false },
+            signedIn: true,
+            expectedTopNav: '/cody/dashboard',
+            expectedSubNav: false,
+        },
+        {
+            name: 'enterprise, user cody',
+            context: { sourcegraphDotComMode: false, codyEnabledOnInstance: true, codyEnabledForCurrentUser: true },
+            signedIn: true,
+            expectedTopNav: '/cody/chat',
+            expectedSubNav: {
+                'Web Chat': '/cody/chat',
+                Dashboard: '/cody/dashboard',
+            },
+        },
+        {
+            name: 'enterprise, no cody',
+            context: { sourcegraphDotComMode: false, codyEnabledOnInstance: false, codyEnabledForCurrentUser: false },
+            signedIn: true,
+            expectedTopNav: false,
+        },
+    ].forEach(({ name, context, signedIn, expectedTopNav, expectedSubNav }) => {
+        test(name, async ({ sg, page }) => {
+            const mainNav = page.getByLabel('Main')
+            const topNavCodyEntry = mainNav.getByRole('link', { name: topNavName })
+            const menuToggleButton = mainNav.getByLabel("Open 'Cody' submenu")
+            await sg.setWindowContext(context)
+
+            if (signedIn) {
+                sg.signIn({ username: 'test' })
+            }
+
+            await page.goto('/')
+            await expect(mainNav).toBeVisible()
+
+            if (typeof expectedTopNav === 'string') {
+                await expect(topNavCodyEntry).toHaveAttribute('href', expectedTopNav)
+            } else {
+                await expect(topNavCodyEntry).not.toBeAttached()
+            }
+
+            if (typeof expectedSubNav === 'object') {
+                await expect(menuToggleButton).toBeVisible()
+                for (const [name, href] of Object.entries(expectedSubNav)) {
+                    await expect(page.getByRole('link', { name, includeHidden: true })).toHaveAttribute('href', href)
+                }
+            } else if (expectedTopNav) {
+                await expect(menuToggleButton).not.toBeAttached()
+            }
+        })
+    })
+})
+
 test('has global notifications', async ({ sg, page }) => {
     sg.mockTypes({
         Query: () => ({
@@ -61,4 +137,23 @@ test('has global notifications', async ({ sg, page }) => {
 
     await expect(alerts.first()).toBeVisible()
     await expect(alerts).toHaveCount(4)
+})
+
+// Because of how SvelteKit routing works, having a URL with a file path that includes route segements is
+// problematic. We solve this problem by automatically encoding file paths in the URL. This test ensures
+// that this behavior works as expected.
+test('automatic file path encoding', async ({ sg, page }) => {
+    sg.mockOperations({
+        ResolveRepoRevision(variables) {
+            return {
+                repositoryRedirect: {
+                    id: '1',
+                },
+            }
+        },
+    })
+    await page.goto('/sourcegraph/sourcegraph/-/blob/app/src/routes/-/blob/page.ts')
+    // If this didn't work we would render a 'Error: Not found' page
+    await expect(page.getByRole('heading', { name: 'sourcegraph/sourcegraph' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Error' })).not.toBeVisible()
 })

@@ -65,18 +65,21 @@ export const CODE_MONITOR_EVENTS = gql`
         actions {
             nodes {
                 ... on MonitorWebhook {
+                    id
                     __typename
                     events {
                         ...MonitorActionEvents
                     }
                 }
                 ... on MonitorEmail {
+                    id
                     __typename
                     events {
                         ...MonitorActionEvents
                     }
                 }
                 ... on MonitorSlackWebhook {
+                    id
                     __typename
                     events {
                         ...MonitorActionEvents

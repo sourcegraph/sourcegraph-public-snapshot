@@ -1,11 +1,11 @@
 package store
 
 import (
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 )
 
 func TestIntegration(t *testing.T) {
@@ -46,6 +46,7 @@ func TestIntegration(t *testing.T) {
 			"no key":   nil,
 			"test key": &et.TestKey{},
 		} {
+			db := dbtest.NewDB(t)
 			t.Run(name, func(t *testing.T) {
 				t.Run("SiteCredentials", storeTest(db, key, testStoreSiteCredentials))
 			})

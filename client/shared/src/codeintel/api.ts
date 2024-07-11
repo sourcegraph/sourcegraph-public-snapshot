@@ -26,7 +26,7 @@ import type { LanguageSpec } from './legacy-extensions/language-specs/language-s
 import { languageSpecs } from './legacy-extensions/language-specs/languages'
 import { RedactingLogger } from './legacy-extensions/logging'
 import { createProviders, emptySourcegraphProviders, type SourcegraphProviders } from './legacy-extensions/providers'
-import type { Occurrence } from './scip'
+import { SymbolRole, Occurrence } from './scip'
 
 export interface CodeIntelAPI {
     hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Promise<boolean>
@@ -255,6 +255,6 @@ function localDefinition(params: ScipParameters): Occurrence[] {
         definitionOccurrence =>
             definitionOccurrence.symbol === params.referenceOccurrence.symbol &&
             definitionOccurrence.symbolRoles &&
-            (definitionOccurrence.symbolRoles & 1) === 1
+            (definitionOccurrence.symbolRoles & SymbolRole.Definition) !== 0
     )
 }

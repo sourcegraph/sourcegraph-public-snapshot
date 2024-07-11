@@ -10,7 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrystore"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
@@ -18,9 +19,9 @@ import (
 
 // Resolver is the GraphQL resolver of all things related to telemetry V2.
 type Resolver struct {
-	logger   log.Logger
-	db       database.DB
-	teestore *teestore.Store
+	logger         log.Logger
+	db             database.DB
+	telemetryStore telemetry.EventsStore
 }
 
 var _ graphqlbackend.TelemetryResolver = &Resolver{}
@@ -28,9 +29,9 @@ var _ graphqlbackend.TelemetryResolver = &Resolver{}
 // New returns a new Resolver whose store uses the given database
 func New(logger log.Logger, db database.DB) graphqlbackend.TelemetryResolver {
 	return &Resolver{
-		logger:   logger,
-		db:       db,
-		teestore: teestore.NewStore(db.TelemetryEventsExportQueue(), db.EventLogs()),
+		logger:         logger,
+		db:             db,
+		telemetryStore: telemetrystore.New(db.TelemetryEventsExportQueue(), db.EventLogs()),
 	}
 }
 
@@ -80,7 +81,7 @@ func (r *Resolver) RecordEvents(ctx context.Context, args *graphqlbackend.Record
 			log.String("eventData", string(data)))
 		return nil, errors.Wrap(err, "invalid events provided")
 	}
-	if err := r.teestore.StoreEvents(ctx, gatewayEvents); err != nil {
+	if err := r.telemetryStore.StoreEvents(ctx, gatewayEvents); err != nil {
 		// This is an important failure, make sure we surface it, as it could be
 		// an implementation error.
 		data, _ := json.Marshal(args.Events)

@@ -152,7 +152,7 @@ var (
 			stats.user_last_active_at AS last_active_at,
 			users.deleted_at,
 			users.site_admin,
-            (SELECT COUNT(user_id) FROM user_external_accounts WHERE user_id=users.id AND service_type = 'scim') >= 1 AS scim_controlled,
+            (SELECT COUNT(user_id) FROM user_external_accounts WHERE user_id = users.id AND service_type = 'scim' AND deleted_at IS NULL) >= 1 AS scim_controlled,
 			COALESCE(stats.user_events_count, 0) AS events_count
 		FROM users
 			LEFT JOIN aggregated_user_statistics stats ON stats.user_id = users.id

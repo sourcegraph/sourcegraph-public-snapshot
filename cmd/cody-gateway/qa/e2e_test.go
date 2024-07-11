@@ -11,8 +11,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -24,6 +26,7 @@ func Test_Completions(t *testing.T) {
 				"anthropic": AnthropicGatewayFeatureClient{},
 				"fireworks": FireworksGatewayFeatureClient{},
 				"openai":    OpenAIGatewayFeatureClient{},
+				"google":    GoogleGatewayFeatureClient{},
 			} {
 				t.Run(name, func(t *testing.T) {
 					for _, stream := range []bool{false, true} {
@@ -39,12 +42,12 @@ func Test_Completions(t *testing.T) {
 							if errors.Is(err, errNotImplemented) {
 								t.Skip(string(f), err)
 							}
-							assert.NoError(t, err)
+							require.NoError(t, err)
 							resp, err := http.DefaultClient.Do(req)
-							assert.NoError(t, err)
+							require.NoError(t, err)
 							body, err := io.ReadAll(resp.Body)
-							assert.NoError(t, err)
-							assert.Equal(t, resp.StatusCode, http.StatusOK, string(body))
+							require.NoError(t, err)
+							assert.Equal(t, http.StatusOK, resp.StatusCode, string(body))
 							if stream {
 								assert.Contains(t, resp.Header.Get("Content-Type"), "text/event-stream")
 							}
@@ -87,7 +90,60 @@ func Test_Embeddings_OpenAI(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(response.Embeddings))
 		assert.Equal(t, model.dimensions, len(response.Embeddings[0].Data))
-		assert.Equal(t, model.firstValue, response.Embeddings[0].Data[0])
+		// This can drift somewhat, round the comparison to a few decimal places
+		// to avoid diffs like:
+		//
+		//     expected: -0.036106355
+		//     actual  : -0.03610423
+		assert.Equal(t,
+			fmt.Sprintf("%.4f", model.firstValue),
+			fmt.Sprintf("%.4f", response.Embeddings[0].Data[0]))
+	}
+}
+
+func Test_Finetuned_Fireworks_Completions(t *testing.T) {
+	gatewayURL, gatewayToken := parseBackendData(t)
+	t.Parallel()
+	testConfig := map[string][]struct{ language, model string }{
+		fireworks.FineTunedFIMVariant1: {{"", fireworks.FineTunedMixtralAll}},
+		fireworks.FineTunedFIMVariant2: {{"typescript", fireworks.FineTunedMixtralTypescript}, {"typescriptreact",
+			fireworks.FineTunedMixtralTypescript}, {"javascript", fireworks.FineTunedMixtralJavascript}, {"php", fireworks.FineTunedMixtralPhp}, {"python", fireworks.FineTunedMixtralPython}, {"badlanguage", fireworks.FineTunedMixtralAll}, {"", fireworks.FineTunedMixtralAll}},
+		fireworks.FineTunedFIMVariant3: {{"", fireworks.FineTunedLlamaAll}},
+		fireworks.FineTunedFIMVariant4: {{"typescript", fireworks.FineTunedLlamaTypescript}, {"typescriptreact",
+			fireworks.FineTunedLlamaTypescript}, {"javascript", fireworks.FineTunedLlamaJavascript}, {"php", fireworks.FineTunedLlamaPhp}, {"python", fireworks.FineTunedLlamaPython}, {"badlanguage", fireworks.FineTunedLlamaAll}, {"", fireworks.FineTunedLlamaAll}},
+	}
+	for model, languageModel := range testConfig {
+		t.Run(model, func(t *testing.T) {
+			for _, l := range languageModel {
+				t.Run(l.language, func(t *testing.T) {
+					u := *gatewayURL
+					req := &http.Request{URL: &u, Header: make(http.Header)}
+					req.Header.Set("X-Sourcegraph-Feature", string(codygateway.FeatureCodeCompletions))
+					req.Header.Set("Authorization", "Bearer "+gatewayToken)
+					reqBody := fmt.Sprintf(`{
+			"prompt":"def bubble_sort(arr):\n>",
+			"maxTokensToSample":30,
+			"model": "%s",
+			"temperature":0.2,
+			"topP":0.95,
+			"stream":true,
+			"languageId": "%s"
+			}`, model, l.language)
+					req.Method = "POST"
+					req.URL.Path = "/v1/completions/fireworks"
+					req.Body = io.NopCloser(strings.NewReader(reqBody))
+
+					resp, err := http.DefaultClient.Do(req)
+
+					assert.NoError(t, err)
+					body, err := io.ReadAll(resp.Body)
+					assert.NoError(t, err)
+					assert.Equal(t, resp.StatusCode, http.StatusOK, string(body))
+					assert.Contains(t, resp.Header.Get("Content-Type"), "text/event-stream")
+					assert.Equal(t, resp.Header.Get("X-Cody-Resolved-Model"), "fireworks/"+l.model)
+				})
+			}
+		})
 	}
 }
 

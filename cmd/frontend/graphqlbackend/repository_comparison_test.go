@@ -1097,7 +1097,7 @@ func (d *dummyFileResolver) Languages(ctx context.Context) ([]string, error) {
 	})
 }
 
-func (d *dummyFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
+func (d *dummyFileResolver) ToGitBlob() (*GitBlobResolver, bool) {
 	return nil, false
 }
 

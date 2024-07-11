@@ -93,7 +93,7 @@ func (s *phabricatorStore) CreateOrUpdate(ctx context.Context, callsign string, 
 func (s *phabricatorStore) CreateIfNotExists(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
 	repo, err := s.GetByName(ctx, name)
 	if err != nil {
-		if !errors.HasType(err, errPhabricatorRepoNotFound{}) {
+		if !errors.HasType[errPhabricatorRepoNotFound](err) {
 			return nil, err
 		}
 		return s.Create(ctx, callsign, name, phabURL)

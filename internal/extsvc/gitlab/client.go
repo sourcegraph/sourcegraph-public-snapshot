@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -178,7 +179,7 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 		tokenHash = a.Hash()
 		key += tokenHash
 	}
-	projCache := rcache.NewWithTTL(key, int(cacheTTL/time.Second))
+	projCache := rcache.NewWithTTL(redispool.Cache, key, int(cacheTTL/time.Second))
 
 	rl := ratelimit.NewInstrumentedLimiter(p.urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitLabClient"), p.urn))
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(p.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
@@ -393,7 +394,7 @@ func HTTPErrorCode(err error) int {
 // IsNotFound reports whether err is a GitLab API error of type NOT_FOUND, the equivalent cached
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
-	return errors.HasType(err, &ProjectNotFoundError{}) ||
+	return errors.HasType[*ProjectNotFoundError](err) ||
 		errors.Is(err, ErrMergeRequestNotFound) ||
 		HTTPErrorCode(err) == http.StatusNotFound
 }

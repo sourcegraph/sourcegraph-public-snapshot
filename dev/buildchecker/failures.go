@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
+
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -19,11 +20,10 @@ func findConsecutiveFailures(
 ) (
 	failedCommits []CommitInfo,
 	thresholdExceeded bool,
-	buildsScanned int,
 ) {
 	var consecutiveFailures int
 	var build buildkite.Build
-	for buildsScanned, build = range builds {
+	for _, build = range builds {
 		if isBuildScheduled(build) {
 			// a Scheduled build should not be considered as part of the set that determines whether
 			// main is locked.

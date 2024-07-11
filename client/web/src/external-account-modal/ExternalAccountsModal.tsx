@@ -9,7 +9,6 @@ import { Button, ErrorAlert, H2, LoadingSpinner, Modal, Text } from '@sourcegrap
 
 import type { AuthenticatedUser } from '../auth'
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import type { UserExternalAccountsWithAccountDataVariables } from '../graphql-operations'
 import type { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ExternalAccountsSignIn } from '../user/settings/auth/ExternalAccountsSignIn'
@@ -85,8 +84,6 @@ function filterAuthProviders(
 }
 
 export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModalProps> = props => {
-    const [enableExternalAccountsModal] = useFeatureFlag('external-accounts-modal')
-
     const [seenAuthzProviders, setSeenAuthzProviders] = useTemporarySetting('user.seenAuthProviders', [])
 
     const [userExternalAccounts, setUserExternalAccounts] = useState<{
@@ -106,7 +103,6 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
         UserExternalAccountsWithAccountDataVariables
     >(USER_EXTERNAL_ACCOUNTS, {
         variables: { username: props.authenticatedUser.username },
-        skip: !enableExternalAccountsModal,
         onCompleted: res =>
             setUserExternalAccounts({ loading: false, fetched: res.user.externalAccounts.nodes, lastRemoved: '' }),
     })
@@ -162,7 +158,7 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
     return (
         <Modal
             aria-label="Connect your external accounts"
-            isOpen={isModalOpen && enableExternalAccountsModal}
+            isOpen={isModalOpen}
             onDismiss={onDismiss}
             className={styles.modal}
             position="center"

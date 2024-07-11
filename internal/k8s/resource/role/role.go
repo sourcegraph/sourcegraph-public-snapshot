@@ -18,3 +18,16 @@ func NewRole(name, namespace string) rbacv1.Role {
 	}
 
 }
+
+func NewClusterRole(name, namespace string) rbacv1.ClusterRole {
+	return rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+			Labels: map[string]string{
+				"for-namespace": namespace,
+				"deploy":        "sourcegraph",
+			},
+		},
+	}
+
+}

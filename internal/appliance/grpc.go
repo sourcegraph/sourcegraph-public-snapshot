@@ -7,13 +7,11 @@ import (
 )
 
 func (a *Appliance) GetApplianceVersion(ctx context.Context, request *pb.GetApplianceVersionRequest) (*pb.GetApplianceVersionResponse, error) {
-	version := a.GetCurrentVersion(ctx)
-
-	return &pb.GetApplianceVersionResponse{Version: version.String()}, nil
+	return &pb.GetApplianceVersionResponse{Version: a.GetCurrentVersion(ctx)}, nil
 }
 
-func (a *Appliance) GetApplianceStage(ctx context.Context, request *pb.GetApplianceStageRequest) (*pb.GetApplianceStageResponse, error) {
-	stage := a.GetCurrentStage(ctx)
+func (a *Appliance) GetApplianceStatus(ctx context.Context, request *pb.GetApplianceStatusRequest) (*pb.GetApplianceStatusResponse, error) {
+	status := a.GetCurrentStatus(ctx)
 
-	return &pb.GetApplianceStageResponse{Stage: stage.String()}, nil
+	return &pb.GetApplianceStatusResponse{Status: status.String()}, nil
 }

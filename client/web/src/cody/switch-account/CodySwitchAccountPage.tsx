@@ -11,7 +11,7 @@ import { Button, ButtonLink, Card, AnchorLink, Text } from '@sourcegraph/wildcar
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { PageRoutes } from '../../routes.constants'
+import { CodyProRoutes } from '../codyProRoutes'
 
 import styles from './CodySwitchAccountPage.module.scss'
 
@@ -33,7 +33,7 @@ export const CodySwitchAccountPage: React.FunctionComponent<CodySwitchAccountPag
     const accountSwitchNotRequired = !username || !authenticatedUser || authenticatedUser.username === username
     useEffect(() => {
         if (accountSwitchNotRequired) {
-            navigate(PageRoutes.CodyManagement)
+            navigate(CodyProRoutes.Manage)
         }
     }, [accountSwitchNotRequired, navigate])
 
@@ -72,7 +72,7 @@ export const CodySwitchAccountPage: React.FunctionComponent<CodySwitchAccountPag
                         <Text className="mb-0 text-muted">{authenticatedUser.emails[0].email}</Text>
                     </div>
                 </div>
-                <ButtonLink to={PageRoutes.CodyManagement} variant="secondary">
+                <ButtonLink to={CodyProRoutes.Manage} variant="secondary">
                     Continue
                 </ButtonLink>
             </Card>

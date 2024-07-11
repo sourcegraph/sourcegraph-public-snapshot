@@ -1,0 +1,1729 @@
+---
+source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  new module foo.bar.baz{};
+//^^^ Keyword
+//    ^^^^^^ Keyword
+//           ^^^ Identifier
+//              ^ IdentifierOperator
+//               ^^^ Identifier
+//                  ^ IdentifierOperator
+//                   ^^^ IdentifierType
+//                        ^ PunctuationDelimiter
+  // NOTE: Hack tree-sitter grammar doest not support module
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  // https://github.com/slackhq/tree-sitter-hack/issues/70
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  module foo.bar.baz;
+//^^^^^^ Keyword
+//       ^^^ Identifier
+//          ^ IdentifierOperator
+//           ^^^ Identifier
+//              ^ IdentifierOperator
+//               ^^^ Identifier
+//                  ^ PunctuationDelimiter
+  
+  namespace Hack\Example\namespace {
+//^^^^^^^^^ Keyword
+//          ^^^^ IdentifierNamespace
+//              ^ PunctuationDelimiter
+//               ^^^^^^^ IdentifierNamespace
+//                      ^ PunctuationDelimiter
+//                       ^^^^^^^^^ IdentifierNamespace
+      // imports
+//    ^^^^^^^^^^ Comment
+      use namespace HH\Lib\{C as D, Vec as E};
+//    ^^^ Keyword
+//        ^^^^^^^^^ Keyword
+//                  ^^ IdentifierNamespace
+//                    ^ PunctuationDelimiter
+//                     ^^^ IdentifierNamespace
+//                          ^ IdentifierNamespace
+//                            ^^ Keyword
+//                               ^ IdentifierNamespace
+//                                ^ PunctuationDelimiter
+//                                  ^^^ IdentifierNamespace
+//                                      ^^ Keyword
+//                                         ^ IdentifierNamespace
+//                                           ^ PunctuationDelimiter
+      use type HH\Lib\{C1 as D1, Vec1 as E1};
+//    ^^^ Keyword
+//        ^^^^ Keyword
+//             ^^ IdentifierNamespace
+//               ^ PunctuationDelimiter
+//                ^^^ IdentifierNamespace
+//                     ^^ IdentifierType
+//                        ^^ Keyword
+//                           ^^ IdentifierType
+//                             ^ PunctuationDelimiter
+//                               ^^^^ IdentifierType
+//                                    ^^ Keyword
+//                                       ^^ IdentifierType
+//                                          ^ PunctuationDelimiter
+      use const Space\Const\C as X;
+//    ^^^ Keyword
+//        ^^^^^ Keyword
+//              ^^^^^ IdentifierNamespace
+//                   ^ PunctuationDelimiter
+//                    ^^^^^ IdentifierNamespace
+//                         ^ PunctuationDelimiter
+//                          ^ IdentifierConstant
+//                            ^^ Keyword
+//                               ^ IdentifierConstant
+//                                ^ PunctuationDelimiter
+      use type Space\Type\T;
+//    ^^^ Keyword
+//        ^^^^ Keyword
+//             ^^^^^ IdentifierNamespace
+//                  ^ PunctuationDelimiter
+//                   ^^^^ IdentifierNamespace
+//                       ^ PunctuationDelimiter
+//                        ^ IdentifierType
+//                         ^ PunctuationDelimiter
+      use function UseNS\ff;
+//    ^^^ Keyword
+//        ^^^^^^^^ Keyword
+//                 ^^^^^ IdentifierNamespace
+//                      ^ PunctuationDelimiter
+//                       ^^ IdentifierFunction
+//                         ^ PunctuationDelimiter
+      use D;
+//    ^^^ Keyword
+//        ^ Identifier
+//         ^ PunctuationDelimiter
+  
+      // Functions
+//    ^^^^^^^^^^^^ Comment
+      function f(dynamic $d): void {}
+//    ^^^^^^^^ Keyword
+//             ^ IdentifierFunction
+//               ^^^^^^^ IdentifierBuiltinType
+//                       ^^ IdentifierParameter
+//                          ^ PunctuationDelimiter
+//                            ^^^^ IdentifierBuiltinType
+      function g(arraykey $a): void {}
+//    ^^^^^^^^ Keyword
+//             ^ IdentifierFunction
+//               ^^^^^^^^ IdentifierBuiltinType
+//                        ^^ IdentifierParameter
+//                           ^ PunctuationDelimiter
+//                             ^^^^ IdentifierBuiltinType
+      function h(num $a = 1): void {}
+//    ^^^^^^^^ Keyword
+//             ^ IdentifierFunction
+//               ^^^ IdentifierBuiltinType
+//                   ^^ IdentifierParameter
+//                      ^ IdentifierOperator
+//                        ^ NumericLiteral
+//                          ^ PunctuationDelimiter
+//                            ^^^^ IdentifierBuiltinType
+  
+      // Shapes
+//    ^^^^^^^^^ Comment
+      type Shape1 = shape('name' => string, ?'age' => int);
+//    ^^^^ Keyword
+//         ^^^^^^ IdentifierType
+//                ^ IdentifierOperator
+//                  ^^^^^ IdentifierBuiltinType
+//                        ^^^^^^ StringLiteral
+//                               ^^ IdentifierOperator
+//                                  ^^^^^^ IdentifierType
+//                                        ^ PunctuationDelimiter
+//                                          ^ IdentifierOperator
+//                                           ^^^^^ StringLiteral
+//                                                 ^^ IdentifierOperator
+//                                                    ^^^ IdentifierType
+//                                                        ^ PunctuationDelimiter
+      type Shape2 = shape('age' => int);
+//    ^^^^ Keyword
+//         ^^^^^^ IdentifierType
+//                ^ IdentifierOperator
+//                  ^^^^^ IdentifierBuiltinType
+//                        ^^^^^ StringLiteral
+//                              ^^ IdentifierOperator
+//                                 ^^^ IdentifierType
+//                                     ^ PunctuationDelimiter
+      function foo(int $arg): shape(...){
+//    ^^^^^^^^ Keyword
+//             ^^^ IdentifierFunction
+//                 ^^^ IdentifierBuiltinType
+//                     ^^^^ IdentifierParameter
+//                          ^ PunctuationDelimiter
+//                            ^^^^^ IdentifierBuiltinType
+//                                  ^^^ IdentifierBuiltinType
+  
+        // File includes
+//      ^^^^^^^^^^^^^^^^ Comment
+        require_once(__DIR__.'/file.hack');
+//      ^^^^^^^^^^^^ Keyword
+//                   ^^^^^^^ IdentifierBuiltin
+//                          ^ IdentifierOperator
+//                           ^^^^^^^^^^^^ StringLiteral
+//                                        ^ PunctuationDelimiter
+        require(__DIR__.'/file.hack');
+//      ^^^^^^^ Keyword
+//              ^^^^^^^ IdentifierBuiltin
+//                     ^ IdentifierOperator
+//                      ^^^^^^^^^^^^ StringLiteral
+//                                   ^ PunctuationDelimiter
+        include(__DIR__.'/file.hack');
+//      ^^^^^^^ Keyword
+//              ^^^^^^^ IdentifierBuiltin
+//                     ^ IdentifierOperator
+//                      ^^^^^^^^^^^^ StringLiteral
+//                                   ^ PunctuationDelimiter
+        include_once(__DIR__.'/file.hack');
+//      ^^^^^^^^^^^^ Keyword
+//                   ^^^^^^^ IdentifierBuiltin
+//                          ^ IdentifierOperator
+//                           ^^^^^^^^^^^^ StringLiteral
+//                                        ^ PunctuationDelimiter
+  
+        $a = shape();
+//      ^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^^^ IdentifierBuiltinType
+//                  ^ PunctuationDelimiter
+        $a = shape('name' => 'db-01', 'age' => 365);
+//      ^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^^^ IdentifierBuiltinType
+//                 ^^^^^^ StringLiteral
+//                        ^^ IdentifierOperator
+//                           ^^^^^^^ StringLiteral
+//                                  ^ PunctuationDelimiter
+//                                    ^^^^^ StringLiteral
+//                                          ^^ IdentifierOperator
+//                                             ^^^ NumericLiteral
+//                                                 ^ PunctuationDelimiter
+        return $a;
+//      ^^^^^^ Keyword
+//             ^^ Identifier
+//               ^ PunctuationDelimiter
+      }
+  }
+  namespace A {
+//^^^^^^^^^ Keyword
+//          ^ IdentifierNamespace
+      class B<T, D> {}
+//    ^^^^^ Keyword
+//          ^ IdentifierType
+//           ^ IdentifierOperator
+//            ^ IdentifierType
+//             ^ PunctuationDelimiter
+//               ^ IdentifierType
+//                ^ IdentifierOperator
+      interface I1<T, D> {}
+//    ^^^^^^^^^ Keyword
+//              ^^ IdentifierType
+//                ^ IdentifierOperator
+//                 ^ IdentifierType
+//                  ^ PunctuationDelimiter
+//                    ^ IdentifierType
+//                     ^ IdentifierOperator
+      interface I2<T> {}
+//    ^^^^^^^^^ Keyword
+//              ^^ IdentifierType
+//                ^ IdentifierOperator
+//                 ^ IdentifierType
+//                  ^ IdentifierOperator
+  }
+  namespace {
+//^^^^^^^^^ Keyword
+    // Constants
+//  ^^^^^^^^^^^^ Comment
+    const int MAX_COUNT = 123;
+//  ^^^^^ Keyword
+//        ^^^ IdentifierBuiltinType
+//            ^^^^^^^^^ Identifier
+//                      ^ IdentifierOperator
+//                        ^^^ NumericLiteral
+//                           ^ PunctuationDelimiter
+  
+    /**
+//  ^^^ Comment 44:2..46:5
+     * A doc comment starts with two asterisks.
+     */
+    function swap<T>(inout T $i1, inout T $i2): void {
+//  ^^^^^^^^ Keyword
+//           ^^^^ IdentifierFunction
+//               ^ IdentifierOperator
+//                ^ IdentifierType
+//                 ^ IdentifierOperator
+//                   ^^^^^ Keyword
+//                         ^ IdentifierType
+//                           ^^^ IdentifierParameter
+//                              ^ PunctuationDelimiter
+//                                ^^^^^ Keyword
+//                                      ^ IdentifierType
+//                                        ^^^ IdentifierParameter
+//                                            ^ PunctuationDelimiter
+//                                              ^^^^ IdentifierBuiltinType
+      $temp = $i1;
+//    ^^^^^ Identifier
+//          ^ IdentifierOperator
+//            ^^^ Identifier
+//               ^ PunctuationDelimiter
+  
+      // Anonymous functions
+//    ^^^^^^^^^^^^^^^^^^^^^^ Comment
+      $f = function($x) { return $x + 1; };
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^^^ Keyword
+//                  ^^ IdentifierParameter
+//                        ^^^^^^ Keyword
+//                               ^^ Identifier
+//                                  ^ IdentifierOperator
+//                                    ^ NumericLiteral
+//                                     ^ PunctuationDelimiter
+//                                        ^ PunctuationDelimiter
+      $f = function(num $x) use($y) { return $x + $y; };
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^^^ Keyword
+//                  ^^^ IdentifierBuiltinType
+//                      ^^ IdentifierParameter
+//                          ^^^ Keyword
+//                              ^^ Identifier
+//                                    ^^^^^^ Keyword
+//                                           ^^ Identifier
+//                                              ^ IdentifierOperator
+//                                                ^^ Identifier
+//                                                  ^ PunctuationDelimiter
+//                                                     ^ PunctuationDelimiter
+      $f = $x ==> $x + 1;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^ IdentifierParameter
+//            ^^^ IdentifierOperator
+//                ^^ Identifier
+//                   ^ IdentifierOperator
+//                     ^ NumericLiteral
+//                      ^ PunctuationDelimiter
+      $f = (int $x): int ==> $x + 1;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//          ^^^ IdentifierBuiltinType
+//              ^^ IdentifierParameter
+//                 ^ PunctuationDelimiter
+//                   ^^^ IdentifierBuiltinType
+//                       ^^^ IdentifierOperator
+//                           ^^ Identifier
+//                              ^ IdentifierOperator
+//                                ^ NumericLiteral
+//                                 ^ PunctuationDelimiter
+    }
+  
+    // Generators
+//  ^^^^^^^^^^^^^ Comment
+    function squares(
+//  ^^^^^^^^ Keyword
+//           ^^^^^^^ IdentifierFunction
+      int $start,
+//    ^^^ IdentifierBuiltinType
+//        ^^^^^^ IdentifierParameter
+//              ^ PunctuationDelimiter
+      int $end,
+//    ^^^ IdentifierBuiltinType
+//        ^^^^ IdentifierParameter
+//            ^ PunctuationDelimiter
+      string $keyPrefix = "",
+//    ^^^^^^ IdentifierBuiltinType
+//           ^^^^^^^^^^ IdentifierParameter
+//                      ^ IdentifierOperator
+//                        ^^ StringLiteral
+//                          ^ PunctuationDelimiter
+    ): Generator<string, int, void> {
+//   ^ PunctuationDelimiter
+//     ^^^^^^^^^ IdentifierType
+//              ^ IdentifierOperator
+//               ^^^^^^ IdentifierBuiltinType
+//                     ^ PunctuationDelimiter
+//                      ^ IdentifierType
+//                       ^^^ IdentifierBuiltinType
+//                          ^ PunctuationDelimiter
+//                           ^ IdentifierType
+//                            ^^^^ IdentifierBuiltinType
+//                                ^ IdentifierOperator
+      for ($i = $start; $i <= $end; ++$i) {
+//    ^^^ Keyword
+//         ^^ Identifier
+//            ^ IdentifierOperator
+//              ^^^^^^ Identifier
+//                    ^ PunctuationDelimiter
+//                      ^^ Identifier
+//                         ^^ IdentifierOperator
+//                            ^^^^ Identifier
+//                                ^ PunctuationDelimiter
+//                                  ^^ IdentifierOperator
+//                                    ^^ Identifier
+        yield $keyPrefix.$i => $i * $i; // specify a key/value pair
+//      ^^^^^ Keyword
+//            ^^^^^^^^^^ Identifier
+//                      ^ IdentifierOperator
+//                       ^^ Identifier
+//                          ^^ IdentifierOperator
+//                             ^^ Identifier
+//                                ^ IdentifierOperator
+//                                  ^^ Identifier
+//                                    ^ PunctuationDelimiter
+//                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      }
+    }
+  
+    // Function Pointers
+//  ^^^^^^^^^^^^^^^^^^^^ Comment
+    internal function f() : void {
+//  ^^^^^^^^ Keyword
+//           ^^^^^^^^ Keyword
+//                    ^ IdentifierFunction
+//                        ^ PunctuationDelimiter
+//                          ^^^^ IdentifierBuiltinType
+        echo "Internal f\n";
+//      ^^^^ Keyword
+//           ^^^^^^^^^^^^^^ StringLiteral
+//                         ^ PunctuationDelimiter
+    }
+    public function getF(): (function():void) {
+//  ^^^^^^ Identifier
+//         ^^^^^^^^ Keyword
+//                  ^^^^ IdentifierFunction
+//                        ^ PunctuationDelimiter
+//                           ^^^^^^^^ Keyword
+//                                     ^ PunctuationDelimiter
+//                                      ^^^^ IdentifierBuiltinType
+        return f<>;
+//      ^^^^^^ Keyword
+//             ^ Identifier
+//              ^ IdentifierOperator
+//               ^ IdentifierOperator
+//                ^ PunctuationDelimiter
+    }
+  
+    <<__EntryPoint>>
+//  ^^ IdentifierOperator
+//    ^^^^^^^^^^^^ IdentifierAttribute
+//                ^^ IdentifierOperator
+    function main(): void {
+//  ^^^^^^^^ Keyword
+//           ^^^^ IdentifierFunction
+//                 ^ PunctuationDelimiter
+//                   ^^^^ IdentifierBuiltinType
+      $v1 = -10;
+//    ^^^ Identifier
+//        ^ IdentifierOperator
+//          ^ IdentifierOperator
+//           ^^ NumericLiteral
+//             ^ PunctuationDelimiter
+      $v2 = "red";
+//    ^^^ Identifier
+//        ^ IdentifierOperator
+//          ^^^^^ StringLiteral
+//               ^ PunctuationDelimiter
+      $a1 = "foo"."bar";
+//    ^^^ Identifier
+//        ^ IdentifierOperator
+//          ^^^^^ StringLiteral
+//               ^ IdentifierOperator
+//                ^^^^^ StringLiteral
+//                     ^ PunctuationDelimiter
+  
+      // Built-ins
+//    ^^^^^^^^^^^^ Comment
+      $keyedcontainer = dict[];
+//    ^^^^^^^^^^^^^^^ Identifier
+//                    ^ IdentifierOperator
+//                      ^^^^ IdentifierBuiltinType
+//                            ^ PunctuationDelimiter
+      $r = idx($keyedcontainer, 'key', 23);
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^ IdentifierBuiltin
+//             ^^^^^^^^^^^^^^^ Identifier
+//                            ^ PunctuationDelimiter
+//                              ^^^^^ StringLiteral
+//                                   ^ PunctuationDelimiter
+//                                     ^^ NumericLiteral
+//                                        ^ PunctuationDelimiter
+      invariant($a1 is string, "Object must have type B");
+//    ^^^^^^^^^ Keyword
+//              ^^^ Identifier
+//                  ^^ Keyword
+//                     ^^^^^^ IdentifierBuiltinType
+//                           ^ PunctuationDelimiter
+//                             ^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                       ^ PunctuationDelimiter
+      echo "\$v1 = ".$v1.", \$v2 = ".$v2."\n";
+//    ^^^^ Keyword
+//         ^^^^^^^^^ StringLiteral
+//                  ^ IdentifierOperator
+//                   ^^^ Identifier
+//                      ^ IdentifierOperator
+//                       ^^^^^^^^^^^ StringLiteral
+//                                  ^ IdentifierOperator
+//                                   ^^^ Identifier
+//                                      ^ IdentifierOperator
+//                                       ^^^^ StringLiteral
+//                                           ^ PunctuationDelimiter
+      exit ("Closing down\n");
+//    ^^^^ Keyword
+//          ^^^^^^^^^^^^^^^^ StringLiteral
+//                           ^ PunctuationDelimiter
+  
+      // NOTE: Tree-sitter grammar does not support
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      //       string interpolation
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      //       https://github.com/slackhq/tree-sitter-hack/issues/69
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      $y = "hello $x[0]";
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^^^^^^^^ StringLiteral
+//                      ^ PunctuationDelimiter
+      $y = "hello $x->foo";
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^^^^^^^^^^ StringLiteral
+//                        ^ PunctuationDelimiter
+  
+      // Control Flow
+//    ^^^^^^^^^^^^^^^ Comment
+      $i = 1;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^ NumericLiteral
+//          ^ PunctuationDelimiter
+      do {
+//    ^^ Keyword
+        ++$i;
+//      ^^ IdentifierOperator
+//        ^^ Identifier
+//          ^ PunctuationDelimiter
+      } while ($i <= 10);
+//      ^^^^^ Keyword
+//             ^^ Identifier
+//                ^^ IdentifierOperator
+//                   ^^ NumericLiteral
+//                      ^ PunctuationDelimiter
+  
+      foreach (($array as vec<_>) as $item) {}
+//    ^^^^^^^ Keyword
+//              ^^^^^^ Identifier
+//                     ^^ Keyword
+//                        ^^^ IdentifierType
+//                           ^ IdentifierOperator
+//                            ^ IdentifierType
+//                             ^ IdentifierOperator
+//                                ^^ Keyword
+//                                   ^^^^^ Identifier
+  
+      for (; $i <= 5; ) {
+//    ^^^ Keyword
+//         ^ PunctuationDelimiter
+//           ^^ Identifier
+//              ^^ IdentifierOperator
+//                 ^ NumericLiteral
+//                  ^ PunctuationDelimiter
+        ++$i;
+//      ^^ IdentifierOperator
+//        ^^ Identifier
+//          ^ PunctuationDelimiter
+        continue;
+//      ^^^^^^^^ Keyword
+//              ^ PunctuationDelimiter
+      }
+  
+      try {
+//    ^^^ Keyword
+        echo "try this";
+//      ^^^^ Keyword
+//           ^^^^^^^^^^ StringLiteral
+//                     ^ PunctuationDelimiter
+      } catch (Exception $ex) {
+//      ^^^^^ Keyword
+//             ^^^^^^^^^ IdentifierType
+//                       ^^^ Identifier
+        echo "Caught an Exception\n";
+//      ^^^^ Keyword
+//           ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                  ^ PunctuationDelimiter
+      } finally {
+//      ^^^^^^^ Keyword
+        echo "Finally\n";
+//      ^^^^ Keyword
+//           ^^^^^^^^^^^ StringLiteral
+//                      ^ PunctuationDelimiter
+      }
+  
+      using ($new = new Object(), $file = new File('using', '+using')) {}
+//    ^^^^^ Keyword
+//           ^^^^ Identifier
+//                ^ IdentifierOperator
+//                  ^^^ Keyword
+//                      ^^^^^^ IdentifierType
+//                              ^ PunctuationDelimiter
+//                                ^^^^^ Identifier
+//                                      ^ IdentifierOperator
+//                                        ^^^ Keyword
+//                                            ^^^^ IdentifierType
+//                                                 ^^^^^^^ StringLiteral
+//                                                        ^ PunctuationDelimiter
+//                                                          ^^^^^^^^ StringLiteral
+  
+      switch ($pos) {
+//    ^^^^^^ Keyword
+//            ^^^^ Identifier
+        case Position::Bottom:
+//      ^^^^ Keyword
+//           ^^^^^^^^ IdentifierType
+//                   ^^ PunctuationDelimiter
+//                     ^^^^^^ Identifier
+//                           ^ PunctuationDelimiter
+          break;
+//        ^^^^^ Keyword
+//             ^ PunctuationDelimiter
+      }
+  
+      // Magic Constants (some of them)
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      $a = __CLASS__;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^^^^ IdentifierBuiltin
+//                  ^ PunctuationDelimiter
+      $a = __DIR__;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^^ IdentifierBuiltin
+//                ^ PunctuationDelimiter
+      $a = __FILE__;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^^^ IdentifierBuiltin
+//                 ^ PunctuationDelimiter
+  
+      // Expressions
+//    ^^^^^^^^^^^^^^ Comment
+      $tuple = tuple('one', 'two', 'three');
+//    ^^^^^^ Identifier
+//           ^ IdentifierOperator
+//             ^^^^^ IdentifierBuiltinType
+//                   ^^^^^ StringLiteral
+//                        ^ PunctuationDelimiter
+//                          ^^^^^ StringLiteral
+//                               ^ PunctuationDelimiter
+//                                 ^^^^^^^ StringLiteral
+//                                         ^ PunctuationDelimiter
+      list($one, $two, $three) = $tuple;
+//    ^^^^ Keyword
+//         ^^^^ Identifier
+//             ^ PunctuationDelimiter
+//               ^^^^ Identifier
+//                   ^ PunctuationDelimiter
+//                     ^^^^^^ Identifier
+//                             ^ IdentifierOperator
+//                               ^^^^^^ Identifier
+//                                     ^ PunctuationDelimiter
+  
+      // Ternary
+//    ^^^^^^^^^^ Comment
+      $x = foo() ?: bar();
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^ IdentifierFunction
+//               ^^ IdentifierOperator
+//                  ^^^ IdentifierFunction
+//                       ^ PunctuationDelimiter
+      $x = $tmp ? $tmp : bar();
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^ Identifier
+//              ^ IdentifierOperator
+//                ^^^^ Identifier
+//                     ^ IdentifierOperator
+//                       ^^^ IdentifierFunction
+//                            ^ PunctuationDelimiter
+  
+      // Coalescing
+//    ^^^^^^^^^^^^^ Comment
+      $a = $b ?? 4;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^ Identifier
+//            ^^ IdentifierOperator
+//               ^ NumericLiteral
+//                ^ PunctuationDelimiter
+      $a ??= $b;
+//    ^^ Identifier
+//       ^^^ IdentifierOperator
+//           ^^ Identifier
+//             ^ PunctuationDelimiter
+  
+      // Type assertions
+//    ^^^^^^^^^^^^^^^^^^ Comment
+      $a = 1 ?as int;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^ NumericLiteral
+//           ^^^ Keyword
+//               ^^^ IdentifierBuiltinType
+//                  ^ PunctuationDelimiter
+      $a = 1 as int;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^ NumericLiteral
+//           ^^ Keyword
+//              ^^^ IdentifierBuiltinType
+//                 ^ PunctuationDelimiter
+      $a = 1 is int;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^ NumericLiteral
+//           ^^ Keyword
+//              ^^^ IdentifierBuiltinType
+//                 ^ PunctuationDelimiter
+      $a = is_int(1);
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^ IdentifierBuiltin
+//                ^ NumericLiteral
+//                  ^ PunctuationDelimiter
+      $a = is_bool(1);
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^^ IdentifierBuiltin
+//                 ^ NumericLiteral
+//                   ^ PunctuationDelimiter
+      $a = is_string(1);
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^^^^ IdentifierBuiltin
+//                   ^ NumericLiteral
+//                     ^ PunctuationDelimiter
+  
+      $infile = @fopen("NoSuchFile.txt", 'r');
+//    ^^^^^^^ Identifier
+//            ^ IdentifierOperator
+//              ^ IdentifierOperator
+//               ^^^^^ IdentifierFunction
+//                     ^^^^^^^^^^^^^^^^ StringLiteral
+//                                     ^ PunctuationDelimiter
+//                                       ^^^ StringLiteral
+//                                           ^ PunctuationDelimiter
+  
+      $d = dict[];
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^ IdentifierBuiltinType
+//               ^ PunctuationDelimiter
+      $xhp = <tt>Hello <strong>{$user_name}</strong>
+//    ^^^^ Identifier
+//         ^ IdentifierOperator
+//           ^ TagDelimiter
+//            ^^ Tag
+//              ^ TagDelimiter
+//               ^^^^^^ StringLiteral
+//                     ^ TagDelimiter
+//                      ^^^^^^ Tag
+//                            ^ TagDelimiter
+//                              ^^^^^^^^^^ Identifier
+//                                         ^^ TagDelimiter
+//                                           ^^^^^^ Tag
+//                                                 ^ TagDelimiter
+//                                                   StringLiteral 151:50..152:6
+        <elt attr="string">Hello</elt>
+//      ^ TagDelimiter
+//       ^^^ Tag
+//           ^^^^ TagAttribute
+//               ^ IdentifierOperator
+//                ^^^^^^^^ StringLiteral
+//                        ^ TagDelimiter
+//                         ^^^^^ StringLiteral
+//                              ^^ TagDelimiter
+//                                ^^^ Tag
+//                                   ^ TagDelimiter
+//                                     StringLiteral 152:36..153:6
+        <p id="foo"/>
+//      ^ TagDelimiter
+//       ^ Tag
+//         ^^ TagAttribute
+//           ^ IdentifierOperator
+//            ^^^^^ StringLiteral
+//                 ^^ TagDelimiter
+//                    StringLiteral 153:19..155:6
+        Text in the markup
+        <!-- this is a comment -->
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+//                                 StringLiteral 155:32..156:2
+    </tt>;
+//  ^^ TagDelimiter
+//    ^^ Tag
+//      ^ TagDelimiter
+//       ^ PunctuationDelimiter
+  
+      // Literals
+//    ^^^^^^^^^^^ Comment
+      // NOTE(issue: https://github.com/facebook/hhvm/issues/9447)
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      // nameof code example is based on official docs, but doesn't seem to compile
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      // properly with hhvm/hhvm or parse properly with tree-sitter-hack
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      $d[nameof C] = 4; // Not compiling, not sure why
+//    ^^ Identifier
+//       ^^^^^^ Identifier
+//              ^ Identifier
+//                 ^ IdentifierOperator
+//                   ^ NumericLiteral
+//                    ^ PunctuationDelimiter
+//                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      $v = vec[1, 2, 3];
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^ IdentifierBuiltinType
+//             ^ NumericLiteral
+//              ^ PunctuationDelimiter
+//                ^ NumericLiteral
+//                 ^ PunctuationDelimiter
+//                   ^ NumericLiteral
+//                     ^ PunctuationDelimiter
+      $k = keyset[2, 1];
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^ IdentifierBuiltinType
+//                ^ NumericLiteral
+//                 ^ PunctuationDelimiter
+//                   ^ NumericLiteral
+//                     ^ PunctuationDelimiter
+      $d = dict['a' => 1, 'b' => 3];
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^ IdentifierBuiltinType
+//              ^^^ StringLiteral
+//                  ^^ IdentifierOperator
+//                     ^ NumericLiteral
+//                      ^ PunctuationDelimiter
+//                        ^^^ StringLiteral
+//                            ^^ IdentifierOperator
+//                               ^ NumericLiteral
+//                                 ^ PunctuationDelimiter
+      $v[0] = 42;
+//    ^^ Identifier
+//       ^ NumericLiteral
+//          ^ IdentifierOperator
+//            ^^ NumericLiteral
+//              ^ PunctuationDelimiter
+      $a1 = (bool)0;
+//    ^^^ Identifier
+//        ^ IdentifierOperator
+//           ^^^^ IdentifierBuiltinType
+//                ^ NumericLiteral
+//                 ^ PunctuationDelimiter
+      $a = 0b101010;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^^^ NumericLiteral
+//                 ^ PunctuationDelimiter
+      $a = 0XAf;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^ NumericLiteral
+//             ^ PunctuationDelimiter
+      $f = 123.456 + 0.6E27 + 2.34e-3;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^^ NumericLiteral
+//                 ^ IdentifierOperator
+//                   ^^^^^^ NumericLiteral
+//                          ^ IdentifierOperator
+//                            ^^^^^^^ NumericLiteral
+//                                   ^ PunctuationDelimiter
+      $f = NAN;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^ IdentifierBuiltin
+//            ^ PunctuationDelimiter
+      $f = INF;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^ IdentifierBuiltin
+//            ^ PunctuationDelimiter
+      $x = tuple(1, 2.0, null);
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^ IdentifierBuiltinType
+//               ^ NumericLiteral
+//                ^ PunctuationDelimiter
+//                  ^^^ NumericLiteral
+//                     ^ PunctuationDelimiter
+//                       ^^^^ IdentifierNull
+//                            ^ PunctuationDelimiter
+      $x is (~int, @float, ?bool);
+//    ^^ Identifier
+//       ^^ Keyword
+//           ^ IdentifierOperator
+//            ^^^ IdentifierBuiltinType
+//               ^ PunctuationDelimiter
+//                 ^ IdentifierOperator
+//                  ^^^^^ IdentifierBuiltinType
+//                       ^ PunctuationDelimiter
+//                         ^ IdentifierOperator
+//                          ^^^^ IdentifierBuiltinType
+//                               ^ PunctuationDelimiter
+      $s = shape('name' => 'db-01', 'age' => 365);
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^ IdentifierBuiltinType
+//               ^^^^^^ StringLiteral
+//                      ^^ IdentifierOperator
+//                         ^^^^^^^ StringLiteral
+//                                ^ PunctuationDelimiter
+//                                  ^^^^^ StringLiteral
+//                                        ^^ IdentifierOperator
+//                                           ^^^ NumericLiteral
+//                                               ^ PunctuationDelimiter
+      $x = true;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^ BooleanLiteral
+//             ^ PunctuationDelimiter
+      $y = false;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^ BooleanLiteral
+//              ^ PunctuationDelimiter
+      $x = True;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^ BooleanLiteral
+//             ^ PunctuationDelimiter
+      $y = FALSE;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^ BooleanLiteral
+//              ^ PunctuationDelimiter
+  
+      // NOTE: Grammar does not support the _ separator properly
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      //       https://github.com/slackhq/tree-sitter-hack/issues/72
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      $a = 123_456;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^ NumericLiteral
+//            ^^^^ Identifier
+//                ^ PunctuationDelimiter
+      $a = 0x49AD_DF30;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^ NumericLiteral
+//               ^^^^^ Identifier
+//                    ^ PunctuationDelimiter
+      $f = 123_456.49_30e-30_30;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^ NumericLiteral
+//            ^^^^ Identifier
+//                ^ IdentifierOperator
+//                 ^^ NumericLiteral
+//                             ^ PunctuationDelimiter
+  
+    // nowdoc
+//  ^^^^^^^^^ Comment
+    $s = <<< 'ID'
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^^^^ StringLiteral 188:7..190:2
+      $('a') abc $(function{return;})
+  ID;
+//  ^ PunctuationDelimiter
+  
+    // heredoc
+//  ^^^^^^^^^^ Comment
+    $s = <<<ID
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^ StringLiteral 193:7..195:2
+    $('a') abc $(function{return;})
+  ID;
+//  ^ PunctuationDelimiter
+  
+      // Pipe
+//    ^^^^^^^ Comment
+      $x = vec[2,1,3]
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^ IdentifierBuiltinType
+//             ^ NumericLiteral
+//              ^ PunctuationDelimiter
+//               ^ NumericLiteral
+//                ^ PunctuationDelimiter
+//                 ^ NumericLiteral
+        |> Vec\map($$, $a ==> $a * $a)
+//      ^^ IdentifierOperator
+//         ^^^ IdentifierNamespace
+//            ^ PunctuationDelimiter
+//             ^^^ IdentifierFunction
+//                 ^^ Identifier
+//                   ^ PunctuationDelimiter
+//                     ^^ IdentifierParameter
+//                        ^^^ IdentifierOperator
+//                            ^^ Identifier
+//                               ^ IdentifierOperator
+//                                 ^^ Identifier
+        |> Vec\sort($$);
+//      ^^ IdentifierOperator
+//         ^^^ IdentifierNamespace
+//            ^ PunctuationDelimiter
+//             ^^^^ IdentifierFunction
+//                  ^^ Identifier
+//                     ^ PunctuationDelimiter
+  
+      // Operators
+//    ^^^^^^^^^^^^ Comment
+      $a1 = -10 + 100;
+//    ^^^ Identifier
+//        ^ IdentifierOperator
+//          ^ IdentifierOperator
+//           ^^ NumericLiteral
+//              ^ IdentifierOperator
+//                ^^^ NumericLiteral
+//                   ^ PunctuationDelimiter
+      $a1 = 2 ** 10;
+//    ^^^ Identifier
+//        ^ IdentifierOperator
+//          ^ NumericLiteral
+//            ^^ IdentifierOperator
+//               ^^ NumericLiteral
+//                 ^ PunctuationDelimiter
+      $a1 = 100 + -3.4e2;
+//    ^^^ Identifier
+//        ^ IdentifierOperator
+//          ^^^ NumericLiteral
+//              ^ IdentifierOperator
+//                ^ IdentifierOperator
+//                 ^^^^^ NumericLiteral
+//                      ^ PunctuationDelimiter
+      $a1 = 9.5 + 23.444;
+//    ^^^ Identifier
+//        ^ IdentifierOperator
+//          ^^^ NumericLiteral
+//              ^ IdentifierOperator
+//                ^^^^^^ NumericLiteral
+//                      ^ PunctuationDelimiter
+      $a1 = (1 << 63) >> 63;
+//    ^^^ Identifier
+//        ^ IdentifierOperator
+//           ^ NumericLiteral
+//             ^^ IdentifierOperator
+//                ^^ NumericLiteral
+//                    ^^ IdentifierOperator
+//                       ^^ NumericLiteral
+//                         ^ PunctuationDelimiter
+      $a1 = 1 > 2;
+//    ^^^ Identifier
+//        ^ IdentifierOperator
+//          ^ NumericLiteral
+//            ^ IdentifierOperator
+//              ^ NumericLiteral
+//               ^ PunctuationDelimiter
+      $a = $a & ~0x20;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^ Identifier
+//            ^ IdentifierOperator
+//              ^ IdentifierOperator
+//               ^^^^ NumericLiteral
+//                   ^ PunctuationDelimiter
+      $a = $a ^ ~0x20;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^ Identifier
+//            ^ IdentifierOperator
+//              ^ IdentifierOperator
+//               ^^^^ NumericLiteral
+//                   ^ PunctuationDelimiter
+      $a = $a || $b;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^ Identifier
+//            ^^ IdentifierOperator
+//               ^^ Identifier
+//                 ^ PunctuationDelimiter
+      $a = $a && $b;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^ Identifier
+//            ^^ IdentifierOperator
+//               ^^ Identifier
+//                 ^ PunctuationDelimiter
+      $a = !$a;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^ IdentifierOperator
+//          ^^ Identifier
+//            ^ PunctuationDelimiter
+      $a = $a++;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^ Identifier
+//           ^^ IdentifierOperator
+//             ^ PunctuationDelimiter
+      $a = $a--;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^ Identifier
+//           ^^ IdentifierOperator
+//             ^ PunctuationDelimiter
+      $a -= 1;
+//    ^^ Identifier
+//       ^^ IdentifierOperator
+//          ^ NumericLiteral
+//           ^ PunctuationDelimiter
+      $a +=1;
+//    ^^ Identifier
+//       ^^ IdentifierOperator
+//         ^ NumericLiteral
+//          ^ PunctuationDelimiter
+      $a **=1;
+//    ^^ Identifier
+//       ^^^ IdentifierOperator
+//          ^ NumericLiteral
+//           ^ PunctuationDelimiter
+  
+      // Comparisons
+//    ^^^^^^^^^^^^^^ Comment
+      $a = 1 > 2;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^ NumericLiteral
+//           ^ IdentifierOperator
+//             ^ NumericLiteral
+//              ^ PunctuationDelimiter
+      $a = 1 < 2;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^ NumericLiteral
+//           ^ IdentifierOperator
+//             ^ NumericLiteral
+//              ^ PunctuationDelimiter
+      $a = 1 == 2;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^ NumericLiteral
+//           ^^ IdentifierOperator
+//              ^ NumericLiteral
+//               ^ PunctuationDelimiter
+      $a = 1 != 2;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^ NumericLiteral
+//           ^^ IdentifierOperator
+//              ^ NumericLiteral
+//               ^ PunctuationDelimiter
+      $a = 1 === 2;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^ NumericLiteral
+//           ^^^ IdentifierOperator
+//               ^ NumericLiteral
+//                ^ PunctuationDelimiter
+      $a = 1 !== 2;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^ NumericLiteral
+//           ^^^ IdentifierOperator
+//               ^ NumericLiteral
+//                ^ PunctuationDelimiter
+      $a = 1 <=> 2;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^ NumericLiteral
+//           ^^^ IdentifierOperator
+//               ^ NumericLiteral
+//                ^ PunctuationDelimiter
+      $a = $a is nonnull;
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^ Identifier
+//            ^^ Keyword
+//               ^^^^^^^ IdentifierBuiltinType
+//                      ^ PunctuationDelimiter
+    }
+  
+    // Types
+//  ^^^^^^^^ Comment
+    type Complex = shape('real' => float, 'imag' => float);
+//  ^^^^ Keyword
+//       ^^^^^^^ IdentifierType
+//               ^ IdentifierOperator
+//                 ^^^^^ IdentifierBuiltinType
+//                       ^^^^^^ StringLiteral
+//                              ^^ IdentifierOperator
+//                                 ^^^^^ IdentifierType
+//                                      ^ PunctuationDelimiter
+//                                        ^^^^^^ StringLiteral
+//                                               ^^ IdentifierOperator
+//                                                  ^^^^^ IdentifierType
+//                                                        ^ PunctuationDelimiter
+    newtype Point = (float, float);
+//  ^^^^^^^ Keyword
+//          ^^^^^ IdentifierType
+//                ^ IdentifierOperator
+//                   ^^^^^ IdentifierBuiltinType
+//                        ^ PunctuationDelimiter
+//                          ^^^^^ IdentifierBuiltinType
+//                                ^ PunctuationDelimiter
+  
+    // return types
+//  ^^^^^^^^^^^^^^^ Comment
+    <<__Memoize>>
+//  ^^ IdentifierOperator
+//    ^^^^^^^^^ IdentifierAttribute
+//             ^^ IdentifierOperator
+    function noreturn_example(): noreturn {
+//  ^^^^^^^^ Keyword
+//           ^^^^^^^^^^^^^^^^ IdentifierFunction
+//                             ^ PunctuationDelimiter
+//                               ^^^^^^^^ IdentifierBuiltinType
+      throw new Exception('something went wrong');
+//    ^^^^^ Keyword
+//          ^^^ Keyword
+//              ^^^^^^^^^ IdentifierType
+//                        ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                               ^ PunctuationDelimiter
+    }
+    <<Contributors("John Doe", keyset["Core Library Team"])>>
+//  ^^ IdentifierOperator
+//    ^^^^^^^^^^^^ IdentifierAttribute
+//                 ^^^^^^^^^^ StringLiteral
+//                           ^ PunctuationDelimiter
+//                             ^^^^^^ IdentifierBuiltinType
+//                                    ^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                         ^^ IdentifierOperator
+    function nothing_example(): nothing {
+//  ^^^^^^^^ Keyword
+//           ^^^^^^^^^^^^^^^ IdentifierFunction
+//                            ^ PunctuationDelimiter
+//                              ^^^^^^^ IdentifierBuiltinType
+      throw new Exception('something went wrong');
+//    ^^^^^ Keyword
+//          ^^^ Keyword
+//              ^^^^^^^^^ IdentifierType
+//                        ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                               ^ PunctuationDelimiter
+    }
+    function f2<<<__Newable>> reify T as A>(): T {
+//  ^^^^^^^^ Keyword
+//           ^^ IdentifierFunction
+//             ^ IdentifierOperator
+//              ^^ IdentifierOperator
+//                ^^^^^^^^^ IdentifierAttribute
+//                         ^^ IdentifierOperator
+//                            ^^^^^ Keyword
+//                                  ^ IdentifierType
+//                                    ^^ Keyword
+//                                       ^ IdentifierType
+//                                        ^ IdentifierOperator
+//                                           ^ PunctuationDelimiter
+//                                             ^ IdentifierType
+      return new T();
+//    ^^^^^^ Keyword
+//           ^^^ Keyword
+//               ^ IdentifierType
+//                  ^ PunctuationDelimiter
+    }
+  
+    // Async/await
+//  ^^^^^^^^^^^^^^ Comment
+    async function main_async(): Awaitable<void> {
+//  ^^^^^ Keyword
+//        ^^^^^^^^ Keyword
+//                 ^^^^^^^^^^ IdentifierFunction
+//                             ^ PunctuationDelimiter
+//                               ^^^^^^^^^ IdentifierType
+//                                        ^ IdentifierOperator
+//                                         ^^^^ IdentifierBuiltinType
+//                                             ^ IdentifierOperator
+      concurrent {
+//    ^^^^^^^^^^ Keyword
+          $out = await IO\request_output();
+//        ^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^ Keyword
+//                     ^^ IdentifierNamespace
+//                       ^ PunctuationDelimiter
+//                        ^^^^^^^^^^^^^^ IdentifierFunction
+//                                        ^ PunctuationDelimiter
+          await $out->writeAllAsync("Hello, world\n");
+//        ^^^^^ Keyword
+//              ^^^^ Identifier
+//                  ^^ IdentifierOperator
+//                    ^^^^^^^^^^^^^ IdentifierFunction
+//                                  ^^^^^^^^^^^^^^^^ StringLiteral
+//                                                   ^ PunctuationDelimiter
+      }
+    }
+  
+    // Enums
+//  ^^^^^^^^ Comment
+    enum Position: int {
+//  ^^^^ Keyword
+//       ^^^^^^^^ Identifier
+//               ^ PunctuationDelimiter
+//                 ^^^ IdentifierBuiltinType
+      Top = 0;
+//    ^^^ Identifier
+//        ^ IdentifierOperator
+//          ^ NumericLiteral
+//           ^ PunctuationDelimiter
+      Bottom = 1;
+//    ^^^^^^ Identifier
+//           ^ IdentifierOperator
+//             ^ NumericLiteral
+//              ^ PunctuationDelimiter
+    }
+    enum class Random: mixed {
+//  ^^^^ Keyword
+//       ^^^^^ Keyword
+//             ^^^^^^ Identifier
+//                   ^ PunctuationDelimiter
+//                     ^^^^^ IdentifierBuiltinType
+      int X = 42;
+//    ^^^ IdentifierBuiltinType
+//        ^ Identifier
+//          ^ IdentifierOperator
+//            ^^ NumericLiteral
+//              ^ PunctuationDelimiter
+      string S = 'foo';
+//    ^^^^^^ IdentifierBuiltinType
+//           ^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^ StringLiteral
+//                    ^ PunctuationDelimiter
+    }
+  
+    // Interfaces
+//  ^^^^^^^^^^^^^ Comment
+    interface I1<+T> {
+//  ^^^^^^^^^ Keyword
+//            ^^ IdentifierType
+//              ^ IdentifierOperator
+//                ^ IdentifierType
+//                 ^ IdentifierOperator
+      public function push(T $element): void;
+//    ^^^^^^ Keyword
+//           ^^^^^^^^ Keyword
+//                    ^^^^ IdentifierFunction
+//                         ^ IdentifierType
+//                           ^^^^^^^^ IdentifierParameter
+//                                    ^ PunctuationDelimiter
+//                                      ^^^^ IdentifierBuiltinType
+//                                          ^ PunctuationDelimiter
+    }
+  
+    // Traits
+//  ^^^^^^^^^ Comment
+    trait T1 implements I1 {
+//  ^^^^^ Keyword
+//        ^^ Identifier
+//           ^^^^^^^^^^ Keyword
+//                      ^^ IdentifierType
+      // NOTE: readonly is not supported properly in tree-sitter grammar
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      //       https://github.com/slackhq/tree-sitter-hack/issues/71
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      public static readonly int $x = 0;
+//    ^^^^^^ Keyword
+//           ^^^^^^ Keyword
+//                  ^^^^^^^^ IdentifierType
+//                           ^^^ IdentifierBuiltinType
+//                               ^^ Identifier
+//                                  ^ IdentifierOperator
+//                                    ^ NumericLiteral
+//                                     ^ PunctuationDelimiter
+  
+      static function inc() : void {
+//    ^^^^^^ Keyword
+//           ^^^^^^^^ Keyword
+//                    ^^^ IdentifierFunction
+//                          ^ PunctuationDelimiter
+//                            ^^^^ IdentifierBuiltinType
+        static::$x = static::$x + 1;
+//      ^^^^^^ Keyword
+//            ^^ PunctuationDelimiter
+//              ^^ Identifier
+//                 ^ IdentifierOperator
+//                   ^^^^^^ Keyword
+//                         ^^ PunctuationDelimiter
+//                           ^^ Identifier
+//                              ^ IdentifierOperator
+//                                ^ NumericLiteral
+//                                 ^ PunctuationDelimiter
+      }
+    }
+    abstract class A1 implements I1 { use T1; }
+//  ^^^^^^^^ Keyword
+//           ^^^^^ Keyword
+//                 ^^ IdentifierType
+//                    ^^^^^^^^^^ Keyword
+//                               ^^ IdentifierType
+//                                    ^^^ Keyword
+//                                        ^^ IdentifierType
+//                                          ^ PunctuationDelimiter
+  
+    // Classes
+//  ^^^^^^^^^^ Comment
+    final class C {
+//  ^^^^^ Keyword
+//        ^^^^^ Keyword
+//              ^ IdentifierType
+      function f(classname<C> $clsname): void {
+//    ^^^^^^^^ Keyword
+//             ^ IdentifierFunction
+//               ^^^^^^^^^ IdentifierType
+//                        ^ IdentifierOperator
+//                         ^ IdentifierType
+//                          ^ IdentifierOperator
+//                            ^^^^^^^^ IdentifierParameter
+//                                     ^ PunctuationDelimiter
+//                                       ^^^^ IdentifierBuiltinType
+          $w = new $clsname();
+//        ^^ Identifier
+//           ^ IdentifierOperator
+//             ^^^ Keyword
+//                 ^^^^^^^^ IdentifierType
+//                           ^ PunctuationDelimiter
+      }
+    function cons_static() :mixed{
+//  ^^^^^^^^ Keyword
+//           ^^^^^^^^^^^ IdentifierFunction
+//                         ^ PunctuationDelimiter
+//                          ^^^^^ IdentifierBuiltinType
+      $a = new static(1, "x", 3);
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^ Keyword
+//             ^^^^^^ Keyword
+//                    ^ NumericLiteral
+//                     ^ PunctuationDelimiter
+//                       ^^^ StringLiteral
+//                          ^ PunctuationDelimiter
+//                            ^ NumericLiteral
+//                              ^ PunctuationDelimiter
+    }
+    function cons_self(): void {
+//  ^^^^^^^^ Keyword
+//           ^^^^^^^^^ IdentifierFunction
+//                      ^ PunctuationDelimiter
+//                        ^^^^ IdentifierBuiltinType
+      $a = new self(1, "x", 3);
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^ Keyword
+//             ^^^^ Keyword
+//                  ^ NumericLiteral
+//                   ^ PunctuationDelimiter
+//                     ^^^ StringLiteral
+//                        ^ PunctuationDelimiter
+//                          ^ NumericLiteral
+//                            ^ PunctuationDelimiter
+    }
+    function cons_parent(): void {
+//  ^^^^^^^^ Keyword
+//           ^^^^^^^^^^^ IdentifierFunction
+//                        ^ PunctuationDelimiter
+//                          ^^^^ IdentifierBuiltinType
+      $a = new parent(1, "x", 3);
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^ Keyword
+//             ^^^^^^ Keyword
+//                    ^ NumericLiteral
+//                     ^ PunctuationDelimiter
+//                       ^^^ StringLiteral
+//                          ^ PunctuationDelimiter
+//                            ^ NumericLiteral
+//                              ^ PunctuationDelimiter
+    }
+    }
+  
+    class B2<reify T> {}
+//  ^^^^^ Keyword
+//        ^^ IdentifierType
+//          ^ IdentifierOperator
+//           ^^^^^ Keyword
+//                 ^ IdentifierType
+//                  ^ IdentifierOperator
+  
+    use namespace A as A;
+//  ^^^ Keyword
+//      ^^^^^^^^^ Keyword
+//                ^ IdentifierNamespace
+//                  ^^ Keyword
+//                     ^ IdentifierNamespace
+//                      ^ PunctuationDelimiter
+    abstract final class F<Ta as A, Tb super B<A, C>> extends A\B implements A\I1<A, C>, A\I2 {
+//  ^^^^^^^^ Keyword
+//           ^^^^^ Keyword
+//                 ^^^^^ Keyword
+//                       ^ IdentifierType
+//                        ^ IdentifierOperator
+//                         ^^ IdentifierType
+//                            ^^ Keyword
+//                               ^ IdentifierType
+//                                ^ PunctuationDelimiter
+//                                  ^^ IdentifierType
+//                                     ^^^^^ Keyword
+//                                           ^ IdentifierType
+//                                            ^ IdentifierOperator
+//                                             ^ IdentifierType
+//                                              ^ PunctuationDelimiter
+//                                               ^ IdentifierType
+//                                                ^ IdentifierType
+//                                                 ^ IdentifierOperator
+//                                                  ^ IdentifierOperator
+//                                                    ^^^^^^^ Keyword
+//                                                            ^ IdentifierNamespace
+//                                                             ^ PunctuationDelimiter
+//                                                              ^ IdentifierType
+//                                                                ^^^^^^^^^^ Keyword
+//                                                                           ^ IdentifierNamespace
+//                                                                            ^ PunctuationDelimiter
+//                                                                             ^^ IdentifierType
+//                                                                               ^ IdentifierOperator
+//                                                                                ^ IdentifierType
+//                                                                                 ^ PunctuationDelimiter
+//                                                                                  ^ IdentifierType
+//                                                                                   ^ IdentifierType
+//                                                                                    ^ IdentifierOperator
+//                                                                                     ^ PunctuationDelimiter
+//                                                                                       ^ IdentifierNamespace
+//                                                                                        ^ PunctuationDelimiter
+//                                                                                         ^^ IdentifierType
+      static function method<Ta as A, Tb super B>(): Tc {}
+//    ^^^^^^ Keyword
+//           ^^^^^^^^ Keyword
+//                    ^^^^^^ IdentifierFunction
+//                          ^ IdentifierOperator
+//                           ^^ IdentifierType
+//                              ^^ Keyword
+//                                 ^ IdentifierType
+//                                  ^ PunctuationDelimiter
+//                                    ^^ IdentifierType
+//                                       ^^^^^ Keyword
+//                                             ^ IdentifierType
+//                                              ^ IdentifierOperator
+//                                                 ^ PunctuationDelimiter
+//                                                   ^^ IdentifierType
+    }
+  
+    // XHP Attributes
+//  ^^^^^^^^^^^^^^^^^ Comment
+  use namespace Facebook\XHP\Core as x;
+//^^^ Keyword
+//    ^^^^^^^^^ Keyword
+//              ^^^^^^^^ IdentifierNamespace
+//                      ^ PunctuationDelimiter
+//                       ^^^ IdentifierNamespace
+//                          ^ PunctuationDelimiter
+//                           ^^^^ IdentifierNamespace
+//                                ^^ Keyword
+//                                   ^ IdentifierNamespace
+//                                    ^ PunctuationDelimiter
+  final xhp class user_info extends x\element {
+//^^^^^ Keyword
+//      ^^^ Keyword
+//          ^^^^^ Keyword
+//                ^^^^^^^^^ IdentifierType
+//                          ^^^^^^^ Keyword
+//                                  ^ IdentifierNamespace
+//                                   ^ PunctuationDelimiter
+//                                    ^^^^^^^ IdentifierType
+      attribute int userid @required;
+//    ^^^^^^^^^ Keyword
+//              ^^^ IdentifierBuiltinType
+//                  ^^^^^^ Identifier
+//                         ^^^^^^^^^ IdentifierAttribute
+//                                  ^ PunctuationDelimiter
+      attribute string name = "";
+//    ^^^^^^^^^ Keyword
+//              ^^^^^^ IdentifierBuiltinType
+//                     ^^^^ Identifier
+//                          ^ IdentifierOperator
+//                            ^^ StringLiteral
+//                              ^ PunctuationDelimiter
+  
+      protected async function renderAsync(): Awaitable<x\node> {
+//    ^^^^^^^^^ Keyword
+//              ^^^^^ Keyword
+//                    ^^^^^^^^ Keyword
+//                             ^^^^^^^^^^^ IdentifierFunction
+//                                          ^ PunctuationDelimiter
+//                                            ^^^^^^^^^ IdentifierType
+//                                                     ^ IdentifierOperator
+//                                                      ^ IdentifierNamespace
+//                                                       ^ PunctuationDelimiter
+//                                                        ^^^^ IdentifierType
+//                                                            ^ IdentifierOperator
+        return
+//      ^^^^^^ Keyword
+          <x:frag>User with id {$this->:userid} has name {$this->:name}</x:frag>;
+//        ^ TagDelimiter
+//         ^^^^^^ Tag
+//               ^ TagDelimiter
+//                ^^^^^^^^^^^^^ StringLiteral
+//                              ^^^^^ IdentifierBuiltin
+//                                   ^^ IdentifierOperator
+//                                     ^^^^^^^ Identifier
+//                                             ^^^^^^^^^^ StringLiteral
+//                                                        ^^^^^ IdentifierBuiltin
+//                                                             ^^ IdentifierOperator
+//                                                               ^^^^^ Identifier
+//                                                                     ^^ TagDelimiter
+//                                                                       ^^^^^^ Tag
+//                                                                             ^ TagDelimiter
+//                                                                              ^ PunctuationDelimiter
+      }
+    }
+  
+    // Only compiles when in a module
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+    internal class StackUnderflowException extends \Exception {}
+//  ^^^^^^^^ Keyword
+//           ^^^^^ Keyword
+//                 ^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType
+//                                         ^^^^^^^ Keyword
+//                                                 ^ PunctuationDelimiter
+//                                                  ^^^^^^^^^ IdentifierType
+  
+    class VecStack<T> implements I1<T> {
+//  ^^^^^ Keyword
+//        ^^^^^^^^ IdentifierType
+//                ^ IdentifierOperator
+//                 ^ IdentifierType
+//                  ^ IdentifierOperator
+//                    ^^^^^^^^^^ Keyword
+//                               ^^ IdentifierType
+//                                 ^ IdentifierOperator
+//                                  ^ IdentifierType
+//                                   ^ IdentifierOperator
+      private int $stackPtr;
+//    ^^^^^^^ Keyword
+//            ^^^ IdentifierBuiltinType
+//                ^^^^^^^^^ Identifier
+//                         ^ PunctuationDelimiter
+  
+      // Constraints
+//    ^^^^^^^^^^^^^^ Comment
+      public function flatten<Tu>(): MyList<Tu> where T = MyList<Tu> {
+//    ^^^^^^ Keyword
+//           ^^^^^^^^ Keyword
+//                    ^^^^^^^ IdentifierFunction
+//                           ^ IdentifierOperator
+//                            ^^ IdentifierType
+//                              ^ IdentifierOperator
+//                                 ^ PunctuationDelimiter
+//                                   ^^^^^^ IdentifierType
+//                                         ^ IdentifierOperator
+//                                          ^^ IdentifierType
+//                                            ^ IdentifierOperator
+//                                              ^^^^^ Keyword
+//                                                    ^ IdentifierType
+//                                                      ^ IdentifierOperator
+//                                                        ^^^^^^ IdentifierType
+//                                                              ^ IdentifierOperator
+//                                                               ^^ IdentifierType
+//                                                                 ^ IdentifierOperator
+        throw new Exception('unimplemented');
+//      ^^^^^ Keyword
+//            ^^^ Keyword
+//                ^^^^^^^^^ IdentifierType
+//                          ^^^^^^^^^^^^^^^ StringLiteral
+//                                          ^ PunctuationDelimiter
+      }
+      public function __construct(private vec<T> $elements = vec[]) {
+//    ^^^^^^ Keyword
+//           ^^^^^^^^ Keyword
+//                    ^^^^^^^^^^^ IdentifierFunction
+//                                ^^^^^^^ Keyword
+//                                        ^^^ IdentifierType
+//                                           ^ IdentifierOperator
+//                                            ^ IdentifierType
+//                                             ^ IdentifierOperator
+//                                               ^^^^^^^^^ IdentifierParameter
+//                                                         ^ IdentifierOperator
+//                                                           ^^^ IdentifierBuiltinType
+        $this->stackPtr = C\count($elements) - 1;
+//      ^^^^^ IdentifierBuiltin
+//           ^^ IdentifierOperator
+//             ^^^^^^^^ Identifier
+//                      ^ IdentifierOperator
+//                        ^ IdentifierNamespace
+//                         ^ PunctuationDelimiter
+//                          ^^^^^ IdentifierFunction
+//                                ^^^^^^^^^ Identifier
+//                                           ^ IdentifierOperator
+//                                             ^ NumericLiteral
+//                                              ^ PunctuationDelimiter
+        $a = $elements?->getX();
+//      ^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^^^^^^^ Identifier
+//                    ^^^ IdentifierOperator
+//                       ^^^^ IdentifierFunction
+//                             ^ PunctuationDelimiter
+      }
+  
+      public function push(T $element): void {
+//    ^^^^^^ Keyword
+//           ^^^^^^^^ Keyword
+//                    ^^^^ IdentifierFunction
+//                         ^ IdentifierType
+//                           ^^^^^^^^ IdentifierParameter
+//                                    ^ PunctuationDelimiter
+//                                      ^^^^ IdentifierBuiltinType
+        $this->stackPtr++;
+//      ^^^^^ IdentifierBuiltin
+//           ^^ IdentifierOperator
+//             ^^^^^^^^ Identifier
+//                     ^^ IdentifierOperator
+//                       ^ PunctuationDelimiter
+        if (C\count($this->elements) === $this->stackPtr) {
+//      ^^ Keyword
+//          ^ IdentifierNamespace
+//           ^ PunctuationDelimiter
+//            ^^^^^ IdentifierFunction
+//                  ^^^^^ IdentifierBuiltin
+//                       ^^ IdentifierOperator
+//                         ^^^^^^^^ Identifier
+//                                   ^^^ IdentifierOperator
+//                                       ^^^^^ IdentifierBuiltin
+//                                            ^^ IdentifierOperator
+//                                              ^^^^^^^^ Identifier
+          $this->elements[] = $element;
+//        ^^^^^ IdentifierBuiltin
+//             ^^ IdentifierOperator
+//               ^^^^^^^^ Identifier
+//                          ^ IdentifierOperator
+//                            ^^^^^^^^ Identifier
+//                                    ^ PunctuationDelimiter
+        } else {
+//        ^^^^ Keyword
+          $this->elements[$this->stackPtr] = $element;
+//        ^^^^^ IdentifierBuiltin
+//             ^^ IdentifierOperator
+//               ^^^^^^^^ Identifier
+//                        ^^^^^ IdentifierBuiltin
+//                             ^^ IdentifierOperator
+//                               ^^^^^^^^ Identifier
+//                                         ^ IdentifierOperator
+//                                           ^^^^^^^^ Identifier
+//                                                   ^ PunctuationDelimiter
+        }
+      }
+    }
+  }

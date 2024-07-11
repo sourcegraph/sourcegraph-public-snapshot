@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	edb "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	internalGitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/insights/background/limiter"
@@ -98,7 +97,6 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 			AllRepoIterator: discovery.NewAllReposIterator(
 				mainAppDB.Repos(),
 				time.Now,
-				dotcom.SourcegraphDotComMode(),
 				15*time.Minute,
 				&prometheus.CounterOpts{
 					Namespace: "src",

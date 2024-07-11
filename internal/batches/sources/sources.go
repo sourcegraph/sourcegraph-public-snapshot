@@ -17,8 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	ghastore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -67,12 +68,11 @@ var ErrNoSSHCredential = errors.New("authenticator doesn't support SSH")
 type AuthenticationStrategy string
 
 const (
-	// Authenticate using a traditional PAT configured by the user or site admin. This
-	// should be used for all code host interactions unless another authentication
+	// AuthenticationStrategyUserCredential is used to authenticate using a traditional PAT configured by
+	//the user or site admin. This should be used for all code host interactions unless another authentication
 	// strategy is explicitly required.
 	AuthenticationStrategyUserCredential AuthenticationStrategy = "USER_CREDENTIAL"
-	// Authenticate using a GitHub App. This should only be used for GitHub code hosts for
-	// commit signing interactions.
+	// AuthenticationStrategyGitHubApp is used to authenticate using a GitHub App.
 	AuthenticationStrategyGitHubApp AuthenticationStrategy = "GITHUB_APP"
 )
 
@@ -86,6 +86,19 @@ type SourcerStore interface {
 	UserCredentials() database.UserCredentialsStore
 	GitHubAppsStore() ghastore.GitHubAppsStore
 	GetChangesetSpecByID(ctx context.Context, id int64) (*btypes.ChangesetSpec, error)
+}
+
+type SourcerOpts struct {
+	ExternalServiceID      string
+	ExternalServiceType    string
+	GitHubAppAccount       string
+	GitHubAppKind          ghtypes.GitHubAppKind
+	AuthenticationStrategy AuthenticationStrategy
+
+	// We sometimes create a sourcer for a changeset that without the use of a credential.
+	// An example is when we want to create a GitHubSource for a changeset that is to
+	// be signed by a GitHub app.
+	AsNonCredential bool
 }
 
 // Sourcer exposes methods to get a ChangesetSource based on a changeset, repo or
@@ -106,13 +119,13 @@ type Sourcer interface {
 	//
 	// If the changeset was not created by a batch change, then a site credential will be
 	// used. If another AuthenticationStrategy is specified, then it will be used.
-	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy, repo *types.Repo) (ChangesetSource, error)
+	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, repo *types.Repo, opts SourcerOpts) (ChangesetSource, error)
 	// ForUser returns a ChangesetSource for changesets on the given repo.
 	// It will be authenticated with the given authenticator.
 	ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChangesetSource, error)
 	// ForExternalService returns a ChangesetSource based on the provided external service opts.
 	// It will be authenticated with the given authenticator.
-	ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error)
+	ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts SourcerOpts) (ChangesetSource, error)
 }
 
 // NewSourcer returns a new Sourcer to be used in Batch Changes.
@@ -136,7 +149,7 @@ func newSourcer(cf *httpcli.Factory, csf changesetSourceFactory) Sourcer {
 	}
 }
 
-func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy, targetRepo *types.Repo) (ChangesetSource, error) {
+func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, targetRepo *types.Repo, opts SourcerOpts) (ChangesetSource, error) {
 	repo, err := tx.Repos().Get(ctx, ch.RepoID)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading changeset repo")
@@ -150,7 +163,7 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 		return nil, errors.Wrap(err, "loading external service")
 	}
 
-	if as == AuthenticationStrategyGitHubApp && extSvc.Kind != extsvc.KindGitHub {
+	if opts.AuthenticationStrategy == AuthenticationStrategyGitHubApp && extSvc.Kind != extsvc.KindGitHub {
 		return nil, ErrExternalServiceNotGitHub
 	}
 
@@ -159,45 +172,8 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 		return nil, err
 	}
 
-	if as == AuthenticationStrategyGitHubApp {
-		cs, err := tx.GetChangesetSpecByID(ctx, ch.CurrentSpecID)
-		if err != nil {
-			return nil, errors.Wrap(err, "getting changeset spec")
-		}
-
-		var owner string
-		// We check if the changeset is meant to be pushed to a fork.
-		// If yes, then we try to figure out the user namespace and get a github app for the user namespace.
-		if cs.IsFork() {
-			// forkNamespace is nil returns a non-nil value if the fork namespace is explicitly defined
-			// e.g sourcegraph.
-			// if it isn't then we assume the changeset will be forked into the current user's namespace
-			forkNamespace := cs.GetForkNamespace()
-			if forkNamespace != nil {
-				owner = *forkNamespace
-			} else {
-				u, err := getCloneURL(targetRepo)
-				if err != nil {
-					return nil, errors.Wrap(err, "getting url for forked changeset")
-				}
-
-				owner, _, err = github.SplitRepositoryNameWithOwner(strings.TrimPrefix(u.Path, "/"))
-				if err != nil {
-					return nil, errors.Wrap(err, "getting owner from repo name")
-				}
-			}
-		} else {
-			// Get owner from repo metadata. We expect repo.Metadata to be a github.Repository because the
-			// authentication strategy `AuthenticationStrategyGitHubApp` only applies to GitHub repositories.
-			// so this is a safe type cast.
-			repoMetadata := repo.Metadata.(*github.Repository)
-			owner, _, err = github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
-			if err != nil {
-				return nil, errors.Wrap(err, "getting owner from repo name")
-			}
-		}
-
-		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner)
+	if opts.AsNonCredential {
+		return s.createChangesetSourceForGHApp(ctx, tx, css, extSvc, ch, targetRepo, repo, opts)
 	}
 
 	if ch.OwnedByBatchChangeID != 0 {
@@ -210,6 +186,79 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 	}
 
 	return withSiteAuthenticator(ctx, tx, css, repo)
+}
+
+// createChangesetSourceForGHApp creates a changeset source that is authenticated with a GitHub app.
+func (s *sourcer) createChangesetSourceForGHApp(
+	ctx context.Context,
+	tx SourcerStore,
+	css ChangesetSource,
+	extSvc *types.ExternalService,
+	ch *btypes.Changeset,
+	targetRepo *types.Repo,
+	repo *types.Repo,
+	opts SourcerOpts,
+) (ChangesetSource, error) {
+	if opts.AuthenticationStrategy != AuthenticationStrategyGitHubApp {
+		return nil, errors.New("commit signing is only supported for GitHub apps")
+	}
+
+	var owner string
+	if ch != nil {
+		changesetOwner, err := getOwnerFromChangeset(ctx, tx, ch, targetRepo, repo)
+		if err != nil {
+			return nil, err
+		}
+		owner = changesetOwner
+	} else {
+		owner = opts.GitHubAppAccount
+	}
+
+	if opts.GitHubAppKind == "" {
+		return nil, errors.New("ForChangeset with AuthenticationStrategyGitHubApp must be called with a gitHubAppKind, but was called with empty string.")
+	}
+	return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner, opts.GitHubAppKind)
+}
+
+func getOwnerFromChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, targetRepo, repo *types.Repo) (string, error) {
+	cs, err := tx.GetChangesetSpecByID(ctx, ch.CurrentSpecID)
+	if err != nil {
+		return "", errors.Wrap(err, "getting changeset spec")
+	}
+
+	var owner string
+	// We check if the changeset is meant to be pushed to a fork.
+	// If yes, then we try to figure out the user namespace and get a GitHub app for the user namespace.
+	if cs.IsFork() {
+		// forkNamespace is nil returns a non-nil value if the fork namespace is explicitly defined
+		// e.g. Sourcegraph.
+		// if it isn't then we assume the changeset will be forked into the current user's namespace
+		forkNamespace := cs.GetForkNamespace()
+		if forkNamespace != nil {
+			owner = *forkNamespace
+		} else {
+			u, err := getCloneURL(targetRepo)
+			if err != nil {
+				return "", errors.Wrap(err, "getting url for forked changeset")
+			}
+
+			owner, _, err = github.SplitRepositoryNameWithOwner(strings.TrimPrefix(u.Path, "/"))
+			if err != nil {
+				return "", errors.Wrap(err, "getting owner from repo name")
+			}
+		}
+	} else {
+		// Get owner from repo metadata. We expect repo.Metadata to be a github.Repository because the
+		// authentication strategy `AuthenticationStrategyGitHubApp` only applies to GitHub repositories.
+		// so this is a safe type cast.
+		repoMetadata := repo.Metadata.(*github.Repository)
+		owner, _, err = github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
+		if err != nil {
+			return "", errors.Wrap(err, "getting owner from repo name")
+		}
+	}
+
+	return owner, nil
 }
 
 func (s *sourcer) ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChangesetSource, error) {
@@ -227,13 +276,16 @@ func (s *sourcer) ForUser(ctx context.Context, tx SourcerStore, uid int32, repo 
 	return withAuthenticatorForUser(ctx, tx, css, uid, repo)
 }
 
-func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error) {
+func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts SourcerOpts) (ChangesetSource, error) {
 	// Empty authenticators are not allowed.
 	if au == nil {
 		return nil, ErrMissingCredentials
 	}
 
-	extSvcIDs, err := tx.GetExternalServiceIDs(ctx, opts)
+	extSvcIDs, err := tx.GetExternalServiceIDs(ctx, store.GetExternalServiceIDsOpts{
+		ExternalServiceType: opts.ExternalServiceType,
+		ExternalServiceID:   opts.ExternalServiceID,
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service IDs")
 	}
@@ -249,6 +301,10 @@ func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au au
 	if err != nil {
 		return nil, err
 	}
+
+	if opts.AsNonCredential {
+		return s.createChangesetSourceForGHApp(ctx, tx, css, extSvc, nil, nil, nil, opts)
+	}
 	return css.WithAuthenticator(au)
 }
 
@@ -263,7 +319,7 @@ func loadBatchesSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory
 // GitserverPushConfig creates a push configuration given a repo and an
 // authenticator. This function is only public for testing purposes, and should
 // not be used otherwise.
-func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
+func GitserverPushConfig(ctx context.Context, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
 	// Empty authenticators are not allowed.
 	if au == nil {
 		return nil, ErrNoPushCredentials{}
@@ -305,6 +361,16 @@ func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.Pus
 		}
 	case *auth.BasicAuth:
 		if err := setBasicAuth(cloneURL, extSvcType, av.Username, av.Password); err != nil {
+			return nil, err
+		}
+	case *ghauth.InstallationAuthenticator:
+		if av.NeedsRefresh() {
+			if err := av.Refresh(ctx, httpcli.ExternalClient); err != nil {
+				return nil, err
+			}
+		}
+		t := av.GetToken()
+		if err := setGitHubAppInstallationToken(cloneURL, extSvcType, t.Token); err != nil {
 			return nil, err
 		}
 	default:
@@ -351,7 +417,7 @@ func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*btypes
 // App has been configured for it, ErrNoGitHubAppConfigured is returned. If a batches
 // domain GitHub App has been configured, but no installation exists for the given
 // account, ErrNoGitHubAppInstallation is returned.
-func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, extSvc *types.ExternalService, account string) (ChangesetSource, error) {
+func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, extSvc *types.ExternalService, account string, kind ghtypes.GitHubAppKind) (ChangesetSource, error) {
 	if extSvc.Kind != extsvc.KindGitHub {
 		return nil, ErrExternalServiceNotGitHub
 	}
@@ -371,7 +437,7 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 	}
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 
-	app, err := tx.GitHubAppsStore().GetByDomain(ctx, types.BatchesGitHubAppDomain, baseURL.String())
+	app, err := tx.GitHubAppsStore().GetByDomainAndKind(ctx, types.BatchesGitHubAppDomain, kind, baseURL.String())
 	if err != nil {
 		return nil, ErrNoGitHubAppConfigured
 	}
@@ -381,7 +447,7 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 		return nil, ErrNoGitHubAppInstallation
 	}
 
-	appAuther, err := ghaauth.NewGitHubAppAuthenticator(app.AppID, []byte(app.PrivateKey))
+	appAuther, err := ghauth.NewGitHubAppAuthenticator(app.AppID, []byte(app.PrivateKey))
 	if err != nil {
 		return nil, errors.Wrap(err, "creating GitHub App authenticator")
 	}
@@ -398,7 +464,7 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 	// a GitHub App authenticated on behalf of a user, we should switch to using that
 	// access token here. See here for more details:
 	// https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app
-	installationAuther := ghaauth.NewInstallationAccessToken(baseURL, installID, appAuther, keyring.Default().GitHubAppKey)
+	installationAuther := ghauth.NewInstallationAccessToken(baseURL, installID, appAuther, keyring.Default().GitHubAppKey)
 
 	return css.WithAuthenticator(installationAuther)
 }
@@ -424,10 +490,7 @@ func withAuthenticatorForUser(ctx context.Context, tx SourcerStore, css Changese
 // If no credential is found, the original source is returned and uses the external service
 // config.
 func withSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, repo *types.Repo) (ChangesetSource, error) {
-	cred, err := loadSiteCredential(ctx, tx, store.GetSiteCredentialOpts{
-		ExternalServiceType: repo.ExternalRepo.ServiceType,
-		ExternalServiceID:   repo.ExternalRepo.ServiceID,
-	})
+	cred, err := loadSiteCredential(ctx, tx, repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading site credential")
 	}
@@ -503,20 +566,29 @@ func loadUserCredential(ctx context.Context, s SourcerStore, userID int32, repo 
 		return nil, err
 	}
 	if cred != nil {
-		return cred.Authenticator(ctx)
+		return cred.Authenticator(ctx, ghauth.CreateAuthenticatorForCredentialOpts{
+			Repo:           repo,
+			GitHubAppStore: s.GitHubAppsStore(),
+		})
 	}
 	return nil, nil
 }
 
 // loadSiteCredential attempts to find a site credential for the given repo.
 // When no credential is found, nil is returned.
-func loadSiteCredential(ctx context.Context, s SourcerStore, opts store.GetSiteCredentialOpts) (auth.Authenticator, error) {
-	cred, err := s.GetSiteCredential(ctx, opts)
+func loadSiteCredential(ctx context.Context, s SourcerStore, repo *types.Repo) (auth.Authenticator, error) {
+	cred, err := s.GetSiteCredential(ctx, store.GetSiteCredentialOpts{
+		ExternalServiceType: repo.ExternalRepo.ServiceType,
+		ExternalServiceID:   repo.ExternalRepo.ServiceID,
+	})
 	if err != nil && err != store.ErrNoResults {
 		return nil, err
 	}
 	if cred != nil {
-		return cred.Authenticator(ctx)
+		return cred.Authenticator(ctx, ghauth.CreateAuthenticatorForCredentialOpts{
+			Repo:           repo,
+			GitHubAppStore: s.GitHubAppsStore(),
+		})
 	}
 	return nil, nil
 }
@@ -524,18 +596,23 @@ func loadSiteCredential(ctx context.Context, s SourcerStore, opts store.GetSiteC
 // setOAuthTokenAuth sets the user part of the given URL to use the provided OAuth token,
 // with the specific quirks per code host.
 func setOAuthTokenAuth(u *vcs.URL, extSvcType, token string) error {
+	// @BolajiOlajide I found a bug in the existing credential validation (especially with GitHub) where a leading or trailing
+	// space in a PAT is ignored by GitHub and that credential is marked as valid.
+	// However, if stored in the database, the leading/trailing space is preserved and the PAT when used to push a commit
+	// will fail. The URL returned looks like `https://%20<TOKEN>@github.com/sourcegraph/sourcegraph.git` which is invalid.
+	trimmedToken := strings.TrimSpace(token)
 	switch extSvcType {
 	case extsvc.TypeGitHub:
-		u.User = url.User(token)
+		u.User = url.User(trimmedToken)
 
 	case extsvc.TypeGitLab:
-		u.User = url.UserPassword("git", token)
+		u.User = url.UserPassword("git", trimmedToken)
 
 	case extsvc.TypeBitbucketServer:
 		return errors.New("require username/token to push commits to BitbucketServer")
 
 	default:
-		panic(fmt.Sprintf("setOAuthTokenAuth: invalid external service type %q", extSvcType))
+		return errors.Newf("setOAuthTokenAuth: invalid external service type %q", extSvcType)
 	}
 	return nil
 }
@@ -551,6 +628,16 @@ func setBasicAuth(u *vcs.URL, extSvcType, username, password string) error {
 
 	default:
 		panic(fmt.Sprintf("setBasicAuth: invalid external service type %q", extSvcType))
+	}
+	return nil
+}
+
+func setGitHubAppInstallationToken(u *vcs.URL, extSvcType, token string) error {
+	switch extSvcType {
+	case extsvc.TypeGitHub:
+		u.User = url.UserPassword("x-access-token", token)
+	default:
+		return errors.Newf("setGitHubAppInstallationToken: invalid external service type %q", extSvcType)
 	}
 	return nil
 }

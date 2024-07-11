@@ -177,20 +177,7 @@ exports[`FormActionArea > Error is shown if code monitor has empty description 1
           class="font-weight-bold cardLink"
         >
           <div>
-            Send Slack message to channel 
-            <span
-              style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
-            >
-              This feature is currently in beta
-            </span>
-            <span
-              aria-hidden="true"
-              class="badge info productStatusBadge ml-1 mb-1"
-              status="beta"
-            >
-              beta
-            </span>
-             
+            Send Slack message to channel
           </div>
         </div>
         <span

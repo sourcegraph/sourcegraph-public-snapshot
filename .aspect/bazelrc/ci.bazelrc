@@ -1,10 +1,3 @@
-# We recommend enforcing a policy that keeps your CI from being slowed down
-# by individual test targets that should be optimized
-# or split up into multiple test targets with sharding or manually.
-# Set this flag to exclude targets that have their timeout set to eternal (>15m) from running on CI.
-# Docs: https://bazel.build/docs/user-manual#test-timeout-filters
-test --test_timeout_filters=-eternal
-
 # Set this flag to enable re-tries of failed tests on CI.
 # When any test target fails, try one or more times. This applies regardless of whether the "flaky"
 # tag appears on the target definition.

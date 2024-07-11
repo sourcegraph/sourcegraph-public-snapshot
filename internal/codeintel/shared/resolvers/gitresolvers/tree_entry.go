@@ -42,14 +42,14 @@ func NewGitTreeEntryResolver(commit resolvers.GitCommitResolver, path string, is
 	}
 }
 
-func (r *treeEntryResolver) Repository() resolvers.RepositoryResolver          { return r.commit.Repository() }
-func (r *treeEntryResolver) Commit() resolvers.GitCommitResolver               { return r.commit }
-func (r *treeEntryResolver) Path() string                                      { return r.path }
-func (r *treeEntryResolver) Name() string                                      { return stdpath.Base(r.path) }
-func (r *treeEntryResolver) URL() string                                       { return r.commit.URI() + r.uriSuffix }
-func (r *treeEntryResolver) RecordID() string                                  { return r.path }
-func (r *treeEntryResolver) ToGitTree() (resolvers.GitTreeEntryResolver, bool) { return r, r.isDir }
-func (r *treeEntryResolver) ToGitBlob() (resolvers.GitTreeEntryResolver, bool) { return r, !r.isDir }
+func (r *treeEntryResolver) Repository() resolvers.RepositoryResolver     { return r.commit.Repository() }
+func (r *treeEntryResolver) Commit() resolvers.GitCommitResolver          { return r.commit }
+func (r *treeEntryResolver) Path() string                                 { return r.path }
+func (r *treeEntryResolver) Name() string                                 { return stdpath.Base(r.path) }
+func (r *treeEntryResolver) URL() string                                  { return r.commit.URI() + r.uriSuffix }
+func (r *treeEntryResolver) RecordID() string                             { return r.path }
+func (r *treeEntryResolver) ToGitTree() (resolvers.GitBlobResolver, bool) { return r, r.isDir }
+func (r *treeEntryResolver) ToGitBlob() (resolvers.GitTreeResolver, bool) { return r, !r.isDir }
 
 func (r *treeEntryResolver) Content(ctx context.Context, args *resolvers.GitTreeContentPageArgs) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)

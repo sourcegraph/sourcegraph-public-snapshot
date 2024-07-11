@@ -3,7 +3,11 @@ package codenav
 import (
 	"sync"
 
+	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -25,9 +29,22 @@ type RequestState struct {
 
 	authChecker authz.SubRepoPermissionChecker
 
-	RepositoryID int
-	Commit       string
-	Path         string
+	RepositoryID api.RepoID
+	Commit       api.CommitID
+	Path         core.RepoRelPath
+}
+
+func (r *RequestState) Attrs() []attribute.KeyValue {
+	out := []attribute.KeyValue{
+		attribute.Int("repositoryID", int(r.RepositoryID)),
+		attribute.String("commit", string(r.Commit)),
+		attribute.String("path", r.Path.RawValue()),
+	}
+	if r.dataLoader != nil {
+		uploads := r.dataLoader.uploads
+		out = append(out, attribute.Int("numUploads", len(uploads)), attribute.String("uploads", uploadIDsToString(uploads)))
+	}
+	return out
 }
 
 func NewRequestState(
@@ -36,20 +53,20 @@ func NewRequestState(
 	authChecker authz.SubRepoPermissionChecker,
 	gitserverClient gitserver.Client,
 	repo *sgTypes.Repo,
-	commit string,
-	path string,
+	commit api.CommitID,
+	path core.RepoRelPath,
 	maxIndexes int,
 	hunkCache HunkCache,
 ) RequestState {
 	r := &RequestState{
 		// repoStore:    repoStore,
-		RepositoryID: int(repo.ID),
+		RepositoryID: repo.ID,
 		Commit:       commit,
 		Path:         path,
 	}
 	r.SetUploadsDataLoader(uploads)
 	r.SetAuthChecker(authChecker)
-	r.SetLocalGitTreeTranslator(gitserverClient, repo, commit, path, hunkCache)
+	r.SetLocalGitTreeTranslator(gitserverClient, repo, commit, hunkCache)
 	r.SetLocalCommitCache(repoStore, gitserverClient)
 	r.SetMaximumIndexesPerMonikerSearch(maxIndexes)
 
@@ -79,11 +96,10 @@ func (r *RequestState) SetUploadsDataLoader(uploads []shared.CompletedUpload) {
 	}
 }
 
-func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *sgTypes.Repo, commit, path string, hunkCache HunkCache) {
-	args := &requestArgs{
-		repo:   repo,
-		commit: commit,
-		path:   path,
+func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *sgTypes.Repo, commit api.CommitID, hunkCache HunkCache) {
+	args := &TranslationBase{
+		Repo:   repo,
+		Commit: commit,
 	}
 
 	r.GitTreeTranslator = NewGitTreeTranslator(client, args, hunkCache)

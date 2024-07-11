@@ -7,12 +7,11 @@ go_library(
         "branch.go",
         "checker.go",
         "failures.go",
-        "history.go",
         "main.go",
-        "report.go",
         "slack.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/buildchecker",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/team",
@@ -20,7 +19,6 @@ go_library(
         "//lib/pointers",
         "@com_github_buildkite_go_buildkite_v3//buildkite",
         "@com_github_google_go_github_v55//github",
-        "@com_github_honeycombio_libhoney_go//:libhoney-go",
         "@com_github_slack_go_slack//:slack",
         "@org_golang_x_oauth2//:oauth2",
     ],
@@ -29,6 +27,7 @@ go_library(
 go_binary(
     name = "buildchecker",
     embed = [":buildchecker_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )
 
@@ -39,11 +38,11 @@ go_test(
         "branch_test.go",
         "checker_test.go",
         "failures_test.go",
-        "history_test.go",
         "slack_test.go",
     ],
     data = glob(["testdata/**"]),
     embed = [":buildchecker_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "//dev/team",
         "//internal/httptestutil",

@@ -381,3 +381,8 @@ func (r *NodeResolver) ToSearchJob() (SearchJobResolver, bool) {
 	n, ok := r.Node.(SearchJobResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToCodeGraphData() (resolverstubs.CodeGraphDataResolver, bool) {
+	n, ok := r.Node.(resolverstubs.CodeGraphDataResolver)
+	return n, ok
+}
