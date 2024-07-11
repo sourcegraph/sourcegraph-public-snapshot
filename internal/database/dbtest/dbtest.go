@@ -69,6 +69,13 @@ func NewDB(t testing.TB) *sql.DB {
 	return newDB(logger, t, "migrated", schemas.Frontend, schemas.CodeIntel)
 }
 
+// NewCodeintelDB returns a connection to a new clean temporary testing database
+// with only the codeintel schema applied
+func NewCodeintelDB(t testing.TB) *sql.DB {
+	logger := logtest.Scoped(t)
+	return newDB(logger, t, "migrated-codeintel", schemas.CodeIntel)
+}
+
 // NewDBAtRev returns a connection to a clean, new temporary testing database with
 // the same schema as Sourcegraph's production Postgres database at the given revision.
 func NewDBAtRev(logger log.Logger, t testing.TB, rev string) *sql.DB {

@@ -2,14 +2,14 @@ import React, { useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Routes, Route } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 
 import type { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
@@ -20,15 +20,14 @@ import { Page } from '../components/Page'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useUserExternalAccounts } from '../hooks/useUserExternalAccounts'
 import type { RouteV6Descriptor } from '../util/contributions'
-import { getLicenseFeatures } from '../util/license'
 
 import {
     maintenanceGroupHeaderLabel,
     maintenanceGroupInstrumentationItemLabel,
-    maintenanceGroupMonitoringItemLabel,
     maintenanceGroupMigrationsItemLabel,
-    maintenanceGroupUpdatesItemLabel,
+    maintenanceGroupMonitoringItemLabel,
     maintenanceGroupTracingItemLabel,
+    maintenanceGroupUpdatesItemLabel,
 } from './sidebaritems'
 import { SiteAdminSidebar, type SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
@@ -62,11 +61,6 @@ export interface SiteAdminAreaRouteContext
     codeInsightsEnabled: boolean
 
     endUserOnboardingEnabled: boolean
-
-    license: {
-        isCodeSearchEnabled: boolean
-        isCodyEnabled: boolean
-    }
 }
 
 export interface SiteAdminAreaRoute extends RouteV6Descriptor<SiteAdminAreaRouteContext> {}
@@ -149,7 +143,6 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         telemetryRecorder: props.telemetryRecorder,
         codeInsightsEnabled: props.codeInsightsEnabled,
         endUserOnboardingEnabled,
-        license: getLicenseFeatures(),
     }
 
     return (
@@ -161,7 +154,6 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
             </PageHeader>
             <div className="d-flex my-3 flex-column flex-sm-row" ref={reference}>
                 <SiteAdminSidebar
-                    license={context.license}
                     className={classNames('flex-0 mr-3 mb-4', styles.sidebar)}
                     groups={adminSideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}

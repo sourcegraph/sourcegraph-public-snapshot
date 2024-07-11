@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "database",
+    srcs = [
+        "database.go",
+        "migrate.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database",
+    tags = [TAG_INFRA_CORESERVICES],
+    visibility = ["//cmd/enterprise-portal:__subpackages__"],
+    deps = [
+        "//cmd/enterprise-portal/internal/database/internal/tables",
+        "//cmd/enterprise-portal/internal/database/subscriptions",
+        "//lib/errors",
+        "//lib/managedservicesplatform/runtime",
+        "//lib/redislock",
+        "@com_github_jackc_pgx_v5//pgxpool",
+        "@com_github_redis_go_redis_v9//:go-redis",
+        "@com_github_sourcegraph_log//:log",
+        "@io_gorm_driver_postgres//:postgres",
+        "@io_gorm_gorm//:gorm",
+        "@io_gorm_gorm//logger",
+        "@io_gorm_plugin_opentelemetry//tracing",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel//codes",
+        "@io_opentelemetry_go_otel_trace//:trace",
+    ],
+)

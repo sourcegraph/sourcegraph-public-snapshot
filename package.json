@@ -47,7 +47,8 @@
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
     "build-browser-extension": "pnpm --filter @sourcegraph/browser run build",
     "chromatic": "CHROMATIC=true pnpm run _chromatic --storybook-config-dir client/storybook/src --build-script-name=storybook:build",
-    "_chromatic": "chromatic"
+    "_chromatic": "chromatic",
+    "install:browsers": "pnpm -r install:browsers"
   },
   "jscpd": {
     "gitignore": true,
@@ -72,8 +73,6 @@
     "@graphql-codegen/typescript-operations": "2.5.10",
     "@ianvs/prettier-plugin-sort-imports": "^3.7.1",
     "@octokit/rest": "^16.36.0",
-    "@percy/cli": "^1.24.0",
-    "@percy/puppeteer": "^2.0.2",
     "@pollyjs/adapter": "^5.0.0",
     "@pollyjs/core": "^5.1.0",
     "@pollyjs/persister-fs": "^5.0.0",
@@ -313,6 +312,7 @@
     "@sourcegraph/extension-api-classes": "^1.1.0",
     "@stripe/react-stripe-js": "^2.7.0",
     "@stripe/stripe-js": "^3.3.0",
+    "@tanstack/react-query": "^5.39.0",
     "@testing-library/react": "^13.4.0",
     "@visx/annotation": "^2.10.0",
     "@visx/axis": "^2.11.1",
@@ -333,6 +333,7 @@
     "bloomfilter": "^0.0.18",
     "buffer": "^6.0.3",
     "classnames": "^2.2.6",
+    "cody-web-experimental": "^0.2.4",
     "comlink": "^4.3.0",
     "copy-to-clipboard": "^3.3.1",
     "core-js": "^3.8.2",
@@ -426,7 +427,11 @@
     "webextension-polyfill": "^0.6.0",
     "whatwg-url": "^14.0.0",
     "yaml-ast-parser": "^0.0.43",
-    "zustand": "^3.6.9"
+    "zustand": "^3.6.9",
+    "@bufbuild/protobuf": "^1.10.0",
+    "@connectrpc/connect": "^1.4.0",
+    "@connectrpc/connect-query": "^1.4.1",
+    "@connectrpc/connect-web": "^1.4.0"
   },
   "packageManager": "pnpm@8.9.2",
   "pnpm": {
@@ -446,9 +451,19 @@
           "node-gyp": "*"
         }
       },
-      "@percy/sdk-utils": {
+      "mz": {
         "dependencies": {
-          "ws": "*"
+          "graceful-fs": "*"
+        }
+      },
+      "follow-redirects": {
+        "dependencies": {
+          "debug": "*"
+        }
+      },
+      "debug": {
+        "dependencies": {
+          "supports-color": "*"
         }
       },
       "@graphql-codegen/cli@5": {

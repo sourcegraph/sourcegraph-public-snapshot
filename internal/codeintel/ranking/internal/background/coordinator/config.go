@@ -13,5 +13,5 @@ type Config struct {
 }
 
 func (c *Config) Load() {
-	c.Interval = c.GetInterval("CODEINTEL_RANKING_COORDINATOR_INTERVAL", "1s", "How frequently to run the ranking coordinator.")
+	c.Interval = c.GetInterval("CODEINTEL_RANKING_COORDINATOR_INTERVAL", "30s", "How frequently to run the ranking coordinator.")
 }

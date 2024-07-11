@@ -29,7 +29,15 @@ func (g *gitCLIBackend) GetCommit(ctx context.Context, commit api.CommitID, incl
 		return nil, err
 	}
 
-	args := buildGetCommitArgs(commit, includeModifiedFiles)
+	// commit sometimes is not a commitID today, so we run a revparse first to make
+	// sure we're dealing with a commit ID. This will also report errors like
+	// "cannot resolve to commit" as a RevisionNotFoundError.
+	commitID, err := g.revParse(ctx, string(commit))
+	if err != nil {
+		return nil, err
+	}
+
+	args := buildGetCommitArgs(commitID, includeModifiedFiles)
 
 	r, err := g.NewCommand(ctx, WithArguments(args...))
 	if err != nil {
@@ -42,7 +50,7 @@ func (g *gitCLIBackend) GetCommit(ctx context.Context, commit api.CommitID, incl
 		// If exit code is 128 and `fatal: bad object` is part of stderr, most likely we
 		// are referencing a commit that does not exist.
 		// We want to return a gitdomain.RevisionNotFoundError in that case.
-		var e *CommandFailedError
+		var e *commandFailedError
 		if errors.As(err, &e) && e.ExitStatus == 128 && bytes.Contains(e.Stderr, []byte("fatal: bad object")) {
 			return nil, &gitdomain.RevisionNotFoundError{Repo: g.repoName, Spec: string(commit)}
 		}
@@ -50,7 +58,7 @@ func (g *gitCLIBackend) GetCommit(ctx context.Context, commit api.CommitID, incl
 		return nil, err
 	}
 
-	c, err := parseCommitLogOutput(bytes.TrimPrefix(rawCommit, []byte{'\x1e'}))
+	c, err := parseCommitFromLog(bytes.TrimPrefix(rawCommit, []byte{'\x1e'}))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse commit log output")
 	}
@@ -88,19 +96,15 @@ const (
 	logFormatWithoutRefs = "--format=format:%x1e%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
 )
 
-func parseCommitLogOutput(rawCommit []byte) (*git.GitCommitWithFiles, error) {
+// parseCommitFromLog parses the next commit from data and returns the commit and the remaining
+// data. The data arg is a byte array that contains NUL-separated log fields as formatted by
+// logFormatFlag.
+func parseCommitFromLog(rawCommit []byte) (*git.GitCommitWithFiles, error) {
 	parts := bytes.Split(rawCommit, []byte{'\x00'})
 	if len(parts) != partsPerCommit {
 		return nil, errors.Newf("internal error: expected %d parts, got %d", partsPerCommit, len(parts))
 	}
 
-	return parseCommitFromLog(parts)
-}
-
-// parseCommitFromLog parses the next commit from data and returns the commit and the remaining
-// data. The data arg is a byte array that contains NUL-separated log fields as formatted by
-// logFormatFlag.
-func parseCommitFromLog(parts [][]byte) (*git.GitCommitWithFiles, error) {
 	// log outputs are newline separated, so all but the 1st commit ID part
 	// has an erroneous leading newline.
 	parts[0] = bytes.TrimPrefix(parts[0], []byte{'\n'})
@@ -171,7 +175,7 @@ func (g *gitCLIBackend) getBlobOID(ctx context.Context, commit api.CommitID, pat
 		// If exit code is 128 and `not a tree object` is part of stderr, most likely we
 		// are referencing a commit that does not exist.
 		// We want to return a gitdomain.RevisionNotFoundError in that case.
-		var e *CommandFailedError
+		var e *commandFailedError
 		if errors.As(err, &e) && e.ExitStatus == 128 {
 			if bytes.Contains(e.Stderr, []byte("not a tree object")) || bytes.Contains(e.Stderr, []byte("Not a valid object name")) {
 				return "", &gitdomain.RevisionNotFoundError{Repo: g.repoName, Spec: string(commit)}
@@ -221,7 +225,7 @@ func (g *gitCLIBackend) BehindAhead(ctx context.Context, left, right string) (*g
 
 	out, err := io.ReadAll(rc)
 	if err != nil {
-		var e *CommandFailedError
+		var e *commandFailedError
 		if errors.As(err, &e) {
 			switch {
 			case e.ExitStatus == 128 && bytes.Contains(e.Stderr, []byte("fatal: ambiguous argument")):
@@ -258,7 +262,7 @@ func (g *gitCLIBackend) FirstEverCommit(ctx context.Context) (api.CommitID, erro
 
 	out, err := io.ReadAll(rc)
 	if err != nil {
-		var cmdFailedErr *CommandFailedError
+		var cmdFailedErr *commandFailedError
 		if errors.As(err, &cmdFailedErr) {
 			if cmdFailedErr.ExitStatus == 129 && bytes.Contains(cmdFailedErr.Stderr, []byte(revListUsageString)) {
 				// If the error is due to an empty repository, return a sentinel error.
@@ -296,7 +300,7 @@ func (g *gitCLIBackend) Stat(ctx context.Context, commit api.CommitID, path stri
 	if path == "" || path == "." {
 		rev, err := g.revParse(ctx, string(commit)+"^{tree}")
 		if err != nil {
-			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 				return nil, &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
 			}
 			return nil, err
@@ -486,7 +490,7 @@ func (it *readDirIterator) Next() (fs.FileInfo, error) {
 	}
 
 	if err := it.sc.Err(); err != nil {
-		var cfe *CommandFailedError
+		var cfe *commandFailedError
 		if errors.As(err, &cfe) {
 			if bytes.Contains(cfe.Stderr, []byte("exists on disk, but not in")) {
 				return nil, &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(it.path), Err: os.ErrNotExist}
@@ -511,7 +515,7 @@ func (it *readDirIterator) Next() (fs.FileInfo, error) {
 
 func (it *readDirIterator) Close() error {
 	if err := it.r.Close(); err != nil {
-		var cfe *CommandFailedError
+		var cfe *commandFailedError
 		if errors.As(err, &cfe) {
 			if bytes.Contains(cfe.Stderr, []byte("exists on disk, but not in")) {
 				return &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(it.path), Err: os.ErrNotExist}

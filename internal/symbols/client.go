@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
@@ -34,7 +33,6 @@ func LoadConfig() {
 	DefaultClient = &Client{
 		Endpoints:           defaultEndpoints(),
 		GRPCConnectionCache: defaults.NewConnectionCache(log.Scoped("symbolsConnectionCache")),
-		HTTPLimiter:         limiter.New(500),
 		SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
 	}
 }
@@ -49,9 +47,6 @@ type Client struct {
 	Endpoints *endpoint.Map
 
 	GRPCConnectionCache *defaults.ConnectionCache
-
-	// Limits concurrency of outstanding HTTP posts
-	HTTPLimiter limiter.Limiter
 
 	// SubRepoPermsChecker is function to return the checker to use. It needs to be a
 	// function since we expect the client to be set at runtime once we have a
@@ -192,26 +187,11 @@ func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint)
 	}
 
 	// 🚨 SECURITY: We have a valid result, so we need to apply sub-repo permissions filtering.
-	if c.SubRepoPermsChecker == nil {
-		return result, err
-	}
-
-	checker := c.SubRepoPermsChecker()
-	if !authz.SubRepoEnabled(checker) {
-		return result, err
-	}
-
-	a := actor.FromContext(ctx)
-	// Filter in place
-	rc := authz.RepoContent{
-		Repo: api.RepoName(args.Repo),
-		Path: args.Path,
-	}
-	perm, err := authz.ActorPermissions(ctx, checker, a, rc)
+	ok, err := authz.FilterActorPath(ctx, c.SubRepoPermsChecker(), actor.FromContext(ctx), api.RepoName(args.Repo), args.Path)
 	if err != nil {
 		return nil, errors.Wrap(err, "checking sub-repo permissions")
 	}
-	if !perm.Include(authz.Read) {
+	if !ok {
 		return nil, nil
 	}
 

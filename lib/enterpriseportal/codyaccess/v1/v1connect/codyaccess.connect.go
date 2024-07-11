@@ -39,6 +39,12 @@ const (
 	// CodyAccessServiceListCodyGatewayAccessesProcedure is the fully-qualified name of the
 	// CodyAccessService's ListCodyGatewayAccesses RPC.
 	CodyAccessServiceListCodyGatewayAccessesProcedure = "/enterpriseportal.codyaccess.v1.CodyAccessService/ListCodyGatewayAccesses"
+	// CodyAccessServiceUpdateCodyGatewayAccessProcedure is the fully-qualified name of the
+	// CodyAccessService's UpdateCodyGatewayAccess RPC.
+	CodyAccessServiceUpdateCodyGatewayAccessProcedure = "/enterpriseportal.codyaccess.v1.CodyAccessService/UpdateCodyGatewayAccess"
+	// CodyAccessServiceGetCodyGatewayUsageProcedure is the fully-qualified name of the
+	// CodyAccessService's GetCodyGatewayUsage RPC.
+	CodyAccessServiceGetCodyGatewayUsageProcedure = "/enterpriseportal.codyaccess.v1.CodyAccessService/GetCodyGatewayUsage"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -46,6 +52,8 @@ var (
 	codyAccessServiceServiceDescriptor                       = v1.File_codyaccess_proto.Services().ByName("CodyAccessService")
 	codyAccessServiceGetCodyGatewayAccessMethodDescriptor    = codyAccessServiceServiceDescriptor.Methods().ByName("GetCodyGatewayAccess")
 	codyAccessServiceListCodyGatewayAccessesMethodDescriptor = codyAccessServiceServiceDescriptor.Methods().ByName("ListCodyGatewayAccesses")
+	codyAccessServiceUpdateCodyGatewayAccessMethodDescriptor = codyAccessServiceServiceDescriptor.Methods().ByName("UpdateCodyGatewayAccess")
+	codyAccessServiceGetCodyGatewayUsageMethodDescriptor     = codyAccessServiceServiceDescriptor.Methods().ByName("GetCodyGatewayUsage")
 )
 
 // CodyAccessServiceClient is a client for the enterpriseportal.codyaccess.v1.CodyAccessService
@@ -55,6 +63,12 @@ type CodyAccessServiceClient interface {
 	GetCodyGatewayAccess(context.Context, *connect.Request[v1.GetCodyGatewayAccessRequest]) (*connect.Response[v1.GetCodyGatewayAccessResponse], error)
 	// List all Cody Gateway accesses granted to any Enterprise subscription.
 	ListCodyGatewayAccesses(context.Context, *connect.Request[v1.ListCodyGatewayAccessesRequest]) (*connect.Response[v1.ListCodyGatewayAccessesResponse], error)
+	// UpdateEnterpriseSubscription updates the Cody Gateway access granted to an
+	// Enterprise subscription.
+	UpdateCodyGatewayAccess(context.Context, *connect.Request[v1.UpdateCodyGatewayAccessRequest]) (*connect.Response[v1.UpdateCodyGatewayAccessResponse], error)
+	// GetCodyGatewayUsage returns data about a subscription's recent usage of
+	// Cody Gateway.
+	GetCodyGatewayUsage(context.Context, *connect.Request[v1.GetCodyGatewayUsageRequest]) (*connect.Response[v1.GetCodyGatewayUsageResponse], error)
 }
 
 // NewCodyAccessServiceClient constructs a client for the
@@ -82,6 +96,20 @@ func NewCodyAccessServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
+		updateCodyGatewayAccess: connect.NewClient[v1.UpdateCodyGatewayAccessRequest, v1.UpdateCodyGatewayAccessResponse](
+			httpClient,
+			baseURL+CodyAccessServiceUpdateCodyGatewayAccessProcedure,
+			connect.WithSchema(codyAccessServiceUpdateCodyGatewayAccessMethodDescriptor),
+			connect.WithIdempotency(connect.IdempotencyIdempotent),
+			connect.WithClientOptions(opts...),
+		),
+		getCodyGatewayUsage: connect.NewClient[v1.GetCodyGatewayUsageRequest, v1.GetCodyGatewayUsageResponse](
+			httpClient,
+			baseURL+CodyAccessServiceGetCodyGatewayUsageProcedure,
+			connect.WithSchema(codyAccessServiceGetCodyGatewayUsageMethodDescriptor),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -89,6 +117,8 @@ func NewCodyAccessServiceClient(httpClient connect.HTTPClient, baseURL string, o
 type codyAccessServiceClient struct {
 	getCodyGatewayAccess    *connect.Client[v1.GetCodyGatewayAccessRequest, v1.GetCodyGatewayAccessResponse]
 	listCodyGatewayAccesses *connect.Client[v1.ListCodyGatewayAccessesRequest, v1.ListCodyGatewayAccessesResponse]
+	updateCodyGatewayAccess *connect.Client[v1.UpdateCodyGatewayAccessRequest, v1.UpdateCodyGatewayAccessResponse]
+	getCodyGatewayUsage     *connect.Client[v1.GetCodyGatewayUsageRequest, v1.GetCodyGatewayUsageResponse]
 }
 
 // GetCodyGatewayAccess calls enterpriseportal.codyaccess.v1.CodyAccessService.GetCodyGatewayAccess.
@@ -102,6 +132,17 @@ func (c *codyAccessServiceClient) ListCodyGatewayAccesses(ctx context.Context, r
 	return c.listCodyGatewayAccesses.CallUnary(ctx, req)
 }
 
+// UpdateCodyGatewayAccess calls
+// enterpriseportal.codyaccess.v1.CodyAccessService.UpdateCodyGatewayAccess.
+func (c *codyAccessServiceClient) UpdateCodyGatewayAccess(ctx context.Context, req *connect.Request[v1.UpdateCodyGatewayAccessRequest]) (*connect.Response[v1.UpdateCodyGatewayAccessResponse], error) {
+	return c.updateCodyGatewayAccess.CallUnary(ctx, req)
+}
+
+// GetCodyGatewayUsage calls enterpriseportal.codyaccess.v1.CodyAccessService.GetCodyGatewayUsage.
+func (c *codyAccessServiceClient) GetCodyGatewayUsage(ctx context.Context, req *connect.Request[v1.GetCodyGatewayUsageRequest]) (*connect.Response[v1.GetCodyGatewayUsageResponse], error) {
+	return c.getCodyGatewayUsage.CallUnary(ctx, req)
+}
+
 // CodyAccessServiceHandler is an implementation of the
 // enterpriseportal.codyaccess.v1.CodyAccessService service.
 type CodyAccessServiceHandler interface {
@@ -109,6 +150,12 @@ type CodyAccessServiceHandler interface {
 	GetCodyGatewayAccess(context.Context, *connect.Request[v1.GetCodyGatewayAccessRequest]) (*connect.Response[v1.GetCodyGatewayAccessResponse], error)
 	// List all Cody Gateway accesses granted to any Enterprise subscription.
 	ListCodyGatewayAccesses(context.Context, *connect.Request[v1.ListCodyGatewayAccessesRequest]) (*connect.Response[v1.ListCodyGatewayAccessesResponse], error)
+	// UpdateEnterpriseSubscription updates the Cody Gateway access granted to an
+	// Enterprise subscription.
+	UpdateCodyGatewayAccess(context.Context, *connect.Request[v1.UpdateCodyGatewayAccessRequest]) (*connect.Response[v1.UpdateCodyGatewayAccessResponse], error)
+	// GetCodyGatewayUsage returns data about a subscription's recent usage of
+	// Cody Gateway.
+	GetCodyGatewayUsage(context.Context, *connect.Request[v1.GetCodyGatewayUsageRequest]) (*connect.Response[v1.GetCodyGatewayUsageResponse], error)
 }
 
 // NewCodyAccessServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -131,12 +178,30 @@ func NewCodyAccessServiceHandler(svc CodyAccessServiceHandler, opts ...connect.H
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
+	codyAccessServiceUpdateCodyGatewayAccessHandler := connect.NewUnaryHandler(
+		CodyAccessServiceUpdateCodyGatewayAccessProcedure,
+		svc.UpdateCodyGatewayAccess,
+		connect.WithSchema(codyAccessServiceUpdateCodyGatewayAccessMethodDescriptor),
+		connect.WithIdempotency(connect.IdempotencyIdempotent),
+		connect.WithHandlerOptions(opts...),
+	)
+	codyAccessServiceGetCodyGatewayUsageHandler := connect.NewUnaryHandler(
+		CodyAccessServiceGetCodyGatewayUsageProcedure,
+		svc.GetCodyGatewayUsage,
+		connect.WithSchema(codyAccessServiceGetCodyGatewayUsageMethodDescriptor),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/enterpriseportal.codyaccess.v1.CodyAccessService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case CodyAccessServiceGetCodyGatewayAccessProcedure:
 			codyAccessServiceGetCodyGatewayAccessHandler.ServeHTTP(w, r)
 		case CodyAccessServiceListCodyGatewayAccessesProcedure:
 			codyAccessServiceListCodyGatewayAccessesHandler.ServeHTTP(w, r)
+		case CodyAccessServiceUpdateCodyGatewayAccessProcedure:
+			codyAccessServiceUpdateCodyGatewayAccessHandler.ServeHTTP(w, r)
+		case CodyAccessServiceGetCodyGatewayUsageProcedure:
+			codyAccessServiceGetCodyGatewayUsageHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -152,4 +217,12 @@ func (UnimplementedCodyAccessServiceHandler) GetCodyGatewayAccess(context.Contex
 
 func (UnimplementedCodyAccessServiceHandler) ListCodyGatewayAccesses(context.Context, *connect.Request[v1.ListCodyGatewayAccessesRequest]) (*connect.Response[v1.ListCodyGatewayAccessesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.codyaccess.v1.CodyAccessService.ListCodyGatewayAccesses is not implemented"))
+}
+
+func (UnimplementedCodyAccessServiceHandler) UpdateCodyGatewayAccess(context.Context, *connect.Request[v1.UpdateCodyGatewayAccessRequest]) (*connect.Response[v1.UpdateCodyGatewayAccessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.codyaccess.v1.CodyAccessService.UpdateCodyGatewayAccess is not implemented"))
+}
+
+func (UnimplementedCodyAccessServiceHandler) GetCodyGatewayUsage(context.Context, *connect.Request[v1.GetCodyGatewayUsageRequest]) (*connect.Response[v1.GetCodyGatewayUsageResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.codyaccess.v1.CodyAccessService.GetCodyGatewayUsage is not implemented"))
 }

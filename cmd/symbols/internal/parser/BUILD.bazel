@@ -1,0 +1,42 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "parser",
+    srcs = [
+        "config.go",
+        "filtering_parser.go",
+        "observability.go",
+        "parser.go",
+        "parser_pool.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser",
+    tags = [TAG_PLATFORM_SEARCH],
+    visibility = ["//cmd/symbols:__subpackages__"],
+    deps = [
+        "//cmd/symbols/internal/fetcher",
+        "//cmd/symbols/internal/types",
+        "//internal/conf",
+        "//internal/ctags_config",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/search",
+        "//internal/search/result",
+        "//lib/codeintel/languages",
+        "//lib/errors",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_go_ctags//:go-ctags",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//std",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "parser_test",
+    srcs = ["observability_test.go"],
+    embed = [":parser"],
+    tags = [TAG_PLATFORM_SEARCH],
+    deps = ["//internal/observation"],
+)

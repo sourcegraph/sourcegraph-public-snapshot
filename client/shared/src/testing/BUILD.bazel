@@ -60,7 +60,6 @@ ts_project(
     deps = [
         "//:node_modules/@apollo/client",
         "//:node_modules/@axe-core/puppeteer",
-        "//:node_modules/@percy/puppeteer",
         "//:node_modules/@pollyjs/adapter",
         "//:node_modules/@pollyjs/core",
         "//:node_modules/@pollyjs/persister-fs",

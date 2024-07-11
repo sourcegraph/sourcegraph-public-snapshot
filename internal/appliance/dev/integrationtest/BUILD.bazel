@@ -3,6 +3,7 @@ load("//dev:go_defs.bzl", "go_test")
 go_test(
     name = "integrationtest_test",
     srcs = ["integration_test.go"],
+    tags = [TAG_INFRA_RELEASE],
     deps = [
         "//internal/appliance/config",
         "//internal/k8s/resource/configmap",

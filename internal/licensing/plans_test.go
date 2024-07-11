@@ -33,9 +33,9 @@ func TestInfo_Plan(t *testing.T) {
 		tags []string
 		want Plan
 	}{
-		{tags: []string{"foo", testPlan.tag()}, want: testPlan},
-		{tags: []string{"foo", testPlan.tag(), Plan("xyz").tag()}, want: testPlan},
-		{tags: []string{"foo", Plan("xyz").tag(), testPlan.tag()}, want: testPlan},
+		{tags: []string{"foo", testPlan.Tag()}, want: testPlan},
+		{tags: []string{"foo", testPlan.Tag(), Plan("xyz").Tag()}, want: testPlan},
+		{tags: []string{"foo", Plan("xyz").Tag(), testPlan.Tag()}, want: testPlan},
 		{tags: []string{"plan:old-enterprise-0"}, want: PlanOldEnterprise},
 		{tags: []string{"plan:team-0"}, want: PlanTeam0},
 		{tags: []string{"plan:enterprise-0"}, want: PlanEnterprise0},
@@ -61,9 +61,9 @@ func TestInfo_hasUnknownPlan(t *testing.T) {
 	}{
 		{tags: []string{""}},
 		{tags: []string{"foo"}},
-		{tags: []string{"foo", PlanOldEnterprise.tag()}},
-		{tags: []string{"foo", PlanTeam0.tag()}},
-		{tags: []string{"foo", PlanEnterprise0.tag()}},
+		{tags: []string{"foo", PlanOldEnterprise.Tag()}},
+		{tags: []string{"foo", PlanTeam0.Tag()}},
+		{tags: []string{"foo", PlanEnterprise0.Tag()}},
 
 		{tags: []string{"foo", "plan:xyz"}, wantErr: `The license has an unrecognizable plan in tag "plan:xyz", please contact Sourcegraph support.`},
 	}

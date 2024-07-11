@@ -20,6 +20,7 @@ import (
 
 const DefaultCodeResultsCount = 12
 const DefaultTextResultsCount = 3
+const SymbolResultsCount = 3
 
 // NewSearchJob creates a new job for Cody context searches. It maps the query into a keyword query by breaking
 // it into terms, applying light stemming, then combining the terms through an OR operator.
@@ -39,34 +40,51 @@ func NewSearchJob(plan query.Plan, inputs *search.Inputs, newJob func(query.Basi
 	fileMatcher := getFileMatcher(inputs)
 	basicQuery := plan[0].ToParseTree()
 
-	q, err := queryStringToKeywordQuery(query.StringHuman(basicQuery))
+	q, err := parseQuery(query.StringHuman(basicQuery))
 
 	if err != nil {
 		return nil, err
 	}
 
-	params := q.query.Parameters
+	params := q.keywordQuery.Parameters
 	patterns := q.patterns
 
-	// If there are no patterns left, this query was entirely composed of stopwords, so we return no results.
+	// If there are no patterns left, this search was entirely composed of stopwords, so we return no results.
 	// ⚠️ We must return a no-op job instead of nil, since the job framework assumes all jobs are non-nil.
 	if len(patterns) == 0 {
 		return newNoopJob(), nil
 	}
 
-	codeQuery := q.query.MapParameters(append(params, query.Parameter{Field: query.FieldFile, Value: textFileFilter, Negated: true}))
+	var symbolJob job.Job = newNoopJob()
+	if len(q.symbols) > 0 {
+		symbolQuery := q.symbolQuery.MapParameters(append(params,
+			query.Parameter{Field: query.FieldType, Value: "symbol"},
+			query.Parameter{Field: query.FieldFile, Value: textFileFilter, Negated: true}))
+		symbolJob, err = newJob(symbolQuery)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	codeQuery := q.keywordQuery.MapParameters(append(params,
+		query.Parameter{Field: query.FieldType, Value: "path"},
+		query.Parameter{Field: query.FieldType, Value: "file"},
+		query.Parameter{Field: query.FieldFile, Value: textFileFilter, Negated: true}))
 	codeJob, err := newJob(codeQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	textQuery := q.query.MapParameters(append(params, query.Parameter{Field: query.FieldFile, Value: textFileFilter}))
+	textQuery := q.keywordQuery.MapParameters(append(params,
+		query.Parameter{Field: query.FieldType, Value: "path"},
+		query.Parameter{Field: query.FieldType, Value: "file"},
+		query.Parameter{Field: query.FieldFile, Value: textFileFilter}))
 	textJob, err := newJob(textQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	return &searchJob{codeJob, codeCount, textJob, textCount, fileMatcher, patterns}, nil
+	return &searchJob{symbolJob, codeJob, codeCount, textJob, textCount, fileMatcher, patterns}, nil
 }
 
 type codyFileMatcher = func(id api.RepoID, s string) bool
@@ -105,6 +123,7 @@ var textFileFilter = func() string {
 }()
 
 type searchJob struct {
+	symbolJob job.Job
 	codeJob   job.Job
 	codeCount int
 
@@ -119,6 +138,12 @@ func (j *searchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
 
+	symbolGroup := pool.NewWithResults[response]()
+	symbolGroup.Go(func() response {
+		count := min(SymbolResultsCount, j.codeCount)
+		return j.doSearch(ctx, clients, j.symbolJob, count)
+	})
+
 	codeGroup := pool.NewWithResults[response]()
 	codeGroup.Go(func() response {
 		return j.doSearch(ctx, clients, j.codeJob, j.codeCount)
@@ -129,21 +154,46 @@ func (j *searchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return j.doSearch(ctx, clients, j.textJob, j.textCount)
 	})
 
-	// For consistency, always return code results before text results. This is not critical for response
-	// quality, but just makes testing easier.
-	responses := append(codeGroup.Wait(), textGroup.Wait()...)
-	for _, r := range responses {
+	textResponse := textGroup.Wait()[0]
+	symbolResponse := symbolGroup.Wait()[0]
+	codeResponse := codeGroup.Wait()[0]
+
+	j.limitCodeResponse(symbolResponse, &codeResponse)
+
+	// For consistency, always return text results, symbol results, then general code results. This is not
+	// critical for response quality, but just makes testing easier.
+	for _, r := range []response{textResponse, symbolResponse, codeResponse} {
 		stream.Send(streaming.SearchEvent{
 			Results: r.matches,
 		})
-
 		alert = search.MaxPriorityAlert(alert, r.alert)
 		if r.err != nil {
 			err = errors.Append(err, r.err)
 		}
 	}
-
 	return alert, err
+}
+
+// limitCodeResponse deduplicates code results that are already included in the symbol results,
+// and applies the result limit. Symbol results count towards the total code results limit.
+func (j *searchJob) limitCodeResponse(symbolResponse response, codeResponse *response) {
+	symbolKeys := make(map[result.Key]struct{})
+	for _, match := range symbolResponse.matches {
+		symbolKeys[match.Key()] = struct{}{}
+	}
+
+	limit := min(len(codeResponse.matches), j.codeCount-len(symbolResponse.matches))
+	codeMatches := codeResponse.matches[:0]
+	for _, match := range codeResponse.matches {
+		if len(codeMatches) >= limit {
+			break
+		}
+
+		if _, ok := symbolKeys[match.Key()]; !ok {
+			codeMatches = append(codeMatches, match)
+		}
+	}
+	codeResponse.matches = codeMatches
 }
 
 type response struct {

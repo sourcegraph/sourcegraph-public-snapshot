@@ -45,11 +45,12 @@ INSERT INTO	batch_changes_site_credentials (
 	external_service_id,
 	credential,
 	encryption_key_id,
+	github_app_id,
 	created_at,
 	updated_at
 )
 VALUES
-	(%s, %s, %s, %s, %s, %s)
+	(%s, %s, %s, %s, %s, %s, %s)
 RETURNING
 	%s
 `
@@ -66,6 +67,7 @@ func createSiteCredentialQuery(ctx context.Context, c *btypes.SiteCredential, ke
 		c.ExternalServiceID,
 		[]byte(encryptedCredential),
 		keyID,
+		dbutil.NewNullInt(c.GitHubAppID),
 		c.CreatedAt,
 		c.UpdatedAt,
 		sqlf.Join(siteCredentialColumns, ","),
@@ -247,6 +249,7 @@ SET
 	external_service_id = %s,
 	credential = %s,
 	encryption_key_id = %s,
+	github_app_id = %s,
 	created_at = %s,
 	updated_at = %s
 WHERE
@@ -267,6 +270,7 @@ func (s *Store) updateSiteCredentialQuery(ctx context.Context, c *btypes.SiteCre
 		c.ExternalServiceID,
 		[]byte(encryptedCredential),
 		keyID,
+		dbutil.NewNullInt(c.GitHubAppID),
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
@@ -280,6 +284,7 @@ var siteCredentialColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_service_id"),
 	sqlf.Sprintf("credential"),
 	sqlf.Sprintf("encryption_key_id"),
+	sqlf.Sprintf("github_app_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
@@ -295,6 +300,7 @@ func scanSiteCredential(c *btypes.SiteCredential, key encryption.Key, sc dbutil.
 		&c.ExternalServiceID,
 		&encryptedCredential,
 		&keyID,
+		&dbutil.NullInt{N: &c.GitHubAppID},
 		&dbutil.NullTime{Time: &c.CreatedAt},
 		&dbutil.NullTime{Time: &c.UpdatedAt},
 	); err != nil {

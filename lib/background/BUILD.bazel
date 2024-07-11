@@ -10,6 +10,7 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/background",
     visibility = ["//visibility:public"],
+    deps = ["//lib/errors"],
 )
 
 go_test(
@@ -20,7 +21,12 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":background"],
-    deps = ["@com_github_stretchr_testify//assert"],
+    deps = [
+        "//lib/errors",
+        "@com_github_derision_test_go_mockgen_v2//testutil/require",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
 )
 
 go_mockgen(

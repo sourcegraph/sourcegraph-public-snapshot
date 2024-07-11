@@ -8,7 +8,7 @@
 import { Facet, Prec } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 
-import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/codemirror/utils'
 
 import { multiLineEnabled } from './multiline'
 

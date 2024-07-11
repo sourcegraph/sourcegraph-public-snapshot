@@ -1,0 +1,17 @@
+.avatar {
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+    width: 42px;
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+    height: 42px;
+    border-radius: 50%;
+}
+
+.avatar-placeholder {
+    border: 1px solid var(--border-color);
+}
+
+.team-member-list {
+    display: grid;
+    grid-template-columns: 1fr fit-content(10rem) 1fr fit-content(10rem) fit-content(10rem);
+    gap: 1rem;
+}

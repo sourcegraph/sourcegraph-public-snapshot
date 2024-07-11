@@ -6,7 +6,6 @@ import (
 
 	gcpmetricexporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
@@ -14,6 +13,9 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
+	apioption "google.golang.org/api/option"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -25,7 +27,10 @@ func configureMetrics(_ context.Context, logger log.Logger, config Config, res *
 		// We use a push-based exporter with PeriodicReader from the metrics SDK
 		// to publish metrics to GCP.
 		exporter, err := gcpmetricexporter.New(
-			gcpmetricexporter.WithProjectID(config.GCPProjectID))
+			gcpmetricexporter.WithProjectID(config.GCPProjectID),
+			gcpmetricexporter.WithMonitoringClientOptions(
+				apioption.WithTelemetryDisabled(),
+			))
 		if err != nil {
 			return nil, errors.Wrap(err, "gcpmetricexporter.New")
 		}

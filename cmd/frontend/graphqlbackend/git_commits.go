@@ -5,6 +5,7 @@ import (
 	"context"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -89,14 +90,30 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 			return nil, errors.Wrap(err, "failed to resolve revision range")
 		}
 
+		var before, after time.Time
+
+		if r.after != nil {
+			after, err = gitdomain.ParseGitDate(*r.after, time.Now)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to parse after")
+			}
+		}
+
+		if r.before != nil {
+			before, err = gitdomain.ParseGitDate(*r.before, time.Now)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to parse before")
+			}
+		}
+
 		return r.gitserverClient.Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{
 			Ranges:       []string{cmp.Or(r.revisionRange, "HEAD")},
 			N:            uint(n),
 			MessageQuery: pointers.DerefZero(r.query),
 			Author:       pointers.DerefZero(r.author),
-			After:        pointers.DerefZero(r.after),
+			After:        after,
 			Skip:         uint(afterCursor),
-			Before:       pointers.DerefZero(r.before),
+			Before:       before,
 			Path:         pointers.DerefZero(r.path),
 			Follow:       r.follow,
 		})

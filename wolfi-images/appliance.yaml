@@ -1,0 +1,22 @@
+# Base image containing a basic set of packages used by Sourcegraph.
+# Designed to be used as a base image for other images with no specific dependencies.
+
+include: ./sourcegraph-template.yaml
+
+contents:
+  packages:
+    # Included by existing SG base image
+    - tini
+    - mailcap
+
+accounts:
+  run-as: sourcegraph
+  groups:
+    - groupname: sourcegraph
+      gid: 101
+  users:
+    - username: sourcegraph
+      uid: 100
+      gid: 101
+
+work-dir: /

@@ -19,6 +19,7 @@ syntect.workspace = true
 tree-sitter.workspace = true
 tree-sitter-highlight.workspace = true
 walkdir.workspace = true
+camino.workspace = true
 
 tree-sitter-all-languages = { path = "../tree-sitter-all-languages" }
 

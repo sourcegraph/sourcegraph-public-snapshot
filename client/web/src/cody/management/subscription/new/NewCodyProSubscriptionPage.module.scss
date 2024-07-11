@@ -1,0 +1,55 @@
+.page {
+    font-size: 1.125rem;
+}
+
+.h1 {
+    font-size: 2rem;
+    font-weight: 500;
+}
+
+.line-height-loading-spinner {
+    width: 0.9rem !important;
+    height: 0.9rem !important;
+}
+
+.seat-count-selector-value {
+    display: flex;
+    width: 2.5rem;
+    height: 3.25rem;
+    border: 1px solid var(--input-border-color);
+    border-radius: var(--border-radius);
+    padding: 0.5rem 1.25rem;
+    font-size: 1rem;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-bg-1);
+}
+
+.payment-data-error-message {
+    color: var(--danger);
+    margin: 0.5rem 0;
+}
+
+.pay-button {
+    width: 100%;
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.price {
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.disclaimer {
+    font-size: 0.875rem;
+    font-weight: 300;
+    font-style: italic;
+    line-height: 1.25rem;
+}
+
+// Need the specificity to override the global styles
+svg.plus-minus-button {
+    width: 1.5rem;
+    height: 2.25rem;
+}

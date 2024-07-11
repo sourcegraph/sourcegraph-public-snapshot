@@ -315,7 +315,7 @@ func marshalJSON(v any) []byte {
 // need a Bitbucket Server API up and running to run those tests. But if
 // you want to work on these tests / code, you need to start a new instance
 // of Bitbucket Server with docker, create an Application Link as per
-// https://sourcegraph.com/docs/admin/external_service/bitbucket_server, and
+// https://sourcegraph.com/docs/admin/code_hosts/bitbucket_server, and
 // then run the tests with -update=true.
 type fixtures struct {
 	users             map[string]*bitbucketserver.User

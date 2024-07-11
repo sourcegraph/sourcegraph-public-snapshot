@@ -206,11 +206,10 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 				// Set up mocks to prevent the diffstat computation from trying to
 				// use a real gitserver, and so we can control what diff is used to
 				// create the diffstat.
-				state := bt.MockChangesetSyncState(&protocol.RepoInfo{
+				bt.MockChangesetSyncState(&protocol.RepoInfo{
 					Name: "repo",
 					VCS:  protocol.VCSInfo{URL: "https://example.com/repo/"},
 				})
-				defer state.Unmock()
 
 				u, err := extsvc.WebhookURL(extsvc.KindBitbucketCloud, es.ID, cfg, esURL)
 				assert.Nil(t, err)

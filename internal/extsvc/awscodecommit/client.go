@@ -10,6 +10,7 @@ import (
 	"github.com/aws/smithy-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -24,7 +25,7 @@ func NewClient(config aws.Config) *Client {
 	// Cache for repository metadata. The configuration-specific key prefix is not known
 	// synchronously, so cache consumers must call (*Client).cacheKeyPrefix to obtain the
 	// prefix value and prepend it explicitly.
-	repoCache := rcache.NewWithTTL("cc_repo:", 60 /* seconds */)
+	repoCache := rcache.NewWithTTL(redispool.Cache, "cc_repo:", 60 /* seconds */)
 
 	return &Client{
 		aws:       config,
@@ -50,7 +51,7 @@ var ErrNotFound = errors.New("AWS CodeCommit repository not found")
 // IsNotFound reports whether err is a AWS CodeCommit API not-found error or the
 // equivalent cached response error.
 func IsNotFound(err error) bool {
-	return errors.Is(err, ErrNotFound) || errors.HasType(err, &codecommittypes.RepositoryDoesNotExistException{})
+	return errors.Is(err, ErrNotFound) || errors.HasType[*codecommittypes.RepositoryDoesNotExistException](err)
 }
 
 // IsUnauthorized reports whether err is a AWS CodeCommit API unauthorized error.

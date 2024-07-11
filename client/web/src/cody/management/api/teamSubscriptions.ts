@@ -1,4 +1,4 @@
-export type TeamRole = 'none' | 'member' | 'admin'
+import type { TeamRole } from './teamMembers'
 
 // BillingInterval is the subscription's billing cycle. 'daily' is only
 // available in the dev environment.
@@ -31,23 +31,23 @@ export interface PaymentMethod {
 export interface PreviewResult {
     dueNow: UsdCents
     newPrice: UsdCents
-    dueDate: Date
+    dueDate: string
 }
 
 export interface DiscountInfo {
     description: string
-    expiresAt?: Date
+    expiresAt?: string
 }
 
 export interface Invoice {
-    date: Date
+    date: string
 
     amountDue: UsdCents
     amountPaid: UsdCents
     status: InvoiceStatus
 
-    periodStart: Date
-    periodEnd: Date
+    periodStart: string
+    periodEnd: string
 
     hostedInvoiceUrl?: string
     pdfUrl?: string
@@ -65,8 +65,8 @@ export interface SubscriptionSummary {
 }
 
 export interface Subscription {
-    createdAt: Date
-    endedAt?: Date
+    createdAt: string
+    endedAt?: string
 
     primaryEmail: string
     name: string
@@ -78,8 +78,8 @@ export interface Subscription {
 
     discountInfo?: DiscountInfo
 
-    currentPeriodStart: Date
-    currentPeriodEnd: Date
+    currentPeriodStart: string
+    currentPeriodEnd: string
 
     paymentMethod?: PaymentMethod
     nextInvoice?: PreviewResult
@@ -112,7 +112,29 @@ export interface UpdateSubscriptionRequest {
     subscriptionUpdate?: SubscriptionUpdateOptions
 }
 
+export interface PreviewUpdateSubscriptionRequest {
+    newSeatCount?: number
+    newBillingInterval?: BillingInterval
+    newCancelAtPeriodEnd?: boolean
+}
+
 export interface GetSubscriptionInvoicesResponse {
     invoices: Invoice[]
     continuationToken?: string
+}
+
+export interface CreateTeamRequest {
+    name: string
+    slug: string
+    seats: number
+    address: Address
+    billingInterval: BillingInterval
+    couponCode?: string
+    creditCardToken: string
+}
+
+export interface PreviewCreateTeamRequest {
+    seats: number
+    billingInterval: BillingInterval
+    couponCode?: string
 }

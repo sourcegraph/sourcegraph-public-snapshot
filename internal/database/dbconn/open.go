@@ -112,10 +112,8 @@ func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 //	  │           │Implement all SQL driver methods
 //	  │
 //	  │Expects all SQL driver methods
-//
-// A sqlhooks.Driver must be used as a Driver otherwise errors will be raised.
 type extendedDriver struct {
-	driver.Driver
+	sqlhooksDriver *sqlhooks.Driver
 }
 
 // extendedConn wraps sqlHooks' conn that does implement Ping, ResetSession and
@@ -138,10 +136,6 @@ var _ driver.NamedValueChecker = &extendedConn{}
 // Ping, ResetSession and CheckNamedValue optional methods that the
 // otelsql.Conn expects to be implemented.
 func (d *extendedDriver) Open(str string) (driver.Conn, error) {
-	if _, ok := d.Driver.(*sqlhooks.Driver); !ok {
-		return nil, errors.New("sql driver is not a sqlhooks.Driver")
-	}
-
 	if pgConnectionUpdater != "" {
 		// Driver.Open() is called during after we first attempt to connect to the database
 		// during startup time in `dbconn.open()`, where the manager will persist the config internally,
@@ -167,7 +161,7 @@ func (d *extendedDriver) Open(str string) (driver.Conn, error) {
 		}
 	}
 
-	c, err := d.Driver.Open(str)
+	c, err := d.sqlhooksDriver.Open(str)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +174,7 @@ func (d *extendedDriver) Open(str string) (driver.Conn, error) {
 		return nil, errors.New("sql conn doen't implement driver.QueryerContext")
 	}
 	if _, ok := c.(any).(driver.Conn); !ok {
-		return nil, errors.New("sql conn doen't implement driver.Conn")
+		return nil, errors.New("sql conn doesn't implement driver.Conn")
 	}
 	if _, ok := c.(any).(driver.ConnPrepareContext); !ok {
 		return nil, errors.New("sql conn doen't implement driver.ConnPrepareContext")
@@ -199,23 +193,30 @@ func (d *extendedDriver) Open(str string) (driver.Conn, error) {
 	}, nil
 }
 
+// UnwrappableConn is a wrapped conn can surface the underlying connection. It
+// is also implemented by the otelsql driver.
+// See https://sourcegraph.com/github.com/XSAM/otelsql@0256631c154becc112155e330591de4e2802af5e/-/blob/conn.go?L279
+type UnwrappableConn interface{ Raw() driver.Conn }
+
+var _ UnwrappableConn = (*extendedConn)(nil)
+
 // Access the underlying connection, so we can forward the methods that
 // sqlhooks does not implement on its own.
-func (n *extendedConn) rawConn() driver.Conn {
+func (n *extendedConn) Raw() driver.Conn {
 	c := n.Conn.(*sqlhooks.ExecerQueryerContextWithSessionResetter)
 	return c.Conn.Conn
 }
 
 func (n *extendedConn) Ping(ctx context.Context) error {
-	return n.rawConn().(driver.Pinger).Ping(ctx)
+	return n.Raw().(driver.Pinger).Ping(ctx)
 }
 
 func (n *extendedConn) ResetSession(ctx context.Context) error {
-	return n.rawConn().(driver.SessionResetter).ResetSession(ctx)
+	return n.Raw().(driver.SessionResetter).ResetSession(ctx)
 }
 
 func (n *extendedConn) CheckNamedValue(namedValue *driver.NamedValue) error {
-	return n.rawConn().(driver.NamedValueChecker).CheckNamedValue(namedValue)
+	return n.Raw().(driver.NamedValueChecker).CheckNamedValue(namedValue)
 }
 
 func (n *extendedConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
@@ -240,7 +241,11 @@ func registerPostgresProxy() {
 			metricSQLErrorTotal:   m.WithLabelValues("error"),
 		},
 	))
-	sql.Register("postgres-proxy", &extendedDriver{dri})
+	if sqlhooksDriver, ok := dri.(*sqlhooks.Driver); ok {
+		sql.Register("postgres-proxy", &extendedDriver{sqlhooksDriver})
+		return
+	}
+	panic("sql driver is not a sqlhooks.Driver")
 }
 
 var registerOnce sync.Once

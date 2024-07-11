@@ -1,145 +1,238 @@
 import React from 'react'
 
-import { mdiHelpCircleOutline, mdiInformationOutline, mdiOpenInNew } from '@mdi/js'
+import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { H2, Text, Link, Icon, H5, Modal } from '@sourcegraph/wildcard'
+import type { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { Badge, ButtonLink, H3, Icon, Link, LinkOrSpan, SourcegraphIcon, Text } from '@sourcegraph/wildcard'
 
-import { editorGroups } from '../editorGroups'
-import type { IEditor } from '../onboarding/CodyOnboarding'
-
-import { EditorStep } from './CodyManagementPage'
+import { PageRoutes } from '../../routes.constants'
 
 import styles from './CodyManagementPage.module.scss'
 
-interface UseCodyInEditorSectionProps extends TelemetryV2Props {
-    selectedEditor: IEditor | null
-    setSelectedEditor: (editor: IEditor | null) => void
-    selectedEditorStep: EditorStep | null
-    setSelectedEditorStep: (step: EditorStep | null) => void
-    isUserOnProTier: boolean
-}
+interface UseCodyInEditorSectionProps extends TelemetryV2Props {}
 
-export const UseCodyInEditorSection: React.FunctionComponent<UseCodyInEditorSectionProps> = props => (
-    <div className={classNames('p-4 border bg-1 mt-4 mb-5', styles.container)}>
-        <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-            <div>
-                <H2>Use Cody directly in your editor</H2>
-                <Text className="text-muted mb-0">Download the Cody extension in your editor to start using Cody.</Text>
-            </div>
-            {props.isUserOnProTier ? (
-                <div>
-                    <Link
-                        to="https://help.sourcegraph.com/"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-muted text-sm"
-                    >
-                        <Icon svgPath={mdiHelpCircleOutline} className="mr-1" aria-hidden={true} />
-                        Join our community, read our docs, or get product/billing support
-                    </Link>
-                </div>
-            ) : null}
-        </div>
-        {editorGroups.map((group, index) => (
-            <div
-                key={group.map(editor => editor.name).join('-')}
-                className={classNames('d-flex mt-3', styles.responsiveContainer, {
-                    'border-bottom pb-3': index < group.length - 1,
-                })}
-            >
-                {group.map((editor, index) => (
-                    <div
-                        key={editor.name}
-                        className={classNames('d-flex flex-column flex-1 pt-3 px-3', {
-                            'border-left': index !== 0,
-                        })}
-                    >
-                        <div
-                            className={classNames('d-flex mb-3 align-items-center', styles.ideHeader)}
-                            onClick={() => {
-                                props.setSelectedEditor(editor)
-                                props.setSelectedEditorStep(EditorStep.SetupInstructions)
-                            }}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={e => {
-                                if (e.key === 'Enter') {
-                                    props.setSelectedEditor(editor)
-                                    props.setSelectedEditorStep(EditorStep.SetupInstructions)
-                                }
-                            }}
-                        >
-                            <div>
-                                <img
-                                    alt={editor.name}
-                                    src={`https://storage.googleapis.com/sourcegraph-assets/ideIcons/ideIcon${editor.icon}.svg`}
-                                    width={34}
-                                    className="mr-3"
-                                />
-                            </div>
-                            <div>
-                                <Text className="text-muted mb-0" size="small">
-                                    {editor.publisher}
-                                </Text>
-                                <Text className={classNames('mb-0', styles.ideName)}>{editor.name}</Text>
-                                <H5 className={styles.releaseStage}>{editor.releaseStage}</H5>
-                            </div>
-                        </div>
-
-                        {editor.instructions && (
-                            <Link
-                                to="#"
-                                className="mb-2 text-muted d-flex align-items-center"
-                                onClick={() => {
-                                    props.setSelectedEditor(editor)
-                                    props.setSelectedEditorStep(EditorStep.SetupInstructions)
-                                }}
-                            >
-                                <Icon svgPath={mdiInformationOutline} aria-hidden={true} className="mr-1" /> Quickstart
-                                guide
-                            </Link>
-                        )}
-                        {editor.docs && (
-                            <Link
-                                to={editor.docs}
-                                target="_blank"
-                                rel="noopener"
-                                className="text-muted d-flex align-items-center"
-                            >
-                                <Icon svgPath={mdiOpenInNew} aria-hidden={true} className="mr-1" /> Documentation
-                            </Link>
-                        )}
-                        {props.selectedEditor?.name === editor.name &&
-                            props.selectedEditorStep !== null &&
-                            editor.instructions && (
-                                <Modal
-                                    key={editor.name + '-modal'}
-                                    isOpen={true}
-                                    aria-label={`${editor.name} Info`}
-                                    className={styles.modal}
-                                    position="center"
-                                >
-                                    <editor.instructions
-                                        showStep={props.selectedEditorStep}
-                                        onClose={() => {
-                                            props.setSelectedEditor(null)
-                                            props.setSelectedEditorStep(null)
-                                        }}
-                                        telemetryRecorder={props.telemetryRecorder}
-                                    />
-                                </Modal>
-                            )}
-                    </div>
-                ))}
-                {group.length < 4
-                    ? [...new Array(4 - group.length)].map((_, index) => (
-                          // eslint-disable-next-line react/no-array-index-key
-                          <div key={index} className="flex-1 p-3" />
-                      ))
-                    : null}
-            </div>
+export const CodyEditorsAndClients: React.FunctionComponent<UseCodyInEditorSectionProps> = ({ telemetryRecorder }) => (
+    <div className={styles.responsiveContainer}>
+        {EDITOR_INSTRUCTIONS.map(editor => (
+            <EditorInstructions key={editor.name} editor={editor} telemetryRecorder={telemetryRecorder} />
         ))}
     </div>
 )
+
+const EDITOR_ICON_HEIGHT = 34
+
+const EditorInstructions: React.FunctionComponent<
+    { editor: EditorInstructionsTile; className?: string } & TelemetryV2Props
+> = ({ editor, telemetryRecorder, className }) => (
+    <div className={classNames('d-flex flex-column px-3', className)}>
+        {/* eslint-disable-next-line react/forbid-dom-props */}
+        <div className="d-flex my-3 align-items-center" style={{ minHeight: `${EDITOR_ICON_HEIGHT}px` }}>
+            {editor.icon &&
+                (typeof editor.icon === 'string' ? (
+                    <img
+                        alt={editor.name}
+                        src={`https://storage.googleapis.com/sourcegraph-assets/ideIcons/ideIcon${editor.icon}.svg`}
+                        width={EDITOR_ICON_HEIGHT}
+                        height={EDITOR_ICON_HEIGHT}
+                        className="mr-3"
+                    />
+                ) : (
+                    <editor.icon className="mr-3" />
+                ))}
+            <H3 className="mb-0 font-weight-normal">{editor.name}</H3>
+        </div>
+        {editor.instructions && <editor.instructions telemetryRecorder={telemetryRecorder} />}
+    </div>
+)
+
+interface EditorInstructionsTile {
+    /** Refers to gs://sourcegraph-assets/ideIcons/ideIcon${icon}.svg. */
+    icon?: string | React.ComponentType<{ className?: string }>
+
+    name: string
+    instructions?: React.FunctionComponent<{
+        telemetryRecorder: TelemetryRecorder
+    }>
+}
+
+const EDITOR_INSTRUCTIONS: EditorInstructionsTile[] = [
+    {
+        icon: 'VsCode',
+        name: 'VS Code',
+        instructions: ({ telemetryRecorder }) => (
+            <div className="d-flex flex-column flex-gap-2 align-items-start">
+                <ButtonLink
+                    variant="primary"
+                    to="vscode:extension/sourcegraph.cody-ai"
+                    target="_blank"
+                    rel="noopener"
+                    className="mb-2"
+                    onClick={() => {
+                        telemetryRecorder.recordEvent('cody.editorExtensionsInstructions', 'clickInstall', {
+                            metadata: { vscode: 1 },
+                        })
+                    }}
+                >
+                    Install Cody in VS Code
+                </ButtonLink>
+                <Link
+                    to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai"
+                    className="text-muted d-inline-flex align-items-center flex-gap-1"
+                    target="_blank"
+                    rel="noopener"
+                    onClick={() => {
+                        telemetryRecorder.recordEvent('cody.editorExtensionsInstructions', 'clickMarketplace', {
+                            metadata: { vscode: 1 },
+                        })
+                    }}
+                >
+                    View in VS Code Marketplace{' '}
+                    <Icon aria-label="Open in new window" role="img" svgPath={mdiOpenInNew} />
+                </Link>
+                <Link
+                    to="https://github.com/sourcegraph/cody"
+                    className="text-muted d-inline-flex align-items-center flex-gap-1"
+                    target="_blank"
+                    rel="noopener"
+                    onClick={() => {
+                        telemetryRecorder.recordEvent('cody.editorExtensionsInstructions', 'clickSource', {
+                            metadata: { vscode: 1 },
+                        })
+                    }}
+                >
+                    Install from source <Icon aria-label="Open in new window" role="img" svgPath={mdiOpenInNew} />
+                </Link>
+            </div>
+        ),
+    },
+    {
+        icon: 'JetBrains',
+        name: 'All JetBrains IDEs',
+        instructions: ({ telemetryRecorder }) => (
+            <div className="d-flex flex-column flex-gap-2 align-items-start">
+                <ButtonLink
+                    variant="primary"
+                    to="https://plugins.jetbrains.com/plugin/9682-sourcegraph-cody--code-search"
+                    className="mb-2"
+                    target="_blank"
+                    rel="noopener"
+                    onClick={() => {
+                        telemetryRecorder.recordEvent('cody.editorExtensionsInstructions', 'clickMarketplace', {
+                            metadata: { jetbrains: 1 },
+                        })
+                    }}
+                >
+                    Install Cody from JetBrains&nbsp;Marketplace
+                </ButtonLink>
+                <Link
+                    to="https://github.com/sourcegraph/jetbrains"
+                    className="text-muted d-inline-flex align-items-center flex-gap-1"
+                    target="_blank"
+                    rel="noopener"
+                    onClick={() => {
+                        telemetryRecorder.recordEvent('cody.editorExtensionsInstructions', 'clickSource', {
+                            metadata: { jetbrains: 1 },
+                        })
+                    }}
+                >
+                    Install from source <Icon aria-label="Open in new window" role="img" svgPath={mdiOpenInNew} />
+                </Link>
+                <Text className="text-muted small mt-2">
+                    Works in IntelliJ, PyCharm, GoLand, Android Studio, WebStorm, Rider, RubyMine, and all other
+                    JetBrains IDEs.
+                </Text>
+            </div>
+        ),
+    },
+    {
+        icon: ({ className }) => (
+            <SourcegraphIcon className={className} width={EDITOR_ICON_HEIGHT} height={EDITOR_ICON_HEIGHT} />
+        ),
+        name: 'Web',
+        instructions: ({ telemetryRecorder }) => (
+            <div className="d-flex flex-column flex-gap-2 align-items-start">
+                <ButtonLink
+                    variant="primary"
+                    to={PageRoutes.CodyChat}
+                    onClick={() => {
+                        telemetryRecorder.recordEvent('cody.editorExtensionsInstructions', 'clickWebChat', {
+                            metadata: { chrome: 1 },
+                        })
+                    }}
+                >
+                    Chat with Cody on the web
+                </ButtonLink>
+                <Text className="text-muted small mt-2">
+                    ...or open the <strong>Cody</strong> sidebar when viewing a repository, directory, or code file on
+                    Sourcegraph.
+                </Text>
+            </div>
+        ),
+    },
+    {
+        name: 'Other editors & clients',
+        instructions: ({ telemetryRecorder }) => (
+            <ul className="d-flex flex-column flex-gap-2 align-items-start list-unstyled">
+                {OTHER_CLIENTS.map(client => (
+                    <li key={client.name} className="d-flex flex-gap-2 align-items-center">
+                        <LinkOrSpan
+                            to={client.url}
+                            target="_blank"
+                            rel="noopener"
+                            className={client.url ? undefined : 'text-muted'}
+                            onClick={() => {
+                                telemetryRecorder.recordEvent('cody.editorExtensionsInstructions', 'clickOther', {
+                                    metadata: { [client.telemetryMetadataKey]: 1 },
+                                })
+                            }}
+                        >
+                            {client.name}
+                        </LinkOrSpan>
+                        {client.releaseStage && (
+                            <Badge variant="outlineSecondary" small={true}>
+                                {client.releaseStage}
+                            </Badge>
+                        )}
+                    </li>
+                ))}
+            </ul>
+        ),
+    },
+]
+
+const OTHER_CLIENTS: {
+    name: string
+    url?: string
+    telemetryMetadataKey: string
+    releaseStage?: 'Experimental' | 'Coming soon'
+}[] = [
+    {
+        name: 'Neovim',
+        url: 'https://github.com/sourcegraph/sg.nvim#setup',
+        telemetryMetadataKey: 'neovim',
+        releaseStage: 'Experimental',
+    },
+    {
+        name: 'Cody CLI',
+        url: 'https://sourcegraph.com/github.com/sourcegraph/cody@main/-/blob/cli/README.md',
+        telemetryMetadataKey: 'cli',
+        releaseStage: 'Experimental',
+    },
+    {
+        name: 'Visual Studio',
+        telemetryMetadataKey: 'visualstudio',
+        releaseStage: 'Coming soon',
+    },
+    {
+        name: 'Eclipse',
+        telemetryMetadataKey: 'eclipse',
+        releaseStage: 'Coming soon',
+    },
+    {
+        name: 'Emacs',
+        url: 'https://github.com/sourcegraph/cody-emacs',
+        telemetryMetadataKey: 'emacs',
+        releaseStage: 'Coming soon',
+    },
+]

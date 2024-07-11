@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/logcountmetric"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -164,7 +165,7 @@ func createExternalHealthcheckAlert(
 		Description: fmt.Sprintf("Service is failing to respond on https://%s - this may be expected if the service was recently provisioned or if its external domain has changed.", externalDNS),
 
 		// If a service is not reachable, it's definitely a problem.
-		Severity: alertpolicy.SeverityLevelCritical,
+		Severity: spec.AlertSeverityLevelCritical,
 
 		ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 			ConditionBuilder: alertpolicy.ConditionBuilder{

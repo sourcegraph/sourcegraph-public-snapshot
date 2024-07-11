@@ -8,11 +8,14 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/cody-gateway/internal/httpapi/embeddings",
-        "//internal/codygateway",
+        "//internal/codygateway/codygatewayactor",
+        "//internal/collections",
         "//internal/completions/client/anthropic",
         "//internal/completions/client/fireworks",
+        "//internal/completions/client/google",
         "//internal/env",
         "//internal/trace/policy",
         "//lib/errors",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//:sourcegraph-accounts-sdk-go",
     ],
 )

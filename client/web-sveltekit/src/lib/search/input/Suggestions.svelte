@@ -1,6 +1,5 @@
 <script lang="ts">
     import { EditorView } from '@codemirror/view'
-    import { mdiInformationOutline } from '@mdi/js'
     import { createEventDispatcher, tick } from 'svelte'
 
     import { isSafari } from '@sourcegraph/common/src/util'
@@ -86,12 +85,16 @@
         {#if selectedOption}
             <div class="footer">
                 <span>
-                    <ActionInfo action={selectedOption.action} shortcut="Enter" />{' '}
+                    <ActionInfo action={selectedOption.action} shortcut={{ key: 'enter' }} />
                     {#if selectedOption.alternativeAction}
-                        <ActionInfo action={selectedOption.alternativeAction} shortcut="Mod+Enter" />
+                        {' '}
+                        <ActionInfo
+                            action={selectedOption.alternativeAction}
+                            shortcut={{ key: 'mod+enter', mac: 'cmd+enter' }}
+                        />
                     {/if}
                 </span>
-                <Icon svgPath={mdiInformationOutline} aria-hidden="true" inline />
+                <Icon icon={ILucideInfo} aria-hidden="true" inline />
             </div>
         {/if}
     {/if}
@@ -99,8 +102,6 @@
 
 <style lang="scss">
     .root {
-        --color: var(--icon-color);
-
         overflow-y: hidden;
         display: flex;
         flex-direction: column;

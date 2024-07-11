@@ -1,0 +1,72 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "squirrel",
+    srcs = [
+        "breadcrumbs.go",
+        "hover.go",
+        "lang_java.go",
+        "lang_python.go",
+        "lang_starlark.go",
+        "languages.go",
+        "local_code_intel.go",
+        "service.go",
+        "util.go",
+    ],
+    embedsrcs = ["language-file-extensions.json"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/squirrel",
+    tags = [TAG_PLATFORM_SEARCH],
+    visibility = ["//cmd/symbols:__subpackages__"],
+    deps = [
+        "//cmd/symbols/internal/types",
+        "//internal/api",
+        "//internal/jsonc",
+        "//internal/search",
+        "//internal/search/result",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_fatih_color//:color",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_smacker_go_tree_sitter//:go-tree-sitter",
+        "@com_github_smacker_go_tree_sitter//cpp",
+        "@com_github_smacker_go_tree_sitter//csharp",
+        "@com_github_smacker_go_tree_sitter//golang",
+        "@com_github_smacker_go_tree_sitter//java",
+        "@com_github_smacker_go_tree_sitter//javascript",
+        "@com_github_smacker_go_tree_sitter//python",
+        "@com_github_smacker_go_tree_sitter//ruby",
+        "@com_github_smacker_go_tree_sitter//typescript/tsx",
+    ],
+)
+
+go_test(
+    name = "squirrel_test",
+    timeout = "short",
+    srcs = [
+        "hover_test.go",
+        "local_code_intel_test.go",
+        "service_test.go",
+    ],
+    data = glob(["test_repos/**"]) + [
+        # We have to explicitly list those files as the test_repos/starlark folder
+        # is ignored in the .bazelignore file, to avoid picking up the BUILD.bazel
+        # which are test data and not related to the Sourcegraph codebase.
+        "test_repos/starlark/BUILD",
+        "test_repos/starlark/BUILD.bazel",
+        "test_repos/starlark/WORKSPACE",
+        "test_repos/starlark/bzl_library.bzl",
+        "test_repos/starlark/sample.bzl",
+    ],
+    embed = [":squirrel"],
+    tags = [TAG_PLATFORM_SEARCH],
+    deps = [
+        "//internal/search",
+        "//internal/search/result",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_fatih_color//:color",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)

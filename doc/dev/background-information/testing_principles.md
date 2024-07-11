@@ -76,7 +76,6 @@ Tradeoffs:
 Examples:
 
 - Tests that call our search API to test the behavior of our entire search system.
-- Tests that validate UI styles, through [visual testing](#visual-testing).
 - Tests that validate UI behavior in the browser while mocking out all network requests so no backend is required.
   - Note: We still typically prefer unit tests here, only fall back to integration tests if you need to test some very specific behavior that cannot be covered in a unit test.
 
@@ -100,12 +99,6 @@ Examples:
 
 - Run our Sourcegraph Docker image and verify that site admins can complete the registration flow.
 - Run our Sourcegraph Docker image and verify that users can sign in and perform a search.
-
-#### Visual testing
-
-Visual testing is useful to catch visual regressions and verify designs for new features. [More info about visual testing philosophy](testing_web_code.md#visual-regressions)
-
-We use [Percy](https://percy.io/) to detect visual changes in Sourcegraph features during browser-based tests (client integration tests and end-to-end tests). You may need permissions to update screenshots if your feature introduces visual changes. Post a message in #dev-chat that you need access to Percy, and someone will add you to our organization (you will also receive an invitation via e-mail). Once you've been invited to the Sourcegraph organization and created a Percy account, you should then link it to your GitHub account.
 
 ### Other testing strategies
 

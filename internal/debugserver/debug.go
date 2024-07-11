@@ -84,7 +84,7 @@ type Dumper interface {
 // Any extra endpoints supplied will be registered via their own declared path.
 func NewServerRoutine(ready <-chan struct{}, extra ...Endpoint) goroutine.BackgroundRoutine {
 	if addr == "" {
-		return goroutine.NoopRoutine()
+		return goroutine.NoopRoutine("noop server")
 	}
 
 	handler := httpserver.NewHandler(func(router *mux.Router) {

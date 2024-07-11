@@ -32,13 +32,9 @@
    "IsLocked": false,
    "IsDisabled": false,
    "ViewerPermission": "ADMIN",
-   "visibility": "public",
    "RepositoryTopics": {
     "Nodes": []
    },
-   "Parent": {
-    "NameWithOwner": "sourcegraph-testing/vcr-fork-test-repo-already-forked",
-    "IsFork": false
-   }
+   "visibility": "public"
   }
  }

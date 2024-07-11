@@ -1,9 +1,3 @@
-(namespace_import (identifier) @descriptor.term @kind.variable)
-(named_imports
-  (import_specifier alias: (_) @descriptor.term @kind.variable))
-(named_imports
-  (import_specifier name: (_) @descriptor.term @kind.variable !alias))
-
 ;; Function / Generator declaration.
 ;;   Don't think there is any reason to expose anything from within the body of the functions
 (function_declaration (identifier) @descriptor.method @kind.function body: (_) @local)

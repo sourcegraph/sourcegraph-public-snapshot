@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "internal",
+    srcs = ["policy_iterator.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/internal",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/policies",
+        "//internal/codeintel/policies/shared",
+        "//lib/pointers",
+    ],
+)

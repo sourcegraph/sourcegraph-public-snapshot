@@ -375,8 +375,12 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		assert.Equal(t, want, got)
 	})
 
-	t.Run("disable create access token for any user on Sourcegraph.com", func(t *testing.T) {
+	t.Run("prevent create access token for other user on Sourcegraph.com", func(t *testing.T) {
+		users := dbmocks.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
 		db := dbmocks.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
 
 		conf.Get().AuthAccessTokens = &schema.AuthAccessTokens{Allow: string(conf.AccessTokensAdmin)}
 		defer func() { conf.Get().AuthAccessTokens = nil }()
@@ -386,13 +390,13 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx,
 			&createAccessTokenInput{
-				User:            MarshalUserID(1),
+				User:            MarshalUserID(2),
 				Scopes:          []string{authz.ScopeUserAll},
 				DurationSeconds: &defaultTokenDuration,
 			},
 		)
 		got := fmt.Sprintf("%v", err)
-		want := `access token configuration value "site-admin-create" is disabled on Sourcegraph.com`
+		want := `access token creation for other users is disabled on Sourcegraph.com`
 		assert.Equal(t, want, got)
 	})
 }

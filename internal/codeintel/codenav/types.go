@@ -3,7 +3,11 @@ package codenav
 import (
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -12,9 +16,9 @@ import (
 // current target path and position matched to the data within the underlying index.
 type visibleUpload struct {
 	Upload                uploadsshared.CompletedUpload
-	TargetPath            string
+	TargetPath            core.RepoRelPath
 	TargetPosition        shared.Position
-	TargetPathWithoutRoot string
+	TargetPathWithoutRoot core.UploadRelPath
 }
 
 type qualifiedMonikerSet struct {
@@ -48,23 +52,39 @@ func (s *qualifiedMonikerSet) add(qualifiedMoniker precise.QualifiedMonikerData)
 }
 
 type RequestArgs struct {
-	RepositoryID int
-	Commit       string
+	RepositoryID api.RepoID
+	Commit       api.CommitID
 	Limit        int
 	RawCursor    string
 }
 
+func (args *RequestArgs) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.Int("repositoryID", int(args.RepositoryID)),
+		attribute.String("commit", string(args.Commit)),
+		attribute.Int("limit", args.Limit),
+	}
+}
+
 type PositionalRequestArgs struct {
 	RequestArgs
-	Path      string
+	Path      core.RepoRelPath
 	Line      int
 	Character int
+}
+
+func (args *PositionalRequestArgs) Attrs() []attribute.KeyValue {
+	return append(args.RequestArgs.Attrs(),
+		attribute.String("path", args.Path.RawValue()),
+		attribute.Int("line", args.Line),
+		attribute.Int("character", args.Character),
+	)
 }
 
 // DiagnosticAtUpload is a diagnostic from within a particular upload. The adjusted commit denotes
 // the target commit for which the location was adjusted (the originally requested commit).
 type DiagnosticAtUpload struct {
-	shared.Diagnostic
+	shared.Diagnostic[core.RepoRelPath]
 	Upload         uploadsshared.CompletedUpload
 	AdjustedCommit string
 	AdjustedRange  shared.Range
@@ -106,7 +126,8 @@ type Cursor struct {
 	// the following fields...
 	// are populated during the local phase, used in the remote phase
 
-	SymbolNames         []string       `json:"ss"` // symbol names extracted from visible uploads
+	SymbolNames []string `json:"ss"` // symbol names extracted from visible uploads
+	// SkipPathsByUploadID maps UploadID -> UploadRelPath.
 	SkipPathsByUploadID map[int]string `json:"pm"` // paths to skip for particular uploads in the remote phase
 }
 

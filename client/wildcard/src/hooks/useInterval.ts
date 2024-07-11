@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useIsMounted } from '.'
 
@@ -10,15 +10,10 @@ interface UseIntervalControls {
 
 /**
  * Custom hook for controlling the repeated execution of a function on an interval.
- *
  * @param callback The function to call on the execution interval
  * @param interval The interval at which the function should be re-invoked, in ms
  */
-export const useInterval = (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    callback: () => any,
-    interval: number
-): UseIntervalControls => {
+export const useInterval = (callback: () => any, interval: number): UseIntervalControls => {
     const [internalInterval, setInternalInterval] = useState(interval)
     // The function will continue to re-execute so long as there is a positive interval value.
     const hasInterval = internalInterval > 0

@@ -1,0 +1,17 @@
+/* Define custom CSS variables */
+:root {
+    --bs-primary: #3498db;
+    --bs-secondary: #2ecc71;
+    --bs-success: #28a745;
+    --bs-info: #17a2b8;
+    --bs-warning: #ffc107;
+    --bs-danger: #dc3545;
+    --bs-light: #f8f9fa;
+    --bs-dark: #343a40;
+}
+
+/* Override Bootstrap variables */
+body {
+    background-color: var(--bs-light);
+    color: var(--bs-dark);
+}

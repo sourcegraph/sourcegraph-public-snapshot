@@ -45,7 +45,7 @@ func (r *VirtualFileResolver) Path() string      { return r.stat.Name() }
 func (r *VirtualFileResolver) Name() string      { return path.Base(r.stat.Name()) }
 func (r *VirtualFileResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
-func (r *VirtualFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool)    { return nil, false }
+func (r *VirtualFileResolver) ToGitBlob() (*GitBlobResolver, bool)         { return nil, false }
 func (r *VirtualFileResolver) ToVirtualFile() (*VirtualFileResolver, bool) { return r, true }
 func (r *VirtualFileResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
 	return nil, false

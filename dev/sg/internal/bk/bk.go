@@ -171,6 +171,18 @@ func (c *Client) ListArtifactsByJob(ctx context.Context, pipeline string, buildN
 	return artifacts, nil
 }
 
+// ListBuilds returns a list of all the builds for a given pipeline and a given status
+func (c *Client) ListBuilds(ctx context.Context, pipeline string, status string) ([]buildkite.Build, error) {
+	builds, _, err := c.bk.Builds.ListByPipeline(BuildkiteOrg, pipeline, &buildkite.BuildsListOptions{
+		State: []string{status},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return builds, nil
+}
+
 // DownloadArtifact downloads the Buildkite artifact into the provider io.Writer
 func (c *Client) DownloadArtifact(artifact buildkite.Artifact, w io.Writer) error {
 	url := artifact.DownloadURL

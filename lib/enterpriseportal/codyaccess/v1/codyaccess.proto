@@ -3,6 +3,8 @@ syntax = "proto3";
 package enterpriseportal.codyaccess.v1;
 
 import "google/protobuf/duration.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1";
 
@@ -10,8 +12,6 @@ option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cod
 // Gateway access management capabilities (e.g. access quotas). It is not the
 // Cody Gateway service API itself - it serves capabilities that Cody Gateway
 // depends on.
-//
-// DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
 service CodyAccessService {
   // Retrieve Cody Gateway access granted to an Enterprise subscription.
   rpc GetCodyGatewayAccess(GetCodyGatewayAccessRequest) returns (GetCodyGatewayAccessResponse) {
@@ -20,6 +20,18 @@ service CodyAccessService {
 
   // List all Cody Gateway accesses granted to any Enterprise subscription.
   rpc ListCodyGatewayAccesses(ListCodyGatewayAccessesRequest) returns (ListCodyGatewayAccessesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // UpdateEnterpriseSubscription updates the Cody Gateway access granted to an
+  // Enterprise subscription.
+  rpc UpdateCodyGatewayAccess(UpdateCodyGatewayAccessRequest) returns (UpdateCodyGatewayAccessResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+
+  // GetCodyGatewayUsage returns data about a subscription's recent usage of
+  // Cody Gateway.
+  rpc GetCodyGatewayUsage(GetCodyGatewayUsageRequest) returns (GetCodyGatewayUsageResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -51,7 +63,7 @@ message CodyGatewayRateLimit {
   // The source of the rate limit configuration.
   CodyGatewayRateLimitSource source = 1;
   // Requests per time interval.
-  int64 limit = 2;
+  uint64 limit = 2;
   // Interval for rate limiting.
   google.protobuf.Duration interval_duration = 3;
 }
@@ -64,7 +76,8 @@ message CodyGatewayAccessToken {
 
 message CodyGatewayAccess {
   // The external, prefixed UUID-format identifier for the Enterprise
-  // subscription corresponding to this Cody Gateway access description.
+  // subscription corresponding to this Cody Gateway access description
+  // (e.g. "es_...").
   string subscription_id = 1;
 
   // Whether or not a subscription has Cody Gateway access enabled.
@@ -75,11 +88,14 @@ message CodyGatewayAccess {
   // Rate limit for code completions access, or null if not enabled.
   optional CodyGatewayRateLimit code_completions_rate_limit = 4;
   // Rate limit for embedding text chunks, or null if not enabled.
-  optional CodyGatewayRateLimit embeddings_rate_limt = 5;
+  optional CodyGatewayRateLimit embeddings_rate_limit = 5;
 
   // Available access tokens for authenticating as the subscription holder with
   // Cody Gateway.
   repeated CodyGatewayAccessToken access_tokens = 6;
+
+  // The display name of the corresponding Enterprise subscription.
+  string subscription_display_name = 7;
 }
 
 message ListCodyGatewayAccessesRequest {
@@ -102,4 +118,64 @@ message ListCodyGatewayAccessesResponse {
   string next_page_token = 1;
   // The list of Cody Gateway access that matched the given query.
   repeated CodyGatewayAccess accesses = 2;
+}
+
+message UpdateCodyGatewayAccessRequest {
+  // The Cody Gateway access to update. See `update_mask` for the fields that
+  // can be updated.
+  //
+  // The following fields are used to identify the Cody Gateway access to update:
+  //  - subscription_id
+  // Multiple fields are treated as AND-concatenated.
+  CodyGatewayAccess access = 1;
+
+  // The list of fields to update, fields are specified relative to the CodyGatewayAccess.
+  // Updatable fields are:
+  //  - enabled
+  //  - chat_completions_rate_limit.limit
+  //  - chat_completions_rate_limit.interval_duration
+  //  - code_completions_rate_limit.limit
+  //  - code_completions_rate_limit.interval_duration
+  //  - embeddings_rate_limit.limit
+  //  - embeddings_rate_limit.interval_duration
+  // An omitted `update_mask` implies that all populated fields are updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message UpdateCodyGatewayAccessResponse {
+  // The updated Cody Gateway access.
+  CodyGatewayAccess access = 1;
+}
+
+message GetCodyGatewayUsageRequest {
+  oneof query {
+    // The external, prefixed UUID-format identifier of an Enterprise subscription.
+    string subscription_id = 1;
+  }
+}
+
+message CodyGatewayUsage {
+  // The external, prefixed UUID-format identifier for the Enterprise
+  // subscription corresponding to this Cody Gateway usage (e.g. "es_...").
+  string subscription_id = 1;
+
+  message UsageDatapoint {
+    // The time the usage occurred. Currently the time is always the day.
+    google.protobuf.Timestamp time = 1;
+    // The usage for the corresponding time period.
+    uint64 usage = 2;
+    // The model that was used.
+    string model = 3;
+  }
+
+  // Usage data for chat completions access, or null if not enabled.
+  repeated UsageDatapoint chat_completions_usage = 2;
+  // Usage data for code completions access, or null if not enabled.
+  repeated UsageDatapoint code_completions_usage = 3;
+  // Usage data for embedding text chunks, or null if not enabled.
+  repeated UsageDatapoint embeddings_usage = 4;
+}
+
+message GetCodyGatewayUsageResponse {
+  CodyGatewayUsage usage = 1;
 }

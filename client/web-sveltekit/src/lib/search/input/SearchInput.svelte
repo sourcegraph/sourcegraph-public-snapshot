@@ -6,7 +6,6 @@
 
     import { EditorSelection, EditorState, Prec, type Extension } from '@codemirror/state'
     import { EditorView } from '@codemirror/view'
-    import { mdiCodeBrackets, mdiFormatLetterCase, mdiRegex } from '@mdi/js'
 
     import { goto, invalidate } from '$app/navigation'
     import {
@@ -87,6 +86,7 @@
             },
             '.cm-scroller': {
                 overflowX: 'hidden',
+                lineHeight: '1.6',
             },
             '.cm-content': {
                 paddingLeft: '0.25rem',
@@ -112,13 +112,13 @@
 </script>
 
 <script lang="ts">
-    import { mdiClockOutline } from '@mdi/js'
     import { registerHotkey } from '$lib/Hotkey'
 
     export let autoFocus = false
     export let size: 'normal' | 'compat' = 'normal'
     export let queryState: QueryStateStore
     export let onSubmit: (state: QueryState) => void = () => {}
+    export let extension: Extension = []
 
     export function focus() {
         input?.focus()
@@ -137,7 +137,11 @@
     let userHasInteracted = !autoFocus
     const hasInteractedExtension = EditorView.updateListener.of(update => {
         if (!userHasInteracted) {
-            if (update.transactions.some(tr => tr.isUserEvent('select') || tr.isUserEvent('input'))) {
+            if (
+                update.transactions.some(
+                    tr => tr.isUserEvent('select') || tr.isUserEvent('input') || tr.isUserEvent('delete')
+                )
+            ) {
                 userHasInteracted = true
             }
         }
@@ -177,6 +181,7 @@
     })
 
     $: extension = [
+        extension,
         onModeChange((_view, newMode) => (mode = newMode ?? '')),
         hasInteractedExtension,
         suggestionsExtension,
@@ -224,6 +229,9 @@
         if (editor) {
             setMode(editor, currentMode => (currentMode === 'History' ? null : 'History'))
             editor.focus()
+            // This ensures that history suggestions are shown after the button was pressed,
+            // before the user has interacted with the input in any other way.
+            userHasInteracted = true
         }
     }
 </script>
@@ -241,7 +249,7 @@
         <div class="mode-switcher" class:active={!!mode}>
             <Tooltip tooltip="Recent searches">
                 <button class="icon" type="button" on:click={toggleMode}>
-                    <Icon svgPath={mdiClockOutline} inline />
+                    <Icon icon={ILucideHistory} inline aria-hidden />
                     {#if mode}
                         <span>{mode}:</span>
                     {/if}
@@ -268,7 +276,7 @@
                     class:active={$queryState.caseSensitive}
                     on:click={() => queryState.setCaseSensitive(caseSensitive => !caseSensitive)}
                 >
-                    <Icon svgPath={mdiFormatLetterCase} inline />
+                    <Icon icon={IMdiFormatLetterCase} inline aria-hidden />
                 </button>
             </Tooltip>
             <Tooltip tooltip="{regularExpressionEnabled ? 'Disable' : 'Enable'} regular expression">
@@ -278,7 +286,7 @@
                     class:active={regularExpressionEnabled}
                     on:click={() => setOrUnsetPatternType(SearchPatternType.regexp)}
                 >
-                    <Icon svgPath={mdiRegex} inline />
+                    <Icon icon={IMdiRegex} inline aria-hidden />
                 </button>
             </Tooltip>
             {#if structuralEnabled}
@@ -289,7 +297,7 @@
                         class:active={structuralEnabled}
                         on:click={() => setOrUnsetPatternType(SearchPatternType.structural)}
                     >
-                        <Icon svgPath={mdiCodeBrackets} inline />
+                        <Icon icon={ILucideBrackets} inline aria-hidden />
                     </button>
                 </Tooltip>
             {/if}
@@ -372,6 +380,8 @@
     }
 
     button.toggle {
+        --icon-color: currentColor;
+
         width: 1.5rem;
         height: 1.5rem;
         cursor: pointer;
@@ -409,6 +419,8 @@
         --color: var(--text-muted);
 
         button {
+            --icon-color: currentColor;
+
             padding: 0.0625rem 0.125rem;
             color: var(--color);
             border-radius: var(--border-radius);

@@ -1,0 +1,47 @@
+diff --git a/esbuild/private/plugins/bazel-sandbox.js b/esbuild/private/plugins/bazel-sandbox.js
+index c58b668..0ba6cff 100644
+--- a/esbuild/private/plugins/bazel-sandbox.js
++++ b/esbuild/private/plugins/bazel-sandbox.js
+@@ -24,7 +24,15 @@ function bazelSandboxPlugin() {
+           }
+           otherOptions.pluginData.executedSandboxPlugin = true
+
+-          return await resolveInExecroot(build, importPath, otherOptions)
++          const res = await resolveInExecroot(build, importPath, otherOptions)
++          // Needed due to an issue with esbuild when it comes to plguins + `"browser": false` in package.json
++          // that manifests with object-inspect package.
++          // https://github.com/evanw/esbuild/issues/2970
++          // https://github.com/evanw/esbuild/issues/2123
++          if (res.path.endsWith('util.inspect')) {
++            res.path = res.path + ".js"
++          }
++          return res
+         }
+       )
+     },
+@@ -48,8 +56,25 @@ async function resolveInExecroot(build, importPath, otherOptions) {
+     return result
+   }
+
++  return correctImportPath(result, otherOptions, false)
++}
++
++function correctImportPath(result, otherOptions, firstEntry) {
+   // If esbuild attempts to leave the execroot, map the path back into the execroot.
+   if (!result.path.startsWith(execroot)) {
++    // A relative path that is marked as external. If it was not marked as external, it would error in the build.resolve call.
++    // We need to make it an absolute path from its importer and then re-attempt correcting it to be within the execroot.
++    if (result.path.startsWith("..")) {
++      const absPath = path.resolve(otherOptions.importer, result.path)
++      if (!!process.env.JS_BINARY__LOG_DEBUG) {
++        console.error(
++          `DEBUG: [bazel-sandbox] relative & external path found ${result.path}, making absolute relative to its importer ${otherOptions.importer} and then reattempting making it relative to the execroot (${execroot}): ${absPath}`
++        )
++      }
++      result.path = absPath
++      return correctImportPath(result, otherOptions, true)
++    }
++
+     // If it tried to leave bazel-bin, error out completely.
+     if (!result.path.includes(bindir)) {
+       throw new Error(

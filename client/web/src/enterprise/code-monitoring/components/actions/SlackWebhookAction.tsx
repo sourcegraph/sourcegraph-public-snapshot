@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { gql, useMutation } from '@apollo/client'
 import { noop } from 'lodash'
 
-import { Alert, Input, Link, ProductStatusBadge, Label } from '@sourcegraph/wildcard'
+import { Alert, Input, Label, Link } from '@sourcegraph/wildcard'
 
 import type { SendTestSlackWebhookResult, SendTestSlackWebhookVariables } from '../../../../graphql-operations'
 import type { ActionProps } from '../FormActionArea'
@@ -101,11 +101,7 @@ export const SlackWebhookAction: React.FunctionComponent<React.PropsWithChildren
 
     return (
         <ActionEditor
-            title={
-                <div>
-                    Send Slack message to channel <ProductStatusBadge className="ml-1 mb-1" status="beta" />{' '}
-                </div>
-            }
+            title={<div>Send Slack message to channel</div>}
             subtitle="Post to a specified Slack channel. Requires webhook configuration."
             idName="slack-webhook"
             disabled={disabled}

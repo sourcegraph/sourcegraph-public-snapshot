@@ -2,17 +2,13 @@ package internal
 
 import (
 	"context"
-	"io"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
-	"sort"
-	"strconv"
 	"strings"
 	"testing"
-	"testing/quick"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -408,23 +404,19 @@ func TestCleanupBroken(t *testing.T) {
 	writeFile(t, filepath.Join(repoGCNew, "gc.log"), []byte("warning: There are too many unreachable loose objects; run 'git prune' to remove them."))
 	writeFile(t, filepath.Join(repoGCOld, "gc.log"), []byte("warning: There are too many unreachable loose objects; run 'git prune' to remove them."))
 
-	for gitDirPath, delta := range map[string]time.Duration{
-		repoGCOld:         2 * repoTTLGC,
-		repoCorrupt:       repoTTLGC / 2, // should only trigger corrupt, not old
-		repoPerforceGCOld: 2 * repoTTLGC,
+	for gitDirPath, delta := range map[string]int{
+		repoGCOld:         2 * gcFailureRecloneThreshold,
+		repoCorrupt:       gcFailureRecloneThreshold / 2,
+		repoPerforceGCOld: 2 * gcFailureRecloneThreshold,
 	} {
-		ts := time.Now().Add(-delta)
-		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(gitDirPath), "git")
-		require.NoError(t, cli.Config().Set(ctx, gitConfigGCFailed, strconv.Itoa(int(ts.Unix()))))
-		if err := os.Chtimes(filepath.Join(gitDirPath, "HEAD"), ts, ts); err != nil {
-			t.Fatal(err)
+		for range delta {
+			require.NoError(t, incrementGCFailCounter(common.GitDir(gitDirPath)))
 		}
 	}
 	{
-		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoCorrupt), "perforce")
-		if err := cli.Config().Set(ctx, gitConfigMaybeCorrupt, "1"); err != nil {
-			t.Fatal(err)
-		}
+		f, err := os.Create(filepath.Join(repoCorrupt, gitcli.RepoMaybeCorruptFlagFilepath))
+		require.NoError(t, err)
+		require.NoError(t, f.Close())
 	}
 	{
 		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoPerforceGCOld), "perforce")
@@ -720,222 +712,6 @@ func TestCleanupOldLocks(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func TestHowManyBytesToFree(t *testing.T) {
-	const G = 1024 * 1024 * 1024
-	logger := logtest.Scoped(t)
-
-	tcs := []struct {
-		name      string
-		diskSize  uint64
-		bytesFree uint64
-		want      int64
-	}{
-		{
-			name:      "if there is already enough space, no space is freed",
-			diskSize:  10 * G,
-			bytesFree: 1.5 * G,
-			want:      0,
-		},
-		{
-			name:      "if there is exactly enough space, no space is freed",
-			diskSize:  10 * G,
-			bytesFree: 1 * G,
-			want:      0,
-		},
-		{
-			name:      "if there not enough space, some space is freed",
-			diskSize:  10 * G,
-			bytesFree: 0.5 * G,
-			want:      int64(0.5 * G),
-		},
-	}
-
-	for _, tc := range tcs {
-		t.Run(tc.name, func(t *testing.T) {
-			b := howManyBytesToFree(
-				logger,
-				&fakeDiskUsage{
-					diskSize:  tc.diskSize,
-					bytesFree: tc.bytesFree,
-				},
-				10,
-			)
-			if b != tc.want {
-				t.Errorf("s.howManyBytesToFree(...) is %v, want 0", b)
-			}
-		})
-	}
-}
-
-type fakeDiskUsage struct {
-	bytesFree uint64
-	diskSize  uint64
-}
-
-func (f *fakeDiskUsage) Free() uint64 {
-	return f.bytesFree
-}
-
-func (f *fakeDiskUsage) Size() uint64 {
-	return f.diskSize
-}
-
-func (f *fakeDiskUsage) PercentUsed() float32 {
-	return 1
-}
-
-func (f *fakeDiskUsage) Available() uint64 {
-	return 1
-}
-
-// assertPaths checks that all paths under want exist. It excludes non-empty directories
-func assertPaths(t *testing.T, root string, want ...string) {
-	t.Helper()
-	notfound := make(map[string]struct{})
-	for _, p := range want {
-		notfound[p] = struct{}{}
-	}
-	var unwanted []string
-	err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
-			if empty, err := isEmptyDir(path); err != nil {
-				t.Fatal(err)
-			} else if !empty {
-				return nil
-			}
-		}
-		rel, err := filepath.Rel(root, path)
-		if err != nil {
-			return err
-		}
-		if _, ok := notfound[rel]; ok {
-			delete(notfound, rel)
-		} else {
-			unwanted = append(unwanted, rel)
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(notfound) > 0 {
-		var paths []string
-		for p := range notfound {
-			paths = append(paths, p)
-		}
-		sort.Strings(paths)
-		t.Errorf("did not find expected paths: %s", strings.Join(paths, " "))
-	}
-	if len(unwanted) > 0 {
-		sort.Strings(unwanted)
-		t.Errorf("found unexpected paths: %s", strings.Join(unwanted, " "))
-	}
-}
-
-func isEmptyDir(path string) (bool, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return false, err
-	}
-	defer f.Close()
-
-	_, err = f.Readdirnames(1)
-	if err == io.EOF {
-		return true, nil
-	}
-	return false, err
-}
-
-func TestFreeUpSpace(t *testing.T) {
-	logger := logtest.Scoped(t)
-	root := t.TempDir()
-	fs := gitserverfs.New(observation.TestContextTB(t), root)
-	require.NoError(t, fs.Initialize())
-	t.Run("no error if no space requested and no repos", func(t *testing.T) {
-		if err := freeUpSpace(context.Background(), logger, newMockedGitserverDB(), fs, "test-gitserver", &fakeDiskUsage{}, 10, 0); err != nil {
-			t.Fatal(err)
-		}
-	})
-	t.Run("error if space requested and no repos", func(t *testing.T) {
-		if err := freeUpSpace(context.Background(), logger, newMockedGitserverDB(), fs, "test-gitserver", &fakeDiskUsage{}, 10, 1); err == nil {
-			t.Fatal("want error")
-		}
-	})
-	t.Run("oldest repo gets removed to free up space", func(t *testing.T) {
-		r1 := filepath.Join(root, "repo1")
-		r2 := filepath.Join(root, "repo2")
-		if err := makeFakeRepo(r1, 1000); err != nil {
-			t.Fatal(err)
-		}
-		if err := makeFakeRepo(r2, 1000); err != nil {
-			t.Fatal(err)
-		}
-		// Force the modification time of r2 to be after that of r1.
-		fi1, err := os.Stat(r1)
-		if err != nil {
-			t.Fatal(err)
-		}
-		mtime2 := fi1.ModTime().Add(time.Second)
-		if err := os.Chtimes(r2, time.Now(), mtime2); err != nil {
-			t.Fatal(err)
-		}
-
-		db := dbmocks.NewMockDB()
-		gr := dbmocks.NewMockGitserverRepoStore()
-		db.GitserverReposFunc.SetDefaultReturn(gr)
-		// Run.
-		if err := freeUpSpace(context.Background(), logger, db, fs, "test-gitserver", &fakeDiskUsage{}, 10, 1000); err != nil {
-			t.Fatal(err)
-		}
-
-		// Check.
-		assertPaths(t, root,
-			".tmp",
-			".p4home",
-			"repo2/.git/HEAD",
-			"repo2/.git/space_eater")
-		rds, err := fs.DirSize(root)
-		require.NoError(t, err)
-		wantSize := int64(1000)
-		if rds > wantSize {
-			t.Errorf("repo dir size is %d, want no more than %d", rds, wantSize)
-		}
-
-		if len(gr.SetCloneStatusFunc.History()) == 0 {
-			t.Fatal("expected gitserverRepos.SetCloneStatus to be called, but wasn't")
-		}
-		require.Equal(t, gr.SetCloneStatusFunc.History()[0].Arg2, types.CloneStatusNotCloned)
-	})
-}
-
-func makeFakeRepo(d string, sizeBytes int) error {
-	gd := filepath.Join(d, ".git")
-	if err := os.MkdirAll(gd, 0o700); err != nil {
-		return errors.Wrap(err, "creating .git dir and any parents")
-	}
-	if err := os.WriteFile(filepath.Join(gd, "HEAD"), nil, 0o666); err != nil {
-		return errors.Wrap(err, "creating HEAD file")
-	}
-	if err := os.WriteFile(filepath.Join(gd, "space_eater"), make([]byte, sizeBytes), 0o666); err != nil {
-		return errors.Wrapf(err, "writing to space_eater file")
-	}
-	return nil
-}
-
-func TestJitterDuration(t *testing.T) {
-	f := func(key string) bool {
-		d := jitterDuration(key, repoTTLGC/4)
-		return 0 <= d && d < repoTTLGC/4
-	}
-	if err := quick.Check(f, nil); err != nil {
-		t.Error(err)
 	}
 }
 
@@ -1471,4 +1247,31 @@ func TestGetSetLastSizeCalculation(t *testing.T) {
 	at, err = getLastSizeCalculation(dir)
 	require.NoError(t, err)
 	require.Equal(t, now, at)
+}
+
+func TestRepoGCFailCounter(t *testing.T) {
+	dir := t.TempDir()
+	gitDir := common.GitDir(dir)
+
+	// Reset when file doesn't exist doesn't fail:
+	require.NoError(t, resetGCFailCounter(gitDir))
+
+	// Getting the counter when file doesn't exist returns zero:
+	have, err := getGCFailCounter(gitDir)
+	require.NoError(t, err)
+	require.Equal(t, 0, have)
+
+	// Incrementing works:
+	for i := range 5 {
+		require.NoError(t, incrementGCFailCounter(gitDir))
+		have, err := getGCFailCounter(gitDir)
+		require.NoError(t, err)
+		require.Equal(t, i+1, have)
+	}
+
+	// Resetting works:
+	require.NoError(t, resetGCFailCounter(gitDir))
+	have, err = getGCFailCounter(gitDir)
+	require.NoError(t, err)
+	require.Equal(t, 0, have)
 }

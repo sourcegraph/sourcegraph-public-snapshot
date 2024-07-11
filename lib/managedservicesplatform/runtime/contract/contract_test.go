@@ -17,11 +17,11 @@ func (m mockServiceMetadata) Name() string    { return "mock-name" }
 func (m mockServiceMetadata) Version() string { return "mock-version" }
 
 func TestNewContract(t *testing.T) {
-	t.Run("sanity check", func(t *testing.T) {
+	t.Run("service sanity check", func(t *testing.T) {
 		e, err := contract.ParseEnv([]string{"MSP=true"})
 		require.NoError(t, err)
 
-		c := contract.New(logtest.Scoped(t), mockServiceMetadata{}, e)
+		c := contract.NewService(logtest.Scoped(t), mockServiceMetadata{}, e)
 		assert.NotZero(t, c)
 		assert.True(t, c.MSP)
 
@@ -30,5 +30,16 @@ func TestNewContract(t *testing.T) {
 		assert.Error(t, err)
 	})
 
+	t.Run("job sanity check", func(t *testing.T) {
+		e, err := contract.ParseEnv([]string{"MSP=true"})
+		require.NoError(t, err)
+		c := contract.NewJob(logtest.Scoped(t), mockServiceMetadata{}, e)
+		assert.NotZero(t, c)
+		assert.True(t, c.MSP)
+
+		// Not expected to error, as there are no required env vars.
+		err = e.Validate()
+		assert.NoError(t, err)
+	})
 	// TODO: Add more validation tests
 }

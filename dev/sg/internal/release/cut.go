@@ -6,6 +6,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/urfave/cli/v2"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/execute"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
@@ -23,7 +24,18 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Using GitHub CLI at %q", ghPath))
 
-	version := cctx.String("version")
+	var version string
+	if cctx.String("version") == "auto" {
+		var err error
+		version, err = determineNextReleaseVersion(cctx.Context)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Normalize the version string, to prevent issues where this was given with the wrong convention
+		// which requires a full rebuild.
+		version = fmt.Sprintf("v%s", strings.TrimPrefix(cctx.String("version"), "v"))
+	}
 	v, err := semver.NewVersion(version)
 	if err != nil {
 		return errors.Newf("invalid version %q, must be semver", version)

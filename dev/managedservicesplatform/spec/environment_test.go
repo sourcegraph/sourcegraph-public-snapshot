@@ -1,6 +1,7 @@
 package spec
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -180,23 +181,32 @@ func TestEnvironmentJobScheduleSpecFindMaxCronInterval(t *testing.T) {
 			wantInterval: time.Hour,
 		},
 		{
-			name: "small interval",
+			name: "interval too small",
 			spec: EnvironmentJobScheduleSpec{
 				Cron: "* * * * *",
 			},
-			wantInterval: time.Minute,
+			wantError: autogold.Expect("the longest interval must be >15m, got 1m0s"),
+		},
+		{
+			name: "hourly and weekends off",
+			spec: EnvironmentJobScheduleSpec{
+				Cron: "0 * * * 1-5",
+			},
+			wantInterval: 49 * time.Hour, // 2 weekend days
 		},
 		{
 			name: "monthly interval forbidden",
 			spec: EnvironmentJobScheduleSpec{
 				Cron: "0 0 1 * *", // once per month
 			},
-			wantError: autogold.Expect("the longest interval must be <28 days, got 744h0m0s"),
+			wantError: autogold.Expect("the longest interval must be <8 days, got 744h0m0s"),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			tc := tc
-			interval, err := tc.spec.FindMaxCronInterval()
+
+			now := time.Now()
+			interval, err := tc.spec.FindMaxCronInterval(now)
 			if tc.wantError != nil {
 				assert.Error(t, err)
 				tc.wantError.Equal(t, err.Error())
@@ -204,6 +214,26 @@ func TestEnvironmentJobScheduleSpecFindMaxCronInterval(t *testing.T) {
 			}
 			require.NoError(t, err)
 			assert.Equal(t, tc.wantInterval, *interval)
+
+			if tc.wantError != nil {
+				return
+			}
+
+			// Make sure at various times from now, the interval doesn't change.
+			for _, fromNow := range []time.Duration{
+				12 * time.Hour,
+				48 * time.Hour,
+				64 * time.Hour,
+				128 * time.Hour,
+				256 * time.Hour,
+			} {
+				t.Run(fmt.Sprintf("%s from now", fromNow.String()), func(t *testing.T) {
+					spec := tc.spec
+					newInterval, err := spec.FindMaxCronInterval(now.Add(fromNow))
+					require.NoError(t, err)
+					assert.Equal(t, interval.String(), newInterval.String())
+				})
+			}
 		})
 	}
 }

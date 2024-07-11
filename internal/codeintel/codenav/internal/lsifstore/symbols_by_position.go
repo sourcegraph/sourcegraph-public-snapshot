@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -18,10 +19,10 @@ import (
 // ranges contain the position, then this method will return multiple sets of monikers. Each slice
 // of monikers are attached to a single range. The order of the output slice is "outside-in", so that
 // the range attached to earlier monikers enclose the range attached to later monikers.
-func (s *store) GetMonikersByPosition(ctx context.Context, uploadID int, path string, line, character int) (_ [][]precise.MonikerData, err error) {
+func (s *store) GetMonikersByPosition(ctx context.Context, uploadID int, path core.UploadRelPath, line, character int) (_ [][]precise.MonikerData, err error) {
 	ctx, trace, endObservation := s.operations.getMonikersByPosition.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("uploadID", uploadID),
-		attribute.String("path", path),
+		attribute.String("path", path.RawValue()),
 		attribute.Int("line", line),
 		attribute.Int("character", character),
 	}})
@@ -30,7 +31,7 @@ func (s *store) GetMonikersByPosition(ctx context.Context, uploadID int, path st
 	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
 		monikersDocumentQuery,
 		uploadID,
-		path,
+		path.RawValue(),
 	)))
 	if err != nil || !exists {
 		return nil, err
@@ -107,10 +108,9 @@ LIMIT 1
 `
 
 // GetPackageInformation returns package information data by identifier.
-func (s *store) GetPackageInformation(ctx context.Context, bundleID int, path, packageInformationID string) (_ precise.PackageInformationData, _ bool, err error) {
+func (s *store) GetPackageInformation(ctx context.Context, bundleID int, packageInformationID string) (_ precise.PackageInformationData, _ bool, err error) {
 	_, _, endObservation := s.operations.getPackageInformation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("bundleID", bundleID),
-		attribute.String("path", path),
 		attribute.String("packageInformationID", packageInformationID),
 	}})
 	defer endObservation(1, observation.Args{})

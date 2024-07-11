@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -149,7 +149,11 @@ func (s *Sources) SyncAll(ctx context.Context, logger log.Logger) error {
 				if err != nil {
 					return errors.Wrapf(err, "failed to sync %s", src.Name())
 				}
-				syncLogger.Info("Completed sync", log.Duration("sync_duration", time.Since(start)), log.Int("seen", seen))
+				span.SetAttributes(
+					attribute.Int("seen_actors", seen))
+				syncLogger.Info("Completed sync",
+					log.Duration("sync_duration", time.Since(start)),
+					log.Int("seen", seen))
 				return nil
 			})
 		}
@@ -201,6 +205,10 @@ type redisLockedBackgroundRoutine struct {
 	routine goroutine.BackgroundRoutine
 }
 
+func (s *redisLockedBackgroundRoutine) Name() string {
+	return s.routine.Name()
+}
+
 func (s *redisLockedBackgroundRoutine) Start() {
 	s.logger.Info("Starting background sync routine")
 
@@ -220,10 +228,10 @@ func (s *redisLockedBackgroundRoutine) Start() {
 	s.routine.Start()
 }
 
-func (s *redisLockedBackgroundRoutine) Stop() {
+func (s *redisLockedBackgroundRoutine) Stop(ctx context.Context) error {
 	start := time.Now()
 	s.logger.Info("Stopping background sync routine")
-	s.routine.Stop()
+	stopErr := s.routine.Stop(ctx)
 
 	// If we have the lock, release it and let somebody else work
 	if expire := s.rmux.Until(); !expire.IsZero() && expire.After(time.Now()) {
@@ -247,6 +255,7 @@ func (s *redisLockedBackgroundRoutine) Stop() {
 
 	s.logger.Info("Background sync successfully stopped",
 		log.Duration("elapsed", time.Since(start)))
+	return stopErr
 }
 
 // sourcesSyncHandler is a handler for NewPeriodicGoroutine
@@ -285,7 +294,7 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 		// If another instance is working on background syncs, we don't want to
 		// do anything. We should check every time still in case the current worker
 		// goes offline, we want to be ready to pick up the work.
-		if err := s.rmux.LockContext(ctx); errors.HasType(err, &redsync.ErrTaken{}) {
+		if err := s.rmux.LockContext(ctx); errors.HasType[*redsync.ErrTaken](err) {
 			skippedReason = fmt.Sprintf("did not acquire lock, another worker is likely active: %s", err.Error())
 			handleLogger.Debug(skippedReason)
 			return nil // ignore lock contention errors
@@ -322,7 +331,7 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 }
 
 type FakeSource struct {
-	SourceName codygateway.ActorSource
+	SourceName codygatewayactor.ActorSource
 }
 
 func (m FakeSource) Name() string {

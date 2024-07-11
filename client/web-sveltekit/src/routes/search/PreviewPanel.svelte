@@ -10,8 +10,9 @@
 </script>
 
 <script lang="ts">
-    import { mdiClose } from '@mdi/js'
     import { from } from 'rxjs'
+
+    import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
     import { isErrorLike } from '$lib/common'
@@ -49,6 +50,7 @@
         requestGraphQL(options) {
             return from(client.query(options.request, options.variables).then(toGraphQLResult))
         },
+        telemetryRecorder: noOpTelemetryRecorder,
     })
 
     $: blobStore = toReadable(
@@ -77,7 +79,7 @@
     <div class="header">
         <h3>File Preview</h3>
         <button data-testid="preview-close" on:click={() => searchResultContext.setPreview(null)}>
-            <Icon svgPath={mdiClose} class="close-icon" --icon-size="16px" inline />
+            <Icon icon={ILucideX} --icon-size="16px" inline />
         </button>
     </div>
     <div class="file-link">

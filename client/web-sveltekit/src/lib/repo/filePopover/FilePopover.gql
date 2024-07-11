@@ -1,0 +1,63 @@
+query FileOrDirPopoverQuery($repoName: String!, $revision: String!, $filePath: String!) {
+    repository(name: $repoName) {
+        commit(rev: $revision) {
+            path(path: $filePath) {
+                ... on GitBlob {
+                    ...FilePopoverFragment
+                }
+                ... on GitTree {
+                    ...DirPopoverFragment
+                }
+            }
+        }
+    }
+}
+
+fragment FilePopoverFragment on GitBlob {
+    __typename
+    path
+    languages
+    byteSize
+    totalLines
+    history(first: 1) {
+        nodes {
+            commit {
+                ...FilePopoverLastCommitFragment
+            }
+        }
+    }
+    ...FileIcon_GitBlob
+}
+
+fragment DirPopoverFragment on GitTree {
+    __typename
+    path
+    # TODO(camdencheek): fix this to use a count, which currently does not exist in our API.
+    # This currently does not scale well with very large directories.
+    files {
+        name
+    }
+    directories {
+        name
+    }
+    history(first: 1) {
+        nodes {
+            commit {
+                ...FilePopoverLastCommitFragment
+            }
+        }
+    }
+}
+
+fragment FilePopoverLastCommitFragment on GitCommit {
+    abbreviatedOID
+    oid
+    subject
+    canonicalURL
+    author {
+        date
+        person {
+            ...Avatar_Person
+        }
+    }
+}

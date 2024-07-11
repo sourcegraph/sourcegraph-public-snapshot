@@ -33,12 +33,15 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
     // inside markdown is loaded.
     loadMarkdownSyntaxHighlighting()
 
-    const { repoName, revision } = parseRepoRevision(params.repo)
+    // An empty revision means we are at the default branch
+    const { repoName, revision = '' } = parseRepoRevision(params.repo)
 
     let resolvedRevisionOrError: ResolvedRevision | ErrorLike
+    let resolvedRevision: ResolvedRevision | undefined
 
     try {
-        resolvedRevisionOrError = await resolveRepoRevision({ client, repoName, revision })
+        resolvedRevisionOrError = await resolveRepoRevision({ client, repoName, revspec: revision })
+        resolvedRevision = resolvedRevisionOrError
     } catch (repoError: unknown) {
         const redirect = isRepoSeeOtherErrorLike(repoError)
 
@@ -46,7 +49,7 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
             redirectToExternalHost(redirect, url)
         }
 
-        // TODO: use differenr error codes for different types of errors
+        // TODO: use different error codes for different types of errors
         // Let revision errors be handled by the nested layout so that we can
         // still render the main repo navigation and header
         if (!isRevisionNotFoundErrorLike(repoError)) {
@@ -58,11 +61,43 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
 
     return {
         repoURL: '/' + params.repo,
+        repoURLWithoutRevision: '/' + repoName,
         repoName,
         displayRepoName: displayRepoName(repoName),
+        /**
+         * Revision from URL
+         */
         revision,
+        /**
+         * A friendly display form of the revision. This can be:
+         * - an empty string which signifies the default branch
+         * - an abbreviated commit SHA
+         * - a symbolic revision (e.g. a branch or tag name)
+         */
+        displayRevision: displayRevision(revision, resolvedRevision),
         resolvedRevisionOrError,
+        resolvedRevision,
     }
+}
+
+/**
+ * Returns a friendly display form of the revision. If the resolved revision's commit ID starts with the revision,
+ * the first 7 characters of the commit ID are returned. Otherwise, the revision is returned as is.
+ *
+ * @param revision The revision from the URL
+ * @param resolvedRevision The resolved revision
+ * @returns A human readable revision string
+ */
+function displayRevision(revision: string, resolvedRevision: ResolvedRevision | undefined): string {
+    if (!resolvedRevision) {
+        return revision
+    }
+
+    if (revision && resolvedRevision.commitID.startsWith(revision)) {
+        return resolvedRevision.commitID.slice(0, 7)
+    }
+
+    return revision
 }
 
 function redirectToExternalHost(externalRedirectURL: string, currentURL: URL): never {
@@ -74,20 +109,47 @@ function redirectToExternalHost(externalRedirectURL: string, currentURL: URL): n
     redirect(303, redirectURL.toString())
 }
 
+// This is a cache for resolved repository information to help in the following case:
+// - The user navigates to a repository page with a symbolic revspec (e.g. a branch or tag name)
+// - The user navigates to a permalink (i.e. URL with commit ID) for that very same revision
+//
+// Without additional steps this would result in a second query to resolve the repository information,
+// because we now have a different revspec in the URL (the commit ID instead of the symbolic rev).
+// But that request would return exactly the same data as the first request. To avoid this, we cache
+// the resolved repository information here and reuse if we make a request for a commit ID that we
+// have previously seen in a response.
+const resolvedRepoRevision = new Map<string, ResolveRepoRevisionResult>()
+
 async function resolveRepoRevision({
     client,
     repoName,
-    revision = '',
+    revspec = '',
 }: {
     client: GraphQLClient
     repoName: string
-    revision?: string
+    revspec?: string
 }): Promise<ResolvedRevision> {
-    // See if we have a cached response
-    let data = client.readQuery(ResolveRepoRevision, { repoName, revision })?.data
+    const cacheKey = `${repoName}@${revspec}`
 
-    if (shouldResolveRepositoryInformation(data)) {
-        data = (await client.query(ResolveRepoRevision, { repoName, revision }, { requestPolicy: 'network-only' })).data
+    let data: ResolveRepoRevisionResult | undefined
+
+    if (resolvedRepoRevision.has(cacheKey)) {
+        // See if we have resolved this revision with another revspec before. This can happen
+        // when the user navigates from a symbolic revspec to its respective permalink (commit ID).
+        data = resolvedRepoRevision.get(cacheKey)
+    } else {
+        // See if we have a cached response for the same revision
+        data = client.readQuery(ResolveRepoRevision, { repoName, revision: revspec })?.data
+
+        if (shouldResolveRepositoryInformation(data)) {
+            data = (
+                await client.query(
+                    ResolveRepoRevision,
+                    { repoName, revision: revspec },
+                    { requestPolicy: 'network-only' }
+                )
+            ).data
+        }
     }
 
     if (!data?.repositoryRedirect) {
@@ -107,7 +169,7 @@ async function resolveRepoRevision({
     // The "revision" we queried for could be a commit or a changelist.
     const commit = data.repositoryRedirect.commit || data.repositoryRedirect.changelist?.commit
     if (!commit) {
-        throw new RevisionNotFoundError(revision)
+        throw new RevisionNotFoundError(revspec)
     }
 
     const defaultBranch = data.repositoryRedirect.defaultBranch?.abbrevName || 'HEAD'
@@ -118,6 +180,9 @@ async function resolveRepoRevision({
         throw new RevisionNotFoundError(defaultBranch)
     }
     */
+
+    // Cache the resolved repository information
+    resolvedRepoRevision.set(`${repoName}@${commit.oid}`, data)
 
     return {
         repo: data.repositoryRedirect,

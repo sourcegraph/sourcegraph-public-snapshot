@@ -294,10 +294,10 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	case query.FieldCommitter:
 		newPred = &gitprotocol.CommitterMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 	case query.FieldBefore:
-		t, _ := query.ParseGitDate(parameter.Value, time.Now) // field already validated
+		t, _ := gitdomain.ParseGitDate(parameter.Value, time.Now) // field already validated
 		newPred = &gitprotocol.CommitBefore{Time: t}
 	case query.FieldAfter:
-		t, _ := query.ParseGitDate(parameter.Value, time.Now) // field already validated
+		t, _ := gitdomain.ParseGitDate(parameter.Value, time.Now) // field already validated
 		newPred = &gitprotocol.CommitAfter{Time: t}
 	case query.FieldMessage:
 		newPred = &gitprotocol.MessageMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}

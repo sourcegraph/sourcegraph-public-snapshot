@@ -2,6 +2,7 @@ package dbworker
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/derision-test/glock"
@@ -96,6 +97,10 @@ func newResetter[T workerutil.Record](logger log.Logger, store store.Store[T], o
 	}
 }
 
+func (r *Resetter[T]) Name() string {
+	return fmt.Sprintf("dbworker.Resetter[%s]", r.options.Name)
+}
+
 // Start begins periodically calling reset stalled on the underlying store.
 func (r *Resetter[T]) Start() {
 	defer close(r.finished)
@@ -132,7 +137,8 @@ loop:
 }
 
 // Stop will cause the resetter loop to exit after the current iteration.
-func (r *Resetter[T]) Stop() {
+func (r *Resetter[T]) Stop(context.Context) error {
 	r.cancel()
 	<-r.finished
+	return nil
 }

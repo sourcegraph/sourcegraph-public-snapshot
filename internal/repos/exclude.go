@@ -219,13 +219,6 @@ func buildSizeConstraintsExcludeFn(constraint string) (excludeFunc, error) {
 
 type operator string
 
-const (
-	opLess           operator = "<"
-	opLessOrEqual    operator = "<="
-	opGreater        operator = ">"
-	opGreaterOrEqual operator = ">="
-)
-
 func newOperator(input string) (operator, error) {
 	if input != "<" && input != "<=" && input != ">" && input != ">=" {
 		return "", errors.Newf("invalid operator %q", input)

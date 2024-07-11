@@ -10,4 +10,4 @@ echo "--- Pnpm install in root"
 ./dev/ci/pnpm-install-with-retry.sh
 
 echo "--- Run integration test suite"
-pnpm percy exec --quiet -- pnpm _test-integration "$@"
+pnpm pnpm _test-integration "$@"

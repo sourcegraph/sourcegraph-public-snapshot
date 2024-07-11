@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,7 +25,7 @@ import (
 const slowRequestRedisFIFOListPerPage = 50
 
 // slowRequestRedisFIFOList is a FIFO redis cache to store the slow requests.
-var slowRequestRedisFIFOList = rcache.NewFIFOListDynamic("slow-graphql-requests-list", func() int {
+var slowRequestRedisFIFOList = rcache.NewFIFOListDynamic(redispool.Cache, "slow-graphql-requests-list", func() int {
 	return conf.Get().ObservabilityCaptureSlowGraphQLRequestsLimit
 })
 

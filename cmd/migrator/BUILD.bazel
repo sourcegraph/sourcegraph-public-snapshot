@@ -63,7 +63,7 @@ genrule(
         tar -cf $@ --owner=:0 --group=:0 --numeric-owner schema-descriptions/
     fi
     """,
-    stamp = 1,
+    stamp = -1,
     visibility = ["//visibility:public"],
 )
 

@@ -4,14 +4,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Manager struct {
-	Cache *rcache.Cache
+	cache *rcache.Cache
 }
 
 type ModelData struct {
@@ -21,7 +20,7 @@ type ModelData struct {
 
 func NewManager() *Manager {
 	return &Manager{
-		Cache: rcache.NewWithRedisStore("LLMUsage"),
+		cache: rcache.New(redispool.Store, "LLMUsage"),
 	}
 }
 
@@ -33,33 +32,6 @@ const (
 	AwsBedrock  Provider = "awsbedrock"
 	Anthropic   Provider = "anthropic"
 )
-
-func (m *Manager) TokenizeAndCalculateUsage(inputMessages []types.Message, outputText, model, feature string, provider Provider) error {
-	tokenizer, err := tokenizer.NewCL100kBaseTokenizer()
-	if err != nil {
-		return errors.Newf("failed to create tokenizer: %w", err)
-	}
-
-	numInputTokens, err := tokenizer.NumTokenizeFromMessages(inputMessages)
-	if err != nil {
-		return errors.Newf("failed to tokenize input text: %w", err)
-	}
-
-	outputTokens, err := tokenizer.Tokenize(outputText)
-	if err != nil {
-		return errors.Newf("failed to tokenize output text: %w", err)
-	}
-
-	baseKey := fmt.Sprintf("%s:%s:%s:", provider, model, feature)
-
-	if err := m.updateTokenCounts(baseKey+"input", int64(numInputTokens)); err != nil {
-		return errors.Newf("failed to update input token counts: %w", err)
-	}
-	if err := m.updateTokenCounts(baseKey+"output", int64(len(outputTokens))); err != nil {
-		return errors.Newf("failed to update output token counts: %w", err)
-	}
-	return nil
-}
 
 func (m *Manager) UpdateTokenCountsFromModelUsage(inputTokens, outputTokens int, model, feature string, provider Provider) error {
 	baseKey := fmt.Sprintf("%s:%s:%s:", provider, model, feature)
@@ -74,7 +46,7 @@ func (m *Manager) UpdateTokenCountsFromModelUsage(inputTokens, outputTokens int,
 }
 
 func (m *Manager) updateTokenCounts(key string, tokenCount int64) error {
-	if _, err := m.Cache.IncrByInt64(key, tokenCount); err != nil {
+	if _, err := m.cache.IncrByInt64(key, tokenCount); err != nil {
 		return errors.Newf("failed to increment token count for key %s: %w", key, err)
 	}
 	return nil
@@ -109,7 +81,7 @@ func (m *Manager) FetchTokenUsageDataForAnalysis() (map[string]float64, error) {
 
 // fetchTokenUsageData retrieves token usage data, optionally decrementing token counts.
 func (m *Manager) fetchTokenUsageData(decrement bool) (map[string]float64, error) {
-	allKeys := m.Cache.ListAllKeys()
+	allKeys := m.cache.ListAllKeys()
 	tokenUsageData := make(map[string]float64)
 
 	for _, key := range allKeys {
@@ -132,13 +104,13 @@ func (m *Manager) getModelNameAndValue(key string, decrement bool) (string, int6
 	}
 	modelName := parts[1]
 
-	value, found, err := m.Cache.GetInt64(modelName)
+	value, found, err := m.cache.GetInt64(modelName)
 	if err != nil || !found {
 		return "", 0, err // Skip keys that are not found or have conversion errors
 	}
 
 	if decrement {
-		if _, err := m.Cache.DecrByInt64(modelName, value); err != nil {
+		if _, err := m.cache.DecrByInt64(modelName, value); err != nil {
 			return "", 0, err
 		}
 	}

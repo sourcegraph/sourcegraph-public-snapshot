@@ -1,8 +1,8 @@
 :root {
     --dropdown-inner-border-radius: 0.1875rem;
-    --dropdown-padding-y: 0.5rem;
-    --dropdown-item-padding-y: 0.25rem;
-    --dropdown-item-padding-x: 0.5rem;
+    --dropdown-padding-y: 0.375rem;
+    --dropdown-item-padding-y: 0.375rem;
+    --dropdown-item-padding-x: 0.75rem;
     --dropdown-item-padding: var(--dropdown-item-padding-y) var(--dropdown-item-padding-x);
     --dropdown-min-width: 10rem;
     --dropdown-spacer: 0.125rem;
@@ -25,7 +25,8 @@
     --dropdown-link-active-bg: var(--primary);
     --dropdown-link-active-color: var(--white);
     --dropdown-link-disabled-color: var(--text-muted);
-    --dropdown-shadow: 0 4px 16px -6px rgba(36, 41, 54, 0.2);
+    --dropdown-shadow: 0 193px 54px 0 rgba(0, 0, 0, 0), 0 123px 49px 0 rgba(0, 0, 0, 0.01),
+        0 69px 42px 0 rgba(0, 0, 0, 0.04), 0 31px 31px 0 rgba(0, 0, 0, 0.07), 0 8px 17px 0 rgba(0, 0, 0, 0.08);
 }
 
 .theme-dark {
@@ -39,5 +40,6 @@
     --dropdown-link-active-bg: var(--primary);
     --dropdown-link-active-color: var(--white);
     --dropdown-link-disabled-color: var(--text-muted);
-    --dropdown-shadow: 0 4px 16px -6px rgba(11, 12, 15, 0.8);
+    --dropdown-shadow: 0 309px 87px 0 rgba(0, 0, 0, 0.01), 0 198px 79px 0 rgba(0, 0, 0, 0.07),
+        0 111px 67px 0 rgba(0, 0, 0, 0.24), 0 49px 49px 0 rgba(0, 0, 0, 0.41), 0 12px 27px 0 rgba(0, 0, 0, 0.47);
 }

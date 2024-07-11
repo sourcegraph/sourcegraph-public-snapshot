@@ -122,7 +122,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
     },
     [BulkOperationType.MERGE]: {
         type: 'merge',
-        experimental: true,
+        experimental: false,
         buttonLabel: 'Merge changesets',
         dropdownTitle: 'Merge changesets',
         dropdownDescription:

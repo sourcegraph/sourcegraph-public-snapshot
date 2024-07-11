@@ -5,7 +5,7 @@ import { gql } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 
-import { scretTokenKey } from '../webview/platform/AuthProvider'
+import { secretTokenKey } from '../webview/platform/AuthProvider'
 
 import { requestGraphQLFromVSCode } from './requestGraphQl'
 
@@ -64,8 +64,8 @@ export function observeAuthenticatedUser(secretStorage: vscode.SecretStorage): O
     updateAuthenticatedUser()
 
     secretStorage.onDidChange(async event => {
-        if (event.key === scretTokenKey) {
-            const token = await secretStorage.get(scretTokenKey)
+        if (event.key === secretTokenKey) {
+            const token = await secretStorage.get(secretTokenKey)
             if (token) {
                 updateAuthenticatedUser()
             }

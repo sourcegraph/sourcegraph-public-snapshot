@@ -105,7 +105,7 @@ func PurgeOldestRepos(logger log.Logger, db database.DB, limit int, perSecond fl
 // purge purges repos, returning the number of repos that were successfully purged
 func purge(ctx context.Context, logger log.Logger, db database.DB, options database.ListPurgableReposOptions) error {
 	start := time.Now()
-	gitserverClient := gitserver.NewRepositoryServiceClient()
+	gitserverClient := gitserver.NewRepositoryServiceClient("repoupdater.purgeworker")
 	var (
 		total   int
 		success int

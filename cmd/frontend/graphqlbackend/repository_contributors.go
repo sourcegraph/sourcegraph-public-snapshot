@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -27,7 +26,7 @@ func (r *RepositoryResolver) Contributors(args *struct {
 	var after time.Time
 	if args.AfterDate != nil && *args.AfterDate != "" {
 		var err error
-		after, err = query.ParseGitDate(*args.AfterDate, time.Now)
+		after, err = gitdomain.ParseGitDate(*args.AfterDate, time.Now)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to parse after date")
 		}

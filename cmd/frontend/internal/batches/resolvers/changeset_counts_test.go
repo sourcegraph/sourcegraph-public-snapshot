@@ -127,7 +127,6 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		Name: githubRepo.Name,
 		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
 	})
-	defer mockState.Unmock()
 
 	bstore := store.New(db, observation.TestContextTB(t), nil)
 
@@ -190,7 +189,9 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		src, err := sourcer.ForChangeset(ctx, bstore, c, sources.AuthenticationStrategyUserCredential, githubRepo)
+		src, err := sourcer.ForChangeset(ctx, bstore, c, githubRepo, sources.SourcerOpts{
+			AuthenticationStrategy: sources.AuthenticationStrategyUserCredential,
+		})
 		if err != nil {
 			t.Fatalf("failed to build source for repo: %s", err)
 		}

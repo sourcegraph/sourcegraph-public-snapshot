@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"net"
 	"sort"
 	"sync"
 	"time"
@@ -29,13 +30,6 @@ type createAccessTokenInput struct {
 }
 
 func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAccessTokenInput) (*createAccessTokenResult, error) {
-	// 🚨 SECURITY: Creating access tokens for any user by site admins is not
-	// allowed on Sourcegraph.com. This check is mostly the defense for a
-	// misconfiguration of the site configuration.
-	if dotcom.SourcegraphDotComMode() && conf.AccessTokensAllow() == conf.AccessTokensAdmin {
-		return nil, errors.Errorf("access token configuration value %q is disabled on Sourcegraph.com", conf.AccessTokensAllow())
-	}
-
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
@@ -56,6 +50,16 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return nil, errors.New("Access token creation has been restricted to admin users. Contact an admin user to create a new access token.")
 		}
+
+		// 🚨 SECURITY: Creating access tokens for other users by site admins is not allowed on
+		// Sourcegraph.com. This check is mostly the defense for a misconfiguration of the site
+		// configuration.
+		if dotcom.SourcegraphDotComMode() {
+			if err := auth.CheckSameUser(ctx, userID); err != nil {
+				return nil, errors.New("access token creation for other users is disabled on Sourcegraph.com")
+			}
+		}
+
 	case conf.AccessTokensNone:
 	default:
 		return nil, errors.New("Access token creation is disabled. Contact an admin user to enable.")
@@ -116,13 +120,35 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 	if err != nil {
 		return nil, err
 	}
+
 	logger := r.logger.Scoped("CreateAccessToken").
 		With(log.Int32("userID", uid))
 
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnAccessTokenChange(ctx, userID, args.Note, false); err != nil {
-			logger.Warn("Failed to send email to inform user of access token creation", log.Error(err))
-		}
+		go func() { // Send email in the background to avoid blocking the request.
+
+			// We want the goroutine that's responsible for sending the email in the background
+			// to survive past the request that triggered it.
+			//
+			// We do this by creating a new context that is only canceled after two minutes.
+			//
+			// (Two minutes seems like a reasonable time to wait for the email to be sent.)
+			c := context.WithoutCancel(ctx)
+			emailCtx, cancel := context.WithTimeout(c, 2*time.Minute)
+			defer cancel()
+
+			err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnAccessTokenChange(emailCtx, userID, args.Note, false)
+			if err != nil {
+				message := "Failed to send email to inform user of access token creation."
+
+				var opErr *net.OpError
+				if errors.As(err, &opErr) && opErr.Op == "dial" {
+					message = message + " (This error might indicate that your SMTP connection settings are incorrect. Please check your site configuration.)"
+				}
+
+				logger.Error(message, log.Error(err))
+			}
+		}()
 	}
 
 	return &createAccessTokenResult{id: marshalAccessTokenID(id), token: token}, err
@@ -209,9 +235,30 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		With(log.Int32("userID", token.SubjectUserID))
 
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnAccessTokenChange(ctx, token.SubjectUserID, token.Note, true); err != nil {
-			logger.Warn("Failed to send email to inform user of access token deletion", log.Error(err))
-		}
+		go func() { // Send email in the background to avoid blocking the request.
+
+			// We want the goroutine that's responsible for sending the email in the background
+			// to survive past the request that triggered it.
+			//
+			// We do this by creating a new context that is only canceled after two minutes.
+			//
+			// (Two minutes seems like a reasonable time to wait for the email to be sent.)
+			c := context.WithoutCancel(ctx)
+			emailCtx, cancel := context.WithTimeout(c, 2*time.Minute)
+			defer cancel()
+
+			err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnAccessTokenChange(emailCtx, token.SubjectUserID, token.Note, true)
+			if err != nil {
+				message := "Failed to send email to inform user of access token creation."
+
+				var opErr *net.OpError
+				if errors.As(err, &opErr) && opErr.Op == "dial" {
+					message = message + " (This error might indicate that your SMTP connection settings are incorrect. Please check your site configuration.)"
+				}
+
+				logger.Error(message, log.Error(err))
+			}
+		}()
 	}
 
 	return &EmptyResponse{}, nil

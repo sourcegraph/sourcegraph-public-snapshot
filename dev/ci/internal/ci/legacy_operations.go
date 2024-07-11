@@ -41,7 +41,7 @@ func legacyBuildCandidateDockerImages(apps []string, version string, tag string,
 
 			// Add Sentry environment variables if we are building off main branch
 			// to enable building the webapp with source maps enabled
-			if rt.Is(runtype.MainDryRun, runtype.CloudEphemeral) && app == "frontend" {
+			if rt.Is(runtype.MainDryRun, runtype.DockerImages, runtype.CloudEphemeral) && app == "frontend" {
 				cmds = append(cmds,
 					bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
 					bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
@@ -123,7 +123,7 @@ func legacyBuildCandidateDockerImage(app string, version string, tag string, rt 
 
 		// Add Sentry environment variables if we are building off main branch
 		// to enable building the webapp with source maps enabled
-		if rt.Is(runtype.MainDryRun, runtype.CloudEphemeral) && app == "frontend" {
+		if rt.Is(runtype.MainDryRun, runtype.DockerImages, runtype.CloudEphemeral) && app == "frontend" {
 			cmds = append(cmds,
 				bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
 				bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),

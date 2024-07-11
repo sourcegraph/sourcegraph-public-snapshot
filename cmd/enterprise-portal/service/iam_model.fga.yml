@@ -1,0 +1,80 @@
+# To run this test suite:
+#
+#   go run github.com/openfga/cli/cmd/fga@latest model test --tests='cmd/enterprise-portal/service/iam_model.fga.yml'
+#
+# See https://openfga.dev/docs/modeling/testing
+
+model_file: ./iam_model.fga
+
+tuples:
+- user: user:user_uuid_a
+  relation: member
+  object: customer_admin:subscription_uuid_a
+- user: customer_admin:subscription_uuid_a#member
+  relation: view
+  object: subscription_cody_analytics:subscription_uuid_a
+
+- user: user:user_uuid_b
+  relation: member
+  object: customer_admin:subscription_uuid_b
+- user: customer_admin:subscription_uuid_b#member
+  relation: view
+  object: subscription_cody_analytics:subscription_uuid_b
+
+tests:
+- name: unexpected users are not customer_admin members
+  check:
+    - user: user:unknown_user_uuid_a # unknown user
+      object: customer_admin:subscription_uuid_a
+      assertions:
+        member: false
+    - user: user:unknown_user_uuid_a # unknown user
+      object: customer_admin:subscription_uuid_b
+      assertions:
+        member: false
+
+- name: expected users are customer_admin members
+  check:
+    - user: user:user_uuid_a
+      object: customer_admin:subscription_uuid_a
+      assertions:
+        member: true
+
+    - user: user:user_uuid_b
+      object: customer_admin:subscription_uuid_b
+      assertions:
+        member: true
+
+- name: customer_admin members have access to their Cody Analytics
+  check:
+    - user: user:user_uuid_a
+      object: subscription_cody_analytics:subscription_uuid_a
+      assertions:
+        view: true
+
+    - user: user:user_uuid_b
+      object: subscription_cody_analytics:subscription_uuid_b
+      assertions:
+        view: true
+
+- name: non-customer_admin members cannot access Cody Analytics
+  check:
+    - user: user:user_uuid_b
+      object: subscription_cody_analytics:subscription_uuid_a
+      assertions:
+        view: false
+
+    - user: user:user_uuid_a
+      object: subscription_cody_analytics:subscription_uuid_b
+      assertions:
+        view: false
+
+    - user: user:unknown_user_uuid_a # unknown user
+      object: subscription_cody_analytics:subscription_uuid_a
+      assertions:
+        view: false
+
+    - user: user:unknown_user_uuid_a # unknown user
+      object: subscription_cody_analytics:subscription_uuid_b
+      assertions:
+        view: false

@@ -12,7 +12,7 @@ import (
 	"github.com/prometheus/alertmanager/api/v2/client/general"
 	amconfig "github.com/prometheus/alertmanager/config"
 	"github.com/prometheus/common/model"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2" // same as used in alertmanager
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -20,7 +20,7 @@ import (
 // Prefix to serve alertmanager on. If you change this, make sure you update prometheus.yml as well
 const alertmanagerPathPrefix = "alertmanager"
 
-func waitForAlertmanager(ctx context.Context, alertmanager *amclient.Alertmanager) error {
+func waitForAlertmanager(ctx context.Context, alertmanager *amclient.AlertmanagerAPI) error {
 	ping := func(ctx context.Context) error {
 		resp, err := alertmanager.General.GetStatus(&general.GetStatusParams{Context: ctx})
 		if err != nil {

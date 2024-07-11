@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "sourcegraph_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/sourcegraph",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/frontend/shared",
+        "//cmd/gitserver/shared",
+        "//cmd/repo-updater/shared",
+        "//cmd/searcher/shared",
+        "//cmd/worker/shared",
+        "//internal/sanitycheck",
+        "//internal/service",
+    ],
+)
+
+go_binary(
+    name = "sourcegraph",
+    embed = [":sourcegraph_lib"],
+    visibility = ["//visibility:public"],
+)

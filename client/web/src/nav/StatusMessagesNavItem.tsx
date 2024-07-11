@@ -376,7 +376,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
     return (
         <Popover isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>
             <PopoverTrigger
-                className="nav-link py-0 px-0 percy-hide chromatic-ignore"
+                className="nav-link py-0 px-0 chromatic-ignore"
                 as={Button}
                 variant="link"
                 aria-label={isOpen ? 'Hide status messages' : 'Show status messages'}

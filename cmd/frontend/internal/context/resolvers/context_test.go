@@ -200,11 +200,7 @@ func TestCodyIgnore(t *testing.T) {
 				mockGitserver,
 			)
 
-			resolver := NewResolver(
-				db,
-				mockGitserver,
-				contextClient,
-			)
+			resolver := NewResolver(db, mockGitserver, contextClient, nil)
 
 			results, err := resolver.GetCodyContext(ctx, graphqlbackend.GetContextArgs{
 				Repos:            graphqlbackend.MarshalRepositoryIDs([]api.RepoID{1, 2}),
@@ -381,11 +377,7 @@ func TestChunkSize(t *testing.T) {
 		mockGitserver,
 	)
 
-	resolver := NewResolver(
-		db,
-		mockGitserver,
-		contextClient,
-	)
+	resolver := NewResolver(db, mockGitserver, contextClient, nil)
 
 	results, err := resolver.GetCodyContext(ctx, graphqlbackend.GetContextArgs{
 		Repos:            graphqlbackend.MarshalRepositoryIDs([]api.RepoID{1}),

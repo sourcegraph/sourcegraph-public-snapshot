@@ -7,7 +7,8 @@ import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery, succeedScan } from '@sourcegraph/shared/src/search/query/scanner'
 import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { V2FilterTypes, type Filter } from '@sourcegraph/shared/src/search/stream'
+import { TELEMETRY_FILTER_TYPES, type Filter } from '@sourcegraph/shared/src/search/stream'
+import { useSettings } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H1, H3, Icon, Tooltip } from '@sourcegraph/wildcard'
@@ -19,7 +20,6 @@ import {
     repoFilter,
     SearchDynamicFilter,
     symbolFilter,
-    utilityFilter,
 } from './components/dynamic-filter/SearchDynamicFilter'
 import { SearchFilterSkeleton } from './components/filter-skeleton/SearchFilterSkeleton'
 import { FilterTypeList } from './components/filter-type-list/FilterTypeList'
@@ -72,7 +72,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
         (filter: URLQueryFilter, remove: boolean): void => {
             telemetryService.log('SearchFiltersTypeClick', { filterType: filter.label }, { filterType: filter.label })
             telemetryRecorder.recordEvent('search.filters.type', 'click', {
-                metadata: { filterKind: V2FilterTypes[filter.kind] },
+                metadata: { filterKind: TELEMETRY_FILTER_TYPES[filter.kind] },
             })
             if (remove) {
                 setSelectedFilters(
@@ -92,11 +92,11 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
     )
 
     const handleFilterChange = useCallback(
-        (filterKind: Filter['kind'], filters: URLQueryFilter[]) => {
+        (filterKind: FilterKind, filters: URLQueryFilter[]) => {
             setSelectedFilters(filters)
             telemetryService.log('SearchFiltersSelectFilter', { filterKind }, { filterKind })
             telemetryRecorder.recordEvent('search.filters', 'select', {
-                metadata: { filterKind: V2FilterTypes[filterKind] },
+                metadata: { filterKind: TELEMETRY_FILTER_TYPES[filterKind] },
             })
         },
         [setSelectedFilters, telemetryService, telemetryRecorder]
@@ -111,6 +111,17 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
     const onAddFilterToQuery = (filter: string): void => {
         onQueryChange(`${query} ${filter}`)
     }
+
+    const settings = useSettings()
+    const snippetFilters = settings?.['search.scopes']?.map(
+        (scope): Filter => ({
+            label: scope.name,
+            value: scope.value,
+            count: 0,
+            exhaustive: true,
+            kind: 'snippet' as any,
+        })
+    )
 
     return (
         <div className={styles.scrollWrapper}>
@@ -204,11 +215,11 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 />
 
                 <SearchDynamicFilter
-                    title="Utility"
-                    filterKind={FilterKind.Utility}
-                    filters={filters}
+                    title="Snippets"
+                    filterKind={FilterKind.Snippet}
+                    filters={snippetFilters}
                     selectedFilters={selectedFilters}
-                    renderItem={utilityFilter}
+                    renderItem={commitDateFilter}
                     onSelectedFilterChange={handleFilterChange}
                     onAddFilterToQuery={onAddFilterToQuery}
                 />
@@ -300,10 +311,10 @@ const SyntheticCountFilter: FC<SyntheticCountFilterProps> = props => {
         return []
     }, [query])
 
-    const handleCountAllFilter = (filterKind: Filter['kind'], countFilters: URLQueryFilter[]): void => {
+    const handleCountAllFilter = (filterKind: FilterKind, countFilters: URLQueryFilter[]): void => {
         telemetryService.log('SearchFiltersSelectFilter', { filterKind }, { filterKind })
         telemetryRecorder.recordEvent('search.filters', 'select', {
-            metadata: { filterKind: V2FilterTypes[filterKind] },
+            metadata: { filterKind: TELEMETRY_FILTER_TYPES[filterKind] },
         })
 
         if (countFilters.length > 0) {
@@ -323,7 +334,7 @@ const SyntheticCountFilter: FC<SyntheticCountFilterProps> = props => {
 
     return (
         <SearchDynamicFilter
-            filterKind={FilterKind.Count as any}
+            filterKind={FilterKind.Count}
             filters={STATIC_COUNT_FILTER}
             selectedFilters={selectedCountFilter}
             renderItem={commitDateFilter}

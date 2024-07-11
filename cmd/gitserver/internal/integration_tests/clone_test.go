@@ -1,7 +1,6 @@
 package inttests
 
 import (
-	"container/list"
 	"context"
 	"os"
 	"path/filepath"
@@ -20,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -83,7 +81,6 @@ func TestClone(t *testing.T) {
 			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), getRemoteURLSource), nil
 		},
 		DB:                      db,
-		Perforce:                perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  locker,
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(100, 10)),
@@ -185,66 +182,26 @@ func TestClone_Fail(t *testing.T) {
 			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), getRemoteURLSource), nil
 		},
 		DB:                      db,
-		Perforce:                perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  locker,
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(100, 10)),
 		Hostname:                "test-shard",
 	})
 
-	// Requesting a repo update should figure out that the repo is not yet
-	// cloned and call clone. We expect that clone to fail, because vcssyncer.IsCloneable
-	// fails here.
+	// Requesting a repo update should figure out that the repo is not yet cloned and call clone.
+	// We expect that clone to fail.
 	_, _, err := s.FetchRepository(ctx, repo)
-	require.Error(t, err)
-	// Note that this error is from IsCloneable(), not from Clone().
-	require.Contains(t, err.Error(), "error cloning repo: repo github.com/test/repo not cloneable:")
-	require.Contains(t, err.Error(), "exit status 128")
-
-	mockassert.CalledOnce(t, locker.TryAcquireFunc)
-	mockassert.CalledOnce(t, lock.ReleaseFunc)
-
-	// Check we reported an error.
-	// Check that it was called exactly once total.
-	mockrequire.CalledOnce(t, gsStore.SetLastErrorFunc)
-	// And that it was called for the right repo, setting the last error value.
-	mockassert.CalledWith(t, gsStore.SetLastErrorFunc, mockassert.Values(mockassert.Skip, repo, mockassert.Skip, "test-shard"))
-	require.Contains(t, gsStore.SetLastErrorFunc.History()[0].Arg2, `error cloning repo: repo github.com/test/repo not cloneable:`)
-	require.Contains(t, gsStore.SetLastErrorFunc.History()[0].Arg2, "exit status 128")
-
-	// And no other DB activity has happened.
-	mockassert.NotCalled(t, gsStore.SetCloneStatusFunc)
-	mockassert.NotCalled(t, gsStore.SetLastOutputFunc)
-
-	// ===================
-
-	// Now, fake that the IsCloneable check passes, then Clone will be called
-	// and is expected to fail.
-	vcssyncer.TestGitRepoExists = func(ctx context.Context, name api.RepoName) error {
-		return nil
-	}
-	t.Cleanup(func() {
-		vcssyncer.TestGitRepoExists = nil
-	})
-	// Reset mock counters.
-	gsStore = dbmocks.NewMockGitserverRepoStore()
-	db.GitserverReposFunc.SetDefaultReturn(gsStore)
-
-	// Requesting another repo update should figure out that the repo is not yet
-	// cloned and call clone. We expect that clone to fail, but in the vcssyncer.Clone
-	// stage this time, not vcssyncer.IsCloneable.
-	_, _, err = s.FetchRepository(ctx, repo)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "failed to clone github.com/test/repo: clone failed. Output: Creating bare repo\nCreated bare repo at")
 
 	// Should have acquired a lock.
-	mockassert.CalledN(t, locker.TryAcquireFunc, 2)
+	mockassert.CalledN(t, locker.TryAcquireFunc, 1)
 	// Should have reported status. 7 lines is the output git currently produces.
 	// This number might need to be adjusted over time, but before doing so please
 	// check that the calls actually use the args you would expect them to use.
 	mockassert.CalledN(t, lock.SetStatusFunc, 7)
 	// Should have released the lock.
-	mockassert.CalledN(t, lock.ReleaseFunc, 2)
+	mockassert.CalledN(t, lock.ReleaseFunc, 1)
 
 	// Check it was set to cloning first, then uncloned again (since clone failed).
 	mockassert.CalledN(t, gsStore.SetCloneStatusFunc, 2)

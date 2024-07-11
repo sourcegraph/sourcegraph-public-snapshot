@@ -107,35 +107,42 @@ func (s *store) GetConfigurationPolicies(ctx context.Context, opts shared.GetCon
 		conds = append(conds, sqlf.Sprintf("TRUE"))
 	}
 
-	var a []shared.ConfigurationPolicy
-	var b int
+	var policiesBatch []shared.ConfigurationPolicy
+	var totalCountResult int
+
 	err = s.db.WithTransact(ctx, func(tx *basestore.Store) error {
 		// TODO - standardize counting techniques
-		totalCount, _, err = basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
+		totalCountQuery := sqlf.Sprintf(
 			getConfigurationPoliciesCountQuery,
 			sqlf.Join(conds, "AND"),
-		)))
+		)
+
+		totalCount, _, err = basestore.ScanFirstInt(tx.Query(ctx, totalCountQuery))
 		if err != nil {
 			return err
 		}
 		trace.AddEvent("TODO Domain Owner", attribute.Int("totalCount", totalCount))
 
-		configurationPolicies, err := scanConfigurationPolicies(tx.Query(ctx, sqlf.Sprintf(
+		finalQuery := sqlf.Sprintf(
 			getConfigurationPoliciesLimitedQuery,
 			sqlf.Join(conds, "AND"),
 			opts.Limit,
 			opts.Offset,
-		)))
+		)
+
+		configurationPolicies, err := scanConfigurationPolicies(tx.Query(ctx, finalQuery))
 		if err != nil {
 			return err
 		}
+
 		trace.AddEvent("TODO Domain Owner", attribute.Int("numConfigurationPolicies", len(configurationPolicies)))
 
-		a = configurationPolicies
-		b = totalCount
+		policiesBatch = configurationPolicies
+		totalCountResult = totalCount
 		return nil
 	})
-	return a, b, err
+
+	return policiesBatch, totalCountResult, err
 }
 
 const getConfigurationPoliciesCountQuery = `

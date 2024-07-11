@@ -90,8 +90,8 @@ func getRecordingAt(t *testing.T, store *rcache.FIFOList, idx int) *wrexec.Recor
 }
 
 func TestRecordingCmd(t *testing.T) {
-	rcache.SetupForTest(t)
-	store := rcache.NewFIFOList(wrexec.KeyPrefix, 100)
+	kv := rcache.SetupForTest(t)
+	store := rcache.NewFIFOList(kv, wrexec.KeyPrefix, 100)
 	var recordAlways wrexec.ShouldRecordFunc = func(ctx context.Context, c *osexec.Cmd) bool {
 		return true
 	}
@@ -120,7 +120,7 @@ func TestRecordingCmd(t *testing.T) {
 			t.Fatalf("failed to execute recorded command: %v", err)
 		}
 
-		readingStore := rcache.NewFIFOList(wrexec.KeyPrefix, 100)
+		readingStore := rcache.NewFIFOList(kv, wrexec.KeyPrefix, 100)
 		recording := getFirst(t, readingStore)
 		if valid, err := isValidRecording(t, cmd, recording); !valid {
 			t.Error(err)

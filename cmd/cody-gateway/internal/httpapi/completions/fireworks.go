@@ -23,16 +23,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-func NewFireworksHandler(
-	baseLogger log.Logger,
-	eventLogger events.Logger,
-	rs limiter.RedisStore,
-	rateLimitNotifier notify.RateLimitNotifier,
-	httpClient httpcli.Doer,
-	config config.FireworksConfig,
-	promptRecorder PromptRecorder,
-	autoFlushStreamingResponses bool,
-) http.Handler {
+func NewFireworksHandler(baseLogger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, rateLimitNotifier notify.RateLimitNotifier, httpClient httpcli.Doer, config config.FireworksConfig, promptRecorder PromptRecorder, upstreamConfig UpstreamHandlerConfig) http.Handler {
+	// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
+	// do any retries
+	upstreamConfig.DefaultRetryAfterSeconds = 30
+
 	return makeUpstreamHandler[fireworksRequest](
 		baseLogger,
 		eventLogger,
@@ -47,10 +42,7 @@ func NewFireworksHandler(
 			config:      config,
 		},
 		promptRecorder,
-		// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
-		// do any retries
-		30, // seconds
-		autoFlushStreamingResponses,
+		upstreamConfig,
 	)
 }
 
@@ -67,6 +59,7 @@ type fireworksRequest struct {
 	Stream      bool      `json:"stream,omitempty"`
 	Echo        bool      `json:"echo,omitempty"`
 	Stop        []string  `json:"stop,omitempty"`
+	LanguageID  string    `json:"languageId,omitempty"`
 }
 
 func (fr fireworksRequest) ShouldStream() bool {
@@ -112,7 +105,7 @@ type FireworksHandlerMethods struct {
 	config      config.FireworksConfig
 }
 
-func (f *FireworksHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
+func (f *FireworksHandlerMethods) getAPIURL(feature codygateway.Feature, _ fireworksRequest) string {
 	if feature == codygateway.FeatureChatCompletions {
 		return "https://api.fireworks.ai/inference/v1/chat/completions"
 	} else {
@@ -136,26 +129,36 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 	if body.N > 1 {
 		body.N = 1
 	}
+	modelLanguageId := body.LanguageID
+	// Delete the fields that are not supported by the Fireworks API.
+	if body.LanguageID != "" {
+		body.LanguageID = ""
+	}
 
 	body.Model = pickStarCoderModel(body.Model, f.config)
+	body.Model = pickFineTunedModel(body.Model, modelLanguageId)
 }
 
 func (f *FireworksHandlerMethods) getRequestMetadata(body fireworksRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{"stream": body.Stream}
 }
 
-func (f *FireworksHandlerMethods) transformRequest(r *http.Request) {
-	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("Authorization", "Bearer "+f.config.AccessToken)
+func (f *FireworksHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
+	// Enable tracing if the client requests it, see https://readme.fireworks.ai/docs/enabling-tracing
+	if downstreamRequest.Header.Get("X-Fireworks-Genie") == "true" {
+		upstreamRequest.Header.Set("X-Fireworks-Genie", "true")
+	}
+	upstreamRequest.Header.Set("Content-Type", "application/json")
+	upstreamRequest.Header.Set("Authorization", "Bearer "+f.config.AccessToken)
 }
 
-func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody fireworksRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody fireworksRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	promptUsage.characters = len(reqBody.Prompt)
 
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !reqBody.Stream {
+	if !isStreamRequest {
 		var res fireworksResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse fireworks response as JSON", log.Error(err))
@@ -241,6 +244,54 @@ func pickStarCoderModel(model string, config config.FireworksConfig) string {
 	}
 
 	return model
+}
+
+func pickFineTunedModel(model string, language string) string {
+	switch model {
+	case fireworks.FineTunedFIMLangDeepSeekStackTrained:
+		{
+			switch language {
+			case "typescript", "typescriptreact", "javascript", "javascriptreact":
+				return fireworks.FineTunedDeepseekStackTrainedTypescript
+			case "python":
+				return fireworks.FineTunedDeepseekStackTrainedPython
+			default:
+				return fireworks.DeepseekCoder7b
+			}
+		}
+	case fireworks.FineTunedFIMLangDeepSeekLogsTrained:
+		{
+			switch language {
+			case "typescript", "typescriptreact":
+				return fireworks.FineTunedDeepseekLogsTrainedTypescript
+			case "javascript", "javascriptreact":
+				return fireworks.FineTunedDeepseekLogsTrainedJavascript
+			case "python":
+				return fireworks.FineTunedDeepseekLogsTrainedPython
+			default:
+				return fireworks.DeepseekCoder7b
+			}
+		}
+	case fireworks.FineTunedFIMLangSpecificMixtral:
+		{
+			switch language {
+			case "typescript", "typescriptreact":
+				return fireworks.FineTunedMixtralTypescript
+			case "javascript":
+				return fireworks.FineTunedMixtralJavascript
+			case "javascriptreact":
+				return fireworks.FineTunedMixtralJsx
+			case "php":
+				return fireworks.FineTunedMixtralPhp
+			case "python":
+				return fireworks.FineTunedMixtralPython
+			default:
+				return fireworks.FineTunedMixtralAll
+			}
+		}
+	default:
+		return model
+	}
 }
 
 // Picks a model based on a specific percentage split. If the percent value is 0, the

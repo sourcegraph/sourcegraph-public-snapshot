@@ -20,7 +20,6 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	RepoUpdaterService_RepoUpdateSchedulerInfo_FullMethodName = "/repoupdater.v1.RepoUpdaterService/RepoUpdateSchedulerInfo"
-	RepoUpdaterService_RepoLookup_FullMethodName              = "/repoupdater.v1.RepoUpdaterService/RepoLookup"
 	RepoUpdaterService_EnqueueRepoUpdate_FullMethodName       = "/repoupdater.v1.RepoUpdaterService/EnqueueRepoUpdate"
 	RepoUpdaterService_RecloneRepository_FullMethodName       = "/repoupdater.v1.RepoUpdaterService/RecloneRepository"
 	RepoUpdaterService_EnqueueChangesetSync_FullMethodName    = "/repoupdater.v1.RepoUpdaterService/EnqueueChangesetSync"
@@ -32,8 +31,6 @@ const (
 type RepoUpdaterServiceClient interface {
 	// RepoUpdateSchedulerInfo returns information about the state of the repo in the update scheduler.
 	RepoUpdateSchedulerInfo(ctx context.Context, in *RepoUpdateSchedulerInfoRequest, opts ...grpc.CallOption) (*RepoUpdateSchedulerInfoResponse, error)
-	// RepoLookup retrieves information about the repository on repoupdater.
-	RepoLookup(ctx context.Context, in *RepoLookupRequest, opts ...grpc.CallOption) (*RepoLookupResponse, error)
 	// EnqueueRepoUpdate requests that the named repository be updated in the near
 	// future. It does not wait for the update.
 	EnqueueRepoUpdate(ctx context.Context, in *EnqueueRepoUpdateRequest, opts ...grpc.CallOption) (*EnqueueRepoUpdateResponse, error)
@@ -56,15 +53,6 @@ func NewRepoUpdaterServiceClient(cc grpc.ClientConnInterface) RepoUpdaterService
 func (c *repoUpdaterServiceClient) RepoUpdateSchedulerInfo(ctx context.Context, in *RepoUpdateSchedulerInfoRequest, opts ...grpc.CallOption) (*RepoUpdateSchedulerInfoResponse, error) {
 	out := new(RepoUpdateSchedulerInfoResponse)
 	err := c.cc.Invoke(ctx, RepoUpdaterService_RepoUpdateSchedulerInfo_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *repoUpdaterServiceClient) RepoLookup(ctx context.Context, in *RepoLookupRequest, opts ...grpc.CallOption) (*RepoLookupResponse, error) {
-	out := new(RepoLookupResponse)
-	err := c.cc.Invoke(ctx, RepoUpdaterService_RepoLookup_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -104,8 +92,6 @@ func (c *repoUpdaterServiceClient) EnqueueChangesetSync(ctx context.Context, in 
 type RepoUpdaterServiceServer interface {
 	// RepoUpdateSchedulerInfo returns information about the state of the repo in the update scheduler.
 	RepoUpdateSchedulerInfo(context.Context, *RepoUpdateSchedulerInfoRequest) (*RepoUpdateSchedulerInfoResponse, error)
-	// RepoLookup retrieves information about the repository on repoupdater.
-	RepoLookup(context.Context, *RepoLookupRequest) (*RepoLookupResponse, error)
 	// EnqueueRepoUpdate requests that the named repository be updated in the near
 	// future. It does not wait for the update.
 	EnqueueRepoUpdate(context.Context, *EnqueueRepoUpdateRequest) (*EnqueueRepoUpdateResponse, error)
@@ -124,9 +110,6 @@ type UnimplementedRepoUpdaterServiceServer struct {
 
 func (UnimplementedRepoUpdaterServiceServer) RepoUpdateSchedulerInfo(context.Context, *RepoUpdateSchedulerInfoRequest) (*RepoUpdateSchedulerInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RepoUpdateSchedulerInfo not implemented")
-}
-func (UnimplementedRepoUpdaterServiceServer) RepoLookup(context.Context, *RepoLookupRequest) (*RepoLookupResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RepoLookup not implemented")
 }
 func (UnimplementedRepoUpdaterServiceServer) EnqueueRepoUpdate(context.Context, *EnqueueRepoUpdateRequest) (*EnqueueRepoUpdateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EnqueueRepoUpdate not implemented")
@@ -164,24 +147,6 @@ func _RepoUpdaterService_RepoUpdateSchedulerInfo_Handler(srv interface{}, ctx co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RepoUpdaterServiceServer).RepoUpdateSchedulerInfo(ctx, req.(*RepoUpdateSchedulerInfoRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RepoUpdaterService_RepoLookup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RepoLookupRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RepoUpdaterServiceServer).RepoLookup(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: RepoUpdaterService_RepoLookup_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RepoUpdaterServiceServer).RepoLookup(ctx, req.(*RepoLookupRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -250,10 +215,6 @@ var RepoUpdaterService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RepoUpdateSchedulerInfo",
 			Handler:    _RepoUpdaterService_RepoUpdateSchedulerInfo_Handler,
-		},
-		{
-			MethodName: "RepoLookup",
-			Handler:    _RepoUpdaterService_RepoLookup_Handler,
 		},
 		{
 			MethodName: "EnqueueRepoUpdate",

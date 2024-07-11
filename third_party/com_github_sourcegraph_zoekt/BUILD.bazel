@@ -34,5 +34,6 @@ genrule(
 
 build_test(
     name = "test_golist_grep",
+    tags = [TAG_INFRA_DEVINFRA],
     targets = [":golist_grep"],
 )

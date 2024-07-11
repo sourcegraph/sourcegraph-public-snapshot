@@ -2018,7 +2018,8 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		r := &Resolver{db: db}
+		logger := logtest.NoOp(t)
+		r := &Resolver{logger: logger, db: db}
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		userID := graphqlbackend.MarshalUserID(1)
@@ -2035,7 +2036,8 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		r := &Resolver{db: db}
+		logger := logtest.NoOp(t)
+		r := &Resolver{logger: logger, db: db}
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		userID := graphqlbackend.MarshalUserID(2)
@@ -2052,7 +2054,8 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		r := &Resolver{db: db}
+		logger := logtest.NoOp(t)
+		r := &Resolver{logger: logger, db: db}
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		userID := graphqlbackend.MarshalUserID(2)
@@ -2133,7 +2136,9 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 	db.ReposFunc.SetDefaultReturn(repoStore)
 
 	// Creating a resolver and validating GraphQL schema.
-	r := &Resolver{db: db}
+	logger := logtest.NoOp(t)
+	r := &Resolver{logger: logger, db: db}
+
 	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, r)
 	if err != nil {
 		t.Fatal(err)
@@ -2378,7 +2383,9 @@ func TestResolverPermissionsSyncJobsFiltering(t *testing.T) {
 	db.ReposFunc.SetDefaultReturn(repoStore)
 
 	// Creating a resolver and validating GraphQL schema.
-	r := &Resolver{db: db}
+	logger := logtest.NoOp(t)
+	r := &Resolver{logger: logger, db: db}
+
 	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, r)
 	if err != nil {
 		t.Fatal(err)
@@ -2547,7 +2554,8 @@ func TestResolverPermissionsSyncJobsSearching(t *testing.T) {
 	db.ReposFunc.SetDefaultReturn(repoStore)
 
 	// Creating a resolver and validating GraphQL schema.
-	r := &Resolver{db: db}
+	logger := logtest.NoOp(t)
+	r := &Resolver{logger: logger, db: db}
 	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, r)
 	if err != nil {
 		t.Fatal(err)

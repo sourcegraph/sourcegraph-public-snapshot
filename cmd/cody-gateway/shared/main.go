@@ -23,15 +23,9 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
+	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
+	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -43,14 +37,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+
+	"github.com/sourcegraph/sourcegraph/lib/background"
+	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/anonymous"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription/enterpriseportal"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 )
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, cfg *config.Config) error {
@@ -92,6 +98,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		}
 	}
 
+	redisPool := connectToRedis(cfg.RedisEndpoint)
+
 	// Create an uncached external doer, we never want to cache any responses.
 	// Not only is the cache hit rate going to be really low and requests large-ish,
 	// but also do we not want to retain any data.
@@ -107,7 +115,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		return errors.Wrap(err, "init metric 'redis_latency'")
 	}
 
-	redisCache := redispool.Cache.WithLatencyRecorder(func(call string, latency time.Duration, err error) {
+	redisCache := redispool.RedisKeyValue(redisPool).WithLatencyRecorder(func(call string, latency time.Duration, err error) {
 		redisLatency.Record(context.Background(), latency.Milliseconds(), metric.WithAttributeSet(attribute.NewSet(
 			attribute.Bool("error", err != nil),
 			attribute.String("command", call))))
@@ -125,10 +133,10 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		dotcomURL.String(),
 		notify.Thresholds{
 			// Detailed notifications for product subscriptions.
-			codygateway.ActorSourceProductSubscription: []int{90, 95, 100},
+			codygatewayactor.ActorSourceEnterpriseSubscription: []int{90, 95, 100},
 			// No notifications for individual dotcom users - this can get quite
 			// spammy.
-			codygateway.ActorSourceDotcomUser: []int{},
+			codygatewayactor.ActorSourceDotcomUser: []int{},
 		},
 		cfg.ActorRateLimitNotify.SlackWebhookURL,
 		func(ctx context.Context, url string, msg *slack.WebhookMessage) error {
@@ -138,24 +146,63 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Supported actor/auth sources
 	sources := actor.NewSources(anonymous.NewSource(cfg.AllowAnonymous, cfg.ActorConcurrencyLimit))
+
 	var dotcomClient graphql.Client
 	if cfg.Dotcom.AccessToken != "" {
 		// dotcom-based actor sources only if an access token is provided for
 		// us to talk with the client
-		obctx.Logger.Info("dotcom-based actor sources are enabled")
+		obctx.Logger.Info("dotcom-user actor source enabled")
 		dotcomClient = dotcom.NewClient(cfg.Dotcom.URL, cfg.Dotcom.AccessToken, cfg.Dotcom.ClientID, cfg.Environment)
+		sources.Add(
+			dotcomuser.NewSource(
+				obctx.Logger,
+				rcache.NewWithTTL(redispool.Cache, fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())),
+				dotcomClient,
+				cfg.ActorConcurrencyLimit,
+				rs,
+				cfg.Dotcom.ActorRefreshCoolDownInterval,
+			),
+		)
+	} else {
+		obctx.Logger.Error("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN is not set, dotcom-user actor source is disabled")
+	}
+
+	// backgroundRoutines collects background dependencies for shutdown
+	var backgroundRoutines []background.Routine
+	if cfg.EnterprisePortal.URL != nil {
+		obctx.Logger.Info("enterprise subscriptions actor source enabled")
+		conn, err := enterpriseportal.Dial(
+			ctx,
+			obctx.Logger.Scoped("enterpriseportal"),
+			cfg.EnterprisePortal.URL,
+			// Authenticate using SAMS client credentials
+			sams.ClientCredentialsTokenSource(
+				cfg.SAMSClientConfig.ConnConfig,
+				cfg.SAMSClientConfig.ClientID,
+				cfg.SAMSClientConfig.ClientSecret,
+				[]scopes.Scope{
+					scopes.ToScope(scopes.ServiceEnterprisePortal, "codyaccess", scopes.ActionRead),
+					scopes.ToScope(scopes.ServiceEnterprisePortal, "subscription", scopes.ActionRead),
+				},
+			),
+		)
+		if err != nil {
+			return errors.Wrap(err, "connect to Enterprise Portal")
+		}
+		backgroundRoutines = append(backgroundRoutines, background.CallbackRoutine{
+			NameFunc: func() string { return "enterpriseportal.grpc.conn" },
+			StopFunc: func(context.Context) error { return conn.Close() },
+		})
 		sources.Add(
 			productsubscription.NewSource(
 				obctx.Logger,
-				rcache.NewWithTTL(fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())),
-				dotcomClient,
-				cfg.Dotcom.InternalMode,
+				rcache.NewWithTTL(redispool.Cache, fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())),
+				codyaccessv1.NewCodyAccessServiceClient(conn),
 				cfg.ActorConcurrencyLimit,
 			),
-			dotcomuser.NewSource(obctx.Logger, rcache.NewWithTTL(fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())), dotcomClient, cfg.ActorConcurrencyLimit, rs, cfg.Dotcom.ActorRefreshCoolDownInterval),
 		)
 	} else {
-		obctx.Logger.Warn("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN is not set, dotcom-based actor sources are disabled")
+		obctx.Logger.Error("CODY_GATEWAY_ENTERPRISE_PORTAL_URL is not set, enterprise subscriptions actor source is disabled")
 	}
 
 	authr := &auth.Authenticator{
@@ -181,8 +228,10 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			Anthropic:                   cfg.Anthropic,
 			OpenAI:                      cfg.OpenAI,
 			Fireworks:                   cfg.Fireworks,
+			Google:                      cfg.Google,
 			EmbeddingsAllowedModels:     cfg.AllowedEmbeddingsModels,
 			AutoFlushStreamingResponses: cfg.AutoFlushStreamingResponses,
+			IdentifiersToLogFor:         cfg.IdentifiersToLogFor,
 			EnableAttributionSearch:     cfg.Attribution.Enabled,
 			Sourcegraph:                 cfg.Sourcegraph,
 		},
@@ -191,7 +240,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		return errors.Wrap(err, "httpapi.NewHandler")
 	}
 	// Diagnostic and Maintenance layers, exposing additional APIs and endpoints.
-	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, cfg.DiagnosticsSecret, sources)
+	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, redisPool, cfg.DiagnosticsSecret, sources)
 	handler = httpapi.NewMaintenanceHandler(obctx.Logger, handler, cfg, redisCache)
 
 	// Collect request client for downstream handlers. Outside of dev, we always set up
@@ -208,8 +257,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	})
 
 	// Set up redis-based distributed mutex for the source syncer worker
-	p := redispool.Store.Pool()
-	sourceWorkerMutex := redsync.New(redigo.NewPool(p)).NewMutex("source-syncer-worker",
+	sourceWorkerMutex := redsync.New(redigo.NewPool(redisPool)).NewMutex("source-syncer-worker",
 		// Do not retry endlessly becuase it's very likely that someone else has
 		// a long-standing hold on the mutex. We will try again on the next periodic
 		// goroutine run.
@@ -225,19 +273,23 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	ready()
 	obctx.Logger.Info("service ready", log.String("address", address))
 
-	// Collect background routines
-	backgroundRoutines := []goroutine.BackgroundRoutine{
+	// Collect service routines
+	serviceRoutines := []goroutine.BackgroundRoutine{
 		server,
 		sources.Worker(obctx, sourceWorkerMutex, cfg.SourcesSyncInterval),
 	}
 	if w, ok := eventLogger.(goroutine.BackgroundRoutine); ok {
-		// eventLogger is events.BufferedLogger
+		// eventLogger is events.BufferedLogger, we need to shut it down cleanly
 		backgroundRoutines = append(backgroundRoutines, w)
 	}
-	// Block until done
-	goroutine.MonitorBackgroundRoutines(ctx, backgroundRoutines...)
 
-	return nil
+	// Block until done
+	return goroutine.MonitorBackgroundRoutines(ctx, background.FIFOSTopRoutine{
+		// Stop important service routines first
+		background.CombinedRoutine(serviceRoutines),
+		// Then shut down other background services
+		background.CombinedRoutine(backgroundRoutines),
+	})
 }
 
 func newRedisStore(store redispool.KeyValue) limiter.RedisStore {

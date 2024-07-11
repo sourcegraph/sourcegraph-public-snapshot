@@ -63,3 +63,13 @@ func Slice[S []V, V any](s S) []*V {
 	}
 	return slice
 }
+
+// NilIfZero returns nil if the provided value is zero, otherwise returns pointer
+// to the value.
+func NilIfZero[T comparable](val T) *T {
+	var zero T
+	if val == zero {
+		return nil
+	}
+	return &val
+}

@@ -6,6 +6,7 @@ import { describe, expect, test } from 'vitest'
 import { subtypeOf } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
+import { noOpTelemetryRecorder } from '../telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
 import { HoverOverlay, type HoverOverlayProps } from './HoverOverlay'
@@ -17,6 +18,7 @@ describe('HoverOverlay', () => {
     const commonProps = subtypeOf<HoverOverlayProps>()({
         location: history.location,
         telemetryService: NOOP_TELEMETRY_SERVICE,
+        telemetryRecorder: noOpTelemetryRecorder,
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
         platformContext: NOOP_PLATFORM_CONTEXT,
         hoveredToken: { repoName: 'r', commitID: 'c', revision: 'v', filePath: 'f', line: 1, character: 2 },
@@ -62,7 +64,12 @@ describe('HoverOverlay', () => {
             render(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c', title: 'Some title' }, active: true }]}
+                    actionsOrError={[
+                        {
+                            action: { id: 'a', command: 'c', title: 'Some title', telemetryProps: { feature: 'test' } },
+                            active: true,
+                        },
+                    ]}
                 />
             ).asFragment()
         ).toMatchSnapshot()
@@ -100,7 +107,9 @@ describe('HoverOverlay', () => {
             render(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
+                    actionsOrError={[
+                        { action: { id: 'a', command: 'c', telemetryProps: { feature: 'a' } }, active: true },
+                    ]}
                     hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
                 />
             ).asFragment()
@@ -112,7 +121,9 @@ describe('HoverOverlay', () => {
             render(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
+                    actionsOrError={[
+                        { action: { id: 'a', command: 'c', telemetryProps: { feature: 'a' } }, active: true },
+                    ]}
                     hoverOrError="loading"
                 />
             ).asFragment()
@@ -172,7 +183,9 @@ describe('HoverOverlay', () => {
             render(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
+                    actionsOrError={[
+                        { action: { id: 'a', command: 'c', telemetryProps: { feature: 'a' } }, active: true },
+                    ]}
                     hoverOrError={{ message: 'm', name: 'c' }}
                 />
             ).asFragment()

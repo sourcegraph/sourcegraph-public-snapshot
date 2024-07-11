@@ -207,8 +207,5 @@ describe('GitLab', () => {
                 timeout: 6000,
             },
         })
-
-        // disable flaky snapshot
-        // await percySnapshot(driver.page, 'Browser extension: GitLab - blob view with code intel popup')
     })
 })

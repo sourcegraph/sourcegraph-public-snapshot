@@ -25,6 +25,7 @@ export function createController(
         | 'requestGraphQL'
         | 'getStaticExtensions'
         | 'telemetryService'
+        | 'telemetryRecorder'
         | 'clientApplication'
         | 'sourcegraphURL'
         | 'createExtensionHost'

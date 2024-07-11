@@ -11,7 +11,8 @@ import {
     type ShiftOptions,
     type FlipOptions,
 } from '@floating-ui/dom'
-import type { ActionReturn, Action } from 'svelte/action'
+import { tick } from 'svelte'
+import type { Action } from 'svelte/action'
 import * as uuid from 'uuid'
 
 import { highlightNode } from '$lib/common'
@@ -95,18 +96,29 @@ export function uniqueID(prefix = ''): string {
  * An action that dispatches a custom 'click-outside' event when the user clicks
  * outside the attached element.
  */
-export function onClickOutside(
-    node: HTMLElement
-): ActionReturn<void, { 'on:click-outside': (event: CustomEvent<HTMLElement>) => void }> {
+export const onClickOutside: Action<
+    HTMLElement,
+    { enabled?: boolean } | undefined,
+    { 'on:click-outside': (event: CustomEvent<HTMLElement>) => void }
+> = (node, { enabled } = { enabled: true }) => {
     function handler(event: MouseEvent): void {
         if (event.target && !node.contains(event.target as HTMLElement)) {
             node.dispatchEvent(new CustomEvent('click-outside', { detail: event.target }))
         }
     }
 
-    window.addEventListener('mousedown', handler)
+    if (enabled) {
+        window.addEventListener('mousedown', handler)
+    }
 
     return {
+        update({ enabled } = { enabled: true }) {
+            if (enabled) {
+                window.addEventListener('mousedown', handler)
+            } else {
+                window.removeEventListener('mousedown', handler)
+            }
+        },
         destroy() {
             window.removeEventListener('mousedown', handler)
         },
@@ -327,84 +339,63 @@ export const portal: Action<HTMLElement, { container?: HTMLElement | null } | un
 }
 
 /**
- * An action that messures the width of the element and adds the provided CSS class when the
- * content overflows (and vice versa). The assumption is that the CSS class will hide some elements
- * when the content overflows, therefore changing the size of the element. It's the responsibility
- * of the caller to ensure that the element is styled accordingly.
+ * An action that resizes an element with the provided grow and shrink callbacks until the target element no longer overflows.
  *
- * However, there are situations where the "overflowing size" cannot be properly determined. In this
- * case a "measure" CSS class can be provided, which should ensure that the element is rendered in a
- * way that all of its content is visible. The action will measure the size of the element with and
- * without the class applied.
- *
- * If `measureClass` is not provided, the action will use `scrollWidth` to determine the size of the
- * content.
- *
- * Using this action should not cause any content flashes because the calculation is done synchronously
- * before painting.
- *
- * @param target The element to measure.
- * @param className The CSS class to add when the content overflows.
- * @param measureClass The CSS class to apply for measuring the size of the content.
+ * @param grow A callback to increase the size of the contained contents. Returns a boolean indicating more growth is possible.
+ * @param shrink A callback to reduce the size of the contained contents. Returns a boolean indicating more shrinking is possible.
  * @returns An action that updates the overflow state of the element.
  */
-export const overflow: Action<HTMLElement, { class: string; measureClass?: string }> = (
+export const sizeToFit: Action<HTMLElement, { grow: () => boolean; shrink: () => boolean }> = (
     target,
-    { class: className, measureClass }
+    { grow, shrink }
 ) => {
-    let ignoreResizeEvent = false
-
-    const observer = new ResizeObserver(() => {
-        if (!ignoreResizeEvent) {
-            update()
+    async function resize(): Promise<void> {
+        if (target.scrollWidth > target.clientWidth) {
+            // Shrink until we fit
+            while (target.scrollWidth > target.clientWidth) {
+                if (!shrink()) {
+                    return
+                }
+                await tick()
+            }
+        } else {
+            // Grow until we overflow, then shrink once
+            while (target.scrollWidth <= target.clientWidth && grow()) {
+                await tick()
+            }
+            await tick()
+            if (target.scrollWidth > target.clientWidth) {
+                shrink()
+                await tick()
+            }
         }
-    })
-
-    // Actions don't provide an API to be notified when the subtree changes so we have to handle this ourselves.
-    const mutationObserver = new MutationObserver(() => {
-        update()
-    })
-
-    function update(): void {
-        // Ignore resize events triggered by this action. It's possible that ResizeObserver
-        // already handles this but we want to be sure.
-        ignoreResizeEvent = true
-
-        target.classList.remove(className)
-
-        // Default to scrollWidth to determine whether the content overflows.
-        let fullWidth = target.scrollWidth
-
-        // This doesn't work in all situations (e.g. flex: 1 and overflow:hidden),
-        // so this is a fallback to the clientWidth.
-        if (measureClass) {
-            target.classList.add(measureClass)
-            fullWidth = target.scrollWidth
-            target.classList.remove(measureClass)
-        }
-
-        const overflows = fullWidth > target.clientWidth
-
-        if (overflows) {
-            target.classList.add(className)
-        }
-
-        ignoreResizeEvent = false
     }
 
-    update()
+    // Resizing can (and probably will) trigger mutations, so do not trigger a
+    // new resize if there is a resize in progress.
+    let resizing = false
+    function resizeOnce() {
+        if (resizing) {
+            return
+        }
+        resizing = true
+        resize().then(() => {
+            resizing = false
+        })
+    }
 
-    observer.observe(target)
-    mutationObserver.observe(target, { childList: true, subtree: true })
-
+    const resizeObserver = new ResizeObserver(resizeOnce)
+    resizeObserver.observe(target)
+    const mutationObserver = new MutationObserver(resizeOnce)
+    mutationObserver.observe(target, { attributes: true, childList: true, characterData: true, subtree: true })
     return {
-        update(parameter) {
-            target.classList.remove(className)
-            className = parameter.class
-            update()
+        update(params) {
+            grow = params.grow
+            shrink = params.shrink
+            resizeOnce()
         },
         destroy() {
-            observer.disconnect()
+            resizeObserver.disconnect()
             mutationObserver.disconnect()
         },
     }

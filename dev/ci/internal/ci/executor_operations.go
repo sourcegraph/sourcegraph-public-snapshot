@@ -124,7 +124,7 @@ func executorDockerMirrorImageFamilyForConfig(c Config) string {
 		if err != nil {
 			panic("cannot parse version")
 		}
-		imageFamily = fmt.Sprintf("sourcegraph-executors-internal-docker-mirror-%d-%d-%d", ver.Major(), ver.Minor(), ver.Patch())
+		imageFamily = fmt.Sprintf("sourcegraph-executors-internal-docker-mirror-%d-%d", ver.Major(), ver.Minor())
 	}
 	return imageFamily
 }
@@ -146,7 +146,7 @@ func executorImageFamilyForConfig(c Config) string {
 		if err != nil {
 			panic("cannot parse version")
 		}
-		imageFamily = fmt.Sprintf("sourcegraph-executors-internal-%d-%d-%d", ver.Major(), ver.Minor(), ver.Patch())
+		imageFamily = fmt.Sprintf("sourcegraph-executors-internal-%d-%d", ver.Major(), ver.Minor())
 	}
 	return imageFamily
 }

@@ -1,0 +1,85 @@
+diff --git a/cel/BUILD.bazel b/cel/BUILD.bazel
+index 6e2fc07..002b59e 100644
+--- a/cel/BUILD.bazel
++++ b/cel/BUILD.bazel
+@@ -4,6 +4,12 @@ package(
+     licenses = ["notice"],  # Apache 2.0
+ )
+
++alias(
++    name = "cel",
++    actual = ":go_default_library",
++    visibility = ["//visibility:public"],
++)
++
+ go_library(
+     name = "go_default_library",
+     srcs = [
+diff --git a/common/BUILD.bazel b/common/BUILD.bazel
+index eef7f28..10b57a2 100644
+--- a/common/BUILD.bazel
++++ b/common/BUILD.bazel
+@@ -5,6 +5,12 @@ package(
+     licenses = ["notice"],  # Apache 2.0
+ )
+
++alias(
++    name = "common",
++    actual = ":go_default_library",
++    visibility = ["//visibility:public"],
++)
++
+ go_library(
+     name = "go_default_library",
+     srcs = [
+diff --git a/common/types/BUILD.bazel b/common/types/BUILD.bazel
+index b5e44ff..ae133b3 100644
+--- a/common/types/BUILD.bazel
++++ b/common/types/BUILD.bazel
+@@ -5,6 +5,12 @@ package(
+     licenses = ["notice"],  # Apache 2.0
+ )
+
++alias(
++    name = "types",
++    actual = ":go_default_library",
++    visibility = ["//visibility:public"],
++)
++
+ go_library(
+     name = "go_default_library",
+     srcs = [
+diff --git a/common/types/ref/BUILD.bazel b/common/types/ref/BUILD.bazel
+index 79330c3..1260306 100644
+--- a/common/types/ref/BUILD.bazel
++++ b/common/types/ref/BUILD.bazel
+@@ -5,6 +5,12 @@ package(
+     licenses = ["notice"],  # Apache 2.0
+ )
+
++alias(
++    name = "ref",
++    actual = ":go_default_library",
++    visibility = ["//visibility:public"],
++)
++
+ go_library(
+     name = "go_default_library",
+     srcs = [
+diff --git a/common/types/traits/BUILD.bazel b/common/types/traits/BUILD.bazel
+index b19eb83..5c54558 100644
+--- a/common/types/traits/BUILD.bazel
++++ b/common/types/traits/BUILD.bazel
+@@ -5,6 +5,12 @@ package(
+     licenses = ["notice"],  # Apache 2.0
+ )
+
++alias(
++    name = "traits",
++    actual = ":go_default_library",
++    visibility = ["//visibility:public"],
++)
++
+ go_library(
+     name = "go_default_library",
+     srcs = [

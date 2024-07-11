@@ -99,15 +99,3 @@ export function useBreakpoint(size: keyof typeof breakpoints, debounceMs = 50): 
 const normalizeResizeObserverSize = (
     resizeObserverSize: undefined | readonly ResizeObserverSize[] | ResizeObserverSize
 ): ResizeObserverSize | undefined => (!Array.isArray(resizeObserverSize) ? resizeObserverSize : resizeObserverSize[0])
-
-export function createElement<K extends keyof HTMLElementTagNameMap>(
-    tagName: K,
-    properties: Partial<HTMLElementTagNameMap[K]> | null = null,
-    ...children: (Node | string)[]
-): HTMLElementTagNameMap[K] {
-    const element = Object.assign(document.createElement(tagName), properties)
-    for (const child of children) {
-        element.append(typeof child === 'string' ? document.createTextNode(child) : child)
-    }
-    return element
-}

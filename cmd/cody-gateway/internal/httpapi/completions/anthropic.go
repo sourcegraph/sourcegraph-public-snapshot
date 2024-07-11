@@ -22,21 +22,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewAnthropicHandler(
-	baseLogger log.Logger,
-	eventLogger events.Logger,
-	rs limiter.RedisStore,
-	rateLimitNotifier notify.RateLimitNotifier,
-	httpClient httpcli.Doer,
-	config config.AnthropicConfig,
-	promptRecorder PromptRecorder,
-	autoFlushStreamingResponses bool,
-) (http.Handler, error) {
+func NewAnthropicHandler(baseLogger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, rateLimitNotifier notify.RateLimitNotifier, httpClient httpcli.Doer, config config.AnthropicConfig, promptRecorder PromptRecorder, upstreamConfig UpstreamHandlerConfig) (http.Handler, error) {
 	// Tokenizer only needs to be initialized once, and can be shared globally.
 	anthropicTokenizer, err := tokenizer.NewCL100kBaseTokenizer()
 	if err != nil {
 		return nil, err
 	}
+
+	// Anthropic primarily uses concurrent requests to rate-limit spikes
+	// in requests, so set a default retry-after that is likely to be
+	// acceptable for Sourcegraph clients to retry (the default
+	// SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION) since we might be
+	// able to circumvent concurrents limits without raising an error to the
+	// user.
+	upstreamConfig.DefaultRetryAfterSeconds = 2
 
 	return makeUpstreamHandler[anthropicRequest](
 		baseLogger,
@@ -48,15 +47,7 @@ func NewAnthropicHandler(
 		config.AllowedModels,
 		&AnthropicHandlerMethods{config: config, anthropicTokenizer: anthropicTokenizer},
 		promptRecorder,
-
-		// Anthropic primarily uses concurrent requests to rate-limit spikes
-		// in requests, so set a default retry-after that is likely to be
-		// acceptable for Sourcegraph clients to retry (the default
-		// SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION) since we might be
-		// able to circumvent concurrents limits without raising an error to the
-		// user.
-		2, // seconds
-		autoFlushStreamingResponses,
+		upstreamConfig,
 	), nil
 }
 
@@ -122,7 +113,7 @@ type AnthropicHandlerMethods struct {
 	config             config.AnthropicConfig
 }
 
-func (a *AnthropicHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
+func (a *AnthropicHandlerMethods) getAPIURL(feature codygateway.Feature, _ anthropicRequest) string {
 	return "https://api.anthropic.com/v1/complete"
 }
 
@@ -137,6 +128,7 @@ func (a *AnthropicHandlerMethods) validateRequest(ctx context.Context, logger lo
 func (a *AnthropicHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, ar anthropicRequest) (*flaggingResult, error) {
 	result, err := isFlaggedRequest(a.anthropicTokenizer,
 		flaggingRequest{
+			ModelName:       ar.Model,
 			FlattenedPrompt: ar.Prompt,
 			MaxTokens:       int(ar.MaxTokensToSample),
 		},
@@ -163,18 +155,18 @@ func (a *AnthropicHandlerMethods) getRequestMetadata(body anthropicRequest) (mod
 	}
 }
 
-func (a *AnthropicHandlerMethods) transformRequest(r *http.Request) {
+func (a *AnthropicHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
 	// Mimic headers set by the official Anthropic client:
 	// https://sourcegraph.com/github.com/anthropics/anthropic-sdk-typescript@493075d70f50f1568a276ed0cb177e297f5fef9f/-/blob/src/index.ts
-	r.Header.Set("Cache-Control", "no-cache")
-	r.Header.Set("Accept", "application/json")
-	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("Client", "sourcegraph-cody-gateway/1.0")
-	r.Header.Set("X-API-Key", a.config.AccessToken)
-	r.Header.Set("anthropic-version", "2023-01-01")
+	upstreamRequest.Header.Set("Cache-Control", "no-cache")
+	upstreamRequest.Header.Set("Accept", "application/json")
+	upstreamRequest.Header.Set("Content-Type", "application/json")
+	upstreamRequest.Header.Set("Client", "sourcegraph-cody-gateway/1.0")
+	upstreamRequest.Header.Set("X-API-Key", a.config.AccessToken)
+	upstreamRequest.Header.Set("anthropic-version", "2023-01-01")
 }
 
-func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody anthropicRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody anthropicRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {
 	var err error
 
 	// Setting a default -1 value so that in case of errors the tokenizer computed tokens don't impact the data
@@ -191,7 +183,7 @@ func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !reqBody.Stream {
+	if !isStreamRequest {
 		var res anthropicResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse Anthropic response as JSON", log.Error(err))

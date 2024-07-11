@@ -61,7 +61,7 @@ func Open(specPath string) (*Spec, error) {
 	}
 	spec, err := parse(specData)
 	if err != nil {
-		return nil, errors.Wrap(err, "spec.parse")
+		return spec, errors.Wrap(err, "spec.parse")
 	}
 
 	// Load extraneous resources
@@ -134,7 +134,7 @@ func parse(data []byte) (*Spec, error) {
 	}
 
 	if validationErrs := s.Validate(); len(validationErrs) > 0 {
-		return nil, errors.Append(nil, validationErrs...)
+		return &s, errors.Append(nil, validationErrs...)
 	}
 	return &s, nil
 }
@@ -176,6 +176,13 @@ func (s Spec) Validate() []error {
 		if !strings.HasPrefix(env.ProjectID, fmt.Sprintf("%s-", s.Service.ID)) {
 			errs = append(errs, errors.Newf("environment %q projectID %q must contain service ID: expecting format '$SERVICE_ID-$ENVIRONMENT_ID-$RANDOM_SUFFIX'",
 				env.ID, env.ProjectID))
+		}
+
+		if env.Category.IsProduction() {
+			if s.Service.NotionPageID == nil {
+				errs = append(errs, errors.Newf("environment %q in category %q requires 'service.notionPageID' to be set",
+					env.ID, env.Category))
+			}
 		}
 
 		if domain := pointers.DerefZero(env.EnvironmentServiceSpec).Domain.GetDNSName(); domain != "" {

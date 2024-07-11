@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "iam",
+    srcs = [
+        "client.go",
+        "database.go",
+        "iam.go",
+        "openfga_server.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/iam",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/errors",
+        "//lib/managedservicesplatform/runtime",
+        "//lib/redislock",
+        "@com_github_openfga_api_proto//openfga/v1:openfga",
+        "@com_github_openfga_language_pkg_go//transformer",
+        "@com_github_openfga_openfga//assets",
+        "@com_github_openfga_openfga//pkg/server",
+        "@com_github_openfga_openfga//pkg/storage/postgres",
+        "@com_github_openfga_openfga//pkg/storage/sqlcommon",
+        "@com_github_pressly_goose_v3//:goose",
+        "@com_github_redis_go_redis_v9//:go-redis",
+        "@com_github_sourcegraph_log//:log",
+        "@io_gorm_driver_postgres//:postgres",
+        "@io_gorm_gorm//:gorm",
+        "@io_gorm_gorm//logger",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel//codes",
+        "@io_opentelemetry_go_otel_trace//:trace",
+        "@org_uber_go_zap//:zap",
+    ],
+)

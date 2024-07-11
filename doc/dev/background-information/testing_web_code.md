@@ -20,11 +20,6 @@ This is the implementation of our [Testing Principles](testing_principles.md) fo
 When testing UI, there are several categories of things that should be tested.
 These categories may be more or less important depending on the piece of UI.
 
-### Visual regressions
-
-A visual regression is a bug where the component behaves correctly, but no longer looks as intended.
-Percy can take screenshots in end-to-end tests and client integration tests.
-
 ### Render output
 
 Depending on the component, it can be important to test the _render output_ of the component.

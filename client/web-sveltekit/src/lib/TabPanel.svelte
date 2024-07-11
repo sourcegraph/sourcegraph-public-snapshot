@@ -2,22 +2,38 @@
     import { getContext, onDestroy } from 'svelte'
     import * as uuid from 'uuid'
 
+    import type { Keys } from '$lib/Hotkey'
     import { type TabsContext, KEY } from './Tabs.svelte'
+    import { registerHotkey } from '$lib/Hotkey'
 
     export let title: string
-    /**
-     * SVG path for the icon to display in the tab header.
-     */
-    export let icon: string | undefined = undefined
+    export let shortcut: Keys | undefined = undefined
 
-    const context = getContext<TabsContext>(KEY)
     const id = uuid.v4()
+    const context = getContext<TabsContext>(KEY)
     const tabId = `${context.id}-tab-${id}`
+
+    if (shortcut) {
+        registerHotkey({
+            keys: shortcut!,
+            allowDefault: false,
+            ignoreInputFields: false,
+            handler: event => {
+                event.preventDefault()
+
+                const currentTabIndex = context.getTabs().findIndex(tab => tab.id === tabId)
+                context.selectTab(currentTabIndex)
+
+                return false
+            },
+        })
+    }
+
     onDestroy(
         context.register({
             id: tabId,
             title,
-            icon,
+            shortcut,
         })
     )
     $: selectedId = context.selectedTabID

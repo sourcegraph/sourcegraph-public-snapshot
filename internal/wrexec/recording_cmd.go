@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 // KeyPrefix is the prefix that will be used to initialise the redis database with.
@@ -196,14 +197,14 @@ func (rf *RecordingCommandFactory) Disable() {
 
 // Command returns a new RecordingCommand with the ShouldRecordFunc already set.
 func (rf *RecordingCommandFactory) Command(ctx context.Context, logger log.Logger, repoName, cmdName string, args ...string) *RecordingCmd {
-	store := rcache.NewFIFOList(GetFIFOListKey(repoName), rf.maxSize)
+	store := rcache.NewFIFOList(redispool.Cache, GetFIFOListKey(repoName), rf.maxSize)
 	return RecordingCommand(ctx, logger, rf.shouldRecord, store, cmdName, args...)
 }
 
 // Wrap constructs a new RecordingCommand based of an existing os/exec.Cmd, while also setting up the ShouldRecordFunc
 // currently set in the factory.
 func (rf *RecordingCommandFactory) Wrap(ctx context.Context, logger log.Logger, cmd *exec.Cmd) *RecordingCmd {
-	store := rcache.NewFIFOList(KeyPrefix, rf.maxSize)
+	store := rcache.NewFIFOList(redispool.Cache, KeyPrefix, rf.maxSize)
 	return RecordingWrap(ctx, logger, rf.shouldRecord, store, cmd)
 }
 
@@ -211,7 +212,7 @@ func (rf *RecordingCommandFactory) Wrap(ctx context.Context, logger log.Logger, 
 // os/exec.Cmd, while also setting up the ShouldRecordFunc currently set in the
 // factory. It uses repoName to create a new Redis list using it.
 func (rf *RecordingCommandFactory) WrapWithRepoName(ctx context.Context, logger log.Logger, repoName api.RepoName, cmd *exec.Cmd) *RecordingCmd {
-	store := rcache.NewFIFOList(GetFIFOListKey(string(repoName)), rf.maxSize)
+	store := rcache.NewFIFOList(redispool.Cache, GetFIFOListKey(string(repoName)), rf.maxSize)
 	return RecordingWrap(ctx, logger, rf.shouldRecord, store, cmd)
 }
 

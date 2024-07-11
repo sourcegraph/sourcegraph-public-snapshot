@@ -27,7 +27,7 @@ func (c *Config) Load() {
 	uploadProcessDelay := env.ChooseFallbackVariableName("CODEINTEL_UPLOAD_EXPIRER_UPLOAD_PROCESS_DELAY", "PRECISE_CODE_INTEL_RETENTION_UPLOAD_PROCESS_DELAY")
 
 	c.CommitBatchSize = c.GetInt(commitBatchSize, "100", "The number of commits to process per upload at a time.")
-	c.ExpirerInterval = c.GetInterval("CODEINTEL_UPLOAD_EXPIRER_INTERVAL", "1s", "How frequently to run the upload expirer routine.")
+	c.ExpirerInterval = c.GetInterval("CODEINTEL_UPLOAD_EXPIRER_INTERVAL", "30s", "How frequently to run the upload expirer routine.")
 	c.PolicyBatchSize = c.GetInt(policyBatchSize, "100", "The number of policies to consider for expiration at a time.")
 	c.RepositoryBatchSize = c.GetInt(repositoryBatchSize, "100", "The number of repositories to consider for expiration at a time.")
 	c.RepositoryProcessDelay = c.GetInterval(repositoryProcessDelay, "24h", "The minimum frequency that the same repository's uploads can be considered for expiration.")

@@ -8,9 +8,11 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringalertpolicy"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringdashboard"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"golang.org/x/exp/maps"
+
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Schema reference: https://cloud.google.com/monitoring/api/ref_v3/rest/v1/projects.dashboards#resource:-dashboard
@@ -68,7 +70,7 @@ func createMonitoringDashboard(stack cdktf.TerraformStack,
 	vars Variables,
 	alertGroups map[string][]monitoringalertpolicy.MonitoringAlertPolicy,
 ) error {
-	dashboard := generateDashboard(vars.Service.ID, vars.EnvironmentID, alertGroups)
+	dashboard := generateDashboard(vars.Service, vars.EnvironmentID, alertGroups)
 
 	dashboardJSON, err := json.Marshal(dashboard)
 	if err != nil {
@@ -87,15 +89,22 @@ const dashboardColumns = 48
 const widgetWidth = 24
 const widgetHeight = 16
 
-func generateDashboard(serviceID, envID string, alertGroups map[string][]monitoringalertpolicy.MonitoringAlertPolicy) dashboard {
+// Groups with special treatment
+const (
+	customAlertsGroupName            = "Custom Alerts"
+	responseCodeRatioAlertsGroupName = "Response Code Ratio Alerts"
+)
+
+func generateDashboard(svc spec.ServiceSpec, envID string, alertGroups map[string][]monitoringalertpolicy.MonitoringAlertPolicy) dashboard {
 	// Add a banner informing operators not to edit the dashboard
 	infoBanner := tile{
 		Width:  dashboardColumns,
 		Height: 8,
 		Widget: widget{
 			Text: &text{
-				Content: fmt.Sprintf("Auto-generated - Please do not edit\n\nFor more details see: [go/msp-ops/%[1]s](https://handbook.sourcegraph.com/departments/engineering/managed-services/%[1]s/)", serviceID),
-				Format:  "MARKDOWN",
+				Content: fmt.Sprintf("This dashboard is auto-generated - please do not edit!\n\nFor more details, see: %s",
+					svc.GetHandbookPageURL()),
+				Format: "MARKDOWN",
 				Style: textStyle{
 					BackgroundColor:     "#FFFFFF",
 					FontSize:            "FS_EXTRA_LARGE",
@@ -114,9 +123,12 @@ func generateDashboard(serviceID, envID string, alertGroups map[string][]monitor
 	// absolute distance from top of dashboard
 	height := infoBanner.Height
 
-	// for consistency we sort the map keys first
-	keys := maps.Keys(alertGroups)
+	// for consistency we sort the map keys first, but place the custom alerts
+	// at the start
+	firstKeys := []string{customAlertsGroupName, responseCodeRatioAlertsGroupName}
+	keys := remove(maps.Keys(alertGroups), firstKeys)
 	slices.Sort(keys)
+	keys = append(firstKeys, keys...)
 	for _, section := range keys {
 		alerts := alertGroups[section]
 		// Ensure we don't create empty sections
@@ -162,10 +174,21 @@ func generateDashboard(serviceID, envID string, alertGroups map[string][]monitor
 	}
 
 	return dashboard{
-		DisplayName: fmt.Sprintf("MSP Alerts - %s-%s", serviceID, envID),
+		DisplayName: fmt.Sprintf("MSP Alerts - %s (%s)", svc.GetName(), envID),
 		MosaicLayout: mosaicLayout{
 			Columns: dashboardColumns,
 			Tiles:   tiles,
 		},
 	}
+}
+
+func remove(v []string, filter []string) []string {
+	for _, f := range filter {
+		for i, s := range v {
+			if s == f {
+				v = append(v[:i], v[i+1:]...)
+			}
+		}
+	}
+	return v
 }

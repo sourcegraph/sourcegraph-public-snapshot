@@ -15,6 +15,7 @@ go_library(
         "//cmd/cody-gateway/internal/limiter",
         "//cmd/cody-gateway/internal/notify",
         "//internal/codygateway",
+        "//internal/codygateway/codygatewayactor",
         "//internal/goroutine",
         "//internal/observation",
         "//internal/trace",
@@ -45,6 +46,7 @@ go_test(
     deps = [
         "//cmd/cody-gateway/internal/limiter",
         "//internal/codygateway",
+        "//internal/codygateway/codygatewayactor",
         "//internal/observation",
         "//internal/redispool",
         "//lib/errors",

@@ -26,7 +26,7 @@
       (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          pkgsShell = import nixpkgs { inherit system; overlays = with self.overlays; [ nodejs-20_x bazel_7 ]; };
+          pkgsShell = import nixpkgs { inherit system; overlays = with self.overlays; [ nodejs-20_x bazel_7 go_1_22 ]; };
           pkgsBins = nixpkgs-stable.legacyPackages.${system};
           pkgsAll = import nixpkgs { inherit system; overlays = builtins.attrValues self.overlays; };
           pkgsX = xcompileTargets.${system} or null;
@@ -47,6 +47,7 @@
               # tzdata fails to build on pkgsStatic, and pkgsMusl isnt supported on macos
               tzdata = if pkgs.hostPlatform.isMacOS then pkgs.tzdata else pkgs.pkgsMusl.tzdata;
             };
+            go_1_22 = pkgs.callPackage ./dev/nix/go_1_22.nix { };
           };
 
           # We use pkgsShell (not pkgsAll) intentionally to avoid doing extra work of
@@ -63,6 +64,7 @@
         p4-fusion = final: prev: { p4-fusion = self.packages.${prev.system}.p4-fusion; };
         bazel_7 = final: prev: { bazel_7 = self.packages.${prev.system}.bazel_7; };
         pg-utils = final: prev: { pg-utils = self.packages.${prev.system}.pg-utils; };
+        go_1_22 = final: prev: { go_1_22 = self.packages.${prev.system}.go_1_22; };
       };
     };
 }

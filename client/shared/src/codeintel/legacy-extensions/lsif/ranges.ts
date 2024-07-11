@@ -62,7 +62,6 @@ interface RangeWindow {
  */
 export function makeRangeWindowFactory(
     hasImplementationsField: boolean,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     queryGraphQL: QueryGraphQLFn<any> = sgQueryGraphQL
 ): Promise<RangeWindowFactoryFn> {
     const disabled = sourcegraph.getSetting<boolean>('codeIntel.disableRangeQueries')
@@ -135,7 +134,6 @@ export async function findOverlappingWindows(
     position: sourcegraph.Position,
     rangeWindows: RangeWindow[],
     hasImplementationsField: boolean,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     queryGraphQL: QueryGraphQLFn<any> = sgQueryGraphQL
 ): Promise<CodeIntelligenceRange[] | null> {
     let index = -1

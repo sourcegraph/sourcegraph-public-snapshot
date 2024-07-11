@@ -60,7 +60,6 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
         // By process of elimination (that TypeScript is unfortunately unable to infer, except
         // by reorganizing this code in a way that's much more complex to humans), node.oldPath
         // is non-null.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         path = <span title={node.oldPath!}>{node.oldPath}</span>
     }
 

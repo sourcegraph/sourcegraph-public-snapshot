@@ -93,7 +93,7 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 		}
 
 		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid))
-		if r.commitErr != nil && errors.HasType(r.commitErr, &gitdomain.RevisionNotFoundError{}) {
+		if r.commitErr != nil && errors.HasType[*gitdomain.RevisionNotFoundError](r.commitErr) {
 			// If the commit is not found, attempt to do a ensure revision call.
 			_, err := r.gitserverClient.ResolveRevision(ctx, r.gitRepo, string(r.oid), gitserver.ResolveRevisionOptions{EnsureRevision: true})
 			if err != nil {
@@ -180,9 +180,6 @@ func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
 }
 
 func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
-	if r.repoResolver.isPerforceDepot(ctx) {
-		return nil, nil
-	}
 
 	commit, err := r.resolveCommit(ctx)
 	if err != nil {
@@ -190,6 +187,10 @@ func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
 	}
 
 	body := commit.Message.Body()
+	if r.repoResolver.isPerforceDepot(ctx) {
+		return maybeTransformP4Body(body), nil
+	}
+
 	if body == "" {
 		return nil, nil
 	}

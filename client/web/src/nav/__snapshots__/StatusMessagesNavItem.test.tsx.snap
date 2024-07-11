@@ -5,7 +5,7 @@ exports[`StatusMessagesNavItem > all messages 1`] = `
   <button
     aria-expanded="false"
     aria-label="Show status messages"
-    class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
+    class="btn btnLink nav-link py-0 px-0 chromatic-ignore"
     type="button"
   />
 </DocumentFragment>
@@ -16,7 +16,7 @@ exports[`StatusMessagesNavItem > no messages 1`] = `
   <button
     aria-expanded="false"
     aria-label="Show status messages"
-    class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
+    class="btn btnLink nav-link py-0 px-0 chromatic-ignore"
     type="button"
   />
 </DocumentFragment>

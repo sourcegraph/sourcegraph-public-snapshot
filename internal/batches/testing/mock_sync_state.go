@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
@@ -20,8 +19,6 @@ type MockedChangesetSyncState struct {
 	DiffStat *diff.Stat
 
 	MockClient *gitserver.MockClient
-
-	mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 }
 
 // MockChangesetSyncState sets up mocks such that invoking SetDerivedState() with
@@ -33,14 +30,6 @@ func MockChangesetSyncState(repo *protocol.RepoInfo) *MockedChangesetSyncState {
 	state := &MockedChangesetSyncState{
 		// This diff.Stat matches the testGitHubDiff below
 		DiffStat: &diff.Stat{Added: 2, Deleted: 4},
-
-		mockRepoLookup: repoupdater.MockRepoLookup,
-	}
-
-	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-		return &protocol.RepoLookupResult{
-			Repo: repo,
-		}, nil
 	}
 
 	gitserverClient := gitserver.NewMockClient()
@@ -85,9 +74,4 @@ func generateFakeCommitID() string {
 	commitID := hex.EncodeToString(commitBytes)
 
 	return commitID
-}
-
-// Unmock resets the mocks set up by MockGitHubChangesetSync.
-func (state *MockedChangesetSyncState) Unmock() {
-	repoupdater.MockRepoLookup = state.mockRepoLookup
 }

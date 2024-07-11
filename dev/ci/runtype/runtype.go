@@ -23,10 +23,11 @@ const (
 
 	// Release branches
 
-	TaggedRelease     // semver-tagged release
-	ReleaseBranch     // release branch build
-	BextReleaseBranch // browser extension release build
-	VsceReleaseBranch // vs code extension release build
+	TaggedRelease      // semver-tagged release
+	ReleaseBranch      // release branch build
+	PatchReleaseBranch // patch release branch build
+	BextReleaseBranch  // browser extension release build
+	VsceReleaseBranch  // vs code extension release build
 
 	InternalRelease // Internal release
 	PromoteRelease  // Public release
@@ -42,6 +43,7 @@ const (
 	ImagePatchNoTest    // build a patched image without testing
 	ExecutorPatchNoTest // build executor image without testing
 	CandidatesNoTest    // build one or all candidate images without testing
+	DockerImages        // build, test and push images on DockerHub registry with insider tags.
 	CloudEphemeral      // build all images and push to cloud ephemeral registry for use with cloud deployment
 
 	BazelDo // run a specific bazel command
@@ -137,6 +139,11 @@ func (t RunType) Matcher() *RunTypeMatcher {
 			Branch:       `^[0-9]+\.[0-9]+$`,
 			BranchRegexp: true,
 		}
+	case PatchReleaseBranch:
+		return &RunTypeMatcher{
+			Branch:       `^[0-9]+\.[0-9]+\.[0-9]+$`,
+			BranchRegexp: true,
+		}
 	case BextReleaseBranch:
 		return &RunTypeMatcher{
 			Branch:      "bext/release",
@@ -174,6 +181,10 @@ func (t RunType) Matcher() *RunTypeMatcher {
 	case CandidatesNoTest:
 		return &RunTypeMatcher{
 			Branch: "docker-images-candidates-notest/",
+		}
+	case DockerImages:
+		return &RunTypeMatcher{
+			Branch: "docker-images/",
 		}
 	case BazelDo:
 		return &RunTypeMatcher{
@@ -217,6 +228,8 @@ func (t RunType) String() string {
 		return "Patch image without testing"
 	case CandidatesNoTest:
 		return "Build all candidates without testing"
+	case DockerImages:
+		return "Build all docker images without testing"
 	case ExecutorPatchNoTest:
 		return "Build executor without testing"
 	case BazelDo:

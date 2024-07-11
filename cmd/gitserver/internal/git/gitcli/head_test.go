@@ -71,7 +71,7 @@ func TestGitCLIBackend_RevParseHead(t *testing.T) {
 
 		_, err := backend.RevParseHead(ctx)
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 }
 
@@ -129,14 +129,14 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 	b.ResetTimer()
 
 	for range b.N {
-		rev, err := QuickRevParseHead(gitDir)
+		rev, err := quickRevParseHead(gitDir)
 		if err != nil {
 			b.Fatal(err)
 		}
 		if rev != masterRev {
 			b.Fatal("unexpected rev: ", rev)
 		}
-		ref, err := QuickSymbolicRefHead(gitDir)
+		ref, err := quickSymbolicRefHead(gitDir)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -182,14 +182,14 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) 
 	b.ResetTimer()
 
 	for range b.N {
-		rev, err := QuickRevParseHead(gitDir)
+		rev, err := quickRevParseHead(gitDir)
 		if err != nil {
 			b.Fatal(err)
 		}
 		if rev != masterRev {
 			b.Fatal("unexpected rev: ", rev)
 		}
-		ref, err := QuickSymbolicRefHead(gitDir)
+		ref, err := quickSymbolicRefHead(gitDir)
 		if err != nil {
 			b.Fatal(err)
 		}

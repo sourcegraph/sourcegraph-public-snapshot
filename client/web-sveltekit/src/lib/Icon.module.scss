@@ -1,0 +1,25 @@
+$icon-size: var(--icon-size, 1.5rem);
+$icon-inline-size: var(--icon-inline-size, #{(16 / 14)}em);
+
+svg.icon {
+    width: $icon-size;
+    height: $icon-size;
+    // Note that --icon-color is defined globally
+    color: var(--icon-color, inherit);
+    fill: currentColor;
+    stroke-width: var(--stroke-width, 2);
+
+    g,
+    path {
+        // Overwrites Lucide's/unplugin-icons' default stroke-width setting
+        stroke-width: inherit;
+    }
+}
+
+svg.icon-inline {
+    --stroke-width: 1.5;
+
+    width: $icon-inline-size;
+    height: $icon-inline-size;
+    vertical-align: text-bottom;
+}

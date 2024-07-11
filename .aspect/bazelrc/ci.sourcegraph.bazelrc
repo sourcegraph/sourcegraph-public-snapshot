@@ -1,4 +1,4 @@
-# Provides secrets like GH_TOKEN and PERCY_TOKEN via --action_env flag.
+# Provides secrets like GH_TOKEN via --action_env flag.
 # Generated via the `.buildkite/hooks/post-checkout` hook.
 try-import %workspace%/.aspect/bazelrc/ci.generated.bazelrc
 
@@ -32,7 +32,7 @@ common --test_env=HEADLESS=false
 common --test_env=SOURCEGRAPH_BASE_URL="http://127.0.0.1:7080"
 common --test_env=DISPLAY=:99
 
-# Provides git commit, branch information to build targets like Percy via status file.
+# Provides git commit, branch information to build targets via status file.
 # https://bazel.build/docs/user-manual#workspace-status
 common --workspace_status_command=./dev/bazel_buildkite_stamp_vars.sh
 
@@ -58,6 +58,9 @@ test --build_event_binary_file=build_event_log.bin
 test --build_event_binary_file_path_conversion=false
 test --build_event_binary_file_upload_mode=wait_for_upload_complete
 test --build_event_publish_all_actions=true
+
+build --experimental_execution_log_compact_file=execution_log.zstd
+test --experimental_execution_log_compact_file=execution_log.zstd
 
 # These likely perform faster locally than the overhead of pulling/pushing from/to the remote cache,
 # as well as being able to reduce how much we push to the cache

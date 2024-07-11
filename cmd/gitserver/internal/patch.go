@@ -10,9 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -22,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/sshagent"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	internalperforce "github.com/sourcegraph/sourcegraph/internal/perforce"
@@ -31,37 +28,40 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var patchID uint64
-
-func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchReader io.Reader) protocol.CreateCommitFromPatchResponse {
-	logger := s.logger.Scoped("createCommitFromPatch").
-		With(
-			log.String("repo", string(req.Repo)),
-			log.String("baseCommit", string(req.BaseCommit)),
-			log.String("targetRef", req.TargetRef),
-		)
-
-	var resp protocol.CreateCommitFromPatchResponse
+// CreateCommitFromPatch adds a new commit to a repository.
+// The rough outline of operations is:
+// 1. Create a temporary directory
+// 2. Initialize a new, empty, non-bare git repository in that directory
+// 3. Check out the base commit provided into this repository (using alternates, for less copying)
+// 4. Apply the patch to the base commit
+// 5. Commit the changes, using the message and author/committer information given
+// 6. Copy the new objects that this process created back to the original repository
+// 7. If configured, push the new commit to the code host
+// 8. Unless PushRef is set, update the ref of the branch in the base repository to point to the new commit
+// 9. Clean up the temporary directory
+func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchReader io.Reader) (resp protocol.CreateCommitFromPatchResponse) {
+	logger := s.logger.Scoped("createCommitFromPatch").With(
+		log.String("repo", string(req.Repo)),
+		log.String("baseCommit", string(req.BaseCommit)),
+		log.String("targetRef", req.TargetRef),
+	)
 
 	repo := req.Repo
-	cloned, err := s.fs.RepoCloned(repo)
-	if err != nil {
-		resp.SetError(repo, "", "", errors.Wrap(err, "failed to check if repo is cloned"))
-		return resp
-	}
-	if !cloned {
-		resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: repo does not exist"))
-		return resp
-	}
-
 	repoGitDir := s.fs.RepoDir(repo)
 
-	var remoteURL *vcs.URL
-
+	var (
+		remoteURL *vcs.URL
+		err       error
+	)
 	if req.Push != nil && req.Push.RemoteURL != "" {
 		remoteURL, err = vcs.ParseURL(req.Push.RemoteURL)
 	} else {
 		remoteURL, err = s.getRemoteURL(ctx, req.Repo)
+	}
+	if err != nil {
+		logger.Error("Failed to get remote URL", log.Error(err))
+		resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
+		return resp
 	}
 
 	ref := req.TargetRef
@@ -69,34 +69,8 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	if req.PushRef != nil && *req.PushRef != "" {
 		ref = *req.PushRef
 	}
-	if req.UniqueRef {
-		refs, err := s.repoRemoteRefs(ctx, remoteURL, repo, ref)
-		if err != nil {
-			logger.Error("Failed to get remote refs", log.Error(err))
-			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteRefs"))
-			return resp
-		}
-
-		retry := 1
-		tmp := ref
-		for {
-			if _, ok := refs[tmp]; !ok {
-				break
-			}
-			tmp = ref + "-" + strconv.Itoa(retry)
-			retry++
-		}
-		ref = tmp
-	}
-
 	if req.Push != nil && req.PushRef == nil {
 		ref = ensureRefPrefix(ref)
-	}
-
-	if err != nil {
-		logger.Error("Failed to get remote URL", log.Error(err))
-		resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
-		return resp
 	}
 
 	redactor := urlredactor.New(remoteURL)
@@ -122,8 +96,6 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return strings.Join(args, " ")
 	}
 
-	// Temporary logging command wrapper
-	prefix := fmt.Sprintf("%d %s ", atomic.AddUint64(&patchID, 1), repo)
 	run := func(cmd *exec.Cmd, reason string, isRemote bool) ([]byte, error) {
 		if !gitcli.IsAllowedGitCmd(logger, cmd.Args[1:]) {
 			return nil, errors.New("command not on allow list")
@@ -139,7 +111,6 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 		out, err := s.recordingCommandFactory.Wrap(ctx, s.logger, cmd).CombinedOutput()
 		logger := logger.With(
-			log.String("prefix", prefix),
 			log.String("command", redactor.Redact(argsToString(cmd.Args))),
 			log.Duration("duration", time.Since(t)),
 			log.String("output", string(out)),
@@ -180,7 +151,10 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return resp
 	}
 
-	applyArgs := append([]string{"apply", "--cached"}, req.GitApplyArgs...)
+	applyArgs := []string{"apply", "--cached"}
+	if req.PatchFilenamesNoPrefix {
+		applyArgs = append(applyArgs, "-p0")
+	}
 
 	cmd = exec.CommandContext(ctx, "git", applyArgs...)
 	cmd.Dir = tmpRepoDir
@@ -333,56 +307,10 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 		if out, err = run(cmd, "creating ref", false); err != nil {
 			logger.Error("Failed to create ref for commit.", log.String("commit", cmtHash), log.String("output", string(out)))
-			return resp
 		}
 	}
 
 	return resp
-}
-
-// repoRemoteRefs returns a map containing ref + commit pairs from the
-// remote Git repository starting with the specified prefix.
-//
-// The ref prefix `ref/<ref type>/` is stripped away from the returned
-// refs.
-func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoName api.RepoName, prefix string) (map[string]string, error) {
-	// The expected output of this git command is a list of:
-	// <commit hash> <ref name>
-	cmd := exec.Command("git", "ls-remote", remoteURL.String(), prefix+"*")
-
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	r := urlredactor.New(remoteURL)
-	err := s.recordingCommandFactory.WrapWithRepoName(ctx, s.logger, api.RepoName(repoName), cmd).WithRedactorFunc(r.Redact).Run()
-	if err != nil {
-		stderr := stderr.Bytes()
-		if len(stderr) > 200 {
-			stderr = stderr[:200]
-		}
-		return nil, errors.Errorf("git %s failed: %s (%q)", cmd.Args, err, stderr)
-	}
-
-	refs := make(map[string]string)
-	raw := stdout.String()
-	for _, line := range strings.Split(raw, "\n") {
-		if line == "" {
-			continue
-		}
-
-		fields := strings.Fields(line)
-		if len(fields) != 2 {
-			return nil, errors.Errorf("git %s failed (invalid output): %s", cmd.Args, line)
-		}
-
-		split := strings.SplitN(fields[1], "/", 3)
-		if len(split) != 3 {
-			return nil, errors.Errorf("git %s failed (invalid refname): %s", cmd.Args, fields[1])
-		}
-
-		refs[split[2]] = fields[0]
-	}
-	return refs, nil
 }
 
 func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchCommit string, remoteURL *vcs.URL, tmpGitPathEnv, altObjectsEnv string) (string, error) {

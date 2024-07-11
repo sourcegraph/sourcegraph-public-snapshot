@@ -22,7 +22,7 @@ import (
 
 type ChangeContext struct {
 	AMConfig *amconfig.Config // refer to https://prometheus.io/docs/alerting/latest/configuration/
-	AMClient *amclient.Alertmanager
+	AMClient *amclient.AlertmanagerAPI
 }
 
 // ChangeResult indicates output from a Change

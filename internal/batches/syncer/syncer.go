@@ -68,6 +68,10 @@ func NewSyncRegistry(ctx context.Context, observationCtx *observation.Context, b
 	}
 }
 
+func (s *SyncRegistry) Name() string {
+	return "SyncRegistry"
+}
+
 func (s *SyncRegistry) Start() {
 	// Fetch initial list of syncers.
 	if err := s.syncCodeHosts(s.ctx); err != nil {
@@ -88,11 +92,15 @@ func (s *SyncRegistry) Start() {
 		goroutine.WithInterval(externalServiceSyncerInterval),
 	)
 
-	goroutine.MonitorBackgroundRoutines(s.ctx, externalServiceSyncer)
+	err := goroutine.MonitorBackgroundRoutines(s.ctx, externalServiceSyncer)
+	if err != nil {
+		s.logger.Error("error monitoring background routines", log.Error(err))
+	}
 }
 
-func (s *SyncRegistry) Stop() {
+func (s *SyncRegistry) Stop(context.Context) error {
 	s.cancel()
+	return nil
 }
 
 // EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
@@ -489,7 +497,9 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	}
 
 	srcer := sources.NewSourcer(s.httpFactory)
-	source, err := srcer.ForChangeset(ctx, s.syncStore, cs, sources.AuthenticationStrategyUserCredential, repo)
+	source, err := srcer.ForChangeset(ctx, s.syncStore, cs, repo, sources.SourcerOpts{
+		AuthenticationStrategy: sources.AuthenticationStrategyUserCredential,
+	})
 	if err != nil {
 		if errors.Is(err, store.ErrDeletedNamespace) {
 			syncLogger.Debug("SyncChangeset skipping changeset: namespace deleted")
@@ -506,7 +516,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 func SyncChangeset(ctx context.Context, syncStore SyncStore, client gitserver.Client, source sources.ChangesetSource, repo *types.Repo, c *btypes.Changeset) (err error) {
 	repoChangeset := &sources.Changeset{TargetRepo: repo, Changeset: c}
 	if err := source.LoadChangeset(ctx, repoChangeset); err != nil {
-		if !errors.HasType(err, sources.ChangesetNotFoundError{}) {
+		if !errors.HasType[sources.ChangesetNotFoundError](err) {
 			// Store the error as the syncer error.
 			errMsg := err.Error()
 			c.SyncErrorMessage = &errMsg

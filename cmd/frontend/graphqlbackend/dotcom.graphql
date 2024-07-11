@@ -484,6 +484,7 @@ input UpdateCodyGatewayAccessInput {
     for this subscription.
     """
     chatCompletionsAllowedModels: [String!]
+        @deprecated(reason: "Enterprise no longer have per-subscription model allowlists.")
     """
     Override default requests per time interval.
 
@@ -501,6 +502,7 @@ input UpdateCodyGatewayAccessInput {
     for this subscription.
     """
     codeCompletionsAllowedModels: [String!]
+        @deprecated(reason: "Enterprise no longer have per-subscription model allowlists.")
     """
     Override default requests per time interval for embeddings generation.
 
@@ -517,6 +519,7 @@ input UpdateCodyGatewayAccessInput {
     Override the set of allowed models for embeddings generation for this subscription.
     """
     embeddingsAllowedModels: [String!]
+        @deprecated(reason: "Enterprise no longer have per-subscription model allowlists.")
 }
 
 """

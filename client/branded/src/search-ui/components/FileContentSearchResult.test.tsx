@@ -37,6 +37,7 @@ describe('FileContentSearchResult', () => {
         expect(getByTestId(container, 'result-container')).toBeVisible()
         expect(getAllByTestId(container, 'result-container').length).toBe(1)
         expect(getAllByTestId(container, 'file-search-result').length).toBe(1)
+        expect(getAllByTestId(container, 'file-match-children').length).toBe(1)
     })
 
     // TODO: add test that the collapse shows if there are too many results

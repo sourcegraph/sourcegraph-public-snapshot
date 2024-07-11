@@ -49,7 +49,7 @@ func (g *gitCLIBackend) ContributorCounts(ctx context.Context, opt git.Contribut
 		// If exit code is 128 and `fatal: bad object` is part of stderr, most likely we
 		// are referencing a range that does not exist.
 		// We want to return a gitdomain.RevisionNotFoundError in that case.
-		var e *CommandFailedError
+		var e *commandFailedError
 		if errors.As(err, &e) && e.ExitStatus == 128 && (bytes.Contains(e.Stderr, []byte("fatal: bad object")) ||
 			bytes.Contains(e.Stderr, []byte("fatal: bad revision"))) {
 			return nil, &gitdomain.RevisionNotFoundError{Repo: g.repoName, Spec: string(opt.Range)}

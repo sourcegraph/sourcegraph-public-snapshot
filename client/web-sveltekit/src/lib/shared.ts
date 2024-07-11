@@ -23,33 +23,35 @@ export { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
 export { SectionID as SearchSidebarSectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 export { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 export {
-    type Skipped,
-    getFileMatchUrl,
-    getRepositoryUrl,
+    LATEST_VERSION,
+    TELEMETRY_FILTER_TYPES,
     aggregateStreamingSearch,
     emptyAggregateResults,
-    LATEST_VERSION,
-    type AggregateStreamingSearchResults,
-    type StreamSearchOptions,
+    getFileMatchUrl,
+    getMatchUrl,
     getRepoMatchLabel,
     getRepoMatchUrl,
-    getMatchUrl,
-    type RepositoryMatch,
-    type SymbolMatch,
-    type PathMatch,
-    type ContentMatch,
+    getRepositoryUrl,
+    streamComputeQuery,
+    type AggregateStreamingSearchResults,
+    type Alert,
     type ChunkMatch,
-    type LineMatch,
-    type SearchMatch,
-    type OwnerMatch,
-    type TeamMatch,
-    type PersonMatch,
     type CommitMatch,
+    type ContentMatch,
+    type Filter,
+    type LineMatch,
+    type OwnerMatch,
+    type PathMatch,
+    type PersonMatch,
     type Progress,
     type Range,
-    type Filter,
+    type RepositoryMatch,
     type SearchEvent,
-    type Alert,
+    type SearchMatch,
+    type Skipped,
+    type StreamSearchOptions,
+    type SymbolMatch,
+    type TeamMatch,
 } from '@sourcegraph/shared/src/search/stream'
 export {
     type MatchItem,
@@ -60,18 +62,28 @@ export {
     truncateGroups,
 } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
-export { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-export { KeywordKind } from '@sourcegraph/shared/src/search/query/token'
+export {
+    getRelevantTokens,
+    type RelevantTokenResult,
+    EMPTY_RELEVANT_TOKEN_RESULT,
+} from '@sourcegraph/shared/src/search/query/analyze'
+export { scanSearchQuery, scanSearchQueryAsPatterns } from '@sourcegraph/shared/src/search/query/scanner'
+export { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
+export { KeywordKind, PatternKind, type Token } from '@sourcegraph/shared/src/search/query/token'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 export { getGlobalSearchContextFilter, findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
+export { isFilterOfType } from '@sourcegraph/shared/src/search/query/utils'
 export { omitFilter, appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
-export { type Settings, SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
+export type { Settings } from '@sourcegraph/shared/src/settings/settings'
 export { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-export { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search/helpers'
+export {
+    QueryChangeSource,
+    type QueryState,
+    TELEMETRY_SEARCH_SOURCE_TYPE,
+} from '@sourcegraph/shared/src/search/helpers'
 export { migrateLocalStorageToTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/migrateLocalStorageToTemporarySettings'
 export type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
-export { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
-export { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
+export { SyntaxKind, Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 export { createCodeIntelAPI, type CodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 export { getModeFromPath } from '@sourcegraph/shared/src/languages'
 export type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'

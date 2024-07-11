@@ -6,7 +6,6 @@ go_library(
     srcs = [
         "client.go",
         "consts.go",
-        "ifaces.go",
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codygateway",

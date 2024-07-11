@@ -25,11 +25,6 @@ func (a *automaticRetryClient) RepoUpdateSchedulerInfo(ctx context.Context, in *
 	return a.base.RepoUpdateSchedulerInfo(ctx, in, opts...)
 }
 
-func (a *automaticRetryClient) RepoLookup(ctx context.Context, in *proto.RepoLookupRequest, opts ...grpc.CallOption) (*proto.RepoLookupResponse, error) {
-	opts = append(defaults.RetryPolicy, opts...)
-	return a.base.RepoLookup(ctx, in, opts...)
-}
-
 func (a *automaticRetryClient) EnqueueRepoUpdate(ctx context.Context, in *proto.EnqueueRepoUpdateRequest, opts ...grpc.CallOption) (*proto.EnqueueRepoUpdateResponse, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return a.base.EnqueueRepoUpdate(ctx, in, opts...)

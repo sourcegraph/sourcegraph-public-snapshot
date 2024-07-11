@@ -63,6 +63,7 @@ go_test(
         "@com_github_buildkite_go_buildkite_v3//buildkite",
         "@com_github_gorilla_mux//:mux",
         "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
         "@com_google_cloud_go_bigquery//:bigquery",
     ],
@@ -75,7 +76,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_base",
+    base = "//wolfi-images/sourcegraph-base:base_image",
     entrypoint = [
         "/sbin/tini",
         "--",

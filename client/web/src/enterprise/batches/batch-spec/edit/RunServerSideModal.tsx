@@ -40,7 +40,7 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
                 </Text>
 
                 <video
-                    className="w-100 h-auto shadow percy-hide"
+                    className="w-100 h-auto shadow"
                     width={1280}
                     height={720}
                     autoPlay={true}

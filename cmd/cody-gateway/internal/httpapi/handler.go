@@ -12,9 +12,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
-
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
@@ -22,9 +20,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/requestlogger"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -35,10 +36,12 @@ type Config struct {
 	Anthropic                   config.AnthropicConfig
 	OpenAI                      config.OpenAIConfig
 	Fireworks                   config.FireworksConfig
+	Google                      config.GoogleConfig
 	EmbeddingsAllowedModels     []string
 	AutoFlushStreamingResponses bool
 	EnableAttributionSearch     bool
 	Sourcegraph                 config.SourcegraphConfig
+	IdentifiersToLogFor         collections.Set[string]
 }
 
 var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
@@ -48,6 +51,7 @@ var (
 	attributesOpenAICompletions    = newMetricAttributes("openai", "completions")
 	attributesOpenAIEmbeddings     = newMetricAttributes("openai", "embeddings")
 	attributesFireworksCompletions = newMetricAttributes("fireworks", "completions")
+	attributesGoogleCompletions    = newMetricAttributes("google", "completions")
 )
 
 func NewHandler(
@@ -114,19 +118,16 @@ func NewHandler(
 			),
 		)
 	}
+	upstreamConfig := completions.UpstreamHandlerConfig{
+		DefaultRetryAfterSeconds:    3, // matching SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION
+		AutoFlushStreamingResponses: config.AutoFlushStreamingResponses,
+		IdentifiersToLogFor:         config.IdentifiersToLogFor,
+	}
 
 	if config.Anthropic.AccessToken == "" {
 		logger.Error("Anthropic access token not set. Not registering Anthropic-related endpoints.")
 	} else {
-		anthropicHandler, err := completions.NewAnthropicHandler(
-			logger,
-			eventLogger,
-			rs,
-			config.RateLimitNotifier,
-			httpClient,
-			config.Anthropic,
-			flaggedPromptRecorder,
-			config.AutoFlushStreamingResponses)
+		anthropicHandler, err := completions.NewAnthropicHandler(logger, eventLogger, rs, config.RateLimitNotifier, httpClient, config.Anthropic, flaggedPromptRecorder, upstreamConfig)
 		if err != nil {
 			return nil, errors.Wrap(err, "init Anthropic handler")
 		}
@@ -136,15 +137,7 @@ func NewHandler(
 			attributesAnthropicCompletions,
 			anthropicHandler)
 
-		anthropicMessagesHandler, err := completions.NewAnthropicMessagesHandler(
-			logger,
-			eventLogger,
-			rs,
-			config.RateLimitNotifier,
-			httpClient,
-			config.Anthropic,
-			flaggedPromptRecorder,
-			config.AutoFlushStreamingResponses)
+		anthropicMessagesHandler, err := completions.NewAnthropicMessagesHandler(logger, eventLogger, rs, config.RateLimitNotifier, httpClient, config.Anthropic, flaggedPromptRecorder, upstreamConfig)
 		if err != nil {
 			return nil, errors.Wrap(err, "init anthropicMessages handler")
 		}
@@ -158,34 +151,32 @@ func NewHandler(
 	if config.OpenAI.AccessToken == "" {
 		logger.Error("OpenAI access token not set. Not registering OpenAI-related endpoints.")
 	} else {
-		openAIHandler := completions.NewOpenAIHandler(
-			logger,
-			eventLogger,
-			rs,
-			config.RateLimitNotifier,
-			httpClient,
-			config.OpenAI,
-			flaggedPromptRecorder,
-			config.AutoFlushStreamingResponses)
+		openAIHandler := completions.NewOpenAIHandler(logger, eventLogger, rs, config.RateLimitNotifier, httpClient, config.OpenAI, flaggedPromptRecorder, upstreamConfig)
 		registerStandardEndpoint(
 			"v1.completions.openai",
 			"/completions/openai",
 			attributesOpenAICompletions,
 			openAIHandler)
 
-		registerSimpleGETEndpoint("v1.embeddings.models", "/embeddings/models", embeddings.NewListHandler())
+		registerSimpleGETEndpoint("v1.embeddings.models", "/embeddings/models",
+			embeddings.NewListHandler(config.EmbeddingsAllowedModels))
 
 		factoryMap := embeddings.ModelFactoryMap{
-			embeddings.ModelNameOpenAIAda:            embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
-			embeddings.ModelNameSourcegraphSTMultiQA: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.EmbeddingsAPIURL, config.Sourcegraph.EmbeddingsAPIToken),
+			embeddings.ModelNameOpenAIAda:              embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
+			embeddings.ModelNameSourcegraphSTMultiQA:   embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.EmbeddingsAPIURL, config.Sourcegraph.EmbeddingsAPIToken),
+			embeddings.ModelNameSourcegraphMetadataGen: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.EmbeddingsAPIURL, config.Sourcegraph.EmbeddingsAPIToken),
 		}
+
+		fireworksClient := fireworks.NewClient(httpcli.UncachedExternalDoer, "https://api.fireworks.ai/inference/v1/chat/completions", config.Fireworks.AccessToken)
+
 		embeddingsHandler := embeddings.NewHandler(
 			logger,
 			eventLogger,
 			rs,
 			config.RateLimitNotifier,
 			factoryMap,
-			config.EmbeddingsAllowedModels)
+			config.EmbeddingsAllowedModels,
+			fireworksClient)
 		// TODO: If embeddings.ModelFactoryMap includes more than just OpenAI, we might want to
 		// revisit how we count concurrent requests into the handler. (Instead of assuming they are
 		// all OpenAI-related requests. (i.e. maybe we should use something other than
@@ -200,20 +191,21 @@ func NewHandler(
 	if config.Fireworks.AccessToken == "" {
 		logger.Error("Fireworks access token not set. Not registering Fireworks-related endpoints.")
 	} else {
-		fireworksHandler := completions.NewFireworksHandler(
-			logger,
-			eventLogger,
-			rs,
-			config.RateLimitNotifier,
-			httpClient,
-			config.Fireworks,
-			flaggedPromptRecorder,
-			config.AutoFlushStreamingResponses)
+		fireworksHandler := completions.NewFireworksHandler(logger, eventLogger, rs, config.RateLimitNotifier, httpClient, config.Fireworks, flaggedPromptRecorder, upstreamConfig)
 		registerStandardEndpoint(
 			"v1.completions.fireworks",
 			"/completions/fireworks",
 			attributesFireworksCompletions,
 			fireworksHandler)
+	}
+
+	if config.Google.AccessToken != "" {
+		googleHandler := completions.NewGoogleHandler(logger, eventLogger, rs, config.RateLimitNotifier, httpClient, config.Google, flaggedPromptRecorder, upstreamConfig)
+		registerStandardEndpoint(
+			"v1.completions.google",
+			"/completions/google",
+			attributesGoogleCompletions,
+			googleHandler)
 	}
 
 	// Register a route where actors can retrieve their current rate limit state.

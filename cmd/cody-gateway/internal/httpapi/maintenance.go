@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/internal/sams"
 )
@@ -29,23 +30,28 @@ const samsScopeFlaggedPromptRead = "cody_gateway::flaggedprompts::read"
 func NewMaintenanceHandler(
 	baseLogger log.Logger, next http.Handler, config *config.Config, redisKV redispool.KeyValue) http.Handler {
 	// Do nothing if no SAMS configuration is provided.
-	if !config.SAMSClientConfig.Valid() {
-		baseLogger.Warn("No SAMS client config provided. Not registering maintenance endpoints.")
+	if err := config.SAMSClientConfig.Validate(); err != nil {
+		baseLogger.Warn("no SAMS client config provided; not registering maintenance endpoints",
+			log.Error(err))
 		return next
 	}
 
 	logger := baseLogger.Scoped("Maintenance")
 
 	// Create the SAMS Client.
+	samsAPIURL := pointers.Deref(
+		config.SAMSClientConfig.ConnConfig.APIURL,
+		config.SAMSClientConfig.ConnConfig.ExternalURL, // default
+	)
 	samsClient := sams.NewClient(
-		config.SAMSClientConfig.URL,
+		samsAPIURL,
 		clientcredentials.Config{
 			ClientID:     config.SAMSClientConfig.ClientID,
 			ClientSecret: config.SAMSClientConfig.ClientSecret,
 			// Since we are only using our SAMS client to verify supplied token,
 			// we just issue tokens with a minimal set of scopes.
 			Scopes:   []string{"openid", "profile", "email"},
-			TokenURL: fmt.Sprintf("%s/oauth/token", config.SAMSClientConfig.URL),
+			TokenURL: fmt.Sprintf("%s/oauth/token", samsAPIURL),
 		})
 
 	return newMaintenanceHandler(logger, next, redisKV, samsClient)

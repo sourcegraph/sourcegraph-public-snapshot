@@ -439,6 +439,7 @@ func NewSchema(
 	schemas := []string{
 		mainSchema,
 		outboundWebhooksSchema,
+		viewerSchema,
 	}
 
 	for _, optional := range optionals {
@@ -960,24 +961,9 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
-		if errcode.IsRepoDenied(err) {
-			return nil, repositoryDeniedError{err}
-		}
 		return nil, err
 	}
 	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, r.gitserverClient, repo)}, nil
-}
-
-type repositoryDeniedError struct {
-	error
-}
-
-func (r repositoryDeniedError) Error() string {
-	return r.error.Error()
-}
-
-func (r repositoryDeniedError) Extensions() map[string]any {
-	return map[string]any{"code": "ErrRepoDenied"}
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {

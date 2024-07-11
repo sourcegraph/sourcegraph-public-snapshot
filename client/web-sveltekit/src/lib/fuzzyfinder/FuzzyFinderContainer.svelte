@@ -22,10 +22,23 @@
     import { parseRepoRevision } from '$lib/shared'
 
     import FuzzyFinder from './FuzzyFinder.svelte'
-    import { filesHotkey, reposHotkey, symbolsHotkey } from './keys'
+    import { allHotkey, filesHotkey, reposHotkey, symbolsHotkey } from './keys'
 
     let finder: FuzzyFinder | undefined
     let scope = ''
+
+    registerHotkey({
+        keys: allHotkey,
+        ignoreInputFields: false,
+        handler: event => {
+            event.stopPropagation()
+            fuzzyFinderState.set({
+                open: true,
+                selectedTabId: 'all',
+            })
+            return false
+        },
+    })
 
     registerHotkey({
         keys: reposHotkey,
@@ -39,6 +52,7 @@
             return false
         },
     })
+
     registerHotkey({
         keys: symbolsHotkey,
         ignoreInputFields: false,
@@ -61,6 +75,16 @@
                 open: true,
                 selectedTabId: 'files',
             })
+            return false
+        },
+    })
+
+    registerHotkey({
+        keys: { key: 'Esc' },
+        ignoreInputFields: false,
+        handler: event => {
+            event.preventDefault()
+            fuzzyFinderState.update(state => ({ ...state, open: false }))
             return false
         },
     })

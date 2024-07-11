@@ -5,4 +5,5 @@ go_library(
     srcs = ["interrupt.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/interrupt",
     visibility = ["//visibility:public"],
+    deps = ["//dev/sg/internal/std"],
 )

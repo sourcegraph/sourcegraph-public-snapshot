@@ -7,8 +7,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
-
     import CodeExcerpt from '$lib/CodeExcerpt.svelte'
     import { pluralize, SourcegraphURL } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
@@ -122,7 +120,7 @@
                 }}
                 class:expanded
             >
-                <Icon svgPath={expanded ? mdiChevronUp : mdiChevronDown} inline aria-hidden="true" />
+                <Icon icon={expanded ? ILucideChevronUp : ILucideChevronDown} inline aria-hidden="true" />
                 <span>{expandButtonText}</span>
             </button>
         {/if}

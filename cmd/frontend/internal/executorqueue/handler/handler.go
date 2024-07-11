@@ -439,7 +439,7 @@ func wrapHandler(w http.ResponseWriter, r *http.Request, payload any, logger log
 func decodeAndLabelMetrics(encodedMetrics, instanceName string) ([]*dto.MetricFamily, error) {
 	var data []*dto.MetricFamily
 
-	dec := expfmt.NewDecoder(strings.NewReader(encodedMetrics), expfmt.FmtText)
+	dec := expfmt.NewDecoder(strings.NewReader(encodedMetrics), expfmt.NewFormat(expfmt.TypeTextPlain))
 	for {
 		var mf dto.MetricFamily
 		if err := dec.Decode(&mf); err != nil {

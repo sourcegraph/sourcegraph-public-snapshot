@@ -431,7 +431,7 @@ func (r *notebookResolver) Namespace(ctx context.Context) (*graphqlbackend.Names
 			// On Cloud, the user can have access to an org notebook if it is public. But if the user is not a member of
 			// that org, then he does not have access to further information about the org. Instead of returning an error
 			// (which would prevent the user from viewing the notebook) we return an empty namespace.
-			if dotcom.SourcegraphDotComMode() && errors.HasType(err, &database.OrgNotFoundError{}) {
+			if dotcom.SourcegraphDotComMode() && errors.HasType[*database.OrgNotFoundError](err) {
 				return nil, nil
 			}
 			return nil, err
@@ -511,6 +511,10 @@ func (r *notebookBlockResolver) ToSymbolBlock() (graphqlbackend.SymbolBlockResol
 		return &symbolBlockResolver{r.block}, true
 	}
 	return nil, false
+}
+
+func (r *notebookResolver) PatternType(_ context.Context) string {
+	return r.notebook.PatternType
 }
 
 type markdownBlockResolver struct {

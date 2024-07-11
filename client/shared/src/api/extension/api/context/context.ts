@@ -2,7 +2,7 @@ import { basename, dirname, extname } from 'path'
 
 import type { Context } from '@sourcegraph/template-parser'
 
-import { type SettingsCascadeOrError, isSettingsValid } from '../../../../settings/settings'
+import { isSettingsValid, type SettingsCascadeOrError } from '../../../../settings/settings'
 import type { ViewerWithPartialModel } from '../../../viewerTypes'
 
 export type ContributionScope =
@@ -15,7 +15,6 @@ export type ContributionScope =
 
 /**
  * Compute the full context data based on the environment, including keys such as `resource.uri`.
- *
  * @param activeEditor the currently visible editor (if any)
  * @param settings the settings for the viewer
  * @param context manually specified context keys
@@ -69,13 +68,13 @@ export function computeContext<T>(
         // See above for why we disable eslint rules related to `any`.
         //
 
-        data['component.selections'] = component.selections as any // eslint-disable-line @typescript-eslint/no-explicit-any
+        data['component.selections'] = component.selections as any
         if (component.selections.length > 0) {
-            data['component.selection'] = (component.selections[0] || null) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+            data['component.selection'] = (component.selections[0] || null) as any
 
-            data['component.selection.start'] = (component.selections[0] ? component.selections[0].start : null) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+            data['component.selection.start'] = (component.selections[0] ? component.selections[0].start : null) as any
 
-            data['component.selection.end'] = (component.selections[0] ? component.selections[0].end : null) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+            data['component.selection.end'] = (component.selections[0] ? component.selections[0].end : null) as any
             data['component.selection.start.line'] = component.selections[0] ? component.selections[0].start.line : null
             data['component.selection.start.character'] = component.selections[0]
                 ? component.selections[0].start.character

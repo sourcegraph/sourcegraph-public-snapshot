@@ -3,8 +3,8 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { type CodySubscriptionStatus, CodySubscriptionPlan } from '@sourcegraph/shared/src/graphql-operations'
-import { Text, LoadingSpinner, H4 } from '@sourcegraph/wildcard'
+import { CodySubscriptionPlan, type CodySubscriptionStatus } from '@sourcegraph/shared/src/graphql-operations'
+import { ButtonLink, H4, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import type { UserCodyUsageResult } from '../../graphql-operations'
 import { AutocompletesIcon, ChatMessagesIcon } from '../components/CodyIcon'
@@ -22,19 +22,19 @@ interface SubscriptionStatsProps {
         cancelAtPeriodEnd: boolean
     }
     usageData: UserCodyUsageResult | undefined
+    onClickUpgradeToProCTA: () => void
 }
 
 export const SubscriptionStats: React.FunctionComponent<SubscriptionStatsProps> = ({
     subscription,
     usageData,
+    onClickUpgradeToProCTA,
 }: SubscriptionStatsProps) => {
     const stats = usageData?.currentUser
     const codyCurrentPeriodChatLimit = stats?.codyCurrentPeriodChatLimit || 0
     const codyCurrentPeriodChatUsage = stats?.codyCurrentPeriodChatUsage || 0
-    const codyCurrentPeriodCodeLimit = stats?.codyCurrentPeriodCodeLimit || 0
     const codyCurrentPeriodCodeUsage = stats?.codyCurrentPeriodCodeUsage || 0
 
-    const codeLimitReached = codyCurrentPeriodCodeUsage >= codyCurrentPeriodCodeLimit && codyCurrentPeriodCodeLimit > 0
     const chatLimitReached = codyCurrentPeriodChatUsage >= codyCurrentPeriodChatLimit && codyCurrentPeriodChatLimit > 0
     const isUserOnProTier = subscription.plan === CodySubscriptionPlan.PRO
 
@@ -59,84 +59,59 @@ export const SubscriptionStats: React.FunctionComponent<SubscriptionStatsProps> 
     const codyProSubscriptionEndTime = subscription.currentPeriodEndAt
 
     return (
-        <div className={classNames('d-flex align-items-center mt-3', styles.responsiveContainer)}>
-            <div className="d-flex flex-column align-items-center flex-grow-1 p-3">
+        <div className={styles.responsiveContainer}>
+            <div className="d-flex flex-column align-items-center justify-content-center p-3">
                 {isUserOnProTier ? <ProTierIcon /> : <Text className={classNames(styles.planName, 'mb-0')}>Free</Text>}
-                <Text className="text-muted mb-0" size="small">
-                    tier
-                </Text>
                 {isUserOnProTier && subscription.cancelAtPeriodEnd && (
                     <Text className="text-muted mb-0 mt-4" size="small">
                         Subscription ends <Timestamp date={codyProSubscriptionEndTime} />
                     </Text>
                 )}
+                {!isUserOnProTier && (
+                    <ButtonLink
+                        variant="secondary"
+                        to="/cody/subscription"
+                        onClick={onClickUpgradeToProCTA}
+                        className="mt-2"
+                        size="sm"
+                    >
+                        Upgrade plan
+                    </ButtonLink>
+                )}
             </div>
-            <div className="d-flex flex-column align-items-center flex-grow-1 p-3 border-left border-right">
+            <div className="d-flex flex-column align-items-center justify-content-center p-3">
                 <AutocompletesIcon />
-                <div className="mb-2 mt-3">
-                    {subscription.applyProRateLimits ? (
-                        <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
-                            Unlimited
-                        </Text>
-                    ) : usageData?.currentUser ? (
+                <div className="my-2">
+                    {usageData?.currentUser ? (
                         <>
-                            <Text
-                                weight="bold"
-                                className={classNames(
-                                    'd-inline mb-0',
-                                    styles.counter,
-                                    codeLimitReached ? 'text-danger' : 'text-muted'
-                                )}
-                            >
-                                {Math.min(codyCurrentPeriodCodeUsage, codyCurrentPeriodCodeLimit)} /
-                            </Text>{' '}
-                            <Text
-                                className={classNames('d-inline b-0', codeLimitReached ? 'text-danger' : 'text-muted')}
-                                size="small"
-                            >
-                                {codyCurrentPeriodCodeLimit}
-                            </Text>
+                            <Text className="d-inline mb-0 text-muted">{codyCurrentPeriodCodeUsage} /</Text>{' '}
+                            <Text className="d-inline b-0 text-muted">unlimited</Text>
                         </>
                     ) : (
                         <LoadingSpinner />
                     )}
                 </div>
-                <H4 className={classNames('mb-0', codeLimitReached ? 'text-danger' : 'text-muted')}>
-                    Autocomplete suggestions
-                </H4>
-                {!subscription.applyProRateLimits &&
-                    (codeLimitReached ? (
-                        <Text className="text-danger mb-0" size="small">
-                            Renews in <Timestamp date={usageRefreshTime} />
-                        </Text>
-                    ) : (
-                        <Text className="text-muted mb-0" size="small">
-                            this month
-                        </Text>
-                    ))}
+                <H4 className="mb-0 text-muted">Autocomplete suggestions</H4>
+                <Text className="text-muted mb-0" size="small">
+                    this month
+                </Text>
             </div>
-            <div className="d-flex flex-column align-items-center flex-grow-1 p-3">
+            <div className="d-flex flex-column align-items-center justify-content-center p-3">
                 <ChatMessagesIcon />
-                <div className="mb-2 mt-3">
+                <div className="my-2">
                     {subscription.applyProRateLimits ? (
-                        <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
+                        <Text weight="bold" className={classNames('d-inline mb-0')}>
                             Unlimited
                         </Text>
                     ) : usageData?.currentUser ? (
                         <>
                             <Text
-                                weight="bold"
-                                className={classNames(
-                                    'd-inline mb-0',
-                                    styles.counter,
-                                    chatLimitReached ? 'text-danger' : 'text-muted'
-                                )}
+                                className={classNames('d-inline mb-0', chatLimitReached ? 'text-danger' : 'text-muted')}
                             >
                                 {Math.min(codyCurrentPeriodChatUsage, codyCurrentPeriodChatLimit)} /
                             </Text>{' '}
                             <Text
                                 className={classNames('d-inline b-0', chatLimitReached ? 'text-danger' : 'text-muted')}
-                                size="small"
                             >
                                 {codyCurrentPeriodChatLimit}
                             </Text>

@@ -4,9 +4,10 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import type { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
-import { SearchBox, LegacyToggles } from '@sourcegraph/branded'
+import { SearchBox } from '@sourcegraph/branded'
 import { Toggles } from '@sourcegraph/branded/src/search-ui/input/toggles/Toggles'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
+import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import {
     type CaseSensitivityProps,
     type SearchPatternTypeProps,
@@ -39,9 +40,12 @@ const isTouchOnlyDevice =
 
 const queryStateSelector = (
     state: NavbarQueryState
-): Pick<CaseSensitivityProps, 'caseSensitive'> & SearchPatternTypeProps & Pick<SearchModeProps, 'searchMode'> => ({
+): Pick<CaseSensitivityProps, 'caseSensitive'> &
+    SearchPatternTypeProps &
+    Pick<SearchModeProps, 'searchMode'> & { defaultPatternType: SearchPatternType } => ({
     caseSensitive: state.searchCaseSensitivity,
     patternType: state.searchPatternType,
+    defaultPatternType: state.defaultPatternType,
     searchMode: state.searchMode,
 })
 
@@ -50,7 +54,6 @@ interface SearchPageInputProps {
     setQueryState: (newState: QueryState) => void
     hardCodedSearchContextSpec?: string
     simpleSearch: boolean
-    showKeywordSearchToggle?: boolean
 }
 
 export const SearchPageInput: FC<SearchPageInputProps> = props => {
@@ -73,7 +76,10 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
     const location = useLocation()
     const navigate = useNavigate()
 
-    const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
+    const { caseSensitive, patternType, defaultPatternType, searchMode } = useNavbarQueryState(
+        queryStateSelector,
+        shallow
+    )
     const [v2QueryInput] = useV2QueryInput()
 
     const { recentSearches } = useRecentSearches()
@@ -148,34 +154,20 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             selectedSearchContextSpec={selectedSearchContextSpec}
             className="flex-grow-1"
         >
-            {props.showKeywordSearchToggle ? (
-                <Toggles
-                    patternType={patternType}
-                    caseSensitive={caseSensitive}
-                    setPatternType={setSearchPatternType}
-                    setCaseSensitivity={setSearchCaseSensitivity}
-                    searchMode={searchMode}
-                    setSearchMode={setSearchMode}
-                    navbarSearchQuery={queryState.query}
-                    submitSearch={submitSearchOnChange}
-                    structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch !== 'enabled'}
-                    telemetryService={telemetryService}
-                    telemetryRecorder={telemetryRecorder}
-                />
-            ) : (
-                <LegacyToggles
-                    patternType={patternType}
-                    caseSensitive={caseSensitive}
-                    setPatternType={setSearchPatternType}
-                    setCaseSensitivity={setSearchCaseSensitivity}
-                    searchMode={searchMode}
-                    setSearchMode={setSearchMode}
-                    navbarSearchQuery={queryState.query}
-                    submitSearch={submitSearchOnChange}
-                    showSmartSearchButton={false}
-                    structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch !== 'enabled'}
-                />
-            )}
+            <Toggles
+                patternType={patternType}
+                defaultPatternType={defaultPatternType}
+                caseSensitive={caseSensitive}
+                setPatternType={setSearchPatternType}
+                setCaseSensitivity={setSearchCaseSensitivity}
+                searchMode={searchMode}
+                setSearchMode={setSearchMode}
+                navbarSearchQuery={queryState.query}
+                submitSearch={submitSearchOnChange}
+                structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch !== 'enabled'}
+                telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
+            />
         </LazyV2SearchInput>
     ) : (
         <SearchBox
@@ -193,6 +185,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             showSearchContextManagement={true}
             caseSensitive={caseSensitive}
             patternType={patternType}
+            defaultPatternType={defaultPatternType}
             setPatternType={setSearchPatternType}
             setCaseSensitivity={setSearchCaseSensitivity}
             searchMode={searchMode}
@@ -204,7 +197,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch !== 'enabled'}
             showSearchHistory={true}
             recentSearches={recentSearches}
-            showKeywordSearchToggle={props.showKeywordSearchToggle}
         />
     )
     return (

@@ -1,7 +1,5 @@
 import type { Meta, StoryFn } from '@storybook/react'
 
-import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
-
 import { WebStory } from '../components/WebStory'
 
 import { SavedSearchForm, type SavedSearchFormProps } from './SavedSearchForm'
@@ -17,7 +15,7 @@ export default config
 
 window.context.emailEnabled = true
 
-const commonProps: Omit<SavedSearchFormProps, 'isLightTheme'> = {
+const commonProps: SavedSearchFormProps = {
     isSourcegraphDotCom: false,
     submitLabel: 'Submit',
     title: 'Title',
@@ -31,7 +29,6 @@ const commonProps: Omit<SavedSearchFormProps, 'isLightTheme'> = {
         id: '',
         url: '',
     },
-    telemetryRecorder: noOpTelemetryRecorder,
 }
 
 export const NewSavedSearch: StoryFn = () => (

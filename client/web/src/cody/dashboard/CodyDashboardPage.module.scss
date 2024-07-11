@@ -33,7 +33,7 @@
         }
 
         &-header {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 700;
             margin-top: 0.5rem;
         }
@@ -99,41 +99,6 @@
             }
         }
     }
-
-    &-upsell {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        margin: 5rem auto;
-        padding: 3rem;
-        max-width: 60rem;
-        border-radius: 0.5rem;
-        background: linear-gradient(90.64deg, rgba(228, 211, 252, 0.32) 3.11%, rgba(215, 240, 253, 0.32) 83.64%),
-            linear-gradient(0deg, #f9fafb, #f9fafb);
-
-        :global(.theme-dark) & {
-            background: linear-gradient(0deg, #14171f, #14171f),
-                linear-gradient(90.64deg, rgba(28, 34, 48, 0.32) 3.11%, rgba(17, 26, 40, 0.32) 83.64%);
-        }
-
-        &-meta {
-            align-self: center;
-        }
-
-        &-title {
-            color: var(--text-title);
-            font-weight: 500;
-            font-size: 1.5rem;
-            margin-top: 1rem;
-            margin-bottom: 0.75rem;
-        }
-
-        &-description {
-            font-size: 0.9375rem;
-            font-weight: 400;
-            color: var(--text-body);
-            margin-bottom: 1.25rem;
-        }
-    }
 }
 
 .cody-gradient {
@@ -196,12 +161,4 @@
     &-dropdown {
         min-width: 12rem;
     }
-}
-
-.luminant-image {
-    mask-type: luminance;
-}
-
-.alpha-image {
-    mask-type: alpha;
 }

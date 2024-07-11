@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { mdiCompareHorizontal } from '@mdi/js'
-
     import { numberWithCommas } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import DiffSquares from '$lib/repo/DiffSquares.svelte'
@@ -20,7 +18,7 @@
             <a href={commit.canonicalURL}>{commit.abbreviatedOID}</a>
         </Badge>&nbsp;(selected)</span
     >
-    <Icon svgPath={mdiCompareHorizontal} aria-hidden />
+    <Icon icon={ILucideGitCompareArrows} inline aria-hidden />
     <span class="label">
         {#if parent}
             <Badge variant="link">
@@ -48,6 +46,7 @@
     .root {
         flex-shrink: 0;
         display: inline-flex;
+        align-items: center;
         gap: 1rem;
     }
 

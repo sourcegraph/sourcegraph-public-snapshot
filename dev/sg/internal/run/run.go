@@ -58,7 +58,6 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 	p := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
 	// Start each command concurrently
 	for _, cmd := range runner.cmds {
-		cmd := cmd
 		p.Go(func(ctx context.Context) error {
 			config := cmd.GetConfig()
 			std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s...", config.Name))
@@ -83,6 +82,7 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 				select {
 				// Handle context cancelled
 				case <-ctx.Done():
+					runner.WriteLine(output.Styledf(output.StyleSuccess, "%s%s stopped due to context error: %v%s", output.StyleBold, config.Name, ctx.Err(), output.StyleReset))
 					return ctx.Err()
 
 				// Handle process exit

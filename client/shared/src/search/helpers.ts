@@ -6,7 +6,7 @@ import type { SearchPatternType } from '../graphql-operations'
 
 import type { SearchContextProps } from './helpers/searchContext'
 import type { CharacterRange } from './query/token'
-import type { SearchMode } from './searchQueryState'
+import type { SearchMode } from './types'
 
 export interface SearchPatternTypeProps {
     patternType: SearchPatternType
@@ -89,6 +89,19 @@ export interface SubmitSearchParameters
         | 'excludedResults'
         | 'smartSearchDisabled'
     searchMode?: SearchMode
+}
+
+export const TELEMETRY_SEARCH_SOURCE_TYPE: { [key in SubmitSearchParameters['source']]: number } = {
+    home: 1,
+    nav: 2,
+    repo: 3,
+    tree: 4,
+    filter: 5,
+    type: 6,
+    scopePage: 7,
+    communitySearchContextPage: 8,
+    excludedResults: 9,
+    smartSearchDisabled: 10,
 }
 
 export interface SubmitSearchProps {

@@ -1,23 +1,21 @@
 import React, {
     forwardRef,
-    type MutableRefObject,
-    type RefObject,
     useEffect,
     useImperativeHandle,
     useMemo,
     useRef,
+    type MutableRefObject,
+    type RefObject,
 } from 'react'
 
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import {
-    type ChangeSpec,
     Compartment,
     EditorState,
+    StateEffect,
+    type ChangeSpec,
     type EditorStateConfig,
     type Extension,
-    StateEffect,
-    type StateEffectType,
-    StateField,
 } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
@@ -28,7 +26,7 @@ if (process.env.INTEGRATION_TESTS) {
     // Typecast "as any" is used to avoid TypeScript complaining about window
     // not having this property. We decided that it's fine to use this in a test
     // context
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     ;(window as any).CodeMirrorFindFromDOM = (element: HTMLElement): ReturnType<typeof EditorView['findFromDOM']> =>
         EditorView.findFromDOM(element)
 }
@@ -172,11 +170,10 @@ export function replaceValue(view: EditorView, newValue: string): ChangeSpec | u
  * Use `useMemo` to compute the extension from some input:
  *
  * const extension = useCompartment(
- *   editorRef,
- *   useMemo(() => EditorView.darkTheme(isLightTheme === false), [isLightTheme])
+ * editorRef,
+ * useMemo(() => EditorView.darkTheme(isLightTheme === false), [isLightTheme])
  * )
  * const editor = useCodeMirror(..., ..., extension)
- *
  * @param editorRef - Ref object to the editor instance
  * @param extension - the dynamic extension(s) to add to the editor
  * @returns a compartmentalized extension
@@ -205,47 +202,6 @@ export function useCompartment(
     const initialExtension = useMemo(() => compartment.of(extension), [compartment])
 
     return initialExtension
-}
-
-/**
- * A helper function for creating an extension that operates on the value which
- * can be updated via an effect.
- * This is useful in React components where the extension depends on the value
- * of a prop  but that prop is unstable, and especially useful for callbacks.
- * Instead of reconfiguring the editor whenever the value changes (which is
- * apparently not cheap), the extension can be updated via the returned update
- * function or effect.
- *
- * Example:
- *
- * const {onChange} = props;
- * const [onChangeField, setOnChange] = useMemo(() => createUpdateableField(...), [])
- * ...
- * useEffect(() => {
- *   if (editor) {
- *     setOnchange(editor, onChange)
- *   }
- * }, [editor, onChange])
- */
-export function createUpdateableField<T>(
-    defaultValue: T,
-    provider?: (field: StateField<T>) => Extension
-): [StateField<T>, (editor: EditorView, newValue: T) => void, StateEffectType<T>] {
-    const fieldEffect = StateEffect.define<T>()
-    const field = StateField.define<T>({
-        create() {
-            return defaultValue
-        },
-        update(value, transaction) {
-            const effect = transaction.effects.find((effect): effect is StateEffect<typeof defaultValue> =>
-                effect.is(fieldEffect)
-            )
-            return effect ? effect.value : value
-        },
-        provide: provider,
-    })
-
-    return [field, (editor, newValue) => editor.dispatch({ effects: [fieldEffect.of(newValue)] }), fieldEffect]
 }
 
 /**

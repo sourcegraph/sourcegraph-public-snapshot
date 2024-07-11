@@ -68,6 +68,7 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("string.special",          SyntaxKind::StringLiteral),
     ("string.escape",           SyntaxKind::StringLiteralEscape),
     ("tag",                     SyntaxKind::Tag),
+    ("tag.delimiter",           SyntaxKind::TagDelimiter),
     ("type",                    SyntaxKind::IdentifierType),
     ("identifier.type",         SyntaxKind::IdentifierType),
     ("type.builtin",            SyntaxKind::IdentifierBuiltinType),
@@ -175,12 +176,14 @@ lazy_static::lazy_static! {
             (C_Sharp, "c_sharp"),
             (Dart, "dart"),
             (Go, "go"),
+            (Hack, "hack"),
             (Java, "java"),
             // Skipping Javascript here as it is handled
             // specially inside the macro implementation
             // in order to include the jsx highlights.
             (Jsonnet, "jsonnet"),
             (Kotlin, "kotlin"),
+            (Magik, "magik"),
             (Matlab, "matlab"),
             (Nickel, "nickel"),
             (Perl, "perl"),
@@ -544,12 +547,13 @@ SELECT * FROM my_table
             let document = language.highlight_document(&contents, true).unwrap();
             // TODO: I'm not sure if there's a better way to run the snapshots without
             // panicing and then catching, but this will do for now.
-            match std::panic::catch_unwind(|| {
+            let panic_or_value = std::panic::catch_unwind(|| {
                 insta::assert_snapshot!(
                     filepath.strip_prefix(&input_dir).unwrap().to_str().unwrap(),
                     snapshot_treesitter_syntax_kinds(&document, &contents)
                 );
-            }) {
+            });
+            match panic_or_value {
                 Ok(_) => println!("{}: OK", filepath.to_str().unwrap()),
                 Err(err) => failed_tests.push(err),
             }
@@ -592,12 +596,13 @@ SELECT * FROM my_table
 
             // TODO: I'm not sure if there's a better way to run the snapshots without
             // panicing and then catching, but this will do for now.
-            match std::panic::catch_unwind(|| {
+            let panic_or_value = std::panic::catch_unwind(|| {
                 insta::assert_snapshot!(
                     filepath.strip_prefix(&input_dir).unwrap().to_str().unwrap(),
                     snapshot_treesitter_syntax_and_symbols(&document, &contents)
                 );
-            }) {
+            });
+            match panic_or_value {
                 Ok(_) => println!("{}: OK", filepath.to_str().unwrap()),
                 Err(err) => failed_tests.push(err),
             }

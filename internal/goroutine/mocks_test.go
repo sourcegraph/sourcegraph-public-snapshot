@@ -16,6 +16,9 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/goroutine) used for unit
 // testing.
 type MockBackgroundRoutine struct {
+	// NameFunc is an instance of a mock function object controlling the
+	// behavior of the method Name.
+	NameFunc *BackgroundRoutineNameFunc
 	// StartFunc is an instance of a mock function object controlling the
 	// behavior of the method Start.
 	StartFunc *BackgroundRoutineStartFunc
@@ -29,13 +32,18 @@ type MockBackgroundRoutine struct {
 // overwritten.
 func NewMockBackgroundRoutine() *MockBackgroundRoutine {
 	return &MockBackgroundRoutine{
+		NameFunc: &BackgroundRoutineNameFunc{
+			defaultHook: func() (r0 string) {
+				return
+			},
+		},
 		StartFunc: &BackgroundRoutineStartFunc{
 			defaultHook: func() {
 				return
 			},
 		},
 		StopFunc: &BackgroundRoutineStopFunc{
-			defaultHook: func() {
+			defaultHook: func(context.Context) (r0 error) {
 				return
 			},
 		},
@@ -47,13 +55,18 @@ func NewMockBackgroundRoutine() *MockBackgroundRoutine {
 // overwritten.
 func NewStrictMockBackgroundRoutine() *MockBackgroundRoutine {
 	return &MockBackgroundRoutine{
+		NameFunc: &BackgroundRoutineNameFunc{
+			defaultHook: func() string {
+				panic("unexpected invocation of MockBackgroundRoutine.Name")
+			},
+		},
 		StartFunc: &BackgroundRoutineStartFunc{
 			defaultHook: func() {
 				panic("unexpected invocation of MockBackgroundRoutine.Start")
 			},
 		},
 		StopFunc: &BackgroundRoutineStopFunc{
-			defaultHook: func() {
+			defaultHook: func(context.Context) error {
 				panic("unexpected invocation of MockBackgroundRoutine.Stop")
 			},
 		},
@@ -65,6 +78,9 @@ func NewStrictMockBackgroundRoutine() *MockBackgroundRoutine {
 // implementation, unless overwritten.
 func NewMockBackgroundRoutineFrom(i BackgroundRoutine) *MockBackgroundRoutine {
 	return &MockBackgroundRoutine{
+		NameFunc: &BackgroundRoutineNameFunc{
+			defaultHook: i.Name,
+		},
 		StartFunc: &BackgroundRoutineStartFunc{
 			defaultHook: i.Start,
 		},
@@ -72,6 +88,105 @@ func NewMockBackgroundRoutineFrom(i BackgroundRoutine) *MockBackgroundRoutine {
 			defaultHook: i.Stop,
 		},
 	}
+}
+
+// BackgroundRoutineNameFunc describes the behavior when the Name method of
+// the parent MockBackgroundRoutine instance is invoked.
+type BackgroundRoutineNameFunc struct {
+	defaultHook func() string
+	hooks       []func() string
+	history     []BackgroundRoutineNameFuncCall
+	mutex       sync.Mutex
+}
+
+// Name delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockBackgroundRoutine) Name() string {
+	r0 := m.NameFunc.nextHook()()
+	m.NameFunc.appendCall(BackgroundRoutineNameFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Name method of the
+// parent MockBackgroundRoutine instance is invoked and the hook queue is
+// empty.
+func (f *BackgroundRoutineNameFunc) SetDefaultHook(hook func() string) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Name method of the parent MockBackgroundRoutine instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *BackgroundRoutineNameFunc) PushHook(hook func() string) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BackgroundRoutineNameFunc) SetDefaultReturn(r0 string) {
+	f.SetDefaultHook(func() string {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BackgroundRoutineNameFunc) PushReturn(r0 string) {
+	f.PushHook(func() string {
+		return r0
+	})
+}
+
+func (f *BackgroundRoutineNameFunc) nextHook() func() string {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BackgroundRoutineNameFunc) appendCall(r0 BackgroundRoutineNameFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BackgroundRoutineNameFuncCall objects
+// describing the invocations of this function.
+func (f *BackgroundRoutineNameFunc) History() []BackgroundRoutineNameFuncCall {
+	f.mutex.Lock()
+	history := make([]BackgroundRoutineNameFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BackgroundRoutineNameFuncCall is an object that describes an invocation
+// of method Name on an instance of MockBackgroundRoutine.
+type BackgroundRoutineNameFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BackgroundRoutineNameFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BackgroundRoutineNameFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // BackgroundRoutineStartFunc describes the behavior when the Start method
@@ -172,24 +287,24 @@ func (c BackgroundRoutineStartFuncCall) Results() []interface{} {
 // BackgroundRoutineStopFunc describes the behavior when the Stop method of
 // the parent MockBackgroundRoutine instance is invoked.
 type BackgroundRoutineStopFunc struct {
-	defaultHook func()
-	hooks       []func()
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
 	history     []BackgroundRoutineStopFuncCall
 	mutex       sync.Mutex
 }
 
 // Stop delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockBackgroundRoutine) Stop() {
-	m.StopFunc.nextHook()()
-	m.StopFunc.appendCall(BackgroundRoutineStopFuncCall{})
-	return
+func (m *MockBackgroundRoutine) Stop(v0 context.Context) error {
+	r0 := m.StopFunc.nextHook()(v0)
+	m.StopFunc.appendCall(BackgroundRoutineStopFuncCall{v0, r0})
+	return r0
 }
 
 // SetDefaultHook sets function that is called when the Stop method of the
 // parent MockBackgroundRoutine instance is invoked and the hook queue is
 // empty.
-func (f *BackgroundRoutineStopFunc) SetDefaultHook(hook func()) {
+func (f *BackgroundRoutineStopFunc) SetDefaultHook(hook func(context.Context) error) {
 	f.defaultHook = hook
 }
 
@@ -197,7 +312,7 @@ func (f *BackgroundRoutineStopFunc) SetDefaultHook(hook func()) {
 // Stop method of the parent MockBackgroundRoutine instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *BackgroundRoutineStopFunc) PushHook(hook func()) {
+func (f *BackgroundRoutineStopFunc) PushHook(hook func(context.Context) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -205,20 +320,20 @@ func (f *BackgroundRoutineStopFunc) PushHook(hook func()) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *BackgroundRoutineStopFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func() {
-		return
+func (f *BackgroundRoutineStopFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context) error {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *BackgroundRoutineStopFunc) PushReturn() {
-	f.PushHook(func() {
-		return
+func (f *BackgroundRoutineStopFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context) error {
+		return r0
 	})
 }
 
-func (f *BackgroundRoutineStopFunc) nextHook() func() {
+func (f *BackgroundRoutineStopFunc) nextHook() func(context.Context) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -250,18 +365,25 @@ func (f *BackgroundRoutineStopFunc) History() []BackgroundRoutineStopFuncCall {
 
 // BackgroundRoutineStopFuncCall is an object that describes an invocation
 // of method Stop on an instance of MockBackgroundRoutine.
-type BackgroundRoutineStopFuncCall struct{}
+type BackgroundRoutineStopFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c BackgroundRoutineStopFuncCall) Args() []interface{} {
-	return []interface{}{}
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c BackgroundRoutineStopFuncCall) Results() []interface{} {
-	return []interface{}{}
+	return []interface{}{c.Result0}
 }
 
 // MockErrorHandler is a mock implementation of the ErrorHandler interface

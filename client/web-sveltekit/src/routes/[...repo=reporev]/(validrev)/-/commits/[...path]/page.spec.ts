@@ -1,6 +1,6 @@
 import type { GitCommitMock } from '$testing/graphql-type-mocks'
 
-import { expect, test } from '../../../../../testing/integration'
+import { expect, test } from '../../../../../../testing/integration'
 
 const repoName = 'github.com/sourcegraph/sourcegraph'
 const url = `/${repoName}/-/commits`
@@ -43,7 +43,7 @@ test.beforeEach(async ({ sg }) => {
     })
 })
 
-test('infinity scroll', async ({ page, utils }) => {
+test.fixme('infinity scroll', async ({ page, utils }) => {
     await page.goto(url)
     // First page of commits is loaded
     const firstCommit = page.getByRole('link', { name: 'Commit 0' })

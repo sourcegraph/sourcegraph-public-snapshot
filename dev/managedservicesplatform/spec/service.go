@@ -2,6 +2,7 @@ package spec
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/grafana/regexp"
 
@@ -43,6 +44,12 @@ type ServiceSpec struct {
 	// Protocol is a protocol other than HTTP that the service communicates
 	// with. If empty, the service uses HTTP. To use gRPC, configure 'h2c':
 	// https://cloud.google.com/run/docs/configuring/http2
+	//
+	// To use gRPC and Cloudflare proxy (implicitly enabled unless
+	// 'domain.cloudflare.proxied: false' is configured), the Cloudflare zone
+	// must have gRPC enabled: https://developers.cloudflare.com/network/grpc-connections/
+	// This is already enabled for the Cloudflare zones 'sourcegraph.com' and
+	// 'sgdev.org'.
 	Protocol *ServiceProtocol `yaml:"protocol,omitempty"`
 
 	// IAM is an optional IAM configuration for the service account on the
@@ -82,6 +89,20 @@ func (s ServiceSpec) Validate() []error {
 	}
 	if len(s.Description) == 0 {
 		errs = append(errs, errors.New("description is required"))
+	}
+	if s.NotionPageID != nil {
+		page := *s.NotionPageID
+		if len(page) == 0 {
+			errs = append(errs, errors.New("notionPageID cannot be empty"))
+		}
+		// Should not be 'www.notion.so' or 'sourcegraph.notion.site'
+		if strings.Contains(page, ".notion.") {
+			errs = append(errs, errors.New("notionPageID must be a page ID, not a URL"))
+		}
+		// Should not have URL query parameters appended by Notion
+		if strings.Contains(page, "?") {
+			errs = append(errs, errors.New("notionPageID must be a page ID, found what looks like a URL query '?'"))
+		}
 	}
 
 	if s.IAM != nil {

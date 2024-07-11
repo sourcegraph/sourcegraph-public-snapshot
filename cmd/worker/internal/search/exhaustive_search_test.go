@@ -102,7 +102,10 @@ func TestExhaustiveSearch(t *testing.T) {
 	require.NoError(err)
 	for _, routine := range routines {
 		go routine.Start()
-		defer routine.Stop()
+		defer func() {
+			err := routine.Stop(context.Background())
+			require.NoError(err)
+		}()
 	}
 	require.Eventually(func() bool {
 		return !searchJob.hasWork(workerCtx)

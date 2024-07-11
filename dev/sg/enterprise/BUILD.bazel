@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "enterprise",
+    srcs = ["sg_enterprise.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/enterprise",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/sg/internal/category",
+        "//dev/sg/internal/std",
+        "//dev/sg/sams/samsflags",
+        "//lib/enterpriseportal/subscriptions/v1:subscriptions",
+        "//lib/enterpriseportal/subscriptions/v1/v1connect",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_connectrpc_connect//:connect",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//:sourcegraph-accounts-sdk-go",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//scopes",
+        "@com_github_urfave_cli_v2//:cli",
+        "@org_golang_google_protobuf//encoding/protojson",
+        "@org_golang_google_protobuf//types/known/fieldmaskpb",
+        "@org_golang_x_exp//maps",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)

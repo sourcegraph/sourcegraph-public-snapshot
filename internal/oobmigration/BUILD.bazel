@@ -74,6 +74,7 @@ go_test(
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
     ],
 )
 

@@ -1,12 +1,12 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import {
-    Observable,
     fromEvent,
-    Subscription,
+    type Notification,
+    Observable,
     type OperatorFunction,
     pipe,
     type Subscriber,
-    type Notification,
+    Subscription,
 } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
 
@@ -14,7 +14,7 @@ import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 
 import type { SearchPatternType, SymbolKind } from '../graphql-operations'
 
-import { SearchMode } from './searchQueryState'
+import { SearchMode } from './types'
 
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance.
@@ -284,7 +284,7 @@ export interface Filter {
     kind: 'file' | 'repo' | 'lang' | 'utility' | 'author' | 'commit date' | 'symbol type' | 'type'
 }
 
-export const V2FilterTypes: { [key in Filter['kind']]: number } = {
+export const TELEMETRY_FILTER_TYPES = {
     file: 1,
     repo: 2,
     lang: 3,
@@ -293,6 +293,8 @@ export const V2FilterTypes: { [key in Filter['kind']]: number } = {
     'commit date': 6,
     'symbol type': 7,
     type: 8,
+    snippet: 9,
+    count: 10,
 }
 
 export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
@@ -501,6 +503,12 @@ export const messageHandlers: MessageHandlers = {
 
 export interface StreamSearchOptions {
     version: string
+    /**
+     * TODO(stefan): "patternType" should be an optional parameter. Both Stream API and the GQL API don't require it.
+     * In the UI, we sometimes prefer to remove the "patternType:" filter from the query for better readability.
+     * "patternType" should be used to set the patternType of a query for those cases. Use "version" to
+     * define the default patternType instead.
+     */
     patternType: SearchPatternType
     caseSensitive: boolean
     trace: string | undefined
@@ -619,19 +627,21 @@ export function getRepositoryUrl(repository: string, branches?: string[]): strin
 }
 
 export function getRevision(branches?: string[], version?: string): string {
-    if (branches && branches.length > 0) {
-        return branches[0]
+    let revision = ''
+    if (branches) {
+        const branch = branches[0]
+        if (branch !== '') {
+            revision = branch
+        }
+    } else if (version) {
+        revision = version
     }
-    if (version) {
-        return version
-    }
-    return ''
+
+    return revision
 }
 
 export function getFileMatchUrl(fileMatch: ContentMatch | SymbolMatch | PathMatch): string {
-    // We are not using getRevision here, because we want to flip the logic from
-    // "branches first" to "revsion first"
-    const revision = fileMatch.commit ?? fileMatch.branches?.[0]
+    const revision = getRevision(fileMatch.branches, fileMatch.commit)
     const encodedFilePath = fileMatch.path.split('/').map(encodeURIComponent).join('/')
     return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${encodedFilePath}`
 }

@@ -34,6 +34,9 @@ type Output struct {
 	// OperatorAccessUser is the SQL user corresponding to the operator access
 	// service account.
 	OperatorAccessUser sqluser.SqlUser
+	// Databases created in the Cloud SQL instance, used for resources that
+	// depend on database creation.
+	Databases []cdktf.ITerraformDependable
 }
 
 type Config struct {
@@ -72,6 +75,13 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		databaseFlags = append(databaseFlags, sqldatabaseinstance.SqlDatabaseInstanceSettingsDatabaseFlags{
 			Name:  pointers.Ptr("max_connections"),
 			Value: pointers.Stringf("%d", *config.Spec.MaxConnections),
+		})
+	}
+	if config.Spec.LogicalReplication != nil {
+		// https://cloud.google.com/sql/docs/postgres/replication/configure-logical-replication#set-up-native-postgresql-logical-replication
+		databaseFlags = append(databaseFlags, sqldatabaseinstance.SqlDatabaseInstanceSettingsDatabaseFlags{
+			Name:  pointers.Ptr("cloudsql.logical_decoding"),
+			Value: pointers.Ptr("on"),
 		})
 	}
 
@@ -145,7 +155,12 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			IpConfiguration: &sqldatabaseinstance.SqlDatabaseInstanceSettingsIpConfiguration{
 				Ipv4Enabled:    pointers.Ptr(true),
 				PrivateNetwork: config.Network.Id(),
-				RequireSsl:     pointers.Ptr(true),
+
+				// https://cloud.google.com/sql/docs/postgres/admin-api/rest/v1beta4/instances#SslMode
+				RequireSsl: pointers.Ptr(true),
+				SslMode:    pointers.Ptr("TRUSTED_CLIENT_CERTIFICATE_REQUIRED"),
+
+				EnablePrivatePathForGoogleCloudServices: pointers.Ptr(true),
 			},
 		},
 
@@ -191,6 +206,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		Length:  pointers.Float64(32),
 		Special: pointers.Ptr(false),
 	})
+	// sqluser.NewSqlUser has 'cloudsqlsuperuser' by default
 	adminUser := sqluser.NewSqlUser(scope, id.TerraformID("admin_user"), &sqluser.SqlUserConfig{
 		Instance: instance.Name(),
 		Project:  &config.ProjectID,
@@ -209,6 +225,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			instance, config.WorkloadIdentity, databaseResources),
 		OperatorAccessUser: newSqlUserForIdentity(scope, id.TerraformID("operator_access_service_account_user"),
 			instance, config.OperatorAccessIdentity, databaseResources),
+		Databases: databaseResources,
 	}, nil
 }
 

@@ -1,7 +1,9 @@
 spec:
   requestedVersion: "5.3.9104"
 
-  blobstore: {}
+  blobstore:
+    persistentVolumeConfig:
+      storageClassName: sourcegraph
 
   codeInsights:
     disabled: true
@@ -12,13 +14,16 @@ spec:
   frontend:
     disabled: true
 
+  grafana:
+    disabled: true
+
   gitServer:
     disabled: true
 
   indexedSearch:
     disabled: true
 
-  indexedSearchIndexer:
+  openTelemetry:
     disabled: true
 
   pgsql:
@@ -51,5 +56,5 @@ spec:
   worker:
     disabled: true
 
-  storageClass:
-    name: sourcegraph
+  prometheus:
+    disabled: true

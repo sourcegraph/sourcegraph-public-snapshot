@@ -59,7 +59,7 @@ func deleteCloudEphemeral(ctx *cli.Context) error {
 	pending := std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Deleting ephemeral instance %q", name))
 	err = cloudClient.DeleteInstance(ctx.Context, name)
 	if err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "deleting of %q failed", name))
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deleting of %q failed", name))
 		return err
 	}
 

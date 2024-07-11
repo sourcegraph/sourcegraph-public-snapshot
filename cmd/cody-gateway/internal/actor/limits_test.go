@@ -11,11 +11,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestNewRateLimitWithPercentageConcurrency(t *testing.T) {
-	concurrencyLimitConfig := codygateway.ActorConcurrencyLimitConfig{
+	concurrencyLimitConfig := codygatewayactor.ActorConcurrencyLimitConfig{
 		Percentage: 0.1,
 		Interval:   10 * time.Second,
 	}
@@ -172,4 +173,52 @@ func TestAsErrConcurrencyLimitExceeded(t *testing.T) {
 	var err error = ErrConcurrencyLimitExceeded{}
 	assert.True(t, errors.As(err, &ErrConcurrencyLimitExceeded{}))
 	assert.True(t, errors.As(errors.Wrap(err, "foo"), &ErrConcurrencyLimitExceeded{}))
+}
+
+func TestRateLimit_EvaluateAllowedModels(t *testing.T) {
+	tests := []struct {
+		name                    string
+		allowedModels           []string
+		prefixedMasterAllowlist []string
+		want                    []string
+	}{
+		{
+			name:                    "all models allowed",
+			allowedModels:           []string{"*"},
+			prefixedMasterAllowlist: []string{"provider/model1", "provider/model2", "provider/model3"},
+			want:                    []string{"provider/model1", "provider/model2", "provider/model3"},
+		},
+		{
+			name:                    "no models allowed",
+			allowedModels:           []string{},
+			prefixedMasterAllowlist: []string{"provider/model1", "provider/model2", "provider/model3"},
+			want:                    []string{},
+		},
+		{
+			name:                    "some models allowed",
+			allowedModels:           []string{"provider/model1", "provider/model3"},
+			prefixedMasterAllowlist: []string{"provider/model1", "provider/model2", "provider/model3"},
+			want:                    []string{"provider/model1", "provider/model3"},
+		},
+		{
+			name:                    "non-existent models allowed",
+			allowedModels:           []string{"provider/model4", "provider/model5"},
+			prefixedMasterAllowlist: []string{"provider/model1", "provider/model2", "provider/model3"},
+			want:                    []string{},
+		},
+		{
+			name:                    "multiple models with wildcard is ignored",
+			allowedModels:           []string{"provider/model1", "*", "provider/model4"},
+			prefixedMasterAllowlist: []string{"provider/model1"},
+			want:                    []string{"provider/model1"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &RateLimit{AllowedModels: tt.allowedModels}
+			got := r.EvaluateAllowedModels(tt.prefixedMasterAllowlist)
+			assert.ElementsMatch(t, tt.want, got)
+		})
+	}
 }

@@ -20,6 +20,12 @@ export module Client {
         return { method: 'PATCH', urlSuffix: '/team/current/subscription', requestBody }
     }
 
+    export function previewUpdateCurrentSubscription(
+        requestBody: types.PreviewUpdateSubscriptionRequest
+    ): Call<types.PreviewResult> {
+        return { method: 'PATCH', urlSuffix: '/team/current/subscription/preview', requestBody }
+    }
+
     export function getCurrentSubscriptionInvoices(): Call<types.GetSubscriptionInvoicesResponse> {
         return { method: 'GET', urlSuffix: '/team/current/subscription/invoices' }
     }
@@ -28,6 +34,52 @@ export module Client {
         requestBody: types.ReactivateSubscriptionRequest
     ): Call<types.GetSubscriptionInvoicesResponse> {
         return { method: 'POST', urlSuffix: '/team/current/subscription/reactivate', requestBody }
+    }
+
+    // Teams
+
+    export function createTeam(requestBody: types.CreateTeamRequest): Call<string> {
+        return { method: 'POST', urlSuffix: '/team', requestBody }
+    }
+
+    export function previewCreateTeam(requestBody: types.PreviewCreateTeamRequest): Call<types.PreviewResult> {
+        return { method: 'POST', urlSuffix: '/team/preview', requestBody }
+    }
+
+    // Team members
+
+    export function getCurrentTeamMembers(): Call<types.ListTeamMembersResponse> {
+        return { method: 'GET', urlSuffix: '/team/current/members' }
+    }
+
+    export function updateTeamMember(requestBody: types.UpdateTeamMembersRequest): Call<unknown> {
+        return { method: 'PATCH', urlSuffix: '/team/current/members', requestBody }
+    }
+
+    // Invites
+
+    export function getInvite(teamId: string, inviteId: string): Call<types.TeamInvite> {
+        return { method: 'GET', urlSuffix: `/team/${teamId}/invites/${inviteId}` }
+    }
+
+    export function getTeamInvites(): Call<types.ListTeamInvitesResponse> {
+        return { method: 'GET', urlSuffix: '/team/current/invites' }
+    }
+
+    export function sendInvite(requestBody: types.CreateTeamInviteRequest): Call<types.ListTeamInvitesResponse> {
+        return { method: 'POST', urlSuffix: '/team/current/invites', requestBody }
+    }
+
+    export function resendInvite(inviteId: string): Call<unknown> {
+        return { method: 'POST', urlSuffix: `/team/current/invites/${inviteId}/resend` }
+    }
+
+    export function acceptInvite(teamId: string, inviteId: string): Call<unknown> {
+        return { method: 'POST', urlSuffix: `/team/${teamId}/invites/${inviteId}/accept` }
+    }
+
+    export function cancelInvite(teamId: string, inviteId: string): Call<unknown> {
+        return { method: 'POST', urlSuffix: `/team/${teamId}/invites/${inviteId}/cancel` }
     }
 
     // Stripe Checkout
@@ -40,12 +92,12 @@ export module Client {
 }
 
 // Call is the bundle of data necessary for making an API request.
-// This is a sort of "meta request" in the same veign as the `gql`
+// This is a sort of "meta request" in the same vein as the `gql`
 // template tag, see: https://github.com/apollographql/graphql-tag
 export interface Call<Resp> {
     method: 'GET' | 'POST' | 'PATCH' | 'DELETE'
     urlSuffix: string
-    requestBody?: any
+    requestBody?: unknown
 
     // Unused. This will never be set, it is only to
     // pass along the expected response type.
@@ -64,7 +116,7 @@ export interface Caller {
 // the current Sourcegraph instance's SSC proxy API endpoint.
 export class CodyProApiCaller implements Caller {
     // e.g. "https://sourcegraph.com"
-    private origin: string
+    private readonly origin: string
 
     constructor() {
         this.origin = window.location.origin
@@ -81,6 +133,17 @@ export class CodyProApiCaller implements Caller {
             credentials: 'same-origin',
             method: call.method,
             body: bodyJson,
+            headers: {
+                // In order for the Sourcegraph backend to authenticate the request, we need to
+                // ensure we don't run afoul of our CSRF protections (see csrf_security_model.md).
+                //
+                // Setting the `x-requested-with` header, along with other the current CORS config
+                // is sufficient for backend request to be authenticated. (See `CookieMiddlewareWithCSRFSafety()`.)
+                //
+                // On a related note, the `fetch` API does NOT include the "origin" header for GET
+                // or HEAD requests by spec. (See https://fetch.spec.whatwg.org/#origin-header.)
+                'x-requested-with': 'Sourcegraph/CodyProApiClient',
+            },
         })
 
         if (fetchResponse.status >= 200 && fetchResponse.status <= 299) {

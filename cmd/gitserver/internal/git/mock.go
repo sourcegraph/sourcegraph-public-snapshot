@@ -280,6 +280,270 @@ func (c BlameHunkReaderReadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// MockCommitLogIterator is a mock implementation of the CommitLogIterator
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git) used for
+// unit testing.
+type MockCommitLogIterator struct {
+	// CloseFunc is an instance of a mock function object controlling the
+	// behavior of the method Close.
+	CloseFunc *CommitLogIteratorCloseFunc
+	// NextFunc is an instance of a mock function object controlling the
+	// behavior of the method Next.
+	NextFunc *CommitLogIteratorNextFunc
+}
+
+// NewMockCommitLogIterator creates a new mock of the CommitLogIterator
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockCommitLogIterator() *MockCommitLogIterator {
+	return &MockCommitLogIterator{
+		CloseFunc: &CommitLogIteratorCloseFunc{
+			defaultHook: func() (r0 error) {
+				return
+			},
+		},
+		NextFunc: &CommitLogIteratorNextFunc{
+			defaultHook: func() (r0 *GitCommitWithFiles, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockCommitLogIterator creates a new mock of the
+// CommitLogIterator interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockCommitLogIterator() *MockCommitLogIterator {
+	return &MockCommitLogIterator{
+		CloseFunc: &CommitLogIteratorCloseFunc{
+			defaultHook: func() error {
+				panic("unexpected invocation of MockCommitLogIterator.Close")
+			},
+		},
+		NextFunc: &CommitLogIteratorNextFunc{
+			defaultHook: func() (*GitCommitWithFiles, error) {
+				panic("unexpected invocation of MockCommitLogIterator.Next")
+			},
+		},
+	}
+}
+
+// NewMockCommitLogIteratorFrom creates a new mock of the
+// MockCommitLogIterator interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockCommitLogIteratorFrom(i CommitLogIterator) *MockCommitLogIterator {
+	return &MockCommitLogIterator{
+		CloseFunc: &CommitLogIteratorCloseFunc{
+			defaultHook: i.Close,
+		},
+		NextFunc: &CommitLogIteratorNextFunc{
+			defaultHook: i.Next,
+		},
+	}
+}
+
+// CommitLogIteratorCloseFunc describes the behavior when the Close method
+// of the parent MockCommitLogIterator instance is invoked.
+type CommitLogIteratorCloseFunc struct {
+	defaultHook func() error
+	hooks       []func() error
+	history     []CommitLogIteratorCloseFuncCall
+	mutex       sync.Mutex
+}
+
+// Close delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCommitLogIterator) Close() error {
+	r0 := m.CloseFunc.nextHook()()
+	m.CloseFunc.appendCall(CommitLogIteratorCloseFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Close method of the
+// parent MockCommitLogIterator instance is invoked and the hook queue is
+// empty.
+func (f *CommitLogIteratorCloseFunc) SetDefaultHook(hook func() error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Close method of the parent MockCommitLogIterator instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CommitLogIteratorCloseFunc) PushHook(hook func() error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CommitLogIteratorCloseFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func() error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CommitLogIteratorCloseFunc) PushReturn(r0 error) {
+	f.PushHook(func() error {
+		return r0
+	})
+}
+
+func (f *CommitLogIteratorCloseFunc) nextHook() func() error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CommitLogIteratorCloseFunc) appendCall(r0 CommitLogIteratorCloseFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CommitLogIteratorCloseFuncCall objects
+// describing the invocations of this function.
+func (f *CommitLogIteratorCloseFunc) History() []CommitLogIteratorCloseFuncCall {
+	f.mutex.Lock()
+	history := make([]CommitLogIteratorCloseFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CommitLogIteratorCloseFuncCall is an object that describes an invocation
+// of method Close on an instance of MockCommitLogIterator.
+type CommitLogIteratorCloseFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CommitLogIteratorCloseFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CommitLogIteratorCloseFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CommitLogIteratorNextFunc describes the behavior when the Next method of
+// the parent MockCommitLogIterator instance is invoked.
+type CommitLogIteratorNextFunc struct {
+	defaultHook func() (*GitCommitWithFiles, error)
+	hooks       []func() (*GitCommitWithFiles, error)
+	history     []CommitLogIteratorNextFuncCall
+	mutex       sync.Mutex
+}
+
+// Next delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCommitLogIterator) Next() (*GitCommitWithFiles, error) {
+	r0, r1 := m.NextFunc.nextHook()()
+	m.NextFunc.appendCall(CommitLogIteratorNextFuncCall{r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Next method of the
+// parent MockCommitLogIterator instance is invoked and the hook queue is
+// empty.
+func (f *CommitLogIteratorNextFunc) SetDefaultHook(hook func() (*GitCommitWithFiles, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Next method of the parent MockCommitLogIterator instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CommitLogIteratorNextFunc) PushHook(hook func() (*GitCommitWithFiles, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CommitLogIteratorNextFunc) SetDefaultReturn(r0 *GitCommitWithFiles, r1 error) {
+	f.SetDefaultHook(func() (*GitCommitWithFiles, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CommitLogIteratorNextFunc) PushReturn(r0 *GitCommitWithFiles, r1 error) {
+	f.PushHook(func() (*GitCommitWithFiles, error) {
+		return r0, r1
+	})
+}
+
+func (f *CommitLogIteratorNextFunc) nextHook() func() (*GitCommitWithFiles, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CommitLogIteratorNextFunc) appendCall(r0 CommitLogIteratorNextFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CommitLogIteratorNextFuncCall objects
+// describing the invocations of this function.
+func (f *CommitLogIteratorNextFunc) History() []CommitLogIteratorNextFuncCall {
+	f.mutex.Lock()
+	history := make([]CommitLogIteratorNextFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CommitLogIteratorNextFuncCall is an object that describes an invocation
+// of method Next on an instance of MockCommitLogIterator.
+type CommitLogIteratorNextFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *GitCommitWithFiles
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CommitLogIteratorNextFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CommitLogIteratorNextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // MockGitBackend is a mock implementation of the GitBackend interface (from
 // the package
 // github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git) used for
@@ -297,15 +561,15 @@ type MockGitBackend struct {
 	// ChangedFilesFunc is an instance of a mock function object controlling
 	// the behavior of the method ChangedFiles.
 	ChangedFilesFunc *GitBackendChangedFilesFunc
+	// CommitLogFunc is an instance of a mock function object controlling
+	// the behavior of the method CommitLog.
+	CommitLogFunc *GitBackendCommitLogFunc
 	// ConfigFunc is an instance of a mock function object controlling the
 	// behavior of the method Config.
 	ConfigFunc *GitBackendConfigFunc
 	// ContributorCountsFunc is an instance of a mock function object
 	// controlling the behavior of the method ContributorCounts.
 	ContributorCountsFunc *GitBackendContributorCountsFunc
-	// ExecFunc is an instance of a mock function object controlling the
-	// behavior of the method Exec.
-	ExecFunc *GitBackendExecFunc
 	// FirstEverCommitFunc is an instance of a mock function object
 	// controlling the behavior of the method FirstEverCommit.
 	FirstEverCommitFunc *GitBackendFirstEverCommitFunc
@@ -377,6 +641,11 @@ func NewMockGitBackend() *MockGitBackend {
 				return
 			},
 		},
+		CommitLogFunc: &GitBackendCommitLogFunc{
+			defaultHook: func(context.Context, CommitLogOpts) (r0 CommitLogIterator, r1 error) {
+				return
+			},
+		},
 		ConfigFunc: &GitBackendConfigFunc{
 			defaultHook: func() (r0 GitConfigBackend) {
 				return
@@ -384,11 +653,6 @@ func NewMockGitBackend() *MockGitBackend {
 		},
 		ContributorCountsFunc: &GitBackendContributorCountsFunc{
 			defaultHook: func(context.Context, ContributorCountsOpts) (r0 []*gitdomain.ContributorCount, r1 error) {
-				return
-			},
-		},
-		ExecFunc: &GitBackendExecFunc{
-			defaultHook: func(context.Context, ...string) (r0 io.ReadCloser, r1 error) {
 				return
 			},
 		},
@@ -494,6 +758,11 @@ func NewStrictMockGitBackend() *MockGitBackend {
 				panic("unexpected invocation of MockGitBackend.ChangedFiles")
 			},
 		},
+		CommitLogFunc: &GitBackendCommitLogFunc{
+			defaultHook: func(context.Context, CommitLogOpts) (CommitLogIterator, error) {
+				panic("unexpected invocation of MockGitBackend.CommitLog")
+			},
+		},
 		ConfigFunc: &GitBackendConfigFunc{
 			defaultHook: func() GitConfigBackend {
 				panic("unexpected invocation of MockGitBackend.Config")
@@ -502,11 +771,6 @@ func NewStrictMockGitBackend() *MockGitBackend {
 		ContributorCountsFunc: &GitBackendContributorCountsFunc{
 			defaultHook: func(context.Context, ContributorCountsOpts) ([]*gitdomain.ContributorCount, error) {
 				panic("unexpected invocation of MockGitBackend.ContributorCounts")
-			},
-		},
-		ExecFunc: &GitBackendExecFunc{
-			defaultHook: func(context.Context, ...string) (io.ReadCloser, error) {
-				panic("unexpected invocation of MockGitBackend.Exec")
 			},
 		},
 		FirstEverCommitFunc: &GitBackendFirstEverCommitFunc{
@@ -603,14 +867,14 @@ func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 		ChangedFilesFunc: &GitBackendChangedFilesFunc{
 			defaultHook: i.ChangedFiles,
 		},
+		CommitLogFunc: &GitBackendCommitLogFunc{
+			defaultHook: i.CommitLog,
+		},
 		ConfigFunc: &GitBackendConfigFunc{
 			defaultHook: i.Config,
 		},
 		ContributorCountsFunc: &GitBackendContributorCountsFunc{
 			defaultHook: i.ContributorCounts,
-		},
-		ExecFunc: &GitBackendExecFunc{
-			defaultHook: i.Exec,
 		},
 		FirstEverCommitFunc: &GitBackendFirstEverCommitFunc{
 			defaultHook: i.FirstEverCommit,
@@ -1109,6 +1373,114 @@ func (c GitBackendChangedFilesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// GitBackendCommitLogFunc describes the behavior when the CommitLog method
+// of the parent MockGitBackend instance is invoked.
+type GitBackendCommitLogFunc struct {
+	defaultHook func(context.Context, CommitLogOpts) (CommitLogIterator, error)
+	hooks       []func(context.Context, CommitLogOpts) (CommitLogIterator, error)
+	history     []GitBackendCommitLogFuncCall
+	mutex       sync.Mutex
+}
+
+// CommitLog delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitBackend) CommitLog(v0 context.Context, v1 CommitLogOpts) (CommitLogIterator, error) {
+	r0, r1 := m.CommitLogFunc.nextHook()(v0, v1)
+	m.CommitLogFunc.appendCall(GitBackendCommitLogFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CommitLog method of
+// the parent MockGitBackend instance is invoked and the hook queue is
+// empty.
+func (f *GitBackendCommitLogFunc) SetDefaultHook(hook func(context.Context, CommitLogOpts) (CommitLogIterator, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CommitLog method of the parent MockGitBackend instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *GitBackendCommitLogFunc) PushHook(hook func(context.Context, CommitLogOpts) (CommitLogIterator, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitBackendCommitLogFunc) SetDefaultReturn(r0 CommitLogIterator, r1 error) {
+	f.SetDefaultHook(func(context.Context, CommitLogOpts) (CommitLogIterator, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitBackendCommitLogFunc) PushReturn(r0 CommitLogIterator, r1 error) {
+	f.PushHook(func(context.Context, CommitLogOpts) (CommitLogIterator, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitBackendCommitLogFunc) nextHook() func(context.Context, CommitLogOpts) (CommitLogIterator, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitBackendCommitLogFunc) appendCall(r0 GitBackendCommitLogFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitBackendCommitLogFuncCall objects
+// describing the invocations of this function.
+func (f *GitBackendCommitLogFunc) History() []GitBackendCommitLogFuncCall {
+	f.mutex.Lock()
+	history := make([]GitBackendCommitLogFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitBackendCommitLogFuncCall is an object that describes an invocation of
+// method CommitLog on an instance of MockGitBackend.
+type GitBackendCommitLogFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 CommitLogOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 CommitLogIterator
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitBackendCommitLogFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitBackendCommitLogFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // GitBackendConfigFunc describes the behavior when the Config method of the
 // parent MockGitBackend instance is invoked.
 type GitBackendConfigFunc struct {
@@ -1313,120 +1685,6 @@ func (c GitBackendContributorCountsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitBackendContributorCountsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitBackendExecFunc describes the behavior when the Exec method of the
-// parent MockGitBackend instance is invoked.
-type GitBackendExecFunc struct {
-	defaultHook func(context.Context, ...string) (io.ReadCloser, error)
-	hooks       []func(context.Context, ...string) (io.ReadCloser, error)
-	history     []GitBackendExecFuncCall
-	mutex       sync.Mutex
-}
-
-// Exec delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitBackend) Exec(v0 context.Context, v1 ...string) (io.ReadCloser, error) {
-	r0, r1 := m.ExecFunc.nextHook()(v0, v1...)
-	m.ExecFunc.appendCall(GitBackendExecFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Exec method of the
-// parent MockGitBackend instance is invoked and the hook queue is empty.
-func (f *GitBackendExecFunc) SetDefaultHook(hook func(context.Context, ...string) (io.ReadCloser, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Exec method of the parent MockGitBackend instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *GitBackendExecFunc) PushHook(hook func(context.Context, ...string) (io.ReadCloser, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitBackendExecFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...string) (io.ReadCloser, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBackendExecFunc) PushReturn(r0 io.ReadCloser, r1 error) {
-	f.PushHook(func(context.Context, ...string) (io.ReadCloser, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitBackendExecFunc) nextHook() func(context.Context, ...string) (io.ReadCloser, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitBackendExecFunc) appendCall(r0 GitBackendExecFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitBackendExecFuncCall objects describing
-// the invocations of this function.
-func (f *GitBackendExecFunc) History() []GitBackendExecFuncCall {
-	f.mutex.Lock()
-	history := make([]GitBackendExecFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitBackendExecFuncCall is an object that describes an invocation of
-// method Exec on an instance of MockGitBackend.
-type GitBackendExecFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 io.ReadCloser
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c GitBackendExecFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitBackendExecFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

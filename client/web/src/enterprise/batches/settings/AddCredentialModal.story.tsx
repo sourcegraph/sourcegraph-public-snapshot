@@ -6,7 +6,7 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { ExternalServiceKind } from '../../../graphql-operations'
+import { ExternalServiceKind, type UserAreaUserFields } from '../../../graphql-operations'
 
 import { AddCredentialModal } from './AddCredentialModal'
 import { CREATE_BATCH_CHANGES_CREDENTIAL } from './backend'
@@ -23,6 +23,14 @@ const config: Meta = {
         },
     },
 }
+
+const user = {
+    __typename: 'User',
+    id: '123',
+    username: 'alice',
+    avatarURL: null,
+    viewerCanAdminister: true,
+} as UserAreaUserFields
 
 export default config
 
@@ -54,7 +62,7 @@ export const RequiresSSHstep1: StoryFn = args => (
             >
                 <AddCredentialModal
                     {...props}
-                    userID="user-id-1"
+                    user={user}
                     externalServiceKind={args.externalServiceKind}
                     externalServiceURL="https://github.com/"
                     requiresSSH={true}
@@ -83,7 +91,7 @@ export const RequiresSSHstep2: StoryFn = args => (
         {props => (
             <AddCredentialModal
                 {...props}
-                userID="user-id-1"
+                user={user}
                 externalServiceKind={args.externalServiceKind}
                 externalServiceURL="https://github.com/"
                 requiresSSH={true}
@@ -112,7 +120,7 @@ export const GitHub: StoryFn = () => (
         {props => (
             <AddCredentialModal
                 {...props}
-                userID="user-id-1"
+                user={user}
                 externalServiceKind={ExternalServiceKind.GITHUB}
                 externalServiceURL="https://github.com/"
                 requiresSSH={false}
@@ -131,7 +139,7 @@ export const GitLab: StoryFn = () => (
         {props => (
             <AddCredentialModal
                 {...props}
-                userID="user-id-1"
+                user={user}
                 externalServiceKind={ExternalServiceKind.GITLAB}
                 externalServiceURL="https://gitlab.com/"
                 requiresSSH={false}
@@ -150,7 +158,7 @@ export const BitbucketServer: StoryFn = () => (
         {props => (
             <AddCredentialModal
                 {...props}
-                userID="user-id-1"
+                user={user}
                 externalServiceKind={ExternalServiceKind.BITBUCKETSERVER}
                 externalServiceURL="https://bitbucket.sgdev.org/"
                 requiresSSH={false}
@@ -167,7 +175,7 @@ export const BitbucketCloud: StoryFn = () => (
         {props => (
             <AddCredentialModal
                 {...props}
-                userID="user-id-1"
+                user={user}
                 externalServiceKind={ExternalServiceKind.BITBUCKETCLOUD}
                 externalServiceURL="https://bitbucket.org/"
                 requiresSSH={false}

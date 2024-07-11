@@ -1,4 +1,4 @@
-def server_integration_test(name, port, runner_src, **kwargs):
+def server_integration_test(name, port, runner_src, server_image, **kwargs):
     if not port:
         fail("port must be specified")
 
@@ -10,7 +10,7 @@ def server_integration_test(name, port, runner_src, **kwargs):
     deps = kwargs.pop("deps", [])
 
     # First two arguments are always the server image and the image name
-    args = ["$(location //cmd/server:image_tarball)", "server:candidate"] + args
+    args = ["$(location {})".format(server_image), "server:candidate"] + args
 
     # Explicitly define the port, needs to be different for each test so we can run them concurrently.
     env["PORT"] = port

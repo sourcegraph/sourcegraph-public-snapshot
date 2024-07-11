@@ -1,5 +1,6 @@
 import type { Page } from '@sveltejs/kit'
-import type { ComponentType } from 'svelte'
+
+import type { IconComponent } from '$lib/Icon.svelte'
 
 /**
  * Indicates to the UI to show a status badge next to the navigation entry.
@@ -24,7 +25,7 @@ export interface NavigationEntry {
     /**
      * An optional icon to display next to the label.
      */
-    icon?: string | ComponentType
+    icon?: IconComponent
     /**
      * An optional status to display next to the label. See {@link Status}.
      */
@@ -35,7 +36,7 @@ export interface NavigationEntry {
  * A navigation menu is a collection of navigation entries.
  * Currently, it will be rendered as a dropdown in the navigation bar.
  */
-export interface NavigationMenu {
+export interface NavigationMenu<T extends NavigationEntry = NavigationEntry> {
     /**
      * The label of the navigation menu.
      */
@@ -43,23 +44,17 @@ export interface NavigationMenu {
     /**
      * The navigation entries that are part of the menu.
      */
-    children: NavigationEntry[]
+    children: T[]
 
     /**
-     * NavigationMenu item can be rendered as plain link in side navigation mode
-     * This fallbackURL will be used to set URL to this link
+     * Target URL to navigate to when the menu is clicked.
      */
     href: string
 
     /**
      * An optional icon to display next to the label.
      */
-    icon?: string | ComponentType
-    /**
-     * A function to determine if current page is part of the menu.
-     * This is used to mark the menu as "current" in the UI.
-     */
-    isCurrent(page: Page): boolean
+    icon?: IconComponent
 }
 
 /**
@@ -68,4 +63,8 @@ export interface NavigationMenu {
  */
 export function isCurrent(entry: NavigationEntry, page: Page): boolean {
     return page.url.pathname === entry.href
+}
+
+export function isNavigationMenu(entry: NavigationEntry | NavigationMenu): entry is NavigationMenu {
+    return entry && 'children' in entry && entry.children.length > 0
 }

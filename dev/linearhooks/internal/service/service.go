@@ -39,7 +39,7 @@ func (s Service) Version() string { return version.Version() }
 func (s Service) Initialize(
 	ctx context.Context,
 	logger log.Logger,
-	contract runtime.Contract,
+	contract runtime.ServiceContract,
 	config Config,
 ) (background.Routine, error) {
 	logger.Info("starting service")
@@ -89,18 +89,23 @@ type httpRoutine struct {
 	*http.Server
 }
 
+func (s *httpRoutine) Name() string {
+	return "http"
+}
+
 func (s *httpRoutine) Start() {
 	if err := s.Server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		s.log.Error("error stopping server", log.Error(err))
 	}
 }
 
-func (s *httpRoutine) Stop() {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func (s *httpRoutine) Stop(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	if err := s.Server.Shutdown(ctx); err != nil {
 		s.log.Error("error shutting down server", log.Error(err))
 	} else {
 		s.log.Info("server stopped")
 	}
+	return nil
 }

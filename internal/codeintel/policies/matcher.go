@@ -269,9 +269,9 @@ func commitsUniqueToBranch(ctx context.Context, gitserverClient gitserver.Client
 		rng = fmt.Sprintf("HEAD..%s", commitID)
 	}
 
-	var after string
+	var after time.Time
 	if maxCommitAge != nil {
-		after = maxCommitAge.Format(time.RFC3339)
+		after = *maxCommitAge
 	}
 
 	commits, err := gitserverClient.Commits(ctx, repo, gitserver.CommitsOptions{
@@ -298,7 +298,7 @@ func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContex
 		if policy.Type == shared.GitObjectTypeCommit {
 			commit, err := m.gitserverClient.GetCommit(ctx, context.repo, api.CommitID(policy.Pattern))
 			if err != nil {
-				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 					continue
 				}
 				return err

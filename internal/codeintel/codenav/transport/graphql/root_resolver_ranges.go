@@ -27,13 +27,11 @@ func (r *gitBlobLSIFDataResolver) Ranges(ctx context.Context, args *resolverstub
 		},
 		Path: r.requestState.Path,
 	}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.ranges, time.Second, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", requestArgs.RepositoryID),
-		attribute.String("commit", requestArgs.Commit),
-		attribute.String("path", requestArgs.Path),
-		attribute.Int("startLine", int(args.StartLine)),
-		attribute.Int("endLine", int(args.EndLine)),
-	}})
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.ranges, time.Second,
+		observation.Args{Attrs: append(requestArgs.Attrs(),
+			attribute.Int("startLine", int(args.StartLine)),
+			attribute.Int("endLine", int(args.EndLine)))},
+	)
 	defer endObservation()
 
 	if args.StartLine < 0 || args.EndLine < args.StartLine {

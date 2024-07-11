@@ -2,48 +2,81 @@ package store
 
 import (
 	"context"
+	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
 	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
-func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
-	credentials := make([]*btypes.SiteCredential, 0, 3)
-	// Make sure these are sorted alphabetically.
-	externalServiceTypes := []string{
-		extsvc.TypeBitbucketServer,
-		extsvc.TypeGitHub,
-		extsvc.TypeGitLab,
+func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, _ bt.Clock) {
+	appID := 1
+	kind := ghtypes.SiteCredentialGitHubAppKind
+
+	query := sqlf.Sprintf(
+		"INSERT INTO github_apps (app_id, name, slug, base_url, client_id, client_secret, private_key, encryption_key_id, app_url, domain, kind) VALUES (%d, %s, %s, %s, %s, %s, %s, %s, DEFAULT, DEFAULT, %s)",
+		appID, "name", "slug", "url", "clientID", "clientSecret", "privateKey", "encryptionKeyID", kind,
+	)
+	if err := s.Store.Exec(ctx, query); err != nil {
+		t.Fatal(err)
+	}
+
+	var credentials []*btypes.SiteCredential
+
+	creds := []struct {
+		externalServiceID   string
+		externalServiceType string
+		githubAppID         int
+	}{
+		{
+			externalServiceType: extsvc.TypeBitbucketServer,
+			externalServiceID:   "https://someurl.test",
+		},
+		{
+			externalServiceType: extsvc.TypeGitHub,
+			externalServiceID:   "https://second.someurl.test",
+			githubAppID:         appID,
+		},
+		{
+			externalServiceType: extsvc.TypeGitHub,
+			externalServiceID:   "https://someurl.test",
+		},
+		{
+			externalServiceType: extsvc.TypeGitLab,
+			externalServiceID:   "https://someurl.test",
+		},
 	}
 
 	t.Run("Create", func(t *testing.T) {
-		for i := range cap(credentials) {
-			cred := &btypes.SiteCredential{
-				ExternalServiceType: externalServiceTypes[i],
-				ExternalServiceID:   "https://someurl.test",
+		for _, c := range creds {
+			sc := &btypes.SiteCredential{
+				ExternalServiceType: c.externalServiceType,
+				ExternalServiceID:   c.externalServiceID,
+				GitHubAppID:         c.githubAppID,
 			}
-			token := &auth.OAuthBearerToken{Token: "123"}
 
-			if err := s.CreateSiteCredential(ctx, cred, token); err != nil {
+			token := &auth.OAuthBearerToken{Token: "123"}
+			if err := s.CreateSiteCredential(ctx, sc, token); err != nil {
 				t.Fatal(err)
 			}
-			if cred.ID == 0 {
+
+			if sc.ID == 0 {
 				t.Fatal("id should not be zero")
 			}
-			if cred.CreatedAt.IsZero() {
+			if sc.CreatedAt.IsZero() {
 				t.Fatal("CreatedAt should be set")
 			}
-			if cred.UpdatedAt.IsZero() {
+			if sc.UpdatedAt.IsZero() {
 				t.Fatal("UpdatedAt should be set")
 			}
-			credentials = append(credentials, cred)
+			credentials = append(credentials, sc)
 		}
 	})
 

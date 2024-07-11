@@ -13,6 +13,5 @@ go_library(
         "//internal/codeintel/types",
         "//internal/conf",
         "//internal/database",
-        "//internal/dotcom",
     ],
 )

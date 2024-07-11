@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -152,5 +154,61 @@ func TestParseP4FusionCommitSubject(t *testing.T) {
 		if subject != tc.expectedSubject {
 			t.Errorf("Expected subject %q, got %q", tc.expectedSubject, subject)
 		}
+	}
+}
+
+func TestMaybeTransformP4Body(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "p4-fusion tag",
+			input:    "This is a commit message\n[p4-fusion: depot-paths = \"//test-perms/\": change = 80972]",
+			expected: "This is a commit message",
+		},
+		{
+			name:     "git-p4 tag",
+			input:    "Another commit message\n[git-p4: depot-paths = \"//test-perms/\": change = 80999]",
+			expected: "Another commit message",
+		},
+		{
+			name:     "git-p4 tag no new line",
+			input:    "Another commit message[git-p4: depot-paths = \"//test-perms/\": change = 80999]",
+			expected: "Another commit message",
+		},
+		{
+			name:     "no tags",
+			input:    "A simple commit message without tags",
+			expected: "A simple commit message without tags",
+		},
+		{
+			name:     "empty input",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "only whitespace",
+			input:    "   \n   \t   ",
+			expected: "",
+		},
+		{
+			name:     "multiple lines without tags",
+			input:    "First line\nSecond line\nThird line",
+			expected: "First line\nSecond line\nThird line",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := maybeTransformP4Body(tt.input)
+			if result == nil {
+				t.Fatal("Expected non-nil result")
+			}
+			if diff := cmp.Diff(tt.expected, *result); diff != "" {
+				t.Errorf("maybeTransformP4Body() mismatch (-want +got):\n%s", diff)
+			}
+		})
 	}
 }

@@ -2,7 +2,7 @@ import { type Extension, Facet, type Range as CodeMirrorRange } from '@codemirro
 import { Decoration, EditorView, type Tooltip } from '@codemirror/view'
 import { from } from 'rxjs'
 
-import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/codemirror/utils'
 
 import { LoadingTooltip } from '../tooltips/LoadingTooltip'
 import { MOUSE_MAIN_BUTTON, preciseOffsetAtCoords } from '../utils'

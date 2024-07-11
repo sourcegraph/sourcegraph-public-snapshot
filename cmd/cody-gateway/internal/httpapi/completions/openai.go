@@ -22,16 +22,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-func NewOpenAIHandler(
-	baseLogger log.Logger,
-	eventLogger events.Logger,
-	rs limiter.RedisStore,
-	rateLimitNotifier notify.RateLimitNotifier,
-	httpClient httpcli.Doer,
-	config config.OpenAIConfig,
-	promptRecorder PromptRecorder,
-	autoFlushStreamingResponses bool,
-) http.Handler {
+func NewOpenAIHandler(baseLogger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, rateLimitNotifier notify.RateLimitNotifier, httpClient httpcli.Doer, config config.OpenAIConfig, promptRecorder PromptRecorder, upstreamConfig UpstreamHandlerConfig) http.Handler {
+	// OpenAI primarily uses tokens-per-minute ("TPM") to rate-limit spikes
+	// in requests, so set a very high retry-after to discourage Sourcegraph
+	// clients from retrying at all since retries are probably not going to
+	// help in a minute-long rate limit window.
+	upstreamConfig.DefaultRetryAfterSeconds = 30
+
 	return makeUpstreamHandler[openaiRequest](
 		baseLogger,
 		eventLogger,
@@ -42,13 +39,7 @@ func NewOpenAIHandler(
 		config.AllowedModels,
 		&OpenAIHandlerMethods{config: config},
 		promptRecorder,
-
-		// OpenAI primarily uses tokens-per-minute ("TPM") to rate-limit spikes
-		// in requests, so set a very high retry-after to discourage Sourcegraph
-		// clients from retrying at all since retries are probably not going to
-		// help in a minute-long rate limit window.
-		30, // seconds
-		autoFlushStreamingResponses,
+		upstreamConfig,
 	)
 }
 
@@ -117,7 +108,7 @@ type OpenAIHandlerMethods struct {
 	config config.OpenAIConfig
 }
 
-func (*OpenAIHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
+func (*OpenAIHandlerMethods) getAPIURL(_ codygateway.Feature, _ openaiRequest) string {
 	return "https://api.openai.com/v1/chat/completions"
 }
 
@@ -128,10 +119,11 @@ func (*OpenAIHandlerMethods) validateRequest(_ context.Context, _ log.Logger, fe
 	return nil
 }
 
-func (o *OpenAIHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, req openaiRequest) (*flaggingResult, error) {
+func (o *OpenAIHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger, req openaiRequest) (*flaggingResult, error) {
 	result, err := isFlaggedRequest(
-		nil, /* tokenzier, meaning token counts aren't considered when for flagging consideration. */
+		nil, /* tokenizer, meaning token counts aren't considered when for flagging consideration. */
 		flaggingRequest{
+			ModelName:       req.Model,
 			FlattenedPrompt: req.BuildPrompt(),
 			MaxTokens:       int(req.MaxTokens),
 		},
@@ -153,15 +145,15 @@ func (*OpenAIHandlerMethods) getRequestMetadata(body openaiRequest) (model strin
 	return body.Model, map[string]any{"stream": body.Stream}
 }
 
-func (o *OpenAIHandlerMethods) transformRequest(r *http.Request) {
-	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("Authorization", "Bearer "+o.config.AccessToken)
+func (o *OpenAIHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
+	upstreamRequest.Header.Set("Content-Type", "application/json")
+	upstreamRequest.Header.Set("Authorization", "Bearer "+o.config.AccessToken)
 	if o.config.OrgID != "" {
-		r.Header.Set("OpenAI-Organization", o.config.OrgID)
+		upstreamRequest.Header.Set("OpenAI-Organization", o.config.OrgID)
 	}
 }
 
-func (*OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body openaiRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (*OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body openaiRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	for _, m := range body.Messages {
 		promptUsage.characters += len(m.Content)
@@ -172,7 +164,7 @@ func (*OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body opena
 	completionUsage.tokenizerTokens = -1
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !body.Stream {
+	if !isStreamRequest {
 		var res openaiResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse OpenAI response as JSON", log.Error(err))

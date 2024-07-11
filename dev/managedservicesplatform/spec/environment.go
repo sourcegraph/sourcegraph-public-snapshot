@@ -252,7 +252,9 @@ func (s EnvironmentDeployTypeSubscriptionSpec) ResolveTag(imageRepo string) (str
 }
 
 type EnvironmentServiceSpec struct {
-	// Domain configures where the resource is externally accessible.
+	// Domain configures where the resource is externally accessible. There
+	// may be additional considerations based on your service's chosen protocol;
+	// refer to the 'service.protocol' docstring for more details.
 	//
 	// Only supported for services of 'kind: service'.
 	Domain *EnvironmentServiceDomainSpec `yaml:"domain,omitempty"`
@@ -524,6 +526,9 @@ func (s *EnvironmentServiceHealthProbesSpec) Validate() []error {
 	if s.GetTimeoutSeconds() > s.GetLivenessIntervalSeconds() {
 		errs = append(errs, errors.New("livenessInterval must be greater than or equal to timeout"))
 	}
+	if s.GetLivenessIntervalSeconds() > 3600 {
+		errs = append(errs, errors.New("livenessInterval must be less than or equal to 3600 seconds"))
+	}
 
 	return errs
 }
@@ -575,6 +580,8 @@ func (s *EnvironmentServiceHealthProbesSpec) GetTimeoutSeconds() int {
 }
 
 type EnvironmentJobSpec struct {
+	// DeadlineSeconds of each job execution, in seconds. Defaults to 300.
+	DeadlineSeconds *int `yaml:"deadlineSeconds,omitempty"`
 	// Schedule configures a cron schedule for the service.
 	//
 	// Only supported for services of 'kind: job'.
@@ -594,10 +601,11 @@ func (s *EnvironmentJobSpec) Validate() []error {
 type EnvironmentJobScheduleSpec struct {
 	// Cron is a cron schedule in the form of "* * * * *".
 	//
+	// The smallest interval must be greater than 15 minutes, and more frequent
+	// than once a week.
+	//
 	// Protip: use https://crontab.guru
 	Cron string `yaml:"cron"`
-	// Deadline of each attempt, in seconds.
-	Deadline *int `yaml:"deadline,omitempty"`
 }
 
 func (s *EnvironmentJobScheduleSpec) Validate() []error {
@@ -606,7 +614,7 @@ func (s *EnvironmentJobScheduleSpec) Validate() []error {
 	}
 
 	var errs []error
-	if _, err := s.FindMaxCronInterval(); err != nil {
+	if _, err := s.FindMaxCronInterval(time.Now()); err != nil {
 		errs = append(errs, errors.Wrap(err, "schedule.cron: invalid schedule"))
 	}
 	return errs
@@ -614,7 +622,7 @@ func (s *EnvironmentJobScheduleSpec) Validate() []error {
 
 // FindMaxCronInterval tries to find the largest gap between events in the cron
 // schedule. It may return 'nil, nil' if no configuration is available.
-func (s *EnvironmentJobScheduleSpec) FindMaxCronInterval() (*time.Duration, error) {
+func (s *EnvironmentJobScheduleSpec) FindMaxCronInterval(now time.Time) (*time.Duration, error) {
 	if s == nil {
 		return nil, nil
 	}
@@ -624,12 +632,13 @@ func (s *EnvironmentJobScheduleSpec) FindMaxCronInterval() (*time.Duration, erro
 		return nil, errors.Wrap(err, "invalid cron schedule")
 	}
 
-	// get 64 scheduled events to try and see what the largest gap is - this
+	// Get nScheduled events to try and see what the largest gap is - this
 	// is not performance sensitive, we just need to be able to reliably find
 	// the largest interval. some silly crons won't generate reliable intervals
 	// but this will hopefully give us a realistic indicator that we can error
 	// out on below.
-	scheduled := expr.NextN(time.Now(), 64)
+	nScheduled := 24 * 7 * 4 // up to every 4 times per hour (15 minutes) every day per week
+	scheduled := expr.NextN(now, uint(nScheduled))
 
 	// scheduled is in chronological order, so we can compare subsequent events
 	// to find the largest gap in this cron.
@@ -643,15 +652,15 @@ func (s *EnvironmentJobScheduleSpec) FindMaxCronInterval() (*time.Duration, erro
 		}
 	}
 
-	// should not be possible to have <1m schedule
-	if maxGap < time.Minute {
-		return nil, errors.Newf("the longest interval must be >1m, got %s", maxGap.String())
+	// should not be possible to have <15m schedule for costs
+	if maxGap < 15*time.Minute {
+		return nil, errors.Newf("the longest interval must be >15m, got %s", maxGap.String())
 	}
 
-	// once we get into the monthly territory, things might get funky - forbid
-	// these very long intervals for now
-	if maxGap > 27*24*time.Hour {
-		return nil, errors.Newf("the longest interval must be <28 days, got %s", maxGap.String())
+	// once we get into the longer-than-weekly territory, things might get funky;
+	// forbid these very long intervals for now
+	if maxGap > 8*24*time.Hour {
+		return nil, errors.Newf("the longest interval must be <8 days, got %s", maxGap.String())
 	}
 
 	return &maxGap, nil
@@ -781,7 +790,23 @@ type EnvironmentResourcePostgreSQLSpec struct {
 	//  - https://cloud.google.com/sql/pricing
 	//
 	// Also see: https://sourcegraph.notion.site/655e89d164b24727803f5e5a603226d8
+	//
+	// Toggling highAvailability will incur a small amount of downtime.
 	HighAvailability *bool `yaml:"highAvailability,omitempty"`
+	// LogicalReplication configures native logical replication for PostgreSQL:
+	// https://www.postgresql.org/docs/current/logical-replication.html
+	//
+	// Enabling logicalReplication will incur a small amount of downtime. If you
+	// plan to use logical replication, you should configure an empty
+	// 'logicalReplication' block to initialize the database instance with the
+	// prerequisite configuration:
+	//
+	//  logicalReplication: {}
+	//
+	// The primary use case for logicalReplication is to integrate with GCP
+	// Datastream to make tables available in BigQuery:
+	// https://cloud.google.com/datastream/docs/sources-postgresql
+	LogicalReplication *EnvironmentResourcePostgreSQLLogicalReplicationSpec `yaml:"logicalReplication,omitempty"`
 }
 
 func (EnvironmentResourcePostgreSQLSpec) ResourceKind() string { return "PostgreSQL instance" }
@@ -814,7 +839,65 @@ func (s *EnvironmentResourcePostgreSQLSpec) Validate() []error {
 			errs = append(errs, errors.New("postgreSQL.memoryGB must be <= 6*postgreSQL.cpu"))
 		}
 	}
+	if s.LogicalReplication != nil {
+		errs = append(errs, s.LogicalReplication.Validate()...)
+	}
 	return errs
+}
+
+type EnvironmentResourcePostgreSQLLogicalReplicationSpec struct {
+	// Publications configure PostgreSQL logical replication publications for
+	// consumption in tools like GCP Datastream.
+	//
+	// Configuriing publications also configures all required Datastream
+	// connection resources and configuration to set up a Datastream "Stream"
+	// https://cloud.google.com/datastream/docs/create-a-stream, which must be
+	// set up separately.
+	Publications []EnvironmentResourcePostgreSQLLogicalReplicationPublicationsSpec `yaml:"publications,omitempty"`
+}
+
+func (s *EnvironmentResourcePostgreSQLLogicalReplicationSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
+
+	var errs []error
+	seenPublications := map[string]struct{}{}
+	for i, p := range s.Publications {
+		if p.Name == "" {
+			errs = append(errs, errors.Newf("publication[%d].name is required", i))
+		}
+		if _, ok := seenPublications[p.Name]; ok {
+			errs = append(errs, errors.Newf("publication[%d].name must be unique", i))
+		}
+		seenPublications[p.Name] = struct{}{}
+
+		if p.Database == "" {
+			errs = append(errs, errors.Newf("publication[%d].database is required", i))
+		}
+		if len(p.Tables) == 0 {
+			errs = append(errs, errors.Newf("publication[%d].tables is required", i))
+		}
+		for ti, t := range p.Tables {
+			if t == "" {
+				errs = append(errs, errors.Newf("publication[%d].tables[%d] must not be empty", i, ti))
+			}
+		}
+	}
+	return errs
+}
+
+type EnvironmentResourcePostgreSQLLogicalReplicationPublicationsSpec struct {
+	// Name of the publication. Must be machine-friendly and unique. Required.
+	Name string `yaml:"name"`
+	// Database containing the tables you want to replicate and publish. Required.
+	Database string `yaml:"database"`
+	// Tables to replicate and publish. Required.
+	//
+	// Note that curerntly, referenced tables MUST exist BEFORE a publication
+	// is provisioned on them. Database tables should be created and owned by
+	// the application workload identity.
+	Tables []string `yaml:"tables"`
 }
 
 type EnvironmentResourceBigQueryDatasetSpec struct {

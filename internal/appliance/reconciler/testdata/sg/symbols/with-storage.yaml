@@ -13,13 +13,16 @@ spec:
   frontend:
     disabled: true
 
+  grafana:
+    disabled: true
+
   gitServer:
     disabled: true
 
   indexedSearch:
     disabled: true
 
-  indexedSearchIndexer:
+  openTelemetry:
     disabled: true
 
   pgsql:
@@ -44,10 +47,14 @@ spec:
     disabled: true
 
   symbols:
-    storageSize: "100Gi"
+    persistentVolumeConfig:
+      storageSize: "100Gi"
 
   syntectServer:
     disabled: true
 
   worker:
+    disabled: true
+
+  prometheus:
     disabled: true

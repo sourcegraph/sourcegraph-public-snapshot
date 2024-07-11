@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
 )
@@ -34,12 +35,14 @@ var (
 	EventNameAssigned = "license.check.api.assigned"
 )
 
-func logEvent(ctx context.Context, db database.DB, name string, siteID string) {
+func logEvent(ctx context.Context, db database.DB, name string, siteID string, licenseID string) {
 	logger := log.Scoped("LicenseCheckHandler logEvent")
 	eArg, err := json.Marshal(struct {
-		SiteID string `json:"site_id,omitempty"`
+		SiteID    string `json:"site_id,omitempty"`
+		LicenseID string `json:"license_id,omitempty"`
 	}{
-		SiteID: siteID,
+		SiteID:    siteID,
+		LicenseID: licenseID,
 	})
 	if err != nil {
 		logger.Warn("error marshalling json body", log.Error(err))
@@ -59,9 +62,9 @@ func logEvent(ctx context.Context, db database.DB, name string, siteID string) {
 }
 
 const multipleInstancesSameKeySlackFmt = `
-The site ID for ` + "`%s`" + `'s license key ID <%s/site-admin/dotcom/product/subscriptions/%s#%s|%s> has been updated from ` + "`%s` to `%s`." + `
+The site ID for ` + "`%s`" + `'s license key ID <%s/site-admin/dotcom/product/subscriptions/%s#%s|%s> is registered as ` + "`%s`, but is attempting to be used by the site ID `%s`." + `
 
-If this is a regular occurence, it could mean that the license key is being used on multiple Sourcegraph instances.
+This could mean that the license key is attempting to be used on multiple Sourcegraph instances.
 
 To fix it, <https://app.golinks.io/internal-licensing-faq-slack-multiple|follow the guide to update the siteID and license key for all customer instances>.
 `
@@ -198,28 +201,24 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 				})
 				return
 			}
-			logEvent(ctx, db, EventNameAssigned, siteID)
+			logEvent(ctx, db, EventNameAssigned, siteID, license.ID)
 		} else if !strings.EqualFold(*license.SiteID, siteID) {
 			logger.Warn("license being used with multiple site IDs", log.String("previousSiteID", *license.SiteID), log.String("licenseKeyID", license.ID), log.String("subscriptionID", license.ProductSubscriptionID))
 
+			flags := featureflag.FromContext(ctx)
+			// This feature flag allows us to temporarily allow conflicting Site IDs
+			conflictingSiteIDsValid := flags.GetBoolOr("markConflictingSiteIDsAsValid", false)
+
 			replyWithJSON(w, http.StatusOK, licensing.LicenseCheckResponse{
-				// TODO: revert this to false again in the future, once most customers have a separate
-				// license key per instance
 				Data: &licensing.LicenseCheckResponseData{
-					IsValid: true,
+					IsValid: conflictingSiteIDsValid,
 					Reason:  ReasonLicenseIsAlreadyInUseMsg,
 				},
 			})
 
-			oldSiteID := *license.SiteID
-			if license, err = lStore.AssignSiteID(r.Context(), license, siteID); err != nil {
-				logger.Error("failed to update site ID associated with license", log.String("licenseID", license.ID), log.String("siteID", siteID), log.Error(err))
-				return
-			}
-
 			customerName := getCustomerNameFromLicense(r.Context(), logger, db, license)
 
-			sendSlackMessage(logger, license, customerName, oldSiteID)
+			sendSlackMessage(logger, license, customerName, *license.SiteID)
 			return
 		}
 
@@ -229,7 +228,7 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 				IsValid: true,
 			},
 		})
-		logEvent(ctx, db, EventNameSuccess, siteID)
+		logEvent(ctx, db, EventNameSuccess, siteID, license.ID)
 	})
 }
 

@@ -21,7 +21,7 @@ type SGConfigCommandOptions struct {
 
 	// Output all logs to a file instead of to stdout/stderr
 	Logfile         string                            `yaml:"logfile"`
-	ExternalSecrets map[string]secrets.ExternalSecret `yaml:"external_secrets"`
+	ExternalSecrets map[string]secrets.ExternalSecret `yaml:"externalSecrets"`
 
 	RepositoryRoot string
 }

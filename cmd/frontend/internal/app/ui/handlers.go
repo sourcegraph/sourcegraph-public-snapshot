@@ -76,12 +76,20 @@ type PreloadedAsset struct {
 	Href string
 }
 
+type SvelteInjections struct {
+	Enabled bool
+	Head    template.HTML
+	Body    template.HTML
+}
+
 type Common struct {
 	Injected InjectedHTML
 	Metadata *Metadata
 	Context  jscontext.JSContext
 	Title    string
 	Error    *pageError
+
+	Svelte SvelteInjections
 
 	PreloadedAssets *[]PreloadedAsset
 
@@ -162,6 +170,19 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		}
 	}
 
+	var svelteInjections SvelteInjections
+	if sveltekit.Enabled(r.Context()) {
+		svelteHead, svelteBody, err := sveltekit.LoadCachedSvelteKitInjections()
+		if err != nil {
+			return nil, errors.Wrap(err, "loading svelte kit context")
+		}
+		svelteInjections = SvelteInjections{
+			Enabled: true,
+			Head:    template.HTML(svelteHead),
+			Body:    template.HTML(svelteBody),
+		}
+	}
+
 	common := &Common{
 		Injected: InjectedHTML{
 			HeadTop:    template.HTML(conf.Get().HtmlHeadTop),
@@ -178,7 +199,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
 			ShowPreview: r.URL.Path == "/sign-in" && r.URL.RawQuery == "returnTo=%2F",
 		},
-
+		Svelte:              svelteInjections,
 		WebBuilderDevServer: webBuilderDevServer,
 	}
 
@@ -190,7 +211,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		// Common repo pages (blob, tree, etc).
 		var err error
 		common.Repo, common.CommitID, err = handlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vars(r))
-		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) // should reply with HTTP 200
+		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && errors.HasType[*gitdomain.RevisionNotFoundError](err) // should reply with HTTP 200
 		if err != nil && !isRepoEmptyError {
 			var urlMovedError *handlerutil.URLMovedError
 			if errors.As(err, &urlMovedError) {
@@ -214,12 +235,12 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 				http.Redirect(w, r, u.String(), http.StatusSeeOther)
 				return nil, nil
 			}
-			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 				// Revision does not exist.
 				serveError(w, r, db, err, http.StatusNotFound)
 				return nil, nil
 			}
-			if errors.HasType(err, &gitserver.RepoNotCloneableErr{}) {
+			if errors.HasType[*gitserver.RepoNotCloneableErr](err) {
 				if errcode.IsNotFound(err) {
 					// Repository is not found.
 					serveError(w, r, db, err, http.StatusNotFound)
@@ -228,10 +249,6 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 
 				// Repository is not cloneable.
 				dangerouslyServeError(w, r, db, errors.New("repository could not be cloned"), http.StatusInternalServerError)
-				return nil, nil
-			}
-			if errcode.IsRepoDenied(err) {
-				serveError(w, r, db, err, http.StatusNotFound)
 				return nil, nil
 			}
 			if gitdomain.IsRepoNotExist(err) {
@@ -327,10 +344,6 @@ func serveBasicPage(db database.DB, title func(c *Common, r *http.Request) strin
 		}
 		common.Title = title(common, r)
 
-		if sveltekit.Enabled(r.Context()) {
-			return sveltekit.RenderTemplate(w, common)
-		}
-
 		return renderTemplate(w, "app.html", common)
 	}
 }
@@ -354,8 +367,7 @@ func serveHome(db database.DB) handlerFunc {
 		// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to /search.
 		// except if the instance is on a Cody-Only license.
 		redirectURL := "/search"
-		features := common.Context.LicenseInfo.Features
-		if !features.CodeSearch && features.Cody && !dotcom.SourcegraphDotComMode() {
+		if !common.Context.CodeSearchEnabledOnInstance && common.Context.CodyEnabledOnInstance && !dotcom.SourcegraphDotComMode() {
 			redirectURL = "/cody"
 		}
 
@@ -482,10 +494,6 @@ func serveTree(db database.DB, title func(c *Common, r *http.Request) string) ha
 
 		common.Title = title(common, r)
 
-		if sveltekit.Enabled(r.Context()) {
-			return sveltekit.RenderTemplate(w, common)
-		}
-
 		return renderTemplate(w, "app.html", common)
 	}
 }
@@ -539,10 +547,6 @@ func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *
 			return nil
 		}
 
-		if sveltekit.Enabled(r.Context()) {
-			return sveltekit.RenderTemplate(w, common)
-		}
-
 		return renderTemplate(w, "app.html", common)
 	}
 }
@@ -586,20 +590,41 @@ func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 	anonymousUserId, _ := cookie.AnonymousUID(r)
 
 	hubspotutil.SyncUser(email, hubspotutil.SelfHostedSiteInitEventID, &hubspot.ContactProperties{
-		IsServerAdmin:          true,
-		AnonymousUserID:        anonymousUserId,
-		LastSourceURL:          getCookie("sourcegraphRecentSourceUrl"),
-		LastReferrer:           getCookie("sg_referrer"),
-		SignupSessionSourceURL: getCookie("sourcegraphSignupSourceUrl"),
-		SignupSessionReferrer:  getCookie("sourcegraphSignupReferrer"),
-		SessionUTMCampaign:     getCookie("sg_utm_campaign"),
-		SessionUTMSource:       getCookie("sg_utm_source"),
-		SessionUTMMedium:       getCookie("sg_utm_medium"),
-		SessionUTMContent:      getCookie("sg_utm_content"),
-		SessionUTMTerm:         getCookie("sg_utm_term"),
-		GoogleClickID:          getCookie("gclid"),
-		MicrosoftClickID:       getCookie("msclkid"),
-		HasAgreedToToS:         tosAccepted == "true",
+		IsServerAdmin:              true,
+		AnonymousUserID:            anonymousUserId,
+		FirstSourceURL:             getCookie("first_page_seen_url"),
+		LastSourceURL:              getCookie("last_page_seen_url"),
+		LastPageSeenShort:          getCookie("last_page_seen_url_short"),
+		LastPageSeenMid:            getCookie("last_page_seen_url_mid"),
+		LastPageSeenLong:           getCookie("last_page_seen_url_long"),
+		MostRecentReferrerUrl:      getCookie("most_recent_referrer_url"),
+		MostRecentReferrerUrlShort: getCookie("most_recent_referrer_url_short"),
+		MostRecentReferrerUrlLong:  getCookie("most_recent_referrer_url_long"),
+		SignupSessionSourceURL:     getCookie("sourcegraphSignupSourceUrl"),
+		SignupSessionReferrer:      getCookie("sourcegraphSignupReferrer"),
+		SessionUTMCampaign:         getCookie("utm_campaign"),
+		SessionUTMSource:           getCookie("utm_source"),
+		SessionUTMMedium:           getCookie("utm_medium"),
+		SessionUTMContent:          getCookie("utm_content"),
+		SessionUTMTerm:             getCookie("utm_term"),
+		UtmCampaignShort:           getCookie("utm_campaign_short"),
+		UtmCampaignMid:             getCookie("utm_campaign_mid"),
+		UtmCampaignLong:            getCookie("utm_campaign_long"),
+		UtmSourceShort:             getCookie("utm_source_short"),
+		UtmSourceMid:               getCookie("utm_source_mid"),
+		UtmSourceLong:              getCookie("utm_source_long"),
+		UtmMediumShort:             getCookie("utm_medium_short"),
+		UtmMediumMid:               getCookie("utm_medium_mid"),
+		UtmMediumLong:              getCookie("utm_medium_long"),
+		UtmContentShort:            getCookie("utm_content_short"),
+		UtmContentMid:              getCookie("utm_content_mid"),
+		UtmContentLong:             getCookie("utm_content_long"),
+		UtmTermShort:               getCookie("utm_term_short"),
+		UtmTermMid:                 getCookie("utm_term_mid"),
+		UtmTermLong:                getCookie("utm_term_long"),
+		GoogleClickID:              getCookie("gclid"),
+		MicrosoftClickID:           getCookie("msclkid"),
+		HasAgreedToToS:             tosAccepted == "true",
 	})
 	return nil
 }

@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/service"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/statefulset"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -48,11 +47,7 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *config.S
 	cfg := sg.Spec.PGSQL
 	name := "pgsql"
 
-	ctrImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return err
-	}
-
+	ctrImage := config.GetDefaultImage(sg, "postgres-12-alpine")
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
 		Image: ctrImage,
 		Resources: &corev1.ResourceRequirements{
@@ -107,11 +102,7 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *config.S
 		{Name: "lockdir", MountPath: "/var/run/postgresql"},
 	}
 
-	initCtrImage, err := config.GetDefaultImage(sg, "alpine")
-	if err != nil {
-		return err
-	}
-
+	initCtrImage := config.GetDefaultImage(sg, "alpine-3.14")
 	initCtr := container.NewContainer("correct-data-dir-permissions", cfg, config.ContainerConfig{
 		Image: initCtrImage,
 		Resources: &corev1.ResourceRequirements{
@@ -134,11 +125,7 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *config.S
 	initCtr.VolumeMounts = []corev1.VolumeMount{{Name: "disk", MountPath: "/data"}}
 	initCtr.Command = []string{"sh", "-c", "if [ -d /data/pgdata-12 ]; then chmod 750 /data/pgdata-12; fi"}
 
-	pgExpCtrImage, err := config.GetDefaultImage(sg, "pgsql-exporter")
-	if err != nil {
-		return err
-	}
-
+	pgExpCtrImage := config.GetDefaultImage(sg, "postgres_exporter")
 	pgExpCtr := container.NewContainer("pgsql-exporter", cfg, config.ContainerConfig{
 		Image: pgExpCtrImage,
 		Resources: &corev1.ResourceRequirements{
@@ -159,6 +146,9 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *config.S
 		ReadOnlyRootFilesystem:   pointers.Ptr(true),
 	}
 	pgExpCtr.Env = append(pgExpCtr.Env, container.EnvVarsPostgresExporter(databaseSecretName)...)
+	pgExpCtr.Env = append(pgExpCtr.Env, corev1.EnvVar{
+		Name: "PG_EXPORTER_EXTEND_QUERY_PATH", Value: "/config/queries.yaml",
+	})
 
 	podVolumes := []corev1.Volume{
 		pod.NewVolumeEmptyDir("lockdir"),
@@ -204,19 +194,16 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *config.S
 
 func (r *Reconciler) reconcilePGSQLPersistentVolumeClaim(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.PGSQL
-	storageSize, err := resource.ParseQuantity(cfg.StorageSize)
+	p, err := pvc.NewPersistentVolumeClaim("pgsql", sg.Namespace, cfg)
 	if err != nil {
-		return errors.Wrap(err, "parsing storage size")
+		return err
 	}
-
-	p := pvc.NewPersistentVolumeClaim("pgsql", sg.Namespace, storageSize, sg.Spec.StorageClass.Name)
-
 	return reconcileObject(ctx, r, sg.Spec.PGSQL, &p, &corev1.PersistentVolumeClaim{}, sg, owner)
 }
 
 func (r *Reconciler) reconcilePGSQLConfigMap(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cm := configmap.NewConfigMap("pgsql-conf", sg.Namespace)
-	cm.Data = map[string]string{"postgresql.conf": config.DefaultPGSQLConfig()}
+	cm.Data = map[string]string{"postgresql.conf": string(config.PgsqlConfig)}
 
 	return reconcileObject(ctx, r, sg.Spec.PGSQL, &cm, &corev1.ConfigMap{}, sg, owner)
 }

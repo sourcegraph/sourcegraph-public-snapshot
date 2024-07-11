@@ -2,7 +2,6 @@ package productsubscription_test
 
 import (
 	"context"
-	"math"
 	"testing"
 	"time"
 
@@ -275,11 +274,6 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 	perProUserChatDailyLLMRequestLimit := 50
 	oneDayInSeconds := int32(60 * 60 * 24)
 
-	// Create feature flags
-	limitsExceeded := "rate-limits-exceeded-for-testing"
-	_, err := db.FeatureFlags().CreateBool(ctx, limitsExceeded, false)
-	require.NoError(t, err)
-
 	tru := true
 	cfg := &conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
@@ -332,36 +326,6 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// Rate limited Cody SSC - Free user
-	rateLimitsExceededFreeUser, err := db.Users().Create(ctx, database.NewUser{Username: "free-limited", EmailIsVerified: true, Email: "free-limited@test.com"})
-	require.NoError(t, err)
-	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: limitsExceeded, Value: true, UserID: &rateLimitsExceededFreeUser.ID})
-	require.NoError(t, err)
-	rateLimitsExceededFreeUserExternalAccount, err := db.UserExternalAccounts().Insert(ctx, &extsvc.Account{
-		UserID: rateLimitsExceededFreeUser.ID,
-		AccountSpec: extsvc.AccountSpec{
-			AccountID:   "789",
-			ServiceType: "openidconnect",
-			ServiceID:   ssc.GetSAMSServiceID(),
-		},
-	})
-	require.NoError(t, err)
-
-	// Rate limited Cody SSC - Pro user
-	rateLimitsExceededProUser, err := db.Users().Create(ctx, database.NewUser{Username: "pro-limited", EmailIsVerified: true, Email: "pro-limited@test.com"})
-	require.NoError(t, err)
-	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: limitsExceeded, Value: true, UserID: &rateLimitsExceededProUser.ID})
-	require.NoError(t, err)
-	rateLimitsExceededProUserExternalAccount, err := db.UserExternalAccounts().Insert(ctx, &extsvc.Account{
-		UserID: rateLimitsExceededProUser.ID,
-		AccountSpec: extsvc.AccountSpec{
-			AccountID:   "abc",
-			ServiceType: "openidconnect",
-			ServiceID:   ssc.GetSAMSServiceID(),
-		},
-	})
-	require.NoError(t, err)
-
 	tests := []struct {
 		name                            string
 		pro                             bool
@@ -397,25 +361,6 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 			wantChatLimitInterval:           oneDayInSeconds,
 			wantCodeCompletionLimit:         graphqlbackend.BigInt(0),
 			wantCodeCompletionLimitInterval: oneDayInSeconds,
-			pro:                             true,
-		},
-		{
-			name:                            "free-limited",
-			user:                            rateLimitsExceededFreeUser,
-			externalAccount:                 rateLimitsExceededFreeUserExternalAccount,
-			wantChatLimit:                   graphqlbackend.BigInt(1),
-			wantChatLimitInterval:           math.MaxInt32,
-			wantCodeCompletionLimit:         graphqlbackend.BigInt(1),
-			wantCodeCompletionLimitInterval: math.MaxInt32,
-		},
-		{
-			name:                            "pro-limited",
-			user:                            rateLimitsExceededProUser,
-			externalAccount:                 rateLimitsExceededProUserExternalAccount,
-			wantChatLimit:                   graphqlbackend.BigInt(1),
-			wantChatLimitInterval:           math.MaxInt32,
-			wantCodeCompletionLimit:         graphqlbackend.BigInt(1),
-			wantCodeCompletionLimitInterval: math.MaxInt32,
 			pro:                             true,
 		},
 	}

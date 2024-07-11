@@ -27,16 +27,17 @@ func initAndAuthenticate() (*gqltestutil.Client, error) {
 		return nil, errors.Wrap(err, "failed to check if site needs init")
 	}
 
-	var client *gqltestutil.Client
+	client, err := gqltestutil.NewClient(SourcegraphEndpoint)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create gql client")
+	}
 	if needsSiteInit {
-		client, err = gqltestutil.SiteAdminInit(SourcegraphEndpoint, adminEmail, adminUsername, adminPassword)
-		if err != nil {
+		if err := client.SiteAdminInit(adminEmail, adminUsername, adminPassword); err != nil {
 			return nil, errors.Wrap(err, "failed to create site admin")
 		}
 		log.Println("Site admin has been created:", adminUsername)
 	} else {
-		client, err = gqltestutil.SignIn(SourcegraphEndpoint, adminEmail, adminPassword)
-		if err != nil {
+		if err = client.SignIn(adminEmail, adminPassword); err != nil {
 			return nil, errors.Wrap(err, "failed to sign in")
 		}
 		log.Println("Site admin authenticated:", adminUsername)

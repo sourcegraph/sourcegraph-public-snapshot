@@ -37,7 +37,7 @@ func upgradeDeploymentForVersion(ctx context.Context, email, name, version strin
 	}
 
 	spec := NewDeploymentSpec(
-		sanitizeInstanceName(name),
+		name,
 		version,
 		"", // we don't need a license during upgrade
 	)
@@ -45,7 +45,7 @@ func upgradeDeploymentForVersion(ctx context.Context, email, name, version strin
 	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Upgrading deployment %q to version %q", spec.Name, spec.Version))
 
 	// Check if the deployment already exists
-	_, err = cloudClient.GetInstance(ctx, spec.Name)
+	inst, err := cloudClient.GetInstance(ctx, spec.Name)
 	if err != nil {
 		if errors.Is(err, ErrInstanceNotFound) {
 			return ErrInstanceNotFound
@@ -53,7 +53,22 @@ func upgradeDeploymentForVersion(ctx context.Context, email, name, version strin
 			return errors.Wrapf(err, "failed to check if instance %q already exists", spec.Name)
 		}
 	}
-	inst, err := cloudClient.UpgradeInstance(ctx, spec)
+	// Do various checks before upgrading the instance
+	if !inst.HasStatus(InstanceStatusCompleted) {
+		std.Out.WriteWarningf("Cannot upgrade instance with status %q - if this issue persists, please reach out to #discuss-dev-infra", inst.Status.Status)
+		return ErrInstanceStatusNotComplete
+	}
+	if !inst.IsEphemeral() {
+		std.Out.WriteWarningf("Cannot upgrade non-ephemeral instance %q", name)
+		return ErrNotEphemeralInstance
+	}
+	if inst.IsExpired() {
+		std.Out.WriteWarningf("Cannot upgrade expired instance %q", name)
+		return ErrExpiredInstance
+	}
+
+	// All checks OK, we can issue the upgrade
+	inst, err = cloudClient.UpgradeInstance(ctx, spec)
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Upgrade of %q failed", spec.Name))
 		return errors.Wrapf(err, "failed to issue upgrade of %q to version %s", spec.Name, spec.Version)
@@ -75,18 +90,20 @@ func upgradeCloudEphemeral(ctx *cli.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to determine current branch")
 	}
-	// if a version is specified we do not build anything and just trigger the cloud deployment
 	email, err := GetGCloudAccount(ctx.Context)
 	if err != nil {
 		return err
 	}
-	deploymentName := createDeploymentName(ctx.String("name"), version, email, currentBranch)
+	deploymentName := determineDeploymentName(ctx.String("name"), version, email, currentBranch)
+	if ctx.String("name") != "" && ctx.String("name") != deploymentName {
+		std.Out.WriteNoticef("Your deployment name has been truncated to be %q", deploymentName)
+	}
 
 	err = upgradeDeploymentForVersion(ctx.Context, email, deploymentName, version)
 	if err != nil {
 		if errors.Is(err, ErrInstanceNotFound) {
 			std.Out.WriteWarningf("Unable to upgrade %q since no deployment like that exists", deploymentName)
-			std.Out.WriteMarkdown("You can check what deployments exist under your GCP account with `sg cloud list`, or you can see all deployments with `sg cloud list --all`")
+			std.Out.WriteMarkdown("You can check what deployments exist under your GCP account with `sg cloud ephemeral list`, or you can see all deployments with `sg cloud ephemeral list --all`")
 		}
 		return err
 	}

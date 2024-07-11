@@ -1,0 +1,75 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "memcmd",
+    srcs = [
+        "observer.go",
+        "observer_darwin.go",
+        "observer_linux.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/memcmd",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/bytesize",
+        "//lib/errors",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "//internal/env",
+            "@com_github_prometheus_procfs//:procfs",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//internal/env",
+            "@com_github_prometheus_procfs//:procfs",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "memcmd_test",
+    srcs = [
+        "observer_darwin_test.go",
+        "observer_example_test.go",
+        "observer_linux_test.go",
+        "observer_test.go",
+    ],
+    data = ["@go_sdk//:bin/go"],
+    embed = [":memcmd"],
+    env = {
+        "GO_RLOCATIONPATH": "$(rlocationpath @go_sdk//:bin/go)",
+    },
+    deps = [
+        "@io_bazel_rules_go//go/runfiles:go_default_library",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "//internal/bytesize",
+            "//lib/errors",
+            "@com_github_dustin_go_humanize//:go-humanize",
+            "@com_github_google_go_cmp//cmp",
+            "@com_github_sourcegraph_conc//pool",
+            "@com_github_stretchr_testify//require",
+            "@org_uber_go_goleak//:goleak",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//internal/bytesize",
+            "//lib/errors",
+            "@com_github_dustin_go_humanize//:go-humanize",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//internal/bytesize",
+            "//lib/errors",
+            "@com_github_dustin_go_humanize//:go-humanize",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//internal/bytesize",
+            "//lib/errors",
+            "@com_github_dustin_go_humanize//:go-humanize",
+            "@com_github_google_go_cmp//cmp",
+            "@com_github_sourcegraph_conc//pool",
+            "@com_github_stretchr_testify//require",
+            "@org_uber_go_goleak//:goleak",
+        ],
+        "//conditions:default": [],
+    }),
+)

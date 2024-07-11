@@ -38,10 +38,7 @@ func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *config
 	name := "symbols"
 	cfg := sg.Spec.Symbols
 
-	defaultImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return err
-	}
+	defaultImage := config.GetDefaultImage(sg, name)
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
 		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{
@@ -56,7 +53,7 @@ func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *config
 		},
 	})
 
-	storageSize, err := resource.ParseQuantity(cfg.StorageSize)
+	storageSize, err := resource.ParseQuantity(cfg.GetPersistentVolumeConfig().StorageSize)
 	if err != nil {
 		return errors.Wrap(err, "parsing storage size")
 	}
@@ -116,17 +113,20 @@ func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *config
 		pod.NewVolumeEmptyDir("tmp"),
 	}
 
+	pvc, err := pvc.NewPersistentVolumeClaim("cache", sg.Namespace, cfg)
+	if err != nil {
+		return err
+	}
+
 	sset := statefulset.NewStatefulSet(name, sg.Namespace, sg.Spec.RequestedVersion)
 	sset.Spec.Template = podTemplate.Template
-	sset.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
-		pvc.NewPersistentVolumeClaim("cache", sg.Namespace, storageSize, sg.Spec.StorageClass.Name),
-	}
+	sset.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{pvc}
 
 	return reconcileObject(ctx, r, sg.Spec.Symbols, &sset, &appsv1.StatefulSet{}, sg, owner)
 }
 
 func (r *Reconciler) reconcileSymbolsService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	svc := service.NewService("symbols", sg.Namespace, sg.Spec.RepoUpdater)
+	svc := service.NewService("symbols", sg.Namespace, sg.Spec.Symbols)
 	svc.Spec.Ports = []corev1.ServicePort{
 		{Name: "http", TargetPort: intstr.FromString("http"), Port: 3184},
 		{Name: "debug", TargetPort: intstr.FromString("debug"), Port: 6060},
