@@ -9,6 +9,7 @@ go_library(
         "gittree_translator.go",
         "iface.go",
         "init.go",
+        "mapped_index.go",
         "mocks_temp.go",
         "observability.go",
         "request_state.go",
@@ -60,6 +61,7 @@ go_test(
     timeout = "short",
     srcs = [
         "gittree_translator_test.go",
+        "mapped_index_test.go",
         "scip_utils_test.go",
         "service_closest_uploads_test.go",
         "service_definitions_test.go",
@@ -80,6 +82,7 @@ go_test(
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
+        "//internal/codeintel/codenav/internal/lsifstore",
         "//internal/codeintel/codenav/shared",
         "//internal/codeintel/core",
         "//internal/codeintel/uploads/shared",

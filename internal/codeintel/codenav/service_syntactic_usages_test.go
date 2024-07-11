@@ -66,8 +66,8 @@ func TestSearchBasedUsages_ResultWithoutSymbols(t *testing.T) {
 	)
 
 	usages, searchErr := svc.searchBasedUsagesInner(
-		context.Background(), observation.TestTraceLogger(log.NoOp()), NewMockGitTreeTranslator(), UsagesForSymbolArgs{},
-		"symbol", "Java", core.None[core.UploadLike](),
+		context.Background(), observation.TestTraceLogger(log.NoOp()), UsagesForSymbolArgs{},
+		"symbol", "Java", core.None[MappedIndex](),
 	)
 	require.NoError(t, searchErr)
 	expectSearchRanges(t, usages, refRange, refRange2)
@@ -90,8 +90,8 @@ func TestSearchBasedUsages_ResultWithSymbol(t *testing.T) {
 	)
 
 	usages, searchErr := svc.searchBasedUsagesInner(
-		context.Background(), observation.TestTraceLogger(log.NoOp()), NewMockGitTreeTranslator(), UsagesForSymbolArgs{},
-		"symbol", "Java", core.None[core.UploadLike](),
+		context.Background(), observation.TestTraceLogger(log.NoOp()), UsagesForSymbolArgs{},
+		"symbol", "Java", core.None[MappedIndex](),
 	)
 	require.NoError(t, searchErr)
 	expectSearchRanges(t, usages, refRange, refRange2, defRange)
