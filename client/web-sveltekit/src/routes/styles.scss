@@ -45,10 +45,12 @@ input:focus-visible {
 
 // Taken from https://www.a11yproject.com/posts/how-to-hide-content/
 .visually-hidden {
-    clip-path: inset(50%);
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
     height: 1px;
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    width: 1px;
+    clip-path: inset(50%);
     overflow: hidden;
     position: absolute;
     white-space: nowrap;
-    width: 1px;
 }

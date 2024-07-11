@@ -72,8 +72,9 @@ test('shows previous diffs when error occurs', async ({ page, sg }) => {
                             nodes: [
                                 {
                                     __typename: 'FileDiff',
-                                    oldPath: null,
-                                    newPath: '<new path>',
+                                    newFile: {
+                                        path: '<new path>',
+                                    },
                                 },
                             ],
                             pageInfo: {
