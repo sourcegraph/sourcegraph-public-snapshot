@@ -438,3 +438,8 @@
   package: analytics
   interfaces:
     - secretStore
+- filename: internal/releaseregistry/mocks/mocks.go
+  path: github.com/sourcegraph/sourcegraph/internal/releaseregistry
+  package: mocks
+  interfaces:
+    - ReleaseRegistryClient

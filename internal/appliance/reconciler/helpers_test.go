@@ -2,8 +2,6 @@ package reconciler
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"os"
 	"path/filepath"
 	"testing"
@@ -63,21 +61,17 @@ func (suite *ApplianceTestSuite) TearDownSuite() {
 
 func (suite *ApplianceTestSuite) createConfigMapAndAwaitReconciliation(fixtureFileName string) string {
 	// Create a random namespace for each test
-	namespace := "test-appliance-" + suite.randomSlug()
-	ns := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: namespace,
-		},
-	}
-	_, err := suite.k8sClient.CoreV1().Namespaces().Create(suite.ctx, ns, metav1.CreateOptions{})
+	namespace, err := k8senvtest.NewRandomNamespace("test-appliance")
+	suite.Require().NoError(err)
+	_, err = suite.k8sClient.CoreV1().Namespaces().Create(suite.ctx, namespace, metav1.CreateOptions{})
 	suite.Require().NoError(err)
 
-	cfgMap := suite.newConfigMap(namespace, fixtureFileName)
-	suite.awaitReconciliation(namespace, func() {
-		_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace).Create(suite.ctx, cfgMap, metav1.CreateOptions{})
+	cfgMap := suite.newConfigMap(namespace.GetName(), fixtureFileName)
+	suite.awaitReconciliation(namespace.GetName(), func() {
+		_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace.GetName()).Create(suite.ctx, cfgMap, metav1.CreateOptions{})
 		suite.Require().NoError(err)
 	})
-	return namespace
+	return namespace.GetName()
 }
 
 func (suite *ApplianceTestSuite) updateConfigMapAndAwaitReconciliation(namespace, fixtureFileName string) {
@@ -130,11 +124,4 @@ func (suite *ApplianceTestSuite) newConfigMap(namespace, fixtureFileName string)
 		},
 		Data: map[string]string{"spec": string(cfgBytes)},
 	}
-}
-
-func (suite *ApplianceTestSuite) randomSlug() string {
-	buf := make([]byte, 3)
-	_, err := rand.Read(buf)
-	suite.Require().NoError(err)
-	return hex.EncodeToString(buf)
 }

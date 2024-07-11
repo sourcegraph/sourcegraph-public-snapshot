@@ -11,6 +11,7 @@ declare global {
   const ILucideArchive: typeof import('~icons/lucide/archive')['default']
   const ILucideArrowDownFromLine: typeof import('~icons/lucide/arrow-down-from-line')['default']
   const ILucideArrowLeftFromLine: typeof import('~icons/lucide/arrow-left-from-line')['default']
+  const ILucideArrowRight: typeof import('~icons/lucide/arrow-right')['default']
   const ILucideArrowRightFromLine: typeof import('~icons/lucide/arrow-right-from-line')['default']
   const ILucideBarChartBig: typeof import('~icons/lucide/bar-chart-big')['default']
   const ILucideBookOpen: typeof import('~icons/lucide/book-open')['default']
