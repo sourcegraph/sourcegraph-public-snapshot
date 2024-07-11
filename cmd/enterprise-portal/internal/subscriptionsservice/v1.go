@@ -16,6 +16,7 @@ import (
 	subscriptionsv1connect "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1/v1connect"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/iam"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/connectutil"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
@@ -328,7 +329,7 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 	// Empty field paths means update all non-empty fields.
 	if len(fieldPaths) == 0 {
 		if v := req.Msg.GetSubscription().GetInstanceDomain(); v != "" {
-			opts.InstanceDomain = v
+			opts.InstanceDomain = &v
 		}
 		if v := req.Msg.GetSubscription().GetDisplayName(); v != "" {
 			opts.DisplayName = v
@@ -337,22 +338,23 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 		for _, p := range fieldPaths {
 			switch p {
 			case "instance_domain":
-				opts.InstanceDomain = req.Msg.GetSubscription().GetInstanceDomain()
+				opts.InstanceDomain = pointers.Ptr(req.Msg.GetSubscription().GetInstanceDomain())
 			case "display_name":
 				opts.DisplayName = req.Msg.GetSubscription().GetDisplayName()
 			case "*":
 				opts.ForceUpdate = true
-				opts.InstanceDomain = req.Msg.GetSubscription().GetInstanceDomain()
+				opts.InstanceDomain = pointers.Ptr(req.Msg.GetSubscription().GetInstanceDomain())
 			}
 		}
 	}
 
 	// Validate and normalize the domain
-	if opts.InstanceDomain != "" {
-		opts.InstanceDomain, err = subscriptionsv1.NormalizeInstanceDomain(opts.InstanceDomain)
+	if opts.InstanceDomain != nil {
+		normalizedDomain, err := subscriptionsv1.NormalizeInstanceDomain(pointers.DerefZero(opts.InstanceDomain))
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInvalidArgument, errors.Wrap(err, "invalid instance domain"))
 		}
+		opts.InstanceDomain = &normalizedDomain
 	}
 
 	subscription, err := s.store.UpsertEnterpriseSubscription(ctx, subscriptionID, opts)

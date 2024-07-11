@@ -3,17 +3,20 @@ package databasetest
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables/custommigrator"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -57,6 +60,11 @@ func NewTestDB(t testing.TB, system, suite string, tables ...schema.Tabler) *pgx
 	for _, table := range tables {
 		err = db.AutoMigrate(table)
 		require.NoError(t, err)
+		if m, ok := table.(custommigrator.CustomTableMigrator); ok {
+			if err := m.RunCustomMigrations(db.Migrator()); err != nil {
+				require.NoError(t, err)
+			}
+		}
 	}
 
 	// Close the connection used to auto-migrate the database.
@@ -66,7 +74,12 @@ func NewTestDB(t testing.TB, system, suite string, tables ...schema.Tabler) *pgx
 	require.NoError(t, err)
 
 	// Open a new connection to the test suite database.
-	testDB, err := pgxpool.New(context.Background(), dsn.String())
+	dbConfig, err := pgxpool.ParseConfig(dsn.String())
+	require.NoError(t, err)
+	if testing.Verbose() {
+		dbConfig.ConnConfig.Tracer = pgxTestTracer{TB: t}
+	}
+	testDB, err := pgxpool.NewWithConfig(context.Background(), dbConfig)
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
@@ -109,4 +122,44 @@ func ClearTablesAfterTest(t *testing.T, db *pgxpool.Pool, tables ...schema.Table
 			t.Errorf("Failed to clear table data: %v", err)
 		}
 	})
+}
+
+// pgxTestTracer implements various pgx tracing hooks for dumping diagnostics
+// in testing.
+type pgxTestTracer struct{ testing.TB }
+
+// Select tracing hooks we want to implement.
+var (
+	_ pgx.QueryTracer = pgxTestTracer{}
+)
+
+func (t pgxTestTracer) TraceQueryStart(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryStartData) context.Context {
+	var args []string
+	if len(data.Args) > 0 {
+		// Divider for readability
+		args = append(args, "\n---")
+	}
+	for _, arg := range data.Args {
+		data, err := json.MarshalIndent(arg, "", "  ")
+		if err != nil {
+			args = append(args, fmt.Sprintf("marshal %T: %+v", arg, err))
+		}
+		args = append(args, string(data))
+	}
+
+	t.Logf(`pgx.QueryStart db=%q
+%s%s`,
+		conn.Config().Database,
+		strings.TrimSpace(data.SQL),
+		strings.Join(args, "\n"))
+	return ctx
+}
+
+func (t pgxTestTracer) TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryEndData) {
+	if data.Err != nil {
+		t.Logf(`pgx.QueryEnd db=%q tag=%q error=%q`,
+			conn.Config().Database,
+			data.CommandTag.String(),
+			data.Err)
+	}
 }

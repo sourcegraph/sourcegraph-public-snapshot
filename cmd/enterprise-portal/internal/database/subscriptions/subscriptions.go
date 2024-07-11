@@ -10,9 +10,25 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/upsert"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+// ⚠️ DO NOT USE: This type is only used for creating foreign key constraints
+// and initializing tables with gorm.
+type TableSubscription struct {
+	// Each Subscription has many Licenses.
+	Licenses []*TableSubscriptionLicense `gorm:"foreignKey:SubscriptionID"`
+
+	// Each Subscription has many Conditions.
+	Conditions *[]SubscriptionCondition `gorm:"foreignKey:SubscriptionID"`
+
+	Subscription
+}
+
+func (*TableSubscription) TableName() string {
+	return "enterprise_portal_subscriptions"
+}
 
 // Subscription is an Enterprise subscription record.
 type Subscription struct {
@@ -22,7 +38,7 @@ type Subscription struct {
 	// "acme.sourcegraphcloud.com". This is set explicitly.
 	//
 	// It must be unique across all currently un-archived subscriptions.
-	InstanceDomain string `gorm:"uniqueIndex:,where:archived_at IS NULL"`
+	InstanceDomain *string `gorm:"uniqueIndex:,where:archived_at IS NULL"`
 
 	// WARNING: The below fields are not yet used in production.
 
@@ -39,9 +55,9 @@ type Subscription struct {
 	// to this subscription.
 	//
 	// Condition transition details are tracked in 'enterprise_portal_subscription_conditions'.
-	CreatedAt  time.Time  `gorm:"not null;default:current_timestamp"`
-	UpdatedAt  time.Time  `gorm:"not null;default:current_timestamp"`
-	ArchivedAt *time.Time // Null indicates the subscription is not archived.
+	CreatedAt  utctime.Time  `gorm:"not null;default:current_timestamp"`
+	UpdatedAt  utctime.Time  `gorm:"not null;default:current_timestamp"`
+	ArchivedAt *utctime.Time // Null indicates the subscription is not archived.
 
 	// SalesforceSubscriptionID associated with this Enterprise subscription.
 	SalesforceSubscriptionID *string
@@ -49,11 +65,7 @@ type Subscription struct {
 	SalesforceOpportunityID *string
 }
 
-func (s Subscription) TableName() string {
-	return "enterprise_portal_subscriptions"
-}
-
-// subscriptionTableColumns must match s.scan() values.
+// subscriptionTableColumns must match scanSubscription() values.
 func subscriptionTableColumns() []string {
 	return []string{
 		"id",
@@ -67,7 +79,7 @@ func subscriptionTableColumns() []string {
 	}
 }
 
-// scanSubscription matches s.columns() values.
+// scanSubscription matches subscriptionTableColumns() values.
 func scanSubscription(row pgx.Row) (*Subscription, error) {
 	var s Subscription
 	err := row.Scan(
@@ -83,13 +95,6 @@ func scanSubscription(row pgx.Row) (*Subscription, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	s.CreatedAt = s.CreatedAt.UTC()
-	s.UpdatedAt = s.UpdatedAt.UTC()
-	if s.ArchivedAt != nil {
-		s.ArchivedAt = pointers.Ptr(s.ArchivedAt.UTC())
-	}
-
 	return &s, nil
 }
 
@@ -172,7 +177,7 @@ WHERE %s
 }
 
 type UpsertSubscriptionOptions struct {
-	InstanceDomain string
+	InstanceDomain *string
 	DisplayName    string
 
 	CreatedAt  time.Time

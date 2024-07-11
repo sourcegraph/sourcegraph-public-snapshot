@@ -20,7 +20,7 @@ func TestSubscriptionsStore(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	db := databasetest.NewTestDB(t, "enterprise-portal", "SubscriptionsStore", tables.All()...)
+	db := databasetest.NewTestDB(t, "enterprise-portal", t.Name(), tables.All()...)
 
 	for _, tc := range []struct {
 		name string
@@ -45,19 +45,19 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 	s1, err := s.Upsert(
 		ctx,
 		uuid.New().String(),
-		subscriptions.UpsertSubscriptionOptions{InstanceDomain: "s1.sourcegraph.com"},
+		subscriptions.UpsertSubscriptionOptions{InstanceDomain: pointers.Ptr("s1.sourcegraph.com")},
 	)
 	require.NoError(t, err)
 	s2, err := s.Upsert(
 		ctx,
 		uuid.New().String(),
-		subscriptions.UpsertSubscriptionOptions{InstanceDomain: "s2.sourcegraph.com"},
+		subscriptions.UpsertSubscriptionOptions{InstanceDomain: pointers.Ptr("s2.sourcegraph.com")},
 	)
 	require.NoError(t, err)
 	_, err = s.Upsert(
 		ctx,
 		uuid.New().String(),
-		subscriptions.UpsertSubscriptionOptions{InstanceDomain: "s3.sourcegraph.com"},
+		subscriptions.UpsertSubscriptionOptions{InstanceDomain: pointers.Ptr("s3.sourcegraph.com")},
 	)
 	require.NoError(t, err)
 
@@ -79,7 +79,7 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 
 	t.Run("list by instance domains", func(t *testing.T) {
 		ss, err := s.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{
-			InstanceDomains: []string{s1.InstanceDomain, s2.InstanceDomain}},
+			InstanceDomains: []string{*s1.InstanceDomain, *s2.InstanceDomain}},
 		)
 		require.NoError(t, err)
 		require.Len(t, ss, 2)
@@ -115,7 +115,7 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 	currentSubscription, err := s.Upsert(
 		ctx,
 		uuid.New().String(),
-		subscriptions.UpsertSubscriptionOptions{InstanceDomain: "s1.sourcegraph.com"},
+		subscriptions.UpsertSubscriptionOptions{InstanceDomain: pointers.Ptr("s1.sourcegraph.com")},
 	)
 	require.NoError(t, err)
 
@@ -140,7 +140,7 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 		t.Cleanup(func() { currentSubscription = got })
 
 		got, err = s.Upsert(ctx, currentSubscription.ID, subscriptions.UpsertSubscriptionOptions{
-			InstanceDomain: "s1-new.sourcegraph.com",
+			InstanceDomain: pointers.Ptr("s1-new.sourcegraph.com"),
 		})
 		require.NoError(t, err)
 		assert.Equal(t, "s1-new.sourcegraph.com", got.InstanceDomain)
@@ -169,7 +169,7 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 		assert.Equal(t, currentSubscription.InstanceDomain, got.InstanceDomain)
 		assert.Equal(t, currentSubscription.DisplayName, got.DisplayName)
 		// Round times to allow for some precision drift in CI
-		assert.Equal(t, yesterday.Round(time.Second).UTC(), got.CreatedAt.Round(time.Second))
+		assert.Equal(t, yesterday.Round(time.Second).UTC(), got.CreatedAt.Time().Round(time.Second))
 	})
 
 	t.Run("update only archived at", func(t *testing.T) {
@@ -184,7 +184,7 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 		assert.Equal(t, currentSubscription.DisplayName, got.DisplayName)
 		assert.Equal(t, currentSubscription.CreatedAt, got.CreatedAt)
 		// Round times to allow for some precision drift in CI
-		assert.Equal(t, yesterday.Round(time.Second).UTC(), got.ArchivedAt.Round(time.Second))
+		assert.Equal(t, yesterday.Round(time.Second).UTC(), got.ArchivedAt.Time().Round(time.Second))
 	})
 
 	t.Run("force update to zero values", func(t *testing.T) {
@@ -209,7 +209,7 @@ func SubscriptionsStoreGet(t *testing.T, ctx context.Context, s *subscriptions.S
 	s1, err := s.Upsert(
 		ctx,
 		uuid.New().String(),
-		subscriptions.UpsertSubscriptionOptions{InstanceDomain: "s1.sourcegraph.com"},
+		subscriptions.UpsertSubscriptionOptions{InstanceDomain: pointers.Ptr("s1.sourcegraph.com")},
 	)
 	require.NoError(t, err)
 

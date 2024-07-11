@@ -68,7 +68,7 @@ func convertSubscriptionToProto(subscription *subscriptions.Subscription, attrs 
 	return &subscriptionsv1.EnterpriseSubscription{
 		Id:             subscriptionsv1.EnterpriseSubscriptionIDPrefix + attrs.ID,
 		Conditions:     conds,
-		InstanceDomain: subscription.InstanceDomain,
+		InstanceDomain: pointers.DerefZero(subscription.InstanceDomain),
 		DisplayName:    subscription.DisplayName,
 	}
 }
