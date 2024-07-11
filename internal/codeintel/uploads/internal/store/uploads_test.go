@@ -358,7 +358,7 @@ func TestGetCompletedUploadsByIDs(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	// Dumps do not exist initially
+	// Indexes do not exist initially
 	if uploads, err := store.GetCompletedUploadsByIDs(context.Background(), []int{1, 2}); err != nil {
 		t.Fatalf("unexpected error getting dump: %s", err)
 	} else if len(uploads) > 0 {

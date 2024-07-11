@@ -63,7 +63,7 @@ var scanDirtyRepositories = basestore.NewSliceScanner(func(s dbutil.Scanner) (dr
 
 // UpdateUploadsVisibleToCommits uses the given commit graph and the tip of non-stale branches and tags to determine the
 // set of LSIF uploads that are visible for each commit, and the set of uploads which are visible at the tip of a
-// non-stale branch or tag. The decorated commit graph is serialized to Postgres for use by find closest dumps
+// non-stale branch or tag. The decorated commit graph is serialized to Postgres for use by find closest completed uploads
 // queries.
 //
 // If dirtyToken is supplied, the repository will be unmarked when the supplied token does matches the most recent
@@ -278,7 +278,7 @@ LIMIT %s
 // optional indexer.
 //
 // This method should be used when the commit is known to exist in the lsif_nearest_uploads table. If it doesn't, then this method
-// will return no dumps (as the input commit is not reachable from anything with an upload). The nearest uploads table must be
+// will return no completed uploads (as the input commit is not reachable from anything with an upload). The nearest uploads table must be
 // refreshed before calling this method when the commit is unknown.
 //
 // Because refreshing the commit graph can be very expensive, we also provide FindClosestCompletedUploadsFromGraphFragment. That method should
@@ -291,9 +291,9 @@ LIMIT %s
 // by depth (e.g. if the graph contains an ancestor at depth d, then the graph also contains all other ancestors up to depth d), then
 // we get the ideal behavior. Only if we contain a partial row of ancestors will we return partial results.
 //
-// It is possible for some dumps to overlap theoretically, e.g. if someone uploads one dump covering the repository root and then later
-// splits the repository into multiple dumps. For this reason, the returned dumps are always sorted in most-recently-finished order to
-// prevent returning data from stale dumps.
+// It is possible for some indexes to overlap theoretically, e.g. if someone uploads one index covering the repository root and then later
+// splits the repository into multiple indexes. For this reason, the returned indexes are always sorted in most-recently-finished order to
+// prevent returning data from stale indexes.
 func (s *store) FindClosestCompletedUploads(ctx context.Context, opts shared.UploadMatchingOptions) (_ []shared.CompletedUpload, err error) {
 	ctx, trace, endObservation := s.operations.findClosestCompletedUploads.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	defer endObservation(1, observation.Args{})
