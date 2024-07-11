@@ -1,10 +1,48 @@
 <script lang="ts">
     import { DiffHunkLineType } from '$lib/graphql-types'
+
     import '$lib/highlight.scss'
 
     import type { FileDiffHunks_Hunk } from './FileDiffHunks.gql'
 
     export let hunks: readonly FileDiffHunks_Hunk[]
+
+    function linesToDiffInformation(lines: FileDiffHunks_Hunk['highlight']['lines']): {
+        newLineOffset: number
+        oldLineOffset: number
+        marker: '-' | '+' | ' '
+        added: boolean
+        deleted: boolean
+        html: string
+    }[] {
+        let newLineOffset = -1
+        let oldLineOffset = -1
+
+        return lines.map(line => {
+            let marker: '-' | '+' | ' ' = ' '
+            let added = false
+            let deleted = false
+
+            switch (line.kind) {
+                case DiffHunkLineType.ADDED:
+                    marker = '+'
+                    newLineOffset++
+                    added = true
+                    break
+                case DiffHunkLineType.DELETED:
+                    marker = '-'
+                    oldLineOffset++
+                    deleted = true
+                    break
+                case DiffHunkLineType.UNCHANGED:
+                    newLineOffset++
+                    oldLineOffset++
+                    break
+            }
+
+            return { newLineOffset, oldLineOffset, marker, added, deleted, html: line.html }
+        })
+    }
 </script>
 
 {#if hunks.length === 0}
@@ -18,6 +56,8 @@
         </colgroup>
         <tbody>
             {#each hunks as hunk (hunk.oldRange.startLine)}
+                {@const oldStartLine = hunk.oldRange.startLine}
+                {@const newStartLine = hunk.newRange.startLine}
                 <tr>
                     <td class="header" colspan="3">
                         @@ -{hunk.oldRange.startLine},{hunk.oldRange.lines} +{hunk.newRange.startLine},{hunk.newRange
@@ -27,20 +67,15 @@
                         {/if}
                     </td>
                 </tr>
-                {#each hunk.highlight.lines as line, i (line)}
-                    {@const both = line.kind === DiffHunkLineType.UNCHANGED}
-                    {@const addition = line.kind === DiffHunkLineType.ADDED}
-                    {@const deletion = line.kind === DiffHunkLineType.DELETED}
-                    {@const marker = addition ? '+' : deletion ? '-' : ' '}
-
-                    <tr class:both class:addition class:deletion>
+                {#each linesToDiffInformation(hunk.highlight.lines) as { marker, added, deleted, newLineOffset, oldLineOffset, html }}
+                    <tr class:added class:deleted>
                         <td class="num"
-                            >{#if !addition}{hunk.oldRange.startLine - 1 + i}{/if}</td
+                            >{#if !added}{oldStartLine + oldLineOffset}{/if}</td
                         >
                         <td class="num"
-                            >{#if !deletion}{hunk.newRange.startLine - 1 + i}{/if}</td
+                            >{#if !deleted}{newStartLine + newLineOffset}{/if}</td
                         >
-                        <td class="content" data-diff-marker={marker}>{@html line.html}</td>
+                        <td class="content" data-diff-marker={marker}>{@html html}</td>
                     </tr>
                 {/each}
             {/each}
@@ -52,18 +87,15 @@
     table {
         width: 100%;
         border-collapse: collapse;
-    }
-
-    tr {
         font-family: var(--code-font-family);
         font-size: 0.75rem;
     }
 
-    tr.addition {
+    tr.added {
         --code-bg: var(--diff-add-bg);
     }
 
-    tr.deletion {
+    tr.deleted {
         --code-bg: var(--diff-remove-bg);
     }
 

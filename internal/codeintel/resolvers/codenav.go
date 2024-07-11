@@ -622,7 +622,7 @@ type UsageResolver interface {
 	UsageRange(context.Context) (UsageRangeResolver, error)
 	SurroundingContent(_ context.Context, args *struct {
 		*SurroundingLines `json:"surroundingLines"`
-	}) (*string, error)
+	}) (string, error)
 	UsageKind() SymbolUsageKind
 }
 
