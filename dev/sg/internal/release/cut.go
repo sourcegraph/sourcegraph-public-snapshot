@@ -3,36 +3,40 @@ package release
 import (
 	"context"
 	"fmt"
-	"github.com/Masterminds/semver"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/urfave/cli/v2"
 	"os/exec"
 	"strings"
 
+	"github.com/Masterminds/semver"
+	"github.com/urfave/cli/v2"
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
+
 	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/execute"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 )
 
 func genMigrationGraph(ctx context.Context, newVersion string) error {
-	err := run.Cmd(ctx, "comby", "-in-place", "\"const maxVersionString = :[1]\"", fmt.Sprintf("\"const maxVersionString = \"%d\"\"", newVersion), "internal/database/migration/shared/data/cmd/generator/consts.go").Run()
+	err := run.Cmd(ctx, "comby", "-in-place", "\"const maxVersionString = :[1]\"", fmt.Sprintf("\"const maxVersionString = \"%d\"\"", newVersion), "internal/database/migration/shared/data/cmd/generator/consts.go").Run().Wait()
 	if err != nil {
 		return errors.Wrap(err, "Could not run comby to change maxVersionString")
 	}
-	err = run.Cmd(ctx, "git", "add", "./internal/database/migration/shared/data/cmd/generator/consts.go").Run()
+	err = run.Cmd(ctx, "git", "add", "./internal/database/migration/shared/data/cmd/generator/consts.go").Run().Wait()
 	if err != nil {
 		return errors.Wrap(err, "Could not git add file")
 	}
-	err = run.Cmd(ctx, "git", "commit", "-m", "Update maxVersionString").Run()
+	err = run.Cmd(ctx, "git", "commit", "-m", "Update maxVersionString").Run().Wait()
 	if err != nil {
 		return errors.Wrap(err, "Could not git commit file")
 	}
-	err = run.Cmd(ctx, "git", "archive", "--format=tar.gz", "HEAD", "migrations", ">", fmt.Sprintf("migrations-v%d.tar.gz", newVersion)).Run()
+	err = run.Cmd(ctx, "git", "archive", "--format=tar.gz", "HEAD", "migrations", ">", fmt.Sprintf("migrations-v%d.tar.gz", newVersion)).Run().Wait()
 	if err != nil {
 		return errors.Wrap(err, "Could not create git archive")
 	}
-	err = run.Cmd(ctx, "CLOUDSDK_CORE_PROJECT=\"sourcegraph-ci\"", "gsutil", "cp", fmt.Sprintf("migrations-v%d", newVersion), "gs://schemas-migrations/migrations/").Run()
+	err = run.Cmd(ctx, "CLOUDSDK_CORE_PROJECT=\"sourcegraph-ci\"", "gsutil", "cp", fmt.Sprintf("migrations-v%d", newVersion), "gs://schemas-migrations/migrations/").Run().Wait()
 	if err != nil {
 		return errors.Wrap(err, "Could not push git archive to GCS")
 	}
