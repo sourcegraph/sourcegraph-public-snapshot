@@ -36,7 +36,12 @@
 
 <header use:sizeToFit={{ grow, shrink }}>
     <h2 data-testid="file-header-path">
-        <ShrinkablePath bind:this={shrinkablePath} {path} showCopyButton>
+        <ShrinkablePath
+            bind:this={shrinkablePath}
+            {path}
+            pathHref={pathHrefFactory({ repoName, revision, fullPath: path, fullPathType: type })}
+            showCopyButton
+        >
             <slot name="file-icon" slot="file-icon" />
         </ShrinkablePath>
     </h2>
