@@ -37,7 +37,7 @@ var addresses = func() struct {
 	}
 
 	redis.Cache = env.Get("REDIS_CACHE_ENDPOINT", fallback("redis-cache:6379"), "redis used for cache data. if not set, REDIS_ENDPOINT will be considered")
-	redis.Cache = env.Get("REDIS_STORE_ENDPOINT", fallback("redis-store:6379"), "redis used for persistent stores (eg HTTP sessions). if not set, REDIS_ENDPOINT will be considered")
+	redis.Store = env.Get("REDIS_STORE_ENDPOINT", fallback("redis-store:6379"), "redis used for persistent stores (eg HTTP sessions). if not set, REDIS_ENDPOINT will be considered")
 
 	return redis
 }()
