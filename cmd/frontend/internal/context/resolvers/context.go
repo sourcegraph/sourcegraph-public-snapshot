@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"time"
 
-	"github.com/google/uuid"
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
@@ -129,11 +129,6 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 	})
 }
 
-// GetCodyIntent is deprecated: use ChatIntent instead.
-func (r *Resolver) GetCodyIntent(ctx context.Context, args graphqlbackend.GetIntentArgs) (graphqlbackend.IntentResolver, error) {
-	return r.ChatIntent(ctx, graphqlbackend.ChatIntentArgs{Query: args.Query, InteractionID: uuid.NewString()})
-}
-
 // ChatIntent is a quick-and-dirty way to expose our intent detection model to Cody clients.
 // Yes, it does things that should not be done in production code - for now it is just a proof of concept for demos.
 func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatIntentArgs) (graphqlbackend.IntentResolver, error) {
@@ -146,6 +141,9 @@ func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatInten
 	if err != nil {
 		return nil, err
 	}
+	// Fail-fast
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	// Proof-of-concept warning - this needs to be deployed behind Cody Gateway, or exposed with HTTPS and authentication.
 	req, err := http.NewRequestWithContext(ctx, "POST", "http://35.232.21.114:8000/predict/linearv2", bytes.NewReader(buf))
 	if err != nil {

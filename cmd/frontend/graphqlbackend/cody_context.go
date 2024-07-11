@@ -8,7 +8,6 @@ import (
 
 type CodyContextResolver interface {
 	GetCodyContext(ctx context.Context, args GetContextArgs) ([]ContextResultResolver, error)
-	GetCodyIntent(ctx context.Context, args GetIntentArgs) (IntentResolver, error)
 	ChatIntent(ctx context.Context, args ChatIntentArgs) (IntentResolver, error)
 	RankContext(ctx context.Context, args RankContextArgs) (RankContextResolver, error)
 	RecordContext(ctx context.Context, args RecordContextArgs) (*EmptyResponse, error)
@@ -19,10 +18,6 @@ type GetContextArgs struct {
 	Query            string
 	CodeResultsCount int32
 	TextResultsCount int32
-}
-
-type GetIntentArgs struct {
-	Query string
 }
 
 type ChatIntentArgs struct {
@@ -51,6 +46,7 @@ type InputContextItem struct {
 	Content   string
 	Retriever *string
 	Score     *float64
+	FileName  *string
 }
 
 type RankOptions struct {
@@ -99,11 +95,4 @@ type RankContextResolver interface {
 	Ranker() string
 	Used() []int32
 	Discarded() []int32
-}
-
-type ContextItemResolver interface {
-	Content() string
-	Retriever() string
-	Score() *float64
-	FileChunk() *FileChunkContextResolver
 }

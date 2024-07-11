@@ -20,15 +20,6 @@ extend type Query {
         """
         textResultsCount: Int!
     ): [CodyContextResult!]!
-    """
-    DEPRECATED: use chatIntent. This will be deleted in a future release.
-    """
-    getCodyIntent(
-        """
-        A natural language query string.
-        """
-        query: String!
-    ): CodyIntentResponse!
 
     """
     EXPERIMENTAL: Detect intent for a given Cody chat query.
@@ -131,20 +122,6 @@ type FileChunkContext {
 }
 
 """
-EXPERIMENTAL: A response from Cody intent detection API. To be deleted in a future release.
-"""
-type CodyIntentResponse {
-    """
-    Intent that was detected
-    """
-    intent: String!
-    """
-    Confidence score as assigned by the intent detection model
-    """
-    score: Float!
-}
-
-"""
 EXPERIMENTAL: A response from Cody Chat intent detection API.
 """
 type ChatIntentResponse {
@@ -173,6 +150,10 @@ input InputContextItem {
     Optional: score assigned by the retriever.
     """
     score: Float
+    """
+    Optional: Name of the file associated with this context item.
+    """
+    fileName: String
 }
 
 """
