@@ -69,7 +69,8 @@
             ><!--
         -->{/if}<!--
     -->{/each}<!--
-    We include the copy button in this component because
+    We include the copy button in this component because we want it to wrap along with the path
+    elements. Otherwise, an invisible button might wrap to its own line, which looks weird.
     -->{#if showCopyButton}<!--
         --><span
             data-copy-button
