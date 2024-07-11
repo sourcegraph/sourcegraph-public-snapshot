@@ -351,22 +351,17 @@ func addLimitsAndFilter(plan *search.Inputs, filter fileMatcher, args GetContext
 }
 
 func fileMatchToContextMatch(fm *result.FileMatch) FileChunkContext {
-	if len(fm.ChunkMatches) == 0 {
+	var startLine int
+	if len(fm.Symbols) != 0 {
+		startLine = max(0, fm.Symbols[0].Symbol.Line-5) // 5 lines of leading context, clamped to zero
+	} else if len(fm.ChunkMatches) != 0 {
+		// To provide some context variety, we just use the top-ranked
+		// chunk (the first chunk) from each file match.
+		startLine = max(0, fm.ChunkMatches[0].ContentStart.Line-5) // 5 lines of leading context, clamped to zero
+	} else {
 		// If this is a filename-only match, return a single chunk at the start of the file
-		return FileChunkContext{
-			RepoName:  fm.Repo.Name,
-			RepoID:    fm.Repo.ID,
-			CommitID:  fm.CommitID,
-			Path:      fm.Path,
-			StartLine: 0,
-		}
+		startLine = 0
 	}
-
-	// To provide some context variety, we just use the top-ranked
-	// chunk (the first chunk) from each file
-
-	// 5 lines of leading context, clamped to zero
-	startLine := max(0, fm.ChunkMatches[0].ContentStart.Line-5)
 
 	return FileChunkContext{
 		RepoName:  fm.Repo.Name,
