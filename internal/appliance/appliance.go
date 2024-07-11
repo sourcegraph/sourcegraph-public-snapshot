@@ -218,7 +218,7 @@ func (a *Appliance) GetConfigMap(ctx context.Context, name string) (*corev1.Conf
 }
 
 func (a *Appliance) shouldSetupRun(ctx context.Context) (bool, error) {
-	cfgMap, err := a.GetConfigMap(ctx, "sourcegraph-appliance")
+	cfgMap, err := a.GetConfigMap(ctx, config.ConfigmapName)
 	switch {
 	case err != nil:
 		return false, err
