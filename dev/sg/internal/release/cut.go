@@ -1,19 +1,43 @@
 package release
 
 import (
+	"context"
 	"fmt"
-	"os/exec"
-
 	"github.com/Masterminds/semver"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/urfave/cli/v2"
+	"os/exec"
 	"strings"
 
+	"github.com/sourcegraph/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/execute"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
 )
+
+func genMigrationGraph(ctx context.Context, newVersion string) error {
+	err := run.Cmd(ctx, "comby", "-in-place", "\"const maxVersionString = :[1]\"", fmt.Sprintf("\"const maxVersionString = \"%d\"\"", newVersion), "internal/database/migration/shared/data/cmd/generator/consts.go").Run()
+	if err != nil {
+		return errors.Wrap(err, "Could not run comby to change maxVersionString")
+	}
+	err = run.Cmd(ctx, "git", "add", "./internal/database/migration/shared/data/cmd/generator/consts.go").Run()
+	if err != nil {
+		return errors.Wrap(err, "Could not git add file")
+	}
+	err = run.Cmd(ctx, "git", "commit", "-m", "Update maxVersionString").Run()
+	if err != nil {
+		return errors.Wrap(err, "Could not git commit file")
+	}
+	err = run.Cmd(ctx, "git", "archive", "--format=tar.gz", "HEAD", "migrations", ">", fmt.Sprintf("migrations-v%d.tar.gz", newVersion)).Run()
+	if err != nil {
+		return errors.Wrap(err, "Could not create git archive")
+	}
+	err = run.Cmd(ctx, "CLOUDSDK_CORE_PROJECT=\"sourcegraph-ci\"", "gsutil", "cp", fmt.Sprintf("migrations-v%d", newVersion), "gs://schemas-migrations/migrations/").Run()
+	if err != nil {
+		return errors.Wrap(err, "Could not push git archive to GCS")
+	}
+	return nil
+}
 
 func cutReleaseBranch(cctx *cli.Context) error {
 	p := std.Out.Pending(output.Styled(output.StylePending, "Checking for GitHub CLI..."))
