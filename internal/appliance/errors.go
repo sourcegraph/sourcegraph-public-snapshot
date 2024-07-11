@@ -30,9 +30,9 @@ func (a *Appliance) serverErrorResponse(w http.ResponseWriter, r *http.Request, 
 }
 
 func (a *Appliance) notFoundResponse(w http.ResponseWriter, r *http.Request) {
-	a.errorResponse(w, r, http.StatusInternalServerError, "the requested resource could not be found")
+	a.errorResponse(w, r, http.StatusNotFound, "the requested resource could not be found")
 }
 
 func (a *Appliance) methodNotAllowedResponse(w http.ResponseWriter, r *http.Request) {
-	a.errorResponse(w, r, http.StatusInternalServerError, fmt.Sprintf("the %s method is not supported", r.Method))
+	a.errorResponse(w, r, http.StatusMethodNotAllowed, fmt.Sprintf("the %s method is not supported", r.Method))
 }

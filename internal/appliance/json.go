@@ -47,7 +47,7 @@ func (a *Appliance) readJSON(w http.ResponseWriter, r *http.Request, output any)
 
 		// list of de-facto errors common to JSON APIs that we want to wrap and handle
 		switch {
-		case strings.HasPrefix(err.Error(), "json: unknown filed"):
+		case strings.HasPrefix(err.Error(), "json: unknown field"):
 			return errors.Newf("request body contains unknown key")
 
 		case errors.Is(err, io.EOF):
