@@ -31,6 +31,7 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	// Check that main has been pulled to the local branch
 	defaultBranch := cctx.String("branch")
 	defaultGitRepoBranch := repo.NewGitRepo(defaultBranch, defaultBranch)
+	p = std.Out.Pending(output.Styled(output.StylePending, "Checking if the default branch exists locally..."))
 	if err := defaultGitRepoBranch.Checkout(cctx.Context); err != nil {
 		p.Destroy()
 		return errors.Wrapf(err, "checking out %q", defaultBranch)
@@ -55,7 +56,7 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	if !regexp.MustCompile("\\d+\\.\\d+\\.0$").MatchString(version) {
 		return errors.Newf("invalid version input %q, must be of the form X.Y.0", version)
 	}
-	releaseBranch := strings.Replace(version, ".0", ".x", 1)
+	releaseBranch := strings.TrimPrefix(strings.Replace(version, ".0", ".x", 1), "v")
 
 	// Ensure release branch conforms to release process policy
 	if !regexp.MustCompile("\\d+\\.\\d+\\.x$").MatchString(releaseBranch) {
@@ -67,7 +68,7 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	p = std.Out.Pending(output.Styled(output.StylePending, "Checking if the release branch exists locally ..."))
 	if ok, err := releaseGitRepoBranch.HasLocalBranch(cctx.Context); err != nil {
 		p.Destroy()
-		return errors.Wrapf(err, "checking if %q branch exists localy", releaseBranch)
+		return errors.Wrapf(err, "checking if %q branch exists locally", releaseBranch)
 	} else if ok {
 		p.Destroy()
 		return errors.Newf("branch %q exists locally", releaseBranch)
@@ -86,7 +87,10 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Release branch %q does not exist in remote", releaseBranch))
 
 	// Checkout and push release branch
-	releaseGitRepoBranch.CheckoutNewBranch(cctx.Context)
+	err = releaseGitRepoBranch.CheckoutNewBranch(cctx.Context)
+	if err != nil {
+		return errors.Wrapf(err, "could not checkout release branch %q", releaseBranch)
+	}
 	_, err = releaseGitRepoBranch.Push(cctx.Context)
 	if err != nil {
 		return errors.Wrapf(err, "could not push release branch %q", releaseBranch)
@@ -101,14 +105,14 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "could not add consts.go to staged changes")
 	}
-	_, err = releaseGitRepoBranch.Commit(cctx.Context, "chore: update max version")
-	if err != nil {
-		return errors.Wrap(err, "could not commit staged changes")
-	}
-	_, err = releaseGitRepoBranch.Push(cctx.Context)
-	if err != nil {
-		return errors.Wrap(err, "could not push staged changes")
-	}
+	// _, err = releaseGitRepoBranch.Commit(cctx.Context, "chore: update max version")
+	// if err != nil {
+	// 	return errors.Wrap(err, "could not commit staged changes")
+	// }
+	// _, err = releaseGitRepoBranch.Push(cctx.Context)
+	// if err != nil {
+	// 	return errors.Wrap(err, "could not push staged changes")
+	// }
 
 	// generate new stitched migration archive
 	err = genStitchMigrationArchive(cctx.Context, version)
@@ -156,9 +160,9 @@ func genStitchMigrationArchive(ctx context.Context, newVersion string) error {
 	if err != nil {
 		return errors.Wrap(err, "Could not create git archive")
 	}
-	err = run.Cmd(ctx, "CLOUDSDK_CORE_PROJECT=\"sourcegraph-ci\"", "gsutil", "cp", fmt.Sprintf("migrations-v%s", newVersion), "gs://schemas-migrations/migrations/").Run().Wait()
-	if err != nil {
-		return errors.Wrap(err, "Could not push git archive to GCS")
-	}
+	//err = run.Cmd(ctx, "CLOUDSDK_CORE_PROJECT=\"sourcegraph-ci\"", "gsutil", "cp", fmt.Sprintf("migrations-v%s", newVersion), "gs://schemas-migrations/migrations/").Run().Wait()
+	//if err != nil {
+	//	return errors.Wrap(err, "Could not push git archive to GCS")
+	//}
 	return nil
 }
