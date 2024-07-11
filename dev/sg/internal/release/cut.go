@@ -147,7 +147,7 @@ func replaceMaxVersion(ctx context.Context, newVersion string) error {
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Using Comby at %q", combyPath))
 
-	err = run.Cmd(ctx, "comby", "-in-place", "\"const maxVersionString = :[1]\"", fmt.Sprintf("const maxVersionString = %d", newVersion), "internal/database/migration/shared/data/cmd/generator/consts.go").Run().Wait()
+	err = run.Cmd(ctx, "comby", "-in-place", "\"const maxVersionString = :[1]\"", fmt.Sprintf("const maxVersionString = %s", newVersion), "internal/database/migration/shared/data/cmd/generator/consts.go").Run().Wait()
 	if err != nil {
 		return errors.Wrap(err, "Could not run comby to change maxVersionString")
 	}
@@ -156,7 +156,7 @@ func replaceMaxVersion(ctx context.Context, newVersion string) error {
 
 // TODO set timestamp during archive generation for cache
 func genStitchMigrationArchive(ctx context.Context, newVersion string) error {
-	err := run.Cmd(ctx, "git", "archive", "--format=tar.gz", "HEAD", "migrations", "--o", fmt.Sprintf("migrations-v%s.tar.gz", newVersion)).Run().Wait()
+	err := run.Cmd(ctx, "git", "archive", "--format=tar.gz", "HEAD", "migrations", "-o", fmt.Sprintf("migrations-v%s.tar.gz", newVersion)).Run().Wait()
 	if err != nil {
 		return errors.Wrap(err, "Could not create git archive")
 	}
