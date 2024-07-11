@@ -52,13 +52,13 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	// Normalize the version string, to prevent issues where this was given with the wrong convention
 	// which requires a full rebuild.
 	version := fmt.Sprintf("v%s", strings.TrimPrefix(cctx.String("version"), "v"))
-	if !regexp.MustCompile("\\d+\\.\\d+\\.0)$").MatchString(version) {
+	if !regexp.MustCompile("\\d+\\.\\d+\\.0$").MatchString(version) {
 		return errors.Newf("invalid version input %q, must be of the form X.Y.0", version)
 	}
 	releaseBranch := strings.Replace(version, ".0", ".x", 1)
 
 	// Ensure release branch conforms to release process policy
-	if !regexp.MustCompile("\\d+\\.\\d+\\.x)$").MatchString(releaseBranch) {
+	if !regexp.MustCompile("\\d+\\.\\d+\\.x$").MatchString(releaseBranch) {
 		return errors.Newf("invalid branch name %q, must be of the form X.Y.x", releaseBranch)
 	}
 
