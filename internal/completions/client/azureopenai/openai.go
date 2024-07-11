@@ -205,6 +205,12 @@ func GetAPIClient(endpoint, accessToken, tokenRetrievalEndpoint, clientId, clien
 			},
 		},
 	}
+	// Replace the HTTP Transport with the mock Doer if applicable.
+	// The Azure SDK's Transporter interface is identical to our cli.Doer's.
+	if MockAzureAPIClientTransport != nil {
+		clientOpts.ClientOptions.Transport = MockAzureAPIClientTransport
+	}
+
 	if accessToken != "" {
 		credential := azcore.NewKeyCredential(accessToken)
 		apiClient.client, err = azopenai.NewClientWithKeyCredential(endpoint, credential, clientOpts)
