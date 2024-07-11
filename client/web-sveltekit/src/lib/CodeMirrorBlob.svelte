@@ -71,7 +71,7 @@
             padding: '0 1.5ex',
         },
         '.cm-line': {
-            lineHeight: '1.54',
+            lineHeight: 'var(--code-line-height)',
             padding: '0',
         },
         '.selected-line': {

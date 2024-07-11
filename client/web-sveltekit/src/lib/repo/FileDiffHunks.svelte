@@ -45,50 +45,45 @@
     }
 </script>
 
-{#if hunks.length === 0}
-    <div class="text-muted mr-2">No changes</div>
-{:else}
-    <table>
-        <colgroup>
-            <col width="40" />
-            <col width="40" />
-            <col />
-        </colgroup>
-        <tbody>
-            {#each hunks as hunk (hunk.oldRange.startLine)}
-                {@const oldStartLine = hunk.oldRange.startLine}
-                {@const newStartLine = hunk.newRange.startLine}
-                <tr>
-                    <td class="header" colspan="3">
-                        @@ -{hunk.oldRange.startLine},{hunk.oldRange.lines} +{hunk.newRange.startLine},{hunk.newRange
-                            .lines}
-                        {#if hunk.section}
-                            @@ {hunk.section}
-                        {/if}
-                    </td>
+<table>
+    <colgroup>
+        <col width="40" />
+        <col width="40" />
+        <col />
+    </colgroup>
+    <tbody>
+        {#each hunks as hunk (hunk.oldRange.startLine)}
+            {@const oldStartLine = hunk.oldRange.startLine}
+            {@const newStartLine = hunk.newRange.startLine}
+            <tr>
+                <td class="header" colspan="3">
+                    @@ -{hunk.oldRange.startLine},{hunk.oldRange.lines} +{hunk.newRange.startLine},{hunk.newRange.lines}
+                    {#if hunk.section}
+                        @@ {hunk.section}
+                    {/if}
+                </td>
+            </tr>
+            {#each linesToDiffInformation(hunk.highlight.lines) as { marker, added, deleted, newLineOffset, oldLineOffset, html }}
+                <tr class:added class:deleted>
+                    <td class="num"
+                        >{#if !added}{oldStartLine + oldLineOffset}{/if}</td
+                    >
+                    <td class="num"
+                        >{#if !deleted}{newStartLine + newLineOffset}{/if}</td
+                    >
+                    <td class="content" data-diff-marker={marker}>{@html html}</td>
                 </tr>
-                {#each linesToDiffInformation(hunk.highlight.lines) as { marker, added, deleted, newLineOffset, oldLineOffset, html }}
-                    <tr class:added class:deleted>
-                        <td class="num"
-                            >{#if !added}{oldStartLine + oldLineOffset}{/if}</td
-                        >
-                        <td class="num"
-                            >{#if !deleted}{newStartLine + newLineOffset}{/if}</td
-                        >
-                        <td class="content" data-diff-marker={marker}>{@html html}</td>
-                    </tr>
-                {/each}
             {/each}
-        </tbody>
-    </table>
-{/if}
+        {/each}
+    </tbody>
+</table>
 
 <style lang="scss">
     table {
         width: 100%;
         border-collapse: collapse;
         font-family: var(--code-font-family);
-        font-size: 0.75rem;
+        font-size: var(--code-font-size);
     }
 
     tr.added {
@@ -101,24 +96,28 @@
 
     td {
         background-color: var(--code-bg);
-
-        &.num {
-            min-width: 2.5rem;
-            line-height: 1.6666666667;
-            white-space: nowrap;
-            text-align: right;
-            -webkit-user-select: none;
-            user-select: none;
-            vertical-align: top;
-            padding: 0 0.5rem;
-            color: var(--text-muted);
-        }
+        line-height: var(--code-line-height);
 
         &.header {
             white-space: pre-wrap;
             background-color: var(--color-bg-2);
             color: var(--body-color);
             padding: 0.25rem 1rem;
+        }
+
+        &.num {
+            color: var(--text-muted);
+            min-width: 2.5rem;
+            // The alignment between the line numbers and the marker/content seems to be a bit off, due to,
+            // apparently, specifying `vertical-align: top`. Hover this declaration is necessary so that the
+            // line number is aligned with the first line when the content wraps around.
+            // Adding a top padding makes it look better.
+            padding-top: 2px;
+            padding-inline: 0.5rem;
+            text-align: right;
+            user-select: none;
+            vertical-align: top;
+            white-space: nowrap;
         }
 
         &.content {
