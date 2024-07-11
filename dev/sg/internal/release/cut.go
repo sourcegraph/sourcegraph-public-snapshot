@@ -97,14 +97,31 @@ func cutReleaseBranch(cctx *cli.Context) error {
 		return errors.Wrapf(err, "could not push release branch %q", releaseBranch)
 	}
 
-	// generate and commit max string const and migration graph archive
+	// generate max string const and migration graph
+	p = std.Out.Pending(output.Styled(output.StylePending, "Increasing max version number const"))
 	err = replaceMaxVersion(cctx.Context, version)
 	if err != nil {
+		p.Destroy()
 		return err
 	}
+	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Max version number increased"))
+
+	p = std.Out.Pending(output.Styled(output.StylePending, "Generating stitched migration graph"))
+	err = genStitchMigrationGraph(cctx.Context)
+	if err != nil {
+		p.Destroy()
+		return err
+	}
+	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Stitched migration graph generated"))
+
+	// commit changes
 	_, err = releaseGitRepoBranch.Add(cctx.Context, "internal/database/migration/shared/data/cmd/generator/consts.go")
 	if err != nil {
 		return errors.Wrap(err, "could not add consts.go to staged changes")
+	}
+	_, err = releaseGitRepoBranch.Add(cctx.Context, "internal/database/migration/shared/data/stitched-migration-graph.json")
+	if err != nil {
+		return errors.Wrap(err, "could not add stitched-migration-graph.json to staged changes")
 	}
 	_, err = releaseGitRepoBranch.Commit(cctx.Context, "chore: update max version")
 	if err != nil {
@@ -151,6 +168,14 @@ func replaceMaxVersion(ctx context.Context, newVersion string) error {
 	err = run.Cmd(ctx, "comby", "-in-place", "\"const maxVersionString = :[1]\"", fmt.Sprintf("\"const maxVersionString = \\\"%s\\\"\"", noVNewVersion), "internal/database/migration/shared/data/cmd/generator/consts.go").Run().Wait()
 	if err != nil {
 		return errors.Wrap(err, "Could not run comby to change maxVersionString")
+	}
+	return nil
+}
+
+func genStitchMigrationGraph(ctx context.Context) error {
+	err := run.Cmd(ctx, "sg", "bazel", "run", "//internal/database/migration/shared:write_stitched_migration_graph").Run().Wait()
+	if err != nil {
+		return errors.Wrap(err, "Could not run stitch migration generator")
 	}
 	return nil
 }
