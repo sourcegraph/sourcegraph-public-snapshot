@@ -42,3 +42,13 @@ button:focus-visible {
 input:focus-visible {
     box-shadow: 0 0 0 2px var(--primary-2);
 }
+
+// Taken from https://www.a11yproject.com/posts/how-to-hide-content/
+.visually-hidden {
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}

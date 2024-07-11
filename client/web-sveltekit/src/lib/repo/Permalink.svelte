@@ -17,7 +17,7 @@
         keys: { key: 'y' },
         ignoreInputFields: true,
         handler: () => {
-            const {revision} = parseBrowserRepoURL($page.url.pathname)
+            const { revision } = parseBrowserRepoURL($page.url.pathname)
             // Only navigate if necessary. We don't want to add unnecessary history entries.
             if (revision !== commitID) {
                 goto(href, { noScroll: true, keepFocus: true }).catch(() => {
