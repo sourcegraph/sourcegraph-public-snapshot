@@ -61,7 +61,7 @@ type operations struct {
 	markFailed                           *observation.Operation
 	deleteUploads                        *observation.Operation
 
-	// Dumps
+	// Completed uploads
 	findClosestCompletedUploads                   *observation.Operation
 	findClosestCompletedUploadsFromGraphFragment  *observation.Operation
 	getCompletedUploadsWithDefinitionsForMonikers *observation.Operation
@@ -168,7 +168,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		persistNearestUploadsLinks: op("persistNearestUploadsLinks"),
 		persistUploadsVisibleAtTip: op("persistUploadsVisibleAtTip"),
 
-		// Dumps
+		// Completed uploads
 		findClosestCompletedUploads:                   op("FindClosestCompletedUploads"),
 		findClosestCompletedUploadsFromGraphFragment:  op("FindClosestCompletedUploadsFromGraphFragment"),
 		getCompletedUploadsWithDefinitionsForMonikers: op("GetUploadsWithDefinitionsForMonikers"),
