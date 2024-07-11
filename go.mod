@@ -45,6 +45,11 @@ replace (
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.5
 	// Pending: https://github.com/openfga/openfga/pull/1688
 	github.com/openfga/openfga => github.com/sourcegraph/openfga v0.0.0-20240614204729-de6b563022de
+	// We need to wait for https://github.com/prometheus/alertmanager to cut a
+	// release that uses a newer 'prometheus/common'. Then we need to update
+	// https://github.com/sourcegraph/alertmanager. Upgrading before then will
+	// cause problems with generated alertmanager configuration.
+	github.com/prometheus/common => github.com/prometheus/common v0.48.0
 	// Pending: https://github.com/shurcooL/httpgzip/pull/9
 	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df
 )
