@@ -201,7 +201,7 @@ var sg = &cli.App{
 		// setup
 		if !cmd.Bool("disable-analytics") {
 			if err := analytics.InitIdentity(cmd.Context, std.Out, secretsStore); err != nil {
-				std.Out.WriteWarningf("Failed to persist analytics. See below for moe details")
+				std.Out.WriteWarningf("Failed to persist analytics. See below for more details")
 				msg := ""
 				if errors.As(err, &secrets.CommandErr{}) {
 					msg = "The problem occured while trying to get a secret via a tool. Below is the error:\n"
