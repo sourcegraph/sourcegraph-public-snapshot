@@ -1123,7 +1123,7 @@ func (s *Service) getSyntacticSymbolsAtRange(
 	targetRange, err := translateLookupRangeToCommit(ctx, gitTreeTranslator, api.CommitID(upload.Commit), args.Path, args.SymbolRange)
 	if err != nil {
 		trace.Info("range translation failed", log.Error(err))
-		return nil, upload, nil
+		return nil, upload, err
 	}
 	trace = trace.WithFields(log.String("targetRange", targetRange.String()))
 
