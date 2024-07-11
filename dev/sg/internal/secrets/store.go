@@ -43,8 +43,12 @@ type Store struct {
 
 type storeKey struct{}
 
+// SecretErr is the error that occurs when we fail to get a secret. It contains the original
+// error as well as the secret key that failed to fetch.
 type SecretErr struct {
+	// Err is the original error
 	Err error
+	// Key is the secret key that failed to fetch
 	Key string
 }
 
@@ -52,8 +56,11 @@ func (se SecretErr) Error() string {
 	return fmt.Sprintf("failed to get secret %q: %v", se.Key, se.Err)
 }
 
+// GoogleSecretErr is an error that occurs when we fail to fetch a secret from Google Secret Manger in a particular GCP Project.
+// It contains the key that failed to fetch, the original error and the GCP project name.
 type GoogleSecretErr struct {
 	SecretErr
+	// Project is the GCP project where we failed to fetch the secret
 	Project string
 }
 
@@ -61,12 +68,14 @@ func (gse GoogleSecretErr) Error() string {
 	return fmt.Sprintf("google(%s): %s", gse.Project, gse.SecretErr.Error())
 }
 
+// CommandErr is an error that occurs when we fail to get a secret by executing some CLI Command.
+// It contains the original error as well as the secret key that failed to fetch.
 type CommandErr struct {
 	SecretErr
 }
 
 func (ce CommandErr) Error() string {
-	return fmt.Sprintf("command error - %v", ce.SecretErr.Error())
+	return fmt.Sprintf("command error: %v", ce.SecretErr.Error())
 }
 
 // FromContext fetches a store from context. In sg, a store is set in the command context
@@ -156,7 +165,6 @@ func (s *Store) Get(key string, target any) error {
 }
 
 func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallbacks ...FallbackFunc) (string, error) {
-	return "", GoogleSecretErr{}
 	var value externalSecretValue
 
 	// Check if we already have this secret
