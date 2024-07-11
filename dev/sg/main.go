@@ -201,7 +201,29 @@ var sg = &cli.App{
 		// setup
 		if !cmd.Bool("disable-analytics") {
 			if err := analytics.InitIdentity(cmd.Context, std.Out, secretsStore); err != nil {
-				std.Out.WriteWarningf("Failed to persist identity for analytics, continuing: %s", err)
+				std.Out.WriteWarningf("Failed to persist analytics. See below for moe details")
+				msg := ""
+				if errors.As(err, &secrets.CommandErr{}) {
+					msg = "The problem occured while trying to get a secret via a tool. Below is the error:\n"
+					msg += fmt.Sprintf("\n```%v```\n", err)
+					msg += "\nPossible fixes:\n"
+					msg += "- You might missing a required tool - re-run `sg setup` to get it installed in your environment.\n"
+					msg += "- Reach out to #discuss-dev-infra to help troubleshoot\n"
+				} else if errors.As(err, &secrets.GoogleSecretErr{}) {
+					msg = "The problem occured while trying to get a secret via Google. Below is the error:\n"
+					msg += fmt.Sprintf("\n```%v```\n", err)
+					msg += "\nPossible fixes:\n"
+					msg += "- You should be in the `gcp-engineers@sourcegraph.com` group. Ask #ask-it-tech-ops or #discuss-dev-infra to check that\n"
+					msg += "- Ensure you're currently authenticated with your sourcegraph.com account by running `gcloud auth list`\n"
+					msg += "- Ensure you're authenticated with gcloud by running `gcloud auth application-default login`\n"
+				} else {
+					msg = fmt.Sprintf("The problem occured while trying to persist analytics. Below is the error:\n```%v```\n", err)
+				}
+				msg += "If the error persists please reach out to #discuss-dev-infra but you can disable analytics by doing:\n"
+				msg += "- run your command with `--disable-analytics`\n"
+				msg += "- export `SG_DISABLE_ANALYTICS=1`\n"
+				std.Out.WriteMarkdown(msg)
+				std.Out.WriteWarningf("attempting to continue ...")
 			}
 
 			// Add analytics to each command

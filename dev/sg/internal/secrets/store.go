@@ -43,6 +43,32 @@ type Store struct {
 
 type storeKey struct{}
 
+type SecretErr struct {
+	Err error
+	Key string
+}
+
+func (se SecretErr) Error() string {
+	return fmt.Sprintf("failed to get secret %q: %v", se.Key, se.Err)
+}
+
+type GoogleSecretErr struct {
+	SecretErr
+	Project string
+}
+
+func (gse GoogleSecretErr) Error() string {
+	return fmt.Sprintf("google(%s): %s", gse.Project, gse.SecretErr.Error())
+}
+
+type CommandErr struct {
+	SecretErr
+}
+
+func (ce CommandErr) Error() string {
+	return fmt.Sprintf("command error - %v", ce.SecretErr.Error())
+}
+
 // FromContext fetches a store from context. In sg, a store is set in the command context
 // when sg starts - if the load fails, an error is printed and a store is not set.
 func FromContext(ctx context.Context) (*Store, error) {
@@ -130,6 +156,7 @@ func (s *Store) Get(key string, target any) error {
 }
 
 func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallbacks ...FallbackFunc) (string, error) {
+	return "", GoogleSecretErr{}
 	var value externalSecretValue
 
 	// Check if we already have this secret
@@ -175,14 +202,16 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallback
 	}
 
 	if err != nil {
-		errMessage := fmt.Sprintf("gcloud: failed to access secret %q from %q",
-			secret.Name, secret.Project)
+		secretErr := SecretErr{Err: err, Key: secret.Name}
 		// Some secret providers use their respective CLI, if not found the user might not
 		// have run 'sg setup' to set up the relevant tool.
 		if strings.Contains(err.Error(), "command not found") {
-			errMessage += "- you may need to run 'sg setup' again"
+			return "", CommandErr{SecretErr: secretErr}
 		}
-		return "", errors.Wrap(err, errMessage)
+		return "", GoogleSecretErr{
+			SecretErr: secretErr,
+			Project:   secret.Project,
+		}
 	}
 
 	// Return and persist the fetched secret
