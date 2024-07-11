@@ -36,6 +36,7 @@ func cutReleaseBranch(cctx *cli.Context) error {
 		p.Destroy()
 		return errors.Wrapf(err, "checking out %q", defaultBranch)
 	}
+	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Default branch exists locally"))
 	p = std.Out.Pending(output.Styled(output.StylePending, "Checking if the default branch is up to date with remote ..."))
 	if _, err := defaultGitRepoBranch.FetchOrigin(cctx.Context); err != nil {
 		p.Destroy()
@@ -147,7 +148,7 @@ func replaceMaxVersion(ctx context.Context, newVersion string) error {
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Using Comby at %q", combyPath))
 
-	err = run.Cmd(ctx, "comby", "-in-place", "\"const maxVersionString = :[1]\"", fmt.Sprintf("const maxVersionString = %s", newVersion), "internal/database/migration/shared/data/cmd/generator/consts.go").Run().Wait()
+	err = run.Cmd(ctx, "comby", "-in-place", "const maxVersionString = :[1]", fmt.Sprintf("const maxVersionString = %s", newVersion), "internal/database/migration/shared/data/cmd/generator/consts.go").Run().Wait()
 	if err != nil {
 		return errors.Wrap(err, "Could not run comby to change maxVersionString")
 	}
