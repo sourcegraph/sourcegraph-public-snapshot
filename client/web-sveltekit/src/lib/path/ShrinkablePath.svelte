@@ -1,3 +1,9 @@
+<!--
+    @component
+    ShrinkablePath is a DisplayPath that can collapse its path items
+    into a dropdown menu to save space. It does not do this automatically,
+    and is usually used alongside a helper like `sizeToFit`.
+-->
 <script lang="ts">
     import { writable } from 'svelte/store'
 
@@ -33,6 +39,7 @@
         return false
     }
 
+    // Returns whether growing was successful
     export function grow(): boolean {
         if (collapsedPartCount > 0) {
             collapsedPartCount--

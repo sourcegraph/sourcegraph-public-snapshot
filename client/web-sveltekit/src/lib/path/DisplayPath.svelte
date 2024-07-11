@@ -1,9 +1,43 @@
+<!--
+    @component
+    DisplayPath is a path that is formatted for display.
+
+    Some features it provides:
+    - Styleable slashes (target data-slash) and path items (target data-path-item)
+    - Styleable spacing (target gap in data-path-container)
+    - An optional copy button which copies the full path (target data-copy-button)
+    - An optional icon before the last path element
+    - An optional callback to linkify a path item
+    - Zero additional whitespace in the DOM
+        - This means document.querySelector('[data-path-container]').textContent should always exactly equal the path
+    - Selecting the path and copying it manually still works, even with inline icons (which would normally add a space)
+
+    This component is designed to be styled by targeting data- attributes rather than by using slots
+    because it is disturbingly easy to break the whitespace and path copying guarantees this component
+    provides by introducing whitespace or inline block elements in a slot. That is also why this is
+    a somwhat "full-featured" component rather than being designed more around composition.
+-->
 <script lang="ts">
     import CopyButton from '$lib/wildcard/CopyButton.svelte'
 
+    /**
+     * The path to be formatted
+     */
     export let path: string
+    /**
+     * Whether to show a "copy path" button. Can be styled by targeting `data-copy-button`
+     */
     export let showCopyButton = false
+    /**
+     * A callback to generate an href for the given path. If unset, path items
+     * will not be linkified. Will be called with the full path prefix for a
+     * path item. For example, for the path `tmp/test`, it will be called with
+     * `tmp` and `tmp/test`.
+     *
+     * For most cases, use the `pathHrefFactory` helper to create this callback.
+     */
     export let pathHref: ((path: string) => string) | undefined = undefined
+
     $: parts = path.split('/').map((part, index, allParts) => ({ part, path: allParts.slice(0, index + 1).join('/') }))
 </script>
 
@@ -24,9 +58,9 @@
         Wrap the anchor element with a span because otherwise it adds
         spaces around it when copied
         --><span
-            class:last
+            class:after={last}
             data-path-item
-            >{#if pathHref}<a href={pathHref(path)}>{part}</a>{:else}{part}{/if}<!--component
+            >{#if pathHref}<a href={pathHref(path)}>{part}</a>{:else}{part}{/if}<!--
             --></span
         ><!--
         -->{#if last}<!--
@@ -35,9 +69,11 @@
             ><!--
         -->{/if}<!--
     -->{/each}<!--
+    We include the copy button in this component because
     -->{#if showCopyButton}<!--
-        --><span data-copy-button
-            ><CopyButton value={path} label="Copy path to clipboard" /></span
+        --><span
+            data-copy-button
+            class="after"><CopyButton value={path} label="Copy path to clipboard" /></span
         ><!--
     -->{/if}
 </span>
@@ -48,15 +84,18 @@
         align-items: center;
         gap: 0.125em;
 
+        white-space: pre-wrap;
+
         font-weight: 400;
         font-size: var(--code-font-size);
         font-family: var(--code-font-family);
-    }
 
-    // Global so a data-slash can be slotted in in the prefix
-    [data-slash] {
-        color: var(--text-disabled);
-        display: inline;
+        // Global so data-slash can be slotted in with the prefix
+        // and styled consistently.
+        :global([data-slash]) {
+            color: var(--text-disabled);
+            display: inline;
+        }
     }
 
     [data-path-item] {
@@ -66,14 +105,13 @@
         & > a {
             color: inherit;
         }
+    }
 
-        // HACK: The file icon is placed after the file name
-        // in the DOM so it doesn't add any spaces in the file
-        // path when copied. This visually reorders the last
-        // path element after the file icon.
-        &.last {
-            order: 1;
-        }
+    // HACK: The file icon is placed after the file name in the DOM so it
+    // doesn't add any spaces in the file path when copied. This visually
+    // reorders the last path element after the file icon.
+    .after {
+        order: 1;
     }
 
     [data-file-icon] {
@@ -86,6 +124,5 @@
     [data-copy-button] {
         margin-left: 0.5rem;
         user-select: none; // Avoids a trailing space on select + copy
-        order: 1;
     }
 </style>
