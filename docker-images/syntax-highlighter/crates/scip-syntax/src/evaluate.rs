@@ -14,7 +14,7 @@ use serde::Serializer;
 use string_interner::{symbol::SymbolU32, StringInterner, Symbol};
 use syntax_analysis::range::Range;
 
-use crate::{io::read_index_from_file, progress::*};
+use crate::{io::read_index_from_file, progress::*, scip_strict};
 
 pub fn evaluate_command(
     candidate: &Utf8Path,
@@ -731,16 +731,12 @@ impl SymbolFormatter {
 
     fn try_strip_package_details<T: Copy>(&mut self, sym: SymbolId<T>) -> SymbolId<T> {
         let s = self.display_symbol(sym);
-        if s.as_bytes().iter().filter(|&c| *c == b' ').count() != 5 {
+        let Result::Ok(scip_strict::Symbol::NonLocal(mut symbol)) = scip_strict::Symbol::parse(s)
+        else {
             return sym;
-        }
-        let parts: Vec<&str> = s.splitn(5, ' ').collect();
-        let scheme = parts[0];
-        let _manager = parts[1];
-        let _package_name = parts[2];
-        let _version = parts[3];
-        let descriptor = parts[4];
-        self.make_symbol_id(&format!("{scheme} . . . {descriptor}"))
+        };
+        symbol.package = scip_strict::Package::default();
+        self.make_symbol_id(&symbol.to_string())
     }
 }
 

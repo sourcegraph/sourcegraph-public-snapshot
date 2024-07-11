@@ -9,13 +9,6 @@ import (
 	"strings"
 ) // See package-level comment before adding imports.
 
-type UploadLike interface {
-	// GetID is purely present to help with debugging.
-	GetID() int
-	// Root_ should return the upload's Root path.
-	GetRoot() string
-}
-
 // UploadRelPath is the path fragment that is relative
 // to the upload root (which may be non-empty). In the database table
 // codeintel_scip_document_lookup, the paths stored are UploadRelPath

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 )
 
 func TestActor_TraceAttributes(t *testing.T) {
@@ -64,14 +65,14 @@ func TestIsDotComActor(t *testing.T) {
 	t.Run("true for dotcom subscription", func(t *testing.T) {
 		actor := &Actor{
 			ID:     "d3d2b638-d0a2-4539-a099-b36860b09819",
-			Source: FakeSource{codygateway.ActorSourceEnterpriseSubscription},
+			Source: FakeSource{codygatewayactor.ActorSourceEnterpriseSubscription},
 		}
 		require.True(t, actor.IsDotComActor())
 	})
 
 	t.Run("true for dotcom user", func(t *testing.T) {
 		actor := &Actor{
-			Source: FakeSource{codygateway.ActorSourceDotcomUser},
+			Source: FakeSource{codygatewayactor.ActorSourceDotcomUser},
 		}
 		require.True(t, actor.IsDotComActor())
 	})
@@ -79,7 +80,7 @@ func TestIsDotComActor(t *testing.T) {
 	t.Run("false for other subscription", func(t *testing.T) {
 		actor := &Actor{
 			ID:     "other-sub-id",
-			Source: FakeSource{codygateway.ActorSourceEnterpriseSubscription},
+			Source: FakeSource{codygatewayactor.ActorSourceEnterpriseSubscription},
 		}
 		require.False(t, actor.IsDotComActor())
 	})

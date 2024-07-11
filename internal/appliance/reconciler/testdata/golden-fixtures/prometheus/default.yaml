@@ -360,6 +360,9 @@ resources:
           frontend:
             disabled: true
 
+          grafana:
+            disabled: true
+
           gitServer:
             disabled: true
 
@@ -473,7 +476,7 @@ resources:
       - apiGroups:
           - ""
         resources:
-          - configmap
+          - configmaps
         verbs:
           - get
   - apiVersion: rbac.authorization.k8s.io/v1

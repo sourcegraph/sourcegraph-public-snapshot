@@ -4,32 +4,37 @@
     // https://www.notion.so/sourcegraph/Sourcegraph-Releases-eee2a5384b0a4555adb51b439ddde35f?pvs=4
     "events": [
         {
+            "name": "September 2024 Release",
+            "monthlyReleaseDate": "2024-09-04T09:00:00-07:00",
+            "patchReleaseDates": ["2024-09-18T09:00:00-07:00"]
+        },
+        {
+            "name": "August 2024 Release",
+            "monthlyReleaseDate": "2024-08-07T09:00:00-07:00",
+            "patchReleaseDates": ["2024-08-21T09:00:00-07:00"]
+        },
+        {
             "name": "July 2024 Release",
-            "branchCutDate": "2024-07-02T09:00:00-07:00",
-            "monthlyReleaseDate": "2024-07-05T09:00:00-07:00",
-            "patchReleaseDates": ["2024-07-22T09:00:00-07:00"]
+            "monthlyReleaseDate": "2024-07-10T09:00:00-07:00",
+            "patchReleaseDates": ["2024-07-24T09:00:00-07:00"]
         },
         {
             "name": "June 2024 Release",
-            "branchCutDate": "2024-06-02T09:00:00-07:00",
             "monthlyReleaseDate": "2024-06-05T09:00:00-07:00",
             "patchReleaseDates": ["2024-06-20T09:00:00-07:00"]
         },
         {
             "name": "May 2024 Release",
-            "branchCutDate": "2024-05-02T09:00:00-07:00",
             "monthlyReleaseDate": "2024-05-06T09:00:00-07:00",
             "patchReleaseDates": ["2024-05-27T09:00:00-07:00"]
         },
         {
             "name": "April 2024 Release",
-            "branchCutDate": "2024-04-03T09:00:00-07:00",
             "monthlyReleaseDate": "2024-04-05T09:00:00-07:00",
             "patchReleaseDates": ["2024-04-22T09:00:00-07:00"]
         },
         {
             "name": "March 2024 Release",
-            "branchCutDate": "2024-03-06T09:00:00-07:00",
             "monthlyReleaseDate": "2024-03-08T09:00:00-07:00",
             "patchReleaseDates": ["2024-03-20T09:00:00-07:00"]
         }

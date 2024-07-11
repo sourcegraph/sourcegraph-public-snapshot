@@ -25,7 +25,6 @@ import (
 
 type Event struct {
 	Name               string      `json:"name"`
-	BranchCutDate      time.Time   `json:"branchCutDate"`
 	MonthlyReleaseDate time.Time   `json:"monthlyReleaseDate"`
 	PatchReleaseDates  []time.Time `json:"patchReleaseDates"`
 }
@@ -78,14 +77,6 @@ func generateCalendarEvents(cctx *cli.Context) error {
 		if len(patchEventsToCreate) == 0 {
 			p.Complete(output.Linef(output.EmojiWarning, output.StyleWarning, "Skipping event: %q because there are no patch release dates for the month.", e.Name))
 			continue
-		}
-
-		p.Updatef("Creating Branch Cut event for %q", e.Name)
-		branchCutEvt := createReleaseEvent(cc.TeamEmail, fmt.Sprintf("Branch Cut: (%s)", e.Name), e.BranchCutDate)
-		_, err := client.Events.Insert("primary", branchCutEvt).Context(cctx.Context).Do()
-		if err != nil {
-			p.Destroy()
-			return errors.Wrapf(err, "Failed to create Code Freeze event for %q", e.Name)
 		}
 
 		p.Updatef("Creating Monthly Release event for %q", e.Name)

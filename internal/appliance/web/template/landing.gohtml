@@ -1,0 +1,22 @@
+{{ template "layout.gohtml" }}
+
+{{ define "title" }}Sourcegraph Maintenance{{ end }}
+
+{{- define "content" }}
+<h1>Sourcegraph maintenance</h1>
+{{- if ne .Flash "" }}
+<div class="alert alert-warning" role="alert">
+{{- .Flash }}
+</div>
+{{- end }}
+
+<form action="/appliance/login" method="post">
+    <div class="row">
+        <div class="col">
+            <label for="password" class="fw-bold">Enter admin password:</label>
+            <input id="password" name="password" type="password">
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Login</button>
+</form>
+{{- end }}

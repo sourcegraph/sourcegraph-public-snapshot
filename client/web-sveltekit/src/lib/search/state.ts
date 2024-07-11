@@ -20,21 +20,19 @@ interface Options {
     readonly patternType: SearchPatternType
     readonly searchMode: SearchMode
     readonly query: string
-    readonly searchContext: string
 }
 
 type QuerySettings = Pick<
     Settings,
     'search.defaultCaseSensitive' | 'search.defaultPatternType' | 'search.defaultMode'
 > | null
-export type QueryOptions = Pick<Options, 'patternType' | 'caseSensitive' | 'searchMode' | 'searchContext'>
+export type QueryOptions = Pick<Options, 'patternType' | 'caseSensitive' | 'searchMode'>
 
 export class QueryState {
     private defaultCaseSensitive = false
     private defaultPatternType = SearchPatternType.keyword
     private defaultSearchMode = SearchMode.Precise
     private defaultQuery = ''
-    private defaultSearchContext = 'global'
 
     private constructor(public readonly options: Partial<Options>, public settings: QuerySettings) {}
 
@@ -68,10 +66,6 @@ export class QueryState {
         return this.options.query ?? this.defaultQuery
     }
 
-    public get searchContext(): string {
-        return this.options.searchContext ?? this.defaultSearchContext
-    }
-
     public setQuery(newQuery: Update<string>): QueryState {
         const query = typeof newQuery === 'function' ? newQuery(this.query) : newQuery
         return new QueryState({ ...this.options, query }, this.settings)
@@ -103,6 +97,13 @@ export class QueryState {
 
     public setSettings(settings: QuerySettings): QueryState {
         return new QueryState(this.options, settings)
+    }
+
+    /**
+     * Returns the stringifed URL search query parameters for the current query state.
+     */
+    public toSearchURLQueryParamaters(): string {
+        return buildSearchURLQuery(this.query, this.patternType, this.caseSensitive, undefined, this.searchMode)
     }
 }
 
@@ -152,18 +153,9 @@ export enum SearchCachePolicy {
  * @param queryState The query state to build the URL from.
  * @param enforceCache Whether to enforce the use of the in-memory query cache.
  */
-export function getQueryURL(
-    queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>,
-    cachePolicy: SearchCachePolicy = SearchCachePolicy.Default
-): URL {
+export function getQueryURL(queryState: QueryState, cachePolicy: SearchCachePolicy = SearchCachePolicy.Default): URL {
     let url = new URL('/search', location.href)
-    url.search = buildSearchURLQuery(
-        queryState.query,
-        queryState.patternType,
-        queryState.caseSensitive,
-        queryState.searchContext,
-        queryState.searchMode
-    )
+    url.search = queryState.toSearchURLQueryParamaters()
     if (cachePolicy !== SearchCachePolicy.Default) {
         setCachePolicyInURL(url, cachePolicy)
     }

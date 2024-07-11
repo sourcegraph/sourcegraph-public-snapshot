@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription/productsubscriptiontest"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -31,7 +31,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 	logger := logtest.Scoped(t)
 	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 
-	concurrencyConfig := codygateway.ActorConcurrencyLimitConfig{Percentage: 50, Interval: time.Hour}
+	concurrencyConfig := codygatewayactor.ActorConcurrencyLimitConfig{Percentage: 50, Interval: time.Hour}
 
 	t.Run("unauthenticated and allow anonymous", func(t *testing.T) {
 		w := httptest.NewRecorder()

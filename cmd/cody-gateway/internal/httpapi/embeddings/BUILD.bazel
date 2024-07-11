@@ -22,6 +22,7 @@ go_library(
         "//cmd/cody-gateway/internal/notify",
         "//cmd/cody-gateway/internal/response",
         "//internal/codygateway",
+        "//internal/codygateway/codygatewayevents",
         "//internal/completions/client/fireworks",
         "//internal/completions/types",
         "//internal/httpcli",

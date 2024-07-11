@@ -99,7 +99,7 @@ func NewConfig(now time.Time) Config {
 	} else {
 		out, giterr := exec.Command("git", "rev-parse", "HEAD").Output()
 		if giterr != nil {
-			panic(err)
+			panic(giterr)
 		}
 
 		commit = strings.TrimSpace(string(out))

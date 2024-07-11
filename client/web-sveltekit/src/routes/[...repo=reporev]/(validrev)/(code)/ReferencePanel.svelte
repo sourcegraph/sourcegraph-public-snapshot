@@ -44,7 +44,7 @@
     $: locations = connection ? unique(connection.nodes) : []
 </script>
 
-<div class="root" class:loading>
+<div class="root">
     <PanelGroup id="references">
         <Panel id="references-list">
             <Scroller margin={600} on:more>
@@ -77,7 +77,7 @@
                     {/each}
                 </ul>
                 {#if loading}
-                    <LoadingSpinner center />
+                    <div class="loader"><LoadingSpinner center /></div>
                 {/if}
             </Scroller>
         </Panel>
@@ -93,10 +93,6 @@
 <style lang="scss">
     .root {
         height: 100%;
-
-        &.loading {
-            padding: 1rem;
-        }
 
         :global([data-panel-id='reference-panel-preview']) {
             z-index: 0;
@@ -130,6 +126,7 @@
         }
     }
 
+    ul:not(:empty) + .loader,
     li + li {
         border-top: 1px solid var(--border-color);
     }
@@ -155,5 +152,9 @@
     .range {
         color: var(--oc-violet-6);
         text-align: left;
+    }
+
+    .loader {
+        padding: 1rem;
     }
 </style>

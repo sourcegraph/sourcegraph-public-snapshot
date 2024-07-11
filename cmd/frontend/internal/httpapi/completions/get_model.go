@@ -4,8 +4,12 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	frontendmodelconfig "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/modelconfig"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/internal/modelconfig"
+	modelconfigSDK "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
@@ -23,6 +27,21 @@ type getModelFn func(ctx context.Context, requestParams types.CodyCompletionRequ
 
 func getCodeCompletionModelFn() getModelFn {
 	return func(_ context.Context, requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
+		if conf.UseExperimentalModelConfiguration() {
+			// Using new "modelConfiguration" site config.
+			// TODO(slimsag): self-hosted-models: currently this logic only handles Cody Enterprise with Self-hosted models
+			if err := modelconfig.ValidateModelRef(modelconfigSDK.ModelRef(requestParams.Model)); err != nil {
+				_ = err // TODO(slimsag): self-hosted-models: log the error
+				// We don't have a valid modelRef, so use whatever model we have instead.
+				modelConfig, err := frontendmodelconfig.Get().Get()
+				if err != nil {
+					return "", err
+				}
+				return string(modelConfig.DefaultModels.CodeCompletion), nil
+			}
+			return requestParams.Model, nil // valid ModelRef
+		}
+
 		// For code completions, we only allow certain models to be used.
 		// (Regardless of if the user is on Cody Free, Pro, or Enterprise.)
 		if requestParams.Model != "" {
@@ -42,6 +61,24 @@ func getCodeCompletionModelFn() getModelFn {
 
 func getChatModelFn(db database.DB) getModelFn {
 	return func(ctx context.Context, requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
+		if conf.UseExperimentalModelConfiguration() {
+			// Using new "modelConfiguration" site config.
+			// TODO(slimsag): self-hosted-models: currently this logic only handles Cody Enterprise with Self-hosted models
+			if err := modelconfig.ValidateModelRef(modelconfigSDK.ModelRef(requestParams.Model)); err != nil {
+				_ = err // TODO(slimsag): self-hosted-models: log the error
+				// We don't have a valid modelRef, so use whatever model we have instead.
+				modelConfig, err := frontendmodelconfig.Get().Get()
+				if err != nil {
+					return "", err
+				}
+				if requestParams.Fast {
+					return string(modelConfig.DefaultModels.FastChat), nil
+				}
+				return string(modelConfig.DefaultModels.Chat), nil
+			}
+			return requestParams.Model, nil // valid ModelRef
+		}
+
 		// If running on dotcom, i.e. using Cody Free/Cody Pro, then a number
 		// of models are available depending on the caller's subscription status.
 		if dotcom.SourcegraphDotComMode() {
@@ -92,6 +129,8 @@ func isAllowedCodeCompletionModel(model string) bool {
 		"fireworks/" + fireworks.FineTunedFIMLangSpecificMixtral,
 		"fireworks/" + fireworks.DeepseekCoder1p3b,
 		"fireworks/" + fireworks.DeepseekCoder7b,
+		"fireworks/" + fireworks.DeepseekCoderV2LiteBase,
+		"fireworks/" + fireworks.CodeQwen7B,
 		"anthropic/claude-instant-1.2",
 		"anthropic/claude-3-haiku-20240307",
 		// Deprecated model identifiers
@@ -100,6 +139,7 @@ func isAllowedCodeCompletionModel(model string) bool {
 		"anthropic/claude-instant-1.2-cyan",
 		"google/" + google.Gemini15Flash,
 		"google/" + google.Gemini15FlashLatest,
+		"google/" + google.Gemini15Flash001,
 		"google/" + google.GeminiPro,
 		"google/" + google.GeminiProLatest,
 		"fireworks/accounts/sourcegraph/models/starcoder-7b",
@@ -132,6 +172,8 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 			"google/" + google.Gemini15FlashLatest,
 			"google/" + google.Gemini15ProLatest,
 			"google/" + google.GeminiProLatest,
+			"google/" + google.Gemini15Flash001,
+			"google/" + google.Gemini15Pro001,
 			"google/" + google.Gemini15Flash,
 			"google/" + google.Gemini15Pro,
 			"google/" + google.GeminiPro,

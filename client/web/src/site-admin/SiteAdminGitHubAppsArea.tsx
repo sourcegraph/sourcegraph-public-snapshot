@@ -11,6 +11,7 @@ import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     GitHubAppDomain,
+    GitHubAppKind,
     type SiteExternalServiceConfigResult,
     type SiteExternalServiceConfigVariables,
 } from '../graphql-operations'
@@ -82,6 +83,7 @@ export const SiteAdminGitHubAppsArea: FC<Props> = props => {
                 path="new"
                 element={
                     <CreateGitHubAppPage
+                        appKind={GitHubAppKind.REPO_SYNC}
                         defaultEvents={DEFAULT_EVENTS}
                         defaultPermissions={DEFAULT_PERMISSIONS}
                         appDomain={GitHubAppDomain.REPOS}

@@ -14,11 +14,22 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/redislock"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// CodyGatewayActor represents an actor that is making requests to the Cody Gateway.
+type CodyGatewayActor interface {
+	// GetID returns the unique identifier for this actor.
+	GetID() string
+	// GetName returns the human-readable name for this actor.
+	GetName() string
+	// GetSource returns the source of this actor.
+	GetSource() codygatewayactor.ActorSource
+}
 
 var tracer = otel.Tracer("internal/notify")
 
@@ -26,16 +37,16 @@ var tracer = otel.Tracer("internal/notify")
 // given thresholds. At most one notification will be sent per actor per
 // threshold until the TTL is reached (that clears the counter). It is best to
 // align the TTL with the rate limit window.
-type RateLimitNotifier func(ctx context.Context, actor codygateway.Actor, feature codygateway.Feature, usageRatio float32, ttl time.Duration)
+type RateLimitNotifier func(ctx context.Context, actor CodyGatewayActor, feature codygateway.Feature, usageRatio float32, ttl time.Duration)
 
 // Thresholds map actor sources to percentage rate limit usage increments
 // to notify on. Each threshold will only trigger the notification once during
 // the same rate limit window.
-type Thresholds map[codygateway.ActorSource][]int
+type Thresholds map[codygatewayactor.ActorSource][]int
 
 // Get retrieves thresholds for the actor source if set, otherwise provides
 // defaults. The returned thresholds are sorted.
-func (t Thresholds) Get(actorSource codygateway.ActorSource) []int {
+func (t Thresholds) Get(actorSource codygatewayactor.ActorSource) []int {
 	if thresholds, ok := t[actorSource]; ok {
 		sort.Ints(thresholds)
 		return thresholds
@@ -55,7 +66,7 @@ func NewSlackRateLimitNotifier(
 ) RateLimitNotifier {
 	baseLogger = baseLogger.Scoped("slackRateLimitNotifier")
 
-	return func(ctx context.Context, actor codygateway.Actor, feature codygateway.Feature, usageRatio float32, ttl time.Duration) {
+	return func(ctx context.Context, actor CodyGatewayActor, feature codygateway.Feature, usageRatio float32, ttl time.Duration) {
 		thresholds := actorSourceThresholds.Get(actor.GetSource())
 		if len(thresholds) == 0 {
 			return
@@ -92,7 +103,7 @@ func handleNotify(
 	slackWebhookURL string,
 	slackSender func(ctx context.Context, url string, msg *slack.WebhookMessage) error,
 
-	actor codygateway.Actor,
+	actor CodyGatewayActor,
 	feature codygateway.Feature,
 	usagePercentage int,
 	ttl time.Duration,
@@ -150,7 +161,7 @@ func handleNotify(
 
 	var actorLink string
 	switch actor.GetSource() {
-	case codygateway.ActorSourceEnterpriseSubscription:
+	case codygatewayactor.ActorSourceEnterpriseSubscription:
 		actorLink = fmt.Sprintf("<%s/site-admin/dotcom/product/subscriptions/%s|%s>", dotcomURL, actor.GetID(), actor.GetName())
 	default:
 		actorLink = fmt.Sprintf("`%s`", actor.GetID())

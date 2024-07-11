@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/modelconfig"
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -32,6 +33,9 @@ func main() {
 	modelCfg, err := GenerateModelConfigurationDoc()
 	if err != nil {
 		logger.Fatal("generating model config", log.Error(err))
+	}
+	if err := modelconfig.ValidateModelConfig(modelCfg); err != nil {
+		logger.Fatal("validation error in newly generated config", log.Error(err))
 	}
 
 	modelCfgJSON, err := json.MarshalIndent(modelCfg, "", "  ")

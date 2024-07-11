@@ -117,6 +117,7 @@ var notebookColumns = []*sqlf.Query{
 	sqlf.Sprintf("notebooks.namespace_org_id"),
 	sqlf.Sprintf("notebooks.created_at"),
 	sqlf.Sprintf("notebooks.updated_at"),
+	sqlf.Sprintf("pattern_type"),
 }
 
 func notebooksPermissionsCondition(ctx context.Context) *sqlf.Query {
@@ -196,6 +197,7 @@ func scanNotebook(scanner dbutil.Scanner) (*Notebook, error) {
 		&dbutil.NullInt32{N: &n.NamespaceOrgID},
 		&n.CreatedAt,
 		&n.UpdatedAt,
+		&n.PatternType,
 	)
 	if err != nil {
 		return nil, err

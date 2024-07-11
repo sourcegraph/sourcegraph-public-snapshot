@@ -1,4 +1,4 @@
-use std::process;
+use std::{num::NonZeroUsize, process};
 
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::{Parser, Subcommand};
@@ -33,6 +33,10 @@ struct IndexCommandOptions {
     /// Project root to write to SCIP index
     #[arg(short, long, default_value = "./")]
     project_root: String,
+
+    /// Number of jobs to run in parallel, defaults to number of logical cores
+    #[arg(short, long)]
+    jobs: Option<NonZeroUsize>,
 
     /// Evaluate the build index against an index from a file
     #[arg(long)]
@@ -171,7 +175,7 @@ pub fn main() -> anyhow::Result<()> {
                 }
             };
 
-            result.unwrap()
+            result?
         }
 
         Commands::ScipEvaluate {
@@ -204,6 +208,7 @@ fn run_index_command(options: IndexCommandOptions, mode: IndexMode) -> anyhow::R
         Utf8Path::new(&options.out),
         Utf8Path::new(&options.project_root),
         options.evaluate.map(Utf8PathBuf::from),
+        options.jobs,
         IndexOptions {
             analysis_mode: options.mode,
             fail_fast: options.fail_fast,

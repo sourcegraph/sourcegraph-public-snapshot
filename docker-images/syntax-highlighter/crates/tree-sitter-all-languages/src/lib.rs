@@ -66,6 +66,12 @@ impl ParserId {
         }
     }
 
+    pub fn get_parser(self) -> tree_sitter::Parser {
+        let mut parser = tree_sitter::Parser::new();
+        parser.set_language(self.language()).expect("Error assigning language to parser, likely a version mismatch between compiled grammar and tree-sitter library.");
+        parser
+    }
+
     pub fn from_name(name: &str) -> Option<Self> {
         match name {
             "c" => Some(ParserId::C),

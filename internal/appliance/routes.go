@@ -12,9 +12,15 @@ func (a *Appliance) Routes() *mux.Router {
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/appliance", http.StatusFound)
 	})
-	r.HandleFunc("/appliance", a.applianceHandler).Methods(http.MethodGet)
-	r.HandleFunc("/appliance/setup", a.getSetupHandler).Methods(http.MethodGet)
-	r.HandleFunc("/appliance/setup", a.postSetupHandler).Methods(http.MethodPost)
+
+	r.Handle("/appliance/login", a.getLoginHandler()).Methods(http.MethodGet)
+	r.Handle("/appliance/login", a.postLoginHandler()).Methods(http.MethodPost)
+	r.Handle("/appliance/error", a.errorHandler()).Methods(http.MethodGet)
+
+	// Auth-gated endpoints
+	r.Handle("/appliance", a.CheckAuthorization(a.applianceHandler())).Methods(http.MethodGet)
+	r.Handle("/appliance/setup", a.CheckAuthorization(a.getSetupHandler())).Methods(http.MethodGet)
+	r.Handle("/appliance/setup", a.CheckAuthorization(a.postSetupHandler())).Methods(http.MethodPost)
 
 	return r
 }

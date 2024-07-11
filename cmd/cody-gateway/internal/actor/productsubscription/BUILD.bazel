@@ -10,6 +10,7 @@ go_library(
     deps = [
         "//cmd/cody-gateway/internal/actor",
         "//internal/codygateway",
+        "//internal/codygateway/codygatewayactor",
         "//internal/collections",
         "//internal/license",
         "//internal/productsubscription",
@@ -34,7 +35,7 @@ go_test(
     embed = [":productsubscription"],
     tags = [TAG_CODY_PRIME],
     deps = [
-        "//internal/codygateway",
+        "//internal/codygateway/codygatewayactor",
         "//internal/collections",
         "//lib/enterpriseportal/codyaccess/v1:codyaccess",
         "@com_github_hexops_autogold_v2//:autogold",

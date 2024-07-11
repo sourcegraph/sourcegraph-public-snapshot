@@ -513,6 +513,10 @@ func (r *notebookBlockResolver) ToSymbolBlock() (graphqlbackend.SymbolBlockResol
 	return nil, false
 }
 
+func (r *notebookResolver) PatternType(_ context.Context) string {
+	return r.notebook.PatternType
+}
+
 type markdownBlockResolver struct {
 	// block.type == NotebookMarkdownBlockType
 	block notebooks.NotebookBlock

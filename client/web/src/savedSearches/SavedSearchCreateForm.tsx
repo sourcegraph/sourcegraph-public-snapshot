@@ -1,11 +1,12 @@
 import React, { type FC } from 'react'
 
-import { useLocation, useNavigate, type NavigateFunction, type Location } from 'react-router-dom'
-import { concat, Subject, Subscription } from 'rxjs'
+import { useLocation, useNavigate, type Location, type NavigateFunction } from 'react-router-dom'
+import { Subject, Subscription, concat } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import type { Omit } from 'utility-types'
 
-import { type ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { asError, isErrorLike, type ErrorLike } from '@sourcegraph/common'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { screenReaderAnnounce } from '@sourcegraph/wildcard'
 
@@ -13,9 +14,9 @@ import type { AuthenticatedUser } from '../auth'
 import type { NamespaceProps } from '../namespaces'
 import { createSavedSearch } from '../search/backend'
 
-import { type SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
+import { SavedSearchForm, type SavedQueryFields } from './SavedSearchForm'
 
-interface Props extends NamespaceProps {
+interface Props extends NamespaceProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     location: Location

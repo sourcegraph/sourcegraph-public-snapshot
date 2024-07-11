@@ -21,10 +21,9 @@
   ],
   "models": [
     {
-      "modelId": "claude-3-sonnet",
       "modelRef": "anthropic::2023-06-01::claude-3-sonnet",
       "displayName": "Claude 3 Sonnet",
-      "string": "claude-3-sonnet-20240229",
+      "modelName": "claude-3-sonnet-20240229",
       "capabilities": ["autocomplete", "chat"],
       "category": "balanced",
       "status": "stable",
@@ -35,10 +34,9 @@
       }
     },
     {
-      "modelId": "claude-3.5-sonnet",
       "modelRef": "anthropic::2023-06-01::claude-3.5-sonnet",
       "displayName": "Claude 3.5 Sonnet",
-      "string": "claude-3-5-sonnet-20240620",
+      "modelName": "claude-3-5-sonnet-20240620",
       "capabilities": ["autocomplete", "chat"],
       "category": "accuracy",
       "status": "stable",
@@ -49,10 +47,9 @@
       }
     },
     {
-      "modelId": "claude-3-opus",
       "modelRef": "anthropic::2023-06-01::claude-3-opus",
       "displayName": "Claude 3 Opus",
-      "string": "claude-3-opus-20240229",
+      "modelName": "claude-3-opus-20240229",
       "capabilities": ["autocomplete", "chat"],
       "category": "accuracy",
       "status": "stable",
@@ -63,10 +60,9 @@
       }
     },
     {
-      "modelId": "claude-3-haiku",
       "modelRef": "anthropic::2023-06-01::claude-3-haiku",
       "displayName": "Claude 3 Haiku",
-      "string": "claude-3-haiku-20240307",
+      "modelName": "claude-3-haiku-20240307",
       "capabilities": ["autocomplete", "chat"],
       "category": "speed",
       "status": "stable",
@@ -77,10 +73,9 @@
       }
     },
     {
-      "modelId": "claude-2.1",
       "modelRef": "anthropic::2023-01-01::claude-2.1",
       "displayName": "Claude 2.1",
-      "string": "claude-2.1",
+      "modelName": "claude-2.1",
       "capabilities": ["autocomplete", "chat"],
       "category": "balanced",
       "status": "deprecated",
@@ -91,10 +86,9 @@
       }
     },
     {
-      "modelId": "claude-2.0",
       "modelRef": "anthropic::2023-01-01::claude-2.0",
       "displayName": "Claude 2.0",
-      "string": "claude-2.0",
+      "modelName": "claude-2.0",
       "capabilities": ["autocomplete", "chat"],
       "category": "balanced",
       "status": "deprecated",
@@ -105,10 +99,9 @@
       }
     },
     {
-      "modelId": "claude-instant-1.2",
       "modelRef": "anthropic::2023-01-01::claude-instant-1.2",
       "displayName": "Claude Instant",
-      "string": "claude-instant-1.2",
+      "modelName": "claude-instant-1.2",
       "capabilities": ["autocomplete", "chat"],
       "category": "balanced",
       "status": "deprecated",
@@ -119,10 +112,9 @@
       }
     },
     {
-      "modelId": "gemini-1.5-pro-latest",
       "modelRef": "google::v1::gemini-1.5-pro-latest",
       "displayName": "Gemini 1.5 Pro",
-      "string": "gemini-1.5-pro-latest",
+      "modelName": "gemini-1.5-pro-latest",
       "capabilities": ["autocomplete", "chat"],
       "category": "accuracy",
       "status": "stable",
@@ -133,10 +125,9 @@
       }
     },
     {
-      "modelId": "gemini-1.5-flash-latest",
       "modelRef": "google::v1::gemini-1.5-flash-latest",
       "displayName": "Gemini 1.5 Flash",
-      "string": "google/gemini-1.5-flash-latest",
+      "modelName": "google/gemini-1.5-flash-latest",
       "capabilities": ["autocomplete", "chat"],
       "category": "speed",
       "status": "stable",
@@ -147,10 +138,9 @@
       }
     },
     {
-      "modelId": "mixtral-8x7b-instruct",
       "modelRef": "mistral::v1::mixtral-8x7b-instruct",
       "displayName": "Mixtral 8x7B",
-      "string": "mixtral-8x7b-instruct",
+      "modelName": "mixtral-8x7b-instruct",
       "capabilities": ["autocomplete", "chat"],
       "category": "speed",
       "status": "stable",
@@ -161,10 +151,9 @@
       }
     },
     {
-      "modelId": "mixtral-8x22b-instruct",
       "modelRef": "mistral::v1::mixtral-8x22b-instruct",
       "displayName": "Mixtral 8x22B",
-      "string": "mixtral-8x22b-instruct",
+      "modelName": "mixtral-8x22b-instruct",
       "capabilities": ["autocomplete", "chat"],
       "category": "accuracy",
       "status": "stable",
@@ -175,10 +164,9 @@
       }
     },
     {
-      "modelId": "gpt-4o",
       "modelRef": "openai::2024-02-01::gpt-4o",
       "displayName": "GPT-4o",
-      "string": "gpt-4o",
+      "modelName": "gpt-4o",
       "capabilities": ["autocomplete", "chat"],
       "category": "accuracy",
       "status": "stable",
@@ -189,10 +177,9 @@
       }
     },
     {
-      "modelId": "gpt-4-turbo",
       "modelRef": "openai::2024-02-01::gpt-4-turbo",
       "displayName": "GPT-4 Turbo",
-      "string": "gpt-4-turbo",
+      "modelName": "gpt-4-turbo",
       "capabilities": ["autocomplete", "chat"],
       "category": "balanced",
       "status": "stable",
@@ -203,10 +190,9 @@
       }
     },
     {
-      "modelId": "gpt-3.5-turbo",
       "modelRef": "openai::2024-02-01::gpt-3.5-turbo",
       "displayName": "GPT-3.5 Turbo",
-      "string": "gpt-3.5-turbo",
+      "modelName": "gpt-3.5-turbo",
       "capabilities": ["autocomplete", "chat"],
       "category": "speed",
       "status": "stable",

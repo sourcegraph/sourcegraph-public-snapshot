@@ -68,4 +68,23 @@ func TestChangesetsStatsResolver(t *testing.T) {
 		require.Equal(t, r.IsCompleted(), false)
 		require.Equal(t, r.PercentComplete(), int32(22))
 	})
+
+	t.Run("all archived changeset", func(t *testing.T) {
+		stats := btypes.ChangesetsStats{
+			CommonChangesetsStats: btypes.CommonChangesetsStats{
+				Unpublished: 0,
+				Draft:       0,
+				Open:        0,
+				Merged:      0,
+				Closed:      0,
+				Total:       4,
+			},
+			Deleted:  2,
+			Archived: 2,
+		}
+
+		r := changesetsStatsResolver{stats: stats}
+		require.Equal(t, r.IsCompleted(), true)
+		require.Equal(t, r.PercentComplete(), int32(100))
+	})
 }

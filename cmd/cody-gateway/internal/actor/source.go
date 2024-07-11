@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -331,7 +331,7 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 }
 
 type FakeSource struct {
-	SourceName codygateway.ActorSource
+	SourceName codygatewayactor.ActorSource
 }
 
 func (m FakeSource) Name() string {

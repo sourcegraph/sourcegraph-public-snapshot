@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 )
 
 type Actor struct {
@@ -58,11 +59,11 @@ func (a *Actor) GetName() string {
 	return a.Name
 }
 
-func (a *Actor) GetSource() codygateway.ActorSource {
+func (a *Actor) GetSource() codygatewayactor.ActorSource {
 	if a == nil || a.Source == nil {
 		return "unknown"
 	}
-	return codygateway.ActorSource(a.Source.Name())
+	return codygatewayactor.ActorSource(a.Source.Name())
 }
 
 // IsEmpty returns true if the actor is empty, e.g. has no ID.
@@ -75,7 +76,7 @@ func (a *Actor) IsEmpty() bool {
 
 func (a *Actor) IsDotComActor() bool {
 	// Corresponds to sourcegraph.com subscription ID, or using a dotcom access token
-	return a != nil && (a.GetSource() == codygateway.ActorSourceEnterpriseSubscription && a.ID == "d3d2b638-d0a2-4539-a099-b36860b09819") || a.GetSource() == codygateway.ActorSourceDotcomUser
+	return a != nil && (a.GetSource() == codygatewayactor.ActorSourceEnterpriseSubscription && a.ID == "d3d2b638-d0a2-4539-a099-b36860b09819") || a.GetSource() == codygatewayactor.ActorSourceDotcomUser
 }
 
 type contextKey int

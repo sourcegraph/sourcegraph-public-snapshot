@@ -319,6 +319,9 @@ resources:
               migrator:
                 bestEffortQOS: true
 
+          grafana:
+            disabled: true
+
           gitServer:
             disabled: true
 

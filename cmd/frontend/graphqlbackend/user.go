@@ -279,6 +279,8 @@ func (r *UserResolver) CodyCurrentPeriodCodeLimit(ctx context.Context) (int32, e
 		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
+	// TODO(sqs): This is not enforced anymore as the intent is to give free unlimited autocomplete.
+
 	subscription, err := r.fetchCodySubscription(ctx)
 	if err != nil {
 		return 0, err

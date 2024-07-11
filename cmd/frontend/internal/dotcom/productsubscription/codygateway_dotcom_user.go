@@ -6,23 +6,23 @@ import (
 	"math"
 	"slices"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -142,7 +142,7 @@ func (r codyUserGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Cont
 	return &codyGatewayRateLimitResolver{
 		feature:     types.CompletionsFeatureChat,
 		actorID:     r.user.Username,
-		actorSource: codygateway.ActorSourceDotcomUser,
+		actorSource: codygatewayactor.ActorSourceDotcomUser,
 		source:      rateLimitSource,
 		v:           rateLimit,
 	}, nil
@@ -162,7 +162,7 @@ func (r codyUserGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Cont
 	return &codyGatewayRateLimitResolver{
 		feature:     types.CompletionsFeatureCode,
 		actorID:     r.user.Username,
-		actorSource: codygateway.ActorSourceDotcomUser,
+		actorSource: codygatewayactor.ActorSourceDotcomUser,
 		source:      rateLimitSource,
 		v:           rateLimit,
 	}, nil
@@ -189,7 +189,7 @@ func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) 
 
 	return &codyGatewayRateLimitResolver{
 		actorID:     r.user.Username,
-		actorSource: codygateway.ActorSourceDotcomUser,
+		actorSource: codygatewayactor.ActorSourceDotcomUser,
 		source:      graphqlbackend.CodyGatewayRateLimitSourcePlan,
 		v:           rateLimit,
 	}, nil
@@ -335,6 +335,7 @@ var allCodeCompletionModels = slices.Concat([]string{"anthropic/" + anthropic.Cl
 	"anthropic/claude-instant-1.2",
 	"google/" + google.Gemini15Flash,
 	"google/" + google.Gemini15FlashLatest,
+	"google/" + google.Gemini15Flash001,
 	"google/" + google.GeminiPro,
 	"google/" + google.GeminiProLatest,
 	"fireworks/starcoder",
@@ -342,9 +343,13 @@ var allCodeCompletionModels = slices.Concat([]string{"anthropic/" + anthropic.Cl
 	"fireworks/" + fireworks.StarcoderTwo15b,
 	"fireworks/" + fireworks.StarcoderTwo7b,
 	"fireworks/" + fireworks.DeepseekCoder1p3b,
+	"fireworks/" + fireworks.DeepseekCoderV2LiteBase,
+	"fireworks/" + fireworks.CodeQwen7B,
 	"fireworks/" + fireworks.DeepseekCoder7b},
-	prefix("fireworks/", fireworks.FineTunedMixtralModelVariants),
-	prefix("fireworks/", fireworks.FineTunedLlamaModelVariants))
+	prefixWithFireworks(fireworks.FineTunedMixtralModelVariants),
+	prefixWithFireworks(fireworks.FineTunedLlamaModelVariants),
+	prefixWithFireworks(fireworks.FineTunedDeepseekLogsTrainedModelVariants),
+	prefixWithFireworks(fireworks.FineTunedDeepseekStackTrainedModelVariants))
 
 func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 	switch scope {
@@ -377,6 +382,8 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"google/" + google.Gemini15FlashLatest,
 			"google/" + google.Gemini15ProLatest,
 			"google/" + google.GeminiProLatest,
+			"google/" + google.Gemini15Flash001,
+			"google/" + google.Gemini15Pro001,
 			"google/" + google.Gemini15Flash,
 			"google/" + google.Gemini15Pro,
 			"google/" + google.GeminiPro,
@@ -399,10 +406,10 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 	}
 }
 
-func prefix(prefix string, models []string) []string {
+func prefixWithFireworks(models []string) []string {
 	result := make([]string, len(models))
 	for i := range models {
-		result[i] = prefix + models[i]
+		result[i] = "fireworks/" + models[i]
 	}
 	return result
 }

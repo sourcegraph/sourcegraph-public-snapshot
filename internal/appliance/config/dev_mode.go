@@ -16,6 +16,7 @@ func (sg *Sourcegraph) SetLocalDevMode() {
 	sg.Spec.Frontend.ContainerConfig = setBestEffortQOSOnContainer(sg.Spec.Frontend.ContainerConfig, "migrator")
 
 	sg.Spec.GitServer.ContainerConfig = setBestEffortQOSOnContainer(sg.Spec.GitServer.ContainerConfig, "gitserver")
+	sg.Spec.Grafana.ContainerConfig = setBestEffortQOSOnContainer(sg.Spec.Grafana.ContainerConfig, "grafana")
 
 	sg.Spec.IndexedSearch.ContainerConfig = setBestEffortQOSOnContainer(sg.Spec.IndexedSearch.ContainerConfig, "zoekt-webserver")
 	sg.Spec.IndexedSearch.ContainerConfig = setBestEffortQOSOnContainer(sg.Spec.IndexedSearch.ContainerConfig, "zoekt-indexserver")

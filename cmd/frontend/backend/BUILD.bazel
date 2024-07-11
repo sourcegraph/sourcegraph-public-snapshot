@@ -53,6 +53,7 @@ go_library(
         "//internal/observation",
         "//internal/randstring",
         "//internal/rcache",
+        "//internal/redispool",
         "//internal/repos",
         "//internal/repoupdater",
         "//internal/trace",

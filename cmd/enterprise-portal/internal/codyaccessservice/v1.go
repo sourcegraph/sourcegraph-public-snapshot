@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"connectrpc.com/connect"
 	"github.com/sourcegraph/log"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
 	codyaccessv1connect "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1/v1connect"
+	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -142,4 +144,39 @@ func (s *handlerV1) ListCodyGatewayAccesses(ctx context.Context, req *connect.Re
 	logger.Scoped("audit").Info("ListCodyGatewayAccesses",
 		log.Strings("accessedSubscriptions", accessedSubscriptions))
 	return connect.NewResponse(&resp), nil
+}
+
+func (s *handlerV1) GetCodyGatewayUsage(ctx context.Context, req *connect.Request[codyaccessv1.GetCodyGatewayUsageRequest]) (*connect.Response[codyaccessv1.GetCodyGatewayUsageResponse], error) {
+	logger := trace.Logger(ctx, s.logger)
+
+	// 🚨 SECURITY: Require appropriate M2M scope.
+	requiredScope := samsm2m.EnterprisePortalScope("codyaccess", scopes.ActionRead)
+	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
+	if err != nil {
+		return nil, err
+	}
+	logger = logger.With(clientAttrs...)
+
+	switch query := req.Msg.GetQuery().(type) {
+	case *codyaccessv1.GetCodyGatewayUsageRequest_SubscriptionId:
+		internalSubscriptionID := strings.TrimPrefix(query.SubscriptionId,
+			subscriptionsv1.EnterpriseSubscriptionIDPrefix)
+		if internalSubscriptionID == "" {
+			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid query: subscription ID"))
+		}
+
+		usage, err := s.store.GetCodyGatewayUsage(ctx, internalSubscriptionID)
+		if err != nil {
+			if errors.Is(err, errStoreUnimplemented) {
+				return nil, connect.NewError(connect.CodeUnimplemented, err)
+			}
+			return nil, connectutil.InternalError(ctx, logger, err, "failed to get Cody Gateway usage")
+		}
+		return connect.NewResponse(&codyaccessv1.GetCodyGatewayUsageResponse{
+			Usage: usage,
+		}), nil
+
+	default:
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.Newf("unknown query type %T", query))
+	}
 }

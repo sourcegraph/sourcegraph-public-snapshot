@@ -62,7 +62,6 @@
         },
         '.cm-gutterElement': {
             lineHeight: '1.54',
-            minWidth: '40px !important',
 
             '&:hover': {
                 color: 'var(--text-body)',
@@ -73,6 +72,7 @@
         },
         '.cm-line': {
             lineHeight: '1.54',
+            padding: '0',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
@@ -129,16 +129,13 @@
     import { EditorView } from '@codemirror/view'
     import { createEventDispatcher, onMount } from 'svelte'
 
-    import {
-        codeGraphData as codeGraphDataFacet,
-        type CodeGraphData,
-    } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/occurrences'
-
     import { browser } from '$app/environment'
     import { goto } from '$app/navigation'
     import type { LineOrPositionOrRange } from '$lib/common'
-    import type { CodeIntelAPI } from '$lib/shared'
+    import { type CodeIntelAPI, Occurrence } from '$lib/shared'
     import {
+        codeGraphData as codeGraphDataFacet,
+        type CodeGraphData,
         selectableLineNumbers,
         syntaxHighlight,
         type SelectedLineRange,
@@ -154,9 +151,11 @@
         temporaryTooltip,
         hideEmptyLastLine,
         search,
+        debugOccurrences as debugOccurrencesFacet,
     } from '$lib/web'
 
     import BlameDecoration from './blame/BlameDecoration.svelte'
+    import { ReblameMarker } from './blame/reblame'
     import { SearchPanel, keyboardShortcut } from './codemirror/inline-search'
     import { type Range, staticHighlights } from './codemirror/static-highlights'
     import {
@@ -173,6 +172,7 @@
     export let blobInfo: BlobInfo
     export let highlights: string
     export let codeGraphData: CodeGraphData[] = []
+    export let debugOccurrences: Occurrence[] = []
     export let wrapLines: boolean = false
     export let selectedLines: LineOrPositionOrRange | null = null
     export let codeIntelAPI: CodeIntelAPI | null
@@ -203,7 +203,8 @@
         blameDataExtension: null,
         blameColumnExtension: null,
         searchExtension: null,
-        codeGraph: null,
+        codeGraphExtension: null,
+        debugOccurrencesExtension: null,
     })
     const useFileSearch = createLocalWritable('blob.overrideBrowserFindOnPage', true)
     registerHotkey({
@@ -257,6 +258,7 @@
     $: lineWrapping = wrapLines ? EditorView.lineWrapping : null
     $: syntaxHighlighting = highlights ? syntaxHighlight.of({ content: blobInfo.content, lsif: highlights }) : null
     $: codeGraph = codeGraphDataFacet.of(codeGraphData)
+    $: debugOccurrencesExtension = debugOccurrencesFacet.of(debugOccurrences)
     $: staticHighlightExtension = staticHighlights(staticHighlightRanges)
     $: searchExtension = search({
         overrideBrowserFindInPageShortcut: $useFileSearch,
@@ -278,6 +280,7 @@
                       },
                   }
               },
+              createReblameMarker: (...args) => new ReblameMarker(...args),
           })
         : null
     $: blameDataExtension = blameDataFacet(blameData)
@@ -290,10 +293,11 @@
             codeIntelExtension,
             lineWrapping,
             syntaxHighlighting,
-            codeGraph,
+            codeGraphExtension: codeGraph,
             staticHighlightExtension,
             blameDataExtension,
             searchExtension,
+            debugOccurrencesExtension,
         }
         if (view.state.sliceDoc() !== blobInfo.content) {
             view.setState(createEditorState(blobInfo, extensions))
@@ -329,11 +333,12 @@
                     codeIntelExtension,
                     lineWrapping,
                     syntaxHighlighting,
-                    codeGraph,
+                    codeGraphExtension: codeGraph,
                     staticHighlightExtension,
                     blameDataExtension,
                     blameColumnExtension,
                     searchExtension,
+                    debugOccurrencesExtension,
                 }),
                 parent: container,
             })

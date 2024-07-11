@@ -129,7 +129,7 @@
     }
 
     function handleResultCopy(): void {
-        TELEMETRY_RECORDER.recordEvent('search.result.area', 'copy')
+        TELEMETRY_RECORDER.recordEvent('search.result.code', 'copy')
     }
 
     function handleSearchResultClick(index: number): void {
