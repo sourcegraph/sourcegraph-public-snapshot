@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-	"regexp"
 	"strings"
 
+	"github.com/grafana/regexp"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -91,10 +91,10 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	if err != nil {
 		return errors.Wrapf(err, "could not checkout release branch %q", releaseBranch)
 	}
-	_, err = releaseGitRepoBranch.Push(cctx.Context)
-	if err != nil {
-		return errors.Wrapf(err, "could not push release branch %q", releaseBranch)
-	}
+	//_, err = releaseGitRepoBranch.Push(cctx.Context)
+	//if err != nil {
+	//	return errors.Wrapf(err, "could not push release branch %q", releaseBranch)
+	//}
 
 	// generate and commit max string const and migration graph archive
 	err = replaceMaxVersion(cctx.Context, version)
