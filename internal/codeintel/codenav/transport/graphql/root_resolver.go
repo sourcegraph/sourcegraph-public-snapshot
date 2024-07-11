@@ -285,7 +285,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 			numSyntacticResults = len(syntacticResult.Matches)
 			remainingCount = remainingCount - numSyntacticResults
-			previousSyntacticSearch = prevSearch
+			previousSyntacticSearch = core.Some(prevSearch)
 		}
 	}
 

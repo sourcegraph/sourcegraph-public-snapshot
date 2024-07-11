@@ -1264,7 +1264,7 @@ func (s *Service) SyntacticUsages(
 	ctx context.Context,
 	gitTreeTranslator GitTreeTranslator,
 	args UsagesForSymbolArgs,
-) (SyntacticUsagesResult, core.Option[PreviousSyntacticSearch], *SyntacticUsagesError) {
+) (SyntacticUsagesResult, PreviousSyntacticSearch, *SyntacticUsagesError) {
 	// The `nil` in the second argument is here, because `With` does not work with custom error types.
 	ctx, trace, endObservation := s.operations.syntacticUsages.With(ctx, nil, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoId", int(args.Repo.ID)),
@@ -1276,7 +1276,7 @@ func (s *Service) SyntacticUsages(
 
 	symbolsAtRange, upload, err := s.getSyntacticSymbolsAtRange(ctx, trace, gitTreeTranslator, args)
 	if err != nil {
-		return SyntacticUsagesResult{}, core.None[PreviousSyntacticSearch](), err
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, err
 	}
 
 	// Overlapping symbolsAtRange should lead to the same display name, but be scored separately.
@@ -1284,7 +1284,7 @@ func (s *Service) SyntacticUsages(
 	searchSymbol := symbolsAtRange[0]
 	language, langErr := languageFromFilepath(trace, args.Path)
 	if langErr != nil {
-		return SyntacticUsagesResult{}, core.None[PreviousSyntacticSearch](), &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: langErr,
 		}
@@ -1292,7 +1292,7 @@ func (s *Service) SyntacticUsages(
 
 	symbolName, ok := nameFromGlobalSymbol(searchSymbol)
 	if !ok {
-		return SyntacticUsagesResult{}, core.None[PreviousSyntacticSearch](), &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: errors.New("can't find syntactic occurrences for locals via search"),
 		}
@@ -1305,7 +1305,7 @@ func (s *Service) SyntacticUsages(
 	}
 	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(ctx, trace, s.searchClient, searchCoords)
 	if searchErr != nil {
-		return SyntacticUsagesResult{}, core.None[PreviousSyntacticSearch](), &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: searchErr,
 		}
@@ -1326,11 +1326,11 @@ func (s *Service) SyntacticUsages(
 	}
 	return SyntacticUsagesResult{
 			Matches: slices.Concat(results...),
-		}, core.Some(PreviousSyntacticSearch{
+		}, PreviousSyntacticSearch{
 			UploadSummary: core.UploadSummary{upload.ID, upload.Root, api.CommitID(upload.Commit)},
 			SymbolName:    symbolName,
 			Language:      language,
-		}), nil
+		}, nil
 }
 
 const MAX_FILE_SIZE_FOR_SYMBOL_DETECTION_BYTES = 10_000_000
@@ -1393,12 +1393,12 @@ func (s *Service) SearchBasedUsages(
 
 	var language string
 	var symbolName string
-	var syntacticUpload core.UploadLike
+	var syntacticUpload core.Option[core.UploadLike]
 
 	if prev, ok := previousSyntacticSearch.Get(); ok {
 		language = prev.Language
 		symbolName = prev.SymbolName
-		syntacticUpload = &prev.UploadSummary
+		syntacticUpload = core.Some[core.UploadLike](&prev.UploadSummary)
 	} else {
 		language, err = languageFromFilepath(trace, args.Path)
 		if err != nil {
@@ -1415,11 +1415,11 @@ func (s *Service) SearchBasedUsages(
 		if uploadErr != nil {
 			trace.Info("no syntactic upload found, return all search-based results", log.Error(err))
 		} else {
-			syntacticUpload = &upload
+			syntacticUpload = core.Some[core.UploadLike](upload)
 		}
 	}
 
-	return s.searchBasedUsagesInner(ctx, trace, args, symbolName, language, syntacticUploadID)
+	return s.searchBasedUsagesInner(ctx, trace, gitTreeTranslator, args, symbolName, language, syntacticUpload)
 }
 
 // searchBasedUsagesInner is extracted from SearchBasedUsages to allow
@@ -1427,10 +1427,11 @@ func (s *Service) SearchBasedUsages(
 func (s *Service) searchBasedUsagesInner(
 	ctx context.Context,
 	trace observation.TraceLogger,
+	gitTreeTranslator GitTreeTranslator,
 	args UsagesForSymbolArgs,
 	symbolName string,
 	language string,
-	syntacticUploadID core.Option[int],
+	syntacticUpload core.Option[core.UploadLike],
 ) (matches []SearchBasedMatch, err error) {
 	searchCoords := searchArgs{
 		repo:       args.Repo.Name,
@@ -1449,8 +1450,8 @@ func (s *Service) searchBasedUsagesInner(
 
 	results := [][]SearchBasedMatch{}
 	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
-		if syntacticUpload != nil {
-			_, searchBasedMatches, err := s.findSyntacticMatchesForCandidateFile(ctx, trace, gitTreeTranslator, syntacticUpload, pair.Key, pair.Value)
+		if upload, ok := syntacticUpload.Get(); ok {
+			_, searchBasedMatches, err := s.findSyntacticMatchesForCandidateFile(ctx, trace, gitTreeTranslator, upload, pair.Key, pair.Value)
 			if err == nil {
 				results = append(results, searchBasedMatches)
 				continue
