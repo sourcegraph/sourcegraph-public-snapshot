@@ -23,6 +23,8 @@ allowed_prefix=(
   # Doesn't connect but uses db internals for use with sqlite
   github.com/sourcegraph/sourcegraph/cmd/symbols
   github.com/sourcegraph/sourcegraph/cmd/worker
+  github.com/sourcegraph/sourcegraph/cmd/sourcegraph
+  github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/databasetest
 )
 
 # Create regex ^(a|b|c)
