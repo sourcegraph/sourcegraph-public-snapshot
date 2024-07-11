@@ -29,7 +29,7 @@ import (
 // at a different path P2 in a newer commit is even reliably useful, since symbol names
 // may change based on the file name or directory name depending on the language.
 //
-// TODO(id: GitTreeTranslator-cleanup): Instead of storing the translationBase, we should
+// TODO(id: GitTreeTranslator-cleanup): Instead of storing the TranslationBase, we should
 // take that as an argument. Specifically, use a struct with two fields, AncestorCommit
 // and DescendantCommit, and avoid Source/Target terminology (which becomes confusing to
 // understand with the reverse parameter). Instead, we can use an enum MappingDirection
@@ -54,27 +54,39 @@ type GitTreeTranslator interface {
 	// TODO(id: GitTreeTranslator-cleanup): The reverse parameter is always true in production,
 	// let's remove the extra parameter.
 	GetTargetCommitRangeFromSourceRange(ctx context.Context, commit string, path string, rx shared.Range, reverse bool) (shared.Range, bool, error)
+
+	GetSourceCommit() api.CommitID
+
+	// TODO(id: add-bulk-translation-api) Add an API which can map a bunch of ranges all at once
+	// so as to avoid iterating over the hunks repeatedly. So long as there is no error getting
+	// the hunks, the API should try to convert as many ranges as possible instead of fail-fast
+	// behavior. It is OK to expect the input set of ranges to be sorted.
+	// Might be useful to add a simple benchmark too.
 }
 
 type gitTreeTranslator struct {
 	client    gitserver.Client
-	base      *translationBase
+	base      *TranslationBase
 	hunkCache HunkCache
 }
 
-// TODO(id: GitTreeTranslator-cleanup): Strictly speaking, calling this translationBase is not
+// TODO(id: GitTreeTranslator-cleanup): Strictly speaking, calling this TranslationBase is not
 // quite correct as things can flip around based on the reverse parameter. So get rid
 // of the commit field and pass that as a parameter for increased clarity at call-sites.
-type translationBase struct {
-	repo   *sgtypes.Repo
-	commit api.CommitID
+type TranslationBase struct {
+	Repo   *sgtypes.Repo
+	Commit api.CommitID
 }
 
-func (r *translationBase) GetRepoID() int {
-	return int(r.repo.ID)
+func (r *TranslationBase) GetRepoID() int {
+	return int(r.Repo.ID)
 }
 
-// HunkCache is a LRU cache that holds git diff hunks.
+// HunkCache is a concurrency-safe LRU cache that holds git diff hunks.
+//
+// WARNING: It is NOT safe to modify the return value of Get or to
+// modify key or value passed to Set. Not 100% sure about this, filed:
+// https://github.com/dgraph-io/ristretto/issues/381
 type HunkCache interface {
 	// Get returns the value (if any) and a boolean representing whether the value was
 	// found or not.
@@ -95,7 +107,7 @@ func NewHunkCache(size int) (HunkCache, error) {
 }
 
 // NewGitTreeTranslator creates a new GitTreeTranslator with the given repository and source commit.
-func NewGitTreeTranslator(client gitserver.Client, base *translationBase, hunkCache HunkCache) GitTreeTranslator {
+func NewGitTreeTranslator(client gitserver.Client, base *TranslationBase, hunkCache HunkCache) GitTreeTranslator {
 	return &gitTreeTranslator{
 		client:    client,
 		hunkCache: hunkCache,
@@ -108,7 +120,7 @@ func NewGitTreeTranslator(client gitserver.Client, base *translationBase, hunkCa
 // indicating that the translation was successful. If reverse is true, then the source and
 // target commits are swapped.
 func (g *gitTreeTranslator) GetTargetCommitPositionFromSourcePosition(ctx context.Context, commit string, path string, px shared.Position, reverse bool) (shared.Position, bool, error) {
-	hunks, err := g.readCachedHunks(ctx, g.base.repo, string(g.base.commit), commit, path, reverse)
+	hunks, err := g.readCachedHunks(ctx, g.base.Repo, string(g.base.Commit), commit, path, reverse)
 	if err != nil {
 		return shared.Position{}, false, err
 	}
@@ -122,13 +134,17 @@ func (g *gitTreeTranslator) GetTargetCommitPositionFromSourcePosition(ctx contex
 // that the translation was successful. If reverse is true, then the source and target commits
 // are swapped.
 func (g *gitTreeTranslator) GetTargetCommitRangeFromSourceRange(ctx context.Context, commit string, path string, rx shared.Range, reverse bool) (shared.Range, bool, error) {
-	hunks, err := g.readCachedHunks(ctx, g.base.repo, string(g.base.commit), commit, path, reverse)
+	hunks, err := g.readCachedHunks(ctx, g.base.Repo, string(g.base.Commit), commit, path, reverse)
 	if err != nil {
 		return shared.Range{}, false, err
 	}
 
 	commitRange, ok := translateRange(hunks, rx)
 	return commitRange, ok, nil
+}
+
+func (g *gitTreeTranslator) GetSourceCommit() api.CommitID {
+	return g.base.Commit
 }
 
 // readCachedHunks returns a position-ordered slice of changes (additions or deletions) of

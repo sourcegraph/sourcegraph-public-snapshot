@@ -89,6 +89,10 @@ type TraceLogger interface {
 	// underlying Logger.
 	SetAttributes(attributes ...attribute.KeyValue)
 
+	// WithFields is analogous to log.Logger's With function, but returns
+	// a new TraceLogger instead.
+	WithFields(...log.Field) TraceLogger
+
 	// Logger is a logger scoped to this trace.
 	log.Logger
 }
@@ -151,6 +155,16 @@ func (t *traceLogger) SetAttributes(attributes ...attribute.KeyValue) {
 	}
 	t.trace.SetAttributes(attributes...)
 	t.Logger = t.Logger.With(attributesToLogFields(attributes)...)
+}
+
+func (t *traceLogger) WithFields(field ...log.Field) TraceLogger {
+	return &traceLogger{
+		opName:  t.opName,
+		event:   t.event,
+		trace:   t.trace,
+		context: t.context,
+		Logger:  t.Logger.With(field...),
+	}
 }
 
 // FinishFunc is the shape of the function returned by With and should be invoked within

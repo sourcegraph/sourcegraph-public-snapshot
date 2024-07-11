@@ -16,9 +16,9 @@ import (
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var mockTranslationBase = translationBase{
-	repo:   &sgtypes.Repo{ID: 50},
-	commit: "deadbeef1",
+var mockTranslationBase = TranslationBase{
+	Repo:   &sgtypes.Repo{ID: 50},
+	Commit: "deadbeef1",
 }
 
 func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
