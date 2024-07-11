@@ -221,10 +221,11 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				fileMatch("assets/javascripts/bootstrap.min.js"),
 			},
 			expectedDynamicFilterStrsRegexp: map[string]int{
-				`repo:^testRepo$`:             3,
-				`-file:\.min\.js$|\.js\.map$`: 3,
-				`lang:javascript`:             1,
-				`type:path`:                   3,
+				`repo:^testRepo$`:  3,
+				`-file:\.min\.js$`: 1,
+				`-file:\.js\.map$`: 2,
+				`lang:javascript`:  1,
+				`type:path`:        3,
 			},
 		},
 
