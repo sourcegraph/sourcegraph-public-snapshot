@@ -232,7 +232,7 @@ func NewBatchComputeImplementer(ctx context.Context, logger log.Logger, db datab
 	log15.Debug("compute", "search", searchQuery)
 
 	patternType := "regexp"
-	job, err := gql.NewBatchSearchImplementer(ctx, logger, db, &gql.SearchArgs{Query: searchQuery, PatternType: &patternType})
+	job, err := gql.NewBatchSearchImplementer(ctx, logger, db, &gql.SearchArgs{Query: searchQuery, PatternType: &patternType, Version: "V3"})
 	if err != nil {
 		return nil, err
 	}
