@@ -39,14 +39,14 @@ var _ resolverstubs.UsageResolver = &usageResolver{}
 
 func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Repo, revision api.CommitID) resolverstubs.UsageResolver {
 	var kind resolverstubs.SymbolUsageKind
-	if scip.SymbolRole_Definition.Matches(usage.Occurrence) {
+	if usage.IsDefinition {
 		kind = resolverstubs.UsageKindDefinition
 	} else {
 		kind = resolverstubs.UsageKindReference
 	}
 	return &usageResolver{
 		symbol: &symbolInformationResolver{
-			name: usage.Occurrence.Symbol,
+			name: usage.Symbol,
 		},
 		provenance: resolverstubs.ProvenanceSyntactic,
 		kind:       kind,
