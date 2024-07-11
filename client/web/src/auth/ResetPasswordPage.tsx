@@ -169,7 +169,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                 {isErrorLike(this.state.submitOrError) && <ErrorAlert error={this.state.submitOrError} />}
                 <Container className="w-100">
                     <Link to='/password-reset'><Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowLeftBoldBoxOutline} />Raise request for a different account</Link>
-                    <Text className="mt-1 text-center text-muted font-weight-bold mb-5">{email}</Text>
+                    <Text className="mt-1 text-center text-muted font-weight-bold mb-3">{email}</Text>
                     <Form data-testid="reset-password-page-form" onSubmit={this.handleSubmitResetPassword}>
                         <PasswordInput
                             name="password"
