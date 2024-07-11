@@ -20,7 +20,7 @@
     export let showCopyButton = false
     export let pathHref: ((path: string) => string) | undefined = undefined
 
-    $: parts = path.split('/').map((part, _, allParts) => ({ part, path: allParts.join('/') }))
+    $: parts = path.split('/').map((part, index, allParts) => ({ part, path: allParts.slice(0, index + 1).join('/') }))
     let collapsedPartCount = 0
     $: collapsedParts = parts.slice(0, collapsedPartCount)
     $: visibleParts = parts.slice(collapsedPartCount)
