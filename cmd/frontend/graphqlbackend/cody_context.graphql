@@ -175,6 +175,9 @@ input InputContextItem {
     score: Float
 }
 
+"""
+Options for context ranking.
+"""
 input RankOptions {
     """
     Ranker to use for context ranking. Empty value means "server decides".
@@ -182,6 +185,9 @@ input RankOptions {
     ranker: String!
 }
 
+"""
+Response from the ranker - contains reordered indices of context items pass as input, but not full context items.
+"""
 type RankingResponse {
     """
     Ranker used to produce this response.
