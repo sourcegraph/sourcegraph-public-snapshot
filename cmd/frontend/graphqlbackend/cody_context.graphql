@@ -38,7 +38,67 @@ extend type Query {
         A natural language query string.
         """
         query: String!
+        """
+        Cody interaction ID - used to join requests for intent detection/context fetching/ranking.
+        """
+        interactionId: String!
     ): ChatIntentResponse!
+
+    """
+    EXPERIMENTAL: Rank context items for given Cody chat query. Returns indices of input context items ordered by relevance.
+    """
+    rankContext(
+        """
+        A natural language query string.
+        """
+        query: String
+        """
+        Context items to rank.
+        """
+        contextItems: [InputContextItem!]!
+        """
+        Ranking options.
+        """
+        rankOptions: RankOptions
+        """
+        Target model.
+        """
+        targetModel: String
+        """
+        Target context window, in tokens.
+        """
+        targetContextWindowTokens: Int
+        """
+        Intent of Cody interaction. If empty, server will detect it.
+        """
+        intent: String
+        """
+        Type of Command executed in a given Cody interaction. Empty value means it's an open-ended Chat.
+        """
+        command: String
+        """
+        Cody interaction ID.
+        """
+        interactionId: String!
+    ): RankingResponse!
+
+    """
+    EXPERIMENTAL: Stores context passed to the LLM for a given interaction.
+    """
+    recordContext(
+        """
+        Interaction ID.
+        """
+        interactionId: String!
+        """
+        Context items that were passed to the LLM.
+        """
+        usedContextItems: [InputContextItem!]!
+        """
+        Context items that were not passed to the LLM.
+        """
+        discardedContextItems: [InputContextItem!]!
+    ): EmptyResponse
 }
 
 """
@@ -71,7 +131,7 @@ type FileChunkContext {
 }
 
 """
-EXPERIMENTAL: A response from Cody intent detection API.
+EXPERIMENTAL: A response from Cody intent detection API. To be deleted in a future release.
 """
 type CodyIntentResponse {
     """
@@ -96,4 +156,43 @@ type ChatIntentResponse {
     Confidence score as assigned by the intent detection model
     """
     score: Float!
+}
+"""
+EXPERIMENTAL: Representation of a context item used as API param (doesn't have to support full metadata available on the client).
+"""
+input InputContextItem {
+    """
+    Content of the context item.
+    """
+    content: String!
+    """
+    Retriever that produced this item
+    """
+    retriever: String
+    """
+    Optional: score assigned by the retriever.
+    """
+    score: Float
+}
+
+input RankOptions {
+    """
+    Ranker to use for context ranking. Empty value means "server decides".
+    """
+    ranker: String!
+}
+
+type RankingResponse {
+    """
+    Ranker used to produce this response.
+    """
+    ranker: String!
+    """
+    Indices of context items that were used by the ranker, ordered by decreasing relevance.
+    """
+    used: [Int!]!
+    """
+    Indices of context items that were discarded by the ranker. Order is undefined.
+    """
+    discarded: [Int!]!
 }

@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
@@ -39,6 +40,53 @@ type Resolver struct {
 	contextClient       *codycontext.CodyContextClient
 	logger              log.Logger
 	intentApiHttpClient httpcli.Doer
+}
+
+func (r *Resolver) RecordContext(ctx context.Context, args graphqlbackend.RecordContextArgs) (*graphqlbackend.EmptyResponse, error) {
+	err := r.contextApiEnabled(ctx)
+	if err != nil {
+		return nil, err
+	}
+	retrieverUsed, retrieverDiscarded := map[string]int{}, map[string]int{}
+	for _, item := range args.UsedContextItems {
+		if item.Retriever == nil {
+			retrieverUsed["unknown"]++
+			continue
+		}
+		retrieverUsed[*item.Retriever]++
+	}
+	for _, item := range args.DiscardedContextItems {
+		if item.Retriever == nil {
+			retrieverDiscarded["unknown"]++
+			continue
+		}
+		retrieverDiscarded[*item.Retriever]++
+	}
+	fields := []log.Field{log.String("interactionID", args.InteractionID), log.Int("includedItemCount", len(args.UsedContextItems)), log.Int("excludedItemCount", len(args.DiscardedContextItems))}
+	for r, cnt := range retrieverUsed {
+		fields = append(fields, log.Int(r+"-used", cnt))
+	}
+	for r, cnt := range retrieverDiscarded {
+		fields = append(fields, log.Int(r+"-discarded", cnt))
+	}
+	r.logger.Info("recording context", fields...)
+	return nil, nil
+}
+
+func (r *Resolver) RankContext(ctx context.Context, args graphqlbackend.RankContextArgs) (graphqlbackend.RankContextResolver, error) {
+	err := r.contextApiEnabled(ctx)
+	if err != nil {
+		return nil, err
+	}
+	res := rankContextResponse{
+		ranker: "identity",
+	}
+	r.logger.Info("ranking context", log.String("interactionID", args.InteractionID), log.String("ranker", res.ranker), log.Int("contextItemCount", len(args.ContextItems)))
+
+	for i := range args.ContextItems {
+		res.used = append(res.used, int32(i))
+	}
+	return res, nil
 }
 
 func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetContextArgs) (_ []graphqlbackend.ContextResultResolver, err error) {
@@ -83,19 +131,14 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 
 // GetCodyIntent is deprecated: use ChatIntent instead.
 func (r *Resolver) GetCodyIntent(ctx context.Context, args graphqlbackend.GetIntentArgs) (graphqlbackend.IntentResolver, error) {
-	return r.ChatIntent(ctx, graphqlbackend.ChatIntentArgs(args))
+	return r.ChatIntent(ctx, graphqlbackend.ChatIntentArgs{Query: args.Query, InteractionID: uuid.NewString()})
 }
 
 // ChatIntent is a quick-and-dirty way to expose our intent detection model to Cody clients.
 // Yes, it does things that should not be done in production code - for now it is just a proof of concept for demos.
 func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatIntentArgs) (graphqlbackend.IntentResolver, error) {
-	if !dotcom.SourcegraphDotComMode() {
-		return nil, errors.New("this feature is only available on sourcegraph.com")
-	}
-	if isEnabled, reason := cody.IsCodyEnabled(ctx, r.db); !isEnabled {
-		return nil, errors.Newf("cody is not enabled: %s", reason)
-	}
-	if err := cody.CheckVerifiedEmailRequirement(ctx, r.db, r.logger); err != nil {
+	err := r.contextApiEnabled(ctx)
+	if err != nil {
 		return nil, err
 	}
 	intentRequest := intentApiRequest{Query: args.Query}
@@ -123,7 +166,21 @@ func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatInten
 	if err != nil {
 		return nil, err
 	}
+	r.logger.Info("detecting intent", log.String("interactionID", args.InteractionID), log.String("query", args.Query), log.String("intent", intentResponse.Intent), log.Float64("score", intentResponse.Score))
 	return &chatIntentResponse{intent: intentResponse.Intent, score: intentResponse.Score}, nil
+}
+
+func (r *Resolver) contextApiEnabled(ctx context.Context) error {
+	if !dotcom.SourcegraphDotComMode() {
+		return errors.New("this feature is only available on sourcegraph.com")
+	}
+	if isEnabled, reason := cody.IsCodyEnabled(ctx, r.db); !isEnabled {
+		return errors.Newf("cody is not enabled: %s", reason)
+	}
+	if err := cody.CheckVerifiedEmailRequirement(ctx, r.db, r.logger); err != nil {
+		return err
+	}
+	return nil
 }
 
 type intentApiRequest struct {
@@ -197,3 +254,23 @@ func countLines(content string, numRunes int) int {
 	in := []byte(string(truncated))
 	return bytes.Count(in, []byte("\n"))
 }
+
+type rankContextResponse struct {
+	ranker    string
+	used      []int32
+	discarded []int32
+}
+
+func (r rankContextResponse) Ranker() string {
+	return r.ranker
+}
+
+func (r rankContextResponse) Used() []int32 {
+	return r.used
+}
+
+func (r rankContextResponse) Discarded() []int32 {
+	return r.discarded
+}
+
+var _ graphqlbackend.RankContextResolver = &rankContextResponse{}

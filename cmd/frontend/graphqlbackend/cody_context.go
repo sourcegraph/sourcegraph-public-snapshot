@@ -10,6 +10,8 @@ type CodyContextResolver interface {
 	GetCodyContext(ctx context.Context, args GetContextArgs) ([]ContextResultResolver, error)
 	GetCodyIntent(ctx context.Context, args GetIntentArgs) (IntentResolver, error)
 	ChatIntent(ctx context.Context, args ChatIntentArgs) (IntentResolver, error)
+	RankContext(ctx context.Context, args RankContextArgs) (RankContextResolver, error)
+	RecordContext(ctx context.Context, args RecordContextArgs) (*EmptyResponse, error)
 }
 
 type GetContextArgs struct {
@@ -24,7 +26,35 @@ type GetIntentArgs struct {
 }
 
 type ChatIntentArgs struct {
-	Query string
+	Query         string
+	InteractionID string
+}
+
+type RankContextArgs struct {
+	Query                     *string
+	ContextItems              []InputContextItem
+	RankOptions               *RankOptions
+	TargetModel               *string
+	TargetContextWindowTokens *int32
+	Intent                    *string
+	Command                   *string
+	InteractionID             string
+}
+
+type RecordContextArgs struct {
+	InteractionID         string
+	UsedContextItems      []InputContextItem
+	DiscardedContextItems []InputContextItem
+}
+
+type InputContextItem struct {
+	Content   string
+	Retriever *string
+	Score     *float64
+}
+
+type RankOptions struct {
+	Ranker string
 }
 
 type IntentResolver interface {
@@ -63,4 +93,17 @@ func (f *FileChunkContextResolver) ChunkContent(ctx context.Context) (string, er
 		StartLine: &f.startLine,
 		EndLine:   &f.endLine,
 	})
+}
+
+type RankContextResolver interface {
+	Ranker() string
+	Used() []int32
+	Discarded() []int32
+}
+
+type ContextItemResolver interface {
+	Content() string
+	Retriever() string
+	Score() *float64
+	FileChunk() *FileChunkContextResolver
 }
