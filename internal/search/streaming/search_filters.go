@@ -38,12 +38,12 @@ var commonFileFilters = []struct {
 	regexFilter string
 }{
 	{
-		label:       "Exclude _test.xx",
+		label:       "Exclude _test.*",
 		regexp:      lazyregexp.New(`_tests?\.\w+$`),
 		regexFilter: `-file:_test\.\w+$`,
 	},
 	{
-		label:       "Exclude .test.xx",
+		label:       "Exclude .test.*",
 		regexp:      lazyregexp.New(`\.tests?\.\w+$`),
 		regexFilter: `-file:\.test\.\w+$`,
 	},
@@ -69,8 +69,13 @@ var commonFileFilters = []struct {
 	},
 	{
 		label:       "Exclude minified JavaScript",
-		regexp:      lazyregexp.New(`\.min\.js$|\.js\.map$`),
-		regexFilter: `-file:\.min\.js$|\.js\.map$`,
+		regexp:      lazyregexp.New(`\.min\.js$`),
+		regexFilter: `-file:\.min\.js$`,
+	},
+	{
+		label:       "Exclude JavaScript maps",
+		regexp:      lazyregexp.New(`\.js\.map$`),
+		regexFilter: `-file:\.js\.map$`,
 	},
 }
 
