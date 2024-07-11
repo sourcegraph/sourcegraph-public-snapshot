@@ -1,5 +1,4 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
-load("//dev:go_mockgen.bzl", "go_mockgen")
 load("//dev:go_defs.bzl", "go_test")
 
 go_library(
@@ -8,11 +7,15 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance/selfupdate",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/appliance",
+        "//internal/appliance/config",
         "//internal/releaseregistry",
         "//lib/errors",
         "@com_github_life4_genesis//slices",
         "@com_github_sourcegraph_log//:log",
         "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/errors",
         "@io_k8s_apimachinery//pkg/types",
         "@io_k8s_sigs_controller_runtime//pkg/client",
     ],
@@ -20,41 +23,12 @@ go_library(
 
 go_test(
     name = "selfupdate_test",
-    srcs = [
-        "mocks_test.go",
-        "selfupdate_test.go",
-    ],
-    data = [
-        "//dev/tools:kubebuilder-assets",
-    ],
+    srcs = ["selfupdate_test.go"],
     embed = [":selfupdate"],
-    env = {
-        "KUBEBUILDER_ASSET_PATHS": "$(rlocationpaths //dev/tools:kubebuilder-assets)",
-    },
     deps = [
-        "//internal/appliance/config",
-        "//internal/appliance/k8senvtest",
-        "//internal/k8s/resource/container",
-        "//internal/k8s/resource/deployment",
-        "//internal/k8s/resource/pod",
         "//internal/releaseregistry",
+        "//internal/releaseregistry/mocks",
         "@com_github_sourcegraph_log//logtest",
-        "@com_github_sourcegraph_log_logr//:logr",
         "@com_github_stretchr_testify//require",
-        "@io_k8s_api//apps/v1:apps",
-        "@io_k8s_api//core/v1:core",
-        "@io_k8s_apimachinery//pkg/types",
-        "@io_k8s_sigs_controller_runtime//pkg/client",
     ],
-)
-
-go_mockgen(
-    name = "generate_mocks",
-    out = "mocks_test.go",
-    manifests = [
-        "//:mockgen.yaml",
-        "//:mockgen.test.yaml",
-        "//:mockgen.temp.yaml",
-    ],
-    deps = [":selfupdate"],
 )

@@ -4,7 +4,7 @@
 // this repository. To add additional mocks to this or another package, add a new entry
 // to the mockgen.yaml file in the root of this repository.
 
-package selfupdate
+package mocks
 
 import (
 	"context"
@@ -15,8 +15,8 @@ import (
 
 // MockReleaseRegistryClient is a mock implementation of the
 // ReleaseRegistryClient interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/appliance/selfupdate) used
-// for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/releaseregistry) used for
+// unit testing.
 type MockReleaseRegistryClient struct {
 	// ListVersionsFunc is an instance of a mock function object controlling
 	// the behavior of the method ListVersions.
@@ -52,7 +52,7 @@ func NewStrictMockReleaseRegistryClient() *MockReleaseRegistryClient {
 // NewMockReleaseRegistryClientFrom creates a new mock of the
 // MockReleaseRegistryClient interface. All methods delegate to the given
 // implementation, unless overwritten.
-func NewMockReleaseRegistryClientFrom(i ReleaseRegistryClient) *MockReleaseRegistryClient {
+func NewMockReleaseRegistryClientFrom(i releaseregistry.ReleaseRegistryClient) *MockReleaseRegistryClient {
 	return &MockReleaseRegistryClient{
 		ListVersionsFunc: &ReleaseRegistryClientListVersionsFunc{
 			defaultHook: i.ListVersions,

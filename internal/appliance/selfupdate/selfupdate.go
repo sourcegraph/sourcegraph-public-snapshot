@@ -19,15 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type ReleaseRegistryClient interface {
-	ListVersions(ctx context.Context, product string) ([]releaseregistry.ReleaseInfo, error)
-}
-
 type SelfUpdate struct {
 	Interval       time.Duration
 	Logger         log.Logger
 	K8sClient      client.Client
-	RelregClient   ReleaseRegistryClient
+	RelregClient   releaseregistry.ReleaseRegistryClient
 	DeploymentName string
 	Namespace      string
 }
@@ -41,7 +37,7 @@ func (u *SelfUpdate) Loop(ctx context.Context) error {
 	for {
 		select {
 		case <-ticker.C:
-			if err := u.once(ctx); err != nil {
+			if err := u.Once(ctx); err != nil {
 				u.Logger.Error("error self-updating", log.Error(err))
 				return err
 			}
@@ -52,7 +48,7 @@ func (u *SelfUpdate) Loop(ctx context.Context) error {
 	}
 }
 
-func (u *SelfUpdate) once(ctx context.Context) error {
+func (u *SelfUpdate) Once(ctx context.Context) error {
 	u.Logger.Info("starting self-update")
 
 	var dep appsv1.Deployment
