@@ -30,7 +30,7 @@ go_proto_library(
 go_library(
     name = "telemetrygateway",
     srcs = [
-        "client.go",
+        "dial.go",
         "v1.go",
     ],
     embed = [":v1_go_proto"],

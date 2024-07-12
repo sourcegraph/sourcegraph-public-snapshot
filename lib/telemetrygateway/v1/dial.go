@@ -63,13 +63,13 @@ var cloudRunDialOptions = []grpc.DialOption{
 // Dial is intended for simple, standard production use cases. If you need
 // to customize the way you connect to Telemetry Gateway, you should create your
 // own dial setup.
-func Dial(ctx context.Context, logger log.Logger, addr *url.URL, ts oauth2.TokenSource) (*grpc.ClientConn, error) {
+func Dial(ctx context.Context, logger log.Logger, addr *url.URL, ts oauth2.TokenSource, dialOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	insecureTarget := addr.Scheme != "https"
 	if insecureTarget {
-		return nil, errors.New("insecure target Telemetry Gateway used outside of dev mode")
+		return nil, errors.Newf("insecure target Telemetry Gateway %q", addr.String())
 	}
-	creds := grpc.WithPerRPCCredentials(oauth.TokenSource{TokenSource: ts})
-	dialOpts := append([]grpc.DialOption{creds}, cloudRunDialOptions...)
+	dialOpts = append(dialOpts, grpc.WithPerRPCCredentials(oauth.TokenSource{TokenSource: ts}))
+	dialOpts = append(dialOpts, cloudRunDialOptions...)
 	logger.Info("dialing Enterprise Portal gRPC service",
 		log.String("host", addr.Host),
 		log.Bool("insecureTarget", insecureTarget))
