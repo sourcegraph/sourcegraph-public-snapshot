@@ -202,6 +202,10 @@ var sg = &cli.App{
 			std.Out.WriteWarningf("Unable to infer user shell context: %s", err)
 		}
 		cmd.Context = background.Context(cmd.Context, verbose)
+
+		// We need to register the wait in the interrupt handlers, because if interrupted
+		// the .After on cli.App won't run. This makes sure that both the happy and sad paths
+		// are waiting for background tasks to finish.
 		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
 
 		// Set up analytics and hooks for each command - do this as the first context
