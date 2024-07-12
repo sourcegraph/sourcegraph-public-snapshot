@@ -32,7 +32,7 @@
 <div class="root">
     {#if withHeader}
         <header>
-            <DisplayRepoName repoName={data.name} externalLinks={data.externalURLs} />
+            <div><DisplayRepoName repoName={data.name} externalLinks={data.externalURLs} /></div>
             <Badge variant="outlineSecondary" small pill>
                 {data.isPrivate ? 'Private' : 'Public'}
             </Badge>
@@ -79,7 +79,7 @@
     .root {
         width: 480px;
 
-        & > div {
+        & > * {
             padding: 0.75rem;
 
             &:not(:last-child) {
@@ -91,6 +91,7 @@
     header {
         display: flex;
         align-items: center;
+        gap: 0.5rem;
     }
 
     .description-and-tags {
@@ -98,7 +99,7 @@
         flex-flow: column nowrap;
         justify-content: center;
         align-items: flex-start;
-        gap: 0.5rem 0.5rem;
+        gap: 0.5rem;
         width: 100%;
         color: var(--text-body);
 
@@ -107,7 +108,7 @@
             align-items: flex-start;
             display: flex;
             flex-flow: row wrap;
-            gap: 0.5rem 0.5rem;
+            gap: 0.5rem;
             justify-content: flex-start;
         }
     }

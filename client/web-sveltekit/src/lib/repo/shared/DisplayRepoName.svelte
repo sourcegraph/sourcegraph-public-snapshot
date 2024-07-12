@@ -26,10 +26,11 @@
     $: kind = link?.serviceKind ?? inferExternalServiceKind(repoName)
 </script>
 
-<span class="root">
-    <Tooltip tooltip={host ?? ''}><Icon icon={getIconForExternalService(kind)} inline /></Tooltip>
-    <DisplayPath path={displayName}>></DisplayPath>
-</span>
+<span class="root"
+    ><Tooltip tooltip={host ?? ''}><Icon icon={getIconForExternalService(kind)} inline /></Tooltip><DisplayPath
+        path={displayName}>></DisplayPath
+    ></span
+>
 
 <style lang="scss">
     span.root {
