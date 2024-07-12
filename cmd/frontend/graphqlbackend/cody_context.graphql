@@ -145,7 +145,7 @@ input InputContextItem {
     """
     Retriever that produced this item
     """
-    retriever: String
+    retriever: String!
     """
     Optional: score assigned by the retriever.
     """

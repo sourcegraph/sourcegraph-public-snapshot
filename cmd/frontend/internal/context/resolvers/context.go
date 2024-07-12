@@ -49,18 +49,10 @@ func (r *Resolver) RecordContext(ctx context.Context, args graphqlbackend.Record
 	}
 	retrieverUsed, retrieverDiscarded := map[string]int{}, map[string]int{}
 	for _, item := range args.UsedContextItems {
-		if item.Retriever == nil {
-			retrieverUsed["unknown"]++
-			continue
-		}
-		retrieverUsed[*item.Retriever]++
+		retrieverUsed[item.Retriever]++
 	}
 	for _, item := range args.DiscardedContextItems {
-		if item.Retriever == nil {
-			retrieverDiscarded["unknown"]++
-			continue
-		}
-		retrieverDiscarded[*item.Retriever]++
+		retrieverDiscarded[item.Retriever]++
 	}
 	fields := []log.Field{log.String("interactionID", args.InteractionID), log.Int("includedItemCount", len(args.UsedContextItems)), log.Int("excludedItemCount", len(args.DiscardedContextItems))}
 	for r, cnt := range retrieverUsed {

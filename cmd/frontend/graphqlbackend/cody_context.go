@@ -44,7 +44,7 @@ type RecordContextArgs struct {
 
 type InputContextItem struct {
 	Content   string
-	Retriever *string
+	Retriever string
 	Score     *float64
 	FileName  *string
 }
