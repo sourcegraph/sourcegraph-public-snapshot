@@ -131,11 +131,13 @@ test('copy path button appears and copies path', async ({ page, sg }) => {
     )
     await stream.close()
 
-    const copyPathButton = page.getByRole('button', { name: 'Copy path to clipboard' })
-
     for (const match of [contentMatch, pathMatch, symbolMatch]) {
-        await page.getByRole('link', { name: match.path }).hover()
-        expect(copyPathButton).toBeVisible()
+        await page.getByText(match.path).hover()
+        const copyPathButton = page
+            .locator('article')
+            .filter({ hasText: match.path })
+            .getByLabel('Copy path to clipboard')
+        await expect(copyPathButton).toBeVisible()
         await copyPathButton.click()
         const clipboardText = await page.evaluate('navigator.clipboard.readText()')
         expect(clipboardText).toBe(match.path)

@@ -112,6 +112,32 @@ func TestSearchFiltersUpdate(t *testing.T) {
 			wantFilterCount: 2,
 		},
 		{
+			name: "FileMatch, test files",
+			events: []SearchEvent{
+				{
+					Results: []result.Match{
+						&result.FileMatch{
+							File: result.File{
+								Repo: repo,
+								Path: "agent_test.py",
+							},
+							PathMatches: make(result.Ranges, 1),
+						},
+						&result.FileMatch{
+							File: result.File{
+								Repo: repo,
+								Path: "agent.py",
+							},
+							PathMatches: make(result.Ranges, 1),
+						},
+					},
+				},
+			},
+			wantFilterValue: "-file:_test\\.\\w+$",
+			wantFilterKind:  "file",
+			wantFilterCount: 1,
+		},
+		{
 			name: "SymbolMatch",
 			events: []SearchEvent{
 				{

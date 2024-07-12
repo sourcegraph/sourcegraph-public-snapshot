@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom'
 
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { CreatedByAndUpdatedByInfoByline } from '../components/Byline/CreatedByAndUpdatedByInfoByline'
 import { ConnectionLoading } from '../components/FilteredConnection/ui'
@@ -30,8 +30,9 @@ export const SiteAdminWebhookUpdatePage: FC<SiteAdminWebhookUpdatePageProps> = (
     const { loading, data } = useWebhookQuery(id)
 
     const webhook = data?.node && data.node.__typename === 'Webhook' ? data.node : undefined
+
     return (
-        <Container>
+        <>
             <PageTitle title="Edit incoming webhook" />
             {loading && !data && <ConnectionLoading />}
             {webhook && (
@@ -56,6 +57,6 @@ export const SiteAdminWebhookUpdatePage: FC<SiteAdminWebhookUpdatePageProps> = (
                     <WebhookCreateUpdatePage existingWebhook={webhook} />
                 </>
             )}
-        </Container>
+        </>
     )
 }

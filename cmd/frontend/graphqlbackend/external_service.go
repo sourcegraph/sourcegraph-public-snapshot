@@ -126,6 +126,20 @@ func (r *externalServiceResolver) Kind() string {
 	return r.externalService.Kind
 }
 
+func (r *externalServiceResolver) URL(ctx context.Context) (string, error) {
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return "", err
+	}
+
+	config, err := r.externalService.Config.Decrypt(ctx)
+	if err != nil {
+		return "", errors.Wrap(err, "decrypting external service config")
+	}
+
+	return extsvc.UniqueCodeHostIdentifier(r.externalService.Kind, config)
+}
+
 func (r *externalServiceResolver) DisplayName() string {
 	return r.externalService.DisplayName
 }

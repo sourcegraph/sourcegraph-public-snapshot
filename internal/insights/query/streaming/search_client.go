@@ -33,7 +33,7 @@ type insightsSearchClient struct {
 func (r *insightsSearchClient) Search(ctx context.Context, query string, patternType *string, sender streaming.Sender) (*search.Alert, error) {
 	inputs, err := r.searchClient.Plan(
 		ctx,
-		"",
+		"V3",
 		patternType,
 		query,
 		search.Precise,

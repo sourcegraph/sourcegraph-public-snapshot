@@ -1,4 +1,4 @@
-<article data-testid="search-result">
+<article data-show-copy-target data-testid="search-result">
     <div class="header">
         <div class="title">
             <slot name="title" />
@@ -18,15 +18,12 @@
 
 <style lang="scss">
     article {
-        :global([data-visible-on-focus]) {
-            visibility: hidden;
+        :global([data-copy-button]) {
+            opacity: 0;
+            transition: opacity 0.2s;
         }
-
-        &:hover,
-        &:focus-within {
-            :global([data-visible-on-focus]) {
-                visibility: visible;
-            }
+        &:is(:hover, :focus-within) :global([data-copy-button]) {
+            opacity: 1;
         }
     }
 
