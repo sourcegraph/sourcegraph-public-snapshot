@@ -101,7 +101,7 @@ js_run_devserver(
 
 # Create production release artifacts
 js_run_binary(
-    name = "frontend",
+    name = "build",
     srcs = RUNTIME_DEPS,
     args = ["build"],
     mnemonic = "ViteBuild",
@@ -115,12 +115,12 @@ vite_bin.vite_binary(
     name = "preview",
     args = ["preview"],
     chdir = package_name(),
-    data = [":frontend"],
+    data = [":build"],
 )
 
 pkg_tar(
     name = "tar_frontend",
-    srcs = [":frontend"],
+    srcs = [":build"],
     package_dir = "maintenance",
     strip_prefix = "dist",
     visibility = ["//docker-images/appliance-frontend:__pkg__"],
