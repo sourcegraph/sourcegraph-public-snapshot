@@ -321,6 +321,9 @@ resources:
           frontend:
             disabled: true
 
+          grafana:
+            disabled: true
+
           gitServer:
             disabled: true
 

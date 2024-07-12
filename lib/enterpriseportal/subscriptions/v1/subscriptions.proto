@@ -327,6 +327,7 @@ message UpdateEnterpriseSubscriptionRequest {
   // The list of fields to update, fields are specified relative to the EnterpriseSubscription.
   // Updatable fields are:
   //  - instance_domain
+  //  - display_name
   google.protobuf.FieldMask update_mask = 2;
 }
 

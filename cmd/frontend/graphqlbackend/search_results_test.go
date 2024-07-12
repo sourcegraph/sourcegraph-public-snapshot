@@ -194,10 +194,10 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				fileMatch("/foo.go"),
 			},
 			expectedDynamicFilterStrsRegexp: map[string]int{
-				`repo:^testRepo$`:  2,
-				`-file:_test\.go$`: 1,
-				`lang:go`:          2,
-				`type:path`:        2,
+				`repo:^testRepo$`:   2,
+				`-file:_test\.\w+$`: 1,
+				`lang:go`:           2,
+				`type:path`:         2,
 			},
 		},
 

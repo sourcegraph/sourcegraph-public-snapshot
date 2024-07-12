@@ -241,8 +241,8 @@ export const FETCH_HIGHLIGHTED_BLOB = gql`
 `
 
 export const CODE_INTEL_SEARCH_QUERY = gql`
-    query CodeIntelSearch2($query: String!) {
-        search(query: $query) {
+    query CodeIntelSearch2($query: String!, $version: SearchVersion!) {
+        search(query: $query, version: $version) {
             __typename
             results {
                 __typename

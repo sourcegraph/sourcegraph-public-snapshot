@@ -21,7 +21,7 @@ import (
 )
 
 func TestRecordedCommandsResolver(t *testing.T) {
-	rcache.SetupForTest(t)
+	kv := rcache.SetupForTest(t)
 
 	timeFormat := "2006-01-02T15:04:05Z"
 	startTime, err := time.Parse(timeFormat, "2023-07-20T15:04:05Z")
@@ -137,7 +137,7 @@ func TestRecordedCommandsResolver(t *testing.T) {
 		repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)
 		db.ReposFunc.SetDefaultReturn(repos)
 
-		r := rcache.NewFIFOList(wrexec.GetFIFOListKey(repoName), 3)
+		r := rcache.NewFIFOList(kv, wrexec.GetFIFOListKey(repoName), 3)
 		cmd1 := wrexec.RecordedCommand{
 			Start:    startTime,
 			Duration: float64(100),
@@ -225,7 +225,7 @@ func TestRecordedCommandsResolver(t *testing.T) {
 		repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)
 		db.ReposFunc.SetDefaultReturn(repos)
 
-		r := rcache.NewFIFOList(wrexec.GetFIFOListKey(repoName), 3)
+		r := rcache.NewFIFOList(kv, wrexec.GetFIFOListKey(repoName), 3)
 
 		err = r.Insert(marshalCmd(t, cmd1))
 		require.NoError(t, err)

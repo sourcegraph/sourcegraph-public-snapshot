@@ -9,7 +9,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/upsert"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Subscription is an Enterprise subscription record.
@@ -26,8 +28,12 @@ type Subscription struct {
 
 	// DisplayName is the human-friendly name of this subscription, e.g. "Acme, Inc."
 	//
-	// It must be unique across all currently un-archived subscriptions.
-	DisplayName string `gorm:"size:256;not null;uniqueIndex:,where:archived_at IS NULL AND display_name != 'Unnamed subscription';default:'Unnamed subscription'"`
+	// It must be unique across all currently un-archived subscriptions, unless
+	// it is not set.
+	//
+	// TODO: Clean up the database post-deploy and remove the 'Unnamed subscription'
+	// part of the constraint.
+	DisplayName string `gorm:"size:256;not null;uniqueIndex:,where:archived_at IS NULL AND display_name != 'Unnamed subscription' AND display_name != ''"`
 
 	// Timestamps representing the latest timestamps of key conditions related
 	// to this subscription.
@@ -43,8 +49,48 @@ type Subscription struct {
 	SalesforceOpportunityID *string
 }
 
-func (s *Subscription) TableName() string {
+func (s Subscription) TableName() string {
 	return "enterprise_portal_subscriptions"
+}
+
+// subscriptionTableColumns must match s.scan() values.
+func subscriptionTableColumns() []string {
+	return []string{
+		"id",
+		"instance_domain",
+		"display_name",
+		"created_at",
+		"updated_at",
+		"archived_at",
+		"salesforce_subscription_id",
+		"salesforce_opportunity_id",
+	}
+}
+
+// scanSubscription matches s.columns() values.
+func scanSubscription(row pgx.Row) (*Subscription, error) {
+	var s Subscription
+	err := row.Scan(
+		&s.ID,
+		&s.InstanceDomain,
+		&s.DisplayName,
+		&s.CreatedAt,
+		&s.UpdatedAt,
+		&s.ArchivedAt,
+		&s.SalesforceSubscriptionID,
+		&s.SalesforceOpportunityID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	s.CreatedAt = s.CreatedAt.UTC()
+	s.UpdatedAt = s.UpdatedAt.UTC()
+	if s.ArchivedAt != nil {
+		s.ArchivedAt = pointers.Ptr(s.ArchivedAt.UTC())
+	}
+
+	return &s, nil
 }
 
 // Store is the storage layer for product subscriptions.
@@ -101,11 +147,11 @@ func (s *Store) List(ctx context.Context, opts ListEnterpriseSubscriptionsOption
 	where, limit, namedArgs := opts.toQueryConditions()
 	query := fmt.Sprintf(`
 SELECT
-	id,
-	instance_domain
+	%s
 FROM enterprise_portal_subscriptions
 WHERE %s
 %s`,
+		strings.Join(subscriptionTableColumns(), ", "),
 		where, limit,
 	)
 	rows, err := s.db.Query(ctx, query, namedArgs)
@@ -116,17 +162,25 @@ WHERE %s
 
 	var subscriptions []*Subscription
 	for rows.Next() {
-		var subscription Subscription
-		if err = rows.Scan(&subscription.ID, &subscription.InstanceDomain); err != nil {
+		sub, err := scanSubscription(rows)
+		if err != nil {
 			return nil, errors.Wrap(err, "scan row")
 		}
-		subscriptions = append(subscriptions, &subscription)
+		subscriptions = append(subscriptions, sub)
 	}
 	return subscriptions, rows.Err()
 }
 
 type UpsertSubscriptionOptions struct {
 	InstanceDomain string
+	DisplayName    string
+
+	CreatedAt  time.Time
+	ArchivedAt *time.Time
+
+	SalesforceSubscriptionID *string
+	SalesforceOpportunityID  *string
+
 	// ForceUpdate indicates whether to force update all fields of the subscription
 	// record.
 	ForceUpdate bool
@@ -134,40 +188,26 @@ type UpsertSubscriptionOptions struct {
 
 // toQuery returns the query based on the options. It returns an empty query if
 // nothing to update.
-func (opts UpsertSubscriptionOptions) toQuery(id string) (query string, _ pgx.NamedArgs) {
-	const queryFmt = `
-INSERT INTO enterprise_portal_subscriptions (id, instance_domain)
-VALUES (@id, @instanceDomain)
-ON CONFLICT (id)
-DO UPDATE SET
-	%s`
-	namedArgs := pgx.NamedArgs{
-		"id":             id,
-		"instanceDomain": opts.InstanceDomain,
-	}
+func (opts UpsertSubscriptionOptions) Exec(ctx context.Context, db *pgxpool.Pool, id string) error {
+	b := upsert.New("enterprise_portal_subscriptions", "id", opts.ForceUpdate)
+	upsert.Field(b, "id", id)
+	upsert.Field(b, "instance_domain", opts.InstanceDomain)
+	upsert.Field(b, "display_name", opts.DisplayName)
 
-	var sets []string
-	if opts.ForceUpdate || opts.InstanceDomain != "" {
-		sets = append(sets, "instance_domain = excluded.instance_domain")
-	}
-	if len(sets) == 0 {
-		return "", nil
-	}
-	query = fmt.Sprintf(
-		queryFmt,
-		strings.Join(sets, ", "),
-	)
-	return query, namedArgs
+	upsert.Field(b, "created_at", opts.CreatedAt,
+		upsert.WithColumnDefault(),
+		upsert.WithIgnoreOnForceUpdate())
+	upsert.Field(b, "updated_at", time.Now()) // always updated now
+	upsert.Field(b, "archived_at", opts.ArchivedAt)
+	upsert.Field(b, "salesforce_subscription_id", opts.SalesforceSubscriptionID)
+	upsert.Field(b, "salesforce_opportunity_id", opts.SalesforceOpportunityID)
+	return b.Exec(ctx, db)
 }
 
 // Upsert upserts a subscription record based on the given options.
 func (s *Store) Upsert(ctx context.Context, subscriptionID string, opts UpsertSubscriptionOptions) (*Subscription, error) {
-	query, namedArgs := opts.toQuery(subscriptionID)
-	if query != "" {
-		_, err := s.db.Exec(ctx, query, namedArgs)
-		if err != nil {
-			return nil, errors.Wrap(err, "exec")
-		}
+	if err := opts.Exec(ctx, s.db, subscriptionID); err != nil {
+		return nil, errors.Wrap(err, "exec")
 	}
 	return s.Get(ctx, subscriptionID)
 }
@@ -175,12 +215,18 @@ func (s *Store) Upsert(ctx context.Context, subscriptionID string, opts UpsertSu
 // Get returns a subscription record with the given subscription ID. It returns
 // pgx.ErrNoRows if no such subscription exists.
 func (s *Store) Get(ctx context.Context, subscriptionID string) (*Subscription, error) {
-	var subscription Subscription
-	query := `SELECT id, instance_domain FROM enterprise_portal_subscriptions WHERE id = @id`
+	query := fmt.Sprintf(`SELECT
+		%s
+	FROM
+		enterprise_portal_subscriptions
+	WHERE
+		id = @id`,
+		strings.Join(subscriptionTableColumns(), ", "))
 	namedArgs := pgx.NamedArgs{"id": subscriptionID}
-	err := s.db.QueryRow(ctx, query, namedArgs).Scan(&subscription.ID, &subscription.InstanceDomain)
+
+	sub, err := scanSubscription(s.db.QueryRow(ctx, query, namedArgs))
 	if err != nil {
 		return nil, err
 	}
-	return &subscription, nil
+	return sub, nil
 }

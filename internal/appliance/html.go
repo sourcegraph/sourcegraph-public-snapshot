@@ -194,9 +194,9 @@ func (a *Appliance) postSetupHandler() http.Handler {
 			a.sourcegraph.SetLocalDevMode()
 		}
 
-		_, err = a.CreateConfigMap(r.Context(), "sourcegraph-appliance")
+		_, err = a.CreateConfigMap(r.Context(), config.ConfigmapName)
 		if err != nil {
-			a.logger.Error("failed to create configMap sourcegraph-appliance", log.Error(err))
+			a.logger.Error("failed to create configMap "+config.ConfigmapName, log.Error(err))
 			// Handle err
 		}
 		a.status = StatusInstalling

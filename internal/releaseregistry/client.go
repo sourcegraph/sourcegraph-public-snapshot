@@ -21,6 +21,15 @@ type ReleaseInfo struct {
 	IsDevelopment bool       `json:"is_development"`
 }
 
+// If you're wondering why we define an interface here, Java-style, instead of
+// using the more Go-ish idiom of encouraging consumers define interfaces, it's
+// because there are a couple of packages we want to use mocks for this
+// interface in, and its simpler to generate them in one place and import them
+// everywhere.
+type ReleaseRegistryClient interface {
+	ListVersions(ctx context.Context, product string) ([]ReleaseInfo, error)
+}
+
 type Client struct {
 	endpoint string
 	client   http.Client

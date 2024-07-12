@@ -34,6 +34,7 @@ type TemporarySettingStatus<K extends TemporarySettingsKey> = LoadingData<Tempor
 
 export interface TemporarySettingStore<K extends TemporarySettingsKey> extends Readable<TemporarySettingStatus<K>> {
     setValue(value: TemporarySettings[K]): void
+    value(): Promise<TemporarySettings[K] | null>
 }
 
 /**
@@ -64,6 +65,19 @@ export function temporarySetting<K extends TemporarySettingsKey>(
         subscribe,
         setValue(data) {
             storage?.set(key, data)
+        },
+        value(): Promise<TemporarySettings[K] | null> {
+            return new Promise((resolve, reject) => {
+                const unsubscribe = subscribe(result => {
+                    if (result.loading) return
+                    if (result.error) {
+                        reject(result.error)
+                    } else {
+                        resolve(result.data)
+                    }
+                    unsubscribe()
+                })
+            })
         },
     }
 }

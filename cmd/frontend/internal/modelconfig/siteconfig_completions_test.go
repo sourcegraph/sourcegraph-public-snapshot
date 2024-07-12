@@ -305,7 +305,7 @@ func TestConvertCompletionsConfig(t *testing.T) {
 	})
 
 	t.Run("MaxTokens", func(t *testing.T) {
-		t.Run("Alising", func(t *testing.T) {
+		t.Run("Aliasing", func(t *testing.T) {
 			compConfig := loadCompletionsConfig(schema.Completions{
 				Provider: "sourcegraph",
 

@@ -11,6 +11,9 @@ spec:
 
   frontend: {}
 
+  grafana:
+    disabled: true
+
   gitServer:
     disabled: true
 

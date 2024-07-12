@@ -131,11 +131,13 @@ test('copy path button appears and copies path', async ({ page, sg }) => {
     )
     await stream.close()
 
-    const copyPathButton = page.getByRole('button', { name: 'Copy path to clipboard' })
-
     for (const match of [contentMatch, pathMatch, symbolMatch]) {
-        await page.getByRole('link', { name: match.path }).hover()
-        expect(copyPathButton).toBeVisible()
+        await page.getByText(match.path).hover()
+        const copyPathButton = page
+            .locator('article')
+            .filter({ hasText: match.path })
+            .getByLabel('Copy path to clipboard')
+        await expect(copyPathButton).toBeVisible()
         await copyPathButton.click()
         const clipboardText = await page.evaluate('navigator.clipboard.readText()')
         expect(clipboardText).toBe(match.path)
@@ -258,5 +260,53 @@ test.describe('search results', async () => {
 
         const alert = page.getByRole('heading', { name: 'Test alert' })
         await expect(alert).toBeVisible()
+    })
+})
+
+test.describe('search filters', async () => {
+    test('type filters are always visible', async ({ page, sg }) => {
+        const stream = await sg.mockSearchStream()
+        await page.goto('/search?q=test')
+        await page.getByRole('heading', { name: 'Filter results' }).waitFor()
+        await stream.publish(
+            {
+                type: 'matches',
+                data: [chunkMatch],
+            },
+            createProgressEvent(),
+            createDoneEvent()
+        )
+        await stream.close()
+
+        for (const typeFilter of ['Code', 'Repositories', 'Paths', 'Symbols', 'Commits', 'Diffs']) {
+            await expect(page.getByRole('link', { name: typeFilter })).toBeVisible()
+        }
+    })
+
+    test('snippets are shown', async ({ page, sg }) => {
+        sg.mockOperations({
+            Init: () => ({
+                currentUser: null,
+                viewerSettings: {
+                    final: '{"search.scopes":[{"name":"Test snippet", "value": "repo:testsnippet"}]}',
+                },
+            }),
+        })
+
+        const stream = await sg.mockSearchStream()
+        await page.goto('/search?q=test')
+        await page.getByRole('heading', { name: 'Filter results' }).waitFor()
+        await stream.publish(
+            {
+                type: 'matches',
+                data: [chunkMatch],
+            },
+            createProgressEvent(),
+            createDoneEvent()
+        )
+        await stream.close()
+
+        await page.getByRole('link', { name: 'Test snippet' }).click()
+        await page.waitForURL(/Test\+snippet/)
     })
 })

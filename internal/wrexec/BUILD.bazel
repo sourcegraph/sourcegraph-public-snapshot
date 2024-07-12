@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/rcache",
+        "//internal/redispool",
         "@com_github_sourcegraph_log//:log",
     ],
 )

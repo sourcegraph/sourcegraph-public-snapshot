@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	repogitserver "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/phabricator"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/purge"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/scheduler"
@@ -131,7 +130,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	routines := []goroutine.BackgroundRoutine{
 		makeGRPCServer(logger, server),
 		newUnclonedReposManager(ctx, logger, updateScheduler, store),
-		phabricator.NewRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker"), store),
 		// Run git fetches scheduler
 		updateScheduler,
 	}
@@ -328,8 +326,6 @@ func watchSyncer(
 
 // newUnclonedReposManager creates a background routine that will periodically list
 // the uncloned repositories on gitserver and update the scheduler with the list.
-// It also ensures that if any of our indexable repos are missing from the cloned
-// list they will be added for cloning ASAP.
 func newUnclonedReposManager(ctx context.Context, logger log.Logger, sched *scheduler.UpdateScheduler, store repos.Store) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
@@ -341,15 +337,7 @@ func newUnclonedReposManager(ctx context.Context, logger log.Logger, sched *sche
 
 			baseRepoStore := database.ReposWith(logger, store)
 
-			// Move any repos managed by the scheduler that are uncloned to the front
-			// of the queue.
-			managed := sched.ListRepoIDs()
-
-			if len(managed) == 0 {
-				return nil
-			}
-
-			uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{IDs: managed, NoCloned: true})
+			uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{NoCloned: true})
 			if err != nil {
 				return errors.Wrap(err, "failed to fetch list of uncloned repositories")
 			}

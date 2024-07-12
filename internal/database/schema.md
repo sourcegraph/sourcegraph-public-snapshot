@@ -2806,7 +2806,7 @@ Foreign-key constraints:
  namespace_user_id | integer                  |           |          | 
  namespace_org_id  | integer                  |           |          | 
  updater_user_id   | integer                  |           |          | 
- pattern_type      | pattern_type             |           | not null | 'standard'::pattern_type
+ pattern_type      | pattern_type             |           | not null | 'keyword'::pattern_type
 Indexes:
     "notebooks_pkey" PRIMARY KEY, btree (id)
     "notebooks_blocks_tsvector_idx" gin (blocks_tsvector)

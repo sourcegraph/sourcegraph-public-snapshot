@@ -8,11 +8,11 @@ import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import { WebStory } from '../components/WebStory'
+import { WebhookExternalServiceFields } from '../graphql-operations'
 
-import { WEBHOOK_BY_ID } from './backend'
-import { createExternalService, createWebhookMock } from './fixtures'
+import { WEBHOOK_BY_ID, WEBHOOK_EXTERNAL_SERVICES } from './backend'
+import { createWebhookMock } from './fixtures'
 import { SiteAdminWebhookUpdatePage } from './SiteAdminWebhookUpdatePage'
 
 const decorator: Decorator = Story => <Story />
@@ -32,14 +32,14 @@ export const WebhookUpdatePage: StoryFn = () => (
                     new WildcardMockLink([
                         {
                             request: {
-                                query: getDocumentNode(EXTERNAL_SERVICES),
-                                variables: { first: null, after: null, repo: null },
+                                query: getDocumentNode(WEBHOOK_EXTERNAL_SERVICES),
+                                variables: {},
                             },
                             result: {
                                 data: {
                                     externalServices: {
                                         __typename: 'ExternalServiceConnection',
-                                        totalCount: 17,
+                                        totalCount: 6,
                                         pageInfo: {
                                             endCursor: null,
                                             hasNextPage: false,
@@ -90,10 +90,12 @@ export const WebhookUpdatePage: StoryFn = () => (
                     <Route
                         path="/site-admin/webhooks/incoming/:id"
                         element={
-                            <SiteAdminWebhookUpdatePage
-                                telemetryService={NOOP_TELEMETRY_SERVICE}
-                                telemetryRecorder={noOpTelemetryRecorder}
-                            />
+                            <div className="container p-4">
+                                <SiteAdminWebhookUpdatePage
+                                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                                    telemetryRecorder={noOpTelemetryRecorder}
+                                />
+                            </div>
                         }
                     />
                 </Routes>
@@ -103,3 +105,13 @@ export const WebhookUpdatePage: StoryFn = () => (
 )
 
 WebhookUpdatePage.storyName = 'Update webhook'
+
+function createExternalService(kind: ExternalServiceKind, url: string): WebhookExternalServiceFields {
+    return {
+        __typename: 'ExternalService',
+        id: `service-${url}`,
+        kind,
+        displayName: `${kind}-123`,
+        url,
+    }
+}

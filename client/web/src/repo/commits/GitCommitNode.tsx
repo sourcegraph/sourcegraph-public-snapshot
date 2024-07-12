@@ -271,7 +271,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
 
     const treeCanonicalURL =
         isPerforceChangelistMappingEnabled() && isPerforceDepot
-            ? node.tree.canonicalURL.replace(node.oid, refID)
+            ? node.tree.canonicalURL.replace(node.oid, `changelist/${refID}`)
             : node.tree.canonicalURL
 
     const viewFilesCommitElement = node.tree && (

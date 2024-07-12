@@ -15,6 +15,7 @@ go_library(
         "//internal/api",
         "//internal/extsvc",
         "//internal/rcache",
+        "//internal/redispool",
         "//lib/errors",
         "@com_github_aws_aws_sdk_go_v2//aws",
         "@com_github_aws_aws_sdk_go_v2_service_codecommit//:codecommit",

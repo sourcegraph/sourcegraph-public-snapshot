@@ -163,6 +163,7 @@ func getProviderConfiguration(siteConfig *conftypes.CompletionsConfig) *types.Se
 		// We'll add those when needed, when we expose the newer style configuration in the site-config.
 	default:
 		serverSideConfig.GenericProvider = &types.GenericProviderConfig{
+			ServiceName: types.GenericServiceProvider(siteConfig.Provider),
 			AccessToken: siteConfig.AccessToken,
 			Endpoint:    siteConfig.Endpoint,
 		}

@@ -114,6 +114,8 @@ func (u CompletedUpload) GetRoot() string {
 	return u.Root
 }
 
+func (u CompletedUpload) GetCommit() api.CommitID { return api.CommitID(u.Commit) }
+
 func (u *CompletedUpload) ConvertToUpload() Upload {
 	return Upload{
 		ID:                u.ID,

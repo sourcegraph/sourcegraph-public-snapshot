@@ -161,8 +161,6 @@ Clarification and discussion about key concepts, architecture, and development s
 
 - [Telemetry](background-information/telemetry/index.md)
 - [Adding, changing and debugging pings](background-information/adding_ping_data.md)
-- [DEPRECATED: Event level data usage pipeline](background-information/data-usage-pipeline.md)
-- [DEPRECATED: Adding, changing and debugging user event data](background-information/adding_event_level_data.md)
 - [Deploy Sourcegraph with Helm chart (BETA)](../../../admin/deploy/kubernetes/helm.md)
 - [GitHub API oddities](background-information/github-api-oddities.md)
 

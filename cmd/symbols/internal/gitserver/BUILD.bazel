@@ -1,0 +1,37 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gitserver",
+    srcs = [
+        "client.go",
+        "observability.go",
+        "tar.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver",
+    tags = [TAG_PLATFORM_SEARCH],
+    visibility = ["//cmd/symbols:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/gitserver",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/types",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "gitserver_test",
+    timeout = "short",
+    srcs = ["client_test.go"],
+    embed = [":gitserver"],
+    tags = [TAG_PLATFORM_SEARCH],
+    deps = [
+        "//internal/api",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/observation",
+        "@com_github_stretchr_testify//require",
+    ],
+)

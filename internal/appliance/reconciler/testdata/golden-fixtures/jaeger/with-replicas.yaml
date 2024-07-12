@@ -3,7 +3,7 @@ resources:
     kind: Deployment
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 2aec65d91a8e4d599f56e961552c2c4e5c1cfd83b6b4288bbbbd892695eae2ba
+        appliance.sourcegraph.com/configHash: 26085a9769db91495dcbbe1bfeb41f07bd95acb5f3a6dcefb9cb3843d7824b50
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
@@ -116,6 +116,9 @@ resources:
           frontend:
             disabled: true
 
+          grafana:
+            disabled: true
+
           gitServer:
             disabled: true
 
@@ -175,7 +178,7 @@ resources:
     kind: ServiceAccount
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 2aec65d91a8e4d599f56e961552c2c4e5c1cfd83b6b4288bbbbd892695eae2ba
+        appliance.sourcegraph.com/configHash: 26085a9769db91495dcbbe1bfeb41f07bd95acb5f3a6dcefb9cb3843d7824b50
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -194,7 +197,7 @@ resources:
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 2aec65d91a8e4d599f56e961552c2c4e5c1cfd83b6b4288bbbbd892695eae2ba
+        appliance.sourcegraph.com/configHash: 26085a9769db91495dcbbe1bfeb41f07bd95acb5f3a6dcefb9cb3843d7824b50
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         app: jaeger-collector
@@ -243,7 +246,7 @@ resources:
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 2aec65d91a8e4d599f56e961552c2c4e5c1cfd83b6b4288bbbbd892695eae2ba
+        appliance.sourcegraph.com/configHash: 26085a9769db91495dcbbe1bfeb41f07bd95acb5f3a6dcefb9cb3843d7824b50
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         app: jaeger-query

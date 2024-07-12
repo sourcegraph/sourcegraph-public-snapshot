@@ -22,6 +22,7 @@
     import FileIcon from '$lib/repo/FileIcon.svelte'
     import { renderMermaid } from '$lib/repo/mermaid'
     import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
+    import OpenCodyAction from '$lib/repo/OpenCodyAction.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI, replaceRevisionInURL } from '$lib/shared'
     import { isLightTheme, settings } from '$lib/stores'
@@ -70,6 +71,7 @@
         revision,
         resolvedRevision: { commitID },
         revisionOverride,
+        isCodyAvailable,
     } = data)
     $: blobLoader.set(data.blob)
     $: highlightsLoader.set(data.highlights)
@@ -164,14 +166,12 @@
 
 {#if embedded}
     <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
-        <FileIcon slot="icon" file={blob} inline />
-        <svelte:fragment slot="actions">
-            <slot name="actions" />
-        </svelte:fragment>
+        <FileIcon slot="file-icon" file={blob} inline />
+        <slot name="actions" slot="actions" />
     </FileHeader>
 {:else}
     <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
-        <FileIcon slot="icon" file={blob} inline />
+        <FileIcon slot="file-icon" file={blob} inline />
         <svelte:fragment slot="actions">
             {#if !revisionOverride}
                 {#await data.externalServiceType then externalServiceType}
@@ -184,6 +184,9 @@
                 <OpenInCodeHostAction data={blob} lineOrPosition={data.lineOrPosition} />
             {/if}
             <Permalink {commitID} />
+            {#if $isCodyAvailable}
+                <OpenCodyAction />
+            {/if}
         </svelte:fragment>
         <svelte:fragment slot="actionmenu">
             <MenuLink href={rawURL} target="_blank">

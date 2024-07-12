@@ -250,7 +250,7 @@ test('history panel', async ({ page, sg }) => {
 
 test('file popover', async ({ page, sg }, testInfo) => {
     // Test needs more time to teardown
-    test.setTimeout(testInfo.timeout * 3000)
+    test.setTimeout(testInfo.timeout * 4)
 
     await page.goto(`/${repoName}`)
 
@@ -309,6 +309,143 @@ test('file popover', async ({ page, sg }, testInfo) => {
     await expect(page.getByText('Last Changed')).toBeVisible()
 
     // Click the parent dir in the popover and expect to navigate to that page
-    await page.locator('span').filter({ hasText: /^src$/ }).getByRole('link').click()
+    await page.locator('div').filter({ hasText: /^src$/ }).getByRole('link').click()
     await page.waitForURL(/src$/)
+})
+
+test.describe('cody sidebar', () => {
+    const path = `/${repoName}/-/blob/index.js`
+
+    async function hasCody(page: Page): Promise<void> {
+        const codyButton = page.getByLabel('Open Cody chat')
+        await expect(codyButton).toBeVisible()
+        await codyButton.click()
+        await expect(page.getByRole('complementary', { name: 'Cody' })).toBeVisible()
+    }
+
+    async function doesNotHaveCody(page: Page): Promise<void> {
+        const codyButton = page.getByLabel('Open Cody chat')
+        await expect(page.getByRole('link', { name: 'index.js' })).toBeVisible()
+        await expect(codyButton).not.toBeAttached()
+    }
+
+    test.describe('dotcom', () => {
+        test.beforeEach(({ sg }) => {
+            sg.dotcomMode()
+        })
+
+        test('enabled when signed out', async ({ page, sg }) => {
+            await page.goto(path)
+            await hasCody(page)
+            await expect(
+                page.getByText('Cody is only available to signed-in users. Sign in to use Cody.')
+            ).toBeVisible()
+        })
+
+        test('enabled when signed in', async ({ page, sg }) => {
+            sg.signIn()
+
+            await page.goto(path)
+            await hasCody(page)
+        })
+
+        test('ignores context filters', async ({ page, sg }) => {
+            sg.mockTypes({
+                Site: () => ({
+                    codyContextFilters: {
+                        raw: {
+                            include: [String.raw`source.*`],
+                        },
+                    },
+                }),
+            })
+
+            await page.goto(path)
+            await hasCody(page)
+        })
+    })
+
+    test.describe('enterprise', () => {
+        test.beforeEach(({ sg }) => {
+            sg.signIn()
+
+            sg.mockTypes({
+                Site: () => ({
+                    codyContextFilters: {
+                        raw: null,
+                    },
+                }),
+            })
+        })
+
+        test('disabled when disabled on instance', async ({ page, sg }) => {
+            sg.setWindowContext({
+                codyEnabledOnInstance: false,
+            })
+
+            await page.goto(path)
+            await doesNotHaveCody(page)
+        })
+
+        test('disabled when disabled for user', async ({ page, sg }) => {
+            sg.setWindowContext({
+                codyEnabledOnInstance: true,
+                codyEnabledForCurrentUser: false,
+            })
+
+            await page.goto(path)
+            await doesNotHaveCody(page)
+        })
+
+        test('enabled for user', async ({ page, sg }) => {
+            // teardown takes longer than default timeout
+            test.setTimeout(10000)
+
+            sg.setWindowContext({
+                codyEnabledOnInstance: true,
+                codyEnabledForCurrentUser: true,
+            })
+
+            await page.goto(path)
+            await hasCody(page)
+        })
+
+        test('disabled for excluded repo', async ({ page, sg }) => {
+            sg.setWindowContext({
+                codyEnabledOnInstance: true,
+                codyEnabledForCurrentUser: true,
+            })
+            sg.mockTypes({
+                Site: () => ({
+                    codyContextFilters: {
+                        raw: {
+                            include: [String.raw`source.*`],
+                        },
+                    },
+                }),
+            })
+
+            await page.goto(path)
+            await doesNotHaveCody(page)
+        })
+
+        test('disabled with invalid context filter', async ({ page, sg }) => {
+            sg.setWindowContext({
+                codyEnabledOnInstance: true,
+                codyEnabledForCurrentUser: true,
+            })
+            sg.mockTypes({
+                Site: () => ({
+                    codyContextFilters: {
+                        raw: {
+                            include: [String.raw`*`],
+                        },
+                    },
+                }),
+            })
+
+            await page.goto(path)
+            await doesNotHaveCody(page)
+        })
+    })
 })
