@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { LineOrPositionOrRange } from '$lib/common'
-    import { getHumanNameForCodeHost, getIconForCodeHost } from '$lib/repo/shared/externalService'
+    import Icon from '$lib/Icon.svelte'
+    import { getHumanNameForExternalService, getIconForExternalService } from '$lib/repo/shared/externalService'
     import { getExternalURL } from '$lib/repo/url'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import Tooltip from '$lib/Tooltip.svelte'
@@ -24,9 +25,9 @@
             on:click={handleOpenCodeHostClick}
         >
             {#if externalLink.serviceKind}
-                <Icon icon={getIconForCodeHost(`${externalLink.serviceKind}`)} />
+                <Icon icon={getIconForExternalService(externalLink.serviceKind)} aria-hidden />
                 <span data-action-label>
-                    {getHumanNameForCodeHost(`${externalLink.serviceKind}`)}
+                    {getHumanNameForExternalService(externalLink.serviceKind)}
                 </span>
             {:else}
                 Code host

@@ -4,8 +4,9 @@
 
     import { navigating } from '$app/stores'
     import Commit from '$lib/Commit.svelte'
+    import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import { getHumanNameForCodeHost, getIconForCodeHost } from '$lib/repo/shared/externalService'
+    import { getHumanNameForExternalService, getIconForExternalService } from '$lib/repo/shared/externalService'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
     import { Alert, Badge } from '$lib/wildcard'
 
@@ -104,8 +105,8 @@
                                     <a href={url}>
                                         View on
                                         {#if serviceKind}
-                                            <Icon icon={getIconForCodeHost(`${serviceKind}`)} />
-                                            {getHumanNameForCodeHost(`${serviceKind}`)}
+                                            <Icon icon={getIconForExternalService(serviceKind)} />
+                                            {getHumanNameForExternalService(serviceKind)}
                                         {:else}
                                             code host
                                         {/if}

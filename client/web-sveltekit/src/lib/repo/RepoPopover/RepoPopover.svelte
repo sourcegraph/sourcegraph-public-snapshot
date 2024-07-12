@@ -20,7 +20,6 @@
     import Badge from '$lib/wildcard/Badge.svelte'
 
     import RepoStars from '../RepoStars.svelte'
-    import { getHumanNameForExternalService, getIconForExternalService } from '../shared/externalService'
 
     import type { RepoPopoverFragment } from './RepoPopover.gql'
 
@@ -41,14 +40,16 @@
                     {data.isPrivate ? 'Private' : 'Public'}
                 </Badge>
             </div>
-            <div class="right">
-                <Icon
-                    icon={getIconForCodeHost(data.externalRepository.serviceType)}
-                    --icon-color="var(--text-body)"
-                    --size={24}
-                />
-                <small>{getHumanNameForCodeHost(data.externalRepository.serviceType)}</small>
-            </div>
+            {#if data.externalURLs.length > 0}
+                <div class="right">
+                    <Icon
+                        icon={getIconForExternalService(data.externalURLs[0].serviceType)}
+                        --icon-color="var(--text-body)"
+                        --size={24}
+                    />
+                    <small>{getHumanNameForExternalService(data.externalURLs[0].serviceType)}</small>
+                </div>
+            {/if}
         </div>
     {/if}
 

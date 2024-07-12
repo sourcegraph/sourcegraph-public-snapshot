@@ -9,7 +9,7 @@
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import FileDiff from '$lib/repo/FileDiff.svelte'
-    import { getHumanNameForCodeHost, getIconForCodeHost } from '$lib/repo/shared/externalService'
+    import { getHumanNameForExternalService, getIconForExternalService } from '$lib/repo/shared/externalService'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
     import Alert from '$lib/wildcard/Alert.svelte'
     import Badge from '$lib/wildcard/Badge.svelte'
@@ -92,8 +92,8 @@
                                 <a href={url}>
                                     View on
                                     {#if serviceKind}
-                                        <Icon icon={getIconForCodeHost(`${serviceKind}`)} />
-                                        {getHumanNameForCodeHost(`${serviceKind}`)}
+                                        <Icon icon={getIconForExternalService(serviceKind)} />
+                                        {getHumanNameForExternalService(serviceKind)}
                                     {:else}
                                         code host
                                     {/if}

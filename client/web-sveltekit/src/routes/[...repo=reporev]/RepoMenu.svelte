@@ -3,8 +3,9 @@
     import { reposHotkey } from '$lib/fuzzyfinder/keys'
     import Icon from '$lib/Icon.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
+    import type { DisplayRepoName_ExternalLink } from '$lib/repo/shared/DisplayRepoName.gql'
     import DisplayRepoName from '$lib/repo/shared/DisplayRepoName.svelte'
-    import { getHumanNameForCodeHost, type ExternalServiceKind } from '$lib/repo/shared/externalService'
+    import { getHumanNameForExternalService } from '$lib/repo/shared/externalService'
     import { getButtonClassName } from '$lib/wildcard/Button'
     import DropdownMenu from '$lib/wildcard/menu/DropdownMenu.svelte'
     import MenuButton from '$lib/wildcard/menu/MenuButton.svelte'
@@ -13,16 +14,13 @@
 
     export let repoName: string
     export let repoURL: string
-
-    export let externalURL: string | undefined
-    export let externalServiceKind: ExternalServiceKind | undefined
+    export let externalLinks: DisplayRepoName_ExternalLink[]
 </script>
 
 <DropdownMenu triggerButtonClass="{getButtonClassName({ variant: 'text' })} triggerButton">
     <div slot="trigger" class="trigger">
         <h2>
-            <!-- TODO: fix this typechecking -->
-            <DisplayRepoName {repoName} codeHost={externalServiceKind} />
+            <DisplayRepoName {repoName} {externalLinks} />
         </h2>
     </div>
 
@@ -46,25 +44,27 @@
             <span>Settings</span>
         </div>
     </MenuLink>
-    {#if externalURL}
+    {#if externalLinks.length > 0}
         <MenuSeparator />
-        <MenuLink href={externalURL} target="_blank" rel="noreferrer noopener">
-            <div class="code-host-item">
-                <small>
-                    {#if externalServiceKind}
-                        Hosted on {getHumanNameForCodeHost(externalServiceKind)}
-                    {:else}
-                        View on code host
-                    {/if}
-                </small>
-                <div class="repo-name">
-                    <DisplayRepoName {repoName} codeHost={externalServiceKind} />
+        {#each externalLinks as externalLink (externalLink.url)}
+            <MenuLink href={externalLink.url} target="_blank" rel="noreferrer noopener">
+                <div class="code-host-item">
+                    <small>
+                        {#if externalLink.serviceKind}
+                            Hosted on {getHumanNameForExternalService(externalLink.serviceKind)}
+                        {:else}
+                            View on code host
+                        {/if}
+                    </small>
+                    <div class="repo-name">
+                        <DisplayRepoName {repoName} externalLinks={[externalLink]} />
+                    </div>
+                    <div class="external-link-icon">
+                        <Icon icon={ILucideExternalLink} aria-hidden />
+                    </div>
                 </div>
-                <div class="external-link-icon">
-                    <Icon icon={ILucideExternalLink} aria-hidden />
-                </div>
-            </div>
-        </MenuLink>
+            </MenuLink>
+        {/each}
     {/if}
 </DropdownMenu>
 

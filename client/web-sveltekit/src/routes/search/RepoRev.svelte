@@ -29,7 +29,7 @@
     {#key highlights}
         <Popover showOnHover let:registerTrigger placement="bottom-start">
             <a class="repo-link" {href} use:highlightRanges={{ ranges: highlights }} use:registerTrigger>
-                <DisplayRepoName {repoName} codeHost={undefined} />
+                <DisplayRepoName {repoName} externalLinks={undefined} />
                 {#if rev}
                     <small class="rev"> @ {rev}</small>
                 {/if}

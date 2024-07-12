@@ -11,11 +11,9 @@ fragment RepoPopoverFragment on Repository {
     isPrivate
     topics
 
-    externalServices(first: 1) {
-        nodes {
-            kind
-            url
-        }
+    externalURLs {
+        url
+        serviceKind
     }
 
     commit(rev: "HEAD") {

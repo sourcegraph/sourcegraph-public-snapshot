@@ -19,7 +19,7 @@
     import { getGraphQLClient } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
     import FileIcon from '$lib/repo/FileIcon.svelte'
-    import { getIconForExternalService, inferExternalService } from '$lib/repo/shared/externalService'
+    import { getIconForExternalService, inferExternalServiceKind } from '$lib/repo/shared/externalService'
     import EmphasizedLabel from '$lib/search/EmphasizedLabel.svelte'
     import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
     import { displayRepoName } from '$lib/shared'
@@ -282,7 +282,7 @@
                                     <span class="icon"
                                         ><Icon
                                             icon={getIconForExternalService(
-                                                inferExternalService(item.repository.name).kind
+                                                inferExternalServiceKind(item.repository.name)
                                             )}
                                             inline
                                         /></span
