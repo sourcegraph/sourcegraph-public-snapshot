@@ -163,4 +163,61 @@ func TestModelConfigBuilder(t *testing.T) {
 			assert.Equal(t, 4_000, model.ContextWindow.MaxOutputTokens)
 		})
 	})
+
+	// Verify that the special handling of AWS Provisioned Throughput ARNs is handled correctly.
+	t.Run("AWSProvisionedThroughput", func(t *testing.T) {
+		const (
+			chatModelInConfig     = "anthropic.claude-3-haiku-20240307-v1:0-100k"
+			fastChatModelInConfig = "anthropic.claude-v2-fastchat"
+
+			priovisionedThroughputARN = "arn:aws:bedrock:us-west-2:012345678901:provisioned-model/abcdefghijkl"
+
+			accessTokenInConfig = "<ACCESS_KEY_ID>:<SECRET_ACCESS_KEY>:<SESSION_TOKEN>"
+			endpointInConfig    = "https://vpce-0a10b2345cd67e89f-abc0defg.bedrock-runtime.us-west-2.vpce.amazonaws.com"
+		)
+
+		cfg := verifyCanBuildModelConfig(t, testData{
+			SiteCompletionsConfig: schema.Completions{
+				Provider:    string(conftypes.CompletionsProviderNameAWSBedrock),
+				AccessToken: accessTokenInConfig,
+				Endpoint:    endpointInConfig,
+
+				// The chat model is using provisioned throughput, hence the odd looking model name.
+				ChatModel: chatModelInConfig + "/" + priovisionedThroughputARN,
+
+				// Completions and FastChat are using the same model, one without provisioned throughput.
+				CompletionModel: fastChatModelInConfig,
+				FastChatModel:   fastChatModelInConfig,
+			},
+		})
+		assert.Equal(t, 1, len(cfg.Providers), "providers: %v", cfg.Providers)
+		assert.Equal(t, 2, len(cfg.Models), "models: %v", cfg.Models)
+
+		verifyProviderByID(t, cfg, "anthropic", func(t *testing.T, prov types.Provider) {
+			require.NotNil(t, prov.ServerSideConfig)
+			require.NotNil(t, prov.ServerSideConfig.AWSBedrock)
+
+			bedrockCfg := prov.ServerSideConfig.AWSBedrock
+			require.Equal(t, accessTokenInConfig, bedrockCfg.AccessToken)
+			require.Equal(t, endpointInConfig, bedrockCfg.Endpoint)
+			require.Equal(t, "", bedrockCfg.Region)
+		})
+
+		verifyModelByMRef(t, cfg, "anthropic::unknown::"+fastChatModelInConfig, func(t *testing.T, model types.Model) {
+			assert.Equal(t, fastChatModelInConfig, model.ModelName)
+			// No server-side config for this one. It should just work.
+			assert.Nil(t, model.ServerSideConfig)
+		})
+
+		// The mref includes a sanitized version of the chatModelInConfig.
+		verifyModelByMRef(t, cfg, "anthropic::unknown::anthropic.claude-3-haiku-20240307-v1_0-100k", func(t *testing.T, model types.Model) {
+			assert.Equal(t, chatModelInConfig, model.ModelName)
+			//  Confirm the provisioned throughput was applied, too.
+			require.NotNil(t, model.ServerSideConfig)
+			require.NotNil(t, model.ServerSideConfig.AWSBedrockProvisionedThroughput)
+
+			ptCfg := model.ServerSideConfig.AWSBedrockProvisionedThroughput
+			assert.Equal(t, priovisionedThroughputARN, ptCfg.ARN)
+		})
+	})
 }

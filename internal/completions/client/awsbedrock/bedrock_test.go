@@ -7,6 +7,9 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 )
 
 func TestBedrockProvisionedThroughputModel(t *testing.T) {
@@ -42,7 +45,30 @@ func TestBedrockProvisionedThroughputModel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%q", tt.want), func(t *testing.T) {
-			got := buildApiUrl(tt.endpoint, tt.model, tt.stream, tt.fallbackRegion)
+			// The values in the `model` field of these tests is in the form that an admin would
+			// put into the older "completions config" porition of the site config. And encodes
+			// both the model name and potentially a "Provisioned Throughput ARN".
+			//
+			// Here we convert that encoded type of model name into the modelconfigSDK.Model type,
+			// which will happen when we load the site configuration and convert it into the
+			// modelconfig. See `frontend/internal/modelconfig.Get()`.
+			bedrockModelRef := conftypes.NewBedrockModelRefFromModelID(tt.model)
+			var awsSpecificConfig *types.AWSBedrockProvisionedThroughput
+			if bedrockModelRef.ProvisionedCapacity != nil {
+				awsSpecificConfig = &types.AWSBedrockProvisionedThroughput{
+					ARN: *bedrockModelRef.ProvisionedCapacity,
+				}
+			}
+
+			model := types.Model{
+				ModelRef:  "anthropic::unknown-api-version::unknown-model-id",
+				ModelName: bedrockModelRef.Model,
+				ServerSideConfig: &types.ServerSideModelConfig{
+					AWSBedrockProvisionedThroughput: awsSpecificConfig,
+				},
+			}
+
+			got := buildApiUrl(tt.endpoint, model, tt.stream, tt.fallbackRegion)
 			if got.String() != tt.want {
 				t.Logf("got %q but wanted %q", got, tt.want)
 				t.Fail()

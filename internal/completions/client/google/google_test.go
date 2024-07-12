@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+
+	modelconfigSDK "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 )
 
 type mockDoer struct {
@@ -71,9 +73,13 @@ func TestGetAPIURL(t *testing.T) {
 	}
 
 	buildRequestForModel := func(model string) types.CompletionRequest {
+		// Note that this isn't a "valid" request, in that most metadata is missing.
+		// So if we add more unit tests, we'll probably need to flesh this out more.
 		return types.CompletionRequest{
-			Parameters: types.CompletionRequestParameters{
-				Model: model,
+			ModelConfigInfo: types.ModelConfigInfo{
+				Model: modelconfigSDK.Model{
+					ModelName: model,
+				},
 			},
 		}
 	}
@@ -85,7 +91,6 @@ func TestGetAPIURL(t *testing.T) {
 		require.Equal(t, expected, url)
 	})
 
-	//
 	t.Run("valid endpoint for Vertex AI", func(t *testing.T) {
 		req := buildRequestForModel("gemini-1.5-pro")
 		c := &googleCompletionStreamClient{
