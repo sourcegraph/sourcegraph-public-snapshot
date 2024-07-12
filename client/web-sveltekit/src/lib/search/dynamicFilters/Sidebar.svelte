@@ -121,9 +121,9 @@
     import LanguageIcon from '$lib/LanguageIcon.svelte'
     import Popover from '$lib/Popover.svelte'
     import RepoPopover, { fetchRepoPopoverData } from '$lib/repo/RepoPopover/RepoPopover.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import DisplayRepoName from '$lib/repo/shared/DisplayRepoName.svelte'
     import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
-    import { TELEMETRY_FILTER_TYPES, displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
+    import { TELEMETRY_FILTER_TYPES, scanSearchQuery, type Filter } from '$lib/shared'
     import { settings } from '$lib/stores'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { delay } from '$lib/utils'
@@ -234,8 +234,7 @@
                 <Popover showOnHover let:registerTrigger placement="right-start">
                     <div use:registerTrigger>
                         <SectionItem {...item} on:select={() => handleFilterSelect('repo')}>
-                            <CodeHostIcon slot="icon" disableTooltip repository={item.label} />
-                            <span slot="label">{displayRepoName(item.label)}</span>
+                            <DisplayRepoName repoName={item.label} codeHost={undefined} />
                         </SectionItem>
                     </div>
                     <svelte:fragment slot="content">

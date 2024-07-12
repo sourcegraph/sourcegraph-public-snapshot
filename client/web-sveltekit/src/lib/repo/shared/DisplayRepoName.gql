@@ -1,0 +1,4 @@
+fragment DisplayRepoName_ExternalLink on ExternalLink {
+    url
+    serviceKind
+}

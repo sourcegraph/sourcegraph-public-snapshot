@@ -19,7 +19,7 @@
     import { getGraphQLClient } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
     import FileIcon from '$lib/repo/FileIcon.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import { getIconForExternalService, inferExternalService } from '$lib/repo/shared/externalService'
     import EmphasizedLabel from '$lib/search/EmphasizedLabel.svelte'
     import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
     import { displayRepoName } from '$lib/shared'
@@ -279,7 +279,14 @@
                             {#if item.type === 'repo'}
                                 {@const matchOffset = repo.length - displayRepo.length}
                                 <a href="/{item.repository.name}" on:click={handleClick}>
-                                    <span class="icon"><CodeHostIcon repository={item.repository.name} /></span>
+                                    <span class="icon"
+                                        ><Icon
+                                            icon={getIconForExternalService(
+                                                inferExternalService(item.repository.name).kind
+                                            )}
+                                            inline
+                                        /></span
+                                    >
                                     <span class="label"
                                         ><EmphasizedLabel label={displayRepo} offset={matchOffset} /></span
                                     >

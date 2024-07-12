@@ -6,11 +6,11 @@
     import { navigating } from '$app/stores'
     import Commit from '$lib/Commit.svelte'
     import { pluralize } from '$lib/common'
+    import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import FileDiff from '$lib/repo/FileDiff.svelte'
-    import { getHumanNameForCodeHost } from '$lib/repo/shared/codehost'
+    import { getHumanNameForCodeHost, getIconForCodeHost } from '$lib/repo/shared/externalService'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import Alert from '$lib/wildcard/Alert.svelte'
     import Badge from '$lib/wildcard/Badge.svelte'
     import CopyButton from '$lib/wildcard/CopyButton.svelte'
@@ -92,8 +92,8 @@
                                 <a href={url}>
                                     View on
                                     {#if serviceKind}
-                                        <CodeHostIcon repository={serviceKind} disableTooltip />
-                                        {getHumanNameForCodeHost(serviceKind)}
+                                        <Icon icon={getIconForCodeHost(`${serviceKind}`)} />
+                                        {getHumanNameForCodeHost(`${serviceKind}`)}
                                     {:else}
                                         code host
                                     {/if}

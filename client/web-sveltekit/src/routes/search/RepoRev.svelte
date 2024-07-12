@@ -3,7 +3,7 @@
     import { getGraphQLClient } from '$lib/graphql'
     import Popover from '$lib/Popover.svelte'
     import { default as RepoPopover, fetchRepoPopoverData } from '$lib/repo/RepoPopover/RepoPopover.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import DisplayRepoName from '$lib/repo/shared/DisplayRepoName.svelte'
     import { displayRepoName } from '$lib/shared'
     import { delay } from '$lib/utils'
     import Alert from '$lib/wildcard/Alert.svelte'
@@ -25,12 +25,11 @@
 </script>
 
 <span class="root">
-    <CodeHostIcon repository={repoName} />
     <!-- #key is needed here to recreate the link because use:highlightRanges changes the DOM -->
     {#key highlights}
         <Popover showOnHover let:registerTrigger placement="bottom-start">
             <a class="repo-link" {href} use:highlightRanges={{ ranges: highlights }} use:registerTrigger>
-                {displayRepoName(repoName)}
+                <DisplayRepoName {repoName} codeHost={undefined} />
                 {#if rev}
                     <small class="rev"> @ {rev}</small>
                 {/if}

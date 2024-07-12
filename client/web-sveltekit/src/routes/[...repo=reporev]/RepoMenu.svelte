@@ -3,8 +3,8 @@
     import { reposHotkey } from '$lib/fuzzyfinder/keys'
     import Icon from '$lib/Icon.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
-    import { getHumanNameForCodeHost } from '$lib/repo/shared/codehost'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import DisplayRepoName from '$lib/repo/shared/DisplayRepoName.svelte'
+    import { getHumanNameForCodeHost, type ExternalServiceKind } from '$lib/repo/shared/externalService'
     import { getButtonClassName } from '$lib/wildcard/Button'
     import DropdownMenu from '$lib/wildcard/menu/DropdownMenu.svelte'
     import MenuButton from '$lib/wildcard/menu/MenuButton.svelte'
@@ -12,24 +12,19 @@
     import MenuSeparator from '$lib/wildcard/menu/MenuSeparator.svelte'
 
     export let repoName: string
-    export let displayRepoName: string
     export let repoURL: string
 
     export let externalURL: string | undefined
-    export let externalServiceKind: string | undefined
+    export let externalServiceKind: ExternalServiceKind | undefined
 </script>
 
 <DropdownMenu triggerButtonClass="{getButtonClassName({ variant: 'text' })} triggerButton">
-    <svelte:fragment slot="trigger">
-        <div class="trigger">
-            <CodeHostIcon repository={repoName} codeHost={externalServiceKind} />
-            <h2>
-                {#each displayRepoName.split('/') as segment, i}
-                    {#if i > 0}<span class="slash">/</span>{/if}{segment}
-                {/each}
-            </h2>
-        </div>
-    </svelte:fragment>
+    <div slot="trigger" class="trigger">
+        <h2>
+            <!-- TODO: fix this typechecking -->
+            <DisplayRepoName {repoName} codeHost={externalServiceKind} />
+        </h2>
+    </div>
 
     <MenuLink href={repoURL}>
         <div class="menu-item">
@@ -63,8 +58,7 @@
                     {/if}
                 </small>
                 <div class="repo-name">
-                    <CodeHostIcon repository={repoName} codeHost={externalServiceKind} />
-                    <span>{displayRepoName}</span>
+                    <DisplayRepoName {repoName} codeHost={externalServiceKind} />
                 </div>
                 <div class="external-link-icon">
                     <Icon icon={ILucideExternalLink} aria-hidden />
@@ -90,13 +84,6 @@
             font-size: var(--font-size-large);
             font-weight: 500;
             margin: 0;
-
-            .slash {
-                font-weight: 400;
-                color: var(--text-muted);
-                margin: 0.25em;
-                letter-spacing: -0.25px;
-            }
         }
     }
 

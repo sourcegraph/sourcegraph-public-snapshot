@@ -3,24 +3,35 @@
     import DisplayPath from '$lib/path/DisplayPath.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
 
-    import { type CodeHostKind, getHumanNameForCodeHost, getIconForCodeHost, inferCodeHost } './codehost'
-    import { displayRepoName } from './index'
+    import type { DisplayRepoName_ExternalLink } from './DisplayRepoName.gql'
+    import { getIconForExternalService, inferExternalServiceKind } from './externalService'
 
     export let repoName: string
-    export let codeHost: CodeHostKind | undefined
+    export let externalLinks: DisplayRepoName_ExternalLink[] | undefined
 
-    const {name: codeHostName, kind: codeHostKind} =
-        codeHost
-            ? {kind: codeHost, name: getHumanNameForCodeHost(codeHost)}
-            : inferCodeHost(repoName)
+    function linkHost(link: DisplayRepoName_ExternalLink): string {
+        return new URL(link.url).hostname
+    }
 
-    $: displayName = displayRepoName(repoName)
+    // Find an external link that matches the repo name (if it exists).
+    // Fall back to arbitrarily selecting the first external link (if it exists).
+    $: link = externalLinks?.find(link => repoName.startsWith(`${linkHost(link)}/`)) ?? externalLinks?.at(0)
+    $: host = link
+        ? `${linkHost(link)}`
+        : repoName
+              .match(/^[^\/]*.[^\/]*\//)
+              ?.at(0)
+              ?.slice(0, -1)
+    $: displayName = host ? repoName.slice(host.length + 1) : repoName
+    $: kind = link?.serviceKind ?? inferExternalServiceKind(repoName)
 </script>
 
-<Tooltip tooltip={codeHostName}>
-    <Icon icon={getIconForCodeHost(codeHostKind)} inline aria-label="" />
+<Tooltip tooltip={host ?? ''}>
+    <Icon icon={getIconForExternalService(kind)} inline />
 </Tooltip>
-<DisplayPath path={displayName} />
+<span>
+    <DisplayPath path={displayName} />
+</span>
 
 <style lang="scss">
     span {

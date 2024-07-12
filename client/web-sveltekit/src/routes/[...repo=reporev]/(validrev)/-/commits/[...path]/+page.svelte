@@ -5,9 +5,8 @@
     import { navigating } from '$app/stores'
     import Commit from '$lib/Commit.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import { getHumanNameForCodeHost } from '$lib/repo/shared/codehost'
+    import { getHumanNameForCodeHost, getIconForCodeHost } from '$lib/repo/shared/externalService'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { Alert, Badge } from '$lib/wildcard'
 
     import RepositoryRevPicker from '../../../RepositoryRevPicker.svelte'
@@ -105,8 +104,8 @@
                                     <a href={url}>
                                         View on
                                         {#if serviceKind}
-                                            <CodeHostIcon repository={serviceKind} disableTooltip />
-                                            {getHumanNameForCodeHost(serviceKind)}
+                                            <Icon icon={getIconForCodeHost(`${serviceKind}`)} />
+                                            {getHumanNameForCodeHost(`${serviceKind}`)}
                                         {:else}
                                             code host
                                         {/if}

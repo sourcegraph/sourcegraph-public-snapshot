@@ -20,7 +20,7 @@
     import Badge from '$lib/wildcard/Badge.svelte'
 
     import RepoStars from '../RepoStars.svelte'
-    import { getHumanNameForCodeHost, getIconForCodeHost } from '../shared/codehost'
+    import { getHumanNameForExternalService, getIconForExternalService } from '../shared/externalService'
 
     import type { RepoPopoverFragment } from './RepoPopover.gql'
 
