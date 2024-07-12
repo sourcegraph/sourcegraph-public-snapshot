@@ -40,13 +40,17 @@ extend type Query {
     """
     rankContext(
         """
-        A natural language query string.
+        Cody interaction ID.
         """
-        query: String
+        interactionId: String!
         """
         Context items to rank.
         """
         contextItems: [InputContextItem!]!
+        """
+        A natural language query string. Optional - can be fetched using interactionId.
+        """
+        query: String
         """
         Ranking options.
         """
@@ -60,17 +64,13 @@ extend type Query {
         """
         targetContextWindowTokens: Int
         """
-        Intent of Cody interaction. If empty, server will detect it.
+        Intent of Cody interaction. If empty, server will detect it (or look it up using interaction ID).
         """
         intent: String
         """
         Type of Command executed in a given Cody interaction. Empty value means it's an open-ended Chat.
         """
         command: String
-        """
-        Cody interaction ID.
-        """
-        interactionId: String!
     ): RankingResponse!
 
     """
