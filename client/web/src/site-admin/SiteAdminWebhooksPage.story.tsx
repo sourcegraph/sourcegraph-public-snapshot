@@ -56,8 +56,8 @@ export const NoWebhooksFound: StoryFn = () => (
                                     webhooks: {
                                         nodes: [],
                                     },
-                                    webhookLogs: {
-                                        totalCount: 0,
+                                    errorsOnly: {
+                                        nodes: [],
                                     },
                                 },
                             },
@@ -66,10 +66,12 @@ export const NoWebhooksFound: StoryFn = () => (
                     ])
                 }
             >
-                <SiteAdminWebhooksPage
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    telemetryRecorder={noOpTelemetryRecorder}
-                />
+                <div className="container p-4">
+                    <SiteAdminWebhooksPage
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                        telemetryRecorder={noOpTelemetryRecorder}
+                    />
+                </div>
             </MockedTestProvider>
         )}
     </WebStory>
@@ -163,8 +165,8 @@ export const FiveWebhooksFound: StoryFn = () => (
                                             },
                                         ],
                                     },
-                                    webhookLogs: {
-                                        totalCount: 5,
+                                    errorsOnly: {
+                                        nodes: [],
                                     },
                                 },
                             },
@@ -173,10 +175,12 @@ export const FiveWebhooksFound: StoryFn = () => (
                     ])
                 }
             >
-                <SiteAdminWebhooksPage
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    telemetryRecorder={noOpTelemetryRecorder}
-                />
+                <div className="container p-4">
+                    <SiteAdminWebhooksPage
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                        telemetryRecorder={noOpTelemetryRecorder}
+                    />
+                </div>
             </MockedTestProvider>
         )}
     </WebStory>

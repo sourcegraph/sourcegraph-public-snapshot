@@ -1,10 +1,8 @@
-import { type FC, useEffect, useState } from 'react'
+import { type FC, useEffect, useState, useCallback } from 'react'
 
 import { mdiWebhook, mdiDelete, mdiPencil } from '@mdi/js'
-import { noop } from 'lodash'
 import { useNavigate, useParams } from 'react-router-dom'
 
-import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -14,10 +12,12 @@ import {
     H2,
     H5,
     Link,
-    LoadingSpinner,
     PageHeader,
     ErrorAlert,
     Icon,
+    Alert,
+    Text,
+    Code,
 } from '@sourcegraph/wildcard'
 
 import { CreatedByAndUpdatedByInfoByline } from '../components/Byline/CreatedByAndUpdatedByInfoByline'
@@ -31,9 +31,10 @@ import {
     SummaryContainer,
 } from '../components/FilteredConnection/ui'
 import { PageTitle } from '../components/PageTitle'
-import type { DeleteWebhookResult, DeleteWebhookVariables, WebhookFields } from '../graphql-operations'
+import { ExternalServiceKind, type WebhookFields } from '../graphql-operations'
 
-import { DELETE_WEBHOOK, useWebhookLogsConnection, useWebhookQuery } from './backend'
+import { useWebhookLogsConnection, useWebhookQuery } from './backend'
+import { WebhookConfirmDeleteModal } from './WebhookConfirmDeleteModal'
 import { WebhookInfoLogPageHeader } from './WebhookInfoLogPageHeader'
 import { WebhookInformation } from './WebhookInformation'
 import { WebhookLogNode } from './webhooks/WebhookLogNode'
@@ -49,23 +50,30 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
     const navigate = useNavigate()
 
     const [onlyErrors, setOnlyErrors] = useState(false)
-    const { loading, hasNextPage, fetchMore, connection, error } = useWebhookLogsConnection(id, 20, onlyErrors)
-    const { loading: webhookLoading, data: webhookData } = useWebhookQuery(id)
+    const {
+        loading,
+        hasNextPage,
+        fetchMore,
+        connection,
+        error: webhookLogsError,
+    } = useWebhookLogsConnection(id, 20, onlyErrors)
+    const { loading: webhookLoading, data: webhookData, error: webhookError } = useWebhookQuery(id)
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminWebhook')
         telemetryRecorder.recordEvent('admin.webhook', 'view')
     }, [telemetryService, telemetryRecorder])
 
-    const [deleteWebhook, { error: deleteError, loading: isDeleting }] = useMutation<
-        DeleteWebhookResult,
-        DeleteWebhookVariables
-    >(DELETE_WEBHOOK, { variables: { hookID: id }, onCompleted: () => navigate('/site-admin/webhooks/incoming') })
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const deleteWebhook = useCallback(() => {
+        setShowDeleteModal(true)
+    }, [])
 
     return (
-        <Container>
+        <>
             <PageTitle title="Incoming webhooks" />
             {webhookLoading && !webhookData && <ConnectionLoading />}
+            {!webhookLoading && !webhookData && webhookError && <ErrorAlert error={webhookError} />}
             {webhookData?.node && webhookData.node.__typename === 'Webhook' && (
                 <PageHeader
                     path={[
@@ -91,76 +99,77 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                                 variant="secondary"
                                 display="inline"
                             >
-                                <Icon aria-hidden={true} svgPath={mdiPencil} />
-                                {' Edit'}
+                                <Icon aria-hidden={true} svgPath={mdiPencil} /> Edit
                             </ButtonLink>
                             <Button
                                 aria-label="Delete"
                                 className="test-delete-webhook"
                                 variant="danger"
-                                disabled={isDeleting}
-                                onClick={event => {
-                                    event.preventDefault()
-                                    if (
-                                        !window.confirm(
-                                            'Delete this webhook? Any external webhooks configured to point at this endpoint will no longer be received.'
-                                        )
-                                    ) {
-                                        return
-                                    }
-                                    deleteWebhook().catch(
-                                        // noop here is used because creation error is handled directly when useMutation is called
-                                        noop
-                                    )
-                                }}
+                                disabled={showDeleteModal}
+                                onClick={deleteWebhook}
                             >
-                                {isDeleting && <LoadingSpinner />}
-                                <Icon aria-hidden={true} svgPath={mdiDelete} />
-                                {' Delete'}
+                                <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete
                             </Button>
                         </div>
                     }
                 />
             )}
+            <Container className="mb-3">
+                <H2>Information</H2>
+                {webhookData?.node && webhookData.node.__typename === 'Webhook' && (
+                    <WebhookInformation webhook={webhookData.node as WebhookFields} />
+                )}
 
-            {deleteError && <ErrorAlert className="mt-2" prefix="Error during webhook deletion" error={deleteError} />}
+                <H2>Logs</H2>
+                <WebhookInfoLogPageHeader webhookID={id} onlyErrors={onlyErrors} onSetOnlyErrors={setOnlyErrors} />
 
-            <H2>Information</H2>
+                <ConnectionContainer className="mt-5">
+                    {webhookLogsError && <ConnectionError errors={[webhookLogsError.message]} />}
+                    {loading && !connection && <ConnectionLoading />}
+
+                    <ConnectionList aria-label="WebhookLogs" className={styles.logs}>
+                        <SiteAdminWebhookPageHeader timeLabel="Received at" />
+                        {connection?.nodes?.map(node => (
+                            <WebhookLogNode doNotShowExternalService={true} key={node.id} node={node} />
+                        ))}
+                    </ConnectionList>
+
+                    {connection && (
+                        <SummaryContainer className="mt-2">
+                            <ConnectionSummary
+                                noSummaryIfAllNodesVisible={false}
+                                first={connection.totalCount ?? 0}
+                                centered={true}
+                                connection={connection}
+                                noun="webhook log"
+                                pluralNoun="webhook logs"
+                                hasNextPage={hasNextPage}
+                                emptyElement={<EmptyList onlyErrors={onlyErrors} />}
+                            />
+                            {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
+                        </SummaryContainer>
+                    )}
+                </ConnectionContainer>
+            </Container>
+
             {webhookData?.node && webhookData.node.__typename === 'Webhook' && (
-                <WebhookInformation webhook={webhookData.node as WebhookFields} />
+                <>
+                    <H2>Setup instructions</H2>
+                    <Container>
+                        <WebhookSetupInstructions webhook={webhookData.node} />
+                    </Container>
+                </>
             )}
 
-            <H2>Logs</H2>
-            <WebhookInfoLogPageHeader webhookID={id} onlyErrors={onlyErrors} onSetOnlyErrors={setOnlyErrors} />
-
-            <ConnectionContainer className="mt-5">
-                {error && <ConnectionError errors={[error.message]} />}
-                {loading && !connection && <ConnectionLoading />}
-
-                <ConnectionList aria-label="WebhookLogs" className={styles.logs}>
-                    <SiteAdminWebhookPageHeader timeLabel="Received at" />
-                    {connection?.nodes?.map(node => (
-                        <WebhookLogNode doNotShowExternalService={true} key={node.id} node={node} />
-                    ))}
-                </ConnectionList>
-
-                {connection && (
-                    <SummaryContainer className="mt-2">
-                        <ConnectionSummary
-                            noSummaryIfAllNodesVisible={false}
-                            first={connection.totalCount ?? 0}
-                            centered={true}
-                            connection={connection}
-                            noun="webhook log"
-                            pluralNoun="webhook logs"
-                            hasNextPage={hasNextPage}
-                            emptyElement={<EmptyList onlyErrors={onlyErrors} />}
-                        />
-                        {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
-                    </SummaryContainer>
-                )}
-            </ConnectionContainer>
-        </Container>
+            {showDeleteModal && webhookData?.node && webhookData.node.__typename === 'Webhook' && (
+                <WebhookConfirmDeleteModal
+                    webhook={webhookData.node}
+                    onCancel={() => setShowDeleteModal(false)}
+                    afterDelete={() => navigate('/site-admin/webhooks/incoming')}
+                    telemetryRecorder={telemetryRecorder}
+                />
+            )}
+        </>
     )
 }
 
@@ -195,3 +204,170 @@ const EmptyList: FC<{ onlyErrors: boolean }> = ({ onlyErrors }) => (
         )}
     </div>
 )
+
+interface WebhookSetupInstructionsProps {
+    webhook: WebhookFields
+}
+
+const WebhookSetupInstructions: React.FunctionComponent<WebhookSetupInstructionsProps> = ({ webhook }) => {
+    if (webhook.codeHostKind === ExternalServiceKind.GITHUB) {
+        return (
+            <>
+                <Text>
+                    To set up a GitHub webhook, follow the instructions below, or see more in the{' '}
+                    <Link to="/help/admin/config/webhooks/incoming#github">GitHub webooks documentation</Link>.
+                </Text>
+                <Alert variant="info">
+                    Note: For GitHub App integrations, webhooks are created automatically. You do not need to create
+                    them manually.
+                </Alert>
+                <Text className="mb-0">
+                    <ol className="mb-0">
+                        <li>
+                            Copy the webhook URL <strong>{webhook.url}</strong>
+                        </li>
+                        <li>
+                            On GitHub, go to the settings page of your organization. From there, click{' '}
+                            <strong>Settings</strong>, then
+                            <strong>Webhooks</strong>, then <strong>Add webhook</strong>.
+                        </li>
+                        <li>
+                            Fill in the webhook form:
+                            <ul>
+                                <li>Payload URL: the URL you just copied above.</li>
+                                <li>
+                                    Content type: this must be set to <strong>application/json</strong>.
+                                </li>
+                                <li>Secret: the secret token you can find above.</li>
+                                <li>Active: ensure this is enabled.</li>
+                                <li>
+                                    Which events: select <strong>Let me select individual events</strong>, and then
+                                    enable:
+                                    <table className="table ml-3">
+                                        <thead>
+                                            <tr>
+                                                <th className="px-2">Repo updates</th>
+                                                <th className="px-2">Batch Changes</th>
+                                                <th className="px-2">Repo permissions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <ul>
+                                                        <li>
+                                                            <Code>push</Code>
+                                                        </li>
+                                                    </ul>
+                                                </td>
+                                                <td>
+                                                    <ul>
+                                                        <li>
+                                                            <Code>Issue comments</Code>
+                                                        </li>
+                                                        <li>
+                                                            <Code>Pull requests</Code>
+                                                        </li>
+                                                        <li>
+                                                            <Code>Pull request reviews</Code>
+                                                        </li>
+                                                        <li>
+                                                            <Code>Pull request review comments</Code>
+                                                        </li>
+                                                        <li>
+                                                            <Code>Check runs</Code>
+                                                        </li>
+                                                        <li>
+                                                            <Code>Check suites</Code>
+                                                        </li>
+                                                        <li>
+                                                            <Code>Statuses</Code>
+                                                        </li>
+                                                    </ul>
+                                                </td>
+                                                <td>
+                                                    <ul>
+                                                        <li>
+                                                            <Code>Collaborator add, remove, or changed</Code>
+                                                        </li>
+                                                        <li>
+                                                            <Code>Memberships</Code>
+                                                        </li>
+                                                        <li>
+                                                            <Code>Organizations</Code>
+                                                        </li>
+                                                        <li>
+                                                            <Code>Repositories</Code>
+                                                        </li>
+                                                        <li>
+                                                            <Code>Teams</Code>
+                                                        </li>
+                                                    </ul>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            Click <strong>Add webhook</strong>.
+                        </li>
+                        <li>Confirm that the new webhook is listed.</li>
+                        <li>You should see an initial ping event sent from GitHub in the webhook logs above.</li>
+                    </ol>
+                </Text>
+            </>
+        )
+    }
+    if (webhook.codeHostKind === ExternalServiceKind.GITLAB) {
+        return (
+            <>
+                <Text className="mb-0">
+                    To set up a GitLab webhook, follow the instructions in the{' '}
+                    <Link to="/help/admin/config/webhooks/incoming#gitlab">GitLab integration documentation</Link>.
+                </Text>
+            </>
+        )
+    }
+    if (webhook.codeHostKind === ExternalServiceKind.BITBUCKETSERVER) {
+        return (
+            <>
+                <Text className="mb-0">
+                    To set up a Bitbucket Server webhook, follow the instructions in the{' '}
+                    <Link to="/help/admin/config/webhooks/incoming#bitbucket-server">
+                        Bitbucket Server integration documentation
+                    </Link>
+                    .
+                </Text>
+            </>
+        )
+    }
+    if (webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD) {
+        return (
+            <>
+                <Text className="mb-0">
+                    To set up a Bitbucket Cloud webhook, follow the instructions in the{' '}
+                    <Link to="/help/admin/config/webhooks/incoming#bitbucket-cloud">
+                        Bitbucket Cloud integration documentation
+                    </Link>
+                    .
+                </Text>
+            </>
+        )
+    }
+    if (webhook.codeHostKind === ExternalServiceKind.AZUREDEVOPS) {
+        return (
+            <>
+                <Text className="mb-0">
+                    To set up an Azure DevOps webhook, follow the instructions in the{' '}
+                    <Link to="/help/admin/config/webhooks/incoming#azure-devops">
+                        Azure DevOps integration documentation
+                    </Link>
+                    .
+                </Text>
+            </>
+        )
+    }
+    return null
+}
