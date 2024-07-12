@@ -259,6 +259,32 @@ test.describe('search results', async () => {
         const alert = page.getByRole('heading', { name: 'Test alert' })
         await expect(alert).toBeVisible()
     })
+
+    test('toggle regexp', async ({ page, sg }) => {
+        sg.mockOperations({
+            Init: () => ({
+                currentUser: null,
+                viewerSettings: {
+                    final: '{"search.defaultPatternType": "standard"}'
+                },
+            }),
+        })
+
+        await page.goto('/search?q=test')
+
+        const searchInput = page.getByRole('textbox')
+        const regexpToggle = page.getByTitle('regexp toggle');
+
+        // Toggle regexp on and submit search
+        await regexpToggle.click()
+        await searchInput.press('Enter')
+        await expect(page).toHaveURL(/\/search\?q=test&patternType=regexp&sm=0/)
+
+        // Toggle regexp off and submit: should use default pattern type
+        await regexpToggle.click()
+        await searchInput.press('Enter')
+        await expect(page).toHaveURL(/\/search\?q=test&patternType=standard&sm=0/)
+    })
 })
 
 test.describe('search filters', async () => {

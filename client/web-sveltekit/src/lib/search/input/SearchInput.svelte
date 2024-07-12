@@ -291,6 +291,7 @@
                 <button
                     class="toggle icon"
                     type="button"
+                    title="regexp toggle"
                     class:active={regularExpressionEnabled}
                     on:click={() => setOrUnsetPatternType(SearchPatternType.regexp)}
                 >
