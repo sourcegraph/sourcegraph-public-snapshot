@@ -115,7 +115,6 @@ func testAPIProviderAWSBedrock(t *testing.T, infra *apiProviderTestInfra) {
 		)
 
 		getProvisionedThroughputSiteConfig := func() *schema.Completions {
-
 			return &schema.Completions{
 				Provider:    string(conftypes.CompletionsProviderNameAWSBedrock),
 				AccessToken: accessTokenInConfig,

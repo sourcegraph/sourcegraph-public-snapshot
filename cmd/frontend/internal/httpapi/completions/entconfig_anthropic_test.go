@@ -1,6 +1,7 @@
 package completions
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -91,14 +92,28 @@ func testAPIProviderAnthropic(t *testing.T, infra *apiProviderTestInfra) {
 	}
 
 	t.Run("TestDataIsValid", func(t *testing.T) {
-		// Just confirm that the stock test data works as expected,
-		// without any test-specific modifications.
-		data := getValidTestData()
+		requestedModels := []string{
+			"",
 
-		// Confirm that the test data is using the "default completions config".
-		require.Nil(t, data.SiteConfig.Completions)
+			// > Serves a 400:
+			// > unsupported code completion model "claude-3-sonnet-20240229" (default "anthropic::unknown::claude-3-sonnet-20240229")
+			// "claude-3-sonnet-20240229",
 
-		runCompletionsTest(t, infra, data)
+			"anthropic/claude-3-sonnet-20240229",
+		}
+
+		for _, requestedModel := range requestedModels {
+			t.Run(fmt.Sprintf("requestedModel_%q", requestedModel), func(t *testing.T) {
+				// Just confirm that the stock test data works as expected,
+				// with various permutations of a valid model specified by the client.
+				data := getValidTestData()
+				data.UserCompletionRequest.RequestedModel = types.TaintedModelRef(requestedModel)
+
+				// Confirm that the test data is using the "default completions config".
+				require.Nil(t, data.SiteConfig.Completions)
+				runCompletionsTest(t, infra, data)
+			})
+		}
 	})
 
 	t.Run("BYOK", func(t *testing.T) {
@@ -106,9 +121,9 @@ func testAPIProviderAnthropic(t *testing.T, infra *apiProviderTestInfra) {
 			anthropicAPIKeyInConfig      = "secret-api-key"
 			anthropicAPIEndpointInConfig = "https://byok.anthropic.com/path/from/config"
 
-			chatModelInConfig     = "anthropic/claude-3-opus"
-			codeModelInConfig     = "anthropic/claude-3-haiku"
-			fastChatModelInConfig = "anthropic/fast-chat-model"
+			chatModelInConfig     = "claude-3-opus"
+			codeModelInConfig     = "claude-3-haiku"
+			fastChatModelInConfig = "fast-chat-model"
 		)
 		getBYOKSiteConfig := func() *schema.Completions {
 			return &schema.Completions{
@@ -137,12 +152,13 @@ func testAPIProviderAnthropic(t *testing.T, infra *apiProviderTestInfra) {
 			testData := getValidTestData()
 			testData.SiteConfig.Completions = getBYOKSiteConfig()
 
-			// BUG: Cody Enterprise doesn't support using any user-provided models.
-			// This confirms the current behavior which we want to change soon.
-			testData.UserCompletionRequest.Model = "anthropic/latest-and-greatest"
+			// When using the older completions configuration, only 3x models can be specified.
+			// Here we request to use the "code completion" model, which should work.
+			testData.UserCompletionRequest.RequestedModel = types.TaintedModelRef("anthropic/" + codeModelInConfig)
 
-			// Confirm the user-supplied model is ignored.
-			testData.WantRequestToLLMProvider["model"] = chatModelInConfig
+			// Confirm the user-supplied model is honored, now that Cody Enterprise supports
+			// serving multiple LLM models to users.
+			testData.WantRequestToLLMProvider["model"] = codeModelInConfig
 			testData.WantRequestToLLMProviderPath = "/path/from/config"
 
 			runCompletionsTest(t, infra, testData)
