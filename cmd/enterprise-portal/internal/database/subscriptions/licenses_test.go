@@ -173,6 +173,12 @@ func TestLicensesStore(t *testing.T) {
 		})
 	})
 
+	// No point continuing if test licenses did not create, all tests after this
+	// will fail
+	if t.Failed() {
+		t.FailNow()
+	}
+
 	t.Run("List", func(t *testing.T) {
 		listedLicenses, err := licenses.List(ctx, subscriptions.ListLicensesOpts{})
 		require.NoError(t, err)
