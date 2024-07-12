@@ -45,11 +45,13 @@ go_test(
     name = "appliance_test",
     srcs = [
         "auth_test.go",
+        "json_test.go",
         "versions_test.go",
     ],
     embed = [":appliance"],
     deps = [
         "@com_github_golang_jwt_jwt_v5//:jwt",
+        "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_log//:log",
         "@com_github_stretchr_testify//require",
     ],
