@@ -213,7 +213,7 @@ var sg = &cli.App{
 					msg = "The problem occured while trying to get a secret via Google. Below is the error:\n"
 					msg += fmt.Sprintf("\n```%v```\n", err)
 					msg += "\nPossible fixes:\n"
-					msg += "- You should be in the `gcp-engineers@sourcegraph.com` group. Ask #ask-it-tech-ops or #discuss-dev-infra to check that\n"
+					msg += "- You should be in the `gcp-engineering@sourcegraph.com` group. Ask #ask-it-tech-ops or #discuss-dev-infra to check that\n"
 					msg += "- Ensure you're currently authenticated with your sourcegraph.com account by running `gcloud auth list`\n"
 					msg += "- Ensure you're authenticated with gcloud by running `gcloud auth application-default login`\n"
 				} else {
