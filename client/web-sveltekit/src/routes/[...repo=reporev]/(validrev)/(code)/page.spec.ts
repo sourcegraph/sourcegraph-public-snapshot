@@ -250,7 +250,7 @@ test('history panel', async ({ page, sg }) => {
 
 test('file popover', async ({ page, sg }, testInfo) => {
     // Test needs more time to teardown
-    test.setTimeout(testInfo.timeout * 3000)
+    test.setTimeout(testInfo.timeout * 4)
 
     await page.goto(`/${repoName}`)
 
@@ -309,7 +309,7 @@ test('file popover', async ({ page, sg }, testInfo) => {
     await expect(page.getByText('Last Changed')).toBeVisible()
 
     // Click the parent dir in the popover and expect to navigate to that page
-    await page.locator('span').filter({ hasText: /^src$/ }).getByRole('link').click()
+    await page.locator('div').filter({ hasText: /^src$/ }).getByRole('link').click()
     await page.waitForURL(/src$/)
 })
 
