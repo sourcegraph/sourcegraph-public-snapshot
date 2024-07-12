@@ -19,7 +19,7 @@
 <div class="root">
     <RepoRev repoName={result.repository} {rev} />
     <span class="interpunct">·</span>
-    <span use:highlightRanges={{ ranges: matches }}>
+    <span class="path" use:highlightRanges={{ ranges: matches }}>
         <DisplayPath
             path={result.path}
             pathHref={pathHrefFactory({
@@ -43,6 +43,10 @@
         :global([data-path-container]) {
             flex-flow: wrap;
         }
+    }
+
+    .path {
+        display: contents;
     }
 
     .interpunct {
