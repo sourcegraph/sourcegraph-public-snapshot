@@ -32,7 +32,7 @@
 
 <style lang="scss">
     a {
-        --icon-color: currentColor;
+        --icon-color: var(--header-icon-color);
 
         display: flex;
         width: 100%;
