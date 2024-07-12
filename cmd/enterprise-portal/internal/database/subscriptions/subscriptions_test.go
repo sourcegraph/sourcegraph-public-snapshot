@@ -182,7 +182,7 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 			pointers.DerefZero(got.InstanceDomain))
 		assert.Equal(t, currentSubscription.DisplayName, got.DisplayName)
 		// Round times to allow for some precision drift in CI
-		assert.Equal(t, yesterday.Round(time.Second).UTC(), got.CreatedAt.Time().Round(time.Second))
+		assert.Equal(t, yesterday.Round(time.Second).UTC(), got.CreatedAt.GetTime().Round(time.Second))
 	})
 
 	t.Run("update only archived at", func(t *testing.T) {
@@ -197,7 +197,7 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 		assert.Equal(t, *currentSubscription.DisplayName, *got.DisplayName)
 		assert.Equal(t, currentSubscription.CreatedAt, got.CreatedAt)
 		// Round times to allow for some precision drift in CI
-		assert.Equal(t, yesterday.Round(time.Second).UTC(), got.ArchivedAt.Time().Round(time.Second))
+		assert.Equal(t, yesterday.Round(time.Second).UTC(), got.ArchivedAt.GetTime().Round(time.Second))
 	})
 
 	t.Run("force update to zero values", func(t *testing.T) {

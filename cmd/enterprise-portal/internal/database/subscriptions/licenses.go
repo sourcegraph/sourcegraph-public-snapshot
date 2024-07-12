@@ -56,6 +56,10 @@ type SubscriptionLicense struct {
 	CreatedAt utctime.Time  `gorm:"not null;default:current_timestamp"`
 	RevokedAt *utctime.Time // Null indicates the license is not revoked.
 
+	// ExpireAt is the time at which the license should expire. Expiration does
+	// NOT get a corresponding condition entry in 'enterprise_portal_subscription_license_conditions'.
+	ExpireAt utctime.Time `gorm:"not null"`
+
 	// LicenseType is the kind of license stored in LicenseData, corresponding
 	// to the API 'EnterpriseSubscriptionLicenseType'.
 	LicenseType string `gorm:"not null"`
@@ -77,6 +81,7 @@ func subscriptionLicenseWithConditionsColumns() []string {
 
 		"created_at",
 		"revoked_at",
+		"expire_at",
 
 		"license_type",
 		"license_data",
@@ -98,6 +103,7 @@ func scanSubscriptionLicenseWithConditions(row pgx.Row) (*LicenseWithConditions,
 		&l.ID,
 		&l.CreatedAt,
 		&l.RevokedAt,
+		&l.ExpireAt,
 		&l.LicenseType,
 		&l.LicenseData,
 		&l.Conditions, // see subscriptionLicenseConditionJSONBAgg docstring
@@ -207,6 +213,8 @@ type CreateLicenseOpts struct {
 	Message string
 	// If nil, the creation time will be set to the current time.
 	Time *utctime.Time
+	// Expiration time of the license.
+	ExpireTime utctime.Time
 }
 
 // LicenseKey corresponds to *subscriptionsv1.EnterpriseSubscriptionLicenseKey
@@ -228,8 +236,11 @@ func (s *LicensesStore) CreateLicenseKey(
 	// match the time provided in the options.
 	if opts.Time == nil {
 		return nil, errors.New("creation time must be specified for licensekeys")
-	} else if !opts.Time.Time().Equal(license.Info.CreatedAt) {
+	} else if !opts.Time.GetTime().Equal(utctime.FromTime(license.Info.CreatedAt).AsTime()) {
 		return nil, errors.New("creation time must match the license key information")
+	}
+	if !opts.ExpireTime.GetTime().Equal(utctime.FromTime(license.Info.ExpiresAt).AsTime()) {
+		return nil, errors.New("expiration time must match the license key information")
 	}
 
 	return s.create(
@@ -253,7 +264,7 @@ func (s *LicensesStore) create(
 	}
 	if opts.Time == nil {
 		opts.Time = pointers.Ptr(utctime.Now())
-	} else if opts.Time.Time().After(time.Now()) {
+	} else if opts.Time.GetTime().After(time.Now()) {
 		return nil, errors.New("creation time cannot be in the future")
 	}
 	if licenseType == subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_UNSPECIFIED {
@@ -284,14 +295,16 @@ INSERT INTO enterprise_portal_subscription_licenses (
 	subscription_id,
 	license_type,
 	license_data,
-	created_at
+	created_at,
+	expire_at
 )
 VALUES (
 	@licenseID,
 	@subscriptionID,
 	@licenseType,
 	@licenseData,
-	@createdAt
+	@createdAt,
+	@expireAt
 )
 `, pgx.NamedArgs{
 		"licenseID":      licenseID.String(),
@@ -299,6 +312,7 @@ VALUES (
 		"licenseType":    subscriptionsv1.EnterpriseSubscriptionLicenseType_name[int32(licenseType)],
 		"licenseData":    licenseData,
 		"createdAt":      opts.Time,
+		"expireAt":       opts.ExpireTime,
 	}); err != nil {
 		return nil, errors.Wrap(err, "create license")
 	}
@@ -328,7 +342,7 @@ type RevokeLicenseOpts struct {
 func (s *LicensesStore) Revoke(ctx context.Context, licenseID string, opts RevokeLicenseOpts) (*LicenseWithConditions, error) {
 	if opts.Time == nil {
 		opts.Time = pointers.Ptr(utctime.Now())
-	} else if opts.Time.Time().After(time.Now()) {
+	} else if opts.Time.GetTime().After(time.Now()) {
 		return nil, errors.New("revocation time cannot be in the future")
 	}
 

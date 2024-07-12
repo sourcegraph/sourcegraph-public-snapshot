@@ -47,13 +47,13 @@ var _ driver.Valuer = (*Time)(nil)
 // Value must be called with a non-nil Time. driver.Valuer callers will first
 // check that the value is non-nil, so this is safe.
 func (t Time) Value() (driver.Value, error) {
-	stdTime := t.Time()
+	stdTime := t.GetTime()
 	return *stdTime, nil
 }
 
 var _ json.Marshaler = (*Time)(nil)
 
-func (t Time) MarshalJSON() ([]byte, error) { return json.Marshal(t.Time()) }
+func (t Time) MarshalJSON() ([]byte, error) { return json.Marshal(t.GetTime()) }
 
 var _ json.Unmarshaler = (*Time)(nil)
 
@@ -66,11 +66,15 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Time returns the underlying time.Time value, or nil if it is nil.
-func (t *Time) Time() *time.Time {
+// GetTime returns the underlying time.GetTime value, or nil if it is nil.
+func (t *Time) GetTime() *time.Time {
 	if t == nil {
 		return nil
 	}
-	// Ensure the time is in UTC.
-	return pointers.Ptr((*time.Time)(t).UTC().Round(time.Microsecond))
+	return pointers.Ptr(t.AsTime())
+}
+
+// Time casts the Time as a standard time.Time value.
+func (t Time) AsTime() time.Time {
+	return time.Time(t).UTC().Round(time.Microsecond)
 }

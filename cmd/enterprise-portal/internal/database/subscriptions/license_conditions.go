@@ -67,7 +67,7 @@ type createLicenseConditionOpts struct {
 }
 
 func (s *licenseConditionsStore) createLicenseCondition(ctx context.Context, licenseID string, opts createLicenseConditionOpts) error {
-	if opts.TransitionTime.Time().IsZero() {
+	if opts.TransitionTime.GetTime().IsZero() {
 		return errors.New("transition time is required")
 	}
 	_, err := s.tx.Exec(ctx, `

@@ -61,6 +61,7 @@ func TestLicensesStore(t *testing.T) {
 		) {
 			assert.NotEmpty(t, got.ID)
 			assert.NotZero(t, got.CreatedAt)
+			assert.NotZero(t, got.ExpireAt)
 			assert.Equal(t, "ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY", got.LicenseType)
 			wantLicenseData.Equal(t, string(got.LicenseData))
 
@@ -75,18 +76,20 @@ func TestLicensesStore(t *testing.T) {
 				Info: license.Info{
 					Tags:      []string{"foo"},
 					CreatedAt: time.Time{}.Add(1 * time.Hour),
+					ExpiresAt: time.Time{}.Add(48 * time.Hour),
 				},
 				SignedKey: "asdfasdf",
 			},
 			subscriptions.CreateLicenseOpts{
-				Message: t.Name() + " 1 old",
-				Time:    pointers.Ptr(utctime.FromTime(time.Time{}.Add(1 * time.Hour))),
+				Message:    t.Name() + " 1 old",
+				Time:       pointers.Ptr(utctime.FromTime(time.Time{}.Add(1 * time.Hour))),
+				ExpireTime: utctime.FromTime(time.Time{}.Add(48 * time.Hour)),
 			})
 		require.NoError(t, err)
 		testLicense(
 			got,
 			autogold.Expect(valast.Ptr("TestLicensesStore/CreateLicenseKey 1 old")),
-			autogold.Expect(`{"Info": {"c": "0001-01-01T01:00:00Z", "e": "0001-01-01T00:00:00Z", "t": ["foo"], "u": 0}, "SignedKey": "asdfasdf"}`),
+			autogold.Expect(`{"Info": {"c": "0001-01-01T01:00:00Z", "e": "0001-01-03T00:00:00Z", "t": ["foo"], "u": 0}, "SignedKey": "asdfasdf"}`),
 		)
 		createdLicenses = append(createdLicenses, got)
 
@@ -95,18 +98,20 @@ func TestLicensesStore(t *testing.T) {
 				Info: license.Info{
 					Tags:      []string{"baz"},
 					CreatedAt: time.Time{}.Add(24 * time.Hour),
+					ExpiresAt: time.Time{}.Add(48 * time.Hour),
 				},
 				SignedKey: "barasdf",
 			},
 			subscriptions.CreateLicenseOpts{
-				Message: t.Name() + " 1",
-				Time:    pointers.Ptr(utctime.FromTime(time.Time{}.Add(24 * time.Hour))),
+				Message:    t.Name() + " 1",
+				Time:       pointers.Ptr(utctime.FromTime(time.Time{}.Add(24 * time.Hour))),
+				ExpireTime: utctime.FromTime(time.Time{}.Add(48 * time.Hour)),
 			})
 		require.NoError(t, err)
 		testLicense(
 			got,
 			autogold.Expect(valast.Ptr("TestLicensesStore/CreateLicenseKey 1")),
-			autogold.Expect(`{"Info": {"c": "0001-01-02T00:00:00Z", "e": "0001-01-01T00:00:00Z", "t": ["baz"], "u": 0}, "SignedKey": "barasdf"}`),
+			autogold.Expect(`{"Info": {"c": "0001-01-02T00:00:00Z", "e": "0001-01-03T00:00:00Z", "t": ["baz"], "u": 0}, "SignedKey": "barasdf"}`),
 		)
 		createdLicenses = append(createdLicenses, got)
 
@@ -115,22 +120,24 @@ func TestLicensesStore(t *testing.T) {
 				Info: license.Info{
 					Tags:      []string{"tag"},
 					CreatedAt: time.Time{}.Add(24 * time.Hour),
+					ExpiresAt: time.Time{}.Add(48 * time.Hour),
 				},
 				SignedKey: "asdffdsadf",
 			},
 			subscriptions.CreateLicenseOpts{
-				Message: t.Name() + " 2",
-				Time:    pointers.Ptr(utctime.FromTime(time.Time{}.Add(24 * time.Hour))),
+				Message:    t.Name() + " 2",
+				Time:       pointers.Ptr(utctime.FromTime(time.Time{}.Add(24 * time.Hour))),
+				ExpireTime: utctime.FromTime(time.Time{}.Add(48 * time.Hour)),
 			})
 		require.NoError(t, err)
 		testLicense(
 			got,
 			autogold.Expect(valast.Ptr("TestLicensesStore/CreateLicenseKey 2")),
-			autogold.Expect(`{"Info": {"c": "0001-01-02T00:00:00Z", "e": "0001-01-01T00:00:00Z", "t": ["tag"], "u": 0}, "SignedKey": "asdffdsadf"}`),
+			autogold.Expect(`{"Info": {"c": "0001-01-02T00:00:00Z", "e": "0001-01-03T00:00:00Z", "t": ["tag"], "u": 0}, "SignedKey": "asdffdsadf"}`),
 		)
 		createdLicenses = append(createdLicenses, got)
 
-		t.Run("timestamps do not match", func(t *testing.T) {
+		t.Run("createdAt does not match", func(t *testing.T) {
 			_, err = licenses.CreateLicenseKey(ctx, subscriptionID2,
 				&subscriptions.LicenseKey{
 					Info: license.Info{
@@ -145,6 +152,24 @@ func TestLicensesStore(t *testing.T) {
 				})
 			require.Error(t, err)
 			autogold.Expect("creation time must match the license key information").Equal(t, err.Error())
+		})
+		t.Run("expiresAt does not match", func(t *testing.T) {
+			_, err = licenses.CreateLicenseKey(ctx, subscriptionID2,
+				&subscriptions.LicenseKey{
+					Info: license.Info{
+						Tags:      []string{"tag"},
+						CreatedAt: time.Time{},
+						ExpiresAt: time.Time{}.Add(48 * time.Hour),
+					},
+					SignedKey: "asdffdsadf",
+				},
+				subscriptions.CreateLicenseOpts{
+					Message:    t.Name(),
+					Time:       pointers.Ptr(utctime.FromTime(time.Time{})),
+					ExpireTime: utctime.Now(),
+				})
+			require.Error(t, err)
+			autogold.Expect("expiration time must match the license key information").Equal(t, err.Error())
 		})
 	})
 
@@ -196,11 +221,11 @@ func TestLicensesStore(t *testing.T) {
 				Time:    pointers.Ptr(utctime.FromTime(revokeTime)),
 			})
 			require.NoError(t, err)
-			assert.Equal(t, revokeTime.UTC(), *got.RevokedAt.Time())
+			assert.Equal(t, revokeTime.UTC(), got.RevokedAt.AsTime())
 			require.Len(t, got.Conditions, 2)
 			// Most recent condition is sorted first, and should be the revocation
 			assert.Equal(t, "STATUS_REVOKED", got.Conditions[0].Status)
-			assert.Equal(t, revokeTime.UTC(), *got.Conditions[0].TransitionTime.Time())
+			assert.Equal(t, revokeTime.UTC(), *got.Conditions[0].TransitionTime.GetTime())
 			assert.Equal(t, "STATUS_CREATED", got.Conditions[1].Status)
 		}
 	})
