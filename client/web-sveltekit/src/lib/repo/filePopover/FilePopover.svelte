@@ -50,16 +50,12 @@
     $: lastCommit = entry.history.nodes[0].commit
 </script>
 
-<div class="root section muted">
-    <div class="repo-and-path section">
-        <DisplayPath path={displayRepoName(repoName)} />
-        {#if dirName}
-            <span>·</span>
-            <DisplayPath
-                path={dirName}
-                pathHref={pathHrefFactory({ repoName, revision, fullPath: dirName, fullPathType: 'tree' })}
-            />
-        {/if}
+<div class="root">
+    <div class="path section">
+        <DisplayPath
+            path={dirName}
+            pathHref={pathHrefFactory({ repoName, revision, fullPath: dirName, fullPathType: 'tree' })}
+        />
     </div>
 
     <div class="lang-and-file section">
@@ -114,12 +110,6 @@
 
         .section {
             padding: 0.5rem 1rem;
-        }
-
-        .repo-and-path {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.375em;
             border-bottom: 1px solid var(--border-color);
         }
 
@@ -180,10 +170,6 @@
 
     .title {
         color: var(--text-title);
-    }
-
-    .muted {
-        color: var(--text-muted);
     }
 
     .body {
