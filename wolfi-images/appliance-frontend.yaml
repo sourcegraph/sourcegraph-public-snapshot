@@ -1,0 +1,40 @@
+include: ./sourcegraph-template.yaml
+
+contents:
+  packages:
+    - nginx
+    - gettext
+
+paths:
+  - path: /etc/nginx/conf.d
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+  - path: /var/lib/nginx/tmp
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+  - path: /var/lib/nginx/client_body
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+  - path: /run/nginx
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+  - path: /var/lib/nginx/logs
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+
+annotations:
+  org.opencontainers.image.url: https://sourcegraph.com/
+  org.opencontainers.image.source: https://github.com/sourcegraph/sourcegraph/
+  org.opencontainers.image.documentation: https://sourcegraph.com/docs/
+  org.opencontainers.image.title: Sourcegraph Appliance Frontend
+  org.opencontainers.image.description: "all user interface for the Sourcegraph Appliance"
