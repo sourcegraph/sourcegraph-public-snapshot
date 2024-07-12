@@ -8,12 +8,12 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 import {
     ConnectionContainer,
     ConnectionError,
-    ConnectionLoading,
+    ConnectionForm,
     ConnectionList,
-    SummaryContainer,
+    ConnectionLoading,
     ConnectionSummary,
     ShowMoreButton,
-    ConnectionForm,
+    SummaryContainer,
 } from '../../../../components/FilteredConnection/ui'
 import { PageTitle } from '../../../../components/PageTitle'
 
@@ -92,7 +92,6 @@ export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsW
                             {connection && (
                                 <SummaryContainer className="mt-2 mb-0">
                                     <ConnectionSummary
-                                        first={15}
                                         centered={true}
                                         connection={connection}
                                         noun="product license"

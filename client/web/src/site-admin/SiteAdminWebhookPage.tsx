@@ -1,23 +1,23 @@
-import { type FC, useEffect, useState, useCallback } from 'react'
+import { useCallback, useEffect, useState, type FC } from 'react'
 
-import { mdiWebhook, mdiDelete, mdiPencil } from '@mdi/js'
+import { mdiDelete, mdiPencil, mdiWebhook } from '@mdi/js'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
+    Alert,
     Button,
     ButtonLink,
+    Code,
     Container,
+    ErrorAlert,
     H2,
     H5,
+    Icon,
     Link,
     PageHeader,
-    ErrorAlert,
-    Icon,
-    Alert,
     Text,
-    Code,
 } from '@sourcegraph/wildcard'
 
 import { CreatedByAndUpdatedByInfoByline } from '../components/Byline/CreatedByAndUpdatedByInfoByline'
@@ -138,7 +138,6 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                         <SummaryContainer className="mt-2">
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={false}
-                                first={connection.totalCount ?? 0}
                                 centered={true}
                                 connection={connection}
                                 noun="webhook log"

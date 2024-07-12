@@ -304,7 +304,6 @@ const ProductSubscriptionLicensesConnection: React.FunctionComponent<ProductSubs
             {connection && (
                 <SummaryContainer centered={true}>
                     <ConnectionSummary
-                        first={15}
                         centered={true}
                         connection={connection}
                         noun="product license"

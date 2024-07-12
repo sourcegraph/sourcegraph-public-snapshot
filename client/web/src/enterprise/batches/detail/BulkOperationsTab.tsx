@@ -54,7 +54,6 @@ export const BulkOperationsTab: React.FunctionComponent<React.PropsWithChildren<
                         <ConnectionSummary
                             noSummaryIfAllNodesVisible={true}
                             centered={true}
-                            first={BATCH_COUNT}
                             connection={connection}
                             noun="bulk operation"
                             pluralNoun="bulk operations"

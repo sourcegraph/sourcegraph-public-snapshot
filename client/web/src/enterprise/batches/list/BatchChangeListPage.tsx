@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
@@ -10,7 +10,7 @@ import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/sett
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
-import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
+import { Button, Container, H3, Link, PageHeader, screenReaderAnnounce, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -28,14 +28,14 @@ import {
 } from '../../../components/FilteredConnection/ui'
 import { Page } from '../../../components/Page'
 import type {
-    ListBatchChange,
-    Scalars,
-    BatchChangesVariables,
-    BatchChangesResult,
     BatchChangesByNamespaceResult,
     BatchChangesByNamespaceVariables,
+    BatchChangesResult,
+    BatchChangesVariables,
     GetLicenseAndUsageInfoResult,
     GetLicenseAndUsageInfoVariables,
+    ListBatchChange,
+    Scalars,
 } from '../../../graphql-operations'
 
 import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
@@ -250,7 +250,6 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                                     <ConnectionSummary
                                         centered={true}
                                         noSummaryIfAllNodesVisible={true}
-                                        first={BATCH_CHANGES_PER_PAGE_COUNT}
                                         connection={connection}
                                         noun="batch change"
                                         pluralNoun="batch changes"

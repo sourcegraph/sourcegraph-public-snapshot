@@ -267,7 +267,6 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
                         <SummaryContainer centered={true}>
                             <ConnectionSummary
                                 centered={true}
-                                first={REPOSITORY_GIT_COMMITS_PER_PAGE}
                                 connection={connection}
                                 noun={getRefType(sourceType)}
                                 pluralNoun={pluralize(getRefType(sourceType), 0)}

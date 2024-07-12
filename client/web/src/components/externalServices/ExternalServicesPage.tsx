@@ -95,7 +95,6 @@ export const ExternalServicesPage: FC<Props> = ({
                         <SummaryContainer className="mt-2" centered={true}>
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={false}
-                                first={connection.totalCount ?? 0}
                                 centered={true}
                                 connection={connection}
                                 noun="code host connection"

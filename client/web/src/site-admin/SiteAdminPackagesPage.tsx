@@ -353,7 +353,6 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
                                 connection={connection}
                                 connectionQuery={query}
                                 hasNextPage={hasNextPage}
-                                first={DEFAULT_FIRST}
                                 noun="package"
                                 pluralNoun="packages"
                                 className="mb-0"

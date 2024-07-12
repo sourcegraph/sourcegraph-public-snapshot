@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect, useContext } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 import { Subject } from 'rxjs'
 
@@ -17,22 +17,22 @@ import {
     SummaryContainer,
 } from '../../../../components/FilteredConnection/ui'
 import {
+    BatchChangeState,
+    type BatchChangeChangesetsResult,
+    type BatchChangeChangesetsVariables,
     type ExternalChangesetFields,
     type HiddenExternalChangesetFields,
     type Scalars,
-    type BatchChangeChangesetsResult,
-    type BatchChangeChangesetsVariables,
-    BatchChangeState,
 } from '../../../../graphql-operations'
 import { MultiSelectContext, MultiSelectContextProvider } from '../../MultiSelectContext'
 import {
-    type queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
-    queryAllChangesetIDs as _queryAllChangesetIDs,
     CHANGESETS,
+    queryAllChangesetIDs as _queryAllChangesetIDs,
+    type queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
 } from '../backend'
 
 import { BatchChangeChangesetsHeader } from './BatchChangeChangesetsHeader'
-import { type ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
+import { ChangesetFilterRow, type ChangesetFilters } from './ChangesetFilterRow'
 import { ChangesetNode } from './ChangesetNode'
 import { ChangesetSelectRow } from './ChangesetSelectRow'
 import { EmptyArchivedChangesetListElement } from './EmptyArchivedChangesetListElement'
@@ -233,7 +233,6 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
                         <SummaryContainer centered={true}>
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={true}
-                                first={BATCH_COUNT}
                                 centered={true}
                                 connection={connection}
                                 noun="changeset"

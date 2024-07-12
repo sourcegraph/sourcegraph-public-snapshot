@@ -181,7 +181,6 @@ export const RevisionsPopoverCommits: React.FunctionComponent<
     const summary = response.connection && (
         <ConnectionSummary
             connection={response.connection}
-            first={BATCH_COUNT}
             noun={noun}
             pluralNoun={pluralNoun}
             hasNextPage={response.hasNextPage}

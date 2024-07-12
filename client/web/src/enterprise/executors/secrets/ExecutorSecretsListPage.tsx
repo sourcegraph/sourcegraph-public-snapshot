@@ -1,4 +1,4 @@
-import React, { type FC, useCallback, useState, useEffect } from 'react'
+import React, { useCallback, useEffect, useState, type FC } from 'react'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Container, Link, PageHeader } from '@sourcegraph/wildcard'
@@ -14,8 +14,8 @@ import {
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
 import {
-    type ExecutorSecretFields,
     ExecutorSecretScope,
+    type ExecutorSecretFields,
     type GlobalExecutorSecretsResult,
     type OrgExecutorSecretsResult,
     type Scalars,
@@ -25,8 +25,8 @@ import {
 import { AddSecretModal } from './AddSecretModal'
 import {
     globalExecutorSecretsConnectionFactory,
-    userExecutorSecretsConnectionFactory,
     orgExecutorSecretsConnectionFactory,
+    userExecutorSecretsConnectionFactory,
 } from './backend'
 import { ExecutorSecretNode } from './ExecutorSecretNode'
 import { ExecutorSecretScopeSelector } from './ExecutorSecretScopeSelector'
@@ -217,7 +217,6 @@ const ExecutorSecretsListPage: FC<ExecutorSecretsListPageProps> = ({
                         <SummaryContainer className="mt-2">
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={true}
-                                first={15}
                                 centered={true}
                                 connection={connection}
                                 noun="executor secret"

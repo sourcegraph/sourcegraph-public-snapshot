@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import { mdiWebhook, mdiMapSearch, mdiPlus } from '@mdi/js'
+import { mdiMapSearch, mdiPlus, mdiWebhook } from '@mdi/js'
 import classNames from 'classnames'
 
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
@@ -18,7 +18,7 @@ import {
 } from '../components/FilteredConnection/ui'
 import { PageTitle } from '../components/PageTitle'
 
-import { useWebhooksConnection, useWebhookPageHeader } from './backend'
+import { useWebhookPageHeader, useWebhooksConnection } from './backend'
 import { WebhookNode } from './WebhookNode'
 import { PerformanceGauge } from './webhooks/PerformanceGauge'
 
@@ -89,7 +89,6 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
                         <SummaryContainer className="mt-2" centered={true}>
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={false}
-                                first={connection.totalCount ?? 0}
                                 centered={true}
                                 connection={connection}
                                 noun="webhook"

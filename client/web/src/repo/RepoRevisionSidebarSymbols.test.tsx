@@ -1,5 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing'
-import { cleanup, fireEvent } from '@testing-library/react'
+import { act, cleanup, fireEvent, within } from '@testing-library/react'
 import delay from 'delay'
 import { escapeRegExp } from 'lodash'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -29,49 +29,79 @@ const sidebarProps: RepoRevisionSidebarSymbolsProps = {
     onHandleSymbolClick: () => {},
 }
 
-const symbolsMock: MockedResponse<SymbolsResult> = {
-    request: {
-        query: getDocumentNode(SYMBOLS_QUERY),
-        variables: {
-            query: '',
-            first: 100,
-            repo: sidebarProps.repoID,
-            revision: sidebarProps.revision,
-            includePatterns: ['^' + escapeRegExp(sidebarProps.activePath)],
+const symbolsMocks: MockedResponse<SymbolsResult>[] = [
+    {
+        request: {
+            query: getDocumentNode(SYMBOLS_QUERY),
+            variables: {
+                query: '',
+                first: 100,
+                repo: sidebarProps.repoID,
+                revision: sidebarProps.revision,
+                includePatterns: ['^' + escapeRegExp(sidebarProps.activePath)],
+            },
         },
-    },
-    result: {
-        data: {
-            node: {
-                __typename: 'Repository',
-                commit: {
-                    symbols: {
-                        __typename: 'SymbolConnection',
-                        nodes: [
-                            {
-                                __typename: 'Symbol',
-                                kind: SymbolKind.CONSTANT,
-                                language: 'TypeScript',
-                                name: 'firstSymbol',
-                                url: `${location.pathname}?L13:14`,
-                                containerName: null,
-                                location: {
-                                    resource: {
-                                        path: 'src/index.js',
+        result: {
+            data: {
+                node: {
+                    __typename: 'Repository',
+                    commit: {
+                        symbols: {
+                            __typename: 'SymbolConnection',
+                            nodes: [
+                                {
+                                    __typename: 'Symbol',
+                                    kind: SymbolKind.CONSTANT,
+                                    language: 'TypeScript',
+                                    name: 'firstSymbol',
+                                    url: `${location.pathname}?L13:14`,
+                                    containerName: null,
+                                    location: {
+                                        resource: {
+                                            path: 'src/index.js',
+                                        },
+                                        range: null,
                                     },
-                                    range: null,
                                 },
+                            ],
+                            pageInfo: {
+                                hasNextPage: false,
                             },
-                        ],
-                        pageInfo: {
-                            hasNextPage: false,
                         },
                     },
                 },
             },
         },
     },
-}
+    {
+        request: {
+            query: getDocumentNode(SYMBOLS_QUERY),
+            variables: {
+                query: 'some query',
+                first: 100,
+                repo: sidebarProps.repoID,
+                revision: sidebarProps.revision,
+                includePatterns: ['^' + escapeRegExp(sidebarProps.activePath)],
+            },
+        },
+        result: {
+            data: {
+                node: {
+                    __typename: 'Repository',
+                    commit: {
+                        symbols: {
+                            __typename: 'SymbolConnection',
+                            nodes: [],
+                            pageInfo: {
+                                hasNextPage: false,
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    },
+]
 
 describe('RepoRevisionSidebarSymbols', () => {
     let renderResult: RenderWithBrandedContextResult
@@ -79,7 +109,7 @@ describe('RepoRevisionSidebarSymbols', () => {
 
     beforeEach(async () => {
         renderResult = renderWithBrandedContext(
-            <MockedTestProvider mocks={[symbolsMock]} addTypename={true}>
+            <MockedTestProvider mocks={symbolsMocks} addTypename={true}>
                 <RepoRevisionSidebarSymbols {...sidebarProps} />
             </MockedTestProvider>,
             { route }
@@ -108,8 +138,14 @@ describe('RepoRevisionSidebarSymbols', () => {
         expect(symbol).toBeVisible()
     })
 
-    it('renders summary correctly', () => {
-        expect(renderResult.getByText('1 symbol total')).toBeVisible()
+    it('renders no-query-matches correctly', async () => {
+        const searchInput = within(renderResult.container).getByRole('searchbox')
+        fireEvent.change(searchInput, { target: { value: 'some query' } })
+
+        await waitForInputDebounce()
+        await waitForNextApolloResponse()
+
+        expect(renderResult.getByTestId('summary')).toHaveTextContent('No symbols matching some query')
     })
 
     it('clicking symbol updates route', async () => {
@@ -126,3 +162,5 @@ describe('RepoRevisionSidebarSymbols', () => {
         expect(renderResult.locationRef.current?.search).toEqual('?L13:14')
     })
 })
+
+const waitForInputDebounce = () => act(() => new Promise(resolve => setTimeout(resolve, 200)))

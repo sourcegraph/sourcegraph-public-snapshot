@@ -158,7 +158,6 @@ export const CodeMonitoringLogs: React.FunctionComponent<
                         <SummaryContainer centered={true}>
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={true}
-                                first={pageSize}
                                 connection={connection}
                                 noun="monitor"
                                 pluralNoun="monitors"
