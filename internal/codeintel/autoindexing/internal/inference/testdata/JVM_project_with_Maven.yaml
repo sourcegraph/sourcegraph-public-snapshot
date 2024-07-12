@@ -1,7 +1,7 @@
 - steps: []
   local_steps: []
   root: ""
-  indexer: sourcegraph/scip-java@sha256:a2b3828145cd38758a43363f06d786f9e620c97979a9291463c6544f7f17c68f
+  indexer: sourcegraph/scip-java@sha256:02b5dd2a14b3d0cd776b561ba68660676b4172677fd1fff59cb5d9a0b5351cea
   indexer_args:
     - scip-java
     - index
