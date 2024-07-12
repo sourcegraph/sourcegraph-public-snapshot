@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/http-client'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { Text } from '@sourcegraph/wildcard'
-import { type RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+import { renderWithBrandedContext, type RenderWithBrandedContextResult } from '@sourcegraph/wildcard/src/testing'
 
 import type {
     TestShowMorePaginationQueryFields,
@@ -208,7 +208,7 @@ describe('useShowMorePagination', () => {
             expect(queries.getByText('Fetch more')).toBeVisible()
 
             // URL updates to match visible results
-            expect(queries.locationRef.current?.search).toBe('?visible=2')
+            expect(queries.locationRef.current?.search).toBe('?first=2')
         })
 
         it('fetches final page of results correctly', async () => {
@@ -231,12 +231,12 @@ describe('useShowMorePagination', () => {
             expect(queries.queryByText('Fetch more')).not.toBeInTheDocument()
 
             // URL updates to match visible results
-            expect(queries.locationRef.current?.search).toBe('?visible=4')
+            expect(queries.locationRef.current?.search).toBe('?first=4')
         })
 
         it('fetches correct amount of results when navigating directly with a URL', async () => {
-            // We need to add an extra mock here, as we will derive a different `first` variable from `visible` in the URL.
-            const mockFromVisible: MockedResponse<TestShowMorePaginationQueryResult> = {
+            // We need to add an extra mock here, as we will derive a different `first` variable the URL.
+            const mockFromFirst: MockedResponse<TestShowMorePaginationQueryResult> = {
                 request: generateMockRequest({ first: 3 }),
                 result: generateMockResult({
                     nodes: [mockResultNodes[0], mockResultNodes[1], mockResultNodes[2]],
@@ -246,7 +246,7 @@ describe('useShowMorePagination', () => {
                 }),
             }
 
-            const queries = await renderWithMocks([...cursorMocks, mockFromVisible], '/?visible=3')
+            const queries = await renderWithMocks([...cursorMocks, mockFromFirst], '/?first=3')
 
             // Renders 3 results without having to manually fetch
             expect(queries.getAllByRole('listitem').length).toBe(3)
@@ -263,7 +263,7 @@ describe('useShowMorePagination', () => {
             expect(queries.getByText('Total count: 4')).toBeVisible()
 
             // URL should be overidden
-            expect(queries.locationRef.current?.search).toBe('?visible=4')
+            expect(queries.locationRef.current?.search).toBe('?first=4')
         })
     })
 

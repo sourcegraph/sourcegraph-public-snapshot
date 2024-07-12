@@ -68,21 +68,13 @@ export interface GetUrlQueryParameters {
     query?: string
     filterValues?: FilterValues
     filters?: Filter[]
-    visibleResultCount?: number
     search: Location['search']
 }
 
 /**
  * Determines the URL search parameters for a connection.
  */
-export const getUrlQuery = ({
-    first,
-    query,
-    filterValues,
-    visibleResultCount,
-    filters,
-    search,
-}: GetUrlQueryParameters): string => {
+export const getUrlQuery = ({ first, query, filterValues, filters, search }: GetUrlQueryParameters): string => {
     const searchParameters = new URLSearchParams(search)
 
     if (query) {
@@ -105,10 +97,6 @@ export const getUrlQuery = ({
                 searchParameters.delete(filter.id)
             }
         }
-    }
-
-    if (visibleResultCount && visibleResultCount !== 0 && visibleResultCount !== first?.actual) {
-        searchParameters.set('visible', String(visibleResultCount))
     }
 
     return searchParameters.toString()

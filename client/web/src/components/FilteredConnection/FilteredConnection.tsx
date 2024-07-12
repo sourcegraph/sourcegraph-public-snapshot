@@ -384,7 +384,7 @@ class InnerFilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> = Con
                     ({ connectionOrError, previousPage, ...rest }) => {
                         if (this.props.useURLQuery) {
                             const { location, navigate } = this.props
-                            const searchFragment = this.urlQuery({ visibleResultCount: previousPage.length })
+                            const searchFragment = this.urlQuery({ first: previousPage.length })
                             const searchFragmentParams = new URLSearchParams(searchFragment)
                             searchFragmentParams.sort()
 
@@ -510,12 +510,10 @@ class InnerFilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> = Con
         first,
         query,
         filterValues,
-        visibleResultCount,
     }: {
         first?: number
         query?: string
         filterValues?: FilterValues
-        visibleResultCount?: number
     }): string {
         if (!first) {
             first = this.state.first
@@ -535,7 +533,6 @@ class InnerFilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> = Con
                 default: this.props.defaultFirst!,
             },
             filterValues,
-            visibleResultCount,
             search: this.props.location.search,
             filters: this.props.filters,
         })
