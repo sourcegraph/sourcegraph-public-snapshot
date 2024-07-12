@@ -1,5 +1,5 @@
 import { ExternalServiceKind } from '$lib/graphql-types'
-import type { IconComponent } from '$lib/Icon.svelte'
+import { type IconComponent } from '$lib/Icon.svelte'
 
 const iconMap: Partial<Record<keyof typeof ExternalServiceKind, IconComponent>> = {
     GITHUB: ISimpleIconsGithub,
@@ -58,13 +58,13 @@ const inferredKindMap: Record<string, ExternalServiceKind> = {
 }
 
 /**
- * @deprecated Prefer getting the code host kind from the GraphQL API because
+ * @deprecated Prefer getting the code host kind from the GraphQL API Repository.externalLinks because
  * it is more accurate and will return the correct CodeHostKind for a non-public deployment.
  *
  * Attempts to infer the code host kind from a repo name.
  *
  * @param repoName The name of the repo
- * @returns An object containing an inferred name and kind for the repo's code host
+ * @returns The inferred service kind, or undefined if unsuccessful
  */
 export function inferExternalServiceKind(repoName: string): ExternalServiceKind | undefined {
     const name = repoName.split('/', 2)[0]

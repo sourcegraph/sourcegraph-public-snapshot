@@ -14,12 +14,11 @@
 
 <script lang="ts">
     import Avatar from '$lib/Avatar.svelte'
-    import Icon from '$lib/Icon.svelte'
-    import { displayRepoName } from '$lib/shared'
     import Timestamp from '$lib/Timestamp.svelte'
     import Badge from '$lib/wildcard/Badge.svelte'
 
     import RepoStars from '../RepoStars.svelte'
+    import DisplayRepoName from '../shared/DisplayRepoName.svelte'
 
     import type { RepoPopoverFragment } from './RepoPopover.gql'
 
@@ -32,25 +31,12 @@
 
 <div class="root">
     {#if withHeader}
-        <div class="header">
-            <div class="left">
-                <Icon icon={ILucideGitMerge} aria-hidden --icon-color="var(--primary)" />
-                <h4>{displayRepoName(data.name)}</h4>
-                <Badge variant="outlineSecondary" small pill>
-                    {data.isPrivate ? 'Private' : 'Public'}
-                </Badge>
-            </div>
-            {#if data.externalURLs.length > 0}
-                <div class="right">
-                    <Icon
-                        icon={getIconForExternalService(data.externalURLs[0].serviceType)}
-                        --icon-color="var(--text-body)"
-                        --size={24}
-                    />
-                    <small>{getHumanNameForExternalService(data.externalURLs[0].serviceType)}</small>
-                </div>
-            {/if}
-        </div>
+        <header>
+            <DisplayRepoName repoName={data.name} externalLinks={data.externalURLs} />
+            <Badge variant="outlineSecondary" small pill>
+                {data.isPrivate ? 'Private' : 'Public'}
+            </Badge>
+        </header>
     {/if}
 
     {#if data.description || data.topics.length}
@@ -102,41 +88,9 @@
         }
     }
 
-    .header {
+    header {
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        background-color: var(--subtle-bg);
-
-        .left {
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            gap: 0.25rem;
-
-            h4 {
-                color: var(--text-body);
-                margin: 0;
-            }
-
-            small {
-                border: 1px solid var(--text-muted);
-                color: var(--text-muted);
-                padding: 0rem 0.5rem;
-                border-radius: 1rem;
-            }
-        }
-
-        .right {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 0.25rem;
-
-            small {
-                color: var(--text-muted);
-            }
-        }
     }
 
     .description-and-tags {
