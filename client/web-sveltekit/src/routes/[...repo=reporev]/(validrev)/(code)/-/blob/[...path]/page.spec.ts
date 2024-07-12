@@ -251,11 +251,8 @@ test.describe('file header', () => {
             // We specifically check the textContent here because this is what is
             // used to apply highlights. It must exactly equal the path (no additional
             // whitespace) or the highlights will be incorrectly offset.
-            const pathContainer = await page
-                .locator('css=[data-path-container]')
-                .first()
-                .evaluateHandle(elem => elem.textContent)
-            expect(await pathContainer.jsonValue()).toEqual('src/readme.md')
+            const pathContainer = page.locator('css=[data-path-container]').first()
+            await expect(pathContainer).toHaveText(/^src\/readme.md$/)
         })
 
         test('copy path button', async ({ page, context }) => {
@@ -407,7 +404,7 @@ test.describe('scroll behavior', () => {
 
 test('non-existent file', async ({ page, sg }) => {
     sg.mockOperations({
-        BlobFileViewBlobQuery: ({}) => ({
+        BlobFileViewBlobQuery: ({ }) => ({
             repository: {
                 commit: {
                     blob: null,
@@ -422,7 +419,7 @@ test('non-existent file', async ({ page, sg }) => {
 
 test('error loading file data', async ({ page, sg }) => {
     sg.mockOperations({
-        BlobFileViewBlobQuery: ({}) => {
+        BlobFileViewBlobQuery: ({ }) => {
             throw new Error('Blob error')
         },
     })
@@ -433,7 +430,7 @@ test('error loading file data', async ({ page, sg }) => {
 
 test.skip('error loading highlights data', async ({ page, sg }) => {
     sg.mockOperations({
-        BlobFileViewHighlightedFileQuery: ({}) => {
+        BlobFileViewHighlightedFileQuery: ({ }) => {
             throw new Error('Highlights error')
         },
     })
