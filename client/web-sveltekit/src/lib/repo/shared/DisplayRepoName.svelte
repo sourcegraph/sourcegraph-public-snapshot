@@ -19,26 +19,42 @@
     $: host = link
         ? `${linkHost(link)}`
         : repoName
-              .match(/^[^\/]*.[^\/]*\//)
+              .match(/^[^\/]*\.[^\/]*\//)
               ?.at(0)
               ?.slice(0, -1)
     $: displayName = host ? repoName.slice(host.length + 1) : repoName
     $: kind = link?.serviceKind ?? inferExternalServiceKind(repoName)
 </script>
 
-<Tooltip tooltip={host ?? ''}>
-    <Icon icon={getIconForExternalService(kind)} inline />
-</Tooltip>
-<span>
-    <DisplayPath path={displayName} />
+<span class="root">
+    <Tooltip tooltip={host ?? ''}><Icon icon={getIconForExternalService(kind)} inline /></Tooltip>
+    <DisplayPath path={displayName}>></DisplayPath>
 </span>
 
 <style lang="scss">
-    span {
+    span.root {
         display: contents;
+        color: var(--text-body);
+        font-family: var(--font-family-base);
+        font-size: var(--font-size-base);
+        font-weight: 500;
+
+        :global([data-icon]) {
+            margin-right: 0.375em;
+            align-self: center;
+            --icon-color: currentColor;
+        }
+
         :global([data-path-container]) {
+            color: var(--text-body);
             font-family: var(--font-family-base);
             font-size: var(--font-size-base);
+            font-weight: 500;
+            gap: 0;
+
+            :global([data-slash]) {
+                color: inherit;
+            }
         }
     }
 </style>

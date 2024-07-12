@@ -12,7 +12,7 @@
 
 <style lang="scss">
     div {
-        display: flex;
+        display: inline-flex;
         align-items: center;
         gap: 0.25em;
     }

@@ -31,7 +31,7 @@
             <a class="repo-link" {href} use:highlightRanges={{ ranges: highlights }} use:registerTrigger>
                 <DisplayRepoName {repoName} externalLinks={undefined} />
                 {#if rev}
-                    <small class="rev"> @ {rev}</small>
+                    &nbsp;<small class="rev"> @ {rev}</small>
                 {/if}
             </a>
             <svelte:fragment slot="content">
@@ -54,9 +54,9 @@
         gap: 0.375rem;
 
         .repo-link {
-            align-self: baseline;
-            color: var(--body-color);
-            font-weight: 500;
+            display: inline-flex;
+            align-items: baseline;
+            color: var(--text-body);
             .rev {
                 color: var(--text-muted);
             }

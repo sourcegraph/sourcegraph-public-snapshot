@@ -26,7 +26,7 @@
 </script>
 
 <SearchResult>
-    <div slot="title">
+    <svelte:fragment slot="title">
         <RepoRev repoName={result.repository} {rev} highlights={repositoryMatches} />
         {#if result.fork}
             <span class="info">
@@ -46,7 +46,7 @@
                 <small>Private</small>
             </span>
         {/if}
-    </div>
+    </svelte:fragment>
     <svelte:fragment slot="info">
         {#if result.repoStars}
             <RepoStars repoStars={result.repoStars} />
