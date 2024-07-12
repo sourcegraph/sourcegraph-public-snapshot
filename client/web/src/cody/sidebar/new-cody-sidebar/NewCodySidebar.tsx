@@ -4,7 +4,7 @@ import { mdiClose } from '@mdi/js'
 
 import { CodyLogo } from '@sourcegraph/cody-ui'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Alert, Badge, Button, H4, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Alert, Button, H4, Icon, LoadingSpinner, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import styles from './NewCodySidebar.module.scss'
 
@@ -32,7 +32,7 @@ export const NewCodySidebar: FC<NewCodySidebarProps> = props => {
                     <CodyLogo />
                     Cody
                     <div className="ml-2">
-                        <Badge variant="info">Experimental</Badge>
+                        <ProductStatusBadge status="beta" />
                     </div>
                 </div>
                 <Button variant="icon" aria-label="Close" onClick={onClose}>
