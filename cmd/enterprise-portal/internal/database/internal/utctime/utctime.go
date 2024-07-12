@@ -13,13 +13,21 @@ import (
 // Time is a wrapper around time.Time that implements the database/sql.Scanner
 // and database/sql/driver.Valuer interfaces to serialize and deserialize time
 // in UTC time zone.
+//
+// Time ensures that time.Time values are always:
+//
+//   - represented in UTC for consistency
+//   - rounded to microsecond precision
+//
+// We round the time because PostgreSQL times are represented in microseconds:
+// https://www.postgresql.org/docs/current/datatype-datetime.html
 type Time time.Time
 
 // Now returns the current time in UTC.
-func Now() Time { return Time(time.Now().UTC()) }
+func Now() Time { return Time(time.Now()) }
 
 // FromTime returns a utctime.Time from a time.Time.
-func FromTime(t time.Time) Time { return Time(t.UTC()) }
+func FromTime(t time.Time) Time { return Time(t.UTC().Round(time.Microsecond)) }
 
 var _ sql.Scanner = (*Time)(nil)
 
@@ -28,7 +36,7 @@ func (t *Time) Scan(src any) error {
 		return nil
 	}
 	if v, ok := src.(time.Time); ok {
-		*t = Time(v.UTC())
+		*t = FromTime(v)
 		return nil
 	}
 	return errors.Newf("value %T is not time.Time", src)
@@ -64,5 +72,5 @@ func (t *Time) Time() *time.Time {
 		return nil
 	}
 	// Ensure the time is in UTC.
-	return pointers.Ptr((*time.Time)(t).UTC())
+	return pointers.Ptr((*time.Time)(t).UTC().Round(time.Microsecond))
 }

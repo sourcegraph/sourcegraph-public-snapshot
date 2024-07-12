@@ -69,7 +69,7 @@ func convertSubscriptionToProto(subscription *subscriptions.Subscription, attrs 
 		Id:             subscriptionsv1.EnterpriseSubscriptionIDPrefix + attrs.ID,
 		Conditions:     conds,
 		InstanceDomain: pointers.DerefZero(subscription.InstanceDomain),
-		DisplayName:    subscription.DisplayName,
+		DisplayName:    pointers.DerefZero(subscription.DisplayName),
 	}
 }
 

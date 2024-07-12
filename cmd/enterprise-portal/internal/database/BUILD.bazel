@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "database.go",
         "migrate.go",
+        "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database",
     tags = [TAG_INFRA_CORESERVICES],

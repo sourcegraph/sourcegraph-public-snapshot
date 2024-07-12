@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/databasetest"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
@@ -45,19 +46,25 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 	s1, err := s.Upsert(
 		ctx,
 		uuid.New().String(),
-		subscriptions.UpsertSubscriptionOptions{InstanceDomain: pointers.Ptr("s1.sourcegraph.com")},
+		subscriptions.UpsertSubscriptionOptions{
+			InstanceDomain: pointers.Ptr(database.NewNullString("s1.sourcegraph.com")),
+		},
 	)
 	require.NoError(t, err)
 	s2, err := s.Upsert(
 		ctx,
 		uuid.New().String(),
-		subscriptions.UpsertSubscriptionOptions{InstanceDomain: pointers.Ptr("s2.sourcegraph.com")},
+		subscriptions.UpsertSubscriptionOptions{
+			InstanceDomain: pointers.Ptr(database.NewNullString("s2.sourcegraph.com")),
+		},
 	)
 	require.NoError(t, err)
 	_, err = s.Upsert(
 		ctx,
 		uuid.New().String(),
-		subscriptions.UpsertSubscriptionOptions{InstanceDomain: pointers.Ptr("s3.sourcegraph.com")},
+		subscriptions.UpsertSubscriptionOptions{
+			InstanceDomain: pointers.Ptr(database.NewNullString("s3.sourcegraph.com")),
+		},
 	)
 	require.NoError(t, err)
 
@@ -115,14 +122,16 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 	currentSubscription, err := s.Upsert(
 		ctx,
 		uuid.New().String(),
-		subscriptions.UpsertSubscriptionOptions{InstanceDomain: pointers.Ptr("s1.sourcegraph.com")},
+		subscriptions.UpsertSubscriptionOptions{
+			InstanceDomain: pointers.Ptr(database.NewNullString("s1.sourcegraph.com")),
+		},
 	)
 	require.NoError(t, err)
 
 	got, err := s.Get(ctx, currentSubscription.ID)
 	require.NoError(t, err)
 	assert.Equal(t, currentSubscription.ID, got.ID)
-	assert.Equal(t, currentSubscription.InstanceDomain, got.InstanceDomain)
+	assert.Equal(t, *currentSubscription.InstanceDomain, *got.InstanceDomain)
 	assert.Empty(t, got.DisplayName)
 	assert.NotZero(t, got.CreatedAt)
 	assert.NotZero(t, got.UpdatedAt)
@@ -133,17 +142,19 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 
 		got, err = s.Upsert(ctx, currentSubscription.ID, subscriptions.UpsertSubscriptionOptions{})
 		require.NoError(t, err)
-		assert.Equal(t, currentSubscription.InstanceDomain, got.InstanceDomain)
+		assert.Equal(t,
+			pointers.DerefZero(currentSubscription.InstanceDomain),
+			pointers.DerefZero(got.InstanceDomain))
 	})
 
 	t.Run("update only domain", func(t *testing.T) {
 		t.Cleanup(func() { currentSubscription = got })
 
 		got, err = s.Upsert(ctx, currentSubscription.ID, subscriptions.UpsertSubscriptionOptions{
-			InstanceDomain: pointers.Ptr("s1-new.sourcegraph.com"),
+			InstanceDomain: pointers.Ptr(database.NewNullString("s1-new.sourcegraph.com")),
 		})
 		require.NoError(t, err)
-		assert.Equal(t, "s1-new.sourcegraph.com", got.InstanceDomain)
+		assert.Equal(t, "s1-new.sourcegraph.com", pointers.DerefZero(got.InstanceDomain))
 		assert.Equal(t, currentSubscription.DisplayName, got.DisplayName)
 	})
 
@@ -151,11 +162,11 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 		t.Cleanup(func() { currentSubscription = got })
 
 		got, err = s.Upsert(ctx, currentSubscription.ID, subscriptions.UpsertSubscriptionOptions{
-			DisplayName: "My New Display Name",
+			DisplayName: pointers.Ptr(database.NewNullString("My New Display Name")),
 		})
 		require.NoError(t, err)
-		assert.Equal(t, currentSubscription.InstanceDomain, got.InstanceDomain)
-		assert.Equal(t, "My New Display Name", got.DisplayName)
+		assert.Equal(t, *currentSubscription.InstanceDomain, *got.InstanceDomain)
+		assert.Equal(t, "My New Display Name", pointers.DerefZero(got.DisplayName))
 	})
 
 	t.Run("update only created at", func(t *testing.T) {
@@ -166,7 +177,9 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 			CreatedAt: yesterday,
 		})
 		require.NoError(t, err)
-		assert.Equal(t, currentSubscription.InstanceDomain, got.InstanceDomain)
+		assert.Equal(t,
+			pointers.DerefZero(currentSubscription.InstanceDomain),
+			pointers.DerefZero(got.InstanceDomain))
 		assert.Equal(t, currentSubscription.DisplayName, got.DisplayName)
 		// Round times to allow for some precision drift in CI
 		assert.Equal(t, yesterday.Round(time.Second).UTC(), got.CreatedAt.Time().Round(time.Second))
@@ -180,8 +193,8 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 			ArchivedAt: pointers.Ptr(yesterday),
 		})
 		require.NoError(t, err)
-		assert.Equal(t, currentSubscription.InstanceDomain, got.InstanceDomain)
-		assert.Equal(t, currentSubscription.DisplayName, got.DisplayName)
+		assert.Equal(t, *currentSubscription.InstanceDomain, *got.InstanceDomain)
+		assert.Equal(t, *currentSubscription.DisplayName, *got.DisplayName)
 		assert.Equal(t, currentSubscription.CreatedAt, got.CreatedAt)
 		// Round times to allow for some precision drift in CI
 		assert.Equal(t, yesterday.Round(time.Second).UTC(), got.ArchivedAt.Time().Round(time.Second))
@@ -209,7 +222,9 @@ func SubscriptionsStoreGet(t *testing.T, ctx context.Context, s *subscriptions.S
 	s1, err := s.Upsert(
 		ctx,
 		uuid.New().String(),
-		subscriptions.UpsertSubscriptionOptions{InstanceDomain: pointers.Ptr("s1.sourcegraph.com")},
+		subscriptions.UpsertSubscriptionOptions{
+			InstanceDomain: pointers.Ptr(database.NewNullString("s1.sourcegraph.com")),
+		},
 	)
 	require.NoError(t, err)
 

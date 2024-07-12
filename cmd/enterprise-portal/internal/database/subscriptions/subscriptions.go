@@ -2,6 +2,7 @@ package subscriptions
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -49,7 +50,7 @@ type Subscription struct {
 	//
 	// TODO: Clean up the database post-deploy and remove the 'Unnamed subscription'
 	// part of the constraint.
-	DisplayName string `gorm:"size:256;not null;uniqueIndex:,where:archived_at IS NULL AND display_name != 'Unnamed subscription' AND display_name != ''"`
+	DisplayName *string `gorm:"size:256;uniqueIndex:,where:archived_at IS NULL AND display_name != 'Unnamed subscription' AND display_name != ''"`
 
 	// Timestamps representing the latest timestamps of key conditions related
 	// to this subscription.
@@ -177,8 +178,8 @@ WHERE %s
 }
 
 type UpsertSubscriptionOptions struct {
-	InstanceDomain *string
-	DisplayName    string
+	InstanceDomain *sql.NullString
+	DisplayName    *sql.NullString
 
 	CreatedAt  time.Time
 	ArchivedAt *time.Time

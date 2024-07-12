@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/databasetest"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
@@ -31,11 +32,11 @@ func TestLicensesStore(t *testing.T) {
 
 	subs := subscriptions.NewStore(db)
 	_, err := subs.Upsert(ctx, subscriptionID1, subscriptions.UpsertSubscriptionOptions{
-		DisplayName: "Acme, Inc. 1",
+		DisplayName: pointers.Ptr(database.NewNullString("Acme, Inc. 1")),
 	})
 	require.NoError(t, err)
 	_, err = subs.Upsert(ctx, subscriptionID2, subscriptions.UpsertSubscriptionOptions{
-		DisplayName: "Acme, Inc. 2",
+		DisplayName: pointers.Ptr(database.NewNullString("Acme, Inc. 2")),
 	})
 	require.NoError(t, err)
 

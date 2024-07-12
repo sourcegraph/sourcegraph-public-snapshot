@@ -38,6 +38,7 @@ go_test(
     ],
     deps = [
         ":subscriptions",
+        "//cmd/enterprise-portal/internal/database",
         "//cmd/enterprise-portal/internal/database/databasetest",
         "//cmd/enterprise-portal/internal/database/internal/tables",
         "//cmd/enterprise-portal/internal/database/internal/utctime",
