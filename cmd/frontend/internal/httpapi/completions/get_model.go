@@ -20,7 +20,9 @@ import (
 	modelconfigSDK "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 )
 
-// legacyModelRef is a model reference that is of the form "provider/model".
+// legacyModelRef is a model reference that is of the form "provider/model" or even
+// just "model". (::sigh::)
+//
 // The type is just to catch conversion errors while we roll out modelconfigSDK.ModelRef
 // as the "one, true model reference" mechanism.
 type legacyModelRef string
@@ -31,7 +33,8 @@ func (lmr legacyModelRef) Parse() (string, string) {
 	case 2:
 		return parts[0], parts[1]
 
-		// Weird or unexpected formats.
+		// If there was no slash, then we just have a model name.
+		// and have no idea about the provider.
 	case 0, 1:
 		fallthrough
 	default:
@@ -50,7 +53,16 @@ func (lmr legacyModelRef) EqualToIgnoringAPIVersion(mref modelconfigSDK.ModelRef
 	lmrProvider, lmrModel := lmr.Parse()
 	mrefProvider := string(mref.ProviderID())
 	mrefModel := string(mref.ModelID())
-	return lmrProvider == mrefProvider && lmrModel == mrefModel
+
+	// Only check the provider matches if the legacyModelRef had one. In other words,
+	// if we only have "gpt-3.5-turbo" then we will consider it matching "anthropic::unknown::gpt-3.5-turbo".
+	//
+	// This will get more risky as backends support more models, with potentially overlapping
+	// ModelIDs. But for now is safe enough.
+	if lmrProvider != "" && lmrProvider != mrefProvider {
+		return false
+	}
+	return lmrModel == mrefModel
 }
 
 // ToModelRef returns a BEST GUESS at the actual ModelRef for the

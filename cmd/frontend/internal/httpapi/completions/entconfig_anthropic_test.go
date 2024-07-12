@@ -92,13 +92,10 @@ func testAPIProviderAnthropic(t *testing.T, infra *apiProviderTestInfra) {
 	}
 
 	t.Run("TestDataIsValid", func(t *testing.T) {
+		// The 3x ways Cody clients specify models (before they start sending fully-qualified mrefs).
 		requestedModels := []string{
 			"",
-
-			// > Serves a 400:
-			// > unsupported code completion model "claude-3-sonnet-20240229" (default "anthropic::unknown::claude-3-sonnet-20240229")
-			// "claude-3-sonnet-20240229",
-
+			"claude-3-sonnet-20240229",
 			"anthropic/claude-3-sonnet-20240229",
 		}
 

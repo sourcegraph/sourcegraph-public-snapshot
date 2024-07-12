@@ -99,6 +99,17 @@ func TestLegacyModelRef(t *testing.T) {
 				InMRef:      "openai::v2::gpt-4o",
 				Want:        true,
 			},
+			// Only the model name is supplied, no provider at all.
+			{
+				InLegacyRef: "gpt-4o",
+				InMRef:      "openai::v2::gpt-4o",
+				Want:        true,
+			},
+			{
+				InLegacyRef: "gpt-4o",
+				InMRef:      "something-other-than-openai::v2::gpt-4o",
+				Want:        true,
+			},
 
 			// Non matches.
 			{
@@ -108,6 +119,11 @@ func TestLegacyModelRef(t *testing.T) {
 			},
 			{
 				InLegacyRef: "openai/gpt-4o",
+				InMRef:      "openai::v1::gpt-4o-turbo",
+				Want:        false,
+			},
+			{
+				InLegacyRef: "gpt-4o",
 				InMRef:      "openai::v1::gpt-4o-turbo",
 				Want:        false,
 			},
