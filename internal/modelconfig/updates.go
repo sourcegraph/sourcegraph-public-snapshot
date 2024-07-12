@@ -82,10 +82,10 @@ func ApplyModelOverride(mod *types.Model, modelOverrides types.ModelOverride) er
 	updateIfNonZero(&modCtxWin.MaxInputTokens, overrideCtxWin.MaxInputTokens)
 	updateIfNonZero(&modCtxWin.MaxOutputTokens, overrideCtxWin.MaxOutputTokens)
 
-	if mod.ClientSideConfig != nil {
+	if modelOverrides.ClientSideConfig != nil {
 		mod.ClientSideConfig = modelOverrides.ClientSideConfig
 	}
-	if mod.ServerSideConfig != nil {
+	if modelOverrides.ServerSideConfig != nil {
 		mod.ServerSideConfig = modelOverrides.ServerSideConfig
 	}
 
