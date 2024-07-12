@@ -248,6 +248,9 @@ test.describe('file header', () => {
         test('textContent is exactly the path', async ({ page, context }) => {
             await context.grantPermissions(['clipboard-read', 'clipboard-write'])
             await page.goto(url)
+            // We specifically check the textContent here because this is what is
+            // used to apply highlights. It must exactly equal the path (no additional
+            // whitespace) or the highlights will be incorrectly offset.
             const pathContainer = await page
                 .locator('css=[data-path-container]')
                 .first()
