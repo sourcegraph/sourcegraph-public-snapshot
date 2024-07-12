@@ -104,8 +104,7 @@ func (c *googleCompletionStreamClient) Complete(
 func (c *googleCompletionStreamClient) handleAnthropicComplete(
 	ctx context.Context,
 	request types.CompletionRequest) (*types.CompletionResponse, error) {
-	requestParams := request.Parameters
-	resp, err := c.makeAnthopicRequest(ctx, requestParams, false)
+	resp, err := c.makeAnthopicRequest(ctx, request, false)
 	if err != nil {
 		return nil, err
 	}
@@ -136,8 +135,7 @@ func (c *googleCompletionStreamClient) handleAnthropicComplete(
 func (c *googleCompletionStreamClient) handleGeminiComplete(
 	ctx context.Context,
 	request types.CompletionRequest) (*types.CompletionResponse, error) {
-	requestParams := request.Parameters
-	resp, err := c.makeGeminiRequest(ctx, requestParams, false)
+	resp, err := c.makeGeminiRequest(ctx, request, false)
 	if err != nil {
 		return nil, err
 	}
@@ -148,13 +146,8 @@ func (c *googleCompletionStreamClient) handleGeminiComplete(
 		return nil, err
 	}
 
-	if len(response.Candidates) == 0 {
-		// Empty response.
-		return &types.CompletionResponse{}, nil
-	}
-
-	if len(response.Candidates[0].Content.Parts) == 0 {
-		// Empty response.
+	// Empty response.
+	if len(response.Candidates) == 0 || len(response.Candidates[0].Content.Parts) == 0 {
 		return &types.CompletionResponse{}, nil
 	}
 
@@ -171,18 +164,18 @@ func (c *googleCompletionStreamClient) Stream(
 	request types.CompletionRequest,
 	sendEvent types.SendCompletionEvent) error {
 	if c.apiFamily == VertexAnthropic {
-		return c.handleVertexAnthropicStream(ctx, request.Parameters, sendEvent)
+		return c.handleVertexAnthropicStream(ctx, request, sendEvent)
 	} else {
-		return c.handleGeminiStream(ctx, request.Parameters, sendEvent)
+		return c.handleGeminiStream(ctx, request, sendEvent)
 	}
 }
 
 func (c *googleCompletionStreamClient) handleGeminiStream(
 	ctx context.Context,
-	requestParams types.CompletionRequestParameters,
+	request types.CompletionRequest,
 	sendEvent types.SendCompletionEvent,
 ) error {
-	resp, err := c.makeGeminiRequest(ctx, requestParams, true)
+	resp, err := c.makeGeminiRequest(ctx, request, true)
 	if err != nil {
 		return err
 	}
@@ -230,7 +223,7 @@ func (c *googleCompletionStreamClient) handleGeminiStream(
 
 func (c *googleCompletionStreamClient) handleVertexAnthropicStream(
 	ctx context.Context,
-	requestParams types.CompletionRequestParameters,
+	request types.CompletionRequest,
 	sendEvent types.SendCompletionEvent,
 ) error {
 	var resp *http.Response
@@ -241,7 +234,7 @@ func (c *googleCompletionStreamClient) handleVertexAnthropicStream(
 			resp.Body.Close()
 		}
 	})()
-	resp, err = c.makeAnthopicRequest(ctx, requestParams, true)
+	resp, err = c.makeAnthopicRequest(ctx, request, true)
 	if err != nil {
 		return err
 	}
@@ -336,13 +329,15 @@ func (c *googleCompletionStreamClient) handleVertexAnthropicStream(
 }
 
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
-func (c *googleCompletionStreamClient) makeGeminiRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
-	apiURL := c.getAPIURL(requestParams, stream)
+func (c *googleCompletionStreamClient) makeGeminiRequest(ctx context.Context, request types.CompletionRequest, stream bool) (*http.Response, error) {
+	apiURL := c.getAPIURL(request, stream)
 	endpointURL := apiURL.String()
 
 	// Ensure TopK and TopP are non-negative
+	requestParams := request.Parameters
 	requestParams.TopK = max(0, requestParams.TopK)
 	requestParams.TopP = max(0, requestParams.TopP)
+
 	// Generate the prompt
 	prompt, err := getGeminiPrompt(requestParams.Messages)
 	if err != nil {
@@ -396,7 +391,9 @@ func (c *googleCompletionStreamClient) makeGeminiRequest(ctx context.Context, re
 }
 
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
-func (c *googleCompletionStreamClient) makeAnthopicRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+func (c *googleCompletionStreamClient) makeAnthopicRequest(ctx context.Context, request types.CompletionRequest, stream bool) (*http.Response, error) {
+	requestParams := request.Parameters
+
 	// Generate the prompt
 	prompt, systemPrompt, err := getAnthropicPrompt(requestParams.Messages)
 	if err != nil {
@@ -416,20 +413,17 @@ func (c *googleCompletionStreamClient) makeAnthopicRequest(ctx context.Context, 
 		return nil, err
 	}
 
-	apiURL := c.getAPIURL(requestParams, stream)
-
+	apiURL := c.getAPIURL(request, stream)
 	req, err := http.NewRequestWithContext(ctx, "POST", apiURL.String(), bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
-
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
 	resp, err := c.gcpCli.Do(req)
 	if err != nil {
 		return nil, err
 	}
-
 	if resp.StatusCode != http.StatusOK {
 		return nil, types.NewErrStatusNotOK("Google", resp)
 	}
@@ -439,7 +433,7 @@ func (c *googleCompletionStreamClient) makeAnthopicRequest(ctx context.Context, 
 
 // In the latest API Docs, the model name and API key must be used with the default API endpoint URL.
 // Ref: https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=rest#gemini_and_content_based_apis
-func (c *googleCompletionStreamClient) getAPIURL(requestParams types.CompletionRequestParameters, stream bool) *url.URL {
+func (c *googleCompletionStreamClient) getAPIURL(request types.CompletionRequest, stream bool) *url.URL {
 	apiURL, err := url.Parse(c.endpoint)
 	if err != nil {
 		apiURL = &url.URL{
@@ -449,7 +443,8 @@ func (c *googleCompletionStreamClient) getAPIURL(requestParams types.CompletionR
 		}
 	}
 
-	apiURL.Path = path.Join(apiURL.Path, requestParams.Model) + ":" + getgRPCMethod(stream, c.apiFamily)
+	model := request.Parameters.Model
+	apiURL.Path = path.Join(apiURL.Path, model) + ":" + getgRPCMethod(stream, c.apiFamily)
 
 	// We need to append the API key to the default API endpoint URL.
 	if isDefaultAPIEndpoint(apiURL) {

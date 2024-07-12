@@ -16,13 +16,14 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	k8sConfig        *rest.Config
-	metrics          metricsConfig
-	grpc             grpcConfig
-	http             httpConfig
-	namespace        string
-	relregEndpoint   string
-	applianceVersion string
+	k8sConfig          *rest.Config
+	metrics            metricsConfig
+	grpc               grpcConfig
+	http               httpConfig
+	namespace          string
+	relregEndpoint     string
+	applianceVersion   string
+	selfDeploymentName string
 }
 
 func (c *Config) Load() {
@@ -46,6 +47,7 @@ func (c *Config) Load() {
 	c.http.addr = c.Get("APPLIANCE_HTTP_ADDR", ":8080", "Appliance http address.")
 	c.namespace = c.Get("APPLIANCE_NAMESPACE", "default", "Namespace to monitor.")
 	c.applianceVersion = c.Get("APPLIANCE_VERSION", version.Version(), "Version tag for the running appliance.")
+	c.selfDeploymentName = c.Get("APPLIANCE_DEPLOYMENT_NAME", "", "Own deployment name for self-update. Default is to disable self-update.")
 	c.relregEndpoint = c.Get("RELEASE_REGISTRY_ENDPOINT", releaseregistry.Endpoint, "Release registry endpoint.")
 }
 

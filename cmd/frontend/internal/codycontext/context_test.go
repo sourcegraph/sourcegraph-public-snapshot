@@ -1,9 +1,11 @@
 package codycontext
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -62,6 +64,40 @@ func TestFileMatchToContextMatches(t *testing.T) {
 				StartLine: 85,
 			},
 		},
+		{
+			// With symbol match returns context around first symbol
+			fileMatch: &result.FileMatch{
+				File: result.File{
+					Path:     "main.go",
+					CommitID: "abc123",
+					Repo: types.MinimalRepo{
+						Name: "repo",
+						ID:   1,
+					},
+				},
+				Symbols: []*result.SymbolMatch{
+					{
+						Symbol: result.Symbol{
+							Line: 23,
+							Name: "symbol",
+						},
+					},
+					{
+						Symbol: result.Symbol{
+							Line: 37,
+							Name: "symbol",
+						},
+					},
+				},
+			},
+			want: FileChunkContext{
+				RepoName:  "repo",
+				RepoID:    1,
+				CommitID:  "abc123",
+				Path:      "main.go",
+				StartLine: 18,
+			},
+		},
 	}
 
 	for _, tc := range cases {
@@ -70,4 +106,14 @@ func TestFileMatchToContextMatches(t *testing.T) {
 			t.Errorf("mismatch (-want +got):\n%s", diff)
 		}
 	}
+}
+
+func TestReposAsRegexp(t *testing.T) {
+	t.Run("SRCH-658", func(t *testing.T) {
+		repos := []types.RepoIDName{{Name: "github.com/sourcegraph/docs"}, {Name: "github.com/sourcegraph/docs"}}
+		pattern := reposAsRegexp(repos)
+		re := regexp.MustCompile(pattern)
+		require.True(t, re.MatchString("github.com/sourcegraph/docs"))
+		require.False(t, re.MatchString("github.com/sourcegraph/docsite"))
+	})
 }

@@ -1,31 +1,24 @@
 package reconciler
 
 import (
-	"bytes"
 	"context"
-	"crypto/rand"
-	"encoding/hex"
-	stdlog "log"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/bazelbuild/rules_go/go/runfiles"
-	"github.com/go-logr/stdr"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	"github.com/sourcegraph/log/logr"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
+	"github.com/sourcegraph/sourcegraph/internal/appliance/k8senvtest"
 )
 
 // Test helpers
@@ -33,13 +26,9 @@ import (
 type ApplianceTestSuite struct {
 	suite.Suite
 
-	ctx       context.Context
-	cancelCtx context.CancelFunc
-
-	testEnv     *envtest.Environment
-	ctrlMgrDone chan struct{}
-
-	k8sClient *kubernetes.Clientset
+	ctx            context.Context
+	k8sClient      *kubernetes.Clientset
+	envtestCleanup func() error
 }
 
 func TestApplianceTestSuite(t *testing.T) {
@@ -47,105 +36,42 @@ func TestApplianceTestSuite(t *testing.T) {
 }
 
 func (suite *ApplianceTestSuite) SetupSuite() {
-	suite.ctx, suite.cancelCtx = context.WithCancel(context.Background())
-	suite.setupEnvtest()
+	suite.ctx = context.Background()
+
+	var k8sConfig *rest.Config
+	var err error
+	logger := logr.New(logtest.Scoped(suite.T()))
+	k8sConfig, suite.envtestCleanup, err = k8senvtest.SetupEnvtest(suite.ctx, logger, newReconciler)
+	suite.Require().NoError(err)
+	suite.k8sClient, err = kubernetes.NewForConfig(k8sConfig)
+	suite.Require().NoError(err)
 }
 
-func (suite *ApplianceTestSuite) TearDownSuite() {
-	t := suite.T()
-	suite.cancelCtx()
-	require.NoError(t, suite.testEnv.Stop())
-	<-suite.ctrlMgrDone
-}
-
-func (suite *ApplianceTestSuite) setupEnvtest() {
-	t := suite.T()
-	logger := stdr.New(stdlog.New(os.Stderr, "", stdlog.LstdFlags))
-
-	suite.testEnv = &envtest.Environment{
-		AttachControlPlaneOutput: true,
-		BinaryAssetsDirectory:    suite.kubebuilderAssetPath(),
-	}
-	apiServerCfg := suite.testEnv.ControlPlane.GetAPIServer()
-	apiServerCfg.Configure().Set("bind-address", "127.0.0.1")
-	apiServerCfg.Configure().Set("advertise-address", "127.0.0.1")
-	cfg, err := suite.testEnv.Start()
-	require.NoError(t, err)
-
-	// If we had CRDs, this is where we'd add them to the scheme
-
-	ctrlMgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Logger: logger,
-		Scheme: scheme.Scheme,
-
-		// On macos with the built-in firewall enabled, every test run will
-		// cause a firewall dialog box to pop. That's incredibly annoying. This
-		// can be solved by binding the metrics server to localhost, but we
-		// don't need it, so we disable it altogether.
-		Metrics: metricsserver.Options{BindAddress: "0"},
-	})
-	require.NoError(t, err)
-	suite.k8sClient, err = kubernetes.NewForConfig(cfg)
-	require.NoError(t, err)
-
-	reconciler := &Reconciler{
+func newReconciler(ctrlMgr ctrl.Manager) k8senvtest.KubernetesController {
+	return &Reconciler{
 		Client:   ctrlMgr.GetClient(),
 		Scheme:   ctrlMgr.GetScheme(),
 		Recorder: ctrlMgr.GetEventRecorderFor("appliance"),
 	}
-	require.NoError(t, reconciler.SetupWithManager(ctrlMgr))
-
-	// Start controller manager async. We'll stop it with context cancellation
-	// later.
-	suite.ctrlMgrDone = make(chan struct{})
-	go func() {
-		require.NoError(t, ctrlMgr.Start(suite.ctx))
-		close(suite.ctrlMgrDone)
-	}()
 }
 
-func (suite *ApplianceTestSuite) kubebuilderAssetPath() string {
-	if os.Getenv("BAZEL_TEST") == "" {
-		return suite.kubebuilderAssetPathLocalDev()
-	}
-
-	assetPaths := strings.Split(os.Getenv("KUBEBUILDER_ASSET_PATHS"), " ")
-	suite.Require().Greater(len(assetPaths), 0)
-	arbAssetPath, err := runfiles.Rlocation(assetPaths[0])
-	suite.Require().NoError(err)
-	return filepath.Dir(arbAssetPath)
-}
-
-// In the hermetic bazel environment, we skip setup-envtest, handling the assets
-// directly in a hermetic and cachable way.
-// If we're using `go test`, which can be convenient for local dev, we fall back
-// on expecting setup-envtest to be present on the developer machine.
-func (suite *ApplianceTestSuite) kubebuilderAssetPathLocalDev() string {
-	setupEnvTestCmd := exec.Command("setup-envtest", "use", "1.28.0", "--bin-dir", "/tmp/envtest", "-p", "path")
-	var envtestOut bytes.Buffer
-	setupEnvTestCmd.Stdout = &envtestOut
-	err := setupEnvTestCmd.Run()
-	suite.Require().NoError(err, "Did you remember to `go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest`?")
-	return strings.TrimSpace(envtestOut.String())
+func (suite *ApplianceTestSuite) TearDownSuite() {
+	suite.Require().NoError(suite.envtestCleanup())
 }
 
 func (suite *ApplianceTestSuite) createConfigMapAndAwaitReconciliation(fixtureFileName string) string {
 	// Create a random namespace for each test
-	namespace := "test-appliance-" + suite.randomSlug()
-	ns := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: namespace,
-		},
-	}
-	_, err := suite.k8sClient.CoreV1().Namespaces().Create(suite.ctx, ns, metav1.CreateOptions{})
+	namespace, err := k8senvtest.NewRandomNamespace("test-appliance")
+	suite.Require().NoError(err)
+	_, err = suite.k8sClient.CoreV1().Namespaces().Create(suite.ctx, namespace, metav1.CreateOptions{})
 	suite.Require().NoError(err)
 
-	cfgMap := suite.newConfigMap(namespace, fixtureFileName)
-	suite.awaitReconciliation(namespace, func() {
-		_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace).Create(suite.ctx, cfgMap, metav1.CreateOptions{})
+	cfgMap := suite.newConfigMap(namespace.GetName(), fixtureFileName)
+	suite.awaitReconciliation(namespace.GetName(), func() {
+		_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace.GetName()).Create(suite.ctx, cfgMap, metav1.CreateOptions{})
 		suite.Require().NoError(err)
 	})
-	return namespace
+	return namespace.GetName()
 }
 
 func (suite *ApplianceTestSuite) updateConfigMapAndAwaitReconciliation(namespace, fixtureFileName string) {
@@ -198,11 +124,4 @@ func (suite *ApplianceTestSuite) newConfigMap(namespace, fixtureFileName string)
 		},
 		Data: map[string]string{"spec": string(cfgBytes)},
 	}
-}
-
-func (suite *ApplianceTestSuite) randomSlug() string {
-	buf := make([]byte, 3)
-	_, err := rand.Read(buf)
-	suite.Require().NoError(err)
-	return hex.EncodeToString(buf)
 }

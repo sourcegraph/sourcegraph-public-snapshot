@@ -26,6 +26,8 @@ type Config struct {
 
 	Port int
 
+	RedisEndpoint string
+
 	DiagnosticsSecret string
 
 	Dotcom struct {
@@ -296,7 +298,9 @@ func (c *Config) Load() {
 			"accounts/fireworks/models/starcoder-1b-w8a16",
 			fireworks.DeepseekCoder1p3b,
 			fireworks.DeepseekCoder7b,
-		}, fireworks.FineTunedLlamaModelVariants, fireworks.FineTunedMixtralModelVariants), ","),
+			fireworks.DeepseekCoderV2LiteBase,
+			fireworks.CodeQwen7B,
+		}, fireworks.FineTunedLlamaModelVariants, fireworks.FineTunedMixtralModelVariants, fireworks.FineTunedDeepseekLogsTrainedModelVariants, fireworks.FineTunedDeepseekStackTrainedModelVariants), ","),
 		"Fireworks models that can be used."))
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for Fireworks"))
@@ -311,6 +315,8 @@ func (c *Config) Load() {
 			google.Gemini15FlashLatest,
 			google.Gemini15ProLatest,
 			google.GeminiProLatest,
+			google.Gemini15Flash001,
+			google.Gemini15Pro001,
 			google.Gemini15Flash,
 			google.Gemini15Pro,
 			google.GeminiPro,
@@ -381,6 +387,8 @@ func (c *Config) Load() {
 	c.SAMSClientConfig.ClientSecret = c.GetOptional("SAMS_CLIENT_SECRET", "SAMS OAuth client secret")
 
 	c.Environment = c.Get("CODY_GATEWAY_ENVIRONMENT", "dev", "Environment name.")
+
+	c.RedisEndpoint = c.Get("REDIS_ENDPOINT", "", "Redis endpoint to connect to for storing KV data.")
 }
 
 // loadFlaggingConfig loads the common set of flagging-related environment variables for

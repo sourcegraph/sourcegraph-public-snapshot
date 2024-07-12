@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 type mockHTTPResponseBody struct {
@@ -51,6 +52,6 @@ func newTestClient(t *testing.T) *Client {
 		baseURL:             &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
 		httpClient:          &http.Client{},
 		externalRateLimiter: &ratelimit.Monitor{},
-		projCache:           rcache.NewWithTTL("__test__gl_proj", 1000),
+		projCache:           rcache.NewWithTTL(redispool.Cache, "__test__gl_proj", 1000),
 	}
 }

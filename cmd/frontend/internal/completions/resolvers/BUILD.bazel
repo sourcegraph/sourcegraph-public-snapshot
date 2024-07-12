@@ -10,6 +10,7 @@ go_library(
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/internal/cody",
         "//cmd/frontend/internal/httpapi/completions",
+        "//cmd/frontend/internal/modelconfig",
         "//internal/completions/client",
         "//internal/completions/types",
         "//internal/conf",

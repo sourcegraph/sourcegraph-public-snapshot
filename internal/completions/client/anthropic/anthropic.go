@@ -48,11 +48,7 @@ func (a *anthropicClient) Complete(
 	logger log.Logger,
 	request types.CompletionRequest) (*types.CompletionResponse, error) {
 
-	feature := request.Feature
-	version := request.Version
-	requestParams := request.Parameters
-
-	resp, err := a.makeRequest(ctx, requestParams, version, false)
+	resp, err := a.makeRequest(ctx, request, false)
 	if err != nil {
 		return nil, err
 	}
@@ -62,15 +58,13 @@ func (a *anthropicClient) Complete(
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
+	if err = a.recordTokenUsage(request, response.Usage); err != nil {
+		return nil, err
+	}
 
 	completion := ""
 	for _, content := range response.Content {
 		completion += content.Text
-	}
-
-	err = a.tokenManager.UpdateTokenCountsFromModelUsage(response.Usage.InputTokens, response.Usage.OutputTokens, "anthropic/"+requestParams.Model, string(feature), tokenusage.Anthropic)
-	if err != nil {
-		return nil, err
 	}
 
 	return &types.CompletionResponse{
@@ -86,11 +80,7 @@ func (a *anthropicClient) Stream(
 	request types.CompletionRequest,
 	sendEvent types.SendCompletionEvent) error {
 
-	feature := request.Feature
-	version := request.Version
-	requestParams := request.Parameters
-
-	resp, err := a.makeRequest(ctx, requestParams, version, true)
+	resp, err := a.makeRequest(ctx, request, true)
 	if err != nil {
 		return err
 	}
@@ -130,8 +120,13 @@ func (a *anthropicClient) Stream(
 		case "message_delta":
 			if event.Delta != nil {
 				stopReason = event.Delta.StopReason
-				err = a.tokenManager.UpdateTokenCountsFromModelUsage(inputPromptTokens, event.Usage.OutputTokens, "anthropic/"+requestParams.Model, string(feature), tokenusage.Anthropic)
-				if err != nil {
+
+				// Build the usage data based on what we've seen.
+				usageData := anthropicMessagesResponseUsage{
+					InputTokens:  inputPromptTokens,
+					OutputTokens: event.Usage.OutputTokens,
+				}
+				if err = a.recordTokenUsage(request, usageData); err != nil {
 					logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 				}
 			}
@@ -151,7 +146,16 @@ func (a *anthropicClient) Stream(
 	return dec.Err()
 }
 
-func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, stream bool) (*http.Response, error) {
+func (a *anthropicClient) recordTokenUsage(request types.CompletionRequest, usage anthropicMessagesResponseUsage) error {
+	return a.tokenManager.UpdateTokenCountsFromModelUsage(
+		usage.InputTokens, usage.OutputTokens,
+		"anthropic/"+request.Parameters.Model, string(request.Feature),
+		tokenusage.Anthropic)
+}
+
+func (a *anthropicClient) makeRequest(ctx context.Context, request types.CompletionRequest, stream bool) (*http.Response, error) {
+	requestParams := request.Parameters
+	version := request.Version
 	convertedMessages := requestParams.Messages
 	stopSequences := removeWhitespaceOnlySequences(requestParams.StopSequences)
 	if version == types.CompletionsVersionLegacy {

@@ -22,6 +22,7 @@ const (
 	CodyAccessService_GetCodyGatewayAccess_FullMethodName    = "/enterpriseportal.codyaccess.v1.CodyAccessService/GetCodyGatewayAccess"
 	CodyAccessService_ListCodyGatewayAccesses_FullMethodName = "/enterpriseportal.codyaccess.v1.CodyAccessService/ListCodyGatewayAccesses"
 	CodyAccessService_UpdateCodyGatewayAccess_FullMethodName = "/enterpriseportal.codyaccess.v1.CodyAccessService/UpdateCodyGatewayAccess"
+	CodyAccessService_GetCodyGatewayUsage_FullMethodName     = "/enterpriseportal.codyaccess.v1.CodyAccessService/GetCodyGatewayUsage"
 )
 
 // CodyAccessServiceClient is the client API for CodyAccessService service.
@@ -35,6 +36,9 @@ type CodyAccessServiceClient interface {
 	// UpdateEnterpriseSubscription updates the Cody Gateway access granted to an
 	// Enterprise subscription.
 	UpdateCodyGatewayAccess(ctx context.Context, in *UpdateCodyGatewayAccessRequest, opts ...grpc.CallOption) (*UpdateCodyGatewayAccessResponse, error)
+	// GetCodyGatewayUsage returns data about a subscription's recent usage of
+	// Cody Gateway.
+	GetCodyGatewayUsage(ctx context.Context, in *GetCodyGatewayUsageRequest, opts ...grpc.CallOption) (*GetCodyGatewayUsageResponse, error)
 }
 
 type codyAccessServiceClient struct {
@@ -72,6 +76,15 @@ func (c *codyAccessServiceClient) UpdateCodyGatewayAccess(ctx context.Context, i
 	return out, nil
 }
 
+func (c *codyAccessServiceClient) GetCodyGatewayUsage(ctx context.Context, in *GetCodyGatewayUsageRequest, opts ...grpc.CallOption) (*GetCodyGatewayUsageResponse, error) {
+	out := new(GetCodyGatewayUsageResponse)
+	err := c.cc.Invoke(ctx, CodyAccessService_GetCodyGatewayUsage_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CodyAccessServiceServer is the server API for CodyAccessService service.
 // All implementations must embed UnimplementedCodyAccessServiceServer
 // for forward compatibility
@@ -83,6 +96,9 @@ type CodyAccessServiceServer interface {
 	// UpdateEnterpriseSubscription updates the Cody Gateway access granted to an
 	// Enterprise subscription.
 	UpdateCodyGatewayAccess(context.Context, *UpdateCodyGatewayAccessRequest) (*UpdateCodyGatewayAccessResponse, error)
+	// GetCodyGatewayUsage returns data about a subscription's recent usage of
+	// Cody Gateway.
+	GetCodyGatewayUsage(context.Context, *GetCodyGatewayUsageRequest) (*GetCodyGatewayUsageResponse, error)
 	mustEmbedUnimplementedCodyAccessServiceServer()
 }
 
@@ -98,6 +114,9 @@ func (UnimplementedCodyAccessServiceServer) ListCodyGatewayAccesses(context.Cont
 }
 func (UnimplementedCodyAccessServiceServer) UpdateCodyGatewayAccess(context.Context, *UpdateCodyGatewayAccessRequest) (*UpdateCodyGatewayAccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateCodyGatewayAccess not implemented")
+}
+func (UnimplementedCodyAccessServiceServer) GetCodyGatewayUsage(context.Context, *GetCodyGatewayUsageRequest) (*GetCodyGatewayUsageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCodyGatewayUsage not implemented")
 }
 func (UnimplementedCodyAccessServiceServer) mustEmbedUnimplementedCodyAccessServiceServer() {}
 
@@ -166,6 +185,24 @@ func _CodyAccessService_UpdateCodyGatewayAccess_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CodyAccessService_GetCodyGatewayUsage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCodyGatewayUsageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CodyAccessServiceServer).GetCodyGatewayUsage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CodyAccessService_GetCodyGatewayUsage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CodyAccessServiceServer).GetCodyGatewayUsage(ctx, req.(*GetCodyGatewayUsageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CodyAccessService_ServiceDesc is the grpc.ServiceDesc for CodyAccessService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -184,6 +221,10 @@ var CodyAccessService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateCodyGatewayAccess",
 			Handler:    _CodyAccessService_UpdateCodyGatewayAccess_Handler,
+		},
+		{
+			MethodName: "GetCodyGatewayUsage",
+			Handler:    _CodyAccessService_GetCodyGatewayUsage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

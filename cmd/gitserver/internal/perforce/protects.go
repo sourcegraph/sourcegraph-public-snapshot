@@ -66,7 +66,11 @@ func P4ProtectsForUser(ctx context.Context, fs gitserverfs.FS, args P4ProtectsFo
 		return nil, nil
 	}
 
-	return parseP4Protects(out)
+	if os.Getenv("SRC_GITSERVER_P4_BROKER_ENABLED") != "" {
+		return parseP4BrokerProtects(out)
+	} else {
+		return parseP4Protects(out)
+	}
 }
 
 type P4ProtectsForDepotArguments struct {
@@ -136,6 +140,32 @@ type perforceJSONProtect struct {
 	User      string  `json:"user"`
 }
 
+type perforceBrokerJSONProtect struct {
+	Data []byte `json:"data"` // base64 encoded JSON
+}
+
+// parseP4BrokerProtects decodes a `p4 protects` message returned from a
+// `p4broker` filter.
+//
+// It first decodes the "data" JSON field from the response, which should be
+// a base64 JSON string from an actual `p4 protects` command.
+// Once decoded, it calls the parseP4Protects function to
+// parse the protects as normal.
+func parseP4BrokerProtects(brokerProtects []byte) ([]*p4types.Protect, error) {
+	var parsedBrokerResponse perforceBrokerJSONProtect
+	if err := json.Unmarshal(brokerProtects, &parsedBrokerResponse); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal protect line")
+	}
+
+	if len(parsedBrokerResponse.Data) == 0 {
+		return nil, errors.New("not a valid protects response")
+	}
+
+	return parseP4Protects(parsedBrokerResponse.Data)
+}
+
+// parseP4Protects expects output from a `p4 protects` command called with
+// the `-Mj -ztag` flags, and returns a parsed list of protects.
 func parseP4Protects(out []byte) ([]*p4types.Protect, error) {
 	protects := make([]*p4types.Protect, 0)
 
@@ -149,6 +179,10 @@ func parseP4Protects(out []byte) ([]*p4types.Protect, error) {
 		var parsedLine perforceJSONProtect
 		if err := json.Unmarshal(line, &parsedLine); err != nil {
 			return nil, errors.Wrap(err, "failed to unmarshal protect line")
+		}
+
+		if parsedLine.DepotFile == "" {
+			return nil, errors.New("not a valid protects response")
 		}
 
 		entityType := "user"

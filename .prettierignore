@@ -70,3 +70,6 @@ dev/linearhooks/internal/lineargql/schema.graphql
 # This is an embedded external minified library and should not be modified
 internal/appliance/web/static/script/htmx.min.js
 internal/appliance/web/static/script/bootstrap.bundle.min.js
+
+# Generated code
+client/web/src/enterprise/site-admin/dotcom/productSubscriptions/enterpriseportalgen/**

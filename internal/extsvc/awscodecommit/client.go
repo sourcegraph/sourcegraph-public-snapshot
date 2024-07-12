@@ -10,6 +10,7 @@ import (
 	"github.com/aws/smithy-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -24,7 +25,7 @@ func NewClient(config aws.Config) *Client {
 	// Cache for repository metadata. The configuration-specific key prefix is not known
 	// synchronously, so cache consumers must call (*Client).cacheKeyPrefix to obtain the
 	// prefix value and prepend it explicitly.
-	repoCache := rcache.NewWithTTL("cc_repo:", 60 /* seconds */)
+	repoCache := rcache.NewWithTTL(redispool.Cache, "cc_repo:", 60 /* seconds */)
 
 	return &Client{
 		aws:       config,

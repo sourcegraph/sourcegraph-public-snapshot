@@ -4,8 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
-	"fmt"
-	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"net/http"
 	"reflect"
 	"testing"
@@ -28,6 +26,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -52,7 +52,7 @@ func TestUserCredential_Authenticator(t *testing.T) {
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
-				if _, err := credential.Authenticator(ctx); err == nil {
+				if _, err := credential.Authenticator(ctx, ghauth.CreateAuthenticatorForCredentialOpts{}); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -73,7 +73,7 @@ func TestUserCredential_Authenticator(t *testing.T) {
 					Credential: NewEncryptedCredential(string(enc), keyID, et.TestKey{}),
 				}
 
-				have, err := uc.Authenticator(ctx)
+				have, err := uc.Authenticator(ctx, ghauth.CreateAuthenticatorForCredentialOpts{})
 				if err != nil {
 					t.Errorf("unexpected error: %v", err)
 				} else if diff := cmp.Diff(have, a); diff != "" {
@@ -95,7 +95,7 @@ func TestUserCredential_Authenticator(t *testing.T) {
 			Credential: NewEncryptedCredential(string(enc), kid, key),
 		}
 
-		have, err := uc.Authenticator(ctx)
+		have, err := uc.Authenticator(ctx, ghauth.CreateAuthenticatorForCredentialOpts{})
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		} else if diff := cmp.Diff(have, a); diff != "" {
@@ -114,7 +114,7 @@ func TestUserCredential_Authenticator(t *testing.T) {
 			Credential: NewEncryptedCredential(string(enc), "", nil),
 		}
 
-		have, err := uc.Authenticator(ctx)
+		have, err := uc.Authenticator(ctx, ghauth.CreateAuthenticatorForCredentialOpts{})
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		} else if diff := cmp.Diff(have, a); diff != "" {
@@ -171,28 +171,54 @@ func TestUserCredential_SetAuthenticator(t *testing.T) {
 	})
 }
 
+func createGitHubApp(ctx context.Context, t *testing.T, db DB) *ghtypes.GitHubApp {
+	testPrivateKey := `-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEAmDthV4Ab7Kx8g8xRY1MTbheTrT2DsPsoxpzEe69QlPd2WkhT
+dM/VMUL+qxwJqBsC6fnSY2GdoP5Juv05zjVRo0g4fE8QhB/nD+ZCMkTeC9zD1vbb
+Gd+hXecqjW1Qq8ad4CSgB5nFB2Djc0OlscTghAZL1ZJ8rLLRvIV4WznBJV60iMkV
+T0LhLkwUEgCWoRW0GAihVPd65TteNoYDyQ5B4m8/D4S4BFO79xKNtyazkijVMrF5
+6eYS00YTskMljaVwPdcMLE8BEzg9ipQygxyHKShHTEloUUMmukts+PUVSmKWZgE1
+uEKtpYQ1lrshu/yGoXrsj7pvgRdBRZgyn0GPNwIDAQABAoIBAQCXS7zM5+fY6vy9
+SJ1C59gRvKDqto5hoNy/uCKXAoBF7UPVKri3Ca/Ky9irWqxGRMI6pC1y1BuDW/cP
+Pojq5pcCfs6UzUeO6N4OMTxtFYDRrVF+Hc1YA6gu2YazFIfukPFrSTs7Epp9YM/t
+SLgu24p/7HoGAxah1P8aLFSX5eiOJ+8t8byYOrKLp3Rn67lC9Y+9LX4X6GHlBMDc
+WHYupi3ZA7Q59dXQCJHFNG/hk17AMtB8lFra9rUid8teX8ZJKJQ26hU2O0UMujjM
+mFlCdmvc97lJ4LhjrWHv/9yacf90bViHIkL52Yux1jNt/jl3/7CyBwHbau4b0qoZ
+QkM4WIihAoGBAMlzsUeJxBCbUyMd/6TiLn60SDn0HMf4ZVdGqqxkhopVmsvRTn+P
+wu9YHWFPwXwVL3wdtuBjsEA9nMKWWMQKbQUZhm1Y+AQIVpVNQqesgyLctVoIUBNY
+fglvKrs8JuRuwMpE2P/3lXMsxtV9AyCpxxXhya8KqJa2jcMB/Lr+lx+fAoGBAMFz
+16yHU+Zo6OOvy7T2xh67btwOrS2kIzhGO6gcK7qabkGGeaKLShnMYEmFGp4EaHTf
+OVie+SU0OWF/e5bgFWC+fm6jWyhO0xPRbvs2P+l2KtnT2UBT9IgjhrVUIzp+Vn7t
+cjfb32m7km1kZZ48ySP9cH/4/xnT6XEC33PoNwlpAoGAG1t+w7xNyAOP8sDsKrQc
+pFBPTq98CRwOhx+tpeOw8bBWaT9vbZtUWbSZqNFv8S3fWPegEjD3ioHTfAl23Iid
+7Ydd3hOq+sE3IOdxGdwvotheOG/QkBAAbb+PCgZNMdBolg9reLdisFVwWyWy+wiT
+ZMFY5lCIPI9mCQmIDMzuMPkCgYBFJKJxh+z07YpP1wV4KLunQFbfUF+VcJUmB/RK
+ocb/azL9OJNBBYf2sJW5sVlSIUE0hJR6mFd0dLYNowMJag46Bdwqrzhlr8bBzplc
+MIenahTmxlFgLKG6Bvie1vPAdGd19mhcjrnLkL9FWhz38cHymyMammSTVqqZOe2j
+/9usAQKBgQCT//j6XflAr20gb+mNcoJqVxRTFtSsZa23kJnZ3Sfs3R8XXu5NcZEZ
+ODI9ZpZ9tg8oK9EB5vqMFTTnyjpar7F2jqFWtUmNju/rGlrQCZx0we+EAW/R2hFP
+YGYu4Z+SyXTsv/Ys5VGWuuCJO32RuRBeC4eJCmpyH0mqPhIBZmV4Jw==
+-----END RSA PRIVATE KEY-----
+`
+	app := &ghtypes.GitHubApp{
+		AppID:      2093849,
+		Domain:     "batches",
+		PrivateKey: testPrivateKey,
+		Kind:       ghtypes.UserCredentialGitHubAppKind,
+	}
+	ghAppID, err := db.GitHubApps().Create(ctx, app)
+	if err != nil {
+		t.Fatal(err)
+	}
+	app.ID = ghAppID
+	return app
+}
+
 func TestUserCredentials_CreateUpdate(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
 	fx := setUpUserCredentialTest(t, db)
-
-	_, err := db.GitHubApps().Create(context.Background(), &ghtypes.GitHubApp{
-		ID:            0,
-		AppID:         0,
-		Name:          "",
-		Domain:        "batches",
-		BaseURL:       "",
-		AppURL:        "",
-		ClientID:      "",
-		ClientSecret:  "",
-		WebhookSecret: "",
-		PrivateKey:    "",
-		EncryptionKey: "",
-		Kind:          ghtypes.RepoSyncGitHubAppKind,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	ctx := context.Background()
 
 	// Authorisation failure tests. (We'll test the happy path below.)
 	t.Run("unauthorised", func(t *testing.T) {
@@ -237,6 +263,11 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 			}
 
 			cred, err := fx.db.Create(fx.userCtx, scope, authenticator)
+			t.Cleanup(func() {
+				if cred != nil {
+					fx.db.Delete(fx.userCtx, cred.ID)
+				}
+			})
 			assert.NoError(t, err)
 			assert.NotNil(t, cred)
 			assert.NotZero(t, cred.ID)
@@ -247,49 +278,7 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 			assert.NotZero(t, cred.CreatedAt)
 			assert.NotZero(t, cred.UpdatedAt)
 
-			have, err := cred.Authenticator(fx.userCtx)
-			assert.NoError(t, err)
-			assert.Equal(t, authenticator.Hash(), have.Hash())
-
-			// Ensure that trying to insert again fails.
-			second, err := fx.db.Create(fx.userCtx, scope, authenticator)
-			assert.Error(t, err)
-			assert.Nil(t, second)
-
-			// Valid update contexts.
-			newExternalServiceType := extsvc.TypeGitLab
-			cred.ExternalServiceType = newExternalServiceType
-
-			err = fx.db.Update(fx.userCtx, cred)
-			assert.NoError(t, err)
-
-			updatedCred, err := fx.db.GetByID(fx.userCtx, cred.ID)
-			assert.NoError(t, err)
-			assert.Equal(t, cred, updatedCred)
-		})
-
-		t.Run(fmt.Sprintf("%s-%s", name, "with github app id"), func(t *testing.T) {
-			t.Skip("not implemented yet")
-			scope := UserCredentialScope{
-				Domain:              name,
-				UserID:              fx.user.ID,
-				ExternalServiceType: extsvc.TypeGitHub,
-				ExternalServiceID:   "https://github.com",
-				GitHubAppID:         1,
-			}
-
-			cred, err := fx.db.Create(fx.userCtx, scope, authenticator)
-			assert.NoError(t, err)
-			assert.NotNil(t, cred)
-			assert.NotZero(t, cred.ID)
-			assert.Equal(t, scope.Domain, cred.Domain)
-			assert.Equal(t, scope.UserID, cred.UserID)
-			assert.Equal(t, scope.ExternalServiceType, cred.ExternalServiceType)
-			assert.Equal(t, scope.ExternalServiceID, cred.ExternalServiceID)
-			assert.NotZero(t, cred.CreatedAt)
-			assert.NotZero(t, cred.UpdatedAt)
-
-			have, err := cred.Authenticator(fx.userCtx)
+			have, err := cred.Authenticator(fx.userCtx, ghauth.CreateAuthenticatorForCredentialOpts{})
 			assert.NoError(t, err)
 			assert.Equal(t, authenticator.Hash(), have.Hash())
 
@@ -310,6 +299,51 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 			assert.Equal(t, cred, updatedCred)
 		})
 	}
+
+	t.Run("with github app", func(t *testing.T) {
+		ghApp := createGitHubApp(ctx, t, db)
+		t.Cleanup(func() {
+			db.GitHubApps().Delete(ctx, ghApp.ID)
+		})
+
+		scope := UserCredentialScope{
+			Domain:              "batches",
+			UserID:              fx.user.ID,
+			ExternalServiceType: extsvc.TypeGitHub,
+			ExternalServiceID:   "https://github.com",
+			GitHubAppID:         ghApp.ID,
+		}
+
+		auther, err := ghauth.NewGitHubAppAuthenticator(ghApp.AppID, []byte(ghApp.PrivateKey))
+		assert.NoError(t, err)
+
+		cred, err := fx.db.Create(fx.userCtx, scope, auther)
+		t.Cleanup(func() {
+			if cred != nil {
+				fx.db.Delete(fx.userCtx, cred.ID)
+			}
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, cred)
+		assert.NotZero(t, cred.ID)
+		assert.Equal(t, scope.Domain, cred.Domain)
+		assert.Equal(t, scope.UserID, cred.UserID)
+		assert.Equal(t, scope.ExternalServiceType, cred.ExternalServiceType)
+		assert.Equal(t, scope.ExternalServiceID, cred.ExternalServiceID)
+		assert.NotZero(t, cred.CreatedAt)
+		assert.NotZero(t, cred.UpdatedAt)
+
+		have, err := cred.Authenticator(fx.userCtx, ghauth.CreateAuthenticatorForCredentialOpts{
+			GitHubAppStore: db.GitHubApps(),
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, auther.Hash(), have.Hash())
+
+		// Ensure that trying to insert again fails.
+		second, err := fx.db.Create(fx.userCtx, scope, auther)
+		assert.Error(t, err)
+		assert.Nil(t, second)
+	})
 }
 
 func TestUserCredentials_Delete(t *testing.T) {
@@ -463,6 +497,25 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, want, have)
 	})
+
+	t.Run("extant github app credential", func(t *testing.T) {
+		ghApp := createGitHubApp(fx.user2Ctx, t, db)
+
+		auther, err := ghauth.NewGitHubAppAuthenticator(ghApp.AppID, []byte(ghApp.PrivateKey))
+		require.NoError(t, err)
+
+		ghAppScope := scope
+		ghAppScope.GitHubAppID = ghApp.ID
+		ghAppScope.UserID = fx.user2.ID
+
+		want, err := fx.db.Create(fx.user2Ctx, ghAppScope, auther)
+		require.NoError(t, err)
+		require.NotNil(t, want)
+
+		have, err := fx.db.GetByScope(fx.user2Ctx, ghAppScope)
+		assert.NoError(t, err)
+		assert.Equal(t, want, have)
+	})
 }
 
 func TestUserCredentials_List(t *testing.T) {
@@ -470,11 +523,23 @@ func TestUserCredentials_List(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(t))
 	fx := setUpUserCredentialTest(t, db)
 
+	ghApp := createGitHubApp(fx.user2Ctx, t, db)
+
+	auther, err := ghauth.NewGitHubAppAuthenticator(ghApp.AppID, []byte(ghApp.PrivateKey))
+	require.NoError(t, err)
+
 	githubScope := UserCredentialScope{
 		Domain:              UserCredentialDomainBatches,
 		UserID:              fx.user.ID,
 		ExternalServiceType: "github",
 		ExternalServiceID:   "https://github.com",
+	}
+	githubScopeWithGitHubApp := UserCredentialScope{
+		Domain:              UserCredentialDomainBatches,
+		UserID:              fx.user2.ID,
+		ExternalServiceType: "github",
+		ExternalServiceID:   "https://github.com",
+		GitHubAppID:         ghApp.ID,
 	}
 	gitlabScope := UserCredentialScope{
 		Domain:              UserCredentialDomainBatches,
@@ -496,6 +561,9 @@ func TestUserCredentials_List(t *testing.T) {
 	require.NoError(t, err)
 
 	gitlabCred, err := fx.db.Create(fx.userCtx, gitlabScope, token)
+	require.NoError(t, err)
+
+	githubAppCred, err := fx.db.Create(fx.user2Ctx, githubScopeWithGitHubApp, auther)
 	require.NoError(t, err)
 
 	// This one should always be invisible to the user tests below.
@@ -587,6 +655,17 @@ func TestUserCredentials_List(t *testing.T) {
 			assert.Equal(t, []*UserCredential{gitlabCred}, creds)
 		})
 	}
+
+	t.Run("user with github app credential", func(t *testing.T) {
+		creds, next, err := fx.db.List(fx.user2Ctx, UserCredentialsListOpts{
+			Scope: UserCredentialScope{
+				Domain: UserCredentialDomainBatches,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Zero(t, next)
+		assert.Equal(t, []*UserCredential{githubAppCred}, creds)
+	})
 }
 
 func TestUserCredentials_Invalid(t *testing.T) {
@@ -639,7 +718,7 @@ func TestUserCredentials_Invalid(t *testing.T) {
 				cred, err := fx.db.GetByID(ctx, id)
 				require.NoError(t, err)
 
-				_, err = cred.Authenticator(ctx)
+				_, err = cred.Authenticator(ctx, ghauth.CreateAuthenticatorForCredentialOpts{})
 				assert.Error(t, err)
 			})
 		}
@@ -706,12 +785,14 @@ func createUserCredentialAuths(t *testing.T) map[string]auth.Authenticator {
 type testFixture struct {
 	internalCtx context.Context
 	userCtx     context.Context
+	user2Ctx    context.Context
 	adminCtx    context.Context
 
 	db  UserCredentialsStore
 	key encryption.Key
 
 	user  *types.User
+	user2 *types.User
 	admin *types.User
 }
 
@@ -740,14 +821,24 @@ func setUpUserCredentialTest(t *testing.T, db DB) *testFixture {
 	})
 	require.NoError(t, err)
 
+	user2, err := db.Users().Create(ctx, NewUser{
+		Email:                 "b@example.com",
+		Username:              "u3",
+		Password:              "pw",
+		EmailVerificationCode: "c",
+	})
+	require.NoError(t, err)
+
 	return &testFixture{
 		internalCtx: actor.WithInternalActor(ctx),
 		userCtx:     actor.WithActor(ctx, actor.FromUser(user.ID)),
+		user2Ctx:    actor.WithActor(ctx, actor.FromUser(user2.ID)),
 		adminCtx:    actor.WithActor(ctx, actor.FromUser(admin.ID)),
 		key:         key,
 		db:          db.UserCredentials(key),
 		user:        user,
 		admin:       admin,
+		user2:       user2,
 	}
 }
 

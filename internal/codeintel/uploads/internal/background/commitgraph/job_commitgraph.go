@@ -90,7 +90,7 @@ func (s *commitGraphUpdater) lockAndUpdateUploadsVisibleToCommits(ctx context.Co
 
 	// The following process pulls the commit graph for the given repository from gitserver, pulls the set of LSIF
 	// upload objects for the given repository from Postgres, and correlates them into a visibility
-	// graph. This graph is then upserted back into Postgres for use by find closest dumps queries.
+	// graph. This graph is then upserted back into Postgres for use by find closest completd uploads queries.
 	//
 	// The user should supply a dirty token that is associated with the given repository so that
 	// the repository can be unmarked as long as the repository is not marked as dirty again before

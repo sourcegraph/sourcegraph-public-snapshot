@@ -325,6 +325,9 @@ resources:
           frontend:
             ingress: {}
 
+          grafana:
+            disabled: true
+
           gitServer:
             disabled: true
 

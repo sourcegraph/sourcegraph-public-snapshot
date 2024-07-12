@@ -305,6 +305,7 @@ func TestGitserverPushConfig(t *testing.T) {
 			wantErr:             ErrNoPushCredentials{CredentialsType: "*auth.OAuthClient"},
 		},
 	}
+	ctx := context.Background()
 	for _, tt := range tcs {
 		t.Run(tt.name, func(t *testing.T) {
 			sources := map[string]*types.SourceInfo{}
@@ -323,7 +324,7 @@ func TestGitserverPushConfig(t *testing.T) {
 				},
 			}
 
-			havePushConfig, haveErr := GitserverPushConfig(repo, tt.authenticator)
+			havePushConfig, haveErr := GitserverPushConfig(ctx, repo, tt.authenticator)
 			if haveErr != tt.wantErr {
 				t.Fatalf("invalid error returned, want=%v have=%v", tt.wantErr, haveErr)
 			}
@@ -411,7 +412,9 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential, repo)
+			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, repo, SourcerOpts{
+				AuthenticationStrategy: AuthenticationStrategyUserCredential,
+			})
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
@@ -452,7 +455,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential, repo)
+			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, repo, SourcerOpts{AuthenticationStrategy: AuthenticationStrategyUserCredential})
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
@@ -487,13 +490,13 @@ func TestSourcer_ForChangeset(t *testing.T) {
 			tx.ExternalServicesFunc.SetDefaultReturn(extsvcStore)
 
 			css := NewMockChangesetSource()
-			_, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential, repo)
+			_, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, repo, SourcerOpts{AuthenticationStrategy: AuthenticationStrategyUserCredential})
 			assert.Error(t, err)
 		})
 
 		t.Run("with GH App", func(t *testing.T) {
 			ghaStore := ghastore.NewMockGitHubAppsStore()
-			ghaStore.GetByDomainFunc.SetDefaultHook(func(ctx context.Context, domain types.GitHubAppDomain, baseUrl string) (*ghatypes.GitHubApp, error) {
+			ghaStore.GetByDomainAndKindFunc.SetDefaultHook(func(ctx context.Context, domain types.GitHubAppDomain, kind ghatypes.GitHubAppKind, baseUrl string) (*ghatypes.GitHubApp, error) {
 				assert.EqualValues(t, types.BatchesGitHubAppDomain, domain)
 				assert.EqualValues(t, config.Url, baseUrl)
 				ghApp := &ghatypes.GitHubApp{
@@ -537,7 +540,11 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyGitHubApp, repo)
+			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, repo, SourcerOpts{
+				AuthenticationStrategy: AuthenticationStrategyGitHubApp,
+				GitHubAppKind:          ghatypes.SiteCredentialGitHubAppKind,
+				AsNonCredential:        true,
+			})
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
@@ -545,7 +552,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 		t.Run("with GH Ap (forked changeset)", func(t *testing.T) {
 			forkedRepoNamespace := "some-forked-org"
 			ghaStore := ghastore.NewMockGitHubAppsStore()
-			ghaStore.GetByDomainFunc.SetDefaultHook(func(ctx context.Context, domain types.GitHubAppDomain, baseUrl string) (*ghatypes.GitHubApp, error) {
+			ghaStore.GetByDomainAndKindFunc.SetDefaultHook(func(ctx context.Context, domain types.GitHubAppDomain, kind ghatypes.GitHubAppKind, baseUrl string) (*ghatypes.GitHubApp, error) {
 				assert.EqualValues(t, types.BatchesGitHubAppDomain, domain)
 				assert.EqualValues(t, config.Url, baseUrl)
 				ghApp := &ghatypes.GitHubApp{
@@ -600,7 +607,11 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				},
 			}
 
-			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyGitHubApp, targetRepo)
+			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, targetRepo, SourcerOpts{
+				AuthenticationStrategy: AuthenticationStrategyGitHubApp,
+				GitHubAppKind:          ghatypes.SiteCredentialGitHubAppKind,
+				AsNonCredential:        true,
+			})
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
@@ -633,7 +644,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential, repo)
+			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, repo, SourcerOpts{AuthenticationStrategy: AuthenticationStrategyUserCredential})
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
@@ -659,7 +670,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 			want := errors.New("validator was called")
 			css.ValidateAuthenticatorFunc.SetDefaultReturn(want)
 
-			_, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential, repo)
+			_, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, repo, SourcerOpts{AuthenticationStrategy: AuthenticationStrategyUserCredential})
 			assert.Error(t, err)
 		})
 	})

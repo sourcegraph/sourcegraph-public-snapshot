@@ -1,10 +1,16 @@
-import type { QueryResult } from '@apollo/client'
+import type { MutationTuple, QueryResult } from '@apollo/client'
 import { parse as parseJSONC } from 'jsonc-parser'
 import { lastValueFrom, type Observable } from 'rxjs'
 import { map, tap } from 'rxjs/operators'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
-import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
+import {
+    createInvalidGraphQLMutationResponseError,
+    dataOrThrowErrors,
+    gql,
+    useMutation,
+    useQuery,
+} from '@sourcegraph/http-client'
 import type { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
@@ -57,6 +63,8 @@ import type {
     WebhookPageHeaderVariables,
     WebhooksListResult,
     WebhooksListVariables,
+    DeleteWebhookResult,
+    DeleteWebhookVariables,
 } from '../graphql-operations'
 import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
@@ -877,14 +885,6 @@ export const WEBHOOK_BY_ID = gql`
     }
 `
 
-export const DELETE_WEBHOOK = gql`
-    mutation DeleteWebhook($hookID: ID!) {
-        deleteWebhook(id: $hookID) {
-            alwaysNil
-        }
-    }
-`
-
 export const WEBHOOK_PAGE_HEADER = gql`
     query WebhookPageHeader {
         webhooks {
@@ -1083,3 +1083,32 @@ export const useGitserversConnection = (): UseShowMorePaginationResult<Gitserver
             return gitservers
         },
     })
+
+export const WEBHOOK_EXTERNAL_SERVICES = gql`
+    query WebhookExternalServices {
+        externalServices {
+            nodes {
+                ...WebhookExternalServiceFields
+            }
+        }
+    }
+
+    fragment WebhookExternalServiceFields on ExternalService {
+        id
+        kind
+        displayName
+        url
+    }
+`
+
+const DELETE_WEBHOOK = gql`
+    mutation DeleteWebhook($id: ID!) {
+        deleteWebhook(id: $id) {
+            alwaysNil
+        }
+    }
+`
+
+export function useDeleteWebhook(): MutationTuple<DeleteWebhookResult, DeleteWebhookVariables> {
+    return useMutation<DeleteWebhookResult, DeleteWebhookVariables>(DELETE_WEBHOOK)
+}

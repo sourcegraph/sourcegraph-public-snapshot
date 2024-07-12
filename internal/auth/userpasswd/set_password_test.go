@@ -22,10 +22,12 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 
 	defer func() { backend.MockMakePasswordResetURL = nil }()
 
-	backend.MockMakePasswordResetURL = func(context.Context, int32) (*url.URL, error) {
+	backend.MockMakePasswordResetURL = func(context.Context, int32, string) (*url.URL, error) {
 		query := url.Values{}
 		query.Set("userID", "1")
 		query.Set("code", "foo")
+		query.Set("email", "a@example.com")
+
 		return &url.URL{Path: "/password-reset", RawQuery: query.Encode()}, nil
 	}
 
@@ -44,7 +46,7 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 			id:            1,
 			emailVerified: true,
 			ctx:           ctx,
-			wantURL:       "http://example.com/password-reset?code=foo&userID=1",
+			wantURL:       "http://example.com/password-reset?code=foo&email=a%40example.com&userID=1",
 			wantErr:       false,
 			email:         "a@example.com",
 		},
@@ -53,7 +55,7 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 			id:            1,
 			emailVerified: false,
 			ctx:           ctx,
-			wantURL:       "http://example.com/password-reset?code=foo&userID=1",
+			wantURL:       "http://example.com/password-reset?code=foo&email=a%40example.com&userID=1",
 			wantEmailURL:  "http://example.com/password-reset?code=foo&userID=1&email=a%40example.com&emailVerifyCode=",
 			wantErr:       false,
 			email:         "a@example.com",

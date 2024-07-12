@@ -6,11 +6,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -46,11 +48,18 @@ type Service struct {
 	opts ServiceOptions
 }
 
-func (s *Service) CompletionsUsageForActor(ctx context.Context, feature types.CompletionsFeature, actorSource codygatewayactor.ActorSource, actorID string) ([]SubscriptionUsage, error) {
+func (s *Service) CompletionsUsageForActor(ctx context.Context, feature types.CompletionsFeature, actorSource codygatewayactor.ActorSource, actorID string) (_ []SubscriptionUsage, err error) {
 	if !s.opts.BigQuery.IsConfigured() {
 		// Not configured, nothing we can do.
 		return nil, nil
 	}
+
+	var tr trace.Trace
+	tr, ctx = trace.New(ctx, "CompletionsUsageForActor",
+		attribute.String("feature", string(feature)),
+		attribute.String("actorSource", string(actorSource)),
+		attribute.String("actorID", actorID))
+	defer tr.EndWithErrIfNotContext(&err)
 
 	client, err := bigquery.NewClient(ctx, s.opts.BigQuery.ProjectID, s.opts.BigQuery.ClientOptions...)
 	if err != nil {
@@ -59,6 +68,10 @@ func (s *Service) CompletionsUsageForActor(ctx context.Context, feature types.Co
 	defer client.Close()
 
 	tbl := client.Dataset(s.opts.BigQuery.Dataset).Table(s.opts.BigQuery.EventsTable)
+	tr.AddEvent("bigquery.NewClient",
+		attribute.String("projectID", s.opts.BigQuery.ProjectID),
+		attribute.String("dataset", s.opts.BigQuery.Dataset),
+		attribute.String("table", s.opts.BigQuery.EventsTable))
 
 	// Count events with the name for made requests for each day in the last 7 days.
 	query := fmt.Sprintf(`
@@ -168,11 +181,17 @@ ORDER BY
 	return results, nil
 }
 
-func (s *Service) EmbeddingsUsageForActor(ctx context.Context, actorSource codygatewayactor.ActorSource, actorID string) ([]SubscriptionUsage, error) {
+func (s *Service) EmbeddingsUsageForActor(ctx context.Context, actorSource codygatewayactor.ActorSource, actorID string) (_ []SubscriptionUsage, err error) {
 	if !s.opts.BigQuery.IsConfigured() {
 		// Not configured, nothing we can do.
 		return nil, nil
 	}
+
+	var tr trace.Trace
+	tr, ctx = trace.New(ctx, "EmbeddingsUsageForActor",
+		attribute.String("actorSource", string(actorSource)),
+		attribute.String("actorID", actorID))
+	defer tr.EndWithErrIfNotContext(&err)
 
 	client, err := bigquery.NewClient(ctx, s.opts.BigQuery.ProjectID, s.opts.BigQuery.ClientOptions...)
 	if err != nil {
@@ -181,6 +200,10 @@ func (s *Service) EmbeddingsUsageForActor(ctx context.Context, actorSource codyg
 	defer client.Close()
 
 	tbl := client.Dataset(s.opts.BigQuery.Dataset).Table(s.opts.BigQuery.EventsTable)
+	tr.AddEvent("bigquery.NewClient",
+		attribute.String("projectID", s.opts.BigQuery.ProjectID),
+		attribute.String("dataset", s.opts.BigQuery.Dataset),
+		attribute.String("table", s.opts.BigQuery.EventsTable))
 
 	// Count amount of tokens across all requests for made requests for each day abd model
 	// in the last 7 days.

@@ -52,11 +52,7 @@ func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
 	logger log.Logger,
 	request types.CompletionRequest) (*types.CompletionResponse, error) {
 
-	feature := request.Feature
-	version := request.Version
-	requestParams := request.Parameters
-
-	resp, err := c.makeRequest(ctx, requestParams, version, false)
+	resp, err := c.makeRequest(ctx, request, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "making request")
 	}
@@ -66,16 +62,15 @@ func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, errors.Wrap(err, "decoding response")
 	}
+	if err := c.recordTokenUsage(request, response.Usage); err != nil {
+		return nil, err
+	}
+
 	completion := ""
 	for _, content := range response.Content {
 		completion += content.Text
 	}
 
-	parsedModelId := conftypes.NewBedrockModelRefFromModelID(requestParams.Model)
-	err = c.tokenManager.UpdateTokenCountsFromModelUsage(response.Usage.InputTokens, response.Usage.OutputTokens, "anthropic/"+parsedModelId.Model, string(feature), tokenusage.AwsBedrock)
-	if err != nil {
-		return nil, err
-	}
 	return &types.CompletionResponse{
 		Completion: completion,
 		StopReason: response.StopReason,
@@ -88,11 +83,7 @@ func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 	request types.CompletionRequest,
 	sendEvent types.SendCompletionEvent) error {
 
-	feature := request.Feature
-	version := request.Version
-	requestParams := request.Parameters
-
-	resp, err := a.makeRequest(ctx, requestParams, version, true)
+	resp, err := a.makeRequest(ctx, request, true)
 	if err != nil {
 		return errors.Wrap(err, "making request")
 	}
@@ -159,9 +150,13 @@ func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 		case "message_delta":
 			if event.Delta != nil {
 				stopReason = event.Delta.StopReason
-				parsedModelId := conftypes.NewBedrockModelRefFromModelID(requestParams.Model)
-				err = a.tokenManager.UpdateTokenCountsFromModelUsage(inputPromptTokens, event.Usage.OutputTokens, "anthropic/"+parsedModelId.Model, string(feature), tokenusage.AwsBedrock)
-				if err != nil {
+
+				// Build the usage data based on what we've seen.
+				usageData := bedrockAnthropicMessagesResponseUsage{
+					InputTokens:  inputPromptTokens,
+					OutputTokens: event.Usage.OutputTokens,
+				}
+				if err := a.recordTokenUsage(request, usageData); err != nil {
 					logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 				}
 			}
@@ -179,16 +174,25 @@ func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 	}
 }
 
+func (c *awsBedrockAnthropicCompletionStreamClient) recordTokenUsage(request types.CompletionRequest, usage bedrockAnthropicMessagesResponseUsage) error {
+	parsedModelRef := conftypes.NewBedrockModelRefFromModelID(request.Parameters.Model)
+	return c.tokenManager.UpdateTokenCountsFromModelUsage(
+		usage.InputTokens, usage.OutputTokens,
+		"anthropic/"+parsedModelRef.Model, string(request.Feature),
+		tokenusage.AwsBedrock)
+}
+
 type awsEventStreamPayload struct {
 	Bytes []byte `json:"bytes"`
 }
 
-func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, stream bool) (*http.Response, error) {
+func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Context, request types.CompletionRequest, stream bool) (*http.Response, error) {
 	defaultConfig, err := config.LoadDefaultConfig(ctx, awsConfigOptsForKeyConfig(c.endpoint, c.accessToken)...)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading aws config")
 	}
 
+	requestParams := request.Parameters
 	if requestParams.TopK == -1 {
 		requestParams.TopK = 0
 	}
@@ -208,7 +212,7 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 
 	convertedMessages := requestParams.Messages
 	stopSequences := removeWhitespaceOnlySequences(requestParams.StopSequences)
-	if version == types.CompletionsVersionLegacy {
+	if request.Version == types.CompletionsVersionLegacy {
 		convertedMessages = types.ConvertFromLegacyMessages(convertedMessages)
 	}
 
@@ -343,60 +347,6 @@ func awsConfigOptsForKeyConfig(endpoint string, accessToken string) []func(*conf
 	}
 
 	return configOpts
-}
-
-type bedrockAnthropicNonStreamingResponse struct {
-	Content    []bedrockAnthropicMessageContent      `json:"content"`
-	StopReason string                                `json:"stop_reason"`
-	Usage      bedrockAnthropicMessagesResponseUsage `json:"usage"`
-}
-
-// AnthropicMessagesStreamingResponse captures all relevant-to-us fields from each relevant SSE event from https://docs.anthropic.com/claude/reference/messages_post.
-type bedrockAnthropicStreamingResponse struct {
-	Type         string                                       `json:"type"`
-	Delta        *bedrockAnthropicStreamingResponseTextBucket `json:"delta"`
-	ContentBlock *bedrockAnthropicStreamingResponseTextBucket `json:"content_block"`
-	Usage        *bedrockAnthropicMessagesResponseUsage       `json:"usage"`
-	Message      *bedrockAnthropicStreamingResponseMessage    `json:"message"`
-}
-
-type bedrockAnthropicStreamingResponseMessage struct {
-	Usage *bedrockAnthropicMessagesResponseUsage `json:"usage"`
-}
-
-type bedrockAnthropicMessagesResponseUsage struct {
-	InputTokens  int `json:"input_tokens"`
-	OutputTokens int `json:"output_tokens"`
-}
-
-type bedrockAnthropicStreamingResponseTextBucket struct {
-	Text       string `json:"text"`        // for event `content_block_delta`
-	StopReason string `json:"stop_reason"` // for event `message_delta`
-}
-
-type bedrockAnthropicCompletionsRequestParameters struct {
-	Messages      []bedrockAnthropicMessage `json:"messages,omitempty"`
-	Temperature   float32                   `json:"temperature,omitempty"`
-	TopP          float32                   `json:"top_p,omitempty"`
-	TopK          int                       `json:"top_k,omitempty"`
-	Stream        bool                      `json:"stream,omitempty"`
-	StopSequences []string                  `json:"stop_sequences,omitempty"`
-	MaxTokens     int                       `json:"max_tokens,omitempty"`
-
-	// These are not accepted from the client an instead are only used to talk to the upstream LLM
-	// APIs directly (these do NOT need to be set when talking to Cody Gateway)
-	System           string `json:"system,omitempty"`
-	AnthropicVersion string `json:"anthropic_version"`
-}
-
-type bedrockAnthropicMessage struct {
-	Role    string                           `json:"role"` // "user", "assistant", or "system" (only allowed for the first message)
-	Content []bedrockAnthropicMessageContent `json:"content"`
-}
-
-type bedrockAnthropicMessageContent struct {
-	Type string `json:"type"` // "text" or "image" (not yet supported)
-	Text string `json:"text"`
 }
 
 func removeWhitespaceOnlySequences(sequences []string) []string {

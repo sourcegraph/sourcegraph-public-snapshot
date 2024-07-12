@@ -54,12 +54,13 @@ export const SiteAdminWebhookPageStory: StoryFn = args => {
                     after: null,
                     onlyErrors: false,
                     onlyUnmatched: false,
-                    webhookID: '',
+                    webhookID: '1',
                 },
             },
             result: {
                 data: {
                     webhookLogs: {
+                        __typename: 'WebhookLogConnection',
                         nodes: WEBHOOK_MOCK_DATA,
                         pageInfo: { hasNextPage: false },
                         totalCount: 20,
@@ -82,6 +83,7 @@ export const SiteAdminWebhookPageStory: StoryFn = args => {
             result: {
                 data: {
                     webhookLogs: {
+                        __typename: 'WebhookLogConnection',
                         nodes: ERRORED_WEBHOOK_MOCK_DATA,
                         pageInfo: { hasNextPage: false },
                         totalCount: 20,
@@ -116,10 +118,12 @@ export const SiteAdminWebhookPageStory: StoryFn = args => {
                         <Route
                             path="/site-admin/webhooks/incoming/:id"
                             element={
-                                <SiteAdminWebhookPage
-                                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                                    telemetryRecorder={noOpTelemetryRecorder}
-                                />
+                                <div className="container p-4">
+                                    <SiteAdminWebhookPage
+                                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                                        telemetryRecorder={noOpTelemetryRecorder}
+                                    />
+                                </div>
                             }
                         />
                     </Routes>
@@ -155,6 +159,7 @@ export const SiteAdminWebhookPageWithoutLogsStory: StoryFn = args => {
             result: {
                 data: {
                     webhookLogs: {
+                        __typename: 'WebhookLogConnection',
                         nodes: [],
                         pageInfo: { hasNextPage: false },
                         totalCount: 0,

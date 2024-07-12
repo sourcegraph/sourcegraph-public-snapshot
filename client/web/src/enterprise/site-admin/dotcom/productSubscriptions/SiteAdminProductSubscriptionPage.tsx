@@ -6,7 +6,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { logger } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, LoadingSpinner, Link, Icon, ErrorAlert, PageHeader, Container, H3, Text } from '@sourcegraph/wildcard'
 
 import {
@@ -36,6 +36,7 @@ import {
     useProductSubscriptionLicensesConnection,
 } from './backend'
 import { CodyServicesSection } from './CodyServicesSection'
+import type { EnterprisePortalEnvironment } from './enterpriseportal'
 import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
 import { accessTokenPath, errorForPath, enterprisePortalID } from './utils'
@@ -122,6 +123,20 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
 
     const productSubscription = data!.dotcom.productSubscription
 
+    /**
+     * TODO(@robert): As part of https://linear.app/sourcegraph/issue/CORE-100,
+     * eventually dev subscriptions will only live on Enterprise Portal dev and
+     * prod subscriptions will only live on Enterprise Portal prod. Until we
+     * cut over, we use license tags to determine what Enterprise Portal
+     * environment to target.
+     */
+    const enterprisePortalEnvironment: EnterprisePortalEnvironment =
+        window.context.deployType === 'dev'
+            ? 'local'
+            : productSubscription.activeLicense?.info?.tags?.includes('dev')
+            ? 'dev'
+            : 'prod'
+
     return (
         <>
             <div className="site-admin-product-subscription-page">
@@ -198,6 +213,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                 </Container>
 
                 <CodyServicesSection
+                    enterprisePortalEnvironment={enterprisePortalEnvironment}
                     viewerCanAdminister={true}
                     currentSourcegraphAccessToken={productSubscription.currentSourcegraphAccessToken}
                     accessTokenError={errorForPath(error, accessTokenPath)}

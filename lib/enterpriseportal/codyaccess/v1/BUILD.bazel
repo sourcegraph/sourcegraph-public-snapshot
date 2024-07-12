@@ -16,6 +16,7 @@ proto_library(
     deps = [
         "@com_google_protobuf//:duration_proto",
         "@com_google_protobuf//:field_mask_proto",
+        "@com_google_protobuf//:timestamp_proto",
     ],
 )
 
@@ -35,6 +36,7 @@ go_library(
         "@org_golang_google_protobuf//runtime/protoimpl",
         "@org_golang_google_protobuf//types/known/durationpb",
         "@org_golang_google_protobuf//types/known/fieldmaskpb",
+        "@org_golang_google_protobuf//types/known/timestamppb",
     ],
 )
 

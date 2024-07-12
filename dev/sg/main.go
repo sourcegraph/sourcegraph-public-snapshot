@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	hashstructure "github.com/mitchellh/hashstructure/v2"
@@ -27,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/dev/sg/sams"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -128,18 +130,18 @@ var sg = &cli.App{
 			Value:       false,
 			Destination: &disableOverwrite,
 		},
-		&cli.BoolFlag{
+		warnSkippedInDev(&cli.BoolFlag{
 			Name:    "skip-auto-update",
 			Usage:   "prevent sg from automatically updating itself",
 			EnvVars: []string{"SG_SKIP_AUTO_UPDATE"},
 			Value:   BuildCommit == "dev", // Default to skip in dev
-		},
-		&cli.BoolFlag{
+		}),
+		warnSkippedInDev(&cli.BoolFlag{
 			Name:    "disable-analytics",
 			Usage:   "disable event logging (logged to '~/.sourcegraph/events')",
 			EnvVars: []string{"SG_DISABLE_ANALYTICS"},
 			Value:   BuildCommit == "dev", // Default to skip in dev
-		},
+		}),
 		&cli.BoolFlag{
 			Name:        "disable-output-detection",
 			Usage:       "use fixed output configuration instead of detecting terminal capabilities",
@@ -160,7 +162,10 @@ var sg = &cli.App{
 		if bashCompletionsMode {
 			return nil
 		}
-
+		// if we're in CI we don't want analytics enabled
+		if os.Getenv("CI") == "true" {
+			cmd.Set("disable-analytics", "true")
+		}
 		// Lots of setup happens in Before - we want to make sure anything that
 		// we collect a generate a helpful message here if anything goes wrong.
 		defer func() {
@@ -178,28 +183,66 @@ var sg = &cli.App{
 		// Configure global output
 		std.Out = std.NewOutput(cmd.App.Writer, verbose)
 
+		// Print out a warning about flags which are disabled by default only in dev, but
+		// enabled otherwise.
+		if BuildCommit == "dev" {
+			printSkippedInDevWarning()
+		}
+
+		// Set up access to secrets
+		secretsStore, err := loadSecrets()
+		if err != nil {
+			std.Out.WriteWarningf("failed to open secrets: %s", err)
+		} else {
+			cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
+		}
+		// Initialize context
+		cmd.Context, err = usershell.Context(cmd.Context)
+		if err != nil {
+			std.Out.WriteWarningf("Unable to infer user shell context: %s", err)
+		}
+		cmd.Context = background.Context(cmd.Context, verbose)
+
+		// We need to register the wait in the interrupt handlers, because if interrupted
+		// the .After on cli.App won't run. This makes sure that both the happy and sad paths
+		// are waiting for background tasks to finish.
+		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
+
 		// Set up analytics and hooks for each command - do this as the first context
 		// setup
 		if !cmd.Bool("disable-analytics") {
-			cmd.Context, err = analytics.WithContext(cmd.Context, cmd.App.Version)
-			if err != nil {
-				std.Out.WriteWarningf("Failed to initialize analytics: " + err.Error())
+			if err := analytics.InitIdentity(cmd.Context, std.Out, secretsStore); err != nil {
+				std.Out.WriteWarningf("Failed to persist analytics. See below for more details")
+				msg := ""
+				if errors.As(err, &secrets.CommandErr{}) {
+					msg = "The problem occured while trying to get a secret via a tool. Below is the error:\n"
+					msg += fmt.Sprintf("\n```%v```\n", err)
+					msg += "\nPossible fixes:\n"
+					msg += "- You might missing a required tool - re-run `sg setup` to get it installed in your environment.\n"
+					msg += "- Reach out to #discuss-dev-infra to help troubleshoot\n"
+				} else if errors.As(err, &secrets.GoogleSecretErr{}) {
+					msg = "The problem occured while trying to get a secret via Google. Below is the error:\n"
+					msg += fmt.Sprintf("\n```%v```\n", err)
+					msg += "\nPossible fixes:\n"
+					msg += "- You should be in the `gcp-engineering@sourcegraph.com` group. Ask #ask-it-tech-ops or #discuss-dev-infra to check that\n"
+					msg += "- Ensure you're currently authenticated with your sourcegraph.com account by running `gcloud auth list`\n"
+					msg += "- Ensure you're authenticated with gcloud by running `gcloud auth application-default login`\n"
+				} else {
+					msg = fmt.Sprintf("The problem occured while trying to persist analytics. Below is the error:\n```%v```\n", err)
+				}
+				msg += "If the error persists please reach out to #discuss-dev-infra but you can disable analytics by doing:\n"
+				msg += "- run your command with `--disable-analytics`\n"
+				msg += "- export `SG_DISABLE_ANALYTICS=1`\n"
+				std.Out.WriteMarkdown(msg)
+				std.Out.WriteWarningf("attempting to continue ...")
 			}
-
-			// Ensure analytics are persisted
-			interrupt.Register(func() { _ = analytics.Persist(cmd.Context) })
 
 			// Add analytics to each command
 			addAnalyticsHooks([]string{"sg"}, cmd.App.Commands)
+			// Start the analytics publisher
+			analytics.BackgroundEventPublisher(cmd.Context)
+			interrupt.Register(analytics.StopBackgroundEventPublisher)
 		}
-
-		// Initialize context after analytics are set up
-		cmd.Context, err = usershell.Context(cmd.Context)
-		if err != nil {
-			std.Out.WriteWarningf("Unable to infer user shell context: " + err.Error())
-		}
-		cmd.Context = background.Context(cmd.Context, verbose)
-		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
 
 		// Configure logger, for commands that use components that use loggers
 		if _, set := os.LookupEnv(log.EnvDevelopment); !set {
@@ -219,27 +262,15 @@ var sg = &cli.App{
 			return errors.Newf("--overwrite must not be empty")
 		}
 
-		// Set up access to secrets
-		secretsStore, err := loadSecrets()
-		if err != nil {
-			std.Out.WriteWarningf("failed to open secrets: %s", err)
-		} else {
-			cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
-		}
-
 		// We always try to set this, since we often want to watch files, start commands, etc...
 		if err := setMaxOpenFiles(); err != nil {
 			std.Out.WriteWarningf("Failed to set max open files: %s", err)
 		}
 
 		// Check for updates, unless we are running update manually.
-		skipBackgroundTasks := map[string]struct{}{
-			"update":   {},
-			"version":  {},
-			"live":     {},
-			"teammate": {},
-		}
-		if _, skipped := skipBackgroundTasks[cmd.Args().First()]; !skipped {
+		skipBackgroundTasks := collections.NewSet("update", "version", "live", "teammate")
+
+		if !skipBackgroundTasks.Has(cmd.Args().First()) {
 			background.Run(cmd.Context, func(ctx context.Context, out *std.Output) {
 				err := checkSgVersionAndUpdate(ctx, out, cmd.Bool("skip-auto-update"))
 				if err != nil {
@@ -259,8 +290,6 @@ var sg = &cli.App{
 		if !bashCompletionsMode {
 			// Wait for background jobs to finish up, iff not in autocomplete mode
 			background.Wait(cmd.Context, std.Out)
-			// Persist analytics
-			_ = analytics.Persist(cmd.Context)
 		}
 
 		return nil
@@ -277,7 +306,6 @@ var sg = &cli.App{
 		dbCommand,
 		migrationCommand,
 		insightsCommand,
-		telemetryCommand,
 		monitoringCommand,
 		contextCommand,
 		deployCommand,
@@ -305,7 +333,6 @@ var sg = &cli.App{
 		enterprise.Command,
 
 		// Util
-		analyticsCommand,
 		doctorCommand,
 		funkyLogoCommand,
 		helpCommand,
@@ -422,6 +449,24 @@ func watchConfig(ctx context.Context) (<-chan *sgconf.Config, error) {
 	}()
 
 	return output, err
+}
+
+var skippedInDevFlags = []cli.Flag{}
+
+// warnSkippedInDev registers a flag as having a different default value when sg is running in dev mode.
+func warnSkippedInDev(flag cli.Flag) cli.Flag {
+	skippedInDevFlags = append(skippedInDevFlags, flag)
+	return flag
+}
+
+// printSkippedInDevWarning reminds the user that sg is running in dev mode and certain flags have a different default value.
+func printSkippedInDevWarning() {
+	names := []string{}
+	for _, f := range skippedInDevFlags {
+		// Safe because it's not possible for a flag to not have name.
+		names = append(names, f.Names()[0])
+	}
+	std.Out.WriteWarningf("Running sg with a dev build, following flags have different default value unless explictly set: %s", strings.Join(names, ", "))
 }
 
 func exists(file string) bool {

@@ -36,6 +36,7 @@
     import { FileViewGitBlob, FileViewHighlightedFile } from './FileView.gql'
     import FileViewModeSwitcher from './FileViewModeSwitcher.svelte'
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
+    import OpenCodyAction from '$lib/repo/OpenCodyAction.svelte'
     import { CodeViewMode, toCodeViewMode } from './util'
 
     export let data: Extract<PageData, { type: 'FileView' }>
@@ -70,6 +71,7 @@
         revision,
         resolvedRevision: { commitID },
         revisionOverride,
+        isCodyAvailable,
     } = data)
     $: blobLoader.set(data.blob)
     $: highlightsLoader.set(data.highlights)
@@ -139,7 +141,7 @@
     }
 
     function handleCopy(): void {
-        TELEMETRY_RECORDER.recordEvent('repo.blob', 'copy')
+        TELEMETRY_RECORDER.recordEvent('blob.code', 'copy')
     }
 
     function onViewModeChange(event: CustomEvent<CodeViewMode>): void {
@@ -184,6 +186,9 @@
                 <OpenInCodeHostAction data={blob} lineOrPosition={data.lineOrPosition} />
             {/if}
             <Permalink {commitID} />
+            {#if $isCodyAvailable}
+                <OpenCodyAction />
+            {/if}
         </svelte:fragment>
         <svelte:fragment slot="actionmenu">
             <MenuLink href={rawURL} target="_blank">

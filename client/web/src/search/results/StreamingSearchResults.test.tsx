@@ -6,22 +6,23 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { EMPTY, lastValueFrom, NEVER, of } from 'rxjs'
-import { spy, assert } from 'sinon'
+import { assert, spy } from 'sinon'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
 import type { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/src/search/stream'
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
+    CHUNK_MATCH_RESULT,
     COLLAPSABLE_SEARCH_RESULT,
     HIGHLIGHTED_FILE_LINES_REQUEST,
+    LINE_MATCH_RESULT,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULT,
-    CHUNK_MATCH_RESULT,
-    LINE_MATCH_RESULT,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { simulateMenuItemClick } from '@sourcegraph/shared/src/testing/simulateMenuItemClick'
 
@@ -92,7 +93,11 @@ describe('StreamingSearchResults', () => {
     })
 
     it('should call streaming search API with the right parameters from URL', async () => {
-        useNavbarQueryState.setState({ searchCaseSensitivity: true, searchPatternType: SearchPatternType.regexp })
+        useNavbarQueryState.setState({
+            searchCaseSensitivity: true,
+            searchPatternType: SearchPatternType.regexp,
+            searchMode: SearchMode.SmartSearch,
+        })
         const searchSpy = spy(defaultProps.streamSearch)
 
         renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={searchSpy} />)
@@ -105,7 +110,7 @@ describe('StreamingSearchResults', () => {
 
         expect(receivedQuery).toEqual('r:golang/oauth2 test f:travis')
         expect(receivedOptions).toEqual({
-            version: 'V3',
+            version: LATEST_VERSION,
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
             searchMode: SearchMode.SmartSearch,

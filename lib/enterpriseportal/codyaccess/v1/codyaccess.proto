@@ -4,6 +4,7 @@ package enterpriseportal.codyaccess.v1;
 
 import "google/protobuf/duration.proto";
 import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1";
 
@@ -26,6 +27,12 @@ service CodyAccessService {
   // Enterprise subscription.
   rpc UpdateCodyGatewayAccess(UpdateCodyGatewayAccessRequest) returns (UpdateCodyGatewayAccessResponse) {
     option idempotency_level = IDEMPOTENT;
+  }
+
+  // GetCodyGatewayUsage returns data about a subscription's recent usage of
+  // Cody Gateway.
+  rpc GetCodyGatewayUsage(GetCodyGatewayUsageRequest) returns (GetCodyGatewayUsageResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
 
@@ -56,7 +63,7 @@ message CodyGatewayRateLimit {
   // The source of the rate limit configuration.
   CodyGatewayRateLimitSource source = 1;
   // Requests per time interval.
-  int64 limit = 2;
+  uint64 limit = 2;
   // Interval for rate limiting.
   google.protobuf.Duration interval_duration = 3;
 }
@@ -138,4 +145,37 @@ message UpdateCodyGatewayAccessRequest {
 message UpdateCodyGatewayAccessResponse {
   // The updated Cody Gateway access.
   CodyGatewayAccess access = 1;
+}
+
+message GetCodyGatewayUsageRequest {
+  oneof query {
+    // The external, prefixed UUID-format identifier of an Enterprise subscription.
+    string subscription_id = 1;
+  }
+}
+
+message CodyGatewayUsage {
+  // The external, prefixed UUID-format identifier for the Enterprise
+  // subscription corresponding to this Cody Gateway usage (e.g. "es_...").
+  string subscription_id = 1;
+
+  message UsageDatapoint {
+    // The time the usage occurred. Currently the time is always the day.
+    google.protobuf.Timestamp time = 1;
+    // The usage for the corresponding time period.
+    uint64 usage = 2;
+    // The model that was used.
+    string model = 3;
+  }
+
+  // Usage data for chat completions access, or null if not enabled.
+  repeated UsageDatapoint chat_completions_usage = 2;
+  // Usage data for code completions access, or null if not enabled.
+  repeated UsageDatapoint code_completions_usage = 3;
+  // Usage data for embedding text chunks, or null if not enabled.
+  repeated UsageDatapoint embeddings_usage = 4;
+}
+
+message GetCodyGatewayUsageResponse {
+  CodyGatewayUsage usage = 1;
 }

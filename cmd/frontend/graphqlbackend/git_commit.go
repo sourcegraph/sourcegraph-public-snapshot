@@ -180,9 +180,6 @@ func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
 }
 
 func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
-	if r.repoResolver.isPerforceDepot(ctx) {
-		return nil, nil
-	}
 
 	commit, err := r.resolveCommit(ctx)
 	if err != nil {
@@ -190,6 +187,10 @@ func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
 	}
 
 	body := commit.Message.Body()
+	if r.repoResolver.isPerforceDepot(ctx) {
+		return maybeTransformP4Body(body), nil
+	}
+
 	if body == "" {
 		return nil, nil
 	}

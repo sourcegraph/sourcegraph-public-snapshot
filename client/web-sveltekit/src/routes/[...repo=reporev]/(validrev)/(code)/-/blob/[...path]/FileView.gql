@@ -53,15 +53,15 @@ fragment FileViewCodeGraphData on CodeGraphData {
 
 fragment FileViewOccurrence on SCIPOccurrence {
     symbol
-        range {
-            start {
-                line
-                    character
-            }
-            end {
-                line
-                    character
-            }
+    range {
+        start {
+            line
+            character
         }
+        end {
+            line
+            character
+        }
+    }
     roles
 }
