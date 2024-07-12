@@ -196,6 +196,13 @@ var sg = &cli.App{
 		} else {
 			cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
 		}
+		// Initialize context
+		cmd.Context, err = usershell.Context(cmd.Context)
+		if err != nil {
+			std.Out.WriteWarningf("Unable to infer user shell context: %s", err)
+		}
+		cmd.Context = background.Context(cmd.Context, verbose)
+		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
 
 		// Set up analytics and hooks for each command - do this as the first context
 		// setup
@@ -228,19 +235,10 @@ var sg = &cli.App{
 
 			// Add analytics to each command
 			addAnalyticsHooks([]string{"sg"}, cmd.App.Commands)
+			// Start the analytics publisher
+			analytics.BackgroundEventPublisher(cmd.Context)
+			interrupt.Register(analytics.StopBackgroundEventPublisher)
 		}
-
-		// Initialize context after analytics are set up
-		cmd.Context, err = usershell.Context(cmd.Context)
-		if err != nil {
-			std.Out.WriteWarningf("Unable to infer user shell context: %s", err)
-		}
-		cmd.Context = background.Context(cmd.Context, verbose)
-		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
-
-		// start the analytics publisher
-		analytics.BackgroundEventPublisher(cmd.Context)
-		interrupt.Register(analytics.StopBackgroundEventPublisher)
 
 		// Configure logger, for commands that use components that use loggers
 		if _, set := os.LookupEnv(log.EnvDevelopment); !set {
