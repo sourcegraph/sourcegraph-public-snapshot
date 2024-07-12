@@ -19,7 +19,6 @@
 <div class="root">
     <RepoRev repoName={result.repository} {rev} />
     <span class="interpunct">·</span>
-    <!-- Wrap the path and the copy button in a span so they wrap together  -->
     <span use:highlightRanges={{ ranges: matches }}>
         <DisplayPath
             path={result.path}
