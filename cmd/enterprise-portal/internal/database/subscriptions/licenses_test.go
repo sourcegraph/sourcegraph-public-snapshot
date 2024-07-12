@@ -215,17 +215,17 @@ func TestLicensesStore(t *testing.T) {
 
 	t.Run("Revoke", func(t *testing.T) {
 		for idx, license := range createdLicenses {
-			revokeTime := time.Now().Add(-time.Second)
+			revokeTime := utctime.FromTime(time.Now().Add(-time.Second))
 			got, err := licenses.Revoke(ctx, license.ID, subscriptions.RevokeLicenseOpts{
 				Message: fmt.Sprintf("%s %d", t.Name(), idx),
-				Time:    pointers.Ptr(utctime.FromTime(revokeTime)),
+				Time:    pointers.Ptr(revokeTime),
 			})
 			require.NoError(t, err)
-			assert.Equal(t, revokeTime.UTC(), got.RevokedAt.AsTime())
+			assert.Equal(t, revokeTime.AsTime(), got.RevokedAt.AsTime())
 			require.Len(t, got.Conditions, 2)
 			// Most recent condition is sorted first, and should be the revocation
 			assert.Equal(t, "STATUS_REVOKED", got.Conditions[0].Status)
-			assert.Equal(t, revokeTime.UTC(), *got.Conditions[0].TransitionTime.GetTime())
+			assert.Equal(t, revokeTime.AsTime(), got.Conditions[0].TransitionTime.AsTime())
 			assert.Equal(t, "STATUS_CREATED", got.Conditions[1].Status)
 		}
 	})
