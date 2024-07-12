@@ -26,7 +26,7 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 		query := url.Values{}
 		query.Set("userID", "1")
 		query.Set("code", "foo")
-		query.Set("email", "dummy@email.com")
+		query.Set("email", "a@example.com")
 
 		return &url.URL{Path: "/password-reset", RawQuery: query.Encode()}, nil
 	}
@@ -46,7 +46,7 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 			id:            1,
 			emailVerified: true,
 			ctx:           ctx,
-			wantURL:       "http://example.com/password-reset?code=foo&userID=1",
+			wantURL:       "http://example.com/password-reset?code=foo&email=a%40example.com&userID=1",
 			wantErr:       false,
 			email:         "a@example.com",
 		},
@@ -55,7 +55,7 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 			id:            1,
 			emailVerified: false,
 			ctx:           ctx,
-			wantURL:       "http://example.com/password-reset?code=foo&userID=1",
+			wantURL:       "http://example.com/password-reset?code=foo&email=a%40example.com&userID=1",
 			wantEmailURL:  "http://example.com/password-reset?code=foo&userID=1&email=a%40example.com&emailVerifyCode=",
 			wantErr:       false,
 			email:         "a@example.com",
