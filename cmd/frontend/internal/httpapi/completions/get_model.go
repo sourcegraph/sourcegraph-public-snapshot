@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig"
@@ -33,12 +35,20 @@ func (lmr legacyModelRef) Parse() (string, string) {
 	case 2:
 		return parts[0], parts[1]
 
+	case 0, 1:
 		// If there was no slash, then we just have a model name.
 		// and have no idea about the provider.
-	case 0, 1:
-		fallthrough
-	default:
 		return "", string(lmr)
+
+	default:
+		// If there as _more_ than 2 slashes, then we are probably dealing
+		// with an unfortunate case like "fireworks/accounts/fireworks/models/mixtral-8x7b-instruct".
+		//
+		// We cannot just return ("fireworks", "mixtral-8x7b-instruct") because
+		// Cody Gateway actually expects the model name to be "accounts/fireworks/models/...".
+		provider := parts[0]
+		model := strings.TrimPrefix(string(lmr), provider+"/")
+		return provider, model
 	}
 }
 
@@ -349,7 +359,7 @@ func isAllowedCodyProChatModel(model legacyModelRef, isProUser bool) bool {
 // resolveRequestedModel loads the provider and model configuration data for whatever model the user is requesting.
 // Any errors returned are assumed to be user-facing, such as "you don't have access to model X", etc.
 func resolveRequestedModel(
-	ctx context.Context,
+	ctx context.Context, logger log.Logger,
 	cfg *modelconfigSDK.ModelConfiguration, request types.CodyCompletionRequestParameters, getModelFn getModelFn) (
 	*modelconfigSDK.Provider, *modelconfigSDK.Model, error) {
 
@@ -358,6 +368,10 @@ func resolveRequestedModel(
 	if err != nil {
 		return nil, nil, err
 	}
+	logger.Info(
+		"resolved completion model",
+		log.String("requestedModel", string(request.RequestedModel)),
+		log.String("resolvedMRef", string(mref)))
 
 	// SUPER SHADY HACK: Because right now we do NOT restrict Cody Pro models to be ONLY those defined in the
 	// configuration data, it's very likely that the model and provider simply won't be found. So for the dotcom

@@ -122,7 +122,7 @@ func newCompletionsHandler(
 
 		// Load the Provider and Model configuration data. This is surprisingly tricky, because of
 		// various contextual defaults and/or checking the user has access to the model, etc.
-		providerConfig, modelConfig, err := resolveRequestedModel(ctx, currentModelConfig, requestParams, getModel)
+		providerConfig, modelConfig, err := resolveRequestedModel(ctx, logger, currentModelConfig, requestParams, getModel)
 		if err != nil {
 			// NOTE: We return the raw error to the user assuming that it contains relevant
 			// user-facing diagnostic information, and doesn't leak any internal details.

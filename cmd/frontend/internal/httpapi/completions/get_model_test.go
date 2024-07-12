@@ -2,6 +2,7 @@ package completions
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -57,16 +58,29 @@ func TestLegacyModelRef(t *testing.T) {
 				WantProvider: "openai",
 				WantModel:    "gpt-4o",
 			},
+
+			// Awkward case with more than one slash.
+			{
+				Input:        "a/b/c",
+				WantProvider: "a",
+				WantModel:    "b/c",
+			},
+			{
+				Input:        "fireworks/accounts/fireworks/models/mixtral-8x22b-instruct",
+				WantProvider: "fireworks",
+				WantModel:    "accounts/fireworks/models/mixtral-8x22b-instruct",
+			},
+			{
+				Input:        "a//b",
+				WantProvider: "a",
+				WantModel:    "/b",
+			},
+
 			// Any unrecognized formats just return an empty provider.
 			{
 				Input:        "just-model",
 				WantProvider: "",
 				WantModel:    "just-model",
-			},
-			{
-				Input:        "a//b",
-				WantProvider: "",
-				WantModel:    "a//b",
 			},
 			{
 				Input:        "a::b::c",
@@ -76,9 +90,15 @@ func TestLegacyModelRef(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			gotProvider, gotModel := legacyModelRef(test.Input).Parse()
+			testLegacyRef := legacyModelRef(test.Input)
+			gotProvider, gotModel := testLegacyRef.Parse()
 			assert.Equal(t, test.WantProvider, gotProvider, "legacyModelRef(%q)", test.Input)
 			assert.Equal(t, test.WantModel, gotModel, "legacyModelRef(%q)", test.Input)
+
+			// BONUS TEST! Verify the ToModelRef function works as expected.
+			wantMRef := fmt.Sprintf("%s::unknown::%s", gotProvider, gotModel)
+			gotMRef := testLegacyRef.ToModelRef()
+			assert.Equal(t, wantMRef, string(gotMRef))
 		}
 	})
 
@@ -183,6 +203,7 @@ func TestCodyProModelAllowlists(t *testing.T) {
 				IsPro:      false,
 				Want:       false,
 			},
+
 			// Pro and Free models.
 			{
 				LegacyMRef: "openai/gpt-3.5-turbo",
@@ -194,6 +215,18 @@ func TestCodyProModelAllowlists(t *testing.T) {
 				IsPro:      false,
 				Want:       true,
 			},
+
+			{
+				LegacyMRef: "fireworks/accounts/fireworks/models/mixtral-8x22b-instruct",
+				IsPro:      true,
+				Want:       true,
+			},
+			{
+				LegacyMRef: "fireworks/accounts/fireworks/models/mixtral-8x22b-instruct",
+				IsPro:      false,
+				Want:       true,
+			},
+
 			// Unknown models.
 			{
 				LegacyMRef: "openai/gpt-6-omega",
@@ -210,7 +243,7 @@ func TestCodyProModelAllowlists(t *testing.T) {
 		for _, test := range tests {
 			lmref := legacyModelRef(test.LegacyMRef)
 			got := isAllowedCodyProChatModel(lmref, test.IsPro)
-			assert.Equal(t, test.Want, got, "isAllowedCodyProChatModel(%q)", lmref)
+			assert.Equal(t, test.Want, got, "isAllowedCodyProChatModel(%q, %v)", lmref, test.IsPro)
 		}
 	})
 }
