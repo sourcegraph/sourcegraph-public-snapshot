@@ -3,6 +3,7 @@ package codyaccess_test
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -10,10 +11,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/codyaccess"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/databasetest"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -25,18 +29,71 @@ func TestCodyGatewayStore(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	db := databasetest.NewTestDB(t, "enterprise-portal", "CodyGatewayStore", tables.All()...)
+	db := databasetest.NewTestDB(t, "enterprise-portal", t.Name(), tables.All()...)
 
 	// Create a test subscription as a parent.
 	subscriptionIDs := make([]string, 10)
 	for idx := range subscriptionIDs {
 		subscriptionID := uuid.NewString()
 		_, err := subscriptions.NewStore(db).Upsert(ctx, subscriptionID, subscriptions.UpsertSubscriptionOptions{
-			DisplayName:    mockSubscriptionDisplayName(idx),
-			InstanceDomain: fmt.Sprintf("s%d.sourcegraph.com", idx),
+			DisplayName:    pointers.Ptr(database.NewNullString(mockSubscriptionDisplayName(idx))),
+			InstanceDomain: pointers.Ptr(database.NewNullString(fmt.Sprintf("s%d.sourcegraph.com", idx))),
 		})
 		require.NoError(t, err)
 		subscriptionIDs[idx] = subscriptionID
+
+		now := time.Now()
+		// We create 3 licenses for each:
+		// - 1 expired
+		// - 1 revoked
+		// - 2 active
+		for _, opt := range []subscriptions.CreateLicenseOpts{
+			{
+				Message:    "expired",
+				Time:       pointers.Ptr(utctime.FromTime(now.Add(-10 * time.Hour))),
+				ExpireTime: utctime.FromTime(now.Add(-1 * time.Hour)),
+			},
+			{
+				Message:    "revoked",
+				Time:       pointers.Ptr(utctime.FromTime(now.Add(-5 * time.Hour))),
+				ExpireTime: utctime.FromTime(now.Add(-1 * time.Hour)),
+			},
+			{
+				Message:    "activeOld",
+				Time:       pointers.Ptr(utctime.FromTime(now.Add(-4 * time.Hour))),
+				ExpireTime: utctime.FromTime(now.Add(10 * time.Hour)),
+			},
+			{
+				Message:    "activeLicense",
+				Time:       pointers.Ptr(utctime.FromTime(now.Add(-1 * time.Hour))),
+				ExpireTime: utctime.FromTime(now.Add(10 * time.Hour)),
+			},
+		} {
+			l, err := subscriptions.NewLicensesStore(db).CreateLicenseKey(ctx,
+				subscriptionID,
+				&subscriptions.LicenseKey{
+					Info: license.Info{
+						// Set properties that are easy to assert on later
+						Tags: []string{
+							strconv.Itoa(idx),
+							opt.Message,
+						},
+						UserCount: uint(idx),
+						CreatedAt: opt.Time.AsTime(),
+						ExpiresAt: opt.ExpireTime.AsTime(),
+					},
+					SignedKey: subscriptionID, // stub value
+				},
+				opt)
+			require.NoError(t, err)
+			if opt.Message == "revoked" {
+				_, err := subscriptions.NewLicensesStore(db).Revoke(ctx, l.ID, subscriptions.RevokeLicenseOpts{
+					Message: t.Name(),
+				})
+				require.NoError(t, err)
+			}
+		}
+
 	}
 	databasetest.ClearTablesAfterTest(t, db, tables.All()...)
 
@@ -62,8 +119,8 @@ func TestCodyGatewayStore(t *testing.T) {
 		t.Run("already archived", func(t *testing.T) {
 			subscriptionID := uuid.NewString()
 			_, err := subscriptions.NewStore(db).Upsert(ctx, subscriptionID, subscriptions.UpsertSubscriptionOptions{
-				DisplayName:    "Archived subscription",
-				InstanceDomain: "archived.sourcegraph.com",
+				DisplayName:    pointers.Ptr(database.NewNullString("Archived subscription")),
+				InstanceDomain: pointers.Ptr(database.NewNullString("archived.sourcegraph.com")),
 				ArchivedAt:     pointers.Ptr(time.Now()),
 			})
 			require.NoError(t, err)
@@ -77,8 +134,8 @@ func TestCodyGatewayStore(t *testing.T) {
 		t.Run("set then archive", func(t *testing.T) {
 			subscriptionID := uuid.NewString()
 			_, err := subscriptions.NewStore(db).Upsert(ctx, subscriptionID, subscriptions.UpsertSubscriptionOptions{
-				DisplayName:    "Soon-to-be-archived subscription",
-				InstanceDomain: "not-yet-archived.sourcegraph.com",
+				DisplayName:    pointers.Ptr(database.NewNullString("Soon-to-be-archived subscription")),
+				InstanceDomain: pointers.Ptr(database.NewNullString("not-yet-archived.sourcegraph.com")),
 			})
 			require.NoError(t, err)
 
@@ -135,6 +192,13 @@ func CodyGatewayStoreListAndGet(t *testing.T, ctx context.Context, subscriptionI
 		assert.Equal(t, idx, pointers.DerefZero(got.CodeCompletionsRateLimitIntervalSeconds))
 		assert.Equal(t, int64(idx), pointers.DerefZero(got.EmbeddingsRateLimit))
 		assert.Equal(t, idx, pointers.DerefZero(got.EmbeddingsRateLimitIntervalSeconds))
+
+		assert.Equal(t, []string{strconv.Itoa(idx), "activeLicense"}, got.ActiveLicenseInfo.Tags)
+		assert.Equal(t, uint(idx), got.ActiveLicenseInfo.UserCount)
+		assert.Len(t, got.LicenseKeyHashes, 2) // 2 valid licenses
+		for _, hash := range got.LicenseKeyHashes {
+			assert.NotEmpty(t, hash)
+		}
 	}
 
 	t.Run("List", func(t *testing.T) {
@@ -244,7 +308,9 @@ func CodyGatewayStoreUpsert(t *testing.T, ctx context.Context, subscriptionIDs [
 			CodyGatewayAccess: codyaccess.CodyGatewayAccess{
 				SubscriptionID: currentAccess.SubscriptionID,
 			},
-			DisplayName: currentAccess.DisplayName,
+			DisplayName:       currentAccess.DisplayName,
+			ActiveLicenseInfo: currentAccess.ActiveLicenseInfo,
+			LicenseKeyHashes:  currentAccess.LicenseKeyHashes,
 		}, *got)
 	})
 }

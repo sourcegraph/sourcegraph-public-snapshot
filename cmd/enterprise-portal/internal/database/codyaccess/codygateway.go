@@ -11,11 +11,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/pgxerrors"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/upsert"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// ⚠️ DO NOT USE: This type is only used for creating foreign key constraints
+// and initializing tables with gorm.
 type TableCodyGatewayAccess struct {
-	// ⚠️ DO NOT USE: This field is only used for creating foreign key constraint.
 	Subscription *subscriptions.TableSubscription `gorm:"foreignKey:SubscriptionID"`
 
 	CodyGatewayAccess
@@ -46,13 +48,7 @@ type CodyGatewayAccess struct {
 }
 
 // codyGatewayAccessTableColumns must match scanCodyGatewayAccess() values.
-// Requires:
-//
-//	RIGHT JOIN
-//		enterprise_portal_subscriptions AS subscription
-//		ON subscription_id = subscription.id
-//
-// As this uses subscription fields.
+// Requires 'codyGatewayAccessJoinClauses'.
 func codyGatewayAccessTableColumns() []string {
 	return []string{
 		"subscription.id",
@@ -63,7 +59,11 @@ func codyGatewayAccessTableColumns() []string {
 		"code_completions_rate_limit_interval_seconds",
 		"embeddings_rate_limit",
 		"embeddings_rate_limit_interval_seconds",
+		// Subscriptions
 		"subscription.display_name",
+		// Licenses - depends on license key info
+		"active_license.license_data->'Info' as active_license_info",
+		"tokens.license_key_hashes as license_key_hashes",
 	}
 }
 
@@ -86,6 +86,9 @@ func scanCodyGatewayAccess(row pgx.Row) (*CodyGatewayAccessWithSubscriptionDetai
 		&a.EmbeddingsRateLimitIntervalSeconds,
 		// Subscriptions fields
 		&a.DisplayName,
+		// License fields
+		&a.ActiveLicenseInfo,
+		&a.LicenseKeyHashes,
 	)
 	if err != nil {
 		return nil, err
@@ -96,7 +99,50 @@ func scanCodyGatewayAccess(row pgx.Row) (*CodyGatewayAccessWithSubscriptionDetai
 	return &a, nil
 }
 
-// Store is the storage layer for Cody Gateway access.
+const codyGatewayAccessJoinClauses = `
+-- We want Cody Gateway access records for every subscription, even if an
+-- an explicit one doesn't exist yet.
+RIGHT JOIN
+    enterprise_portal_subscriptions AS subscription
+    ON access.subscription_id = subscription.id
+
+-- Join against the "active license" of a subscription, which is currently used
+-- as the source for default subscription access properties.
+-- We may want to move user counts, product tags, etc. to the subscription table
+-- in the future instead.
+LEFT JOIN
+    enterprise_portal_subscription_licenses AS active_license
+    ON active_license.id = (
+        SELECT id
+        FROM enterprise_portal_subscription_licenses
+        WHERE
+            enterprise_portal_subscription_licenses.license_type = 'ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY'
+            AND access.subscription_id = enterprise_portal_subscription_licenses.subscription_id
+        -- Get most recently created license key as the "active license"
+        ORDER BY enterprise_portal_subscription_licenses.created_at DESC
+        LIMIT 1
+    )
+
+-- Join against collected license key hashes of each subscription, which we use
+-- as 'access tokens' to Cody Gateway
+LEFT JOIN (
+	SELECT
+		licenses.subscription_id,
+		ARRAY_AGG(digest(licenses.license_data->>'SignedKey','sha256')) AS license_key_hashes
+	FROM
+		enterprise_portal_subscription_licenses AS licenses
+	WHERE
+		licenses.license_type = 'ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY'
+		AND licenses.expire_at > NOW()  -- expires in future
+		AND licenses.revoked_at IS NULL -- is not revoked
+    GROUP BY
+        licenses.subscription_id
+) tokens ON tokens.subscription_id = subscription.id
+`
+
+// Store is the storage layer for Cody Gateway access. It aims to mirror the
+// existing behaviour as close as possible, and as such has extensive
+// dependencies on licensing.
 type CodyGatewayStore struct {
 	db *pgxpool.Pool
 }
@@ -112,6 +158,9 @@ type CodyGatewayAccessWithSubscriptionDetails struct {
 
 	// DisplayName is the display name of the related subscription.
 	DisplayName string
+
+	ActiveLicenseInfo *license.Info
+	LicenseKeyHashes  [][]byte
 }
 
 var ErrSubscriptionDoesNotExist = errors.New("subscription does not exist")
@@ -121,14 +170,13 @@ func (s *CodyGatewayStore) Get(ctx context.Context, subscriptionID string) (*Cod
 	query := fmt.Sprintf(`SELECT
 	%s
 FROM
-	enterprise_portal_cody_gateway_access
-RIGHT JOIN
-	enterprise_portal_subscriptions AS subscription
-	ON subscription_id = subscription.id
+	enterprise_portal_cody_gateway_access AS access
+%s
 WHERE
 	subscription.id = @subscriptionID
 	AND subscription.archived_at IS NULL`,
-		strings.Join(codyGatewayAccessTableColumns(), ", "))
+		strings.Join(codyGatewayAccessTableColumns(), ", "),
+		codyGatewayAccessJoinClauses)
 
 	sub, err := scanCodyGatewayAccess(s.db.QueryRow(ctx, query, pgx.NamedArgs{
 		"subscriptionID": subscriptionID,
@@ -150,13 +198,12 @@ func (s *CodyGatewayStore) List(ctx context.Context) ([]*CodyGatewayAccessWithSu
 	query := fmt.Sprintf(`SELECT
 	%s
 FROM
-	enterprise_portal_cody_gateway_access
-RIGHT JOIN
-	enterprise_portal_subscriptions AS subscription
-	ON subscription_id = subscription.id
+	enterprise_portal_cody_gateway_access AS access
+%s
 WHERE
 	subscription.archived_at IS NULL`,
-		strings.Join(codyGatewayAccessTableColumns(), ", "))
+		strings.Join(codyGatewayAccessTableColumns(), ", "),
+		codyGatewayAccessJoinClauses)
 
 	rows, err := s.db.Query(ctx, query)
 	if err != nil {
