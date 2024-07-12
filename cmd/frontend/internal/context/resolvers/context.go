@@ -145,7 +145,7 @@ func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatInten
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	// Proof-of-concept warning - this needs to be deployed behind Cody Gateway, or exposed with HTTPS and authentication.
-	req, err := http.NewRequestWithContext(ctx, "POST", "http://35.232.21.114:8000/predict/linearv2", bytes.NewReader(buf))
+	req, err := http.NewRequestWithContext(ctx, "POST", "http://34.123.181.109:8000/predict/linearv2", bytes.NewReader(buf))
 	if err != nil {
 		return nil, err
 	}
