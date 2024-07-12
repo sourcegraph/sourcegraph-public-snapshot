@@ -2,6 +2,7 @@ import gql from 'tagged-template-noop'
 
 import { isErrorLike } from '@sourcegraph/common'
 
+import { SearchVersion } from '../../../graphql-operations'
 import type * as sourcegraph from '../api'
 import { cache } from '../util'
 
@@ -251,6 +252,7 @@ export class API {
 
         const data = await queryGraphQL<Response>(buildSearchQuery(fileLocal), {
             query,
+            version: SearchVersion.V3,
         })
         return data.search.results.results.filter(isDefined)
     }
@@ -322,8 +324,8 @@ function buildSearchQuery(fileLocal: boolean): string {
 
     if (fileLocal) {
         return gql`
-            query LegacyCodeIntelSearch2($query: String!) {
-                search(query: $query) {
+            query LegacyCodeIntelSearch2($query: String!, $version: SearchVersion!) {
+                search(query: $query, version: $version) {
                     ...SearchResults
                     ...FileLocal
                 }
@@ -334,8 +336,8 @@ function buildSearchQuery(fileLocal: boolean): string {
     }
 
     return gql`
-        query LegacyCodeIntelSearch3($query: String!) {
-            search(query: $query) {
+        query LegacyCodeIntelSearch3($query: String!, $version: SearchVersion!) {
+            search(query: $query, version: $version) {
                 ...SearchResults
             }
         }
