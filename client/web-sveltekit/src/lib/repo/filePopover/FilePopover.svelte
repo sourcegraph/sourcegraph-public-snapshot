@@ -28,7 +28,6 @@
     import Icon from '$lib/Icon.svelte'
     import { pathHrefFactory } from '$lib/path'
     import DisplayPath from '$lib/path/DisplayPath.svelte'
-    import { displayRepoName } from '$lib/shared'
     import Timestamp from '$lib/Timestamp.svelte'
     import { formatBytes } from '$lib/utils'
     import Badge from '$lib/wildcard/Badge.svelte'
