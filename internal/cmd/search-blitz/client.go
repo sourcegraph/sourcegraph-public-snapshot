@@ -45,7 +45,7 @@ func (s *client) search(ctx context.Context, query, queryName string) (*metrics,
 	return s.doGraphQL(ctx, graphQLRequest{
 		QueryName:        queryName,
 		GraphQLQuery:     graphQLSearchQuery,
-		GraphQLVariables: map[string]string{"query": query},
+		GraphQLVariables: map[string]string{"query": query, "version": "V3"},
 		MetricsFromBody: func(body io.Reader) (*metrics, error) {
 			var respDec struct {
 				Data struct {

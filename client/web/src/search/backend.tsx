@@ -1,7 +1,6 @@
 import { type Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { createAggregateError } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
@@ -16,34 +15,8 @@ import type {
     UpdateSavedSearchVariables,
     Scalars,
     SavedSearchFields,
-    ReposByQueryResult,
     SavedSearchResult,
 } from '../graphql-operations'
-
-export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
-    return queryGraphQL<ReposByQueryResult>(
-        gql`
-            query ReposByQuery($query: String!) {
-                search(query: $query) {
-                    results {
-                        repositories {
-                            name
-                            url
-                        }
-                    }
-                }
-            }
-        `,
-        { query }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data?.search?.results?.repositories) {
-                throw createAggregateError(errors)
-            }
-            return data.search.results.repositories
-        })
-    )
-}
 
 const savedSearchFragment = gql`
     fragment SavedSearchFields on SavedSearch {
