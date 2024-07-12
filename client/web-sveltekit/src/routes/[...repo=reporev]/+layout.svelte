@@ -122,7 +122,10 @@
             key: 'ctrl+backspace',
             mac: 'cmd+backspace',
         },
-        ignoreInputFields: false,
+        // Ctrl/cmd+Backspace is used to delete whole words in inputs
+        // This would interfere e.g. with the fuzzy finder (but not the search input because
+        // CodeMirror handles this itself)
+        ignoreInputFields: true,
         handler: () => {
             goto(data.repoURL)
         },
