@@ -265,7 +265,7 @@ test.describe('search results', async () => {
             Init: () => ({
                 currentUser: null,
                 viewerSettings: {
-                    final: '{"search.defaultPatternType": "standard"}'
+                    final: '{"search.defaultPatternType": "standard"}',
                 },
             }),
         })
@@ -273,7 +273,7 @@ test.describe('search results', async () => {
         await page.goto('/search?q=test')
 
         const searchInput = page.getByRole('textbox')
-        const regexpToggle = page.getByTitle('regexp toggle');
+        const regexpToggle = page.getByTitle('regexp toggle')
 
         // Toggle regexp on and submit search
         await regexpToggle.click()
