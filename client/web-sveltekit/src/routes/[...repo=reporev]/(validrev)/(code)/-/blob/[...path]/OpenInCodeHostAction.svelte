@@ -25,7 +25,7 @@
             on:click={handleOpenCodeHostClick}
         >
             {#if externalLink.serviceKind}
-                <Icon icon={getIconForExternalService(externalLink.serviceKind)} aria-hidden />
+                <Icon icon={getIconForExternalService(externalLink.serviceKind)} aria-hidden inline />
                 <span data-action-label>
                     {getHumanNameForExternalService(externalLink.serviceKind)}
                 </span>

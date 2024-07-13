@@ -81,6 +81,12 @@
         white-space: nowrap;
 
         h2 {
+            :global([data-path-container]) {
+                gap: 0.25em;
+            }
+            :global([data-slash]) {
+                color: var(--text-muted);
+            }
             font-size: var(--font-size-large);
             font-weight: 500;
             margin: 0;

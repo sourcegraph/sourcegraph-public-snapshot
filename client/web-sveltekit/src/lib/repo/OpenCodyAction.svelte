@@ -12,7 +12,7 @@
 {#if !$rightPanelOpen}
     <Tooltip tooltip="Open Cody chat">
         <button on:click={handleClick} aria-controls={CODY_SIDEBAR_ID} aria-expanded={$rightPanelOpen}>
-            <Icon icon={ISgCody} />
+            <Icon icon={ISgCody} inline />
             <span data-action-label>Cody</span>
         </button>
     </Tooltip>

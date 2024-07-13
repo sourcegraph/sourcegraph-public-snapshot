@@ -8,6 +8,7 @@
 
     export let repoName: string
     export let externalLinks: DisplayRepoName_ExternalLink[] | undefined
+    export let disableTooltip: boolean = false
 
     function linkHost(link: DisplayRepoName_ExternalLink): string {
         return new URL(link.url).hostname
@@ -27,31 +28,31 @@
 </script>
 
 <span class="root"
-    ><Tooltip tooltip={host ?? ''}><Icon icon={getIconForExternalService(kind)} inline /></Tooltip><DisplayPath
-        path={displayName}>></DisplayPath
-    ></span
+    ><Tooltip tooltip={disableTooltip ? '' : host ?? ''}><Icon icon={getIconForExternalService(kind)} inline /></Tooltip
+    ><DisplayPath path={displayName}>></DisplayPath></span
 >
 
 <style lang="scss">
     span.root {
-        display: contents;
-        color: var(--text-body);
-        font-family: var(--font-family-base);
-        font-size: var(--font-size-base);
-        font-weight: 500;
+        display: flex;
 
         :global([data-icon]) {
+            flex: none;
             margin-right: 0.375em;
             align-self: center;
             --icon-color: currentColor;
         }
 
         :global([data-path-container]) {
-            color: var(--text-body);
-            font-family: var(--font-family-base);
-            font-size: var(--font-size-base);
-            font-weight: 500;
+            color: inherit;
+            font-size: inherit;
+            font-weight: inherit;
             gap: 0;
+            font-family: var(--font-family-base);
+
+            :global([data-path-item]) {
+                color: inherit;
+            }
 
             :global([data-slash]) {
                 color: inherit;

@@ -46,7 +46,7 @@
     introduce any additional whitespace in the path container since that would
     make the path invalid when copied from a selection
 -->
-<span data-path-container>
+<div data-path-container>
     <slot name="prefix" /><!--
     -->{#each parts as { part, path }, index}<!--
         -->{@const last =
@@ -77,11 +77,11 @@
             class="after"><CopyButton value={path} label="Copy path to clipboard" /></span
         ><!--
     -->{/if}
-</span>
+</div>
 
 <style lang="scss">
     [data-path-container] {
-        display: inline-flex;
+        display: flex;
         align-items: center;
         gap: 0.125em;
 

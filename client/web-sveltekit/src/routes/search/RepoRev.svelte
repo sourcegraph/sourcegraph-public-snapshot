@@ -57,6 +57,8 @@
             display: inline-flex;
             align-items: baseline;
             color: var(--text-body);
+            font-weight: 500;
+
             .rev {
                 color: var(--text-muted);
             }

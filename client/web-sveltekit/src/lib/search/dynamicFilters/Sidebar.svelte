@@ -234,7 +234,9 @@
                 <Popover showOnHover let:registerTrigger placement="right-start">
                     <div use:registerTrigger>
                         <SectionItem {...item} on:select={() => handleFilterSelect('repo')}>
-                            <DisplayRepoName repoName={item.label} codeHost={undefined} />
+                            <div slot="label" class="repo-name">
+                                <DisplayRepoName repoName={item.label} externalLinks={undefined} />
+                            </div>
                         </SectionItem>
                     </div>
                     <svelte:fragment slot="content">
@@ -342,6 +344,19 @@
             transform: rotateX(180deg);
             fill: none !important;
             --icon-color: var(--body-color);
+        }
+    }
+
+    .repo-name {
+        display: flex;
+        min-width: 0;
+        :global([data-path-container]) {
+            display: block;
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     }
 

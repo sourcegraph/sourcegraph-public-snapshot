@@ -92,6 +92,7 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        font-weight: 500;
     }
 
     .description-and-tags {
