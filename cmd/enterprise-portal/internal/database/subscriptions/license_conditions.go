@@ -30,7 +30,7 @@ func (*SubscriptionLicenseCondition) TableName() string {
 
 // subscriptionLicenseConditionJSONBAgg must be used with:
 //
-//	JOIN
+//	LEFT JOIN
 //		enterprise_portal_subscription_license_conditions license_condition
 //		ON license_condition.license_id = id
 //	GROUP BY

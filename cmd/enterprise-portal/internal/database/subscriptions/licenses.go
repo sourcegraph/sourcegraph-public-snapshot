@@ -153,7 +153,7 @@ SELECT
 	%s
 FROM
 	enterprise_portal_subscription_licenses
-JOIN
+LEFT JOIN
 	enterprise_portal_subscription_license_conditions license_condition
 	ON license_condition.license_id = id
 WHERE
@@ -189,7 +189,7 @@ SELECT
 	%s
 FROM
 	enterprise_portal_subscription_licenses
-JOIN
+LEFT JOIN
 	enterprise_portal_subscription_license_conditions license_condition
 	ON license_condition.license_id = id
 WHERE
