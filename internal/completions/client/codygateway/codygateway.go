@@ -119,6 +119,12 @@ func (c *codyGatewayClient) clientForParams(logger log.Logger, feature types.Com
 		client := anthropic.NewClient(doer, "", "", true, c.tokenManager)
 		return client, nil
 
+	case "mistral":
+		// Annoying legacy hack: We expose Mistral model (e.g. "mixtral-8x22b-instruct") but have only
+		// effer offered them via the Fireworks API provider. So when switching to the newer modelconfig
+		// format, this is a situation where there wasn't a "mistral API Provider" for these models.
+		// Instead, we just send these to fireworks.
+		fallthrough
 	case conftypes.CompletionsProviderNameFireworks:
 		doer := gatewayDoer(
 			c.upstream, feature, c.gatewayURL, c.accessToken,

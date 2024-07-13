@@ -127,7 +127,7 @@
     {
       "modelRef": "google::v1::gemini-1.5-flash-latest",
       "displayName": "Gemini 1.5 Flash",
-      "modelName": "google/gemini-1.5-flash-latest",
+      "modelName": "gemini-1.5-flash-latest",
       "capabilities": ["autocomplete", "chat"],
       "category": "speed",
       "status": "stable",
@@ -140,7 +140,7 @@
     {
       "modelRef": "mistral::v1::mixtral-8x7b-instruct",
       "displayName": "Mixtral 8x7B",
-      "modelName": "mixtral-8x7b-instruct",
+      "modelName": "accounts/fireworks/models/mixtral-8x7b-instruct",
       "capabilities": ["autocomplete", "chat"],
       "category": "speed",
       "status": "stable",
@@ -153,7 +153,7 @@
     {
       "modelRef": "mistral::v1::mixtral-8x22b-instruct",
       "displayName": "Mixtral 8x22B",
-      "modelName": "mixtral-8x22b-instruct",
+      "modelName": "accounts/fireworks/models/mixtral-8x22b-instruct",
       "capabilities": ["autocomplete", "chat"],
       "category": "accuracy",
       "status": "stable",
