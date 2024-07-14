@@ -1,5 +1,4 @@
-import { once } from 'lodash'
-import type { ActionReturn } from 'svelte/action'
+import type { Action } from 'svelte/action'
 
 /**
  * Returns true if the environment supports IntersectionObserver
@@ -19,11 +18,21 @@ function createObserver(init: IntersectionObserverInit): IntersectionObserver {
     return new IntersectionObserver(intersectionHandler, init)
 }
 
-const getGlobalObserver = once(() => createObserver({ root: null, rootMargin: '0px 0px 500px 0px' }))
+const observerCache = new WeakMap<HTMLElement, IntersectionObserver>()
+function getObserver(container: HTMLElement): IntersectionObserver {
+    let observer = observerCache.get(container)
+    if (!observer) {
+        observer = createObserver({ root: container, rootMargin: '0px 0px 500px 0px' })
+        observerCache.set(container, observer)
+    }
+    return observer
+}
 
-export function observeIntersection(
-    node: HTMLElement
-): ActionReturn<void, { 'on:intersecting': (e: CustomEvent<boolean>) => void }> {
+export const observeIntersection: Action<
+    HTMLElement,
+    HTMLElement | null,
+    { 'on:intersecting': (e: CustomEvent<boolean>) => void }
+> = (node: HTMLElement, container: HTMLElement | null) => {
     // If the environment doesn't support IntersectionObserver we assume that the
     // element is visible and dispatch the event immediately
     if (!supportsIntersectionObserver()) {
@@ -31,26 +40,19 @@ export function observeIntersection(
         return {}
     }
 
-    let observer = getGlobalObserver()
-
-    let scrollAncestor: HTMLElement | null = node.parentElement
-    while (scrollAncestor) {
-        const overflow = getComputedStyle(scrollAncestor).overflowY
-        if (overflow === 'auto' || overflow === 'scroll') {
-            break
-        }
-        scrollAncestor = scrollAncestor.parentElement
-    }
-
-    if (scrollAncestor && scrollAncestor !== document.getRootNode()) {
-        observer = createObserver({ root: scrollAncestor, rootMargin: '0px 0px 500px 0px' })
-    }
-
-    observer.observe(node)
+    let observer = container ? getObserver(container) : null
+    observer?.observe(node)
 
     return {
+        update(newContainer) {
+            container && observer?.unobserve(container)
+            container = newContainer
+
+            observer = container ? getObserver(container) : null
+            observer?.observe(node)
+        },
         destroy() {
-            observer.unobserve(node)
+            observer?.unobserve(node)
         },
     }
 }

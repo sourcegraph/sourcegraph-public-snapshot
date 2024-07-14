@@ -63,6 +63,7 @@
     }
 
     let resultContainer: HTMLElement | null = null
+
     const recentSearches = createRecentSearchesStore()
 
     $: state = $stream.state // 'loading', 'error', 'complete'
@@ -84,6 +85,8 @@
 
     $: previewResult = writable(cacheEntry?.preview ?? null)
 
+    const scrollContainer = writable<HTMLElement | null>(null)
+    $: scrollContainer.set(resultContainer)
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
             return expandedSet.has(match)
@@ -99,6 +102,7 @@
             previewResult.set(result)
         },
         queryState,
+        scrollContainer,
     })
 
     beforeNavigate(() => {
@@ -188,7 +192,7 @@
                             {@const component = getSearchResultComponent(result)}
                             {#if i === resultsToShow.length - 1}
                                 <li
-                                    use:observeIntersection
+                                    use:observeIntersection={resultContainer}
                                     on:intersecting={loadMore}
                                     on:click={() => handleSearchResultClick(i)}
                                 >
