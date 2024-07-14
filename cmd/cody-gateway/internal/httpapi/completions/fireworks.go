@@ -262,12 +262,14 @@ func pickFineTunedModel(model string, language string) string {
 	case fireworks.FineTunedFIMLangDeepSeekLogsTrained:
 		{
 			switch language {
-			case "typescript", "typescriptreact":
+			case "typescript":
 				return fireworks.FineTunedDeepseekLogsTrainedTypescript
-			case "javascript", "javascriptreact":
+			case "javascript":
 				return fireworks.FineTunedDeepseekLogsTrainedJavascript
 			case "python":
 				return fireworks.FineTunedDeepseekLogsTrainedPython
+			case "typescriptreact", "javascriptreact":
+				return fireworks.FineTunedDeepseekLogsTrainedReact
 			default:
 				return fireworks.DeepseekCoder7b
 			}
