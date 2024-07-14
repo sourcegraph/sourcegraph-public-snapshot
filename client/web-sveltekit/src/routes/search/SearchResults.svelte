@@ -53,16 +53,16 @@
     export let queryState: QueryStateStore
 
     export function capture(): SearchResultsCapture {
-        return resultContainer?.scrollTop ?? 0
+        return $resultContainer?.scrollTop ?? 0
     }
 
     export function restore(capture?: SearchResultsCapture): void {
-        if (resultContainer) {
-            resultContainer.scrollTop = capture ?? 0
+        if ($resultContainer) {
+            $resultContainer.scrollTop = capture ?? 0
         }
     }
 
-    let resultContainer: HTMLElement | null = null
+    const resultContainer = writable<HTMLElement | null>(null)
 
     const recentSearches = createRecentSearchesStore()
 
@@ -85,8 +85,6 @@
 
     $: previewResult = writable(cacheEntry?.preview ?? null)
 
-    const scrollContainer = writable<HTMLElement | null>(null)
-    $: scrollContainer.set(resultContainer)
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
             return expandedSet.has(match)
@@ -102,7 +100,7 @@
             previewResult.set(result)
         },
         queryState,
-        scrollContainer,
+        scrollContainer: resultContainer,
     })
 
     beforeNavigate(() => {
@@ -174,7 +172,7 @@
                 <aside class="actions">
                     <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} />
                 </aside>
-                <div class="result-list" bind:this={resultContainer}>
+                <div class="result-list" bind:this={$resultContainer}>
                     {#if $stream.alert}
                         <div class="message-container">
                             <SearchAlert alert={$stream.alert} />
@@ -192,7 +190,7 @@
                             {@const component = getSearchResultComponent(result)}
                             {#if i === resultsToShow.length - 1}
                                 <li
-                                    use:observeIntersection={resultContainer}
+                                    use:observeIntersection={$resultContainer}
                                     on:intersecting={loadMore}
                                     on:click={() => handleSearchResultClick(i)}
                                 >
