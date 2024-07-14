@@ -48,21 +48,27 @@ type CodyCompletionRequestParameters struct {
 	// that is faster (but probably "dumber").
 	Fast bool
 }
+type CompletionRequest struct {
+	Feature    CompletionsFeature
+	Version    CompletionsVersion
+	Parameters CompletionRequestParameters
+}
 
 type CompletionRequestParameters struct {
 	// Prompt exists only for backwards compatibility. Do not use it in new
 	// implementations. It will be removed once we are reasonably sure 99%
 	// of VSCode extension installations are upgraded to a new Cody version.
-	Prompt            string    `json:"prompt"`
-	Messages          []Message `json:"messages"`
-	MaxTokensToSample int       `json:"maxTokensToSample,omitempty"`
-	Temperature       float32   `json:"temperature,omitempty"`
-	StopSequences     []string  `json:"stopSequences,omitempty"`
-	TopK              int       `json:"topK,omitempty"`
-	TopP              float32   `json:"topP,omitempty"`
-	Model             string    `json:"model,omitempty"`
-	Stream            *bool     `json:"stream,omitempty"`
-	Logprobs          *uint8    `json:"logprobs"`
+	Prompt                                       string    `json:"prompt"`
+	Messages                                     []Message `json:"messages"`
+	MaxTokensToSample                            int       `json:"maxTokensToSample,omitempty"`
+	Temperature                                  float32   `json:"temperature,omitempty"`
+	StopSequences                                []string  `json:"stopSequences,omitempty"`
+	TopK                                         int       `json:"topK,omitempty"`
+	TopP                                         float32   `json:"topP,omitempty"`
+	Model                                        string    `json:"model,omitempty"`
+	Stream                                       *bool     `json:"stream,omitempty"`
+	Logprobs                                     *uint8    `json:"logprobs"`
+	AzureUseDeprecatedCompletionsAPIForOldModels bool      `json:"azureUseDeprecatedCompletionsAPIForOldModels,omitempty"`
 }
 
 // IsStream returns whether a streaming response is requested. For backwards

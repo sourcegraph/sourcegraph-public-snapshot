@@ -30,7 +30,6 @@ var authProxyURL = os.Getenv("CODY_AZURE_OPENAI_IDENTITY_HTTP_PROXY")
 // it will acquire a short lived token and reusing the client
 // prevents acquiring a new token on every request.
 // The client will refresh the token as needed.
-
 var apiClient completionsClient
 
 type completionsClient struct {
@@ -123,10 +122,9 @@ type azureCompletionClient struct {
 func (c *azureCompletionClient) Complete(
 	ctx context.Context,
 	feature types.CompletionsFeature,
-	_ types.CompletionsVersion,
+	version types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
-
 	switch feature {
 	case types.CompletionsFeatureCode:
 		return completeAutocomplete(ctx, c.client, requestParams)
@@ -142,6 +140,35 @@ func completeAutocomplete(
 	client CompletionsClient,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
+	if requestParams.AzureUseDeprecatedCompletionsAPIForOldModels {
+		return doCompletionsAPIAutocomplete(ctx, client, requestParams)
+	}
+	return doChatCompletionsAPIAutocomplete(ctx, client, requestParams)
+}
+
+func doChatCompletionsAPIAutocomplete(
+	ctx context.Context,
+	client CompletionsClient,
+	requestParams types.CompletionRequestParameters,
+) (*types.CompletionResponse, error) {
+	response, err := client.GetChatCompletions(ctx, getChatOptions(requestParams), nil)
+	if err != nil {
+		return nil, toStatusCodeError(err)
+	}
+	if !hasValidFirstChatChoice(response.Choices) {
+		return &types.CompletionResponse{}, nil
+	}
+	return &types.CompletionResponse{
+		Completion: *response.Choices[0].Delta.Content,
+		StopReason: string(*response.Choices[0].FinishReason),
+	}, nil
+}
+
+func doCompletionsAPIAutocomplete(
+	ctx context.Context,
+	client CompletionsClient,
+	requestParams types.CompletionRequestParameters,
+) (*types.CompletionResponse, error) {
 	options, err := getCompletionsOptions(requestParams)
 	if err != nil {
 		return nil, err
@@ -150,7 +177,6 @@ func completeAutocomplete(
 	if err != nil {
 		return nil, toStatusCodeError(err)
 	}
-
 	// Text and FinishReason are documented as REQUIRED but checking just to be safe
 	if !hasValidFirstCompletionsChoice(response.Choices) {
 		return &types.CompletionResponse{}, nil
@@ -182,7 +208,7 @@ func completeChat(
 func (c *azureCompletionClient) Stream(
 	ctx context.Context,
 	feature types.CompletionsFeature,
-	_ types.CompletionsVersion,
+	version types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
@@ -197,6 +223,60 @@ func (c *azureCompletionClient) Stream(
 }
 
 func streamAutocomplete(
+	ctx context.Context,
+	client CompletionsClient,
+	requestParams types.CompletionRequestParameters,
+	sendEvent types.SendCompletionEvent,
+) error {
+	if requestParams.AzureUseDeprecatedCompletionsAPIForOldModels {
+		return doStreamCompletionsAPI(ctx, client, requestParams, sendEvent)
+	}
+	return doStreamChatCompletionsAPI(ctx, client, requestParams, sendEvent)
+}
+
+// Streaming with ChatCompletions API
+func doStreamChatCompletionsAPI(
+	ctx context.Context,
+	client CompletionsClient,
+	requestParams types.CompletionRequestParameters,
+	sendEvent types.SendCompletionEvent,
+) error {
+	resp, err := client.GetChatCompletionsStream(ctx, getChatOptions(requestParams), nil)
+	if err != nil {
+		return err
+	}
+	defer resp.ChatCompletionsStream.Close()
+
+	var content string
+	for {
+		entry, err := resp.ChatCompletionsStream.Read()
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		if hasValidFirstChatChoice(entry.Choices) {
+			content += *entry.Choices[0].Delta.Content
+			finish := ""
+			if entry.Choices[0].FinishReason != nil {
+				finish = string(*entry.Choices[0].FinishReason)
+			}
+			ev := types.CompletionResponse{
+				Completion: content,
+				StopReason: finish,
+			}
+			err := sendEvent(ev)
+			if err != nil {
+				return err
+			}
+		}
+	}
+}
+
+// Streaming with Completions API
+func doStreamCompletionsAPI(
 	ctx context.Context,
 	client CompletionsClient,
 	requestParams types.CompletionRequestParameters,
@@ -225,7 +305,6 @@ func streamAutocomplete(
 		if err != nil {
 			return err
 		}
-
 		// hasValidFirstCompletionsChoice checks for a valid 1st choice which has text
 		if hasValidFirstCompletionsChoice(entry.Choices) {
 			content += *entry.Choices[0].Text
@@ -261,6 +340,7 @@ func streamChat(
 	// Azure sends incremental deltas for each message in a chat stream
 	// build up the full message content over multiple responses
 	var content string
+
 	for {
 		entry, err := resp.ChatCompletionsStream.Read()
 		// stream is done

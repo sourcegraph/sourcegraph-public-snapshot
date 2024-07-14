@@ -630,6 +630,8 @@ type CodyGateway struct {
 type Completions struct {
 	// AccessToken description: The access token used to authenticate with the external completions provider. If using the default provider 'sourcegraph', and if 'licenseKey' is set, a default access token is generated.
 	AccessToken string `json:"accessToken,omitempty"`
+	// AzureUseDeprecatedCompletionsAPIForOldModels description: Enables the use of the older completions API for select Azure OpenAI models.
+	AzureUseDeprecatedCompletionsAPIForOldModels bool `json:"azureUseDeprecatedCompletionsAPIForOldModels,omitempty"`
 	// ChatModel description: The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.
 	//  NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommed using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison
 	ChatModel string `json:"chatModel,omitempty"`
