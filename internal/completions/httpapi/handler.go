@@ -105,6 +105,7 @@ func newCompletionsHandler(
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		requestParams.AzureUseDeprecatedCompletionsAPIForOldModels = completionsConfig.AzureUseDeprecatedCompletionsAPIForOldModels
 
 		ctx, done := Trace(ctx, traceFamily, requestParams.Model, requestParams.MaxTokensToSample).
 			WithErrorP(&err).
