@@ -53,7 +53,7 @@ func TestGetOldestCommitDate(t *testing.T) {
 		}
 	}
 
-	if _, _, err := store.GetOldestCommitDate(context.Background(), 50); err == nil {
+	if _, err := store.GetCommitDateForOldestUpload(context.Background(), 50); err == nil {
 		t.Fatalf("expected error getting oldest commit date")
 	} else if !errors.Is(err, &backfillIncompleteError{50}) {
 		t.Fatalf("unexpected backfill error, got %q", err)
@@ -64,11 +64,11 @@ func TestGetOldestCommitDate(t *testing.T) {
 		t.Fatalf("unexpected error updating commit date %s", err)
 	}
 
-	if commitDate, ok, err := store.GetOldestCommitDate(context.Background(), 50); err != nil {
+	if commitDate, err := store.GetCommitDateForOldestUpload(context.Background(), 50); err != nil {
 		t.Fatalf("unexpected error getting oldest commit date: %s", err)
-	} else if !ok {
+	} else if commitDate.IsNone() {
 		t.Fatalf("expected commit date for repository")
-	} else if !commitDate.Equal(t3) {
+	} else if !commitDate.Unwrap().Equal(t3) {
 		t.Fatalf("unexpected commit date. want=%s have=%s", t3, commitDate)
 	}
 
@@ -83,18 +83,18 @@ func TestGetOldestCommitDate(t *testing.T) {
 		}
 	}
 
-	if commitDate, ok, err := store.GetOldestCommitDate(context.Background(), 51); err != nil {
+	if commitDate, err := store.GetCommitDateForOldestUpload(context.Background(), 51); err != nil {
 		t.Fatalf("unexpected error getting oldest commit date: %s", err)
-	} else if !ok {
+	} else if commitDate.IsNone() {
 		t.Fatalf("expected commit date for repository")
-	} else if !commitDate.Equal(t2) {
+	} else if !commitDate.Unwrap().Equal(t2) {
 		t.Fatalf("unexpected commit date. want=%s have=%s", t2, commitDate)
 	}
 
 	// Missing repository
-	if _, ok, err := store.GetOldestCommitDate(context.Background(), 52); err != nil {
+	if commitDate, err := store.GetCommitDateForOldestUpload(context.Background(), 52); err != nil {
 		t.Fatalf("unexpected error getting oldest commit date: %s", err)
-	} else if ok {
+	} else if commitDate.IsSome() {
 		t.Fatalf("unexpected commit date for repository")
 	}
 }

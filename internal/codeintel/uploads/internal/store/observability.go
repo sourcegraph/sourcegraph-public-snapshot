@@ -16,7 +16,7 @@ type operations struct {
 	deleteSourcedCommits                *observation.Operation
 	updateSourcedCommits                *observation.Operation
 	getCommitsVisibleToUpload           *observation.Operation
-	getOldestCommitDate                 *observation.Operation
+	getCommitDateForOldestUpload        *observation.Operation
 	getCommitGraphMetadata              *observation.Operation
 	hasCommit                           *observation.Operation
 	repositoryIDsWithErrors             *observation.Operation
@@ -121,13 +121,13 @@ func newOperations(observationCtx *observation.Context) *operations {
 		list: op("List"),
 
 		// Commits
-		getCommitsVisibleToUpload: op("CommitsVisibleToUploads"),
-		getOldestCommitDate:       op("GetOldestCommitDate"),
-		getStaleSourcedCommits:    op("GetStaleSourcedCommits"),
-		getCommitGraphMetadata:    op("GetCommitGraphMetadata"),
-		deleteSourcedCommits:      op("DeleteSourcedCommits"),
-		updateSourcedCommits:      op("UpdateSourcedCommits"),
-		hasCommit:                 op("HasCommit"),
+		getCommitsVisibleToUpload:    op("CommitsVisibleToUploads"),
+		getCommitDateForOldestUpload: op("GetCommitDateForOldestUpload"),
+		getStaleSourcedCommits:       op("GetStaleSourcedCommits"),
+		getCommitGraphMetadata:       op("GetCommitGraphMetadata"),
+		deleteSourcedCommits:         op("DeleteSourcedCommits"),
+		updateSourcedCommits:         op("UpdateSourcedCommits"),
+		hasCommit:                    op("HasCommit"),
 
 		// Repositories
 		getRepositoriesForIndexScan:             op("GetRepositoriesForIndexScan"),
