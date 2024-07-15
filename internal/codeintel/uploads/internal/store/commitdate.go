@@ -19,7 +19,7 @@ import (
 //     an error is returned to prevent downstream expiration errors being made due to outdated commit graph data.
 //   - Otherwise if there are no non-nil timestamps, None is returned.
 func (s *store) GetCommitDateForOldestUpload(ctx context.Context, repositoryID int) (_ core.Option[time.Time], err error) {
-	ctx, _, endObservation := s.operations.getOldestCommitDate.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, _, endObservation := s.operations.getCommitDateForOldestUpload.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
