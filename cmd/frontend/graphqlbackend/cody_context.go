@@ -26,7 +26,7 @@ type ChatIntentArgs struct {
 }
 
 type RankContextArgs struct {
-	Query                     *string
+	Query                     string
 	ContextItems              []InputContextItem
 	RankOptions               *RankOptions
 	TargetModel               *string
@@ -47,6 +47,8 @@ type InputContextItem struct {
 	Retriever string
 	Score     *float64
 	FileName  *string
+	StartLine *int32
+	EndLine   *int32
 }
 
 type RankOptions struct {
