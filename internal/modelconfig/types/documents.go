@@ -20,6 +20,16 @@ type ModelConfiguration struct {
 	DefaultModels DefaultModels `json:"defaultModels"`
 }
 
+// GetModelByMRef returns the model with the supplied mref, or nil if it is not found.
+func (mc *ModelConfiguration) GetModelByMRef(mref ModelRef) *Model {
+	for _, model := range mc.Models {
+		if model.ModelRef == mref {
+			return &model
+		}
+	}
+	return nil
+}
+
 // SiteModelConfiguration is the data type that is encoded into the site configuration schema,
 // and in `site.schema.json`.
 type SiteModelConfiguration struct {
