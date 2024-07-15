@@ -130,7 +130,13 @@
   type: (type_identifier) @reference.either
 )
 
-(throws (type_identifier)* @reference.global)
+
+; public class test<T extends Exception> {
+; 	private void provideFieldValue()
+; 			throws T, NoSuchFieldException, IllegalAccessException {}
+;                  ^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^
+; }
+(throws (type_identifier)* @reference.either)
 
 ; Person::getName
 ; ^^^^^^  ^^^^^^^
