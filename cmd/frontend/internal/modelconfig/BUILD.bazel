@@ -23,6 +23,7 @@ go_library(
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
+        "//internal/license",
         "//internal/modelconfig",
         "//internal/modelconfig/embedded",
         "//internal/modelconfig/types",
