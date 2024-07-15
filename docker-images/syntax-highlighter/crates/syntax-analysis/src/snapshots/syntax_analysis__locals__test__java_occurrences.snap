@@ -24,8 +24,10 @@ expression: dumped
 //                                        ^^^ definition local 4
 //                                                    ^^^^ definition local 5
     return new Locals(this.chars + chars + text.getChars());
+//             ^^^^^^ reference Locals
 //                                 ^^^^^ reference local 3
 //                                         ^^^^ reference local 5
+//                                              ^^^^^^^^ reference getChars
    }
   
    public String getChars() {
@@ -45,6 +47,7 @@ expression: dumped
   
    private class Binary<N extends Number> {
 //                      ^ definition local 7
+//                                ^^^^^^ reference Number
     final N val;
 //        ^ reference local 7
   
@@ -63,6 +66,7 @@ expression: dumped
 //                                      ^ definition local 10
 //                                                ^ definition local 11
      System.out.println(x + "," + y);
+//              ^^^^^^^ reference println
 //                      ^ reference local 10
 //                                ^ reference local 11
       }
@@ -92,6 +96,7 @@ expression: dumped
   
    protected String toStringAttributes() {
     return "text=" + getChars();
+//                   ^^^^^^^^ reference getChars
    }
   
    public <T extends Container> List<T> fromArrayToList(T[] a) {
@@ -101,7 +106,10 @@ expression: dumped
 //                                                      ^ reference local 14
 //                                                          ^ definition local 15
     return Arrays.stream(a).collect(Collectors.toList());
+//                ^^^^^^ reference stream
 //                       ^ reference local 15
+//                          ^^^^^^^ reference collect
+//                                             ^^^^^^ reference toList
    }
   
    // ? in (wildcard) node doesn't have its own node and
@@ -110,6 +118,7 @@ expression: dumped
 //                                      ^^^^^^^^^ reference local 1
 //                                                 ^ definition local 16
     System.out.println(a);
+//             ^^^^^^^ reference println
 //                     ^ reference local 16
    }
   
@@ -121,9 +130,11 @@ expression: dumped
 //                      ^ reference local 17
 //                         ^ reference local 18
      System.out.println(i);
+//              ^^^^^^^ reference println
 //                      ^ reference local 18
     }
     System.out.println(r);
+//             ^^^^^^^ reference println
 //                     ^ reference local 17
    }
   
@@ -158,23 +169,31 @@ expression: dumped
 //                     ^^^^^^^ definition local 25
     numbers.add(5);
 //  ^^^^^^^ reference local 25
+//          ^^^ reference add
     numbers.add(9);
 //  ^^^^^^^ reference local 25
+//          ^^^ reference add
     numbers.add(8);
 //  ^^^^^^^ reference local 25
+//          ^^^ reference add
     numbers.add(1);
 //  ^^^^^^^ reference local 25
+//          ^^^ reference add
     numbers.forEach((n) -> {
 //  ^^^^^^^ reference local 25
+//          ^^^^^^^ reference forEach
 //                   ^ definition local 26
      System.out.println(n);
+//              ^^^^^^^ reference println
 //                      ^ reference local 26
     });
   
     for (Integer num : numbers) {
+//       ^^^^^^^ reference Integer
 //               ^^^ definition local 27
 //                     ^^^^^^^ reference local 25
      System.out.println(num);
+//              ^^^^^^^ reference println
 //                      ^^^ reference local 27
     }
   

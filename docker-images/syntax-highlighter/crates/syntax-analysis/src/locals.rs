@@ -599,13 +599,11 @@ impl<'a> LocalResolver<'a> {
                         continue;
                     }
 
-                    // dbg!("References {:?}", &self.non_local_references_at_offsets);
-
                     match kind {
                         ReferenceKind::Global | ReferenceKind::Either => {
                             self.non_local_references_at_offsets.insert(offset);
                         }
-                        ReferenceKind::Local => {}
+                        _ => {}
                     }
 
                     references.push(RefCapture {
@@ -762,63 +760,62 @@ impl<'a> LocalResolver<'a> {
         }
     }
 
+    fn make_local_reference(
+        &self,
+        reference: &Reference,
+        def_id: DefId,
+    ) -> scip::types::Occurrence {
+        scip::types::Occurrence {
+            range: reference.node.scip_range(),
+            symbol: format_symbol(def_id.as_local_symbol()),
+            ..Default::default()
+        }
+    }
+
     fn resolve_references(&mut self) {
         let mut ref_occurrences = vec![];
 
         for (scope_ref, scope) in self.arena.iter() {
             for reference in scope.references.iter() {
-                let def_id = if let Some(resolved) = reference.resolves_to {
-                    resolved
-                } else if self
+                if !self
                     .skip_references_at_offsets
                     .contains(&reference.node.start_byte())
                 {
-                    // See the comment on LocalResolver.definition_start_bytes
-                    continue;
-                } else {
-                    // if let Some(def) =
-                    // self.find_def(scope_ref, reference.name, reference.node.start_byte())
-                    // {
-                    // def.id
-                    // } else {
-                    // dbg!(&reference.kind);
-                    // dbg!(self.interner.resolve(reference.name));
-
-                    // dbg!(
-                    //     self.interner.resolve(reference.name),
-                    //     reference.kind,
-                    //     reference.node.start_byte()
-                    // );
-
                     match reference.kind {
-                        ReferenceKind::Global => {
-                            // without even looking for definition we emit a global reference here
-                            ref_occurrences.push(self.make_global_reference(reference));
-                            continue;
+                        ReferenceKind::Local => {
+                            if !self
+                                .non_local_references_at_offsets
+                                .contains(&reference.node.start_byte())
+                            {
+                                if let Some(def_id) = reference.resolves_to {
+                                    ref_occurrences
+                                        .push(self.make_local_reference(reference, def_id))
+                                } else if let Some(def) = self.find_def(
+                                    scope_ref,
+                                    reference.name,
+                                    reference.node.start_byte(),
+                                ) {
+                                    ref_occurrences
+                                        .push(self.make_local_reference(reference, def.id));
+                                }
+                            }
                         }
-                        ReferenceKind::Local | ReferenceKind::Either => {
+                        ReferenceKind::Global => {
+                            ref_occurrences.push(self.make_global_reference(reference))
+                        }
+                        ReferenceKind::Either => {
                             if let Some(def) = self.find_def(
                                 scope_ref,
                                 reference.name,
                                 reference.node.start_byte(),
                             ) {
-                                def.id
+                                ref_occurrences.push(self.make_local_reference(reference, def.id));
                             } else {
-                                if ReferenceKind::Either == reference.kind {
-                                    ref_occurrences.push(self.make_global_reference(reference));
-                                }
-                                continue;
+                                ref_occurrences.push(self.make_global_reference(reference))
                             }
                         }
                     }
-                    // };
-                };
-
-                ref_occurrences.push(scip::types::Occurrence {
-                    range: reference.node.scip_range(),
-                    symbol: format_symbol(def_id.as_local_symbol()),
-                    ..Default::default()
-                });
+                }
             }
         }
 
