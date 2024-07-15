@@ -281,7 +281,7 @@ func startSgCmd(ctx context.Context, cmd SGConfigCommand, parentEnv map[string]s
 	opts := commandOptions{
 		name:   conf.Name,
 		exec:   exec,
-		env:    makeEnv(parentEnv, secretsEnv, conf.Env),
+		env:    makeEnv(conf.Env, parentEnv, secretsEnv),
 		dir:    conf.RepositoryRoot,
 		stdout: outputOptions{ignore: conf.IgnoreStdout},
 		stderr: outputOptions{ignore: conf.IgnoreStderr},
