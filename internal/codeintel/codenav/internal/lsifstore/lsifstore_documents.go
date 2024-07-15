@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *store) SCIPDocument(ctx context.Context, uploadID int, path core.UploadRelPath) (_ *scip.Document, err error) {
+func (s *store) SCIPDocument(ctx context.Context, uploadID int, path core.UploadRelPath) (_ *scip.Document, found bool, err error) {
 	ctx, _, endObservation := s.operations.scipDocument.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("path", path.RawValue()),
 		attribute.Int("uploadID", uploadID),
@@ -40,8 +40,7 @@ func (s *store) SCIPDocument(ctx context.Context, uploadID int, path core.Upload
 		}
 		return &document, nil
 	})
-	doc, _, err := scanner(s.db.Query(ctx, sqlf.Sprintf(fetchSCIPDocumentQuery, uploadID, path.RawValue())))
-	return doc, err
+	return scanner(s.db.Query(ctx, sqlf.Sprintf(fetchSCIPDocumentQuery, uploadID, path.RawValue())))
 }
 
 const fetchSCIPDocumentQuery = `

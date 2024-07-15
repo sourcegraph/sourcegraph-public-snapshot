@@ -864,8 +864,8 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID api.Repo
 
 	upload := uploads[0]
 
-	document, err := s.lsifstore.SCIPDocument(ctx, upload.ID, core.NewUploadRelPath(upload, path))
-	if err != nil || document == nil {
+	document, found, err := s.lsifstore.SCIPDocument(ctx, upload.ID, core.NewUploadRelPath(upload, path))
+	if err != nil || !found {
 		return nil, err
 	}
 
@@ -994,8 +994,8 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID api.Repo
 }
 
 func (s *Service) SCIPDocument(ctx context.Context, gitTreeTranslator GitTreeTranslator, upload core.UploadLike, path core.RepoRelPath) (*scip.Document, error) {
-	rawDocument, err := s.lsifstore.SCIPDocument(ctx, upload.GetID(), core.NewUploadRelPath(upload, path))
-	if err != nil {
+	rawDocument, found, err := s.lsifstore.SCIPDocument(ctx, upload.GetID(), core.NewUploadRelPath(upload, path))
+	if err != nil || !found {
 		return nil, err
 	}
 	// The caller shouldn't need to care whether the document was uploaded

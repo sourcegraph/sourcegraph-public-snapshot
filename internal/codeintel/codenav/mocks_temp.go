@@ -143,7 +143,7 @@ func NewMockLsifStore() *MockLsifStore {
 			},
 		},
 		SCIPDocumentFunc: &LsifStoreSCIPDocumentFunc{
-			defaultHook: func(context.Context, int, core.UploadRelPath) (r0 *scip.Document, r1 error) {
+			defaultHook: func(context.Context, int, core.UploadRelPath) (r0 *scip.Document, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -220,7 +220,7 @@ func NewStrictMockLsifStore() *MockLsifStore {
 			},
 		},
 		SCIPDocumentFunc: &LsifStoreSCIPDocumentFunc{
-			defaultHook: func(context.Context, int, core.UploadRelPath) (*scip.Document, error) {
+			defaultHook: func(context.Context, int, core.UploadRelPath) (*scip.Document, bool, error) {
 				panic("unexpected invocation of MockLsifStore.SCIPDocument")
 			},
 		},
@@ -1811,24 +1811,24 @@ func (c LsifStoreGetStencilFuncCall) Results() []interface{} {
 // LsifStoreSCIPDocumentFunc describes the behavior when the SCIPDocument
 // method of the parent MockLsifStore instance is invoked.
 type LsifStoreSCIPDocumentFunc struct {
-	defaultHook func(context.Context, int, core.UploadRelPath) (*scip.Document, error)
-	hooks       []func(context.Context, int, core.UploadRelPath) (*scip.Document, error)
+	defaultHook func(context.Context, int, core.UploadRelPath) (*scip.Document, bool, error)
+	hooks       []func(context.Context, int, core.UploadRelPath) (*scip.Document, bool, error)
 	history     []LsifStoreSCIPDocumentFuncCall
 	mutex       sync.Mutex
 }
 
 // SCIPDocument delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockLsifStore) SCIPDocument(v0 context.Context, v1 int, v2 core.UploadRelPath) (*scip.Document, error) {
-	r0, r1 := m.SCIPDocumentFunc.nextHook()(v0, v1, v2)
-	m.SCIPDocumentFunc.appendCall(LsifStoreSCIPDocumentFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
+func (m *MockLsifStore) SCIPDocument(v0 context.Context, v1 int, v2 core.UploadRelPath) (*scip.Document, bool, error) {
+	r0, r1, r2 := m.SCIPDocumentFunc.nextHook()(v0, v1, v2)
+	m.SCIPDocumentFunc.appendCall(LsifStoreSCIPDocumentFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the SCIPDocument method
 // of the parent MockLsifStore instance is invoked and the hook queue is
 // empty.
-func (f *LsifStoreSCIPDocumentFunc) SetDefaultHook(hook func(context.Context, int, core.UploadRelPath) (*scip.Document, error)) {
+func (f *LsifStoreSCIPDocumentFunc) SetDefaultHook(hook func(context.Context, int, core.UploadRelPath) (*scip.Document, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -1836,7 +1836,7 @@ func (f *LsifStoreSCIPDocumentFunc) SetDefaultHook(hook func(context.Context, in
 // SCIPDocument method of the parent MockLsifStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *LsifStoreSCIPDocumentFunc) PushHook(hook func(context.Context, int, core.UploadRelPath) (*scip.Document, error)) {
+func (f *LsifStoreSCIPDocumentFunc) PushHook(hook func(context.Context, int, core.UploadRelPath) (*scip.Document, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1844,20 +1844,20 @@ func (f *LsifStoreSCIPDocumentFunc) PushHook(hook func(context.Context, int, cor
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LsifStoreSCIPDocumentFunc) SetDefaultReturn(r0 *scip.Document, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, core.UploadRelPath) (*scip.Document, error) {
-		return r0, r1
+func (f *LsifStoreSCIPDocumentFunc) SetDefaultReturn(r0 *scip.Document, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, core.UploadRelPath) (*scip.Document, bool, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreSCIPDocumentFunc) PushReturn(r0 *scip.Document, r1 error) {
-	f.PushHook(func(context.Context, int, core.UploadRelPath) (*scip.Document, error) {
-		return r0, r1
+func (f *LsifStoreSCIPDocumentFunc) PushReturn(r0 *scip.Document, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int, core.UploadRelPath) (*scip.Document, bool, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *LsifStoreSCIPDocumentFunc) nextHook() func(context.Context, int, core.UploadRelPath) (*scip.Document, error) {
+func (f *LsifStoreSCIPDocumentFunc) nextHook() func(context.Context, int, core.UploadRelPath) (*scip.Document, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1904,7 +1904,10 @@ type LsifStoreSCIPDocumentFuncCall struct {
 	Result0 *scip.Document
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1916,7 +1919,7 @@ func (c LsifStoreSCIPDocumentFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c LsifStoreSCIPDocumentFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // MockGitTreeTranslator is a mock implementation of the GitTreeTranslator

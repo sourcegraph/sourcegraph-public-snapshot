@@ -50,7 +50,7 @@ func TestSnapshotForDocument(t *testing.T) {
 				IsImplementation: true,
 			}},
 		}},
-	}, nil)
+	}, true, nil)
 
 	data, err := svc.SnapshotForDocument(context.Background(), 0, "deadbeef", repoRelPath("burger.go"), 0)
 	if err != nil {
