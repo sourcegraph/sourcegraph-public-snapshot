@@ -186,7 +186,7 @@ func getChatModelFn(db database.DB) getModelFn {
 				return legacyMRef.ToModelRef(), nil
 			}
 			errModelNotAllowed := errors.Errorf(
-				"the requested model is not available (%q, onProTier=%v)",
+				"the requested chat model is not available (%q, onProTier=%v)",
 				requestParams.RequestedModel, subscription.ApplyProRateLimits)
 			return "", errModelNotAllowed
 		}
@@ -228,7 +228,7 @@ func getChatModelFn(db database.DB) getModelFn {
 		}
 
 		err := errors.Errorf(
-			"unsupported code completion model %q (default %q)",
+			"unsupported chat model %q (default %q)",
 			initialRequestedModel, cfg.DefaultModels.Chat)
 		return "", err
 	}
