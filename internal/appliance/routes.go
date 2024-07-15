@@ -13,10 +13,10 @@ func (a *Appliance) Routes() *mux.Router {
 	r.NotFoundHandler = http.HandlerFunc(a.notFoundResponse)
 	r.MethodNotAllowedHandler = http.HandlerFunc(a.methodNotAllowedResponse)
 
-	r.Handle("/api/operator/v1beta1/stage", a.getSetupJSONHandler())
-	r.Handle("/api/operator/v1beta1/install/progress", a.getInstallJSONHandler())
-	r.Handle("/api/operator/v1beta1/maintenance/status", a.getStatusJSONHandler())
-	r.Handle("/api/operator/v1beta1/fake/stage", a.postSetupJSONHandler())
+	r.Handle("/api/operator/v1beta1/stage", a.getStageJSONHandler())
+	r.Handle("/api/operator/v1beta1/install/progress", a.getInstallProgressJSONHandler())
+	r.Handle("/api/operator/v1beta1/maintenance/status", a.getStageJSONHandler())
+	r.Handle("/api/operator/v1beta1/fake/stage", a.postStageJSONHandler())
 
 	return r
 }

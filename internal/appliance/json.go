@@ -84,13 +84,36 @@ func (a *Appliance) readJSON(w http.ResponseWriter, r *http.Request, output any)
 	return nil
 }
 
-func (a *Appliance) getSetupJSONHandler() http.Handler {
+func (a *Appliance) getStageJSONHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		data := struct {
+			Stage string `json:"stage"`
+			Data  string `json:"data,omitempty"`
+		}{
+			Stage: a.status.String(),
+			Data:  "",
+		}
+
+		if err := a.writeJSON(w, http.StatusOK, responseData{"status": data}, nil); err != nil {
+			a.serverErrorResponse(w, r, err)
+		}
+	})
+}
+
+func (a *Appliance) getInstallProgressJSONHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	})
 }
 
-func (a *Appliance) postSetupJSONHandler() http.Handler {
+func (a *Appliance) getStatusHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+	})
+}
+
+// TODO actually handles the state for install. Rename this to reflect and validate input.
+func (a *Appliance) postStageJSONHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			Stage string `json:"stage"`
@@ -100,26 +123,6 @@ func (a *Appliance) postSetupJSONHandler() http.Handler {
 		if err := a.readJSON(w, r, &input); err != nil {
 			a.badRequestResponse(w, r, err)
 			return
-		}
-	})
-}
-
-func (a *Appliance) getInstallJSONHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-	})
-}
-
-func (a *Appliance) getStatusJSONHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		data := struct {
-			Status string
-		}{
-			Status: a.status.String(),
-		}
-
-		if err := a.writeJSON(w, http.StatusOK, responseData{"status": data}, nil); err != nil {
-			a.serverErrorResponse(w, r, err)
 		}
 	})
 }
