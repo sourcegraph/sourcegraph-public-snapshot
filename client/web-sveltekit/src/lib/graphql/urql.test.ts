@@ -74,14 +74,15 @@ describe('infinityQuery', () => {
                 first: 2,
                 afterCursor: null as string | null,
             },
-            mapResult: (result, previousResult) => {
+            map: result => {
                 const list = result.data?.list
                 return {
                     nextVariables: list?.pageInfo.hasNextPage ? { afterCursor: list.pageInfo.endCursor } : undefined,
-                    data: (previousResult.data ?? []).concat(list?.nodes ?? []),
+                    data: list?.nodes,
                     error: result.error,
                 }
             },
+            merge: (prev, next) => [...(prev ?? []), ...(next ?? [])],
             createRestoreStrategy: api =>
                 new IncrementalRestoreStrategy(
                     api,
