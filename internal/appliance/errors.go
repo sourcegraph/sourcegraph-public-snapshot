@@ -36,3 +36,7 @@ func (a *Appliance) notFoundResponse(w http.ResponseWriter, r *http.Request) {
 func (a *Appliance) methodNotAllowedResponse(w http.ResponseWriter, r *http.Request) {
 	a.errorResponse(w, r, http.StatusMethodNotAllowed, fmt.Sprintf("the %s method is not supported", r.Method))
 }
+
+func (a *Appliance) invalidAdminPasswordResponse(w http.ResponseWriter, r *http.Request) {
+	a.errorResponse(w, r, http.StatusUnauthorized, "invalid admin password")
+}

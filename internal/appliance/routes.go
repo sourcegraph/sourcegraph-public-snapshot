@@ -8,6 +8,7 @@ import (
 
 func (a *Appliance) Routes() *mux.Router {
 	r := mux.NewRouter()
+	r.Use(a.checkAuthorization)
 
 	// ported appliance React UI endpoints
 	r.NotFoundHandler = http.HandlerFunc(a.notFoundResponse)
