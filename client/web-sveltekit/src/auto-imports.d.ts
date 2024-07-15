@@ -101,6 +101,7 @@ declare global {
   const IPhosphorePngLight: typeof import('~icons/ph/osphore-png-light')['default']
   const ISgBatchChanges: typeof import('~icons/sg/batch-changes')['default']
   const ISgCody: typeof import('~icons/sg/cody')['default']
+  const ISgSymbols: typeof import('~icons/sg/symbols')['default']
   const ISimpleIconsApachegroovy: typeof import('~icons/simple-icons/apachegroovy')['default']
   const ISimpleIconsBitbucket: typeof import('~icons/simple-icons/bitbucket')['default']
   const ISimpleIconsC: typeof import('~icons/simple-icons/c')['default']

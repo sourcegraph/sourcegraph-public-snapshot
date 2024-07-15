@@ -28,11 +28,16 @@ function getObserver(container: HTMLElement): IntersectionObserver {
     return observer
 }
 
+/**
+ * observeIntersection emits an `intersecting` event when the node intersects with the
+ * target element. In the case that the target element is null, we fall back to intersection
+ * with the root element.
+ */
 export const observeIntersection: Action<
     HTMLElement,
     HTMLElement | null,
     { 'on:intersecting': (e: CustomEvent<boolean>) => void }
-> = (node: HTMLElement, container: HTMLElement | null) => {
+> = (node: HTMLElement, target: HTMLElement | null) => {
     // If the environment doesn't support IntersectionObserver we assume that the
     // element is visible and dispatch the event immediately
     if (!supportsIntersectionObserver()) {
@@ -40,19 +45,20 @@ export const observeIntersection: Action<
         return {}
     }
 
-    let observer = container ? getObserver(container) : null
-    observer?.observe(node)
+    let container = target ?? document.documentElement
+    let observer = getObserver(container)
+    observer.observe(node)
 
     return {
         update(newContainer) {
             container && observer?.unobserve(container)
-            container = newContainer
+            container = newContainer ?? document.documentElement
 
-            observer = container ? getObserver(container) : null
-            observer?.observe(node)
+            observer = getObserver(container)
+            observer.observe(node)
         },
         destroy() {
-            observer?.unobserve(node)
+            observer.unobserve(node)
         },
     }
 }
