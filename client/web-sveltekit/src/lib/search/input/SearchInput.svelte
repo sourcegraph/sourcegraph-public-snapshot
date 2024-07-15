@@ -33,6 +33,7 @@
     import { createSuggestionsSource } from '$lib/web'
 
     import { type QueryStateStore, getQueryURL, QueryState } from '../state'
+    import { settings } from '$lib/stores'
 
     import { createRecentSearchesStore } from './recentSearches'
     import Suggestions from './Suggestions.svelte'
@@ -192,8 +193,15 @@
 
     function setOrUnsetPatternType(patternType: SearchPatternType): void {
         queryState.setPatternType(currentPatternType =>
-            currentPatternType === patternType ? SearchPatternType.keyword : patternType
+            currentPatternType === patternType ? getUnselectedPatternType() : patternType
         )
+    }
+
+    // When a toggle is unset, we revert back to the default pattern type. However, if the default pattern type
+    // is regexp, we should revert to keyword instead (otherwise it's not possible to disable the toggle).
+    function getUnselectedPatternType(): SearchPatternType {
+        const defaultPatternType = ($settings?.['search.defaultPatternType'] as SearchPatternType) ?? SearchPatternType.keyword
+        return defaultPatternType === SearchPatternType.regexp ? SearchPatternType.keyword : defaultPatternType
     }
 
     async function submitQuery(state: QueryState): Promise<void> {
@@ -283,6 +291,7 @@
                 <button
                     class="toggle icon"
                     type="button"
+                    title="regexp toggle"
                     class:active={regularExpressionEnabled}
                     on:click={() => setOrUnsetPatternType(SearchPatternType.regexp)}
                 >

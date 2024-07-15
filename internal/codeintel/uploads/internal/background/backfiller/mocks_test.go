@@ -12,6 +12,7 @@ import (
 	"time"
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
+	core "github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	commitgraph "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -75,6 +76,10 @@ type MockStore struct {
 	// GetAuditLogsForUploadFunc is an instance of a mock function object
 	// controlling the behavior of the method GetAuditLogsForUpload.
 	GetAuditLogsForUploadFunc *StoreGetAuditLogsForUploadFunc
+	// GetCommitDateForOldestUploadFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetCommitDateForOldestUpload.
+	GetCommitDateForOldestUploadFunc *StoreGetCommitDateForOldestUploadFunc
 	// GetCommitGraphMetadataFunc is an instance of a mock function object
 	// controlling the behavior of the method GetCommitGraphMetadata.
 	GetCommitGraphMetadataFunc *StoreGetCommitGraphMetadataFunc
@@ -108,9 +113,6 @@ type MockStore struct {
 	// function object controlling the behavior of the method
 	// GetLastUploadRetentionScanForRepository.
 	GetLastUploadRetentionScanForRepositoryFunc *StoreGetLastUploadRetentionScanForRepositoryFunc
-	// GetOldestCommitDateFunc is an instance of a mock function object
-	// controlling the behavior of the method GetOldestCommitDate.
-	GetOldestCommitDateFunc *StoreGetOldestCommitDateFunc
 	// GetRecentIndexesSummaryFunc is an instance of a mock function object
 	// controlling the behavior of the method GetRecentIndexesSummary.
 	GetRecentIndexesSummaryFunc *StoreGetRecentIndexesSummaryFunc
@@ -315,6 +317,11 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
+		GetCommitDateForOldestUploadFunc: &StoreGetCommitDateForOldestUploadFunc{
+			defaultHook: func(context.Context, int) (r0 core.Option[time.Time], r1 error) {
+				return
+			},
+		},
 		GetCommitGraphMetadataFunc: &StoreGetCommitGraphMetadataFunc{
 			defaultHook: func(context.Context, int) (r0 bool, r1 *time.Time, r2 error) {
 				return
@@ -362,11 +369,6 @@ func NewMockStore() *MockStore {
 		},
 		GetLastUploadRetentionScanForRepositoryFunc: &StoreGetLastUploadRetentionScanForRepositoryFunc{
 			defaultHook: func(context.Context, int) (r0 *time.Time, r1 error) {
-				return
-			},
-		},
-		GetOldestCommitDateFunc: &StoreGetOldestCommitDateFunc{
-			defaultHook: func(context.Context, int) (r0 time.Time, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -642,6 +644,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.GetAuditLogsForUpload")
 			},
 		},
+		GetCommitDateForOldestUploadFunc: &StoreGetCommitDateForOldestUploadFunc{
+			defaultHook: func(context.Context, int) (core.Option[time.Time], error) {
+				panic("unexpected invocation of MockStore.GetCommitDateForOldestUpload")
+			},
+		},
 		GetCommitGraphMetadataFunc: &StoreGetCommitGraphMetadataFunc{
 			defaultHook: func(context.Context, int) (bool, *time.Time, error) {
 				panic("unexpected invocation of MockStore.GetCommitGraphMetadata")
@@ -690,11 +697,6 @@ func NewStrictMockStore() *MockStore {
 		GetLastUploadRetentionScanForRepositoryFunc: &StoreGetLastUploadRetentionScanForRepositoryFunc{
 			defaultHook: func(context.Context, int) (*time.Time, error) {
 				panic("unexpected invocation of MockStore.GetLastUploadRetentionScanForRepository")
-			},
-		},
-		GetOldestCommitDateFunc: &StoreGetOldestCommitDateFunc{
-			defaultHook: func(context.Context, int) (time.Time, bool, error) {
-				panic("unexpected invocation of MockStore.GetOldestCommitDate")
 			},
 		},
 		GetRecentIndexesSummaryFunc: &StoreGetRecentIndexesSummaryFunc{
@@ -941,6 +943,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		GetAuditLogsForUploadFunc: &StoreGetAuditLogsForUploadFunc{
 			defaultHook: i.GetAuditLogsForUpload,
 		},
+		GetCommitDateForOldestUploadFunc: &StoreGetCommitDateForOldestUploadFunc{
+			defaultHook: i.GetCommitDateForOldestUpload,
+		},
 		GetCommitGraphMetadataFunc: &StoreGetCommitGraphMetadataFunc{
 			defaultHook: i.GetCommitGraphMetadata,
 		},
@@ -970,9 +975,6 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		GetLastUploadRetentionScanForRepositoryFunc: &StoreGetLastUploadRetentionScanForRepositoryFunc{
 			defaultHook: i.GetLastUploadRetentionScanForRepository,
-		},
-		GetOldestCommitDateFunc: &StoreGetOldestCommitDateFunc{
-			defaultHook: i.GetOldestCommitDate,
 		},
 		GetRecentIndexesSummaryFunc: &StoreGetRecentIndexesSummaryFunc{
 			defaultHook: i.GetRecentIndexesSummary,
@@ -2651,6 +2653,117 @@ func (c StoreGetAuditLogsForUploadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// StoreGetCommitDateForOldestUploadFunc describes the behavior when the
+// GetCommitDateForOldestUpload method of the parent MockStore instance is
+// invoked.
+type StoreGetCommitDateForOldestUploadFunc struct {
+	defaultHook func(context.Context, int) (core.Option[time.Time], error)
+	hooks       []func(context.Context, int) (core.Option[time.Time], error)
+	history     []StoreGetCommitDateForOldestUploadFuncCall
+	mutex       sync.Mutex
+}
+
+// GetCommitDateForOldestUpload delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockStore) GetCommitDateForOldestUpload(v0 context.Context, v1 int) (core.Option[time.Time], error) {
+	r0, r1 := m.GetCommitDateForOldestUploadFunc.nextHook()(v0, v1)
+	m.GetCommitDateForOldestUploadFunc.appendCall(StoreGetCommitDateForOldestUploadFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetCommitDateForOldestUpload method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreGetCommitDateForOldestUploadFunc) SetDefaultHook(hook func(context.Context, int) (core.Option[time.Time], error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetCommitDateForOldestUpload method of the parent MockStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *StoreGetCommitDateForOldestUploadFunc) PushHook(hook func(context.Context, int) (core.Option[time.Time], error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreGetCommitDateForOldestUploadFunc) SetDefaultReturn(r0 core.Option[time.Time], r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (core.Option[time.Time], error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreGetCommitDateForOldestUploadFunc) PushReturn(r0 core.Option[time.Time], r1 error) {
+	f.PushHook(func(context.Context, int) (core.Option[time.Time], error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreGetCommitDateForOldestUploadFunc) nextHook() func(context.Context, int) (core.Option[time.Time], error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreGetCommitDateForOldestUploadFunc) appendCall(r0 StoreGetCommitDateForOldestUploadFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreGetCommitDateForOldestUploadFuncCall
+// objects describing the invocations of this function.
+func (f *StoreGetCommitDateForOldestUploadFunc) History() []StoreGetCommitDateForOldestUploadFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreGetCommitDateForOldestUploadFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreGetCommitDateForOldestUploadFuncCall is an object that describes an
+// invocation of method GetCommitDateForOldestUpload on an instance of
+// MockStore.
+type StoreGetCommitDateForOldestUploadFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 core.Option[time.Time]
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreGetCommitDateForOldestUploadFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreGetCommitDateForOldestUploadFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // StoreGetCommitGraphMetadataFunc describes the behavior when the
 // GetCommitGraphMetadata method of the parent MockStore instance is
 // invoked.
@@ -3764,117 +3877,6 @@ func (c StoreGetLastUploadRetentionScanForRepositoryFuncCall) Args() []interface
 // invocation.
 func (c StoreGetLastUploadRetentionScanForRepositoryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// StoreGetOldestCommitDateFunc describes the behavior when the
-// GetOldestCommitDate method of the parent MockStore instance is invoked.
-type StoreGetOldestCommitDateFunc struct {
-	defaultHook func(context.Context, int) (time.Time, bool, error)
-	hooks       []func(context.Context, int) (time.Time, bool, error)
-	history     []StoreGetOldestCommitDateFuncCall
-	mutex       sync.Mutex
-}
-
-// GetOldestCommitDate delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockStore) GetOldestCommitDate(v0 context.Context, v1 int) (time.Time, bool, error) {
-	r0, r1, r2 := m.GetOldestCommitDateFunc.nextHook()(v0, v1)
-	m.GetOldestCommitDateFunc.appendCall(StoreGetOldestCommitDateFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the GetOldestCommitDate
-// method of the parent MockStore instance is invoked and the hook queue is
-// empty.
-func (f *StoreGetOldestCommitDateFunc) SetDefaultHook(hook func(context.Context, int) (time.Time, bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetOldestCommitDate method of the parent MockStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *StoreGetOldestCommitDateFunc) PushHook(hook func(context.Context, int) (time.Time, bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreGetOldestCommitDateFunc) SetDefaultReturn(r0 time.Time, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (time.Time, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetOldestCommitDateFunc) PushReturn(r0 time.Time, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (time.Time, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *StoreGetOldestCommitDateFunc) nextHook() func(context.Context, int) (time.Time, bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreGetOldestCommitDateFunc) appendCall(r0 StoreGetOldestCommitDateFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreGetOldestCommitDateFuncCall objects
-// describing the invocations of this function.
-func (f *StoreGetOldestCommitDateFunc) History() []StoreGetOldestCommitDateFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreGetOldestCommitDateFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreGetOldestCommitDateFuncCall is an object that describes an
-// invocation of method GetOldestCommitDate on an instance of MockStore.
-type StoreGetOldestCommitDateFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 time.Time
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 bool
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreGetOldestCommitDateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreGetOldestCommitDateFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreGetRecentIndexesSummaryFunc describes the behavior when the
