@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit'
 
-import { getGraphQLClient, infinityQuery } from '$lib/graphql'
+import { IncrementalRestoreStrategy, getGraphQLClient, infinityQuery } from '$lib/graphql'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
@@ -38,44 +38,22 @@ export const load: PageLoad = async ({ params }) => {
                       first: PAGE_SIZE,
                       after: null as string | null,
                   },
-                  nextVariables: previousResult => {
-                      if (
-                          !previousResult.error &&
-                          previousResult?.data?.repository?.comparison?.fileDiffs?.pageInfo?.hasNextPage
-                      ) {
-                          return {
-                              after: previousResult.data.repository.comparison.fileDiffs.pageInfo.endCursor,
-                          }
-                      }
-                      return undefined
-                  },
-                  combine: (previousResult, nextResult) => {
-                      if (!nextResult.data?.repository?.comparison) {
-                          return {
-                              ...nextResult,
-                              // When this code path is executed we probably have an error.
-                              // We still want to show the data that was loaded before the error occurred.
-                              data: previousResult.data,
-                          }
-                      }
-                      const previousNodes = previousResult.data?.repository?.comparison?.fileDiffs?.nodes ?? []
-                      const nextNodes = nextResult.data.repository?.comparison?.fileDiffs?.nodes ?? []
+                  mapResult: (result, previousResult) => {
+                      const pageInfo = result.data?.repository?.comparison.fileDiffs.pageInfo
                       return {
-                          ...nextResult,
-                          data: {
-                              repository: {
-                                  ...nextResult.data.repository,
-                                  comparison: {
-                                      ...nextResult.data.repository.comparison,
-                                      fileDiffs: {
-                                          ...nextResult.data.repository.comparison.fileDiffs,
-                                          nodes: [...previousNodes, ...nextNodes],
-                                      },
-                                  },
-                              },
-                          },
+                          pageInfo: pageInfo?.hasNextPage ? { after: pageInfo.endCursor } : undefined,
+                          data: (previousResult.data ?? []).concat(
+                              result.data?.repository?.comparison.fileDiffs.nodes ?? []
+                          ),
+                          error: result.error,
                       }
                   },
+                  createRestoreStrategy: api =>
+                      new IncrementalRestoreStrategy(
+                          api,
+                          n => n.length,
+                          n => ({ first: n.length })
+                      ),
               })
             : null
 
