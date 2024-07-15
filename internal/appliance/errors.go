@@ -16,7 +16,6 @@ func (a *Appliance) errorResponse(w http.ResponseWriter, r *http.Request, status
 
 	if err := a.writeJSON(w, status, resp, nil); err != nil {
 		a.logError(r, err)
-		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
