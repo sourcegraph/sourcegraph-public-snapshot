@@ -272,7 +272,7 @@ func (s *CodyGatewayStore) Upsert(ctx context.Context, subscriptionID string, op
 				errors.WithStack(ErrSubscriptionDoesNotExist),
 				err.Error())
 		}
-		return nil, errors.Wrap(err, "exec")
+		return nil, err
 	}
 	return s.Get(ctx, subscriptionID)
 }
