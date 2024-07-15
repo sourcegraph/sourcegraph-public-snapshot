@@ -118,6 +118,12 @@
     (#not-eq? @reference.either "var")
 )
 
+; class Binary<N extends Number> {...
+;                        ^^^^^^
+(type_bound
+  (type_identifier)* @reference.either
+)
+
 ; for (MyType variable: variables) {...
 ;      ^^^^^^
 (enhanced_for_statement
