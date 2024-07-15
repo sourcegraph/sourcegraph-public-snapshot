@@ -104,6 +104,8 @@ func Init(
 		singletonConfigService.set(updatedConfig)
 	})
 
+	enterpriseServices.ModelconfigResolver = newResolver(logger)
+
 	// TODO(chrsmith): When the enhanced model configuration data is available, if configured to do so
 	// we will spawn a background job that will poll Cody Gateway for any updated model information. This
 	// will be tricky, because we want to honor any dynamic changes to the site config. e.g. the `conf.Watch`

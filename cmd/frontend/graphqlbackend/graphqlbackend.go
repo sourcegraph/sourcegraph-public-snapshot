@@ -626,6 +626,11 @@ func NewSchema(
 			resolver.TelemetryRootResolver = telemetryResolver
 			schemas = append(schemas, telemetrySchema)
 		}
+
+		if modelconfigResolver := optional.ModelconfigResolver; modelconfigResolver != nil {
+			EnterpriseResolvers.modelconfigResolver = modelconfigResolver
+			resolver.ModelconfigResolver = modelconfigResolver
+		}
 	}
 
 	opts := []graphql.SchemaOpt{
@@ -679,6 +684,7 @@ type OptionalResolver struct {
 	SearchContextsResolver
 	WebhooksResolver
 	ContentLibraryResolver
+	ModelconfigResolver
 	*TelemetryRootResolver
 }
 
@@ -801,6 +807,7 @@ var EnterpriseResolvers = struct {
 	webhooksResolver            WebhooksResolver
 	contentLibraryResolver      ContentLibraryResolver
 	telemetryResolver           *TelemetryRootResolver
+	modelconfigResolver         ModelconfigResolver
 }{}
 
 // Root returns a new schemaResolver.
