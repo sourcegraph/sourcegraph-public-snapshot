@@ -49,7 +49,6 @@ go_test(
     ],
     embed = [":appliance"],
     deps = [
-        "@com_github_golang_jwt_jwt_v5//:jwt",
         "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_log//:log",
         "@com_github_stretchr_testify//require",
