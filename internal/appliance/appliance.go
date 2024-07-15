@@ -44,7 +44,7 @@ type Status string
 
 const (
 	StatusUnknown         Status = "unknown"
-	StatusSetup           Status = "setup"
+	StatusInstall         Status = "install"
 	StatusInstalling      Status = "installing"
 	StatusIdle            Status = "idle"
 	StatusUpgrading       Status = "upgrading"
@@ -75,7 +75,7 @@ func NewAppliance(
 		releaseRegistryClient:  relregClient,
 		latestSupportedVersion: latestSupportedVersion,
 		namespace:              namespace,
-		status:                 StatusSetup,
+		status:                 StatusInstall,
 		sourcegraph:            &config.Sourcegraph{},
 		logger:                 logger,
 	}
