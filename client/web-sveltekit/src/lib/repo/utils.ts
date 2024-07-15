@@ -1,4 +1,10 @@
-import type { ResolvedRevision } from '../../routes/[...repo=reporev]/+layout'
+import type { ResolvedRepository } from '../../routes/[...repo=reporev]/layout.gql'
+
+export interface ResolvedRevision {
+    repo: ResolvedRepository
+    defaultBranch: string
+    commitID: string
+}
 
 export function getRevisionLabel(
     urlRevision: string | undefined,
