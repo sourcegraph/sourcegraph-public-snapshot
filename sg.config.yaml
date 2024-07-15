@@ -516,16 +516,6 @@ commands:
     description: Enterprise version of the web app
     cmd: pnpm --filter @sourcegraph/web dev
     install: |
-      # ❗ This is a bandage, long term solution: https://linear.app/sourcegraph/issue/DINF-115
-      dir_path=client/web/dist/chunks
-      dir_size=$(du -k "$dir_path" | cut -f1)
-      size_limit=$((300 * 1024)) # If above 300mb, just nuke it
-
-      if [ "$dir_size" -gt "$size_limit" ]; then
-          rm -Rf "$dir_path/"*
-          touch "${dir_path}/.gitkeep"
-      fi
-
       pnpm install
       pnpm run generate
     env:
