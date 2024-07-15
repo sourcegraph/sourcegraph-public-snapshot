@@ -13,10 +13,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
@@ -137,10 +135,6 @@ func (s *Service) CreateSearchJob(ctx context.Context, query string) (_ *types.E
 		attribute.String("query", query),
 	))
 	defer endObservation(1, observation.Args{})
-
-	if !exhaustive.IsEnabled(conf.Get()) {
-		return nil, errors.New("search jobs are disabled")
-	}
 
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {

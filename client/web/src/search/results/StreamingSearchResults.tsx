@@ -29,6 +29,7 @@ import { useAggregationUIMode } from './components/aggregation'
 import { NewSearchContent } from './components/new-search-content/NewSearchContent'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { useStreamingSearchPings } from './useStreamingSearchPings'
+import { SearchJobsProps } from '../../enterprise/search-jobs'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
@@ -39,6 +40,7 @@ export interface StreamingSearchResultsProps
         CodeInsightsProps,
         SearchAggregationProps,
         CodeMonitoringProps,
+        SearchJobsProps,
         OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
@@ -293,6 +295,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             settingsCascade={props.settingsCascade}
             telemetryService={telemetryService}
             platformContext={platformContext}
+            searchJobsEnabled={props.searchJobsEnabled}
         />
     )
 }

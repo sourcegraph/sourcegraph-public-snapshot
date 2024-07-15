@@ -69,10 +69,6 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 }
 
 func (r *Resolver) Monitors(ctx context.Context, userID *int32, args *graphqlbackend.ListMonitorsArgs) (graphqlbackend.MonitorConnectionResolver, error) {
-	if err := r.isEnabled(); err != nil {
-		return nil, err
-	}
-
 	// Request one extra to determine if there are more pages
 	newArgs := *args
 	newArgs.First += 1
@@ -117,10 +113,6 @@ func (r *Resolver) Monitors(ctx context.Context, userID *int32, args *graphqlbac
 }
 
 func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (graphqlbackend.MonitorResolver, error) {
-	if err := r.isEnabled(); err != nil {
-		return nil, err
-	}
-
 	err := r.isAllowedToEdit(ctx, id)
 	if err != nil {
 		return nil, err
@@ -140,10 +132,6 @@ func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (graphqlbacke
 }
 
 func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (_ graphqlbackend.MonitorResolver, err error) {
-	if err := r.isEnabled(); err != nil {
-		return nil, err
-	}
-
 	if err := r.isAllowedToCreate(ctx, args.Monitor.Namespace); err != nil {
 		return nil, err
 	}
@@ -209,10 +197,6 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 }
 
 func (r *Resolver) ToggleCodeMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
-	if err := r.isEnabled(); err != nil {
-		return nil, err
-	}
-
 	err := r.isAllowedToEdit(ctx, args.Id)
 	if err != nil {
 		return nil, errors.Errorf("UpdateMonitorEnabled: %w", err)
@@ -230,10 +214,6 @@ func (r *Resolver) ToggleCodeMonitor(ctx context.Context, args *graphqlbackend.T
 }
 
 func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.isEnabled(); err != nil {
-		return nil, err
-	}
-
 	err := r.isAllowedToEdit(ctx, args.Id)
 	if err != nil {
 		return nil, errors.Errorf("DeleteCodeMonitor: %w", err)
@@ -251,10 +231,6 @@ func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.D
 }
 
 func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
-	if err := r.isEnabled(); err != nil {
-		return nil, err
-	}
-
 	err := r.isAllowedToEdit(ctx, args.Monitor.Id)
 	if err != nil {
 		return nil, errors.Errorf("UpdateCodeMonitor: %w", err)
@@ -400,10 +376,6 @@ func (r *Resolver) createRecipients(ctx context.Context, emailID int64, recipien
 // actions (emails, webhooks) immediately. This is useful during development and
 // troubleshooting. Only site admins can call this functions.
 func (r *Resolver) ResetTriggerQueryTimestamps(ctx context.Context, args *graphqlbackend.ResetTriggerQueryTimestampsArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.isEnabled(); err != nil {
-		return nil, err
-	}
-
 	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 	if err != nil {
 		return nil, err
@@ -421,10 +393,6 @@ func (r *Resolver) ResetTriggerQueryTimestamps(ctx context.Context, args *graphq
 }
 
 func (r *Resolver) TriggerTestEmailAction(ctx context.Context, args *graphqlbackend.TriggerTestEmailActionArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.isEnabled(); err != nil {
-		return nil, err
-	}
-
 	err := r.isAllowedToCreate(ctx, args.Namespace)
 	if err != nil {
 		return nil, err
@@ -440,10 +408,6 @@ func (r *Resolver) TriggerTestEmailAction(ctx context.Context, args *graphqlback
 }
 
 func (r *Resolver) TriggerTestWebhookAction(ctx context.Context, args *graphqlbackend.TriggerTestWebhookActionArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.isEnabled(); err != nil {
-		return nil, err
-	}
-
 	err := r.isAllowedToCreate(ctx, args.Namespace)
 	if err != nil {
 		return nil, err
@@ -457,10 +421,6 @@ func (r *Resolver) TriggerTestWebhookAction(ctx context.Context, args *graphqlba
 }
 
 func (r *Resolver) TriggerTestSlackWebhookAction(ctx context.Context, args *graphqlbackend.TriggerTestSlackWebhookActionArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.isEnabled(); err != nil {
-		return nil, err
-	}
-
 	err := r.isAllowedToCreate(ctx, args.Namespace)
 	if err != nil {
 		return nil, err
