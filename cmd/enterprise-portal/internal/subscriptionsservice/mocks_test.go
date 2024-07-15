@@ -96,12 +96,12 @@ func NewMockStoreV1() *MockStoreV1 {
 			},
 		},
 		ListEnterpriseSubscriptionsFunc: &StoreV1ListEnterpriseSubscriptionsFunc{
-			defaultHook: func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) (r0 []*subscriptions.Subscription, r1 error) {
+			defaultHook: func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) (r0 []*subscriptions.SubscriptionWithConditions, r1 error) {
 				return
 			},
 		},
 		UpsertEnterpriseSubscriptionFunc: &StoreV1UpsertEnterpriseSubscriptionFunc{
-			defaultHook: func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (r0 *subscriptions.Subscription, r1 error) {
+			defaultHook: func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (r0 *subscriptions.SubscriptionWithConditions, r1 error) {
 				return
 			},
 		},
@@ -148,12 +148,12 @@ func NewStrictMockStoreV1() *MockStoreV1 {
 			},
 		},
 		ListEnterpriseSubscriptionsFunc: &StoreV1ListEnterpriseSubscriptionsFunc{
-			defaultHook: func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
+			defaultHook: func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error) {
 				panic("unexpected invocation of MockStoreV1.ListEnterpriseSubscriptions")
 			},
 		},
 		UpsertEnterpriseSubscriptionFunc: &StoreV1UpsertEnterpriseSubscriptionFunc{
-			defaultHook: func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
+			defaultHook: func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (*subscriptions.SubscriptionWithConditions, error) {
 				panic("unexpected invocation of MockStoreV1.UpsertEnterpriseSubscription")
 			},
 		},
@@ -961,15 +961,15 @@ func (c StoreV1ListDotcomEnterpriseSubscriptionsFuncCall) Results() []interface{
 // ListEnterpriseSubscriptions method of the parent MockStoreV1 instance is
 // invoked.
 type StoreV1ListEnterpriseSubscriptionsFunc struct {
-	defaultHook func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error)
-	hooks       []func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error)
+	defaultHook func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error)
+	hooks       []func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error)
 	history     []StoreV1ListEnterpriseSubscriptionsFuncCall
 	mutex       sync.Mutex
 }
 
 // ListEnterpriseSubscriptions delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStoreV1) ListEnterpriseSubscriptions(v0 context.Context, v1 subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
+func (m *MockStoreV1) ListEnterpriseSubscriptions(v0 context.Context, v1 subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error) {
 	r0, r1 := m.ListEnterpriseSubscriptionsFunc.nextHook()(v0, v1)
 	m.ListEnterpriseSubscriptionsFunc.appendCall(StoreV1ListEnterpriseSubscriptionsFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -978,7 +978,7 @@ func (m *MockStoreV1) ListEnterpriseSubscriptions(v0 context.Context, v1 subscri
 // SetDefaultHook sets function that is called when the
 // ListEnterpriseSubscriptions method of the parent MockStoreV1 instance is
 // invoked and the hook queue is empty.
-func (f *StoreV1ListEnterpriseSubscriptionsFunc) SetDefaultHook(hook func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error)) {
+func (f *StoreV1ListEnterpriseSubscriptionsFunc) SetDefaultHook(hook func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error)) {
 	f.defaultHook = hook
 }
 
@@ -987,7 +987,7 @@ func (f *StoreV1ListEnterpriseSubscriptionsFunc) SetDefaultHook(hook func(contex
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreV1ListEnterpriseSubscriptionsFunc) PushHook(hook func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error)) {
+func (f *StoreV1ListEnterpriseSubscriptionsFunc) PushHook(hook func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -995,20 +995,20 @@ func (f *StoreV1ListEnterpriseSubscriptionsFunc) PushHook(hook func(context.Cont
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreV1ListEnterpriseSubscriptionsFunc) SetDefaultReturn(r0 []*subscriptions.Subscription, r1 error) {
-	f.SetDefaultHook(func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
+func (f *StoreV1ListEnterpriseSubscriptionsFunc) SetDefaultReturn(r0 []*subscriptions.SubscriptionWithConditions, r1 error) {
+	f.SetDefaultHook(func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreV1ListEnterpriseSubscriptionsFunc) PushReturn(r0 []*subscriptions.Subscription, r1 error) {
-	f.PushHook(func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
+func (f *StoreV1ListEnterpriseSubscriptionsFunc) PushReturn(r0 []*subscriptions.SubscriptionWithConditions, r1 error) {
+	f.PushHook(func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreV1ListEnterpriseSubscriptionsFunc) nextHook() func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
+func (f *StoreV1ListEnterpriseSubscriptionsFunc) nextHook() func(context.Context, subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1050,7 +1050,7 @@ type StoreV1ListEnterpriseSubscriptionsFuncCall struct {
 	Arg1 subscriptions.ListEnterpriseSubscriptionsOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*subscriptions.Subscription
+	Result0 []*subscriptions.SubscriptionWithConditions
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -1072,15 +1072,15 @@ func (c StoreV1ListEnterpriseSubscriptionsFuncCall) Results() []interface{} {
 // UpsertEnterpriseSubscription method of the parent MockStoreV1 instance is
 // invoked.
 type StoreV1UpsertEnterpriseSubscriptionFunc struct {
-	defaultHook func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error)
-	hooks       []func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error)
+	defaultHook func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (*subscriptions.SubscriptionWithConditions, error)
+	hooks       []func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (*subscriptions.SubscriptionWithConditions, error)
 	history     []StoreV1UpsertEnterpriseSubscriptionFuncCall
 	mutex       sync.Mutex
 }
 
 // UpsertEnterpriseSubscription delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStoreV1) UpsertEnterpriseSubscription(v0 context.Context, v1 string, v2 subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
+func (m *MockStoreV1) UpsertEnterpriseSubscription(v0 context.Context, v1 string, v2 subscriptions.UpsertSubscriptionOptions) (*subscriptions.SubscriptionWithConditions, error) {
 	r0, r1 := m.UpsertEnterpriseSubscriptionFunc.nextHook()(v0, v1, v2)
 	m.UpsertEnterpriseSubscriptionFunc.appendCall(StoreV1UpsertEnterpriseSubscriptionFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -1089,7 +1089,7 @@ func (m *MockStoreV1) UpsertEnterpriseSubscription(v0 context.Context, v1 string
 // SetDefaultHook sets function that is called when the
 // UpsertEnterpriseSubscription method of the parent MockStoreV1 instance is
 // invoked and the hook queue is empty.
-func (f *StoreV1UpsertEnterpriseSubscriptionFunc) SetDefaultHook(hook func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error)) {
+func (f *StoreV1UpsertEnterpriseSubscriptionFunc) SetDefaultHook(hook func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (*subscriptions.SubscriptionWithConditions, error)) {
 	f.defaultHook = hook
 }
 
@@ -1098,7 +1098,7 @@ func (f *StoreV1UpsertEnterpriseSubscriptionFunc) SetDefaultHook(hook func(conte
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreV1UpsertEnterpriseSubscriptionFunc) PushHook(hook func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error)) {
+func (f *StoreV1UpsertEnterpriseSubscriptionFunc) PushHook(hook func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (*subscriptions.SubscriptionWithConditions, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1106,20 +1106,20 @@ func (f *StoreV1UpsertEnterpriseSubscriptionFunc) PushHook(hook func(context.Con
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreV1UpsertEnterpriseSubscriptionFunc) SetDefaultReturn(r0 *subscriptions.Subscription, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
+func (f *StoreV1UpsertEnterpriseSubscriptionFunc) SetDefaultReturn(r0 *subscriptions.SubscriptionWithConditions, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (*subscriptions.SubscriptionWithConditions, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreV1UpsertEnterpriseSubscriptionFunc) PushReturn(r0 *subscriptions.Subscription, r1 error) {
-	f.PushHook(func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
+func (f *StoreV1UpsertEnterpriseSubscriptionFunc) PushReturn(r0 *subscriptions.SubscriptionWithConditions, r1 error) {
+	f.PushHook(func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (*subscriptions.SubscriptionWithConditions, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreV1UpsertEnterpriseSubscriptionFunc) nextHook() func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
+func (f *StoreV1UpsertEnterpriseSubscriptionFunc) nextHook() func(context.Context, string, subscriptions.UpsertSubscriptionOptions) (*subscriptions.SubscriptionWithConditions, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1164,7 +1164,7 @@ type StoreV1UpsertEnterpriseSubscriptionFuncCall struct {
 	Arg2 subscriptions.UpsertSubscriptionOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *subscriptions.Subscription
+	Result0 *subscriptions.SubscriptionWithConditions
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

@@ -174,9 +174,9 @@ func TestHandlerV1_ListEnterpriseSubscriptions(t *testing.T) {
 			h.mockStore.IAMListObjectsFunc.SetDefaultHook(func(_ context.Context, opts iam.ListObjectsOptions) ([]string, error) {
 				return tc.iamObjectsHook(opts)
 			})
-			h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
+			h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error) {
 				tc.wantListOpts.Equal(t, opts)
-				return []*subscriptions.Subscription{}, nil
+				return []*subscriptions.SubscriptionWithConditions{}, nil
 			})
 
 			if _, err := h.ListEnterpriseSubscriptions(ctx, req); tc.wantError != nil {
@@ -204,8 +204,8 @@ func TestHandlerV1_ListEnterpriseSubscriptions(t *testing.T) {
 		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
 
 		h := newTestHandlerV1()
-		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
-			return []*subscriptions.Subscription{}, nil
+		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error) {
+			return []*subscriptions.SubscriptionWithConditions{}, nil
 		})
 		h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
 			assert.Empty(t, opts.SubscriptionIDs)
@@ -310,9 +310,9 @@ func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 				[]*dotcomdb.SubscriptionAttributes{
 					{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"},
 				}, nil)
-			h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
+			h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.SubscriptionWithConditions, error) {
 				tc.wantUpdateOpts.Equal(t, opts)
-				return &subscriptions.Subscription{}, nil
+				return &subscriptions.SubscriptionWithConditions{}, nil
 			})
 			_, err := h.UpdateEnterpriseSubscription(ctx, req)
 			require.NoError(t, err)
@@ -457,10 +457,12 @@ func TestHandlerV1_UpdateEnterpriseSubscriptionMembership(t *testing.T) {
 				},
 			)
 			h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(
-				func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
+				func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error) {
 					if slices.Contains(opts.IDs, subscriptionID) ||
 						slices.Contains(opts.InstanceDomains, instanceDomain) {
-						return []*subscriptions.Subscription{{ID: subscriptionID}}, nil
+						return []*subscriptions.SubscriptionWithConditions{
+							{Subscription: subscriptions.Subscription{ID: subscriptionID}},
+						}, nil
 					}
 					return nil, nil
 				},
