@@ -48,9 +48,9 @@ extend type Query {
         """
         contextItems: [InputContextItem!]!
         """
-        A natural language query string. Optional - can be fetched using interactionId.
+        A natural language query string.
         """
-        query: String
+        query: String!
         """
         Ranking options.
         """
@@ -154,6 +154,14 @@ input InputContextItem {
     Optional: Name of the file associated with this context item.
     """
     fileName: String
+    """
+    The start line of the relevant chunk (inclusive).
+    """
+    startLine: Int
+    """
+    The end line of the relevant chunk (exclusive).
+    """
+    endLine: Int
 }
 
 """
