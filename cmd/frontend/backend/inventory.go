@@ -50,7 +50,7 @@ func (s *semaphoredReadCloser) Close() error {
 // the given commit.
 func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.Client, commitID api.CommitID, forceEnhancedLanguageDetection bool) (inventory.Context, error) {
 	if !gitdomain.IsAbsoluteRevision(string(commitID)) {
-		return inventory.Context{}, errors.Errorf("refusing to compute inventory for non-absolute commit ID %q", commitID)
+		return inventory.Context{}, nil
 	}
 
 	gitServerSemaphore := semaphore.NewWeighted(int64(gitServerConcurrency))

@@ -3,16 +3,15 @@ package inventory
 import (
 	"archive/tar"
 	"context"
+	"fmt"
 	"github.com/sourcegraph/conc/iter"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"io"
 	"io/fs"
 	"sort"
+	"strings"
 )
-
-var maxInvsLength = env.MustGetInt("GET_INVENTORY_MAX_INV_IN_MEMORY", 1000, "When computing the language stats, every nth iteration all loaded files are aggregated into the inventory to reduce the memory footprint. Increasing this value may make the computation run faster, but will require more memory.")
 
 func (c *Context) All(ctx context.Context) (inv Inventory, err error) {
 	if c.CacheGet != nil {
@@ -33,38 +32,94 @@ func (c *Context) All(ctx context.Context) (inv Inventory, err error) {
 		return Inventory{}, err
 	}
 
-	invs := make([]Inventory, maxInvsLength)
 	tr := c.NewTarReader(r)
-	for {
+	return c.ArchiveProcessor(ctx, func() (*NextRecord, error) {
 		th, err := tr.Next()
 		if err != nil {
+			return nil, err
+		}
+		return &NextRecord{
+			Header:     th,
+			FileReader: io.NopCloser(tr),
+		}, nil
+	})
+}
+
+type NextRecord struct {
+	Header     *tar.Header
+	FileReader io.ReadCloser
+}
+
+type dirInfo struct {
+	path  string
+	inv   Inventory
+	depth int
+}
+
+func (c *Context) ArchiveProcessor(ctx context.Context, next func() (*NextRecord, error)) (inv Inventory, err error) {
+	root := dirInfo{path: ".", inv: Inventory{}}
+	dirStack := []*dirInfo{&root}
+	var currentDepth = -1
+	currentDir := &root
+
+	for {
+		n, err := next()
+		if err != nil {
+			// We've seen everything and can collapse the rest.
 			if errors.Is(err, io.EOF) {
-				return Sum(invs), nil
+				c.compressAndCacheDirectory(ctx, &dirStack)
+				r := dirStack[0]
+				if c.CacheSet != nil {
+					c.CacheSet(ctx, fmt.Sprintf("%s/%s:%s", c.Repo, r.path, c.CommitID), r.inv)
+				}
+				return r.inv, nil
 			}
 			return Inventory{}, err
 		}
-		entry := th.FileInfo()
 
+		entry := n.Header.FileInfo()
+
+		name := n.Header.Name
+		path := strings.Trim(name, "/ ")
+		depth := strings.Count(path, "/")
+
+		// Process completed directories
+		for currentDepth >= depth {
+			c.compressAndCacheDirectory(ctx, &dirStack)
+			currentDir = dirStack[len(dirStack)-1]
+			currentDepth--
+		}
 		switch {
 		case entry.Mode().IsRegular():
-			inv, err := c.fileTar(ctx, th, tr)
+			lang, err := getLang(ctx, n.Header.FileInfo(), func(ctx context.Context, path string) (io.ReadCloser, error) {
+				return n.FileReader, nil
+			}, c.ShouldSkipEnhancedLanguageDetection)
 			if err != nil {
 				return Inventory{}, err
 			}
-			invs = append(invs, inv)
+			fileInv := Inventory{Languages: []Lang{lang}}
+			currentDir.inv = Sum([]Inventory{currentDir.inv, fileInv})
+
 		case entry.Mode().IsDir():
-			// If we want to we could try to optimize cache invalidation at the tree level
-			// here. For now, we only iterate over all the files in the archive.
-			continue
+			dir := dirInfo{path: path, inv: Inventory{}, depth: depth}
+			dirStack = append(dirStack, &dir)
+			currentDepth = depth
+			currentDir = &dir
 		default:
-			// Skip symlinks, submodules, etc.
 			continue
 		}
+	}
+}
 
-		if len(invs) > maxInvsLength {
-			sum := Sum(invs)
-			invs = make([]Inventory, maxInvsLength)
-			invs = append(invs, sum)
+func (c *Context) compressAndCacheDirectory(ctx context.Context, dirStack *[]*dirInfo) {
+	if len(*dirStack) > 1 {
+		dir := (*dirStack)[len(*dirStack)-1]
+		*dirStack = (*dirStack)[:len(*dirStack)-1]
+		if c.CacheSet != nil && len(dir.inv.Languages) > 0 {
+			c.CacheSet(ctx, fmt.Sprintf("%s/%s:%s", c.Repo, dir.path, c.CommitID), dir.inv)
+		}
+		if len(*dirStack) > 0 {
+			(*dirStack)[len(*dirStack)-1].inv = Sum([]Inventory{(*dirStack)[len(*dirStack)-1].inv, dir.inv})
 		}
 	}
 }
@@ -162,33 +217,6 @@ func (c *Context) file(ctx context.Context, file fs.FileInfo) (inv Inventory, er
 	lang, err := getLang(ctx, file, c.NewFileReader, c.ShouldSkipEnhancedLanguageDetection)
 	if err != nil {
 		return Inventory{}, errors.Wrapf(err, "inventory file %q", file.Name())
-	}
-	if lang == (Lang{}) {
-		return Inventory{}, nil
-	}
-	return Inventory{Languages: []Lang{lang}}, nil
-}
-
-func (c *Context) fileTar(ctx context.Context, file *tar.Header, r io.Reader) (inv Inventory, err error) {
-	// Get and set from the cache.
-	if c.CacheGet != nil {
-		if inv, ok := c.CacheGet(ctx, c.CacheKey(file.FileInfo())); ok {
-			return inv, nil // cache hit
-		}
-	}
-	if c.CacheSet != nil {
-		defer func() {
-			if err == nil {
-				c.CacheSet(ctx, c.CacheKey(file.FileInfo()), inv) // store in cache
-			}
-		}()
-	}
-
-	lang, err := getLang(ctx, file.FileInfo(), func(ctx context.Context, path string) (io.ReadCloser, error) {
-		return io.NopCloser(r), nil
-	}, c.ShouldSkipEnhancedLanguageDetection)
-	if err != nil {
-		return Inventory{}, errors.Wrapf(err, "inventory file %q", file.FileInfo().Name())
 	}
 	if lang == (Lang{}) {
 		return Inventory{}, nil
