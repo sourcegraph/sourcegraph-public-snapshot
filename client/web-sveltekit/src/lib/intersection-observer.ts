@@ -51,7 +51,7 @@ export const observeIntersection: Action<
 
     return {
         update(newContainer) {
-            container && observer?.unobserve(container)
+            observer.unobserve(container)
             container = newContainer ?? document.documentElement
 
             observer = getObserver(container)
