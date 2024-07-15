@@ -63,7 +63,7 @@ export function query<TData = any, TVariables extends AnyVariables = AnyVariable
     return getGraphQLClient().query<TData, TVariables>(query, variables).toPromise()
 }
 
-interface InfinityQueryArgs<TData, TPayload = any, TVariables extends AnyVariables = AnyVariables, TSnapshot = void> {
+interface InfinityQueryArgs<TData, TPayload = any, TVariables extends AnyVariables = AnyVariables, TSnapshot = any> {
     /**
      * The {@link Client} instance to use for the query.
      */
@@ -149,7 +149,7 @@ interface InfinityStoreResultState<TData = any, TVariables extends AnyVariables 
 }
 
 // This needs to be exported so that TS type inference can work in SvelteKit generated files.
-export interface InfinityQueryStore<TData = any, TVariables extends AnyVariables = AnyVariables, TSnapshot = void>
+export interface InfinityQueryStore<TData = any, TVariables extends AnyVariables = AnyVariables, TSnapshot = any>
     extends Readable<InfinityStoreResultState<TData, TVariables>> {
     /**
      * Reruns the query with the next set of query variables.
