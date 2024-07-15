@@ -26,6 +26,7 @@ export enum PageRoutes {
     CodeMonitoring = '/code-monitoring/*',
     Insights = '/insights/*',
     SearchJobs = '/search-jobs/*',
+    SavedSearches = '/saved-searches',
     Contexts = '/contexts',
     CreateContext = '/contexts/new',
     EditContext = '/contexts/:specOrOrg/:spec?/edit',
