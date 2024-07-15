@@ -198,6 +198,7 @@ go_library(
         "visitor.go",
         "webhook_logs.go",
         "webhooks.go",
+        "workflows.go",
     ],
     embedsrcs = [
         "authz.graphql",
@@ -228,6 +229,7 @@ go_library(
         "telemetry.graphql",
         "viewer.graphql",
         "saved_searches.graphql",
+        "workflows.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend",
     visibility = ["//:__subpackages__"],

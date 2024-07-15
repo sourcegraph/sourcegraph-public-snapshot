@@ -66,6 +66,7 @@ const SearchUpsellPage = lazyComponent(() => import('./search/upsell/SearchUpsel
 const SearchPageWrapper = lazyComponent(() => import('./search/SearchPageWrapper'), 'SearchPageWrapper')
 const SearchJob = lazyComponent(() => import('./enterprise/search-jobs/SearchJobsPage'), 'SearchJobsPage')
 const SavedSearchArea = lazyComponent(() => import('./savedSearches/Area'), 'Area')
+const WorkflowArea = lazyComponent(() => import('./workflows/Area'), 'Area')
 
 const Index = lazyComponent(() => import('./Index'), 'IndexPage')
 
@@ -188,6 +189,15 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <SavedSearchArea {...props} />}
+                condition={() => window.context?.codeSearchEnabledOnInstance}
+            />
+        ),
+    },
+    {
+        path: `${PageRoutes.Workflows}/*`,
+        element: (
+            <LegacyRoute
+                render={props => <WorkflowArea {...props} />}
                 condition={() => window.context?.codeSearchEnabledOnInstance}
             />
         ),

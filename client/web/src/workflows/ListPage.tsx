@@ -1,17 +1,13 @@
 import { useEffect, useMemo, type FunctionComponent } from 'react'
 
-import { mdiLink, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 
-import type { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
-    Badge,
     Button,
     Container,
     ErrorAlert,
-    Icon,
+    H2,
     Link,
     LoadingSpinner,
     PageSwitcher,
@@ -27,81 +23,55 @@ import {
 } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { ConnectionContainer, ConnectionForm } from '../components/FilteredConnection/ui'
 import {
-    SavedSearchesOrderBy,
-    type SavedSearchFields,
-    type SavedSearchesResult,
-    type SavedSearchesVariables,
+    WorkflowsOrderBy,
+    type WorkflowFields,
+    type WorkflowsResult,
+    type WorkflowsVariables,
 } from '../graphql-operations'
 import { useAffiliatedNamespaces } from '../namespaces/useAffiliatedNamespaces'
 import { PageRoutes } from '../routes.constants'
-import { useNavbarQueryState } from '../stores'
 
-import { savedSearchesQuery } from './graphql'
-import { telemetryRecordSavedSearchViewSearchResults } from './telemetry'
+import { workflowsQuery } from './graphql'
+import { WorkflowNameWithOwner } from './WorkflowNameWithOwner'
 
 import styles from './ListPage.module.scss'
 
-const SavedSearchNode: FunctionComponent<
-    SearchPatternTypeProps &
-        TelemetryV2Props & {
-            savedSearch: SavedSearchFields
-        }
-> = ({ savedSearch, patternType, telemetryRecorder }) => (
-    <div className={classNames(styles.row, 'list-group-item align-items-center flex-gap-2')}>
-        <Button
-            as={Link}
-            to={`/search?${buildSearchURLQuery(savedSearch.query, patternType, false)}`}
-            variant="link"
-            size="lg"
-            className={classNames(
-                'd-flex flex-gap-2 align-items-center flex-grow-1 text-left text-decoration-none pl-0',
-                styles.searchLink
-            )}
-            onClick={() => telemetryRecordSavedSearchViewSearchResults(telemetryRecorder, savedSearch, 'List')}
-        >
-            <Badge
-                variant="primary"
-                className="py-1 d-flex flex-gap-1 align-items-center mr-1 bg-transparent border border-primary text-primary"
-            >
-                <Icon aria-hidden={true} svgPath={mdiMagnify} className="flex-shrink-0" size="sm" />
-                Run search
-            </Badge>
-            <span className={styles.searchLinkDescription}>{savedSearch.description}</span>
-        </Button>
-        <div className="flex-1" />
-        <Badge variant="outlineSecondary" tooltip="Owner">
-            {('displayName' in savedSearch.owner ? savedSearch.owner.displayName : null) ??
-                savedSearch.owner.namespaceName}
-        </Badge>
-        <Button to={savedSearch.url} variant="secondary" as={Link}>
-            <Icon aria-label="Permalink" svgPath={mdiLink} />
-        </Button>
-        {savedSearch.viewerCanAdminister && (
-            <Button to={`${savedSearch.url}/edit`} variant="secondary" as={Link}>
+const WorkflowNode: FunctionComponent<
+    TelemetryV2Props & {
+        workflow: WorkflowFields
+    }
+> = ({ workflow }) => (
+    <div className={classNames(styles.row, 'list-group-item test-workflow-list-page-row')}>
+        <div className="flex-1">
+            <H2 className="text-base mb-0 font-weight-normal">
+                <WorkflowNameWithOwner workflow={workflow} />
+            </H2>
+        </div>
+        <div className="flex-0">
+            <Button to={workflow.id} variant="secondary" as={Link}>
                 Edit
             </Button>
-        )}
+        </div>
     </div>
 )
 
-export function urlToSavedSearchesList(owner: SavedSearchFields['owner']['id']): string {
-    return `${PageRoutes.SavedSearches}?owner=${encodeURIComponent(owner)}`
+export function urlToWorkflowsList(owner: WorkflowFields['owner']['id']): string {
+    return `${PageRoutes.Workflows}?owner=${encodeURIComponent(owner)}`
 }
 
 /**
- * List of saved searches.
+ * List of workflows.
  */
 export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorder }) => {
     useEffect(() => {
-        telemetryRecorder.recordEvent('savedSearches.list', 'view')
+        telemetryRecorder.recordEvent('workflows.list', 'view')
     }, [telemetryRecorder])
-
 
     const { namespaces, loading: namespacesLoading, error: namespacesError } = useAffiliatedNamespaces()
     const filters = useMemo<
         Filter<
-            Exclude<keyof SavedSearchesVariables, PaginationKeys | 'query'>,
-            Partial<Omit<SavedSearchesVariables, PaginationKeys | 'query'>>
+            Exclude<keyof WorkflowsVariables, PaginationKeys | 'query'>,
+            Partial<Omit<WorkflowsVariables, PaginationKeys | 'query'>>
         >[]
     >(
         () => [
@@ -114,14 +84,14 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
                         value: 'updated-at-desc',
                         label: 'Recently updated',
                         args: {
-                            orderBy: SavedSearchesOrderBy.SAVED_SEARCH_UPDATED_AT,
+                            orderBy: WorkflowsOrderBy.WORKFLOW_UPDATED_AT,
                         },
                     },
                     {
                         value: 'description-asc',
                         label: 'By description',
                         args: {
-                            orderBy: SavedSearchesOrderBy.SAVED_SEARCH_DESCRIPTION,
+                            orderBy: WorkflowsOrderBy.WORKFLOW_NAME_WITH_OWNER,
                         },
                     },
                 ],
@@ -130,7 +100,7 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
                 label: 'Owner',
                 type: 'select',
                 id: 'owner',
-                tooltip: 'User or organization that owns the saved search',
+                tooltip: 'User or organization that owns the workflow',
                 options: [
                     {
                         value: 'all',
@@ -157,32 +127,27 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
         loading: listLoading,
         error: listError,
         ...paginationProps
-    } = usePageSwitcherPagination<
-        SavedSearchesResult,
-        Partial<SavedSearchesVariables>,
-        SavedSearchFields,
-        typeof connectionState
-    >({
-        query: savedSearchesQuery,
-        variables: { ...buildFilterArgs(filters, connectionState), query: debouncedQuery },
-        getConnection: ({ data }) => data?.savedSearches || undefined,
-        state: [connectionState, setConnectionState],
-    })
-
-    const searchPatternType = useNavbarQueryState(state => state.searchPatternType)
+    } = usePageSwitcherPagination<WorkflowsResult, Partial<WorkflowsVariables>, WorkflowFields, typeof connectionState>(
+        {
+            query: workflowsQuery,
+            variables: { ...buildFilterArgs(filters, connectionState), query: debouncedQuery },
+            getConnection: ({ data }) => data?.workflows || undefined,
+            state: [connectionState, setConnectionState],
+        }
+    )
 
     const error = namespacesError || listError
     const loading = namespacesLoading || listLoading
 
     return (
         <>
-            <Container data-testid="saved-searches-list-page">
+            <Container data-testid="workflows-list-page">
                 <ConnectionContainer>
                     <ConnectionForm
                         hideSearch={false}
                         showSearchFirst={true}
                         inputClassName="mw-30"
-                        inputPlaceholder="Find a saved search..."
+                        inputPlaceholder="Find a workflow..."
                         inputAriaLabel=""
                         inputValue={connectionState.query}
                         onInputChange={event => {
@@ -202,14 +167,13 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
                     ) : error ? (
                         <ErrorAlert error={error} className="mb-3" />
                     ) : !connection?.nodes || connection.nodes.length === 0 ? (
-                        <Text className="text-center text-muted mb-0">No saved searches found.</Text>
+                        <Text className="text-center text-muted mb-0">No workflows found.</Text>
                     ) : (
                         <div className="list-group list-group-flush">
-                            {connection.nodes.map(savedSearch => (
-                                <SavedSearchNode
-                                    key={savedSearch.id}
-                                    patternType={searchPatternType}
-                                    savedSearch={savedSearch}
+                            {connection.nodes.map(workflow => (
+                                <WorkflowNode
+                                    key={workflow.id}
+                                    workflow={workflow}
                                     telemetryRecorder={telemetryRecorder}
                                 />
                             ))}

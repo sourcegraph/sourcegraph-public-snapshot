@@ -381,19 +381,19 @@ func TestTransferSavedSearchOwnership(t *testing.T) {
 		return &types.OrgMembership{OrgID: oid, UserID: uid}, nil
 	})
 
-	ss := dbmocks.NewMockSavedSearchStore()
-	ss.UpdateOwnerFunc.SetDefaultHook(func(ctx context.Context, id int32, newOwner types.Namespace) (*types.SavedSearch, error) {
+	mockStore := dbmocks.NewMockSavedSearchStore()
+	mockStore.UpdateOwnerFunc.SetDefaultHook(func(ctx context.Context, id int32, newOwner types.Namespace) (*types.SavedSearch, error) {
 		return &types.SavedSearch{
 			ID:    id,
 			Owner: newOwner,
 		}, nil
 	})
-	ss.GetByIDFunc.SetDefaultReturn(&types.SavedSearch{ID: fixtureID, Owner: types.NamespaceUser(userID)}, nil)
+	mockStore.GetByIDFunc.SetDefaultReturn(&types.SavedSearch{ID: fixtureID, Owner: types.NamespaceUser(userID)}, nil)
 
 	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(om)
-	db.SavedSearchesFunc.SetDefaultReturn(ss)
+	db.SavedSearchesFunc.SetDefaultReturn(mockStore)
 
 	result, err := newTestResolver(t, db).TransferSavedSearchOwnership(ctx, &graphqlbackend.TransferSavedSearchOwnershipArgs{
 		ID:       marshalSavedSearchID(fixtureID),
@@ -403,7 +403,7 @@ func TestTransferSavedSearchOwnership(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mockrequire.Called(t, ss.UpdateOwnerFunc)
+	mockrequire.Called(t, mockStore.UpdateOwnerFunc)
 	mockrequire.Called(t, om.GetByOrgIDAndUserIDFunc)
 	want := &savedSearchResolver{db, types.SavedSearch{
 		ID:    fixtureID,
