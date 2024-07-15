@@ -11,35 +11,16 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/auth"
 	workerauthz "github.com/sourcegraph/sourcegraph/cmd/worker/internal/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/batches"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/completions"
-	repoembeddings "github.com/sourcegraph/sourcegraph/cmd/worker/internal/embeddings/repo"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/eventlogs"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/executormultiqueue"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/executors"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/githubapps"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
-	workerinsights "github.com/sourcegraph/sourcegraph/cmd/worker/internal/insights"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/licensecheck"
-	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/outboundwebhooks"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/own"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/permissions"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/sourcegraphaccounts"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetry"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetrygatewayexporter"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/users"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/zoektrepos"
 	workerjob "github.com/sourcegraph/sourcegraph/cmd/worker/job"
@@ -47,18 +28,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -76,72 +54,71 @@ type namedBackgroundRoutine struct {
 func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) *Config {
 	symbols.LoadConfig()
 
-	registerMigrators := oobmigration.ComposeRegisterMigratorsFuncs(register.RegisterOSSMigrators, registerEnterpriseMigrators)
+	// registerMigrators := oobmigration.ComposeRegisterMigratorsFuncs(register.RegisterOSSMigrators, registerEnterpriseMigrators)
 
 	builtins := map[string]workerjob.Job{
-		"webhook-log-janitor":                   webhooks.NewJanitor(),
-		"out-of-band-migrations":                workermigrations.NewMigrator(registerMigrators),
-		"gitserver-metrics":                     gitserver.NewMetricsJob(),
-		"record-encrypter":                      encryption.NewRecordEncrypterJob(),
-		"repo-statistics-compactor":             repostatistics.NewCompactor(),
-		"repo-statistics-resetter":              repostatistics.NewResetter(),
-		"zoekt-repos-updater":                   zoektrepos.NewUpdater(),
-		"outbound-webhook-sender":               outboundwebhooks.NewSender(),
-		"license-check":                         licensecheck.NewJob(),
-		"cody-gateway-usage-check":              codygateway.NewUsageJob(),
-		"rate-limit-config":                     ratelimit.NewRateLimitConfigJob(),
-		"codehost-version-syncing":              versions.NewSyncingJob(),
-		"insights-job":                          workerinsights.NewInsightsJob(),
-		"insights-query-runner-job":             workerinsights.NewInsightsQueryRunnerJob(),
-		"insights-data-retention-job":           workerinsights.NewInsightsDataRetentionJob(),
-		"batches-janitor":                       batches.NewJanitorJob(),
-		"batches-scheduler":                     batches.NewSchedulerJob(),
-		"batches-reconciler":                    batches.NewReconcilerJob(),
-		"batches-bulk-processor":                batches.NewBulkOperationProcessorJob(),
-		"batches-workspace-resolver":            batches.NewWorkspaceResolverJob(),
-		"executors-janitor":                     executors.NewJanitorJob(),
-		"executors-metricsserver":               executors.NewMetricsServerJob(),
-		"executors-multiqueue-metrics-reporter": executormultiqueue.NewMultiqueueMetricsReporterJob(),
-		"codemonitors-job":                      codemonitors.NewCodeMonitorJob(),
-		"bitbucket-project-permissions":         permissions.NewBitbucketProjectPermissionsJob(),
-		"permission-sync-job-cleaner":           permissions.NewPermissionSyncJobCleaner(),
-		"permission-sync-job-scheduler":         permissions.NewPermissionSyncJobScheduler(),
-		"export-usage-telemetry":                telemetry.NewTelemetryJob(),
-		"telemetrygateway-exporter":             telemetrygatewayexporter.NewJob(),
-		"event-logs-janitor":                    eventlogs.NewEventLogsJanitorJob(),
-		"cody-llm-token-counter":                completions.NewTokenUsageJob(),
-		"aggregated-users-statistics":           users.NewAggregatedUsersStatisticsJob(),
-		"refresh-analytics-cache":               adminanalytics.NewRefreshAnalyticsCacheJob(),
+		"webhook-log-janitor": webhooks.NewJanitor(),
+		// "out-of-band-migrations":                workermigrations.NewMigrator(registerMigrators),
+		"gitserver-metrics": gitserver.NewMetricsJob(),
+		// "record-encrypter":                      encryption.NewRecordEncrypterJob(),
+		"repo-statistics-compactor": repostatistics.NewCompactor(),
+		"repo-statistics-resetter":  repostatistics.NewResetter(),
+		"zoekt-repos-updater":       zoektrepos.NewUpdater(),
+		// "outbound-webhook-sender":               outboundwebhooks.NewSender(),
+		"license-check": licensecheck.NewJob(),
+		// "cody-gateway-usage-check":              codygateway.NewUsageJob(),
+		"rate-limit-config": ratelimit.NewRateLimitConfigJob(),
+		// "codehost-version-syncing":              versions.NewSyncingJob(),
+		// "insights-job":                          workerinsights.NewInsightsJob(),
+		// "insights-query-runner-job":             workerinsights.NewInsightsQueryRunnerJob(),
+		// "insights-data-retention-job":           workerinsights.NewInsightsDataRetentionJob(),
+		// "batches-janitor":                       batches.NewJanitorJob(),
+		// "batches-scheduler":                     batches.NewSchedulerJob(),
+		// "batches-reconciler":                    batches.NewReconcilerJob(),
+		// "batches-bulk-processor":                batches.NewBulkOperationProcessorJob(),
+		// "batches-workspace-resolver":            batches.NewWorkspaceResolverJob(),
+		// "executors-janitor":                     executors.NewJanitorJob(),
+		// "executors-metricsserver":               executors.NewMetricsServerJob(),
+		// "executors-multiqueue-metrics-reporter": executormultiqueue.NewMultiqueueMetricsReporterJob(),
+		// "codemonitors-job":                      codemonitors.NewCodeMonitorJob(),
+		// "bitbucket-project-permissions":         permissions.NewBitbucketProjectPermissionsJob(),
+		"permission-sync-job-cleaner":   permissions.NewPermissionSyncJobCleaner(),
+		"permission-sync-job-scheduler": permissions.NewPermissionSyncJobScheduler(),
+		// "export-usage-telemetry":                telemetry.NewTelemetryJob(),
+		// "telemetrygateway-exporter":             telemetrygatewayexporter.NewJob(),
+		"event-logs-janitor": eventlogs.NewEventLogsJanitorJob(),
+		// "cody-llm-token-counter":                completions.NewTokenUsageJob(),
+		// "aggregated-users-statistics":           users.NewAggregatedUsersStatisticsJob(),
+		// "refresh-analytics-cache":               adminanalytics.NewRefreshAnalyticsCacheJob(),
+		// "codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
+		// "codeintel-autoindexing-summary-builder":      codeintel.NewAutoindexingSummaryBuilder(),
+		// "codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
+		// "codeintel-autoindexing-scheduler":            codeintel.NewAutoindexingSchedulerJob(),
+		// "codeintel-commitgraph-updater":               codeintel.NewCommitGraphUpdaterJob(),
+		// "codeintel-metrics-reporter":                  codeintel.NewMetricsReporterJob(),
+		// "codeintel-upload-backfiller":                 codeintel.NewUploadBackfillerJob(),
+		// "codeintel-upload-expirer":                    codeintel.NewUploadExpirerJob(),
+		// "codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
+		// "codeintel-ranking-file-reference-counter":    codeintel.NewRankingFileReferenceCounter(),
+		// "codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
+		// "codeintel-package-filter-applicator":         codeintel.NewPackagesFilterApplicatorJob(),
 
-		"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
-		"codeintel-autoindexing-summary-builder":      codeintel.NewAutoindexingSummaryBuilder(),
-		"codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
-		"codeintel-autoindexing-scheduler":            codeintel.NewAutoindexingSchedulerJob(),
-		"codeintel-commitgraph-updater":               codeintel.NewCommitGraphUpdaterJob(),
-		"codeintel-metrics-reporter":                  codeintel.NewMetricsReporterJob(),
-		"codeintel-upload-backfiller":                 codeintel.NewUploadBackfillerJob(),
-		"codeintel-upload-expirer":                    codeintel.NewUploadExpirerJob(),
-		"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
-		"codeintel-ranking-file-reference-counter":    codeintel.NewRankingFileReferenceCounter(),
-		"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
-		"codeintel-package-filter-applicator":         codeintel.NewPackagesFilterApplicatorJob(),
-
-		"codeintel-syntactic-indexing-scheduler": syntactic_indexing.NewSyntacticindexingSchedulerJob(),
+		// "codeintel-syntactic-indexing-scheduler": syntactic_indexing.NewSyntacticindexingSchedulerJob(),
 
 		"auth-sourcegraph-operator-cleaner": auth.NewSourcegraphOperatorCleaner(),
 
-		"repo-embedding-janitor":   repoembeddings.NewRepoEmbeddingJanitorJob(),
-		"repo-embedding-job":       repoembeddings.NewRepoEmbeddingJob(),
-		"repo-embedding-scheduler": repoembeddings.NewRepoEmbeddingSchedulerJob(),
+		// "repo-embedding-janitor":   repoembeddings.NewRepoEmbeddingJanitorJob(),
+		// "repo-embedding-job":       repoembeddings.NewRepoEmbeddingJob(),
+		// "repo-embedding-scheduler": repoembeddings.NewRepoEmbeddingSchedulerJob(),
 
-		"own-repo-indexing-queue": own.NewOwnRepoIndexingQueue(),
+		// "own-repo-indexing-queue": own.NewOwnRepoIndexingQueue(),
 
 		"github-apps-installation-validation-job": githubapps.NewGitHubApsInstallationJob(),
 
-		"exhaustive-search-job": search.NewSearchJob(),
+		// "exhaustive-search-job": search.NewSearchJob(),
 
-		"repo-perms-syncer":          workerauthz.NewPermsSyncerJob(),
-		"perforce-changelist-mapper": perforce.NewPerforceChangelistMappingJob(),
+		"repo-perms-syncer": workerauthz.NewPermsSyncerJob(),
+		// "perforce-changelist-mapper": perforce.NewPerforceChangelistMappingJob(),
 
 		"sourcegraph-accounts-notifications-subscriber": sourcegraphaccounts.NewNotificationsSubscriber(),
 	}

@@ -6,7 +6,10 @@ go_library(
     srcs = ["siteid.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/siteid",
     visibility = ["//:__subpackages__"],
-    deps = ["//internal/database"],
+    deps = [
+        "//internal/database",
+        "//internal/tenant",
+    ],
 )
 
 go_test(

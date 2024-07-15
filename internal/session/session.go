@@ -11,6 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/boj/redistore"
+	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -26,11 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
-
-	"github.com/boj/redistore"
-	"github.com/gorilla/sessions"
 )
 
 const SignOutCookie = "sg-signout"
@@ -64,21 +62,74 @@ func SetSessionStore(s sessions.Store) {
 // of the session.Options.Secure and session.Options.SameSite fields to what
 // is returned by the secure closure at invocation time.
 type sessionsStore struct {
-	sessions.Store
 	secure func() bool
 }
 
 // Get returns a cached session, setting the secure cookie option dynamically.
 func (st *sessionsStore) Get(r *http.Request, name string) (s *sessions.Session, err error) {
+	rstore := st.makeStore()
+
+	t := tenant.FromContext(r.Context())
+	if t.ID() == 0 {
+		return nil, errors.New("tenant not set")
+	}
+
+	rstore.SetKeyPrefix(fmt.Sprintf("tnt_%d:session_", t.ID()))
+
 	defer st.setSecureOptions(s)
-	return st.Store.Get(r, name)
+	return rstore.Get(r, name)
 }
 
 // New creates and returns a new session with the secure cookie setting option set
 // dynamically.
 func (st *sessionsStore) New(r *http.Request, name string) (s *sessions.Session, err error) {
+	rstore := st.makeStore()
+
+	t := tenant.FromContext(r.Context())
+	if t.ID() == 0 {
+		return nil, errors.New("tenant not set")
+	}
+
+	rstore.SetKeyPrefix(fmt.Sprintf("tnt_%d:session_", t.ID()))
+
 	defer st.setSecureOptions(s)
-	return st.Store.New(r, name)
+	return rstore.New(r, name)
+}
+
+func (st *sessionsStore) Save(r *http.Request, w http.ResponseWriter, s *sessions.Session) error {
+	rstore := st.makeStore()
+
+	t := tenant.FromContext(r.Context())
+	if t.ID() == 0 {
+		return errors.New("tenant not set")
+	}
+
+	rstore.SetKeyPrefix(fmt.Sprintf("tnt_%d:session_", t.ID()))
+
+	return rstore.Save(r, w, s)
+}
+
+func (st *sessionsStore) makeStore() *redistore.RediStore {
+	pool := redispool.Store.Pool()
+	rstore := &redistore.RediStore{
+		// http://godoc.org/github.com/gomodule/redigo/redis#Pool
+		Pool:   pool,
+		Codecs: securecookie.CodecsFromPairs([]byte(sessionCookieKey)),
+		Options: &sessions.Options{
+			Path:   "/",
+			MaxAge: int(defaultExpiryPeriod / time.Second),
+		},
+		DefaultMaxAge: 60 * 20, // 20 minutes seems like a reasonable default
+	}
+	rstore.SetMaxLength(4096)
+	rstore.SetSerializer(redistore.GobSerializer{})
+
+	rstore.Options.Path = "/"
+	rstore.Options.HttpOnly = true
+
+	setSessionSecureOptions(rstore.Options, st.secure())
+
+	return rstore
 }
 
 func (st *sessionsStore) setSecureOptions(s *sessions.Session) {
@@ -92,25 +143,9 @@ func (st *sessionsStore) setSecureOptions(s *sessions.Session) {
 }
 
 // NewRedisStore creates a new session store backed by Redis.
+// TODO: This used to wait for redis to be available.
 func NewRedisStore(secureCookie func() bool) sessions.Store {
-	var store sessions.Store
-	var options *sessions.Options
-
-	pool := redispool.Store.Pool()
-	rstore, err := redistore.NewRediStoreWithPool(pool, []byte(sessionCookieKey))
-	if err != nil {
-		waitForRedis(rstore)
-	}
-	rstore.SetKeyPrefix(fmt.Sprintf("tnt_%d:session_", tenant.ID))
-	store = rstore
-	options = rstore.Options
-
-	options.Path = "/"
-	options.HttpOnly = true
-
-	setSessionSecureOptions(options, secureCookie())
 	return &sessionsStore{
-		Store:  store,
 		secure: secureCookie,
 	}
 }
@@ -133,55 +168,6 @@ func setSessionSecureOptions(opts *sessions.Options, secure bool) {
 	}
 
 	opts.Secure = secure
-}
-
-// Ping attempts to contact Redis and returns a non-nil error upon failure. It is intended to be
-// used by health checks.
-func Ping() error {
-	if sessionStore == nil {
-		return errors.New("redis session store is not available")
-	}
-	rstore, ok := sessionStore.(*redistore.RediStore)
-	if !ok {
-		// Only try to ping Redis session stores. If we add other types of session stores, add ways
-		// to ping them here.
-		return nil
-	}
-	return ping(rstore)
-}
-
-func ping(s *redistore.RediStore) error {
-	conn := s.Pool.Get()
-	defer conn.Close()
-	data, err := conn.Do("PING")
-	if err != nil {
-		return err
-	}
-	if data != "PONG" {
-		return errors.New("no pong received")
-	}
-	return nil
-}
-
-// waitForRedis waits up to a certain timeout for Redis to become reachable, to reduce the
-// likelihood of the HTTP handlers starting to serve requests while Redis (and therefore session
-// data) is still unavailable. After the timeout has elapsed, if Redis is still unreachable, it
-// continues anyway (because that's probably better than the site not coming up at all).
-func waitForRedis(s *redistore.RediStore) {
-	const timeout = 5 * time.Second
-	deadline := time.Now().Add(timeout)
-	var err error
-	for {
-		time.Sleep(150 * time.Millisecond)
-		err = ping(s)
-		if err == nil {
-			return
-		}
-		if time.Now().After(deadline) {
-			log15.Warn("Redis (used for session store) failed to become reachable. Will continue trying to establish connection in background.", "timeout", timeout, "error", err)
-			return
-		}
-	}
 }
 
 // SetData sets the session data at the key. The session data is a map of keys to values. If no

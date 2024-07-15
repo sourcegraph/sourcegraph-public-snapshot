@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -67,13 +68,24 @@ func (s *searchIndexerGRPCServer) SearchConfiguration(ctx context.Context, reque
 		repoIDs:     repoIDs,
 	}
 
-	r, err := s.server.doSearchConfiguration(ctx, parameters)
-	if err != nil {
-		var parameterErr *parameterError
-		if errors.As(err, &parameterErr) {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
+	// TODO: Zoekt should know about tenants and ask for the tenant its interested
+	// in itself.
+	var r *searchConfigurationResponse = &searchConfigurationResponse{}
+	err := tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+		tntR, err := s.server.doSearchConfiguration(ctx, parameters)
+		if err != nil {
+			var parameterErr *parameterError
+			if errors.As(err, &parameterErr) {
+				return status.Error(codes.InvalidArgument, err.Error())
+			}
 
+			return err
+		}
+		r.fingerprint = tntR.fingerprint
+		r.options = append(r.options, tntR.options...)
+		return nil
+	})
+	if err != nil {
 		return nil, err
 	}
 
@@ -98,7 +110,16 @@ func (s *searchIndexerGRPCServer) List(ctx context.Context, r *proto.ListRequest
 	parameters.IndexedIDs = indexedIDs
 	parameters.Hostname = r.GetHostname()
 
-	repoIDs, err := s.server.doList(ctx, &parameters)
+	// TODO: Zoekt should know about tenancy and ask for the right tenant itself.
+	var repoIDs []api.RepoID
+	err := tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+		ids, err := s.server.doList(ctx, &parameters)
+		if err != nil {
+			return err
+		}
+		repoIDs = append(repoIDs, ids...)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}

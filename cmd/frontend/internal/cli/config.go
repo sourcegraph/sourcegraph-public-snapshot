@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -168,40 +169,41 @@ func overrideGlobalSettings(ctx context.Context, logger log.Logger, db database.
 		return nil
 	}
 	settings := db.Settings()
-	update := func(ctx context.Context) (bool, error) {
+	update := func(ctx context.Context) error {
 		globalSettingsBytes, err := os.ReadFile(path)
 		if err != nil {
-			return false, errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
+			return errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
 		}
-		currentSettings, err := settings.GetLatest(ctx, api.SettingsSubject{Site: true})
-		if err != nil {
-			return false, errors.Wrap(err, "could not fetch current settings")
-		}
-		// Only overwrite the settings if the current settings differ, don't exist, or were
-		// created by a human user to prevent creating unnecessary rows in the DB.
-		globalSettings := string(globalSettingsBytes)
-		if currentSettings == nil || currentSettings.AuthorUserID != nil || currentSettings.Contents != globalSettings {
-			var lastID *int32 = nil
-			if currentSettings != nil {
-				lastID = &currentSettings.ID
-			}
-			_, err = settings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
+		return tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+			currentSettings, err := settings.GetLatest(ctx, api.SettingsSubject{Site: true})
 			if err != nil {
-				return false, errors.Wrap(err, "writing global setting override to database")
+				return errors.Wrap(err, "could not fetch current settings")
 			}
-			return true, nil
-		}
-		return false, nil
+			// Only overwrite the settings if the current settings differ, don't exist, or were
+			// created by a human user to prevent creating unnecessary rows in the DB.
+			globalSettings := string(globalSettingsBytes)
+			if currentSettings == nil || currentSettings.AuthorUserID != nil || currentSettings.Contents != globalSettings {
+				var lastID *int32 = nil
+				if currentSettings != nil {
+					lastID = &currentSettings.ID
+				}
+				_, err = settings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
+				if err != nil {
+					return errors.Wrap(err, "writing global setting override to database")
+				}
+				return nil
+			}
+			return nil
+		})
 	}
-	updated, err := update(ctx)
+	err := update(ctx)
 	if err != nil {
 		return err
 	}
-	if !updated {
-		logger.Info("Global settings is already up to date, skipping writing a new entry")
-	}
 
-	go watchUpdate(ctx, logger, update, path)
+	go watchUpdate(ctx, logger, func(ctx context.Context) (bool, error) {
+		return true, update(ctx)
+	}, path)
 
 	return nil
 }
@@ -453,7 +455,7 @@ type configurationSource struct {
 }
 
 func (c *configurationSource) Read(ctx context.Context) (conftypes.RawUnified, error) {
-	site, err := c.db.Conf().SiteGetLatest(ctx)
+	site, err := c.db.Conf().SiteGetLatest(tenant.InsecureGlobalContext(ctx))
 	if err != nil {
 		return conftypes.RawUnified{}, errors.Wrap(err, "ConfStore.SiteGetLatest")
 	}
@@ -470,14 +472,14 @@ func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnif
 }
 
 func (c *configurationSource) WriteWithOverride(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID int32, isOverride bool) error {
-	site, err := c.db.Conf().SiteGetLatest(ctx)
+	site, err := c.db.Conf().SiteGetLatest(tenant.InsecureGlobalContext(ctx))
 	if err != nil {
 		return errors.Wrap(err, "ConfStore.SiteGetLatest")
 	}
 	if site.ID != lastID {
 		return errors.New("site config has been modified by another request, write not allowed")
 	}
-	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, authorUserID, input.Site, isOverride)
+	_, err = c.db.Conf().SiteCreateIfUpToDate(tenant.InsecureGlobalContext(ctx), &site.ID, authorUserID, input.Site, isOverride)
 	if err != nil {
 		log.Error(errors.Wrap(err, "SiteConfig creation failed"))
 		return errors.Wrap(err, "ConfStore.SiteCreateIfUpToDate")

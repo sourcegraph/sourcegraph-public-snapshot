@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 type updater struct{}
@@ -62,12 +63,14 @@ var (
 )
 
 func (h *handler) Handle(ctx context.Context) error {
-	indexed, err := search.ListAllIndexed(ctx, search.Indexed())
-	if err != nil {
-		return err
-	}
+	return tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+		indexed, err := search.ListAllIndexed(ctx, search.Indexed())
+		if err != nil {
+			return err
+		}
 
-	return h.db.ZoektRepos().UpdateIndexStatuses(ctx, indexed.ReposMap)
+		return h.db.ZoektRepos().UpdateIndexStatuses(ctx, indexed.ReposMap)
+	})
 }
 
 func (h *handler) HandleError(err error) {

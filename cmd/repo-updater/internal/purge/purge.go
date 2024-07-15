@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -44,33 +45,35 @@ func NewRepositoryPurgeWorker(ctx context.Context, logger log.Logger, db databas
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			purgeConfig := conf.SiteConfig().RepoPurgeWorker
-			if purgeConfig == nil {
-				purgeConfig = &schema.RepoPurgeWorker{
-					// Defaults - align with documentation
-					IntervalMinutes:   15,
-					DeletedTTLMinutes: 60,
+			return tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+				purgeConfig := conf.SiteConfig().RepoPurgeWorker
+				if purgeConfig == nil {
+					purgeConfig = &schema.RepoPurgeWorker{
+						// Defaults - align with documentation
+						IntervalMinutes:   15,
+						DeletedTTLMinutes: 60,
+					}
 				}
-			}
-			if purgeConfig.IntervalMinutes <= 0 {
-				logger.Debug("purge worker disabled via site config", log.Int("repoPurgeWorker.interval", purgeConfig.IntervalMinutes))
+				if purgeConfig.IntervalMinutes <= 0 {
+					logger.Debug("purge worker disabled via site config", log.Int("repoPurgeWorker.interval", purgeConfig.IntervalMinutes))
+					return nil
+				}
+
+				deletedBefore := time.Now().Add(-time.Duration(purgeConfig.DeletedTTLMinutes) * time.Minute)
+				purgeLogger := logger.With(log.Time("deletedBefore", deletedBefore))
+
+				timeToNextPurge = time.Duration(purgeConfig.IntervalMinutes) * time.Minute
+				purgeLogger.Debug("running repository purge", log.Duration("timeToNextPurge", timeToNextPurge))
+				if err := purge(ctx, purgeLogger, db, database.ListPurgableReposOptions{
+					Limit:         5000,
+					Limiter:       limiter,
+					DeletedBefore: deletedBefore,
+				}); err != nil {
+					return errors.Wrap(err, "failed to run repository clone purge")
+				}
+
 				return nil
-			}
-
-			deletedBefore := time.Now().Add(-time.Duration(purgeConfig.DeletedTTLMinutes) * time.Minute)
-			purgeLogger := logger.With(log.Time("deletedBefore", deletedBefore))
-
-			timeToNextPurge = time.Duration(purgeConfig.IntervalMinutes) * time.Minute
-			purgeLogger.Debug("running repository purge", log.Duration("timeToNextPurge", timeToNextPurge))
-			if err := purge(ctx, purgeLogger, db, database.ListPurgableReposOptions{
-				Limit:         5000,
-				Limiter:       limiter,
-				DeletedBefore: deletedBefore,
-			}); err != nil {
-				return errors.Wrap(err, "failed to run repository clone purge")
-			}
-
-			return nil
+			})
 		}),
 		goroutine.WithName("repo-updater.repo-purge-worker"),
 		goroutine.WithDescription("deletes repos which are present on gitserver but not in the repos table"),

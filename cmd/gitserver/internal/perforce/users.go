@@ -29,12 +29,12 @@ func P4Users(ctx context.Context, fs gitserverfs.FS, args P4UsersArguments) ([]p
 
 	options = append(options, WithArguments("-Mj", "-ztag", "users"))
 
-	p4home, err := fs.P4HomeDir()
+	p4home, err := fs.P4HomeDir(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create p4home dir")
 	}
 
-	scratchDir, err := fs.TempDir("p4-users-")
+	scratchDir, err := fs.TempDir(ctx, "p4-users-")
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 users'")
 	}

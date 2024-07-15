@@ -16,6 +16,7 @@ go_library(
         "//internal/rbac",
         "//internal/rbac/types",
         "//internal/redispool",
+        "//internal/tenant",
         "//internal/types",
         "//lib/errors",
         "@com_github_gomodule_redigo//redis",

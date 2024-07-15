@@ -51,6 +51,7 @@ go_library(
         "//internal/repoupdater",
         "//internal/search/result",
         "//internal/search/symbol",
+        "//internal/tenant",
         "//internal/trace",
         "//internal/types",
         "//internal/version",

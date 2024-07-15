@@ -1,8 +1,31 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "tenant",
-    srcs = ["tenant.go"],
+    srcs = [
+        "create.go",
+        "grpc.go",
+        "http.go",
+        "tenant.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/tenant",
     visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//metadata",
+    ],
+)
+
+go_test(
+    name = "tenant_test",
+    srcs = [
+        "grpc_test.go",
+        "http_test.go",
+    ],
+    embed = [":tenant"],
 )

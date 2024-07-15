@@ -25,7 +25,6 @@ go_library(
         "@com_github_boj_redistore//:redistore",
         "@com_github_gorilla_securecookie//:securecookie",
         "@com_github_gorilla_sessions//:sessions",
-        "@com_github_inconshreveable_log15//:log15",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
     ],

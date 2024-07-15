@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"container/heap"
+	"context"
 	"sync"
 	"time"
 
@@ -54,7 +55,7 @@ func (s *schedule) upsert(repo configuredRepo) (updated bool) {
 	return false
 }
 
-func (s *schedule) prioritiseUncloned(uncloned []types.MinimalRepo) {
+func (s *schedule) prioritiseUncloned(ctx context.Context, uncloned []types.MinimalRepo) {
 	// All non-cloned repos will be due for cloning as if they are newly added
 	// repos.
 	notClonedDue := timeNow().Add(minDelay)
@@ -69,7 +70,7 @@ func (s *schedule) prioritiseUncloned(uncloned []types.MinimalRepo) {
 	for _, repo := range uncloned {
 		if repoUpdate := s.index[repo.ID]; repoUpdate == nil {
 			heap.Push(s, &scheduledRepoUpdate{
-				Repo:     configuredRepo{ID: repo.ID, Name: repo.Name},
+				Repo:     configuredRepo{ID: repo.ID, Name: repo.Name, Ctx: ctx},
 				Interval: minDelay,
 				Due:      notClonedDue,
 			})
@@ -82,39 +83,6 @@ func (s *schedule) prioritiseUncloned(uncloned []types.MinimalRepo) {
 	}
 
 	// We updated the queue, inform the scheduler loop.
-	if rescheduleTimer {
-		s.rescheduleTimer()
-	}
-}
-
-// insertNew will insert repos only if they are not known to the scheduler
-func (s *schedule) insertNew(repos []types.MinimalRepo) {
-	configuredRepos := make([]configuredRepo, len(repos))
-	for i := range repos {
-		configuredRepos[i] = configuredRepo{
-			ID:   repos[i].ID,
-			Name: repos[i].Name,
-		}
-	}
-
-	due := timeNow().Add(minDelay)
-	rescheduleTimer := false
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for _, repo := range configuredRepos {
-		if update := s.index[repo.ID]; update != nil {
-			continue
-		}
-		heap.Push(s, &scheduledRepoUpdate{
-			Repo:     repo,
-			Interval: minDelay,
-			Due:      due,
-		})
-		rescheduleTimer = true
-	}
-
 	if rescheduleTimer {
 		s.rescheduleTimer()
 	}

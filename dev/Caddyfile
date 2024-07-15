@@ -14,6 +14,13 @@
 	}
 }
 
+erik.sourcegraph.test:{$SOURCEGRAPH_HTTPS_PORT} {
+	tls internal
+	reverse_proxy 127.0.0.1:3080 {
+		lb_try_duration 60s
+	}
+}
+
 # Caddy (:3081) -> sourcegraph-frontend (:3082)
 :3081 {
 	reverse_proxy 127.0.0.1:3082

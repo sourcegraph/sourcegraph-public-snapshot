@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 )
 
@@ -45,7 +46,7 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 	codeintelStore := migrationstore.NewWithDB(obsvCtx, codeintelDB, schemas.CodeIntel.MigrationsTableName)
 	codeinsightsStore := migrationstore.NewWithDB(obsvCtx, codeinsightsDB, schemas.CodeInsights.MigrationsTableName)
 
-	ctx := context.Background()
+	ctx := tenant.InsecureGlobalContext(context.Background())
 	oobmigrationStore := oobmigration.NewStoreWithDB(db)
 	if err := oobmigrationStore.SynchronizeMetadata(ctx); err != nil {
 		return nil, err

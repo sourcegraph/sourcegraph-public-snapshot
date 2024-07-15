@@ -165,13 +165,16 @@ func (r *globalRateLimiter) waitn(ctx context.Context, n int, requestTime time.T
 		maxWaitTime = int32(maxTimeToWait.Seconds())
 	}
 
-	tenantPrefix := fmt.Sprintf("tnt_%d:", tenant.ID)
+	p, err := tenantPrefix(ctx)
+	if err != nil {
+		return 0, err
+	}
 
 	result, err := invokeScriptWithRetries(
 		ctx,
 		getTokensScript,
 		connection,
-		tenantPrefix+keys.BucketKey, tenantPrefix+keys.LastReplenishmentTimestampKey, tenantPrefix+keys.RateKey, tenantPrefix+keys.ReplenishmentIntervalSecondsKey, tenantPrefix+keys.BurstKey,
+		p+keys.BucketKey, p+keys.LastReplenishmentTimestampKey, p+keys.RateKey, p+keys.ReplenishmentIntervalSecondsKey, p+keys.BurstKey,
 		requestTime.Unix(),
 		maxWaitTime,
 		int32(fallbackRateLimit),
@@ -270,9 +273,12 @@ func (r *globalRateLimiter) SetTokenBucketConfig(ctx context.Context, bucketQuot
 	connection := r.pool.Get()
 	defer connection.Close()
 
-	tenantPrefix := fmt.Sprintf("tnt_%d:", tenant.ID)
+	p, err := tenantPrefix(ctx)
+	if err != nil {
+		return err
+	}
 
-	_, err := setReplenishmentScript.DoContext(ctx, connection, tenantPrefix+keys.RateKey, tenantPrefix+keys.ReplenishmentIntervalSecondsKey, tenantPrefix+keys.BurstKey, bucketQuota, bucketReplenishInterval.Seconds(), defaultBurst)
+	_, err = setReplenishmentScript.DoContext(ctx, connection, p+keys.RateKey, p+keys.ReplenishmentIntervalSecondsKey, p+keys.BurstKey, bucketQuota, bucketReplenishInterval.Seconds(), defaultBurst)
 	return errors.Wrapf(err, "error while setting token bucket replenishment for bucket %s", r.bucketName)
 }
 
@@ -385,7 +391,11 @@ type GlobalLimiterInfo struct {
 // GetGlobalLimiterState reports how all the existing rate limiters are configured,
 // keyed by bucket name.
 func GetGlobalLimiterState(ctx context.Context) (map[string]GlobalLimiterInfo, error) {
-	return GetGlobalLimiterStateFromPool(ctx, kv().Pool(), fmt.Sprintf("tnt_%d:%s", tenant.ID, tokenBucketGlobalPrefix))
+	p, err := tenantPrefix(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return GetGlobalLimiterStateFromPool(ctx, kv().Pool(), fmt.Sprintf("%s:%s", p, tokenBucketGlobalPrefix))
 }
 
 func GetGlobalLimiterStateFromPool(ctx context.Context, pool *redis.Pool, prefix string) (map[string]GlobalLimiterInfo, error) {
@@ -546,7 +556,7 @@ func SetupForTest(t TB) {
 		}
 	}
 
-	err := redispool.DeleteAllKeysWithPrefix(c, tokenBucketGlobalPrefix)
+	err := redispool.DeleteAllKeysWithPrefix(context.Background(), c, tokenBucketGlobalPrefix)
 	if err != nil {
 		t.Fatalf("cold not clear test prefix: &v", err)
 	}
@@ -577,3 +587,11 @@ var (
 		Help: "Incremented each time requesting a token from a rate limiter fails after retries.",
 	}, []string{"bucket"})
 )
+
+func tenantPrefix(ctx context.Context) (string, error) {
+	t := tenant.FromContext(ctx)
+	if t.ID() == 0 {
+		return "", errors.New("no tenant in context")
+	}
+	return fmt.Sprintf("tnt_%d:", t.ID()), nil
+}

@@ -1,56 +1,48 @@
 package tenant
 
-// // TenantPropagator implements the (internal/grpc).Propagator interface
-// // for propagating tenants across RPC calls. This is modeled directly on
-// // the HTTP middleware in this package, and should work exactly the same.
-// type TenantPropagator struct{}
+import (
+	"context"
+	"strconv"
 
-// func (TenantPropagator) FromContext(ctx context.Context) metadata.MD {
-// 	actor := FromContext(ctx)
-// 	md := make(metadata.MD)
+	"google.golang.org/grpc/metadata"
+)
 
-// 	// We always propagate AnonymousUID if present.
-// 	if actor.AnonymousUID != "" {
-// 		md.Append(headerKeyActorAnonymousUID, actor.AnonymousUID)
-// 	}
+// TenantPropagator implements the (internal/grpc).Propagator interface
+// for propagating tenants across RPC calls. This is modeled directly on
+// the HTTP middleware in this package, and should work exactly the same.
+type TenantPropagator struct{}
 
-// 	switch {
-// 	case actor.IsInternal():
-// 		md.Append(headerKeyActorUID, headerValueInternalActor)
-// 	case actor.IsAuthenticated():
-// 		md.Append(headerKeyActorUID, actor.UIDString())
-// 	default:
-// 		md.Append(headerKeyActorUID, headerValueNoActor)
-// 	}
+func (TenantPropagator) FromContext(ctx context.Context) metadata.MD {
+	tenant := FromContext(ctx)
+	md := make(metadata.MD)
 
-// 	return md
-// }
+	switch {
+	case tenant.ID() == 0:
+		md.Append(headerKeyTenantID, headerValueNoTenant)
+	default:
+		md.Append(headerKeyTenantID, strconv.Itoa(tenant.ID()))
+	}
 
-// func (TenantPropagator) InjectContext(ctx context.Context, md metadata.MD) context.Context {
-// 	var idStr string
-// 	if vals := md.Get(headerKeyTenantID); len(vals) > 0 {
-// 		idStr = vals[0]
-// 	}
+	return md
+}
 
-// 	tnt := &Tenant{}
-// 	switch idStr {
-// 	case headerValueInternalActor:
-// 		act = Internal()
-// 	default:
-// 		uid, err := strconv.Atoi(idStr)
-// 		if err != nil {
-// 			// If the actor is invalid, ignore the error
-// 			// and do not set an actor on the context.
-// 			break
-// 		}
-// 		act = FromUser(int32(uid))
-// 	}
+func (TenantPropagator) InjectContext(ctx context.Context, md metadata.MD) context.Context {
+	var idStr string
+	if vals := md.Get(headerKeyTenantID); len(vals) > 0 {
+		idStr = vals[0]
+	}
 
-// 	// Always preserve the AnonymousUID if present
-// 	if vals := md.Get(headerKeyActorAnonymousUID); len(vals) > 0 {
-// 		act.AnonymousUID = vals[0]
-// 	}
-
-// 	// FromContext always returns a non-nil Actor, so it's okay to always add it
-// 	return WithActor(ctx, act)
-// }
+	switch idStr {
+	case headerValueNoTenant:
+		// Nothing to do, empty tenant.
+		return ctx
+	default:
+		uid, err := strconv.Atoi(idStr)
+		if err != nil {
+			// If the actor is invalid, ignore the error
+			// and do not set an actor on the context.
+			return ctx
+		}
+		return withTenant(ctx, uid)
+	}
+}

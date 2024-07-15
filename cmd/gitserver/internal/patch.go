@@ -47,7 +47,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	)
 
 	repo := req.Repo
-	repoGitDir := s.fs.RepoDir(repo)
+	repoGitDir := s.fs.RepoDir(ctx, repo)
 
 	var (
 		remoteURL *vcs.URL
@@ -85,7 +85,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}()
 
 	// Ensure tmp directory exists
-	tmpRepoDir, err := s.fs.TempDir("patch-repo-")
+	tmpRepoDir, err := s.fs.TempDir(ctx, "patch-repo-")
 	if err != nil {
 		resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: make tmp repo"))
 		return resp
@@ -316,7 +316,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchCommit string, remoteURL *vcs.URL, tmpGitPathEnv, altObjectsEnv string) (string, error) {
 	baseCommit := string(req.BaseCommit)
 
-	p4home, err := s.fs.P4HomeDir()
+	p4home, err := s.fs.P4HomeDir(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -347,7 +347,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	p4client := strings.TrimPrefix(req.TargetRef, "refs/heads/")
 
 	// do all work in (another) temporary directory
-	tmpClientDir, err := s.fs.TempDir("perforce-client-")
+	tmpClientDir, err := s.fs.TempDir(ctx, "perforce-client-")
 	if err != nil {
 		return "", errors.Wrap(err, "gitserver: make tmp repo for Perforce client")
 	}

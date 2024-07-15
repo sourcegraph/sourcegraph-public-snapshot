@@ -222,20 +222,38 @@ func (n *extendedConn) CheckNamedValue(namedValue *driver.NamedValue) error {
 
 func (n *extendedConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
 	if !strings.HasPrefix(query, "ROLLBACK") {
-		_, err := n.execerContext.ExecContext(ctx, fmt.Sprintf("SET app.current_tenant = '%d'", tenant.ID), nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to set tenant")
+		t := tenant.FromContext(ctx)
+		if t.ID() != 0 {
+			_, err := n.execerContext.ExecContext(ctx, fmt.Sprintf("SET app.current_tenant = '%d'", t.ID()), nil)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to set tenant")
+			}
+		} else {
+			err := errors.WithStack(errors.New("tenant is not set"))
+			// sglog.Scoped("database").Error("tenant is not set", sglog.Error(err), sglog.String("stack", string(debug.Stack())))
+			return nil, err
 		}
 	}
+
 	ctx, query = instrumentQuery(ctx, query, len(args))
 	return n.execerContext.ExecContext(ctx, query, args)
 }
 
 func (n *extendedConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
-	_, err := n.queryerContext.QueryContext(ctx, fmt.Sprintf("SET app.current_tenant = '%d'", tenant.ID), nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to set tenant")
+	if !strings.HasPrefix(query, "ROLLBACK") {
+		t := tenant.FromContext(ctx)
+		if t.ID() != 0 {
+			_, err := n.queryerContext.QueryContext(ctx, fmt.Sprintf("SET app.current_tenant = '%d'", t.ID()), nil)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to set tenant")
+			}
+		} else {
+			err := errors.WithStack(errors.New("tenant is not set"))
+			// sglog.Scoped("database").Error("tenant is not set", sglog.Error(err), sglog.String("stack", string(debug.Stack())))
+			return nil, err
+		}
 	}
+
 	ctx, query = instrumentQuery(ctx, query, len(args))
 	return n.queryerContext.QueryContext(ctx, query, args)
 }

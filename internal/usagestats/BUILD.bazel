@@ -51,6 +51,7 @@ go_library(
         "//internal/redispool",
         "//internal/search",
         "//internal/siteid",
+        "//internal/tenant",
         "//internal/timeutil",
         "//internal/types",
         "//internal/version",

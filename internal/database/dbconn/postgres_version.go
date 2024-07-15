@@ -1,10 +1,12 @@
 package dbconn
 
 import (
+	"context"
 	"database/sql"
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -12,7 +14,7 @@ var versionPattern = lazyregexp.New(`^PostgreSQL (\d+)\.`)
 
 func ensureMinimumPostgresVersion(db *sql.DB) error {
 	var version string
-	if err := db.QueryRow("SELECT version();").Scan(&version); err != nil {
+	if err := db.QueryRowContext(tenant.InsecureGlobalContext(context.Background()), "SELECT version();").Scan(&version); err != nil {
 		return errors.Wrap(err, "failed version check")
 	}
 

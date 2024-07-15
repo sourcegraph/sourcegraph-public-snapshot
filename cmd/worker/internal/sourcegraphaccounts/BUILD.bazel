@@ -16,7 +16,6 @@ go_library(
         "//cmd/worker/shared/init/db",
         "//internal/conf",
         "//internal/database",
-        "//internal/dotcom",
         "//internal/env",
         "//internal/extsvc",
         "//internal/goroutine",

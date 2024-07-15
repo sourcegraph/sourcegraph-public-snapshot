@@ -63,6 +63,7 @@ go_library(
         "//internal/perforce",
         "//internal/ratelimit",
         "//internal/security",
+        "//internal/tenant",
         "//internal/trace",
         "//internal/types",
         "//internal/unpack",

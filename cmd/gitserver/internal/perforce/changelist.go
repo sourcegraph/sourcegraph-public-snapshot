@@ -44,12 +44,12 @@ func GetChangelistByID(ctx context.Context, fs gitserverfs.FS, args GetChangeLis
 		"-e", args.ChangelistID, // start from this changelist and go up
 	))
 
-	p4home, err := fs.P4HomeDir()
+	p4home, err := fs.P4HomeDir(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create p4home dir")
 	}
 
-	scratchDir, err := fs.TempDir("p4-changelist-")
+	scratchDir, err := fs.TempDir(ctx, "p4-changelist-")
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 changes'")
 	}
@@ -115,7 +115,7 @@ func GetChangelistByClient(ctx context.Context, fs gitserverfs.FS, args GetChang
 		"-c", args.Client,
 	))
 
-	p4home, err := fs.P4HomeDir()
+	p4home, err := fs.P4HomeDir(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create p4home dir")
 	}

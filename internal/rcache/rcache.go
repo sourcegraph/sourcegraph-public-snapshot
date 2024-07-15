@@ -1,6 +1,7 @@
 package rcache
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -272,7 +273,7 @@ func SetupForTest(t testing.TB) redispool.KeyValue {
 		}
 	}
 
-	err := redispool.DeleteAllKeysWithPrefix(c, globalPrefix)
+	err := redispool.DeleteAllKeysWithPrefix(context.Background(), c, globalPrefix)
 	if err != nil {
 		log15.Error("Could not clear test prefix", "name", t.Name(), "globalPrefix", globalPrefix, "error", err)
 	}

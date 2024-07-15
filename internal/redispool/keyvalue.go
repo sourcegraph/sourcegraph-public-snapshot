@@ -2,12 +2,9 @@ package redispool
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-
-	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 // KeyValue is a key value store modeled after the most common usage we have
@@ -21,34 +18,31 @@ import (
 // corresponding redis documentation at https://redis.io/commands/COMMANDNAME/
 // eg https://redis.io/commands/GetSet/
 type KeyValue interface {
-	Get(key string) Value
-	GetSet(key string, value any) Value
-	Set(key string, value any) error
-	SetEx(key string, ttlSeconds int, value any) error
-	SetNx(key string, value any) (bool, error)
-	Incr(key string) (int, error)
-	Incrby(key string, value int) (int, error)
-	IncrByInt64(key string, value int64) (int64, error)
-	DecrByInt64(key string, value int64) (int64, error)
-	Del(key string) error
+	Get( /*ctx context.Context,*/ key string) Value
+	GetSet( /*ctx context.Context,*/ key string, value any) Value
+	Set( /*ctx context.Context,*/ key string, value any) error
+	SetEx( /*ctx context.Context,*/ key string, ttlSeconds int, value any) error
+	SetNx( /*ctx context.Context,*/ key string, value any) (bool, error)
+	Incr( /*ctx context.Context,*/ key string) (int, error)
+	Incrby( /*ctx context.Context,*/ key string, value int) (int, error)
+	IncrByInt64( /*ctx context.Context,*/ key string, value int64) (int64, error)
+	DecrByInt64( /*ctx context.Context,*/ key string, value int64) (int64, error)
+	Del( /*ctx context.Context,*/ key string) error
 
-	TTL(key string) (int, error)
-	Expire(key string, ttlSeconds int) error
+	TTL( /*ctx context.Context,*/ key string) (int, error)
+	Expire( /*ctx context.Context,*/ key string, ttlSeconds int) error
 
-	HGet(key, field string) Value
-	HGetAll(key string) Values
-	HSet(key, field string, value any) error
-	HDel(key, field string) Value
+	HGet( /*ctx context.Context,*/ key, field string) Value
+	HGetAll( /*ctx context.Context,*/ key string) Values
+	HSet( /*ctx context.Context,*/ key, field string, value any) error
+	HDel( /*ctx context.Context,*/ key, field string) Value
 
-	LPush(key string, value any) error
-	LTrim(key string, start, stop int) error
-	LLen(key string) (int, error)
-	LRange(key string, start, stop int) Values
+	LPush( /*ctx context.Context,*/ key string, value any) error
+	LTrim( /*ctx context.Context,*/ key string, start, stop int) error
+	LLen( /*ctx context.Context,*/ key string) (int, error)
+	LRange( /*ctx context.Context,*/ key string, start, stop int) Values
 
-	Keys(prefix string) ([]string, error)
-	// WithContext will return a KeyValue that should respect ctx for all
-	// blocking operations.
-	WithContext(ctx context.Context) KeyValue
+	Keys( /*ctx context.Context,*/ prefix string) ([]string, error)
 	WithLatencyRecorder(r LatencyRecorder) KeyValue
 
 	// Pool returns the underlying redis pool.
@@ -124,7 +118,6 @@ type LatencyRecorder func(call string, latency time.Duration, err error)
 
 type redisKeyValue struct {
 	pool     *redis.Pool
-	ctx      context.Context
 	prefix   string
 	recorder *LatencyRecorder
 }
@@ -154,27 +147,27 @@ func NewKeyValue(addr string, poolOpts *redis.Pool) KeyValue {
 //	  WithPrefix(prefix string) KeyValue
 //	}
 func RedisKeyValue(pool *redis.Pool) KeyValue {
-	return &redisKeyValue{pool: pool, prefix: fmt.Sprintf("tnt_%d:", tenant.ID)}
+	return &redisKeyValue{pool: pool}
 }
 
-func (r redisKeyValue) Get(key string) Value {
-	return r.do("GET", r.prefix+key)
+func (r *redisKeyValue) Get(key string) Value {
+	return r.do(context.Background(), "GET", r.prefix+key)
 }
 
 func (r *redisKeyValue) GetSet(key string, val any) Value {
-	return r.do("GETSET", r.prefix+key, val)
+	return r.do(context.Background(), "GETSET", r.prefix+key, val)
 }
 
 func (r *redisKeyValue) Set(key string, val any) error {
-	return r.do("SET", r.prefix+key, val).err
+	return r.do(context.Background(), "SET", r.prefix+key, val).err
 }
 
 func (r *redisKeyValue) SetEx(key string, ttlSeconds int, val any) error {
-	return r.do("SETEX", r.prefix+key, ttlSeconds, val).err
+	return r.do(context.Background(), "SETEX", r.prefix+key, ttlSeconds, val).err
 }
 
 func (r *redisKeyValue) SetNx(key string, val any) (bool, error) {
-	_, err := r.do("SET", r.prefix+key, val, "NX").String()
+	_, err := r.do(context.Background(), "SET", r.prefix+key, val, "NX").String()
 	if err == redis.ErrNil {
 		return false, nil
 	}
@@ -182,75 +175,66 @@ func (r *redisKeyValue) SetNx(key string, val any) (bool, error) {
 }
 
 func (r *redisKeyValue) Incr(key string) (int, error) {
-	return r.do("INCR", r.prefix+key).Int()
+	return r.do(context.Background(), "INCR", r.prefix+key).Int()
 }
 
 func (r *redisKeyValue) Incrby(key string, value int) (int, error) {
-	return r.do("INCRBY", r.prefix+key, value).Int()
+	return r.do(context.Background(), "INCRBY", r.prefix+key, value).Int()
 }
 
 func (r *redisKeyValue) IncrByInt64(key string, value int64) (int64, error) {
-	return r.do("INCRBY", r.prefix+key, value).Int64()
+	return r.do(context.Background(), "INCRBY", r.prefix+key, value).Int64()
 }
 
 func (r *redisKeyValue) DecrByInt64(key string, value int64) (int64, error) {
-	return r.do("DECRBY", r.prefix+key, value).Int64()
+	return r.do(context.Background(), "DECRBY", r.prefix+key, value).Int64()
 }
 
 func (r *redisKeyValue) Del(key string) error {
-	return r.do("DEL", r.prefix+key).err
+	return r.do(context.Background(), "DEL", r.prefix+key).err
 }
 
 func (r *redisKeyValue) TTL(key string) (int, error) {
-	return r.do("TTL", r.prefix+key).Int()
+	return r.do(context.Background(), "TTL", r.prefix+key).Int()
 }
 
 func (r *redisKeyValue) Expire(key string, ttlSeconds int) error {
-	return r.do("EXPIRE", r.prefix+key, ttlSeconds).err
+	return r.do(context.Background(), "EXPIRE", r.prefix+key, ttlSeconds).err
 }
 
 func (r *redisKeyValue) HGet(key, field string) Value {
-	return r.do("HGET", r.prefix+key, field)
+	return r.do(context.Background(), "HGET", r.prefix+key, field)
 }
 
 func (r *redisKeyValue) HGetAll(key string) Values {
-	return Values(r.do("HGETALL", r.prefix+key))
+	return Values(r.do(context.Background(), "HGETALL", r.prefix+key))
 }
 
 func (r *redisKeyValue) HSet(key, field string, val any) error {
-	return r.do("HSET", r.prefix+key, field, val).err
+	return r.do(context.Background(), "HSET", r.prefix+key, field, val).err
 }
 
 func (r *redisKeyValue) HDel(key, field string) Value {
-	return r.do("HDEL", r.prefix+key, field)
+	return r.do(context.Background(), "HDEL", r.prefix+key, field)
 }
 
 func (r *redisKeyValue) LPush(key string, value any) error {
-	return r.do("LPUSH", r.prefix+key, value).err
+	return r.do(context.Background(), "LPUSH", r.prefix+key, value).err
 }
 func (r *redisKeyValue) LTrim(key string, start, stop int) error {
-	return r.do("LTRIM", r.prefix+key, start, stop).err
+	return r.do(context.Background(), "LTRIM", r.prefix+key, start, stop).err
 }
 func (r *redisKeyValue) LLen(key string) (int, error) {
-	raw := r.do("LLEN", r.prefix+key)
+	raw := r.do(context.Background(), "LLEN", r.prefix+key)
 	return redis.Int(raw.reply, raw.err)
 }
 func (r *redisKeyValue) LRange(key string, start, stop int) Values {
-	return Values(r.do("LRANGE", r.prefix+key, start, stop))
-}
-
-func (r *redisKeyValue) WithContext(ctx context.Context) KeyValue {
-	return &redisKeyValue{
-		pool:   r.pool,
-		ctx:    ctx,
-		prefix: r.prefix,
-	}
+	return Values(r.do(context.Background(), "LRANGE", r.prefix+key, start, stop))
 }
 
 func (r *redisKeyValue) WithLatencyRecorder(rec LatencyRecorder) KeyValue {
 	return &redisKeyValue{
 		pool:     r.pool,
-		ctx:      r.ctx,
 		prefix:   r.prefix,
 		recorder: &rec,
 	}
@@ -261,32 +245,26 @@ func (r *redisKeyValue) WithLatencyRecorder(rec LatencyRecorder) KeyValue {
 func (r *redisKeyValue) WithPrefix(prefix string) KeyValue {
 	return &redisKeyValue{
 		pool:   r.pool,
-		ctx:    r.ctx,
 		prefix: r.prefix + prefix + ":",
 	}
 }
 
 func (r *redisKeyValue) Keys(prefix string) ([]string, error) {
-	return Values(r.do("KEYS", prefix)).Strings()
+	return Values(r.do(context.Background(), "KEYS", prefix)).Strings()
 }
 
 func (r *redisKeyValue) Pool() *redis.Pool {
 	return r.pool
 }
 
-func (r *redisKeyValue) do(commandName string, args ...any) Value {
-	var c redis.Conn
-	if r.ctx != nil {
-		var err error
-		c, err = r.pool.GetContext(r.ctx)
-		if err != nil {
-			return Value{err: err}
-		}
-		defer c.Close()
-	} else {
-		c = r.pool.Get()
-		defer c.Close()
+func (r *redisKeyValue) do(ctx context.Context, commandName string, args ...any) Value {
+	var err error
+	c, err := r.pool.GetContext(ctx)
+	if err != nil {
+		return Value{err: err}
 	}
+	defer c.Close()
+
 	var start time.Time
 	if r.recorder != nil {
 		start = time.Now()

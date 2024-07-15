@@ -79,7 +79,7 @@ SELECT migrate_table('codeowners_owners');
 SELECT migrate_table('commit_authors');
 SELECT migrate_table('configuration_policies_audit_logs');
 SELECT migrate_table('context_detection_embedding_jobs');
-SELECT migrate_table('critical_and_site_config');
+-- SELECT migrate_table('critical_and_site_config');
 SELECT migrate_table('discussion_comments');
 SELECT migrate_table('discussion_mail_reply_tokens');
 SELECT migrate_table('discussion_threads');
@@ -302,7 +302,7 @@ SELECT migrate_index('codeintel_ranking_exports_graph_key_upload_id', '', 'codei
 SELECT migrate_index('codeintel_ranking_path_counts_inputs_graph_key_unique_definitio', 'WHERE NOT processed', 'codeintel_ranking_path_counts_inputs', 'graph_key', 'definition_id');
 SELECT migrate_index('codeintel_ranking_references_processed_graph_key_codeintel_rank', '', 'codeintel_ranking_references_processed', 'graph_key', 'codeintel_ranking_reference_id');
 SELECT migrate_index('commit_authors_email_name', '', 'commit_authors', 'email', 'name');
-SELECT migrate_index('critical_and_site_config_unique', '', 'critical_and_site_config', 'id', 'type');
+-- SELECT migrate_index('critical_and_site_config_unique', '', 'critical_and_site_config', 'id', 'type');
 SELECT migrate_index('event_logs_export_allowlist_event_name_idx', '', 'event_logs_export_allowlist', 'event_name');
 SELECT migrate_index('executor_secrets_unique_key_global', 'WHERE namespace_user_id IS NULL AND namespace_org_id IS NULL', 'executor_secrets', 'key', 'scope');
 SELECT migrate_index('executor_secrets_unique_key_namespace_org', 'WHERE namespace_org_id IS NOT NULL', 'executor_secrets', 'key', 'namespace_org_id', 'scope');

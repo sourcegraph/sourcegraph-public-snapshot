@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -41,46 +42,48 @@ func NewRepositorySyncWorker(ctx context.Context, db database.DB, logger log.Log
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			phabs, err := s.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{
-				Kinds: []string{extsvc.KindPhabricator},
+			return tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+				phabs, err := s.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{
+					Kinds: []string{extsvc.KindPhabricator},
+				})
+				if err != nil {
+					return errors.Wrap(err, "unable to fetch Phabricator connections")
+				}
+
+				var errs error
+
+				for _, phab := range phabs {
+					src, err := repos.NewPhabricatorSource(ctx, logger, phab, cf)
+					if err != nil {
+						errs = errors.Append(errs, errors.Wrap(err, "failed to instantiate PhabricatorSource"))
+						continue
+					}
+
+					repos, err := repos.ListAll(ctx, src)
+					if err != nil {
+						errs = errors.Append(errs, errors.Wrap(err, "error fetching Phabricator repos"))
+						continue
+					}
+
+					err = updatePhabRepos(ctx, db, repos)
+					if err != nil {
+						errs = errors.Append(errs, errors.Wrap(err, "error updating Phabricator repos"))
+						continue
+					}
+
+					cfg, err := phab.Configuration(ctx)
+					if err != nil {
+						errs = errors.Append(errs, errors.Wrap(err, "failed to parse Phabricator config"))
+						continue
+					}
+
+					phabricatorUpdateTime.WithLabelValues(
+						cfg.(*schema.PhabricatorConnection).Url,
+					).Set(float64(time.Now().Unix()))
+				}
+
+				return errs
 			})
-			if err != nil {
-				return errors.Wrap(err, "unable to fetch Phabricator connections")
-			}
-
-			var errs error
-
-			for _, phab := range phabs {
-				src, err := repos.NewPhabricatorSource(ctx, logger, phab, cf)
-				if err != nil {
-					errs = errors.Append(errs, errors.Wrap(err, "failed to instantiate PhabricatorSource"))
-					continue
-				}
-
-				repos, err := repos.ListAll(ctx, src)
-				if err != nil {
-					errs = errors.Append(errs, errors.Wrap(err, "error fetching Phabricator repos"))
-					continue
-				}
-
-				err = updatePhabRepos(ctx, db, repos)
-				if err != nil {
-					errs = errors.Append(errs, errors.Wrap(err, "error updating Phabricator repos"))
-					continue
-				}
-
-				cfg, err := phab.Configuration(ctx)
-				if err != nil {
-					errs = errors.Append(errs, errors.Wrap(err, "failed to parse Phabricator config"))
-					continue
-				}
-
-				phabricatorUpdateTime.WithLabelValues(
-					cfg.(*schema.PhabricatorConnection).Url,
-				).Set(float64(time.Now().Unix()))
-			}
-
-			return errs
 		}),
 		goroutine.WithName("repo-updater.phabricator-repository-syncer"),
 		goroutine.WithDescription("periodically syncs repositories from Phabricator to Sourcegraph"),

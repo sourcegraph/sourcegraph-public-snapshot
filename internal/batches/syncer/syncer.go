@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -85,7 +86,9 @@ func (s *SyncRegistry) Start() {
 	externalServiceSyncer := goroutine.NewPeriodicGoroutine(
 		s.ctx,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			return s.syncCodeHosts(ctx)
+			return tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+				return s.syncCodeHosts(ctx)
+			})
 		}),
 		goroutine.WithName("batchchanges.codehost-syncer"),
 		goroutine.WithDescription("Batch Changes syncer external service sync"),
@@ -142,7 +145,7 @@ func (s *SyncRegistry) EnqueueChangesetSyncsForRepos(ctx context.Context, repoID
 
 // addCodeHostSyncer adds a syncer for the code host associated with the supplied code host if the syncer hasn't
 // already been added and starts it.
-func (s *SyncRegistry) addCodeHostSyncer(codeHost *btypes.CodeHost) {
+func (s *SyncRegistry) addCodeHostSyncer(ctx context.Context, codeHost *btypes.CodeHost) {
 	// This should never happen since the store does the filtering for us, but let's be super duper extra cautious.
 	if !codeHost.IsSupported() {
 		s.logger.Info("Code host not supported by batch changes",
@@ -162,7 +165,7 @@ func (s *SyncRegistry) addCodeHostSyncer(codeHost *btypes.CodeHost) {
 	}
 
 	// We need to be able to cancel the syncer if the code host is removed
-	ctx, cancel := context.WithCancel(s.ctx)
+	ctx, cancel := context.WithCancel(tenant.Inherit(ctx, s.ctx))
 	ctx = metrics.ContextWithTask(ctx, "Batches.ChangesetSyncer")
 
 	syncer := &changesetSyncer{
@@ -241,7 +244,7 @@ func (s *SyncRegistry) syncCodeHosts(ctx context.Context) error {
 	// Add and start syncers
 	for _, host := range codeHosts {
 		codeHostsByExternalServiceID[host.ExternalServiceID] = host
-		s.addCodeHostSyncer(host)
+		s.addCodeHostSyncer(ctx, host)
 	}
 
 	s.mu.Lock()

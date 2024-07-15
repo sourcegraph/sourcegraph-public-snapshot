@@ -297,7 +297,7 @@ func AuthCallback(logger log.Logger, db database.DB, r *http.Request, usernamePr
 	}
 
 	// Exchange the code for an access token, see http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest.
-	oauth2Token, err := p.oauth2Config().Exchange(context.WithValue(ctx, oauth2.HTTPClient, p.httpClient), r.URL.Query().Get("code"))
+	oauth2Token, err := p.oauth2Config(ctx).Exchange(context.WithValue(ctx, oauth2.HTTPClient, p.httpClient), r.URL.Query().Get("code"))
 	if err != nil {
 		return nil,
 			"Authentication failed. Try signing in again. The error was: unable to obtain access token from issuer.",
@@ -512,7 +512,7 @@ func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, 
 	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
-	authURL := p.oauth2Config().AuthCodeURL(oidcState, oidc.Nonce(oidcState))
+	authURL := p.oauth2Config(r.Context()).AuthCodeURL(oidcState, oidc.Nonce(oidcState))
 	// Pass along the prompt_auth to OP for the specific type of authentication to
 	// use, e.g. "github", "gitlab", "google".
 	promptAuth := r.URL.Query().Get("prompt_auth")

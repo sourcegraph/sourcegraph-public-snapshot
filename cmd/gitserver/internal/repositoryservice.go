@@ -62,7 +62,7 @@ func (s *repositoryServiceServer) DeleteRepository(ctx context.Context, req *pro
 
 	repoName := api.RepoName(req.GetRepoName())
 
-	cloned, err := s.fs.RepoCloned(repoName)
+	cloned, err := s.fs.RepoCloned(ctx, repoName)
 	if err != nil {
 		return nil, status.New(codes.Internal, "failed to determine clone status").Err()
 	}
@@ -71,7 +71,7 @@ func (s *repositoryServiceServer) DeleteRepository(ctx context.Context, req *pro
 		return nil, newRepoNotFoundError(repoName, false, "")
 	}
 
-	err = s.fs.RemoveRepo(repoName)
+	err = s.fs.RemoveRepo(ctx, repoName)
 	if err != nil {
 		err = errors.Wrap(err, "removing repo directory")
 		s.logger.Error("failed to delete repository", log.String("repo", string(repoName)), log.Error(err))
@@ -121,7 +121,7 @@ func (s *repositoryServiceServer) ListRepositories(ctx context.Context, req *pro
 	atStart := false
 
 	repos := make([]*proto.ListRepositoriesResponse_GitRepository, 0, req.GetPageSize())
-	err = s.fs.ForEachRepo(func(rn api.RepoName, gd common.GitDir) (done bool) {
+	err = s.fs.ForEachRepo(ctx, func(rn api.RepoName, gd common.GitDir) (done bool) {
 		if err := ctx.Err(); err != nil {
 			return true
 		}
@@ -138,7 +138,7 @@ func (s *repositoryServiceServer) ListRepositories(ctx context.Context, req *pro
 		}
 
 		repos = append(repos, &proto.ListRepositoriesResponse_GitRepository{
-			Path: []byte(s.fs.CanonicalPath(gd)),
+			Path: []byte(s.fs.CanonicalPath(ctx, gd)),
 			Name: string(rn),
 		})
 

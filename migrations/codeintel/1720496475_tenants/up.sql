@@ -36,3 +36,6 @@ SELECT migrate_table('rockskip_repos');
 SELECT migrate_table('rockskip_symbols');
 
 DROP FUNCTION migrate_table(text);
+
+ALTER TABLE rockskip_repos DROP CONSTRAINT IF EXISTS rockskip_repos_repo_key;
+ALTER TABLE rockskip_repos ADD CONSTRAINT rockskip_repos_repo_key UNIQUE (repo, tenant_id);

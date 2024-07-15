@@ -162,6 +162,7 @@ func (r *ownResolver) logBackendEvent(ctx context.Context, eventName string) {
 	if a.IsAuthenticated() && !a.IsMockUser() {
 		//lint:ignore SA1019 existing usage of deprecated functionality.
 		if err := usagestats.LogBackendEvent(
+			ctx,
 			r.db,
 			a.UID,
 			deviceid.FromContext(ctx),

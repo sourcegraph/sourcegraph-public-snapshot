@@ -46,6 +46,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -334,14 +335,16 @@ func newUnclonedReposManager(ctx context.Context, logger log.Logger, sched *sche
 
 			baseRepoStore := database.ReposWith(logger, store)
 
-			uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{NoCloned: true})
-			if err != nil {
-				return errors.Wrap(err, "failed to fetch list of uncloned repositories")
-			}
+			return tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+				uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{NoCloned: true})
+				if err != nil {
+					return errors.Wrap(err, "failed to fetch list of uncloned repositories")
+				}
 
-			sched.PrioritiseUncloned(uncloned)
+				sched.PrioritiseUncloned(ctx, uncloned)
 
-			return nil
+				return nil
+			})
 		}),
 		goroutine.WithName("repo-updater.uncloned-repo-manager"),
 		goroutine.WithDescription("periodically lists uncloned repos and schedules them as high priority in the repo updater update queue"),

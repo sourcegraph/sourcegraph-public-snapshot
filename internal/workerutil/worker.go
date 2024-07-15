@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -41,6 +42,7 @@ type Worker[T Record] struct {
 	runningIDSet     *IDSet          // tracks the running job IDs to heartbeat
 	jobName          string
 	recorder         *recorder.Recorder
+	nextTenant       chan context.Context
 }
 
 // dummyType is only for this compile-time test.
@@ -139,6 +141,7 @@ func newWorker[T Record](ctx context.Context, store Store[T], handler Handler[T]
 		dequeueCancel:    cancel,
 		finished:         make(chan struct{}),
 		runningIDSet:     newIDSet(),
+		nextTenant:       iterateTenants(dequeueContext),
 	}
 }
 
@@ -162,11 +165,21 @@ func (w *Worker[T]) Start() {
 			}
 
 			ids := w.runningIDSet.Slice()
-			knownIDs, canceledIDs, err := w.store.Heartbeat(w.rootCtx, ids)
+			var knownIDs []string
+			var canceledIDs []string
+			err := tenant.ForEachTenant(w.rootCtx, func(ctx context.Context) error {
+				tenantKnownIDs, tenantCanceledIDs, err := w.store.Heartbeat(w.rootCtx, ids)
+				if err != nil {
+					w.options.Metrics.logger.Error("Failed to refresh heartbeats",
+						log.Strings("ids", ids),
+						log.Error(err))
+					return err
+				}
+				knownIDs = append(knownIDs, tenantKnownIDs...)
+				canceledIDs = append(canceledIDs, tenantCanceledIDs...)
+				return nil
+			})
 			if err != nil {
-				w.options.Metrics.logger.Error("Failed to refresh heartbeats",
-					log.Strings("ids", ids),
-					log.Error(err))
 				// Bail out and restart the for loop.
 				continue
 			}
@@ -291,7 +304,9 @@ func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 		}
 	}()
 
-	dequeueable, extraDequeueArguments, err := w.preDequeueHook(w.dequeueCtx)
+	tenantCtx := <-w.nextTenant
+
+	dequeueable, extraDequeueArguments, err := w.preDequeueHook(tenantCtx)
 	if err != nil {
 		return false, errors.Wrap(err, "Handler.PreDequeueHook")
 	}
@@ -301,7 +316,7 @@ func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	// Select a queued record to process and the transaction that holds it
-	record, dequeued, err := w.store.Dequeue(w.dequeueCtx, w.options.WorkerHostname, extraDequeueArguments)
+	record, dequeued, err := w.store.Dequeue(tenantCtx, w.options.WorkerHostname, extraDequeueArguments)
 	if err != nil {
 		return false, errors.Wrap(err, "store.Dequeue")
 	}
@@ -313,7 +328,7 @@ func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 	// Create context and span based on the root context
 	workerSpan, workerCtxWithSpan := trace.New(
 		// TODO tail-based sampling once its a thing, until then, we can configure on a per-job basis
-		policy.WithShouldTrace(w.rootCtx, w.options.Metrics.traceSampler(record)),
+		policy.WithShouldTrace(tenantCtx, w.options.Metrics.traceSampler(record)),
 		w.options.Name,
 	)
 	handleCtx, cancel := context.WithCancel(workerCtxWithSpan)
@@ -425,6 +440,30 @@ func (w *Worker[T]) handle(ctx, workerContext context.Context, record T) (err er
 
 	handleLog.Debug("Handled record")
 	return nil
+}
+
+func iterateTenants(ctx context.Context) chan context.Context {
+	ch := make(chan context.Context)
+
+	go func() {
+		for {
+			_ = tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case ch <- ctx:
+				}
+				return nil
+			})
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+		}
+	}()
+
+	return ch
 }
 
 // isJobCanceled returns true if the job has been canceled through the Cancel interface.

@@ -188,6 +188,7 @@ func (r *Resolver) logBackendEvent(ctx context.Context, eventName string, args a
 
 		//lint:ignore SA1019 existing usage of deprecated functionality.
 		if err := usagestats.LogBackendEvent(
+			ctx,
 			r.db,
 			a.UID,
 			deviceid.FromContext(ctx),

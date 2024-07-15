@@ -85,12 +85,12 @@ func P4Depots(ctx context.Context, fs gitserverfs.FS, args P4DepotsArguments) ([
 		options = append(options, WithArguments("-Mj", "-ztag", "depots", "-e", args.NameFilter))
 	}
 
-	p4home, err := fs.P4HomeDir()
+	p4home, err := fs.P4HomeDir(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create p4home dir")
 	}
 
-	scratchDir, err := fs.TempDir("p4-depots-")
+	scratchDir, err := fs.TempDir(ctx, "p4-depots-")
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 depots'")
 	}

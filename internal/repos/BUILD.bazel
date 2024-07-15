@@ -84,6 +84,7 @@ go_library(
         "//internal/observation",
         "//internal/ratelimit",
         "//internal/repoupdater",
+        "//internal/tenant",
         "//internal/trace",
         "//internal/types",
         "//internal/types/typestest",

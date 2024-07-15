@@ -11,9 +11,9 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -93,11 +93,9 @@ func NewService(
 }
 
 func (s *Service) startIndexingLoop(indexRequestQueue chan indexRequest) {
-	// We should use an internal actor when doing cross service calls.
-	ctx := actor.WithInternalActor(context.Background())
 	for indexRequest := range indexRequestQueue {
 		s.metrics.queueAge.Observe(time.Since(indexRequest.dateAddedToQueue).Seconds())
-		err := s.Index(ctx, indexRequest.repo, indexRequest.commit)
+		err := s.Index(indexRequest.ctx, indexRequest.repo, indexRequest.commit)
 		close(indexRequest.done)
 		if err != nil {
 			s.logger.Error("indexing error",
@@ -112,18 +110,21 @@ func (s *Service) startIndexingLoop(indexRequestQueue chan indexRequest) {
 func (s *Service) startCleanupLoop() {
 	for range s.repoUpdates {
 		threadStatus := s.status.NewThreadStatus("cleanup")
-		err := DeleteOldRepos(context.Background(), s.db, s.maxRepos, threadStatus)
-		threadStatus.End()
-		if err != nil {
-			s.logger.Error("failed to delete old repos", log.Error(err))
-		}
+		_ = tenant.ForEachTenant(context.Background(), func(ctx context.Context) error {
+			err := DeleteOldRepos(ctx, s.db, s.maxRepos, threadStatus)
+			threadStatus.End()
+			if err != nil {
+				s.logger.Error("failed to delete old repos", log.Error(err))
+			}
+			return nil
+		})
 	}
 }
 
 func DeleteOldRepos(ctx context.Context, db *sql.DB, maxRepos int, threadStatus *ThreadStatus) error {
 	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
 	// See doc/dev/background-information/sql/locking_behavior.md for more details.
-	conn, err := db.Conn(context.Background())
+	conn, err := db.Conn(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to get connection for deleting old repos")
 	}

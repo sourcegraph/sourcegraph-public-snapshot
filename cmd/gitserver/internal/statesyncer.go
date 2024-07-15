@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/connection"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -77,7 +78,9 @@ func NewRepoStateSyncer(
 			fullSync = fullSync || currentPinned != previousPinned
 			previousPinned = currentPinned
 
-			if err := syncRepoState(ctx, logger, db, locker, shardID, fs, gitServerAddrs, batchSize, perSecond, fullSync); err != nil {
+			if err := tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+				return syncRepoState(ctx, logger, db, locker, shardID, fs, gitServerAddrs, batchSize, perSecond, fullSync)
+			}); err != nil {
 				// after a failed full sync, we should attempt it again in the next
 				// invocation.
 				fullSync = true
@@ -196,7 +199,7 @@ func syncRepoState(
 			}
 			repoSyncStateCounter.WithLabelValues("this_shard").Inc()
 
-			cloned, err := fs.RepoCloned(repo.Name)
+			cloned, err := fs.RepoCloned(ctx, repo.Name)
 			if err != nil {
 				// Failed to determine cloned state, we have to skip this record for now.
 				continue

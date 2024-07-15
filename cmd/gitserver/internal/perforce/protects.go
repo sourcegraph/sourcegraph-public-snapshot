@@ -36,12 +36,12 @@ func P4ProtectsForUser(ctx context.Context, fs gitserverfs.FS, args P4ProtectsFo
 	// requires super access.
 	options = append(options, WithArguments("-Mj", "-ztag", "protects", "-u", args.Username))
 
-	p4home, err := fs.P4HomeDir()
+	p4home, err := fs.P4HomeDir(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create p4home dir")
 	}
 
-	scratchDir, err := fs.TempDir("p4-protects-")
+	scratchDir, err := fs.TempDir(ctx, "p4-protects-")
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 protects'")
 	}
@@ -96,12 +96,12 @@ func P4ProtectsForDepot(ctx context.Context, fs gitserverfs.FS, args P4ProtectsF
 	// access.
 	options = append(options, WithArguments("-Mj", "-ztag", "protects", "-a", args.Depot))
 
-	p4home, err := fs.P4HomeDir()
+	p4home, err := fs.P4HomeDir(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create p4home dir")
 	}
 
-	scratchDir, err := fs.TempDir("p4-protects-")
+	scratchDir, err := fs.TempDir(ctx, "p4-protects-")
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 protects'")
 	}

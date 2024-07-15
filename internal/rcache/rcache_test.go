@@ -1,6 +1,7 @@
 package rcache
 
 import (
+	"context"
 	"reflect"
 	"strconv"
 	"testing"
@@ -118,7 +119,7 @@ func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 	conn := pool.Get()
 	defer conn.Close()
 
-	err := redispool.DeleteAllKeysWithPrefix(conn, c.rkeyPrefix()+"a")
+	err := redispool.DeleteAllKeysWithPrefix(context.Background(), conn, c.rkeyPrefix()+"a")
 	if err != nil {
 		t.Error(err)
 	}

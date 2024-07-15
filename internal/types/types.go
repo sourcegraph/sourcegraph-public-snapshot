@@ -2114,6 +2114,7 @@ type RepoSyncDiff struct {
 	Deleted    Repos
 	Modified   ReposModified
 	Unmodified Repos
+	Ctx        context.Context
 }
 
 // Sort sorts all Diff elements by Repo.IDs.

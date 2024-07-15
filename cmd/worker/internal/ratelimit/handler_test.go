@@ -43,7 +43,7 @@ func TestHandler_Handle(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		c := pool.Get()
-		err := redispool.DeleteAllKeysWithPrefix(c, prefix)
+		err := redispool.DeleteAllKeysWithPrefix(context.Background(), c, prefix)
 		if err != nil {
 			t.Logf("Failed to clear redis: %+v\n", err)
 		}

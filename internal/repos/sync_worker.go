@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -123,11 +124,13 @@ func newJobCleanerRoutine(ctx context.Context, db database.DB, interval time.Dur
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			err := db.ExternalServices().CleanupSyncJobs(ctx, database.ExternalServicesCleanupSyncJobsOptions{
-				OlderThan:             30 * 24 * time.Hour, // 30 days
-				MaxPerExternalService: 100,
+			return tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+				err := db.ExternalServices().CleanupSyncJobs(ctx, database.ExternalServicesCleanupSyncJobsOptions{
+					OlderThan:             30 * 24 * time.Hour, // 30 days
+					MaxPerExternalService: 100,
+				})
+				return errors.Wrap(err, "error while running job cleaner")
 			})
-			return errors.Wrap(err, "error while running job cleaner")
 		}),
 		goroutine.WithName("repo-updater.sync-job-cleaner"),
 		goroutine.WithDescription("periodically cleans old sync jobs from the database"),

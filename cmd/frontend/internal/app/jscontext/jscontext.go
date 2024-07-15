@@ -290,7 +290,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		headers["Cache-Control"] = "no-cache"
 	}
 
-	siteID := siteid.Get(db)
+	siteID := siteid.Get(ctx, db)
 
 	// Show the site init screen?
 	siteInitialized, err := db.GlobalState().SiteInitialized(ctx)

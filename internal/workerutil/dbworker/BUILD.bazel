@@ -13,6 +13,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/observation",
+        "//internal/tenant",
         "//internal/workerutil",
         "//internal/workerutil/dbworker/store",
         "//lib/errors",

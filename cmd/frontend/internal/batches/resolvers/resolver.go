@@ -102,7 +102,7 @@ func logBackendEvent(ctx context.Context, db database.DB, name string, args any,
 	}
 
 	//lint:ignore SA1019 existing usage of deprecated functionality.
-	return usagestats.LogBackendEvent(db, actor.UID, deviceid.FromContext(ctx), name, jsonArg, jsonPublicArg, featureflag.GetEvaluatedFlagSet(ctx), nil)
+	return usagestats.LogBackendEvent(ctx, db, actor.UID, deviceid.FromContext(ctx), name, jsonArg, jsonPublicArg, featureflag.GetEvaluatedFlagSet(ctx), nil)
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {

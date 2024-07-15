@@ -50,6 +50,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
@@ -81,7 +82,7 @@ func InitDB(logger sglog.Logger) (*sql.DB, error) {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	if err := upgradestore.New(database.NewDB(logger, sqlDB)).UpdateServiceVersion(context.Background(), version.Version()); err != nil {
+	if err := upgradestore.New(database.NewDB(logger, sqlDB)).UpdateServiceVersion(tenant.InsecureGlobalContext(context.Background()), version.Version()); err != nil {
 		return nil, err
 	}
 
@@ -100,7 +101,7 @@ type SetupFunc func(database.DB, conftypes.UnifiedWatchable) enterprise.Services
 func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, debugserverEndpoints *LazyDebugserverEndpoint, enterpriseSetupHook SetupFunc, enterpriseMigratorHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
 	logger := observationCtx.Logger
 
-	if err := tryAutoUpgrade(ctx, observationCtx, ready, enterpriseMigratorHook); err != nil {
+	if err := tryAutoUpgrade(tenant.InsecureGlobalContext(ctx), observationCtx, ready, enterpriseMigratorHook); err != nil {
 		return errors.Wrap(err, "frontend.tryAutoUpgrade")
 	}
 
@@ -118,12 +119,18 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	} else {
 		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(observationCtx, db, oobmigration.RefreshInterval)
 
-		if err := outOfBandMigrationRunner.SynchronizeMetadata(ctx); err != nil {
-			return errors.Wrap(err, "failed to synchronize out of band migration metadata")
-		}
+		if err := tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+			if err := outOfBandMigrationRunner.SynchronizeMetadata(ctx); err != nil {
+				return errors.Wrap(err, "failed to synchronize out of band migration metadata")
+			}
 
-		if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner); err != nil {
-			return errors.Wrap(err, "failed to validate out of band migrations")
+			if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner); err != nil {
+				return errors.Wrap(err, "failed to validate out of band migrations")
+			}
+
+			return nil
+		}); err != nil {
+			return err
 		}
 	}
 
@@ -131,7 +138,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	highlight.Init()
 
 	// override site config first
-	if err := overrideSiteConfig(ctx, logger, db); err != nil {
+	if err := overrideSiteConfig(tenant.InsecureGlobalContext(ctx), logger, db); err != nil {
 		return errors.Wrap(err, "failed to apply site config overrides")
 	}
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(newConfigurationSource(logger, db))
@@ -148,9 +155,10 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// now the keyring is configured it's safe to override the rest of the config
 	// and that config can access the keyring
-	if err := overrideExtSvcConfig(ctx, logger, db); err != nil {
-		return errors.Wrap(err, "failed to override external service config")
-	}
+	// TODO: Make tenant aware or drop
+	// if err := overrideExtSvcConfig(ctx, logger, db); err != nil {
+	// 	return errors.Wrap(err, "failed to override external service config")
+	// }
 
 	// Run enterprise setup hook
 	enterpriseServices := enterpriseSetupHook(db, conf.DefaultClient())

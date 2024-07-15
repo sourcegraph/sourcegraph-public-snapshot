@@ -7,15 +7,15 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/sourcegraph/log"
+	"golang.org/x/oauth2/google"
+
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	notificationsv1 "github.com/sourcegraph/sourcegraph-accounts-sdk-go/notifications/v1"
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
-	"golang.org/x/oauth2/google"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -46,15 +46,11 @@ func (s *notificationsSubscriber) Config() []env.Config {
 }
 
 func (s *notificationsSubscriber) Routines(ctx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	if !dotcom.SourcegraphDotComMode() {
-		return nil, nil // Not relevant
-	}
+	// if !dotcom.SourcegraphDotComMode() {
+	// 	return nil, nil // Not relevant
+	// }
 
 	logger := observationCtx.Logger
-	if s.config.GCP.CredentialsFile == "" {
-		logger.Info("worker disabled because SOURCEGRAPH_ACCOUNTS_CREDENTIALS_FILE is not set")
-		return nil, nil
-	}
 
 	// NOTE: Theoretically, we could have multiple SAMS providers configured, but in
 	// practice, we should ever only have one in production. Otherwise, we might
@@ -103,13 +99,21 @@ func (s *notificationsSubscriber) Routines(ctx context.Context, observationCtx *
 	store := newNotificationsSubscriberStore(samsClient, db)
 	handlers := newNotificationsSubscriberHandlers(logger, store, samsProvider)
 
-	credentialsJSON, err := os.ReadFile(s.config.GCP.CredentialsFile)
-	if err != nil {
-		return nil, errors.Wrap(err, "read GCP credentials file")
-	}
-	credentials, err := google.CredentialsFromJSON(ctx, credentialsJSON, pubsub.ScopePubSub)
-	if err != nil {
-		return nil, errors.Wrap(err, "parse GCP credentials JSON")
+	var credentials *google.Credentials
+	if s.config.GCP.CredentialsFile != "" {
+		credentialsJSON, err := os.ReadFile(s.config.GCP.CredentialsFile)
+		if err != nil {
+			return nil, errors.Wrap(err, "read GCP credentials file")
+		}
+		credentials, err = google.CredentialsFromJSON(ctx, credentialsJSON, pubsub.ScopePubSub)
+		if err != nil {
+			return nil, errors.Wrap(err, "parse GCP credentials JSON")
+		}
+	} else {
+		credentials, err = google.FindDefaultCredentials(ctx, pubsub.ScopePubSub)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to find GCP default credentials, consider setting SOURCEGRAPH_ACCOUNTS_CREDENTIALS_FILE")
+		}
 	}
 
 	subscriber, err := sams.NewNotificationsV1Subscriber(
@@ -144,7 +148,7 @@ type notificationsSubscriberConfig struct {
 }
 
 func (c *notificationsSubscriberConfig) Load() {
-	c.GCP.CredentialsFile = c.Get("SOURCEGRAPH_ACCOUNTS_CREDENTIALS_FILE", "", "Path to the Google Cloud credentials file")
+	c.GCP.CredentialsFile = c.GetOptional("SOURCEGRAPH_ACCOUNTS_CREDENTIALS_FILE", "Path to the Google Cloud credentials file")
 	c.GCP.ProjectID = c.Get("SOURCEGRAPH_ACCOUNTS_NOTIFICATIONS_PROJECT", "sourcegraph-dev", "The GCP project that the service is running in")
 	c.GCP.SubscriptionID = c.Get("SOURCEGRAPH_ACCOUNTS_NOTIFICATIONS_SUBSCRIPTION", "sams-notifications", "GCP Pub/Sub subscription ID to receive SAMS notifications from")
 }

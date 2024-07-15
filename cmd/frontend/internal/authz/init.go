@@ -29,7 +29,7 @@ import (
 var clock = timeutil.Now
 
 func Init(
-	ctx context.Context,
+	_ context.Context,
 	observationCtx *observation.Context,
 	db database.DB,
 	_ codeintel.Services,
@@ -69,7 +69,7 @@ func Init(
 			return nil
 		}
 
-		_, _, _, _, invalidConnections := providers.ProvidersFromConfig(ctx, conf.Get(), db)
+		_, _, _, _, invalidConnections := providers.ProvidersFromConfig(context.Background(), conf.Get(), db)
 
 		// We currently support three types of authz providers: GitHub, GitLab and Bitbucket Server.
 		authzTypes := make(map[string]struct{}, 3)
@@ -135,7 +135,7 @@ func Init(
 	go func() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
-			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
+			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(context.Background(), conf.Get(), db)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

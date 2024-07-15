@@ -7,6 +7,7 @@
 package gitserverfs
 
 import (
+	"context"
 	"sync"
 
 	common "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
@@ -61,7 +62,7 @@ type MockFS struct {
 func NewMockFS() *MockFS {
 	return &MockFS{
 		CanonicalPathFunc: &FSCanonicalPathFunc{
-			defaultHook: func(common.GitDir) (r0 string) {
+			defaultHook: func(context.Context, common.GitDir) (r0 string) {
 				return
 			},
 		},
@@ -76,12 +77,12 @@ func NewMockFS() *MockFS {
 			},
 		},
 		ForEachRepoFunc: &FSForEachRepoFunc{
-			defaultHook: func(func(api.RepoName, common.GitDir) bool) (r0 error) {
+			defaultHook: func(context.Context, func(api.RepoName, common.GitDir) bool) (r0 error) {
 				return
 			},
 		},
 		IgnorePathFunc: &FSIgnorePathFunc{
-			defaultHook: func(string) (r0 bool) {
+			defaultHook: func(context.Context, string) (r0 bool) {
 				return
 			},
 		},
@@ -91,32 +92,32 @@ func NewMockFS() *MockFS {
 			},
 		},
 		P4HomeDirFunc: &FSP4HomeDirFunc{
-			defaultHook: func() (r0 string, r1 error) {
+			defaultHook: func(context.Context) (r0 string, r1 error) {
 				return
 			},
 		},
 		RemoveRepoFunc: &FSRemoveRepoFunc{
-			defaultHook: func(api.RepoName) (r0 error) {
+			defaultHook: func(context.Context, api.RepoName) (r0 error) {
 				return
 			},
 		},
 		RepoClonedFunc: &FSRepoClonedFunc{
-			defaultHook: func(api.RepoName) (r0 bool, r1 error) {
+			defaultHook: func(context.Context, api.RepoName) (r0 bool, r1 error) {
 				return
 			},
 		},
 		RepoDirFunc: &FSRepoDirFunc{
-			defaultHook: func(api.RepoName) (r0 common.GitDir) {
+			defaultHook: func(context.Context, api.RepoName) (r0 common.GitDir) {
 				return
 			},
 		},
 		ResolveRepoNameFunc: &FSResolveRepoNameFunc{
-			defaultHook: func(common.GitDir) (r0 api.RepoName) {
+			defaultHook: func(context.Context, common.GitDir) (r0 api.RepoName) {
 				return
 			},
 		},
 		TempDirFunc: &FSTempDirFunc{
-			defaultHook: func(string) (r0 string, r1 error) {
+			defaultHook: func(context.Context, string) (r0 string, r1 error) {
 				return
 			},
 		},
@@ -128,7 +129,7 @@ func NewMockFS() *MockFS {
 func NewStrictMockFS() *MockFS {
 	return &MockFS{
 		CanonicalPathFunc: &FSCanonicalPathFunc{
-			defaultHook: func(common.GitDir) string {
+			defaultHook: func(context.Context, common.GitDir) string {
 				panic("unexpected invocation of MockFS.CanonicalPath")
 			},
 		},
@@ -143,12 +144,12 @@ func NewStrictMockFS() *MockFS {
 			},
 		},
 		ForEachRepoFunc: &FSForEachRepoFunc{
-			defaultHook: func(func(api.RepoName, common.GitDir) bool) error {
+			defaultHook: func(context.Context, func(api.RepoName, common.GitDir) bool) error {
 				panic("unexpected invocation of MockFS.ForEachRepo")
 			},
 		},
 		IgnorePathFunc: &FSIgnorePathFunc{
-			defaultHook: func(string) bool {
+			defaultHook: func(context.Context, string) bool {
 				panic("unexpected invocation of MockFS.IgnorePath")
 			},
 		},
@@ -158,32 +159,32 @@ func NewStrictMockFS() *MockFS {
 			},
 		},
 		P4HomeDirFunc: &FSP4HomeDirFunc{
-			defaultHook: func() (string, error) {
+			defaultHook: func(context.Context) (string, error) {
 				panic("unexpected invocation of MockFS.P4HomeDir")
 			},
 		},
 		RemoveRepoFunc: &FSRemoveRepoFunc{
-			defaultHook: func(api.RepoName) error {
+			defaultHook: func(context.Context, api.RepoName) error {
 				panic("unexpected invocation of MockFS.RemoveRepo")
 			},
 		},
 		RepoClonedFunc: &FSRepoClonedFunc{
-			defaultHook: func(api.RepoName) (bool, error) {
+			defaultHook: func(context.Context, api.RepoName) (bool, error) {
 				panic("unexpected invocation of MockFS.RepoCloned")
 			},
 		},
 		RepoDirFunc: &FSRepoDirFunc{
-			defaultHook: func(api.RepoName) common.GitDir {
+			defaultHook: func(context.Context, api.RepoName) common.GitDir {
 				panic("unexpected invocation of MockFS.RepoDir")
 			},
 		},
 		ResolveRepoNameFunc: &FSResolveRepoNameFunc{
-			defaultHook: func(common.GitDir) api.RepoName {
+			defaultHook: func(context.Context, common.GitDir) api.RepoName {
 				panic("unexpected invocation of MockFS.ResolveRepoName")
 			},
 		},
 		TempDirFunc: &FSTempDirFunc{
-			defaultHook: func(string) (string, error) {
+			defaultHook: func(context.Context, string) (string, error) {
 				panic("unexpected invocation of MockFS.TempDir")
 			},
 		},
@@ -236,23 +237,23 @@ func NewMockFSFrom(i FS) *MockFS {
 // FSCanonicalPathFunc describes the behavior when the CanonicalPath method
 // of the parent MockFS instance is invoked.
 type FSCanonicalPathFunc struct {
-	defaultHook func(common.GitDir) string
-	hooks       []func(common.GitDir) string
+	defaultHook func(context.Context, common.GitDir) string
+	hooks       []func(context.Context, common.GitDir) string
 	history     []FSCanonicalPathFuncCall
 	mutex       sync.Mutex
 }
 
 // CanonicalPath delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockFS) CanonicalPath(v0 common.GitDir) string {
-	r0 := m.CanonicalPathFunc.nextHook()(v0)
-	m.CanonicalPathFunc.appendCall(FSCanonicalPathFuncCall{v0, r0})
+func (m *MockFS) CanonicalPath(v0 context.Context, v1 common.GitDir) string {
+	r0 := m.CanonicalPathFunc.nextHook()(v0, v1)
+	m.CanonicalPathFunc.appendCall(FSCanonicalPathFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the CanonicalPath method
 // of the parent MockFS instance is invoked and the hook queue is empty.
-func (f *FSCanonicalPathFunc) SetDefaultHook(hook func(common.GitDir) string) {
+func (f *FSCanonicalPathFunc) SetDefaultHook(hook func(context.Context, common.GitDir) string) {
 	f.defaultHook = hook
 }
 
@@ -260,7 +261,7 @@ func (f *FSCanonicalPathFunc) SetDefaultHook(hook func(common.GitDir) string) {
 // CanonicalPath method of the parent MockFS instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *FSCanonicalPathFunc) PushHook(hook func(common.GitDir) string) {
+func (f *FSCanonicalPathFunc) PushHook(hook func(context.Context, common.GitDir) string) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -269,19 +270,19 @@ func (f *FSCanonicalPathFunc) PushHook(hook func(common.GitDir) string) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *FSCanonicalPathFunc) SetDefaultReturn(r0 string) {
-	f.SetDefaultHook(func(common.GitDir) string {
+	f.SetDefaultHook(func(context.Context, common.GitDir) string {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *FSCanonicalPathFunc) PushReturn(r0 string) {
-	f.PushHook(func(common.GitDir) string {
+	f.PushHook(func(context.Context, common.GitDir) string {
 		return r0
 	})
 }
 
-func (f *FSCanonicalPathFunc) nextHook() func(common.GitDir) string {
+func (f *FSCanonicalPathFunc) nextHook() func(context.Context, common.GitDir) string {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -316,7 +317,10 @@ func (f *FSCanonicalPathFunc) History() []FSCanonicalPathFuncCall {
 type FSCanonicalPathFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 common.GitDir
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 common.GitDir
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 string
@@ -325,7 +329,7 @@ type FSCanonicalPathFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c FSCanonicalPathFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -542,23 +546,23 @@ func (c FSDiskUsageFuncCall) Results() []interface{} {
 // FSForEachRepoFunc describes the behavior when the ForEachRepo method of
 // the parent MockFS instance is invoked.
 type FSForEachRepoFunc struct {
-	defaultHook func(func(api.RepoName, common.GitDir) bool) error
-	hooks       []func(func(api.RepoName, common.GitDir) bool) error
+	defaultHook func(context.Context, func(api.RepoName, common.GitDir) bool) error
+	hooks       []func(context.Context, func(api.RepoName, common.GitDir) bool) error
 	history     []FSForEachRepoFuncCall
 	mutex       sync.Mutex
 }
 
 // ForEachRepo delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockFS) ForEachRepo(v0 func(api.RepoName, common.GitDir) bool) error {
-	r0 := m.ForEachRepoFunc.nextHook()(v0)
-	m.ForEachRepoFunc.appendCall(FSForEachRepoFuncCall{v0, r0})
+func (m *MockFS) ForEachRepo(v0 context.Context, v1 func(api.RepoName, common.GitDir) bool) error {
+	r0 := m.ForEachRepoFunc.nextHook()(v0, v1)
+	m.ForEachRepoFunc.appendCall(FSForEachRepoFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the ForEachRepo method
 // of the parent MockFS instance is invoked and the hook queue is empty.
-func (f *FSForEachRepoFunc) SetDefaultHook(hook func(func(api.RepoName, common.GitDir) bool) error) {
+func (f *FSForEachRepoFunc) SetDefaultHook(hook func(context.Context, func(api.RepoName, common.GitDir) bool) error) {
 	f.defaultHook = hook
 }
 
@@ -566,7 +570,7 @@ func (f *FSForEachRepoFunc) SetDefaultHook(hook func(func(api.RepoName, common.G
 // ForEachRepo method of the parent MockFS instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *FSForEachRepoFunc) PushHook(hook func(func(api.RepoName, common.GitDir) bool) error) {
+func (f *FSForEachRepoFunc) PushHook(hook func(context.Context, func(api.RepoName, common.GitDir) bool) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -575,19 +579,19 @@ func (f *FSForEachRepoFunc) PushHook(hook func(func(api.RepoName, common.GitDir)
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *FSForEachRepoFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(func(api.RepoName, common.GitDir) bool) error {
+	f.SetDefaultHook(func(context.Context, func(api.RepoName, common.GitDir) bool) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *FSForEachRepoFunc) PushReturn(r0 error) {
-	f.PushHook(func(func(api.RepoName, common.GitDir) bool) error {
+	f.PushHook(func(context.Context, func(api.RepoName, common.GitDir) bool) error {
 		return r0
 	})
 }
 
-func (f *FSForEachRepoFunc) nextHook() func(func(api.RepoName, common.GitDir) bool) error {
+func (f *FSForEachRepoFunc) nextHook() func(context.Context, func(api.RepoName, common.GitDir) bool) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -622,7 +626,10 @@ func (f *FSForEachRepoFunc) History() []FSForEachRepoFuncCall {
 type FSForEachRepoFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 func(api.RepoName, common.GitDir) bool
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(api.RepoName, common.GitDir) bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -631,7 +638,7 @@ type FSForEachRepoFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c FSForEachRepoFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -643,23 +650,23 @@ func (c FSForEachRepoFuncCall) Results() []interface{} {
 // FSIgnorePathFunc describes the behavior when the IgnorePath method of the
 // parent MockFS instance is invoked.
 type FSIgnorePathFunc struct {
-	defaultHook func(string) bool
-	hooks       []func(string) bool
+	defaultHook func(context.Context, string) bool
+	hooks       []func(context.Context, string) bool
 	history     []FSIgnorePathFuncCall
 	mutex       sync.Mutex
 }
 
 // IgnorePath delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockFS) IgnorePath(v0 string) bool {
-	r0 := m.IgnorePathFunc.nextHook()(v0)
-	m.IgnorePathFunc.appendCall(FSIgnorePathFuncCall{v0, r0})
+func (m *MockFS) IgnorePath(v0 context.Context, v1 string) bool {
+	r0 := m.IgnorePathFunc.nextHook()(v0, v1)
+	m.IgnorePathFunc.appendCall(FSIgnorePathFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the IgnorePath method of
 // the parent MockFS instance is invoked and the hook queue is empty.
-func (f *FSIgnorePathFunc) SetDefaultHook(hook func(string) bool) {
+func (f *FSIgnorePathFunc) SetDefaultHook(hook func(context.Context, string) bool) {
 	f.defaultHook = hook
 }
 
@@ -667,7 +674,7 @@ func (f *FSIgnorePathFunc) SetDefaultHook(hook func(string) bool) {
 // IgnorePath method of the parent MockFS instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *FSIgnorePathFunc) PushHook(hook func(string) bool) {
+func (f *FSIgnorePathFunc) PushHook(hook func(context.Context, string) bool) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -676,19 +683,19 @@ func (f *FSIgnorePathFunc) PushHook(hook func(string) bool) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *FSIgnorePathFunc) SetDefaultReturn(r0 bool) {
-	f.SetDefaultHook(func(string) bool {
+	f.SetDefaultHook(func(context.Context, string) bool {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *FSIgnorePathFunc) PushReturn(r0 bool) {
-	f.PushHook(func(string) bool {
+	f.PushHook(func(context.Context, string) bool {
 		return r0
 	})
 }
 
-func (f *FSIgnorePathFunc) nextHook() func(string) bool {
+func (f *FSIgnorePathFunc) nextHook() func(context.Context, string) bool {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -723,7 +730,10 @@ func (f *FSIgnorePathFunc) History() []FSIgnorePathFuncCall {
 type FSIgnorePathFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 string
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 bool
@@ -732,7 +742,7 @@ type FSIgnorePathFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c FSIgnorePathFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -842,23 +852,23 @@ func (c FSInitializeFuncCall) Results() []interface{} {
 // FSP4HomeDirFunc describes the behavior when the P4HomeDir method of the
 // parent MockFS instance is invoked.
 type FSP4HomeDirFunc struct {
-	defaultHook func() (string, error)
-	hooks       []func() (string, error)
+	defaultHook func(context.Context) (string, error)
+	hooks       []func(context.Context) (string, error)
 	history     []FSP4HomeDirFuncCall
 	mutex       sync.Mutex
 }
 
 // P4HomeDir delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockFS) P4HomeDir() (string, error) {
-	r0, r1 := m.P4HomeDirFunc.nextHook()()
-	m.P4HomeDirFunc.appendCall(FSP4HomeDirFuncCall{r0, r1})
+func (m *MockFS) P4HomeDir(v0 context.Context) (string, error) {
+	r0, r1 := m.P4HomeDirFunc.nextHook()(v0)
+	m.P4HomeDirFunc.appendCall(FSP4HomeDirFuncCall{v0, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the P4HomeDir method of
 // the parent MockFS instance is invoked and the hook queue is empty.
-func (f *FSP4HomeDirFunc) SetDefaultHook(hook func() (string, error)) {
+func (f *FSP4HomeDirFunc) SetDefaultHook(hook func(context.Context) (string, error)) {
 	f.defaultHook = hook
 }
 
@@ -866,7 +876,7 @@ func (f *FSP4HomeDirFunc) SetDefaultHook(hook func() (string, error)) {
 // P4HomeDir method of the parent MockFS instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *FSP4HomeDirFunc) PushHook(hook func() (string, error)) {
+func (f *FSP4HomeDirFunc) PushHook(hook func(context.Context) (string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -875,19 +885,19 @@ func (f *FSP4HomeDirFunc) PushHook(hook func() (string, error)) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *FSP4HomeDirFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func() (string, error) {
+	f.SetDefaultHook(func(context.Context) (string, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *FSP4HomeDirFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func() (string, error) {
+	f.PushHook(func(context.Context) (string, error) {
 		return r0, r1
 	})
 }
 
-func (f *FSP4HomeDirFunc) nextHook() func() (string, error) {
+func (f *FSP4HomeDirFunc) nextHook() func(context.Context) (string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -920,6 +930,9 @@ func (f *FSP4HomeDirFunc) History() []FSP4HomeDirFuncCall {
 // FSP4HomeDirFuncCall is an object that describes an invocation of method
 // P4HomeDir on an instance of MockFS.
 type FSP4HomeDirFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 string
@@ -931,7 +944,7 @@ type FSP4HomeDirFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c FSP4HomeDirFuncCall) Args() []interface{} {
-	return []interface{}{}
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
@@ -943,23 +956,23 @@ func (c FSP4HomeDirFuncCall) Results() []interface{} {
 // FSRemoveRepoFunc describes the behavior when the RemoveRepo method of the
 // parent MockFS instance is invoked.
 type FSRemoveRepoFunc struct {
-	defaultHook func(api.RepoName) error
-	hooks       []func(api.RepoName) error
+	defaultHook func(context.Context, api.RepoName) error
+	hooks       []func(context.Context, api.RepoName) error
 	history     []FSRemoveRepoFuncCall
 	mutex       sync.Mutex
 }
 
 // RemoveRepo delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockFS) RemoveRepo(v0 api.RepoName) error {
-	r0 := m.RemoveRepoFunc.nextHook()(v0)
-	m.RemoveRepoFunc.appendCall(FSRemoveRepoFuncCall{v0, r0})
+func (m *MockFS) RemoveRepo(v0 context.Context, v1 api.RepoName) error {
+	r0 := m.RemoveRepoFunc.nextHook()(v0, v1)
+	m.RemoveRepoFunc.appendCall(FSRemoveRepoFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the RemoveRepo method of
 // the parent MockFS instance is invoked and the hook queue is empty.
-func (f *FSRemoveRepoFunc) SetDefaultHook(hook func(api.RepoName) error) {
+func (f *FSRemoveRepoFunc) SetDefaultHook(hook func(context.Context, api.RepoName) error) {
 	f.defaultHook = hook
 }
 
@@ -967,7 +980,7 @@ func (f *FSRemoveRepoFunc) SetDefaultHook(hook func(api.RepoName) error) {
 // RemoveRepo method of the parent MockFS instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *FSRemoveRepoFunc) PushHook(hook func(api.RepoName) error) {
+func (f *FSRemoveRepoFunc) PushHook(hook func(context.Context, api.RepoName) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -976,19 +989,19 @@ func (f *FSRemoveRepoFunc) PushHook(hook func(api.RepoName) error) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *FSRemoveRepoFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(api.RepoName) error {
+	f.SetDefaultHook(func(context.Context, api.RepoName) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *FSRemoveRepoFunc) PushReturn(r0 error) {
-	f.PushHook(func(api.RepoName) error {
+	f.PushHook(func(context.Context, api.RepoName) error {
 		return r0
 	})
 }
 
-func (f *FSRemoveRepoFunc) nextHook() func(api.RepoName) error {
+func (f *FSRemoveRepoFunc) nextHook() func(context.Context, api.RepoName) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1023,7 +1036,10 @@ func (f *FSRemoveRepoFunc) History() []FSRemoveRepoFuncCall {
 type FSRemoveRepoFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 api.RepoName
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1032,7 +1048,7 @@ type FSRemoveRepoFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c FSRemoveRepoFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -1044,23 +1060,23 @@ func (c FSRemoveRepoFuncCall) Results() []interface{} {
 // FSRepoClonedFunc describes the behavior when the RepoCloned method of the
 // parent MockFS instance is invoked.
 type FSRepoClonedFunc struct {
-	defaultHook func(api.RepoName) (bool, error)
-	hooks       []func(api.RepoName) (bool, error)
+	defaultHook func(context.Context, api.RepoName) (bool, error)
+	hooks       []func(context.Context, api.RepoName) (bool, error)
 	history     []FSRepoClonedFuncCall
 	mutex       sync.Mutex
 }
 
 // RepoCloned delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockFS) RepoCloned(v0 api.RepoName) (bool, error) {
-	r0, r1 := m.RepoClonedFunc.nextHook()(v0)
-	m.RepoClonedFunc.appendCall(FSRepoClonedFuncCall{v0, r0, r1})
+func (m *MockFS) RepoCloned(v0 context.Context, v1 api.RepoName) (bool, error) {
+	r0, r1 := m.RepoClonedFunc.nextHook()(v0, v1)
+	m.RepoClonedFunc.appendCall(FSRepoClonedFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the RepoCloned method of
 // the parent MockFS instance is invoked and the hook queue is empty.
-func (f *FSRepoClonedFunc) SetDefaultHook(hook func(api.RepoName) (bool, error)) {
+func (f *FSRepoClonedFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -1068,7 +1084,7 @@ func (f *FSRepoClonedFunc) SetDefaultHook(hook func(api.RepoName) (bool, error))
 // RepoCloned method of the parent MockFS instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *FSRepoClonedFunc) PushHook(hook func(api.RepoName) (bool, error)) {
+func (f *FSRepoClonedFunc) PushHook(hook func(context.Context, api.RepoName) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1077,19 +1093,19 @@ func (f *FSRepoClonedFunc) PushHook(hook func(api.RepoName) (bool, error)) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *FSRepoClonedFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(api.RepoName) (bool, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (bool, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *FSRepoClonedFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(api.RepoName) (bool, error) {
+	f.PushHook(func(context.Context, api.RepoName) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *FSRepoClonedFunc) nextHook() func(api.RepoName) (bool, error) {
+func (f *FSRepoClonedFunc) nextHook() func(context.Context, api.RepoName) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1124,7 +1140,10 @@ func (f *FSRepoClonedFunc) History() []FSRepoClonedFuncCall {
 type FSRepoClonedFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 api.RepoName
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 bool
@@ -1136,7 +1155,7 @@ type FSRepoClonedFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c FSRepoClonedFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -1148,23 +1167,23 @@ func (c FSRepoClonedFuncCall) Results() []interface{} {
 // FSRepoDirFunc describes the behavior when the RepoDir method of the
 // parent MockFS instance is invoked.
 type FSRepoDirFunc struct {
-	defaultHook func(api.RepoName) common.GitDir
-	hooks       []func(api.RepoName) common.GitDir
+	defaultHook func(context.Context, api.RepoName) common.GitDir
+	hooks       []func(context.Context, api.RepoName) common.GitDir
 	history     []FSRepoDirFuncCall
 	mutex       sync.Mutex
 }
 
 // RepoDir delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockFS) RepoDir(v0 api.RepoName) common.GitDir {
-	r0 := m.RepoDirFunc.nextHook()(v0)
-	m.RepoDirFunc.appendCall(FSRepoDirFuncCall{v0, r0})
+func (m *MockFS) RepoDir(v0 context.Context, v1 api.RepoName) common.GitDir {
+	r0 := m.RepoDirFunc.nextHook()(v0, v1)
+	m.RepoDirFunc.appendCall(FSRepoDirFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the RepoDir method of
 // the parent MockFS instance is invoked and the hook queue is empty.
-func (f *FSRepoDirFunc) SetDefaultHook(hook func(api.RepoName) common.GitDir) {
+func (f *FSRepoDirFunc) SetDefaultHook(hook func(context.Context, api.RepoName) common.GitDir) {
 	f.defaultHook = hook
 }
 
@@ -1172,7 +1191,7 @@ func (f *FSRepoDirFunc) SetDefaultHook(hook func(api.RepoName) common.GitDir) {
 // RepoDir method of the parent MockFS instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *FSRepoDirFunc) PushHook(hook func(api.RepoName) common.GitDir) {
+func (f *FSRepoDirFunc) PushHook(hook func(context.Context, api.RepoName) common.GitDir) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1181,19 +1200,19 @@ func (f *FSRepoDirFunc) PushHook(hook func(api.RepoName) common.GitDir) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *FSRepoDirFunc) SetDefaultReturn(r0 common.GitDir) {
-	f.SetDefaultHook(func(api.RepoName) common.GitDir {
+	f.SetDefaultHook(func(context.Context, api.RepoName) common.GitDir {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *FSRepoDirFunc) PushReturn(r0 common.GitDir) {
-	f.PushHook(func(api.RepoName) common.GitDir {
+	f.PushHook(func(context.Context, api.RepoName) common.GitDir {
 		return r0
 	})
 }
 
-func (f *FSRepoDirFunc) nextHook() func(api.RepoName) common.GitDir {
+func (f *FSRepoDirFunc) nextHook() func(context.Context, api.RepoName) common.GitDir {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1228,7 +1247,10 @@ func (f *FSRepoDirFunc) History() []FSRepoDirFuncCall {
 type FSRepoDirFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 api.RepoName
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 common.GitDir
@@ -1237,7 +1259,7 @@ type FSRepoDirFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c FSRepoDirFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -1249,24 +1271,24 @@ func (c FSRepoDirFuncCall) Results() []interface{} {
 // FSResolveRepoNameFunc describes the behavior when the ResolveRepoName
 // method of the parent MockFS instance is invoked.
 type FSResolveRepoNameFunc struct {
-	defaultHook func(common.GitDir) api.RepoName
-	hooks       []func(common.GitDir) api.RepoName
+	defaultHook func(context.Context, common.GitDir) api.RepoName
+	hooks       []func(context.Context, common.GitDir) api.RepoName
 	history     []FSResolveRepoNameFuncCall
 	mutex       sync.Mutex
 }
 
 // ResolveRepoName delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockFS) ResolveRepoName(v0 common.GitDir) api.RepoName {
-	r0 := m.ResolveRepoNameFunc.nextHook()(v0)
-	m.ResolveRepoNameFunc.appendCall(FSResolveRepoNameFuncCall{v0, r0})
+func (m *MockFS) ResolveRepoName(v0 context.Context, v1 common.GitDir) api.RepoName {
+	r0 := m.ResolveRepoNameFunc.nextHook()(v0, v1)
+	m.ResolveRepoNameFunc.appendCall(FSResolveRepoNameFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the ResolveRepoName
 // method of the parent MockFS instance is invoked and the hook queue is
 // empty.
-func (f *FSResolveRepoNameFunc) SetDefaultHook(hook func(common.GitDir) api.RepoName) {
+func (f *FSResolveRepoNameFunc) SetDefaultHook(hook func(context.Context, common.GitDir) api.RepoName) {
 	f.defaultHook = hook
 }
 
@@ -1274,7 +1296,7 @@ func (f *FSResolveRepoNameFunc) SetDefaultHook(hook func(common.GitDir) api.Repo
 // ResolveRepoName method of the parent MockFS instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *FSResolveRepoNameFunc) PushHook(hook func(common.GitDir) api.RepoName) {
+func (f *FSResolveRepoNameFunc) PushHook(hook func(context.Context, common.GitDir) api.RepoName) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1283,19 +1305,19 @@ func (f *FSResolveRepoNameFunc) PushHook(hook func(common.GitDir) api.RepoName) 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *FSResolveRepoNameFunc) SetDefaultReturn(r0 api.RepoName) {
-	f.SetDefaultHook(func(common.GitDir) api.RepoName {
+	f.SetDefaultHook(func(context.Context, common.GitDir) api.RepoName {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *FSResolveRepoNameFunc) PushReturn(r0 api.RepoName) {
-	f.PushHook(func(common.GitDir) api.RepoName {
+	f.PushHook(func(context.Context, common.GitDir) api.RepoName {
 		return r0
 	})
 }
 
-func (f *FSResolveRepoNameFunc) nextHook() func(common.GitDir) api.RepoName {
+func (f *FSResolveRepoNameFunc) nextHook() func(context.Context, common.GitDir) api.RepoName {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1330,7 +1352,10 @@ func (f *FSResolveRepoNameFunc) History() []FSResolveRepoNameFuncCall {
 type FSResolveRepoNameFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 common.GitDir
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 common.GitDir
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 api.RepoName
@@ -1339,7 +1364,7 @@ type FSResolveRepoNameFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c FSResolveRepoNameFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -1351,23 +1376,23 @@ func (c FSResolveRepoNameFuncCall) Results() []interface{} {
 // FSTempDirFunc describes the behavior when the TempDir method of the
 // parent MockFS instance is invoked.
 type FSTempDirFunc struct {
-	defaultHook func(string) (string, error)
-	hooks       []func(string) (string, error)
+	defaultHook func(context.Context, string) (string, error)
+	hooks       []func(context.Context, string) (string, error)
 	history     []FSTempDirFuncCall
 	mutex       sync.Mutex
 }
 
 // TempDir delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockFS) TempDir(v0 string) (string, error) {
-	r0, r1 := m.TempDirFunc.nextHook()(v0)
-	m.TempDirFunc.appendCall(FSTempDirFuncCall{v0, r0, r1})
+func (m *MockFS) TempDir(v0 context.Context, v1 string) (string, error) {
+	r0, r1 := m.TempDirFunc.nextHook()(v0, v1)
+	m.TempDirFunc.appendCall(FSTempDirFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the TempDir method of
 // the parent MockFS instance is invoked and the hook queue is empty.
-func (f *FSTempDirFunc) SetDefaultHook(hook func(string) (string, error)) {
+func (f *FSTempDirFunc) SetDefaultHook(hook func(context.Context, string) (string, error)) {
 	f.defaultHook = hook
 }
 
@@ -1375,7 +1400,7 @@ func (f *FSTempDirFunc) SetDefaultHook(hook func(string) (string, error)) {
 // TempDir method of the parent MockFS instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *FSTempDirFunc) PushHook(hook func(string) (string, error)) {
+func (f *FSTempDirFunc) PushHook(hook func(context.Context, string) (string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1384,19 +1409,19 @@ func (f *FSTempDirFunc) PushHook(hook func(string) (string, error)) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *FSTempDirFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func(string) (string, error) {
+	f.SetDefaultHook(func(context.Context, string) (string, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *FSTempDirFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func(string) (string, error) {
+	f.PushHook(func(context.Context, string) (string, error) {
 		return r0, r1
 	})
 }
 
-func (f *FSTempDirFunc) nextHook() func(string) (string, error) {
+func (f *FSTempDirFunc) nextHook() func(context.Context, string) (string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1431,7 +1456,10 @@ func (f *FSTempDirFunc) History() []FSTempDirFuncCall {
 type FSTempDirFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 string
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 string
@@ -1443,7 +1471,7 @@ type FSTempDirFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c FSTempDirFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

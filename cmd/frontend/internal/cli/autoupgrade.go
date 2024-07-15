@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -187,7 +188,7 @@ func runMigration(
 	}
 
 	return multiversion.RunMigration(
-		ctx,
+		tenant.InsecureGlobalContext(ctx),
 		db,
 		runnerFactory,
 		plan,

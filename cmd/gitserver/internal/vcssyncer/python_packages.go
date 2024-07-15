@@ -77,7 +77,7 @@ func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep rep
 	defer pkgData.Close()
 
 	mkdirTemp := func() (string, error) {
-		return s.fs.TempDir("pypi-packages")
+		return s.fs.TempDir(ctx, "pypi-packages")
 	}
 
 	if err = unpackPythonPackage(pkgData, packageURL, mkdirTemp, dir); err != nil {

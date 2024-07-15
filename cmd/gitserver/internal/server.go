@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
@@ -248,7 +249,7 @@ func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protoc
 		return protocol.IsRepoCloneableResponse{}, errors.Wrap(err, "GetVCSSyncer")
 	}
 
-	cloned, err := s.fs.RepoCloned(repo)
+	cloned, err := s.fs.RepoCloned(ctx, repo)
 	if err != nil {
 		return protocol.IsRepoCloneableResponse{}, errors.Wrap(err, "determine if repo is cloned")
 	}
@@ -276,7 +277,7 @@ func (s *Server) FetchRepository(ctx context.Context, repoName api.RepoName) (la
 		return lastFetched, lastChanged, err
 	}
 
-	dir := s.fs.RepoDir(repoName)
+	dir := s.fs.RepoDir(ctx, repoName)
 
 	lastFetched, err = repoLastFetched(dir)
 	if err != nil {
@@ -321,7 +322,8 @@ func (s *Server) repoUpdateOrClone(ctx context.Context, repoName api.RepoName) e
 			// We use server context here to ensure that we can cancel the background
 			// job when the server is shutting down, and to make sure that the job
 			// keeps running beyond the lifetime of the gRPC request that triggers this.
-			ctx, cancel := s.serverContext()
+			srvCtx, cancel := s.serverContext()
+			ctx = tenant.Inherit(ctx, srvCtx)
 			defer cancel()
 			// We may be attempting to clone a private repo so we need an internal actor.
 			ctx = actor.WithInternalActor(ctx)
@@ -337,7 +339,7 @@ func (s *Server) repoUpdateOrClone(ctx context.Context, repoName api.RepoName) e
 				}
 			}()
 
-			cloned, err := s.fs.RepoCloned(repoName)
+			cloned, err := s.fs.RepoCloned(ctx, repoName)
 			if err != nil {
 				return errors.Wrap(err, "determining cloned status")
 			}
@@ -397,7 +399,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, lock Reposito
 		return errors.Wrap(err, "get VCS syncer")
 	}
 
-	dir := s.fs.RepoDir(repo)
+	dir := s.fs.RepoDir(ctx, repo)
 
 	defer func() {
 		if err != nil {
@@ -423,7 +425,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, lock Reposito
 	// We clone to a temporary location first to avoid having incomplete
 	// clones in the repo tree. This also avoids leaving behind corrupt clones
 	// if the clone is interrupted.
-	tmpDir, err := s.fs.TempDir("clone-")
+	tmpDir, err := s.fs.TempDir(ctx, "clone-")
 	if err != nil {
 		return err
 	}
@@ -434,7 +436,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, lock Reposito
 		s.logger.Error("Setting clone status in DB", log.Error(err))
 	}
 	defer func() {
-		cloned, err := s.fs.RepoCloned(repo)
+		cloned, err := s.fs.RepoCloned(ctx, repo)
 		if err != nil {
 			s.logger.Error("failed to check if repo is cloned", log.Error(err))
 		} else if err := s.db.GitserverRepos().SetCloneStatus(
@@ -665,7 +667,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, lock Repos
 			return err
 		}
 
-		dir := s.fs.RepoDir(repo)
+		dir := s.fs.RepoDir(ctx, repo)
 
 		syncer, err := s.getVCSSyncer(ctx, repo)
 		if err != nil {

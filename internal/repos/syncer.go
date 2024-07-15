@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -90,15 +91,17 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 	scheduler := goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			if conf.Get().DisableAutoCodeHostSyncs {
+			return tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+				if conf.Get().DisableAutoCodeHostSyncs {
+					return nil
+				}
+
+				if err := store.EnqueueSyncJobs(ctx); err != nil {
+					return errors.Wrap(err, "enqueueing sync jobs")
+				}
+
 				return nil
-			}
-
-			if err := store.EnqueueSyncJobs(ctx); err != nil {
-				return errors.Wrap(err, "enqueueing sync jobs")
-			}
-
-			return nil
+			})
 		}),
 		goroutine.WithName("repo-updater.repo-sync-scheduler"),
 		goroutine.WithDescription("enqueues sync jobs for external service sync jobs"),
@@ -181,6 +184,7 @@ func (e ErrAccountSuspended) AccountSuspended() bool {
 
 func (s *Syncer) notifyDeleted(ctx context.Context, deleted ...api.RepoID) {
 	var d types.RepoSyncDiff
+	d.Ctx = ctx
 	for _, id := range deleted {
 		d.Deleted = append(d.Deleted, &types.Repo{ID: id})
 	}
@@ -305,7 +309,7 @@ func (s *Syncer) SyncExternalService(
 	defer func() {
 		// Use a different context here so that we make sure to record progress
 		// even if context has been canceled
-		if err := progressRecorder(context.Background(), syncProgress, true); err != nil {
+		if err := progressRecorder(tenant.Background(ctx), syncProgress, true); err != nil {
 			logger.Error("recording final sync progress", log.Error(err))
 		}
 	}()
@@ -345,6 +349,7 @@ func (s *Syncer) SyncExternalService(
 		}
 
 		var diff types.RepoSyncDiff
+		diff.Ctx = ctx
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
 			syncProgress.Errors++
 			logger.Error("failed to sync, skipping", log.String("repo", string(sourced.Name)), log.Error(err))
@@ -438,6 +443,7 @@ func (s *Syncer) SyncExternalService(
 
 // syncs a sourced repo of a given external service, returning a diff with a single repo.
 func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *types.Repo) (d types.RepoSyncDiff, err error) {
+	d.Ctx = ctx
 	tx, err := s.Store.Transact(ctx)
 	if err != nil {
 		return types.RepoSyncDiff{}, errors.Wrap(err, "syncer: opening transaction")
