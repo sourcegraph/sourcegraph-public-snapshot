@@ -62,7 +62,7 @@
 
 <section>
     {#if data.commit}
-        <Scroller bind:this={scroller} margin={600} on:more={data.diff?.fetchMore}>
+        <Scroller bind:this={scroller} margin={600} on:more={diffQuery?.fetchMore}>
             <div class="header">
                 <div class="info"><Commit commit={data.commit} alwaysExpanded /></div>
                 <div class="parents">

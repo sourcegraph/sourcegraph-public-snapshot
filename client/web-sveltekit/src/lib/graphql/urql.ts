@@ -298,7 +298,8 @@ interface RestoreStrategy<TSnapshot, TData> {
     restore(snapshot: TSnapshot): Promise<void>
 }
 
-interface IncrementalRestoreStrategySnapshot<TVariables extends AnyVariables> {
+// This needs to be exported so that TS type inference can work in SvelteKit generated files.
+export interface IncrementalRestoreStrategySnapshot<TVariables extends AnyVariables> {
     count: number
     variables?: Partial<TVariables>
     nonce: string

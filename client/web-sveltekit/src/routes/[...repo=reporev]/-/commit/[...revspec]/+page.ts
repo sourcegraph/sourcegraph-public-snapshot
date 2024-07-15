@@ -41,7 +41,7 @@ export const load: PageLoad = async ({ params }) => {
                   mapResult: (result, previousResult) => {
                       const pageInfo = result.data?.repository?.comparison.fileDiffs.pageInfo
                       return {
-                          pageInfo: pageInfo?.hasNextPage ? { after: pageInfo.endCursor } : undefined,
+                          nextVariables: pageInfo?.hasNextPage ? { after: pageInfo.endCursor } : undefined,
                           data: (previousResult.data ?? []).concat(
                               result.data?.repository?.comparison.fileDiffs.nodes ?? []
                           ),
