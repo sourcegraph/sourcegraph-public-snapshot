@@ -57,6 +57,7 @@ env:
       { "Name": "frontend", "Host": "127.0.0.1:6063" },
       { "Name": "gitserver-0", "Host": "127.0.0.1:3551" },
       { "Name": "gitserver-1", "Host": "127.0.0.1:3552" },
+      { "Name": "tenantmanager", "Host": "127.0.0.1:6078" },
       { "Name": "searcher", "Host": "127.0.0.1:6069" },
       { "Name": "symbols", "Host": "127.0.0.1:6071" },
       { "Name": "repo-updater", "Host": "127.0.0.1:6074" },
