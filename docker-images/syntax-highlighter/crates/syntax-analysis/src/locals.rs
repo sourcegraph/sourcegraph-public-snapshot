@@ -582,7 +582,7 @@ impl<'a> LocalResolver<'a> {
                     })
                 } else if capture_name.starts_with("reference") {
                     let kind = ReferenceKind::from_str(
-                        &capture_name
+                        capture_name
                             .strip_prefix("reference.")
                             .unwrap_or(capture_name),
                     );
