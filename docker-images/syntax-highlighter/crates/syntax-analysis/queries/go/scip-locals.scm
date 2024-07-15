@@ -58,6 +58,6 @@
    left: (expression_list
            (identifier) @definition.var)))
 
-(identifier) @reference
-(type_identifier) @reference
-(field_identifier) @reference
+(identifier) @reference.local
+(type_identifier) @reference.local
+(field_identifier) @reference.local

@@ -57,23 +57,16 @@ enum ReferenceKind {
     /// and a global reference is immediately emitted (with symbol being just
     /// the node's text content)
     Global,
-
-    /// Mixed reference is first attempted to be resolved as local,
-    /// and if that fails, a global referencei is emittted
-    Either,
 }
 
 impl ReferenceKind {
-    fn from_str(str: &str) -> ReferenceKind {
+    fn from_str(str: &str) -> Option<&ReferenceKind> {
         if str == "global" {
-            ReferenceKind::Global
+            Some(&ReferenceKind::Global)
         } else if str == "local" {
-            ReferenceKind::Local
-        } else if str == "either" {
-            ReferenceKind::Either
+            Some(&ReferenceKind::Local)
         } else {
-            debug_assert!(true, "Unknown reference type: {str}");
-            ReferenceKind::Local
+            None
         }
     }
 }
@@ -98,7 +91,7 @@ struct Definition<'a> {
 struct Reference<'a> {
     node: Node<'a>,
     name: Name,
-    kind: ReferenceKind,
+    kind: Option<&'a ReferenceKind>,
     /// When dealing with def_refs there are references that we've
     /// already resolved to their definitions. Because we don't want
     /// to duplicate that work we store the definition's id here.
@@ -220,7 +213,7 @@ struct DefCapture<'a> {
 #[derive(Debug)]
 struct RefCapture<'a> {
     node: Node<'a>,
-    kind: ReferenceKind,
+    kind: Option<&'a ReferenceKind>,
 }
 
 /// Created by LocalResolver::ancestors()
@@ -391,7 +384,7 @@ impl<'a> LocalResolver<'a> {
                     name,
                     node,
                     resolves_to: Some(definition_id),
-                    kind: ReferenceKind::Local,
+                    kind: None,
                 })
             }
         };
@@ -600,7 +593,7 @@ impl<'a> LocalResolver<'a> {
                     }
 
                     match kind {
-                        ReferenceKind::Global | ReferenceKind::Either => {
+                        Some(ReferenceKind::Global) | None => {
                             self.non_local_references_at_offsets.insert(offset);
                         }
                         _ => {}
@@ -782,41 +775,52 @@ impl<'a> LocalResolver<'a> {
                     .contains(&reference.node.start_byte());
 
                 match reference.kind {
-                    ReferenceKind::Local => {
-                        if !self
+                    Some(ReferenceKind::Local) => {
+                        if self
                             .non_local_references_at_offsets
                             .contains(&reference.node.start_byte())
                         {
-                            if let Some(def_id) = reference.resolves_to {
-                                ref_occurrences.push(self.make_local_reference(reference, def_id))
-                            } else if !skip {
-                                if let Some(def) = self.find_def(
-                                    scope_ref,
-                                    reference.name,
-                                    reference.node.start_byte(),
-                                ) {
-                                    ref_occurrences
-                                        .push(self.make_local_reference(reference, def.id));
-                                }
+                            continue;
+                        }
+
+                        if let Some(def_id) = reference.resolves_to {
+                            ref_occurrences.push(self.make_local_reference(reference, def_id))
+                        } else {
+                            if skip {
+                                continue;
                             }
-                        }
-                    }
-                    ReferenceKind::Global => {
-                        if !skip {
-                            ref_occurrences.push(self.make_global_reference(reference))
-                        }
-                    }
-                    ReferenceKind::Either => {
-                        if !skip {
+
                             if let Some(def) = self.find_def(
                                 scope_ref,
                                 reference.name,
                                 reference.node.start_byte(),
                             ) {
                                 ref_occurrences.push(self.make_local_reference(reference, def.id));
-                            } else {
-                                ref_occurrences.push(self.make_global_reference(reference))
                             }
+                        }
+                    }
+                    Some(ReferenceKind::Global) => {
+                        if !skip {
+                            ref_occurrences.push(self.make_global_reference(reference))
+                        }
+                    }
+                    None => {
+                        println!("Handling {:?}, {}", reference, skip);
+                        if let Some(def_id) = reference.resolves_to {
+                            ref_occurrences.push(self.make_local_reference(reference, def_id));
+                            continue;
+                        }
+
+                        if skip {
+                            continue;
+                        }
+
+                        if let Some(def) =
+                            self.find_def(scope_ref, reference.name, reference.node.start_byte())
+                        {
+                            ref_occurrences.push(self.make_local_reference(reference, def.id));
+                        } else {
+                            ref_occurrences.push(self.make_global_reference(reference))
                         }
                     }
                 }
