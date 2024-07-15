@@ -87,15 +87,13 @@ interface InfinityQueryArgs<TData, TPayload = any, TVariables extends AnyVariabl
      * @param previousResult - The previous result of the query.
      * @returns The new/combined result state.
      */
-    map: (
-        result: OperationResult<TPayload, TVariables>,
-    ) => InfinityStoreResult<TData, TVariables>
+    map: (result: OperationResult<TPayload, TVariables>) => InfinityStoreResult<TData, TVariables>
 
     /**
      * Optional callback to merge the data from the previous result with the new data.
      * If not provided the new data will replace the old data.
      */
-    merge?: (previousData: TData|undefined, newData: TData|undefined) => TData
+    merge?: (previousData: TData | undefined, newData: TData | undefined) => TData
 
     /**
      * Returns a strategy for restoring the data when navigating back to a page.
@@ -211,9 +209,11 @@ export function infinityQuery<
         variables: Partial<TVariables>,
         previousResult: InfinityStoreResult<TData, TVariables>
     ): Promise<InfinityStoreResult<TData, TVariables>> {
-        const result = args.map(await initialVariables.then(initialVariables =>
-            args.client.query(args.query, { ...initialVariables, ...variables })
-        ))
+        const result = args.map(
+            await initialVariables.then(initialVariables =>
+                args.client.query(args.query, { ...initialVariables, ...variables })
+            )
+        )
         if (args.merge) {
             result.data = args.merge(previousResult.data, result.data)
         }
