@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "custommigrator",
+    srcs = ["custommigrator.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables/custommigrator",
+    visibility = ["//cmd/enterprise-portal:__subpackages__"],
+    deps = ["@io_gorm_gorm//:gorm"],
+)

@@ -1,14 +1,9 @@
 package subscriptions
 
-import (
-	"time"
-)
+import "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
 
 // Subscription is an Enterprise subscription condition record.
 type SubscriptionCondition struct {
-	// ⚠️ DO NOT USE: This field is only used for creating foreign key constraint.
-	Subscription *Subscription `gorm:"foreignKey:SubscriptionID"`
-
 	// SubscriptionID is the internal unprefixed UUID of the related subscription.
 	SubscriptionID string `gorm:"type:uuid;not null"`
 	// Status is the type of status corresponding to this condition, corresponding
@@ -18,7 +13,7 @@ type SubscriptionCondition struct {
 	Message *string `gorm:"size:256"`
 	// TransitionTime is the time at which the condition was created, i.e. when
 	// the subscription transitioned into this status.
-	TransitionTime time.Time `gorm:"not null;default:current_timestamp"`
+	TransitionTime utctime.Time `gorm:"not null;default:current_timestamp"`
 }
 
 func (s *SubscriptionCondition) TableName() string {
