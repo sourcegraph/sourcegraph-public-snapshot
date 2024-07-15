@@ -2,7 +2,6 @@ package appliance
 
 import (
 	"context"
-	"crypto/rand"
 
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
@@ -22,7 +21,6 @@ import (
 )
 
 type Appliance struct {
-	jwtSecret           []byte
 	adminPasswordBcrypt []byte
 
 	client                 client.Client
@@ -114,13 +112,6 @@ func (a *Appliance) ensureBackingSecretKeysExist(ctx context.Context, secret *co
 	if secret.Data == nil {
 		secret.Data = map[string][]byte{}
 	}
-	if _, ok := secret.Data[dataSecretJWTSigningKeyKey]; !ok {
-		jwtSigningKey, err := genRandomBytes(32)
-		if err != nil {
-			return err
-		}
-		secret.Data[dataSecretJWTSigningKeyKey] = jwtSigningKey
-	}
 
 	if _, ok := secret.Data[dataSecretEncryptedPasswordKey]; !ok {
 		// Get admin-supplied password from separate secret, then delete it
@@ -155,20 +146,7 @@ func (a *Appliance) ensureBackingSecretKeysExist(ctx context.Context, secret *co
 }
 
 func (a *Appliance) loadValuesFromSecret(secret *corev1.Secret) {
-	a.jwtSecret = secret.Data[dataSecretJWTSigningKeyKey]
 	a.adminPasswordBcrypt = secret.Data[dataSecretEncryptedPasswordKey]
-}
-
-func genRandomBytes(length int) ([]byte, error) {
-	randomBytes := make([]byte, length)
-	bytesRead, err := rand.Read(randomBytes)
-	if err != nil {
-		return nil, errors.Wrap(err, "reading random bytes")
-	}
-	if bytesRead != length {
-		return nil, errors.Newf("expected to read %d random bytes, got %d", length, bytesRead)
-	}
-	return randomBytes, nil
 }
 
 func (a *Appliance) GetCurrentVersion(ctx context.Context) string {
