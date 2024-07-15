@@ -83,5 +83,53 @@
 )
 
 (field_access field: (identifier) @occurrence.skip)
-(identifier) @reference
-(type_identifier) @reference
+
+; REFERENCES
+
+; new MyType(...)
+;     ^^^^^^
+(object_creation_expression
+    type: [
+           ; This can be a reference to a local (method's type parameter)
+           ; or a global
+           (type_identifier) @reference.either
+
+           ; For nested classes used in `new` expressions (e.g. `new TodoApp.Item`)
+           ; we emit references to TodoApp, Item, and TodoApp.Item - the latter
+           ; to bump up the fuzzy matching against this exact form
+           (scoped_type_identifier
+               (type_identifier)* @reference.either
+            ) @reference.ether
+    ]
+)
+
+; hello(...)
+; ^^^^^
+; As we don't support local methods yet, we unequivocally mark this reference
+; as global
+(method_invocation
+  name: (identifier) @reference.global
+)
+
+; MyType variable = ...
+; ^^^^^^
+(local_variable_declaration
+  type: (type_identifier) @reference.either
+    (#not-eq? @reference.either "var")
+)
+
+; for (MyType variable: variables) {...
+;      ^^^^^^
+(enhanced_for_statement
+  type: (type_identifier) @reference.either
+)
+
+(throws (type_identifier)* @reference.global)
+
+; Person::getName
+; ^^^^^^  ^^^^^^^
+(method_reference (identifier)* @reference.global)
+
+; all other references we assume to be local only
+(identifier) @reference.local
+(type_identifier) @reference.local
