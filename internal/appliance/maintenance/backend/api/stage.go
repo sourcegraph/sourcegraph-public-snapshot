@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/internal/appliance/maintenance/backend/operator"
 )
 
 var maintenanceEndpoint = os.Getenv("MAINTENANCE_ENDPOINT")
@@ -20,6 +18,26 @@ func init() {
 		os.Exit(1)
 	}
 }
+
+type status struct {
+	Stage          Stage    `json:"stage"`
+	CurrentVersion *string  `json:"version"`     // current version, nil if not installed
+	NextVersion    *string  `json:"nextVersion"` // version being installed/upgraded nil if not being installed/upgraded
+	Tasks          []Task   `json:"tasks"`
+	Errors         []string `json:"errors"`
+}
+
+type Stage string
+
+const (
+	StageUnknown         Stage = "unknown"
+	StageIdle            Stage = "idle"
+	StageInstall         Stage = "install"
+	StageInstalling      Stage = "installing"
+	StageUpgrading       Stage = "upgrading"
+	StageWaitingForAdmin Stage = "wait-for-admin"
+	StageRefresh         Stage = "refresh"
+)
 
 type Feature struct {
 	Name     string `json:"name"`
@@ -40,7 +58,7 @@ type StageResponse struct {
 
 var epoch = time.Unix(0, 0)
 
-var currentStage operator.Stage = operator.StageInstall
+var currentStage Stage = StageInstall
 var switchToAdminTime time.Time = epoch
 
 func init() {
@@ -55,17 +73,17 @@ func StageHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch status {
 	case "installing":
-		currentStage = operator.StageInstalling
+		currentStage = StageInstalling
 	case "ready":
 		fmt.Println("ready!", switchToAdminTime, currentStage)
 		if switchToAdminTime == time.Unix(0, 0) {
-			if currentStage != operator.StageRefresh && currentStage != operator.StageWaitingForAdmin {
+			if currentStage != StageRefresh && currentStage != StageWaitingForAdmin {
 				switchToAdminTime = time.Now().Add(5 * time.Second)
 			}
 		} else {
 			if time.Now().After(switchToAdminTime) {
 				switchToAdminTime = epoch
-				currentStage = operator.StageWaitingForAdmin
+				currentStage = StageWaitingForAdmin
 			}
 		}
 	case "unknown":
@@ -77,8 +95,8 @@ func StageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch currentStage {
-	case operator.StageRefresh:
-		currentStage = operator.StageUnknown
+	case StageRefresh:
+		currentStage = StageUnknown
 	}
 
 	fmt.Println("Sending current stage", result)
@@ -92,12 +110,12 @@ func SetStageHandlerForTesting(w http.ResponseWriter, r *http.Request) {
 	receiveJson(w, r, &request)
 
 	fmt.Println("Setting stage to", request.Stage)
-	currentStage = operator.Stage(request.Stage)
+	currentStage = Stage(request.Stage)
 
 	fmt.Println(installTasks)
 
 	switch currentStage {
-	case operator.StageInstalling:
+	case StageInstalling:
 		installError = ""
 		installTasks = createInstallTasks()
 		installVersion = request.Data
@@ -107,7 +125,7 @@ func SetStageHandlerForTesting(w http.ResponseWriter, r *http.Request) {
 				installError = err.Error()
 			}
 		}()
-	case operator.StageUpgrading:
+	case StageUpgrading:
 		installError = ""
 		installTasks = createFakeUpgradeTasks()
 		installVersion = request.Data

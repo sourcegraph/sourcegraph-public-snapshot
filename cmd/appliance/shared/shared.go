@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	sglogr "github.com/sourcegraph/log/logr"
+
 	"github.com/sourcegraph/sourcegraph/internal/appliance"
 	"github.com/sourcegraph/sourcegraph/internal/appliance/reconciler"
 	"github.com/sourcegraph/sourcegraph/internal/appliance/selfupdate"
