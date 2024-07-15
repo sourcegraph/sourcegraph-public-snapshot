@@ -158,10 +158,10 @@ func (t pgxTestTracer) TraceQueryStart(ctx context.Context, conn *pgx.Conn, data
 }
 
 func (t pgxTestTracer) TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryEndData) {
+	t.Logf(`pgx.QueryEnd db=%q tag=%q error=%q`,
+		conn.Config().Database,
+		data.CommandTag.String(),
+		data.Err)
 	if data.Err != nil {
-		t.Logf(`pgx.QueryEnd db=%q tag=%q error=%q`,
-			conn.Config().Database,
-			data.CommandTag.String(),
-			data.Err)
 	}
 }
