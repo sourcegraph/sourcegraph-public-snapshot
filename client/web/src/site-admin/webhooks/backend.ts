@@ -1,21 +1,4 @@
-import type { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
-
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-
-import { requestGraphQL } from '../../backend/graphql'
-import type {
-    Scalars,
-    ServiceWebhookLogsResult,
-    ServiceWebhookLogsVariables,
-    WebhookLogConnectionFields,
-    WebhookLogsByWebhookIDResult,
-    WebhookLogsByWebhookIDVariables,
-    WebhookLogsResult,
-    WebhookLogsVariables,
-} from '../../graphql-operations'
-
-export type SelectedExternalService = 'unmatched' | 'all' | Scalars['ID']
+import { gql } from '@sourcegraph/http-client'
 
 export const WEBHOOK_LOG_REQUEST_FIELDS_FRAGMENT = gql`
     fragment WebhookLogRequestFields on WebhookLogRequest {
@@ -60,101 +43,6 @@ const WEBHOOK_LOG_FIELDS_FRAGMENT = gql`
     }
 `
 
-const WEBHOOK_LOG_CONNECTION_FIELDS_FRAGMENT = gql`
-    ${WEBHOOK_LOG_FIELDS_FRAGMENT}
-    fragment WebhookLogConnectionFields on WebhookLogConnection {
-        nodes {
-            ...WebhookLogFields
-        }
-        pageInfo {
-            hasNextPage
-            endCursor
-        }
-        totalCount
-    }
-`
-
-export const queryWebhookLogs = (
-    { first, after }: Pick<WebhookLogsVariables, 'first' | 'after'>,
-    externalService: SelectedExternalService,
-    onlyErrors: boolean,
-    webhookID?: string
-): Observable<WebhookLogConnectionFields> => {
-    // If webhook ID is provided, then we search for this webhook's logs
-    if (webhookID) {
-        return requestGraphQL<WebhookLogsByWebhookIDResult, WebhookLogsByWebhookIDVariables>(WEBHOOK_LOGS_BY_ID, {
-            first: first ?? 20,
-            after: null,
-            onlyErrors: false,
-            onlyUnmatched: false,
-            webhookID,
-        }).pipe(
-            map(dataOrThrowErrors),
-            map((result: WebhookLogsResult) => result.webhookLogs)
-        )
-    }
-
-    if (externalService === 'all' || externalService === 'unmatched') {
-        return requestGraphQL<WebhookLogsResult, WebhookLogsVariables>(
-            gql`
-                query WebhookLogs($first: Int, $after: String, $onlyErrors: Boolean!, $onlyUnmatched: Boolean!) {
-                    webhookLogs(
-                        first: $first
-                        after: $after
-                        onlyErrors: $onlyErrors
-                        onlyUnmatched: $onlyUnmatched
-                        legacyOnly: true
-                    ) {
-                        ...WebhookLogConnectionFields
-                    }
-                }
-
-                ${WEBHOOK_LOG_CONNECTION_FIELDS_FRAGMENT}
-            `,
-            {
-                first,
-                after,
-                onlyErrors,
-                onlyUnmatched: externalService === 'unmatched',
-            }
-        ).pipe(
-            map(dataOrThrowErrors),
-            map((result: WebhookLogsResult) => result.webhookLogs)
-        )
-    }
-
-    return requestGraphQL<ServiceWebhookLogsResult, ServiceWebhookLogsVariables>(
-        gql`
-            query ServiceWebhookLogs($first: Int, $after: String, $id: ID!, $onlyErrors: Boolean!) {
-                node(id: $id) {
-                    ... on ExternalService {
-                        __typename
-                        webhookLogs(first: $first, after: $after, onlyErrors: $onlyErrors) {
-                            ...WebhookLogConnectionFields
-                        }
-                    }
-                }
-            }
-
-            ${WEBHOOK_LOG_CONNECTION_FIELDS_FRAGMENT}
-        `,
-        {
-            first: first ?? null,
-            after: after ?? null,
-            onlyErrors,
-            id: externalService,
-        }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(result => {
-            if (result.node?.__typename === 'ExternalService') {
-                return result.node.webhookLogs
-            }
-            throw new Error('unexpected non ExternalService node')
-        })
-    )
-}
-
 export const WEBHOOK_LOG_PAGE_HEADER = gql`
     query WebhookLogPageHeader {
         externalServices {
@@ -192,15 +80,19 @@ export const WEBHOOK_LOGS_BY_ID = gql`
             onlyUnmatched: $onlyUnmatched
             webhookID: $webhookID
         ) {
-            nodes {
-                ...WebhookLogFields
-            }
-            pageInfo {
-                hasNextPage
-                endCursor
-            }
-            totalCount
+            ...ListWebhookLogs
         }
+    }
+
+    fragment ListWebhookLogs on WebhookLogConnection {
+        nodes {
+            ...WebhookLogFields
+        }
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+        totalCount
     }
 `
 

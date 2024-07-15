@@ -73,12 +73,16 @@
     on:mouseleave={hide}
     on:focusin={show}
     on:focusout={hide}
-    data-tooltip-root
->
-    <slot />
-</div>
-{#if (alwaysVisible || visible) && target && tooltip}
-    <div role="tooltip" {id} use:popover={{ reference: target, options }} use:portal>
+    data-tooltip-root><!--
+--><slot /><!--
+--></div
+><!--
+-->{#if (alwaysVisible || visible) && target && tooltip}<div
+        role="tooltip"
+        {id}
+        use:popover={{ reference: target, options }}
+        use:portal
+    >
         <div class="content">{tooltip}</div>
         <div data-arrow />
     </div>

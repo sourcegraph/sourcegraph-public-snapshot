@@ -22,12 +22,12 @@
 </script>
 
 <script lang="ts">
-    import { resolveRoute } from '$app/paths'
     import Avatar from '$lib/Avatar.svelte'
     import { pluralize } from '$lib/common'
     import { getGraphQLClient } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
-    import { displayRepoName } from '$lib/shared'
+    import { pathHrefFactory } from '$lib/path'
+    import DisplayPath from '$lib/path/DisplayPath.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
     import { formatBytes } from '$lib/utils'
     import Badge from '$lib/wildcard/Badge.svelte'
@@ -40,43 +40,21 @@
     export let revision: string
     export let entry: FilePopoverFragment | DirPopoverFragment
 
-    const TREE_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/tree/[...path]'
-
-    function splitPath(filePath: string): [string[], string] {
+    function splitPath(filePath: string): [string, string] {
         let parts = filePath.split('/')
-        return [parts.slice(0, parts.length - 1), parts[parts.length - 1]]
+        return [parts.slice(0, parts.length - 1).join('/'), parts[parts.length - 1]]
     }
 
-    $: [dirNameEntries, baseName] = splitPath(entry.path)
-    $: dirNameBreadcrumbs = dirNameEntries.map((part, index, all): [string, string] => [
-        part,
-        resolveRoute(TREE_ROUTE_ID, {
-            repo: revision ? `${repoName}@${revision}` : repoName,
-            path: all.slice(0, index + 1).join('/'),
-        }),
-    ])
+    $: [dirName, baseName] = splitPath(entry.path)
     $: lastCommit = entry.history.nodes[0].commit
 </script>
 
-<div class="root section muted">
-    <div class="repo-and-path section mono">
-        <!--
-            Extra layer of divs to allow customizing the gap, but wrap before the slashes.
-            Ideally we'd be able to use `break-after: avoid;`, but that's not widely supported.
-        -->
-        {#each displayRepoName(repoName).split('/') as repoFragment, i}
-            <span>
-                {#if i > 0}<span>/</span>{/if}
-                <span>{repoFragment}</span>
-            </span>
-        {/each}
-        {#if dirNameBreadcrumbs.length}<span>·</span>{/if}
-        {#each dirNameBreadcrumbs as [name, href], i}
-            <span>
-                {#if i > 0}<span>/</span>{/if}
-                <span><a {href}>{name}</a></span>
-            </span>
-        {/each}
+<div class="root">
+    <div class="path section">
+        <DisplayPath
+            path={dirName}
+            pathHref={pathHrefFactory({ repoName, revision, fullPath: dirName, fullPathType: 'tree' })}
+        />
     </div>
 
     <div class="lang-and-file section">
@@ -131,27 +109,7 @@
 
         .section {
             padding: 0.5rem 1rem;
-        }
-
-        .repo-and-path {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.375em;
-            span {
-                display: flex;
-                flex-wrap: nowrap;
-                gap: inherit;
-            }
-
             border-bottom: 1px solid var(--border-color);
-
-            font-size: var(--font-size-tiny);
-            a {
-                color: unset;
-                &:hover {
-                    color: var(--text-body);
-                }
-            }
         }
 
         .lang-and-file {
@@ -211,10 +169,6 @@
 
     .title {
         color: var(--text-title);
-    }
-
-    .muted {
-        color: var(--text-muted);
     }
 
     .body {

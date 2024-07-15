@@ -170,6 +170,9 @@ func TestConvertCompletionsConfig(t *testing.T) {
 			{
 				m := siteModelConfig.ModelOverrides[0]
 				assert.EqualValues(t, "anthropic::unknown::anthropic.claude-3-opus-20240229-v1_0", m.ModelRef)
+				assert.EqualValues(t, "anthropic.claude-3-opus-20240229-v1_0", m.ModelRef.ModelID())
+				// Unlike the Model's ID, the Name is unchanged, as this is what AWS expects in the API call.
+				assert.EqualValues(t, "anthropic.claude-3-opus-20240229-v1:0", m.ModelName)
 				require.Nil(t, m.ServerSideConfig)
 			}
 
@@ -214,7 +217,9 @@ func TestConvertCompletionsConfig(t *testing.T) {
 
 			chatModel := siteModelConfig.ModelOverrides[0]
 			assert.EqualValues(t, "anthropic::unknown::anthropic.claude-3-haiku-20240307-v1_0-100k", chatModel.ModelRef)
+			assert.EqualValues(t, "anthropic.claude-3-haiku-20240307-v1:0-100k", chatModel.ModelName)
 			require.NotNil(t, chatModel.ServerSideConfig)
+			require.NotNil(t, chatModel.ServerSideConfig.AWSBedrockProvisionedThroughput)
 			assert.Equal(t, "arn:aws:bedrock:us-west-2:012345678901:provisioned-model/abcdefghijkl", chatModel.ServerSideConfig.AWSBedrockProvisionedThroughput.ARN)
 
 			completionModel := siteModelConfig.ModelOverrides[1]

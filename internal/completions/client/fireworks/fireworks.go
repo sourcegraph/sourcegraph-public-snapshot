@@ -61,17 +61,18 @@ const FineTunedLlamaAll = "accounts/sourcegraph/models/finetuned-fim-lang-all-mo
 
 var FineTunedLlamaModelVariants = []string{FineTunedLlamaTypescript, FineTunedLlamaJavascript, FineTunedLlamaPhp, FineTunedLlamaPython, FineTunedLlamaAll}
 
-const FineTunedDeepseekStackTrainedTypescript = "accounts/sourcegraph/models/finetuned-fim-lang-ts-model-deepseek-7b-stack-trained-v1"
-const FineTunedDeepseekStackTrainedPython = "accounts/sourcegraph/models/finetuned-fim-lang-py-model-deepseek-7b-stack-trained-v1"
+const FineTunedDeepseekStackTrainedTypescript = "accounts/sourcegraph/models/finetuned-fim-lang-ts-like-model-deepseek-7b-stack-v2"
+const FineTunedDeepseekStackTrainedPython = "accounts/sourcegraph/models/finetuned-fim-lang-py-model-deepseek-7b-stack-v2"
 const FineTunedFIMLangDeepSeekStackTrained = "fim-lang-specific-model-deepseek-stack-trained"
 
-const FineTunedDeepseekLogsTrainedTypescript = "accounts/sourcegraph/models/finetuned-fim-lang-ts-model-deepseek-7b-logs-trained-v1"
-const FineTunedDeepseekLogsTrainedJavascript = "accounts/sourcegraph/models/finetuned-fim-lang-js-model-deepseek-7b-logs-trained-v1"
-const FineTunedDeepseekLogsTrainedPython = "accounts/sourcegraph/models/finetuned-fim-lang-py-model-deepseek-7b-logs-trained-v1"
+const FineTunedDeepseekLogsTrainedTypescript = "accounts/sourcegraph/models/finetuned-fim-lang-ts-model-deepseek-7b-logs-v2"
+const FineTunedDeepseekLogsTrainedJavascript = "accounts/sourcegraph/models/finetuned-fim-lang-js-model-deepseek-7b-logs-v2"
+const FineTunedDeepseekLogsTrainedPython = "accounts/sourcegraph/models/finetuned-fim-lang-py-model-deepseek-7b-logs-v2"
+const FineTunedDeepseekLogsTrainedReact = "accounts/sourcegraph/models/finetuned-fim-lang-tsx-jsx-model-deepseek-7b-logs-v2"
 const FineTunedFIMLangDeepSeekLogsTrained = "fim-lang-specific-model-deepseek-logs-trained"
 
 var FineTunedDeepseekStackTrainedModelVariants = []string{FineTunedDeepseekStackTrainedTypescript, FineTunedDeepseekStackTrainedPython, FineTunedFIMLangDeepSeekStackTrained}
-var FineTunedDeepseekLogsTrainedModelVariants = []string{FineTunedDeepseekLogsTrainedTypescript, FineTunedDeepseekLogsTrainedJavascript, FineTunedDeepseekLogsTrainedPython, FineTunedFIMLangDeepSeekLogsTrained}
+var FineTunedDeepseekLogsTrainedModelVariants = []string{FineTunedDeepseekLogsTrainedTypescript, FineTunedDeepseekLogsTrainedJavascript, FineTunedDeepseekLogsTrainedPython, FineTunedDeepseekLogsTrainedReact, FineTunedFIMLangDeepSeekLogsTrained}
 
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
 	return &fireworksClient{
@@ -91,10 +92,7 @@ func (c *fireworksClient) Complete(
 	ctx context.Context,
 	logger log.Logger,
 	request types.CompletionRequest) (*types.CompletionResponse, error) {
-	feature := request.Feature
-	requestParams := request.Parameters
-
-	resp, err := c.makeRequest(ctx, feature, requestParams, false)
+	resp, err := c.makeRequest(ctx, request, false /* stream */)
 	if err != nil {
 		return nil, err
 	}
@@ -131,18 +129,11 @@ func (c *fireworksClient) Stream(
 	logger log.Logger,
 	request types.CompletionRequest,
 	sendEvent types.SendCompletionEvent) error {
-	feature := request.Feature
 	requestParams := request.Parameters
 	logprobsInclude := uint8(0)
 	requestParams.Logprobs = &logprobsInclude
 
-	// HACK: Cody Gateway expects model names in <provider>/<model> format, but if we're connecting directly to
-	// the Fireworks API, we need to strip the "fireworks" provider prefix
-	if components := strings.Split(requestParams.Model, "/"); components[0] == "fireworks" {
-		requestParams.Model = strings.Join(components[1:], "/")
-	}
-
-	resp, err := c.makeRequest(ctx, feature, requestParams, true)
+	resp, err := c.makeRequest(ctx, request, true /* stream */)
 	if err != nil {
 		return err
 	}
@@ -190,16 +181,20 @@ func (c *fireworksClient) Stream(
 	return dec.Err()
 }
 
-func (c *fireworksClient) makeRequest(ctx context.Context, feature types.CompletionsFeature, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+func (c *fireworksClient) makeRequest(ctx context.Context, request types.CompletionRequest, stream bool) (*http.Response, error) {
+	requestParams := request.Parameters
 	if requestParams.TopP < 0 {
 		requestParams.TopP = 0
 	}
 
-	var reqBody []byte
-	var err error
-	var endpoint string
+	var (
+		reqBody  []byte
+		err      error
+		endpoint string
+	)
 
-	if feature == types.CompletionsFeatureCode {
+	switch request.Feature {
+	case types.CompletionsFeatureCode:
 		// For compatibility reasons with other models, we expect to find the prompt
 		// in the first and only message
 		prompt, promptErr := getPrompt(requestParams.Messages)
@@ -208,7 +203,7 @@ func (c *fireworksClient) makeRequest(ctx context.Context, feature types.Complet
 		}
 
 		payload := fireworksRequest{
-			Model:       requestParams.Model,
+			Model:       request.ModelConfigInfo.Model.ModelName,
 			Temperature: requestParams.Temperature,
 			TopP:        requestParams.TopP,
 			N:           1,
@@ -222,9 +217,9 @@ func (c *fireworksClient) makeRequest(ctx context.Context, feature types.Complet
 
 		reqBody, err = json.Marshal(payload)
 		endpoint = c.endpoint
-	} else {
+	case types.CompletionsFeatureChat:
 		payload := fireworksChatRequest{
-			Model:       requestParams.Model,
+			Model:       request.ModelConfigInfo.Model.ModelName,
 			Temperature: requestParams.Temperature,
 			TopP:        requestParams.TopP,
 			N:           1,
@@ -256,8 +251,9 @@ func (c *fireworksClient) makeRequest(ctx context.Context, feature types.Complet
 		}
 
 		reqBody, err = json.Marshal(payload)
+	default:
+		return nil, errors.Errorf("unrecognized feature %q", request.Feature)
 	}
-
 	if err != nil {
 		return nil, err
 	}

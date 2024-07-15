@@ -81,9 +81,10 @@ func TestErrStatusNotOK(t *testing.T) {
 	mockClient, _ := NewClient(getAzureAPIClient, "", "", *tokenManager)
 
 	compRequest := types.CompletionRequest{
-		Feature:    types.CompletionsFeatureChat,
-		Version:    types.CompletionsVersionLegacy,
-		Parameters: types.CompletionRequestParameters{},
+		Feature:         types.CompletionsFeatureChat,
+		ModelConfigInfo: types.ModelConfigInfo{},
+		Parameters:      types.CompletionRequestParameters{},
+		Version:         types.CompletionsVersionLegacy,
 	}
 
 	t.Run("Complete", func(t *testing.T) {
@@ -128,9 +129,10 @@ func TestGenericErr(t *testing.T) {
 	mockClient, _ := NewClient(getAzureAPIClient, "", "", *tokenManager)
 
 	compRequest := types.CompletionRequest{
-		Feature:    types.CompletionsFeatureChat,
-		Version:    types.CompletionsVersionLegacy,
-		Parameters: types.CompletionRequestParameters{},
+		Feature:         types.CompletionsFeatureChat,
+		ModelConfigInfo: types.ModelConfigInfo{},
+		Parameters:      types.CompletionRequestParameters{},
+		Version:         types.CompletionsVersionLegacy,
 	}
 
 	t.Run("Complete", func(t *testing.T) {

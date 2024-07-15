@@ -25,6 +25,7 @@ export { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/tempo
 export {
     LATEST_VERSION,
     TELEMETRY_FILTER_TYPES,
+    getRevision,
     aggregateStreamingSearch,
     emptyAggregateResults,
     getFileMatchUrl,

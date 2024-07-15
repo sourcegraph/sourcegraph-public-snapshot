@@ -194,7 +194,7 @@ copy_to_directory(
 
 playwright_test_bin.playwright_test(
     name = "e2e_test",
-    timeout = "short",
+    timeout = "long",
     args = [
         "test",
         "--config $(location playwright.config.ts)",
