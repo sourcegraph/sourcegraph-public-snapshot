@@ -138,14 +138,14 @@ func mapRefsToCommits(refs []gitdomain.Ref) map[string][]gitdomain.Ref {
 // accelerating rate, as we routinely expire old information for active repositories in a janitor
 // process.
 func (s *commitGraphUpdater) getCommitGraph(ctx context.Context, repositoryID int, repo api.RepoName) (*commitgraph.CommitGraph, error) {
-	commitDate, ok, err := s.store.GetOldestCommitDate(ctx, repositoryID)
+	optCommitDate, err := s.store.GetCommitDateForOldestUpload(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		// No uploads exist for this repository
+	if optCommitDate.IsNone() {
 		return commitgraph.ParseCommitGraph(nil), nil
 	}
+	commitDate := optCommitDate.Unwrap()
 
 	// The --since flag for git log is exclusive, but we want to include the commit where the
 	// oldest dump is defined. This flag only has second resolution, so we shouldn't be pulling
