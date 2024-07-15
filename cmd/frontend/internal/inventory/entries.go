@@ -52,12 +52,12 @@ type NextRecord struct {
 
 type dirInfo struct {
 	path  string
-	inv   Inventory
+	invs  []Inventory
 	depth int
 }
 
 func (c *Context) ArchiveProcessor(ctx context.Context, next func() (*NextRecord, error)) (inv Inventory, err error) {
-	root := dirInfo{path: ".", inv: Inventory{}}
+	root := dirInfo{path: ".", invs: []Inventory{}}
 	dirStack := []*dirInfo{&root}
 	var currentDepth = -1
 	currentDir := &root
@@ -67,12 +67,13 @@ func (c *Context) ArchiveProcessor(ctx context.Context, next func() (*NextRecord
 		if err != nil {
 			// We've seen everything and can collapse the rest.
 			if errors.Is(err, io.EOF) {
-				c.compressAndCacheDirectory(ctx, &dirStack)
+				c.compressAndCacheStackTop(ctx, &dirStack)
 				r := dirStack[0]
+				s := Sum(r.invs)
 				if c.CacheSet != nil {
-					c.CacheSet(ctx, fmt.Sprintf("%s/%s:%s", c.Repo, r.path, c.CommitID), r.inv)
+					c.CacheSet(ctx, fmt.Sprintf("%s/%s:%s", c.Repo, r.path, c.CommitID), s)
 				}
-				return r.inv, nil
+				return s, nil
 			}
 			return Inventory{}, err
 		}
@@ -85,7 +86,7 @@ func (c *Context) ArchiveProcessor(ctx context.Context, next func() (*NextRecord
 
 		// Process completed directories
 		for currentDepth >= depth {
-			c.compressAndCacheDirectory(ctx, &dirStack)
+			c.compressAndCacheStackTop(ctx, &dirStack)
 			currentDir = dirStack[len(dirStack)-1]
 			currentDepth--
 		}
@@ -98,10 +99,10 @@ func (c *Context) ArchiveProcessor(ctx context.Context, next func() (*NextRecord
 				return Inventory{}, err
 			}
 			fileInv := Inventory{Languages: []Lang{lang}}
-			currentDir.inv = Sum([]Inventory{currentDir.inv, fileInv})
+			currentDir.invs = append(currentDir.invs, fileInv)
 
 		case entry.Mode().IsDir():
-			dir := dirInfo{path: path, inv: Inventory{}, depth: depth}
+			dir := dirInfo{path: path, invs: []Inventory{}, depth: depth}
 			dirStack = append(dirStack, &dir)
 			currentDepth = depth
 			currentDir = &dir
@@ -111,15 +112,16 @@ func (c *Context) ArchiveProcessor(ctx context.Context, next func() (*NextRecord
 	}
 }
 
-func (c *Context) compressAndCacheDirectory(ctx context.Context, dirStack *[]*dirInfo) {
+func (c *Context) compressAndCacheStackTop(ctx context.Context, dirStack *[]*dirInfo) {
 	if len(*dirStack) > 1 {
 		dir := (*dirStack)[len(*dirStack)-1]
 		*dirStack = (*dirStack)[:len(*dirStack)-1]
-		if c.CacheSet != nil && len(dir.inv.Languages) > 0 {
-			c.CacheSet(ctx, fmt.Sprintf("%s/%s:%s", c.Repo, dir.path, c.CommitID), dir.inv)
+		s := Sum(dir.invs)
+		if c.CacheSet != nil && len(s.Languages) > 0 {
+			c.CacheSet(ctx, fmt.Sprintf("%s/%s:%s", c.Repo, dir.path, c.CommitID), s)
 		}
 		if len(*dirStack) > 0 {
-			(*dirStack)[len(*dirStack)-1].inv = Sum([]Inventory{(*dirStack)[len(*dirStack)-1].inv, dir.inv})
+			(*dirStack)[len(*dirStack)-1].invs = append((*dirStack)[len(*dirStack)-1].invs, s)
 		}
 	}
 }

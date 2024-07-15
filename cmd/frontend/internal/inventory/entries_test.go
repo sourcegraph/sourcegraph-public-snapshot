@@ -412,3 +412,112 @@ func TestEntriesNextProcessorWithCaching(t *testing.T) {
 		})
 	}
 }
+
+func TestSum(t *testing.T) {
+	testCases := []struct {
+		name     string
+		invs     []Inventory
+		expected Inventory
+	}{
+		{
+			name: "empty input",
+			invs: []Inventory{},
+			expected: Inventory{
+				Languages: []Lang{},
+			},
+		},
+		{
+			name: "single inventory",
+			invs: []Inventory{
+				{
+					Languages: []Lang{
+						{Name: "Go", TotalBytes: 100, TotalLines: 10},
+						{Name: "Python", TotalBytes: 200, TotalLines: 20},
+					},
+				},
+			},
+			expected: Inventory{
+				Languages: []Lang{
+					{Name: "Python", TotalBytes: 200, TotalLines: 20},
+					{Name: "Go", TotalBytes: 100, TotalLines: 10},
+				},
+			},
+		},
+		{
+			name: "multiple inventories",
+			invs: []Inventory{
+				{
+					Languages: []Lang{
+						{Name: "Go", TotalBytes: 100, TotalLines: 10},
+						{Name: "Python", TotalBytes: 200, TotalLines: 20},
+					},
+				},
+				{
+					Languages: []Lang{
+						{Name: "Go", TotalBytes: 50, TotalLines: 5},
+						{Name: "Ruby", TotalBytes: 300, TotalLines: 30},
+					},
+				},
+			},
+			expected: Inventory{
+				Languages: []Lang{
+					{Name: "Ruby", TotalBytes: 300, TotalLines: 30},
+					{Name: "Python", TotalBytes: 200, TotalLines: 20},
+					{Name: "Go", TotalBytes: 150, TotalLines: 15},
+				},
+			},
+		},
+		{
+			name: "empty language name",
+			invs: []Inventory{
+				{
+					Languages: []Lang{
+						{Name: "", TotalBytes: 100, TotalLines: 10},
+						{Name: "Python", TotalBytes: 200, TotalLines: 20},
+					},
+				},
+			},
+			expected: Inventory{
+				Languages: []Lang{
+					{Name: "Python", TotalBytes: 200, TotalLines: 20},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Sum(tc.invs)
+			if !reflect.DeepEqual(got, tc.expected) {
+				t.Errorf("got %+v, want %+v", got, tc.expected)
+			}
+		})
+	}
+}
+
+func BenchmarkSum(b *testing.B) {
+	// Benchmark results
+	// n=1000: ~8500 ns/op
+	// n=100: ~1100 ns/op
+	// n=10: ~360 ns/op
+	// n=5: ~300 ns/op
+	// n=2: ~280 ns/op
+	n := 2
+	invs := make([]Inventory, n)
+	for i := 0; i < n; i++ {
+		invs[i] = Inventory{
+			Languages: []Lang{
+				{Name: "Go", TotalBytes: uint64(100 + int64(i)), TotalLines: uint64(10 + int64(i))},
+				{Name: "Python", TotalBytes: uint64(200 + int64(i)), TotalLines: uint64(20 + int64(i))},
+			},
+		}
+		if i%2 == 1 {
+			invs[i].Languages[1] = Lang{Name: "Ruby", TotalBytes: uint64(300 + int64(i)), TotalLines: uint64(30 + int64(i))}
+		}
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		Sum(invs)
+	}
+}
