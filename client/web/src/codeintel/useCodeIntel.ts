@@ -1,6 +1,5 @@
 import type { ErrorLike } from '@sourcegraph/common'
 
-import type { ConnectionQueryArguments } from '../components/FilteredConnection'
 import type { UsePreciseCodeIntelForPositionVariables } from '../graphql-operations'
 
 import type { LocationsGroup } from './location'
@@ -44,7 +43,7 @@ export interface UseCodeIntelResult {
 }
 
 export interface UseCodeIntelParameters {
-    variables: UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
+    variables: UsePreciseCodeIntelForPositionVariables
 
     searchToken: string
     fileContent: string

@@ -578,5 +578,5 @@ func TestSavedSearchesConnectionStore(t *testing.T) {
 		userID: &user.ID,
 	}
 
-	graphqlutil.TestConnectionResolverStoreSuite(t, connectionStore)
+	graphqlutil.TestConnectionResolverStoreSuite(t, connectionStore, nil)
 }

@@ -1,21 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo } from 'react'
 
-import { isEqual } from 'lodash'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Container, ErrorAlert, Input, LoadingSpinner, PageSwitcher, useDebounce } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
-import {
-    buildFilterArgs,
-    FilterControl,
-    type Filter,
-    type FilterOption,
-    type FilterValues,
-} from '../components/FilteredConnection'
+import { buildFilterArgs, FilterControl, type Filter, type FilterOption } from '../components/FilteredConnection'
+import { useUrlSearchParamsForConnectionState } from '../components/FilteredConnection/hooks/connectionState'
 import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
-import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
 import {
     RepositoryOrderBy,
     type ExternalServiceIDsAndNamesResult,
@@ -84,9 +77,9 @@ const STATUS_FILTERS: { [label: string]: FilterOption } = {
     },
 }
 
-const FILTERS: Filter[] = [
+const FILTERS: Filter<'orderBy' | 'status' | 'codeHost'>[] = [
     {
-        id: 'order',
+        id: 'orderBy',
         label: 'Order',
         type: 'select',
         options: [
@@ -147,7 +140,6 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
         stopPolling,
     } = useQuery<StatusAndRepoStatsResult>(STATUS_AND_REPO_STATS, {})
     const location = useLocation()
-    const navigate = useNavigate()
 
     useEffect(() => {
         if (alwaysPoll || data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
@@ -166,113 +158,59 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
         {}
     )
 
-    const filters = useMemo(() => {
-        if (!extSvcs) {
-            return FILTERS
-        }
-
-        const filtersWithExternalServices = FILTERS.slice() // use slice to copy array
-        if (location.pathname !== PageRoutes.SetupWizard) {
-            const values = [
-                {
-                    label: 'All',
-                    value: 'all',
-                    tooltip: 'Show all repositories',
-                    args: {},
-                },
-            ]
-
-            for (const extSvc of extSvcs.externalServices.nodes) {
-                values.push({
-                    label: extSvc.displayName,
-                    value: extSvc.id,
-                    tooltip: `Show all repositories discovered on ${extSvc.displayName}`,
-                    args: { externalService: extSvc.id },
-                })
-            }
-            filtersWithExternalServices.push({
-                id: 'codeHost',
-                label: 'Code Host',
-                type: 'select',
-                options: values,
-            })
-        }
-        return filtersWithExternalServices
-    }, [extSvcs, location.pathname])
-
-    const [filterValues, setFilterValues] = useState<FilterValues>(() =>
-        getFilterFromURL(new URLSearchParams(location.search), filters)
+    const filters = useMemo<Filter<'orderBy' | 'status' | 'codeHost'>[]>(
+        () => [
+            ...FILTERS,
+            ...(extSvcs && location.pathname !== PageRoutes.SetupWizard
+                ? [
+                      {
+                          id: 'codeHost' as const,
+                          label: 'Code Host',
+                          type: 'select' as const,
+                          options: [
+                              {
+                                  label: 'All',
+                                  value: 'all',
+                                  tooltip: 'Show all repositories',
+                                  args: {},
+                              },
+                              ...extSvcs.externalServices.nodes.map(extSvc => ({
+                                  label: extSvc.displayName,
+                                  value: extSvc.id,
+                                  tooltip: `Show all repositories discovered on ${extSvc.displayName}`,
+                                  args: { externalService: extSvc.id },
+                              })),
+                          ],
+                      },
+                  ]
+                : []),
+        ],
+        [extSvcs, location.pathname]
     )
 
-    useEffect(() => {
-        setFilterValues(getFilterFromURL(new URLSearchParams(location.search), filters))
-    }, [filters, location])
-
-    const [searchQuery, setSearchQuery] = useState<string>(
-        () => new URLSearchParams(location.search).get('query') || ''
-    )
-
-    useEffect(() => {
-        const searchFragment = getUrlQuery({
-            query: searchQuery,
-            filters,
-            filterValues,
-            search: location.search,
-        })
-        const searchFragmentParams = new URLSearchParams(searchFragment)
-        searchFragmentParams.sort()
-
-        const oldParams = new URLSearchParams(location.search)
-        oldParams.sort()
-
-        if (!isEqual(Array.from(searchFragmentParams), Array.from(oldParams))) {
-            navigate(
-                {
-                    search: searchFragment,
-                    hash: location.hash,
-                },
-                {
-                    replace: true,
-                    // Do not throw away flash messages
-                    state: location.state,
-                }
-            )
-        }
-    }, [filters, filterValues, searchQuery, location, navigate])
-
-    const variables = useMemo<RepositoriesVariables>(() => {
-        const args = buildFilterArgs(filters, filterValues)
-
-        return {
-            ...args,
-            query: searchQuery,
-            indexed: args.indexed ?? true,
-            notIndexed: args.notIndexed ?? true,
-            failedFetch: args.failedFetch ?? false,
-            corrupted: args.corrupted ?? false,
-            cloneStatus: args.cloneStatus ?? null,
-            externalService: args.externalService ?? null,
-        } as RepositoriesVariables
-    }, [filters, searchQuery, filterValues])
-
-    const debouncedVariables = useDebounce(variables, 300)
-
+    const [connectionState, setConnectionState] = useUrlSearchParamsForConnectionState(filters)
+    const debouncedQuery = useDebounce(connectionState.query, 300)
     const {
         connection,
         loading: reposLoading,
         error: reposError,
         refetch,
         ...paginationProps
-    } = usePageSwitcherPagination<RepositoriesResult, RepositoriesVariables, SiteAdminRepositoryFields>({
+    } = usePageSwitcherPagination<
+        RepositoriesResult,
+        RepositoriesVariables,
+        SiteAdminRepositoryFields,
+        typeof connectionState
+    >({
         query: REPOSITORIES_QUERY,
-        variables: debouncedVariables,
+        variables: {
+            ...buildFilterArgs(filters, connectionState),
+            query: debouncedQuery,
+        },
         getConnection: ({ data }) => data?.repositories || undefined,
         options: { pollInterval: 5000 },
+        state: [connectionState, setConnectionState],
     })
-
-    useEffect(() => {
-        refetch(debouncedVariables)
-    }, [refetch, debouncedVariables])
 
     const error = repoStatsError || extSvcError || reposError
     const loading = repoStatsLoading || extSvcLoading || reposLoading
@@ -296,7 +234,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                 color: 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that are queued to be cloned.',
-                onClick: () => setFilterValues(values => ({ ...values, status: STATUS_FILTERS.NotCloned.value })),
+                onClick: () => setConnectionState(prev => ({ ...prev, status: STATUS_FILTERS.NotCloned.value })),
             },
             {
                 value: data.repositoryStats.cloning,
@@ -304,7 +242,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                 color: data.repositoryStats.cloning > 0 ? 'var(--primary)' : 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that are currently being cloned.',
-                onClick: () => setFilterValues(values => ({ ...values, status: STATUS_FILTERS.Cloning.value })),
+                onClick: () => setConnectionState(prev => ({ ...prev, status: STATUS_FILTERS.Cloning.value })),
             },
             {
                 value: data.repositoryStats.cloned,
@@ -312,7 +250,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                 color: 'var(--success)',
                 position: 'right',
                 tooltip: 'The number of repositories that have been cloned.',
-                onClick: () => setFilterValues(values => ({ ...values, status: STATUS_FILTERS.Cloned.value })),
+                onClick: () => setConnectionState(prev => ({ ...prev, status: STATUS_FILTERS.Cloned.value })),
             },
             {
                 value: data.repositoryStats.indexed,
@@ -320,7 +258,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                 color: 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that have been indexed for search.',
-                onClick: () => setFilterValues(values => ({ ...values, status: STATUS_FILTERS.Indexed.value })),
+                onClick: () => setConnectionState(prev => ({ ...prev, status: STATUS_FILTERS.Indexed.value })),
             },
             {
                 value: data.repositoryStats.failedFetch,
@@ -329,7 +267,10 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                 position: 'right',
                 tooltip: 'The number of repositories where the last syncing attempt produced an error.',
                 onClick: () =>
-                    setFilterValues(values => ({ ...values, status: STATUS_FILTERS.FailedFetchOrClone.value })),
+                    setConnectionState(prev => ({
+                        ...prev,
+                        status: STATUS_FILTERS.FailedFetchOrClone.value,
+                    })),
             },
         ]
 
@@ -341,11 +282,11 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                 position: 'right',
                 tooltip:
                     'The number of repositories where corruption has been detected. Reclone these repositories to get rid of corruption.',
-                onClick: () => setFilterValues(values => ({ ...values, status: STATUS_FILTERS.Corrupted.value })),
+                onClick: () => setConnectionState(prev => ({ ...prev, status: STATUS_FILTERS.Corrupted.value })),
             })
         }
         return items
-    }, [data, setFilterValues])
+    }, [setConnectionState, data])
 
     return (
         <>
@@ -358,9 +299,9 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                     <div className="d-flex flex-sm-row flex-column-reverse justify-content-center">
                         <FilterControl
                             filters={filters}
-                            values={filterValues}
-                            onValueSelect={(filter: Filter, value: FilterOption['value'] | null) =>
-                                setFilterValues(values => ({ ...values, [filter.id]: value }))
+                            values={connectionState}
+                            onValueSelect={(filter, value) =>
+                                setConnectionState(prev => ({ ...prev, [filter.id]: value }))
                             }
                         />
                         <Input
@@ -368,8 +309,13 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                             className="flex-1 md-ml-5 mb-1"
                             placeholder="Search repositories..."
                             name="query"
-                            value={searchQuery}
-                            onChange={event => setSearchQuery(event.currentTarget.value)}
+                            value={connectionState.query}
+                            onChange={event =>
+                                setConnectionState(prev => ({
+                                    ...prev,
+                                    query: event.currentTarget.value,
+                                }))
+                            }
                             autoComplete="off"
                             autoCorrect="off"
                             autoCapitalize="off"

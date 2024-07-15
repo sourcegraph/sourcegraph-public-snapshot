@@ -42,12 +42,10 @@ export const useWorkspaces = (
         query: WORKSPACES,
         variables: {
             batchSpec: batchSpecID,
-            after: null,
-            first: WORKSPACES_PER_PAGE_COUNT,
             search: filters?.search ?? null,
         },
         options: {
-            useURL: false,
+            pageSize: WORKSPACES_PER_PAGE_COUNT,
             fetchPolicy: 'cache-and-network',
         },
         getConnection: result => {
