@@ -641,6 +641,16 @@ func NewSchema(
 			resolver.TelemetryRootResolver = telemetryResolver
 			schemas = append(schemas, telemetrySchema)
 		}
+
+		if promptsResolver := optional.PromptsResolver; promptsResolver != nil {
+			EnterpriseResolvers.promptsResolver = promptsResolver
+			resolver.PromptsResolver = promptsResolver
+			schemas = append(schemas, promptsSchema)
+			// Register NodeByID handlers.
+			for kind, res := range promptsResolver.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
+		}
 	}
 
 	opts := []graphql.SchemaOpt{
@@ -697,6 +707,7 @@ type OptionalResolver struct {
 	WebhooksResolver
 	ContentLibraryResolver
 	*TelemetryRootResolver
+	PromptsResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -820,6 +831,7 @@ var EnterpriseResolvers = struct {
 	webhooksResolver            WebhooksResolver
 	contentLibraryResolver      ContentLibraryResolver
 	telemetryResolver           *TelemetryRootResolver
+	promptsResolver             PromptsResolver
 }{}
 
 // Root returns a new schemaResolver.

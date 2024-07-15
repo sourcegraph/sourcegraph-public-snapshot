@@ -15267,6 +15267,9 @@ type MockDB struct {
 	// PhabricatorFunc is an instance of a mock function object controlling
 	// the behavior of the method Phabricator.
 	PhabricatorFunc *DBPhabricatorFunc
+	// PromptsFunc is an instance of a mock function object controlling the
+	// behavior of the method Prompts.
+	PromptsFunc *DBPromptsFunc
 	// QueryContextFunc is an instance of a mock function object controlling
 	// the behavior of the method QueryContext.
 	QueryContextFunc *DBQueryContextFunc
@@ -15539,6 +15542,11 @@ func NewMockDB() *MockDB {
 		},
 		PhabricatorFunc: &DBPhabricatorFunc{
 			defaultHook: func() (r0 database.PhabricatorStore) {
+				return
+			},
+		},
+		PromptsFunc: &DBPromptsFunc{
+			defaultHook: func() (r0 database.PromptStore) {
 				return
 			},
 		},
@@ -15874,6 +15882,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Phabricator")
 			},
 		},
+		PromptsFunc: &DBPromptsFunc{
+			defaultHook: func() database.PromptStore {
+				panic("unexpected invocation of MockDB.Prompts")
+			},
+		},
 		QueryContextFunc: &DBQueryContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (*sql.Rows, error) {
 				panic("unexpected invocation of MockDB.QueryContext")
@@ -16133,6 +16146,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		PhabricatorFunc: &DBPhabricatorFunc{
 			defaultHook: i.Phabricator,
+		},
+		PromptsFunc: &DBPromptsFunc{
+			defaultHook: i.Prompts,
 		},
 		QueryContextFunc: &DBQueryContextFunc{
 			defaultHook: i.QueryContext,
@@ -19798,6 +19814,104 @@ func (c DBPhabricatorFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBPhabricatorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBPromptsFunc describes the behavior when the Prompts method of the
+// parent MockDB instance is invoked.
+type DBPromptsFunc struct {
+	defaultHook func() database.PromptStore
+	hooks       []func() database.PromptStore
+	history     []DBPromptsFuncCall
+	mutex       sync.Mutex
+}
+
+// Prompts delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Prompts() database.PromptStore {
+	r0 := m.PromptsFunc.nextHook()()
+	m.PromptsFunc.appendCall(DBPromptsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Prompts method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBPromptsFunc) SetDefaultHook(hook func() database.PromptStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Prompts method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBPromptsFunc) PushHook(hook func() database.PromptStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBPromptsFunc) SetDefaultReturn(r0 database.PromptStore) {
+	f.SetDefaultHook(func() database.PromptStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBPromptsFunc) PushReturn(r0 database.PromptStore) {
+	f.PushHook(func() database.PromptStore {
+		return r0
+	})
+}
+
+func (f *DBPromptsFunc) nextHook() func() database.PromptStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBPromptsFunc) appendCall(r0 DBPromptsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBPromptsFuncCall objects describing the
+// invocations of this function.
+func (f *DBPromptsFunc) History() []DBPromptsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBPromptsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBPromptsFuncCall is an object that describes an invocation of method
+// Prompts on an instance of MockDB.
+type DBPromptsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.PromptStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBPromptsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBPromptsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -56845,6 +56959,1630 @@ func (c PhabricatorStoreWithTransactFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c PhabricatorStoreWithTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockPromptStore is a mock implementation of the PromptStore interface
+// (from the package github.com/sourcegraph/sourcegraph/internal/database)
+// used for unit testing.
+type MockPromptStore struct {
+	// CountFunc is an instance of a mock function object controlling the
+	// behavior of the method Count.
+	CountFunc *PromptStoreCountFunc
+	// CreateFunc is an instance of a mock function object controlling the
+	// behavior of the method Create.
+	CreateFunc *PromptStoreCreateFunc
+	// DeleteFunc is an instance of a mock function object controlling the
+	// behavior of the method Delete.
+	DeleteFunc *PromptStoreDeleteFunc
+	// GetByIDFunc is an instance of a mock function object controlling the
+	// behavior of the method GetByID.
+	GetByIDFunc *PromptStoreGetByIDFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *PromptStoreHandleFunc
+	// ListFunc is an instance of a mock function object controlling the
+	// behavior of the method List.
+	ListFunc *PromptStoreListFunc
+	// MarshalToCursorFunc is an instance of a mock function object
+	// controlling the behavior of the method MarshalToCursor.
+	MarshalToCursorFunc *PromptStoreMarshalToCursorFunc
+	// UnmarshalValuesFromCursorFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// UnmarshalValuesFromCursor.
+	UnmarshalValuesFromCursorFunc *PromptStoreUnmarshalValuesFromCursorFunc
+	// UpdateFunc is an instance of a mock function object controlling the
+	// behavior of the method Update.
+	UpdateFunc *PromptStoreUpdateFunc
+	// UpdateOwnerFunc is an instance of a mock function object controlling
+	// the behavior of the method UpdateOwner.
+	UpdateOwnerFunc *PromptStoreUpdateOwnerFunc
+	// UpdateVisibilityFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateVisibility.
+	UpdateVisibilityFunc *PromptStoreUpdateVisibilityFunc
+	// WithFunc is an instance of a mock function object controlling the
+	// behavior of the method With.
+	WithFunc *PromptStoreWithFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *PromptStoreWithTransactFunc
+}
+
+// NewMockPromptStore creates a new mock of the PromptStore interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockPromptStore() *MockPromptStore {
+	return &MockPromptStore{
+		CountFunc: &PromptStoreCountFunc{
+			defaultHook: func(context.Context, database.PromptListArgs) (r0 int, r1 error) {
+				return
+			},
+		},
+		CreateFunc: &PromptStoreCreateFunc{
+			defaultHook: func(context.Context, *types.Prompt) (r0 *types.Prompt, r1 error) {
+				return
+			},
+		},
+		DeleteFunc: &PromptStoreDeleteFunc{
+			defaultHook: func(context.Context, int32) (r0 error) {
+				return
+			},
+		},
+		GetByIDFunc: &PromptStoreGetByIDFunc{
+			defaultHook: func(context.Context, int32) (r0 *types.Prompt, r1 error) {
+				return
+			},
+		},
+		HandleFunc: &PromptStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		ListFunc: &PromptStoreListFunc{
+			defaultHook: func(context.Context, database.PromptListArgs, *database.PaginationArgs) (r0 []*types.Prompt, r1 error) {
+				return
+			},
+		},
+		MarshalToCursorFunc: &PromptStoreMarshalToCursorFunc{
+			defaultHook: func(*types.Prompt, database.OrderBy) (r0 types.MultiCursor, r1 error) {
+				return
+			},
+		},
+		UnmarshalValuesFromCursorFunc: &PromptStoreUnmarshalValuesFromCursorFunc{
+			defaultHook: func(types.MultiCursor) (r0 []interface{}, r1 error) {
+				return
+			},
+		},
+		UpdateFunc: &PromptStoreUpdateFunc{
+			defaultHook: func(context.Context, *types.Prompt) (r0 *types.Prompt, r1 error) {
+				return
+			},
+		},
+		UpdateOwnerFunc: &PromptStoreUpdateOwnerFunc{
+			defaultHook: func(context.Context, int32, types.Namespace) (r0 *types.Prompt, r1 error) {
+				return
+			},
+		},
+		UpdateVisibilityFunc: &PromptStoreUpdateVisibilityFunc{
+			defaultHook: func(context.Context, int32, bool) (r0 *types.Prompt, r1 error) {
+				return
+			},
+		},
+		WithFunc: &PromptStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) (r0 database.PromptStore) {
+				return
+			},
+		},
+		WithTransactFunc: &PromptStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(database.PromptStore) error) (r0 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockPromptStore creates a new mock of the PromptStore interface.
+// All methods panic on invocation, unless overwritten.
+func NewStrictMockPromptStore() *MockPromptStore {
+	return &MockPromptStore{
+		CountFunc: &PromptStoreCountFunc{
+			defaultHook: func(context.Context, database.PromptListArgs) (int, error) {
+				panic("unexpected invocation of MockPromptStore.Count")
+			},
+		},
+		CreateFunc: &PromptStoreCreateFunc{
+			defaultHook: func(context.Context, *types.Prompt) (*types.Prompt, error) {
+				panic("unexpected invocation of MockPromptStore.Create")
+			},
+		},
+		DeleteFunc: &PromptStoreDeleteFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockPromptStore.Delete")
+			},
+		},
+		GetByIDFunc: &PromptStoreGetByIDFunc{
+			defaultHook: func(context.Context, int32) (*types.Prompt, error) {
+				panic("unexpected invocation of MockPromptStore.GetByID")
+			},
+		},
+		HandleFunc: &PromptStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockPromptStore.Handle")
+			},
+		},
+		ListFunc: &PromptStoreListFunc{
+			defaultHook: func(context.Context, database.PromptListArgs, *database.PaginationArgs) ([]*types.Prompt, error) {
+				panic("unexpected invocation of MockPromptStore.List")
+			},
+		},
+		MarshalToCursorFunc: &PromptStoreMarshalToCursorFunc{
+			defaultHook: func(*types.Prompt, database.OrderBy) (types.MultiCursor, error) {
+				panic("unexpected invocation of MockPromptStore.MarshalToCursor")
+			},
+		},
+		UnmarshalValuesFromCursorFunc: &PromptStoreUnmarshalValuesFromCursorFunc{
+			defaultHook: func(types.MultiCursor) ([]interface{}, error) {
+				panic("unexpected invocation of MockPromptStore.UnmarshalValuesFromCursor")
+			},
+		},
+		UpdateFunc: &PromptStoreUpdateFunc{
+			defaultHook: func(context.Context, *types.Prompt) (*types.Prompt, error) {
+				panic("unexpected invocation of MockPromptStore.Update")
+			},
+		},
+		UpdateOwnerFunc: &PromptStoreUpdateOwnerFunc{
+			defaultHook: func(context.Context, int32, types.Namespace) (*types.Prompt, error) {
+				panic("unexpected invocation of MockPromptStore.UpdateOwner")
+			},
+		},
+		UpdateVisibilityFunc: &PromptStoreUpdateVisibilityFunc{
+			defaultHook: func(context.Context, int32, bool) (*types.Prompt, error) {
+				panic("unexpected invocation of MockPromptStore.UpdateVisibility")
+			},
+		},
+		WithFunc: &PromptStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.PromptStore {
+				panic("unexpected invocation of MockPromptStore.With")
+			},
+		},
+		WithTransactFunc: &PromptStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(database.PromptStore) error) error {
+				panic("unexpected invocation of MockPromptStore.WithTransact")
+			},
+		},
+	}
+}
+
+// NewMockPromptStoreFrom creates a new mock of the MockPromptStore
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockPromptStoreFrom(i database.PromptStore) *MockPromptStore {
+	return &MockPromptStore{
+		CountFunc: &PromptStoreCountFunc{
+			defaultHook: i.Count,
+		},
+		CreateFunc: &PromptStoreCreateFunc{
+			defaultHook: i.Create,
+		},
+		DeleteFunc: &PromptStoreDeleteFunc{
+			defaultHook: i.Delete,
+		},
+		GetByIDFunc: &PromptStoreGetByIDFunc{
+			defaultHook: i.GetByID,
+		},
+		HandleFunc: &PromptStoreHandleFunc{
+			defaultHook: i.Handle,
+		},
+		ListFunc: &PromptStoreListFunc{
+			defaultHook: i.List,
+		},
+		MarshalToCursorFunc: &PromptStoreMarshalToCursorFunc{
+			defaultHook: i.MarshalToCursor,
+		},
+		UnmarshalValuesFromCursorFunc: &PromptStoreUnmarshalValuesFromCursorFunc{
+			defaultHook: i.UnmarshalValuesFromCursor,
+		},
+		UpdateFunc: &PromptStoreUpdateFunc{
+			defaultHook: i.Update,
+		},
+		UpdateOwnerFunc: &PromptStoreUpdateOwnerFunc{
+			defaultHook: i.UpdateOwner,
+		},
+		UpdateVisibilityFunc: &PromptStoreUpdateVisibilityFunc{
+			defaultHook: i.UpdateVisibility,
+		},
+		WithFunc: &PromptStoreWithFunc{
+			defaultHook: i.With,
+		},
+		WithTransactFunc: &PromptStoreWithTransactFunc{
+			defaultHook: i.WithTransact,
+		},
+	}
+}
+
+// PromptStoreCountFunc describes the behavior when the Count method of the
+// parent MockPromptStore instance is invoked.
+type PromptStoreCountFunc struct {
+	defaultHook func(context.Context, database.PromptListArgs) (int, error)
+	hooks       []func(context.Context, database.PromptListArgs) (int, error)
+	history     []PromptStoreCountFuncCall
+	mutex       sync.Mutex
+}
+
+// Count delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPromptStore) Count(v0 context.Context, v1 database.PromptListArgs) (int, error) {
+	r0, r1 := m.CountFunc.nextHook()(v0, v1)
+	m.CountFunc.appendCall(PromptStoreCountFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Count method of the
+// parent MockPromptStore instance is invoked and the hook queue is empty.
+func (f *PromptStoreCountFunc) SetDefaultHook(hook func(context.Context, database.PromptListArgs) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Count method of the parent MockPromptStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PromptStoreCountFunc) PushHook(hook func(context.Context, database.PromptListArgs) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PromptStoreCountFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, database.PromptListArgs) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PromptStoreCountFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, database.PromptListArgs) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *PromptStoreCountFunc) nextHook() func(context.Context, database.PromptListArgs) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PromptStoreCountFunc) appendCall(r0 PromptStoreCountFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PromptStoreCountFuncCall objects describing
+// the invocations of this function.
+func (f *PromptStoreCountFunc) History() []PromptStoreCountFuncCall {
+	f.mutex.Lock()
+	history := make([]PromptStoreCountFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PromptStoreCountFuncCall is an object that describes an invocation of
+// method Count on an instance of MockPromptStore.
+type PromptStoreCountFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 database.PromptListArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PromptStoreCountFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PromptStoreCountFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PromptStoreCreateFunc describes the behavior when the Create method of
+// the parent MockPromptStore instance is invoked.
+type PromptStoreCreateFunc struct {
+	defaultHook func(context.Context, *types.Prompt) (*types.Prompt, error)
+	hooks       []func(context.Context, *types.Prompt) (*types.Prompt, error)
+	history     []PromptStoreCreateFuncCall
+	mutex       sync.Mutex
+}
+
+// Create delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPromptStore) Create(v0 context.Context, v1 *types.Prompt) (*types.Prompt, error) {
+	r0, r1 := m.CreateFunc.nextHook()(v0, v1)
+	m.CreateFunc.appendCall(PromptStoreCreateFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Create method of the
+// parent MockPromptStore instance is invoked and the hook queue is empty.
+func (f *PromptStoreCreateFunc) SetDefaultHook(hook func(context.Context, *types.Prompt) (*types.Prompt, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Create method of the parent MockPromptStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PromptStoreCreateFunc) PushHook(hook func(context.Context, *types.Prompt) (*types.Prompt, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PromptStoreCreateFunc) SetDefaultReturn(r0 *types.Prompt, r1 error) {
+	f.SetDefaultHook(func(context.Context, *types.Prompt) (*types.Prompt, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PromptStoreCreateFunc) PushReturn(r0 *types.Prompt, r1 error) {
+	f.PushHook(func(context.Context, *types.Prompt) (*types.Prompt, error) {
+		return r0, r1
+	})
+}
+
+func (f *PromptStoreCreateFunc) nextHook() func(context.Context, *types.Prompt) (*types.Prompt, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PromptStoreCreateFunc) appendCall(r0 PromptStoreCreateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PromptStoreCreateFuncCall objects
+// describing the invocations of this function.
+func (f *PromptStoreCreateFunc) History() []PromptStoreCreateFuncCall {
+	f.mutex.Lock()
+	history := make([]PromptStoreCreateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PromptStoreCreateFuncCall is an object that describes an invocation of
+// method Create on an instance of MockPromptStore.
+type PromptStoreCreateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.Prompt
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.Prompt
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PromptStoreCreateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PromptStoreCreateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PromptStoreDeleteFunc describes the behavior when the Delete method of
+// the parent MockPromptStore instance is invoked.
+type PromptStoreDeleteFunc struct {
+	defaultHook func(context.Context, int32) error
+	hooks       []func(context.Context, int32) error
+	history     []PromptStoreDeleteFuncCall
+	mutex       sync.Mutex
+}
+
+// Delete delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPromptStore) Delete(v0 context.Context, v1 int32) error {
+	r0 := m.DeleteFunc.nextHook()(v0, v1)
+	m.DeleteFunc.appendCall(PromptStoreDeleteFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Delete method of the
+// parent MockPromptStore instance is invoked and the hook queue is empty.
+func (f *PromptStoreDeleteFunc) SetDefaultHook(hook func(context.Context, int32) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Delete method of the parent MockPromptStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PromptStoreDeleteFunc) PushHook(hook func(context.Context, int32) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PromptStoreDeleteFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PromptStoreDeleteFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32) error {
+		return r0
+	})
+}
+
+func (f *PromptStoreDeleteFunc) nextHook() func(context.Context, int32) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PromptStoreDeleteFunc) appendCall(r0 PromptStoreDeleteFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PromptStoreDeleteFuncCall objects
+// describing the invocations of this function.
+func (f *PromptStoreDeleteFunc) History() []PromptStoreDeleteFuncCall {
+	f.mutex.Lock()
+	history := make([]PromptStoreDeleteFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PromptStoreDeleteFuncCall is an object that describes an invocation of
+// method Delete on an instance of MockPromptStore.
+type PromptStoreDeleteFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PromptStoreDeleteFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PromptStoreDeleteFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PromptStoreGetByIDFunc describes the behavior when the GetByID method of
+// the parent MockPromptStore instance is invoked.
+type PromptStoreGetByIDFunc struct {
+	defaultHook func(context.Context, int32) (*types.Prompt, error)
+	hooks       []func(context.Context, int32) (*types.Prompt, error)
+	history     []PromptStoreGetByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetByID delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPromptStore) GetByID(v0 context.Context, v1 int32) (*types.Prompt, error) {
+	r0, r1 := m.GetByIDFunc.nextHook()(v0, v1)
+	m.GetByIDFunc.appendCall(PromptStoreGetByIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetByID method of
+// the parent MockPromptStore instance is invoked and the hook queue is
+// empty.
+func (f *PromptStoreGetByIDFunc) SetDefaultHook(hook func(context.Context, int32) (*types.Prompt, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetByID method of the parent MockPromptStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PromptStoreGetByIDFunc) PushHook(hook func(context.Context, int32) (*types.Prompt, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PromptStoreGetByIDFunc) SetDefaultReturn(r0 *types.Prompt, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) (*types.Prompt, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PromptStoreGetByIDFunc) PushReturn(r0 *types.Prompt, r1 error) {
+	f.PushHook(func(context.Context, int32) (*types.Prompt, error) {
+		return r0, r1
+	})
+}
+
+func (f *PromptStoreGetByIDFunc) nextHook() func(context.Context, int32) (*types.Prompt, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PromptStoreGetByIDFunc) appendCall(r0 PromptStoreGetByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PromptStoreGetByIDFuncCall objects
+// describing the invocations of this function.
+func (f *PromptStoreGetByIDFunc) History() []PromptStoreGetByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]PromptStoreGetByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PromptStoreGetByIDFuncCall is an object that describes an invocation of
+// method GetByID on an instance of MockPromptStore.
+type PromptStoreGetByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.Prompt
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PromptStoreGetByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PromptStoreGetByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PromptStoreHandleFunc describes the behavior when the Handle method of
+// the parent MockPromptStore instance is invoked.
+type PromptStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []PromptStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPromptStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(PromptStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockPromptStore instance is invoked and the hook queue is empty.
+func (f *PromptStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockPromptStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PromptStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PromptStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PromptStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *PromptStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PromptStoreHandleFunc) appendCall(r0 PromptStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PromptStoreHandleFuncCall objects
+// describing the invocations of this function.
+func (f *PromptStoreHandleFunc) History() []PromptStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]PromptStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PromptStoreHandleFuncCall is an object that describes an invocation of
+// method Handle on an instance of MockPromptStore.
+type PromptStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PromptStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PromptStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PromptStoreListFunc describes the behavior when the List method of the
+// parent MockPromptStore instance is invoked.
+type PromptStoreListFunc struct {
+	defaultHook func(context.Context, database.PromptListArgs, *database.PaginationArgs) ([]*types.Prompt, error)
+	hooks       []func(context.Context, database.PromptListArgs, *database.PaginationArgs) ([]*types.Prompt, error)
+	history     []PromptStoreListFuncCall
+	mutex       sync.Mutex
+}
+
+// List delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPromptStore) List(v0 context.Context, v1 database.PromptListArgs, v2 *database.PaginationArgs) ([]*types.Prompt, error) {
+	r0, r1 := m.ListFunc.nextHook()(v0, v1, v2)
+	m.ListFunc.appendCall(PromptStoreListFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the List method of the
+// parent MockPromptStore instance is invoked and the hook queue is empty.
+func (f *PromptStoreListFunc) SetDefaultHook(hook func(context.Context, database.PromptListArgs, *database.PaginationArgs) ([]*types.Prompt, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// List method of the parent MockPromptStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PromptStoreListFunc) PushHook(hook func(context.Context, database.PromptListArgs, *database.PaginationArgs) ([]*types.Prompt, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PromptStoreListFunc) SetDefaultReturn(r0 []*types.Prompt, r1 error) {
+	f.SetDefaultHook(func(context.Context, database.PromptListArgs, *database.PaginationArgs) ([]*types.Prompt, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PromptStoreListFunc) PushReturn(r0 []*types.Prompt, r1 error) {
+	f.PushHook(func(context.Context, database.PromptListArgs, *database.PaginationArgs) ([]*types.Prompt, error) {
+		return r0, r1
+	})
+}
+
+func (f *PromptStoreListFunc) nextHook() func(context.Context, database.PromptListArgs, *database.PaginationArgs) ([]*types.Prompt, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PromptStoreListFunc) appendCall(r0 PromptStoreListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PromptStoreListFuncCall objects describing
+// the invocations of this function.
+func (f *PromptStoreListFunc) History() []PromptStoreListFuncCall {
+	f.mutex.Lock()
+	history := make([]PromptStoreListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PromptStoreListFuncCall is an object that describes an invocation of
+// method List on an instance of MockPromptStore.
+type PromptStoreListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 database.PromptListArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *database.PaginationArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.Prompt
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PromptStoreListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PromptStoreListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PromptStoreMarshalToCursorFunc describes the behavior when the
+// MarshalToCursor method of the parent MockPromptStore instance is invoked.
+type PromptStoreMarshalToCursorFunc struct {
+	defaultHook func(*types.Prompt, database.OrderBy) (types.MultiCursor, error)
+	hooks       []func(*types.Prompt, database.OrderBy) (types.MultiCursor, error)
+	history     []PromptStoreMarshalToCursorFuncCall
+	mutex       sync.Mutex
+}
+
+// MarshalToCursor delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPromptStore) MarshalToCursor(v0 *types.Prompt, v1 database.OrderBy) (types.MultiCursor, error) {
+	r0, r1 := m.MarshalToCursorFunc.nextHook()(v0, v1)
+	m.MarshalToCursorFunc.appendCall(PromptStoreMarshalToCursorFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the MarshalToCursor
+// method of the parent MockPromptStore instance is invoked and the hook
+// queue is empty.
+func (f *PromptStoreMarshalToCursorFunc) SetDefaultHook(hook func(*types.Prompt, database.OrderBy) (types.MultiCursor, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MarshalToCursor method of the parent MockPromptStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *PromptStoreMarshalToCursorFunc) PushHook(hook func(*types.Prompt, database.OrderBy) (types.MultiCursor, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PromptStoreMarshalToCursorFunc) SetDefaultReturn(r0 types.MultiCursor, r1 error) {
+	f.SetDefaultHook(func(*types.Prompt, database.OrderBy) (types.MultiCursor, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PromptStoreMarshalToCursorFunc) PushReturn(r0 types.MultiCursor, r1 error) {
+	f.PushHook(func(*types.Prompt, database.OrderBy) (types.MultiCursor, error) {
+		return r0, r1
+	})
+}
+
+func (f *PromptStoreMarshalToCursorFunc) nextHook() func(*types.Prompt, database.OrderBy) (types.MultiCursor, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PromptStoreMarshalToCursorFunc) appendCall(r0 PromptStoreMarshalToCursorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PromptStoreMarshalToCursorFuncCall objects
+// describing the invocations of this function.
+func (f *PromptStoreMarshalToCursorFunc) History() []PromptStoreMarshalToCursorFuncCall {
+	f.mutex.Lock()
+	history := make([]PromptStoreMarshalToCursorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PromptStoreMarshalToCursorFuncCall is an object that describes an
+// invocation of method MarshalToCursor on an instance of MockPromptStore.
+type PromptStoreMarshalToCursorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 *types.Prompt
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 database.OrderBy
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 types.MultiCursor
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PromptStoreMarshalToCursorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PromptStoreMarshalToCursorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PromptStoreUnmarshalValuesFromCursorFunc describes the behavior when the
+// UnmarshalValuesFromCursor method of the parent MockPromptStore instance
+// is invoked.
+type PromptStoreUnmarshalValuesFromCursorFunc struct {
+	defaultHook func(types.MultiCursor) ([]interface{}, error)
+	hooks       []func(types.MultiCursor) ([]interface{}, error)
+	history     []PromptStoreUnmarshalValuesFromCursorFuncCall
+	mutex       sync.Mutex
+}
+
+// UnmarshalValuesFromCursor delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockPromptStore) UnmarshalValuesFromCursor(v0 types.MultiCursor) ([]interface{}, error) {
+	r0, r1 := m.UnmarshalValuesFromCursorFunc.nextHook()(v0)
+	m.UnmarshalValuesFromCursorFunc.appendCall(PromptStoreUnmarshalValuesFromCursorFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// UnmarshalValuesFromCursor method of the parent MockPromptStore instance
+// is invoked and the hook queue is empty.
+func (f *PromptStoreUnmarshalValuesFromCursorFunc) SetDefaultHook(hook func(types.MultiCursor) ([]interface{}, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UnmarshalValuesFromCursor method of the parent MockPromptStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PromptStoreUnmarshalValuesFromCursorFunc) PushHook(hook func(types.MultiCursor) ([]interface{}, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PromptStoreUnmarshalValuesFromCursorFunc) SetDefaultReturn(r0 []interface{}, r1 error) {
+	f.SetDefaultHook(func(types.MultiCursor) ([]interface{}, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PromptStoreUnmarshalValuesFromCursorFunc) PushReturn(r0 []interface{}, r1 error) {
+	f.PushHook(func(types.MultiCursor) ([]interface{}, error) {
+		return r0, r1
+	})
+}
+
+func (f *PromptStoreUnmarshalValuesFromCursorFunc) nextHook() func(types.MultiCursor) ([]interface{}, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PromptStoreUnmarshalValuesFromCursorFunc) appendCall(r0 PromptStoreUnmarshalValuesFromCursorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PromptStoreUnmarshalValuesFromCursorFuncCall objects describing the
+// invocations of this function.
+func (f *PromptStoreUnmarshalValuesFromCursorFunc) History() []PromptStoreUnmarshalValuesFromCursorFuncCall {
+	f.mutex.Lock()
+	history := make([]PromptStoreUnmarshalValuesFromCursorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PromptStoreUnmarshalValuesFromCursorFuncCall is an object that describes
+// an invocation of method UnmarshalValuesFromCursor on an instance of
+// MockPromptStore.
+type PromptStoreUnmarshalValuesFromCursorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 types.MultiCursor
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []interface{}
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PromptStoreUnmarshalValuesFromCursorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PromptStoreUnmarshalValuesFromCursorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PromptStoreUpdateFunc describes the behavior when the Update method of
+// the parent MockPromptStore instance is invoked.
+type PromptStoreUpdateFunc struct {
+	defaultHook func(context.Context, *types.Prompt) (*types.Prompt, error)
+	hooks       []func(context.Context, *types.Prompt) (*types.Prompt, error)
+	history     []PromptStoreUpdateFuncCall
+	mutex       sync.Mutex
+}
+
+// Update delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPromptStore) Update(v0 context.Context, v1 *types.Prompt) (*types.Prompt, error) {
+	r0, r1 := m.UpdateFunc.nextHook()(v0, v1)
+	m.UpdateFunc.appendCall(PromptStoreUpdateFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Update method of the
+// parent MockPromptStore instance is invoked and the hook queue is empty.
+func (f *PromptStoreUpdateFunc) SetDefaultHook(hook func(context.Context, *types.Prompt) (*types.Prompt, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Update method of the parent MockPromptStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PromptStoreUpdateFunc) PushHook(hook func(context.Context, *types.Prompt) (*types.Prompt, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PromptStoreUpdateFunc) SetDefaultReturn(r0 *types.Prompt, r1 error) {
+	f.SetDefaultHook(func(context.Context, *types.Prompt) (*types.Prompt, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PromptStoreUpdateFunc) PushReturn(r0 *types.Prompt, r1 error) {
+	f.PushHook(func(context.Context, *types.Prompt) (*types.Prompt, error) {
+		return r0, r1
+	})
+}
+
+func (f *PromptStoreUpdateFunc) nextHook() func(context.Context, *types.Prompt) (*types.Prompt, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PromptStoreUpdateFunc) appendCall(r0 PromptStoreUpdateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PromptStoreUpdateFuncCall objects
+// describing the invocations of this function.
+func (f *PromptStoreUpdateFunc) History() []PromptStoreUpdateFuncCall {
+	f.mutex.Lock()
+	history := make([]PromptStoreUpdateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PromptStoreUpdateFuncCall is an object that describes an invocation of
+// method Update on an instance of MockPromptStore.
+type PromptStoreUpdateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.Prompt
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.Prompt
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PromptStoreUpdateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PromptStoreUpdateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PromptStoreUpdateOwnerFunc describes the behavior when the UpdateOwner
+// method of the parent MockPromptStore instance is invoked.
+type PromptStoreUpdateOwnerFunc struct {
+	defaultHook func(context.Context, int32, types.Namespace) (*types.Prompt, error)
+	hooks       []func(context.Context, int32, types.Namespace) (*types.Prompt, error)
+	history     []PromptStoreUpdateOwnerFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateOwner delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockPromptStore) UpdateOwner(v0 context.Context, v1 int32, v2 types.Namespace) (*types.Prompt, error) {
+	r0, r1 := m.UpdateOwnerFunc.nextHook()(v0, v1, v2)
+	m.UpdateOwnerFunc.appendCall(PromptStoreUpdateOwnerFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the UpdateOwner method
+// of the parent MockPromptStore instance is invoked and the hook queue is
+// empty.
+func (f *PromptStoreUpdateOwnerFunc) SetDefaultHook(hook func(context.Context, int32, types.Namespace) (*types.Prompt, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateOwner method of the parent MockPromptStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *PromptStoreUpdateOwnerFunc) PushHook(hook func(context.Context, int32, types.Namespace) (*types.Prompt, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PromptStoreUpdateOwnerFunc) SetDefaultReturn(r0 *types.Prompt, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, types.Namespace) (*types.Prompt, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PromptStoreUpdateOwnerFunc) PushReturn(r0 *types.Prompt, r1 error) {
+	f.PushHook(func(context.Context, int32, types.Namespace) (*types.Prompt, error) {
+		return r0, r1
+	})
+}
+
+func (f *PromptStoreUpdateOwnerFunc) nextHook() func(context.Context, int32, types.Namespace) (*types.Prompt, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PromptStoreUpdateOwnerFunc) appendCall(r0 PromptStoreUpdateOwnerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PromptStoreUpdateOwnerFuncCall objects
+// describing the invocations of this function.
+func (f *PromptStoreUpdateOwnerFunc) History() []PromptStoreUpdateOwnerFuncCall {
+	f.mutex.Lock()
+	history := make([]PromptStoreUpdateOwnerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PromptStoreUpdateOwnerFuncCall is an object that describes an invocation
+// of method UpdateOwner on an instance of MockPromptStore.
+type PromptStoreUpdateOwnerFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 types.Namespace
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.Prompt
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PromptStoreUpdateOwnerFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PromptStoreUpdateOwnerFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PromptStoreUpdateVisibilityFunc describes the behavior when the
+// UpdateVisibility method of the parent MockPromptStore instance is
+// invoked.
+type PromptStoreUpdateVisibilityFunc struct {
+	defaultHook func(context.Context, int32, bool) (*types.Prompt, error)
+	hooks       []func(context.Context, int32, bool) (*types.Prompt, error)
+	history     []PromptStoreUpdateVisibilityFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateVisibility delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPromptStore) UpdateVisibility(v0 context.Context, v1 int32, v2 bool) (*types.Prompt, error) {
+	r0, r1 := m.UpdateVisibilityFunc.nextHook()(v0, v1, v2)
+	m.UpdateVisibilityFunc.appendCall(PromptStoreUpdateVisibilityFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the UpdateVisibility
+// method of the parent MockPromptStore instance is invoked and the hook
+// queue is empty.
+func (f *PromptStoreUpdateVisibilityFunc) SetDefaultHook(hook func(context.Context, int32, bool) (*types.Prompt, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateVisibility method of the parent MockPromptStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *PromptStoreUpdateVisibilityFunc) PushHook(hook func(context.Context, int32, bool) (*types.Prompt, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PromptStoreUpdateVisibilityFunc) SetDefaultReturn(r0 *types.Prompt, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, bool) (*types.Prompt, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PromptStoreUpdateVisibilityFunc) PushReturn(r0 *types.Prompt, r1 error) {
+	f.PushHook(func(context.Context, int32, bool) (*types.Prompt, error) {
+		return r0, r1
+	})
+}
+
+func (f *PromptStoreUpdateVisibilityFunc) nextHook() func(context.Context, int32, bool) (*types.Prompt, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PromptStoreUpdateVisibilityFunc) appendCall(r0 PromptStoreUpdateVisibilityFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PromptStoreUpdateVisibilityFuncCall objects
+// describing the invocations of this function.
+func (f *PromptStoreUpdateVisibilityFunc) History() []PromptStoreUpdateVisibilityFuncCall {
+	f.mutex.Lock()
+	history := make([]PromptStoreUpdateVisibilityFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PromptStoreUpdateVisibilityFuncCall is an object that describes an
+// invocation of method UpdateVisibility on an instance of MockPromptStore.
+type PromptStoreUpdateVisibilityFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.Prompt
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PromptStoreUpdateVisibilityFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PromptStoreUpdateVisibilityFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PromptStoreWithFunc describes the behavior when the With method of the
+// parent MockPromptStore instance is invoked.
+type PromptStoreWithFunc struct {
+	defaultHook func(basestore.ShareableStore) database.PromptStore
+	hooks       []func(basestore.ShareableStore) database.PromptStore
+	history     []PromptStoreWithFuncCall
+	mutex       sync.Mutex
+}
+
+// With delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPromptStore) With(v0 basestore.ShareableStore) database.PromptStore {
+	r0 := m.WithFunc.nextHook()(v0)
+	m.WithFunc.appendCall(PromptStoreWithFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the With method of the
+// parent MockPromptStore instance is invoked and the hook queue is empty.
+func (f *PromptStoreWithFunc) SetDefaultHook(hook func(basestore.ShareableStore) database.PromptStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// With method of the parent MockPromptStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PromptStoreWithFunc) PushHook(hook func(basestore.ShareableStore) database.PromptStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PromptStoreWithFunc) SetDefaultReturn(r0 database.PromptStore) {
+	f.SetDefaultHook(func(basestore.ShareableStore) database.PromptStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PromptStoreWithFunc) PushReturn(r0 database.PromptStore) {
+	f.PushHook(func(basestore.ShareableStore) database.PromptStore {
+		return r0
+	})
+}
+
+func (f *PromptStoreWithFunc) nextHook() func(basestore.ShareableStore) database.PromptStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PromptStoreWithFunc) appendCall(r0 PromptStoreWithFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PromptStoreWithFuncCall objects describing
+// the invocations of this function.
+func (f *PromptStoreWithFunc) History() []PromptStoreWithFuncCall {
+	f.mutex.Lock()
+	history := make([]PromptStoreWithFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PromptStoreWithFuncCall is an object that describes an invocation of
+// method With on an instance of MockPromptStore.
+type PromptStoreWithFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 basestore.ShareableStore
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.PromptStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PromptStoreWithFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PromptStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PromptStoreWithTransactFunc describes the behavior when the WithTransact
+// method of the parent MockPromptStore instance is invoked.
+type PromptStoreWithTransactFunc struct {
+	defaultHook func(context.Context, func(database.PromptStore) error) error
+	hooks       []func(context.Context, func(database.PromptStore) error) error
+	history     []PromptStoreWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockPromptStore) WithTransact(v0 context.Context, v1 func(database.PromptStore) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(PromptStoreWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockPromptStore instance is invoked and the hook queue is
+// empty.
+func (f *PromptStoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(database.PromptStore) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockPromptStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *PromptStoreWithTransactFunc) PushHook(hook func(context.Context, func(database.PromptStore) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PromptStoreWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(database.PromptStore) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PromptStoreWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(database.PromptStore) error) error {
+		return r0
+	})
+}
+
+func (f *PromptStoreWithTransactFunc) nextHook() func(context.Context, func(database.PromptStore) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PromptStoreWithTransactFunc) appendCall(r0 PromptStoreWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PromptStoreWithTransactFuncCall objects
+// describing the invocations of this function.
+func (f *PromptStoreWithTransactFunc) History() []PromptStoreWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]PromptStoreWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PromptStoreWithTransactFuncCall is an object that describes an invocation
+// of method WithTransact on an instance of MockPromptStore.
+type PromptStoreWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(database.PromptStore) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PromptStoreWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PromptStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

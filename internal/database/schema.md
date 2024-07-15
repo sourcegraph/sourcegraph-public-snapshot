@@ -2924,6 +2924,7 @@ Referenced by:
     TABLE "org_invitations" CONSTRAINT "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
     TABLE "org_stats" CONSTRAINT "org_stats_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "prompts" CONSTRAINT "prompts_owner_org_id_fkey" FOREIGN KEY (owner_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "registry_extensions" CONSTRAINT "registry_extensions_publisher_org_id_fkey" FOREIGN KEY (publisher_org_id) REFERENCES orgs(id)
     TABLE "saved_searches" CONSTRAINT "saved_searches_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "search_contexts" CONSTRAINT "search_contexts_namespace_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
@@ -3443,6 +3444,40 @@ Referenced by:
 **cody_gateway_embeddings_api_rate_interval_seconds**: Custom time interval over which the embeddings rate limit is applied
 
 **cody_gateway_embeddings_api_rate_limit**: Custom requests per time interval allowed for embeddings
+
+# Table "public.prompts"
+```
+      Column       |           Type           | Collation | Nullable |               Default               
+-------------------+--------------------------+-----------+----------+-------------------------------------
+ id                | integer                  |           | not null | nextval('prompts_id_seq'::regclass)
+ name              | citext                   |           | not null | 
+ description       | text                     |           | not null | 
+ definition_text   | text                     |           | not null | 
+ draft             | boolean                  |           | not null | false
+ visibility_secret | boolean                  |           | not null | true
+ owner_user_id     | integer                  |           |          | 
+ owner_org_id      | integer                  |           |          | 
+ created_by        | integer                  |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_by        | integer                  |           |          | 
+ updated_at        | timestamp with time zone |           | not null | now()
+Indexes:
+    "prompts_pkey" PRIMARY KEY, btree (id)
+    "prompts_name_is_unique_in_owner_org" UNIQUE, btree (owner_org_id, name) WHERE owner_org_id IS NOT NULL
+    "prompts_name_is_unique_in_owner_user" UNIQUE, btree (owner_user_id, name) WHERE owner_user_id IS NOT NULL
+Check constraints:
+    "prompts_definition_text_max_length" CHECK (char_length(definition_text) <= (1024 * 100))
+    "prompts_description_max_length" CHECK (char_length(description) <= (1024 * 50))
+    "prompts_has_valid_owner" CHECK (owner_user_id IS NOT NULL AND owner_org_id IS NULL OR owner_org_id IS NOT NULL AND owner_user_id IS NULL)
+    "prompts_name_max_length" CHECK (char_length(name::text) <= 255)
+    "prompts_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)
+Foreign-key constraints:
+    "prompts_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    "prompts_owner_org_id_fkey" FOREIGN KEY (owner_org_id) REFERENCES orgs(id) ON DELETE CASCADE
+    "prompts_owner_user_id_fkey" FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE
+    "prompts_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+
+```
 
 # Table "public.query_runner_state"
 ```
@@ -4441,6 +4476,9 @@ Referenced by:
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_triggered_by_user_id_fkey" FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "product_subscriptions" CONSTRAINT "product_subscriptions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "prompts" CONSTRAINT "prompts_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    TABLE "prompts" CONSTRAINT "prompts_owner_user_id_fkey" FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "prompts" CONSTRAINT "prompts_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
     TABLE "registry_extension_releases" CONSTRAINT "registry_extension_releases_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "registry_extensions" CONSTRAINT "registry_extensions_publisher_user_id_fkey" FOREIGN KEY (publisher_user_id) REFERENCES users(id)
     TABLE "saved_searches" CONSTRAINT "saved_searches_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
@@ -4980,6 +5018,29 @@ Foreign-key constraints:
    FROM (own_background_jobs obj
      JOIN own_signal_configurations osc ON ((obj.job_type = osc.id)))
   WHERE (osc.enabled IS TRUE);
+```
+
+# View "public.prompts_view"
+
+## View query:
+
+```sql
+ SELECT prompts.id,
+    prompts.name,
+    prompts.description,
+    prompts.definition_text,
+    prompts.draft,
+    prompts.visibility_secret,
+    prompts.owner_user_id,
+    prompts.owner_org_id,
+    prompts.created_by,
+    prompts.created_at,
+    prompts.updated_by,
+    prompts.updated_at,
+    (((COALESCE(users.username, orgs.name))::text || '/'::text) || (prompts.name)::text) AS name_with_owner
+   FROM ((prompts
+     LEFT JOIN users ON ((users.id = prompts.owner_user_id)))
+     LEFT JOIN orgs ON ((orgs.id = prompts.owner_org_id)));
 ```
 
 # View "public.reconciler_changesets"
