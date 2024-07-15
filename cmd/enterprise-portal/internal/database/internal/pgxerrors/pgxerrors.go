@@ -1,7 +1,7 @@
 package pgxerrors
 
 import (
-	"errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/jackc/pgx/v5/pgconn"
 )
