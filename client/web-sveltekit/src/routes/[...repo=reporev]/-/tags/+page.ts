@@ -22,7 +22,7 @@ export const load: PageLoad = ({ params, url }) => {
                 withBehindAhead: false,
                 query,
             },
-            mapResult: result => {
+            map: result => {
                 const gitRefs = result.data?.repository?.gitRefs
                 return {
                     nextVariables: gitRefs?.pageInfo.hasNextPage

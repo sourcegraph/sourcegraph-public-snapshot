@@ -23,17 +23,18 @@ export const load: PageLoad = ({ parent, params }) => {
             path,
             afterCursor: null as string | null,
         })),
-        mapResult(result, previousResult) {
+        map: result => {
             const ancestors = result.data?.repository?.commit?.ancestors
             return {
                 nextVariables:
                     ancestors?.pageInfo?.endCursor && ancestors.pageInfo.hasNextPage
                         ? { afterCursor: ancestors.pageInfo.endCursor }
                         : undefined,
-                data: (previousResult.data ?? []).concat(ancestors?.nodes ?? []),
+                data: ancestors?.nodes,
                 error: result.error,
             }
         },
+        merge: (previous, next) => (previous ?? []).concat(next ?? []),
         createRestoreStrategy: api =>
             new IncrementalRestoreStrategy(
                 api,

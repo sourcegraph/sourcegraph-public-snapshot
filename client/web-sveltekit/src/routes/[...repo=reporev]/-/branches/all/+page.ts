@@ -22,7 +22,7 @@ export const load: PageLoad = ({ params, url }) => {
                 withBehindAhead: true,
                 query,
             },
-            mapResult: result => {
+            map: result => {
                 const branches = result.data?.repository?.branches
                 return {
                     nextVariables: branches?.pageInfo.hasNextPage

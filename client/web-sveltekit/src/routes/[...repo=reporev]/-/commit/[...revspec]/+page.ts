@@ -38,16 +38,15 @@ export const load: PageLoad = async ({ params }) => {
                       first: PAGE_SIZE,
                       after: null as string | null,
                   },
-                  mapResult: (result, previousResult) => {
-                      const pageInfo = result.data?.repository?.comparison.fileDiffs.pageInfo
+                  map: result => {
+                      const diffs = result.data?.repository?.comparison.fileDiffs
                       return {
-                          nextVariables: pageInfo?.hasNextPage ? { after: pageInfo.endCursor } : undefined,
-                          data: (previousResult.data ?? []).concat(
-                              result.data?.repository?.comparison.fileDiffs.nodes ?? []
-                          ),
+                          nextVariables: diffs?.pageInfo.hasNextPage ? { after: diffs?.pageInfo.endCursor } : undefined,
+                          data: diffs?.nodes,
                           error: result.error,
                       }
                   },
+                  merge: (previous, next) => (previous ?? []).concat(next ?? []),
                   createRestoreStrategy: api =>
                       new IncrementalRestoreStrategy(
                           api,

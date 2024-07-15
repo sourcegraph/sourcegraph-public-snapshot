@@ -60,16 +60,17 @@ export const load: LayoutLoad = async ({ parent, params }) => {
                 first: HISTORY_COMMITS_PER_PAGE,
                 afterCursor: null as string | null,
             })),
-            mapResult: (result, previousResult) => {
+            map: result => {
                 const anestors = result.data?.repository?.commit?.ancestors
                 return {
                     nextVariables: anestors?.pageInfo.hasNextPage
                         ? { afterCursor: anestors.pageInfo.endCursor }
                         : undefined,
-                    data: (previousResult.data ?? []).concat(anestors?.nodes ?? []),
+                    data: anestors?.nodes,
                     error: result.error,
                 }
             },
+            merge: (previous, next) => (previous ?? []).concat(next ?? []),
             createRestoreStrategy: api =>
                 new IncrementalRestoreStrategy(
                     api,
@@ -94,16 +95,17 @@ export const load: LayoutLoad = async ({ parent, params }) => {
                     character: lineOrPosition.character! - 1,
                     afterCursor: null as string | null,
                 })),
-                mapResult: (result, previousResult) => {
+                map: result => {
                     const references = result.data?.repository?.commit?.blob?.lsif?.references
                     return {
                         nextVariables: references?.pageInfo.hasNextPage
                             ? { afterCursor: references.pageInfo.endCursor }
                             : undefined,
-                        data: (previousResult.data ?? []).concat(references?.nodes ?? []),
+                        data: references?.nodes,
                         error: result.error,
                     }
                 },
+                merge: (previous, next) => (previous ?? []).concat(next ?? []),
             }),
     }
 }

@@ -80,17 +80,22 @@ interface InfinityQueryArgs<TData, TPayload = any, TVariables extends AnyVariabl
     variables: TVariables | Promise<TVariables>
 
     /**
-     * Process the result of the query. This function is called with the previsou result so that the new
-     * result can be merged with it.
+     * Process the result of the query. This function maps the response to the data used
+     * and computes the next set of query variables, if any.
      *
      * @param result - The result of the query.
      * @param previousResult - The previous result of the query.
      * @returns The new/combined result state.
      */
-    mapResult: (
+    map: (
         result: OperationResult<TPayload, TVariables>,
-        previousResult: InfinityStoreResult<TData, TVariables>
     ) => InfinityStoreResult<TData, TVariables>
+
+    /**
+     * Optional callback to merge the data from the previous result with the new data.
+     * If not provided the new data will replace the old data.
+     */
+    merge?: (previousData: TData|undefined, newData: TData|undefined) => TData
 
     /**
      * Returns a strategy for restoring the data when navigating back to a page.
@@ -118,7 +123,7 @@ interface InfinityAPI<TData, TVariables extends AnyVariables = AnyVariables> {
 /**
  * The processed/combined result of a GraphQL query.
  */
-interface InfinityStoreResult<TData = any, TVariables extends AnyVariables = AnyVariables> {
+export interface InfinityStoreResult<TData = any, TVariables extends AnyVariables = AnyVariables> {
     data?: TData
 
     /**
@@ -206,10 +211,13 @@ export function infinityQuery<
         variables: Partial<TVariables>,
         previousResult: InfinityStoreResult<TData, TVariables>
     ): Promise<InfinityStoreResult<TData, TVariables>> {
-        const result = await initialVariables.then(initialVariables =>
+        const result = args.map(await initialVariables.then(initialVariables =>
             args.client.query(args.query, { ...initialVariables, ...variables })
-        )
-        return args.mapResult(result, previousResult)
+        ))
+        if (args.merge) {
+            result.data = args.merge(previousResult.data, result.data)
+        }
+        return result
     }
 
     const initialState: InfinityStoreResultState<TData, TVariables> = { fetching: true }
