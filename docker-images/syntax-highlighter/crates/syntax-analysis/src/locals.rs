@@ -777,20 +777,20 @@ impl<'a> LocalResolver<'a> {
 
         for (scope_ref, scope) in self.arena.iter() {
             for reference in scope.references.iter() {
-                if !self
+                let skip = self
                     .skip_references_at_offsets
-                    .contains(&reference.node.start_byte())
-                {
-                    match reference.kind {
-                        ReferenceKind::Local => {
-                            if !self
-                                .non_local_references_at_offsets
-                                .contains(&reference.node.start_byte())
-                            {
-                                if let Some(def_id) = reference.resolves_to {
-                                    ref_occurrences
-                                        .push(self.make_local_reference(reference, def_id))
-                                } else if let Some(def) = self.find_def(
+                    .contains(&reference.node.start_byte());
+
+                match reference.kind {
+                    ReferenceKind::Local => {
+                        if !self
+                            .non_local_references_at_offsets
+                            .contains(&reference.node.start_byte())
+                        {
+                            if let Some(def_id) = reference.resolves_to {
+                                ref_occurrences.push(self.make_local_reference(reference, def_id))
+                            } else if !skip {
+                                if let Some(def) = self.find_def(
                                     scope_ref,
                                     reference.name,
                                     reference.node.start_byte(),
@@ -800,10 +800,14 @@ impl<'a> LocalResolver<'a> {
                                 }
                             }
                         }
-                        ReferenceKind::Global => {
+                    }
+                    ReferenceKind::Global => {
+                        if !skip {
                             ref_occurrences.push(self.make_global_reference(reference))
                         }
-                        ReferenceKind::Either => {
+                    }
+                    ReferenceKind::Either => {
+                        if !skip {
                             if let Some(def) = self.find_def(
                                 scope_ref,
                                 reference.name,
