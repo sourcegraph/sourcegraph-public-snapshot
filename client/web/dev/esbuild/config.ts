@@ -15,9 +15,8 @@ import { MONACO_LANGUAGES_AND_FEATURES } from '@sourcegraph/build-config/src/mon
 
 import type { EnvironmentConfig } from '../utils'
 
-import { manifestPlugin } from './manifestPlugin'
-
 import chunkCleaner from './chunkCleaner'
+import { manifestPlugin } from './manifestPlugin'
 import { WEB_BUILD_MANIFEST_FILENAME, webManifestBuilder } from './webmanifest'
 
 /**
@@ -59,34 +58,34 @@ export function esbuildBuildOptions(ENVIRONMENT_CONFIG: EnvironmentConfig): esbu
                 'react-dom/client': path.join(ROOT_PATH, 'node_modules/react-dom/client'),
                 ...(ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS
                     ? {
-                        // Monaco
-                        '@sourcegraph/shared/src/components/MonacoEditor':
-                            '@sourcegraph/shared/src/components/NoMonacoEditor',
-                        'monaco-editor': '/dev/null',
-                        'monaco-editor/esm/vs/editor/editor.api': '/dev/null',
-                        'monaco-yaml': '/dev/null',
+                          // Monaco
+                          '@sourcegraph/shared/src/components/MonacoEditor':
+                              '@sourcegraph/shared/src/components/NoMonacoEditor',
+                          'monaco-editor': '/dev/null',
+                          'monaco-editor/esm/vs/editor/editor.api': '/dev/null',
+                          'monaco-yaml': '/dev/null',
 
-                        // GraphiQL
-                        './api/ApiConsole': path.join(ROOT_PATH, 'client/web/src/api/NoApiConsole.tsx'),
-                        '@graphiql/react': '/dev/null',
-                        graphiql: '/dev/null',
+                          // GraphiQL
+                          './api/ApiConsole': path.join(ROOT_PATH, 'client/web/src/api/NoApiConsole.tsx'),
+                          '@graphiql/react': '/dev/null',
+                          graphiql: '/dev/null',
 
-                        // Misc.
-                        recharts: '/dev/null',
-                    }
+                          // Misc.
+                          recharts: '/dev/null',
+                      }
                     : null),
             }),
             ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS ? null : monacoPlugin(MONACO_LANGUAGES_AND_FEATURES),
             buildTimerPlugin,
             ENVIRONMENT_CONFIG.SENTRY_UPLOAD_SOURCE_MAPS
                 ? sentryEsbuildPlugin({
-                    org: ENVIRONMENT_CONFIG.SENTRY_ORGANIZATION,
-                    project: ENVIRONMENT_CONFIG.SENTRY_PROJECT,
-                    authToken: ENVIRONMENT_CONFIG.SENTRY_DOT_COM_AUTH_TOKEN,
-                    silent: true,
-                    release: { name: `frontend@${ENVIRONMENT_CONFIG.VERSION}` },
-                    sourcemaps: { assets: [path.join('dist', '*.map'), path.join('dist', 'chunks', '*.map')] },
-                })
+                      org: ENVIRONMENT_CONFIG.SENTRY_ORGANIZATION,
+                      project: ENVIRONMENT_CONFIG.SENTRY_PROJECT,
+                      authToken: ENVIRONMENT_CONFIG.SENTRY_DOT_COM_AUTH_TOKEN,
+                      silent: true,
+                      release: { name: `frontend@${ENVIRONMENT_CONFIG.VERSION}` },
+                      sourcemaps: { assets: [path.join('dist', '*.map'), path.join('dist', 'chunks', '*.map')] },
+                  })
                 : null,
         ].filter((plugin): plugin is esbuild.Plugin => plugin !== null),
         define: {
