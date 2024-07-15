@@ -228,8 +228,8 @@ FROM product_subscriptions subscription
 	}
 	if opts.DevOnly {
 		// '&&' operator: overlap (have elements in common)
-		c := fmt.Sprintf("ARRAY['%s','%s'] && MAX(active_license.license_tags)",
-			licensing.DevTag, licensing.InternalTag)
+		c := fmt.Sprintf("ARRAY['%s'] && MAX(active_license.license_tags)",
+			licensing.DevTag)
 		if conds.havingClause != "" {
 			clauses = append(clauses, "AND "+c)
 		} else {
@@ -347,8 +347,8 @@ LEFT JOIN product_subscriptions subscriptions
 	}
 	if opts.DevOnly {
 		// '&&' operator: overlap (have elements in common)
-		c := fmt.Sprintf("ARRAY['%s','%s'] && licenses.license_tags",
-			licensing.DevTag, licensing.InternalTag)
+		c := fmt.Sprintf("ARRAY['%s'] && licenses.license_tags",
+			licensing.DevTag)
 		if conds.whereClause != "" {
 			clauses = append(clauses, "AND "+c)
 		} else {
@@ -484,7 +484,12 @@ type ListEnterpriseSubscriptionsOptions struct {
 //
 // If no IDs are given, it returns all subscriptions.
 func (r *Reader) ListEnterpriseSubscriptions(ctx context.Context, opts ListEnterpriseSubscriptionsOptions) ([]*SubscriptionAttributes, error) {
-	query := `SELECT id, created_at, archived_at FROM product_subscriptions WHERE true`
+	query := `
+SELECT
+	id, created_at, archived_at
+FROM
+	product_subscriptions
+WHERE true`
 	namedArgs := pgx.NamedArgs{}
 	if len(opts.SubscriptionIDs) > 0 {
 		query += "\nAND id = ANY(@ids)"
@@ -495,6 +500,22 @@ func (r *Reader) ListEnterpriseSubscriptions(ctx context.Context, opts ListEnter
 	} else {
 		query += "\nAND archived_at IS NULL"
 	}
+	var licenseCond string
+	if r.opts.DevOnly {
+		licenseCond = fmt.Sprintf("'%s' = ANY(product_licenses.license_tags)", licensing.DevTag)
+	} else {
+		licenseCond = fmt.Sprintf("NOT '%s' = ANY(product_licenses.license_tags)", licensing.DevTag)
+	}
+	query += fmt.Sprintf(`
+AND EXISTS (
+	SELECT 1
+	FROM product_licenses
+	WHERE product_licenses.product_subscription_id = product_subscriptions.id
+	AND %s
+	ORDER BY product_licenses.created_at DESC
+	LIMIT 1
+)
+`, licenseCond)
 
 	rows, err := r.db.Query(ctx, query, namedArgs)
 	if err != nil {

@@ -25,7 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-func newTestDotcomReader(t *testing.T) (database.DB, *dotcomdb.Reader) {
+func newTestDotcomReader(t *testing.T, opts dotcomdb.ReaderOptions) (database.DB, *dotcomdb.Reader) {
 	ctx := context.Background()
 
 	// Set up a Sourcegraph test database.
@@ -62,9 +62,7 @@ func newTestDotcomReader(t *testing.T) (database.DB, *dotcomdb.Reader) {
 	require.NoError(t, err)
 
 	// Make sure it works!
-	r := dotcomdb.NewReader(conn, dotcomdb.ReaderOptions{
-		DevOnly: true,
-	})
+	r := dotcomdb.NewReader(conn, opts)
 	require.NoError(t, r.Ping(ctx))
 
 	return database.NewDB(logtest.Scoped(t), sgtestdb), r
@@ -243,7 +241,9 @@ func TestGetCodyGatewayAccessAttributes(t *testing.T) {
 			tc := tc
 			t.Parallel()
 
-			dotcomdb, dotcomreader := newTestDotcomReader(t)
+			dotcomdb, dotcomreader := newTestDotcomReader(t, dotcomdb.ReaderOptions{
+				DevOnly: true,
+			})
 			// First, set up a subscription and license and some other rubbish
 			// data to ensure we only get the license we want.
 			mock := setupDBAndInsertMockLicense(t, dotcomdb, tc.info, &tc.cgAccess)
@@ -323,7 +323,9 @@ func validateAccessAttributes(t *testing.T, dotcomdb database.DB, mock mockedDat
 
 func TestGetAllCodyGatewayAccessAttributes(t *testing.T) {
 	t.Parallel()
-	dotcomdb, dotcomreader := newTestDotcomReader(t)
+	dotcomdb, dotcomreader := newTestDotcomReader(t, dotcomdb.ReaderOptions{
+		DevOnly: true,
+	})
 
 	info := license.Info{
 		CreatedAt: time.Now().Add(-30 * time.Minute),
@@ -352,7 +354,9 @@ func TestGetAllCodyGatewayAccessAttributes(t *testing.T) {
 func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 	t.Parallel()
 
-	db, dotcomreader := newTestDotcomReader(t)
+	db, dotcomreader := newTestDotcomReader(t, dotcomdb.ReaderOptions{
+		DevOnly: true,
+	})
 	info := license.Info{
 		ExpiresAt: time.Now().Add(30 * time.Minute),
 		UserCount: 321,
@@ -467,26 +471,53 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 }
 
 func TestListEnterpriseSubscriptions(t *testing.T) {
-	db, dotcomreader := newTestDotcomReader(t)
-	info := license.Info{
-		ExpiresAt: time.Now().Add(30 * time.Minute),
-		UserCount: 321,
-		Tags:      []string{licensing.PlanEnterprise1.Tag(), licensing.DevTag},
-	}
-	mock := setupDBAndInsertMockLicense(t, db, info, nil)
+	t.Run("devonly", func(t *testing.T) {
+		t.Parallel()
 
-	// Just a simple sanity test
-	ss, err := dotcomreader.ListEnterpriseSubscriptions(
-		context.Background(),
-		dotcomdb.ListEnterpriseSubscriptionsOptions{})
-	require.NoError(t, err)
-	assert.Len(t, ss, mock.createdSubscriptions-mock.archivedSubscriptions)
-	var found bool
-	for _, s := range ss {
-		if s.ID == mock.targetSubscriptionID {
-			found = true
-			break
+		db, dotcomreader := newTestDotcomReader(t, dotcomdb.ReaderOptions{
+			DevOnly: true,
+		})
+		info := license.Info{
+			ExpiresAt: time.Now().Add(30 * time.Minute),
+			UserCount: 321,
+			Tags:      []string{licensing.PlanEnterprise1.Tag(), licensing.DevTag},
 		}
-	}
-	assert.True(t, found)
+		mock := setupDBAndInsertMockLicense(t, db, info, nil)
+
+		ss, err := dotcomreader.ListEnterpriseSubscriptions(
+			context.Background(),
+			dotcomdb.ListEnterpriseSubscriptionsOptions{})
+		require.NoError(t, err)
+		// We expect 1 less subscription because one of the subscriptions does not
+		// have a dev/internal license
+		assert.Len(t, ss, mock.createdSubscriptions-mock.archivedSubscriptions-1)
+		var found bool
+		for _, s := range ss {
+			if s.ID == mock.targetSubscriptionID {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found)
+	})
+
+	t.Run("not devonly", func(t *testing.T) {
+		t.Parallel()
+
+		db, dotcomreader := newTestDotcomReader(t, dotcomdb.ReaderOptions{
+			DevOnly: false,
+		})
+		info := license.Info{
+			ExpiresAt: time.Now().Add(30 * time.Minute),
+			UserCount: 321,
+			Tags:      []string{licensing.PlanEnterprise1.Tag(), licensing.DevTag},
+		}
+		_ = setupDBAndInsertMockLicense(t, db, info, nil)
+
+		ss, err := dotcomreader.ListEnterpriseSubscriptions(
+			context.Background(),
+			dotcomdb.ListEnterpriseSubscriptionsOptions{})
+		require.NoError(t, err)
+		assert.Len(t, ss, 1) // only 1 created without a dev tag
+	})
 }
