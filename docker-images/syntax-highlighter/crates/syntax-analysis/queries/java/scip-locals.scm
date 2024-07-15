@@ -114,29 +114,28 @@
 ; MyType variable = ...
 ; ^^^^^^
 (local_variable_declaration
-  type: (type_identifier) @reference.either
-    (#not-eq? @reference.either "var")
+  type: (type_identifier) @reference
+    (#not-eq? @reference "var")
 )
 
 ; class Binary<N extends Number> {...
 ;                        ^^^^^^
 (type_bound
-  (type_identifier)* @reference.either
+  (type_identifier)* @reference
 )
 
 ; for (MyType variable: variables) {...
 ;      ^^^^^^
 (enhanced_for_statement
-  type: (type_identifier) @reference.either
+  type: (type_identifier) @reference
 )
-
 
 ; public class test<T extends Exception> {
 ; 	private void provideFieldValue()
 ; 			throws T, NoSuchFieldException, IllegalAccessException {}
 ;                  ^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^
 ; }
-(throws (type_identifier)* @reference.either)
+(throws (type_identifier)* @reference)
 
 ; Person::getName
 ; ^^^^^^  ^^^^^^^

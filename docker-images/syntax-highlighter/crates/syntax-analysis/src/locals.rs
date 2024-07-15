@@ -592,6 +592,11 @@ impl<'a> LocalResolver<'a> {
                         continue;
                     }
 
+                    // Unless it's an explicitly specified local reference,
+                    // we mark this location to ensure no other reference capture can be produced here.
+                    // Unfortunately this is not always sufficient as it's order-sensitive and
+                    // Tree Sitter can produce captures for the same span in order different than
+                    // order of rules in the queries
                     match kind {
                         Some(ReferenceKind::Global) | None => {
                             self.non_local_references_at_offsets.insert(offset);
@@ -775,37 +780,17 @@ impl<'a> LocalResolver<'a> {
                     .contains(&reference.node.start_byte());
 
                 match reference.kind {
-                    Some(ReferenceKind::Local) => {
-                        if self
-                            .non_local_references_at_offsets
-                            .contains(&reference.node.start_byte())
+                    Some(ReferenceKind::Local) | None => {
+                        let is_pure_local_reference = reference.kind == Some(&ReferenceKind::Local);
+
+                        if is_pure_local_reference
+                            && self
+                                .non_local_references_at_offsets
+                                .contains(&reference.node.start_byte())
                         {
                             continue;
                         }
 
-                        if let Some(def_id) = reference.resolves_to {
-                            ref_occurrences.push(self.make_local_reference(reference, def_id))
-                        } else {
-                            if skip {
-                                continue;
-                            }
-
-                            if let Some(def) = self.find_def(
-                                scope_ref,
-                                reference.name,
-                                reference.node.start_byte(),
-                            ) {
-                                ref_occurrences.push(self.make_local_reference(reference, def.id));
-                            }
-                        }
-                    }
-                    Some(ReferenceKind::Global) => {
-                        if !skip {
-                            ref_occurrences.push(self.make_global_reference(reference))
-                        }
-                    }
-                    None => {
-                        println!("Handling {:?}, {}", reference, skip);
                         if let Some(def_id) = reference.resolves_to {
                             ref_occurrences.push(self.make_local_reference(reference, def_id));
                             continue;
@@ -819,7 +804,15 @@ impl<'a> LocalResolver<'a> {
                             self.find_def(scope_ref, reference.name, reference.node.start_byte())
                         {
                             ref_occurrences.push(self.make_local_reference(reference, def.id));
-                        } else {
+                            continue;
+                        }
+
+                        if !is_pure_local_reference {
+                            ref_occurrences.push(self.make_global_reference(reference))
+                        }
+                    }
+                    Some(ReferenceKind::Global) => {
+                        if !skip {
                             ref_occurrences.push(self.make_global_reference(reference))
                         }
                     }
