@@ -14,7 +14,6 @@ use std::{
 
 use anyhow::{anyhow, Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
-use clap::ValueEnum;
 use path_clean;
 use rayon::{prelude::*, ThreadPoolBuilder};
 use scip::{types::Document, write_message_to_file};
