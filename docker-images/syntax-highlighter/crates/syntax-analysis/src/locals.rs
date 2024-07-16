@@ -295,7 +295,7 @@ impl<'a> IndexMut<ScopeId<'a>> for LocalResolver<'a> {
 impl<'a> LocalResolver<'a> {
     fn new(source: &'a str, options: &'a LocalResolutionOptions) -> Self {
         LocalResolver {
-            options: options,
+            options,
             arena: Arena::new(),
             interner: StringInterner::default(),
             source_bytes: source.as_bytes(),

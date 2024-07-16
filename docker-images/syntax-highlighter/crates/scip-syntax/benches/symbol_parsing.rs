@@ -10,7 +10,7 @@ fn parse_symbols(symbols: &[&str]) {
 
 fn parse_symbols_v2(symbols: &[&str]) {
     for symbol in symbols {
-        scip_strict::Symbol::parse(&symbol).unwrap();
+        scip_strict::Symbol::parse(symbol).unwrap();
     }
 }
 
