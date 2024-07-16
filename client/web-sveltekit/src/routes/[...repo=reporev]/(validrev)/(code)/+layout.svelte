@@ -63,7 +63,6 @@
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
     import { createFileTreeStore } from './fileTreeStore'
-    import type { GitHistory_HistoryConnection, RepoPage_ReferencesLocationConnection } from './layout.gql'
     import ReferencePanel from './ReferencePanel.svelte'
 
     export let data: LayoutData
@@ -91,28 +90,15 @@
     let fileTreeSidePanel: Panel
     let historyPanel: HistoryPanel
     let selectedTab: number | null = null
-    let commitHistory: GitHistory_HistoryConnection | null
-    let references: RepoPage_ReferencesLocationConnection | null
     const fileTreeStore = createFileTreeStore({ fetchFileTreeData: fetchSidebarFileTree })
 
     $: ({ revision = '', parentPath, repoName, resolvedRevision, isCodyAvailable } = data)
     $: fileTreeStore.set({ repoName, revision: resolvedRevision.commitID, path: parentPath })
-    $: commitHistoryQuery = data.commitHistory
-    $: if (!!commitHistoryQuery) {
-        // Reset commit history when the query observable changes. Without
-        // this we are showing the commit history of the previously selected
-        // file/folder until the new commit history is loaded.
-        commitHistory = null
-    }
-
-    $: commitHistory = $commitHistoryQuery?.data?.repository?.commit?.ancestors ?? null
-
     // The observable query to fetch references (due to infinite scrolling)
     $: sgURL = SourcegraphURL.from($page.url)
     $: selectedLine = sgURL.lineRange
     $: referenceQuery =
         sgURL.viewState === 'references' && selectedLine?.line ? data.getReferenceStore(selectedLine) : null
-    $: references = $referenceQuery?.data?.repository?.commit?.blob?.lsif?.references ?? null
 
     afterNavigate(async () => {
         // We need to wait for referenceQuery to be updated before checking its state
@@ -289,32 +275,22 @@
                             {#key data.filePath}
                                 <HistoryPanel
                                     bind:this={historyPanel}
-                                    history={commitHistory}
-                                    loading={$commitHistoryQuery?.fetching ?? true}
-                                    fetchMore={commitHistoryQuery.fetchMore}
+                                    history={data.commitHistory}
                                     enableInlineDiff={$page.data.enableInlineDiff}
                                     enableViewAtCommit={$page.data.enableViewAtCommit}
                                 />
                             {/key}
                         </TabPanel>
                         <TabPanel title="References" shortcut={referenceHotkey}>
-                            {#if !referenceQuery}
+                            {#if referenceQuery}
+                                <ReferencePanel references={referenceQuery} />
+                            {:else}
                                 <div class="info">
                                     <Alert variant="info"
                                         >Hover over a symbol and click "Find references" to find references to the
                                         symbol.</Alert
                                     >
                                 </div>
-                            {:else if $referenceQuery && !$referenceQuery.fetching && (!references || references.nodes.length === 0)}
-                                <div class="info">
-                                    <Alert variant="info">No references found.</Alert>
-                                </div>
-                            {:else}
-                                <ReferencePanel
-                                    connection={references}
-                                    loading={$referenceQuery?.fetching ?? false}
-                                    on:more={referenceQuery?.fetchMore}
-                                />
                             {/if}
                         </TabPanel>
                     </Tabs>

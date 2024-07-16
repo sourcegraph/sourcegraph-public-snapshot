@@ -57,8 +57,6 @@ export function useTeamMembers(
     return useShowMorePagination<ListTeamMembersResult, ListTeamMembersVariables, ListTeamMemberFields>({
         query: LIST_TEAM_MEMBERS,
         variables: {
-            after: null,
-            first: 15,
             search,
             teamName,
         },

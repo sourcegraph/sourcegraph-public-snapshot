@@ -6,8 +6,8 @@ import { map } from 'rxjs/operators'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { Container, PageHeader, Link, Code } from '@sourcegraph/wildcard'
+import { type TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { Code, Container, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -86,7 +86,7 @@ export const UserEventLogsPageContent: React.FunctionComponent<
     }, [telemetryRecorder])
 
     const queryUserEventLogs = useCallback(
-        (args: { first?: number }): Observable<UserEventLogsConnectionFields> =>
+        (args: { first?: number | null }): Observable<UserEventLogsConnectionFields> =>
             requestGraphQL<UserEventLogsResult, UserEventLogsVariables>(
                 gql`
                     query UserEventLogs($user: ID!, $first: Int) {

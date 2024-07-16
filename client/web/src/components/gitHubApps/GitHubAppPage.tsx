@@ -1,4 +1,4 @@
-import { type FC, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type FC } from 'react'
 
 import { mdiCog, mdiDelete, mdiOpenInNew, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
@@ -10,26 +10,26 @@ import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
+    AnchorLink,
+    Button,
+    ButtonLink,
     Container,
     ErrorAlert,
-    PageHeader,
-    ButtonLink,
-    Icon,
-    LoadingSpinner,
-    Button,
+    Grid,
     H2,
     H3,
+    Icon,
     Link,
+    LoadingSpinner,
+    PageHeader,
     Text,
-    Grid,
-    AnchorLink,
 } from '@sourcegraph/wildcard'
 // eslint-disable-next-line no-restricted-imports
 import type { BreadcrumbItem } from '@sourcegraph/wildcard/src/components/PageHeader'
 
 import { GitHubAppDomain, type GitHubAppByIDResult, type GitHubAppByIDVariables } from '../../graphql-operations'
 import { ExternalServiceNode } from '../externalServices/ExternalServiceNode'
-import { ConnectionList, SummaryContainer, ConnectionSummary } from '../FilteredConnection/ui'
+import { ConnectionList, ConnectionSummary, SummaryContainer } from '../FilteredConnection/ui'
 import { PageTitle } from '../PageTitle'
 
 import { AppLogo } from './AppLogo'
@@ -274,7 +274,6 @@ export const GitHubAppPage: FC<Props> = ({
                                                             <SummaryContainer className="mt-2" centered={true}>
                                                                 <ConnectionSummary
                                                                     noSummaryIfAllNodesVisible={false}
-                                                                    first={100}
                                                                     centered={true}
                                                                     connection={installation.externalServices}
                                                                     noun="code host connection"
@@ -297,7 +296,6 @@ export const GitHubAppPage: FC<Props> = ({
                             <SummaryContainer className="mt-3" centered={true}>
                                 <ConnectionSummary
                                     noSummaryIfAllNodesVisible={false}
-                                    first={app?.installations?.length ?? 0}
                                     centered={true}
                                     connection={{
                                         nodes: app?.installations ?? [],

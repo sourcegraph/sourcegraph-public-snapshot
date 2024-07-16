@@ -5,10 +5,10 @@ import {
     type UseShowMorePaginationResult,
 } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import type {
-    Scalars,
-    PreviewBatchSpecImportingChangesetFields,
     BatchSpecImportingChangesetsResult,
     BatchSpecImportingChangesetsVariables,
+    PreviewBatchSpecImportingChangesetFields,
+    Scalars,
 } from '../../../../../graphql-operations'
 import { IMPORTING_CHANGESETS } from '../../../create/backend'
 
@@ -34,11 +34,9 @@ export const useImportingChangesets = (
         query: IMPORTING_CHANGESETS,
         variables: {
             batchSpec: batchSpecID,
-            after: null,
-            first: CHANGESETS_PER_PAGE_COUNT,
         },
         options: {
-            useURL: false,
+            pageSize: CHANGESETS_PER_PAGE_COUNT,
             fetchPolicy: 'cache-and-network',
         },
         getConnection: result => {

@@ -64,6 +64,7 @@ const SearchContextPage = lazyComponent(
 const SearchUpsellPage = lazyComponent(() => import('./search/upsell/SearchUpsellPage'), 'SearchUpsellPage')
 const SearchPageWrapper = lazyComponent(() => import('./search/SearchPageWrapper'), 'SearchPageWrapper')
 const SearchJob = lazyComponent(() => import('./enterprise/search-jobs/SearchJobsPage'), 'SearchJobsPage')
+const SavedSearchArea = lazyComponent(() => import('./savedSearches/Area'), 'Area')
 
 const Index = lazyComponent(() => import('./Index'), 'IndexPage')
 
@@ -178,6 +179,15 @@ export const routes: RouteObject[] = [
                     />
                 )}
                 condition={({ searchJobsEnabled }) => searchJobsEnabled}
+            />
+        ),
+    },
+    {
+        path: `${PageRoutes.SavedSearches}/*`,
+        element: (
+            <LegacyRoute
+                render={props => <SavedSearchArea {...props} />}
+                condition={() => window.context?.codeSearchEnabledOnInstance}
             />
         ),
     },

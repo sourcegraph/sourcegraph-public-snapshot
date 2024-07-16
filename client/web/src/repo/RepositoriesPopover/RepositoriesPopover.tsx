@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { type TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { useDebounce } from '@sourcegraph/wildcard'
@@ -82,7 +82,7 @@ export const RepositoriesPopover: React.FunctionComponent<React.PropsWithChildre
         RepositoryPopoverFields
     >({
         query: REPOSITORIES_FOR_POPOVER,
-        variables: { first: BATCH_COUNT, after: null, query },
+        variables: { query },
         getConnection: ({ data, errors }) => {
             if (!data?.repositories) {
                 throw createAggregateError(errors)
@@ -90,6 +90,7 @@ export const RepositoriesPopover: React.FunctionComponent<React.PropsWithChildre
             return data.repositories
         },
         options: {
+            pageSize: BATCH_COUNT,
             fetchPolicy: 'cache-first',
         },
     })
@@ -97,7 +98,6 @@ export const RepositoriesPopover: React.FunctionComponent<React.PropsWithChildre
     const summary = connection && (
         <ConnectionSummary
             connection={connection}
-            first={BATCH_COUNT}
             noun="repository"
             pluralNoun="repositories"
             hasNextPage={hasNextPage}

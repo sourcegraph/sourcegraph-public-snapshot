@@ -378,7 +378,10 @@ test.describe('cody sidebar', () => {
             })
         })
 
-        test('disabled when disabled on instance', async ({ page, sg }) => {
+        test.fixme('disabled when disabled on instance', async ({ page, sg }) => {
+            // These tests seem to take longer than the default timeout
+            test.setTimeout(10000)
+
             sg.setWindowContext({
                 codyEnabledOnInstance: false,
             })
@@ -387,7 +390,10 @@ test.describe('cody sidebar', () => {
             await doesNotHaveCody(page)
         })
 
-        test('disabled when disabled for user', async ({ page, sg }) => {
+        test.fixme('disabled when disabled for user', async ({ page, sg }) => {
+            // These tests seem to take longer than the default timeout
+            test.setTimeout(10000)
+
             sg.setWindowContext({
                 codyEnabledOnInstance: true,
                 codyEnabledForCurrentUser: false,

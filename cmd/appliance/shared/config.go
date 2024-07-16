@@ -44,7 +44,7 @@ func (c *Config) Load() {
 	c.metrics.addr = c.Get("APPLIANCE_METRICS_ADDR", ":8734", "Appliance metrics server address.")
 	c.metrics.secure = c.GetBool("APPLIANCE_METRICS_SECURE", "false", "Appliance metrics server uses https.")
 	c.grpc.addr = c.Get("APPLIANCE_GRPC_ADDR", ":9000", "Appliance gRPC address.")
-	c.http.addr = c.Get("APPLIANCE_HTTP_ADDR", ":8080", "Appliance http address.")
+	c.http.addr = c.Get("APPLIANCE_HTTP_ADDR", ":8888", "Appliance http address.")
 	c.namespace = c.Get("APPLIANCE_NAMESPACE", "default", "Namespace to monitor.")
 	c.applianceVersion = c.Get("APPLIANCE_VERSION", version.Version(), "Version tag for the running appliance.")
 	c.selfDeploymentName = c.Get("APPLIANCE_DEPLOYMENT_NAME", "", "Own deployment name for self-update. Default is to disable self-update.")
