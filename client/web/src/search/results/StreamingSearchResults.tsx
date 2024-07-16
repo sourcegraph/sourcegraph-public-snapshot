@@ -16,6 +16,7 @@ import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetry
 import type { SearchAggregationProps, SearchStreamingProps } from '..'
 import type { AuthenticatedUser } from '../../auth'
 import type { CodeMonitoringProps } from '../../codeMonitoring'
+import { SearchJobsProps } from '../../enterprise/search-jobs'
 import { formatUrlOverrideFeatureFlags } from '../../featureFlags/lib/parseUrlOverrideFeatureFlags'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { useFeatureFlagOverrides } from '../../featureFlags/useFeatureFlagOverrides'
@@ -29,7 +30,6 @@ import { useAggregationUIMode } from './components/aggregation'
 import { NewSearchContent } from './components/new-search-content/NewSearchContent'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { useStreamingSearchPings } from './useStreamingSearchPings'
-import { SearchJobsProps } from '../../enterprise/search-jobs'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
