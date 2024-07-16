@@ -496,6 +496,14 @@ impl<'a> LocalResolver<'a> {
                 }
             } else if is_before(next_ref, next_scope) {
                 let reference = references_iter.next().unwrap();
+                if reference.kind == Some(ReferenceKind::Local)
+                    && self
+                        .non_local_references_at_offsets
+                        .contains(&reference.node.start_byte())
+                {
+                    continue;
+                }
+
                 writeln!(
                     w,
                     "{}ref {} {}-{}",
