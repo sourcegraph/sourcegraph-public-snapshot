@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/batches/workers"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -26,6 +27,9 @@ func (j *workspaceResolverJob) Config() []env.Config {
 }
 
 func (j *workspaceResolverJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	if !batches.IsEnabled() {
+		return nil, nil
+	}
 	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("routines"))
 	workCtx := actor.WithInternalActor(context.Background())
 

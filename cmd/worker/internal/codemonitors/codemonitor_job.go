@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/codemonitors/background"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -26,6 +27,10 @@ func (j *codeMonitorJob) Config() []env.Config {
 }
 
 func (j *codeMonitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	if !codemonitors.IsEnabled() {
+		return nil, nil
+	}
+
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
