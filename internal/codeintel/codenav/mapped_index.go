@@ -107,23 +107,24 @@ func (i mappedIndex) GetUploadSummary() core.UploadSummary {
 }
 
 func (i mappedIndex) GetDocument(ctx context.Context, path core.RepoRelPath) (core.Option[MappedDocument], error) {
-	document, found, err := i.lsifStore.SCIPDocument(ctx, i.upload.GetID(), core.NewUploadRelPath(i.upload, path))
+	optDocument, err := i.lsifStore.SCIPDocument(ctx, i.upload.GetID(), core.NewUploadRelPath(i.upload, path))
 	if err != nil {
 		return core.None[MappedDocument](), err
 	}
-	if !found {
-		return core.None[MappedDocument](), nil
-	}
 	// TODO: Should we cache the mapped document? The current usages don't request the same document twice
 	// so we'd just be increasing resident memory
-	return core.Some[MappedDocument](&mappedDocument{
-		gitTreeTranslator: i.gitTreeTranslator,
-		indexCommit:       i.upload.GetCommit(),
-		targetCommit:      i.targetCommit,
-		path:              path,
-		document:          document,
-		mapOnce:           sync.Once{},
-	}), nil
+	if document, ok := optDocument.Get(); ok {
+		return core.Some[MappedDocument](&mappedDocument{
+			gitTreeTranslator: i.gitTreeTranslator,
+			indexCommit:       i.upload.GetCommit(),
+			targetCommit:      i.targetCommit,
+			path:              path,
+			document:          document,
+			mapOnce:           sync.Once{},
+		}), nil
+	} else {
+		return core.None[MappedDocument](), nil
+	}
 }
 
 type mappedDocument struct {

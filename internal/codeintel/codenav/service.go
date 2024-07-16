@@ -864,9 +864,14 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID api.Repo
 
 	upload := uploads[0]
 
-	document, found, err := s.lsifstore.SCIPDocument(ctx, upload.ID, core.NewUploadRelPath(upload, path))
-	if err != nil || !found {
+	optDocument, err := s.lsifstore.SCIPDocument(ctx, upload.ID, core.NewUploadRelPath(upload, path))
+	if err != nil {
 		return nil, err
+	}
+
+	document, ok := optDocument.Get()
+	if !ok {
+		return nil, errors.New("no document found")
 	}
 
 	r, err := s.gitserver.NewFileReader(ctx, api.RepoName(upload.RepositoryName), api.CommitID(upload.Commit), path.RawValue())
@@ -994,10 +999,15 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID api.Repo
 }
 
 func (s *Service) SCIPDocument(ctx context.Context, gitTreeTranslator GitTreeTranslator, upload core.UploadLike, path core.RepoRelPath) (*scip.Document, error) {
-	rawDocument, found, err := s.lsifstore.SCIPDocument(ctx, upload.GetID(), core.NewUploadRelPath(upload, path))
-	if err != nil || !found {
+	optRawDocument, err := s.lsifstore.SCIPDocument(ctx, upload.GetID(), core.NewUploadRelPath(upload, path))
+	if err != nil {
 		return nil, err
 	}
+	rawDocument, ok := optRawDocument.Get()
+	if !ok {
+		return nil, errors.New("document not found")
+	}
+	// TODO(efritz)
 	// The caller shouldn't need to care whether the document was uploaded
 	// for a different root or not.
 	rawDocument.RelativePath = path.RawValue()

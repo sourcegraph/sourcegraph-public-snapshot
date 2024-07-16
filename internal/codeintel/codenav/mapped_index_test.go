@@ -72,19 +72,19 @@ func doc(path string, occurrences ...fakeOccurrence) fakeDocument {
 func setupUpload(commit api.CommitID, root string, documents ...fakeDocument) (uploadsshared.CompletedUpload, lsifstore.LsifStore) {
 	id := newUploadID()
 	lsifStore := NewMockLsifStore()
-	lsifStore.SCIPDocumentFunc.SetDefaultHook(func(ctx context.Context, uploadId int, path core.UploadRelPath) (*scip.Document, bool, error) {
+	lsifStore.SCIPDocumentFunc.SetDefaultHook(func(ctx context.Context, uploadId int, path core.UploadRelPath) (core.Option[*scip.Document], error) {
 		if id != uploadId {
-			return nil, false, errors.New("unknown upload id")
+			return core.None[*scip.Document](), errors.New("unknown upload id")
 		}
 		for _, document := range documents {
 			if document.path.Equal(path) {
-				return &scip.Document{
+				return core.Some(&scip.Document{
 					RelativePath: document.path.RawValue(),
 					Occurrences:  document.Occurrences(),
-				}, true, nil
+				}), nil
 			}
 		}
-		return nil, false, nil
+		return core.None[*scip.Document](), nil
 	})
 
 	return uploadsshared.CompletedUpload{
