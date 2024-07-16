@@ -3,7 +3,6 @@ package codenav
 import (
 	"context"
 	"sync"
-	"sync/atomic"
 
 	genslices "github.com/life4/genesis/slices"
 	"github.com/sourcegraph/scip/bindings/go/scip"
@@ -102,8 +101,13 @@ func (i mappedIndex) GetDocument(ctx context.Context, path core.RepoRelPath) (co
 			indexCommit:       i.upload.GetCommit(),
 			targetCommit:      i.targetCommit,
 			path:              path,
-			document:          document,
-			mapOnce:           sync.Once{},
+			document: &lockedDocument{
+				inner:      document,
+				isMapped:   false,
+				mapErrored: nil,
+				lock:       sync.RWMutex{},
+			},
+			mapOnce: sync.Once{},
 		}), nil
 	} else {
 		return core.None[MappedDocument](), nil
@@ -115,16 +119,22 @@ type mappedDocument struct {
 	indexCommit       api.CommitID
 	targetCommit      api.CommitID
 	path              core.RepoRelPath
-	document          *scip.Document
 
-	mapOnce    sync.Once
-	mapErrored error
-	isMapped   atomic.Bool
+	document *lockedDocument
+	mapOnce  sync.Once
 }
 
+type lockedDocument struct {
+	inner      *scip.Document
+	isMapped   bool
+	mapErrored error
+	lock       sync.RWMutex
+}
+
+// Concurrency: Only call this while you're holding a read lock on the document
 func (d *mappedDocument) mapAllOccurrences(ctx context.Context) ([]*scip.Occurrence, error) {
 	newOccurrences := make([]*scip.Occurrence, 0)
-	for _, occ := range d.document.Occurrences {
+	for _, occ := range d.document.inner.Occurrences {
 		scipRange := scip.NewRangeUnchecked(occ.Range)
 		sharedRange := shared.TranslateRange(scipRange)
 		mappedRange, ok, err := d.gitTreeTranslator.GetTargetCommitRangeFromSourceRange(ctx, string(d.indexCommit), d.path.RawValue(), sharedRange, true)
@@ -150,30 +160,34 @@ func (d *mappedDocument) mapAllOccurrences(ctx context.Context) ([]*scip.Occurre
 func (d *mappedDocument) GetOccurrences(ctx context.Context) ([]*scip.Occurrence, error) {
 	// It's important we don't remap the occurrences twice
 	d.mapOnce.Do(func() {
+		d.document.lock.RLock()
 		newOccurrences, err := d.mapAllOccurrences(ctx)
+		d.document.lock.RUnlock()
+
+		d.document.lock.Lock()
+		defer d.document.lock.Unlock()
 		if err != nil {
-			d.mapErrored = err
+			d.document.mapErrored = err
 			return
 		}
-		d.document.Occurrences = newOccurrences
-		d.isMapped.Store(true)
+		d.document.inner.Occurrences = newOccurrences
+		d.document.isMapped = true
 	})
 
-	if d.mapErrored != nil {
-		return nil, d.mapErrored
+	d.document.lock.RLock()
+	defer d.document.lock.RUnlock()
+	if d.document.mapErrored != nil {
+		return nil, d.document.mapErrored
 	}
-	return d.document.Occurrences, nil
+	return d.document.inner.Occurrences, nil
 }
 
 func (d *mappedDocument) GetOccurrencesAtRange(ctx context.Context, rg scip.Range) ([]*scip.Occurrence, error) {
-	pastOccurrences := d.document.Occurrences
-	if d.isMapped.Load() {
-		// if isMapped is true we know d.document.Occurrences is mapped,
-		// we can _not_ use pastOccurrences here
-		// (in case mapping finished between taking that reference and checking isMapped)
-		return FindOccurrencesWithEqualRange(d.document.Occurrences, rg), nil
+	d.document.lock.RLock()
+	defer d.document.lock.RUnlock()
+	if d.document.isMapped {
+		return FindOccurrencesWithEqualRange(d.document.inner.Occurrences, rg), nil
 	}
-	// We know pastOccurrences is not mapped at this point, and `GetOccurrence` will not modify it
 	mappedRg, ok, err := d.gitTreeTranslator.GetTargetCommitRangeFromSourceRange(
 		ctx, string(d.indexCommit), d.path.RawValue(), shared.TranslateRange(rg), false,
 	)
@@ -184,7 +198,7 @@ func (d *mappedDocument) GetOccurrencesAtRange(ctx context.Context, rg scip.Rang
 		// The range was changed/removed in the target commit, so return no occurrences
 		return nil, nil
 	}
-	pastMatchingOccurrences := FindOccurrencesWithEqualRange(pastOccurrences, mappedRg.ToSCIPRange())
+	pastMatchingOccurrences := FindOccurrencesWithEqualRange(d.document.inner.Occurrences, mappedRg.ToSCIPRange())
 	Range := rg.SCIPRange()
 	return genslices.Map(pastMatchingOccurrences, func(occ *scip.Occurrence) *scip.Occurrence {
 		return &scip.Occurrence{
