@@ -156,6 +156,9 @@
                 placement,
                 offset,
                 shift: { padding: 4 },
+                flip: {
+                    fallbackAxisSideDirection: 'start',
+                },
             },
         }}
         on:click-outside={handleClickOutside}
