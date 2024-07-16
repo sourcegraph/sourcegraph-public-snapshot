@@ -19,6 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/codyaccessservice"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/importer"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -201,6 +202,8 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 				},
 			},
 		},
+		// Run importer in background
+		importer.New(ctx, logger.Scoped("importer"), dotcomDB, dbHandle, config.DotComDB.ImportInterval),
 		// Stop server first
 		server,
 	}, nil

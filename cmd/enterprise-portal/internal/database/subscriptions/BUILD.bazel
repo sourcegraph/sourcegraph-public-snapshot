@@ -13,6 +13,7 @@ go_library(
     tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//cmd/enterprise-portal:__subpackages__"],
     deps = [
+        "//cmd/enterprise-portal/internal/database/internal/pgxerrors",
         "//cmd/enterprise-portal/internal/database/internal/upsert",
         "//cmd/enterprise-portal/internal/database/internal/utctime",
         "//internal/license",

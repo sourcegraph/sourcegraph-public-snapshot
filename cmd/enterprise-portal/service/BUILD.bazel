@@ -18,6 +18,7 @@ go_library(
     deps = [
         "//cmd/enterprise-portal/internal/codyaccessservice",
         "//cmd/enterprise-portal/internal/database",
+        "//cmd/enterprise-portal/internal/database/importer",
         "//cmd/enterprise-portal/internal/dotcomdb",
         "//cmd/enterprise-portal/internal/subscriptionsservice",
         "//internal/codygateway/codygatewayevents",

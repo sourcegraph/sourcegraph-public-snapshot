@@ -1,0 +1,289 @@
+package importer
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/codyaccess"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
+)
+
+type importer struct {
+	logger log.Logger
+
+	dotcom *dotcomdb.Reader
+
+	subscriptions     *subscriptions.Store
+	licenses          *subscriptions.LicensesStore
+	codyGatewayAccess *codyaccess.CodyGatewayStore
+}
+
+var _ goroutine.Handler = (*importer)(nil)
+
+// New returns a periodic goroutine that runs an importer that reconciles
+// subscriptions, licenses, and Cody Gateway access from dotcom into the
+// Enterprise Portal database.
+func New(
+	ctx context.Context,
+	logger log.Logger,
+	dotcom *dotcomdb.Reader,
+	enterprisePortal *database.DB,
+	interval time.Duration,
+) *goroutine.PeriodicGoroutine {
+	return goroutine.NewPeriodicGoroutine(
+		ctx,
+		&importer{
+			logger:            logger,
+			dotcom:            dotcom,
+			subscriptions:     enterprisePortal.Subscriptions(),
+			licenses:          enterprisePortal.Subscriptions().Licenses(),
+			codyGatewayAccess: enterprisePortal.CodyAccess().CodyGateway(),
+		},
+		goroutine.WithOperation(
+			observation.NewContext(logger, observation.Tracer(trace.GetTracer())).
+				Operation(observation.Op{
+					Name: "dotcom.importer",
+				})),
+		goroutine.WithName("dotcom.importer"),
+		goroutine.WithInterval(interval))
+}
+
+func (i *importer) Handle(ctx context.Context) error {
+	l := trace.Logger(ctx, i.logger)
+
+	dotcomSubscriptions, err := i.dotcom.ListEnterpriseSubscriptions(ctx, dotcomdb.ListEnterpriseSubscriptionsOptions{})
+	if err != nil {
+		return err
+	}
+	l.Info("importing dotcom subscriptions",
+		log.Int("subscriptions", len(dotcomSubscriptions)))
+
+	wg := pool.New().
+		WithErrors().
+		WithMaxGoroutines(20)
+	for _, dotcomSub := range dotcomSubscriptions {
+		wg.Go(func() error {
+			if err := i.importSubscription(ctx, dotcomSub); err != nil {
+				return errors.Wrap(err, dotcomSub.ID)
+			}
+			return nil
+		})
+	}
+
+	if err := wg.Wait(); err != nil {
+		return err // routine handler will do error logging
+	}
+	l.Info("import succeeded")
+	return nil
+}
+
+func (i *importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.SubscriptionAttributes) (err error) {
+	tr, ctx := trace.New(ctx, "importSubscription",
+		attribute.String("dotcomSub.ID", dotcomSub.ID))
+	defer tr.EndWithErr(&err)
+
+	dotcomLicenses, err := i.dotcom.ListEnterpriseSubscriptionLicenses(ctx, []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter{{
+		Filter: &subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_SubscriptionId{
+			SubscriptionId: dotcomSub.ID,
+		},
+	}}, 0) // list all licenses
+	if err != nil {
+		return errors.Wrap(err, "dotcom: list licenses")
+	}
+
+	tr.SetAttributes(attribute.Int("licenses", len(dotcomLicenses)))
+	if len(dotcomLicenses) == 0 {
+		// We don't care about this subscription
+		return nil
+	}
+
+	// Construct the conditions we need to apply during the subscription
+	// update
+	var conditions []subscriptions.CreateSubscriptionConditionOptions
+	if epSub, err := i.subscriptions.Get(ctx, dotcomSub.ID); err == nil {
+		// No error - this subscription already exists.
+		tr.SetAttributes(attribute.Bool("already_imported", true))
+		if epSub.ArchivedAt == nil && dotcomSub.ArchivedAt != nil {
+			// This subscription was archived post-import. We need to
+			// add a new condition that reflects the archival event.
+			tr.SetAttributes(attribute.Bool("archived", true))
+			conditions = append(conditions,
+				subscriptions.CreateSubscriptionConditionOptions{
+					Status:         subscriptionsv1.EnterpriseSubscriptionCondition_STATUS_ARCHIVED,
+					TransitionTime: utctime.FromTime(*dotcomSub.ArchivedAt),
+				})
+		}
+	} else if !errors.Is(err, subscriptions.ErrSubscriptionNotFound) {
+		// Error occured, and it's not subscription-not-found - fail.
+		return errors.Wrap(err, "check for already-imported subscription")
+	} else {
+		// Subscription doesn't exist, so we need to create all the
+		// conditions that reflect the creation and archival events.
+		tr.SetAttributes(attribute.Bool("already_imported", false))
+		conditions = append(conditions,
+			subscriptions.CreateSubscriptionConditionOptions{
+				Status:         subscriptionsv1.EnterpriseSubscriptionCondition_STATUS_CREATED,
+				TransitionTime: utctime.FromTime(dotcomSub.CreatedAt),
+			})
+		if dotcomSub.ArchivedAt != nil {
+			tr.SetAttributes(attribute.Bool("archived", true))
+			conditions = append(conditions,
+				subscriptions.CreateSubscriptionConditionOptions{
+					Status:         subscriptionsv1.EnterpriseSubscriptionCondition_STATUS_ARCHIVED,
+					TransitionTime: utctime.FromTime(*dotcomSub.ArchivedAt),
+				})
+		}
+	}
+
+	// Apply updates to the subscription, creating it if it does not
+	// exist yet.
+	activeLicense := dotcomLicenses[0]
+	if _, err := i.subscriptions.Upsert(ctx, dotcomSub.ID,
+		subscriptions.UpsertSubscriptionOptions{
+			DisplayName: func() *sql.NullString {
+				for _, t := range activeLicense.Tags {
+					parts := strings.SplitN(t, ":", 2)
+					if len(parts) != 2 {
+						return nil
+					}
+					if parts[0] == "customer" {
+						// Collision rates are high, and it's tricky to check -
+						// for now, do the simple thing by auto-importing the
+						// display name with the subscription's creation date
+						// suffixed to it.
+						name := fmt.Sprintf("%s %s",
+							parts[1], dotcomSub.CreatedAt.Format(time.DateOnly))
+						return pointers.Ptr(database.NewNullString(name))
+					}
+				}
+				return nil
+			}(),
+			CreatedAt: utctime.FromTime(dotcomSub.CreatedAt),
+			ArchivedAt: func() *utctime.Time {
+				if dotcomSub.ArchivedAt == nil {
+					return nil
+				}
+				return pointers.Ptr(utctime.FromTime(*dotcomSub.ArchivedAt))
+			}(),
+			SalesforceSubscriptionID: activeLicense.SalesforceSubscriptionID,
+			SalesforceOpportunityID:  activeLicense.SalesforceOpportunityID,
+		},
+		conditions...,
+	); err != nil {
+		return errors.Wrap(err, "upsert subscription")
+	}
+
+	// Import licenses belonging to this subscription
+	for _, dotcomLicense := range dotcomLicenses {
+		if err := i.importLicense(ctx, dotcomSub.ID, dotcomLicense); err != nil {
+			return errors.Wrap(err, "import license")
+		}
+	}
+
+	// Import Cody Gateway access configured for this subscription
+	dotcomCGAccess, err := i.dotcom.GetCodyGatewayAccessAttributesBySubscription(ctx, dotcomSub.ID)
+	if err != nil {
+		return errors.Wrap(err, "dotcom: get cody gateway access")
+	}
+	if _, err := i.codyGatewayAccess.Upsert(ctx, dotcomSub.ID, codyaccess.UpsertCodyGatewayAccessOptions{
+		Enabled: dotcomCGAccess.CodyGatewayEnabled,
+
+		ChatCompletionsRateLimit:                dotcomCGAccess.ChatCompletionsRateLimit,
+		ChatCompletionsRateLimitIntervalSeconds: dotcomCGAccess.ChatCompletionsRateSeconds,
+
+		CodeCompletionsRateLimit:                dotcomCGAccess.CodeCompletionsRateLimit,
+		CodeCompletionsRateLimitIntervalSeconds: dotcomCGAccess.CodeCompletionsRateSeconds,
+
+		EmbeddingsRateLimit:                dotcomCGAccess.EmbeddingsRateLimit,
+		EmbeddingsRateLimitIntervalSeconds: dotcomCGAccess.EmbeddingsRateSeconds,
+	}); err != nil {
+		return errors.Wrap(err, "upsert cody gateway access")
+	}
+
+	return nil
+}
+
+func (i *importer) importLicense(ctx context.Context, subscriptionID string, dotcomLicense *dotcomdb.LicenseAttributes) (err error) {
+	tr, ctx := trace.New(ctx, "importSubscription",
+		attribute.String("dotcomSub.ID", subscriptionID),
+		attribute.String("dotcomLicense.ID", dotcomLicense.ID))
+	defer tr.EndWithErr(&err)
+
+	if epLicense, err := i.licenses.Get(ctx, dotcomLicense.ID); err == nil {
+		// No error - this license already exists
+		tr.SetAttributes(attribute.Bool("already_imported", true))
+		if dotcomLicense.RevokedAt != nil && epLicense.RevokedAt == nil {
+			// License was revoked post-import, we need to revoke it now on our
+			// end
+			tr.SetAttributes(attribute.Bool("revoked", true))
+			if _, err := i.licenses.Revoke(ctx, dotcomLicense.ID, subscriptions.RevokeLicenseOpts{
+				Message: pointers.DerefZero(dotcomLicense.RevokeReason),
+				Time:    pointers.Ptr(utctime.FromTime(*dotcomLicense.RevokedAt)),
+			}); err != nil {
+				return errors.Wrap(err, "revoke license")
+			}
+		}
+		return nil
+	} else if !errors.Is(err, subscriptions.ErrSubscriptionLicenseNotFound) {
+		// Error occured, and it's not license-not-found - fail.
+		return errors.Wrap(err, "check for already-imported license")
+	}
+
+	tr.SetAttributes(attribute.Bool("already_imported", false))
+
+	if _, err := i.licenses.CreateLicenseKey(ctx, subscriptionID,
+		&subscriptions.LicenseKey{
+			Info: license.Info{
+				Tags:                     dotcomLicense.Tags,
+				UserCount:                uint(pointers.DerefZero(dotcomLicense.UserCount)),
+				CreatedAt:                dotcomLicense.CreatedAt,
+				ExpiresAt:                pointers.DerefZero(dotcomLicense.ExpiresAt),
+				SalesforceSubscriptionID: dotcomLicense.SalesforceSubscriptionID,
+				SalesforceOpportunityID:  dotcomLicense.SalesforceOpportunityID,
+			},
+			SignedKey: dotcomLicense.LicenseKey,
+		},
+		subscriptions.CreateLicenseOpts{
+			Time:       pointers.Ptr(utctime.FromTime(dotcomLicense.CreatedAt)),
+			ExpireTime: utctime.FromTime(pointers.DerefZero(dotcomLicense.ExpiresAt)),
+			// Use the existing license ID
+			ImportLicenseID: dotcomLicense.ID,
+		},
+	); err != nil {
+		return errors.Wrap(err, "create license")
+	}
+
+	var licenseImportErrors error
+	if dotcomLicense.RevokedAt != nil {
+		tr.SetAttributes(attribute.Bool("revoked", true))
+		if _, err := i.licenses.Revoke(ctx, dotcomLicense.ID, subscriptions.RevokeLicenseOpts{
+			Message: pointers.DerefZero(dotcomLicense.RevokeReason),
+			Time:    pointers.Ptr(utctime.FromTime(*dotcomLicense.RevokedAt)),
+		}); err != nil {
+			licenseImportErrors = errors.Append(licenseImportErrors,
+				errors.Wrapf(err, "import license %q", dotcomLicense.ID))
+		}
+	}
+	if licenseImportErrors != nil {
+		return licenseImportErrors
+	}
+
+	return nil
+}

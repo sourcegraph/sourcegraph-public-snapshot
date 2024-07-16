@@ -162,11 +162,11 @@ func CodyGatewayStoreListAndGet(t *testing.T, ctx context.Context, subscriptionI
 		_, err := s.Upsert(ctx, sub, codyaccess.UpsertCodyGatewayAccessOptions{
 			Enabled:                                 pointers.Ptr(idx%2 == 0), // even
 			ChatCompletionsRateLimit:                pointers.Ptr(int64(idx)),
-			ChatCompletionsRateLimitIntervalSeconds: pointers.Ptr(int(idx)),
+			ChatCompletionsRateLimitIntervalSeconds: pointers.Ptr(int32(idx)),
 			CodeCompletionsRateLimit:                pointers.Ptr(int64(idx)),
-			CodeCompletionsRateLimitIntervalSeconds: pointers.Ptr(int(idx)),
+			CodeCompletionsRateLimitIntervalSeconds: pointers.Ptr(int32(idx)),
 			EmbeddingsRateLimit:                     pointers.Ptr(int64(idx)),
-			EmbeddingsRateLimitIntervalSeconds:      pointers.Ptr(int(idx)),
+			EmbeddingsRateLimitIntervalSeconds:      pointers.Ptr(int32(idx)),
 		})
 		require.NoError(t, err)
 	}
