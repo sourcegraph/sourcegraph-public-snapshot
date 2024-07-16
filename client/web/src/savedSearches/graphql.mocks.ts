@@ -52,6 +52,7 @@ const savedSearchesMock: MockedResponse<SavedSearchesResult, SavedSearchesVariab
         variables: {
             query: '',
             owner: '1',
+            viewerIsAffiliated: true,
             after: null,
             before: null,
             first: 100,
