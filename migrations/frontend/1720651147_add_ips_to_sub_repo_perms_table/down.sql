@@ -1,5 +1,3 @@
--- Undo the changes made in the up migration
-
 -- Remove the check constraint to ensure ips is either NULL or has the same length as paths
 ALTER TABLE IF EXISTS ONLY sub_repo_permissions
     DROP CONSTRAINT IF EXISTS ips_paths_length_check;
