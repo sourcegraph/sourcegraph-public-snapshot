@@ -347,6 +347,9 @@ func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
 }
 
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
+	if r.oid == "" {
+		return []string{}, nil
+	}
 	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, r.repoResolver.RepoName(), api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
@@ -360,6 +363,9 @@ func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 }
 
 func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*languageStatisticsResolver, error) {
+	if r.oid == "" {
+		return []*languageStatisticsResolver{}, nil
+	}
 	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, r.repoResolver.RepoName(), api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err

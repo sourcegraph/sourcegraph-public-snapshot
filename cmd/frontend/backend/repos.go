@@ -119,7 +119,7 @@ func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID ap
 	}
 
 	if commitID == "" {
-		return nil, errors.Errorf("Could not find a commit in the repository. Please add a file first.")
+		return nil, errors.New("commitID must not be empty")
 	}
 
 	ctx, done := startTrace(ctx, "GetInventory", map[string]any{"repo": repo, "commitID": commitID}, &err)
@@ -133,11 +133,7 @@ func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID ap
 		return nil, err
 	}
 
-	// In computing the inventory, sub-tree inventories are cached based on the OID of the Git
-	// tree. Compared to per-blob caching, this creates many fewer cache entries, which means fewer
-	// stores, fewer lookups, and less cache storage overhead. Compared to per-commit caching, this
-	// yields a higher cache hit rate because most trees are unchanged across commits.
-	inv, err := invCtx.All(ctx)
+	inv, err := invCtx.All()
 	if err != nil {
 		return nil, err
 	}
