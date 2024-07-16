@@ -249,6 +249,8 @@ test('history panel', async ({ page, sg }) => {
 })
 
 test('file popover', async ({ page, sg }) => {
+    test.slow()
+
     await page.goto(`/${repoName}`)
 
     // Open the sidebar

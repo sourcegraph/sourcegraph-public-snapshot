@@ -48,17 +48,19 @@ export const useBlameHunks = ({
     const [isBlameVisible] = useBlameVisibility(isPackage)
     const shouldFetchBlame = isBlameVisible
 
-    const hunks = useObservable(
-        useMemo(
-            () =>
-                shouldFetchBlame
-                    ? fetchBlameWithExternalURLs({ revision, repoName, filePath })
-                    : of({ current: undefined, externalURLs: undefined }),
-            [shouldFetchBlame, revision, repoName, filePath]
-        )
+    const stream = useMemo(
+        () =>
+            shouldFetchBlame
+                ? fetchBlameWithExternalURLs({ revision, repoName, filePath })
+                : of({ current: undefined, externalURLs: undefined }),
+        [shouldFetchBlame, revision, repoName, filePath]
     )
-
-    return hunks || { current: undefined, externalURLs: undefined }
+    try {
+        const hunks = useObservable(stream)
+        return hunks || { current: undefined, externalURLs: undefined }
+    } catch (error) {
+        return { message: error.toString() }
+    }
 }
 
 async function fetchRepositoryData(repoName: string): Promise<Omit<BlameHunkData, 'current'>> {
