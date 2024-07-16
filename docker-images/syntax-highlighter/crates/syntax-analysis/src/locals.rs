@@ -6,14 +6,14 @@ use std::{
     slice::Iter,
 };
 
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use id_arena::{Arena, Id};
 use if_chain::if_chain;
 use itertools::Itertools;
 use protobuf::Enum;
 use scip::{
     symbol::format_symbol,
-    types::{Occurrence, Symbol},
+    types::{descriptor, Occurrence, Symbol},
 };
 use string_interner::{symbol::SymbolU32, StringInterner};
 use tree_sitter::Node;
@@ -768,20 +768,27 @@ impl<'a> LocalResolver<'a> {
     }
 
     fn make_global_reference(&self, reference: &Reference) -> scip::types::Occurrence {
-        // let symbol = scip::symbol::format_symbol(scip::types::Symbol {
-        //     scheme: "scip-ctags".into(),
-        //     package: None.into(),
-        //     descriptors: descriptor_stack.clone(),
-        //     ..Default::default()
-        // });
+        let referenced_name = self
+            .interner
+            .resolve(reference.name)
+            .with_context(|| anyhow!("Failed to resolve interned name {:?}", reference.name))
+            .unwrap()
+            .to_string();
+
+        let symbol = scip::symbol::format_symbol(scip::types::Symbol {
+            scheme: "scip-syntax".into(),
+            package: None.into(),
+            descriptors: vec![scip::types::Descriptor {
+                name: referenced_name,
+                suffix: descriptor::Suffix::Term.into(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        });
 
         scip::types::Occurrence {
             range: reference.node.scip_range(),
-            symbol: self
-                .interner
-                .resolve(reference.name)
-                .expect("Failed to resolve reference name from interner")
-                .to_string(), //format_symbol(def_id.as_local_symbol()),
+            symbol,
             ..Default::default()
         }
     }
