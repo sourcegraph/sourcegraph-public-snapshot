@@ -55,14 +55,6 @@ impl Scope {
         let mut symbols = Vec::with_capacity(hint);
         self.traverse(true, &mut occurrences, &mut descriptor_stack, &mut symbols);
 
-        // let symbols = occurrences
-        //     .iter()
-        //     .map(|o| scip::types::SymbolInformation {
-        //         symbol: o.symbol.clone(),
-        //         ..Default::default()
-        //     })
-        //     .collect();
-        //
         Document {
             occurrences,
             symbols,

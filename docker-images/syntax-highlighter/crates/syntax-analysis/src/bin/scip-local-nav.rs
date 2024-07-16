@@ -2,7 +2,10 @@ use std::{fs, path::Path};
 
 use clap::Parser;
 use scip::{types::Document, write_message_to_file};
-use syntax_analysis::{languages::LocalConfiguration, locals::find_locals};
+use syntax_analysis::{
+    languages::LocalConfiguration,
+    locals::{find_locals, LocalResolutionOptions},
+};
 use tree_sitter_all_languages::ParserId;
 use walkdir::WalkDir;
 
@@ -41,7 +44,9 @@ fn parse_files(config: &LocalConfiguration, root: &Path, dir: &Path) -> Vec<Docu
             .parse(contents.as_bytes(), None)
             .expect("to parse the tree");
 
-        let occs = find_locals(config, &tree, &contents).unwrap();
+        let options: LocalResolutionOptions = Default::default();
+
+        let occs = find_locals(config, &tree, &contents, &options).unwrap();
 
         let mut doc = Document::new();
         doc.language = "go".to_string();

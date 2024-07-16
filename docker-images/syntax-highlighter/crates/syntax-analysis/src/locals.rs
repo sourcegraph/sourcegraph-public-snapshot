@@ -75,8 +75,9 @@ pub fn find_locals(
     config: &LocalConfiguration,
     tree: &tree_sitter::Tree,
     source: &str,
+    options: &LocalResolutionOptions,
 ) -> Result<Vec<Occurrence>> {
-    let resolver = LocalResolver::new(source);
+    let resolver = LocalResolver::new(source, options);
     resolver.process(config, tree, None)
 }
 
@@ -245,8 +246,22 @@ enum DefRef {
     NewDefinition(DefId),
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct LocalResolutionOptions {
+    pub emit_global_references: bool,
+}
+
+impl Default for LocalResolutionOptions {
+    fn default() -> Self {
+        LocalResolutionOptions {
+            emit_global_references: true,
+        }
+    }
+}
+
 #[derive(Debug)]
 struct LocalResolver<'a> {
+    options: &'a LocalResolutionOptions,
     arena: Arena<Scope<'a>>,
     interner: StringInterner,
 
@@ -278,8 +293,9 @@ impl<'a> IndexMut<ScopeId<'a>> for LocalResolver<'a> {
 }
 
 impl<'a> LocalResolver<'a> {
-    fn new(source: &'a str) -> Self {
+    fn new(source: &'a str, options: &'a LocalResolutionOptions) -> Self {
         LocalResolver {
+            options: options,
             arena: Arena::new(),
             interner: StringInterner::default(),
             source_bytes: source.as_bytes(),
@@ -586,6 +602,11 @@ impl<'a> LocalResolver<'a> {
                             .strip_prefix("reference.")
                             .unwrap_or(capture_name),
                     );
+
+                    if !self.options.emit_global_references && kind != Some(&ReferenceKind::Local) {
+                        continue;
+                    }
+
                     let offset = capture.node.start_byte();
 
                     if self.skip_occurrences_at_offsets.contains(&offset) {
@@ -747,6 +768,13 @@ impl<'a> LocalResolver<'a> {
     }
 
     fn make_global_reference(&self, reference: &Reference) -> scip::types::Occurrence {
+        // let symbol = scip::symbol::format_symbol(scip::types::Symbol {
+        //     scheme: "scip-ctags".into(),
+        //     package: None.into(),
+        //     descriptors: descriptor_stack.clone(),
+        //     ..Default::default()
+        // });
+
         scip::types::Occurrence {
             range: reference.node.scip_range(),
             symbol: self
@@ -876,8 +904,8 @@ mod test {
         let source_bytes = source_code.as_bytes();
         let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
-
-        let resolver = LocalResolver::new(source_code);
+        let options: LocalResolutionOptions = Default::default();
+        let resolver = LocalResolver::new(source_code, &options);
         let mut tree_output = String::new();
         let occ = resolver.process(config, &tree, Some(&mut tree_output));
 

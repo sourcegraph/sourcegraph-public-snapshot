@@ -1,7 +1,7 @@
 use std::{path::Path, time::Instant};
 
 use clap::Parser;
-use syntax_analysis::locals;
+use syntax_analysis::locals::{self, LocalResolutionOptions};
 use tree_sitter_all_languages::ParserId;
 use walkdir::WalkDir;
 
@@ -70,7 +70,9 @@ fn parse_files(dir: &Path, language: Language) -> Vec<ParseTiming> {
         let mut parser = config.get_parser();
         let tree = parser.parse(source.as_bytes(), None).unwrap();
 
-        locals::find_locals(config, &tree, &source).unwrap();
+        let options: LocalResolutionOptions = Default::default();
+
+        locals::find_locals(config, &tree, &source, &options).unwrap();
         let finish = Instant::now();
 
         timings.push(ParseTiming {
