@@ -16,18 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type Mapped interface {
-	IndexCommit() api.CommitID
-	TargetCommit() api.CommitID
-}
-
-// MappedIndex wraps an uploaded SCIP index and a target commit and creates MappedDocument instances,
-// which automatically map occurrence ranges across the target and index commit.
 type MappedIndex interface {
 	GetDocument(context.Context, core.RepoRelPath) (core.Option[MappedDocument], error)
 	GetUploadSummary() core.UploadSummary
 	// TODO: Should there be a bulk-API for getting multiple documents?
-	Mapped
 }
 
 var _ MappedIndex = mappedIndex{}
@@ -37,7 +29,6 @@ var _ MappedIndex = mappedIndex{}
 type MappedDocument interface {
 	GetOccurrences(context.Context) ([]*scip.Occurrence, error)
 	GetOccurrencesAtRange(context.Context, scip.Range) ([]*scip.Occurrence, error)
-	Mapped
 }
 
 var _ MappedDocument = &mappedDocument{}
@@ -90,14 +81,6 @@ type mappedIndex struct {
 	targetCommit      api.CommitID
 }
 
-func (i mappedIndex) IndexCommit() api.CommitID {
-	return i.upload.GetCommit()
-}
-
-func (i mappedIndex) TargetCommit() api.CommitID {
-	return i.targetCommit
-}
-
 func (i mappedIndex) GetUploadSummary() core.UploadSummary {
 	return core.UploadSummary{
 		ID:     i.upload.GetID(),
@@ -137,14 +120,6 @@ type mappedDocument struct {
 	mapOnce    sync.Once
 	mapErrored error
 	isMapped   atomic.Bool
-}
-
-func (d *mappedDocument) IndexCommit() api.CommitID {
-	return d.indexCommit
-}
-
-func (d *mappedDocument) TargetCommit() api.CommitID {
-	return d.targetCommit
 }
 
 func (d *mappedDocument) mapAllOccurrences(ctx context.Context) ([]*scip.Occurrence, error) {

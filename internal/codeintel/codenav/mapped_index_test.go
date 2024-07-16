@@ -165,16 +165,6 @@ func setupSimpleUpload() (api.CommitID, uploadsshared.CompletedUpload, lsifstore
 	return targetCommit, upload, lsifStore
 }
 
-func TestNewMappedIndex(t *testing.T) {
-	indexCommit := api.CommitID("deadbeef")
-	targetCommit := api.CommitID("beefdead")
-	upload, lsifStore := setupUpload(indexCommit, "")
-	mappedIndex, err := NewMappedIndex(lsifStore, nil, nil, upload, targetCommit)
-	require.NoError(t, err)
-	require.Equal(t, indexCommit, mappedIndex.IndexCommit())
-	require.Equal(t, targetCommit, mappedIndex.TargetCommit())
-}
-
 func TestMappedIndex_GetDocumentNoTranslation(t *testing.T) {
 	targetCommit, upload, lsifStore := setupSimpleUpload()
 	translator := noopTranslator(targetCommit)
