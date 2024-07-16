@@ -31,7 +31,7 @@ export const NewCodyChatPage: FC<NewCodyChatPageProps> = props => {
             <CodyPageHeader isSourcegraphDotCom={isSourcegraphDotCom} className={styles.pageHeader} />
 
             <div className={styles.chatContainer}>
-                <CodyWebChatProvider accessToken="" serverEndpoint={window.location.origin}>
+                <CodyWebChatProvider accessToken="" serverEndpoint={window.location.origin} customHeaders={window.context.xhrHeaders}>
                     <CodyWebHistory>
                         {history => (
                             <div className={styles.chatHistory}>
