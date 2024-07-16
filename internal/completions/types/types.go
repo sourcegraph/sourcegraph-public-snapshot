@@ -262,9 +262,13 @@ const (
 type CodyClientName string
 
 const (
-	CodyClientWeb       CodyClientName = "web"
-	CodyClientVscode    CodyClientName = "vscode"
-	CodyClientJetbrains CodyClientName = "jetbrains"
+	CodyClientWeb          CodyClientName = "web"
+	CodyClientVscode       CodyClientName = "vscode"
+	CodyClientJetbrains    CodyClientName = "jetbrains"
+	CodyClientEclipse      CodyClientName = "eclipse"
+	CodyClientVisualStudio CodyClientName = "visualstudio"
+	CodyClientNeovim       CodyClientName = "neovim"
+	CodyClientCli          CodyClientName = "cody-cli"
 )
 
 type CompletionRequest struct {
