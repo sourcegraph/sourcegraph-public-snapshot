@@ -12,6 +12,7 @@ jobs:
         with:
           repository: 'sourcegraph/devx-service'
           token: ${{ secrets.PR_AUDITOR_TOKEN }}
+          token: ${{ secrets.PR_AUDITOR_TOKEN }}
       - uses: actions/setup-go@v4
         with: { go-version: '1.22' }
 
