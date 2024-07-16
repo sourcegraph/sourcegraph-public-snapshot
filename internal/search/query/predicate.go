@@ -332,6 +332,9 @@ func (p *RepoHasMetaPredicate) Unmarshal(params string, negated bool) (err error
 		if strings.HasPrefix(data, `'`) {
 			return ScanDelimited([]byte(data), true, '\'')
 		}
+		if strings.HasPrefix(data, `/`) {
+			return ScanDelimited([]byte(data), true, '/')
+		}
 		loc := strings.Index(data, ":")
 		if loc >= 0 {
 			return data[:loc], loc, nil

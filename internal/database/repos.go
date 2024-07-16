@@ -1702,6 +1702,10 @@ func kvpCondition(filter RepoKVPFilter) (*sqlf.Query, error) {
 }
 
 func keyOrValueCondition(target string, p string) (*sqlf.Query, error) {
+	if target != "key" && target != "value" {
+		panic("safety: only allow static targets")
+	}
+
 	exact, like, pattern, err := parseIncludePattern(p)
 	if err != nil {
 		return nil, err
@@ -1712,14 +1716,14 @@ func keyOrValueCondition(target string, p string) (*sqlf.Query, error) {
 		if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
 			conds = append(conds, sqlf.Sprintf("TRUE"))
 		} else {
-			conds = append(conds, sqlf.Sprintf("% = ANY (%s)", target, pq.Array(exact)))
+			conds = append(conds, sqlf.Sprintf(target+" = ANY (%s)", pq.Array(exact)))
 		}
 	}
 	for _, v := range like {
-		conds = append(conds, sqlf.Sprintf(`% LIKE %s`, target, strings.ToLower(v)))
+		conds = append(conds, sqlf.Sprintf(target+` LIKE %s`, strings.ToLower(v)))
 	}
 	if pattern != "" {
-		conds = append(conds, sqlf.Sprintf("% ~* %s", target, strings.ToLower(pattern)))
+		conds = append(conds, sqlf.Sprintf(target+" ~* %s", strings.ToLower(pattern)))
 	}
 	return sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR")), nil
 }

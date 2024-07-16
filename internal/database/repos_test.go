@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 /*
@@ -2917,4 +2918,80 @@ func TestRepoStore_Metadata(t *testing.T) {
 	md, err := r.Metadata(ctx, 1, 2)
 	require.NoError(t, err)
 	require.ElementsMatch(t, expected, md)
+}
+
+func TestRepos_List_KVPFilter(t *testing.T) {
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := actor.WithInternalActor(context.Background())
+
+	mustCreateWithKVPs := func(t *testing.T, repo *types.Repo) *types.Repo {
+		t.Helper()
+		createRepo(ctx, t, db, repo)
+		newRepo, err := db.Repos().GetByName(ctx, repo.Name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for key, value := range repo.KeyValuePairs {
+			err = db.RepoKVPs().Create(ctx, newRepo.ID, KeyValuePair{key, value})
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		newRepo, err = db.Repos().GetByName(ctx, repo.Name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return newRepo
+	}
+
+	repo1 := mustCreateWithKVPs(t, &types.Repo{
+		Name: "repo1",
+		KeyValuePairs: map[string]*string{
+			"key1A": pointers.Ptr("value1A"),
+			"key1B": pointers.Ptr("value1B"),
+		},
+	})
+	repo2 := mustCreateWithKVPs(t, &types.Repo{
+		Name: "repo2",
+		KeyValuePairs: map[string]*string{
+			"key2A": pointers.Ptr("value2A"),
+			"key2B": pointers.Ptr("value2B"),
+		},
+	})
+	repo3 := mustCreateWithKVPs(t, &types.Repo{
+		Name: "repo3",
+		KeyValuePairs: map[string]*string{
+			"key3A": pointers.Ptr("value3A"),
+			"key3B": pointers.Ptr("value3B"),
+		},
+	})
+	repo4 := mustCreateWithKVPs(t, &types.Repo{
+		Name: "repo4",
+		KeyValuePairs: map[string]*string{
+			"key4A": pointers.Ptr("value4A"),
+			"key4B": pointers.Ptr("value4B"),
+		},
+	})
+
+	for _, tt := range []struct {
+		name       string
+		kvpFilters []RepoKVPFilter
+		want       []*types.Repo
+	}{
+		{"no filters", []RepoKVPFilter{}, []*types.Repo{repo1, repo2, repo3, repo4}},
+		{"matches all", []RepoKVPFilter{{Key: ".*", KeyOnly: true}}, []*types.Repo{repo1, repo2, repo3, repo4}},
+		{"key and value matches all", []RepoKVPFilter{{Key: ".*", Value: pointers.Ptr(".*")}}, []*types.Repo{repo1, repo2, repo3, repo4}},
+		{"negated all", []RepoKVPFilter{{Key: ".*", Value: pointers.Ptr(".*"), Negated: true}}, nil},
+		{"matches none", []RepoKVPFilter{{Key: "noexist", Value: pointers.Ptr("noexist")}}, nil},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := db.Repos().List(ctx, ReposListOptions{KVPFilters: tt.kvpFilters})
+			if err != nil {
+				t.Fatal(err)
+			}
+			require.Equal(t, tt.want, got)
+		})
+	}
 }
