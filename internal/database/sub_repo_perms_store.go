@@ -514,4 +514,4 @@ DELETE FROM sub_repo_permissions WHERE user_id = %d
 //
 // Currently, this means that the permissions provider for the given service has not been updated to include the IP addresses with each
 // entry it inserts.
-var IPsNotSyncedError = errors.New("The IP addresses associated with this sub-repository-permissions entry have not been synced yet.")
+var IPsNotSyncedError = errors.New("the IP addresses associated with this sub-repository-permissions entry have not been synced yet")
