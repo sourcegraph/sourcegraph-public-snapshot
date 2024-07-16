@@ -263,7 +263,7 @@ func GetAndSaveUser(
 	//
 	// We only store the event if a new user was created, or if a new extAcct
 	// was saved.
-	if newUserSaved || extAcctSaved {
+	if newUserSaved {
 		defer func() {
 			action := telemetry.ActionSucceeded
 			if err != nil { // check final error
