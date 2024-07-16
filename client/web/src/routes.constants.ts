@@ -25,7 +25,7 @@ export enum PageRoutes {
     BatchChanges = '/batch-changes/*',
     CodeMonitoring = '/code-monitoring/*',
     Insights = '/insights/*',
-    SearchJobs = '/search-jobs/*',
+    SearchJobs = '/search-jobs',
     SavedSearches = '/saved-searches',
     Contexts = '/contexts',
     CreateContext = '/contexts/new',
