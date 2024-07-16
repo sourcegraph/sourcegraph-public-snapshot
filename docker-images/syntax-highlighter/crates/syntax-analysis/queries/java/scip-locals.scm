@@ -95,11 +95,10 @@
            (type_identifier) @reference.either
 
            ; For nested classes used in `new` expressions (e.g. `new TodoApp.Item`)
-           ; we emit references to TodoApp, Item, and TodoApp.Item - the latter
-           ; to bump up the fuzzy matching against this exact form
+           ; we emit references to TodoApp, Item
            (scoped_type_identifier
                (type_identifier)* @reference.either
-            ) @reference.ether
+           )
     ]
 )
 
