@@ -521,11 +521,14 @@ type RepoIDName struct {
 	Name api.RepoName
 }
 
-// MinimalRepo represents a source code repository name, its ID and number of stars.
+// MinimalRepo represents a source code repository name, its ID, number of stars and service type.
 type MinimalRepo struct {
 	ID    api.RepoID
 	Name  api.RepoName
 	Stars int
+	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
+	// service itself).
+	ExternalRepo api.ExternalRepoSpec
 }
 
 // MinimalRepos is an utility type with convenience methods for operating on lists of repo names
@@ -937,14 +940,6 @@ func (n *NamespacePermission) DisplayName() string {
 	// Based on the zanzibar representation for data relations:
 	// <namespace>:<object_id>#@<user_id | user_group>
 	return fmt.Sprintf("%s:%d@%d", n.Namespace, n.ResourceID, n.UserID)
-}
-
-type OrgMemberAutocompleteSearchItem struct {
-	ID          int32
-	Username    string
-	DisplayName string
-	AvatarURL   string
-	InOrg       int32
 }
 
 type Org struct {
@@ -1597,17 +1592,6 @@ type CodeHostIntegrationUsageType struct {
 type CodeHostIntegrationUsageInboundTrafficToWeb struct {
 	UniquesCount int32
 	TotalCount   int32
-}
-
-// SavedSearches represents the total number of saved searches, users
-// using saved searches, and usage of saved searches.
-type SavedSearches struct {
-	TotalSavedSearches   int32
-	UniqueUsers          int32
-	NotificationsSent    int32
-	NotificationsClicked int32
-	UniqueUserPageViews  int32
-	OrgSavedSearches     int32
 }
 
 // Panel homepage represents interaction data on the

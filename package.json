@@ -333,7 +333,7 @@
     "bloomfilter": "^0.0.18",
     "buffer": "^6.0.3",
     "classnames": "^2.2.6",
-    "cody-web-experimental": "^0.1.4",
+    "cody-web-experimental": "^0.2.4",
     "comlink": "^4.3.0",
     "copy-to-clipboard": "^3.3.1",
     "core-js": "^3.8.2",
@@ -427,7 +427,11 @@
     "webextension-polyfill": "^0.6.0",
     "whatwg-url": "^14.0.0",
     "yaml-ast-parser": "^0.0.43",
-    "zustand": "^3.6.9"
+    "zustand": "^3.6.9",
+    "@bufbuild/protobuf": "^1.10.0",
+    "@connectrpc/connect": "^1.4.0",
+    "@connectrpc/connect-query": "^1.4.1",
+    "@connectrpc/connect-web": "^1.4.0"
   },
   "packageManager": "pnpm@8.9.2",
   "pnpm": {

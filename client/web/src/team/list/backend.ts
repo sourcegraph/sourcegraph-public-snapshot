@@ -80,8 +80,6 @@ export function useTeams(search: string | null): UseShowMorePaginationResult<Lis
     return useShowMorePagination<ListTeamsResult, ListTeamsVariables, ListTeamFields>({
         query: LIST_TEAMS,
         variables: {
-            after: null,
-            first: 15,
             search,
         },
         options: {
@@ -99,8 +97,6 @@ export function useChildTeams(
         query: LIST_TEAMS_OF_PARENT,
         variables: {
             teamName: parentTeam,
-            after: null,
-            first: 15,
             search,
         },
         options: {

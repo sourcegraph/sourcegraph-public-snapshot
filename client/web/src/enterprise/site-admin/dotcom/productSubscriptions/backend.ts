@@ -5,17 +5,17 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { queryGraphQL } from '../../../../backend/graphql'
 import {
-    type UseShowMorePaginationResult,
     useShowMorePagination,
+    type UseShowMorePaginationResult,
 } from '../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import type {
-    ProductLicensesResult,
+    DotComProductLicensesResult,
+    DotComProductLicensesVariables,
     ProductLicenseFields,
+    ProductLicensesResult,
     ProductLicensesVariables,
     ProductSubscriptionsDotComResult,
     ProductSubscriptionsDotComVariables,
-    DotComProductLicensesResult,
-    DotComProductLicensesVariables,
 } from '../../../../graphql-operations'
 
 const siteAdminProductSubscriptionFragment = gql`
@@ -65,73 +65,6 @@ export const CODY_GATEWAY_ACCESS_FIELDS_FRAGMENT = gql`
         limit
         intervalSeconds
     }
-`
-
-const CODY_GATEWAY_RATE_LIMIT_USAGE_FIELDS = gql`
-    fragment CodyGatewayRateLimitUsageFields on CodyGatewayRateLimit {
-        usage {
-            ...CodyGatewayRateLimitUsageDatapoint
-        }
-    }
-
-    fragment CodyGatewayRateLimitUsageDatapoint on CodyGatewayUsageDatapoint {
-        date
-        count
-        model
-    }
-`
-
-export const CODY_GATEWAY_ACCESS_COMPLETIONS_USAGE_FIELDS_FRAGMENT = gql`
-    fragment CodyGatewayAccessCompletionsUsageFields on CodyGatewayAccess {
-        codeCompletionsRateLimit {
-            ...CodyGatewayRateLimitUsageFields
-        }
-        chatCompletionsRateLimit {
-            ...CodyGatewayRateLimitUsageFields
-        }
-    }
-
-    ${CODY_GATEWAY_RATE_LIMIT_USAGE_FIELDS}
-`
-
-export const DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_COMPLETIONS_USAGE = gql`
-    query DotComProductSubscriptionCodyGatewayCompletionsUsage($uuid: String!) {
-        dotcom {
-            productSubscription(uuid: $uuid) {
-                id
-                codyGatewayAccess {
-                    ...CodyGatewayAccessCompletionsUsageFields
-                }
-            }
-        }
-    }
-
-    ${CODY_GATEWAY_ACCESS_COMPLETIONS_USAGE_FIELDS_FRAGMENT}
-`
-
-export const CODY_GATEWAY_ACCESS_EMBEDDINGS_USAGE_FIELDS_FRAGMENT = gql`
-    fragment CodyGatewayAccessEmbeddingsUsageFields on CodyGatewayAccess {
-        embeddingsRateLimit {
-            ...CodyGatewayRateLimitUsageFields
-        }
-    }
-
-    ${CODY_GATEWAY_RATE_LIMIT_USAGE_FIELDS}
-`
-
-export const DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_EMBEDDINGS_USAGE = gql`
-    query DotComProductSubscriptionCodyGatewayEmbeddingsUsage($uuid: String!) {
-        dotcom {
-            productSubscription(uuid: $uuid) {
-                id
-                codyGatewayAccess {
-                    ...CodyGatewayAccessEmbeddingsUsageFields
-                }
-            }
-        }
-    }
-
-    ${CODY_GATEWAY_ACCESS_EMBEDDINGS_USAGE_FIELDS_FRAGMENT}
 `
 
 export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
@@ -286,14 +219,11 @@ export const PRODUCT_LICENSES = gql`
 `
 
 export const useProductSubscriptionLicensesConnection = (
-    subscriptionUUID: string,
-    first: number
+    subscriptionUUID: string
 ): UseShowMorePaginationResult<ProductLicensesResult, ProductLicenseFields> =>
     useShowMorePagination<ProductLicensesResult, ProductLicensesVariables, ProductLicenseFields>({
         query: PRODUCT_LICENSES,
         variables: {
-            first: first ?? 20,
-            after: null,
             subscriptionUUID,
         },
         getConnection: result => {
@@ -306,7 +236,7 @@ export const useProductSubscriptionLicensesConnection = (
     })
 
 export function queryProductSubscriptions(args: {
-    first?: number
+    first?: number | null
     query?: string
 }): Observable<ProductSubscriptionsDotComResult['dotcom']['productSubscriptions']> {
     return queryGraphQL<ProductSubscriptionsDotComResult>(
@@ -354,14 +284,11 @@ const QUERY_PRODUCT_LICENSES = gql`
 `
 
 export const useQueryProductLicensesConnection = (
-    licenseKeySubstring: string,
-    first: number
+    licenseKeySubstring: string
 ): UseShowMorePaginationResult<DotComProductLicensesResult, ProductLicenseFields> =>
     useShowMorePagination<DotComProductLicensesResult, DotComProductLicensesVariables, ProductLicenseFields>({
         query: QUERY_PRODUCT_LICENSES,
         variables: {
-            first: first ?? 20,
-            after: null,
             licenseKeySubstring,
         },
         getConnection: result => {

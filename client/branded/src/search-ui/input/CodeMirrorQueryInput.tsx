@@ -17,7 +17,6 @@ import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
 import { BaseCodeMirrorQueryInput, type BaseCodeMirrorQueryInputProps } from './BaseCodeMirrorQueryInput'
 import { createDefaultSuggestions, placeholder as placeholderExtension } from './codemirror'
-import { decorateActiveFilter, filterPlaceholder } from './codemirror/active-filter'
 import { queryDiagnostic } from './codemirror/diagnostics'
 import { HISTORY_USER_EVENT, searchHistory as searchHistoryFacet } from './codemirror/history'
 import { useMutableValue, useOnValueChanged, useUpdateInputFromQueryState } from './codemirror/react'
@@ -212,10 +211,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
         ])
     )
 
-    const extensions = useMemo(
-        () => [filterDecoration, autocompletion, dynamicExtensions],
-        [autocompletion, dynamicExtensions]
-    )
+    const extensions = useMemo(() => [autocompletion, dynamicExtensions], [autocompletion, dynamicExtensions])
 
     // Always focus the editor on 'selectedSearchContextSpec' change
     useOnValueChanged(selectedSearchContextSpec, () => {
@@ -265,7 +261,7 @@ const staticExtension: Extension = [
     // The precedence of these extensions needs to be decreased
     // explicitly, otherwise the diagnostic indicators will be
     // hidden behind the highlight background color
-    Prec.low([tokenInfo(), decorateActiveFilter, filterPlaceholder]),
+    Prec.low([tokenInfo(), filterDecoration]),
 ]
 
 /**

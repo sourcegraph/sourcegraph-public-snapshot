@@ -1,11 +1,11 @@
-import { type FC, useEffect } from 'react'
+import { useEffect, type FC } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import { Navigate, useLocation } from 'react-router-dom'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
+import { ButtonLink, Container, Icon, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import {
     ConnectionContainer,
@@ -47,8 +47,6 @@ export const ExternalServicesPage: FC<Props> = ({
     const repoID = searchParameters.get('repoID') || null
 
     const { loading, hasNextPage, fetchMore, connection, error } = useExternalServicesConnection({
-        first: null,
-        after: null,
         repo: repoID,
     })
 
@@ -95,7 +93,6 @@ export const ExternalServicesPage: FC<Props> = ({
                         <SummaryContainer className="mt-2" centered={true}>
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={false}
-                                first={connection.totalCount ?? 0}
                                 centered={true}
                                 connection={connection}
                                 noun="code host connection"

@@ -90,7 +90,7 @@ func (s *commitGraphUpdater) lockAndUpdateUploadsVisibleToCommits(ctx context.Co
 
 	// The following process pulls the commit graph for the given repository from gitserver, pulls the set of LSIF
 	// upload objects for the given repository from Postgres, and correlates them into a visibility
-	// graph. This graph is then upserted back into Postgres for use by find closest dumps queries.
+	// graph. This graph is then upserted back into Postgres for use by find closest completd uploads queries.
 	//
 	// The user should supply a dirty token that is associated with the given repository so that
 	// the repository can be unmarked as long as the repository is not marked as dirty again before
@@ -138,14 +138,14 @@ func mapRefsToCommits(refs []gitdomain.Ref) map[string][]gitdomain.Ref {
 // accelerating rate, as we routinely expire old information for active repositories in a janitor
 // process.
 func (s *commitGraphUpdater) getCommitGraph(ctx context.Context, repositoryID int, repo api.RepoName) (*commitgraph.CommitGraph, error) {
-	commitDate, ok, err := s.store.GetOldestCommitDate(ctx, repositoryID)
+	optCommitDate, err := s.store.GetCommitDateForOldestUpload(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		// No uploads exist for this repository
+	if optCommitDate.IsNone() {
 		return commitgraph.ParseCommitGraph(nil), nil
 	}
+	commitDate := optCommitDate.Unwrap()
 
 	// The --since flag for git log is exclusive, but we want to include the commit where the
 	// oldest dump is defined. This flag only has second resolution, so we shouldn't be pulling

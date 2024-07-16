@@ -6,6 +6,8 @@ import (
 
 	logger "github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -86,7 +88,7 @@ type Store interface {
 	SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, maxTraversal int) (int, int, error)
 
 	// Commit date
-	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
+	GetCommitDateForOldestUpload(ctx context.Context, repositoryID int) (core.Option[time.Time], error)
 	UpdateCommittedAt(ctx context.Context, repositoryID int, commit, commitDateString string) error
 	SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) ([]SourcedCommits, error)
 
@@ -102,8 +104,8 @@ type Store interface {
 	ProcessSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, commitResolverMaximumCommitLag time.Duration, limit int, f func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error), now time.Time) (int, int, error)
 
 	// Misc
-	HasRepository(ctx context.Context, repositoryID int) (bool, error)
-	HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error)
+	HasRepository(ctx context.Context, repositoryID api.RepoID) (bool, error)
+	HasCommit(ctx context.Context, repositoryID api.RepoID, commit api.CommitID) (bool, error)
 	InsertDependencySyncingJob(ctx context.Context, uploadID int) (int, error)
 }
 

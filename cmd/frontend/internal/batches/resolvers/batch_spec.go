@@ -325,6 +325,7 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 			Limit:  int(args.First),
 			Offset: offset,
 		},
+		db: r.store.DatabaseDB(),
 	}, nil
 }
 

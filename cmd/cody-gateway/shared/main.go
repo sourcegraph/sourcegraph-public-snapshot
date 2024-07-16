@@ -26,7 +26,6 @@ import (
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -57,6 +56,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 )
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, cfg *config.Config) error {
@@ -98,6 +98,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		}
 	}
 
+	redisPool := connectToRedis(cfg.RedisEndpoint)
+
 	// Create an uncached external doer, we never want to cache any responses.
 	// Not only is the cache hit rate going to be really low and requests large-ish,
 	// but also do we not want to retain any data.
@@ -113,7 +115,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		return errors.Wrap(err, "init metric 'redis_latency'")
 	}
 
-	redisCache := redispool.Cache.WithLatencyRecorder(func(call string, latency time.Duration, err error) {
+	redisCache := redispool.RedisKeyValue(redisPool).WithLatencyRecorder(func(call string, latency time.Duration, err error) {
 		redisLatency.Record(context.Background(), latency.Milliseconds(), metric.WithAttributeSet(attribute.NewSet(
 			attribute.Bool("error", err != nil),
 			attribute.String("command", call))))
@@ -131,10 +133,10 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		dotcomURL.String(),
 		notify.Thresholds{
 			// Detailed notifications for product subscriptions.
-			codygateway.ActorSourceEnterpriseSubscription: []int{90, 95, 100},
+			codygatewayactor.ActorSourceEnterpriseSubscription: []int{90, 95, 100},
 			// No notifications for individual dotcom users - this can get quite
 			// spammy.
-			codygateway.ActorSourceDotcomUser: []int{},
+			codygatewayactor.ActorSourceDotcomUser: []int{},
 		},
 		cfg.ActorRateLimitNotify.SlackWebhookURL,
 		func(ctx context.Context, url string, msg *slack.WebhookMessage) error {
@@ -154,7 +156,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		sources.Add(
 			dotcomuser.NewSource(
 				obctx.Logger,
-				rcache.NewWithTTL(fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())),
+				rcache.NewWithTTL(redispool.Cache, fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())),
 				dotcomClient,
 				cfg.ActorConcurrencyLimit,
 				rs,
@@ -194,7 +196,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		sources.Add(
 			productsubscription.NewSource(
 				obctx.Logger,
-				rcache.NewWithTTL(fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())),
+				rcache.NewWithTTL(redispool.Cache, fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())),
 				codyaccessv1.NewCodyAccessServiceClient(conn),
 				cfg.ActorConcurrencyLimit,
 			),
@@ -238,7 +240,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		return errors.Wrap(err, "httpapi.NewHandler")
 	}
 	// Diagnostic and Maintenance layers, exposing additional APIs and endpoints.
-	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, cfg.DiagnosticsSecret, sources)
+	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, redisPool, cfg.DiagnosticsSecret, sources)
 	handler = httpapi.NewMaintenanceHandler(obctx.Logger, handler, cfg, redisCache)
 
 	// Collect request client for downstream handlers. Outside of dev, we always set up
@@ -255,8 +257,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	})
 
 	// Set up redis-based distributed mutex for the source syncer worker
-	p := redispool.Store.Pool()
-	sourceWorkerMutex := redsync.New(redigo.NewPool(p)).NewMutex("source-syncer-worker",
+	sourceWorkerMutex := redsync.New(redigo.NewPool(redisPool)).NewMutex("source-syncer-worker",
 		// Do not retry endlessly becuase it's very likely that someone else has
 		// a long-standing hold on the mutex. We will try again on the next periodic
 		// goroutine run.

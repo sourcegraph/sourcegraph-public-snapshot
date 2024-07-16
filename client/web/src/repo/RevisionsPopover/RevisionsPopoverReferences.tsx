@@ -11,7 +11,7 @@ import { useDebounce } from '@sourcegraph/wildcard'
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import { ConnectionSummary } from '../../components/FilteredConnection/ui'
 import type { GitRefFields, RepositoryGitRefsResult, RepositoryGitRefsVariables } from '../../graphql-operations'
-import { type GitReferenceNodeProps, REPOSITORY_GIT_REFS } from '../GitReference'
+import { REPOSITORY_GIT_REFS, type GitReferenceNodeProps } from '../GitReference'
 
 import { ConnectionPopoverGitReferenceNode } from './components'
 import { RevisionsPopoverTab } from './RevisionsPopoverTab'
@@ -150,7 +150,6 @@ export const RevisionsPopoverReferences: React.FunctionComponent<
         query: REPOSITORY_GIT_REFS,
         variables: {
             query,
-            first: BATCH_COUNT,
             repo,
             type,
             withBehindAhead: false,
@@ -163,6 +162,7 @@ export const RevisionsPopoverReferences: React.FunctionComponent<
         },
         options: {
             fetchPolicy: 'cache-first',
+            pageSize: BATCH_COUNT,
         },
     })
 
@@ -170,7 +170,6 @@ export const RevisionsPopoverReferences: React.FunctionComponent<
         <ConnectionSummary
             emptyElement={showSpeculativeResults ? <></> : undefined}
             connection={response.connection}
-            first={BATCH_COUNT}
             noun={noun}
             pluralNoun={pluralNoun}
             hasNextPage={response.hasNextPage}

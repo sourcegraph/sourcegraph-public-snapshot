@@ -21,7 +21,7 @@
 
     interface Capture {
         scroll: ScrollerCapture
-        diffCount: number
+        diffs?: ReturnType<NonNullable<typeof data.diff>['capture']>
         expandedDiffs: Array<[number, boolean]>
     }
 
@@ -30,16 +30,13 @@
     export const snapshot: Snapshot<Capture> = {
         capture: () => ({
             scroll: scroller.capture(),
-            diffCount: diffs?.nodes.length ?? 0,
+            diffs: diffQuery?.capture(),
             expandedDiffs: Array.from(expandedDiffs.entries()),
         }),
         restore: async capture => {
             expandedDiffs = new Map(capture.expandedDiffs)
-            if (capture?.diffCount !== undefined && get(navigating)?.type === 'popstate') {
-                await data.diff?.restore(result => {
-                    const count = result.data?.repository?.comparison.fileDiffs.nodes.length
-                    return !!count && count < capture.diffCount
-                })
+            if (get(navigating)?.type === 'popstate') {
+                await data.diff?.restore(capture.diffs)
             }
             scroller.restore(capture.scroll)
         },
@@ -50,7 +47,6 @@
     let expandedDiffs = new Map<number, boolean>()
 
     $: diffQuery = data.diff
-    $: diffs = $diffQuery?.data?.repository?.comparison.fileDiffs ?? null
 
     afterNavigate(() => {
         repositoryContext.set({ revision: data.commit.abbreviatedOID })
@@ -66,7 +62,7 @@
 
 <section>
     {#if data.commit}
-        <Scroller bind:this={scroller} margin={600} on:more={data.diff?.fetchMore}>
+        <Scroller bind:this={scroller} margin={600} on:more={diffQuery?.fetchMore}>
             <div class="header">
                 <div class="info"><Commit commit={data.commit} alwaysExpanded /></div>
                 <div class="parents">
@@ -104,9 +100,9 @@
                 </div>
             </div>
             <hr />
-            {#if !$diffQuery?.restoring && diffs}
+            {#if $diffQuery?.data}
                 <ul class="diffs">
-                    {#each diffs.nodes as node, index}
+                    {#each $diffQuery.data as node, index}
                         <li>
                             <FileDiff
                                 fileDiff={node}
@@ -117,7 +113,7 @@
                     {/each}
                 </ul>
             {/if}
-            {#if $diffQuery?.fetching || $diffQuery?.restoring}
+            {#if $diffQuery?.fetching}
                 <LoadingSpinner />
             {:else if $diffQuery?.error}
                 <div class="error">

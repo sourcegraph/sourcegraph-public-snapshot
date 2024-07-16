@@ -41,6 +41,7 @@
 
     import { afterNavigate, goto } from '$app/navigation'
     import { page } from '$app/stores'
+    import CodySidebar from '$lib/cody/CodySidebar.svelte'
     import { isErrorLike, SourcegraphURL } from '$lib/common'
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import { filesHotkey } from '$lib/fuzzyfinder/keys'
@@ -50,19 +51,18 @@
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
     import HistoryPanel from '$lib/repo/HistoryPanel.svelte'
     import LastCommit from '$lib/repo/LastCommit.svelte'
+    import { rightPanelOpen } from '$lib/repo/stores'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
     import { Alert, PanelGroup, Panel, PanelResizeHandle, Button } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
-    import type { LastCommitFragment } from '$testing/graphql-type-mocks'
 
     import RepositoryRevPicker from '../RepositoryRevPicker.svelte'
 
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
     import { createFileTreeStore } from './fileTreeStore'
-    import type { GitHistory_HistoryConnection, RepoPage_ReferencesLocationConnection } from './layout.gql'
     import ReferencePanel from './ReferencePanel.svelte'
 
     export let data: LayoutData
@@ -90,38 +90,15 @@
     let fileTreeSidePanel: Panel
     let historyPanel: HistoryPanel
     let selectedTab: number | null = null
-    let lastCommit: LastCommitFragment | null
-    let commitHistory: GitHistory_HistoryConnection | null
-    let references: RepoPage_ReferencesLocationConnection | null
     const fileTreeStore = createFileTreeStore({ fetchFileTreeData: fetchSidebarFileTree })
 
-    $: ({ revision = '', parentPath, repoName, resolvedRevision } = data)
+    $: ({ revision = '', parentPath, repoName, resolvedRevision, isCodyAvailable } = data)
     $: fileTreeStore.set({ repoName, revision: resolvedRevision.commitID, path: parentPath })
-    $: commitHistoryQuery = data.commitHistory
-    $: lastCommitQuery = data.lastCommit
-    $: if (!!commitHistoryQuery) {
-        // Reset commit history when the query observable changes. Without
-        // this we are showing the commit history of the previously selected
-        // file/folder until the new commit history is loaded.
-        commitHistory = null
-    }
-
-    $: if (!!lastCommitQuery) {
-        // Reset last commit when the query observable changes. Without
-        // this we are showing the last commit of the previously selected
-        // file/folder until the last commit is loaded.
-        lastCommit = null
-    }
-
-    $: commitHistory = $commitHistoryQuery?.data?.repository?.commit?.ancestors ?? null
-    $: lastCommit = $lastCommitQuery?.data?.repository?.lastCommit?.ancestors?.nodes[0] ?? null
-
     // The observable query to fetch references (due to infinite scrolling)
     $: sgURL = SourcegraphURL.from($page.url)
     $: selectedLine = sgURL.lineRange
     $: referenceQuery =
         sgURL.viewState === 'references' && selectedLine?.line ? data.getReferenceStore(selectedLine) : null
-    $: references = $referenceQuery?.data?.repository?.commit?.blob?.lsif?.references ?? null
 
     afterNavigate(async () => {
         // We need to wait for referenceQuery to be updated before checking its state
@@ -249,8 +226,22 @@
 
     <Panel id="blob-content-panels" order={2}>
         <PanelGroup id="content-panels" direction="vertical">
-            <Panel id="main-content-panel" order={1}>
-                <slot />
+            <Panel id="content-panel" order={1}>
+                <PanelGroup id="content-sidebar-panels">
+                    <Panel order={1} id="main-content-panel">
+                        <slot />
+                    </Panel>
+                    {#if $isCodyAvailable && $rightPanelOpen}
+                        <PanelResizeHandle id="right-sidebar-resize-handle" />
+                        <Panel id="right-sidebar-panel" order={2} minSize={20} maxSize={70}>
+                            <CodySidebar
+                                repository={data.resolvedRevision.repo}
+                                filePath={data.filePath}
+                                on:close={() => ($rightPanelOpen = false)}
+                            />
+                        </Panel>
+                    {/if}
+                </PanelGroup>
             </Panel>
             <PanelResizeHandle />
             <Panel
@@ -284,40 +275,32 @@
                             {#key data.filePath}
                                 <HistoryPanel
                                     bind:this={historyPanel}
-                                    history={commitHistory}
-                                    loading={$commitHistoryQuery?.fetching ?? true}
-                                    fetchMore={commitHistoryQuery.fetchMore}
+                                    history={data.commitHistory}
                                     enableInlineDiff={$page.data.enableInlineDiff}
                                     enableViewAtCommit={$page.data.enableViewAtCommit}
                                 />
                             {/key}
                         </TabPanel>
                         <TabPanel title="References" shortcut={referenceHotkey}>
-                            {#if !referenceQuery}
+                            {#if referenceQuery}
+                                <ReferencePanel references={referenceQuery} />
+                            {:else}
                                 <div class="info">
                                     <Alert variant="info"
                                         >Hover over a symbol and click "Find references" to find references to the
                                         symbol.</Alert
                                     >
                                 </div>
-                            {:else if $referenceQuery && !$referenceQuery.fetching && (!references || references.nodes.length === 0)}
-                                <div class="info">
-                                    <Alert variant="info">No references found.</Alert>
-                                </div>
-                            {:else}
-                                <ReferencePanel
-                                    connection={references}
-                                    loading={$referenceQuery?.fetching ?? false}
-                                    on:more={referenceQuery?.fetchMore}
-                                />
                             {/if}
                         </TabPanel>
                     </Tabs>
-                    {#if lastCommit && isCollapsed}
-                        <div class="last-commit">
-                            <LastCommit {lastCommit} />
-                        </div>
-                    {/if}
+                    {#await data.lastCommit then lastCommit}
+                        {#if lastCommit && isCollapsed}
+                            <div class="last-commit">
+                                <LastCommit {lastCommit} />
+                            </div>
+                        {/if}
+                    {/await}
                 </div>
             </Panel>
         </PanelGroup>
@@ -345,6 +328,7 @@
         isolation: isolate;
     }
 
+    :global([data-panel-resize-handle-id='right-sidebar-resize-handle']),
     :global([data-panel-resize-handle-id='blob-page-panels-separator']) {
         &::before {
             // Even though side-panel shadow should be rendered over
@@ -438,9 +422,12 @@
         box-shadow: var(--bottom-panel-shadow);
     }
 
-    .bottom-panel {
-        --align-tabs: flex-start;
+    :global([data-panel-id='right-sidebar-panel']) {
+        z-index: 1;
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+    }
 
+    .bottom-panel {
         display: flex;
         align-items: center;
         gap: 2rem;

@@ -1,5 +1,4 @@
 import { canWriteBatchChanges } from '../../batches/utils'
-import { SHOW_BUSINESS_FEATURES } from '../../enterprise/dotcom/productSubscriptions/features'
 
 import type { UserSettingsSidebarItems } from './UserSettingsSidebar'
 
@@ -40,11 +39,6 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         label: 'Account security',
         to: '/security',
         exact: true,
-    },
-    {
-        label: 'Enterprise subscriptions',
-        to: '/subscriptions',
-        condition: ({ user }) => SHOW_BUSINESS_FEATURES && user.viewerCanAdminister,
     },
     {
         label: 'Quotas',

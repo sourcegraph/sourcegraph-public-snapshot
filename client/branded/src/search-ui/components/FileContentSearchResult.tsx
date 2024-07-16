@@ -81,6 +81,13 @@ interface Props extends SettingsCascadeProps, TelemetryProps, TelemetryV2Props {
     openInNewTab?: boolean
 
     index: number
+
+    /**
+     * Don't display the file preview button in the VSCode extension.
+     * Expose this prop to allow the VSCode extension to hide the button.
+     * Name it "hide" in an attempt to communicate that hiding is a special case.
+     */
+    hideFilePreviewButton?: boolean
 }
 
 const BY_LINE_RANKING = 'by-line-number'
@@ -99,6 +106,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
     telemetryRecorder,
     fetchHighlightedFileLineRanges,
     onSelect,
+    hideFilePreviewButton = false, // hiding the file preview button is a special case for the VSCode extension; we normally want it shown.
 }) => {
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
@@ -242,11 +250,13 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             rankingDebug={result.debug}
             repoLastFetched={result.repoLastFetched}
             actions={
-                <SearchResultPreviewButton
-                    result={result}
-                    telemetryService={telemetryService}
-                    telemetryRecorder={telemetryRecorder}
-                />
+                !hideFilePreviewButton ? (
+                    <SearchResultPreviewButton
+                        result={result}
+                        telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
+                    />
+                ) : undefined
             }
         >
             <VisibilitySensor

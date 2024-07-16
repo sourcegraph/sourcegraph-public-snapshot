@@ -20,9 +20,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-var ErrDeploymentExists error = errors.New("deployment already exists")
-var ErrVersionNotFoundRegistry error = errors.New("tag/version not in Cloud Ephemeral registry")
-var ErrMainBranchBuild error = errors.New("cannot trigger a Cloud Ephemeral build for main branch")
+const CloudEphemeralPipeline = "cloud-ephemeral"
+
+var (
+	ErrDeploymentExists        error = errors.New("deployment already exists")
+	ErrVersionNotFoundRegistry error = errors.New("tag/version not in Cloud Ephemeral registry")
+	ErrMainBranchBuild         error = errors.New("cannot trigger a Cloud Ephemeral build for main branch")
+)
 
 var deployEphemeralCommand = cli.Command{
 	Name:        "deploy",
@@ -149,7 +153,7 @@ func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildk
 	}
 
 	pending.Updatef("Starting cloud ephemeral build for %q on commit %q", currRepo.Branch, currRepo.Ref)
-	build, err := client.TriggerBuild(ctx, "sourcegraph", currRepo.Branch, currRepo.Ref, bk.WithEnvVar("CLOUD_EPHEMERAL", "true"))
+	build, err := client.TriggerBuild(ctx, CloudEphemeralPipeline, currRepo.Branch, currRepo.Ref, bk.WithEnvVar("CLOUD_EPHEMERAL", "true"))
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to trigger build"))
 		return nil, err
@@ -170,7 +174,7 @@ func checkVersionExistsInRegistry(ctx context.Context, version string) error {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to check if version %q exists in Cloud ephemeral registry", version))
 		return err
 	} else if len(images) == 0 {
-		pending.Complete(output.Linef(output.EmojiWarningSign, output.StyleYellow, "Whoops! Version %q seems to be missing from the Cloud ephemeral registry. Please ask in #discuss-dev-infra to get the it added to the registry", version))
+		pending.Complete(output.Linef(output.EmojiWarningSign, output.StyleYellow, "Whoops! Version %q seems to be missing from the Cloud ephemeral registry. Please ask in #discuss-dev-infra to get it added to the registry", version))
 		return ErrVersionNotFoundRegistry
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Version %q found in Cloud ephemeral registry", version))

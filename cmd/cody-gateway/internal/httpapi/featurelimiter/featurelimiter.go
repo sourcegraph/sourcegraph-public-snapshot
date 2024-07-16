@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayevents"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -108,12 +109,12 @@ func HandleFeature(
 				if loggerErr := eventLogger.LogEvent(
 					r.Context(),
 					events.Event{
-						Name:       codygateway.EventNameRateLimited,
+						Name:       codygatewayevents.EventNameRateLimited,
 						Source:     act.Source.Name(),
 						Identifier: act.ID,
 						Metadata: events.MergeMaps(limitMap, map[string]any{
 							"error": err.Error(),
-							codygateway.CompletionsEventFeatureMetadataField: feature,
+							codygatewayevents.CompletionsEventFeatureMetadataField: feature,
 							"cause": limitedCause,
 						}),
 					},
@@ -242,6 +243,6 @@ type listLimitElement struct {
 	AllowedModels []string   `json:"allowedModels"`
 }
 
-func noopRateLimitNotifier(_ context.Context, _ codygateway.Actor, _ codygateway.Feature, _ float32, _ time.Duration) {
+func noopRateLimitNotifier(_ context.Context, _ notify.CodyGatewayActor, _ codygateway.Feature, _ float32, _ time.Duration) {
 	// nothing
 }

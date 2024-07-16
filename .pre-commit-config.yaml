@@ -42,3 +42,8 @@ repos:
       pass_filenames: false
       files: '.*\.(sh|bash)'
       stages: [pre-push]
+    - id: forbidcommit
+      name: forbidcommit
+      description: 'Prevent commits with a FORBIDCOMMIT string in the diff'
+      entry: ./dev/forbidcommit.sh
+      language: script

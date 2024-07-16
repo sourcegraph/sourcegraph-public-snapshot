@@ -1,13 +1,18 @@
 <script lang="ts">
     import Icon from '$lib/Icon.svelte'
     import { Badge } from '$lib/wildcard'
+    import type { HTMLAnchorAttributes } from 'svelte/elements'
 
     import { type NavigationEntry, Status } from './mainNavigation'
+
+    type $$Props = {
+        entry: NavigationEntry
+    } & HTMLAnchorAttributes
 
     export let entry: NavigationEntry
 </script>
 
-<a href={entry.href}>
+<a href={entry.href} {...$$restProps}>
     {#if entry.icon}
         <Icon icon={entry.icon} aria-hidden="true" inline />&nbsp;
     {/if}
@@ -20,8 +25,7 @@
 
 <style lang="scss">
     a {
-        display: flex;
-        height: 100%;
+        display: inline-flex;
         align-items: center;
         text-decoration: none;
         color: var(--body-color);
@@ -30,14 +34,5 @@
             color: inherit;
             text-decoration: none;
         }
-    }
-
-    .icon {
-        --icon-color: var(--header-icon-color);
-        width: var(--icon-inline-size);
-        height: var(--icon-inline-size);
-        color: var(--header-icon-color);
-        display: flex;
-        align-items: center;
     }
 </style>

@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/redislock"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables/custommigrator"
 )
 
 // maybeMigrate runs the auto-migration for the database when needed based on
@@ -42,6 +43,12 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 		}
 		span.End()
 	}()
+	logger = logger.
+		WithTrace(log.TraceContext{
+			TraceID: span.SpanContext().TraceID().String(),
+			SpanID:  span.SpanContext().SpanID().String(),
+		}).
+		With(log.String("database", dbName))
 
 	sqlDB, err := contract.PostgreSQL.OpenDatabase(ctx, dbName)
 	if err != nil {
@@ -83,17 +90,20 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 			span.AddEvent("lock.acquired")
 
 			versionKey := fmt.Sprintf("%s:db_version", dbName)
+			liveVersion := redisClient.Get(ctx, versionKey).Val()
 			if shouldSkipMigration(
-				redisClient.Get(ctx, versionKey).Val(),
+				liveVersion,
 				currentVersion,
 			) {
 				logger.Info("skipped auto-migration",
-					log.String("database", dbName),
 					log.String("currentVersion", currentVersion),
 				)
 				span.SetAttributes(attribute.Bool("skipped", true))
 				return nil
 			}
+			logger.Info("executing auto-migration",
+				log.String("liveVersion", liveVersion),
+				log.String("currentVersion", currentVersion))
 			span.SetAttributes(attribute.Bool("skipped", false))
 
 			// Create a session that ignore debug logging.
@@ -107,6 +117,11 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 				err := sess.AutoMigrate(table)
 				if err != nil {
 					return errors.Wrapf(err, "auto migrating table for %s", errors.Safe(fmt.Sprintf("%T", table)))
+				}
+				if m, ok := table.(custommigrator.CustomTableMigrator); ok {
+					if err := m.RunCustomMigrations(sess.Migrator()); err != nil {
+						return errors.Wrapf(err, "running custom migrations for %s", errors.Safe(fmt.Sprintf("%T", table)))
+					}
 				}
 			}
 

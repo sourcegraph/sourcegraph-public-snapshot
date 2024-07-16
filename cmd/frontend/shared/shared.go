@@ -12,6 +12,18 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	// sourcegraph/internal
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/schema"
+
+	// sourcegraph/cmd/frontend/internal
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
@@ -30,24 +42,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/insights"
 	licensing "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/licensing/init"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/modelconfig"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/notebooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/own"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/rbac"
 	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/repos/webhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/savedsearches"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/scim"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/telemetry"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type EnterpriseInitializer = func(context.Context, *observation.Context, database.DB, codeintel.Services, conftypes.UnifiedWatchable, *enterprise.Services) error
@@ -66,12 +71,14 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"guardrails":     guardrails.Init,
 	"insights":       insights.Init,
 	"licensing":      licensing.Init,
+	"modelconfig":    modelconfig.Init,
 	"notebooks":      notebooks.Init,
 	"own":            own.Init,
 	"rbac":           rbac.Init,
 	"repos.webhooks": webhooks.Init,
 	"scim":           scim.Init,
 	"searchcontexts": searchcontexts.Init,
+	"savedsearches":  savedsearches.Init,
 	"contentLibrary": contentlibrary.Init,
 	"search":         search.Init,
 	"telemetry":      telemetry.Init,

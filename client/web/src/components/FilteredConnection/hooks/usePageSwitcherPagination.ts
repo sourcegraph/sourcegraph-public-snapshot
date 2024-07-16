@@ -1,11 +1,16 @@
 import { useCallback, useMemo } from 'react'
 
 import type { ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
-import { useNavigate, useLocation } from 'react-router-dom'
 
-import { type GraphQLResult, useQuery } from '@sourcegraph/http-client'
+import { useQuery, type GraphQLResult } from '@sourcegraph/http-client'
 
 import { asGraphQLResult } from '../utils'
+
+import {
+    useConnectionStateOrMemoryFallback,
+    useConnectionStateWithImplicitPageSize,
+    type UseConnectionStateResult,
+} from './connectionState'
 
 export interface PaginatedConnectionQueryArguments {
     first?: number | null
@@ -47,56 +52,81 @@ export interface UsePaginatedConnectionResult<TResult, TVariables, TNode> extend
 }
 
 interface UsePaginatedConnectionConfig<TResult> {
-    // The number of items per page, defaults to 20
+    /** The number of items per page. Defaults to 20. */
     pageSize?: number
-    // Set if query variables should be updated in and derived from the URL
-    useURL?: boolean
-    // Allows modifying how the query interacts with the Apollo cache
+
+    /** Allows modifying how the query interacts with the Apollo cache. */
     fetchPolicy?: WatchQueryFetchPolicy
-    // Allows running an optional callback on any successful request
+
+    /** Allows running an optional callback on any successful request. */
     onCompleted?: (data: TResult) => void
-    // Allows to provide polling interval to useQuery
+
+    /** Allows to provide polling interval to useQuery. */
     pollInterval?: number
 }
 
-interface UsePaginatedConnectionParameters<TResult, TVariables extends PaginatedConnectionQueryArguments, TNode> {
+export type PaginationKeys = 'first' | 'last' | 'before' | 'after'
+
+interface UsePaginatedConnectionParameters<
+    TResult,
+    TVariables extends PaginatedConnectionQueryArguments,
+    TNode,
+    TState extends PaginatedConnectionQueryArguments
+> {
     query: string
-    variables: Omit<TVariables, 'first' | 'last' | 'before' | 'after'>
+    variables: Omit<TVariables, PaginationKeys>
     getConnection: (result: GraphQLResult<TResult>) => PaginatedConnection<TNode> | undefined
     options?: UsePaginatedConnectionConfig<TResult>
+
+    /**
+     * The value and setter for the state parameters (such as `first`, `after`, `before`, and
+     * filters).
+     */
+    state?: UseConnectionStateResult<TState>
 }
 
-const DEFAULT_PAGE_SIZE = 20
+export const DEFAULT_PAGE_SIZE = 20
 
 /**
  * Request a GraphQL connection query and handle pagination options.
  * Valid queries should follow the connection specification at https://relay.dev/graphql/connections.htm
- *
  * @param query The GraphQL connection query
  * @param variables The GraphQL connection variables
  * @param getConnection A function that filters and returns the relevant data from the connection response.
  * @param options Additional configuration options
  */
-export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedConnectionQueryArguments, TNode>({
+export const usePageSwitcherPagination = <
+    TResult,
+    TVariables extends PaginatedConnectionQueryArguments,
+    TNode,
+    TState extends PaginatedConnectionQueryArguments = PaginatedConnectionQueryArguments &
+        Partial<Record<string | 'query', string>>
+>({
     query,
     variables,
     getConnection,
     options,
-}: UsePaginatedConnectionParameters<TResult, TVariables, TNode>): UsePaginatedConnectionResult<
+    state,
+}: UsePaginatedConnectionParameters<TResult, TVariables, TNode, TState>): UsePaginatedConnectionResult<
     TResult,
     TVariables,
     TNode
 > => {
     const pageSize = options?.pageSize ?? DEFAULT_PAGE_SIZE
-    const [initialPaginationArgs, setPaginationArgs] = useSyncPaginationArgsWithUrl(!!options?.useURL, pageSize)
+    const [connectionState, setConnectionState] = useConnectionStateWithImplicitPageSize(
+        useConnectionStateOrMemoryFallback(state),
+        pageSize
+    )
 
-    // TODO(philipp-spiess): Find out why Omit<TVariables, "first" | ...> & { first: number, ... }
-    // does not work here and get rid of the any cast.
-
-    const queryVariables: TVariables = {
+    const queryVariables = {
         ...variables,
-        ...initialPaginationArgs,
-    } as any
+
+        // Pagination
+        first: connectionState.first ?? null,
+        last: connectionState.last ?? null,
+        after: connectionState.after ?? null,
+        before: connectionState.before ?? null,
+    } as TVariables
 
     const {
         data: currentData,
@@ -125,10 +155,10 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
 
     const updatePagination = useCallback(
         async (nextPageArgs: PaginatedConnectionQueryArguments): Promise<void> => {
-            setPaginationArgs(nextPageArgs)
+            setConnectionState(prev => ({ ...prev, ...nextPageArgs }))
             await refetch(nextPageArgs as Partial<TVariables>)
         },
-        [refetch, setPaginationArgs]
+        [refetch, setConnectionState]
     )
 
     const goToNextPage = useCallback(async (): Promise<void> => {
@@ -182,74 +212,4 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
         startPolling,
         stopPolling,
     }
-}
-
-// TODO(philipp-spiess): We should make these callbacks overridable by the
-// consumer of this API to allow for serialization of other query parameters in
-// the URL (e.g. filters).
-//
-// We also need to change this if we ever want to allow users to change the page
-// size and want to make it persist in the URL.
-const getPaginationArgsFromSearch = (search: string, pageSize: number): PaginatedConnectionQueryArguments => {
-    const searchParameters = new URLSearchParams(search)
-
-    if (searchParameters.has('after')) {
-        return { first: pageSize, last: null, after: searchParameters.get('after'), before: null }
-    }
-    if (searchParameters.has('before')) {
-        return { first: null, last: pageSize, after: null, before: searchParameters.get('before') }
-    }
-    // Special case for handling the last page.
-    if (searchParameters.has('last')) {
-        return { first: null, last: pageSize, after: null, before: null }
-    }
-    return { first: pageSize, last: null, after: null, before: null }
-}
-const getSearchFromPaginationArgs = (paginationArgs: PaginatedConnectionQueryArguments): string => {
-    const searchParameters = new URLSearchParams()
-    if (paginationArgs.after) {
-        searchParameters.set('after', paginationArgs.after)
-        return searchParameters.toString()
-    }
-    if (paginationArgs.before) {
-        searchParameters.set('before', paginationArgs.before)
-        return searchParameters.toString()
-    }
-    if (paginationArgs.last) {
-        searchParameters.set('last', paginationArgs.last.toString())
-        return searchParameters.toString()
-    }
-    return ''
-}
-
-const useSyncPaginationArgsWithUrl = (
-    enabled: boolean,
-    pageSize: number
-): [
-    initialPaginationArgs: PaginatedConnectionQueryArguments,
-    setPaginationArgs: (args: PaginatedConnectionQueryArguments) => void
-] => {
-    const location = useLocation()
-    const navigate = useNavigate()
-
-    const initialPaginationArgs = useMemo(() => {
-        if (enabled) {
-            return getPaginationArgsFromSearch(location.search, pageSize)
-        }
-        return { first: pageSize, last: null, after: null, before: null }
-        // We deliberately ignore changes to the URL after the first render
-        // since we assume that these are caused by this hook.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [enabled])
-
-    const setPaginationArgs = useCallback(
-        (paginationArgs: PaginatedConnectionQueryArguments): void => {
-            if (enabled) {
-                const search = getSearchFromPaginationArgs(paginationArgs)
-                navigate({ search }, { replace: true })
-            }
-        },
-        [enabled, navigate]
-    )
-    return [initialPaginationArgs, setPaginationArgs]
 }

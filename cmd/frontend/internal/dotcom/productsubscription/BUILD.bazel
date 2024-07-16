@@ -36,6 +36,8 @@ go_library(
         "//internal/auth",
         "//internal/authz",
         "//internal/codygateway",
+        "//internal/codygateway/codygatewayactor",
+        "//internal/codygateway/codygatewayevents",
         "//internal/completions/client/anthropic",
         "//internal/completions/client/fireworks",
         "//internal/completions/client/google",
@@ -70,8 +72,6 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
-        "@com_google_cloud_go_bigquery//:bigquery",
-        "@org_golang_google_api//iterator",
         "@org_golang_google_api//option",
     ],
 )

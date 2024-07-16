@@ -30,7 +30,7 @@ resources:
       - apiGroups:
           - ""
         resources:
-          - configmap
+          - configmaps
         verbs:
           - get
       - nonResourceURLs:
@@ -74,6 +74,9 @@ resources:
             disabled: true
 
           frontend:
+            disabled: true
+
+          grafana:
             disabled: true
 
           gitServer:

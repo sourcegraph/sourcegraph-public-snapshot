@@ -12,7 +12,7 @@ import {
     type FlipOptions,
 } from '@floating-ui/dom'
 import { tick } from 'svelte'
-import type { ActionReturn, Action } from 'svelte/action'
+import type { Action } from 'svelte/action'
 import * as uuid from 'uuid'
 
 import { highlightNode } from '$lib/common'
@@ -96,18 +96,29 @@ export function uniqueID(prefix = ''): string {
  * An action that dispatches a custom 'click-outside' event when the user clicks
  * outside the attached element.
  */
-export function onClickOutside(
-    node: HTMLElement
-): ActionReturn<void, { 'on:click-outside': (event: CustomEvent<HTMLElement>) => void }> {
+export const onClickOutside: Action<
+    HTMLElement,
+    { enabled?: boolean } | undefined,
+    { 'on:click-outside': (event: CustomEvent<HTMLElement>) => void }
+> = (node, { enabled } = { enabled: true }) => {
     function handler(event: MouseEvent): void {
         if (event.target && !node.contains(event.target as HTMLElement)) {
             node.dispatchEvent(new CustomEvent('click-outside', { detail: event.target }))
         }
     }
 
-    window.addEventListener('mousedown', handler)
+    if (enabled) {
+        window.addEventListener('mousedown', handler)
+    }
 
     return {
+        update({ enabled } = { enabled: true }) {
+            if (enabled) {
+                window.addEventListener('mousedown', handler)
+            } else {
+                window.removeEventListener('mousedown', handler)
+            }
+        },
         destroy() {
             window.removeEventListener('mousedown', handler)
         },
@@ -330,45 +341,62 @@ export const portal: Action<HTMLElement, { container?: HTMLElement | null } | un
 /**
  * An action that resizes an element with the provided grow and shrink callbacks until the target element no longer overflows.
  *
- * @param grow A callback to increase the size of the contained contents. Returns a boolean indicating more growth is possible.
- * @param shrink A callback to reduce the size of the contained contents. Returns a boolean indicating more shrinking is possible.
+ * @param grow A callback to increase the size of the contained contents. Returns a boolean indicating whether growing was successful.
+ * @param shrink A callback to reduce the size of the contained contents. Returns a boolean indicating whether shrinking was successful.
  * @returns An action that updates the overflow state of the element.
  */
 export const sizeToFit: Action<HTMLElement, { grow: () => boolean; shrink: () => boolean }> = (
     target,
     { grow, shrink }
 ) => {
+    let resizing = false
     async function resize(): Promise<void> {
-        if (target.scrollWidth > target.clientWidth) {
-            // Shrink until we fit
-            while (target.scrollWidth > target.clientWidth) {
-                if (!shrink()) {
-                    return
-                }
-                await tick()
-            }
-        } else {
-            // Grow until we overflow, then shrink once
-            while (target.scrollWidth <= target.clientWidth && grow()) {
-                await tick()
-            }
-            await tick()
-            if (target.scrollWidth > target.clientWidth) {
-                shrink()
-                await tick()
-            }
+        if (resizing) {
+            // Growing and shrinking can cause child nodes to be added
+            // or removed, triggering resize observer during resizing.
+            // If we're already resizing, we can safely ignore those events.
+            return
         }
+        resizing = true
+        // Grow until we overflow
+        while (target.scrollWidth <= target.clientWidth && grow()) {
+            await tick()
+        }
+        await tick()
+        // Then shrink until we fit
+        while (target.scrollWidth > target.clientWidth && shrink()) {
+            await tick()
+        }
+        await tick()
+        resizing = false
     }
 
-    const observer = new ResizeObserver(resize)
-    observer.observe(target)
+    const resizeObserver = new ResizeObserver(resize)
+    resizeObserver.observe(target)
+
+    function isElement(node: Node): node is Element {
+        return node.nodeType === Node.ELEMENT_NODE
+    }
+
+    // If any children change size, that could trigger an overflow, so check the size again
+    target.childNodes.forEach(child => isElement(child) && resizeObserver.observe(child))
+    const mutationObserver = new MutationObserver(mutationList => {
+        for (const mutation of mutationList) {
+            mutation.addedNodes.forEach(node => isElement(node) && resizeObserver.observe(node))
+            mutation.removedNodes.forEach(node => isElement(node) && resizeObserver.unobserve(node))
+        }
+    })
+    mutationObserver.observe(target, { childList: true })
+
     return {
         update(params) {
             grow = params.grow
             shrink = params.shrink
+            resize()
         },
         destroy() {
-            observer.disconnect()
+            resizeObserver.disconnect()
+            mutationObserver.disconnect()
         },
     }
 }

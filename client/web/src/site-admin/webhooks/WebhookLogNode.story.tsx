@@ -15,7 +15,7 @@ import {
 } from './story/fixtures'
 import { WebhookLogNode } from './WebhookLogNode'
 
-import gridStyles from './WebhookLogPage.module.scss'
+import gridStyles from '../SiteAdminWebhookPage.module.scss'
 
 const decorator: Decorator = story => (
     <Container>

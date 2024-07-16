@@ -6,13 +6,18 @@ type CompletionsConfig struct {
 	ChatModel          string
 	ChatModelMaxTokens int
 
-	SmartContextWindow string
+	SmartContextWindow     string
+	DisableClientConfigAPI bool
 
 	FastChatModel          string
 	FastChatModelMaxTokens int
 
 	CompletionModel          string
 	CompletionModelMaxTokens int
+
+	AzureCompletionModel                         string
+	AzureChatModel                               string
+	AzureUseDeprecatedCompletionsAPIForOldModels bool
 
 	AccessToken                                            string
 	Provider                                               CompletionsProviderName

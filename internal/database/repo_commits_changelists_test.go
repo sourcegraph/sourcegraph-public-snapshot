@@ -27,14 +27,18 @@ func TestRepoCommitsChangelists(t *testing.T) {
 	repos := db.Repos()
 	err := repos.Create(ctx, &types.Repo{ID: 1, Name: "foo"})
 	require.NoError(t, err, "failed to insert repo")
+	err = repos.Create(ctx, &types.Repo{ID: 2, Name: "bar"})
+	require.NoError(t, err, "failed to insert repo")
 
-	repoID := int32(1)
+	repoID1 := int32(1)
+	repoID2 := int32(2)
 
 	commitSHA1 := "98d3ec26623660f17f6c298943f55aa339aa894a"
 	commitSHA2 := "4b6152a804c4c177f5fe0dfd61e71cacb64d64dd"
 	commitSHA3 := "e9c83398bbd4c4e9481fd20f100a7e49d68d7510"
+	commitSHA4 := "aac83398bbd4c4e9481fd20f100a7e49d68d7510"
 
-	data := []types.PerforceChangelist{
+	dataForRepo1 := []types.PerforceChangelist{
 		{
 			CommitSHA:    api.CommitID(commitSHA1),
 			ChangelistID: 123,
@@ -48,16 +52,25 @@ func TestRepoCommitsChangelists(t *testing.T) {
 			ChangelistID: 125,
 		},
 	}
-
+	dataForRepo2 := []types.PerforceChangelist{
+		{
+			CommitSHA:    api.CommitID(commitSHA4),
+			ChangelistID: 126,
+		},
+	}
 	s := RepoCommitsChangelistsWith(logger, db)
 
-	err = s.BatchInsertCommitSHAsWithPerforceChangelistID(ctx, api.RepoID(repoID), data)
+	err = s.BatchInsertCommitSHAsWithPerforceChangelistID(ctx, api.RepoID(repoID1), dataForRepo1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = s.BatchInsertCommitSHAsWithPerforceChangelistID(ctx, api.RepoID(repoID2), dataForRepo2)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("BatchInsertCommitSHAsWithPerforceChangelistID", func(t *testing.T) {
-		rows, err := db.QueryContext(ctx, `SELECT repo_id, commit_sha, perforce_changelist_id, created_at FROM repo_commits_changelists ORDER by id`)
+		rows, err := db.QueryContext(ctx, `SELECT repo_id, commit_sha, perforce_changelist_id, created_at FROM repo_commits_changelists WHERE repo_id=1 ORDER by id`)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -112,14 +125,14 @@ func TestRepoCommitsChangelists(t *testing.T) {
 
 	t.Run("GetLatestForRepo", func(t *testing.T) {
 		t.Run("existing repo", func(t *testing.T) {
-			repoCommit, err := s.GetLatestForRepo(ctx, api.RepoID(repoID))
+			repoCommit, err := s.GetLatestForRepo(ctx, api.RepoID(repoID1))
 			require.NoError(t, err, "unexpected error in GetLatestForRepo")
 			require.NotNil(t, repoCommit, "repoCommit was not expected to be nil")
 			require.Equal(
 				t,
 				&types.RepoCommit{
 					ID:                   3,
-					RepoID:               api.RepoID(repoID),
+					RepoID:               api.RepoID(repoID1),
 					CommitSHA:            dbutil.CommitBytea(commitSHA3),
 					PerforceChangelistID: 125,
 				},
@@ -129,7 +142,7 @@ func TestRepoCommitsChangelists(t *testing.T) {
 		})
 
 		t.Run("non existing repo", func(t *testing.T) {
-			repoCommit, err := s.GetLatestForRepo(ctx, api.RepoID(2))
+			repoCommit, err := s.GetLatestForRepo(ctx, api.RepoID(3))
 			require.Error(t, err)
 			require.True(t, errors.Is(err, sql.ErrNoRows))
 			require.Nil(t, repoCommit)
@@ -161,6 +174,36 @@ func TestRepoCommitsChangelists(t *testing.T) {
 			} else {
 				t.Fatalf("wrong error type, want ChangelistNotFoundError, got %T", err)
 			}
+		})
+	})
+
+	t.Run("BatchGetRepoCommitChangelist", func(t *testing.T) {
+		changelistIds := []RepoChangelistIDs{
+			{
+				RepoID:        api.RepoID(1),
+				ChangelistIDs: []int64{123, 124, 125},
+			},
+			{
+				RepoID:        api.RepoID(2),
+				ChangelistIDs: []int64{126},
+			},
+		}
+		t.Run("existing rows", func(t *testing.T) {
+			got, err := s.BatchGetRepoCommitChangelist(ctx, changelistIds...)
+			require.NoError(t, err)
+			// Make sure every items from changelist ids is present in the result.
+			for _, ids := range changelistIds {
+				for _, id := range ids.ChangelistIDs {
+					_, found := got[ids.RepoID][id]
+					require.True(t, found, "row for repo %d and changelist %d was not found", ids.RepoID, id)
+				}
+			}
+		})
+
+		t.Run("return empty map if no result", func(t *testing.T) {
+			got, err := s.BatchGetRepoCommitChangelist(ctx, RepoChangelistIDs{RepoID: 3})
+			require.NoError(t, err)
+			require.Len(t, got[3], 0)
 		})
 	})
 }

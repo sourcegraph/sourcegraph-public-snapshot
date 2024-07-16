@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { cleanup, fireEvent, render, screen, waitFor, act } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type * as H from 'history'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
@@ -80,10 +80,10 @@ describe('FilteredConnection', () => {
             })
 
             // Click "Show more" button, should cause history to be updated
-            fireEvent.click(screen.getByRole('button')!)
-            expect(currentLocation!.search).toEqual('?foo=bar&first=40')
-            fireEvent.click(screen.getByRole('button')!)
-            expect(currentLocation!.search).toEqual('?foo=bar&first=80')
+            fireEvent.click(screen.getByRole('button'))
+            expect(currentLocation!.search).toEqual('?first=40&foo=bar')
+            fireEvent.click(screen.getByRole('button'))
+            expect(currentLocation!.search).toEqual('?first=80&foo=bar')
         })
     })
 })
@@ -154,7 +154,7 @@ describe('ConnectionNodes', () => {
                 onShowMore={showMoreCallback}
             />
         )
-        fireEvent.click(screen.getByRole('button')!)
+        fireEvent.click(screen.getByRole('button'))
         await waitFor(() => sinon.assert.calledOnce(showMoreCallback))
     })
 
@@ -183,7 +183,7 @@ describe('ConnectionNodes', () => {
 
         // Summary should come after the nodes.
         expect(
-            screen.getByTestId('summary')!.compareDocumentPosition(screen.getByTestId('filtered-connection-nodes'))
+            screen.getByTestId('summary').compareDocumentPosition(screen.getByTestId('filtered-connection-nodes'))
         ).toEqual(Node.DOCUMENT_POSITION_PRECEDING)
     })
 
@@ -221,7 +221,7 @@ describe('ConnectionNodes', () => {
         )
         // Summary should come _before_ the nodes.
         expect(
-            screen.getByTestId('summary')!.compareDocumentPosition(screen.getByTestId('filtered-connection-nodes'))
+            screen.getByTestId('summary').compareDocumentPosition(screen.getByTestId('filtered-connection-nodes'))
         ).toEqual(Node.DOCUMENT_POSITION_FOLLOWING)
     })
 
@@ -236,7 +236,7 @@ describe('ConnectionNodes', () => {
         )
         // Summary should come _before_ the nodes.
         expect(
-            screen.getByTestId('summary')!.compareDocumentPosition(screen.getByTestId('filtered-connection-nodes'))
+            screen.getByTestId('summary').compareDocumentPosition(screen.getByTestId('filtered-connection-nodes'))
         ).toEqual(Node.DOCUMENT_POSITION_FOLLOWING)
     })
 })

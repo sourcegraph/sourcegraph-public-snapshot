@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "k8senvtest",
+    srcs = [
+        "envtest.go",
+        "namespaces.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/appliance/k8senvtest",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_go_logr_logr//:logr",
+        "@io_bazel_rules_go//go/runfiles:go_default_library",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes/scheme",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_sigs_controller_runtime//:controller-runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/envtest",
+        "@io_k8s_sigs_controller_runtime//pkg/metrics/server",
+    ],
+)

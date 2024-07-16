@@ -47,7 +47,7 @@ Respond with nothing else, only the entry names and the documentation. Code: ` +
 			MaxTokensToSample: 2000,
 			Temperature:       0,
 			TopP:              1,
-			Model:             fireworks.Llama38bInstruct,
+			RequestedModel:    fireworks.Llama38bInstruct,
 		},
 	}
 	resp, err := c.completionsClient.Complete(c.ctx, c.logger, compRequest)

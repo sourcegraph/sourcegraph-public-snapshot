@@ -10,5 +10,6 @@ go_library(
         "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/httpapi/embeddings",
         "//internal/codygateway",
+        "//internal/codygateway/codygatewayactor",
     ],
 )

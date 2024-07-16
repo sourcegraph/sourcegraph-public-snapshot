@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Button, Modal, H3, Text } from '@sourcegraph/wildcard'
+import { Button, H3, Modal, Text } from '@sourcegraph/wildcard'
 
 import {
     ConnectionContainer,
@@ -46,7 +46,6 @@ export const SecretAccessLogsModal: React.FunctionComponent<React.PropsWithChild
                     <SummaryContainer className="mt-2">
                         <ConnectionSummary
                             noSummaryIfAllNodesVisible={true}
-                            first={15}
                             centered={true}
                             connection={connection}
                             noun="access log"

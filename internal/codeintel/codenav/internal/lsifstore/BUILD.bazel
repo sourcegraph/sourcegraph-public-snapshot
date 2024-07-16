@@ -43,6 +43,7 @@ go_test(
     srcs = [
         "document_metadata_test.go",
         "locations_by_position_test.go",
+        "lsifstore_documents_test.go",
         "metadata_by_position_test.go",
         "symbols_by_position_test.go",
     ],
@@ -63,5 +64,6 @@ go_test(
         "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_sourcegraph_scip//bindings/go/scip",
+        "@com_github_stretchr_testify//require",
     ],
 )

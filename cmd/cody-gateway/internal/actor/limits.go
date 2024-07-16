@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -36,7 +37,7 @@ type RateLimit struct {
 	ConcurrentRequestsInterval time.Duration `json:"concurrentRequestsInterval"`
 }
 
-func NewRateLimitWithPercentageConcurrency(limit int64, interval time.Duration, allowedModels []string, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) RateLimit {
+func NewRateLimitWithPercentageConcurrency(limit int64, interval time.Duration, allowedModels []string, concurrencyConfig codygatewayactor.ActorConcurrencyLimitConfig) RateLimit {
 	// The actual type of time.Duration is int64, so we can use it to compute the
 	// ratio of the rate limit interval to a day (24 hours).
 	ratioToDay := float32(interval) / float32(24*time.Hour)

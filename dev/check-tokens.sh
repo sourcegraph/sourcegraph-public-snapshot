@@ -10,7 +10,7 @@ set -eu
 # Select the files to inspect. We don't want to list files which are deleted, as it makes no sense
 # to look for a token being committed in those.
 #
-# So we use --diff-filter, that tells git to only include in the diff files that were
+# We use --diff-filter, that tells git to only include in the diff files that were:
 # - "A" added
 # - "C" copied
 # - "M" modified

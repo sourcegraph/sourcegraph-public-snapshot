@@ -66,8 +66,7 @@
 
         display: flex;
         align-items: stretch;
-        justify-content: var(--align-tabs, center);
-        gap: var(--tabs-gap, 0);
+        justify-content: var(--tabs-header-align, flex-start);
     }
 
     [role='tab'] {

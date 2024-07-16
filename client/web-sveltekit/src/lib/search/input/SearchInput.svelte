@@ -33,6 +33,7 @@
     import { createSuggestionsSource } from '$lib/web'
 
     import { type QueryStateStore, getQueryURL, QueryState } from '../state'
+    import { settings } from '$lib/stores'
 
     import { createRecentSearchesStore } from './recentSearches'
     import Suggestions from './Suggestions.svelte'
@@ -137,7 +138,11 @@
     let userHasInteracted = !autoFocus
     const hasInteractedExtension = EditorView.updateListener.of(update => {
         if (!userHasInteracted) {
-            if (update.transactions.some(tr => tr.isUserEvent('select') || tr.isUserEvent('input'))) {
+            if (
+                update.transactions.some(
+                    tr => tr.isUserEvent('select') || tr.isUserEvent('input') || tr.isUserEvent('delete')
+                )
+            ) {
                 userHasInteracted = true
             }
         }
@@ -188,8 +193,16 @@
 
     function setOrUnsetPatternType(patternType: SearchPatternType): void {
         queryState.setPatternType(currentPatternType =>
-            currentPatternType === patternType ? SearchPatternType.keyword : patternType
+            currentPatternType === patternType ? getUnselectedPatternType() : patternType
         )
+    }
+
+    // When a toggle is unset, we revert back to the default pattern type. However, if the default pattern type
+    // is regexp, we should revert to keyword instead (otherwise it's not possible to disable the toggle).
+    function getUnselectedPatternType(): SearchPatternType {
+        const defaultPatternType =
+            ($settings?.['search.defaultPatternType'] as SearchPatternType) ?? SearchPatternType.keyword
+        return defaultPatternType === SearchPatternType.regexp ? SearchPatternType.keyword : defaultPatternType
     }
 
     async function submitQuery(state: QueryState): Promise<void> {
@@ -272,17 +285,18 @@
                     class:active={$queryState.caseSensitive}
                     on:click={() => queryState.setCaseSensitive(caseSensitive => !caseSensitive)}
                 >
-                    <Icon icon={ILucideCaseSensitive} inline aria-hidden />
+                    <Icon icon={IMdiFormatLetterCase} inline aria-hidden />
                 </button>
             </Tooltip>
             <Tooltip tooltip="{regularExpressionEnabled ? 'Disable' : 'Enable'} regular expression">
                 <button
                     class="toggle icon"
                     type="button"
+                    title="regexp toggle"
                     class:active={regularExpressionEnabled}
                     on:click={() => setOrUnsetPatternType(SearchPatternType.regexp)}
                 >
-                    <Icon icon={ILucideRegex} inline aria-hidden />
+                    <Icon icon={IMdiRegex} inline aria-hidden />
                 </button>
             </Tooltip>
             {#if structuralEnabled}

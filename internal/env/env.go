@@ -97,7 +97,7 @@ func Get(name, defaultValue, description string) string {
 
 	e := envflag{description: description, value: value}
 	if existing, ok := env[name]; ok && existing != e {
-		panic(fmt.Sprintf("env var %q already registered with a different description or value", name))
+		panic(fmt.Sprintf("env var %q already registered with a different description or value\n\tBefore: %q\n\tAfter: %q", name, existing, e))
 	}
 	env[name] = e
 

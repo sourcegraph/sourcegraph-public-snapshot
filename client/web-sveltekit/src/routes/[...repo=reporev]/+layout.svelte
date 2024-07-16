@@ -2,8 +2,6 @@
     import type { ComponentProps } from 'svelte'
     import { writable } from 'svelte/store'
 
-    import { getButtonClassName } from '@sourcegraph/wildcard'
-
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
     import { sizeToFit } from '$lib/dom'
@@ -18,6 +16,7 @@
     import { default as TabsHeader } from '$lib/TabsHeader.svelte'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { DropdownMenu, MenuLink } from '$lib/wildcard'
+    import { getButtonClassName } from '$lib/wildcard/Button'
 
     import type { LayoutData } from './$types'
     import { setRepositoryPageContext, type RepositoryPageContext } from './context'
@@ -88,6 +87,21 @@
         entry => entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)
     )
     $: visibleNavEntryCount = viewableNavEntries.length
+    function grow(): boolean {
+        if (visibleNavEntryCount < viewableNavEntries.length) {
+            visibleNavEntryCount++
+            return true
+        }
+        return false
+    }
+    function shrink(): boolean {
+        if (visibleNavEntryCount > 0) {
+            visibleNavEntryCount--
+            return true
+        }
+        return false
+    }
+
     $: navEntriesToShow = viewableNavEntries.slice(0, visibleNavEntryCount)
     $: overflowNavEntries = viewableNavEntries.slice(visibleNavEntryCount)
     $: allMenuEntries = [...overflowNavEntries, ...menuEntries]
@@ -123,7 +137,10 @@
             key: 'ctrl+backspace',
             mac: 'cmd+backspace',
         },
-        ignoreInputFields: false,
+        // Ctrl/cmd+Backspace is used to delete whole words in inputs
+        // This would interfere e.g. with the fuzzy finder (but not the search input because
+        // CodeMirror handles this itself)
+        ignoreInputFields: true,
         handler: () => {
             goto(data.repoURL)
         },
@@ -136,25 +153,13 @@
     </div>
 </GlobalHeaderPortal>
 
-<nav
-    aria-label="repository"
-    use:sizeToFit={{
-        grow() {
-            visibleNavEntryCount = Math.min(visibleNavEntryCount + 1, viewableNavEntries.length)
-            return visibleNavEntryCount < viewableNavEntries.length
-        },
-        shrink() {
-            visibleNavEntryCount = Math.max(visibleNavEntryCount - 1, 0)
-            return visibleNavEntryCount > 0
-        },
-    }}
->
+<nav aria-label="repository" use:sizeToFit={{ grow, shrink }}>
     <RepoMenu
         repoName={data.repoName}
         displayRepoName={data.displayRepoName}
         repoURL={data.repoURL}
-        externalURL={data.resolvedRevision?.repo?.externalURLs?.[0].url}
-        externalServiceKind={data.resolvedRevision?.repo?.externalURLs?.[0].serviceKind ?? undefined}
+        externalURL={data.resolvedRepository.externalURLs[0]?.url}
+        externalServiceKind={data.resolvedRepository.externalURLs[0]?.serviceKind ?? undefined}
     />
 
     <TabsHeader id="repoheader" {tabs} selected={selectedTab} />
@@ -186,6 +191,10 @@
 <slot />
 
 <style lang="scss">
+    :root {
+        --repo-header-height: 2rem;
+    }
+
     .search-header {
         width: 100%;
         z-index: 1;

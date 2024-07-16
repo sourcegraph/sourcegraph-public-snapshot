@@ -21,6 +21,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance"
 	"github.com/sourcegraph/sourcegraph/internal/appliance/reconciler"
+	"github.com/sourcegraph/sourcegraph/internal/appliance/selfupdate"
 	pb "github.com/sourcegraph/sourcegraph/internal/appliance/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -45,7 +46,11 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	relregClient := releaseregistry.NewClient(config.relregEndpoint)
 
-	app := appliance.NewAppliance(k8sClient, relregClient, config.applianceVersion, config.namespace, logger)
+	app, err := appliance.NewAppliance(k8sClient, relregClient, config.applianceVersion, config.namespace, logger)
+	if err != nil {
+		logger.Error("failed to create appliance", log.Error(err))
+		return err
+	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Logger: logr,
@@ -89,6 +94,15 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	grpcServer := makeGRPCServer(logger, app)
 
+	selfUpdater := &selfupdate.SelfUpdate{
+		Interval:       time.Hour,
+		Logger:         logger.Scoped("SelfUpdate"),
+		K8sClient:      k8sClient,
+		RelregClient:   relregClient,
+		DeploymentName: config.selfDeploymentName,
+		Namespace:      config.namespace,
+	}
+
 	g, ctx := errgroup.WithContext(ctx)
 	ctx = shutdownOnSignal(ctx)
 
@@ -116,6 +130,11 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		}
 		return nil
 	})
+	if config.selfDeploymentName != "" {
+		g.Go(func() error {
+			return selfUpdater.Loop(ctx)
+		})
+	}
 	g.Go(func() error {
 		<-ctx.Done()
 		grpcServer.GracefulStop()

@@ -7,6 +7,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { WebStory } from '../../components/WebStory'
 import type { ListNotebooksResult } from '../../graphql-operations'
+import { SearchPatternType } from '../../graphql-operations'
 
 import { NotebooksListPage } from './NotebooksListPage'
 
@@ -45,6 +46,7 @@ const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
                     { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
                     { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
                 ],
+                patternType: SearchPatternType.standard,
             },
             {
                 __typename: 'Notebook',
@@ -60,6 +62,7 @@ const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
                 updater: { __typename: 'User', username: 'user2' },
                 namespace: { __typename: 'User', namespaceName: 'user2', id: '2' },
                 blocks: [{ __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' }],
+                patternType: SearchPatternType.standard,
             },
         ],
         pageInfo: { hasNextPage: false, endCursor: null },

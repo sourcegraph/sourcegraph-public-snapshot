@@ -85,7 +85,7 @@ describe('Repository', () => {
             const shortRepositoryName = 'sourcegraph/jsonrpc2'
             const repositoryName = `github.com/${shortRepositoryName}`
             const repositorySourcegraphUrl = `/${repositoryName}`
-            const commitUrl = `${repositorySourcegraphUrl}/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81?visible=1`
+            const commitUrl = `${repositorySourcegraphUrl}/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81?first=1`
             const clickedFileName = 'async.go'
             const clickedCommit = ''
             const fileEntries = ['jsonrpc2.go', clickedFileName]
@@ -1107,7 +1107,7 @@ describe('Repository', () => {
         })
 
         describe('Compare page', () => {
-            const repositorySourcegraphUrl = `/${repositoryName}/-/compare/main...bl/readme?visible=1`
+            const repositorySourcegraphUrl = `/${repositoryName}/-/compare/main...bl/readme`
             it('should render correctly compare page, including diff view', async () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,

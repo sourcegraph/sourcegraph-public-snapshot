@@ -6,7 +6,7 @@ import type { SearchPatternType } from '../graphql-operations'
 
 import type { SearchContextProps } from './helpers/searchContext'
 import type { CharacterRange } from './query/token'
-import type { SearchMode } from './searchQueryState'
+import type { SearchMode } from './types'
 
 export interface SearchPatternTypeProps {
     patternType: SearchPatternType

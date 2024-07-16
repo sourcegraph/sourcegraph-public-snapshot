@@ -1,5 +1,3 @@
-# See docs/api.md for guidance on schema evolution.
-#
 schema {
     query: Query
     mutation: Mutation
@@ -606,33 +604,6 @@ type Mutation {
     Submits happiness feedback.
     """
     submitHappinessFeedback(input: HappinessFeedbackSubmissionInput!): EmptyResponse
-    """
-    Creates a saved search.
-    """
-    createSavedSearch(
-        description: String!
-        query: String!
-        notifyOwner: Boolean!
-        notifySlack: Boolean!
-        orgID: ID
-        userID: ID
-    ): SavedSearch!
-    """
-    Updates a saved search
-    """
-    updateSavedSearch(
-        id: ID!
-        description: String!
-        query: String!
-        notifyOwner: Boolean!
-        notifySlack: Boolean!
-        orgID: ID
-        userID: ID
-    ): SavedSearch!
-    """
-    Deletes a saved search
-    """
-    deleteSavedSearch(id: ID!): EmptyResponse
 
     """
     OBSERVABILITY
@@ -1806,31 +1777,6 @@ type Query {
         query: String = ""
     ): Search
     """
-    List of saved searches based on namespace
-    """
-    savedSearches(
-        """
-        The namespace to list the saved searches for.
-        """
-        namespace: ID!
-        """
-        The limit argument for forward pagination.
-        """
-        first: Int
-        """
-        The limit argument for backward pagination.
-        """
-        last: Int
-        """
-        The cursor argument for forward pagination.
-        """
-        after: String
-        """
-        The cursor argument for backward pagination.
-        """
-        before: String
-    ): SavedSearchesConnection!
-    """
     EXPERIMENTAL: Return the parse tree of a search query.
     """
     parseSearchQuery(
@@ -2031,30 +1977,6 @@ type Query {
         """
         token: String!
     ): OrganizationInvitation!
-
-    """
-    Search for users that opt-in to search autocomplete.
-    """
-    autocompleteMembersSearch(
-        """
-        The organization ID
-        """
-        organization: ID!
-        """
-        Return users whose usernames or display names match the query.
-        """
-        query: String!
-    ): [AutocompleteMemberSearchItem!]!
-
-    """
-    Get started organization summary
-    """
-    orgMembersSummary(
-        """
-        The organization ID
-        """
-        organization: ID!
-    ): OrgMembersSummary!
 
     """
     Lists webhooks. Only available to site admins.
@@ -3038,61 +2960,6 @@ type SearchAlert {
 }
 
 """
-A paginated connection for saved search queries, defined in settings.
-"""
-type SavedSearchesConnection implements Connection {
-    """
-    A list of saved searches.
-    """
-    nodes: [SavedSearch!]!
-
-    """
-    The total number of saved searches in the connection.
-    """
-    totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: ConnectionPageInfo!
-}
-
-"""
-A saved search query, defined in settings.
-"""
-type SavedSearch implements Node {
-    """
-    The unique ID of this saved query.
-    """
-    id: ID!
-    """
-    The description.
-    """
-    description: String!
-    """
-    The query.
-    """
-    query: String!
-    """
-    Whether or not to notify the owner of the saved search via email. This owner is either
-    a single user, or every member of an organization that owns the saved search.
-    """
-    notify: Boolean!
-    """
-    Whether or not to notify on Slack.
-    """
-    notifySlack: Boolean!
-    """
-    The user or org that owns this saved search.
-    """
-    namespace: Namespace!
-    """
-    The Slack webhook URL associated with this saved search, if any.
-    """
-    slackWebhookURL: String
-}
-
-"""
 A search query description.
 """
 type SearchQueryDescription {
@@ -3306,6 +3173,12 @@ type ExternalService implements Node {
     kind: ExternalServiceKind!
 
     """
+    The normalized URL of the external service. For external services that have no
+    URL, this will be an alternative unique identifier.
+    """
+    url: String!
+
+    """
     The display name of the external service.
     """
     displayName: String!
@@ -3334,11 +3207,6 @@ type ExternalService implements Node {
     The number of repos synced by the external service.
     """
     repoCount: Int!
-
-    """
-    An optional URL that will be populated when webhooks have been configured for the external service.
-    """
-    webhookURL: String
 
     """
     This is an optional field that's populated when we ran into errors on the
@@ -3375,43 +3243,6 @@ type ExternalService implements Node {
     The last updater of this external service. Null if the user was deleted or created by a background routine.
     """
     lastUpdater: User
-
-    """
-    Returns recently received webhooks on this external service.
-
-    Only site admins may access this field.
-
-    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://sourcegraph.com/docs/admin/config/webhooks/incoming#deprecation-notice
-    """
-    webhookLogs(
-        """
-        Returns the first n webhook logs.
-        """
-        first: Int
-
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-
-        """
-        Only include webhook logs that resulted in errors.
-        """
-        onlyErrors: Boolean
-
-        """
-        Only include webhook logs on or after this time.
-        """
-        since: DateTime
-
-        """
-        Only include webhook logs on or before this time.
-        """
-        until: DateTime
-    ): WebhookLogConnection!
-        @deprecated(
-            reason: "Webhook logs linked directly to an external service will be removed. See https://sourcegraph.com/docs/admin/config/webhooks/incoming#deprecation-notice"
-        )
 
     """
     The list of recent sync jobs for this external service.
@@ -7138,49 +6969,6 @@ type OrganizationInvitation implements Node {
     """
     isVerifiedEmail: Boolean
 }
-"""
-Result user returned by invite members autocomplete search.
-"""
-type AutocompleteMemberSearchItem {
-    """
-    The unique ID for the user.
-    """
-    id: ID!
-    """
-    The user's username.
-    """
-    username: String!
-    """
-    The display name chosen by the user.
-    """
-    displayName: String
-    """
-    The URL of the user's avatar image.
-    """
-    avatarURL: String
-    """
-    If the user belongs to current Organization.
-    """
-    inOrg: Boolean
-}
-
-"""
-Result organization members count and pending invitations count.
-"""
-type OrgMembersSummary {
-    """
-    The unique ID for the Org.
-    """
-    id: ID!
-    """
-    Total number of members for the org.
-    """
-    membersCount: Int!
-    """
-    Total number of pending invites for the org.
-    """
-    invitesCount: Int!
-}
 
 """
 The recipient's possible responses to an invitation to join an organization as a member.
@@ -7562,6 +7350,11 @@ type CodyLLMConfiguration {
     Enable Cody clients to adjust context window based on the name of the chat model. If enabled, the chatModelMaxTokens value will be ignored.
     """
     smartContextWindow: String!
+    """
+    Disable Cody clients from using the new server-side config API. This is an escape-hatch for any issues
+    that may arise. This field will be removed in the future.
+    """
+    disableClientConfigAPI: Boolean!
     """
     Name of the model being used for fast chat.
     """

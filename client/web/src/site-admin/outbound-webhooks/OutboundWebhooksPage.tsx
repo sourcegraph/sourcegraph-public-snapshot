@@ -1,6 +1,6 @@
-import { type FC, useEffect } from 'react'
+import { useEffect, type FC } from 'react'
 
-import { mdiAlertCircle, mdiWebhook, mdiMapSearch, mdiPencil, mdiPlus } from '@mdi/js'
+import { mdiAlertCircle, mdiMapSearch, mdiPencil, mdiPlus, mdiWebhook } from '@mdi/js'
 
 import { pluralize } from '@sourcegraph/common'
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
@@ -62,7 +62,6 @@ export const OutboundWebhooksPage: FC<OutboundWebhooksPageProps> = ({ telemetryS
                         <SummaryContainer centered={true}>
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={false}
-                                first={connection.totalCount ?? 0}
                                 centered={true}
                                 connection={connection}
                                 noun="webhook"

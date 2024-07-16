@@ -4,6 +4,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "byteutils",
     srcs = [
+        "lineindex.go",
         "linereader.go",
         "nullscanner.go",
     ],
@@ -14,7 +15,10 @@ go_library(
 
 go_test(
     name = "byteutils_test",
-    srcs = ["linereader_test.go"],
+    srcs = [
+        "lineindex_test.go",
+        "linereader_test.go",
+    ],
+    embed = [":byteutils"],
     tags = [TAG_PLATFORM_SOURCE],
-    deps = [":byteutils"],
 )

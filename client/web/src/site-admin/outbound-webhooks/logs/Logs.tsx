@@ -1,4 +1,4 @@
-import { type FC, useMemo } from 'react'
+import { useMemo, type FC } from 'react'
 
 import { mdiAlertCircle, mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
@@ -77,7 +77,6 @@ export const Logs: FC<LogsProps> = ({ id }) => {
                     <SummaryContainer>
                         <ConnectionSummary
                             noSummaryIfAllNodesVisible={false}
-                            first={connection.totalCount ?? 0}
                             centered={true}
                             connection={connection}
                             noun="webhook log"

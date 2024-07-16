@@ -8,36 +8,38 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// GetOldestCommitDate returns the oldest commit date for all uploads for the given repository. If there are no
-// non-nil values, a false-valued flag is returned. If there are any null values, the commit date backfill job
-// has not yet completed and an error is returned to prevent downstream expiration errors being made due to
-// outdated commit graph data.
-func (s *store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ time.Time, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getOldestCommitDate.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// GetCommitDateForOldestUpload returns the oldest commit date for all uploads for the given repository.
+//   - If there are any null values, the commit date backfill job has not yet completed and
+//     an error is returned to prevent downstream expiration errors being made due to outdated commit graph data.
+//   - Otherwise if there are no non-nil timestamps, None is returned.
+func (s *store) GetCommitDateForOldestUpload(ctx context.Context, repositoryID int) (_ core.Option[time.Time], err error) {
+	ctx, _, endObservation := s.operations.getCommitDateForOldestUpload.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	t, ok, err := basestore.ScanFirstNullTime(s.db.Query(ctx, sqlf.Sprintf(getOldestCommitDateQuery, repositoryID)))
+	var none = core.None[time.Time]()
+	t, ok, err := basestore.ScanFirstNullTime(s.db.Query(ctx, sqlf.Sprintf(getCommitDateForOldestUploadQuery, repositoryID)))
 	if err != nil || !ok {
-		return time.Time{}, false, err
+		return none, err
 	}
 	if t == nil {
-		return time.Time{}, false, &backfillIncompleteError{repositoryID}
+		return none, &backfillIncompleteError{repositoryID}
 	}
 
-	return *t, true, nil
+	return core.Some(*t), nil
 }
 
 // Note: we check against '-infinity' here, as the backfill operation will use this sentinel value in the case
 // that the commit is no longer know by gitserver. This allows the backfill migration to make progress without
 // having pristine database.
-const getOldestCommitDateQuery = `
+const getCommitDateForOldestUploadQuery = `
 SELECT
 	cd.committed_at
 FROM lsif_uploads u

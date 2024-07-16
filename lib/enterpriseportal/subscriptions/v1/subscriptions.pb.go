@@ -1538,6 +1538,7 @@ type UpdateEnterpriseSubscriptionRequest struct {
 	// The list of fields to update, fields are specified relative to the EnterpriseSubscription.
 	// Updatable fields are:
 	//   - instance_domain
+	//   - display_name
 	UpdateMask *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 }
 

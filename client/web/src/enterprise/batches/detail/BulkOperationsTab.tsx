@@ -54,7 +54,6 @@ export const BulkOperationsTab: React.FunctionComponent<React.PropsWithChildren<
                         <ConnectionSummary
                             noSummaryIfAllNodesVisible={true}
                             centered={true}
-                            first={BATCH_COUNT}
                             connection={connection}
                             noun="bulk operation"
                             pluralNoun="bulk operations"
@@ -89,11 +88,9 @@ const useBulkOperationsListConnection = (
         query: BULK_OPERATIONS,
         variables: {
             batchChange: batchChangeID,
-            after: null,
-            first: BATCH_COUNT,
         },
         options: {
-            useURL: true,
+            pageSize: BATCH_COUNT,
             fetchPolicy: 'cache-and-network',
         },
         getConnection: result => {

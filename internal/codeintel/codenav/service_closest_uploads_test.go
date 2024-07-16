@@ -2,7 +2,9 @@ package codenav
 
 import (
 	"context"
+	"hash/fnv"
 	"slices"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -91,10 +93,7 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 			return nil, &gitdomain.RevisionNotFoundError{}
 		})
 
-		mockLsifStore.GetPathExistsFunc.SetDefaultHook(func(_ context.Context, uploadID int, path core.UploadRelPath) (bool, error) {
-			return collections.NewSet(testCase.lsifStoreAllowedPaths...).Has(
-				idPathPair{uploadID: uploadID, path: path}), nil
-		})
+		mockLsifStore.FindDocumentIDsFunc.SetDefaultHook(findDocumentIDsFuncLimited(testCase.lsifStoreAllowedPaths))
 
 		testCase.matchingOptions.RepositoryID = repoID
 		testCase.matchingOptions.RootToPathMatching = shared.RootMustEnclosePath
@@ -105,12 +104,38 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 		for _, upload := range filtered {
 			gotIDs = append(gotIDs, upload.ID)
 		}
-		if diff := cmp.Diff(gotIDs, testCase.expectUploadIDs, cmp.Transformer("Sort", func(in []int) []int {
+		if diff := cmp.Diff(testCase.expectUploadIDs, gotIDs, cmp.Transformer("Sort", func(in []int) []int {
 			out := append([]int(nil), in...)
 			slices.Sort(out)
 			return out
 		})); diff != "" {
 			t.Errorf("unexpected filtered uploads (-want +got):\n%s", diff)
 		}
+	}
+}
+
+type findDocumentIDsFuncType = func(_ context.Context, uploadIDToPathMap map[int]core.UploadRelPath) (map[int]int, error)
+
+func findDocumentIDsFuncAllowAny() findDocumentIDsFuncType {
+	return findDocumentIDsFuncImpl(true, nil)
+}
+
+func findDocumentIDsFuncLimited(allowedPaths []idPathPair) findDocumentIDsFuncType {
+	return findDocumentIDsFuncImpl(false, allowedPaths)
+}
+
+func findDocumentIDsFuncImpl(allowAny bool, allowedPaths []idPathPair) findDocumentIDsFuncType {
+	return func(_ context.Context, uploadIDToPathMap map[int]core.UploadRelPath) (map[int]int, error) {
+		uploadPathSet := collections.NewSet(allowedPaths...)
+		uploadIDToDocumentID := map[int]int{}
+		for uploadID, path := range uploadIDToPathMap {
+			if allowAny || uploadPathSet.Has(idPathPair{uploadID: uploadID, path: path}) {
+				hasher := fnv.New64()
+				hasher.Write([]byte(strconv.Itoa(uploadID)))
+				hasher.Write([]byte(path.RawValue()))
+				uploadIDToDocumentID[uploadID] = int(hasher.Sum64())
+			}
+		}
+		return uploadIDToDocumentID, nil
 	}
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
@@ -42,14 +43,14 @@ type Source struct {
 	log               log.Logger
 	cache             httpcache.Cache // cache is expected to be something with automatic TTL
 	dotcom            graphql.Client
-	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
+	concurrencyConfig codygatewayactor.ActorConcurrencyLimitConfig
 	usageStore        limiter.RedisStore
 	coolDownInterval  time.Duration
 }
 
 var _ actor.SourceUpdater = &Source{}
 
-func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, concurrencyConfig codygateway.ActorConcurrencyLimitConfig, usageStore limiter.RedisStore, coolDownInterval time.Duration) *Source {
+func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, concurrencyConfig codygatewayactor.ActorConcurrencyLimitConfig, usageStore limiter.RedisStore, coolDownInterval time.Duration) *Source {
 	return &Source{
 		log:               logger.Scoped("dotcomuser"),
 		cache:             cache,
@@ -60,7 +61,7 @@ func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Cl
 	}
 }
 
-func (s *Source) Name() string { return string(codygateway.ActorSourceDotcomUser) }
+func (s *Source) Name() string { return string(codygatewayactor.ActorSourceDotcomUser) }
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	return s.get(ctx, token, false)
@@ -247,7 +248,7 @@ func (s *Source) get(ctx context.Context, token string, bypassCache bool) (*acto
 }
 
 // newActor creates an actor from Sourcegraph.com user.
-func newActor(source *Source, cacheKey string, user dotcom.DotcomUserState, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *actor.Actor {
+func newActor(source *Source, cacheKey string, user dotcom.DotcomUserState, concurrencyConfig codygatewayactor.ActorConcurrencyLimitConfig) *actor.Actor {
 	now := time.Now()
 
 	userID := unmarshalUserID(user.Id)

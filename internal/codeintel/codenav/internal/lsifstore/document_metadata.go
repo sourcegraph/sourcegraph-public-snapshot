@@ -10,35 +10,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
-
-// GetPathExists determines if the path exists in the database.
-func (s *store) GetPathExists(ctx context.Context, bundleID int, path core.UploadRelPath) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.getPathExists.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("bundleID", bundleID),
-		attribute.String("path", path.RawValue()),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	exists, _, err := basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf(
-		existsQuery,
-		bundleID,
-		path.RawValue(),
-	)))
-	return exists, err
-}
-
-const existsQuery = `
-SELECT EXISTS (
-	SELECT 1
-	FROM codeintel_scip_document_lookup sid
-	WHERE
-		sid.upload_id = %s AND
-		sid.document_path = %s
-)
-`
 
 // Stencil returns all ranges within a single document.
 func (s *store) GetStencil(ctx context.Context, bundleID int, path core.UploadRelPath) (_ []shared.Range, err error) {

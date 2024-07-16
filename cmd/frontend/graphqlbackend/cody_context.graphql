@@ -20,15 +20,76 @@ extend type Query {
         """
         textResultsCount: Int!
     ): [CodyContextResult!]!
+
     """
-    EXPERIMENTAL: Detect intent for a given Cody query.
+    EXPERIMENTAL: Detect intent for a given Cody chat query.
     """
-    getCodyIntent(
+    chatIntent(
         """
         A natural language query string.
         """
         query: String!
-    ): CodyIntentResponse!
+        """
+        Cody interaction ID - used to join requests for intent detection/context fetching/ranking.
+        """
+        interactionId: String!
+    ): ChatIntentResponse!
+
+    """
+    EXPERIMENTAL: Rank context items for given Cody chat query. Returns indices of input context items ordered by relevance.
+    """
+    rankContext(
+        """
+        Cody interaction ID.
+        """
+        interactionId: String!
+        """
+        Context items to rank.
+        """
+        contextItems: [InputContextItem!]!
+        """
+        A natural language query string.
+        """
+        query: String!
+        """
+        Ranking options.
+        """
+        rankOptions: RankOptions
+        """
+        Target model.
+        """
+        targetModel: String
+        """
+        Target context window, in tokens.
+        """
+        targetContextWindowTokens: Int
+        """
+        Intent of Cody interaction. If empty, server will detect it (or look it up using interaction ID).
+        """
+        intent: String
+        """
+        Type of Command executed in a given Cody interaction. Empty value means it's an open-ended Chat.
+        """
+        command: String
+    ): RankingResponse!
+
+    """
+    EXPERIMENTAL: Stores context passed to the LLM for a given interaction.
+    """
+    recordContext(
+        """
+        Interaction ID.
+        """
+        interactionId: String!
+        """
+        Context items that were passed to the LLM.
+        """
+        usedContextItems: [InputContextItem!]!
+        """
+        Context items that were not passed to the LLM.
+        """
+        discardedContextItems: [InputContextItem!]!
+    ): EmptyResponse
 }
 
 """
@@ -61,9 +122,9 @@ type FileChunkContext {
 }
 
 """
-EXPERIMENTAL: A response from Cody intent detection API.
+EXPERIMENTAL: A response from Cody Chat intent detection API.
 """
-type CodyIntentResponse {
+type ChatIntentResponse {
     """
     Intent that was detected
     """
@@ -72,4 +133,61 @@ type CodyIntentResponse {
     Confidence score as assigned by the intent detection model
     """
     score: Float!
+}
+"""
+EXPERIMENTAL: Representation of a context item used as API param (doesn't have to support full metadata available on the client).
+"""
+input InputContextItem {
+    """
+    Content of the context item.
+    """
+    content: String!
+    """
+    Retriever that produced this item
+    """
+    retriever: String!
+    """
+    Optional: score assigned by the retriever.
+    """
+    score: Float
+    """
+    Optional: Name of the file associated with this context item.
+    """
+    fileName: String
+    """
+    The start line of the relevant chunk (inclusive).
+    """
+    startLine: Int
+    """
+    The end line of the relevant chunk (exclusive).
+    """
+    endLine: Int
+}
+
+"""
+Options for context ranking.
+"""
+input RankOptions {
+    """
+    Ranker to use for context ranking. Empty value means "server decides".
+    """
+    ranker: String!
+}
+
+"""
+Response from the ranker - contains reordered indices of context items pass as input, but not full context items.
+"""
+type RankingResponse {
+    """
+    Ranker used to produce this response.
+    """
+    ranker: String!
+    """
+    Indices of context items that were used by the ranker, ordered by decreasing relevance.
+    """
+    used: [Int!]!
+    """
+    Indices of context items that were discarded by the ranker. Order is undefined.
+    """
+    discarded: [Int!]!
 }

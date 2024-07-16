@@ -6,6 +6,7 @@
     import { capitalize } from 'lodash'
     import { from } from 'rxjs'
     import { writable } from 'svelte/store'
+    import * as uuid from 'uuid'
 
     import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
     import type { CodeGraphData } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/occurrences'
@@ -21,6 +22,7 @@
     import FileIcon from '$lib/repo/FileIcon.svelte'
     import { renderMermaid } from '$lib/repo/mermaid'
     import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
+    import OpenCodyAction from '$lib/repo/OpenCodyAction.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI, replaceRevisionInURL } from '$lib/shared'
     import { isLightTheme, settings } from '$lib/stores'
@@ -28,6 +30,8 @@
     import { createPromiseStore, formatBytes } from '$lib/utils'
     import { Alert, Badge, MenuButton, MenuLink } from '$lib/wildcard'
     import markdownStyles from '$lib/wildcard/Markdown.module.scss'
+    import MenuRadioGroup from '$lib/wildcard/menu/MenuRadioGroup.svelte'
+    import MenuSeparator from '$lib/wildcard/menu/MenuSeparator.svelte'
 
     import type { PageData } from './$types'
     import { FileViewGitBlob, FileViewHighlightedFile } from './FileView.gql'
@@ -67,6 +71,7 @@
         revision,
         resolvedRevision: { commitID },
         revisionOverride,
+        isCodyAvailable,
     } = data)
     $: blobLoader.set(data.blob)
     $: highlightsLoader.set(data.highlights)
@@ -106,6 +111,15 @@
               })
             : null
 
+    $: codeGraphDataCommitHashes = data.user?.siteAdmin
+        ? codeGraphData?.map(datum => datum.commit.slice(0, 7))
+        : undefined
+    $: codeGraphDataDebugOptions = codeGraphDataCommitHashes ? ['None', ...codeGraphDataCommitHashes] : undefined
+    const selectedCodeGraphDataDebugOption = writable<string>('None')
+    $: selectedCodeGraphDataOccurrences = codeGraphData?.find(datum =>
+        datum.commit.startsWith($selectedCodeGraphDataDebugOption)
+    )?.occurrences // TODO: we should probably use the nonoverlapping occurrences here
+
     function viewModeURL(viewMode: CodeViewMode) {
         switch (viewMode) {
             case CodeViewMode.Code: {
@@ -127,7 +141,7 @@
     }
 
     function handleCopy(): void {
-        TELEMETRY_RECORDER.recordEvent('repo.blob', 'copy')
+        TELEMETRY_RECORDER.recordEvent('blob.code', 'copy')
     }
 
     function onViewModeChange(event: CustomEvent<CodeViewMode>): void {
@@ -152,14 +166,12 @@
 
 {#if embedded}
     <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
-        <FileIcon slot="icon" file={blob} inline />
-        <svelte:fragment slot="actions">
-            <slot name="actions" />
-        </svelte:fragment>
+        <FileIcon slot="file-icon" file={blob} inline />
+        <slot name="actions" slot="actions" />
     </FileHeader>
 {:else}
     <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
-        <FileIcon slot="icon" file={blob} inline />
+        <FileIcon slot="file-icon" file={blob} inline />
         <svelte:fragment slot="actions">
             {#if !revisionOverride}
                 {#await data.externalServiceType then externalServiceType}
@@ -172,6 +184,9 @@
                 <OpenInCodeHostAction data={blob} lineOrPosition={data.lineOrPosition} />
             {/if}
             <Permalink {commitID} />
+            {#if $isCodyAvailable}
+                <OpenCodyAction />
+            {/if}
         </svelte:fragment>
         <svelte:fragment slot="actionmenu">
             <MenuLink href={rawURL} target="_blank">
@@ -184,6 +199,24 @@
                 <Icon icon={$lineWrap ? ILucideText : ILucideWrapText} inline aria-hidden />
                 {$lineWrap ? 'Disable' : 'Enable'} wrapping long lines
             </MenuButton>
+            {#if codeGraphDataDebugOptions !== undefined}
+                <MenuSeparator />
+                {@const labelID = `label-${uuid.v4()}`}
+                <h6 id={labelID}>Code intelligence preview</h6>
+                <MenuRadioGroup
+                    aria-labelledby={labelID}
+                    values={codeGraphDataDebugOptions}
+                    value={selectedCodeGraphDataDebugOption}
+                >
+                    <svelte:fragment let:value>
+                        {#if value === 'None'}
+                            None
+                        {:else}
+                            Index at <code>{value}</code>
+                        {/if}
+                    </svelte:fragment>
+                </MenuRadioGroup>
+            {/if}
         </svelte:fragment>
     </FileHeader>
 {/if}
@@ -274,6 +307,7 @@
                 }}
                 highlights={highlights?.lsif ?? ''}
                 codeGraphData={codeGraphData ?? undefined}
+                debugOccurrences={selectedCodeGraphDataOccurrences}
                 showBlame={showBlameView}
                 blameData={$blameData}
                 wrapLines={$lineWrap}
@@ -354,5 +388,12 @@
 
     .actions {
         margin-left: auto;
+    }
+
+    h6 {
+        padding: var(--dropdown-item-padding);
+        margin: 0;
+        font-size: 0.75rem;
+        color: var(--dropdown-header-color);
     }
 </style>

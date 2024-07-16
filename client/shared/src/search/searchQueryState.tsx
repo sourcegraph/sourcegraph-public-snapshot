@@ -9,6 +9,7 @@ import { type QueryState, type SubmitSearchParameters, toggleSubquery } from './
 import type { FilterType } from './query/filters'
 import { appendFilter, updateFilter } from './query/transformer'
 import { filterExists } from './query/validate'
+import { SearchMode } from './types'
 
 export type SearchQueryStateStore<T extends SearchQueryState = SearchQueryState> = UseBoundStore<T, StoreApi<T>>
 
@@ -41,11 +42,6 @@ export enum InitialParametersSource {
     DEFAULT,
     USER_SETTINGS,
     URL,
-}
-
-export enum SearchMode {
-    Precise = 0,
-    SmartSearch = 1 << 0,
 }
 
 // Implemented in /web as navbar query state, /vscode as webview query state.

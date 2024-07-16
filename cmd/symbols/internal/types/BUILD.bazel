@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "types",
+    srcs = ["types.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types",
+    tags = [TAG_PLATFORM_SEARCH],
+    visibility = ["//cmd/symbols:__subpackages__"],
+    deps = [
+        "//internal/env",
+        "//internal/search",
+        "//internal/search/result",
+    ],
+)

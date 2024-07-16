@@ -189,7 +189,7 @@ func (r *Reconciler) reconcilePrometheusRole(ctx context.Context, sg *config.Sou
 		},
 		{
 			APIGroups: []string{""},
-			Resources: []string{"configmap"},
+			Resources: []string{"configmaps"},
 			Verbs:     []string{"get"},
 		},
 	}

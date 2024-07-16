@@ -9,12 +9,9 @@
     import { isLightTheme } from '$lib/stores'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
 
-    import DotcomFooterLinks from './DotcomFooterLinks.svelte'
     import SearchHomeNotifications from './SearchHomeNotifications.svelte'
 
     export let queryState: QueryStateStore
-    export let codyHref: string = '/cody'
-    export let showDotcomStuff: boolean = false
 
     setContext<SearchPageContext>('search-context', {
         setQuery(newQuery) {
@@ -40,9 +37,7 @@
             <SearchInput {queryState} autoFocus onSubmit={handleSubmit} />
             <SearchHomeNotifications />
         </div>
-        {#if showDotcomStuff}
-            <DotcomFooterLinks />
-        {/if}
+        <slot />
     </div>
 </section>
 
@@ -57,14 +52,16 @@
     }
 
     div.content {
+        height: 100%;
+        width: 100%;
+        max-width: 64rem;
         padding-top: 3rem;
         flex-shrink: 0;
+
         display: flex;
         gap: 3rem;
         flex-direction: column;
         align-items: center;
-        width: 100%;
-        max-width: 64rem;
 
         :global(.search-box) {
             align-self: stretch;
@@ -82,6 +79,5 @@
     img.logo {
         width: 20rem;
         max-width: 90%;
-        min-height: 54px;
     }
 </style>

@@ -62,3 +62,56 @@ func Test_zoektSearch(t *testing.T) {
 	)
 	require.Error(t, err)
 }
+
+func TestHandleSearchFilters(t *testing.T) {
+	tests := []struct {
+		name        string
+		patternInfo *protocol.PatternInfo
+		expectedQ   query.Q
+		expectedErr error
+	}{
+		{
+			name: "Include and exclude paths",
+			patternInfo: &protocol.PatternInfo{
+				IncludePaths:    []string{"\\.go", "cmd"},
+				ExcludePaths:    "vendor/",
+				IsCaseSensitive: false,
+			},
+			expectedQ: query.NewAnd(
+				&query.Substring{Pattern: ".go", FileName: true},
+				&query.Substring{Pattern: "cmd", FileName: true},
+				&query.Not{Child: &query.Substring{Pattern: "vendor/", FileName: true}},
+			),
+			expectedErr: nil,
+		},
+		{
+			name: "Include and exclude languages",
+			patternInfo: &protocol.PatternInfo{
+				IncludePaths: []string{"cmd"},
+				IncludeLangs: []string{"go", "typescript"},
+				ExcludeLangs: []string{"javascript"},
+			},
+			expectedQ: query.NewAnd(
+				&query.Substring{Pattern: "cmd", FileName: true},
+				&query.Language{Language: "go"},
+				&query.Language{Language: "typescript"},
+				&query.Not{Child: &query.Language{Language: "javascript"}},
+			),
+			expectedErr: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q, err := handleSearchFilters(tt.patternInfo)
+
+			if tt.expectedErr != nil {
+				require.Error(t, err)
+				require.Equal(t, tt.expectedErr.Error(), err.Error())
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.expectedQ, q)
+			}
+		})
+	}
+}

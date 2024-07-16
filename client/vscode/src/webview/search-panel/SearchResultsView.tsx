@@ -393,6 +393,8 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             resultClassName="mr-0"
                             showQueryExamplesOnNoResultsPage={true}
                             selectedSearchContextSpec={context.selectedSearchContextSpec}
+                            // The VSCode extension does not support file preview, so turn that off in the search results.
+                            hideFilePreviewButton={true}
                         />
                     </MatchHandlersContext.Provider>
                 </div>

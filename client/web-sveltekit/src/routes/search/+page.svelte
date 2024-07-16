@@ -4,6 +4,7 @@
     import { settings } from '$lib/stores'
 
     import type { PageData, Snapshot } from './$types'
+    import QueryExamples from './QueryExamples.svelte'
     import SearchHome from './SearchHome.svelte'
     import SearchResults, { type SearchResultsCapture } from './SearchResults.svelte'
 
@@ -41,5 +42,12 @@
         selectedFilters={data.queryFilters}
     />
 {:else}
-    <SearchHome {queryState} codyHref={data.codyHref} showDotcomStuff={data.showDotcomFooterLinks} />
+    <SearchHome {queryState}>
+        <QueryExamples
+            showQueryPage={data.showExampleQueries}
+            queryExample={data.queryExample}
+            queryState={$queryState}
+        />
+        <svelte:component this={data.footer} />
+    </SearchHome>
 {/if}

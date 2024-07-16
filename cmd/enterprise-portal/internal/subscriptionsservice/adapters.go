@@ -65,11 +65,11 @@ func convertSubscriptionToProto(subscription *subscriptions.Subscription, attrs 
 			LastTransitionTime: timestamppb.New(*attrs.ArchivedAt),
 		})
 	}
-
 	return &subscriptionsv1.EnterpriseSubscription{
 		Id:             subscriptionsv1.EnterpriseSubscriptionIDPrefix + attrs.ID,
 		Conditions:     conds,
-		InstanceDomain: subscription.InstanceDomain,
+		InstanceDomain: pointers.DerefZero(subscription.InstanceDomain),
+		DisplayName:    pointers.DerefZero(subscription.DisplayName),
 	}
 }
 

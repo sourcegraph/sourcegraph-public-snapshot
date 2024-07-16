@@ -696,8 +696,7 @@ describe('Batches', () => {
                 await driver.page.waitForSelector('.test-batch-change-details-page', { visible: true })
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    // We now have 1 in the cache, so we'll have a starting number visible that gets set in the URL.
-                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change?visible=1'
+                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change'
                 )
 
                 // Delete the closed batch change.
@@ -1007,6 +1006,8 @@ describe('Batches', () => {
                                               id: '123',
                                               isSiteCredential: false,
                                               sshPublicKey: 'ssh-rsa randorandorandorando',
+                                              isGitHubApp: false,
+                                              gitHubApp: null,
                                           }
                                         : null,
                                     requiresSSH: false,
@@ -1025,6 +1026,8 @@ describe('Batches', () => {
                             id: '123',
                             isSiteCredential: false,
                             sshPublicKey: 'ssh-rsa randorandorandorando',
+                            isGitHubApp: false,
+                            gitHubApp: null,
                         },
                     }
                 },

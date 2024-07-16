@@ -43,6 +43,41 @@ type Store struct {
 
 type storeKey struct{}
 
+// SecretErr is the error that occurs when we fail to get a secret. It contains the original
+// error as well as the secret key that failed to fetch.
+type SecretErr struct {
+	// Err is the original error
+	Err error
+	// Key is the secret key that failed to fetch
+	Key string
+}
+
+func (se SecretErr) Error() string {
+	return fmt.Sprintf("failed to get secret %q: %v", se.Key, se.Err)
+}
+
+// GoogleSecretErr is an error that occurs when we fail to fetch a secret from Google Secret Manger in a particular GCP Project.
+// It contains the key that failed to fetch, the original error and the GCP project name.
+type GoogleSecretErr struct {
+	SecretErr
+	// Project is the GCP project where we failed to fetch the secret
+	Project string
+}
+
+func (gse GoogleSecretErr) Error() string {
+	return fmt.Sprintf("google(%s): %s", gse.Project, gse.SecretErr.Error())
+}
+
+// CommandErr is an error that occurs when we fail to get a secret by executing some CLI Command.
+// It contains the original error as well as the secret key that failed to fetch.
+type CommandErr struct {
+	SecretErr
+}
+
+func (ce CommandErr) Error() string {
+	return fmt.Sprintf("command error: %v", ce.SecretErr.Error())
+}
+
 // FromContext fetches a store from context. In sg, a store is set in the command context
 // when sg starts - if the load fails, an error is printed and a store is not set.
 func FromContext(ctx context.Context) (*Store, error) {
@@ -75,7 +110,15 @@ func LoadFromFile(filepath string) (*Store, error) {
 	}
 	defer f.Close()
 	dec := json.NewDecoder(f)
-	return s, dec.Decode(&s.m)
+	if err := dec.Decode(&s.m); err != nil {
+		// Ignore EOF which is returned when the file is empty, we just pretend the file isn't there.
+		// Note that invalid JSON might still return "unexpected EOF" and
+		// we let that one get through.
+		if !errors.Is(err, io.EOF) {
+			return nil, err
+		}
+	}
+	return s, nil
 }
 
 // Write serializes the store content in the given writer.
@@ -167,14 +210,16 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallback
 	}
 
 	if err != nil {
-		errMessage := fmt.Sprintf("gcloud: failed to access secret %q from %q",
-			secret.Name, secret.Project)
+		secretErr := SecretErr{Err: err, Key: secret.Name}
 		// Some secret providers use their respective CLI, if not found the user might not
 		// have run 'sg setup' to set up the relevant tool.
 		if strings.Contains(err.Error(), "command not found") {
-			errMessage += "- you may need to run 'sg setup' again"
+			return "", CommandErr{SecretErr: secretErr}
 		}
-		return "", errors.Wrap(err, errMessage)
+		return "", GoogleSecretErr{
+			SecretErr: secretErr,
+			Project:   secret.Project,
+		}
 	}
 
 	// Return and persist the fetched secret

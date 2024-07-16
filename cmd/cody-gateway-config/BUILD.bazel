@@ -11,6 +11,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway-config",
     visibility = ["//visibility:private"],
     deps = [
+        "//internal/modelconfig",
         "//internal/modelconfig/types",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",

@@ -32,6 +32,7 @@ func bazelCmd(args ...string) string {
 		genBazelRC,
 		"bazel",
 		fmt.Sprintf("--bazelrc=%s", bazelrc),
+		fmt.Sprintf("--bazelrc=%s", ".aspect/bazelrc/ci.sourcegraph.bazelrc"),
 	}
 	Cmd := append(pre, args...)
 	return strings.Join(Cmd, " ")

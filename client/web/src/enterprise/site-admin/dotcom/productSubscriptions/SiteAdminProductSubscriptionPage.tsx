@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -6,8 +6,8 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { logger } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { Button, LoadingSpinner, Link, Icon, ErrorAlert, PageHeader, Container, H3, Text } from '@sourcegraph/wildcard'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { Button, Container, ErrorAlert, H3, Icon, Link, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import {
     ConnectionContainer,
@@ -21,10 +21,10 @@ import {
 import { PageTitle } from '../../../../components/PageTitle'
 import { useScrollToLocationHash } from '../../../../components/useScrollToLocationHash'
 import type {
-    DotComProductSubscriptionResult,
-    DotComProductSubscriptionVariables,
     ArchiveProductSubscriptionResult,
     ArchiveProductSubscriptionVariables,
+    DotComProductSubscriptionResult,
+    DotComProductSubscriptionVariables,
 } from '../../../../graphql-operations'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
@@ -36,9 +36,10 @@ import {
     useProductSubscriptionLicensesConnection,
 } from './backend'
 import { CodyServicesSection } from './CodyServicesSection'
+import type { EnterprisePortalEnvironment } from './enterpriseportal'
 import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
-import { accessTokenPath, errorForPath, enterprisePortalID } from './utils'
+import { accessTokenPath, enterprisePortalID, errorForPath } from './utils'
 
 interface Props extends TelemetryV2Props {}
 
@@ -122,6 +123,20 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
 
     const productSubscription = data!.dotcom.productSubscription
 
+    /**
+     * TODO(@robert): As part of https://linear.app/sourcegraph/issue/CORE-100,
+     * eventually dev subscriptions will only live on Enterprise Portal dev and
+     * prod subscriptions will only live on Enterprise Portal prod. Until we
+     * cut over, we use license tags to determine what Enterprise Portal
+     * environment to target.
+     */
+    const enterprisePortalEnvironment: EnterprisePortalEnvironment =
+        window.context.deployType === 'dev'
+            ? 'local'
+            : productSubscription.activeLicense?.info?.tags?.includes('dev')
+            ? 'dev'
+            : 'prod'
+
     return (
         <>
             <div className="site-admin-product-subscription-page">
@@ -198,6 +213,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                 </Container>
 
                 <CodyServicesSection
+                    enterprisePortalEnvironment={enterprisePortalEnvironment}
                     viewerCanAdminister={true}
                     currentSourcegraphAccessToken={productSubscription.currentSourcegraphAccessToken}
                     accessTokenError={errorForPath(error, accessTokenPath)}
@@ -251,10 +267,8 @@ const ProductSubscriptionLicensesConnection: React.FunctionComponent<ProductSubs
     toggleShowGenerate,
     telemetryRecorder,
 }) => {
-    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useProductSubscriptionLicensesConnection(
-        subscriptionUUID,
-        20
-    )
+    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } =
+        useProductSubscriptionLicensesConnection(subscriptionUUID)
 
     useEffect(() => {
         setRefetch(refetchAll)
@@ -288,7 +302,6 @@ const ProductSubscriptionLicensesConnection: React.FunctionComponent<ProductSubs
             {connection && (
                 <SummaryContainer centered={true}>
                     <ConnectionSummary
-                        first={15}
                         centered={true}
                         connection={connection}
                         noun="product license"

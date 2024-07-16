@@ -4,31 +4,28 @@ import { mdiClose, mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import ToolsIcon from 'mdi-react/ToolsIcon'
 import { NavLink, useLocation, useNavigate, useSearchParams, type RouteObject } from 'react-router-dom'
 import shallow from 'zustand/shallow'
 
-import { LegacyToggles } from '@sourcegraph/branded'
 import { Toggles } from '@sourcegraph/branded/src/search-ui/input/toggles/Toggles'
 import type { SearchQueryState, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Button, ButtonLink, Icon, Link, Modal, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Icon, Link, Modal, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { BatchChangesIconNav } from '../../batches/icons'
-import { CodyProRoutes } from '../../cody/codyProRoutes'
-import { CODY_MARKETING_PAGE_URL } from '../../cody/codyRoutes'
 import { CodyLogo } from '../../cody/components/CodyLogo'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { DeveloperSettingsGlobalNavItem } from '../../devsettings/DeveloperSettingsGlobalNavItem'
-import { useKeywordSearch } from '../../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../../hooks'
 import { PageRoutes } from '../../routes.constants'
 import { isSearchJobsEnabled } from '../../search-jobs/utility'
 import { LazyV2SearchInput } from '../../search/input/LazyV2SearchInput'
 import { setSearchCaseSensitivity, setSearchMode, setSearchPatternType, useNavbarQueryState } from '../../stores'
-import { InlineNavigationPanel } from '../GlobalNavbar'
+import { InlineNavigationPanel, linkForCodyNavItem } from '../GlobalNavbar'
 import { UserNavItem } from '../UserNavItem'
 
 import styles from './NewGlobalNavigationBar.module.scss'
@@ -202,7 +199,6 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
 
     const navigate = useNavigate()
     const location = useLocation()
-    const showKeywordSearchToggle = useKeywordSearch()
 
     const {
         searchMode,
@@ -247,34 +243,20 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
             onChange={setQueryState}
             onSubmit={submitSearchOnChange}
         >
-            {showKeywordSearchToggle ? (
-                <Toggles
-                    searchMode={searchMode}
-                    patternType={searchPatternType}
-                    defaultPatternType={defaultPatternType}
-                    caseSensitive={searchCaseSensitivity}
-                    navbarSearchQuery={queryState.query}
-                    structuralSearchDisabled={structuralSearchDisabled}
-                    setPatternType={setSearchPatternType}
-                    setCaseSensitivity={setSearchCaseSensitivity}
-                    setSearchMode={setSearchMode}
-                    submitSearch={submitSearchOnChange}
-                    telemetryService={telemetryService}
-                    telemetryRecorder={telemetryRecorder}
-                />
-            ) : (
-                <LegacyToggles
-                    searchMode={searchMode}
-                    patternType={searchPatternType}
-                    caseSensitive={searchCaseSensitivity}
-                    navbarSearchQuery={queryState.query}
-                    structuralSearchDisabled={structuralSearchDisabled}
-                    setPatternType={setSearchPatternType}
-                    setCaseSensitivity={setSearchCaseSensitivity}
-                    setSearchMode={setSearchMode}
-                    submitSearch={submitSearchOnChange}
-                />
-            )}
+            <Toggles
+                searchMode={searchMode}
+                patternType={searchPatternType}
+                defaultPatternType={defaultPatternType}
+                caseSensitive={searchCaseSensitivity}
+                navbarSearchQuery={queryState.query}
+                structuralSearchDisabled={structuralSearchDisabled}
+                setPatternType={setSearchPatternType}
+                setCaseSensitivity={setSearchCaseSensitivity}
+                setSearchMode={setSearchMode}
+                submitSearch={submitSearchOnChange}
+                telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
+            />
         </LazyV2SearchInput>
     )
 }
@@ -352,62 +334,18 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
 
             <nav className={styles.sidebarNavigationNav}>
                 <ul className={styles.sidebarNavigationList}>
-                    <li className={classNames(styles.navItem, styles.navItemNested)}>
-                        <Button
-                            as={Link}
-                            to={PageRoutes.Search}
-                            className={styles.navLink}
-                            onClick={handleNavigationClick}
-                        >
-                            <Icon as={MagnifyIcon} className={styles.icon} aria-hidden={true} /> Code Search
-                        </Button>
-
-                        <ul className={classNames(styles.sidebarNavigationList, styles.sidebarNavigationListNested)}>
-                            {showSearchContext && (
-                                <NavItemLink url={PageRoutes.Contexts} onClick={handleNavigationClick}>
-                                    Context
-                                </NavItemLink>
-                            )}
-                            {showSearchNotebook && (
-                                <NavItemLink url={PageRoutes.Notebooks} onClick={handleNavigationClick}>
-                                    Notebooks
-                                </NavItemLink>
-                            )}
-                            {showCodeMonitoring && (
-                                <NavItemLink url="/code-monitoring" onClick={handleNavigationClick}>
-                                    Code Monitoring
-                                </NavItemLink>
-                            )}
-                            {showSearchJobs && (
-                                <NavItemLink url={PageRoutes.SearchJobs} onClick={handleNavigationClick}>
-                                    Search Jobs <ProductStatusBadge className="ml-2" status="beta" />
-                                </NavItemLink>
-                            )}
-                        </ul>
-                    </li>
+                    <NavItemLink url={PageRoutes.Search} icon={MagnifyIcon} onClick={handleNavigationClick}>
+                        Code Search
+                    </NavItemLink>
 
                     {window.context?.codyEnabledOnInstance && (
                         <NavItemLink
-                            url={
-                                isSourcegraphDotCom
-                                    ? window.context.codyEnabledForCurrentUser
-                                        ? CodyProRoutes.Manage
-                                        : CODY_MARKETING_PAGE_URL
-                                    : PageRoutes.CodyDashboard
-                            }
+                            url={linkForCodyNavItem(isSourcegraphDotCom)}
                             icon={CodyLogo}
                             onClick={handleNavigationClick}
                         >
                             Cody
                         </NavItemLink>
-                    )}
-
-                    {window.context?.codyEnabledForCurrentUser && (
-                        <ul className={classNames(styles.sidebarNavigationList, styles.sidebarNavigationListNested)}>
-                            <NavItemLink url={PageRoutes.CodyChat} onClick={handleNavigationClick}>
-                                Web Chat
-                            </NavItemLink>
-                        </ul>
                     )}
 
                     {showBatchChanges && (
@@ -420,6 +358,43 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                         <NavItemLink url="/insights" icon={BarChartIcon} onClick={handleNavigationClick}>
                             Insights
                         </NavItemLink>
+                    )}
+
+                    {(showSearchContext ||
+                        showSearchNotebook ||
+                        showCodeMonitoring ||
+                        showBatchChanges ||
+                        showCodeInsights) && (
+                        <li className={classNames(styles.navItem, styles.navItemNested)}>
+                            <span className={styles.navGroupTitle}>
+                                <Icon as={ToolsIcon} className={styles.icon} aria-hidden={true} /> Tools
+                            </span>
+
+                            <ul
+                                className={classNames(styles.sidebarNavigationList, styles.sidebarNavigationListNested)}
+                            >
+                                {showSearchContext && (
+                                    <NavItemLink url={PageRoutes.Contexts} onClick={handleNavigationClick}>
+                                        Contexts
+                                    </NavItemLink>
+                                )}
+                                {showSearchNotebook && (
+                                    <NavItemLink url={PageRoutes.Notebooks} onClick={handleNavigationClick}>
+                                        Notebooks
+                                    </NavItemLink>
+                                )}
+                                {showCodeMonitoring && (
+                                    <NavItemLink url="/code-monitoring" onClick={handleNavigationClick}>
+                                        Code Monitoring
+                                    </NavItemLink>
+                                )}
+                                {showSearchJobs && (
+                                    <NavItemLink url={PageRoutes.SearchJobs} onClick={handleNavigationClick}>
+                                        Search Jobs
+                                    </NavItemLink>
+                                )}
+                            </ul>
+                        </li>
                     )}
 
                     {isSourcegraphDotCom && (

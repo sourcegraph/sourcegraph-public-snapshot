@@ -37,9 +37,6 @@ var repoRelPath = core.NewRepoRelPathUnchecked
 func TestRanges(t *testing.T) {
 	mockCodeNavService := NewMockCodeNavService()
 
-	// Update this when TODO(id: check-path-multiple-uploads-api) is addressed.
-	mockCodeNavService.SCIPDocumentFunc.SetDefaultReturn(&scip.Document{}, nil)
-
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
 		Commit:       "deadbeef1",
@@ -448,12 +445,13 @@ func unwrap[T any](v T, err error) func(*testing.T) T {
 
 func makeTestResolver(t *testing.T) resolverstubs.CodeGraphDataResolver {
 	codeNavSvc := NewStrictMockCodeNavService()
+	gitTreeTranslator := codenav.NewMockGitTreeTranslator()
 	index := unwrap(repro.Index("", "testpkg", sampleSourceFiles(), nil))(t)
 	errUploadNotFound := errors.New("upload not found")
 	errDocumentNotFound := errors.New("document not found")
 	testUpload := uploadsshared.CompletedUpload{ID: 82}
-	codeNavSvc.SCIPDocumentFunc.SetDefaultHook(func(_ context.Context, uploadID int, path core.RepoRelPath) (*scip.Document, error) {
-		if uploadID != testUpload.ID {
+	codeNavSvc.SCIPDocumentFunc.SetDefaultHook(func(_ context.Context, _ codenav.GitTreeTranslator, upload core.UploadLike, path core.RepoRelPath) (*scip.Document, error) {
+		if upload.GetID() != testUpload.ID {
 			return nil, errUploadNotFound
 		}
 		for _, d := range index.Documents {
@@ -465,7 +463,7 @@ func makeTestResolver(t *testing.T) resolverstubs.CodeGraphDataResolver {
 	})
 
 	return newCodeGraphDataResolver(
-		codeNavSvc, testUpload,
+		codeNavSvc, gitTreeTranslator, testUpload,
 		&resolverstubs.CodeGraphDataOpts{Repo: &sgtypes.Repo{}, Path: repoRelPath("locals.repro")},
 		resolverstubs.ProvenancePrecise, newOperations(&observation.TestContext))
 }

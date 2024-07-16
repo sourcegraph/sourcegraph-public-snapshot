@@ -1,51 +1,44 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { mdiBlockHelper, mdiCog, mdiDotsHorizontal } from '@mdi/js'
-import { isEqual } from 'lodash'
-import { useLocation, useNavigate } from 'react-router-dom'
 
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
+    Alert,
+    Button,
+    Code,
     Container,
     ErrorAlert,
+    Icon,
+    Input,
     Link,
     LoadingSpinner,
-    PageHeader,
-    Input,
-    useDebounce,
-    Button,
-    Alert,
-    Text,
-    Code,
-    Icon,
     Menu,
     MenuButton,
-    MenuList,
     MenuItem,
     MenuLink,
+    MenuList,
+    PageHeader,
     Position,
+    Text,
+    useDebounce,
 } from '@sourcegraph/wildcard'
 
 import { externalRepoIcon } from '../components/externalServices/externalServices'
-import {
-    buildFilterArgs,
-    FilterControl,
-    type FilteredConnectionFilter,
-    type FilteredConnectionFilterValue,
-} from '../components/FilteredConnection'
+import { buildFilterArgs, FilterControl, type Filter, type FilterOption } from '../components/FilteredConnection'
+import { useUrlSearchParamsForConnectionState } from '../components/FilteredConnection/hooks/connectionState'
 import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
 import { ConnectionSummary } from '../components/FilteredConnection/ui'
-import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
 import { PageTitle } from '../components/PageTitle'
 import type {
+    ExternalServiceKindsResult,
+    ExternalServiceKindsVariables,
     PackagesResult,
     PackagesVariables,
     SiteAdminPackageFields,
-    ExternalServiceKindsVariables,
-    ExternalServiceKindsResult,
 } from '../graphql-operations'
 
 import { EXTERNAL_SERVICE_KINDS, PACKAGES_QUERY } from './backend'
@@ -150,8 +143,6 @@ const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodePr
 
 interface SiteAdminPackagesPageProps extends TelemetryProps, TelemetryV2Props {}
 
-const DEFAULT_FIRST = 15
-
 interface PackagesModalState {
     type: 'add' | 'manage' | null
     node?: SiteAdminPackageFields
@@ -164,8 +155,6 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
     telemetryService,
     telemetryRecorder,
 }) => {
-    const location = useLocation()
-    const navigate = useNavigate()
     const [modalState, setModalState] = useState<PackagesModalState>({ type: null })
 
     useEffect(() => {
@@ -179,7 +168,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
         error: extSvcError,
     } = useQuery<ExternalServiceKindsResult, ExternalServiceKindsVariables>(EXTERNAL_SERVICE_KINDS, {})
 
-    const ecosystemFilterValues = useMemo<FilteredConnectionFilterValue[]>(() => {
+    const ecosystemFilterValues = useMemo<FilterOption[]>(() => {
         const values = []
 
         for (const extSvc of extSvcs?.externalServices.nodes ?? []) {
@@ -196,13 +185,13 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
         return values
     }, [extSvcs?.externalServices.nodes])
 
-    const filters = useMemo<FilteredConnectionFilter[]>(
+    const filters = useMemo<Filter<'ecosystem'>[]>(
         () => [
             {
                 id: 'ecosystem',
                 label: 'Ecosystem',
                 type: 'select',
-                values: [
+                options: [
                     {
                         label: 'All',
                         value: 'all',
@@ -215,73 +204,28 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
         [ecosystemFilterValues]
     )
 
-    const [filterValues, setFilterValues] = useState<Map<string, FilteredConnectionFilterValue>>(() =>
-        getFilterFromURL(new URLSearchParams(location.search), filters)
-    )
-
-    const [searchValue, setSearchValue] = useState<string>(
-        () => new URLSearchParams(location.search).get('query') || ''
-    )
-
-    const query = useDebounce(searchValue, 200)
-
-    useEffect(() => {
-        const searchFragment = getUrlQuery({
-            query: searchValue,
-            filters,
-            filterValues,
-            search: location.search,
-        })
-        const searchFragmentParams = new URLSearchParams(searchFragment)
-        searchFragmentParams.sort()
-
-        const oldParams = new URLSearchParams(location.search)
-        oldParams.sort()
-
-        if (!isEqual(Array.from(searchFragmentParams), Array.from(oldParams))) {
-            navigate(
-                {
-                    search: searchFragment,
-                    hash: location.hash,
-                },
-                {
-                    replace: true,
-                    // Do not throw away flash messages
-                    state: location.state,
-                }
-            )
-        }
-    }, [filterValues, filters, searchValue, location, navigate])
-
-    const variables = useMemo<PackagesVariables>(() => {
-        const args = buildFilterArgs(filterValues)
-
-        return {
-            name: query,
-            kind: null,
-            after: null,
-            first: DEFAULT_FIRST,
-            ...args,
-        }
-    }, [filterValues, query])
-
+    const [connectionState, setConnectionState] = useUrlSearchParamsForConnectionState(filters)
+    const debouncedQuery = useDebounce(connectionState.query, 300)
     const {
         connection,
         error: packagesError,
         loading: packagesLoading,
         fetchMore,
         hasNextPage,
-    } = useShowMorePagination<PackagesResult, PackagesVariables, SiteAdminPackageFields>({
+    } = useShowMorePagination<PackagesResult, PackagesVariables, SiteAdminPackageFields, typeof connectionState>({
         query: PACKAGES_QUERY,
-        variables,
+        variables: {
+            ...buildFilterArgs(filters, connectionState),
+            query: debouncedQuery,
+        },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
             return data.packageRepoReferences
         },
         options: {
             fetchPolicy: 'cache-and-network',
-            useURL: true,
         },
+        state: [connectionState, setConnectionState],
     })
 
     const error = extSvcError || packagesError
@@ -330,8 +274,8 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
                         className="flex-1"
                         placeholder="Search packages..."
                         name="query"
-                        value={searchValue}
-                        onChange={event => setSearchValue(event.currentTarget.value)}
+                        value={connectionState.query}
+                        onChange={event => setConnectionState(prev => ({ ...prev, query: event.currentTarget.value }))}
                         autoComplete="off"
                         autoCorrect="off"
                         autoCapitalize="off"
@@ -342,21 +286,16 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
                     <div className="d-flex align-items-end justify-content-between mt-3">
                         <FilterControl
                             filters={filters}
-                            values={filterValues}
-                            onValueSelect={(filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) =>
-                                setFilterValues(values => {
-                                    const newValues = new Map(values)
-                                    newValues.set(filter.id, value)
-                                    return newValues
-                                })
+                            values={connectionState}
+                            onValueSelect={(filter, value) =>
+                                setConnectionState(prev => ({ ...prev, [filter.id]: value }))
                             }
                         />
                         {connection && (
                             <ConnectionSummary
                                 connection={connection}
-                                connectionQuery={query}
+                                connectionQuery={connectionState.query}
                                 hasNextPage={hasNextPage}
-                                first={DEFAULT_FIRST}
                                 noun="package"
                                 pluralNoun="packages"
                                 className="mb-0"

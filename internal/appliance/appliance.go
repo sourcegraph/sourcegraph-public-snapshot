@@ -3,6 +3,7 @@ package appliance
 import (
 	"context"
 
+	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,13 +12,17 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	pb "github.com/sourcegraph/sourcegraph/internal/appliance/v1"
 	"github.com/sourcegraph/sourcegraph/internal/releaseregistry"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Appliance struct {
+	adminPasswordBcrypt []byte
+
 	client                 client.Client
 	namespace              string
 	status                 Status
@@ -36,9 +41,20 @@ type Appliance struct {
 type Status string
 
 const (
-	StatusUnknown    Status = "unknown"
-	StatusSetup      Status = "setup"
-	StatusInstalling Status = "installing"
+	StatusUnknown         Status = "unknown"
+	StatusInstall         Status = "install"
+	StatusInstalling      Status = "installing"
+	StatusIdle            Status = "idle"
+	StatusUpgrading       Status = "upgrading"
+	StatusWaitingForAdmin Status = "wait-for-admin"
+	StatusRefresh         Status = "refresh"
+
+	// Secret and key names
+	dataSecretName                   = "appliance-data"
+	dataSecretJWTSigningKeyKey       = "jwt-signing-key"
+	dataSecretEncryptedPasswordKey   = "encrypted-admin-password"
+	initialPasswordSecretName        = "appliance-password"
+	initialPasswordSecretPasswordKey = "password"
 )
 
 func (s Status) String() string {
@@ -51,16 +67,86 @@ func NewAppliance(
 	latestSupportedVersion string,
 	namespace string,
 	logger log.Logger,
-) *Appliance {
-	return &Appliance{
+) (*Appliance, error) {
+	app := &Appliance{
 		client:                 client,
 		releaseRegistryClient:  relregClient,
 		latestSupportedVersion: latestSupportedVersion,
 		namespace:              namespace,
-		status:                 StatusSetup,
+		status:                 StatusInstall,
 		sourcegraph:            &config.Sourcegraph{},
 		logger:                 logger,
 	}
+	if err := app.reconcileBackingSecret(context.Background()); err != nil {
+		return nil, err
+	}
+	return app, nil
+}
+
+func (a *Appliance) reconcileBackingSecret(ctx context.Context) error {
+	backingSecretName := types.NamespacedName{Name: dataSecretName, Namespace: a.namespace}
+	backingSecret := &corev1.Secret{}
+	if err := a.client.Get(ctx, backingSecretName, backingSecret); err != nil {
+		// Create the secret if not found, generating and deriving fields.
+		if apierrors.IsNotFound(err) {
+			backingSecret.SetName(dataSecretName)
+			backingSecret.SetNamespace(a.namespace)
+			if err := a.ensureBackingSecretKeysExist(ctx, backingSecret); err != nil {
+				return err
+			}
+			return a.client.Create(ctx, backingSecret)
+		}
+
+		// Any other kind of error, return it
+		return errors.Wrap(err, "getting backing secret")
+	}
+
+	// The backing secret already exists
+	if err := a.ensureBackingSecretKeysExist(ctx, backingSecret); err != nil {
+		return err
+	}
+	return a.client.Update(ctx, backingSecret)
+}
+
+func (a *Appliance) ensureBackingSecretKeysExist(ctx context.Context, secret *corev1.Secret) error {
+	if secret.Data == nil {
+		secret.Data = map[string][]byte{}
+	}
+
+	if _, ok := secret.Data[dataSecretEncryptedPasswordKey]; !ok {
+		// Get admin-supplied password from separate secret, then delete it
+		initialPasswordSecretNsName := types.NamespacedName{Name: initialPasswordSecretName, Namespace: a.namespace}
+		var initialPasswordSecret corev1.Secret
+		if err := a.client.Get(ctx, initialPasswordSecretNsName, &initialPasswordSecret); err != nil {
+			a.logger.Info("no initial password secret exists. Please refer to https://github.com/sourcegraph/sourcegraph/blob/main/cmd/appliance/README.md#development")
+			// We don't return an error here because we don't want to crash on
+			// startup. We want to show the user an error message guiding them
+			// to configure a password.
+		}
+		if adminPassword, ok := initialPasswordSecret.Data[initialPasswordSecretPasswordKey]; ok {
+			adminPasswordBcrypt, err := bcrypt.GenerateFromPassword(adminPassword, 14)
+			if err != nil {
+				return errors.Wrap(err, "bcrypt-hashing password")
+			}
+			secret.Data[dataSecretEncryptedPasswordKey] = adminPasswordBcrypt
+
+			if err := a.client.Delete(ctx, &initialPasswordSecret); err != nil {
+				return errors.Wrap(err, "deleting initial password secret")
+			}
+		} else {
+			a.logger.Info("The k8s secret appliance-password exists, but it does not contain a key password. Please refer to https://github.com/sourcegraph/sourcegraph/blob/main/cmd/appliance/README.md#development")
+			// We don't return an error here because we don't want to crash on
+			// startup. We want to show the user an error message guiding them
+			// to configure a password.
+		}
+	}
+
+	a.loadValuesFromSecret(secret)
+	return nil
+}
+
+func (a *Appliance) loadValuesFromSecret(secret *corev1.Secret) {
+	a.adminPasswordBcrypt = secret.Data[dataSecretEncryptedPasswordKey]
 }
 
 func (a *Appliance) GetCurrentVersion(ctx context.Context) string {
@@ -115,7 +201,7 @@ func (a *Appliance) GetConfigMap(ctx context.Context, name string) (*corev1.Conf
 }
 
 func (a *Appliance) shouldSetupRun(ctx context.Context) (bool, error) {
-	cfgMap, err := a.GetConfigMap(ctx, "sourcegraph-appliance")
+	cfgMap, err := a.GetConfigMap(ctx, config.ConfigmapName)
 	switch {
 	case err != nil:
 		return false, err

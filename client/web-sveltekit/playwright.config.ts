@@ -5,6 +5,14 @@ const PORT = process.env.PORT ? Number(process.env.PORT) : 4173
 
 const config: PlaywrightTestConfig = {
     testMatch: 'src/**/*.spec.ts',
+    // For local testing
+    webServer: process.env.DISABLE_APP_ASSETS_MOCKING
+        ? {
+              command: 'pnpm build:preview && pnpm preview',
+              port: PORT,
+              reuseExistingServer: true,
+          }
+        : undefined,
     reporter: 'list',
     // note: if you proxy into a locally running vite preview, you may have to raise this to 60 seconds
     timeout: 5_000,

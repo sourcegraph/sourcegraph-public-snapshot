@@ -14,8 +14,14 @@ import (
 )
 
 type LsifStore interface {
+	// Multi-upload data
+
+	// FindDocumentIDs checks one path per upload, and returns the document IDs
+	// for those paths. If needed, we could generalize this to allow multiple paths
+	// per uploadID.
+	FindDocumentIDs(ctx context.Context, uploadIDToLookupPath map[int]core.UploadRelPath) (uploadIDToDocumentID map[int]int, _ error)
+
 	// Whole-document data
-	GetPathExists(ctx context.Context, bundleID int, path core.UploadRelPath) (bool, error)
 	GetStencil(ctx context.Context, bundleID int, path core.UploadRelPath) ([]shared.Range, error)
 	GetRanges(ctx context.Context, bundleID int, path core.UploadRelPath, startLine, endLine int) ([]shared.CodeIntelligenceRange, error)
 	SCIPDocument(ctx context.Context, uploadID int, path core.UploadRelPath) (_ *scip.Document, err error)

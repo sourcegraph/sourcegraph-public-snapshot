@@ -20,7 +20,7 @@ import { createCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { useSettings } from '@sourcegraph/shared/src/settings/settings'
+import { useSettings, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -339,8 +339,9 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     )
 
     const { isFileIgnored } = useCodyIgnore()
+    const newCodyWeb = useExperimentalFeatures(features => features.newCodyWeb)
     const isCodyEnabledForFile =
-        window.context?.codyEnabledForCurrentUser && !isFileIgnored(blobInfo.repoName, blobInfo.filePath)
+        !newCodyWeb && window.context?.codyEnabledForCurrentUser && !isFileIgnored(blobInfo.repoName, blobInfo.filePath)
 
     const extensions = useMemo(
         () => [
@@ -504,7 +505,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
     const logEventOnCopy = useCallback(() => {
         telemetryService.log(...codeCopiedEvent('blob-view'))
-        telemetryRecorder.recordEvent('repo.blob.code', 'copy')
+        telemetryRecorder.recordEvent('blob.code', 'copy')
     }, [telemetryService, telemetryRecorder])
 
     return (

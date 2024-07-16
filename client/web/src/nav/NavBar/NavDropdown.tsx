@@ -26,28 +26,19 @@ interface NavDropdownProps {
         /** Alternative path to match against if item is active */
         altPath?: string
     } & Pick<NavLinkProps, 'variant'>
-    /**
-     * The first item in the dropdown menu that serves as the "home" item. It uses the path from the
-     * toggleItem.
-     */
-    homeItem?: Omit<NavDropdownItem, 'path'>
     /** Items to display in the dropdown */
     items: NavDropdownItem[]
     /** A current react router route match */
     routeMatch?: string
     /** The name of the dropdown to use for accessible labels */
     name: string
-
-    __testing__isOpen?: boolean
 }
 
 export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDropdownProps>> = ({
     toggleItem,
-    homeItem: homeItem,
     items,
     routeMatch,
     name,
-    __testing__isOpen,
 }) => {
     const location = useLocation()
     const isItemSelected = useMemo(
@@ -104,16 +95,7 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                     </MenuButton>
                                 </div>
 
-                                <MenuList
-                                    className={styles.menuList}
-                                    targetPadding={EMPTY_RECTANGLE}
-                                    isOpen={__testing__isOpen}
-                                >
-                                    {homeItem && (
-                                        <MenuLink as={Link} key={toggleItem.path} to={toggleItem.path}>
-                                            {homeItem.content}
-                                        </MenuLink>
-                                    )}
+                                <MenuList className={styles.menuList} targetPadding={EMPTY_RECTANGLE}>
                                     {items.map(item => (
                                         <MenuLink as={Link} key={item.path} to={item.path} target={item.target}>
                                             {item.content}

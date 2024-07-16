@@ -277,12 +277,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	// mini-HACK: pass in the scope using repo: filters. In an ideal world, we
 	// would not be using query text manipulation for this and would be using
 	// the job structs directly.
-	regexEscapedRepoNames := make([]string, len(args.Repos))
-	for i, repo := range args.Repos {
-		regexEscapedRepoNames[i] = regexp.QuoteMeta(string(repo.Name))
-	}
-
-	keywordQuery := fmt.Sprintf(`repo:^%s$ %s %s`, query.UnionRegExps(regexEscapedRepoNames), getKeywordContextExcludeFilePathsQuery(), args.Query)
+	keywordQuery := fmt.Sprintf(`repo:%s %s %s`, reposAsRegexp(args.Repos), getKeywordContextExcludeFilePathsQuery(), args.Query)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -335,6 +330,16 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	return collected, nil
 }
 
+// reposAsRegexp returns a regex pattern that matches the names of the given repos,
+// and only the names of the given repos.
+func reposAsRegexp(repos []types.RepoIDName) string {
+	anchoredAndEscapedNames := make([]string, len(repos))
+	for i, repo := range repos {
+		anchoredAndEscapedNames[i] = fmt.Sprintf("^%s$", regexp.QuoteMeta(string(repo.Name)))
+	}
+	return query.UnionRegExps(anchoredAndEscapedNames)
+}
+
 func addLimitsAndFilter(plan *search.Inputs, filter fileMatcher, args GetContextArgs) {
 	if plan.Features == nil {
 		plan.Features = &search.Features{}
@@ -346,22 +351,17 @@ func addLimitsAndFilter(plan *search.Inputs, filter fileMatcher, args GetContext
 }
 
 func fileMatchToContextMatch(fm *result.FileMatch) FileChunkContext {
-	if len(fm.ChunkMatches) == 0 {
+	var startLine int
+	if len(fm.Symbols) != 0 {
+		startLine = max(0, fm.Symbols[0].Symbol.Line-5) // 5 lines of leading context, clamped to zero
+	} else if len(fm.ChunkMatches) != 0 {
+		// To provide some context variety, we just use the top-ranked
+		// chunk (the first chunk) from each file match.
+		startLine = max(0, fm.ChunkMatches[0].ContentStart.Line-5) // 5 lines of leading context, clamped to zero
+	} else {
 		// If this is a filename-only match, return a single chunk at the start of the file
-		return FileChunkContext{
-			RepoName:  fm.Repo.Name,
-			RepoID:    fm.Repo.ID,
-			CommitID:  fm.CommitID,
-			Path:      fm.Path,
-			StartLine: 0,
-		}
+		startLine = 0
 	}
-
-	// To provide some context variety, we just use the top-ranked
-	// chunk (the first chunk) from each file
-
-	// 5 lines of leading context, clamped to zero
-	startLine := max(0, fm.ChunkMatches[0].ContentStart.Line-5)
 
 	return FileChunkContext{
 		RepoName:  fm.Repo.Name,

@@ -3,6 +3,7 @@ import { get } from 'svelte/store'
 
 import { browser } from '$app/environment'
 import { navigating } from '$app/stores'
+import { getGraphQLClient } from '$lib/graphql'
 import { SearchPatternType } from '$lib/graphql-operations'
 import { parseExtendedSearchURL, type ExtendedParsedSearchURL } from '$lib/search'
 import { SearchCachePolicy, getCachePolicyFromURL } from '$lib/search/state'
@@ -11,14 +12,13 @@ import {
     LATEST_VERSION,
     type AggregateStreamingSearchResults,
     type StreamSearchOptions,
-    filterExists,
-    FilterType,
-    getGlobalSearchContextFilter,
-    omitFilter,
     emptyAggregateResults,
 } from '$lib/shared'
 
 import type { PageLoad } from './$types'
+import DotcomFooterLinks from './DotcomFooterLinks.svelte'
+import { DefaultSearchContext } from './page.gql'
+import { queryExampleDotcom, queryExampleEnterprise } from './queryExamples'
 
 type SearchStreamCacheEntry = Observable<AggregateStreamingSearchResults>
 
@@ -86,8 +86,10 @@ export const load: PageLoad = async ({ parent, url, depends }) => {
     const hasQuery = url.searchParams.has('q')
     const cachePolicy = getCachePolicyFromURL(url)
     const trace = url.searchParams.get('trace') ?? undefined
+    const sourcegraphDotComMode = window.context.sourcegraphDotComMode
 
-    const codyHref = window.context.sourcegraphDotComMode ? 'https://sourcegraph.com/cody' : '/cody'
+    const codyHref = sourcegraphDotComMode ? 'https://sourcegraph.com/cody' : '/cody'
+    const footer = sourcegraphDotComMode ? DotcomFooterLinks : null
 
     if (hasQuery) {
         const parsedQuery = parseExtendedSearchURL(url)
@@ -99,15 +101,6 @@ export const load: PageLoad = async ({ parent, url, depends }) => {
             filters: queryFilters,
         } = parsedQuery
         depends(`search:${url}`)
-
-        let searchContext = 'global'
-        if (filterExists(query, FilterType.context)) {
-            // TODO: Validate search context
-            const globalSearchContext = getGlobalSearchContextFilter(query)
-            if (globalSearchContext?.spec) {
-                searchContext = globalSearchContext.spec
-            }
-        }
 
         const options: StreamSearchOptions = {
             version: LATEST_VERSION,
@@ -142,33 +135,31 @@ export const load: PageLoad = async ({ parent, url, depends }) => {
 
         return {
             codyHref,
-            showDotcomFooterLinks: window.context.sourcegraphDotComMode,
+            footer,
             searchStream,
             queryFilters,
             queryFromURL: query,
             queryOptions: {
-                query: withoutGlobalContext(query),
+                query,
                 caseSensitive,
                 patternType,
                 searchMode,
-                searchContext,
             },
         }
     }
+
+    const defaultSearchContext = await getGraphQLClient()
+        .query(DefaultSearchContext, {})
+        .toPromise()
+        .then(result => result.data?.defaultSearchContext?.spec ?? 'global')
+        .catch(() => 'global')
     return {
         codyHref,
-        showDotcomFooterLinks: window.context.sourcegraphDotComMode,
+        footer,
+        queryExample: sourcegraphDotComMode ? queryExampleDotcom() : queryExampleEnterprise(),
+        showExampleQueries: sourcegraphDotComMode,
         queryOptions: {
-            query: '',
+            query: `context:${defaultSearchContext} `,
         },
     }
-}
-
-function withoutGlobalContext(query: string): string {
-    // TODO: Validate search context
-    const globalSearchContext = getGlobalSearchContextFilter(query)
-    if (globalSearchContext?.spec) {
-        return omitFilter(query, globalSearchContext.filter)
-    }
-    return query
 }

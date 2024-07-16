@@ -76,7 +76,7 @@ const IS_BAZEL = process.env.BAZEL === '1'
 
 const SCHEMA_DIR = `${IS_BAZEL ? '' : '../../'}cmd/frontend/graphqlbackend`
 
-const ASSETS_DIR = process.env.ASSETS_DIR || './build/_sk/'
+const ASSETS_DIR = process.env.ASSETS_DIR || './build'
 
 const typeDefs = glob
     .sync('**/*.graphql', { cwd: SCHEMA_DIR })
@@ -231,6 +231,16 @@ class Sourcegraph {
         this.graphqlMock.addFixtures(fixtures)
     }
 
+    public setWindowContext(context: Partial<Window['context']>): Promise<void> {
+        return this.page.addInitScript(context => {
+            if (!window.context) {
+                // @ts-expect-error - Unclear how to type this correctly
+                window.context = {}
+            }
+            Object.assign(window.context, context)
+        }, context)
+    }
+
     public signIn(userMock: UserMock = {}): void {
         this.mockTypes({
             Query: () => ({
@@ -248,6 +258,13 @@ class Sourcegraph {
                 currentUser: null,
             }),
         })
+    }
+
+    /**
+     * Mock the current window context to be in "dotcom mode" (sourcegraph.com).
+     */
+    public dotcomMode(): void {
+        this.setWindowContext({ sourcegraphDotComMode: true })
     }
 
     public teardown(): void {

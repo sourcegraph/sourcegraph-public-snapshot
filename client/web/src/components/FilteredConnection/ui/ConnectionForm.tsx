@@ -3,13 +3,13 @@ import React, { useCallback, useRef } from 'react'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { useAutoFocus, Input, Form } from '@sourcegraph/wildcard'
+import { Form, Input, useAutoFocus } from '@sourcegraph/wildcard'
 
-import { FilterControl, type FilteredConnectionFilter, type FilteredConnectionFilterValue } from '../FilterControl'
+import { FilterControl, type Filter, type FilterOption, type FilterValues } from '../FilterControl'
 
 import styles from './ConnectionForm.module.scss'
 
-export interface ConnectionFormProps {
+export interface ConnectionFormProps<TFilterKey extends string = string> {
     /** Hides the search input field. */
     hideSearch?: boolean
 
@@ -42,14 +42,14 @@ export interface ConnectionFormProps {
      *
      * Filters are mutually exclusive.
      */
-    filters?: FilteredConnectionFilter[]
+    filters?: Filter<TFilterKey>[]
 
-    onFilterSelect?: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
+    onFilterSelect?: (filter: Filter<TFilterKey>, value: FilterOption['value'] | undefined) => void
 
     /** An element rendered as a sibling of the filters. */
     additionalFilterElement?: React.ReactElement
 
-    filterValues?: Map<string, FilteredConnectionFilterValue>
+    filterValues?: FilterValues<TFilterKey>
 
     compact?: boolean
 }
@@ -58,7 +58,9 @@ export interface ConnectionFormProps {
  * FilteredConnection form input.
  * Supports <input> for querying and <select>/<radio> controls for filtering
  */
-export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormProps>(
+export const ConnectionForm: <TFilterKey extends string = string>(
+    props: ConnectionFormProps<TFilterKey> & { ref?: React.Ref<HTMLInputElement> }
+) => JSX.Element | null = React.forwardRef<HTMLInputElement, ConnectionFormProps<any>>(
     (
         {
             hideSearch,
@@ -122,4 +124,3 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
         )
     }
 )
-ConnectionForm.displayName = 'ConnectionForm'

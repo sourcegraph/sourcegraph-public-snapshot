@@ -7,14 +7,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 )
 
 type Source struct {
 	allowAnonymous    bool
-	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
+	concurrencyConfig codygatewayactor.ActorConcurrencyLimitConfig
 }
 
-func NewSource(allowAnonymous bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
+func NewSource(allowAnonymous bool, concurrencyConfig codygatewayactor.ActorConcurrencyLimitConfig) *Source {
 	return &Source{allowAnonymous: allowAnonymous, concurrencyConfig: concurrencyConfig}
 }
 

@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const maxPayloadSize = 10 * 1024 * 1024 // 10mb
+const maxPayloadSize = 10 * 1024 * 1024 // 10MiB
 
 var doneBytes = []byte("[DONE]")
 
