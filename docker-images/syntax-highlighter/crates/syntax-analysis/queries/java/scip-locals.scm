@@ -92,12 +92,12 @@
     type: [
            ; This can be a reference to a local (method's type parameter)
            ; or a global
-           (type_identifier) @reference.either
+           (type_identifier) @reference.type
 
            ; For nested classes used in `new` expressions (e.g. `new TodoApp.Item`)
            ; we emit references to TodoApp, Item
            (scoped_type_identifier
-               (type_identifier)* @reference.either
+               (type_identifier)* @reference.type
            )
     ]
 )
@@ -107,26 +107,26 @@
 ; As we don't support local methods yet, we unequivocally mark this reference
 ; as global
 (method_invocation
-  name: (identifier) @reference.global
+  name: (identifier) @reference.global.method
 )
 
 ; MyType variable = ...
 ; ^^^^^^
 (local_variable_declaration
-  type: (type_identifier) @reference
-    (#not-eq? @reference "var")
+  type: (type_identifier) @reference.type
+    (#not-eq? @reference.type "var")
 )
 
 ; class Binary<N extends Number> {...
 ;                        ^^^^^^
 (type_bound
-  (type_identifier)* @reference
+  (type_identifier)* @reference.type
 )
 
 ; for (MyType variable: variables) {...
 ;      ^^^^^^
 (enhanced_for_statement
-  type: (type_identifier) @reference
+  type: (type_identifier) @reference.type
 )
 
 ; public class test<T extends Exception> {
@@ -134,12 +134,12 @@
 ; 			throws T, NoSuchFieldException, IllegalAccessException {}
 ;                  ^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^
 ; }
-(throws (type_identifier)* @reference)
+(throws (type_identifier)* @reference.type)
 
 ; Person::getName
 ; ^^^^^^  ^^^^^^^
-(method_reference (identifier)* @reference.global)
+(method_reference (identifier)* @reference.global.method)
 
 ; all other references we assume to be local only
 (identifier) @reference.local
-(type_identifier) @reference.local
+(type_identifier) @reference.local.type

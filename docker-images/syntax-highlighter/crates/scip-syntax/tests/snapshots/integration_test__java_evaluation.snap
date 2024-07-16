@@ -155,16 +155,16 @@ local doc-0-4
 local doc-0-5
    1.00 local doc-0-4 [4/4 occurrences]
 
-scip-syntax . . . add.
+scip-syntax . . . add().
    1.00 semanticdb . . . java/util/ArrayList#add(+1). [1/1 occurrences]
 
-scip-syntax . . . println.
+scip-syntax . . . println().
    1.00 semanticdb . . . java/io/PrintStream#println(+8). [3/3 occurrences]
 
-scip-syntax . . . Item.
+scip-syntax . . . Item#
    1.00 semanticdb . . . com/sourcegraph/graph/twodwo/TodoList#Item# [1/5 occurrences]
 
-scip-syntax . . . getTitle.
+scip-syntax . . . getTitle().
    1.00 semanticdb . . . com/sourcegraph/graph/twodwo/TodoList#Item#getTitle(). [2/3 occurrences]
 
 scip-ctags . . . `com.sourcegraph.graph.twodwo`/Main#
@@ -182,17 +182,17 @@ local doc-1-2
 local doc-1-3
    1.00 local doc-1-2 [2/2 occurrences]
 
-scip-syntax . . . TodoList.
+scip-syntax . . . TodoList#
    0.40 semanticdb . . . com/sourcegraph/graph/twodwo/TodoList#`<init>`(). [1/2 occurrences]
    0.60 semanticdb . . . com/sourcegraph/graph/twodwo/TodoList# [3/4 occurrences]
 
-scip-syntax . . . addTodo.
+scip-syntax . . . addTodo().
    1.00 semanticdb . . . com/sourcegraph/graph/twodwo/TodoList#addTodo(). [3/4 occurrences]
 
-scip-syntax . . . summarise.
+scip-syntax . . . summarise().
    1.00 semanticdb . . . com/sourcegraph/graph/twodwo/TodoList#summarise(). [1/2 occurrences]
 
-scip-syntax . . . String.
+scip-syntax . . . String#
    1.00 semanticdb . . . java/lang/String# [1/6 occurrences]
 
 

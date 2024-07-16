@@ -47,6 +47,23 @@ use crate::tree_sitter_ext::NodeExt;
 const MAX_SCOPE_DEPTH: i32 = 10000;
 
 #[derive(Clone, Debug, Copy, PartialEq)]
+enum ReferenceDescriptor {
+    Method,
+    Type,
+}
+impl ReferenceDescriptor {
+    fn from_str(str: &str) -> Option<ReferenceDescriptor> {
+        if str == "method" {
+            Some(ReferenceDescriptor::Method)
+        } else if str == "type" {
+            Some(ReferenceDescriptor::Type)
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Clone, Debug, Copy, PartialEq)]
 enum ReferenceKind {
     /// Pure local reference can only be resolved to a definition
     /// within the locals scope tree, and if definition is not found,
@@ -60,11 +77,11 @@ enum ReferenceKind {
 }
 
 impl ReferenceKind {
-    fn from_str(str: &str) -> Option<&ReferenceKind> {
-        if str == "global" {
-            Some(&ReferenceKind::Global)
-        } else if str == "local" {
-            Some(&ReferenceKind::Local)
+    fn from_str(str: &str) -> Option<ReferenceKind> {
+        if str.starts_with("global") {
+            Some(ReferenceKind::Global)
+        } else if str.starts_with("local") {
+            Some(ReferenceKind::Local)
         } else {
             None
         }
@@ -92,7 +109,8 @@ struct Definition<'a> {
 struct Reference<'a> {
     node: Node<'a>,
     name: Name,
-    kind: Option<&'a ReferenceKind>,
+    kind: Option<ReferenceKind>,
+    descriptor: Option<ReferenceDescriptor>,
     /// When dealing with def_refs there are references that we've
     /// already resolved to their definitions. Because we don't want
     /// to duplicate that work we store the definition's id here.
@@ -214,7 +232,8 @@ struct DefCapture<'a> {
 #[derive(Debug)]
 struct RefCapture<'a> {
     node: Node<'a>,
-    kind: Option<&'a ReferenceKind>,
+    kind: Option<ReferenceKind>,
+    descriptor: Option<ReferenceDescriptor>,
 }
 
 /// Created by LocalResolver::ancestors()
@@ -401,6 +420,7 @@ impl<'a> LocalResolver<'a> {
                     node,
                     resolves_to: Some(definition_id),
                     kind: None,
+                    descriptor: None,
                 })
             }
         };
@@ -518,6 +538,7 @@ impl<'a> LocalResolver<'a> {
                 name,
                 resolves_to: None,
                 kind: ref_capture.kind,
+                descriptor: ref_capture.descriptor,
             };
             self.add_reference(scope, reference)
         }
@@ -603,7 +624,7 @@ impl<'a> LocalResolver<'a> {
                             .unwrap_or(capture_name),
                     );
 
-                    if !self.options.emit_global_references && kind != Some(&ReferenceKind::Local) {
+                    if !self.options.emit_global_references && kind != Some(ReferenceKind::Local) {
                         continue;
                     }
 
@@ -625,9 +646,22 @@ impl<'a> LocalResolver<'a> {
                         _ => {}
                     }
 
+                    let descriptor = match kind {
+                        Some(ReferenceKind::Global) => capture_name
+                            .strip_prefix("reference.global.")
+                            .and_then(ReferenceDescriptor::from_str),
+                        Some(ReferenceKind::Local) => capture_name
+                            .strip_prefix("reference.local.")
+                            .and_then(ReferenceDescriptor::from_str),
+                        None => capture_name
+                            .strip_prefix("reference.")
+                            .and_then(ReferenceDescriptor::from_str),
+                    };
+
                     references.push(RefCapture {
                         node: capture.node,
                         kind,
+                        descriptor,
                     });
                 } else if capture_name == "occurrence.skip" {
                     let offset = capture.node.start_byte();
@@ -775,12 +809,20 @@ impl<'a> LocalResolver<'a> {
             .unwrap()
             .to_string();
 
+        let suffix = match reference.descriptor {
+            Some(ReferenceDescriptor::Type) => descriptor::Suffix::Type,
+            Some(ReferenceDescriptor::Method) => descriptor::Suffix::Method,
+            None => descriptor::Suffix::Term,
+        };
+
+        println!("Descriptor: {referenced_name} --> {suffix:?}",);
+
         let symbol = scip::symbol::format_symbol(scip::types::Symbol {
             scheme: "scip-syntax".into(),
             package: None.into(),
             descriptors: vec![scip::types::Descriptor {
                 name: referenced_name,
-                suffix: descriptor::Suffix::Term.into(),
+                suffix: suffix.into(),
                 ..Default::default()
             }],
             ..Default::default()
@@ -816,7 +858,7 @@ impl<'a> LocalResolver<'a> {
 
                 match reference.kind {
                     Some(ReferenceKind::Local) | None => {
-                        let is_pure_local_reference = reference.kind == Some(&ReferenceKind::Local);
+                        let is_pure_local_reference = reference.kind == Some(ReferenceKind::Local);
 
                         if is_pure_local_reference
                             && self
