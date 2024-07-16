@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig"
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -51,7 +53,8 @@ func (b *builder) build() (*types.ModelConfiguration, error) {
 	// If no site configuration data is supplied, then just use Sourcegraph
 	// supplied data.
 	if b.siteConfigData == nil {
-		return deepCopy(baseConfig)
+		routeUnconfiguredProvidersToCodyGateway(baseConfig)
+		return baseConfig, nil
 	}
 	// But if we are using site config data, ensure it is valid before appying.
 	if vErr := modelconfig.ValidateSiteConfig(b.siteConfigData); vErr != nil {
@@ -106,28 +109,9 @@ func applySiteConfig(baseConfig *types.ModelConfiguration, siteConfig *types.Sit
 		if modelFilters := sgModelConfig.ModelFilters; modelFilters != nil {
 			var filteredModels []types.Model
 			for _, baseConfigModel := range mergedConfig.Models {
-				// Status filter.
-				if modelFilters.StatusFilter != nil {
-					if !slices.Contains(modelFilters.StatusFilter, string(baseConfigModel.Category)) {
-						continue
-					}
+				if isModelAllowed(baseConfigModel, *modelFilters) {
+					filteredModels = append(filteredModels, baseConfigModel)
 				}
-
-				// Allow list. If not specified, include all models. Otherwise, ONLY include the model
-				// IFF it matches one of the allow rules.
-				if len(modelFilters.Allow) > 0 {
-					if !filterListMatches(baseConfigModel.ModelRef, modelFilters.Allow) {
-						continue
-					}
-				}
-				// Deny list. Filter the model if it matches any deny rules.
-				if len(modelFilters.Deny) > 0 {
-					if filterListMatches(baseConfigModel.ModelRef, modelFilters.Deny) {
-						continue
-					}
-				}
-
-				filteredModels = append(filteredModels, baseConfigModel)
 			}
 
 			// Replace the base config models with the filtered set.
@@ -211,6 +195,13 @@ func applySiteConfig(baseConfig *types.ModelConfiguration, siteConfig *types.Sit
 		}
 	}
 
+	// For any providers still missing server-side config, wire them to send
+	// requests to Cody Gateway. We do this BEFORE merging in model/provider
+	// overrides so that new providers defined by the admin don't get wired
+	// to Cody Gateway. (And instead will fail at runtime because no server-side
+	// config is available.)
+	routeUnconfiguredProvidersToCodyGateway(mergedConfig)
+
 	// If there are remaining keys in `modelOverrideLookup` means that the are for a ModelRef that
 	// was NOT found in the base configuration. So in that case we add those as "entirely new" models
 	// that were only defined in the site config, and wasn't referenced in the base config.
@@ -245,69 +236,18 @@ func applySiteConfig(baseConfig *types.ModelConfiguration, siteConfig *types.Sit
 		mergedConfig.Models = append(mergedConfig.Models, *newModel)
 	}
 
-	// Use the DefaultModels from the site config. Otherwise, we need to pick something randomly
-	// to ensure they are at least defined.
+	// Have any admin-supplied default models overwrite what may have been set by
+	// the base config.
 	if siteConfig.DefaultModels != nil {
 		mergedConfig.DefaultModels.Chat = siteConfig.DefaultModels.Chat
 		mergedConfig.DefaultModels.CodeCompletion = siteConfig.DefaultModels.CodeCompletion
 		mergedConfig.DefaultModels.FastChat = siteConfig.DefaultModels.FastChat
-	} else {
-		// getModelWithRequirements returns the the first model available with the specific capability and a matching
-		// category. Returns nil if no such model is found.
-		getModelWithRequirements := func(
-			wantCapability types.ModelCapability, wantCategories ...types.ModelCategory) *types.ModelRef {
-			for _, model := range mergedConfig.Models {
-				// Check if the model can be used for that purpose.
-				var hasCapability bool
-				for _, gotCapability := range model.Capabilities {
-					if gotCapability == wantCapability {
-						hasCapability = true
-						break
-					}
-				}
-				if !hasCapability {
-					return nil
-				}
+	}
 
-				// Check if the model has a matching category.
-				for _, wantCategory := range wantCategories {
-					if model.Category == wantCategory {
-						return &model.ModelRef
-					}
-				}
-			}
-			return nil
-		}
-
-		const (
-			accuracy = types.ModelCategoryAccuracy
-			balanced = types.ModelCategoryBalanced
-			speed    = types.ModelCategorySpeed
-		)
-
-		// Infer the default models to used based on category. This is probably not going to lead to great
-		// results. But :shrug: it's better than just crash looping because the config is under-specified.
-		if mergedConfig.DefaultModels.Chat == "" {
-			validModel := getModelWithRequirements(types.ModelCapabilityAutocomplete, accuracy, balanced)
-			if validModel == nil {
-				return nil, errors.New("no suitable model found for Chat")
-			}
-			mergedConfig.DefaultModels.Chat = *validModel
-		}
-		if mergedConfig.DefaultModels.FastChat == "" {
-			validModel := getModelWithRequirements(types.ModelCapabilityAutocomplete, speed, balanced)
-			if validModel == nil {
-				return nil, errors.New("no suitable model found for FastChat")
-			}
-			mergedConfig.DefaultModels.FastChat = *validModel
-		}
-		if mergedConfig.DefaultModels.CodeCompletion == "" {
-			validModel := getModelWithRequirements(types.ModelCapabilityAutocomplete, speed, balanced)
-			if validModel == nil {
-				return nil, errors.New("no suitable model found for Chat")
-			}
-			mergedConfig.DefaultModels.CodeCompletion = *validModel
-		}
+	// But we still need to confirm that all the default models are actually valid.
+	// e.g. not filtered out because of the model filter, or have an invalid ModelRef.
+	if err := maybeFixDefaultModels(&mergedConfig.DefaultModels, mergedConfig.Models); err != nil {
+		return nil, err
 	}
 
 	// Validate the resulting configuration.
@@ -315,4 +255,137 @@ func applySiteConfig(baseConfig *types.ModelConfiguration, siteConfig *types.Sit
 		return nil, errors.Wrap(err, "result of application was invalid configuration")
 	}
 	return mergedConfig, nil
+}
+
+// isModelAllowed returns whether or not the model should be supported as per the
+// supplied model filter configuration.
+func isModelAllowed(m types.Model, filter types.ModelFilters) bool {
+	// Status filter. Exclude any models whose status doesn't match what is required.
+	if filter.StatusFilter != nil {
+		if !slices.Contains(filter.StatusFilter, string(m.Status)) {
+			return false
+		}
+	}
+
+	// Allow list. If not specified, include all models. Otherwise, ONLY include the model
+	// IFF it matches one of the allow rules.
+	if len(filter.Allow) > 0 {
+		if !filterListMatches(m.ModelRef, filter.Allow) {
+			return false
+		}
+	}
+	// Deny list. Filter the model if it matches any deny rules.
+	if len(filter.Deny) > 0 {
+		if filterListMatches(m.ModelRef, filter.Deny) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// maybeFixDefaultModels will verify that the supplied DefaultModels set is valid, possibly
+// modifying a model in case the existing value was incorrect.
+func maybeFixDefaultModels(defaultModels *types.DefaultModels, allModels []types.Model) error {
+	// getModelWithRequirements returns the the first model available with the specific capability and a matching
+	// category. Returns nil if no such model is found.
+	getModelWithRequirements := func(
+		wantCapability types.ModelCapability, wantCategories ...types.ModelCategory) *types.ModelRef {
+		for _, model := range allModels {
+			// Check if the model can be used for that purpose.
+			var hasCapability bool
+			for _, gotCapability := range model.Capabilities {
+				if gotCapability == wantCapability {
+					hasCapability = true
+					break
+				}
+			}
+			if !hasCapability {
+				continue
+			}
+
+			// Check if the model has a matching category.
+			for _, wantCategory := range wantCategories {
+				if model.Category == wantCategory {
+					return &model.ModelRef
+				}
+			}
+		}
+		return nil
+	}
+
+	modelFound := func(mref types.ModelRef) bool {
+		for _, model := range allModels {
+			if model.ModelRef == mref {
+				return true
+			}
+		}
+		return false
+	}
+
+	const (
+		accuracy = types.ModelCategoryAccuracy
+		balanced = types.ModelCategoryBalanced
+		speed    = types.ModelCategorySpeed
+	)
+
+	// Infer the default models to used based on category. This is probably not going to lead to great
+	// results. But :shrug: it's better than just crash looping because the config is under-specified.
+	if defaultModels.Chat == "" || !modelFound(defaultModels.Chat) {
+		validModelRef := getModelWithRequirements(types.ModelCapabilityChat, accuracy, balanced)
+		if validModelRef == nil {
+			return errors.Errorf("no suitable model found for Chat (%d candidates)", len(allModels))
+		}
+		defaultModels.Chat = *validModelRef
+	}
+	if defaultModels.FastChat == "" || !modelFound(defaultModels.FastChat) {
+		validModelRef := getModelWithRequirements(types.ModelCapabilityChat, speed, balanced)
+		if validModelRef == nil {
+			return errors.Errorf("no suitable model found for FastChat (%d candidates)", len(allModels))
+		}
+		defaultModels.FastChat = *validModelRef
+	}
+	if defaultModels.CodeCompletion == "" || !modelFound(defaultModels.CodeCompletion) {
+		validModelRef := getModelWithRequirements(types.ModelCapabilityAutocomplete, speed, balanced)
+		if validModelRef == nil {
+			return errors.Errorf("no suitable model found for CodeCompletion (%d candidates)", len(allModels))
+		}
+		defaultModels.CodeCompletion = *validModelRef
+	}
+
+	return nil
+}
+
+// routeUnconfiguredProvidersToCodyGateway verifies that each provider has server-side configuration
+// data present. (So that it can actually serve LLM traffic.) However, for any providers missing
+// server-side configuration, they will be updated to send traffic to Cody Gateway.
+func routeUnconfiguredProvidersToCodyGateway(config *types.ModelConfiguration) {
+	siteConfig := conf.Get()
+
+	endpoint := conf.CodyGatewayProdEndpoint
+	accessToken := license.GenerateLicenseKeyBasedAccessToken(siteConfig.LicenseKey)
+
+	// Apply any overrides if present in the site config.
+	if siteConfig.ModelConfiguration != nil && siteConfig.ModelConfiguration.Sourcegraph != nil {
+		sgConfig := siteConfig.ModelConfiguration.Sourcegraph
+		if sgConfig.AccessToken != nil {
+			accessToken = *sgConfig.AccessToken
+		}
+		if sgConfig.Endpoint != nil {
+			endpoint = *sgConfig.Endpoint
+		}
+	}
+
+	for i := range config.Providers {
+		provider := &config.Providers[i]
+
+		if provider.ServerSideConfig == nil {
+			provider.ServerSideConfig = &types.ServerSideProviderConfig{
+				SourcegraphProvider: &types.SourcegraphProviderConfig{
+					AccessToken: accessToken,
+					Endpoint:    endpoint,
+				},
+			}
+		}
+	}
 }

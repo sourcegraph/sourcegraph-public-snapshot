@@ -23,6 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+const CodyGatewayProdEndpoint = "https://cody-gateway.sourcegraph.com"
+
 func init() {
 	deployType := deploy.Type()
 	if !deploy.IsValidDeployType(deployType) {
@@ -726,7 +728,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	if completionsConfig.Provider == string(conftypes.CompletionsProviderNameSourcegraph) {
 		// If no endpoint is configured, use a default value.
 		if completionsConfig.Endpoint == "" {
-			completionsConfig.Endpoint = "https://cody-gateway.sourcegraph.com"
+			completionsConfig.Endpoint = CodyGatewayProdEndpoint
 		}
 
 		// Set the access token, either use the configured one, or generate one for the platform.

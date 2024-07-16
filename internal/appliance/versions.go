@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Return the subset of allVersions that are at most n minor revisions behind
+// NMinorVersions returns the subset of allVersions that are at most n minor revisions behind
 // latestSupportedVersion.
 func NMinorVersions(allVersions []string, latestSupportedVersion string, n uint64) ([]string, error) {
 	latestSupported, err := semver.NewVersion(latestSupportedVersion)

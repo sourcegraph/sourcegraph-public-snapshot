@@ -1,8 +1,9 @@
 import { error } from '@sveltejs/kit'
 
-import { isErrorLike } from '$lib/common'
 import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
 import { GitRefType } from '$lib/graphql-types'
+import type { ResolvedRevision } from '$lib/repo/utils'
+import { RevisionNotFoundError } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
 import { RepositoryGitCommits, RepositoryGitRefs } from './layout.gql'
@@ -11,19 +12,27 @@ export const load: LayoutLoad = async ({ parent }) => {
     // By validating the resolved revision here we can guarantee to
     // subpages that if they load the requested revision exists. This
     // relieves subpages from testing whether the revision is valid.
-    const { repoName, resolvedRevisionOrError } = await parent()
+    const { revision, defaultBranch, resolvedRepository, repoName } = await parent()
 
-    if (isErrorLike(resolvedRevisionOrError)) {
-        error(404, resolvedRevisionOrError)
+    const commit = resolvedRepository.commit || resolvedRepository.changelist?.commit
+
+    if (!commit) {
+        error(404, new RevisionNotFoundError(revision))
     }
 
+    const client = getGraphQLClient()
+
     return {
-        resolvedRevision: resolvedRevisionOrError,
+        resolvedRevision: {
+            repo: resolvedRepository,
+            commitID: commit.oid,
+            defaultBranch,
+        } satisfies ResolvedRevision,
         // Repository pickers queries (branch, tags and commits)
         getRepoBranches: (searchTerm: string) =>
-            getGraphQLClient()
+            client
                 .query(RepositoryGitRefs, {
-                    repoName: repoName,
+                    repoName,
                     query: searchTerm,
                     type: GitRefType.GIT_BRANCH,
                 })
@@ -37,7 +46,7 @@ export const load: LayoutLoad = async ({ parent }) => {
                     })
                 ),
         getRepoTags: (searchTerm: string) =>
-            getGraphQLClient()
+            client
                 .query(RepositoryGitRefs, {
                     repoName,
                     query: searchTerm,
@@ -53,11 +62,11 @@ export const load: LayoutLoad = async ({ parent }) => {
                     })
                 ),
         getRepoCommits: (searchTerm: string) =>
-            getGraphQLClient()
+            client
                 .query(RepositoryGitCommits, {
                     repoName,
                     query: searchTerm,
-                    revision: resolvedRevisionOrError.commitID,
+                    revision: commit.oid,
                 })
                 .then(
                     mapOrThrow(({ data }) => {

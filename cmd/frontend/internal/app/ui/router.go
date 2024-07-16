@@ -138,15 +138,11 @@ func InitRouter(db database.DB) {
 		{pathPrefix: "/settings", name: routeSettings, title: "Settings", index: false},
 		{pathPrefix: "/site-admin", name: routeSiteAdmin, title: "Admin", index: false},
 		{pathPrefix: "/contexts", name: "contexts", title: "Search Contexts", index: false},
+		{pathPrefix: "/saved-searches", name: "saved-searches", title: "Saved Searches", index: false},
 		{path: "/cody/manage", name: "cody", title: "Cody Manage", index: false},
 		{path: "/cody/subscription", name: "cody", title: "Cody Pricing", index: false},
 		{path: "/cody/chat", name: "cody", title: "Cody", index: false},
 		{path: "/cody/chat/{chatID}", name: "cody-chat", title: "Cody", index: false},
-		// TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
-		{path: "/cody", name: "cody", title: "Cody", index: false},
-		// TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
-		{path: "/cody/{chatID}", name: "cody-chat", title: "Cody", index: false},
-		{path: "/post-sign-up", name: "post-sign-up", title: "Cody", index: false},
 		{path: "/unlock-account/{token}", name: uirouter.RouteUnlockAccount, title: "Unlock Your Account", index: false},
 		{path: "/password-reset", name: uirouter.RoutePasswordReset, title: "Reset password", index: false},
 		{path: "/survey", name: "survey", title: "Survey", index: false},

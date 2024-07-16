@@ -200,7 +200,8 @@
     // When a toggle is unset, we revert back to the default pattern type. However, if the default pattern type
     // is regexp, we should revert to keyword instead (otherwise it's not possible to disable the toggle).
     function getUnselectedPatternType(): SearchPatternType {
-        const defaultPatternType = ($settings?.['search.defaultPatternType'] as SearchPatternType) ?? SearchPatternType.keyword
+        const defaultPatternType =
+            ($settings?.['search.defaultPatternType'] as SearchPatternType) ?? SearchPatternType.keyword
         return defaultPatternType === SearchPatternType.regexp ? SearchPatternType.keyword : defaultPatternType
     }
 

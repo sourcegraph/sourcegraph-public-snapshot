@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect, useContext } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 import { Subject } from 'rxjs'
 
@@ -6,6 +6,7 @@ import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Container } from '@sourcegraph/wildcard'
 
+import { useUrlSearchParamsForConnectionState } from '../../../../components/FilteredConnection/hooks/connectionState'
 import { useShowMorePagination } from '../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
@@ -17,22 +18,22 @@ import {
     SummaryContainer,
 } from '../../../../components/FilteredConnection/ui'
 import {
+    BatchChangeState,
+    type BatchChangeChangesetsResult,
+    type BatchChangeChangesetsVariables,
     type ExternalChangesetFields,
     type HiddenExternalChangesetFields,
     type Scalars,
-    type BatchChangeChangesetsResult,
-    type BatchChangeChangesetsVariables,
-    BatchChangeState,
 } from '../../../../graphql-operations'
 import { MultiSelectContext, MultiSelectContextProvider } from '../../MultiSelectContext'
 import {
-    type queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
-    queryAllChangesetIDs as _queryAllChangesetIDs,
     CHANGESETS,
+    queryAllChangesetIDs as _queryAllChangesetIDs,
+    type queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
 } from '../backend'
 
 import { BatchChangeChangesetsHeader } from './BatchChangeChangesetsHeader'
-import { type ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
+import { ChangesetFilterRow, type ChangesetFilters } from './ChangesetFilterRow'
 import { ChangesetNode } from './ChangesetNode'
 import { ChangesetSelectRow } from './ChangesetSelectRow'
 import { EmptyArchivedChangesetListElement } from './EmptyArchivedChangesetListElement'
@@ -127,6 +128,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
         [changesetFilters, batchChangeID, onlyArchived]
     )
 
+    const connectionState = useUrlSearchParamsForConnectionState()
     const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
         BatchChangeChangesetsResult,
         BatchChangeChangesetsVariables,
@@ -135,12 +137,10 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
         query: CHANGESETS,
         variables: {
             ...queryArguments,
-            first: BATCH_COUNT,
-            after: null,
             onlyClosable: null,
         },
         options: {
-            useURL: true,
+            pageSize: BATCH_COUNT,
             fetchPolicy: 'cache-and-network',
             pollInterval: 5000,
         },
@@ -155,6 +155,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
             }
             return data.node.changesets
         },
+        state: connectionState,
     })
 
     useEffect(() => {
@@ -233,7 +234,6 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
                         <SummaryContainer centered={true}>
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={true}
-                                first={BATCH_COUNT}
                                 centered={true}
                                 connection={connection}
                                 noun="changeset"

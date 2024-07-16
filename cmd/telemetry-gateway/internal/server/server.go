@@ -24,7 +24,8 @@ import (
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
-type Server struct {
+// APIServer is the Telemetry Gateway API server.
+type APIServer struct {
 	logger      log.Logger
 	eventsTopic pubsub.TopicPublisher
 	publishOpts events.PublishStreamOptions
@@ -39,14 +40,14 @@ type Server struct {
 	telemetrygatewayv1.UnimplementedTelemeteryGatewayServiceServer
 }
 
-var _ telemetrygatewayv1.TelemeteryGatewayServiceServer = (*Server)(nil)
+var _ telemetrygatewayv1.TelemeteryGatewayServiceServer = (*APIServer)(nil)
 
 func New(
 	logger log.Logger,
 	eventsTopic pubsub.TopicPublisher,
 	samsClient *sams.ClientV1,
 	publishOpts events.PublishStreamOptions,
-) (*Server, error) {
+) (*APIServer, error) {
 	recordEventsRPCMetrics, err := newRecordEventsMetrics()
 	if err != nil {
 		return nil, err
@@ -56,8 +57,8 @@ func New(
 		return nil, err
 	}
 
-	return &Server{
-		logger:      logger.Scoped("server"),
+	return &APIServer{
+		logger:      logger.Scoped("api"),
 		eventsTopic: eventsTopic,
 		publishOpts: publishOpts,
 
@@ -68,7 +69,7 @@ func New(
 	}, nil
 }
 
-func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService_RecordEventsServer) (err error) {
+func (s *APIServer) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService_RecordEventsServer) (err error) {
 	var (
 		logger = sgtrace.Logger(stream.Context(), s.logger).Scoped("RecordEvents")
 		// publisher is initialized once for RecordEventsRequestMetadata.
@@ -207,7 +208,7 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 	return nil
 }
 
-func (s *Server) RecordEvent(ctx context.Context, req *telemetrygatewayv1.RecordEventRequest) (_ *telemetrygatewayv1.RecordEventResponse, err error) {
+func (s *APIServer) RecordEvent(ctx context.Context, req *telemetrygatewayv1.RecordEventRequest) (_ *telemetrygatewayv1.RecordEventResponse, err error) {
 	var (
 		metadata = req.GetMetadata()
 		event    = req.GetEvent()

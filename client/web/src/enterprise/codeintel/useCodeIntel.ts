@@ -4,7 +4,7 @@ import type { QueryResult } from '@apollo/client'
 
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 
-import { type Location, buildPreciseLocation, LocationsGroup } from '../../codeintel/location'
+import { buildPreciseLocation, LocationsGroup, type Location } from '../../codeintel/location'
 import {
     LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
     LOAD_ADDITIONAL_PROTOTYPES_QUERY,
@@ -12,17 +12,16 @@ import {
     USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
 } from '../../codeintel/ReferencesPanelQueries'
 import type { CodeIntelData, UseCodeIntelParameters, UseCodeIntelResult } from '../../codeintel/useCodeIntel'
-import type { ConnectionQueryArguments } from '../../components/FilteredConnection'
 import { asGraphQLResult } from '../../components/FilteredConnection/utils'
 import type {
-    UsePreciseCodeIntelForPositionVariables,
-    UsePreciseCodeIntelForPositionResult,
-    LoadAdditionalReferencesResult,
-    LoadAdditionalReferencesVariables,
     LoadAdditionalImplementationsResult,
     LoadAdditionalImplementationsVariables,
     LoadAdditionalPrototypesResult,
     LoadAdditionalPrototypesVariables,
+    LoadAdditionalReferencesResult,
+    LoadAdditionalReferencesVariables,
+    UsePreciseCodeIntelForPositionResult,
+    UsePreciseCodeIntelForPositionVariables,
 } from '../../graphql-operations'
 
 import { useSearchBasedCodeIntel } from './useSearchBasedCodeIntel'
@@ -88,56 +87,56 @@ export const useCodeIntel = ({
         getSetting,
     })
 
-    const { error, loading } = useQuery<
-        UsePreciseCodeIntelForPositionResult,
-        UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
-    >(USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY, {
-        variables,
-        notifyOnNetworkStatusChange: false,
-        fetchPolicy: 'no-cache',
-        onCompleted: result => {
-            if (!shouldFetchPrecise.current) {
-                return
-            }
-            shouldFetchPrecise.current = false
-
-            let refs: CodeIntelData['references'] = { endCursor: null, nodes: LocationsGroup.empty }
-            let defs: CodeIntelData['definitions'] = { endCursor: null, nodes: LocationsGroup.empty }
-            const addRefs = (newRefs: Location[]): void => {
-                refs.nodes = refs.nodes.combine(newRefs)
-            }
-            const addDefs = (newDefs: Location[]): void => {
-                defs.nodes = defs.nodes.combine(newDefs)
-            }
-
-            const lsifData = result ? getLsifData({ data: result }) : undefined
-            if (lsifData) {
-                refs = lsifData.references
-                defs = lsifData.definitions
-                // If we've exhausted LSIF data and the flag is enabled, we add search-based data.
-                if (refs.endCursor === null && shouldMixPreciseAndSearchBasedReferences()) {
-                    fetchSearchBasedReferences(addRefs)
+    const { error, loading } = useQuery<UsePreciseCodeIntelForPositionResult, UsePreciseCodeIntelForPositionVariables>(
+        USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
+        {
+            variables,
+            notifyOnNetworkStatusChange: false,
+            fetchPolicy: 'no-cache',
+            onCompleted: result => {
+                if (!shouldFetchPrecise.current) {
+                    return
                 }
-                // When no definitions are found, the hover tooltip falls back to a search based
-                // search, regardless of the mixPreciseAndSearchBasedReferences setting.
-                if (defs.nodes.locationsCount === 0) {
-                    fetchSearchBasedDefinitions(addDefs)
+                shouldFetchPrecise.current = false
+
+                let refs: CodeIntelData['references'] = { endCursor: null, nodes: LocationsGroup.empty }
+                let defs: CodeIntelData['definitions'] = { endCursor: null, nodes: LocationsGroup.empty }
+                const addRefs = (newRefs: Location[]): void => {
+                    refs.nodes = refs.nodes.combine(newRefs)
                 }
-            } else {
-                fellBackToSearchBased.current = true
-                fetchSearchBasedCodeIntel(addRefs, addDefs)
-            }
-            setCodeIntelData({
-                ...(lsifData || EMPTY_CODE_INTEL_DATA),
-                definitions: defs,
-                references: refs,
-            })
-        },
-    })
+                const addDefs = (newDefs: Location[]): void => {
+                    defs.nodes = defs.nodes.combine(newDefs)
+                }
+
+                const lsifData = result ? getLsifData({ data: result }) : undefined
+                if (lsifData) {
+                    refs = lsifData.references
+                    defs = lsifData.definitions
+                    // If we've exhausted LSIF data and the flag is enabled, we add search-based data.
+                    if (refs.endCursor === null && shouldMixPreciseAndSearchBasedReferences()) {
+                        fetchSearchBasedReferences(addRefs)
+                    }
+                    // When no definitions are found, the hover tooltip falls back to a search based
+                    // search, regardless of the mixPreciseAndSearchBasedReferences setting.
+                    if (defs.nodes.locationsCount === 0) {
+                        fetchSearchBasedDefinitions(addDefs)
+                    }
+                } else {
+                    fellBackToSearchBased.current = true
+                    fetchSearchBasedCodeIntel(addRefs, addDefs)
+                }
+                setCodeIntelData({
+                    ...(lsifData || EMPTY_CODE_INTEL_DATA),
+                    definitions: defs,
+                    references: refs,
+                })
+            },
+        }
+    )
 
     const [fetchAdditionalReferences, additionalReferencesResult] = useLazyQuery<
         LoadAdditionalReferencesResult,
-        LoadAdditionalReferencesVariables & ConnectionQueryArguments
+        LoadAdditionalReferencesVariables
     >(LOAD_ADDITIONAL_REFERENCES_QUERY, {
         fetchPolicy: 'no-cache',
         onCompleted: result => {
@@ -168,7 +167,7 @@ export const useCodeIntel = ({
 
     const [fetchAdditionalPrototypes, additionalPrototypesResult] = useLazyQuery<
         LoadAdditionalPrototypesResult,
-        LoadAdditionalPrototypesVariables & ConnectionQueryArguments
+        LoadAdditionalPrototypesVariables
     >(LOAD_ADDITIONAL_PROTOTYPES_QUERY, {
         fetchPolicy: 'no-cache',
         onCompleted: result => {
@@ -189,7 +188,7 @@ export const useCodeIntel = ({
 
     const [fetchAdditionalImplementations, additionalImplementationsResult] = useLazyQuery<
         LoadAdditionalImplementationsResult,
-        LoadAdditionalImplementationsVariables & ConnectionQueryArguments
+        LoadAdditionalImplementationsVariables
     >(LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY, {
         fetchPolicy: 'no-cache',
         onCompleted: result => {

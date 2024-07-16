@@ -1,9 +1,14 @@
-import React, { type FC, useCallback, useState, useEffect } from 'react'
+import React, { useCallback, useEffect, useState, type FC } from 'react'
 
+import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Container, Link, PageHeader } from '@sourcegraph/wildcard'
 
-import type { UseShowMorePaginationResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
+import { useUrlSearchParamsForConnectionState } from '../../../components/FilteredConnection/hooks/connectionState'
+import {
+    useShowMorePagination,
+    type UseShowMorePaginationResult,
+} from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -14,9 +19,10 @@ import {
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
 import {
-    type ExecutorSecretFields,
     ExecutorSecretScope,
+    type ExecutorSecretFields,
     type GlobalExecutorSecretsResult,
+    type GlobalExecutorSecretsVariables,
     type OrgExecutorSecretsResult,
     type Scalars,
     type UserExecutorSecretsResult,
@@ -24,9 +30,9 @@ import {
 
 import { AddSecretModal } from './AddSecretModal'
 import {
-    globalExecutorSecretsConnectionFactory,
-    userExecutorSecretsConnectionFactory,
+    GLOBAL_EXECUTOR_SECRETS,
     orgExecutorSecretsConnectionFactory,
+    userExecutorSecretsConnectionFactory,
 } from './backend'
 import { ExecutorSecretNode } from './ExecutorSecretNode'
 import { ExecutorSecretScopeSelector } from './ExecutorSecretScopeSelector'
@@ -38,9 +44,27 @@ export const GlobalExecutorSecretsListPage: FC<GlobalExecutorSecretsListPageProp
         () => props.telemetryRecorder.recordEvent('admin.executors.secretsList', 'view'),
         [props.telemetryRecorder]
     )
+
+    const connectionState = useUrlSearchParamsForConnectionState()
     const connectionLoader = useCallback(
-        (scope: ExecutorSecretScope) => globalExecutorSecretsConnectionFactory(scope),
-        []
+        (scope: ExecutorSecretScope) =>
+            // Scope has to be injected dynamically.
+            // eslint-disable-next-line react-hooks/rules-of-hooks
+            useShowMorePagination<GlobalExecutorSecretsResult, GlobalExecutorSecretsVariables, ExecutorSecretFields>({
+                query: GLOBAL_EXECUTOR_SECRETS,
+                variables: {
+                    scope,
+                },
+                options: {
+                    fetchPolicy: 'network-only',
+                },
+                getConnection: result => {
+                    const { executorSecrets } = dataOrThrowErrors(result)
+                    return executorSecrets
+                },
+                state: connectionState,
+            }),
+        [connectionState]
     )
     return (
         <ExecutorSecretsListPage
@@ -217,7 +241,6 @@ const ExecutorSecretsListPage: FC<ExecutorSecretsListPageProps> = ({
                         <SummaryContainer className="mt-2">
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={true}
-                                first={15}
                                 centered={true}
                                 connection={connection}
                                 noun="executor secret"

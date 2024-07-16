@@ -2,13 +2,16 @@ package modelconfig
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/modelconfig"
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig/embedded"
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -218,6 +221,213 @@ func TestModelConfigBuilder(t *testing.T) {
 
 			ptCfg := model.ServerSideConfig.AWSBedrockProvisionedThroughput
 			assert.Equal(t, priovisionedThroughputARN, ptCfg.ARN)
+		})
+	})
+}
+
+func TestApplySiteConfig(t *testing.T) {
+
+	// validModelWith returns a new, unique Model and applies the given override.
+	rng := rand.New(rand.NewSource(time.Now().Unix()))
+	validModelWith := func(override types.ModelOverride) types.Model {
+		modelID := fmt.Sprintf("test-model-%x", rng.Uint64())
+		m := types.Model{
+			ModelRef:     types.ModelRef(fmt.Sprintf("test-provider::v1::%s", modelID)),
+			ModelName:    modelID,
+			Category:     types.ModelCategoryBalanced,
+			Capabilities: []types.ModelCapability{types.ModelCapabilityChat, types.ModelCapabilityAutocomplete},
+			ContextWindow: types.ContextWindow{
+				MaxInputTokens:  1,
+				MaxOutputTokens: 1,
+			},
+		}
+
+		err := modelconfig.ApplyModelOverride(&m, override)
+		require.NoError(t, err)
+		return m
+	}
+
+	toModelOverride := func(m types.Model) types.ModelOverride {
+		return types.ModelOverride{
+			ModelRef:      m.ModelRef,
+			ModelName:     m.ModelName,
+			Capabilities:  m.Capabilities,
+			ContextWindow: m.ContextWindow,
+			Category:      m.Category,
+		}
+	}
+
+	t.Run("SourcegraphSuppliedModels", func(t *testing.T) {
+		t.Run("StatusFilter", func(t *testing.T) {
+			// The source config contains four models, one with each status.
+			sourcegraphSuppliedConfig := types.ModelConfiguration{
+				Providers: []types.Provider{
+					{
+						ID: types.ProviderID("test-provider"),
+					},
+				},
+				Models: []types.Model{
+					validModelWith(types.ModelOverride{
+						Status: types.ModelStatusExperimental,
+					}),
+					validModelWith(types.ModelOverride{
+						Status: types.ModelStatusBeta,
+					}),
+					validModelWith(types.ModelOverride{
+						Status: types.ModelStatusStable,
+					}),
+					validModelWith(types.ModelOverride{
+						Status: types.ModelStatusDeprecated,
+					}),
+				},
+			}
+
+			// The site configuration filters out all but "beta" and "stable".
+			siteConfig := types.SiteModelConfiguration{
+				SourcegraphModelConfig: &types.SourcegraphModelConfig{
+					ModelFilters: &types.ModelFilters{
+						StatusFilter: []string{"beta", "stable"},
+					},
+				},
+			}
+
+			gotConfig, err := applySiteConfig(&sourcegraphSuppliedConfig, &siteConfig)
+			require.NoError(t, err)
+
+			// Count the final models after the filter was applied.
+			statusCounts := map[types.ModelStatus]int{}
+			for _, model := range gotConfig.Models {
+				statusCounts[model.Status]++
+			}
+
+			assert.Equal(t, 2, len(gotConfig.Models))
+			assert.Equal(t, 1, statusCounts[types.ModelStatusBeta])
+			assert.Equal(t, 1, statusCounts[types.ModelStatusStable])
+		})
+	})
+
+	// This test covers the situation where the the default models from the base configuration
+	// are removed due to model filter, but the site configut doesn't provide valid values.
+	t.Run("ReplacedDefaultModels", func(t *testing.T) {
+		testModel := func(id string, capabilities []types.ModelCapability, category types.ModelCategory) types.Model {
+			m := validModelWith(types.ModelOverride{
+				Capabilities: capabilities,
+				Category:     category,
+			})
+			m.ModelRef = types.ModelRef(fmt.Sprintf("test-provider::v1::%s", id))
+			return m
+		}
+
+		getValidBaseConfig := func() types.ModelConfiguration {
+			chatModel := testModel("chat", []types.ModelCapability{types.ModelCapabilityChat}, types.ModelCategoryAccuracy)
+			codeModel := testModel("code", []types.ModelCapability{types.ModelCapabilityAutocomplete}, types.ModelCategorySpeed)
+			return types.ModelConfiguration{
+				Providers: []types.Provider{
+					{
+						ID: types.ProviderID("test-provider"),
+					},
+				},
+				Models: []types.Model{
+					chatModel,
+					codeModel,
+				},
+				DefaultModels: types.DefaultModels{
+					Chat:           chatModel.ModelRef,
+					CodeCompletion: codeModel.ModelRef,
+					FastChat:       chatModel.ModelRef,
+				},
+			}
+		}
+
+		t.Run("Base", func(t *testing.T) {
+			baseConfig := getValidBaseConfig()
+			_, err := applySiteConfig(&baseConfig, &types.SiteModelConfiguration{
+				SourcegraphModelConfig: &types.SourcegraphModelConfig{}, // i.e. use the baseconfig.
+			})
+			require.NoError(t, err)
+		})
+
+		t.Run("ErrorNoChatModelAvail", func(t *testing.T) {
+			// Now have the site config reject the chat model that was used as the default model.
+			// This will now fail because there is nothing suitable.
+			baseConfig := getValidBaseConfig()
+			_, err := applySiteConfig(&baseConfig, &types.SiteModelConfiguration{
+				SourcegraphModelConfig: &types.SourcegraphModelConfig{
+					ModelFilters: &types.ModelFilters{
+						Deny: []string{"*chat"},
+					},
+				},
+			})
+			assert.ErrorContains(t, err, "no suitable model found for Chat (1 candidates)")
+		})
+
+		t.Run("AlternativeUsed", func(t *testing.T) {
+			t.Run("ErrorUnsuitableCandidate", func(t *testing.T) {
+				// We add a new model from the site config, but the capability and category
+				// make it unsuitable as the default chat model.
+				modelInSiteConfig := testModel(
+					"err-from-site-config", []types.ModelCapability{types.ModelCapabilityAutocomplete}, types.ModelCategorySpeed)
+
+				baseConfig := getValidBaseConfig()
+				_, err := applySiteConfig(&baseConfig, &types.SiteModelConfiguration{
+					SourcegraphModelConfig: &types.SourcegraphModelConfig{
+						ModelFilters: &types.ModelFilters{
+							Deny: []string{"*chat"},
+						},
+					},
+					ModelOverrides: []types.ModelOverride{
+						toModelOverride(modelInSiteConfig),
+					},
+				})
+				assert.ErrorContains(t, err, "no suitable model found for Chat (2 candidates)")
+			})
+
+			t.Run("ErrorStillNoSuitableCandidate", func(t *testing.T) {
+				// This time it works, because the model's capabilities and category.
+				//
+				// However, we still get an error because there is no valid model for
+				// the *fast chat*. Because "accuracy" isn't viable for fast chat,
+				// it needs to be "speed" or "balanced".
+				fromSiteConfig1 := testModel(
+					"from-site-config1", []types.ModelCapability{types.ModelCapabilityChat}, types.ModelCategoryAccuracy)
+				fromSiteConfig2 := testModel(
+					"from-site-config2", []types.ModelCapability{types.ModelCapabilityAutocomplete}, types.ModelCategoryBalanced)
+
+				baseConfig := getValidBaseConfig()
+				_, err := applySiteConfig(&baseConfig, &types.SiteModelConfiguration{
+					SourcegraphModelConfig: &types.SourcegraphModelConfig{
+						ModelFilters: &types.ModelFilters{
+							Deny: []string{"*chat"},
+						},
+					},
+					ModelOverrides: []types.ModelOverride{
+						toModelOverride(fromSiteConfig1),
+						toModelOverride(fromSiteConfig2),
+					},
+				})
+				assert.ErrorContains(t, err, "no suitable model found for FastChat (3 candidates)")
+			})
+
+			t.Run("Works", func(t *testing.T) {
+				// This time it all works, because the new model is "balanced".
+				modelInSiteConfig := testModel(
+					"from-site-config", []types.ModelCapability{types.ModelCapabilityChat}, types.ModelCategoryBalanced)
+
+				baseConfig := getValidBaseConfig()
+				gotConfig, err := applySiteConfig(&baseConfig, &types.SiteModelConfiguration{
+					SourcegraphModelConfig: &types.SourcegraphModelConfig{
+						ModelFilters: &types.ModelFilters{
+							Deny: []string{"*chat"},
+						},
+					},
+					ModelOverrides: []types.ModelOverride{
+						toModelOverride(modelInSiteConfig),
+					},
+				})
+				require.NoError(t, err)
+				assert.EqualValues(t, modelInSiteConfig.ModelRef, gotConfig.DefaultModels.Chat)
+				assert.EqualValues(t, modelInSiteConfig.ModelRef, gotConfig.DefaultModels.FastChat)
+			})
 		})
 	})
 }

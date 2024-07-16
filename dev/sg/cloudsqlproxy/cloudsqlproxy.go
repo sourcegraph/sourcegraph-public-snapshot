@@ -4,6 +4,7 @@ package cloudsqlproxy
 import (
 	"context"
 	"fmt"
+	"net"
 	"strings"
 	"time"
 
@@ -12,6 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/background"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
+
+var (
+	ErrPortInUse = errors.New("port already in use")
 )
 
 // CloudSQLProxy is a cloud-sql-proxy instance
@@ -41,6 +46,12 @@ func (p *CloudSQLProxy) Start(ctx context.Context, timeoutSeconds int) error {
 	bin, err := Path()
 	if err != nil {
 		return errors.Wrap(err, "failed to get path to the cloud-sql-proxy binary")
+	}
+
+	if ok, err := isPortInUse(p.Port); err != nil {
+		return errors.Wrapf(err, "failed to check if port %d is in use", p.Port)
+	} else if ok {
+		return errors.Wrapf(ErrPortInUse, "port %d is in use", p.Port)
 	}
 
 	proxyCmd := fmt.Sprintf("%s -i -p %d --impersonate-service-account=%s  %s",
@@ -99,4 +110,16 @@ func (p *CloudSQLProxy) Start(ctx context.Context, timeoutSeconds int) error {
 	}
 
 	return nil
+}
+
+func isPortInUse(port int) (bool, error) {
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort("", fmt.Sprintf("%d", port)), 3*time.Second)
+	if err != nil {
+		return false, nil
+	}
+	if conn != nil {
+		defer conn.Close()
+		return true, nil
+	}
+	return false, nil
 }

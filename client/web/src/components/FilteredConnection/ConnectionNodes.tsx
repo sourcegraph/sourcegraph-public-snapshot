@@ -94,25 +94,6 @@ interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}, HP = {}>
     onShowMore: () => void
 }
 
-export const getTotalCount = <N,>({ totalCount, nodes, pageInfo }: Connection<N>, first: number): number | null => {
-    if (typeof totalCount === 'number') {
-        return totalCount
-    }
-
-    if (
-        // TODO(sqs): this line below is wrong because `first` might've just been changed and
-        // `nodes` is still the data fetched from before `first` was changed.
-        // this causes the UI to incorrectly show "N items total" even when the count is indeterminate right
-        // after the user clicks "Show more" but before the new data is loaded.
-        nodes.length < first ||
-        (nodes.length === first && pageInfo && typeof pageInfo.hasNextPage === 'boolean' && !pageInfo.hasNextPage)
-    ) {
-        return nodes.length
-    }
-
-    return null
-}
-
 export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
     nodeComponent: NodeComponent,
     nodeComponentProps,
@@ -126,7 +107,6 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
     emptyElement,
     totalCountSummaryComponent,
     connection,
-    first,
     noSummaryIfAllNodesVisible,
     noun,
     pluralNoun,
@@ -142,7 +122,6 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
 
     const summary = (
         <ConnectionSummary
-            first={first}
             noSummaryIfAllNodesVisible={noSummaryIfAllNodesVisible}
             totalCountSummaryComponent={totalCountSummaryComponent}
             noun={noun}
