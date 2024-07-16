@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -21,6 +22,7 @@ go_library(
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
         "//internal/actor",
+        "//internal/batches",
         "//internal/batches/scheduler",
         "//internal/batches/sources",
         "//internal/batches/store",
@@ -35,5 +37,16 @@ go_library(
         "//internal/workerutil/dbworker/store",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "batches_test",
+    srcs = ["batches_test.go"],
+    embed = [":batches"],
+    deps = [
+        "//cmd/worker/job",
+        "//internal/observation",
+        "@com_github_stretchr_testify//require",
     ],
 )
