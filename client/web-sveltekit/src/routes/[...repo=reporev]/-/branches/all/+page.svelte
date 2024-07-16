@@ -76,7 +76,7 @@
     {#if branches && branches.nodes.length > 0}
         <div class="footer">
             {branches.totalCount}
-            {pluralize('branch', branches.totalCount)} total
+            {pluralize('branch', branches.totalCount, 'branches')} total
             {#if branches.totalCount > branches.nodes.length}
                 (showing {branches.nodes.length})
             {/if}

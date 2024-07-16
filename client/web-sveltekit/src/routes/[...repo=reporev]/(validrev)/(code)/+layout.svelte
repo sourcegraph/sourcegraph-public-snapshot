@@ -59,7 +59,7 @@
     import { Alert, PanelGroup, Panel, PanelResizeHandle, Button } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
 
-    import RepositoryRevPicker from '../RepositoryRevPicker.svelte'
+    import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
 
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
@@ -199,7 +199,8 @@
                 <RepositoryRevPicker
                     repoURL={data.repoURL}
                     revision={data.revision}
-                    resolvedRevision={data.resolvedRevision}
+                    commitID={data.resolvedRevision.commitID}
+                    defaultBranch={data.defaultBranch}
                     getRepositoryBranches={data.getRepoBranches}
                     getRepositoryCommits={data.getRepoCommits}
                     getRepositoryTags={data.getRepoTags}
