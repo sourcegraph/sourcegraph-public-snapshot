@@ -186,12 +186,12 @@ func CodyGatewayStoreListAndGet(t *testing.T, ctx context.Context, subscriptionI
 		}
 
 		assert.Equal(t, idx%2 == 0, got.Enabled)
-		assert.Equal(t, int64(idx), pointers.DerefZero(got.ChatCompletionsRateLimit))
-		assert.Equal(t, idx, pointers.DerefZero(got.ChatCompletionsRateLimitIntervalSeconds))
-		assert.Equal(t, int64(idx), pointers.DerefZero(got.CodeCompletionsRateLimit))
-		assert.Equal(t, idx, pointers.DerefZero(got.CodeCompletionsRateLimitIntervalSeconds))
-		assert.Equal(t, int64(idx), pointers.DerefZero(got.EmbeddingsRateLimit))
-		assert.Equal(t, idx, pointers.DerefZero(got.EmbeddingsRateLimitIntervalSeconds))
+		assert.Equal(t, int64(idx), got.ChatCompletionsRateLimit.Int64)
+		assert.Equal(t, int32(idx), got.ChatCompletionsRateLimitIntervalSeconds.Int32)
+		assert.Equal(t, int64(idx), got.CodeCompletionsRateLimit.Int64)
+		assert.Equal(t, int32(idx), got.CodeCompletionsRateLimitIntervalSeconds.Int32)
+		assert.Equal(t, int64(idx), got.EmbeddingsRateLimit.Int64)
+		assert.Equal(t, int32(idx), got.EmbeddingsRateLimitIntervalSeconds.Int32)
 
 		assert.Equal(t, []string{strconv.Itoa(idx), "activeLicense"}, got.ActiveLicenseInfo.Tags)
 		assert.Equal(t, uint(idx), got.ActiveLicenseInfo.UserCount)
@@ -246,12 +246,12 @@ func CodyGatewayStoreUpsert(t *testing.T, ctx context.Context, subscriptionIDs [
 	assert.False(t, got.Enabled)
 	assert.Equal(t, currentAccess.SubscriptionID, got.SubscriptionID)
 	assert.Equal(t, mockSubscriptionDisplayName(0), got.DisplayName)
-	assert.Nil(t, got.ChatCompletionsRateLimit)
-	assert.Nil(t, got.ChatCompletionsRateLimitIntervalSeconds)
-	assert.Nil(t, got.CodeCompletionsRateLimit)
-	assert.Nil(t, got.CodeCompletionsRateLimitIntervalSeconds)
-	assert.Nil(t, got.EmbeddingsRateLimit)
-	assert.Nil(t, got.EmbeddingsRateLimitIntervalSeconds)
+	assert.False(t, got.ChatCompletionsRateLimit.Valid)
+	assert.False(t, got.ChatCompletionsRateLimitIntervalSeconds.Valid)
+	assert.False(t, got.CodeCompletionsRateLimit.Valid)
+	assert.False(t, got.CodeCompletionsRateLimitIntervalSeconds.Valid)
+	assert.False(t, got.EmbeddingsRateLimit.Valid)
+	assert.False(t, got.EmbeddingsRateLimitIntervalSeconds.Valid)
 
 	t.Run("noop", func(t *testing.T) {
 		t.Cleanup(func() { currentAccess = got })
@@ -279,7 +279,7 @@ func CodyGatewayStoreUpsert(t *testing.T, ctx context.Context, subscriptionIDs [
 		assert.Equal(t, currentAccess.Enabled, got.Enabled)
 		assert.Equal(t, currentAccess.DisplayName, got.DisplayName)
 		assert.Equal(t, currentAccess.CodeCompletionsRateLimit, got.CodeCompletionsRateLimit)
-		assert.EqualValues(t, 1234, *got.ChatCompletionsRateLimit)
+		assert.EqualValues(t, 1234, got.ChatCompletionsRateLimit.Int64)
 	})
 
 	t.Run("update only enabled", func(t *testing.T) {
@@ -292,7 +292,7 @@ func CodyGatewayStoreUpsert(t *testing.T, ctx context.Context, subscriptionIDs [
 		assert.True(t, got.Enabled)
 		assert.Equal(t, currentAccess.DisplayName, got.DisplayName)
 		assert.Equal(t, currentAccess.CodeCompletionsRateLimit, got.CodeCompletionsRateLimit)
-		assert.EqualValues(t, 1234, *got.ChatCompletionsRateLimit)
+		assert.EqualValues(t, 1234, got.ChatCompletionsRateLimit.Int64)
 	})
 
 	t.Run("force update to zero values", func(t *testing.T) {

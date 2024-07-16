@@ -2,11 +2,13 @@ package codyaccess
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"gorm.io/gorm"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/pgxerrors"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/upsert"
@@ -23,8 +25,27 @@ type TableCodyGatewayAccess struct {
 	CodyGatewayAccess
 }
 
-func (s *TableCodyGatewayAccess) TableName() string {
+func (*TableCodyGatewayAccess) TableName() string {
 	return "enterprise_portal_cody_gateway_access"
+}
+
+func (t *TableCodyGatewayAccess) RunCustomMigrations(migrator gorm.Migrator) error {
+	// gorm seems to refuse to drop the 'not null' constriant on a column
+	// unless we forcibly run AlterColumn.
+	columns := []string{
+		"chat_completions_rate_limit",
+		"chat_completions_rate_limit_interval_seconds",
+		"code_completions_rate_limit",
+		"code_completions_rate_limit_interval_seconds",
+		"embeddings_rate_limit",
+		"embeddings_rate_limit_interval_seconds",
+	}
+	for _, column := range columns {
+		if err := migrator.AlterColumn(t, column); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type CodyGatewayAccess struct {
@@ -35,16 +56,16 @@ type CodyGatewayAccess struct {
 	Enabled bool `gorm:"not null"`
 
 	// chat_completions_rate_limit
-	ChatCompletionsRateLimit                *int64 `gorm:"type:bigint"`
-	ChatCompletionsRateLimitIntervalSeconds *int
+	ChatCompletionsRateLimit                sql.NullInt64
+	ChatCompletionsRateLimitIntervalSeconds sql.NullInt32
 
 	// code_completions_rate_limit
-	CodeCompletionsRateLimit                *int64 `gorm:"type:bigint"`
-	CodeCompletionsRateLimitIntervalSeconds *int
+	CodeCompletionsRateLimit                sql.NullInt64
+	CodeCompletionsRateLimitIntervalSeconds sql.NullInt32
 
 	// embeddings_rate_limit
-	EmbeddingsRateLimit                *int64 `gorm:"type:bigint"`
-	EmbeddingsRateLimitIntervalSeconds *int
+	EmbeddingsRateLimit                sql.NullInt64
+	EmbeddingsRateLimitIntervalSeconds sql.NullInt32
 }
 
 // codyGatewayAccessTableColumns must match scanCodyGatewayAccess() values.
