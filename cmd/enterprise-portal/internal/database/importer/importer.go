@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/background"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -40,13 +41,19 @@ var _ goroutine.Handler = (*importer)(nil)
 // New returns a periodic goroutine that runs an importer that reconciles
 // subscriptions, licenses, and Cody Gateway access from dotcom into the
 // Enterprise Portal database.
+//
+// If interval is 0, the importer is disabled.
 func New(
 	ctx context.Context,
 	logger log.Logger,
 	dotcom *dotcomdb.Reader,
 	enterprisePortal *database.DB,
 	interval time.Duration,
-) *goroutine.PeriodicGoroutine {
+) background.Routine {
+	if interval == 0 {
+		logger.Warn("importer disabled")
+		return background.NoopRoutine("dotcom.importer.disabled")
+	}
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
 		&importer{

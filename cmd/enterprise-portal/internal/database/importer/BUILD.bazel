@@ -13,6 +13,7 @@ go_library(
         "//cmd/enterprise-portal/internal/dotcomdb",
         "//internal/goroutine",
         "//internal/license",
+        "//internal/observation",
         "//internal/trace",
         "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "//lib/errors",
