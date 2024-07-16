@@ -162,6 +162,25 @@ type GitBackend interface {
 	// This value can be used to determine if a repository changed since the last
 	// time the hash has been computed.
 	RefHash(ctx context.Context) ([]byte, error)
+
+	// MergeBaseOctopus returns the octopus merge base commit sha for the specified
+	// revspecs.
+	// If no common merge base exists, an empty string is returned.
+	// See the following diagrams from git-merge-base docs on what octopus merge bases
+	// are:
+	// Given three commits A, B, and C, MergeBaseOctopus(A, B, C) will compute the
+	// best common ancestor of all commits.
+	// For example, with this topology:
+	//            o---o---o---o---C
+	//           /
+	//          /   o---o---o---B
+	//         /   /
+	//     ---2---1---o---o---o---A
+	// The result of MergeBaseOctopus(A, B, C) is 2, because 2 is the
+	// best common ancestor of all commits.
+	//
+	// If one of the given revspecs does not exist, a RevisionNotFoundError is returned.
+	MergeBaseOctopus(ctx context.Context, revspecs ...string) (api.CommitID, error)
 }
 
 // CommitLogOrder is the order of the commits returned by CommitLog.
