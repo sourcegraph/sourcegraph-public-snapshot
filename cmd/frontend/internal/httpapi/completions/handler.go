@@ -561,10 +561,6 @@ func checkClientCodyIgnoreCompatibility(ctx context.Context, db database.DB, r *
 	}
 	var cvc clientVersionConstraint
 	switch clientName {
-	case types.CodyClientEclipse:
-	case types.CodyClientVisualStudio:
-	case types.CodyClientNeovim:
-	case types.CodyClientCli:
 	case types.CodyClientWeb:
 		// Cody Web is of the same version as the Sourcegraph instance, thus no version constraint is needed.
 		return nil
@@ -582,15 +578,7 @@ func checkClientCodyIgnoreCompatibility(ctx context.Context, db database.DB, r *
 		}
 	default:
 		return &codyIgnoreCompatibilityError{
-			reason: fmt.Sprintf("please use one of the supported clients: %s, %s, %s, %s, %s, %s, %s.",
-				types.CodyClientVscode,
-				types.CodyClientJetbrains,
-				types.CodyClientWeb,
-				types.CodyClientEclipse,
-				types.CodyClientCli,
-				types.CodyClientVisualStudio,
-				types.CodyClientNeovim,
-			),
+			reason:     fmt.Sprintf("please use one of the supported clients: %s, %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains, types.CodyClientWeb),
 			statusCode: http.StatusNotAcceptable,
 		}
 	}
