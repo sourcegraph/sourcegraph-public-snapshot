@@ -37,6 +37,7 @@ export const NewGlobalNavigationBarDemo: StoryFn = () => (
         showSearchBox={true}
         codeInsightsEnabled={true}
         batchChangesEnabled={true}
+        searchJobsEnabled={true}
         authenticatedUser={
             {
                 username: 'alice',

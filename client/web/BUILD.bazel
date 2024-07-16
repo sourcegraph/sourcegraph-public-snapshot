@@ -1394,7 +1394,6 @@ ts_project(
         "src/savedSearches/SavedSearchModal.tsx",
         "src/savedSearches/graphql.ts",
         "src/savedSearches/telemetry.ts",
-        "src/search-jobs/utility.ts",
         "src/search/QuickLinks.tsx",
         "src/search/SearchPageWrapper.tsx",
         "src/search/autocompletion/hooks.ts",
