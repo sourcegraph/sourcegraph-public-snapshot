@@ -95,7 +95,6 @@
         trigger.addEventListener('mouseenter', handleMouseEnterTrigger)
         trigger.addEventListener('mouseleave', handleMouseLeaveTrigger)
         trigger.addEventListener('mousemove', handleMouseMoveTrigger)
-        trigger.addEventListener('click', close)
         window.addEventListener('blur', close)
     }
 
@@ -103,7 +102,6 @@
         trigger.removeEventListener('mouseenter', handleMouseEnterTrigger)
         trigger.removeEventListener('mouseleave', handleMouseLeaveTrigger)
         trigger.removeEventListener('mousemove', handleMouseMoveTrigger)
-        trigger.removeEventListener('click', close)
         window.removeEventListener('blur', close)
     }
 
@@ -181,7 +179,7 @@
         border: 1px solid var(--dropdown-border-color);
         border-radius: var(--popover-border-radius);
         // Ensure child elements do not overflow the border radius
-        overflow: hidden;
+        overflow-y: scroll;
 
         // We always display the popover on hover, but there may not be anything
         // inside until something we load something. This ensures we do not

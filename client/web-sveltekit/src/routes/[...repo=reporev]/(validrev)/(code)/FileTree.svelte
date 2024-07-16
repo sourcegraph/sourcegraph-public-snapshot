@@ -122,10 +122,18 @@
                     We handle navigation via the TreeView's select event, to preserve the focus state.
                     Using a link here allows us to benefit from data preloading.
                 -->
-                <Popover trigger={label} placement="right-start" showOnHover offset={{ mainAxis: 8, crossAxis: -32 }}>
+                <Popover
+                    let:toggle
+                    trigger={label}
+                    placement="right-start"
+                    showOnHover
+                    offset={{ mainAxis: 8, crossAxis: -32 }}
+                >
                     <a
                         href={replaceRevisionInURL(entry.canonicalURL, revision)}
-                        on:click|preventDefault={() => {}}
+                        on:click|preventDefault={() => {
+                            toggle(false)
+                        }}
                         tabindex={-1}
                         data-go-up={isRoot ? true : undefined}
                         on:mouseover={/* Preload */ () =>

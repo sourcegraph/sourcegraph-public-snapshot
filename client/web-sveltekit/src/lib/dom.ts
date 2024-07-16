@@ -1,13 +1,14 @@
 import {
+    arrow,
     autoUpdate,
     computePosition,
     flip,
-    shift,
-    arrow,
-    type Placement,
-    type Middleware,
     offset,
+    shift,
+    size,
+    type Middleware,
     type OffsetOptions,
+    type Placement,
     type ShiftOptions,
     type FlipOptions,
 } from '@floating-ui/dom'
@@ -161,7 +162,18 @@ export const popover: Action<HTMLElement, { reference: Element; options: Popover
         if (options.offset !== undefined) {
             middleware.push(offset(options.offset))
         }
-        middleware.push(shift(options.shift), flip(options.flip))
+        middleware.push(
+            shift(options.shift),
+            flip(options.flip),
+            size({
+                apply({ availableWidth, availableHeight }) {
+                    Object.assign(popover.style, {
+                        maxWidth: `${availableWidth}px`,
+                        maxHeight: `${availableHeight}px`,
+                    })
+                },
+            })
+        )
         if (arrowElement) {
             middleware.push(arrow({ element: arrowElement }))
         }

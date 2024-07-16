@@ -67,8 +67,6 @@
     const resultContainer = writable<HTMLElement | null>(null)
     let searchResultsFiltersPanel: Panel
     const recentSearches = createRecentSearchesStore()
-    // Used to control the sidebar visibility on mobile.
-    let sidebarOpen = false
 
     $: state = $stream.state // 'loading', 'error', 'complete'
     $: results = $stream.results
@@ -166,7 +164,7 @@
     </GlobalHeaderPortal>
 {/if}
 
-<div class="search-results" class:sidebar-open={sidebarOpen}>
+<div class="search-results">
     <PanelGroup id="search-results-panels">
         <Panel
             bind:this={searchResultsFiltersPanel}
@@ -191,9 +189,10 @@
                     {#if $isViewportMobile}
                         <Button
                             variant="secondary"
-                            display="stretch"
+                            display="block"
                             aria-label="Open filters"
-                            on:click={() => searchResultsFiltersPanel.expand()}>Filters</Button
+                            on:click={() => searchResultsFiltersPanel.expand()}
+                            data-scope-button>Filters</Button
                         >
                     {/if}
                     <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} />
@@ -298,6 +297,10 @@
                 display: grid;
                 gap: 0.5rem;
                 grid-template-columns: 1fr auto;
+            }
+
+            :global([data-scope-button]) {
+                align-self: stretch;
             }
         }
 
