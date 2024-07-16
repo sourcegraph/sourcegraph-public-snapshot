@@ -511,6 +511,8 @@ func TestGetAndSaveUser(t *testing.T) {
 						gotEvents := eventsStore.CollectStoredEvents()
 						if c.expNewUserCreated {
 							assert.NotEmpty(t, gotEvents)
+						} else {
+							assert.Empty(t, gotEvents)
 						}
 						for _, ev := range gotEvents {
 							switch {
