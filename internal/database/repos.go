@@ -1186,27 +1186,13 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 	}
 
 	if len(opt.KVPFilters) > 0 {
-		var ands []*sqlf.Query
+		ands := make([]*sqlf.Query, 0, len(opt.KVPFilters))
 		for _, filter := range opt.KVPFilters {
-			if filter.KeyOnly {
-				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s)"
-				if filter.Negated {
-					q = "NOT " + q
-				}
-				ands = append(ands, sqlf.Sprintf(q, filter.Key))
-			} else if filter.Value != nil {
-				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value = %s)"
-				if filter.Negated {
-					q = "NOT " + q
-				}
-				ands = append(ands, sqlf.Sprintf(q, filter.Key, *filter.Value))
-			} else {
-				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value IS NULL)"
-				if filter.Negated {
-					q = "NOT " + q
-				}
-				ands = append(ands, sqlf.Sprintf(q, filter.Key))
+			cond, err := kvpCondition(filter)
+			if err != nil {
+				return nil, errors.Wrap(err, "creating KVPFilter condition")
 			}
+			ands = append(ands, cond)
 		}
 		where = append(where, sqlf.Join(ands, "AND"))
 	}
@@ -1675,6 +1661,67 @@ func parseDescriptionPattern(tr trace.Trace, p string) ([]*sqlf.Query, error) {
 		conds = append(conds, sqlf.Sprintf("lower(description) ~* %s", strings.ToLower(pattern)))
 	}
 	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
+}
+
+func kvpCondition(filter RepoKVPFilter) (*sqlf.Query, error) {
+	if filter.KeyOnly {
+		cond, err := keyOrValueCondition("key", filter.Key)
+		if err != nil {
+			return nil, err
+		}
+		q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND %s)"
+		if filter.Negated {
+			q = "NOT " + q
+		}
+		return sqlf.Sprintf(q, cond), nil
+	} else if filter.Value != nil {
+		keyCond, err := keyOrValueCondition("key", filter.Key)
+		if err != nil {
+			return nil, err
+		}
+		valueCond, err := keyOrValueCondition("value", *filter.Value)
+		if err != nil {
+			return nil, err
+		}
+		q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND %s AND %s)"
+		if filter.Negated {
+			q = "NOT " + q
+		}
+		return sqlf.Sprintf(q, keyCond, valueCond), nil
+	} else {
+		keyCond, err := keyOrValueCondition("key", filter.Key)
+		if err != nil {
+			return nil, err
+		}
+		q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value IS NULL)"
+		if filter.Negated {
+			q = "NOT " + q
+		}
+		return sqlf.Sprintf(q, keyCond), nil
+	}
+}
+
+func keyOrValueCondition(target string, p string) (*sqlf.Query, error) {
+	exact, like, pattern, err := parseIncludePattern(p)
+	if err != nil {
+		return nil, err
+	}
+
+	var conds []*sqlf.Query
+	if exact != nil {
+		if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
+			conds = append(conds, sqlf.Sprintf("TRUE"))
+		} else {
+			conds = append(conds, sqlf.Sprintf("% = ANY (%s)", target, pq.Array(exact)))
+		}
+	}
+	for _, v := range like {
+		conds = append(conds, sqlf.Sprintf(`% LIKE %s`, target, strings.ToLower(v)))
+	}
+	if pattern != "" {
+		conds = append(conds, sqlf.Sprintf("% ~* %s", target, strings.ToLower(pattern)))
+	}
+	return sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR")), nil
 }
 
 // parseCursorConds returns the WHERE conditions for the given cursor
