@@ -32,6 +32,7 @@
     import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
+    import type { ResolvedRevision } from '$lib/repo/utils'
     import { replaceRevisionInURL } from '$lib/shared'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
@@ -40,8 +41,6 @@
     import { getButtonClassName } from '$lib/wildcard/Button'
     import ButtonGroup from '$lib/wildcard/ButtonGroup.svelte'
     import CopyButton from '$lib/wildcard/CopyButton.svelte'
-
-    import type { ResolvedRevision } from '../+layout'
 
     import Picker from './Picker.svelte'
     import RepositoryRevPickerItem from './RepositoryRevPickerItem.svelte'
