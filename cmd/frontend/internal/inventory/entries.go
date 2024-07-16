@@ -11,17 +11,23 @@ import (
 	"io"
 	"io/fs"
 	"sort"
+	"time"
 )
 
 // Based on the benchmarking in entries_test.go, 1_000 is a good number after which we see diminishing returns.
 var maxInvsLength = env.MustGetInt("GET_INVENTORY_MAX_INV_IN_MEMORY", 1_000, "When computing the language stats, every nth iteration all loaded files are aggregated into the inventory to reduce the memory footprint. Increasing this value may make the computation run faster, but will require more memory.")
+var getInventoryTimeout = env.MustGetInt("GET_INVENTORY_TIMEOUT", 5, "Time in minutes before cancelling getInventory requests. Raise this if your repositories are large and need a long time to process.")
 
 func (c *Context) All() (inv Inventory, err error) {
-	ctx := context.Background()
 	// Top-level caching is what we need for users, directory-level caching is to speed up retries if the repo doesn't compute within the timeout.
 	// To help with the latter we detach the context above, instead of introducing rather complicated caching logic (it turned out to be a leetcode problem).
 	// Since we're planning to move this to a pre-computed style anyway, the upsides of introducing complicated code
 	// for retryable caching become less relevant.
+	ctx := context.Background()
+
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(getInventoryTimeout)*time.Minute)
+	defer cancel()
+
 	cacheKey := fmt.Sprintf("%s@%s", c.Repo, c.CommitID)
 	if c.CacheGet != nil {
 		if inv, ok := c.CacheGet(ctx, cacheKey); ok {
