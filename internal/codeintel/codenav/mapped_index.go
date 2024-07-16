@@ -50,8 +50,8 @@ func NewMappedIndex(
 	upload core.UploadLike,
 	targetCommit api.CommitID,
 ) (MappedIndex, error) {
-	// NOTE: No idea if 100 is a reasonable number here (the resolver wide one has a default of 1000),
-	// I'll get rid of the LRU cache once I get the unified diff command output from gitserver
+	// NOTE(issue: GRAPH-742): No idea if 100 is a reasonable number here (the resolver wide one has a default of 1000),
+	// This will go away once the linked issue is fixed.
 	hunkCache, err := NewHunkCache(100)
 	if err != nil {
 		return nil, err
