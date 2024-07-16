@@ -1666,7 +1666,6 @@ func parseDescriptionPattern(tr trace.Trace, p string) ([]*sqlf.Query, error) {
 }
 
 func kvpCondition(filter RepoKVPFilter) (res *sqlf.Query, _ error) {
-	defer func() { fmt.Printf("%#v\n", res) }()
 	if filter.KeyOnly {
 		cond, err := keyOrValueCondition("key", filter.Key)
 		if err != nil {

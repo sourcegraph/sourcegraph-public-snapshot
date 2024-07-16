@@ -318,7 +318,9 @@ func (f *RepoHasTagPredicate) Field() string { return FieldRepo }
 func (f *RepoHasTagPredicate) Name() string  { return "has.tag" }
 
 type RepoHasMetaPredicate struct {
-	Key     string
+	// A regex pattern matching the value
+	Key string
+	// A regex pattern matching the value
 	Value   *string
 	Negated bool
 	KeyOnly bool
@@ -327,13 +329,28 @@ type RepoHasMetaPredicate struct {
 func (p *RepoHasMetaPredicate) Unmarshal(params string, negated bool) (err error) {
 	scanLiteral := func(data string) (string, int, error) {
 		if strings.HasPrefix(data, `"`) {
-			return ScanDelimited([]byte(data), true, '"')
+			s, advance, err := ScanDelimited([]byte(data), true, '"')
+			if err != nil {
+				return "", 0, err
+			}
+			return "^" + regexp.QuoteMeta(s) + "$", advance, nil
 		}
 		if strings.HasPrefix(data, `'`) {
-			return ScanDelimited([]byte(data), true, '\'')
+			s, advance, err := ScanDelimited([]byte(data), true, '\'')
+			if err != nil {
+				return "", 0, err
+			}
+			return "^" + regexp.QuoteMeta(s) + "$", advance, nil
 		}
 		if strings.HasPrefix(data, `/`) {
-			return ScanDelimited([]byte(data), true, '/')
+			s, advance, err := ScanDelimited([]byte(data), false, '/')
+			if err != nil {
+				return "", 0, err
+			}
+			if _, err := syntax.Parse(s, syntax.Perl); err != nil {
+				return "", 0, errors.Wrap(err, "invalid regex literal")
+			}
+			return s, advance, nil
 		}
 		loc := strings.Index(data, ":")
 		if loc >= 0 {
