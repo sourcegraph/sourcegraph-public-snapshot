@@ -10,37 +10,29 @@
     import { Alert, Button, Input } from '$lib/wildcard'
 
     import type { PageData, Snapshot } from './$types'
-    import type { GitTagsConnection } from './page.gql'
 
     export let data: PageData
 
-    export const snapshot: Snapshot<{ count: number; scroller: ScrollerCapture }> = {
+    export const snapshot: Snapshot<{ tags: ReturnType<typeof data.tagsQuery.capture>; scroller: ScrollerCapture }> = {
         capture() {
             return {
-                count: tagsConnection?.nodes.length ?? 0,
+                tags: data.tagsQuery.capture(),
                 scroller: scroller.capture(),
             }
         },
         async restore(snapshot) {
-            if (snapshot?.count && get(navigating)?.type === 'popstate') {
-                await tagsQuery?.restore(result => {
-                    const count = result.data?.repository?.gitRefs?.nodes?.length
-                    return !!count && count < snapshot.count
-                })
+            if (snapshot?.tags && get(navigating)?.type === 'popstate') {
+                await data.tagsQuery?.restore(snapshot.tags)
             }
             scroller.restore(snapshot.scroller)
         },
     }
 
     let scroller: Scroller
-    let tagsConnection: GitTagsConnection | undefined
 
     $: query = data.query
     $: tagsQuery = data.tagsQuery
-    $: tagsConnection = $tagsQuery.data?.repository?.gitRefs ?? tagsConnection
-    $: if (tagsQuery) {
-        tagsConnection = undefined
-    }
+    $: tags = $tagsQuery.data
 </script>
 
 <svelte:head>
@@ -53,10 +45,10 @@
         <Button variant="primary" type="submit">Search</Button>
     </form>
     <Scroller bind:this={scroller} margin={600} on:more={tagsQuery.fetchMore}>
-        {#if !$tagsQuery.restoring && tagsConnection}
+        {#if tags}
             <table>
                 <tbody>
-                    {#each tagsConnection.nodes as tag (tag)}
+                    {#each tags.nodes as tag (tag)}
                         <GitReference ref={tag} />
                     {:else}
                         <tr>
@@ -69,7 +61,7 @@
             </table>
         {/if}
         <div>
-            {#if $tagsQuery.fetching || $tagsQuery.restoring}
+            {#if $tagsQuery.fetching}
                 <LoadingSpinner />
             {:else if $tagsQuery.error}
                 <Alert variant="danger">
@@ -78,12 +70,12 @@
             {/if}
         </div>
     </Scroller>
-    {#if tagsConnection && tagsConnection.nodes.length > 0}
+    {#if tags && tags.nodes.length > 0}
         <div class="footer">
-            {tagsConnection.totalCount}
-            {pluralize('tag', tagsConnection.totalCount)} total
-            {#if tagsConnection.totalCount > tagsConnection.nodes.length}
-                (showing {tagsConnection.nodes.length})
+            {tags.totalCount}
+            {pluralize('tag', tags.totalCount)} total
+            {#if tags.totalCount > tags.nodes.length}
+                (showing {tags.nodes.length})
             {/if}
         </div>
     {/if}
