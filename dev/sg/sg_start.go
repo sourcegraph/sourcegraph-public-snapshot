@@ -154,6 +154,7 @@ sg start --commands frontend gitserver
 )
 
 func constructStartCmdLongHelp() string {
+	// LOOK A CHANGE
 	var out strings.Builder
 
 	fmt.Fprintf(&out, `Use this to start your Sourcegraph environment!`)
