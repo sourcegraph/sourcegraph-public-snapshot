@@ -3,7 +3,6 @@ package codenav
 import (
 	"context"
 	"errors"
-	"slices"
 	"testing"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
@@ -112,8 +111,12 @@ func shiftPos(pos shared.Position, numLines int) shared.Position {
 }
 
 // A GitTreeTranslator that returns positions and ranges shifted by numLines
-// and returns failed translations for paths in failingFiles
-func fakeTranslator(targetCommit api.CommitID, numLines int, failingFiles ...string) GitTreeTranslator {
+// and returns failed translations for path/range pairs if shouldFail returns true
+func fakeTranslator(
+	targetCommit api.CommitID,
+	numLines int,
+	shouldFail func(string, shared.Range) bool,
+) GitTreeTranslator {
 	translator := NewMockGitTreeTranslator()
 	translator.GetSourceCommitFunc.SetDefaultReturn(targetCommit)
 	translator.GetTargetCommitPositionFromSourcePositionFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, pos shared.Position, reverse bool) (shared.Position, bool, error) {
@@ -121,7 +124,7 @@ func fakeTranslator(targetCommit api.CommitID, numLines int, failingFiles ...str
 		if reverse {
 			numLines = -numLines
 		}
-		if slices.Contains(failingFiles, path) {
+		if shouldFail(path, shared.Range{Start: pos, End: pos}) {
 			return shared.Position{}, false, nil
 		}
 		return shiftPos(pos, numLines), true, nil
@@ -131,7 +134,7 @@ func fakeTranslator(targetCommit api.CommitID, numLines int, failingFiles ...str
 		if reverse {
 			numLines = -numLines
 		}
-		if slices.Contains(failingFiles, path) {
+		if shouldFail(path, rg) {
 			return shared.Range{}, false, nil
 		}
 		return shared.Range{Start: shiftPos(rg.Start, numLines), End: shiftPos(rg.End, numLines)}, true, nil
@@ -141,7 +144,7 @@ func fakeTranslator(targetCommit api.CommitID, numLines int, failingFiles ...str
 
 // A GitTreeTranslator that returns all positions and ranges shifted by numLines.
 func shiftAllTranslator(targetCommit api.CommitID, numLines int) GitTreeTranslator {
-	return fakeTranslator(targetCommit, numLines)
+	return fakeTranslator(targetCommit, numLines, func(path string, rg shared.Range) bool { return false })
 }
 
 // A GitTreeTranslator that returns all positions and ranges unchanged
@@ -224,9 +227,53 @@ func TestMappedIndex_GetDocumentWithTranslation(t *testing.T) {
 	require.Len(t, allOccurrences, 3)
 }
 
+// This test is here to check MappedDocument 's internals, by getting all occurrences first,
+// we're testing that the `isMapped` logic does not change the results of GetOccurrencesAtRange
+func TestMappedIndex_GetOccurrencesAtRangeAfterGetOccurrences(t *testing.T) {
+	targetCommit, upload, lsifStore := setupSimpleUpload()
+	translator := shiftAllTranslator(targetCommit, -2)
+	mappedIndex := NewMappedIndexFromTranslator(lsifStore, translator, upload)
+
+	ctx := context.Background()
+	mappedDocumentOption, err := mappedIndex.GetDocument(ctx, core.NewRepoRelPathUnchecked("indexRoot/a.go"))
+	require.NoError(t, err)
+	mappedDocument := mappedDocumentOption.Unwrap()
+
+	allOccurrences, err := mappedDocument.GetOccurrences(ctx)
+	require.NoError(t, err)
+	require.Len(t, allOccurrences, 3)
+
+	noOccurrences, err := mappedDocument.GetOccurrencesAtRange(ctx, testRange(1))
+	require.NoError(t, err)
+	require.Len(t, noOccurrences, 0)
+
+	occurrences, err := mappedDocument.GetOccurrencesAtRange(ctx, shiftSCIPRange(testRange(1), 2))
+	require.NoError(t, err)
+	require.Len(t, occurrences, 1)
+	require.Equal(t, scip.NewRangeUnchecked(occurrences[0].GetRange()).Start.Line, int32(3))
+}
+
+func TestMappedIndex_GetDocumentsFiltersFailedTranslation(t *testing.T) {
+	targetCommit, upload, lsifStore := setupSimpleUpload()
+	translator := fakeTranslator(targetCommit, 0, func(path string, rg shared.Range) bool {
+		return rg.ToSCIPRange().CompareStrict(testRange(1)) == 0
+	})
+	mappedIndex := NewMappedIndexFromTranslator(lsifStore, translator, upload)
+
+	ctx := context.Background()
+	mappedDocumentOption, err := mappedIndex.GetDocument(ctx, core.NewRepoRelPathUnchecked("indexRoot/a.go"))
+	require.NoError(t, err)
+	mappedDocument := mappedDocumentOption.Unwrap()
+	allOccurrences, err := mappedDocument.GetOccurrences(ctx)
+	require.NoError(t, err)
+	require.Len(t, allOccurrences, 2)
+}
+
 func TestMappedIndex_GetDocumentFailedTranslation(t *testing.T) {
 	targetCommit, upload, lsifStore := setupSimpleUpload()
-	translator := fakeTranslator(targetCommit, 0, "indexRoot/b.go")
+	translator := fakeTranslator(targetCommit, 0, func(path string, rg shared.Range) bool {
+		return path == "indexRoot/b.go" || rg.ToSCIPRange().CompareStrict(testRange(1)) == 0
+	})
 	mappedIndex := NewMappedIndexFromTranslator(lsifStore, translator, upload)
 
 	ctx := context.Background()

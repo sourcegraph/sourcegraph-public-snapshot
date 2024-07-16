@@ -3,6 +3,7 @@ package codenav
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 
 	genslices "github.com/life4/genesis/slices"
 	"github.com/sourcegraph/scip/bindings/go/scip"
@@ -121,6 +122,7 @@ func (i mappedIndex) GetDocument(ctx context.Context, path core.RepoRelPath) (co
 		targetCommit:      i.targetCommit,
 		path:              path,
 		document:          document,
+		mapOnce:           sync.Once{},
 	}), nil
 }
 
@@ -131,8 +133,9 @@ type mappedDocument struct {
 	path              core.RepoRelPath
 	document          *scip.Document
 
-	isMappedLock sync.Mutex
-	isMapped     bool
+	mapOnce    sync.Once
+	mapErrored error
+	isMapped   atomic.Bool
 }
 
 func (d *mappedDocument) IndexCommit() api.CommitID {
@@ -143,14 +146,8 @@ func (d *mappedDocument) TargetCommit() api.CommitID {
 	return d.targetCommit
 }
 
-func (d *mappedDocument) GetOccurrences(ctx context.Context) ([]*scip.Occurrence, error) {
-	if d.isMapped {
-		return d.document.Occurrences, nil
-	}
-
-	d.isMappedLock.Lock()
-	defer d.isMappedLock.Unlock()
-
+func (d *mappedDocument) mapAllOccurrences(ctx context.Context) ([]*scip.Occurrence, error) {
+	newOccurrences := make([]*scip.Occurrence, 0)
 	for _, occ := range d.document.Occurrences {
 		scipRange := scip.NewRangeUnchecked(occ.Range)
 		sharedRange := shared.TranslateRange(scipRange)
@@ -161,20 +158,46 @@ func (d *mappedDocument) GetOccurrences(ctx context.Context) ([]*scip.Occurrence
 		if !ok {
 			continue
 		}
-		occ.Range = mappedRange.ToSCIPRange().SCIPRange()
+		newOccurrences = append(newOccurrences, &scip.Occurrence{
+			Range:                 mappedRange.ToSCIPRange().SCIPRange(),
+			Symbol:                occ.Symbol,
+			SymbolRoles:           occ.SymbolRoles,
+			OverrideDocumentation: occ.OverrideDocumentation,
+			SyntaxKind:            occ.SyntaxKind,
+			Diagnostics:           occ.Diagnostics,
+			EnclosingRange:        occ.EnclosingRange,
+		})
 	}
-	d.isMapped = true
+	return newOccurrences, nil
+}
+
+func (d *mappedDocument) GetOccurrences(ctx context.Context) ([]*scip.Occurrence, error) {
+	// It's important we don't remap the occurrences twice
+	d.mapOnce.Do(func() {
+		newOccurrences, err := d.mapAllOccurrences(ctx)
+		if err != nil {
+			d.mapErrored = err
+			return
+		}
+		d.document.Occurrences = newOccurrences
+		d.isMapped.Store(true)
+	})
+
+	if d.mapErrored != nil {
+		return nil, d.mapErrored
+	}
 	return d.document.Occurrences, nil
 }
 
 func (d *mappedDocument) GetOccurrencesAtRange(ctx context.Context, rg scip.Range) ([]*scip.Occurrence, error) {
-	if d.isMapped {
+	pastOccurrences := d.document.Occurrences
+	if d.isMapped.Load() {
+		// if isMapped is true we know d.document.Occurrences is mapped,
+		// we can _not_ use pastOccurrences here
+		// (in case mapping finished between taking that reference and checking isMapped)
 		return FindOccurrencesWithEqualRange(d.document.Occurrences, rg), nil
-
 	}
-	d.isMappedLock.Lock()
-	defer d.isMappedLock.Unlock()
-
+	// We know pastOccurrences is not mapped at this point, and `GetOccurrence` will not modify it
 	mappedRg, ok, err := d.gitTreeTranslator.GetTargetCommitRangeFromSourceRange(
 		ctx, string(d.indexCommit), d.path.RawValue(), shared.TranslateRange(rg), false,
 	)
@@ -185,9 +208,9 @@ func (d *mappedDocument) GetOccurrencesAtRange(ctx context.Context, rg scip.Rang
 		// The range was changed/removed in the target commit, so return no occurrences
 		return nil, nil
 	}
-	pastOccurrences := FindOccurrencesWithEqualRange(d.document.Occurrences, mappedRg.ToSCIPRange())
+	pastMatchingOccurrences := FindOccurrencesWithEqualRange(pastOccurrences, mappedRg.ToSCIPRange())
 	Range := rg.SCIPRange()
-	return genslices.Map(pastOccurrences, func(occ *scip.Occurrence) *scip.Occurrence {
+	return genslices.Map(pastMatchingOccurrences, func(occ *scip.Occurrence) *scip.Occurrence {
 		return &scip.Occurrence{
 			// Return the range in the target commit, instead of the index commit
 			Range:                 Range,
