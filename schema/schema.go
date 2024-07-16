@@ -282,6 +282,12 @@ type AzureDevOpsRateLimit struct {
 	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
+type BackendAPIConfig struct {
+	// AuthHeader description: Value of Authorization header (if required)
+	AuthHeader string `json:"authHeader,omitempty"`
+	// Url description: Full URL of backend API
+	Url string `json:"url"`
+}
 type BatchChangeRolloutWindow struct {
 	// Days description: Day(s) the window applies to. If omitted, this rule applies to all days of the week.
 	Days []string `json:"days,omitempty"`
@@ -668,6 +674,12 @@ type CodyProConfig struct {
 	StripePublishableKey string `json:"stripePublishableKey,omitempty"`
 	// UseEmbeddedUI description: Whether Cody Pro UI is served from sourcegraph.com. If false, users are directed to https://accounts.sourcegraph.com/cody to manage their Cody Pro subscription.
 	UseEmbeddedUI bool `json:"useEmbeddedUI,omitempty"`
+}
+
+// CodyServerSideContext description: Configuration for Server-side context API
+type CodyServerSideContext struct {
+	// IntentDetectionAPI description: Configuration for intent detection API
+	IntentDetectionAPI *IntentDetectionAPI `json:"intentDetectionAPI,omitempty"`
 }
 
 // Completions description: Configuration for the completions service.
@@ -1655,6 +1667,14 @@ type ImportChangesets struct {
 	ExternalIDs []any `json:"externalIDs"`
 	// Repository description: The repository name as configured on your Sourcegraph instance.
 	Repository string `json:"repository"`
+}
+
+// IntentDetectionAPI description: Configuration for intent detection API
+type IntentDetectionAPI struct {
+	// Default description: Default URL for intent detection API
+	Default *BackendAPIConfig `json:"default,omitempty"`
+	// Extra description: Array of additional intent detection API configs
+	Extra []*BackendAPIConfig `json:"extra,omitempty"`
 }
 
 // JVMPackagesConnection description: Configuration for a connection to a JVM packages repository.
@@ -3023,6 +3043,8 @@ type SiteConfiguration struct {
 	CodyPermissions *bool `json:"cody.permissions,omitempty"`
 	// CodyRestrictUsersFeatureFlag description: DEPRECATED; see cody.permissions instead. PRIOR DESCRIPTION: Cody to only be enabled for users that have a feature flag labeled "cody" set to true. You must create a feature flag with this ID after enabling this setting: https://docs-legacy.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.
 	CodyRestrictUsersFeatureFlag *bool `json:"cody.restrictUsersFeatureFlag,omitempty"`
+	// CodyServerSideContext description: Configuration for Server-side context API
+	CodyServerSideContext *CodyServerSideContext `json:"cody.serverSideContext,omitempty"`
 	// Completions description: Configuration for the completions service.
 	Completions *Completions `json:"completions,omitempty"`
 	// ConfigFeatures description: Configuration for the completions service.
@@ -3293,6 +3315,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "cody.enabled")
 	delete(m, "cody.permissions")
 	delete(m, "cody.restrictUsersFeatureFlag")
+	delete(m, "cody.serverSideContext")
 	delete(m, "completions")
 	delete(m, "configFeatures")
 	delete(m, "corsOrigin")

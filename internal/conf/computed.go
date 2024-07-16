@@ -286,6 +286,10 @@ func CodyPermissionsEnabled() bool {
 	return true // default to enabled
 }
 
+func CodyIntentConfig() *schema.IntentDetectionAPI {
+	return Get().CodyServerSideContext.IntentDetectionAPI
+}
+
 func ExecutorsEnabled() bool {
 	return Get().ExecutorsAccessToken != ""
 }

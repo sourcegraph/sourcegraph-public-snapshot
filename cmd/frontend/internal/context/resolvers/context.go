@@ -11,8 +11,10 @@ import (
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
@@ -25,13 +27,16 @@ import (
 )
 
 func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient *codycontext.CodyContextClient, logger log.Logger) graphqlbackend.CodyContextResolver {
-	return &Resolver{
+
+	res := &Resolver{
 		db:                  db,
 		gitserverClient:     gitserverClient,
 		contextClient:       contextClient,
 		logger:              logger,
 		intentApiHttpClient: httpcli.UncachedExternalDoer,
+		intentBackendConfig: conf.CodyIntentConfig(),
 	}
+	return res
 }
 
 type Resolver struct {
@@ -40,6 +45,7 @@ type Resolver struct {
 	contextClient       *codycontext.CodyContextClient
 	logger              log.Logger
 	intentApiHttpClient httpcli.Doer
+	intentBackendConfig *schema.IntentDetectionAPI
 }
 
 func (r *Resolver) RecordContext(ctx context.Context, args graphqlbackend.RecordContextArgs) (*graphqlbackend.EmptyResponse, error) {
@@ -128,6 +134,10 @@ func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatInten
 	if err != nil {
 		return nil, err
 	}
+	backend := r.intentBackendConfig
+	if backend == nil || backend.Default == nil {
+		return nil, errors.New("intent detection backend not configured")
+	}
 	intentRequest := intentApiRequest{Query: args.Query}
 	buf, err := json.Marshal(&intentRequest)
 	if err != nil {
@@ -137,11 +147,14 @@ func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatInten
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	// Proof-of-concept warning - this needs to be deployed behind Cody Gateway, or exposed with HTTPS and authentication.
-	req, err := http.NewRequestWithContext(ctx, "POST", "http://34.123.181.109:8000/predict/linearv2", bytes.NewReader(buf))
+	req, err := http.NewRequestWithContext(ctx, "POST", backend.Default.Url, bytes.NewReader(buf))
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	if backend.Default.AuthHeader != "" {
+		req.Header.Set("Authorization", backend.Default.AuthHeader)
+	}
 	resp, err := r.intentApiHttpClient.Do(req)
 	if err != nil {
 		return nil, err

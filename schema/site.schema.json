@@ -3091,6 +3091,34 @@
     },
     "modelConfiguration": {
       "$ref": "#/definitions/SiteModelConfiguration"
+    },
+    "cody.serverSideContext": {
+      "description": "Configuration for Server-side context API",
+      "type": "object",
+      "!go": {
+        "pointer": true
+      },
+      "group": "Cody",
+      "properties": {
+        "intentDetectionAPI": {
+          "description": "Configuration for intent detection API",
+          "type": "object",
+          "properties": {
+            "default": {
+              "description": "Default URL for intent detection API",
+              "$ref": "#/definitions/BackendAPIConfig"
+            },
+            "extra": {
+              "description": "Array of additional intent detection API configs",
+              "type": "array",
+              "default": [],
+              "items": {
+                "$ref": "#/definitions/BackendAPIConfig"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -4511,6 +4539,20 @@
           "description": "Regular expression which matches a set of repository names. The pattern is evaluated using Go regular expression syntax (https://golang.org/pkg/regexp/). By default, the pattern matches partially. Use \\\"^...$\\\" for whole-string matching.",
           "type": "string",
           "format": "regex"
+        }
+      }
+    },
+    "BackendAPIConfig": {
+      "type": "object",
+      "required": ["url"],
+      "properties": {
+        "url": {
+          "description": "Full URL of backend API",
+          "type": "string"
+        },
+        "authHeader": {
+          "description": "Value of Authorization header (if required)",
+          "type": "string"
         }
       }
     }
