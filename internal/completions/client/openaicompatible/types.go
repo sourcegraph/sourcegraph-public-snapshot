@@ -61,3 +61,9 @@ type openaiResponse struct {
 	Model   string         `json:"model"`
 	Choices []openaiChoice `json:"choices"`
 }
+
+// e.g. {"error":"Input validation error: `inputs` tokens + `max_new_tokens` must be <= 4096. Given: 159 `inputs` tokens and 4000 `max_new_tokens`","error_type":"validation"}
+type openaiErrorResponse struct {
+	Error     string `json:"error"`
+	ErrorType string `json:"error_type"`
+}

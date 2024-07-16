@@ -2,15 +2,18 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "openaicompatible",
-    srcs = ["openaicompatible.go"],
+    srcs = [
+        "openaicompatible.go",
+        "types.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client/openaicompatible",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/completions/tokenizer",
         "//internal/completions/tokenusage",
         "//internal/completions/types",
-        "//internal/httpcli",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_tmaxmax_go_sse//:go_default_library",
     ],
 )

@@ -57,7 +57,7 @@ func getAPIProvider(modelConfigInfo types.ModelConfigInfo) (types.CompletionsCli
 		// TODO(slimsag): self-hosted-models: this logic only handles Cody Enterprise with Self-hosted models
 		// Only in this case do we have modelConfigInfo != nil
 		// TODO(slimsag): self-hosted-models: remove pointer
-		return openaicompatible.NewClient(httpcli.UncachedExternalDoer, &modelConfigInfo, *tokenManager), nil
+		return openaicompatible.NewClient(httpcli.UncachedExternalClient, &modelConfigInfo, *tokenManager), nil
 	}
 
 	// AWS Bedrock.
