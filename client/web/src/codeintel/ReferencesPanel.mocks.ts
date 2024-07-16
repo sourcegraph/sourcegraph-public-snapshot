@@ -4,28 +4,27 @@ import type { MockedResponse } from '@apollo/client/testing'
 import { of } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
-import { getDocumentNode, dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, getDocumentNode, useQuery } from '@sourcegraph/http-client'
 import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import type { ConnectionQueryArguments } from '../components/FilteredConnection'
 import { asGraphQLResult } from '../components/FilteredConnection/utils'
 import {
-    type UsePreciseCodeIntelForPositionResult,
-    type UsePreciseCodeIntelForPositionVariables,
     HighlightResponseFormat,
     type LocationFields,
     type ReferencesPanelHighlightedBlobVariables,
     type ResolveRepoAndRevisionVariables,
+    type UsePreciseCodeIntelForPositionResult,
+    type UsePreciseCodeIntelForPositionVariables,
 } from '../graphql-operations'
 
 import { buildPreciseLocation, LocationsGroup } from './location'
 import type { ReferencesPanelProps } from './ReferencesPanel'
 import {
-    USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
-    RESOLVE_REPO_REVISION_BLOB_QUERY,
     FETCH_HIGHLIGHTED_BLOB,
+    RESOLVE_REPO_REVISION_BLOB_QUERY,
+    USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
 } from './ReferencesPanelQueries'
 import type { UseCodeIntelParameters, UseCodeIntelResult } from './useCodeIntel'
 
@@ -718,45 +717,45 @@ export const defaultProps: ReferencesPanelProps = {
             fetchMorePrototypesLoading: false,
             fetchMorePrototypes: () => {},
         })
-        useQuery<
-            UsePreciseCodeIntelForPositionResult,
-            UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
-        >(USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY, {
-            variables,
-            notifyOnNetworkStatusChange: false,
-            fetchPolicy: 'no-cache',
-            skip: !result.loading,
-            onCompleted: result => {
-                const data = dataOrThrowErrors(asGraphQLResult({ data: result, errors: [] }))
-                if (!data?.repository?.commit?.blob?.lsif) {
-                    return
-                }
-                const lsif = data.repository.commit.blob.lsif
-                setResult(prevResult => ({
-                    ...prevResult,
-                    loading: false,
-                    data: {
-                        implementations: {
-                            endCursor: lsif.implementations.pageInfo.endCursor,
-                            nodes: new LocationsGroup(lsif.implementations.nodes.map(buildPreciseLocation)),
-                        },
-                        prototypes: {
-                            endCursor: lsif.prototypes.pageInfo.endCursor,
-                            nodes: new LocationsGroup(lsif.prototypes.nodes.map(buildPreciseLocation)),
-                        },
+        useQuery<UsePreciseCodeIntelForPositionResult, UsePreciseCodeIntelForPositionVariables>(
+            USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
+            {
+                variables,
+                notifyOnNetworkStatusChange: false,
+                fetchPolicy: 'no-cache',
+                skip: !result.loading,
+                onCompleted: result => {
+                    const data = dataOrThrowErrors(asGraphQLResult({ data: result, errors: [] }))
+                    if (!data?.repository?.commit?.blob?.lsif) {
+                        return
+                    }
+                    const lsif = data.repository.commit.blob.lsif
+                    setResult(prevResult => ({
+                        ...prevResult,
+                        loading: false,
+                        data: {
+                            implementations: {
+                                endCursor: lsif.implementations.pageInfo.endCursor,
+                                nodes: new LocationsGroup(lsif.implementations.nodes.map(buildPreciseLocation)),
+                            },
+                            prototypes: {
+                                endCursor: lsif.prototypes.pageInfo.endCursor,
+                                nodes: new LocationsGroup(lsif.prototypes.nodes.map(buildPreciseLocation)),
+                            },
 
-                        references: {
-                            endCursor: lsif.references.pageInfo.endCursor,
-                            nodes: new LocationsGroup(lsif.references.nodes.map(buildPreciseLocation)),
+                            references: {
+                                endCursor: lsif.references.pageInfo.endCursor,
+                                nodes: new LocationsGroup(lsif.references.nodes.map(buildPreciseLocation)),
+                            },
+                            definitions: {
+                                endCursor: lsif.definitions.pageInfo.endCursor,
+                                nodes: new LocationsGroup(lsif.definitions.nodes.map(buildPreciseLocation)),
+                            },
                         },
-                        definitions: {
-                            endCursor: lsif.definitions.pageInfo.endCursor,
-                            nodes: new LocationsGroup(lsif.definitions.nodes.map(buildPreciseLocation)),
-                        },
-                    },
-                }))
-            },
-        })
+                    }))
+                },
+            }
+        )
         return result
     },
 }

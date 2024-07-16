@@ -8,12 +8,12 @@ import { Button, Container, Icon, useDebounce } from '@sourcegraph/wildcard'
 import {
     ConnectionContainer,
     ConnectionError,
-    ConnectionLoading,
+    ConnectionForm,
     ConnectionList,
-    SummaryContainer,
+    ConnectionLoading,
     ConnectionSummary,
     ShowMoreButton,
-    ConnectionForm,
+    SummaryContainer,
 } from '../../components/FilteredConnection/ui'
 import type { Scalars } from '../../graphql-operations'
 
@@ -91,7 +91,6 @@ export const TeamMemberListPage: React.FunctionComponent<React.PropsWithChildren
                     {connection && (
                         <SummaryContainer className="mt-2">
                             <ConnectionSummary
-                                first={15}
                                 centered={true}
                                 connection={connection}
                                 noun="member"

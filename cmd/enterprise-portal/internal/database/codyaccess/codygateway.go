@@ -4,7 +4,7 @@ import "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/databa
 
 type CodyGatewayAccess struct {
 	// ⚠️ DO NOT USE: This field is only used for creating foreign key constraint.
-	Subscription *subscriptions.Subscription `gorm:"foreignKey:SubscriptionID"`
+	Subscription *subscriptions.TableSubscription `gorm:"foreignKey:SubscriptionID"`
 
 	// SubscriptionID is the internal unprefixed UUID of the related subscription.
 	SubscriptionID string `gorm:"type:uuid;not null;unique"`

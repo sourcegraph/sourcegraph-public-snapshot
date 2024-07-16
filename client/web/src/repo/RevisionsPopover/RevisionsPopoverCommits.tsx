@@ -144,7 +144,6 @@ export const RevisionsPopoverCommits: React.FunctionComponent<
         query: REPOSITORY_GIT_COMMIT,
         variables: {
             query,
-            first: BATCH_COUNT,
             repo,
             revision: currentRev || defaultBranch,
         },
@@ -175,13 +174,13 @@ export const RevisionsPopoverCommits: React.FunctionComponent<
         },
         options: {
             fetchPolicy: 'cache-first',
+            pageSize: BATCH_COUNT,
         },
     })
 
     const summary = response.connection && (
         <ConnectionSummary
             connection={response.connection}
-            first={BATCH_COUNT}
             noun={noun}
             pluralNoun={pluralNoun}
             hasNextPage={response.hasNextPage}

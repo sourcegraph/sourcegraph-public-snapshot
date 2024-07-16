@@ -9,11 +9,11 @@ import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { ButtonLink, Container, ErrorAlert, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
-import { type GitHubAppsResult, type GitHubAppsVariables, GitHubAppDomain } from '../../graphql-operations'
+import { GitHubAppDomain, type GitHubAppsResult, type GitHubAppsVariables } from '../../graphql-operations'
 import {
     ConnectionContainer,
-    ConnectionLoading,
     ConnectionList,
+    ConnectionLoading,
     ConnectionSummary,
     SummaryContainer,
 } from '../FilteredConnection/ui'
@@ -103,7 +103,6 @@ export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled, telemetry
                                 <div className="text-center text-muted">You haven't created any GitHub Apps yet.</div>
                             }
                             noSummaryIfAllNodesVisible={false}
-                            first={gitHubApps?.length ?? 0}
                             centered={true}
                             connection={{
                                 nodes: gitHubApps ?? [],

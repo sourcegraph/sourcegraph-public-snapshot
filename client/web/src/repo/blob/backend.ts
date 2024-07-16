@@ -39,7 +39,7 @@ function fetchBlobCacheKey(options: FetchBlobOptions): string {
 
     return `${makeRepoGitURI(
         options
-    )}?disableTimeout=${disableTimeout}&=${format}&snap=${scipSnapshot}&visible=${visibleIndexID}`
+    )}?disableTimeout=${disableTimeout}&=${format}&snap=${scipSnapshot}&first=${visibleIndexID}`
 }
 
 interface FetchBlobOptions {

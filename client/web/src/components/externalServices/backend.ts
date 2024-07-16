@@ -1,39 +1,40 @@
 import type { Dispatch, SetStateAction } from 'react'
 
-import type { QueryTuple, MutationTuple, QueryResult } from '@apollo/client'
+import type { MutationTuple, QueryResult, QueryTuple } from '@apollo/client'
 import { parse } from 'jsonc-parser'
-import { type Observable, lastValueFrom } from 'rxjs'
+import { lastValueFrom, type Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors, useMutation, useLazyQuery, useQuery } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql, useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
 import type {
-    UpdateExternalServiceResult,
-    UpdateExternalServiceVariables,
-    Scalars,
-    AddExternalServiceVariables,
     AddExternalServiceResult,
-    DeleteExternalServiceVariables,
-    DeleteExternalServiceResult,
-    ExternalServicesVariables,
-    ExternalServicesResult,
-    ExternalServiceCheckConnectionByIdVariables,
-    ExternalServiceCheckConnectionByIdResult,
-    SyncExternalServiceResult,
-    SyncExternalServiceVariables,
-    ExternalServiceSyncJobsVariables,
-    ExternalServiceSyncJobConnectionFields,
-    ExternalServiceSyncJobsResult,
-    CancelExternalServiceSyncVariables,
+    AddExternalServiceVariables,
     CancelExternalServiceSyncResult,
-    ListExternalServiceFields,
+    CancelExternalServiceSyncVariables,
+    DeleteExternalServiceResult,
+    DeleteExternalServiceVariables,
+    ExternalServiceCheckConnectionByIdResult,
+    ExternalServiceCheckConnectionByIdVariables,
     ExternalServiceFields,
     ExternalServiceResult,
+    ExternalServiceSyncJobConnectionFields,
+    ExternalServiceSyncJobsResult,
+    ExternalServiceSyncJobsVariables,
     ExternalServiceVariables,
+    ExternalServicesResult,
+    ExternalServicesVariables,
+    ListExternalServiceFields,
+    Scalars,
+    SyncExternalServiceResult,
+    SyncExternalServiceVariables,
+    UpdateExternalServiceResult,
+    UpdateExternalServiceVariables,
 } from '../../graphql-operations'
 import {
+    ShowMoreConnectionQueryArguments,
     useShowMorePagination,
     type UseShowMorePaginationResult,
 } from '../FilteredConnection/hooks/useShowMorePagination'
@@ -283,11 +284,11 @@ export const EXTERNAL_SERVICE_IDS_AND_NAMES = gql`
 `
 
 export const useExternalServicesConnection = (
-    vars: ExternalServicesVariables
+    vars: Omit<ExternalServicesVariables, keyof ShowMoreConnectionQueryArguments>
 ): UseShowMorePaginationResult<ExternalServicesResult, ListExternalServiceFields> =>
     useShowMorePagination<ExternalServicesResult, ExternalServicesVariables, ListExternalServiceFields>({
         query: EXTERNAL_SERVICES,
-        variables: { after: vars.after, first: vars.first ?? 10, repo: vars.repo },
+        variables: { repo: vars.repo },
         getConnection: result => {
             const { externalServices } = dataOrThrowErrors(result)
             return externalServices

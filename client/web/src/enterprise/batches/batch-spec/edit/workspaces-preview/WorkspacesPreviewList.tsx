@@ -6,9 +6,9 @@ import {
     ConnectionContainer,
     ConnectionError,
     ConnectionList,
-    SummaryContainer,
     ConnectionSummary,
     ShowMoreButton,
+    SummaryContainer,
 } from '../../../../../components/FilteredConnection/ui'
 import type {
     BatchSpecWorkspacesPreviewResult,
@@ -16,7 +16,6 @@ import type {
     PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
 
-import { WORKSPACES_PER_PAGE_COUNT } from './useWorkspaces'
 import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
 
 interface WorkspacesPreviewListProps {
@@ -90,7 +89,6 @@ export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChild
                     <ConnectionSummary
                         centered={true}
                         noSummaryIfAllNodesVisible={true}
-                        first={WORKSPACES_PER_PAGE_COUNT}
                         connection={connectionOrCached}
                         noun="workspace"
                         pluralNoun="workspaces"

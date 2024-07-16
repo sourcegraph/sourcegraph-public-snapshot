@@ -41,7 +41,7 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
     setAlert,
 }) => {
     const queryConnection = useCallback(
-        (args: Partial<ListSearchContextsVariables>) => {
+        (args: Omit<Partial<ListSearchContextsVariables>, 'first'> & { first?: number | null }) => {
             const { namespace, orderBy, descending } = args as {
                 namespace: string | undefined
                 orderBy: SearchContextsOrderBy

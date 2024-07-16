@@ -1,9 +1,9 @@
-import { type ChangeEvent, type FC, useState, useEffect } from 'react'
+import { type ChangeEvent, type FC, useEffect, useState } from 'react'
 
 import { mdiMapSearch } from '@mdi/js'
 
 import { BackfillQueueOrderBy, InsightQueueItemState } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { type TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Container,
     ErrorAlert,
@@ -47,7 +47,7 @@ export const CodeInsightsJobs: FC<Props> = ({ telemetryRecorder }) => {
         query: GET_CODE_INSIGHTS_JOBS,
         variables: { orderBy, states: selectedFilters, search },
         getConnection: ({ data }) => data?.insightAdminBackfillQueue,
-        options: { pollInterval: 10000, pageSize: 15 },
+        options: { pollInterval: 10000 },
     })
 
     const handleJobSelect = (event: ChangeEvent<HTMLInputElement>, jobId: string): void => {

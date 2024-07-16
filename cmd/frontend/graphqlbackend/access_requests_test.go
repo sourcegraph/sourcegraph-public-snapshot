@@ -300,5 +300,5 @@ func TestAccessRequestConnectionStore(t *testing.T) {
 		db: db,
 	}
 
-	graphqlutil.TestConnectionResolverStoreSuite(t, connectionStore)
+	graphqlutil.TestConnectionResolverStoreSuite(t, connectionStore, nil)
 }

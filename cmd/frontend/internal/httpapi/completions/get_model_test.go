@@ -355,7 +355,7 @@ func TestGetChatModelFn(t *testing.T) {
 					},
 				}
 				_, err := getModelFn(ctx, reqParams, &modelConfig)
-				require.ErrorContains(t, err, `unsupported code completion model "some-model-not-in-config"`)
+				require.ErrorContains(t, err, `unsupported chat model "some-model-not-in-config"`)
 			})
 		})
 

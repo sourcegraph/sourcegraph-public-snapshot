@@ -23,6 +23,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/codeintel/core",
         "//internal/codeintel/uploads/internal/commitgraph",
         "//internal/codeintel/uploads/shared",
         "//internal/database",

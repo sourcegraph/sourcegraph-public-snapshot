@@ -158,8 +158,8 @@
         repoName={data.repoName}
         displayRepoName={data.displayRepoName}
         repoURL={data.repoURL}
-        externalURL={data.resolvedRevision?.repo?.externalURLs?.[0].url}
-        externalServiceKind={data.resolvedRevision?.repo?.externalURLs?.[0].serviceKind ?? undefined}
+        externalURL={data.resolvedRepository.externalURLs[0]?.url}
+        externalServiceKind={data.resolvedRepository.externalURLs[0]?.serviceKind ?? undefined}
     />
 
     <TabsHeader id="repoheader" {tabs} selected={selectedTab} />

@@ -1,13 +1,4 @@
 /**
- * The arguments for the connection query
- */
-export interface ConnectionQueryArguments {
-    first?: number
-    after?: string | null
-    query?: string
-}
-
-/**
  * See https://facebook.github.io/relay/graphql/connections.htm.
  */
 export interface Connection<N> {

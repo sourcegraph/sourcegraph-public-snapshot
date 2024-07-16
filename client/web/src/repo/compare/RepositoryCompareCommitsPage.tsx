@@ -1,12 +1,12 @@
 import * as React from 'react'
 
-import type { NavigateFunction, Location } from 'react-router-dom'
-import { type Observable, Subject, Subscription } from 'rxjs'
+import type { Location, NavigateFunction } from 'react-router-dom'
+import { Subject, Subscription, type Observable } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { CardHeader, Card } from '@sourcegraph/wildcard'
+import { Card, CardHeader } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -22,7 +22,7 @@ function queryRepositoryComparisonCommits(args: {
     repo: Scalars['ID']
     base: string | null
     head: string | null
-    first?: number
+    first?: number | null
     path?: string
 }): Observable<RepositoryComparisonRepository['comparison']['commits']> {
     return queryGraphQL<RepositoryComparisonCommitsResult>(
@@ -130,7 +130,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
     }
 
     private queryCommits = (args: {
-        first?: number
+        first?: number | null
     }): Observable<RepositoryComparisonRepository['comparison']['commits']> =>
         queryRepositoryComparisonCommits({
             ...args,
