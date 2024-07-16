@@ -5,24 +5,33 @@ import (
 	"context"
 	"fmt"
 	"github.com/sourcegraph/conc/iter"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"io"
 	"io/fs"
 	"sort"
-	"strings"
 )
 
+// Based on the benchmarking in entries_test.go, 1_000 is a good number after which we see diminishing returns.
+var maxInvsLength = env.MustGetInt("GET_INVENTORY_MAX_INV_IN_MEMORY", 1_000, "When computing the language stats, every nth iteration all loaded files are aggregated into the inventory to reduce the memory footprint. Increasing this value may make the computation run faster, but will require more memory.")
+
 func (c *Context) All(ctx context.Context) (inv Inventory, err error) {
+	ctx = context.Background()
+	// Top-level caching is what we need for users, directory-level caching is to speed up retries if the repo doesn't compute within the timeout.
+	// To help with the latter we detach the context above, instead of introducing rather complicated caching logic (it turned out to be a leetcode problem).
+	// Since we're planning to move this to a pre-computed style anyway, the upsides of introducing complicated code
+	// for retryable caching become less relevant.
+	cacheKey := fmt.Sprintf("%s@%s", c.Repo, c.CommitID)
 	if c.CacheGet != nil {
-		if inv, ok := c.CacheGet(ctx, string(c.Repo)); ok {
+		if inv, ok := c.CacheGet(ctx, cacheKey); ok {
 			return inv, nil
 		}
 	}
 	if c.CacheSet != nil {
 		defer func() {
 			if err == nil {
-				c.CacheSet(ctx, string(c.Repo), inv)
+				c.CacheSet(ctx, cacheKey, inv)
 			}
 		}()
 	}
@@ -50,78 +59,39 @@ type NextRecord struct {
 	FileReader io.ReadCloser
 }
 
-type dirInfo struct {
-	path  string
-	invs  []Inventory
-	depth int
-}
-
 func (c *Context) ArchiveProcessor(ctx context.Context, next func() (*NextRecord, error)) (inv Inventory, err error) {
-	root := dirInfo{path: ".", invs: []Inventory{}}
-	dirStack := []*dirInfo{&root}
-	var currentDepth = -1
-	currentDir := &root
+	var invs []Inventory
 
 	for {
 		n, err := next()
 		if err != nil {
-			// We've seen everything and can collapse the rest.
+			// We've seen everything and can sum up the rest.
 			if errors.Is(err, io.EOF) {
-				c.compressAndCacheStackTop(ctx, &dirStack)
-				r := dirStack[0]
-				s := Sum(r.invs)
-				if c.CacheSet != nil {
-					c.CacheSet(ctx, fmt.Sprintf("%s/%s:%s", c.Repo, r.path, c.CommitID), s)
-				}
-				return s, nil
+				return Sum(invs), nil
 			}
 			return Inventory{}, err
 		}
 
+		if len(invs) >= maxInvsLength {
+			sum := Sum(invs)
+			invs = invs[:0]
+			invs = append(invs, sum)
+		}
+
 		entry := n.Header.FileInfo()
 
-		name := n.Header.Name
-		path := strings.Trim(name, "/ ")
-		depth := strings.Count(path, "/")
-
-		// Process completed directories
-		for currentDepth >= depth {
-			c.compressAndCacheStackTop(ctx, &dirStack)
-			currentDir = dirStack[len(dirStack)-1]
-			currentDepth--
-		}
 		switch {
 		case entry.Mode().IsRegular():
-			lang, err := getLang(ctx, n.Header.FileInfo(), func(ctx context.Context, path string) (io.ReadCloser, error) {
+			lang, err := getLang(ctx, entry, func(ctx context.Context, path string) (io.ReadCloser, error) {
 				return n.FileReader, nil
 			}, c.ShouldSkipEnhancedLanguageDetection)
 			if err != nil {
 				return Inventory{}, err
 			}
-			fileInv := Inventory{Languages: []Lang{lang}}
-			currentDir.invs = append(currentDir.invs, fileInv)
-
-		case entry.Mode().IsDir():
-			dir := dirInfo{path: path, invs: []Inventory{}, depth: depth}
-			dirStack = append(dirStack, &dir)
-			currentDepth = depth
-			currentDir = &dir
+			invs = append(invs, Inventory{Languages: []Lang{lang}})
 		default:
+			// Skip anything that is not a readable file (e.g. directories, symlinks, ...)
 			continue
-		}
-	}
-}
-
-func (c *Context) compressAndCacheStackTop(ctx context.Context, dirStack *[]*dirInfo) {
-	if len(*dirStack) > 1 {
-		dir := (*dirStack)[len(*dirStack)-1]
-		*dirStack = (*dirStack)[:len(*dirStack)-1]
-		s := Sum(dir.invs)
-		if c.CacheSet != nil && len(s.Languages) > 0 {
-			c.CacheSet(ctx, fmt.Sprintf("%s/%s:%s", c.Repo, dir.path, c.CommitID), s)
-		}
-		if len(*dirStack) > 0 {
-			(*dirStack)[len(*dirStack)-1].invs = append((*dirStack)[len(*dirStack)-1].invs, s)
 		}
 	}
 }
