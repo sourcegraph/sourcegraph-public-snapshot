@@ -261,8 +261,7 @@ func GetAndSaveUser(
 	// closure, to ensure we cover all exit paths correctly after the other mega
 	// closure above.
 	//
-	// We only store the event if a new user was created, or if a new extAcct
-	// was saved.
+	// We only store the event if a new user was created.
 	if newUserSaved {
 		defer func() {
 			action := telemetry.ActionSucceeded
