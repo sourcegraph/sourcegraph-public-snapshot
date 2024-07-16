@@ -230,7 +230,7 @@ func (r *Reconciler) reconcileFrontendIngress(ctx context.Context, sg *config.So
 	cfg := sg.Spec.Frontend
 	ingress := ingress.NewIngress(name, sg.Namespace)
 	if cfg.Ingress == nil {
-		return r.ensureObjectDeleted(ctx, &ingress)
+		return ensureObjectDeleted(ctx, r, owner, &ingress)
 	}
 
 	ingress.SetAnnotations(cfg.Ingress.Annotations)
