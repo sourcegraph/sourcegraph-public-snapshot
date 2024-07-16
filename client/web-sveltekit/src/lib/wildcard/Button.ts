@@ -16,7 +16,7 @@ export const BUTTON_VARIANTS = [
     'text',
 ] as const
 export const BUTTON_SIZES = ['sm', 'lg'] as const
-export const BUTTON_DISPLAY = ['inline', 'block'] as const
+export const BUTTON_DISPLAY = ['inline', 'block', 'stretch'] as const
 
 interface GetButtonStyleParameters {
     variant: typeof BUTTON_VARIANTS[number]

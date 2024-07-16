@@ -48,7 +48,9 @@
         {#if !done && takingTooLong}
             <TimeoutMessage />
         {:else if done}
-            <SuggestedAction {progress} {suggestedItems} {severity} {state} />
+            <span class="suggestion">
+                <SuggestedAction {progress} {suggestedItems} {severity} {state} />
+            </span>
         {:else}
             <span>Running search...</span>
         {/if}
@@ -83,6 +85,12 @@
             justify-content: center;
             align-items: flex-start;
             row-gap: 0.25rem;
+
+            @media (--mobile) {
+                .suggestion {
+                    display: none;
+                }
+            }
         }
 
         span {

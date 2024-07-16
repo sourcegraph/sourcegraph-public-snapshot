@@ -54,3 +54,12 @@ input:focus-visible {
     position: absolute;
     white-space: nowrap;
 }
+
+// Helper class to show content only on mobile devices.
+.visible-mobile {
+    display: none;
+
+    @media (--mobile) {
+        display: contents;
+    }
+}

@@ -5,6 +5,7 @@
     import { createHotkey } from '$lib/Hotkey'
 
     import { popover, onClickOutside, portal } from './dom'
+    import { isViewportMobile } from './stores'
 
     /**
      * Show the popover when hovering over the trigger.
@@ -111,7 +112,9 @@
     let oldTrigger: HTMLElement | null
     $: {
         oldTrigger && showOnHover && unwatchTrigger(oldTrigger)
-        trigger && showOnHover && watchTrigger(trigger)
+        if (!$isViewportMobile) {
+            trigger && showOnHover && watchTrigger(trigger)
+        }
         oldTrigger = trigger
     }
 

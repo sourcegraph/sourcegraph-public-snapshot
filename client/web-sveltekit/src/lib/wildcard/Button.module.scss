@@ -132,6 +132,10 @@
     line-height: var(--btn-line-height-lg);
 }
 
+.btn.btn-stretch {
+    align-self: stretch;
+}
+
 // This class is meant for clickable icons. It is NOT meant for buttons with icons in it or for nav
 // items.
 .btn-icon {

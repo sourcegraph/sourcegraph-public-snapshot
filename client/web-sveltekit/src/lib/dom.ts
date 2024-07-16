@@ -230,6 +230,10 @@ export const restrictToViewport: Action<HTMLElement, { offset?: number }> = (nod
 
     window.addEventListener('resize', setMaxHeight)
 
+    // Also update when the content changes
+    const observer = new MutationObserver(setMaxHeight)
+    observer.observe(node, { childList: true, subtree: true })
+
     setMaxHeight()
 
     return {
@@ -240,6 +244,7 @@ export const restrictToViewport: Action<HTMLElement, { offset?: number }> = (nod
 
         destroy() {
             window.removeEventListener('resize', setMaxHeight)
+            observer.disconnect()
         },
     }
 }

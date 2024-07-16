@@ -37,7 +37,7 @@
 </script>
 
 <script lang="ts">
-    import { tick } from 'svelte'
+    import { onMount, tick } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
     import { page } from '$app/stores'
@@ -51,7 +51,8 @@
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
     import HistoryPanel from '$lib/repo/HistoryPanel.svelte'
     import LastCommit from '$lib/repo/LastCommit.svelte'
-    import { rightPanelOpen } from '$lib/repo/stores'
+    import { rightSidePanelOpen, fileTreeSidePanel } from '$lib/repo/stores'
+    import { isViewportMobile } from '$lib/stores'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
@@ -87,7 +88,7 @@
     }
 
     let bottomPanel: Panel
-    let fileTreeSidePanel: Panel
+    let rightSidePanel: Panel
     let historyPanel: HistoryPanel
     let selectedTab: number | null = null
     const fileTreeStore = createFileTreeStore({ fetchFileTreeData: fetchSidebarFileTree })
@@ -142,10 +143,10 @@
     }
 
     function toggleFileSidePanel() {
-        if (fileTreeSidePanel.isExpanded()) {
-            fileTreeSidePanel.collapse()
+        if ($fileTreeSidePanel?.isExpanded()) {
+            $fileTreeSidePanel?.collapse()
         } else {
-            fileTreeSidePanel.expand()
+            $fileTreeSidePanel?.expand()
         }
     }
 
@@ -156,12 +157,27 @@
             bottomPanel?.expand()
         }
     }
+
+    $: if ($isViewportMobile) {
+        if ($rightSidePanelOpen) {
+            rightSidePanel?.expand()
+        } else {
+            rightSidePanel?.collapse()
+        }
+    }
+
+    onMount(() => {
+        if ($isViewportMobile) {
+            // Ensure that cody sidebar is closed on mobile
+            $rightSidePanelOpen = false
+        }
+    })
     const sidebarButtonClass = getButtonClassName({ variant: 'secondary', outline: true, size: 'sm' })
 </script>
 
 <PanelGroup id="blob-page-panels" direction="horizontal">
     <Panel
-        bind:this={fileTreeSidePanel}
+        bind:this={$fileTreeSidePanel}
         id="sidebar-panel"
         order={1}
         defaultSize={1}
@@ -169,6 +185,7 @@
         maxSize={35}
         collapsible
         collapsedSize={1}
+        overlayOnMobile
         let:isCollapsed
     >
         <div class="sidebar" class:collapsed={isCollapsed}>
@@ -231,13 +248,21 @@
                     <Panel order={1} id="main-content-panel">
                         <slot />
                     </Panel>
-                    {#if $isCodyAvailable && $rightPanelOpen}
+                    {#if $isCodyAvailable && $rightSidePanelOpen}
                         <PanelResizeHandle id="right-sidebar-resize-handle" />
-                        <Panel id="right-sidebar-panel" order={2} minSize={20} maxSize={70}>
+                        <Panel
+                            id="right-sidebar-panel"
+                            bind:this={rightSidePanel}
+                            order={2}
+                            minSize={20}
+                            maxSize={70}
+                            overlayOnMobile
+                            onClose={() => ($rightSidePanelOpen = false)}
+                        >
                             <CodySidebar
                                 repository={data.resolvedRevision.repo}
                                 filePath={data.filePath}
-                                on:close={() => ($rightPanelOpen = false)}
+                                on:close={() => ($rightSidePanelOpen = false)}
                             />
                         </Panel>
                     {/if}
@@ -336,6 +361,11 @@
             // over any panel elements
             z-index: 2 !important;
         }
+
+        @media (--mobile) {
+            // !important is necessary to overwrit the elements own style
+            display: none !important;
+        }
     }
 
     .sidebar {
@@ -377,6 +407,15 @@
                     flex-grow: 1;
                     flex-shrink: 1;
                     text-align: left;
+                }
+            }
+
+            @media (--mobile) {
+                grid-template-columns: 1fr;
+                grid-template-areas: 'rev-picker' 'search-files';
+
+                .collapse-button {
+                    display: none;
                 }
             }
         }

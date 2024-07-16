@@ -9,6 +9,7 @@
     import type { PageData } from './$types'
     import type { RepoPage_Readme } from './page.gql'
     import OpenCodyAction from '$lib/repo/OpenCodyAction.svelte'
+    import MobileFileSidePanelOpenButton from '$lib/repo/MobileFileSidePanelOpenButton.svelte'
 
     export let data: PageData
 
@@ -26,6 +27,8 @@
 </svelte:head>
 
 <div class="header">
+    <MobileFileSidePanelOpenButton />
+
     <h3>
         {#if $readme.value}
             {$readme.value.name}
@@ -50,10 +53,6 @@
 </div>
 
 <style lang="scss">
-    h3 {
-        margin: 0;
-    }
-
     .header {
         position: sticky;
         top: 0;
@@ -64,7 +63,12 @@
 
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+    h3 {
+        margin: 0;
+        flex: 1;
     }
 
     .content {
