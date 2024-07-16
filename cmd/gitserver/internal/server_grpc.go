@@ -1175,7 +1175,20 @@ func (gs *grpcServer) RawDiff(req *proto.RawDiffRequest, ss proto.GitserverServi
 		typ = git.GitDiffComparisonTypeOnlyInHead
 	}
 
-	r, err := backend.RawDiff(ctx, string(req.GetBaseRevSpec()), string(req.GetHeadRevSpec()), typ, paths...)
+	opts := git.RawDiffOpts{
+		InterHunkContext: 3,
+		ContextLines:     3,
+	}
+
+	if req.InterHunkContext != nil {
+		opts.InterHunkContext = int(*req.InterHunkContext)
+	}
+
+	if req.ContextLines != nil {
+		opts.ContextLines = int(*req.ContextLines)
+	}
+
+	r, err := backend.RawDiff(ctx, string(req.GetBaseRevSpec()), string(req.GetHeadRevSpec()), typ, opts, paths...)
 	if err != nil {
 		var e *gitdomain.RevisionNotFoundError
 		if errors.As(err, &e) {
