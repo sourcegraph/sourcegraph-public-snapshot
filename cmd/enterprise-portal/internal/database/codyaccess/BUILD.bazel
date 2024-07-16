@@ -20,6 +20,10 @@ go_library(
 go_test(
     name = "codyaccess_test",
     srcs = ["codygateway_test.go"],
+    tags = [
+        TAG_INFRA_CORESERVICES,
+        "requires-network",
+    ],
     deps = [
         ":codyaccess",
         "//cmd/enterprise-portal/internal/database",
