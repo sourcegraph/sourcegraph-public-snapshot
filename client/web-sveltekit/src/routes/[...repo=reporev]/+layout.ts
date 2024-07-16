@@ -7,7 +7,7 @@ import { CloneInProgressError, RepoNotFoundError, displayRepoName, parseRepoRevi
 import type { LayoutLoad } from './$types'
 import { ResolveRepoRevision, ResolvedRepository, type ResolveRepoRevisionResult } from './layout.gql'
 
-export const load: LayoutLoad = async ({ params, url, depends, untrack }) => {
+export const load: LayoutLoad = async ({ params, url, depends }) => {
     const client = getGraphQLClient()
 
     // This allows other places to reload all repo related data by calling
@@ -24,7 +24,7 @@ export const load: LayoutLoad = async ({ params, url, depends, untrack }) => {
         client,
         repoName,
         revspec: revision,
-        url: untrack(() => new URL(url)),
+        url,
     })
 
     return {
