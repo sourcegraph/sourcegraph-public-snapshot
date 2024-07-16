@@ -99,6 +99,7 @@ go_library(
         "license.go",
         "location.go",
         "markdown.go",
+        "modelconfig.go",
         "namespaces.go",
         "node.go",
         "notebooks.go",
