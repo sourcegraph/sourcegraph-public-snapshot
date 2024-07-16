@@ -742,7 +742,9 @@ type ReposListOptions struct {
 }
 
 type RepoKVPFilter struct {
-	Key   string
+	// A regex pattern that matches the key
+	Key string
+	// A regex pattern that matches the value
 	Value *string
 	// If negated is true, this filter will select only repos
 	// that do _not_ have the associated key and value
@@ -1663,7 +1665,8 @@ func parseDescriptionPattern(tr trace.Trace, p string) ([]*sqlf.Query, error) {
 	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
 }
 
-func kvpCondition(filter RepoKVPFilter) (*sqlf.Query, error) {
+func kvpCondition(filter RepoKVPFilter) (res *sqlf.Query, _ error) {
+	defer func() { fmt.Printf("%#v\n", res) }()
 	if filter.KeyOnly {
 		cond, err := keyOrValueCondition("key", filter.Key)
 		if err != nil {
@@ -1720,10 +1723,10 @@ func keyOrValueCondition(target string, p string) (*sqlf.Query, error) {
 		}
 	}
 	for _, v := range like {
-		conds = append(conds, sqlf.Sprintf(target+` LIKE %s`, strings.ToLower(v)))
+		conds = append(conds, sqlf.Sprintf(target+` LIKE %s`, v))
 	}
 	if pattern != "" {
-		conds = append(conds, sqlf.Sprintf(target+" ~* %s", strings.ToLower(pattern)))
+		conds = append(conds, sqlf.Sprintf(target+" ~* %s", pattern))
 	}
 	return sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR")), nil
 }

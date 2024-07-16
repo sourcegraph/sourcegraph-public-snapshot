@@ -2985,6 +2985,10 @@ func TestRepos_List_KVPFilter(t *testing.T) {
 		{"key and value matches all", []RepoKVPFilter{{Key: ".*", Value: pointers.Ptr(".*")}}, []*types.Repo{repo1, repo2, repo3, repo4}},
 		{"negated all", []RepoKVPFilter{{Key: ".*", Value: pointers.Ptr(".*"), Negated: true}}, nil},
 		{"matches none", []RepoKVPFilter{{Key: "noexist", Value: pointers.Ptr("noexist")}}, nil},
+		{"matches all (key)", []RepoKVPFilter{{Key: "key", KeyOnly: true}}, []*types.Repo{repo1, repo2, repo3, repo4}},
+		{"matches all (key\\d)", []RepoKVPFilter{{Key: "key\\d", KeyOnly: true}}, []*types.Repo{repo1, repo2, repo3, repo4}},
+		{"matches all (A$)", []RepoKVPFilter{{Key: "(?-i)A$", KeyOnly: true}}, []*types.Repo{repo1, repo2, repo3, repo4}},
+		{"matches all (^key)", []RepoKVPFilter{{Key: "^key", KeyOnly: true}}, []*types.Repo{repo1, repo2, repo3, repo4}},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := db.Repos().List(ctx, ReposListOptions{KVPFilters: tt.kvpFilters})
