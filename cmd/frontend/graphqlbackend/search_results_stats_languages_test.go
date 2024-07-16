@@ -34,13 +34,11 @@ func createInMemoryTarArchive(files []FileData) ([]byte, error) {
 	tarWriter := tar.NewWriter(buf)
 
 	for _, file := range files {
-		// Create a tar header for each file.
 		header := &tar.Header{
 			Name: file.Name,
 			Size: int64(len(file.Content)),
 		}
 
-		// Write the header to the tar archive.
 		err := tarWriter.WriteHeader(header)
 		if err != nil {
 			return nil, err
