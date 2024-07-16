@@ -18,7 +18,6 @@ go_library(
         "//internal/database/basestore",
         "//internal/database/dbutil",
         "//internal/lazyregexp",
-        "//internal/licensing",
         "//lib/errors",
         "@com_github_keegancsmith_sqlf//:sqlf",
     ],

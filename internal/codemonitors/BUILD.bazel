@@ -13,12 +13,10 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/database",
-        "//internal/dotcom",
         "//internal/errcode",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/gitserver/protocol",
-        "//internal/licensing",
         "//internal/search",
         "//internal/search/client",
         "//internal/search/commit",

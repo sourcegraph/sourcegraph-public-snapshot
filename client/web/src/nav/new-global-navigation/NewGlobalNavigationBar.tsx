@@ -77,12 +77,12 @@ export const NewGlobalNavigationBar: FC<
 
     // Features enablement flags and conditions
     const isLicensed = !!window.context?.licenseInfo
-    const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
-    const showSearchJobs = searchJobsEnabled && !isSourcegraphDotCom
-    const showSearchNotebook = notebooksEnabled && !isSourcegraphDotCom
-    const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphDotCom
-    const showBatchChanges = batchChangesEnabled && isLicensed && !isSourcegraphDotCom
-    const showCodeInsights = codeInsightsEnabled && !isSourcegraphDotCom
+    const showSearchContext = searchContextsEnabled
+    const showSearchJobs = searchJobsEnabled
+    const showSearchNotebook = notebooksEnabled
+    const showCodeMonitoring = codeMonitoringEnabled
+    const showBatchChanges = batchChangesEnabled && isLicensed
+    const showCodeInsights = codeInsightsEnabled
     // We only show the hamburger icon on a repo page and search results page
     const showHamburger =
         routeMatch === PageRoutes.RepoContainer || (routeMatch === PageRoutes.Search && params.get('q'))

@@ -1,4 +1,4 @@
-package notebooks
+package batches
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 )
 
 func IsEnabled() bool {
-	if v, _ := strconv.ParseBool(os.Getenv("DISABLE_NOTEBOOKS")); v {
+	if v, _ := strconv.ParseBool(os.Getenv("DISABLE_BATCH_CHANGES")); v {
 		return false
 	}
 	return true

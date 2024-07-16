@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -36,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/notebooks"
 	"github.com/sourcegraph/sourcegraph/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive"
+	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -431,7 +433,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		Branding: conf.Branding(),
 
-		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(ctx, db) == nil,
+		BatchChangesEnabled:                batches.IsEnabled() && enterprise.BatchChangesEnabledForUser(ctx, db) == nil,
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
@@ -451,7 +453,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		// This used to be hardcoded configuration on the frontend.
 		// https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@ec5cc97a11c3f78743388b85b9ae0f1bc5d43932/-/blob/client/web/src/enterprise/EnterpriseWebApp.tsx?L63-71
 		CodeIntelligenceEnabled:  true,
-		SearchContextsEnabled:    true,
+		SearchContextsEnabled:    searchcontexts.IsEnabled(),
 		NotebooksEnabled:         notebooks.IsEnabled(),
 		CodeMonitoringEnabled:    codemonitors.IsEnabled(),
 		SearchAggregationEnabled: true,

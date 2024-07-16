@@ -5,14 +5,9 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 )
 
 func IsEnabled(cfg conftypes.SiteConfigQuerier) bool {
-	if dotcom.SourcegraphDotComMode() {
-		return false
-	}
-
 	// TODO(stefan): Remove this once Search Jobs is no longer experimental.
 	experimentalFeatures := cfg.SiteConfig().ExperimentalFeatures
 	if experimentalFeatures != nil && experimentalFeatures.SearchJobs != nil {

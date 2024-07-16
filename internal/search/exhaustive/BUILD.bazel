@@ -6,10 +6,7 @@ go_library(
     srcs = ["conf.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/exhaustive",
     visibility = ["//:__subpackages__"],
-    deps = [
-        "//internal/conf/conftypes",
-        "//internal/dotcom",
-    ],
+    deps = ["//internal/conf/conftypes"],
 )
 
 go_test(
