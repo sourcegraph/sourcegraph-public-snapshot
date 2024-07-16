@@ -161,7 +161,6 @@ pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
 
 #[cfg(test)]
 mod tests {
-    
 
     use crate::{scip_highlight, ScipHighlightQuery, SyntaxEngine};
 
