@@ -168,7 +168,7 @@ func (i *importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 				for _, t := range activeLicense.Tags {
 					parts := strings.SplitN(t, ":", 2)
 					if len(parts) != 2 {
-						return nil
+						continue
 					}
 					if parts[0] == "customer" {
 						// Collision rates are high, and it's tricky to check -
@@ -210,7 +210,7 @@ func (i *importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 		return errors.Wrap(err, "dotcom: get cody gateway access")
 	}
 	if _, err := i.codyGatewayAccess.Upsert(ctx, dotcomSub.ID, codyaccess.UpsertCodyGatewayAccessOptions{
-		Enabled: dotcomCGAccess.CodyGatewayEnabled,
+		Enabled: pointers.Ptr(dotcomCGAccess.CodyGatewayEnabled),
 
 		ChatCompletionsRateLimit:                dotcomCGAccess.ChatCompletionsRateLimit,
 		ChatCompletionsRateLimitIntervalSeconds: dotcomCGAccess.ChatCompletionsRateSeconds,
