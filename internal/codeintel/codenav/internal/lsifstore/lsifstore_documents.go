@@ -41,11 +41,8 @@ func (s *store) SCIPDocument(ctx context.Context, uploadID int, path core.Upload
 		return &document, nil
 	})
 	doc, ok, err := scanner(s.db.Query(ctx, sqlf.Sprintf(fetchSCIPDocumentQuery, uploadID, path.RawValue())))
-	if err != nil {
+	if err != nil || !ok {
 		return core.None[*scip.Document](), err
-	}
-	if !ok {
-		return core.None[*scip.Document](), nil
 	}
 	return core.Some(doc), nil
 }
