@@ -2,20 +2,19 @@
     // @sg EnableRollout
     import { onMount } from 'svelte'
 
-    import { goto } from '$app/navigation'
+    import { beforeNavigate, goto } from '$app/navigation'
     import { resolveRoute } from '$app/paths'
     import { page } from '$app/stores'
     import Commit from '$lib/Commit.svelte'
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import FileDiff from '$lib/repo/FileDiff.svelte'
+    import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
     import Scroller, { type Capture } from '$lib/Scroller.svelte'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { createPromiseStore } from '$lib/utils'
     import { Alert } from '$lib/wildcard'
     import Button from '$lib/wildcard/Button.svelte'
-
-    import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
 
     import type { PageData, Snapshot } from './$types'
 
@@ -23,17 +22,20 @@
 
     export const snapshot: Snapshot<{
         scroller: Capture
-        diffs: ReturnType<NonNullable<typeof data.diffQuery>['capture']>
+        diffs: ReturnType<NonNullable<PageData['diffQuery']>['capture']>
+        expandedDiffs: Array<[number, boolean]>
     }> = {
         capture() {
             return {
                 scroller: scroller.capture(),
                 diffs: data.diffQuery?.capture(),
+                expandedDiffs: expandedDiffsSnapshot,
             }
         },
-        async restore({ scroller: scrollerData, diffs: diffsData }) {
-            await data.diffQuery?.restore(diffsData)
-            scroller.restore(scrollerData)
+        async restore(snapshot) {
+            expandedDiffs = new Map(snapshot.expandedDiffs)
+            await data.diffQuery?.restore(snapshot.diffs)
+            scroller.restore(snapshot.scroller)
         },
     }
 
@@ -56,14 +58,37 @@
         TELEMETRY_RECORDER.recordEvent('repo.compare', 'view')
     })
 
+    beforeNavigate(event => {
+        if (event.to?.route.id === $page.route.id && event.to.params?.['spec'] !== $page.params['spec']) {
+            // Reset promise store when we navigate to a different commit range
+            // Resolving the commit range can take a short but noticeable
+            // amount of time and we don't want to show stale data while
+            // the new data is being fetched.
+            // Note: This is because resolving the commit range is
+            // (intentionally) blocking page rendering.
+            // todo: consider removing this when we have a page wide solution
+            // for showing that a navigation is in progress.
+            commits.reset()
+            diffQuery?.reset()
+        }
+
+        expandedDiffsSnapshot = Array.from(expandedDiffs.entries())
+        expandedDiffs = new Map()
+    })
+
     let scroller: Scroller
     let expandedDiffs = new Map<number, boolean>()
-    const commits = createPromiseStore<Awaited<typeof data.commits>>()
+    let expandedDiffsSnapshot: Array<[number, boolean]> = []
+    let commits = createPromiseStore<Awaited<PageData['commits']>>()
 
     $: commits.set(data.commits)
     $: diffQuery = data.diffQuery
     $: diffs = $diffQuery?.data
 </script>
+
+<svelte:head>
+    <title>Compare - {data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
 
 <header>
     <h2>Compare changes across revisions</h2>
@@ -159,17 +184,23 @@
             {/if}
 
             {#if !data.error}
-                <ul class="diffs">
-                    {#each diffs ?? [] as node, index}
-                        <li>
-                            <FileDiff
-                                fileDiff={node}
-                                expanded={expandedDiffs.get(index)}
-                                on:toggle={event => expandedDiffs.set(index, event.detail.expanded)}
-                            />
-                        </li>
-                    {/each}
-                </ul>
+                {@debug diffs}
+                {#if diffs}
+                    <ul class="diffs">
+                        {#each diffs as node, index (index)}
+                            <li>
+                                <FileDiff
+                                    fileDiff={node}
+                                    expanded={expandedDiffs.get(index)}
+                                    on:toggle={event => {
+                                        expandedDiffs.set(index, event.detail.expanded)
+                                        expandedDiffs = expandedDiffs
+                                    }}
+                                />
+                            </li>
+                        {/each}
+                    </ul>
+                {/if}
                 {#if $diffQuery?.fetching}
                     <LoadingSpinner />
                 {:else if $diffQuery?.error}
