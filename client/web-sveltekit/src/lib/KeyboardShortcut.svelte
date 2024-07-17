@@ -4,13 +4,15 @@ A component to display the keyboard shortcuts for the application.
 <script lang="ts">
     import { isMacPlatform } from '$lib/common'
     import { formatShortcutParts, type Keys } from '$lib/Hotkey'
+    import { isViewportMobile } from './stores'
 
     export let shortcut: Keys
     export let inline: boolean = false
 
     const separator = isMacPlatform() ? '' : '+'
 
-    $: parts = (() => {
+    // No need to do this work if we are on a mobile device
+    $: parts = $isViewportMobile ? [] : (() => {
         const result: string[] = []
         let parts = formatShortcutParts(shortcut)
         for (let i = 0; i < parts.length; i++) {
@@ -23,11 +25,13 @@ A component to display the keyboard shortcuts for the application.
     })()
 </script>
 
-<kbd class:inline>
-    {#each parts as part}
-        <span>{part}</span>
-    {/each}
-</kbd>
+{#if !$isViewportMobile}
+    <kbd class:inline>
+        {#each parts as part}
+            <span>{part}</span>
+        {/each}
+    </kbd>
+{/if}
 
 <style lang="scss">
     kbd {

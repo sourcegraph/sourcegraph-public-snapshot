@@ -2,11 +2,13 @@ package analytics
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/background"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -43,6 +45,26 @@ func toEvents(items []invocation) []event {
 	return results
 }
 
+func maybePrintHelpMsg(out *std.Output, errs []error) {
+	if len(errs) == 0 {
+		return
+	}
+	errMsg := ""
+	for _, e := range errs {
+		errMsg += e.Error()
+		errMsg += "\n"
+	}
+
+	out.WriteWarningf("%d Errors occured while trying to publish analytics to bigquery. Below are some of the errors:", len(errs))
+	msg := fmt.Sprintf("\n```%s```\n", errMsg)
+	msg += "If these errors persist you can disable analytics with `export SG_DISABLE_ANALYTICS=1` or by passing the flag `--disable-analytics` as part of your command\n"
+	msg += "Alternatively, try one of the following:"
+	msg += "- You should be in the `gcp-engineering@sourcegraph.com` group. Ask #ask-it-tech-ops or #discuss-dev-infra to check that\n"
+	msg += "- Ensure you're currently authenticated with your sourcegraph.com account by running `gcloud auth list`\n"
+	msg += "- Ensure you're authenticated with gcloud by running `gcloud auth application-default login`\n"
+	out.WriteMarkdown(msg)
+}
+
 func processEvents(ctx context.Context, bgOut *std.Output, store analyticsStore, done chan struct{}) {
 	for {
 		select {
@@ -66,21 +88,29 @@ func processEvents(ctx context.Context, bgOut *std.Output, store analyticsStore,
 			}
 
 			events := toEvents(results)
+			var errs errors.MultiError
 			for _, ev := range events {
 				err := bq.InsertEvent(ctx, ev)
 				if err != nil {
 					if os.Getenv("SG_ANALYTICS_DEBUG") == "1" {
 						panic(err)
 					}
-					bgOut.WriteWarningf("failed to insert analytics event into bigquery: %v", err)
+					errs = errors.Append(errs, err)
 					continue
 				}
 
 				err = store.DeleteInvocation(ctx, ev.UUID)
 				if err != nil {
-					bgOut.WriteWarningf("failed to delete analytics event: %v", err)
+					errs = errors.Append(errs, err)
+				}
+
+				if len(errs.Errors()) > 3 {
+					// if we have more than 3 errors. Something is wrong and it's better for us to exit early.
+					break
 				}
 			}
+
+			maybePrintHelpMsg(bgOut, errs.Errors())
 		}
 	}
 

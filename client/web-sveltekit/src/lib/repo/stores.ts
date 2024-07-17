@@ -3,6 +3,7 @@ import { writable, type Writable } from 'svelte/store'
 
 import { createLocalWritable } from '$lib/stores'
 import { createEmptySingleSelectTreeState, type TreeState } from '$lib/TreeView'
+import type { Panel } from '$lib/wildcard'
 
 /**
  * Persistent, global state for the file sidebar. By keeping the state in memory we can
@@ -13,4 +14,5 @@ export const getSidebarFileTreeStateForRepo = memoize(
     repoName => repoName
 )
 
-export const rightPanelOpen = createLocalWritable<boolean>('repo.right-panel.open', false)
+export const rightSidePanelOpen = createLocalWritable<boolean>('repo.right-panel.open', false)
+export const fileTreeSidePanel = writable<Panel | null>(null)

@@ -146,9 +146,9 @@
 </script>
 
 {#if browser}
-    <div bind:this={container} class="root test-query-input test-editor" data-editor="codemirror6" />
+    <div bind:this={container} class="root test-query-input test-editor" data-editor="codemirror6" data-query-input />
 {:else}
-    <div class="root">
+    <div class="root" data-query-input>
         <input value={normalizedValue} {placeholder} />
     </div>
 {/if}

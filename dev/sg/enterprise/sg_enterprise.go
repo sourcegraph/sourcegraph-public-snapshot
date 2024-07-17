@@ -280,6 +280,47 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 				return nil
 			},
 		}, {
+			Name:      "set-name",
+			Usage:     "Assign a display name name to a subscription",
+			ArgsUsage: "<subscription ID> <display name>",
+			Flags:     clientFlags(),
+			Action: func(c *cli.Context) error {
+				client := newSubscriptionsClient(c, scopeWriteSubscriptions)
+				s := &subscriptionsv1.EnterpriseSubscription{
+					Id:          c.Args().Get(0),
+					DisplayName: c.Args().Get(1),
+				}
+				if s.Id == "" {
+					return errors.New("subscription ID required")
+				}
+				if !strings.HasPrefix(s.Id, subscriptionsv1.EnterpriseSubscriptionIDPrefix) {
+					return errors.Newf("subscription ID must start with %q", subscriptionsv1.EnterpriseSubscriptionIDPrefix)
+				}
+				if s.DisplayName == "" {
+					return errors.New("display name required")
+				}
+
+				std.Out.Writef("Assigning display name %q to subscription %q\n",
+					s.DisplayName, s.Id)
+				resp, err := client.UpdateEnterpriseSubscription(c.Context, connect.NewRequest(&subscriptionsv1.UpdateEnterpriseSubscriptionRequest{
+					Subscription: s,
+					UpdateMask: &fieldmaskpb.FieldMask{
+						Paths: []string{
+							"display_name",
+						},
+					},
+				}))
+				if err != nil {
+					return errors.Wrap(err, "update enterprise subscription")
+				}
+
+				updatedSub := resp.Msg.GetSubscription()
+				std.Out.WriteSuccessf("Updated subscription %q with display name %q\n",
+					updatedSub.GetId(),
+					updatedSub.GetDisplayName())
+				return nil
+			},
+		}, {
 			Name:        "update-membership",
 			Usage:       "Update or assign membership to a subscription for one or more SAMS users",
 			Description: "Only one of --subscription-id or --subscription-instance-domain needs to be specified.",

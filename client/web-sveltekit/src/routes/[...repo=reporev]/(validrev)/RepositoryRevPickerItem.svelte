@@ -44,13 +44,6 @@
         overflow: hidden;
         text-overflow: ellipsis;
 
-        // Prevent avatar image from shrinking
-        :global([data-avatar]) {
-            --avatar-size: 1.5rem;
-
-            flex-shrink: 0;
-        }
-
         // Timestamp uses tooltip wrapper element with display:contents
         // override this behavior since we have to overflow text within
         // trigger text
@@ -64,6 +57,8 @@
     }
 
     .title {
+        grid-area: title;
+
         :global([data-icon]) {
             flex-shrink: 0;
             color: var(--icon-muted);
@@ -81,7 +76,20 @@
         }
     }
 
+    .author {
+        grid-area: author;
+
+        // Prevent avatar image from shrinking
+        :global([data-avatar]) {
+            --avatar-size: 1.5rem;
+
+            flex-shrink: 0;
+        }
+    }
+
     .timestamp {
+        grid-area: timestamp;
+
         justify-content: flex-end;
         color: var(--text-muted);
     }
