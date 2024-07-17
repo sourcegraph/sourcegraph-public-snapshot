@@ -81,16 +81,18 @@
         <CodeHostIcon repository={repo} />
         <span class="repo-name"><DisplayPath path={displayRepoName(repo)} /></span>
         <span class="interpunct">⋅</span>
-        <DisplayPath
-            {path}
-            pathHref={pathHrefFactory({
-                repoName: repo,
-                revision: revision,
-                fullPath: path,
-                fullPathType: 'blob',
-            })}
-            showCopyButton
-        />
+        <span class="file-name">
+            <DisplayPath
+                {path}
+                pathHref={pathHrefFactory({
+                    repoName: repo,
+                    revision: revision,
+                    fullPath: path,
+                    fullPathType: 'blob',
+                })}
+                showCopyButton
+            />
+        </span>
     </div>
     <div>
         {#each usageExcerpts as excerpt}
@@ -130,6 +132,10 @@
         top: 0;
 
         --icon-color: currentColor;
+        :global([data-icon]) {
+            flex: none;
+        }
+
         .repo-name {
             :global([data-path-container]) {
                 font-family: var(--font-family-base);
@@ -145,6 +151,12 @@
 
         .interpunct {
             color: var(--text-disabled);
+        }
+
+        .file-name {
+            :global([data-path-container]) {
+                flex-wrap: wrap;
+            }
         }
     }
 

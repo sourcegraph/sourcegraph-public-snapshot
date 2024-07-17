@@ -289,7 +289,7 @@
                 order={2}
                 defaultSize={1}
                 minSize={20}
-                maxSize={50}
+                maxSize={70}
                 collapsible
                 collapsedSize={1}
                 onExpand={handleBottomPanelExpand}
