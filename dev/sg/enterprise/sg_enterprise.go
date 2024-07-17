@@ -41,8 +41,9 @@ var (
 
 func clientFlags() []cli.Flag {
 	return append(samsflags.ClientCredentials(), &cli.StringFlag{
-		Name:  "enterprise-portal-server",
-		Usage: "The URL of the Enterprise Portal server to use (defaults to the appropriate one for SG_SAMS_SERVER_URL)",
+		Name:    "enterprise-portal-server",
+		Aliases: []string{"server"},
+		Usage:   "The URL of the Enterprise Portal server to use (defaults to the appropriate one for SG_SAMS_SERVER_URL)",
 	})
 }
 
