@@ -190,7 +190,7 @@
 </Popover>
 
 <style lang="scss">
-    div[data-repo-rev-picker-trigger] > :global(*) {
+    span[data-repo-rev-picker-trigger] > :global(*) {
         width: 100%;
         height: 100%;
     }
