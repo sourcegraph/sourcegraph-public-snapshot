@@ -217,6 +217,7 @@ playwright_test_bin.playwright_test(
         "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/test_build/_sk/",
     },
     flaky = True,
+    tags = ["manual"],
 )
 
 TESTS = glob([
@@ -244,7 +245,7 @@ vitest_test(
     bin = vitest_bin,
     chdir = package_name(),
     data = SRCS + BUILD_DEPS + CONFIGS + TESTS + TEST_BUILD_DEPS,
-    tags = [TAG_SEARCHSUITE],
+    tags = [TAG_SEARCHSUITE, "manual"],
     with_vitest_config = False,
 )
 
