@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -60,7 +58,11 @@ func updateAccessToken() {
 
 func initializeAzureEndpoint() {
 	var err error
-	azureEndpoint, err = url.Parse(os.Getenv("AZURE_ENDPOINT"))
+	azure_endpoint, err := readSecretFile("/run/secrets/azure_endpoint")
+	if err != nil {
+		log.Fatalf("error reading OAUTH_URL: %v", err)
+	}
+	azureEndpoint, err = url.Parse(azure_endpoint)
 	if err != nil {
 		log.Fatalf("Invalid AZURE_ENDPOINT: %v", err)
 	}
@@ -69,9 +71,6 @@ func initializeAzureEndpoint() {
 func initializeClient() {
 	client = &http.Client{
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
 			MaxIdleConns:        400,
 			MaxIdleConnsPerHost: 400,
 			IdleConnTimeout:     90 * time.Second,
@@ -167,7 +166,6 @@ func handleProxy(w http.ResponseWriter, req *http.Request) {
 	proxyReq.Header.Set("Api-Key", bearerToken)
 
 	resp, err := client.Do(proxyReq)
-	fmt.Println("client request made")
 	if err != nil {
 		http.Error(w, "Bad Gateway", http.StatusBadGateway)
 		return
