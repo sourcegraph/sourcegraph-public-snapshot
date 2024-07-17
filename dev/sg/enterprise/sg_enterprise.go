@@ -46,7 +46,7 @@ func clientFlags() []cli.Flag {
 	})
 }
 
-func newSubscriptionsClient(c *cli.Context, ss ...scopes.Scope) subscriptionsv1connect.SubscriptionsServiceClient {
+func newSubscriptionsClient(c *cli.Context, ss ...scopes.Scope) (subscriptionsv1connect.SubscriptionsServiceClient, error) {
 	ctx := c.Context
 	samsServer := c.String("sams-server")
 	enterprisePortal := enterprisePortalDevURL
@@ -59,9 +59,13 @@ func newSubscriptionsClient(c *cli.Context, ss ...scopes.Scope) subscriptionsv1c
 	std.Out.WriteSuggestionf("Using %q and %q",
 		enterprisePortal, samsServer)
 
+	samsCfg, err := samsflags.NewClientCredentialsFromFlags(c, ss)
+	if err != nil {
+		return nil, err
+	}
 	return subscriptionsv1connect.NewSubscriptionsServiceClient(
-		oauth2.NewClient(ctx, samsflags.NewClientCredentialsFromFlags(c, ss).TokenSource(ctx)),
-		enterprisePortal)
+		oauth2.NewClient(ctx, samsCfg.TokenSource(ctx)),
+		enterprisePortal), err
 }
 
 // resolveUserReference converts a 'user reference' provided as an argument or
@@ -113,7 +117,10 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 					Usage: "Member with Cody Analytics viewer permission to filter for (email or SAMS user ID)",
 				}),
 			Action: func(c *cli.Context) error {
-				client := newSubscriptionsClient(c, scopeReadSubscriptions)
+				client, err := newSubscriptionsClient(c, scopeReadSubscriptions)
+				if err != nil {
+					return err
+				}
 				req := &subscriptionsv1.ListEnterpriseSubscriptionsRequest{
 					Filters: []*subscriptionsv1.ListEnterpriseSubscriptionsFilter{{
 						Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_IsArchived{
@@ -180,7 +187,10 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 				ArgsUsage: "[subscription IDs...]",
 				Flags:     clientFlags(),
 				Action: func(c *cli.Context) error {
-					client := newSubscriptionsClient(c, scopeReadSubscriptions)
+					client, err := newSubscriptionsClient(c, scopeReadSubscriptions)
+					if err != nil {
+						return err
+					}
 					req := &subscriptionsv1.ListEnterpriseSubscriptionLicensesRequest{
 						Filters: []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter{{
 							Filter: &subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsRevoked{
@@ -230,7 +240,10 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 					Usage: "Skip confirmation prompts",
 				}),
 			Action: func(c *cli.Context) error {
-				client := newSubscriptionsClient(c, scopeWriteSubscriptions)
+				client, err := newSubscriptionsClient(c, scopeWriteSubscriptions)
+				if err != nil {
+					return err
+				}
 				s := &subscriptionsv1.EnterpriseSubscription{
 					Id:             c.Args().Get(0),
 					InstanceDomain: c.Args().Get(1),
@@ -253,7 +266,6 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 						return errors.New("aborting")
 					}
 				}
-				var err error
 				s.InstanceDomain, err = subscriptionsv1.NormalizeInstanceDomain(s.InstanceDomain)
 				if err != nil {
 					return errors.Wrap(err, "normalize instance domain")
@@ -285,7 +297,10 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 			ArgsUsage: "<subscription ID> <display name>",
 			Flags:     clientFlags(),
 			Action: func(c *cli.Context) error {
-				client := newSubscriptionsClient(c, scopeWriteSubscriptions)
+				client, err := newSubscriptionsClient(c, scopeWriteSubscriptions)
+				if err != nil {
+					return err
+				}
 				s := &subscriptionsv1.EnterpriseSubscription{
 					Id:          c.Args().Get(0),
 					DisplayName: c.Args().Get(1),
@@ -351,9 +366,12 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 				}),
 			Action: func(c *cli.Context) error {
 				ctx := context.Background()
-				client := newSubscriptionsClient(c,
+				client, err := newSubscriptionsClient(c,
 					scopeWriteSubscriptions,
 					scopeWriteSubscriptionsPermissions)
+				if err != nil {
+					return err
+				}
 
 				var (
 					members = c.Args().Slice() // can be email or user ID
