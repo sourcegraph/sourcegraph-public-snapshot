@@ -14,8 +14,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-
-	"github.com/google/uuid"
 )
 
 var (
@@ -31,15 +29,6 @@ func readSecretFile(path string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(data)), nil
-}
-
-func generateHeaders(bearerToken string) map[string]string {
-	return map[string]string{
-		"correlationId":      uuid.New().String(),
-		"dataClassification": "sensitive",
-		"dataSource":         "internet",
-		"Authorization":      "Bearer " + bearerToken,
-	}
 }
 
 func updateAccessToken(logger log.Logger) {
