@@ -124,6 +124,10 @@ type OpenAICompatibleProviderConfig struct {
 	// Endpoints where this API can be reached. If multiple are present, Sourcegraph should distribute
 	// load between them.
 	Endpoints []OpenAICompatibleEndpoint `json:"endpoints,omitempty"`
+
+	// Whether to enable verbose logging of requests, allowing for grepping the logs for "OpenAICompatible"
+	// and seeing e.g. what requests Cody is actually sending to your API endpoint.
+	DebugConnections bool `json:"debugConnections,omitempty"`
 }
 
 // A single API endpoint for an OpenAI-compatible API.
