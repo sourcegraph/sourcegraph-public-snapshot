@@ -676,6 +676,18 @@ type CodyProConfig struct {
 	UseEmbeddedUI bool `json:"useEmbeddedUI,omitempty"`
 }
 
+// CodyRerankerCohere description: Re-ranker using Cohere API
+type CodyRerankerCohere struct {
+	ApiKey string `json:"apiKey"`
+	Model  string `json:"model,omitempty"`
+	Type   string `json:"type"`
+}
+
+// CodyRerankerIdentity description: Identity re-ranker
+type CodyRerankerIdentity struct {
+	Type string `json:"type"`
+}
+
 // CodyServerSideContext description: Configuration for Server-side context API
 type CodyServerSideContext struct {
 	// IntentDetectionAPI description: Configuration for intent detection API
@@ -2308,9 +2320,35 @@ type RequestMessage struct {
 
 // Reranker description: Reranker to use for rankContext requests
 type Reranker struct {
-	// CohereAPIKey description: API key for Cohere reranker. If set, means that Cohere should be used (otherwise, identity ranker)
-	CohereAPIKey string `json:"cohereAPIKey,omitempty"`
+	Identity *CodyRerankerIdentity
+	Cohere   *CodyRerankerCohere
 }
+
+func (v Reranker) MarshalJSON() ([]byte, error) {
+	if v.Identity != nil {
+		return json.Marshal(v.Identity)
+	}
+	if v.Cohere != nil {
+		return json.Marshal(v.Cohere)
+	}
+	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
+}
+func (v *Reranker) UnmarshalJSON(data []byte) error {
+	var d struct {
+		DiscriminantProperty string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &d); err != nil {
+		return err
+	}
+	switch d.DiscriminantProperty {
+	case "cohere":
+		return json.Unmarshal(data, &v.Cohere)
+	case "identity":
+		return json.Unmarshal(data, &v.Identity)
+	}
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"identity", "cohere"})
+}
+
 type Responders struct {
 	Id       string `json:"id,omitempty"`
 	Name     string `json:"name,omitempty"`

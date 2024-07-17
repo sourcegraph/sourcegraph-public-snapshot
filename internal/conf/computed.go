@@ -293,22 +293,28 @@ func CodyIntentConfig() *schema.IntentDetectionAPI {
 	return Get().ExperimentalFeatures.CodyServerSideContext.IntentDetectionAPI
 }
 
-type CodyReranker string
+type CodyRerankerBackend string
 
 const (
-	CodyRerankerIdentity CodyReranker = "identity"
-	CodyRerankerCohere   CodyReranker = "cohere"
+	CodyRerankerIdentity CodyRerankerBackend = "identity"
+	CodyRerankerCohere   CodyRerankerBackend = "cohere"
 )
 
-// CodyRerankerConfig returns the CodyReranker to be used and API key to use for the ranker (empty if not needed)
-func CodyRerankerConfig() (CodyReranker, string) {
+func CodyReranker() CodyRerankerBackend {
 	if Get().ExperimentalFeatures == nil || Get().ExperimentalFeatures.CodyServerSideContext == nil || Get().ExperimentalFeatures.CodyServerSideContext.Reranker == nil {
-		return CodyRerankerIdentity, ""
+		return CodyRerankerIdentity
 	}
-	if Get().ExperimentalFeatures.CodyServerSideContext.Reranker.CohereAPIKey == "" {
-		return CodyRerankerIdentity, ""
+	if Get().ExperimentalFeatures.CodyServerSideContext.Reranker.Identity != nil {
+		return CodyRerankerIdentity
 	}
-	return CodyRerankerCohere, Get().ExperimentalFeatures.CodyServerSideContext.Reranker.CohereAPIKey
+	return CodyRerankerCohere
+}
+
+func CodyRerankerCohereConfig() *schema.CodyRerankerCohere {
+	if CodyReranker() != CodyRerankerCohere {
+		return nil
+	}
+	return Get().ExperimentalFeatures.CodyServerSideContext.Reranker.Cohere
 }
 
 func ExecutorsEnabled() bool {

@@ -661,10 +661,21 @@
               "description": "Reranker to use for rankContext requests",
               "type": "object",
               "properties": {
-                "cohereAPIKey": {
-                  "description": "API key for Cohere reranker. If set, means that Cohere should be used (otherwise, identity ranker)",
-                  "type": "string"
+                "type": {
+                  "type": "string",
+                  "enum": ["identity", "cohere"]
                 }
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/CodyRerankerIdentity"
+                },
+                {
+                  "$ref": "#/definitions/CodyRerankerCohere"
+                }
+              ],
+              "!go": {
+                "taggedUnionType": true
               }
             }
           }
@@ -4578,6 +4589,39 @@
         "authHeader": {
           "description": "Value of Authorization header (if required)",
           "type": "string"
+        }
+      }
+    },
+    "CodyRerankerIdentity": {
+      "description": "Identity re-ranker",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "identity"
+        }
+      }
+    },
+    "CodyRerankerCohere": {
+      "description": "Re-ranker using Cohere API",
+      "type": "object",
+      "required": [
+        "type", "apiKey"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "cohere"
+        },
+        "apiKey": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string",
+          "default": "rerank-english-v3.0"
         }
       }
     }

@@ -30,20 +30,16 @@ import (
 )
 
 func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient *codycontext.CodyContextClient, logger log.Logger) graphqlbackend.CodyContextResolver {
-	reranker, apiKey := conf.CodyRerankerConfig()
-	res := &Resolver{
+	return &Resolver{
 		db:                  db,
 		gitserverClient:     gitserverClient,
 		contextClient:       contextClient,
 		logger:              logger,
 		intentApiHttpClient: httpcli.UncachedExternalDoer,
 		intentBackendConfig: conf.CodyIntentConfig(),
-		reranker:            reranker,
+		reranker:            conf.CodyReranker(),
+		cohereConfig:        conf.CodyRerankerCohereConfig(),
 	}
-	if reranker == conf.CodyRerankerCohere {
-		res.cohereAPIKey = apiKey
-	}
-	return res
 }
 
 type Resolver struct {
@@ -53,8 +49,8 @@ type Resolver struct {
 	logger              log.Logger
 	intentApiHttpClient httpcli.Doer
 	intentBackendConfig *schema.IntentDetectionAPI
-	reranker            conf.CodyReranker
-	cohereAPIKey        string
+	reranker            conf.CodyRerankerBackend
+	cohereConfig        *schema.CodyRerankerCohere
 }
 
 func (r *Resolver) RecordContext(ctx context.Context, args graphqlbackend.RecordContextArgs) (*graphqlbackend.EmptyResponse, error) {
@@ -85,11 +81,13 @@ func (r *Resolver) RankContext(ctx context.Context, args graphqlbackend.RankCont
 	if err != nil {
 		return nil, err
 	}
-	ranker, used, discarded := r.rerank(ctx, args)
+	ranker, used, err := r.rerank(ctx, args)
+	if err != nil {
+		return nil, err
+	}
 	res := rankContextResponse{
-		ranker:    string(ranker),
-		used:      used,
-		discarded: discarded,
+		ranker: string(ranker),
+		used:   used,
 	}
 	r.logger.Info("ranking context", log.String("interactionID", args.InteractionID), log.String("ranker", res.ranker), log.Int("contextItemCount", len(args.ContextItems)))
 	return res, nil
@@ -270,7 +268,7 @@ func (r *Resolver) fileChunkToResolver(ctx context.Context, chunk *codycontext.F
 	return graphqlbackend.NewFileChunkContextResolver(gitTreeEntryResolver, chunk.StartLine, endLine), nil
 }
 
-func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextArgs) (conf.CodyReranker, []int32, []int32) {
+func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextArgs) (conf.CodyRerankerBackend, []int32, error) {
 	if r.reranker == conf.CodyRerankerIdentity {
 		var used []int32
 		for i := range args.ContextItems {
@@ -278,11 +276,11 @@ func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextAr
 		}
 		return conf.CodyRerankerIdentity, used, nil
 	}
-	co := client.NewClient(client.WithToken(r.cohereAPIKey))
+	co := client.NewClient(client.WithToken(r.cohereConfig.ApiKey))
 
 	req := &cohere.RerankRequest{
 		Query: args.Query,
-		Model: cohere.String("rerank-english-v3.0"),
+		Model: cohere.String(r.cohereConfig.Model),
 	}
 	for _, ci := range args.ContextItems {
 		req.Documents = append(req.Documents, &cohere.RerankRequestDocumentsItem{String: ci.Content})
@@ -290,6 +288,7 @@ func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextAr
 	resp, err := co.Rerank(ctx, req)
 	if err != nil {
 		r.logger.Error("cohere reranking error", log.String("interactionId", args.InteractionID), log.String("query", args.Query), log.Error(err))
+		return conf.CodyRerankerCohere, nil, err
 	}
 	var used []int32
 	for _, r := range resp.Results {
