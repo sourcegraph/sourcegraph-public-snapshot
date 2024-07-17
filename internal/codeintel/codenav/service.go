@@ -1141,7 +1141,7 @@ func (s *Service) SyntacticUsages(
 	if err != nil {
 		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, err
 	}
-	index := mappedIndex{s.lsifstore, gitTreeTranslator, upload, args.Commit}
+	index := NewMappedIndexFromTranslator(s.lsifstore, gitTreeTranslator, upload)
 	return syntacticUsagesImpl(ctx, trace, s.searchClient, index, args)
 }
 
@@ -1227,7 +1227,7 @@ func (s *Service) SearchBasedUsages(
 		if uploadErr != nil {
 			trace.Info("no syntactic upload found, return all search-based results", log.Error(err))
 		} else {
-			syntacticIndex = core.Some[MappedIndex](mappedIndex{s.lsifstore, gitTreeTranslator, upload, args.Commit})
+			syntacticIndex = core.Some[MappedIndex](NewMappedIndexFromTranslator(s.lsifstore, gitTreeTranslator, upload))
 		}
 	}
 
