@@ -115,12 +115,15 @@ func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID ap
 		return nil, errors.New("commitID must not be empty")
 	}
 
+	ctx, done := startTrace(ctx, "GetInventory", map[string]any{"repo": repo, "commitID": commitID}, &err)
+	defer done()
+
 	invCtx, err := InventoryContext(s.logger, repo, s.gitserverClient, commitID, forceEnhancedLanguageDetection)
 	if err != nil {
 		return nil, err
 	}
 
-	inv, err := invCtx.All()
+	inv, err := invCtx.All(ctx)
 	if err != nil {
 		return nil, err
 	}
