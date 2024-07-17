@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -18,28 +20,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	modelconfigSDK "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// TODO(slimsag): self-hosted-models: expose this as an option
-const debugConnections = true
-
 func NewClient(
 	cli *http.Client,
-	modelConfigInfo *types.ModelConfigInfo,
 	tokenManager tokenusage.Manager,
 ) types.CompletionsClient {
 	return &client{
-		cli:             cli,
-		modelConfigInfo: modelConfigInfo,
-		tokenManager:    tokenManager,
+		cli:          cli,
+		tokenManager: tokenManager,
+		rng:          rand.New(rand.NewSource(time.Now().Unix())),
 	}
 }
 
 type client struct {
-	cli             *http.Client
-	modelConfigInfo *types.ModelConfigInfo
-	tokenManager    tokenusage.Manager
+	cli          *http.Client
+	tokenManager tokenusage.Manager
+	rng          *rand.Rand
 }
 
 func (c *client) Complete(
@@ -70,7 +69,8 @@ func (c *client) Complete(
 		return nil, errors.Wrap(err, "making request")
 	}
 
-	if debugConnections {
+	providerConfig := request.ModelConfigInfo.Provider.ServerSideConfig.OpenAICompatible
+	if providerConfig.DebugConnections {
 		logger.Info("request",
 			log.String("kind", "non-streaming"),
 			log.String("method", req.Method),
@@ -82,23 +82,31 @@ func (c *client) Complete(
 	}
 	resp, err = c.cli.Do(req)
 	if err != nil {
+		logger.Error("request error", log.Error(err))
 		return nil, errors.Wrap(err, "performing request")
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, types.NewErrStatusNotOK("OpenAI", resp)
+		err := types.NewErrStatusNotOK("OpenAI", resp)
+		logger.Error("request error", log.Error(err))
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	var response openaiResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		logger.Error("request error, decoding response", log.Error(err))
 		return nil, errors.Wrap(err, "decoding response")
+	}
+	if providerConfig.DebugConnections {
+		logger.Info("request success")
 	}
 
 	if len(response.Choices) == 0 {
 		// Empty response.
 		return &types.CompletionResponse{}, nil
 	}
-	modelID := c.modelConfigInfo.Model.ModelRef.ModelID()
+
+	modelID := request.ModelConfigInfo.Model.ModelRef.ModelID()
 	err = c.tokenManager.UpdateTokenCountsFromModelUsage(
 		response.Usage.PromptTokens,
 		response.Usage.CompletionTokens,
@@ -137,8 +145,7 @@ func (c *client) Stream(
 	}
 
 	sseClient := &sse.Client{
-		HTTPClient: c.cli,
-		// TODO(slimsag): self-hosted-models: investigate non-default validator implications
+		HTTPClient:        c.cli,
 		ResponseValidator: sse.DefaultValidator,
 		Backoff: sse.Backoff{
 			// Note: go-sse has a bug with retry logic (https://github.com/tmaxmax/go-sse/pull/38)
@@ -221,7 +228,8 @@ func (c *client) Stream(
 	})
 	defer unsubscribe()
 
-	if debugConnections {
+	providerConfig := request.ModelConfigInfo.Provider.ServerSideConfig.OpenAICompatible
+	if providerConfig.DebugConnections {
 		logger.Info("request",
 			log.String("kind", "streaming"),
 			log.String("method", req.Method),
@@ -234,14 +242,14 @@ func (c *client) Stream(
 	err = conn.Connect()
 	if (err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, io.EOF)) || streamErr != nil {
 		err = errors.Append(err, streamErr)
-		logger.Info("request error", log.Error(err))
+		logger.Error("request error", log.Error(err))
 		return errors.Wrap(err, "NewConnection")
 	}
-	if debugConnections {
+	if providerConfig.DebugConnections {
 		logger.Info("request success")
 	}
 
-	modelID := c.modelConfigInfo.Model.ModelRef.ModelID()
+	modelID := request.ModelConfigInfo.Model.ModelRef.ModelID()
 	err = c.tokenManager.UpdateTokenCountsFromModelUsage(
 		promptTokens,
 		completionTokens,
@@ -271,8 +279,7 @@ func (c *client) makeChatRequest(
 	}
 
 	payload := openAIChatCompletionsRequestParameters{
-		// TODO(slimsag): self-hosted-models: allow customization of model request param
-		Model:       request.ModelConfigInfo.Model.ModelName,
+		Model:       getAPIModel(request),
 		Temperature: requestParams.Temperature,
 		TopP:        requestParams.TopP,
 		N:           requestParams.TopK,
@@ -288,7 +295,6 @@ func (c *client) makeChatRequest(
 			role = "user"
 		case types.ASSISTANT_MESSAGE_SPEAKER:
 			role = "assistant"
-			//
 		default:
 			role = strings.ToLower(role)
 		}
@@ -303,15 +309,17 @@ func (c *client) makeChatRequest(
 		return nil, "", err
 	}
 
-	// TODO(slimsag): self-hosted-models: use OpenAICompatibleProvider
-	endpoint := c.modelConfigInfo.Provider.ServerSideConfig.GenericProvider.Endpoint
-	url, err := url.Parse(endpoint)
+	endpoint, err := getEndpoint(request, c.rng)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "getEndpoint")
+	}
+	url, err := url.Parse(endpoint.URL)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "failed to parse configured endpoint")
 	}
 	url.Path = "v1/chat/completions"
 	if url.Scheme == "" || url.Host == "" {
-		return nil, "", errors.Newf("unable to build URL, bad endpoint: %q", endpoint)
+		return nil, "", errors.Newf("unable to build URL, bad endpoint: %q", endpoint.URL)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewReader(reqBody))
@@ -319,12 +327,9 @@ func (c *client) makeChatRequest(
 		return nil, "", err
 	}
 
-	// TODO(slimsag): self-hosted-models: allow setting custom headers
 	req.Header.Set("Content-Type", "application/json")
-	// TODO(slimsag): self-hosted-models: use OpenAICompatibleProvider
-	accessToken := c.modelConfigInfo.Provider.ServerSideConfig.GenericProvider.AccessToken
-	if accessToken != "" {
-		req.Header.Set("Authorization", "Bearer "+accessToken)
+	if endpoint.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+endpoint.AccessToken)
 	}
 	return req, string(reqBody), nil
 }
@@ -348,8 +353,7 @@ func (c *client) makeCompletionRequest(
 	}
 
 	payload := openAICompletionsRequestParameters{
-		// TODO(slimsag): self-hosted-models: allow customization of model request param
-		Model:       request.ModelConfigInfo.Model.ModelName,
+		Model:       getAPIModel(request),
 		Temperature: requestParams.Temperature,
 		TopP:        requestParams.TopP,
 		N:           requestParams.TopK,
@@ -363,9 +367,12 @@ func (c *client) makeCompletionRequest(
 	if err != nil {
 		return nil, "", err
 	}
-	// TODO(slimsag): self-hosted-models: use OpenAICompatibleProvider
-	endpoint := c.modelConfigInfo.Provider.ServerSideConfig.GenericProvider.Endpoint
-	url, err := url.Parse(endpoint)
+
+	endpoint, err := getEndpoint(request, c.rng)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "getEndpoint")
+	}
+	url, err := url.Parse(endpoint.URL)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "failed to parse configured endpoint")
 	}
@@ -380,10 +387,8 @@ func (c *client) makeCompletionRequest(
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	// TODO(slimsag): self-hosted-models: use OpenAICompatibleProvider
-	accessToken := c.modelConfigInfo.Provider.ServerSideConfig.GenericProvider.AccessToken
-	if accessToken != "" {
-		req.Header.Set("Authorization", "Bearer "+accessToken)
+	if endpoint.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+endpoint.AccessToken)
 	}
 	return req, string(reqBody), nil
 }
@@ -394,4 +399,25 @@ func getPrompt(messages []types.Message) (string, error) {
 		return "", errors.Errorf("expected to receive exactly one message with the prompt (got %d)", l)
 	}
 	return messages[0].Text, nil
+}
+
+func getAPIModel(request types.CompletionRequest) string {
+	ssConfig := request.ModelConfigInfo.Model.ServerSideConfig
+	if ssConfig != nil && ssConfig.OpenAICompatible != nil && ssConfig.OpenAICompatible.APIModel != "" {
+		return ssConfig.OpenAICompatible.APIModel
+	}
+	// Default to model name if not specified
+	return request.ModelConfigInfo.Model.ModelName
+}
+
+func getEndpoint(request types.CompletionRequest, rng *rand.Rand) (modelconfigSDK.OpenAICompatibleEndpoint, error) {
+	providerConfig := request.ModelConfigInfo.Provider.ServerSideConfig.OpenAICompatible
+	if len(providerConfig.Endpoints) == 0 {
+		return modelconfigSDK.OpenAICompatibleEndpoint{}, errors.New("no openaicompatible endpoint configured")
+	}
+	if len(providerConfig.Endpoints) == 1 {
+		return providerConfig.Endpoints[0], nil
+	}
+	randPick := rng.Intn(len(providerConfig.Endpoints))
+	return providerConfig.Endpoints[randPick], nil
 }

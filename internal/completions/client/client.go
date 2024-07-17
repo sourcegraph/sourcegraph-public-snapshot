@@ -67,7 +67,7 @@ func getAPIProvider(modelConfigInfo types.ModelConfigInfo) (types.CompletionsCli
 
 	// OpenAI Compatible
 	if openAICompatibleCfg := ssConfig.OpenAICompatible; openAICompatibleCfg != nil {
-		return openaicompatible.NewClient(httpcli.UncachedExternalClient, &modelConfigInfo, *tokenManager), nil
+		return openaicompatible.NewClient(httpcli.UncachedExternalClient, *tokenManager), nil
 	}
 
 	// The "GenericProvider" is an escape hatch for a set of API Providers not needing any additional configuration.
