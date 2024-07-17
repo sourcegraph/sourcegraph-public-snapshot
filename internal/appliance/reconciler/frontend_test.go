@@ -29,6 +29,8 @@ func (suite *ApplianceTestSuite) TestFrontendDeploymentRollsWhenPGSecretsChange(
 		secret string
 	}{
 		{secret: pgsqlSecretName},
+		{secret: codeInsightsDBSecretName},
+		{secret: codeIntelDBSecretName},
 	} {
 		suite.Run(tc.secret, func() {
 			// Create the frontend before the PGSQL secret exists. In general, this

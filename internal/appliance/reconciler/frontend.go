@@ -33,6 +33,12 @@ const (
 	codeIntelDBSecretName    = "codeintel-db-auth"
 )
 
+type DBConnSpecs struct {
+	PG           *config.DatabaseConnectionSpec `json:"pg,omitempty"`
+	CodeIntel    *config.DatabaseConnectionSpec `json:"codeintel,omitempty"`
+	CodeInsights *config.DatabaseConnectionSpec `json:"codeinsights,omitempty"`
+}
+
 func (r *Reconciler) reconcileFrontend(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	if err := r.reconcileFrontendDeployment(ctx, sg, owner); err != nil {
 		return errors.Wrap(err, "reconciling Deployment")
@@ -120,19 +126,30 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 	if err != nil {
 		return err
 	}
+	codeIntelConnSpec, err := r.getDBSecret(ctx, sg, codeIntelDBSecretName)
+	if err != nil {
+		return err
+	}
+	codeInsightsConnSpec, err := r.getDBSecret(ctx, sg, codeInsightsDBSecretName)
+	if err != nil {
+		return err
+	}
+	dbConnSpecs := DBConnSpecs{
+		PG:           dbConnSpec,
+		CodeIntel:    codeIntelConnSpec,
+		CodeInsights: codeInsightsConnSpec,
+	}
 
 	template := pod.NewPodTemplate("sourcegraph-frontend", cfg)
 	template.Template.Spec.Containers = []corev1.Container{ctr}
 	template.Template.Spec.Volumes = []corev1.Volume{pod.NewVolumeEmptyDir("home-dir")}
 	template.Template.Spec.ServiceAccountName = "sourcegraph-frontend"
 
-	if dbConnSpec != nil {
-		dbConnHash, err := configHash(dbConnSpec)
-		if err != nil {
-			return err
-		}
-		template.Template.ObjectMeta.Annotations["checksum/auth"] = dbConnHash
+	dbConnHash, err := configHash(dbConnSpecs)
+	if err != nil {
+		return err
 	}
+	template.Template.ObjectMeta.Annotations["checksum/auth"] = dbConnHash
 
 	if cfg.Migrator {
 		migratorImage := config.GetDefaultImage(sg, "migrator")
@@ -165,10 +182,10 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 
 	ifChanged := struct {
 		config.FrontendSpec
-		PG *config.DatabaseConnectionSpec `json:"pg,omitempty"`
+		DBConnSpecs
 	}{
 		FrontendSpec: cfg,
-		PG:           dbConnSpec,
+		DBConnSpecs:  dbConnSpecs,
 	}
 
 	return reconcileObject(ctx, r, ifChanged, &dep, &appsv1.Deployment{}, sg, owner)
