@@ -339,8 +339,6 @@ func (c *client) Stream(
 	return nil
 }
 
-// TODO(slimsag): self-hosted-models: wrap errors below this point in the file
-
 func (c *client) makeChatRequest(
 	ctx context.Context,
 	request types.CompletionRequest,
@@ -383,7 +381,7 @@ func (c *client) makeChatRequest(
 
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
-		return nil, "", err
+		return nil, "", errors.Wrap(err, "Marshal")
 	}
 
 	endpoint, err := getEndpoint(request, c.rng)
@@ -392,7 +390,7 @@ func (c *client) makeChatRequest(
 	}
 	url, err := url.Parse(endpoint.URL)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "failed to parse configured endpoint")
+		return nil, "", errors.Newf("failed to parse endpoint URL: %q", endpoint.URL)
 	}
 	url.Path = "v1/chat/completions"
 	if url.Scheme == "" || url.Host == "" {
@@ -401,7 +399,7 @@ func (c *client) makeChatRequest(
 
 	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewReader(reqBody))
 	if err != nil {
-		return nil, "", err
+		return nil, "", errors.Wrap(err, "NewRequestWithContext")
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -426,7 +424,7 @@ func (c *client) makeCompletionRequest(
 
 	prompt, err := getPrompt(requestParams.Messages)
 	if err != nil {
-		return nil, "", err
+		return nil, "", errors.Wrap(err, "getPrompt")
 	}
 
 	payload := openAICompletionsRequestParameters{
@@ -442,7 +440,7 @@ func (c *client) makeCompletionRequest(
 
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
-		return nil, "", err
+		return nil, "", errors.Wrap(err, "Marshal")
 	}
 
 	endpoint, err := getEndpoint(request, c.rng)
@@ -451,16 +449,16 @@ func (c *client) makeCompletionRequest(
 	}
 	url, err := url.Parse(endpoint.URL)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "failed to parse configured endpoint")
+		return nil, "", errors.Newf("failed to parse endpoint URL: %q", endpoint.URL)
 	}
 	url.Path = "v1/completions"
 	if url.Scheme == "" || url.Host == "" {
-		return nil, "", errors.Newf("unable to build URL, bad endpoint: %q", endpoint)
+		return nil, "", errors.Newf("unable to build URL, bad endpoint: %q", endpoint.URL)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewReader(reqBody))
 	if err != nil {
-		return nil, "", err
+		return nil, "", errors.Wrap(err, "NewRequestWithContext")
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -471,9 +469,8 @@ func (c *client) makeCompletionRequest(
 }
 
 func getPrompt(messages []types.Message) (string, error) {
-	if l := len(messages); l != 1 {
-		// TODO(slimsag): self-hosted-models: relax oft-problematic constraint
-		return "", errors.Errorf("expected to receive exactly one message with the prompt (got %d)", l)
+	if l := len(messages); l == 0 {
+		return "", errors.New("found zero messages in prompt")
 	}
 	return messages[0].Text, nil
 }
