@@ -53,7 +53,7 @@ func TestFileMode(t *testing.T) {
 
 }
 
-func TestEntriesNextProcessorWithoutCaching(t *testing.T) {
+func TestEntriesNextProcessor(t *testing.T) {
 	testCases := []struct {
 		name     string
 		files    []FileData
