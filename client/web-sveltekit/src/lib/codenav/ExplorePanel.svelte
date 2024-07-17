@@ -339,6 +339,8 @@
         &:hover {
             background-color: var(--secondary-4);
         }
+
+        word-break: break-all;
     }
 
     :global([data-treeitem][aria-selected='true']) > :global([data-treeitem-label]) {
