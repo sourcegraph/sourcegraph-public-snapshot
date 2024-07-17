@@ -74,29 +74,29 @@ func (c *client) Complete(
 	providerConfig := request.ModelConfigInfo.Provider.ServerSideConfig.OpenAICompatible
 	if providerConfig.DebugConnections {
 		logger.Info("request",
+			log.Uint32("id", requestID),
 			log.String("kind", "non-streaming"),
 			log.String("method", req.Method),
 			log.String("url", req.URL.String()),
 			// Note: log package will automatically redact token
 			log.String("headers", fmt.Sprint(req.Header)),
 			log.String("body", reqBody),
-			log.Uint32("id", requestID),
 		)
 	}
 	start := time.Now()
 	resp, err = c.cli.Do(req)
 	if err != nil {
 		logger.Error("request error",
-			log.Error(err),
 			log.Uint32("id", requestID),
+			log.Error(err),
 		)
 		return nil, errors.Wrap(err, "performing request")
 	}
 	if resp.StatusCode != http.StatusOK {
 		err := types.NewErrStatusNotOK("OpenAI", resp)
 		logger.Error("request error",
-			log.Error(err),
 			log.Uint32("id", requestID),
+			log.Error(err),
 		)
 		return nil, err
 	}
@@ -105,8 +105,8 @@ func (c *client) Complete(
 	var response openaiResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		logger.Error("request error, decoding response",
-			log.Error(err),
 			log.Uint32("id", requestID),
+			log.Error(err),
 		)
 		return nil, errors.Wrap(err, "decoding response")
 	}
@@ -117,22 +117,22 @@ func (c *client) Complete(
 			completion = response.Choices[0].Text
 		}
 		logger.Info("request success",
+			log.Uint32("id", requestID),
 			log.Duration("time", time.Since(start)),
 			log.String("response_model", response.Model),
 			log.String("url", req.URL.String()),
 			log.String("system_fingerprint", response.SystemFingerprint),
 			log.String("finish_reason", response.maybeGetFinishReason()),
 			log.String("completion", completion),
-			log.Uint32("id", requestID),
 		)
 	} else {
 		logger.Info("request success",
+			log.Uint32("id", requestID),
 			log.Duration("time", time.Since(start)),
 			log.String("response_model", response.Model),
 			log.String("url", req.URL.String()),
 			log.String("system_fingerprint", response.SystemFingerprint),
 			log.String("finish_reason", response.maybeGetFinishReason()),
-			log.Uint32("id", requestID),
 		)
 	}
 
@@ -270,13 +270,13 @@ func (c *client) Stream(
 	providerConfig := request.ModelConfigInfo.Provider.ServerSideConfig.OpenAICompatible
 	if providerConfig.DebugConnections {
 		logger.Info("request",
+			log.Uint32("id", requestID),
 			log.String("kind", "streaming"),
 			log.String("method", req.Method),
 			log.String("url", req.URL.String()),
 			// Note: log package will automatically redact token
 			log.String("headers", fmt.Sprint(req.Header)),
 			log.String("body", reqBody),
-			log.Uint32("id", requestID),
 		)
 	}
 	start := time.Now()
@@ -302,8 +302,8 @@ func (c *client) Stream(
 	}
 	if err != nil {
 		logger.Error("request error",
-			log.Error(err),
 			log.Uint32("id", requestID),
+			log.Error(err),
 		)
 		return errors.Wrap(err, "NewConnection")
 	}
@@ -311,18 +311,18 @@ func (c *client) Stream(
 	if providerConfig.DebugConnections {
 		// When debugging connections, log more verbose information like the actual completion we got back.
 		logger.Info("request success",
+			log.Uint32("id", requestID),
 			log.Duration("time", time.Since(start)),
 			log.String("url", req.URL.String()),
 			log.String("finish_reason", finishReason),
 			log.String("completion", content),
-			log.Uint32("id", requestID),
 		)
 	} else {
 		logger.Info("request success",
+			log.Uint32("id", requestID),
 			log.Duration("time", time.Since(start)),
 			log.String("url", req.URL.String()),
 			log.String("finish_reason", finishReason),
-			log.Uint32("id", requestID),
 		)
 	}
 
