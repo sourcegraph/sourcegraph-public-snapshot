@@ -3,6 +3,11 @@
     import type { Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
 
+    enum TabPanels {
+        History,
+        References,
+    }
+
     interface Capture {
         selectedTab: number | null
         historyPanel: HistoryCapture
@@ -111,7 +116,8 @@
     setExplorePanelContext({
         openReferences(occurrence: ActiveOccurrence) {
             exploreInputs.set({ activeOccurrence: occurrence, usageKindFilter: SymbolUsageKind.REFERENCE })
-            selectedTab = 1 // TODO: create a name for this
+            // Open the tab when we find references
+            selectedTab = TabPanels.References
         },
     })
     $: usagesConnection = $exploreInputs.activeOccurrence
@@ -136,7 +142,7 @@
 
     function handleBottomPanelExpand() {
         if (selectedTab == null) {
-            selectedTab = 0
+            selectedTab = TabPanels.History
         }
     }
 
