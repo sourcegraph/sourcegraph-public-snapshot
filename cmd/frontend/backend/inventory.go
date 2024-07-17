@@ -59,7 +59,10 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 	logger = logger.Scoped("InventoryContext").
 		With(log.String("repo", string(repo)), log.String("commitID", string(commitID)))
 	invCtx := inventory.Context{
-		Repo: repo,
+		Repo:                                repo,
+		CommitID:                            commitID,
+		ShouldSkipEnhancedLanguageDetection: !useEnhancedLanguageDetection && !forceEnhancedLanguageDetection,
+		GitServerClient:                     gsClient,
 		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
 			trc, ctx := trace.New(ctx, "ReadTree waits for semaphore")
 			err := gitServerSemaphore.Acquire(ctx, 1)
@@ -148,9 +151,6 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 			defer redisSemaphore.Release(1)
 			inventoryCache.Set(cacheKey, b)
 		},
-		ShouldSkipEnhancedLanguageDetection: !useEnhancedLanguageDetection && !forceEnhancedLanguageDetection,
-		GitServerClient:                     gsClient,
-		CommitID:                            commitID,
 	}
 
 	return invCtx, nil
