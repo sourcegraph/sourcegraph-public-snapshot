@@ -657,7 +657,7 @@
                 }
               }
             },
-            "reranker" : {
+            "reranker": {
               "description": "Reranker to use for rankContext requests",
               "type": "object",
               "properties": {
@@ -4595,9 +4595,7 @@
     "CodyRerankerIdentity": {
       "description": "Identity re-ranker",
       "type": "object",
-      "required": [
-        "type"
-      ],
+      "required": ["type"],
       "properties": {
         "type": {
           "type": "string",
@@ -4608,9 +4606,7 @@
     "CodyRerankerCohere": {
       "description": "Re-ranker using Cohere API",
       "type": "object",
-      "required": [
-        "type", "apiKey"
-      ],
+      "required": ["type", "apiKey"],
       "properties": {
         "type": {
           "type": "string",
