@@ -18,7 +18,7 @@ func repoCloneProgress(ctx context.Context, fs gitserverfs.FS, locker Repository
 	resp := protocol.RepoCloneProgress{
 		Cloned: cloned,
 	}
-	cloneProgress, locked := locker.Status(repo)
+	cloneProgress, locked := locker.Status(ctx, repo)
 	if isAlwaysCloningTest(repo) {
 		resp.CloneInProgress = true
 		resp.CloneProgress = "This will never finish cloning"

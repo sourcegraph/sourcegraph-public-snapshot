@@ -1,9 +1,11 @@
 package internal
 
 import (
+	"context"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 // RepositoryLock is returned by RepositoryLocker.TryAcquire. It allows
@@ -25,71 +27,86 @@ type RepositoryLocker interface {
 	// TryAcquire acquires the lock for repo. If it is already held, ok is false
 	// and lock is nil. Otherwise a non-nil lock is returned and true. When
 	// finished with the lock you must call lock.Release.
-	TryAcquire(repo api.RepoName, initialStatus string) (lock RepositoryLock, ok bool)
+	TryAcquire(ctx context.Context, repo api.RepoName, initialStatus string) (lock RepositoryLock, ok bool)
 	// Status returns the status of the locked repo. If repo is not locked, then
 	// locked is false.
-	Status(repo api.RepoName) (status string, locked bool)
+	Status(ctx context.Context, repo api.RepoName) (status string, locked bool)
 	// AllStatuses returns the status of all locked repositories.
-	AllStatuses() map[api.RepoName]string
+	AllStatuses(ctx context.Context) map[api.RepoName]string
 }
 
 func NewRepositoryLocker() RepositoryLocker {
 	return &repositoryLocker{
-		status: make(map[api.RepoName]string),
+		status: make(map[int]map[api.RepoName]string),
 	}
 }
 
 type repositoryLocker struct {
 	// mu protects status
 	mu sync.RWMutex
-	// status tracks repos that are locked. The value is the status. If
+	// status tracks repos that are locked by tenant ID. The value is the status. If
 	// a repo is in status, the repo is locked.
-	status map[api.RepoName]string
+	status map[int]map[api.RepoName]string
 }
 
-func (rl *repositoryLocker) TryAcquire(repo api.RepoName, initialStatus string) (lock RepositoryLock, ok bool) {
+func (rl *repositoryLocker) TryAcquire(ctx context.Context, repo api.RepoName, initialStatus string) (lock RepositoryLock, ok bool) {
+	tnt := tenant.FromContext(ctx)
+
 	rl.mu.Lock()
-	_, failed := rl.status[repo]
-	if !failed {
+	_, found := rl.status[tnt.ID()]
+	if !found {
 		if rl.status == nil {
-			rl.status = make(map[api.RepoName]string)
+			rl.status = make(map[int]map[api.RepoName]string)
 		}
-		rl.status[repo] = initialStatus
+	}
+	_, found = rl.status[tnt.ID()][repo]
+	if !found {
+		if rl.status[tnt.ID()] == nil {
+			rl.status[tnt.ID()] = make(map[api.RepoName]string)
+		}
+		rl.status[tnt.ID()][repo] = initialStatus
 	}
 	rl.mu.Unlock()
 
-	if failed {
+	if found {
 		return nil, false
 	}
 
 	return &repositoryLock{
 		unlock: func() {
 			rl.mu.Lock()
-			delete(rl.status, repo)
+			delete(rl.status[tnt.ID()], repo)
 			rl.mu.Unlock()
 		},
 		setStatus: func(status string) {
 			rl.mu.Lock()
-			rl.status[repo] = status
+			rl.status[tnt.ID()][repo] = status
 			rl.mu.Unlock()
 		},
 		repo: repo,
 	}, true
 }
 
-func (rl *repositoryLocker) Status(repo api.RepoName) (status string, locked bool) {
+func (rl *repositoryLocker) Status(ctx context.Context, repo api.RepoName) (status string, locked bool) {
 	rl.mu.RLock()
 	defer rl.mu.RUnlock()
-	status, locked = rl.status[repo]
+	tnt := tenant.FromContext(ctx)
+	_, locked = rl.status[tnt.ID()]
+	if !locked {
+		return "", false
+	}
+	status, locked = rl.status[tnt.ID()][repo]
 	return
 }
 
-func (rl *repositoryLocker) AllStatuses() map[api.RepoName]string {
+func (rl *repositoryLocker) AllStatuses(ctx context.Context) map[api.RepoName]string {
 	rl.mu.RLock()
 	defer rl.mu.RUnlock()
 
+	tnt := tenant.FromContext(ctx)
+
 	statuses := make(map[api.RepoName]string, len(rl.status))
-	for repo, status := range rl.status {
+	for repo, status := range rl.status[tnt.ID()] {
 		statuses[repo] = status
 	}
 

@@ -169,7 +169,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	rec.RegistrationDone()
 
 	debugserverEndpoints.lockerStatusEndpoint = func(w http.ResponseWriter, r *http.Request) {
-		if err := json.NewEncoder(w).Encode(locker.AllStatuses()); err != nil {
+		if err := json.NewEncoder(w).Encode(locker.AllStatuses(r.Context())); err != nil {
 			logger.Error("failed to encode locker statuses", log.Error(err))
 		}
 	}

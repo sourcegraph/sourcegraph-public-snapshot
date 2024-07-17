@@ -295,7 +295,7 @@ func (s *Server) FetchRepository(ctx context.Context, repoName api.RepoName) (la
 func (s *Server) repoUpdateOrClone(ctx context.Context, repoName api.RepoName) error {
 	logger := s.logger.Scoped("repoUpdateOrClone")
 
-	lock, ok := s.locker.TryAcquire(repoName, "starting fetch")
+	lock, ok := s.locker.TryAcquire(ctx, repoName, "starting fetch")
 	if !ok {
 		return ErrFetchInProgress
 	}

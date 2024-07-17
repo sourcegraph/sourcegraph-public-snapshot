@@ -204,7 +204,7 @@ func syncRepoState(
 				// Failed to determine cloned state, we have to skip this record for now.
 				continue
 			}
-			_, locked := locker.Status(repo.Name)
+			_, locked := locker.Status(ctx, repo.Name)
 
 			var shouldUpdate bool
 			if repo.ShardID != shardID {

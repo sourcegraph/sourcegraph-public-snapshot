@@ -1807,7 +1807,7 @@ func (gs *grpcServer) checkRepoExists(ctx context.Context, repo api.RepoName) er
 		return nil
 	}
 
-	cloneProgress, locked := gs.locker.Status(repo)
+	cloneProgress, locked := gs.locker.Status(ctx, repo)
 
 	// We checked above that the repo is not cloned. So if the repo is currently
 	// locked, it must be a clone in progress.
