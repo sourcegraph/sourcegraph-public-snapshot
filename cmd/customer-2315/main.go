@@ -6,33 +6,35 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/google/uuid"
 )
 
-var (
+type ProxyServer struct {
 	accessToken   string
 	tokenMutex    sync.RWMutex
 	client        *http.Client
 	azureEndpoint *url.URL
-)
+	logger        log.Logger
+}
 
-func readSecretFile(path string) (string, error) {
-	data, err := ioutil.ReadFile(path)
+func (ps *ProxyServer) readSecretFile(path string) (string, error) {
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
 	return strings.TrimSpace(string(data)), nil
 }
 
-func generateHeaders(bearerToken string) map[string]string {
+func (ps *ProxyServer) generateHeaders(bearerToken string) map[string]string {
 	return map[string]string{
 		"correlationId":      uuid.New().String(),
 		"dataClassification": "sensitive",
@@ -41,35 +43,35 @@ func generateHeaders(bearerToken string) map[string]string {
 	}
 }
 
-func updateAccessToken() {
+func (ps *ProxyServer) updateAccessToken() {
 	for {
-		token, err := getAccessToken()
+		token, err := ps.getAccessToken()
 		if err != nil {
-			log.Printf("Error getting access token: %v", err)
+			ps.logger.Fatal("Error getting access token: %v", log.Error(err))
 		} else {
-			tokenMutex.Lock()
-			accessToken = token
-			tokenMutex.Unlock()
-			log.Println("Access token updated")
+			ps.tokenMutex.Lock()
+			ps.accessToken = token
+			ps.tokenMutex.Unlock()
+			ps.logger.Info("Access token updated")
 		}
 		time.Sleep(1 * time.Minute)
 	}
 }
 
-func initializeAzureEndpoint() {
+func (ps *ProxyServer) initializeAzureEndpoint() {
 	var err error
-	azure_endpoint, err := readSecretFile("/run/secrets/azure_endpoint")
+	azure_endpoint, err := ps.readSecretFile("/run/secrets/azure_endpoint")
 	if err != nil {
-		log.Fatalf("error reading OAUTH_URL: %v", err)
+		ps.logger.Fatal("error reading OAUTH_URL: %v", log.Error(err))
 	}
-	azureEndpoint, err = url.Parse(azure_endpoint)
+	ps.azureEndpoint, err = url.Parse(azure_endpoint)
 	if err != nil {
-		log.Fatalf("Invalid AZURE_ENDPOINT: %v", err)
+		ps.logger.Fatal("Invalid AZURE_ENDPOINT: %v", log.Error(err))
 	}
 }
 
-func initializeClient() {
-	client = &http.Client{
+func (ps *ProxyServer) initializeClient() {
+	ps.client = &http.Client{
 		Transport: &http.Transport{
 			MaxIdleConns:        400,
 			MaxIdleConnsPerHost: 400,
@@ -80,16 +82,16 @@ func initializeClient() {
 	}
 }
 
-func getAccessToken() (string, error) {
-	url, err := readSecretFile("/run/secrets/oauth_url")
+func (ps *ProxyServer) getAccessToken() (string, error) {
+	url, err := ps.readSecretFile("/run/secrets/oauth_url")
 	if err != nil {
 		return "", fmt.Errorf("error reading OAUTH_URL: %v", err)
 	}
-	clientID, err := readSecretFile("/run/secrets/client_id")
+	clientID, err := ps.readSecretFile("/run/secrets/client_id")
 	if err != nil {
 		return "", fmt.Errorf("error reading CLIENT_ID: %v", err)
 	}
-	clientSecret, err := readSecretFile("/run/secrets/client_secret")
+	clientSecret, err := ps.readSecretFile("/run/secrets/client_secret")
 	if err != nil {
 		return "", fmt.Errorf("error reading CLIENT_SECRET: %v", err)
 	}
@@ -113,8 +115,7 @@ func getAccessToken() (string, error) {
 
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := ps.client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("error making request: %v", err)
 	}
@@ -137,9 +138,23 @@ func getAccessToken() (string, error) {
 	return token, nil
 }
 
-func handleProxy(w http.ResponseWriter, req *http.Request) {
-	target := azureEndpoint.ResolveReference(req.URL)
+func (ps *ProxyServer) validateApiKey(req *http.Request) bool {
+	proxyAccessToken, err := ps.readSecretFile("/run/secrets/proxy_access_token")
+	if err != nil {
+		return false
+	}
+	incomingAccessToken := req.Header.Get("Api-Key")
 
+	// Compare the incoming Api-Key with the environment variable
+	return incomingAccessToken == proxyAccessToken
+}
+
+func (ps *ProxyServer) handleProxy(w http.ResponseWriter, req *http.Request) {
+	target := ps.azureEndpoint.ResolveReference(req.URL)
+	if !ps.validateApiKey(req) {
+		http.Error(w, "Invalid Proxy Password", http.StatusUnauthorized)
+		return
+	}
 	// Create a proxy request
 	proxyReq, err := http.NewRequest(req.Method, target.String(), req.Body)
 	if err != nil {
@@ -154,18 +169,17 @@ func handleProxy(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	tokenMutex.RLock()
-	bearerToken := accessToken
-	tokenMutex.RUnlock()
-
+	ps.tokenMutex.RLock()
+	bearerToken := ps.accessToken
+	ps.tokenMutex.RUnlock()
 	// Add generated headers
-	headers := generateHeaders(bearerToken)
+	headers := ps.generateHeaders(bearerToken)
 	for key, value := range headers {
 		proxyReq.Header.Set(key, value)
 	}
 	proxyReq.Header.Set("Api-Key", bearerToken)
 
-	resp, err := client.Do(proxyReq)
+	resp, err := ps.client.Do(proxyReq)
 	if err != nil {
 		http.Error(w, "Bad Gateway", http.StatusBadGateway)
 		return
@@ -186,14 +200,15 @@ func handleProxy(w http.ResponseWriter, req *http.Request) {
 	for {
 		n, err := reader.Read(buf)
 		if err != nil && err != io.EOF {
-			http.Error(w, "Bad Gateway", http.StatusBadGateway)
+			ps.logger.Error("Error reading response body: %v", log.Error(err))
+			http.Error(w, "Error reading response from upstream server", http.StatusBadGateway)
 			return
 		}
 		if n == 0 {
 			break
 		}
 		if _, writeErr := w.Write(buf[:n]); writeErr != nil {
-			log.Printf("Error writing response: %v", writeErr)
+			ps.logger.Fatal("Error writing response: %v", log.Error(writeErr))
 			break
 		}
 		if flusher, ok := w.(http.Flusher); ok {
@@ -203,10 +218,22 @@ func handleProxy(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	initializeClient()
-	initializeAzureEndpoint()
-	go updateAccessToken()
-	http.HandleFunc("/", handleProxy)
-	log.Println("HTTPS Proxy server is running on port 8443")
-	log.Fatal(http.ListenAndServeTLS(":8443", "/run/secrets/cert.pem", "/run/secrets/key.pem", nil))
+	liblog := log.Init(log.Resource{
+		Name: "Special Oauth Server",
+	})
+	defer liblog.Sync()
+
+	logger := log.Scoped("server")
+
+	ps := &ProxyServer{
+		logger: logger,
+	}
+	ps.initializeClient()
+	ps.initializeAzureEndpoint()
+	go ps.updateAccessToken()
+	http.HandleFunc("/", ps.handleProxy)
+	logger.Info("HTTPS Proxy server is running on port 8443")
+	if err := http.ListenAndServeTLS(":8443", "/run/secrets/cert.pem", "/run/secrets/key.pem", nil); err != nil {
+		logger.Fatal("Failed to start HTTPS server: %v", log.Error(err))
+	}
 }
