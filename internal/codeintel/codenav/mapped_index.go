@@ -11,8 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type MappedIndex interface {
@@ -35,32 +33,6 @@ type MappedDocument interface {
 }
 
 var _ MappedDocument = &mappedDocument{}
-
-// NewMappedIndex creates a MappedIndex for an uploaded index and a targetCommit
-func NewMappedIndex(
-	lsifStore lsifstore.LsifStore,
-	repo *types.Repo,
-	gitserverClient gitserver.Client,
-	upload core.UploadLike,
-	targetCommit api.CommitID,
-) (MappedIndex, error) {
-	// NOTE(issue: GRAPH-742): No idea if 100 is a reasonable number here (the resolver wide one has a default of 1000),
-	// This will go away once the linked issue is fixed.
-	hunkCache, err := NewHunkCache(100)
-	if err != nil {
-		return nil, err
-	}
-	gitTreeTranslator := NewGitTreeTranslator(gitserverClient, &TranslationBase{
-		Repo:   repo,
-		Commit: targetCommit,
-	}, hunkCache)
-	return mappedIndex{
-		lsifStore:         lsifStore,
-		gitTreeTranslator: gitTreeTranslator,
-		upload:            upload,
-		targetCommit:      targetCommit,
-	}, nil
-}
 
 // NewMappedIndexFromTranslator creates a MappedIndex using the given GitTreeTranslator.
 // The translators SourceCommit has to be the targetCommit, which will be mapped to upload.GetCommit()
