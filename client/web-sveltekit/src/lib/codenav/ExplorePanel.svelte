@@ -226,7 +226,7 @@
             return $inputs.treeFilter.path === undefined || $inputs.treeFilter.path === displayGroup.path
         })
 
-    let referencesScroller: HTMLElement | null
+    let referencesScroller: HTMLElement | undefined
 </script>
 
 {#if $inputs.activeOccurrence === undefined}

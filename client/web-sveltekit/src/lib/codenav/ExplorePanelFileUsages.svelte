@@ -14,7 +14,7 @@
     export let repo: string
     export let path: string
     export let usages: ExplorePanel_Usage[]
-    export let scrollContainer: HTMLElement | null
+    export let scrollContainer: HTMLElement | undefined
 
     // TODO: remove all the usageRange! assertions once the backend is updated to
     // use a non-nullable type in the API. I've already confirmed that it should always
@@ -74,7 +74,7 @@
 
 <div
     class="root"
-    use:observeIntersection={scrollContainer}
+    use:observeIntersection={scrollContainer ?? null}
     on:intersecting={event => (visible = visible || event.detail)}
 >
     <div class="header">
