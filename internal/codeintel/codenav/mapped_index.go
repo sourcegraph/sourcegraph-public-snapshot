@@ -109,8 +109,7 @@ type lockedDocument struct {
 func (d *mappedDocument) mapAllOccurrences(ctx context.Context) ([]*scip.Occurrence, error) {
 	newOccurrences := make([]*scip.Occurrence, 0)
 	for _, occ := range d.document.inner.Occurrences {
-		scipRange := scip.NewRangeUnchecked(occ.Range)
-		sharedRange := shared.TranslateRange(scipRange)
+		sharedRange := shared.TranslateRange(scip.NewRangeUnchecked(occ.Range))
 		mappedRange, ok, err := d.gitTreeTranslator.GetTargetCommitRangeFromSourceRange(ctx, string(d.indexCommit), d.path.RawValue(), sharedRange, true)
 		if err != nil {
 			return nil, err
@@ -148,22 +147,23 @@ func (d *mappedDocument) GetOccurrences(ctx context.Context) ([]*scip.Occurrence
 		d.document.isMapped = true
 	})
 
-	d.document.lock.RLock()
-	defer d.document.lock.RUnlock()
 	if d.document.mapErrored != nil {
 		return nil, d.document.mapErrored
 	}
 	return d.document.inner.Occurrences, nil
 }
 
-func (d *mappedDocument) GetOccurrencesAtRange(ctx context.Context, rg scip.Range) ([]*scip.Occurrence, error) {
+func (d *mappedDocument) GetOccurrencesAtRange(ctx context.Context, range_ scip.Range) ([]*scip.Occurrence, error) {
 	d.document.lock.RLock()
-	defer d.document.lock.RUnlock()
+	occurrences := d.document.inner.Occurrences
 	if d.document.isMapped {
-		return FindOccurrencesWithEqualRange(d.document.inner.Occurrences, rg), nil
+		d.document.lock.RUnlock()
+		return FindOccurrencesWithEqualRange(occurrences, range_), nil
 	}
+	d.document.lock.RUnlock()
+
 	mappedRg, ok, err := d.gitTreeTranslator.GetTargetCommitRangeFromSourceRange(
-		ctx, string(d.indexCommit), d.path.RawValue(), shared.TranslateRange(rg), false,
+		ctx, string(d.indexCommit), d.path.RawValue(), shared.TranslateRange(range_), false,
 	)
 	if err != nil {
 		return nil, err
@@ -172,12 +172,12 @@ func (d *mappedDocument) GetOccurrencesAtRange(ctx context.Context, rg scip.Rang
 		// The range was changed/removed in the target commit, so return no occurrences
 		return nil, nil
 	}
-	pastMatchingOccurrences := FindOccurrencesWithEqualRange(d.document.inner.Occurrences, mappedRg.ToSCIPRange())
-	Range := rg.SCIPRange()
+	pastMatchingOccurrences := FindOccurrencesWithEqualRange(occurrences, mappedRg.ToSCIPRange())
+	scipRange := range_.SCIPRange()
 	return genslices.Map(pastMatchingOccurrences, func(occ *scip.Occurrence) *scip.Occurrence {
 		return &scip.Occurrence{
 			// Return the range in the target commit, instead of the index commit
-			Range:                 Range,
+			Range:                 scipRange,
 			Symbol:                occ.Symbol,
 			SymbolRoles:           occ.SymbolRoles,
 			OverrideDocumentation: occ.OverrideDocumentation,
