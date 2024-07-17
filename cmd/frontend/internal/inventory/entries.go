@@ -45,6 +45,9 @@ func (c *Context) All(ctx context.Context) (inv Inventory, err error) {
 	if err != nil {
 		return Inventory{}, err
 	}
+	defer func() {
+		r.Close()
+	}()
 
 	tr := tar.NewReader(r)
 	return c.ArchiveProcessor(ctx, func() (*NextRecord, error) {
