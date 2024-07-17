@@ -192,6 +192,7 @@ func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	//event.Build.
 	fmt.Println(event.Name, "<=======")
 
 	if testutil.IsTest {
