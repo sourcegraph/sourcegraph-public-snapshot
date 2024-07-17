@@ -281,8 +281,8 @@ test.describe('repo menu', () => {
         await page.goto(url)
         // Focus _something_ on the page. Use both mac and linux shortcuts so this works
         // both locally and in CI.
-        await page.getByRole('link', { name: 'Sourcegraph' }).press('Meta+Backspace')
-        await page.getByRole('link', { name: 'Sourcegraph' }).press('Control+Backspace')
+        await page.getByRole('link').first().press('Meta+Backspace')
+        await page.getByRole('link').first().press('Control+Backspace')
         await page.waitForURL(`/${repoName}`)
     })
 })

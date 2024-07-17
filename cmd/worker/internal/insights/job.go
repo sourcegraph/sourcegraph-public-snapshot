@@ -26,7 +26,7 @@ func (s *insightsJob) Config() []env.Config {
 func (s *insightsJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	if !insights.IsEnabled() {
 		observationCtx.Logger.Debug("Code Insights disabled. Disabling background jobs.")
-		return []goroutine.BackgroundRoutine{}, nil
+		return nil, nil
 	}
 	observationCtx.Logger.Debug("Code Insights enabled. Enabling background jobs.")
 

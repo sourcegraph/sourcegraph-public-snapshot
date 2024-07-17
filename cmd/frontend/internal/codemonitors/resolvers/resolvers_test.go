@@ -40,9 +40,9 @@ func TestCreateCodeMonitor(t *testing.T) {
 	want := &database.Monitor{
 		ID:          1,
 		CreatedBy:   user.ID,
-		CreatedAt:   r.Now(),
+		CreatedAt:   r.now(),
 		ChangedBy:   user.ID,
-		ChangedAt:   r.Now(),
+		ChangedAt:   r.now(),
 		Description: "test monitor",
 		Enabled:     true,
 		UserID:      user.ID,
@@ -453,7 +453,7 @@ func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *R
 					Enabled:     true,
 					Owner:       apitest.UserOrg{Name: user1.Username},
 					CreatedBy:   apitest.UserOrg{Name: user1.Username},
-					CreatedAt:   marshalDateTime(t, r.Now()),
+					CreatedAt:   marshalDateTime(t, r.now()),
 					Trigger: apitest.Trigger{
 						Id:    string(relay.MarshalID(monitorTriggerQueryKind, 1)),
 						Query: "repo:foo",
@@ -462,7 +462,7 @@ func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *R
 								{
 									Id:        string(relay.MarshalID(monitorTriggerEventKind, 1)),
 									Status:    "SUCCESS",
-									Timestamp: r.Now().UTC().Format(time.RFC3339),
+									Timestamp: r.now().UTC().Format(time.RFC3339),
 									Message:   nil,
 								},
 							},
@@ -493,13 +493,13 @@ func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *R
 										{
 											Id:        string(relay.MarshalID(monitorActionEmailEventKind, 1)),
 											Status:    "SUCCESS",
-											Timestamp: r.Now().UTC().Format(time.RFC3339),
+											Timestamp: r.now().UTC().Format(time.RFC3339),
 											Message:   nil,
 										},
 										{
 											Id:        string(relay.MarshalID(monitorActionEmailEventKind, 4)),
 											Status:    "PENDING",
-											Timestamp: r.Now().UTC().Format(time.RFC3339),
+											Timestamp: r.now().UTC().Format(time.RFC3339),
 											Message:   nil,
 										},
 									},
@@ -520,13 +520,13 @@ func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *R
 										{
 											Id:        string(relay.MarshalID(monitorActionEmailEventKind, 2)),
 											Status:    "SUCCESS",
-											Timestamp: r.Now().UTC().Format(time.RFC3339),
+											Timestamp: r.now().UTC().Format(time.RFC3339),
 											Message:   nil,
 										},
 										{
 											Id:        string(relay.MarshalID(monitorActionEmailEventKind, 5)),
 											Status:    "PENDING",
-											Timestamp: r.Now().UTC().Format(time.RFC3339),
+											Timestamp: r.now().UTC().Format(time.RFC3339),
 											Message:   nil,
 										},
 									},
@@ -547,13 +547,13 @@ func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *R
 										{
 											Id:        string(relay.MarshalID(monitorActionEmailEventKind, 3)),
 											Status:    "SUCCESS",
-											Timestamp: r.Now().UTC().Format(time.RFC3339),
+											Timestamp: r.now().UTC().Format(time.RFC3339),
 											Message:   nil,
 										},
 										{
 											Id:        string(relay.MarshalID(monitorActionEmailEventKind, 6)),
 											Status:    "PENDING",
-											Timestamp: r.Now().UTC().Format(time.RFC3339),
+											Timestamp: r.now().UTC().Format(time.RFC3339),
 											Message:   nil,
 										},
 									},
@@ -952,7 +952,7 @@ func queryByID(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Res
 			Enabled:     true,
 			Owner:       apitest.UserOrg{Name: user1.Username},
 			CreatedBy:   apitest.UserOrg{Name: user1.Username},
-			CreatedAt:   marshalDateTime(t, r.Now()),
+			CreatedAt:   marshalDateTime(t, r.now()),
 			Trigger: apitest.Trigger{
 				Id:    string(relay.MarshalID(monitorTriggerQueryKind, 1)),
 				Query: "repo:foo",

@@ -16,6 +16,7 @@ import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetry
 import type { SearchAggregationProps, SearchStreamingProps } from '..'
 import type { AuthenticatedUser } from '../../auth'
 import type { CodeMonitoringProps } from '../../codeMonitoring'
+import { SearchJobsProps } from '../../enterprise/search-jobs'
 import { formatUrlOverrideFeatureFlags } from '../../featureFlags/lib/parseUrlOverrideFeatureFlags'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { useFeatureFlagOverrides } from '../../featureFlags/useFeatureFlagOverrides'
@@ -39,6 +40,7 @@ export interface StreamingSearchResultsProps
         CodeInsightsProps,
         SearchAggregationProps,
         CodeMonitoringProps,
+        SearchJobsProps,
         OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
@@ -293,6 +295,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             settingsCascade={props.settingsCascade}
             telemetryService={telemetryService}
             platformContext={platformContext}
+            searchJobsEnabled={props.searchJobsEnabled}
         />
     )
 }

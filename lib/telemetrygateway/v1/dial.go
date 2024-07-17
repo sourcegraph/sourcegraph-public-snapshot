@@ -10,8 +10,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/grpc/credentials/oauth"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Experimental: some additional networking options to account for some odd
@@ -32,6 +33,12 @@ var cloudRunDialOptions = []grpc.DialOption{
 	// potential networking issues.
 	// Default: 30 minutes
 	grpc.WithIdleTimeout(1 * time.Minute),
+}
+
+type SimpleClient struct {
+	TelemeteryGatewayServiceClient
+	// Conn can be closed to ensure clean shutdown.
+	Conn *grpc.ClientConn
 }
 
 // Dial establishes a connection to the Telemetry Gateway gRPC service with
@@ -63,20 +70,23 @@ var cloudRunDialOptions = []grpc.DialOption{
 // Dial is intended for simple, standard production use cases. If you need
 // to customize the way you connect to Telemetry Gateway, you should create your
 // own dial setup.
-func Dial(ctx context.Context, logger log.Logger, addr *url.URL, ts oauth2.TokenSource, dialOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
+func Dial(ctx context.Context, logger log.Logger, addr *url.URL, ts oauth2.TokenSource, dialOpts ...grpc.DialOption) (*SimpleClient, error) {
 	insecureTarget := addr.Scheme != "https"
 	if insecureTarget {
 		return nil, errors.Newf("insecure target Telemetry Gateway %q", addr.String())
 	}
 	dialOpts = append(dialOpts, grpc.WithPerRPCCredentials(oauth.TokenSource{TokenSource: ts}))
 	dialOpts = append(dialOpts, cloudRunDialOptions...)
-	logger.Info("dialing Enterprise Portal gRPC service",
+	logger.Info("dialing Telemetry Gateway gRPC service",
 		log.String("host", addr.Host),
 		log.Bool("insecureTarget", insecureTarget))
 	//lint:ignore SA1019 DialContext will be supported throughout 1.x
 	conn, err := grpc.NewClient(addr.Host, dialOpts...)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to connect to Enterprise Portal gRPC service at %s", addr.String())
+		return nil, errors.Wrapf(err, "failed to connect to Telemetry Gateway gRPC service at %s", addr.String())
 	}
-	return conn, nil
+	return &SimpleClient{
+		TelemeteryGatewayServiceClient: NewTelemeteryGatewayServiceClient(conn),
+		Conn:                           conn,
+	}, nil
 }

@@ -1,1 +1,3 @@
-export { SearchJobsPage } from './SearchJobsPage'
+export interface SearchJobsProps {
+    searchJobsEnabled: boolean
+}
