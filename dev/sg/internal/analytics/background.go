@@ -45,7 +45,11 @@ func toEvents(items []invocation) []event {
 	return results
 }
 
-func maybePrintHelpMsg(out *std.Output, errs []error) {
+func maybePrintHelpMsg(out *std.Output, multErr errors.MultiError) {
+	if multErr == nil {
+		return
+	}
+	errs := multErr.Errors()
 	if len(errs) == 0 {
 		return
 	}
@@ -104,13 +108,13 @@ func processEvents(ctx context.Context, bgOut *std.Output, store analyticsStore,
 					errs = errors.Append(errs, err)
 				}
 
-				if len(errs.Errors()) > 3 {
+				if errs != nil && len(errs.Errors()) > 3 {
 					// if we have more than 3 errors. Something is wrong and it's better for us to exit early.
 					break
 				}
 			}
 
-			maybePrintHelpMsg(bgOut, errs.Errors())
+			maybePrintHelpMsg(bgOut, errs)
 		}
 	}
 
