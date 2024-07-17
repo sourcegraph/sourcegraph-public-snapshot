@@ -21,7 +21,7 @@ var (
 	accessToken   string
 	tokenMutex    sync.RWMutex
 	client        *http.Client
-	azureEndpoint *url.URL // Add this line
+	azureEndpoint *url.URL
 )
 
 func readSecretFile(path string) (string, error) {

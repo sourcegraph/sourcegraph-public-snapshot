@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -21,7 +21,7 @@ var (
 	accessToken   string
 	tokenMutex    sync.RWMutex
 	client        *http.Client
-	azureEndpoint *url.URL // Add this line
+	azureEndpoint *url.URL
 )
 
 func readSecretFile(path string) (string, error) {
@@ -81,7 +81,7 @@ func initializeClient() {
 }
 
 func getAccessToken() (string, error) {
-	url, err := readSecretFile("/run/secrets/oauth_url")
+	oauth_url, err := readSecretFile("/run/secrets/oauth_url")
 	if err != nil {
 		return "", fmt.Errorf("error reading OAUTH_URL: %v", err)
 	}
@@ -94,47 +94,44 @@ func getAccessToken() (string, error) {
 		return "", fmt.Errorf("error reading CLIENT_SECRET: %v", err)
 	}
 
-	data := map[string]string{
-		"client_id":     clientID,
-		"client_secret": clientSecret,
-		"scope":         "azureopenai-readwrite",
-		"grant_type":    "client_credentials",
-	}
+	authKey := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", clientID, clientSecret)))
 
-	jsonData, err := json.Marshal(data)
+	data := url.Values{}
+	data.Set("grant_type", "client_credentials")
+
+	req, err := http.NewRequest("POST", oauth_url, ioutil.NopCloser(strings.NewReader(data.Encode())))
 	if err != nil {
-		return "", fmt.Errorf("error marshalling JSON: %v", err)
+		return "", fmt.Errorf("Failed to create request: %v", err)
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return "", fmt.Errorf("error creating request: %v", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Add("Authorization", "Basic "+authKey)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("error making request: %v", err)
+		return "", fmt.Errorf("Failed to retrieve token: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("request failed with status: %v", resp.Status)
+		return "", fmt.Errorf("Failed to retrieve token: %s", resp.Status)
 	}
 
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("Failed to read response body: %v", err)
+	}
 	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", fmt.Errorf("error decoding response: %v", err)
+	if err := json.Unmarshal(body, &result); err != nil {
+		log.Fatalf("Failed to unmarshal response body: %v", err)
 	}
 
-	token, ok := result["access_token"].(string)
+	accessToken, ok := result["access_token"].(string)
 	if !ok {
-		return "", fmt.Errorf("access token not found in response")
+		log.Fatalf("Failed to retrieve access token from response body")
 	}
-
-	return token, nil
+	return accessToken, nil
 }
 
 func handleProxy(w http.ResponseWriter, req *http.Request) {
@@ -158,13 +155,9 @@ func handleProxy(w http.ResponseWriter, req *http.Request) {
 	bearerToken := accessToken
 	tokenMutex.RUnlock()
 
-	// Add generated headers
-	headers := generateHeaders(bearerToken)
-	for key, value := range headers {
-		proxyReq.Header.Set(key, value)
-	}
+	// Add accesstoken headers
 	proxyReq.Header.Set("Api-Key", bearerToken)
-
+	fmt.Println("the request is made plsease")
 	resp, err := client.Do(proxyReq)
 	if err != nil {
 		http.Error(w, "Bad Gateway", http.StatusBadGateway)
