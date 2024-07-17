@@ -676,6 +676,12 @@ type CodyProConfig struct {
 	UseEmbeddedUI bool `json:"useEmbeddedUI,omitempty"`
 }
 
+// CommitGraphUpdates description: Customize strategy used for commit graph updates
+type CommitGraphUpdates struct {
+	// DefaultBranchOnly description: Disables precise code nav on non-default branches. Specify repo names using regex syntax.
+	DefaultBranchOnly []string `json:"defaultBranchOnly,omitempty"`
+}
+
 // CodyServerSideContext description: Configuration for Server-side context API
 type CodyServerSideContext struct {
 	// IntentDetectionAPI description: Configuration for intent detection API
@@ -1053,6 +1059,8 @@ type ExperimentalFeatures struct {
 	CodyServerSideContext *CodyServerSideContext `json:"cody.serverSideContext,omitempty"`
 	// CodyContextIgnore description: Enabled filtering of remote Cody context based on repositories ./cody/ignore file
 	CodyContextIgnore *bool `json:"codyContextIgnore,omitempty"`
+	// CommitGraphUpdates description: Customize strategy used for commit graph updates
+	CommitGraphUpdates *CommitGraphUpdates `json:"commitGraphUpdates,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
@@ -1153,6 +1161,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "codeintelSyntacticIndexing.enabled")
 	delete(m, "cody.serverSideContext")
 	delete(m, "codyContextIgnore")
+	delete(m, "commitGraphUpdates")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
 	delete(m, "enableGithubInternalRepoVisibility")

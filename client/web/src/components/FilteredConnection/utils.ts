@@ -41,8 +41,12 @@ export function getFilterFromURL<K extends string>(
                 continue
             }
         }
+
         // couldn't find a value, add default
-        values[filter.id] = filter.options[0].value
+        const defaultOption = filter.options.at(0)
+        if (defaultOption !== undefined) {
+            values[filter.id] = defaultOption.value
+        }
     }
     return values
 }
@@ -117,8 +121,8 @@ export function urlSearchParamsForFilteredConnection({
     if (filterValues && filters) {
         for (const filter of filters) {
             const value = filterValues[filter.id]
-            const defaultValue = filter.options[0].value
-            if (value !== undefined && value !== null && value !== defaultValue) {
+            const defaultOption = filter.options.at(0)
+            if (value !== undefined && value !== null && (!defaultOption || value !== defaultOption.value)) {
                 params.set(filter.id, value)
             } else {
                 params.delete(filter.id)

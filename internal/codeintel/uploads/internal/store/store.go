@@ -88,7 +88,7 @@ type Store interface {
 	SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, maxTraversal int) (int, int, error)
 
 	// Commit date
-	GetCommitDateForOldestUpload(ctx context.Context, repositoryID int) (core.Option[time.Time], error)
+	GetCommitAndDateForOldestUpload(ctx context.Context, repositoryID int) (core.Option[CommitWithDate], error)
 	UpdateCommittedAt(ctx context.Context, repositoryID int, commit, commitDateString string) error
 	SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) ([]SourcedCommits, error)
 

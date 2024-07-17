@@ -3,7 +3,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "codemonitors",
-    srcs = ["search.go"],
+    srcs = [
+        "conf.go",
+        "search.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codemonitors",
     tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],

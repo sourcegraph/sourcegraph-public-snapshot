@@ -12,6 +12,7 @@ go_library(
         "//internal/codeintel",
         "//internal/conf/conftypes",
         "//internal/database",
+        "//internal/notebooks",
         "//internal/observation",
     ],
 )

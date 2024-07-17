@@ -19,6 +19,7 @@ const PROPS: React.ComponentProps<typeof NewGlobalNavigationBar> = {
     codeMonitoringEnabled: true,
     batchChangesEnabled: true,
     codeInsightsEnabled: true,
+    searchJobsEnabled: true,
     showSearchBox: true,
     showFeedbackModal: () => {},
     routes: [],

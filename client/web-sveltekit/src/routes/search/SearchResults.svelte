@@ -53,16 +53,17 @@
     export let queryState: QueryStateStore
 
     export function capture(): SearchResultsCapture {
-        return resultContainer?.scrollTop ?? 0
+        return $resultContainer?.scrollTop ?? 0
     }
 
     export function restore(capture?: SearchResultsCapture): void {
-        if (resultContainer) {
-            resultContainer.scrollTop = capture ?? 0
+        if ($resultContainer) {
+            $resultContainer.scrollTop = capture ?? 0
         }
     }
 
-    let resultContainer: HTMLElement | null = null
+    const resultContainer = writable<HTMLElement | null>(null)
+
     const recentSearches = createRecentSearchesStore()
 
     $: state = $stream.state // 'loading', 'error', 'complete'
@@ -99,6 +100,7 @@
             previewResult.set(result)
         },
         queryState,
+        scrollContainer: resultContainer,
     })
 
     beforeNavigate(() => {
@@ -170,7 +172,7 @@
                 <aside class="actions">
                     <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} />
                 </aside>
-                <div class="result-list" bind:this={resultContainer}>
+                <div class="result-list" bind:this={$resultContainer}>
                     {#if $stream.alert}
                         <div class="message-container">
                             <SearchAlert alert={$stream.alert} />
@@ -188,7 +190,7 @@
                             {@const component = getSearchResultComponent(result)}
                             {#if i === resultsToShow.length - 1}
                                 <li
-                                    use:observeIntersection
+                                    use:observeIntersection={$resultContainer}
                                     on:intersecting={loadMore}
                                     on:click={() => handleSearchResultClick(i)}
                                 >

@@ -33,13 +33,23 @@ type Resolver struct {
 	db     database.DB
 }
 
-func (r *Resolver) Now() time.Time {
+func (r *Resolver) now() time.Time {
 	return r.db.CodeMonitors().Now()
+}
+
+func (r *Resolver) isEnabled() error {
+	if !codemonitors.IsEnabled() {
+		return errors.New("code monitoring is not enabled")
+	}
+	return nil
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	return map[string]graphqlbackend.NodeByIDFunc{
 		MonitorKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			if err := r.isEnabled(); err != nil {
+				return nil, err
+			}
 			return r.MonitorByID(ctx, id)
 		},
 		// TODO: These kinds are currently not implemented, but need a node resolver.
@@ -683,9 +693,6 @@ func (r *Resolver) isAllowedToEdit(ctx context.Context, id graphql.ID) error {
 // - she is a member of the organization which is the owner of the monitor
 // - she is a site-admin
 func (r *Resolver) isAllowedToCreate(ctx context.Context, owner graphql.ID) error {
-	if dotcom.SourcegraphDotComMode() {
-		return errors.New("Code Monitors are disabled on sourcegraph.com")
-	}
 	var ownerInt32 int32
 	err := relay.UnmarshalSpec(owner, &ownerInt32)
 	if err != nil {

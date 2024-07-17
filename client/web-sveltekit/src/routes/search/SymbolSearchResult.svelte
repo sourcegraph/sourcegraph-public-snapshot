@@ -11,8 +11,11 @@
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
     import PreviewButton from './PreviewButton.svelte'
     import SearchResult from './SearchResult.svelte'
+    import { getSearchResultsContext } from './searchResultsContext'
 
     export let result: SymbolMatch
+
+    const scrollContainer = getSearchResultsContext().scrollContainer
 
     $: ranges = result.symbols.map(symbol => ({
         startLine: symbol.line - 1,
@@ -37,7 +40,7 @@
         <PreviewButton {result} />
     </svelte:fragment>
     <svelte:fragment slot="body">
-        <div use:observeIntersection on:intersecting={event => (visible = event.detail)}>
+        <div use:observeIntersection={$scrollContainer} on:intersecting={event => (visible = event.detail)}>
             {#each result.symbols as symbol, index}
                 <a href={symbol.url}>
                     <div class="result">

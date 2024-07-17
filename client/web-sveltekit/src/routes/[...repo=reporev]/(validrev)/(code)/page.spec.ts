@@ -248,10 +248,7 @@ test('history panel', async ({ page, sg }) => {
     await expect(page.getByText('Test commit')).toBeHidden()
 })
 
-test('file popover', async ({ page, sg }, testInfo) => {
-    // Test needs more time to teardown
-    test.setTimeout(testInfo.timeout * 4)
-
+test('file popover', async ({ page, sg }) => {
     await page.goto(`/${repoName}`)
 
     // Open the sidebar
@@ -262,7 +259,7 @@ test('file popover', async ({ page, sg }, testInfo) => {
     await expect(page.getByText('Last Changed')).toBeVisible()
 
     // Hover outside the popover (the Sourcegraph logo), expect the popover to be hidden
-    await page.getByRole('link', { name: 'Sourcegraph', exact: true }).hover()
+    await page.getByRole('banner').getByRole('link').first().hover()
     await expect(page.getByText('Last Changed')).toBeHidden()
 
     sg.mockOperations({

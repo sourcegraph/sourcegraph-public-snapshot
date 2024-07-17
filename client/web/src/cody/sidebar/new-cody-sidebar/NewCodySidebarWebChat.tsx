@@ -48,6 +48,7 @@ export const NewCodySidebarWebChat: FC<NewCodySidebarWebChatProps> = memo(functi
             chatID={chatID}
             initialContext={contextInfo}
             serverEndpoint={window.location.origin}
+            customHeaders={window.context.xhrHeaders}
             onNewChatCreated={handleNewChatCreated}
         >
             <ChatUi />

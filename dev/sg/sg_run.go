@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 )
 
-var deprecationNotice = "sg run is deprecated. Use 'sg start -cmd' instead.\n"
+var deprecationNotice = "[DEPRECATED] sg run is deprecated - use 'sg start -cmd' instead"
 
 func init() {
 	postInitHooks = append(postInitHooks,
@@ -34,10 +34,11 @@ func init() {
 }
 
 var runCommand = &cli.Command{
-	Name:      "run",
-	Usage:     deprecationNotice,
-	ArgsUsage: "[command]",
-	UsageText: deprecationNotice + `
+	Name:        "run",
+	Usage:       deprecationNotice,
+	ArgsUsage:   "[command]",
+	Description: deprecationNotice,
+	UsageText: `
 # Run specific commands
 sg run gitserver
 sg run frontend
