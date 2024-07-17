@@ -2,7 +2,6 @@ query RepositoryComparison($repoName: String!, $base: String, $head: String) {
     repository(name: $repoName) {
         comparison(base: $base, head: $head) {
             range {
-                expr
                 baseRevSpec {
                     object {
                         oid

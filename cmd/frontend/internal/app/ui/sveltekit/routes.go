@@ -54,7 +54,7 @@ var svelteKitRoutes = []svelteKitRoute{
 		Tag:     tags.EnableOptIn | tags.EnableRollout,
 	},
 	{
-		Id:      "/[...repo=reporev]/-/compare/[...spec]",
+		Id:      "/[...repo=reporev]/-/compare/[...rangeSpec]",
 		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/compare(?:/.*)?/?$"),
 		Tag:     tags.EnableOptIn | tags.EnableRollout,
 	},

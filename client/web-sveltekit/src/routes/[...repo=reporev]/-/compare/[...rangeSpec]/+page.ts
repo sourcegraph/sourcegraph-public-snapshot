@@ -15,8 +15,8 @@ export const load: PageLoad = async ({ params, url }) => {
     let baseRevspec = ''
     let headRevspec = ''
 
-    if (params.spec.includes('...')) {
-        ;[baseRevspec, headRevspec] = params.spec.split('...', 2)
+    if (params.rangeSpec.includes('...')) {
+        ;[baseRevspec, headRevspec] = params.rangeSpec.split('...', 2)
     }
 
     if (!baseRevspec && !headRevspec) {

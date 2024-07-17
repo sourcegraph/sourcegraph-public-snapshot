@@ -41,7 +41,7 @@
 
     function handleSelect(baseRevision: string, headRevision: string): void {
         goto(
-            resolveRoute('/[...repo=reporev]/-/compare/[...spec]', {
+            resolveRoute('/[...repo=reporev]/-/compare/[...rangeSpec]', {
                 repo: $page.params.repo,
                 spec: `${baseRevision}...${headRevision}`,
             })
