@@ -143,17 +143,37 @@ func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatInten
 	if err != nil {
 		return nil, err
 	}
+	intentResponse, err := r.sendIntentRequest(ctx, *backend.Default, buf)
+	iter.ForEach(backend.Extra, func(extraBackend **schema.BackendAPIConfig) {
+		if *extraBackend == nil {
+			return
+		}
+		response, err := r.sendIntentRequest(ctx, **extraBackend, buf)
+		if err != nil {
+			r.logger.Warn("error fetching intent from extra backend", log.String("interactionID", args.InteractionID), log.String("backend", (*extraBackend).Url), log.Error(err))
+			return
+		}
+		r.logger.Debug("fetched intent from extra backend", log.String("interactionID", args.InteractionID), log.String("backend", (*extraBackend).Url), log.String("query", args.Query), log.String("intent", response.Intent), log.Float64("score", response.Score))
+	})
+	if err != nil {
+		return nil, err
+	}
+	r.logger.Info("detecting intent", log.String("interactionID", args.InteractionID), log.String("query", args.Query), log.String("intent", intentResponse.Intent), log.Float64("score", intentResponse.Score))
+	return &chatIntentResponse{intent: intentResponse.Intent, score: intentResponse.Score}, nil
+}
+
+func (r *Resolver) sendIntentRequest(ctx context.Context, backend schema.BackendAPIConfig, request []byte) (*intentApiResponse, error) {
 	// Fail-fast
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	// Proof-of-concept warning - this needs to be deployed behind Cody Gateway, or exposed with HTTPS and authentication.
-	req, err := http.NewRequestWithContext(ctx, "POST", backend.Default.Url, bytes.NewReader(buf))
+	req, err := http.NewRequestWithContext(ctx, "POST", backend.Url, bytes.NewReader(request))
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	if backend.Default.AuthHeader != "" {
-		req.Header.Set("Authorization", backend.Default.AuthHeader)
+	if backend.AuthHeader != "" {
+		req.Header.Set("Authorization", backend.AuthHeader)
 	}
 	resp, err := r.intentApiHttpClient.Do(req)
 	if err != nil {
@@ -169,8 +189,7 @@ func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatInten
 	if err != nil {
 		return nil, err
 	}
-	r.logger.Info("detecting intent", log.String("interactionID", args.InteractionID), log.String("query", args.Query), log.String("intent", intentResponse.Intent), log.Float64("score", intentResponse.Score))
-	return &chatIntentResponse{intent: intentResponse.Intent, score: intentResponse.Score}, nil
+	return &intentResponse, nil
 }
 
 func (r *Resolver) contextApiEnabled(ctx context.Context) error {
