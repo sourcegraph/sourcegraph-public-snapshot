@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"archive/tar"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -148,9 +147,6 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 			}
 			defer redisSemaphore.Release(1)
 			inventoryCache.Set(cacheKey, b)
-		},
-		NewTarReader: func(reader io.ReadCloser) *tar.Reader {
-			return tar.NewReader(reader)
 		},
 		ShouldSkipEnhancedLanguageDetection: !useEnhancedLanguageDetection && !forceEnhancedLanguageDetection,
 		GitServerClient:                     gsClient,

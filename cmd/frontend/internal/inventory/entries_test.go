@@ -157,7 +157,6 @@ func TestEntriesNextProcessor(t *testing.T) {
 				CacheKey:                            nil,
 				CacheGet:                            nil,
 				CacheSet:                            nil,
-				NewTarReader:                        nil,
 				ShouldSkipEnhancedLanguageDetection: false,
 				GitServerClient:                     nil,
 			}
