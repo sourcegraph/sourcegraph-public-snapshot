@@ -24,6 +24,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
+
+	cohere "github.com/cohere-ai/cohere-go/v2"
+	"github.com/cohere-ai/cohere-go/v2/client"
 )
 
 func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient *codycontext.CodyContextClient, logger log.Logger) graphqlbackend.CodyContextResolver {
@@ -34,6 +37,8 @@ func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient
 		logger:              logger,
 		intentApiHttpClient: httpcli.UncachedExternalDoer,
 		intentBackendConfig: conf.CodyIntentConfig(),
+		reranker:            conf.CodyReranker(),
+		cohereConfig:        conf.CodyRerankerCohereConfig(),
 	}
 }
 
@@ -44,6 +49,8 @@ type Resolver struct {
 	logger              log.Logger
 	intentApiHttpClient httpcli.Doer
 	intentBackendConfig *schema.IntentDetectionAPI
+	reranker            conf.CodyRerankerBackend
+	cohereConfig        *schema.CodyRerankerCohere
 }
 
 func (r *Resolver) RecordContext(ctx context.Context, args graphqlbackend.RecordContextArgs) (*graphqlbackend.EmptyResponse, error) {
@@ -74,14 +81,15 @@ func (r *Resolver) RankContext(ctx context.Context, args graphqlbackend.RankCont
 	if err != nil {
 		return nil, err
 	}
+	ranker, used, err := r.rerank(ctx, args)
+	if err != nil {
+		return nil, err
+	}
 	res := rankContextResponse{
-		ranker: "identity",
+		ranker: string(ranker),
+		used:   used,
 	}
 	r.logger.Info("ranking context", log.String("interactionID", args.InteractionID), log.String("ranker", res.ranker), log.Int("contextItemCount", len(args.ContextItems)))
-
-	for i := range args.ContextItems {
-		res.used = append(res.used, int32(i))
-	}
 	return res, nil
 }
 
@@ -258,6 +266,35 @@ func (r *Resolver) fileChunkToResolver(ctx context.Context, chunk *codycontext.F
 	numLines := countLines(content, chunkSizeRunes)
 	endLine := chunk.StartLine + numLines - 1 // subtract 1 because endLine is inclusive
 	return graphqlbackend.NewFileChunkContextResolver(gitTreeEntryResolver, chunk.StartLine, endLine), nil
+}
+
+func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextArgs) (conf.CodyRerankerBackend, []int32, error) {
+	if r.reranker == conf.CodyRerankerIdentity {
+		var used []int32
+		for i := range args.ContextItems {
+			used = append(used, int32(i))
+		}
+		return conf.CodyRerankerIdentity, used, nil
+	}
+	co := client.NewClient(client.WithToken(r.cohereConfig.ApiKey))
+
+	req := &cohere.RerankRequest{
+		Query: args.Query,
+		Model: cohere.String(r.cohereConfig.Model),
+	}
+	for _, ci := range args.ContextItems {
+		req.Documents = append(req.Documents, &cohere.RerankRequestDocumentsItem{String: ci.Content})
+	}
+	resp, err := co.Rerank(ctx, req)
+	if err != nil {
+		r.logger.Error("cohere reranking error", log.String("interactionId", args.InteractionID), log.String("query", args.Query), log.Error(err))
+		return conf.CodyRerankerCohere, nil, err
+	}
+	var used []int32
+	for _, r := range resp.Results {
+		used = append(used, int32(r.Index))
+	}
+	return conf.CodyRerankerCohere, used, nil
 }
 
 // countLines finds the number of lines corresponding to the number of runes. We 'round down'
