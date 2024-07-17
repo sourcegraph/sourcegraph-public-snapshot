@@ -97,6 +97,11 @@ func (r *configurationPolicyResolver) IndexingEnabled() bool {
 	return r.configurationPolicy.IndexingEnabled
 }
 
+func (r *configurationPolicyResolver) SyntacticIndexingEnabled() *bool {
+	return &r.configurationPolicy.SyntacticIndexingEnabled
+}
+
+
 func (r *configurationPolicyResolver) IndexCommitMaxAgeHours() *int32 {
 	return toHours(r.configurationPolicy.IndexCommitMaxAge)
 }

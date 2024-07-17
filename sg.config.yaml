@@ -1629,17 +1629,17 @@ commandsets:
       - ibazel
       - dev-private
     bazelCommands:
-      - blobstore
+      # - blobstore
       - frontend
-      - worker
-      - repo-updater
-      - gitserver-0
-      - gitserver-1
-      - searcher
-      - symbols
-      - syntax-highlighter
-      - codeintel-worker
-      - codeintel-executor
+      # - worker
+      # - repo-updater
+      # - gitserver-0
+      # - gitserver-1
+      # - searcher
+      # - symbols
+      # - syntax-highlighter
+      # - codeintel-worker
+      # - codeintel-executor
     commands:
       - web
       - docsite

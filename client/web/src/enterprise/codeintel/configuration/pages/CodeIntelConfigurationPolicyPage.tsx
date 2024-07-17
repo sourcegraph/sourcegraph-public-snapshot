@@ -137,7 +137,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
             return handleDeleteConfig({
                 variables: { id },
-                update: cache => cache.modify({ fields: { node: () => {} } }),
+                update: cache => cache.modify({ fields: { node: () => { } } }),
             }).then(() =>
                 navigate(
                     {
@@ -160,8 +160,8 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             urlType === 'branch'
                 ? { type: GitObjectType.GIT_TREE, pattern: '*' }
                 : urlType === 'tag'
-                ? { type: GitObjectType.GIT_TAG, pattern: '*' }
-                : { type: GitObjectType.GIT_COMMIT, retentionEnabled: true }
+                    ? { type: GitObjectType.GIT_TAG, pattern: '*' }
+                    : { type: GitObjectType.GIT_COMMIT, retentionEnabled: true }
 
         const repoDefaults = repo ? { repository: repo } : {}
         const typeDefaults = policyConfig?.type === GitObjectType.GIT_UNKNOWN ? defaultTypes : {}
@@ -262,9 +262,8 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
                     {!policy.protected && policy.id !== '' && (
                         <Tooltip
-                            content={`Deleting this policy may immediately affect data retention${
-                                indexingEnabled ? ' and auto-indexing' : ''
-                            }.`}
+                            content={`Deleting this policy may immediately affect data retention${indexingEnabled ? ' and auto-indexing' : ''
+                                }.`}
                         >
                             <Button
                                 type="button"
@@ -343,9 +342,8 @@ const NameSettingsSection: FunctionComponent<NameSettingsSectionProps> = ({ repo
                 disabled={policy.protected}
                 required={true}
                 error={policy.name === '' ? 'Please supply a value' : undefined}
-                placeholder={`Custom ${!repo ? 'global ' : ''}${
-                    policy.indexingEnabled ? 'indexing ' : policy.retentionEnabled ? 'retention ' : ''
-                }policy${repo ? ` for ${displayRepoName(repo.name)}` : ''}`}
+                placeholder={`Custom ${!repo ? 'global ' : ''}${policy.indexingEnabled ? 'indexing ' : policy.retentionEnabled ? 'retention ' : ''
+                    }policy${repo ? ` for ${displayRepoName(repo.name)}` : ''}`}
             />
         </div>
     </div>
@@ -380,7 +378,7 @@ const GitConfiguration: FunctionComponent<GitConfigurationProps> = ({ policy, up
     useEffect(() => {
         if (repo && policy?.type) {
             // Update git preview on policy detail changes
-            updateGitPreview({}).catch(() => {})
+            updateGitPreview({}).catch(() => { })
         }
     }, [repo, updateGitPreview, policy?.type, policy?.pattern, policy?.indexCommitMaxAgeHours])
 
@@ -434,10 +432,10 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
                 {policy.type === GitObjectType.GIT_COMMIT
                     ? 'commits'
                     : policy.type === GitObjectType.GIT_TREE
-                    ? 'branches'
-                    : policy.type === GitObjectType.GIT_TAG
-                    ? 'tags'
-                    : ''}{' '}
+                        ? 'branches'
+                        : policy.type === GitObjectType.GIT_TAG
+                            ? 'tags'
+                            : ''}{' '}
                 match this policy?
             </Label>
             <Text size="small" className="text-muted mb-2">
@@ -607,7 +605,7 @@ const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({ policy, pr
                             {policy.indexingEnabled &&
                                 policy.indexCommitMaxAgeHours !== null &&
                                 (new Date().getTime() - new Date(tag.committedAt).getTime()) / MS_IN_HOURS >
-                                    policy.indexCommitMaxAgeHours && (
+                                policy.indexCommitMaxAgeHours && (
                                     <span className="float-right text-muted">
                                         <Tooltip content="This commit is too old to be auto-indexed by this policy.">
                                             <Icon
@@ -681,42 +679,83 @@ interface IndexSettingsSectionProps {
 }
 
 const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({ policy, updatePolicy, repo }) => (
-    <div className="form-group">
-        <Label className="mb-0">
-            Auto-indexing
-            <div className={styles.toggleContainer}>
-                <Toggle
-                    id="indexing-enabled"
-                    value={policy.indexingEnabled}
-                    className={styles.toggle}
-                    onToggle={indexingEnabled => {
-                        if (indexingEnabled) {
-                            updatePolicy({ indexingEnabled })
-                        } else {
-                            updatePolicy({
-                                indexingEnabled,
-                                indexIntermediateCommits: false,
-                                indexCommitMaxAgeHours: null,
-                            })
-                        }
-                    }}
-                />
+    <div>
+        <div className="form-group">
+            <Label className="mb-0">
+                Auto-indexing
+                <div className={styles.toggleContainer}>
+                    <Toggle
+                        id="indexing-enabled"
+                        value={policy.indexingEnabled}
+                        className={styles.toggle}
+                        onToggle={indexingEnabled => {
+                            if (indexingEnabled) {
+                                updatePolicy({ indexingEnabled })
+                            } else {
+                                updatePolicy({
+                                    indexingEnabled,
+                                    indexIntermediateCommits: false,
+                                    indexCommitMaxAgeHours: null,
+                                })
+                            }
+                        }}
+                    />
 
-                <Text size="small" className="text-muted mb-0">
-                    Sourcegraph will automatically generate precise code intelligence data for matching
-                    {repo ? '' : ' repositories and'} revisions. Indexing configuration will be inferred from the
-                    content at matching revisions if not explicitly configured for{' '}
-                    {repo ? 'this repository' : 'matching repositories'}.{' '}
-                    {repo && (
-                        <>
-                            See this repository's <Link to="../index-configuration">index configuration</Link>.
-                        </>
-                    )}
-                </Text>
-            </div>
-        </Label>
+                    <Text size="small" className="text-muted mb-0">
+                        Sourcegraph will automatically generate precise code intelligence data for matching
+                        {repo ? '' : ' repositories and'} revisions. Indexing configuration will be inferred from the
+                        content at matching revisions if not explicitly configured for{' '}
+                        {repo ? 'this repository' : 'matching repositories'}.{' '}
+                        {repo && (
+                            <>
+                                See this repository's <Link to="../index-configuration">index configuration</Link>.
+                            </>
+                        )}
+                    </Text>
+                </div>
+            </Label>
 
-        <IndexSettings policy={policy} updatePolicy={updatePolicy} />
+            <IndexSettings policy={policy} updatePolicy={updatePolicy} />
+        </div>
+
+
+        <div className="form-group">
+            <Label className="mb-0">
+                Syntactic indexing
+                <div className={styles.toggleContainer}>
+                    <Toggle
+                        id="indexing-enabled"
+                        value={policy.indexingEnabled}
+                        className={styles.toggle}
+                        onToggle={indexingEnabled => {
+                            if (indexingEnabled) {
+                                updatePolicy({ indexingEnabled })
+                            } else {
+                                updatePolicy({
+                                    indexingEnabled,
+                                    indexIntermediateCommits: false,
+                                    indexCommitMaxAgeHours: null,
+                                })
+                            }
+                        }}
+                    />
+
+                    <Text size="small" className="text-muted mb-0">
+                        Sourcegraph will automatically generate precise code intelligence data for matching
+                        {repo ? '' : ' repositories and'} revisions. Indexing configuration will be inferred from the
+                        content at matching revisions if not explicitly configured for{' '}
+                        {repo ? 'this repository' : 'matching repositories'}.{' '}
+                        {repo && (
+                            <>
+                                See this repository's <Link to="../index-configuration">index configuration</Link>.
+                            </>
+                        )}
+                    </Text>
+                </div>
+            </Label>
+
+            <IndexSettings policy={policy} updatePolicy={updatePolicy} />
+        </div>
     </div>
 )
 
@@ -885,9 +924,9 @@ function validatePolicy(
 
         // If numeric values are supplied they must be between 1 and maxDuration (inclusive)
         policy.retentionDurationHours !== null &&
-            (policy.retentionDurationHours < 0 || policy.retentionDurationHours > maxDuration),
+        (policy.retentionDurationHours < 0 || policy.retentionDurationHours > maxDuration),
         policy.indexCommitMaxAgeHours !== null &&
-            (policy.indexCommitMaxAgeHours < 0 || policy.indexCommitMaxAgeHours > maxDuration),
+        (policy.indexCommitMaxAgeHours < 0 || policy.indexCommitMaxAgeHours > maxDuration),
 
         // If global indexing is disabled, the policy must be scoped to a repository
         !globalAutoIndexingEnabled && hasGlobalPolicyViolation(policy),

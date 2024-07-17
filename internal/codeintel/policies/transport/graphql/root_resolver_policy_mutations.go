@@ -49,6 +49,7 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
 		RetainIntermediateCommits: args.RetainIntermediateCommits,
 		IndexingEnabled:           args.IndexingEnabled,
+		SyntacticIndexingEnabled:  args.SyntacticIndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
 		EmbeddingEnabled:          args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,
