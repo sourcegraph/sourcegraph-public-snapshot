@@ -168,10 +168,11 @@ func TestEntriesNextProcessor(t *testing.T) {
 				if index >= len(tc.files) {
 					return nil, io.EOF
 				}
+				content := tc.files[index].Content
 				return &NextRecord{
 					Header: &tar.Header{
 						Name: tc.files[index].Name,
-						Size: int64(len(tc.files[index].Content)),
+						Size: int64(len(content)),
 						Mode: func() int64 {
 							if tc.files[index].IsDirectory {
 								// 04 (in octal) sets the directory bit
@@ -180,7 +181,9 @@ func TestEntriesNextProcessor(t *testing.T) {
 							return 0
 						}(),
 					},
-					FileReader: io.NopCloser(strings.NewReader(tc.files[index].Content)),
+					GetFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
+						return io.NopCloser(strings.NewReader(content)), nil
+					},
 				}, nil
 			}
 
