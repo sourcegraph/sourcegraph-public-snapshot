@@ -287,7 +287,10 @@ func CodyPermissionsEnabled() bool {
 }
 
 func CodyIntentConfig() *schema.IntentDetectionAPI {
-	return Get().CodyServerSideContext.IntentDetectionAPI
+	if Get().ExperimentalFeatures == nil || Get().ExperimentalFeatures.CodyServerSideContext == nil {
+		return nil
+	}
+	return Get().ExperimentalFeatures.CodyServerSideContext.IntentDetectionAPI
 }
 
 func ExecutorsEnabled() bool {

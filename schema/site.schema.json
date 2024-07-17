@@ -615,6 +615,34 @@
           "description": "When enabled, syntactic indexing jobs will be scheduled for all enabled repos",
           "type": "boolean",
           "default": false
+        },
+        "cody.serverSideContext": {
+          "description": "Configuration for Server-side context API",
+          "type": "object",
+          "!go": {
+            "pointer": true
+          },
+          "group": "Cody",
+          "properties": {
+            "intentDetectionAPI": {
+              "description": "Configuration for intent detection API",
+              "type": "object",
+              "properties": {
+                "default": {
+                  "description": "Default URL for intent detection API",
+                  "$ref": "#/definitions/BackendAPIConfig"
+                },
+                "extra": {
+                  "description": "Array of additional intent detection API configs",
+                  "type": "array",
+                  "default": [],
+                  "items": {
+                    "$ref": "#/definitions/BackendAPIConfig"
+                  }
+                }
+              }
+            }
+          }
         }
       },
       "examples": [
@@ -3091,34 +3119,6 @@
     },
     "modelConfiguration": {
       "$ref": "#/definitions/SiteModelConfiguration"
-    },
-    "cody.serverSideContext": {
-      "description": "Configuration for Server-side context API",
-      "type": "object",
-      "!go": {
-        "pointer": true
-      },
-      "group": "Cody",
-      "properties": {
-        "intentDetectionAPI": {
-          "description": "Configuration for intent detection API",
-          "type": "object",
-          "properties": {
-            "default": {
-              "description": "Default URL for intent detection API",
-              "$ref": "#/definitions/BackendAPIConfig"
-            },
-            "extra": {
-              "description": "Array of additional intent detection API configs",
-              "type": "array",
-              "default": [],
-              "items": {
-                "$ref": "#/definitions/BackendAPIConfig"
-              }
-            }
-          }
-        }
-      }
     }
   },
   "definitions": {

@@ -1049,6 +1049,8 @@ type ExperimentalFeatures struct {
 	BatchChangesEnablePerforce bool `json:"batchChanges.enablePerforce,omitempty"`
 	// CodeintelSyntacticIndexingEnabled description: When enabled, syntactic indexing jobs will be scheduled for all enabled repos
 	CodeintelSyntacticIndexingEnabled bool `json:"codeintelSyntacticIndexing.enabled,omitempty"`
+	// CodyServerSideContext description: Configuration for Server-side context API
+	CodyServerSideContext *CodyServerSideContext `json:"cody.serverSideContext,omitempty"`
 	// CodyContextIgnore description: Enabled filtering of remote Cody context based on repositories ./cody/ignore file
 	CodyContextIgnore *bool `json:"codyContextIgnore,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
@@ -1149,6 +1151,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	}
 	delete(m, "batchChanges.enablePerforce")
 	delete(m, "codeintelSyntacticIndexing.enabled")
+	delete(m, "cody.serverSideContext")
 	delete(m, "codyContextIgnore")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
@@ -3043,8 +3046,6 @@ type SiteConfiguration struct {
 	CodyPermissions *bool `json:"cody.permissions,omitempty"`
 	// CodyRestrictUsersFeatureFlag description: DEPRECATED; see cody.permissions instead. PRIOR DESCRIPTION: Cody to only be enabled for users that have a feature flag labeled "cody" set to true. You must create a feature flag with this ID after enabling this setting: https://docs-legacy.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.
 	CodyRestrictUsersFeatureFlag *bool `json:"cody.restrictUsersFeatureFlag,omitempty"`
-	// CodyServerSideContext description: Configuration for Server-side context API
-	CodyServerSideContext *CodyServerSideContext `json:"cody.serverSideContext,omitempty"`
 	// Completions description: Configuration for the completions service.
 	Completions *Completions `json:"completions,omitempty"`
 	// ConfigFeatures description: Configuration for the completions service.
@@ -3315,7 +3316,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "cody.enabled")
 	delete(m, "cody.permissions")
 	delete(m, "cody.restrictUsersFeatureFlag")
-	delete(m, "cody.serverSideContext")
 	delete(m, "completions")
 	delete(m, "configFeatures")
 	delete(m, "corsOrigin")
