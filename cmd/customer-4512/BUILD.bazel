@@ -1,0 +1,72 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
+
+go_library(
+    name = "special-oauth_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/special-oauth",
+    tags = [TAG_CODY_PRIME],
+    visibility = ["//visibility:private"],
+    deps = [
+        "@com_github_google_uuid//:uuid",  # Added dependency for github.com/google/uuid
+    ],
+)
+
+go_binary(
+    name = "special-oauth",
+    embed = [":customer-4512_lib"],
+    tags = [TAG_CODY_PRIME],
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "tar_special-oauth",
+    srcs = [":special-oauth"],
+)
+
+oci_image(
+    name = "image",
+    base = "//wolfi-images/sourcegraph-base:base_image",
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/special-oauth",
+    ],
+    tars = [":tar_special-oauth"],
+    user = "sourcegraph",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["special-oauth:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+        TAG_CODY_PRIME,
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("special-oauth"),
+)
+
+go_library(
+    name = "customer-4512_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/customer-4512",
+    visibility = ["//visibility:private"],
+    deps = ["@com_github_google_uuid//:uuid"],
+)

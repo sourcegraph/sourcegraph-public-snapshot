@@ -4,9 +4,9 @@ load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 
 go_library(
-    name = "special-oauth_lib",
+    name = "customer-2315_lib",
     srcs = ["main.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/special-oauth",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/customer-2315",
     tags = [TAG_CODY_PRIME],
     visibility = ["//visibility:private"],
     deps = [
@@ -15,15 +15,15 @@ go_library(
 )
 
 go_binary(
-    name = "special-oauth",
-    embed = [":special-oauth_lib"],
+    name = "customer-2315",
+    embed = [":customer-2315_lib"],
     tags = [TAG_CODY_PRIME],
     visibility = ["//visibility:public"],
 )
 
 pkg_tar(
-    name = "tar_special-oauth",
-    srcs = [":special-oauth"],
+    name = "tar_customer-2315",
+    srcs = [":customer-2315"],
 )
 
 oci_image(
@@ -32,16 +32,16 @@ oci_image(
     entrypoint = [
         "/sbin/tini",
         "--",
-        "/special-oauth",
+        "/customer-2315",
     ],
-    tars = [":tar_special-oauth"],
+    tars = [":tar_customer-2315"],
     user = "sourcegraph",
 )
 
 oci_tarball(
     name = "image_tarball",
     image = ":image",
-    repo_tags = ["special-oauth:candidate"],
+    repo_tags = ["customer-2315:candidate"],
 )
 
 container_structure_test(
@@ -60,5 +60,5 @@ container_structure_test(
 oci_push(
     name = "candidate_push",
     image = ":image",
-    repository = image_repository("special-oauth"),
+    repository = image_repository("customer-2315"),
 )
