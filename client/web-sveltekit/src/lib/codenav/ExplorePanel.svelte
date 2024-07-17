@@ -277,25 +277,29 @@
         </Panel>
         <PanelResizeHandle />
         <Panel id="references-content">
-            {#if usages}
-                <Scroller bind:viewport={referencesScroller} margin={600} on:more={() => connection?.fetchMore()}>
-                    <ul>
-                        {#each displayGroups as pathGroup}
-                            <li>
-                                <ExplorePanelFileUsages scrollContainer={referencesScroller} {...pathGroup} />
-                            </li>
-                        {/each}
-                    </ul>
-                    {#if loading}
-                        <LoadingSpinner center />
-                    {/if}
-                </Scroller>
-            {:else if loading}
+            {#if loading}
                 <div class="loading">
                     <LoadingSkeleton />
                     <LoadingSkeleton />
                     <LoadingSkeleton />
                 </div>
+            {:else}
+                <Scroller bind:viewport={referencesScroller} margin={600} on:more={() => connection?.fetchMore()}>
+                    {#if displayGroups.length > 0}
+                        <ul>
+                            {#each displayGroups as pathGroup}
+                                <li>
+                                    <ExplorePanelFileUsages scrollContainer={referencesScroller} {...pathGroup} />
+                                </li>
+                            {/each}
+                        </ul>
+                        {#if loading}
+                            <LoadingSpinner center />
+                        {/if}
+                    {:else}
+                        <div class="no-results">No results.</div>
+                    {/if}
+                </Scroller>
             {/if}
         </Panel>
     </PanelGroup>
@@ -388,6 +392,16 @@
         height: 100%;
         width: 100%;
 
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    .no-results {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        width: 100%;
         color: var(--text-muted);
         font-weight: 500;
     }
