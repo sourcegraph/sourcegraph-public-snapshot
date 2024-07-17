@@ -3466,6 +3466,7 @@
             "fireworks",
             "google",
             "openai",
+            "huggingface-tgi",
             "openaicompatible",
             "sourcegraph"
           ]
@@ -3489,6 +3490,9 @@
         },
         {
           "$ref": "#/definitions/ServerSideProviderConfigOpenAIProvider"
+        },
+        {
+          "$ref": "#/definitions/ServerSideProviderConfigHuggingfaceTGIProvider"
         },
         {
           "$ref": "#/definitions/ServerSideProviderConfigOpenAICompatibleProvider"
@@ -3613,6 +3617,19 @@
         }
       }
     },
+    "ServerSideProviderConfigHuggingfaceTGIProvider": {
+      "type": "object",
+      "required": ["type", "accessToken", "endpoint"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "huggingface-tgi"
+        },
+        "endpoints": {
+          "$ref": "#/definitions/OpenAICompatibleEndpoint"
+        }
+      }
+    },
     "ServerSideProviderConfigOpenAICompatibleProvider": {
       "type": "object",
       "required": ["type", "accessToken", "endpoint"],
@@ -3621,11 +3638,29 @@
           "type": "string",
           "const": "openaicompatible"
         },
-        "accessToken": {
-          "type": "string"
+        "serviceName": {
+          "description": "The name of the service being connected to, e.g. 'huggingface-tgi'. If known to Sourcegraph, it may employ various tricks to communicate more effectively with that service. Use lowcase alphanumeric and dashes only.",
+          "type": "string",
+          "examples": ["huggingface-tgi", "my-custom-service-name"]
         },
-        "endpoint": {
-          "type": "string"
+        "endpoints": {
+          "$ref": "#/definitions/OpenAICompatibleEndpoint"
+        }
+      }
+    },
+    "OpenAICompatibleEndpoint": {
+      "description": "Endpoints to connect to. If multiple are specified, Sourcegraph will randomly distribute requests between them.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["url", "accessToken"],
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "accessToken": {
+            "type": "string"
+          }
         }
       }
     },

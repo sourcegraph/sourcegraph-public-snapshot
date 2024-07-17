@@ -2008,6 +2008,10 @@ type OnboardingTourConfiguration struct {
 	DefaultSnippets map[string]any    `json:"defaultSnippets,omitempty"`
 	Tasks           []*OnboardingTask `json:"tasks"`
 }
+type OpenAICompatibleEndpoint struct {
+	AccessToken string `json:"accessToken"`
+	Url         string `json:"url"`
+}
 type OpenCodeGraphAnnotation struct {
 	Item  OpenCodeGraphItemRef `json:"item"`
 	Range OpenCodeGraphRange   `json:"range"`
@@ -2574,6 +2578,7 @@ type ServerSideProviderConfig struct {
 	Fireworks        *ServerSideProviderConfigFireworksProvider
 	Google           *ServerSideProviderConfigGoogleProvider
 	Openai           *ServerSideProviderConfigOpenAIProvider
+	HuggingfaceTgi   *ServerSideProviderConfigHuggingfaceTGIProvider
 	Openaicompatible *ServerSideProviderConfigOpenAICompatibleProvider
 	Sourcegraph      *ServerSideProviderConfigSourcegraphProvider
 	Unused           *DoNotUsePhonyDiscriminantType
@@ -2597,6 +2602,9 @@ func (v ServerSideProviderConfig) MarshalJSON() ([]byte, error) {
 	}
 	if v.Openai != nil {
 		return json.Marshal(v.Openai)
+	}
+	if v.HuggingfaceTgi != nil {
+		return json.Marshal(v.HuggingfaceTgi)
 	}
 	if v.Openaicompatible != nil {
 		return json.Marshal(v.Openaicompatible)
@@ -2627,6 +2635,8 @@ func (v *ServerSideProviderConfig) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, &v.Fireworks)
 	case "google":
 		return json.Unmarshal(data, &v.Google)
+	case "huggingface-tgi":
+		return json.Unmarshal(data, &v.HuggingfaceTgi)
 	case "openai":
 		return json.Unmarshal(data, &v.Openai)
 	case "openaicompatible":
@@ -2636,7 +2646,7 @@ func (v *ServerSideProviderConfig) UnmarshalJSON(data []byte) error {
 	case "unused":
 		return json.Unmarshal(data, &v.Unused)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"awsBedrock", "azureOpenAI", "anthropic", "fireworks", "google", "openai", "openaicompatible", "sourcegraph", "unused"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"awsBedrock", "azureOpenAI", "anthropic", "fireworks", "google", "openai", "huggingface-tgi", "openaicompatible", "sourcegraph", "unused"})
 }
 
 type ServerSideProviderConfigAWSBedrock struct {
@@ -2674,9 +2684,14 @@ type ServerSideProviderConfigGoogleProvider struct {
 	Endpoint    string `json:"endpoint"`
 	Type        string `json:"type"`
 }
+type ServerSideProviderConfigHuggingfaceTGIProvider struct {
+	Endpoints []*OpenAICompatibleEndpoint `json:"endpoints,omitempty"`
+	Type      string                      `json:"type"`
+}
 type ServerSideProviderConfigOpenAICompatibleProvider struct {
-	AccessToken string `json:"accessToken"`
-	Endpoint    string `json:"endpoint"`
+	Endpoints []*OpenAICompatibleEndpoint `json:"endpoints,omitempty"`
+	// ServiceName description: The name of the service being connected to, e.g. 'huggingface-tgi'. If known to Sourcegraph, it may employ various tricks to communicate more effectively with that service. Use lowcase alphanumeric and dashes only.
+	ServiceName string `json:"serviceName,omitempty"`
 	Type        string `json:"type"`
 }
 type ServerSideProviderConfigOpenAIProvider struct {
