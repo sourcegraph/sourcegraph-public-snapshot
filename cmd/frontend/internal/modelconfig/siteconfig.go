@@ -173,14 +173,24 @@ func convertServerSideProviderConfig(cfg *schema.ServerSideProviderConfig) *type
 				Endpoint:    v.Endpoint,
 			},
 		}
-	} else if v := cfg.Openaicompatible; v != nil {
-		// TODO(slimsag): self-hosted-models: map this to OpenAICompatibleProviderConfig in the future
+	} else if v := cfg.HuggingfaceTgi; v != nil {
 		return &types.ServerSideProviderConfig{
-			GenericProvider: &types.GenericProviderConfig{
-				ServiceName: types.GenericServiceProviderOpenAI,
-				AccessToken: v.AccessToken,
-				Endpoint:    v.Endpoint,
+			OpenAICompatible: &types.OpenAICompatibleProviderConfig{
+				ServiceName: types.OpenAICompatibleServiceNameHuggingfaceTGI,
+				Endpoints:   convertOpenAICompatibleEndpoints(v.Endpoints),
 			},
+		}
+	} else if v := cfg.Openaicompatible; v != nil {
+		providerConfig := types.OpenAICompatibleProviderConfig{
+			Endpoints: convertOpenAICompatibleEndpoints(v.Endpoints),
+		}
+		if serviceName, ok := types.ValidateOpenAICompatibleServiceName(v.ServiceName); ok {
+			providerConfig.ServiceName = serviceName
+		} else {
+			providerConfig.ServiceNameCustom = v.ServiceName
+		}
+		return &types.ServerSideProviderConfig{
+			OpenAICompatible: &providerConfig,
 		}
 	} else if v := cfg.Sourcegraph; v != nil {
 		return &types.ServerSideProviderConfig{
@@ -192,6 +202,17 @@ func convertServerSideProviderConfig(cfg *schema.ServerSideProviderConfig) *type
 	} else {
 		panic(fmt.Sprintf("illegal state: %+v", v))
 	}
+}
+
+func convertOpenAICompatibleEndpoints(configEndpoints []*schema.OpenAICompatibleEndpoint) []types.OpenAICompatibleEndpoint {
+	var endpoints []types.OpenAICompatibleEndpoint
+	for _, e := range configEndpoints {
+		endpoints = append(endpoints, types.OpenAICompatibleEndpoint{
+			URL:         e.Url,
+			AccessToken: e.AccessToken,
+		})
+	}
+	return endpoints
 }
 
 func convertClientSideModelConfig(v *schema.ClientSideModelConfig) *types.ClientSideModelConfig {

@@ -270,19 +270,15 @@ func (c *client) makeChatRequest(
 		requestParams.TopP = 0
 	}
 
-	// TODO(slimsag): self-hosted-models: there are other parameters here which we could allow
-	// configuration of, which we do not specify as fields today:
 	payload := openAIChatCompletionsRequestParameters{
 		// TODO(slimsag): self-hosted-models: allow customization of model request param
 		Model:       request.ModelConfigInfo.Model.ModelName,
 		Temperature: requestParams.Temperature,
 		TopP:        requestParams.TopP,
-		// TODO(slimsag): self-hosted-models: allow customization of N (TopK?)
-		N:         1,
-		Stream:    stream,
-		MaxTokens: requestParams.MaxTokensToSample,
-		// TODO(slimsag): self-hosted-models: allow customization of stop sequences
-		Stop: requestParams.StopSequences,
+		N:           requestParams.TopK,
+		Stream:      stream,
+		MaxTokens:   requestParams.MaxTokensToSample,
+		Stop:        requestParams.StopSequences,
 	}
 	for _, m := range requestParams.Messages {
 		// TODO(slimsag): map these 'roles' to openai system/user/assistant
@@ -356,13 +352,11 @@ func (c *client) makeCompletionRequest(
 		Model:       request.ModelConfigInfo.Model.ModelName,
 		Temperature: requestParams.Temperature,
 		TopP:        requestParams.TopP,
-		// TODO(slimsag): self-hosted-models: allow customization of N (TopK?)
-		N:         1,
-		Stream:    stream,
-		MaxTokens: requestParams.MaxTokensToSample,
-		// TODO(slimsag): self-hosted-models: allow customization of stop sequences
-		Stop:   requestParams.StopSequences,
-		Prompt: prompt,
+		N:           requestParams.TopK,
+		Stream:      stream,
+		MaxTokens:   requestParams.MaxTokensToSample,
+		Stop:        requestParams.StopSequences,
+		Prompt:      prompt,
 	}
 
 	reqBody, err := json.Marshal(payload)

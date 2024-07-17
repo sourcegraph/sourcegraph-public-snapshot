@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openaicompatible"
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -52,14 +51,6 @@ func getAPIProvider(modelConfigInfo types.ModelConfigInfo) (types.CompletionsCli
 		return nil, errors.Errorf("no server-side config available for provider %q", modelConfigInfo.Provider.ID)
 	}
 
-	if conf.UseExperimentalModelConfiguration() {
-		// Using the new "modelConfiguration" site config
-		// TODO(slimsag): self-hosted-models: this logic only handles Cody Enterprise with Self-hosted models
-		// Only in this case do we have modelConfigInfo != nil
-		// TODO(slimsag): self-hosted-models: remove pointer
-		return openaicompatible.NewClient(httpcli.UncachedExternalClient, &modelConfigInfo, *tokenManager), nil
-	}
-
 	// AWS Bedrock.
 	if awsBedrockCfg := ssConfig.AWSBedrock; awsBedrockCfg != nil {
 		client := awsbedrock.NewClient(
@@ -72,6 +63,11 @@ func getAPIProvider(modelConfigInfo types.ModelConfigInfo) (types.CompletionsCli
 		client, err := azureopenai.NewClient(
 			azureopenai.GetAPIClient, azureOpenAICfg.Endpoint, azureOpenAICfg.AccessToken, *tokenManager)
 		return client, errors.Wrap(err, "getting api provider")
+	}
+
+	// OpenAI Compatible
+	if openAICompatibleCfg := ssConfig.OpenAICompatible; openAICompatibleCfg != nil {
+		return openaicompatible.NewClient(httpcli.UncachedExternalClient, &modelConfigInfo, *tokenManager), nil
 	}
 
 	// The "GenericProvider" is an escape hatch for a set of API Providers not needing any additional configuration.

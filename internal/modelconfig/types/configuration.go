@@ -72,6 +72,66 @@ type GenericProviderConfig struct {
 	Endpoint    string `json:"endpoint"`
 }
 
+// OpenAICompatibleServiceName is an enum for describing the names of services/software
+// which provide OpenAI-compatible APIs that we are currently aware of.
+type OpenAICompatibleServiceName string
+
+const (
+	OpenAICompatibleServiceNameHuggingfaceTGI OpenAICompatibleServiceName = "huggingface-tgi"
+	OpenAICompatibleServiceNameNvidiaNim      OpenAICompatibleServiceName = "nvidia-nim"
+	OpenAICompatibleServiceNameAwsLisa        OpenAICompatibleServiceName = "aws-lisa"
+	OpenAICompatibleServiceNameAwsLisaV2      OpenAICompatibleServiceName = "aws-lisa-v2"
+	OpenAICompatibleServiceNameOllama         OpenAICompatibleServiceName = "ollama"
+)
+
+// Returns (enum, ok bool) depending on whether or not s is a valid OpenAICompatibleServiceName
+// constant.
+func ValidateOpenAICompatibleServiceName(input string) (OpenAICompatibleServiceName, bool) {
+	for _, v := range []OpenAICompatibleServiceName{
+		OpenAICompatibleServiceNameHuggingfaceTGI,
+		OpenAICompatibleServiceNameNvidiaNim,
+		OpenAICompatibleServiceNameAwsLisa,
+		OpenAICompatibleServiceNameAwsLisaV2,
+		OpenAICompatibleServiceNameOllama,
+	} {
+		if input == string(v) {
+			return v, true
+		}
+	}
+	return "", false
+}
+
+// OpenAICompatibleProvider is a provider for connecting to OpenAI-compatible API endpoints
+// supplied by various third-party software. Much of this software does not follow the OpenAI
+// API protocol exactly, and so this provider configuration allows for much more extensive
+// configuration and even logic aware of the service on the other side.
+type OpenAICompatibleProviderConfig struct {
+	// ServiceName is the name of the service being connected to, e.g. "huggingface-tgi" being the
+	// name of the software actually hosting the OpenAI-compatible API endpoint. This is used to
+	// handle any nuance in communicating with that service, as different software has various
+	// bugs/quirks we may want to handle differently.
+	//
+	// This field may only be used if the service name is one we are aware of, i.e. a valid enum
+	// OpenAICompatibleServiceName.
+	ServiceName OpenAICompatibleServiceName `json:"serviceName,omitempty"`
+
+	// ServiceNameCustom is exactly the same as ServiceName, except it is used if the service name
+	// is not one currently known to Sourcegraph, i.e. it is not a valid OpenAICompatibleServiceName
+	// enum but rather just an arbitrary string the site admin plugged in. e.g. "my-enterprise-openai-api"
+	// or "brand-new-openai-compatible-software-that-is-popular"
+	ServiceNameCustom string `json:"serviceNameCustom,omitempty"`
+
+	// Endpoints where this API can be reached. If multiple are present, Sourcegraph should distribute
+	// load between them.
+	Endpoints []OpenAICompatibleEndpoint `json:"endpoints,omitempty"`
+}
+
+// A single API endpoint for an OpenAI-compatible API.
+type OpenAICompatibleEndpoint struct {
+	URL         string `json:"url"`
+	AccessToken string `json:"accessToken"`
+}
+
 // SourcegraphProviderConfig is the configuration blog for configuring a provider
 // to be use Sourcegraph's Cody Gateway for requests.
 type SourcegraphProviderConfig struct {
@@ -82,10 +142,11 @@ type SourcegraphProviderConfig struct {
 // The "Provider" is conceptually a namespace for models. The server-side provider configuration
 // is needed to describe the API endpoint needed to serve its models.
 type ServerSideProviderConfig struct {
-	AWSBedrock          *AWSBedrockProviderConfig  `json:"awsBedrock,omitempty"`
-	AzureOpenAI         *AzureOpenAIProviderConfig `json:"azureOpenAi,omitempty"`
-	GenericProvider     *GenericProviderConfig     `json:"genericProvider,omitempty"`
-	SourcegraphProvider *SourcegraphProviderConfig `json:"sourcegraphProvider,omitempty"`
+	AWSBedrock          *AWSBedrockProviderConfig       `json:"awsBedrock,omitempty"`
+	AzureOpenAI         *AzureOpenAIProviderConfig      `json:"azureOpenAi,omitempty"`
+	OpenAICompatible    *OpenAICompatibleProviderConfig `json:"openAICompatible,omitempty"`
+	GenericProvider     *GenericProviderConfig          `json:"genericProvider,omitempty"`
+	SourcegraphProvider *SourcegraphProviderConfig      `json:"sourcegraphProvider,omitempty"`
 }
 
 // ========================================================
@@ -101,6 +162,81 @@ type ClientSideModelConfig struct {
 	// prompt used. Or describe how clients should upload context to
 	// remote servers, etc. Or "hints", like "this model is great when
 	// working with 'C' code.".
+	OpenAICompatible *ClientSideModelConfigOpenAICompatible `json:"openAICompatible,omitempty"`
+}
+
+// Client-side model configuration used when the model is being provided by an OpenAI-compatible
+// API.
+type ClientSideModelConfigOpenAICompatible struct {
+	// (optional) List of stop sequences to use for this model.
+	StopSequences []string `json:"stopSequences,omitempty"`
+
+	// (optional) EndOfText identifier used by the model. e.g. "<|endoftext|>", "<EOT>"
+	EndOfText string `json:"endOfText,omitempty"`
+
+	// (optional) A hint the client should use when producing context to send to the LLM.
+	// The maximum length of all context (prefix + suffix + snippets), in characters.
+	ContextSizeHintTotalCharacters *uint `json:"contextSizeHintTotalCharacters,omitempty"`
+
+	// (optional) A hint the client should use when producing context to send to the LLM.
+	// The maximum length of the document prefix (text before the cursor) to include, in characters.
+	ContextSizeHintPrefixCharacters *uint `json:"contextSizeHintPrefixCharacters,omitempty"`
+
+	// (optional) A hint the client should use when producing context to send to the LLM.
+	// The maximum length of the document suffix (text after the cursor) to include, in characters.
+	ContextSizeHintSuffixCharacters *uint `json:"contextSizeHintSuffixCharacters,omitempty"`
+
+	// (optional) Custom instruction to be included at the start of all chat messages
+	// when using this model, e.g. "Answer all questions in Spanish."
+	//
+	// Note: similar to Cody client config option `cody.chat.preInstruction`; if user has
+	// configured that it will be used instead of this.
+	ChatPreInstruction string `json:"chatPreInstruction,omitempty"`
+
+	// (optional) Custom instruction to be included at the end of all edit commands
+	// when using this model, e.g. "Write all unit tests with Jest instead of detected framework."
+	//
+	// Note: similar to Cody client config option `cody.edit.preInstruction`; if user has
+	// configured that it will be respected instead of this.
+	EditPostInstruction string `json:"editPostInstruction,omitempty"`
+
+	// (optional) How long the client should wait for autocomplete results to come back (milliseconds),
+	// before giving up and not displaying an autocomplete result at all.
+	//
+	// This applies on single-line completions, e.g. `var i = <completion>`
+	//
+	// Note: similar to hidden Cody client config option `cody.autocomplete.advanced.timeout.singleline`
+	// If user has configured that, it will be respected instead of this.
+	AutocompleteSinglelineTimeout uint `json:"autocompleteSinglelineTimeout,omitempty"`
+
+	// (optional) How long the client should wait for autocomplete results to come back (milliseconds),
+	// before giving up and not displaying an autocomplete result at all.
+	//
+	// This applies on multi-line completions, which are based on intent-detection when e.g. a code block
+	// is being completed, e.g. `func parseURL(url string) {<completion>`
+	//
+	// Note: similar to hidden Cody client config option `cody.autocomplete.advanced.timeout.multiline`
+	// If user has configured that, it will be respected instead of this.
+	AutocompleteMultilineTimeout uint `json:"autocompleteMultilineTimeout,omitempty"`
+
+	// (optional) model parameters to use for the chat feature
+	ChatTopK        float32 `json:"chatTopK,omitempty"`
+	ChatTopP        float32 `json:"chatTopP,omitempty"`
+	ChatTemperature float32 `json:"chatTemperature,omitempty"`
+	ChatMaxTokens   uint    `json:"chatMaxTokens,omitempty"`
+
+	// (optional) model parameters to use for the autocomplete feature
+	AutoCompleteTopK                float32 `json:"autoCompleteTopK,omitempty"`
+	AutoCompleteTopP                float32 `json:"autoCompleteTopP,omitempty"`
+	AutoCompleteTemperature         float32 `json:"autoCompleteTemperature,omitempty"`
+	AutoCompleteSinglelineMaxTokens uint    `json:"autoCompleteSinglelineMaxTokens,omitempty"`
+	AutoCompleteMultilineMaxTokens  uint    `json:"autoCompleteMultilineMaxTokens,omitempty"`
+
+	// (optional) model parameters to use for the edit feature
+	EditTopK        float32 `json:"editTopK,omitempty"`
+	EditTopP        float32 `json:"editTopP,omitempty"`
+	EditTemperature float32 `json:"editTemperature,omitempty"`
+	EditMaxTokens   uint    `json:"editMaxTokens,omitempty"`
 }
 
 // ========================================================
@@ -116,6 +252,34 @@ type AWSBedrockProvisionedThroughput struct {
 	ARN string `json:"arn"`
 }
 
+type ServerSideModelConfigOpenAICompatible struct {
+	// APIModel is value actually sent to the OpenAI-compatible API in the "model" field. THis
+	// is less like a "model name" or "model identifier", and more like "an opaque, potentially
+	// secret string."
+	//
+	// Much software that claims to 'implement the OpenAI API' actually overrides this field with
+	// other information NOT related to the model name, either making it _ineffective_ as a
+	// model name/identifier (e.g. you must send "tgi" or "AUTODETECT" irrespective of which model
+	// you want to use) OR using it to smuggle other (potentially sensitive) information like the
+	// name of the deployment, which cannot be shared with clients.
+	//
+	// If this field is not an empty string, we treat it as an opaque string to be sent with API
+	// requests (similar to an access token) and use it for nothing else. If this field is not
+	// specified, we default to the ModelName.
+	//
+	// Examples (these would be sent in the OpenAI /chat/completions `"model"` field):
+	//
+	// * Huggingface TGI: "tgi"
+	// * NVIDIA NIM: "meta/llama3-70b-instruct"
+	// * AWS LISA (v2): "AUTODETECT"
+	// * AWS LISA (v1): "mistralai/Mistral7b-v0.3-Instruct ecs.textgen.tgi"
+	// * Ollama: "llama2"
+	// * Others: "<SECRET DEPLOYMENT NAME>"
+	//
+	APIModel string `json:"apiModel,omitempty"`
+}
+
 type ServerSideModelConfig struct {
-	AWSBedrockProvisionedThroughput *AWSBedrockProvisionedThroughput `json:"awsBedrockProvisionedThroughput"`
+	AWSBedrockProvisionedThroughput *AWSBedrockProvisionedThroughput       `json:"awsBedrockProvisionedThroughput,omitempty"`
+	OpenAICompatible                *ServerSideModelConfigOpenAICompatible `json:"openAICompatible,omitempty"`
 }
