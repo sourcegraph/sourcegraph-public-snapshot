@@ -59,7 +59,7 @@ func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embedding
 		db:               db,
 		embeddingsClient: embeddingsClient,
 		searchClient:     searchClient,
-		contentFilter:    newRepoContentFilter(obsCtx.Logger, db, gitserverClient),
+		contentFilter:    newRepoContentFilter(obsCtx.Logger, gitserverClient),
 
 		obsCtx:                 obsCtx,
 		getCodyContextOp:       op("getCodyContext"),
