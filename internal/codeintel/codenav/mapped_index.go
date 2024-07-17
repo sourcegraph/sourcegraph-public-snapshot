@@ -6,6 +6,7 @@ import (
 
 	genslices "github.com/life4/genesis/slices"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
@@ -105,6 +106,14 @@ type lockedDocument struct {
 	lock       sync.RWMutex
 }
 
+func cloneOccurrence(occ *scip.Occurrence) *scip.Occurrence {
+	occCopy, ok := proto.Clone(occ).(*scip.Occurrence)
+	if !ok {
+		panic("impossible! proto.Clone changed the type of message")
+	}
+	return occCopy
+}
+
 // Concurrency: Only call this while you're holding a read lock on the document
 func (d *mappedDocument) mapAllOccurrences(ctx context.Context) ([]*scip.Occurrence, error) {
 	newOccurrences := make([]*scip.Occurrence, 0)
@@ -117,15 +126,9 @@ func (d *mappedDocument) mapAllOccurrences(ctx context.Context) ([]*scip.Occurre
 		if !ok {
 			continue
 		}
-		newOccurrences = append(newOccurrences, &scip.Occurrence{
-			Range:                 mappedRange.ToSCIPRange().SCIPRange(),
-			Symbol:                occ.Symbol,
-			SymbolRoles:           occ.SymbolRoles,
-			OverrideDocumentation: occ.OverrideDocumentation,
-			SyntaxKind:            occ.SyntaxKind,
-			Diagnostics:           occ.Diagnostics,
-			EnclosingRange:        occ.EnclosingRange,
-		})
+		newOccurrence := cloneOccurrence(occ)
+		newOccurrence.Range = mappedRange.ToSCIPRange().SCIPRange()
+		newOccurrences = append(newOccurrences, newOccurrence)
 	}
 	return newOccurrences, nil
 }
@@ -175,15 +178,8 @@ func (d *mappedDocument) GetOccurrencesAtRange(ctx context.Context, range_ scip.
 	pastMatchingOccurrences := FindOccurrencesWithEqualRange(occurrences, mappedRg.ToSCIPRange())
 	scipRange := range_.SCIPRange()
 	return genslices.Map(pastMatchingOccurrences, func(occ *scip.Occurrence) *scip.Occurrence {
-		return &scip.Occurrence{
-			// Return the range in the target commit, instead of the index commit
-			Range:                 scipRange,
-			Symbol:                occ.Symbol,
-			SymbolRoles:           occ.SymbolRoles,
-			OverrideDocumentation: occ.OverrideDocumentation,
-			SyntaxKind:            occ.SyntaxKind,
-			Diagnostics:           occ.Diagnostics,
-			EnclosingRange:        occ.EnclosingRange,
-		}
+		newOccurrence := cloneOccurrence(occ)
+		newOccurrence.Range = scipRange
+		return newOccurrence
 	}), nil
 }
