@@ -166,7 +166,6 @@ func handleProxy(w http.ResponseWriter, req *http.Request) {
 	proxyReq.Header.Set("Api-Key", bearerToken)
 
 	resp, err := client.Do(proxyReq)
-	fmt.Println("client request made")
 	if err != nil {
 		http.Error(w, "Bad Gateway", http.StatusBadGateway)
 		return
