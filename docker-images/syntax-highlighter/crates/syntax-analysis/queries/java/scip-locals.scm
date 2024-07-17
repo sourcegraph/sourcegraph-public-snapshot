@@ -76,31 +76,17 @@
   (identifier) @definition.term
 )
 
-; In Java grammar, declarations of type parameters are marked as type_parameter,
-; and call-site generic parameters are marked as type_arguments
-(type_parameter
-    (type_identifier) @definition.type
-)
-
-(field_access field: (identifier) @occurrence.skip)
-
 ; REFERENCES
 
-; new MyType(...)
-;     ^^^^^^
-(object_creation_expression
-    type: [
-           ; This can be a reference to a local (method's type parameter)
-           ; or a global
-           (type_identifier) @reference.type
+; import java.util.HashSet
+;        ^^^^^^^^^ namespace
+;                  ^^^^^^^ type (could also be a constant, but type is more common)
+(import_declaration
+  (scoped_identifier
+    scope: (_) @reference.namespace
+    name: (_) @reference.type))
 
-           ; For nested classes used in `new` expressions (e.g. `new TodoApp.Item`)
-           ; we emit references to TodoApp, Item
-           (scoped_type_identifier
-               (type_identifier)* @reference.type
-           )
-    ]
-)
+(field_access field: (identifier) @reference.global.term)
 
 ; hello(...)
 ; ^^^^^
@@ -113,8 +99,8 @@
 ; MyType variable = ...
 ; ^^^^^^
 (local_variable_declaration
-  type: (type_identifier) @reference.type
-    (#not-eq? @reference.type "var")
+  type: (type_identifier) @occurrence.skip
+    (#eq? @reference.type "var")
 )
 
 ; class Binary<N extends Number> {...
@@ -123,23 +109,13 @@
   (type_identifier)* @reference.type
 )
 
-; for (MyType variable: variables) {...
-;      ^^^^^^
-(enhanced_for_statement
-  type: (type_identifier) @reference.type
-)
-
-; public class test<T extends Exception> {
-; 	private void provideFieldValue()
-; 			throws T, NoSuchFieldException, IllegalAccessException {}
-;                  ^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^
-; }
-(throws (type_identifier)* @reference.type)
 
 ; Person::getName
 ; ^^^^^^  ^^^^^^^
 (method_reference (identifier)* @reference.global.method)
 
+; type references are generally global
+(type_identifier) @reference.type
+
 ; all other references we assume to be local only
 (identifier) @reference.local
-(type_identifier) @reference.local.type

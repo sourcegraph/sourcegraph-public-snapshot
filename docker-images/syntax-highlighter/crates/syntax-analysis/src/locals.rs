@@ -50,15 +50,18 @@ const MAX_SCOPE_DEPTH: i32 = 10000;
 enum ReferenceDescriptor {
     Method,
     Type,
+    Term,
+    Namespace,
 }
+
 impl ReferenceDescriptor {
     fn from_str(str: &str) -> Option<ReferenceDescriptor> {
-        if str == "method" {
-            Some(ReferenceDescriptor::Method)
-        } else if str == "type" {
-            Some(ReferenceDescriptor::Type)
-        } else {
-            None
+        match str {
+            "method" => Some(ReferenceDescriptor::Method),
+            "type" => Some(ReferenceDescriptor::Type),
+            "term" => Some(ReferenceDescriptor::Term),
+            "namespace" => Some(ReferenceDescriptor::Namespace),
+            _ => None,
         }
     }
 }
@@ -820,6 +823,8 @@ impl<'a> LocalResolver<'a> {
         let suffix = match reference.descriptor {
             Some(ReferenceDescriptor::Type) => descriptor::Suffix::Type,
             Some(ReferenceDescriptor::Method) => descriptor::Suffix::Method,
+            Some(ReferenceDescriptor::Term) => descriptor::Suffix::Term,
+            Some(ReferenceDescriptor::Namespace) => descriptor::Suffix::Namespace,
             None => descriptor::Suffix::Term,
         };
 
