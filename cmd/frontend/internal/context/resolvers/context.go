@@ -144,11 +144,14 @@ func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatInten
 		return nil, err
 	}
 	intentResponse, err := r.sendIntentRequest(ctx, *backend.Default, buf)
+	// ignore cancellation from top-level context - we allow extra requests to extend beyond the lifetime of parent
+	// request, but we'll rely on short timeouts to make sure they don't last too long
+	extraContext := context.WithoutCancel(ctx)
 	iter.ForEach(backend.Extra, func(extraBackend **schema.BackendAPIConfig) {
 		if *extraBackend == nil {
 			return
 		}
-		response, err := r.sendIntentRequest(ctx, **extraBackend, buf)
+		response, err := r.sendIntentRequest(extraContext, **extraBackend, buf)
 		if err != nil {
 			r.logger.Warn("error fetching intent from extra backend", log.String("interactionID", args.InteractionID), log.String("backend", (*extraBackend).Url), log.Error(err))
 			return
