@@ -215,6 +215,11 @@
         max-width: 40rem;
         width: 640px;
 
+        @media (--mobile) {
+            min-width: initial;
+            width: 95vw;
+        }
+
         :global([data-tab-header]) {
             padding: 0 0.5rem;
         }
@@ -231,13 +236,23 @@
             display: grid;
             grid-template-rows: auto;
             grid-template-columns: [title] auto [author] minmax(0, 10rem) [timestamp] minmax(0, 8rem);
+
+            @media (--mobile) {
+                grid-template-columns: 1fr;
+            }
         }
 
         :global([data-picker-suggestions-list-item]) {
             display: grid;
-            grid-column: 1 / 4;
+            grid-column: 1/4;
             grid-template-columns: subgrid;
+            grid-template-areas: 'title author timestamp';
             gap: 1rem;
+
+            @media (--mobile) {
+                gap: 0.5rem;
+                grid-template-areas: 'title timestamp' 'author author';
+            }
         }
 
         .commit-subject {

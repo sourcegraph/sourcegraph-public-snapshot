@@ -20,7 +20,7 @@
     import MainNavigationLink from '$lib/navigation/MainNavigationLink.svelte'
     import Popover from '$lib/Popover.svelte'
     import SourcegraphLogo from '$lib/SourcegraphLogo.svelte'
-    import { isViewportMediumDown } from '$lib/stores'
+    import { isViewportMediumDown, isViewportMobile } from '$lib/stores'
     import { Badge, Button } from '$lib/wildcard'
 
     import { GlobalNavigation_User } from './GlobalNavigation.gql'
@@ -122,10 +122,10 @@
 
     <div class="global-portal" bind:this={$extensionElement} />
 
-    <Popover let:registerTrigger showOnHover hoverDelay={100} hoverCloseDelay={50}>
-        <span class="web-next-badge" use:registerTrigger>
+    <Popover let:registerTrigger let:toggle showOnHover={!$isViewportMobile} hoverDelay={100} hoverCloseDelay={50}>
+        <button class="web-next-badge" use:registerTrigger on:click={() => toggle()}>
             <Badge variant="warning">Experimental</Badge>
-        </span>
+        </button>
         <div slot="content" class="web-next-content">
             <h3>Experimental web app</h3>
             <p>
@@ -420,6 +420,7 @@
     }
 
     .web-next-badge {
+        all: unset;
         cursor: pointer;
         padding: 0.25rem;
         margin-left: auto;

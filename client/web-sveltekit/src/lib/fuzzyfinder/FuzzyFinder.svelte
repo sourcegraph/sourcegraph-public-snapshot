@@ -29,6 +29,7 @@
 
     import { allHotkey, filesHotkey, reposHotkey, symbolsHotkey } from './keys'
     import { type CompletionSource, createFuzzyFinderSource } from './sources'
+    import { isViewportMobile } from '$lib/stores'
 
     export let open = false
     export let scope = ''
@@ -238,9 +239,15 @@
                 }}
             />
             <span class="close">
-                <Button variant="icon" on:click={() => dialog?.close()} size="sm">
-                    <Icon icon={ILucideX} aria-label="Close" />
-                </Button>
+                {#if $isViewportMobile}
+                    <Button variant="secondary" on:click={() => dialog?.close()} size="lg" display="block">
+                        Close
+                    </Button>
+                {:else}
+                    <Button variant="icon" on:click={() => dialog?.close()} size="sm">
+                        <Icon icon={ILucideX} aria-label="Close" />
+                    </Button>
+                {/if}
             </span>
         </header>
         <main>
@@ -321,17 +328,26 @@
     dialog {
         width: 80vw;
         height: 80vh;
-        border: none;
         border-radius: 0.75rem;
+        border: 1px solid var(--border-color);
         padding: 0;
         overflow: hidden;
-        border: 1px solid var(--border-color);
         background-color: var(--color-bg-1);
 
         box-shadow: var(--fuzzy-finder-shadow);
 
         &::backdrop {
             background: var(--fuzzy-finder-backdrop);
+        }
+
+        @media (--mobile) {
+            border-radius: 0;
+            border: none;
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            max-height: 100vh;
+            max-width: 100vw;
         }
     }
 
@@ -440,6 +456,7 @@
         }
 
         .close {
+            grid-area: close;
             position: fixed;
             right: 2rem;
             background-color: var(--color-bg-1);
@@ -447,6 +464,17 @@
 
             &:hover {
                 background-color: var(--color-bg-2);
+            }
+        }
+
+        @media (--mobile) {
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-areas: 'close' 'tabs';
+            padding: 0;
+
+            .close {
+                position: static;
             }
         }
     }
