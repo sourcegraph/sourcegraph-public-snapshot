@@ -48,6 +48,7 @@ query RepositoryComparisonDiffs(
                 }
                 pageInfo {
                     hasNextPage
+                    endCursor
                 }
             }
         }
