@@ -53,15 +53,17 @@ func (c *Context) All(ctx context.Context) (inv Inventory, err error) {
 			return nil, err
 		}
 		return &NextRecord{
-			Header:     th,
-			FileReader: io.NopCloser(tr),
+			Header: th,
+			GetFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
+				return io.NopCloser(tr), nil
+			},
 		}, nil
 	})
 }
 
 type NextRecord struct {
-	Header     *tar.Header
-	FileReader io.ReadCloser
+	Header        *tar.Header
+	GetFileReader func(ctx context.Context, path string) (io.ReadCloser, error)
 }
 
 func (c *Context) ArchiveProcessor(ctx context.Context, next func() (*NextRecord, error)) (inv Inventory, err error) {
@@ -87,9 +89,7 @@ func (c *Context) ArchiveProcessor(ctx context.Context, next func() (*NextRecord
 
 		switch {
 		case entry.Mode().IsRegular():
-			lang, err := getLang(ctx, entry, func(ctx context.Context, path string) (io.ReadCloser, error) {
-				return n.FileReader, nil
-			}, c.ShouldSkipEnhancedLanguageDetection)
+			lang, err := getLang(ctx, entry, n.GetFileReader, c.ShouldSkipEnhancedLanguageDetection)
 			if err != nil {
 				return Inventory{}, err
 			}
