@@ -69,6 +69,7 @@ func (c *client) Complete(
 		return nil, errors.Wrap(err, "making request")
 	}
 
+	requestID := c.rng.Uint32()
 	providerConfig := request.ModelConfigInfo.Provider.ServerSideConfig.OpenAICompatible
 	if providerConfig.DebugConnections {
 		logger.Info("request",
@@ -78,27 +79,60 @@ func (c *client) Complete(
 			// Note: log package will automatically redact token
 			log.String("headers", fmt.Sprint(req.Header)),
 			log.String("body", reqBody),
+			log.Uint32("id", requestID),
 		)
 	}
+	start := time.Now()
 	resp, err = c.cli.Do(req)
 	if err != nil {
-		logger.Error("request error", log.Error(err))
+		logger.Error("request error",
+			log.Error(err),
+			log.Uint32("id", requestID),
+		)
 		return nil, errors.Wrap(err, "performing request")
 	}
 	if resp.StatusCode != http.StatusOK {
 		err := types.NewErrStatusNotOK("OpenAI", resp)
-		logger.Error("request error", log.Error(err))
+		logger.Error("request error",
+			log.Error(err),
+			log.Uint32("id", requestID),
+		)
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	var response openaiResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		logger.Error("request error, decoding response", log.Error(err))
+		logger.Error("request error, decoding response",
+			log.Error(err),
+			log.Uint32("id", requestID),
+		)
 		return nil, errors.Wrap(err, "decoding response")
 	}
 	if providerConfig.DebugConnections {
-		logger.Info("request success")
+		// When debugging connections, log more verbose information like the actual completion we got back.
+		completion := ""
+		if len(response.Choices) > 0 {
+			completion = response.Choices[0].Text
+		}
+		logger.Info("request success",
+			log.Duration("time", time.Since(start)),
+			log.String("response_model", response.Model),
+			log.String("url", req.URL.String()),
+			log.String("system_fingerprint", response.SystemFingerprint),
+			log.String("finish_reason", response.maybeGetFinishReason()),
+			log.String("completion", completion),
+			log.Uint32("id", requestID),
+		)
+	} else {
+		logger.Info("request success",
+			log.Duration("time", time.Since(start)),
+			log.String("response_model", response.Model),
+			log.String("url", req.URL.String()),
+			log.String("system_fingerprint", response.SystemFingerprint),
+			log.String("finish_reason", response.maybeGetFinishReason()),
+			log.Uint32("id", requestID),
+		)
 	}
 
 	if len(response.Choices) == 0 {
@@ -159,11 +193,13 @@ func (c *client) Stream(
 	ctx, cancel := context.WithCancel(ctx)
 	conn := sseClient.NewConnection(req.WithContext(ctx))
 
-	var content string
-	var ev types.CompletionResponse
-	var promptTokens, completionTokens int
-	var streamErr error
-
+	var (
+		content                        string
+		ev                             types.CompletionResponse
+		promptTokens, completionTokens int
+		streamErr                      error
+		finishReason                   string
+	)
 	unsubscribe := conn.SubscribeMessages(func(event sse.Event) {
 		// Ignore any data that is not JSON-like
 		if !strings.HasPrefix(event.Data, "{") {
@@ -219,6 +255,7 @@ func (c *client) Stream(
 			for _, choice := range resp.Choices {
 				if choice.FinishReason != "" {
 					// End of stream
+					finishReason = choice.FinishReason
 					streamErr = nil
 					cancel()
 					return
@@ -228,6 +265,7 @@ func (c *client) Stream(
 	})
 	defer unsubscribe()
 
+	requestID := c.rng.Uint32()
 	providerConfig := request.ModelConfigInfo.Provider.ServerSideConfig.OpenAICompatible
 	if providerConfig.DebugConnections {
 		logger.Info("request",
@@ -237,16 +275,54 @@ func (c *client) Stream(
 			// Note: log package will automatically redact token
 			log.String("headers", fmt.Sprint(req.Header)),
 			log.String("body", reqBody),
+			log.Uint32("id", requestID),
 		)
 	}
+	start := time.Now()
 	err = conn.Connect()
-	if (err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, io.EOF)) || streamErr != nil {
+	if errors.Is(err, io.EOF) || errors.Is(err, context.Canceled) {
+		// go-sse will return io.EOF on successful close of the connection, since it expects the
+		// connection to be long-lived. In our case, we expect the connection to close on success
+		// and be short lived, so this is a non-error.
+		err = nil
+	}
+	if streamErr != nil {
 		err = errors.Append(err, streamErr)
-		logger.Error("request error", log.Error(err))
+	}
+	if err == nil && finishReason == "" {
+		// At this point, we successfully streamed the response to the client. But we need to make
+		// sure the client gets a non-empty StopReason at the very end, otherwise it would think
+		// the streamed response it got is partial / incomplete and may not display the completion
+		// to the user as a result.
+		err = sendEvent(types.CompletionResponse{
+			Completion: content,
+			StopReason: "stop_sequence", // pretend we hit a stop sequence (we did!)
+		})
+	}
+	if err != nil {
+		logger.Error("request error",
+			log.Error(err),
+			log.Uint32("id", requestID),
+		)
 		return errors.Wrap(err, "NewConnection")
 	}
+
 	if providerConfig.DebugConnections {
-		logger.Info("request success")
+		// When debugging connections, log more verbose information like the actual completion we got back.
+		logger.Info("request success",
+			log.Duration("time", time.Since(start)),
+			log.String("url", req.URL.String()),
+			log.String("finish_reason", finishReason),
+			log.String("completion", content),
+			log.Uint32("id", requestID),
+		)
+	} else {
+		logger.Info("request success",
+			log.Duration("time", time.Since(start)),
+			log.String("url", req.URL.String()),
+			log.String("finish_reason", finishReason),
+			log.Uint32("id", requestID),
+		)
 	}
 
 	modelID := request.ModelConfigInfo.Model.ModelRef.ModelID()
@@ -288,9 +364,10 @@ func (c *client) makeChatRequest(
 		Stop:        requestParams.StopSequences,
 	}
 	for _, m := range requestParams.Messages {
-		// TODO(slimsag): map these 'roles' to openai system/user/assistant
 		var role string
 		switch m.Speaker {
+		case types.SYSTEM_MESSAGE_SPEAKER:
+			role = "system"
 		case types.HUMAN_MESSAGE_SPEAKER:
 			role = "user"
 		case types.ASSISTANT_MESSAGE_SPEAKER:

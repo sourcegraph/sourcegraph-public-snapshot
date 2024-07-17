@@ -57,9 +57,17 @@ type openaiChoice struct {
 
 type openaiResponse struct {
 	// Usage is only available for non-streaming requests.
-	Usage   openaiUsage    `json:"usage"`
-	Model   string         `json:"model"`
-	Choices []openaiChoice `json:"choices"`
+	Usage             openaiUsage    `json:"usage"`
+	Model             string         `json:"model"`
+	Choices           []openaiChoice `json:"choices"`
+	SystemFingerprint string         `json:"system_fingerprint,omitempty"`
+}
+
+func (r *openaiResponse) maybeGetFinishReason() string {
+	if len(r.Choices) == 0 {
+		return ""
+	}
+	return r.Choices[len(r.Choices)-1].FinishReason
 }
 
 // e.g. {"error":"Input validation error: `inputs` tokens + `max_new_tokens` must be <= 4096. Given: 159 `inputs` tokens and 4000 `max_new_tokens`","error_type":"validation"}
