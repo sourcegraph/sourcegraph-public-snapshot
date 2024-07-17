@@ -399,3 +399,53 @@ func syntacticUsagesImpl(
 		Language:    language,
 	}, nil
 }
+
+// searchBasedUsagesImpl is extracted from SearchBasedUsages to allow
+// testing of the core logic, by only mocking the search client.
+func searchBasedUsagesImpl(
+	ctx context.Context,
+	trace observation.TraceLogger,
+	searchClient searchclient.SearchClient,
+	args UsagesForSymbolArgs,
+	symbolName string,
+	language string,
+	syntacticIndex core.Option[MappedIndex],
+) (matches []SearchBasedMatch, err error) {
+	searchCoords := searchArgs{
+		repo:       args.Repo.Name,
+		commit:     args.Commit,
+		identifier: symbolName,
+		language:   language,
+	}
+	candidateMatches, err := findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
+	if err != nil {
+		return nil, err
+	}
+	candidateSymbols, err := symbolSearch(ctx, trace, searchClient, searchCoords)
+	if err != nil {
+		trace.Warn("Failed to run symbol search, will not mark any search-based usages as definitions", log.Error(err))
+	}
+
+	results := [][]SearchBasedMatch{}
+	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
+		if index, ok := syntacticIndex.Get(); ok {
+			_, searchBasedMatches, err := findSyntacticMatchesForCandidateFile(ctx, trace, index, pair.Key, pair.Value)
+			if err == nil {
+				results = append(results, searchBasedMatches)
+				continue
+			} else {
+				trace.Info("findSyntacticMatches failed, skipping filtering search-based results", log.Error(err))
+			}
+		}
+		matches := []SearchBasedMatch{}
+		for _, rg := range pair.Value.matches {
+			matches = append(matches, SearchBasedMatch{
+				Path:         pair.Key,
+				Range:        rg,
+				IsDefinition: candidateSymbols.Contains(pair.Key, rg),
+			})
+		}
+		results = append(results, matches)
+	}
+	return slices.Concat(results...), nil
+}

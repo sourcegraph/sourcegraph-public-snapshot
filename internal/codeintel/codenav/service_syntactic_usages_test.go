@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -59,15 +58,9 @@ func TestSearchBasedUsages_ResultWithoutSymbols(t *testing.T) {
 		WithFile("path.java", refRange, refRange2).
 		Build()
 
-	svc := newService(
-		observation.TestContextTB(t), defaultMockRepoStore(),
-		NewMockLsifStore(), NewMockUploadService(), gitserver.NewMockClient(),
-		mockSearchClient, log.NoOp(),
-	)
-
-	usages, searchErr := svc.searchBasedUsagesInner(
-		context.Background(), observation.TestTraceLogger(log.NoOp()), UsagesForSymbolArgs{},
-		"symbol", "Java", core.None[MappedIndex](),
+	usages, searchErr := searchBasedUsagesImpl(
+		context.Background(), observation.TestTraceLogger(log.NoOp()), mockSearchClient,
+		UsagesForSymbolArgs{}, "symbol", "Java", core.None[MappedIndex](),
 	)
 	require.NoError(t, searchErr)
 	expectSearchRanges(t, usages, refRange, refRange2)
@@ -83,15 +76,9 @@ func TestSearchBasedUsages_ResultWithSymbol(t *testing.T) {
 		WithSymbols("path.java", defRange).
 		Build()
 
-	svc := newService(
-		observation.TestContextTB(t), defaultMockRepoStore(),
-		NewMockLsifStore(), NewMockUploadService(), gitserver.NewMockClient(),
-		mockSearchClient, log.NoOp(),
-	)
-
-	usages, searchErr := svc.searchBasedUsagesInner(
-		context.Background(), observation.TestTraceLogger(log.NoOp()), UsagesForSymbolArgs{},
-		"symbol", "Java", core.None[MappedIndex](),
+	usages, searchErr := searchBasedUsagesImpl(
+		context.Background(), observation.TestTraceLogger(log.NoOp()), mockSearchClient,
+		UsagesForSymbolArgs{}, "symbol", "Java", core.None[MappedIndex](),
 	)
 	require.NoError(t, searchErr)
 	expectSearchRanges(t, usages, refRange, refRange2, defRange)
