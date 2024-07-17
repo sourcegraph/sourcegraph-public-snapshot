@@ -7,6 +7,10 @@ import (
 
 	"github.com/Masterminds/semver"
 
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -46,4 +50,29 @@ func DetermineUpgradePolicy(currentVersion, targetVersion string) (downtime bool
 
 	fmt.Println("✅ Standard upgrade policy selected.")
 	return false, nil
+}
+
+// checkConnection to standard databases(pgsql, codeintel, codeinsights)
+func CheckConnection(obsvCtx *observation.Context, schema string) error {
+	fmt.Println("Checking connection to frontend databases...")
+
+	dsns, err := postgresdsn.DSNsBySchema(schemas.SchemaNames)
+	if err != nil {
+		return err
+	}
+	fmt.Println(dsns["frontend"])
+
+	frontDB, err := connections.RawNewFrontendDB(obsvCtx, "", "appliance")
+	if err != nil {
+		return err
+	}
+	defer frontDB.Close()
+
+	err = frontDB.Ping()
+	if err != nil {
+		return err
+	}
+	fmt.Println("✅ Connection to frontend databases successful.")
+
+	return nil
 }
