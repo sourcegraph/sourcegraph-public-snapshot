@@ -77,6 +77,91 @@ func TestGetLang_language(t *testing.T) {
 	}
 }
 
+type mockCloser struct {
+	closeFunc func() error
+}
+
+func (m *mockCloser) Close() error {
+	return m.closeFunc()
+}
+
+func TestGetLang_fileReader(t *testing.T) {
+	t.Run("If the file reader is opened, it must be closed", func(t *testing.T) {
+
+		openCalled := false
+		closeCalled := false
+
+		fakeFileReader := func(ctx context.Context, path string) (io.ReadCloser, error) {
+			openCalled = true
+			return struct {
+				io.Reader
+				io.Closer
+			}{
+				Reader: strings.NewReader(""),
+				Closer: &mockCloser{closeFunc: func() error {
+					closeCalled = true
+					return nil
+				}},
+			}, nil
+		}
+
+		_, err := getLang(context.Background(),
+			fi{"a.java", ""},
+			fakeFileReader,
+			false)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !openCalled {
+			t.Fatal("Open should have been called")
+		}
+
+		if !closeCalled {
+			t.Error("Close should have been called")
+		}
+	})
+
+	t.Run("If the file reader is NOT opened, it should not be closed", func(t *testing.T) {
+
+		openCalled := false
+		closeCalled := false
+
+		fakeFileReader := func(ctx context.Context, path string) (io.ReadCloser, error) {
+			openCalled = true
+			return struct {
+				io.Reader
+				io.Closer
+			}{
+				Reader: strings.NewReader(""),
+				Closer: &mockCloser{closeFunc: func() error {
+					closeCalled = true
+					return nil
+				}},
+			}, nil
+		}
+
+		_, err := getLang(context.Background(),
+			fi{"a.java", ""},
+			fakeFileReader,
+			true)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if openCalled {
+			t.Fatal("Open should NOT have been called")
+		}
+
+		if closeCalled {
+			t.Error("Close should NOT have been called")
+		}
+	})
+
+}
+
 func makeFileReader(contents string) func(context.Context, string) (io.ReadCloser, error) {
 	return func(ctx context.Context, path string) (io.ReadCloser, error) {
 		return io.NopCloser(strings.NewReader(contents)), nil
