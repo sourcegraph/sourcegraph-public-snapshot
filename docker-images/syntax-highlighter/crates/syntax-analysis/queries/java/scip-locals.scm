@@ -86,6 +86,7 @@
     scope: (_) @reference.namespace
     name: (_) @reference.type))
 
+(field_access object: (identifier) @reference)
 (field_access field: (identifier) @reference.global.term)
 
 ; hello(...)

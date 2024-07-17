@@ -865,6 +865,11 @@ impl<'a> LocalResolver<'a> {
 
         for (scope_ref, scope) in self.arena.iter() {
             for reference in scope.references.iter() {
+                if let Some(def_id) = reference.resolves_to {
+                    ref_occurrences.push(self.make_local_reference(reference, def_id));
+                    continue;
+                }
+
                 let skip = self
                     .skip_references_at_offsets
                     .contains(&reference.node.start_byte());
@@ -878,11 +883,6 @@ impl<'a> LocalResolver<'a> {
                                 .non_local_references_at_offsets
                                 .contains(&reference.node.start_byte())
                         {
-                            continue;
-                        }
-
-                        if let Some(def_id) = reference.resolves_to {
-                            ref_occurrences.push(self.make_local_reference(reference, def_id));
                             continue;
                         }
 
