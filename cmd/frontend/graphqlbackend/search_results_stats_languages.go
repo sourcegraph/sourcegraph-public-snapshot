@@ -130,9 +130,6 @@ func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db data
 			p.Go(func() error {
 				repoName := repoMatch.Name
 				_, oid, err := gsClient.GetDefaultBranch(ctx, repoName, false)
-				if oid == "" {
-					return nil
-				}
 				if err != nil {
 					return err
 				}

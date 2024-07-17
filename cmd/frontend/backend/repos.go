@@ -111,10 +111,6 @@ func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID ap
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
 	}
 
-	if commitID == "" {
-		return nil, errors.New("commitID must not be empty")
-	}
-
 	ctx, done := startTrace(ctx, "GetInventory", map[string]any{"repo": repo, "commitID": commitID}, &err)
 	defer done()
 
