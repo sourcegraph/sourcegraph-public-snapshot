@@ -543,8 +543,9 @@ func checkClientCodyIgnoreCompatibility(ctx context.Context, db database.DB, r *
 		}
 	}
 
+	// If cody-context-filters-clients-test-mode feature flag is enabled, the client version constaint
+	// allows pre-release versions (see https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions).
 	// Intended for development use only.
-	// TODO: remove after `CodyContextFilters` support is added to the IDE clients.
 	flag, err := db.FeatureFlags().GetFeatureFlag(ctx, "cody-context-filters-clients-test-mode")
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return &codyIgnoreCompatibilityError{
