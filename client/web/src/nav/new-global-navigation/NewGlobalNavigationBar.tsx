@@ -374,6 +374,9 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                             <ul
                                 className={classNames(styles.sidebarNavigationList, styles.sidebarNavigationListNested)}
                             >
+                                <NavItemLink url={PageRoutes.SavedSearches} onClick={handleNavigationClick}>
+                                    Saved Searches
+                                </NavItemLink>
                                 {showSearchContext && (
                                     <NavItemLink url={PageRoutes.Contexts} onClick={handleNavigationClick}>
                                         Contexts
