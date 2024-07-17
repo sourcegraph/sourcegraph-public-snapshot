@@ -252,24 +252,26 @@
                     {/each}
                 </div>
                 <div class="outline">
-                    <h4>Filter by location</h4>
-                    <TreeView treeProvider={outlineTree} on:select={event => handleSelect(event.detail)}>
-                        <svelte:fragment let:entry>
-                            {#if entry.type === 'repo'}
-                                <span class="repo-entry" data-repo-name={entry.name}>
-                                    <CodeHostIcon repository={entry.name} />
-                                    {displayRepoName(entry.name)}
-                                </span>
-                            {:else}
-                                <span class="path-entry" data-repo-name={entry.repo} data-path={entry.name}>
-                                    {entry.name}
-                                </span>
-                            {/if}
-                        </svelte:fragment>
-                        <Alert slot="error" let:error variant="danger">
-                            TODO: {error.message}
-                        </Alert>
-                    </TreeView>
+                    {#if repoGroups.length > 0}
+                        <h4>Filter by location</h4>
+                        <TreeView treeProvider={outlineTree} on:select={event => handleSelect(event.detail)}>
+                            <svelte:fragment let:entry>
+                                {#if entry.type === 'repo'}
+                                    <span class="repo-entry" data-repo-name={entry.name}>
+                                        <CodeHostIcon repository={entry.name} />
+                                        {displayRepoName(entry.name)}
+                                    </span>
+                                {:else}
+                                    <span class="path-entry" data-repo-name={entry.repo} data-path={entry.name}>
+                                        {entry.name}
+                                    </span>
+                                {/if}
+                            </svelte:fragment>
+                            <Alert slot="error" let:error variant="danger">
+                                {error.message}
+                            </Alert>
+                        </TreeView>
+                    {/if}
                 </div>
             </div>
         </Panel>
