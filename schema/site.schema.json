@@ -3619,7 +3619,7 @@
     },
     "ServerSideProviderConfigHuggingfaceTGIProvider": {
       "type": "object",
-      "required": ["type", "accessToken", "endpoint"],
+      "required": ["type", "endpoints"],
       "properties": {
         "type": {
           "type": "string",
@@ -3632,7 +3632,7 @@
     },
     "ServerSideProviderConfigOpenAICompatibleProvider": {
       "type": "object",
-      "required": ["type", "accessToken", "endpoint"],
+      "required": ["type", "serviceName", "endpoints"],
       "properties": {
         "type": {
           "type": "string",
@@ -3653,7 +3653,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["url", "accessToken"],
+        "required": ["url"],
         "properties": {
           "url": {
             "type": "string"
