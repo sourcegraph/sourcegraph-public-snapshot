@@ -3,7 +3,6 @@ import { dirname } from 'path'
 import { readable, derived, type Readable } from 'svelte/store'
 
 import { CodyContextFiltersSchema, getFiltersFromCodyContextFilters } from '$lib/cody/config'
-import type { LineOrPositionOrRange } from '$lib/common'
 import { getGraphQLClient, infinityQuery, type GraphQLClient, IncrementalRestoreStrategy } from '$lib/graphql'
 import { ROOT_PATH, fetchSidebarFileTree } from '$lib/repo/api/tree'
 import { resolveRevision } from '$lib/repo/utils'
