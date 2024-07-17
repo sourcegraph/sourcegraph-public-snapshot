@@ -85,6 +85,14 @@ func (lmr legacyModelRef) ToModelRef() modelconfigSDK.ModelRef {
 	return modelconfigSDK.ModelRef(converted)
 }
 
+// toLegacyMRef converts a newer ModelRef to the older format.
+// Required until we can remove all of the hard-coded model references
+// in the codebase.
+func toLegacyMRef(mref modelconfigSDK.ModelRef) legacyModelRef {
+	olderFormat := fmt.Sprintf("%s/%s", mref.ProviderID(), mref.ModelID())
+	return legacyModelRef(olderFormat)
+}
+
 // getModelFn is the thunk used to return the LLM model we should use for processing
 // the supplied completion request. Depending on the incomming request, site config,
 // feature used, etc. it could be any number of things.
@@ -127,6 +135,9 @@ func getCodeCompletionModelFn() getModelFn {
 		// BUG: A side effect of this, until we make that change, Cody Pro users _cannot_ specify models
 		// using the newer MRef syntax. As this check only looks for older "provider/model" names.
 		if dotcom.SourcegraphDotComMode() {
+			if isAllowedCodyProCompletionModel(toLegacyMRef(mref)) {
+				return mref, nil
+			}
 			if isAllowedCodyProCompletionModel(legacyMRef) {
 				return legacyMRef.ToModelRef(), nil
 			}
@@ -163,6 +174,18 @@ func getChatModelFn(db database.DB) getModelFn {
 	return func(
 		ctx context.Context, requestParams types.CodyCompletionRequestParameters, cfg *modelconfigSDK.ModelConfiguration) (
 		modelconfigSDK.ModelRef, error) {
+		// We want to support newer clients sending fully-qualified ModelRefs, as well as older
+		// clients using the legacy format. So we check if the incomming model reference is in either
+		// format.
+		initialRequestedModel := requestParams.RequestedModel
+		if requestParams.RequestedModel == "" {
+			requestParams.RequestedModel = types.TaintedModelRef(cfg.DefaultModels.Chat)
+		}
+		var (
+			mref       modelconfigSDK.ModelRef = modelconfigSDK.ModelRef(requestParams.RequestedModel)
+			legacyMRef legacyModelRef          = legacyModelRef(requestParams.RequestedModel)
+		)
+
 		// If running on dotcom, i.e. using Cody Free/Cody Pro, then the available
 		// models depend on the caller's subscription status.
 		//
@@ -182,6 +205,9 @@ func getChatModelFn(db database.DB) getModelFn {
 
 			// Note that Cody Pro users MUST specify the model to use on all requests.
 			legacyMRef := legacyModelRef(requestParams.RequestedModel)
+			if isAllowedCodyProChatModel(toLegacyMRef(mref), subscription.ApplyProRateLimits) {
+				return mref, nil
+			}
 			if isAllowedCodyProChatModel(legacyMRef, subscription.ApplyProRateLimits) {
 				return legacyMRef.ToModelRef(), nil
 			}
@@ -197,17 +223,6 @@ func getChatModelFn(db database.DB) getModelFn {
 			return cfg.DefaultModels.FastChat, nil
 		}
 
-		// We want to support newer clients sending fully-qualified ModelRefs, as well as older
-		// clients using the legacy format. So we check if the incomming model reference is in either
-		// format.
-		initialRequestedModel := requestParams.RequestedModel
-		if requestParams.RequestedModel == "" {
-			requestParams.RequestedModel = types.TaintedModelRef(cfg.DefaultModels.Chat)
-		}
-		var (
-			mref       modelconfigSDK.ModelRef = modelconfigSDK.ModelRef(requestParams.RequestedModel)
-			legacyMRef legacyModelRef          = legacyModelRef(requestParams.RequestedModel)
-		)
 		// Now, for Cody Enterprise, if the caller requested a specific model we simply look
 		// it up in the site config. By definition, if it is found then the model is allowed.
 		for _, supportedModel := range cfg.Models {
@@ -299,6 +314,15 @@ func isAllowedCodyProChatModel(model legacyModelRef, isProUser bool) bool {
 	if isProUser {
 		switch model {
 		case
+			// Virtual model names used in the modelconfig data embedded into the binary.
+			"anthropic/claude-3-haiku",
+			"anthropic/claude-3-opus",
+			"anthropic/claude-3-sonnet",
+			"anthropic/claude-3.5-sonnet",
+			// Models that have an even more confusing story.
+			"mistral/mixtral-8x7b-instruct",
+			"mistral/mixtral-8x22b-instruct",
+
 			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/" + anthropic.Claude3Sonnet,
 			"anthropic/" + anthropic.Claude35Sonnet,
@@ -332,6 +356,15 @@ func isAllowedCodyProChatModel(model legacyModelRef, isProUser bool) bool {
 		// Models available to Cody Free users.
 		switch model {
 		case
+			// Virtual model names used in the modelconfig data embedded into the binary.
+			// (Opus is omitted, because it isn't available to Cody Free.)
+			"anthropic/claude-3-haiku",
+			"anthropic/claude-3-sonnet",
+			"anthropic/claude-3.5-sonnet",
+			// Models that have an even more confusing story.
+			"mistral/mixtral-8x7b-instruct",
+			"mistral/mixtral-8x22b-instruct",
+
 			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/" + anthropic.Claude3Sonnet,
 			"anthropic/" + anthropic.Claude35Sonnet,
@@ -354,6 +387,22 @@ func isAllowedCodyProChatModel(model legacyModelRef, isProUser bool) bool {
 	}
 
 	return false
+}
+
+// virutalizedModelRefLookup is a super-lame hack that we can remove once Sourcegraph.com is only serving
+// Sourcegraph-supplied LLM models. And we no longer have the hard-coded lists like `isAllowedCodyProChatModel`.
+// See dotcom_models.go.
+//
+// Until then, we have a problem: the Sourcegraph-supplied models have a few instances where the ModelID and
+// ModelName do not match. This is a good thing. But makes it a little tricky when for in the dotcom case the
+// exact list of supported models is a bit murkier.
+var virutalizedModelRefLookup = map[string]string{
+	"claude-3-sonnet":        "claude-3-sonnet-20240229",
+	"claude-3.5-sonnet":      "claude-3-5-sonnet-20240620",
+	"claude-3-opus":          "claude-3-opus-20240229",
+	"claude-3-haiku":         "claude-3-haiku-20240307",
+	"mixtral-8x7b-instruct":  "accounts/fireworks/models/mixtral-8x7b-instruct",
+	"mixtral-8x22b-instruct": "accounts/fireworks/models/mixtral-8x22b-instruct",
 }
 
 // resolveRequestedModel loads the provider and model configuration data for whatever model the user is requesting.
@@ -381,6 +430,13 @@ func resolveRequestedModel(
 	// So unfortunately we have to syntesize the Provider and Model objects dynamically. (And rely on the
 	// Cody Gateway completion provider to not get fancy and look for any client-side configuration data.)
 	if dotcom.SourcegraphDotComMode() {
+
+		modelName := string(mref.ModelID())
+		// Hack around Sourcegraph supplied models using "claude-3-sonnet" instead of "claude-3-sonnet-20240229".
+		if devirtualizedModelName, ok := virutalizedModelRefLookup[modelName]; ok {
+			modelName = devirtualizedModelName
+		}
+
 		fauxProvider := modelconfigSDK.Provider{
 			ID: mref.ProviderID(),
 			// If the instance is configured to be in dotcom mode, we assume the "completions.provider"
@@ -390,7 +446,7 @@ func resolveRequestedModel(
 		}
 		fauxModel := modelconfigSDK.Model{
 			ModelRef:  mref,
-			ModelName: string(mref.ModelID()),
+			ModelName: modelName,
 			// Leave everything invalid, even ContextWindow.
 			// Which will for the time being be set within the
 			// completion provider.
