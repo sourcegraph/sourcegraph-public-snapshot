@@ -176,13 +176,15 @@ func convertServerSideProviderConfig(cfg *schema.ServerSideProviderConfig) *type
 	} else if v := cfg.HuggingfaceTgi; v != nil {
 		return &types.ServerSideProviderConfig{
 			OpenAICompatible: &types.OpenAICompatibleProviderConfig{
-				ServiceName: types.OpenAICompatibleServiceNameHuggingfaceTGI,
-				Endpoints:   convertOpenAICompatibleEndpoints(v.Endpoints),
+				ServiceName:      types.OpenAICompatibleServiceNameHuggingfaceTGI,
+				Endpoints:        convertOpenAICompatibleEndpoints(v.Endpoints),
+				DebugConnections: v.DebugConnections,
 			},
 		}
 	} else if v := cfg.Openaicompatible; v != nil {
 		providerConfig := types.OpenAICompatibleProviderConfig{
-			Endpoints: convertOpenAICompatibleEndpoints(v.Endpoints),
+			Endpoints:        convertOpenAICompatibleEndpoints(v.Endpoints),
+			DebugConnections: v.DebugConnections,
 		}
 		if serviceName, ok := types.ValidateOpenAICompatibleServiceName(v.ServiceName); ok {
 			providerConfig.ServiceName = serviceName
@@ -219,9 +221,42 @@ func convertClientSideModelConfig(v *schema.ClientSideModelConfig) *types.Client
 	if v == nil {
 		return nil
 	}
-	return &types.ClientSideModelConfig{
-		// We currently do not have any known client-side model configuration.
+	cfg := &types.ClientSideModelConfig{}
+	if o := v.Openaicompatible; o != nil {
+		cfg.OpenAICompatible = &types.ClientSideModelConfigOpenAICompatible{
+			StopSequences:                   o.StopSequences,
+			EndOfText:                       o.EndOfText,
+			ContextSizeHintTotalCharacters:  intPtrToUintPtr(o.ContextSizeHintTotalCharacters),
+			ContextSizeHintPrefixCharacters: intPtrToUintPtr(o.ContextSizeHintPrefixCharacters),
+			ContextSizeHintSuffixCharacters: intPtrToUintPtr(o.ContextSizeHintSuffixCharacters),
+			ChatPreInstruction:              o.ChatPreInstruction,
+			EditPostInstruction:             o.EditPostInstruction,
+			AutocompleteSinglelineTimeout:   uint(o.AutocompleteSinglelineTimeout),
+			AutocompleteMultilineTimeout:    uint(o.AutocompleteMultilineTimeout),
+			ChatTopK:                        float32(o.ChatTopK),
+			ChatTopP:                        float32(o.ChatTopP),
+			ChatTemperature:                 float32(o.ChatTemperature),
+			ChatMaxTokens:                   uint(o.ChatMaxTokens),
+			AutoCompleteTopK:                float32(o.AutoCompleteTopK),
+			AutoCompleteTopP:                float32(o.AutoCompleteTopP),
+			AutoCompleteTemperature:         float32(o.AutoCompleteTemperature),
+			AutoCompleteSinglelineMaxTokens: uint(o.AutoCompleteSinglelineMaxTokens),
+			AutoCompleteMultilineMaxTokens:  uint(o.AutoCompleteMultilineMaxTokens),
+			EditTopK:                        float32(o.EditTopK),
+			EditTopP:                        float32(o.EditTopP),
+			EditTemperature:                 float32(o.EditTemperature),
+			EditMaxTokens:                   uint(o.EditMaxTokens),
+		}
 	}
+	return cfg
+}
+
+func intPtrToUintPtr(v *int) *uint {
+	if v == nil {
+		return nil
+	}
+	ptr := uint(*v)
+	return &ptr
 }
 
 func convertServerSideModelConfig(cfg *schema.ServerSideModelConfig) *types.ServerSideModelConfig {
@@ -232,6 +267,12 @@ func convertServerSideModelConfig(cfg *schema.ServerSideModelConfig) *types.Serv
 		return &types.ServerSideModelConfig{
 			AWSBedrockProvisionedThroughput: &types.AWSBedrockProvisionedThroughput{
 				ARN: v.Arn,
+			},
+		}
+	} else if v := cfg.Openaicompatible; v != nil {
+		return &types.ServerSideModelConfig{
+			OpenAICompatible: &types.ServerSideModelConfigOpenAICompatible{
+				APIModel: v.ApiModel,
 			},
 		}
 	} else {

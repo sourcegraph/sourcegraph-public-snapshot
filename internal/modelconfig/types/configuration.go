@@ -157,20 +157,18 @@ type ServerSideProviderConfig struct {
 // Client-side Model Configuration Data
 // ========================================================
 
+// Anything that needs to be provided to Cody clients at the model-level can go here.
+//
+// For example, allowing the server to customize/override the LLM
+// prompt used. Or describe how clients should upload context to
+// remote servers, etc. Or "hints", like "this model is great when
+// working with 'C' code.".
 type ClientSideModelConfig struct {
-	// We currently do not have any known client-side model configuration.
-	// But later, if anything needs to be provided to Cody clients at the
-	// model-level it will go here.
-	//
-	// For example, allowing the server to customize/override the LLM
-	// prompt used. Or describe how clients should upload context to
-	// remote servers, etc. Or "hints", like "this model is great when
-	// working with 'C' code.".
 	OpenAICompatible *ClientSideModelConfigOpenAICompatible `json:"openAICompatible,omitempty"`
 }
 
-// Client-side model configuration used when the model is being provided by an OpenAI-compatible
-// API.
+// Client-side model configuration used when the model is backed by an OpenAI-compatible API
+// provider.
 type ClientSideModelConfigOpenAICompatible struct {
 	// (optional) List of stop sequences to use for this model.
 	StopSequences []string `json:"stopSequences,omitempty"`

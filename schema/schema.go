@@ -605,6 +605,58 @@ type ChangesetTemplate struct {
 
 // ClientSideModelConfig description: No client-side model configuration is currently available.
 type ClientSideModelConfig struct {
+	Openaicompatible *ClientSideModelConfigOpenAICompatible `json:"openaicompatible,omitempty"`
+}
+
+// ClientSideModelConfigOpenAICompatible description: Advanced configuration options that are only respected if the model is provided by an openaicompatible provider.
+type ClientSideModelConfigOpenAICompatible struct {
+	AutoCompleteMultilineMaxTokens  int     `json:"autoCompleteMultilineMaxTokens,omitempty"`
+	AutoCompleteSinglelineMaxTokens int     `json:"autoCompleteSinglelineMaxTokens,omitempty"`
+	AutoCompleteTemperature         float64 `json:"autoCompleteTemperature,omitempty"`
+	AutoCompleteTopK                float64 `json:"autoCompleteTopK,omitempty"`
+	AutoCompleteTopP                float64 `json:"autoCompleteTopP,omitempty"`
+	// AutocompleteMultilineTimeout description: How long the client should wait for autocomplete results to come back (milliseconds), before giving up and not displaying an autocomplete result at all.
+	//
+	// This applies on multi-line completions, which are based on intent-detection when e.g. a code block is being completed, e.g. 'func parseURL(url string) {<completion>'
+	//
+	// Note: similar to hidden Cody client config option 'cody.autocomplete.advanced.timeout.multiline' If user has configured that, it will be respected instead of this.
+	AutocompleteMultilineTimeout int `json:"autocompleteMultilineTimeout,omitempty"`
+	// AutocompleteSinglelineTimeout description: How long the client should wait for autocomplete results to come back (milliseconds), before giving up and not displaying an autocomplete result at all.
+	//
+	// This applies on single-line completions, e.g. 'var i = <completion>'
+	//
+	// Note: similar to hidden Cody client config option 'cody.autocomplete.advanced.timeout.singleline' If user has configured that, it will be respected instead of this.
+	AutocompleteSinglelineTimeout int `json:"autocompleteSinglelineTimeout,omitempty"`
+	ChatMaxTokens                 int `json:"chatMaxTokens,omitempty"`
+	// ChatPreInstruction description: Custom instruction to be included at the start of all chat messages
+	// when using this model, e.g. 'Answer all questions in Spanish.'
+	//
+	// Note: similar to Cody client config option 'cody.chat.preInstruction'; if user has configured that it will be used instead of this.
+	ChatPreInstruction string  `json:"chatPreInstruction,omitempty"`
+	ChatTemperature    float64 `json:"chatTemperature,omitempty"`
+	ChatTopK           float64 `json:"chatTopK,omitempty"`
+	ChatTopP           float64 `json:"chatTopP,omitempty"`
+	// ContextSizeHintPrefixCharacters description: A hint the client should use when producing context to send to the LLM.
+	// The maximum length of the document prefix (text before the cursor) to include, in characters.
+	ContextSizeHintPrefixCharacters *int `json:"contextSizeHintPrefixCharacters,omitempty"`
+	// ContextSizeHintSuffixCharacters description: A hint the client should use when producing context to send to the LLM.
+	// The maximum length of the document suffix (text after the cursor) to include, in characters.
+	ContextSizeHintSuffixCharacters *int `json:"contextSizeHintSuffixCharacters,omitempty"`
+	// ContextSizeHintTotalCharacters description: A hint the client should use when producing context to send to the LLM.
+	// The maximum length of all context (prefix + suffix + snippets), in characters.
+	ContextSizeHintTotalCharacters *int `json:"contextSizeHintTotalCharacters,omitempty"`
+	EditMaxTokens                  int  `json:"editMaxTokens,omitempty"`
+	// EditPostInstruction description: Custom instruction to be included at the end of all edit commands
+	// when using this model, e.g. 'Write all unit tests with Jest instead of detected framework.'
+	//
+	// Note: similar to Cody client config option 'cody.edit.preInstruction'; if user has configured that it will be respected instead of this.
+	EditPostInstruction string  `json:"editPostInstruction,omitempty"`
+	EditTemperature     float64 `json:"editTemperature,omitempty"`
+	EditTopK            float64 `json:"editTopK,omitempty"`
+	EditTopP            float64 `json:"editTopP,omitempty"`
+	// EndOfText description: End of text identifier used by the model.
+	EndOfText     string   `json:"endOfText,omitempty"`
+	StopSequences []string `json:"stopSequences,omitempty"`
 }
 
 // ClientSideProviderConfig description: No client-side provider configuration is currently available.
@@ -2009,7 +2061,7 @@ type OnboardingTourConfiguration struct {
 	Tasks           []*OnboardingTask `json:"tasks"`
 }
 type OpenAICompatibleEndpoint struct {
-	AccessToken string `json:"accessToken"`
+	AccessToken string `json:"accessToken,omitempty"`
 	Url         string `json:"url"`
 }
 type OpenCodeGraphAnnotation struct {
@@ -2538,12 +2590,16 @@ type Sentry struct {
 }
 type ServerSideModelConfig struct {
 	AwsBedrockProvisionedThroughput *ServerSideModelConfigAwsBedrockProvisionedThroughput
+	Openaicompatible                *ServerSideModelConfigOpenAICompatible
 	Unused                          *DoNotUsePhonyDiscriminantType
 }
 
 func (v ServerSideModelConfig) MarshalJSON() ([]byte, error) {
 	if v.AwsBedrockProvisionedThroughput != nil {
 		return json.Marshal(v.AwsBedrockProvisionedThroughput)
+	}
+	if v.Openaicompatible != nil {
+		return json.Marshal(v.Openaicompatible)
 	}
 	if v.Unused != nil {
 		return json.Marshal(v.Unused)
@@ -2560,16 +2616,25 @@ func (v *ServerSideModelConfig) UnmarshalJSON(data []byte) error {
 	switch d.DiscriminantProperty {
 	case "awsBedrockProvisionedThroughput":
 		return json.Unmarshal(data, &v.AwsBedrockProvisionedThroughput)
+	case "openaicompatible":
+		return json.Unmarshal(data, &v.Openaicompatible)
 	case "unused":
 		return json.Unmarshal(data, &v.Unused)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"awsBedrockProvisionedThroughput", "unused"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"awsBedrockProvisionedThroughput", "openaicompatible", "unused"})
 }
 
 type ServerSideModelConfigAwsBedrockProvisionedThroughput struct {
 	// Arn description: The 'provisioned throughput ARN' to use when sending requests to AWS Bedrock
 	Arn  string `json:"arn"`
 	Type string `json:"type"`
+}
+
+// ServerSideModelConfigOpenAICompatible description: Configuration that is only respected if the model is provided by an openaicompatible provider.
+type ServerSideModelConfigOpenAICompatible struct {
+	// ApiModel description: The literal string value of the 'model' field that will be sent to the /chat/completions API, for example. If set, Sourcegraph treats this as an opaque string and sends it directly to the API, inferring no information from it. By default, the configured model name is sent.
+	ApiModel string `json:"apiModel,omitempty"`
+	Type     string `json:"type"`
 }
 type ServerSideProviderConfig struct {
 	AwsBedrock       *ServerSideProviderConfigAWSBedrock
@@ -2685,13 +2750,17 @@ type ServerSideProviderConfigGoogleProvider struct {
 	Type        string `json:"type"`
 }
 type ServerSideProviderConfigHuggingfaceTGIProvider struct {
-	Endpoints []*OpenAICompatibleEndpoint `json:"endpoints,omitempty"`
-	Type      string                      `json:"type"`
+	// DebugConnections description: Whether to enable verbose logging of requests. When enabled, grep for 'OpenAICompatible' in the frontend container logs to see the requests Cody makes to the endpoint.
+	DebugConnections bool                        `json:"debugConnections,omitempty"`
+	Endpoints        []*OpenAICompatibleEndpoint `json:"endpoints"`
+	Type             string                      `json:"type"`
 }
 type ServerSideProviderConfigOpenAICompatibleProvider struct {
-	Endpoints []*OpenAICompatibleEndpoint `json:"endpoints,omitempty"`
+	// DebugConnections description: Whether to enable verbose logging of requests. When enabled, grep for 'OpenAICompatible' in the frontend container logs to see the requests Cody makes to the endpoint.
+	DebugConnections bool                        `json:"debugConnections,omitempty"`
+	Endpoints        []*OpenAICompatibleEndpoint `json:"endpoints"`
 	// ServiceName description: The name of the service being connected to, e.g. 'huggingface-tgi'. If known to Sourcegraph, it may employ various tricks to communicate more effectively with that service. Use lowcase alphanumeric and dashes only.
-	ServiceName string `json:"serviceName,omitempty"`
+	ServiceName string `json:"serviceName"`
 	Type        string `json:"type"`
 }
 type ServerSideProviderConfigOpenAIProvider struct {
