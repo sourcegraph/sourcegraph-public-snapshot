@@ -724,15 +724,15 @@ const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({ po
                 Syntactic indexing
                 <div className={styles.toggleContainer}>
                     <Toggle
-                        id="indexing-enabled"
-                        value={policy.indexingEnabled}
+                        id="syntactic-indexing-enabled"
+                        value={policy.syntacticIndexingEnabled == null ?  undefined : policy.syntacticIndexingEnabled}
                         className={styles.toggle}
-                        onToggle={indexingEnabled => {
-                            if (indexingEnabled) {
-                                updatePolicy({ indexingEnabled })
+                        onToggle={syntacticIndexingEnabled => {
+                            if (syntacticIndexingEnabled) {
+                                updatePolicy({ syntacticIndexingEnabled })
                             } else {
                                 updatePolicy({
-                                    indexingEnabled,
+                                    syntacticIndexingEnabled,
                                     indexIntermediateCommits: false,
                                     indexCommitMaxAgeHours: null,
                                 })
@@ -741,7 +741,7 @@ const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({ po
                     />
 
                     <Text size="small" className="text-muted mb-0">
-                        Sourcegraph will automatically generate precise code intelligence data for matching
+                        Sourcegraph will automatically generate syntactic code intelligence data for matching
                         {repo ? '' : ' repositories and'} revisions. Indexing configuration will be inferred from the
                         content at matching revisions if not explicitly configured for{' '}
                         {repo ? 'this repository' : 'matching repositories'}.{' '}
@@ -753,8 +753,6 @@ const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({ po
                     </Text>
                 </div>
             </Label>
-
-            <IndexSettings policy={policy} updatePolicy={updatePolicy} />
         </div>
     </div>
 )
