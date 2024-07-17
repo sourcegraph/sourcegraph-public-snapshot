@@ -27,6 +27,7 @@ import (
 var auditFormatFlag string
 var auditPRGitHubToken string
 
+// WTF
 var auditCommand = &cli.Command{
 	Name:      "audit",
 	Usage:     "Display audit trail for resources",
