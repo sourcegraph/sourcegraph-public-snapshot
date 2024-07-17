@@ -369,10 +369,13 @@
     }
 
     .sidebar {
-        height: 100%;
         display: flex;
         flex-direction: column;
         background-color: var(--color-bg-1);
+
+        // Allow sidebar to shrink
+        min-height: 0;
+        height: 100%;
 
         header {
             display: grid;

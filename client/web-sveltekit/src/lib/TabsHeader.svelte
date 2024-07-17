@@ -54,9 +54,7 @@
                 {tab.title}
             </span>
             {#if tab.shortcut}
-                <span class="shortcut">
-                    <KeyboardShortcut shortcut={tab.shortcut} />
-                </span>
+                <KeyboardShortcut shortcut={tab.shortcut} />
             {/if}
         </svelte:element>
     {/each}
@@ -132,14 +130,6 @@
             // Hidden rendering of the bold tab title to prevent
             // shifting when the tab is selected.
             font-weight: 500;
-        }
-    }
-
-    span.shortcut {
-        display: contents;
-
-        @media (--mobile) {
-            display: none;
         }
     }
 </style>
