@@ -31,7 +31,7 @@
         capture: () => ({
             scroll: scroller.capture(),
             diffs: diffQuery?.capture(),
-            expandedDiffs: Array.from(expandedDiffs.entries()),
+            expandedDiffs: expandedDiffsSnapshot,
         }),
         restore: async capture => {
             expandedDiffs = new Map(capture.expandedDiffs)
@@ -45,13 +45,18 @@
     const repositoryContext = getRepositoryPageContext()
     let scroller: Scroller
     let expandedDiffs = new Map<number, boolean>()
+    let expandedDiffsSnapshot: Array<[number, boolean]> = []
 
     $: diffQuery = data.diff
+    $: diffs = $diffQuery?.data
 
     afterNavigate(() => {
         repositoryContext.set({ revision: data.commit.abbreviatedOID })
     })
     beforeNavigate(() => {
+        expandedDiffsSnapshot = Array.from(expandedDiffs.entries())
+        expandedDiffs = new Map()
+
         repositoryContext.set({})
     })
 </script>
@@ -100,14 +105,18 @@
                 </div>
             </div>
             <hr />
-            {#if $diffQuery?.data}
+            {#if diffs}
                 <ul class="diffs">
-                    {#each $diffQuery.data as node, index}
+                    {#each diffs as node, index (index)}
                         <li>
                             <FileDiff
                                 fileDiff={node}
                                 expanded={expandedDiffs.get(index)}
-                                on:toggle={event => expandedDiffs.set(index, event.detail.expanded)}
+                                on:toggle={event => {
+                                    expandedDiffs.set(index, event.detail.expanded)
+                                    // This is needed to for Svelte to consider that expandedDiffs has changed
+                                    expandedDiffs = expandedDiffs
+                                }}
                             />
                         </li>
                     {/each}
