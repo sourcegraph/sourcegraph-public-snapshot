@@ -94,7 +94,7 @@ type CodeIntelligenceConfigurationPolicyResolver interface {
 	RetentionDurationHours() *int32
 	RetainIntermediateCommits() bool
 	IndexingEnabled() bool
-	SyntacticIndexingEnabled() bool
+	SyntacticIndexingEnabled() *bool
 	IndexCommitMaxAgeHours() *int32
 	IndexIntermediateCommits() bool
 	EmbeddingsEnabled() bool

@@ -98,7 +98,7 @@ func (r *configurationPolicyResolver) IndexingEnabled() bool {
 }
 
 func (r *configurationPolicyResolver) SyntacticIndexingEnabled() *bool {
-	return &r.configurationPolicy.SyntacticIndexingEnabled
+	return r.configurationPolicy.SyntacticIndexingEnabled
 }
 
 

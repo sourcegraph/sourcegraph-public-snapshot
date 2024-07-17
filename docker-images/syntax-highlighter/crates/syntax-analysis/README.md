@@ -2,7 +2,13 @@
 
 ## Locals
 
-[`src/locals.rs`](src/locals.rs) implements an evaluator for our [tree-sitter query] based DSL to label local definitions and references for various programming languages using purely syntactic information.
+[`src/locals.rs`](src/locals.rs) implements an evaluator for our [tree-sitter query] based DSL to label the following occurrences:
+
+- local definitions 
+- local references 
+- non-local references
+
+for various programming languages using purely syntactic information.
 This data is used to enable fast and lightweight file-local navigation in the blob view.
 
 Queries describing the local binding structure of various programming languages are maintained in `queries/*/scip-locals.scm`.
