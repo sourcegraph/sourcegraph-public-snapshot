@@ -16,6 +16,8 @@ import (
 )
 
 type MappedIndex interface {
+	// GetDocument returns None if the index does not contain a document at the given path.
+	// There is no caching here, every call to GetDocument re-fetches the full document from the database.
 	GetDocument(context.Context, core.RepoRelPath) (core.Option[MappedDocument], error)
 	GetUploadSummary() core.UploadSummary
 	// TODO: Should there be a bulk-API for getting multiple documents?
@@ -26,7 +28,9 @@ var _ MappedIndex = mappedIndex{}
 // MappedDocument wraps a SCIP document from an uploaded index.
 // All methods accept and return ranges in the context of the target commit.
 type MappedDocument interface {
+	// GetOccurrences returns shared slices. Do not modify the returned slice or Occurrences without copying them first
 	GetOccurrences(context.Context) ([]*scip.Occurrence, error)
+	// GetOccurrencesAtRange returns shared slices. Do not modify the returned slice or Occurrences without copying them first
 	GetOccurrencesAtRange(context.Context, scip.Range) ([]*scip.Occurrence, error)
 }
 
@@ -93,8 +97,6 @@ func (i mappedIndex) GetDocument(ctx context.Context, path core.RepoRelPath) (co
 	if err != nil {
 		return core.None[MappedDocument](), err
 	}
-	// TODO: Should we cache the mapped document? The current usages don't request the same document twice
-	// so we'd just be increasing resident memory
 	if document, ok := optDocument.Get(); ok {
 		return core.Some[MappedDocument](&mappedDocument{
 			gitTreeTranslator: i.gitTreeTranslator,
