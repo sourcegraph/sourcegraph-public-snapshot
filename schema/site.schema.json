@@ -656,6 +656,16 @@
                   }
                 }
               }
+            },
+            "reranker" : {
+              "description": "Reranker to use for rankContext requests",
+              "type": "object",
+              "properties": {
+                "cohereAPIKey": {
+                  "description": "API key for Cohere reranker. If set, means that Cohere should be used (otherwise, identity ranker)",
+                  "type": "string"
+                }
+              }
             }
           }
         }

@@ -680,6 +680,8 @@ type CodyProConfig struct {
 type CodyServerSideContext struct {
 	// IntentDetectionAPI description: Configuration for intent detection API
 	IntentDetectionAPI *IntentDetectionAPI `json:"intentDetectionAPI,omitempty"`
+	// Reranker description: Reranker to use for rankContext requests
+	Reranker *Reranker `json:"reranker,omitempty"`
 }
 
 // CommitGraphUpdates description: Customize strategy used for commit graph updates
@@ -2302,6 +2304,12 @@ type RequestMessage struct {
 	Method   string         `json:"method"`
 	Params   any            `json:"params,omitempty"`
 	Settings map[string]any `json:"settings,omitempty"`
+}
+
+// Reranker description: Reranker to use for rankContext requests
+type Reranker struct {
+	// CohereAPIKey description: API key for Cohere reranker. If set, means that Cohere should be used (otherwise, identity ranker)
+	CohereAPIKey string `json:"cohereAPIKey,omitempty"`
 }
 type Responders struct {
 	Id       string `json:"id,omitempty"`

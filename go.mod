@@ -81,7 +81,7 @@ require (
 	github.com/XSAM/otelsql v0.27.0
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/amit7itz/goset v1.0.1
-	github.com/aws/aws-sdk-go-v2 v1.17.6
+	github.com/aws/aws-sdk-go-v2 v1.30.3
 	github.com/aws/aws-sdk-go-v2/config v1.18.16
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.16
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.56
@@ -89,7 +89,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/codecommit v1.11.0
 	github.com/aws/aws-sdk-go-v2/service/kms v1.14.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.30.6
-	github.com/aws/smithy-go v1.13.5
+	github.com/aws/smithy-go v1.20.3
 	github.com/beevik/etree v1.3.0
 	github.com/buildkite/go-buildkite/v3 v3.0.1
 	github.com/cespare/xxhash/v2 v2.3.0
@@ -269,6 +269,7 @@ require (
 	github.com/bevzzz/nb v0.3.0
 	github.com/bevzzz/nb-synth v0.0.0-20240128164931-35fdda0583a0
 	github.com/bevzzz/nb/extension/extra/goldmark-jupyter v0.0.0-20240131001330-e69229bd9da4
+	github.com/cohere-ai/cohere-go/v2 v2.9.0
 	github.com/derision-test/go-mockgen/v2 v2.0.1
 	github.com/dghubble/gologin/v2 v2.4.0
 	github.com/edsrzf/mmap-go v1.1.0

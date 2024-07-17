@@ -293,6 +293,24 @@ func CodyIntentConfig() *schema.IntentDetectionAPI {
 	return Get().ExperimentalFeatures.CodyServerSideContext.IntentDetectionAPI
 }
 
+type CodyReranker string
+
+const (
+	CodyRerankerIdentity CodyReranker = "identity"
+	CodyRerankerCohere   CodyReranker = "cohere"
+)
+
+// CodyRerankerConfig returns the CodyReranker to be used and API key to use for the ranker (empty if not needed)
+func CodyRerankerConfig() (CodyReranker, string) {
+	if Get().ExperimentalFeatures == nil || Get().ExperimentalFeatures.CodyServerSideContext == nil || Get().ExperimentalFeatures.CodyServerSideContext.Reranker == nil {
+		return CodyRerankerIdentity, ""
+	}
+	if Get().ExperimentalFeatures.CodyServerSideContext.Reranker.CohereAPIKey == "" {
+		return CodyRerankerIdentity, ""
+	}
+	return CodyRerankerCohere, Get().ExperimentalFeatures.CodyServerSideContext.Reranker.CohereAPIKey
+}
+
 func ExecutorsEnabled() bool {
 	return Get().ExecutorsAccessToken != ""
 }
