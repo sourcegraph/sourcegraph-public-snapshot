@@ -175,6 +175,21 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "commitGraphUpdates": {
+          "description": "Customize strategy used for commit graph updates",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "defaultBranchOnly": {
+              "description": "Disables precise code nav on non-default branches. Specify repo names using regex syntax.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "examples": ["github.com/myorg/huge-monorepo", "github.com/other-org/.*"]
+              }
+            }
+          }
+        },
         "scipBasedAPIs": {
           "description": "Enable usage of new CodeGraph and usagesForSymbol APIs",
           "type": "boolean",
