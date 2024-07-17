@@ -144,6 +144,7 @@ type CompletionRequestParameters struct {
 	TopP              float32   `json:"topP,omitempty"`
 	Stream            *bool     `json:"stream,omitempty"`
 	Logprobs          *uint8    `json:"logprobs"`
+	TimeoutMs         *int      `json:"timeoutMs,omitempty"`
 }
 
 // IsStream returns whether a streaming response is requested. For backwards

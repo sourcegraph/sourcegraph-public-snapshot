@@ -67,7 +67,24 @@ func newCompletionsHandler(
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
+		// We don't perform any sort of validation. So we would silently accept a totally bogus
+		// JSON payload. And just have a zero-value CompletionRequestParameters, e.g. no prompt.
+		var requestParams types.CodyCompletionRequestParameters
+		if err := json.NewDecoder(r.Body).Decode(&requestParams); err != nil {
+			logger.Warn("malformed CodyCompletionRequestParameters", log.Error(err))
+			http.Error(w, "could not decode request body", http.StatusBadRequest)
+			return
+		}
+
+		// Set the context timeout: use the timeout from the request params if provided,
+		// otherwise use the default maximum request duration.
+		var ctxTimeout time.Duration
+		if requestParams.TimeoutMs != nil {
+			ctxTimeout = time.Duration(*requestParams.TimeoutMs) * time.Millisecond
+		} else {
+			ctxTimeout = maxRequestDuration
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), ctxTimeout)
 		defer cancel()
 
 		// First check that Cody is enabled for this Sourcegraph instance.
@@ -100,15 +117,6 @@ func newCompletionsHandler(
 				http.Error(w, err.Error(), err.statusCode)
 				return
 			}
-		}
-
-		// We don't perform any sort of validation. So we would silently accept a totally bogus
-		// JSON payload. And just have a zero-value CompletionRequestParameters, e.g. no prompt.
-		var requestParams types.CodyCompletionRequestParameters
-		if err := json.NewDecoder(r.Body).Decode(&requestParams); err != nil {
-			logger.Warn("malformed CodyCompletionRequestParameters", log.Error(err))
-			http.Error(w, "could not decode request body", http.StatusBadRequest)
-			return
 		}
 
 		// Load the current LLM model configuration for the Sourcegraph instance.
