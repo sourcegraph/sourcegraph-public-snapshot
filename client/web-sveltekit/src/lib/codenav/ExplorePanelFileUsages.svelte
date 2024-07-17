@@ -122,7 +122,8 @@
 
     .header {
         display: flex;
-        gap: 0.5rem;
+        flex-wrap: wrap;
+        gap: 0.25rem 0.5rem;
         background-color: var(--secondary-4);
         padding: 0.375rem 0.75rem;
         border-bottom: 1px solid var(--border-color);
