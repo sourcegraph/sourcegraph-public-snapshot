@@ -152,7 +152,7 @@
 
 <GlobalHeaderPortal>
     {#if $isViewportMobile}
-        <Button variant="secondary" outline on:click={() => (showSearchInput = true)}>
+        <Button id="mobile-search-button" variant="secondary" outline on:click={() => (showSearchInput = true)}>
             <Icon icon={ILucideSearch} inline aria-hidden /> Search
         </Button>
     {/if}
@@ -211,6 +211,10 @@
 <style lang="scss">
     :root {
         --repo-header-height: 2rem;
+    }
+
+    :global(#mobile-search-button) {
+        width: 100%;
     }
 
     .search-header {
