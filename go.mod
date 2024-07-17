@@ -91,7 +91,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.30.6
 	github.com/aws/smithy-go v1.13.5
 	github.com/beevik/etree v1.3.0
-	github.com/buildkite/go-buildkite/v3 v3.11.0
+	github.com/buildkite/go-buildkite/v3 v3.0.1
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.1
