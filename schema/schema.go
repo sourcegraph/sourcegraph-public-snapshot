@@ -670,6 +670,12 @@ type CodyProConfig struct {
 	UseEmbeddedUI bool `json:"useEmbeddedUI,omitempty"`
 }
 
+// CommitGraphUpdates description: Customize strategy used for commit graph updates
+type CommitGraphUpdates struct {
+	// DefaultBranchOnly description: Disables precise code nav on non-default branches. Specify repo names using regex syntax.
+	DefaultBranchOnly []string `json:"defaultBranchOnly,omitempty"`
+}
+
 // Completions description: Configuration for the completions service.
 type Completions struct {
 	// AccessToken description: The access token used to authenticate with the external completions provider. If using the default provider 'sourcegraph', and if 'licenseKey' is set, a default access token is generated.
@@ -1039,6 +1045,8 @@ type ExperimentalFeatures struct {
 	CodeintelSyntacticIndexingEnabled bool `json:"codeintelSyntacticIndexing.enabled,omitempty"`
 	// CodyContextIgnore description: Enabled filtering of remote Cody context based on repositories ./cody/ignore file
 	CodyContextIgnore *bool `json:"codyContextIgnore,omitempty"`
+	// CommitGraphUpdates description: Customize strategy used for commit graph updates
+	CommitGraphUpdates *CommitGraphUpdates `json:"commitGraphUpdates,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
@@ -1138,6 +1146,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "batchChanges.enablePerforce")
 	delete(m, "codeintelSyntacticIndexing.enabled")
 	delete(m, "codyContextIgnore")
+	delete(m, "commitGraphUpdates")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
 	delete(m, "enableGithubInternalRepoVisibility")
