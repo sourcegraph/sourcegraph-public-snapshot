@@ -676,16 +676,16 @@ type CodyProConfig struct {
 	UseEmbeddedUI bool `json:"useEmbeddedUI,omitempty"`
 }
 
-// CommitGraphUpdates description: Customize strategy used for commit graph updates
-type CommitGraphUpdates struct {
-	// DefaultBranchOnly description: Disables precise code nav on non-default branches. Specify repo names using regex syntax.
-	DefaultBranchOnly []string `json:"defaultBranchOnly,omitempty"`
-}
-
 // CodyServerSideContext description: Configuration for Server-side context API
 type CodyServerSideContext struct {
 	// IntentDetectionAPI description: Configuration for intent detection API
 	IntentDetectionAPI *IntentDetectionAPI `json:"intentDetectionAPI,omitempty"`
+}
+
+// CommitGraphUpdates description: Customize strategy used for commit graph updates
+type CommitGraphUpdates struct {
+	// DefaultBranchOnly description: Disables precise code nav on non-default branches. Specify repo names using regex syntax.
+	DefaultBranchOnly []string `json:"defaultBranchOnly,omitempty"`
 }
 
 // Completions description: Configuration for the completions service.
