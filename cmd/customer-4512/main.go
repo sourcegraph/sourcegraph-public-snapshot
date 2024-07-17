@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/google/uuid"
 )
@@ -41,30 +42,30 @@ func generateHeaders(bearerToken string) map[string]string {
 	}
 }
 
-func updateAccessToken() {
+func updateAccessToken(logger log.Logger) {
 	for {
-		token, err := getAccessToken()
+		token, err := getAccessToken(logger)
 		if err != nil {
-			log.Printf("Error getting access token: %v", err)
+			logger.Fatal("Error getting access token: %v", log.Error(err))
 		} else {
 			tokenMutex.Lock()
 			accessToken = token
 			tokenMutex.Unlock()
-			log.Println("Access token updated")
+			logger.Info("Access token updated")
 		}
 		time.Sleep(1 * time.Minute)
 	}
 }
 
-func initializeAzureEndpoint() {
+func initializeAzureEndpoint(logger log.Logger) {
 	var err error
 	azure_endpoint, err := readSecretFile("/run/secrets/azure_endpoint")
 	if err != nil {
-		log.Fatalf("error reading OAUTH_URL: %v", err)
+		logger.Fatal("error reading OAUTH_URL: %v", log.Error(err))
 	}
 	azureEndpoint, err = url.Parse(azure_endpoint)
 	if err != nil {
-		log.Fatalf("Invalid AZURE_ENDPOINT: %v", err)
+		logger.Fatal("Invalid AZURE_ENDPOINT: %v", log.Error(err))
 	}
 }
 
@@ -80,7 +81,7 @@ func initializeClient() {
 	}
 }
 
-func getAccessToken() (string, error) {
+func getAccessToken(logger log.Logger) (string, error) {
 	oauth_url, err := readSecretFile("/run/secrets/oauth_url")
 	if err != nil {
 		return "", fmt.Errorf("error reading OAUTH_URL: %v", err)
@@ -124,17 +125,17 @@ func getAccessToken() (string, error) {
 	}
 	var result map[string]interface{}
 	if err := json.Unmarshal(body, &result); err != nil {
-		log.Fatalf("Failed to unmarshal response body: %v", err)
+		logger.Fatal("Failed to unmarshal response body: %v", log.Error(err))
 	}
 
 	accessToken, ok := result["access_token"].(string)
 	if !ok {
-		log.Fatalf("Failed to retrieve access token from response body")
+		logger.Fatal("Failed to retrieve access token from response body")
 	}
 	return accessToken, nil
 }
 
-func handleProxy(w http.ResponseWriter, req *http.Request) {
+func handleProxy(w http.ResponseWriter, req *http.Request, logger log.Logger) {
 	target := azureEndpoint.ResolveReference(req.URL)
 
 	// Create a proxy request
@@ -186,7 +187,7 @@ func handleProxy(w http.ResponseWriter, req *http.Request) {
 			break
 		}
 		if _, writeErr := w.Write(buf[:n]); writeErr != nil {
-			log.Printf("Error writing response: %v", writeErr)
+			logger.Fatal("Error writing response: %v", log.Error(writeErr))
 			break
 		}
 		if flusher, ok := w.(http.Flusher); ok {
@@ -196,10 +197,19 @@ func handleProxy(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+	liblog := log.Init(log.Resource{
+		Name: "Special Oauth Server",
+	})
+	defer liblog.Sync()
+
+	logger := log.Scoped("server")
+
 	initializeClient()
-	initializeAzureEndpoint()
-	go updateAccessToken()
-	http.HandleFunc("/", handleProxy)
-	log.Println("HTTPS Proxy server is running on port 8443")
-	log.Fatal(http.ListenAndServeTLS(":8443", "/run/secrets/cert.pem", "/run/secrets/key.pem", nil))
+	initializeAzureEndpoint(logger)
+	go updateAccessToken(logger)
+	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		handleProxy(w, req, logger)
+	})
+	logger.Info("HTTPS Proxy server is running on port 8443")
+	http.ListenAndServeTLS(":8443", "/run/secrets/cert.pem", "/run/secrets/key.pem", nil)
 }
