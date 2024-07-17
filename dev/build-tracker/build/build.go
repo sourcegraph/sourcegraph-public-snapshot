@@ -71,7 +71,9 @@ const (
 )
 
 func (b *Build) AddJob(j *Job) error {
+	fmt.Println(pointers.DerefZero(j.ID), pointers.DerefZero(j.Name), "<=== job description")
 	stepName := j.GetName()
+	fmt.Println(stepName, "<===")
 	if stepName == "" {
 		return errors.Newf("job %q name is empty", j.GetID())
 	}

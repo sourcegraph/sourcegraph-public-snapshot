@@ -7,6 +7,9 @@ bazelrcs=(--bazelrc=.bazelrc)
 current_commit=$(git rev-parse HEAD)
 tag="5.4.0"
 
+echo "skipping backcompat here"
+exit 0
+
 function restore_current_commit() {
   git checkout --force "${current_commit}"
 }

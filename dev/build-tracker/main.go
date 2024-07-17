@@ -192,6 +192,8 @@ func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	fmt.Println(event.Name, "<=======")
+
 	if testutil.IsTest {
 		s.processEvent(&event)
 	} else {
@@ -307,9 +309,9 @@ func (s *Server) processEvent(event *build.Event) {
 				}
 			}
 
-			if err := s.triggerMetricsPipeline(b); err != nil {
-				s.logger.Error("failed to trigger metrics pipeline for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
-			}
+			//if err := s.triggerMetricsPipeline(b); err != nil {
+			//	s.logger.Error("failed to trigger metrics pipeline for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
+			//}
 		}
 	} else if event.Agent.ID != nil {
 		if err := s.bqWriter.Write(context.Background(), &BuildkiteAgentEvent{
