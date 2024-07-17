@@ -1,13 +1,23 @@
 import * as React from 'react'
 
 import { mdiArrowLeftBoldBoxOutline } from '@mdi/js'
-
 import { useLocation } from 'react-router-dom'
 
 import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
-import { Button, Link, LoadingSpinner, Alert, Text, Input, ErrorAlert, Form, Container, Icon } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Link,
+    LoadingSpinner,
+    Alert,
+    Text,
+    Input,
+    ErrorAlert,
+    Form,
+    Container,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 import { LoaderButton } from '../components/LoaderButton'
@@ -159,7 +169,8 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
         if (this.state.submitOrError === null) {
             return (
                 <Alert variant="success">
-                    Your password was reset. <Link to={`/sign-in?email=${email}`}>Sign in with your new password</Link> to continue.
+                    Your password was reset. <Link to={`/sign-in?email=${email}`}>Sign in with your new password</Link>{' '}
+                    to continue.
                 </Alert>
             )
         }
@@ -168,7 +179,10 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
             <>
                 {isErrorLike(this.state.submitOrError) && <ErrorAlert error={this.state.submitOrError} />}
                 <Container className="w-100">
-                    <Link to='/password-reset'><Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowLeftBoldBoxOutline} />Raise request for a different account</Link>
+                    <Link to="/password-reset">
+                        <Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowLeftBoldBoxOutline} />
+                        Raise request for a different account
+                    </Link>
                     <Text className="mt-1 text-center text-muted font-weight-bold mb-3">{email}</Text>
                     <Form data-testid="reset-password-page-form" onSubmit={this.handleSubmitResetPassword}>
                         <PasswordInput
