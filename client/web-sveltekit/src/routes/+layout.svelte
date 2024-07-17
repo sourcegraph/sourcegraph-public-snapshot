@@ -9,6 +9,7 @@
     import { isLightTheme, setAppContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
 
+    // When adding global imports here, they should probably also be added in .storybook/preview.ts
     import '@fontsource-variable/roboto-mono'
     import '@fontsource-variable/inter'
     import './styles.scss'
