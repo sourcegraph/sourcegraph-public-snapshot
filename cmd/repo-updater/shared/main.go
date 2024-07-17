@@ -46,7 +46,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -325,7 +324,7 @@ func watchSyncer(
 // newUnclonedReposManager creates a background routine that will periodically list
 // the uncloned repositories on gitserver and update the scheduler with the list.
 func newUnclonedReposManager(ctx context.Context, logger log.Logger, sched *scheduler.UpdateScheduler, store repos.Store) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(
+	return goroutine.NewPeriodicGoroutinePerTenant(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			// Don't modify the scheduler if we're not performing auto updates.
@@ -335,16 +334,14 @@ func newUnclonedReposManager(ctx context.Context, logger log.Logger, sched *sche
 
 			baseRepoStore := database.ReposWith(logger, store)
 
-			return tenant.ForEachTenant(ctx, func(ctx context.Context) error {
-				uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{NoCloned: true})
-				if err != nil {
-					return errors.Wrap(err, "failed to fetch list of uncloned repositories")
-				}
+			uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{NoCloned: true})
+			if err != nil {
+				return errors.Wrap(err, "failed to fetch list of uncloned repositories")
+			}
 
-				sched.PrioritiseUncloned(ctx, uncloned)
+			sched.PrioritiseUncloned(ctx, uncloned)
 
-				return nil
-			})
+			return nil
 		}),
 		goroutine.WithName("repo-updater.uncloned-repo-manager"),
 		goroutine.WithDescription("periodically lists uncloned repos and schedules them as high priority in the repo updater update queue"),

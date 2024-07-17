@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -124,6 +125,39 @@ func NewPeriodicGoroutine(ctx context.Context, handler Handler, options ...Optio
 	r.cancel = cancel
 	r.finished = make(chan struct{})
 	r.handler = handler
+
+	// If no operation is provided, create a default one that only handles logging.
+	// We disable tracing and metrics by default - if any of these should be
+	// enabled, caller should use goroutine.WithOperation
+	if r.operation == nil {
+		r.operation = observation.NewContext(
+			log.Scoped("periodic"),
+			observation.Tracer(noop.NewTracerProvider().Tracer("noop")),
+			observation.Metrics(metrics.NoOpRegisterer),
+		).Operation(observation.Op{
+			Name:        r.name,
+			Description: r.description,
+		})
+	}
+
+	return r
+}
+
+func NewPeriodicGoroutinePerTenant(ctx context.Context, handler Handler, options ...Option) *PeriodicGoroutine {
+	r := newDefaultPeriodicRoutine()
+	for _, o := range options {
+		o(r)
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	r.ctx = ctx
+	r.cancel = cancel
+	r.finished = make(chan struct{})
+	r.handler = HandlerFunc(func(ctx context.Context) error {
+		return tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+			return handler.Handle(ctx)
+		})
+	})
 
 	// If no operation is provided, create a default one that only handles logging.
 	// We disable tracing and metrics by default - if any of these should be

@@ -88,20 +88,18 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 		},
 	)
 
-	scheduler := goroutine.NewPeriodicGoroutine(
+	scheduler := goroutine.NewPeriodicGoroutinePerTenant(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			return tenant.ForEachTenant(ctx, func(ctx context.Context) error {
-				if conf.Get().DisableAutoCodeHostSyncs {
-					return nil
-				}
-
-				if err := store.EnqueueSyncJobs(ctx); err != nil {
-					return errors.Wrap(err, "enqueueing sync jobs")
-				}
-
+			if conf.Get().DisableAutoCodeHostSyncs {
 				return nil
-			})
+			}
+
+			if err := store.EnqueueSyncJobs(ctx); err != nil {
+				return errors.Wrap(err, "enqueueing sync jobs")
+			}
+
+			return nil
 		}),
 		goroutine.WithName("repo-updater.repo-sync-scheduler"),
 		goroutine.WithDescription("enqueues sync jobs for external service sync jobs"),

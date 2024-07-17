@@ -22,6 +22,7 @@ import (
 )
 
 // Store is an on-disk cache, with items cached via calls to Open.
+// TODO: Diskcache should be tenant aware.
 type Store interface {
 	// Open will open a file from the local cache with key. If missing, fetcher
 	// will fill the cache first. Open also performs single-flighting for fetcher.

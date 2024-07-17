@@ -37,7 +37,7 @@ func (j *compactor) Routines(_ context.Context, observationCtx *observation.Cont
 	}
 
 	return []goroutine.BackgroundRoutine{
-		goroutine.NewPeriodicGoroutine(
+		goroutine.NewPeriodicGoroutinePerTenant(
 			context.Background(),
 			&compactorHandler{
 				store:  db.RepoStatistics(),
