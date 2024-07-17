@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"path"
 	"reflect"
 	"strings"
 	"time"
@@ -388,15 +389,10 @@ func (c *client) makeChatRequest(
 	if err != nil {
 		return nil, "", errors.Wrap(err, "getEndpoint")
 	}
-	url, err := url.Parse(endpoint.URL)
+	url, err := getEndpointURL(endpoint, "chat/completions")
 	if err != nil {
-		return nil, "", errors.Newf("failed to parse endpoint URL: %q", endpoint.URL)
+		return nil, "", errors.Wrap(err, "getEndpointURL")
 	}
-	url.Path = "v1/chat/completions"
-	if url.Scheme == "" || url.Host == "" {
-		return nil, "", errors.Newf("unable to build URL, bad endpoint: %q", endpoint.URL)
-	}
-
 	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, "", errors.Wrap(err, "NewRequestWithContext")
@@ -447,13 +443,9 @@ func (c *client) makeCompletionRequest(
 	if err != nil {
 		return nil, "", errors.Wrap(err, "getEndpoint")
 	}
-	url, err := url.Parse(endpoint.URL)
+	url, err := getEndpointURL(endpoint, "completions")
 	if err != nil {
-		return nil, "", errors.Newf("failed to parse endpoint URL: %q", endpoint.URL)
-	}
-	url.Path = "v1/completions"
-	if url.Scheme == "" || url.Host == "" {
-		return nil, "", errors.Newf("unable to build URL, bad endpoint: %q", endpoint.URL)
+		return nil, "", errors.Wrap(err, "getEndpointURL")
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewReader(reqBody))
@@ -494,4 +486,16 @@ func getEndpoint(request types.CompletionRequest, rng *rand.Rand) (modelconfigSD
 	}
 	randPick := rng.Intn(len(providerConfig.Endpoints))
 	return providerConfig.Endpoints[randPick], nil
+}
+
+func getEndpointURL(endpoint modelconfigSDK.OpenAICompatibleEndpoint, relativePath string) (*url.URL, error) {
+	url, err := url.Parse(endpoint.URL)
+	if err != nil {
+		return nil, errors.Newf("failed to parse endpoint URL: %q", endpoint.URL)
+	}
+	if url.Scheme == "" || url.Host == "" {
+		return nil, errors.Newf("unable to build URL, bad endpoint: %q", endpoint.URL)
+	}
+	url.Path = path.Join(url.Path, relativePath)
+	return url, nil
 }
