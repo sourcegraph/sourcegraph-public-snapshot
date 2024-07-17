@@ -27,8 +27,7 @@ import (
 )
 
 func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient *codycontext.CodyContextClient, logger log.Logger) graphqlbackend.CodyContextResolver {
-
-	res := &Resolver{
+	return &Resolver{
 		db:                  db,
 		gitserverClient:     gitserverClient,
 		contextClient:       contextClient,
@@ -36,7 +35,6 @@ func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient
 		intentApiHttpClient: httpcli.UncachedExternalDoer,
 		intentBackendConfig: conf.CodyIntentConfig(),
 	}
-	return res
 }
 
 type Resolver struct {
