@@ -101,9 +101,9 @@
     </p>
     <div class="controls">
         <span>
-            <label for="base-rev">base</label>
+            <label for="page.compare.base-rev">base</label>
             <RepositoryRevPicker
-                id="base-rev"
+                id="page.compare.base-rev"
                 repoURL={data.repoURL}
                 revision={data.base?.revision || ''}
                 commitID={data.base?.commitID || ''}
@@ -117,9 +117,9 @@
         </span>
         <Icon icon={ILucideEllipsis} aria-hidden inline />
         <span>
-            <label for="head-rev">head</label>
+            <label for="page.compare.head-rev">head</label>
             <RepositoryRevPicker
-                id="head-rev"
+                id="page.compare.head-rev"
                 repoURL={data.repoURL}
                 revision={data.head?.revision || ''}
                 commitID={data.head?.commitID || ''}
