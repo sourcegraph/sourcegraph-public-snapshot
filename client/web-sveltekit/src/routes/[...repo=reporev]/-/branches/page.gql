@@ -7,12 +7,12 @@ query BranchesPage_OverviewQuery($repoName: String!, $first: Int!, $withBehindAh
 
 fragment GitBranchesOverview on Repository {
     defaultBranch {
-        ...GitReference_Ref
+        ...GitReferencesTable_Ref
     }
     branches(first: $first) {
         nodes {
             id
-            ...GitReference_Ref
+            ...GitReferencesTable_Ref
         }
     }
 }
