@@ -71,9 +71,7 @@ const (
 )
 
 func (b *Build) AddJob(j *Job) error {
-	fmt.Println(pointers.DerefZero(j.ID), pointers.DerefZero(j.Name), "<=== job description")
 	stepName := j.GetName()
-	fmt.Println(stepName, "<===")
 	if stepName == "" {
 		return errors.Newf("job %q name is empty", j.GetID())
 	}
@@ -85,6 +83,12 @@ func (b *Build) AddJob(j *Job) error {
 	}
 	step.Jobs = append(step.Jobs, j)
 	return nil
+}
+
+func (b *Build) BulkAddSteps(steps map[string]*Step) {
+	for name, step := range steps {
+		b.Steps[name] = step
+	}
 }
 
 // updateFromEvent updates the current build with the build and pipeline from the event.
@@ -265,6 +269,23 @@ func (s *Store) Add(event *Event) {
 			log.Int("totalSteps", len(build.Steps)),
 			log.String("status", build.GetState()))
 
+		// If the build was triggered from another build, we need to update the "trigger-er" with the jobs
+		// from the triggered build.
+		if event.Build.TriggeredFrom != nil {
+			triggerer, ok := s.builds[*event.Build.TriggeredFrom.BuildNumber]
+			if ok {
+				triggerer.Lock()
+				triggerer.BulkAddSteps(build.Steps)
+				triggerer.Unlock()
+			} else {
+				// If the triggered build doesn't exist, we'll just leave the triggerer as is and log a message
+				s.logger.Warn(
+					"build triggered from non-existent build",
+					log.Int("buildNumber", event.GetBuildNumber()),
+				)
+			}
+		}
+
 		// Track consecutive failures by pipeline + branch
 		// We update the global count of consecutiveFailures then we set the count on the individual build
 		// if we get a pass, we reset the global count of consecutiveFailures
@@ -276,6 +297,7 @@ func (s *Store) Add(event *Event) {
 			// We got a pass, reset the global count
 			s.consecutiveFailures[failuresKey] = 0
 		}
+		fmt.Println("consecutive failures", s.consecutiveFailures, event.Build.Message)
 	}
 
 	// Keep track of the job, if there is one

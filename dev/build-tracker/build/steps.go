@@ -1,6 +1,7 @@
 package build
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -131,6 +132,7 @@ func GroupByStatus(steps map[string]*Step) map[JobStatus][]*Step {
 	groups := make(map[JobStatus][]*Step)
 
 	for _, step := range steps {
+		fmt.Println(step.Name, "step")
 		state := step.FinalStatus()
 
 		items, ok := groups[state]

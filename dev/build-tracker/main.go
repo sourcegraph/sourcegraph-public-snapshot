@@ -192,9 +192,6 @@ func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//event.Build.
-	fmt.Println(event.Name, "<=======")
-
 	if testutil.IsTest {
 		s.processEvent(&event)
 	} else {
@@ -215,12 +212,18 @@ func (s *Server) notifyIfFailed(b *build.Build) error {
 	}
 	// This determines the final build status
 	info := determineBuildStatusNotification(s.logger, b)
-	s.logger.Debug("build status notification",
+	s.logger.Warn("build status notification",
 		log.Int("buildNumber", info.BuildNumber),
 		log.Int("Passed", len(info.Passed)),
 		log.Int("Failed", len(info.Failed)),
 		log.Int("Fixed", len(info.Fixed)),
 	)
+	fmt.Println("final build status is: ", info.BuildStatus)
+	if b.Build.ID != nil {
+		fmt.Println("build id", *b.Build.ID, *b.Build.State, *b.Build.Message)
+	}
+
+	return nil
 
 	if info.BuildStatus == string(build.BuildFailed) || info.BuildStatus == string(build.BuildFixed) {
 		s.logger.Info("sending notification for build", log.Int("buildNumber", b.GetNumber()), log.String("status", string(info.BuildStatus)))
@@ -304,11 +307,11 @@ func (s *Server) processEvent(event *build.Event) {
 		s.store.Add(event)
 		b := s.store.GetByBuildNumber(event.GetBuildNumber())
 		if event.IsBuildFinished() {
-			if *event.Build.Branch == "main" {
-				if err := s.notifyIfFailed(b); err != nil {
-					s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
-				}
+			//if *event.Build.Branch == "main" {
+			if err := s.notifyIfFailed(b); err != nil {
+				s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
 			}
+			//}
 
 			//if err := s.triggerMetricsPipeline(b); err != nil {
 			//	s.logger.Error("failed to trigger metrics pipeline for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
