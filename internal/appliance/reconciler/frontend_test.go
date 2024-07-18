@@ -48,8 +48,4 @@ func (suite *ApplianceTestSuite) TestAdoptFrontend() {
 		suite.Require().NoError(err)
 	})
 	suite.makeGoldenAssertions(namespace.GetName(), "frontend/adopt-service")
-	// In order to steel thread this:
-	// look at the fixture and see what's up
-	// running with -v will give me all the output
-	// There's be a service, but no OwnerReference (we want one)
 }
