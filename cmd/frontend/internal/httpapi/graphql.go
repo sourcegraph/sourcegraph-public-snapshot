@@ -79,7 +79,7 @@ func writeViolationError(w http.ResponseWriter, info violationInfo) error {
 			{
 				Message: fmt.Sprintf("Query exceeds maximum %s limit", info.violationType),
 				Extensions: map[string]interface{}{
-					"code":     "QUERY_COMPLEXITY_LIMIT_EXCEEDED",
+					"code":     "errQueryComplexityLimitExceeded",
 					"type":     info.violationType,
 					"limit":    info.limit,
 					"actual":   info.actual,
