@@ -195,6 +195,8 @@ func TestMappedIndex_GetDocumentNoTranslation(t *testing.T) {
 
 func TestMappedIndex_GetDocumentWithTranslation(t *testing.T) {
 	targetCommit, upload, lsifStore := setupSimpleUpload()
+	// The translator passed to NewMappedIndex uses the targetCommit as its base.
+	// This -2 thus means going from index -> target shifts by +2 lines.
 	translator := shiftAllTranslator(targetCommit, -2)
 	mappedIndex := NewMappedIndexFromTranslator(lsifStore, translator, upload)
 
