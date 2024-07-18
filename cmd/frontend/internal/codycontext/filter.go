@@ -2,7 +2,6 @@ package codycontext
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/log"
 
@@ -21,9 +20,9 @@ type repoContentFilter interface {
 	getMatcher(ctx context.Context, repos []types.RepoIDName) ([]types.RepoIDName, fileMatcher, error)
 }
 
-func newRepoContentFilter(logger log.Logger, db database.DB, client gitserver.Client) repoContentFilter {
+func newRepoContentFilter(logger log.Logger, client gitserver.Client) repoContentFilter {
 	if dotcom.SourcegraphDotComMode() {
 		return newDotcomFilter(logger, client)
 	}
-	return newEnterpriseFilter(logger, db)
+	return newEnterpriseFilter(logger)
 }
