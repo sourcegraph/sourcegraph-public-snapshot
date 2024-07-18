@@ -58,9 +58,7 @@
                         Unable to load tags: {$tagsQuery.error.message}
                     </Alert>
                 {:else if !tags || tags.nodes.length === 0}
-                    <Alert variant="info">
-                        No tags found
-                    </Alert>
+                    <Alert variant="info">No tags found</Alert>
                 {/if}
             </div>
         </div>

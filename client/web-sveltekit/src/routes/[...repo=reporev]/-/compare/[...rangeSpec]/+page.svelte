@@ -43,7 +43,7 @@
         goto(
             resolveRoute('/[...repo=reporev]/-/compare/[...rangeSpec]', {
                 repo: $page.params.repo,
-                spec: `${baseRevision}...${headRevision}`,
+                rangeSpec: `${baseRevision}...${headRevision}`,
             })
         )
     }
@@ -184,7 +184,6 @@
             {/if}
 
             {#if !data.error}
-                {@debug diffs}
                 {#if diffs}
                     <ul class="diffs">
                         {#each diffs as node, index (index)}

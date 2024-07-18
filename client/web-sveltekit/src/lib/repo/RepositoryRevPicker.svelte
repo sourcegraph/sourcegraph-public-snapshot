@@ -44,6 +44,7 @@
 
     import Picker from './Picker.svelte'
     import RepositoryRevPickerItem from './RepositoryRevPickerItem.svelte'
+    import type { ComponentProps } from 'svelte'
 
     type $$Props = HTMLButtonAttributes & {
         repoURL: string
@@ -62,6 +63,7 @@
     export let commitID: string | undefined = undefined
     export let defaultBranch: string
     export let placement: Placement = 'right-start'
+    export let display: ComponentProps<ButtonGroup>['display'] = undefined
     /**
      * Optional handler for revision selection.
      * If not provided, the default handler will replace the revision in the current URL.
@@ -87,7 +89,7 @@
 
 <Popover let:registerTrigger let:registerTarget let:toggle {placement}>
     <span use:registerTarget data-repo-rev-picker-trigger>
-        <ButtonGroup>
+        <ButtonGroup {display}>
             <button use:registerTrigger class="{buttonClass} rev-name" on:click={() => toggle()} {...$$restProps}>
                 @{revisionLabel}
             </button>
@@ -190,11 +192,6 @@
 </Popover>
 
 <style lang="scss">
-    span[data-repo-rev-picker-trigger] > :global(*) {
-        width: 100%;
-        height: 100%;
-    }
-
     .rev-name {
         overflow: hidden;
         white-space: nowrap;

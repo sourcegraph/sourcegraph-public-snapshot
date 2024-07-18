@@ -32,7 +32,7 @@
 {#if avatarURL}
     <img src={avatarURL} role="presentation" aria-hidden="true" alt="Avatar of {name}" data-avatar />
 {:else}
-    <div data-avatar title="{name}">
+    <div data-avatar title={name}>
         <span>{getInitials(name)}</span>
     </div>
 {/if}
