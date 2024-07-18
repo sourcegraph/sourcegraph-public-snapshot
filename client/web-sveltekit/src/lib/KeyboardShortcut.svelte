@@ -12,17 +12,19 @@ A component to display the keyboard shortcuts for the application.
     const separator = isMacPlatform() ? '' : '+'
 
     // No need to do this work if we are on a mobile device
-    $: parts = $isViewportMobile ? [] : (() => {
-        const result: string[] = []
-        let parts = formatShortcutParts(shortcut)
-        for (let i = 0; i < parts.length; i++) {
-            if (i > 0) {
-                result.push(separator)
-            }
-            result.push(parts[i])
-        }
-        return result
-    })()
+    $: parts = $isViewportMobile
+        ? []
+        : (() => {
+              const result: string[] = []
+              let parts = formatShortcutParts(shortcut)
+              for (let i = 0; i < parts.length; i++) {
+                  if (i > 0) {
+                      result.push(separator)
+                  }
+                  result.push(parts[i])
+              }
+              return result
+          })()
 </script>
 
 {#if !$isViewportMobile}

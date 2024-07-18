@@ -1,6 +1,10 @@
 package subscriptions
 
-import "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
+import (
+	"gorm.io/gorm"
+
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
+)
 
 // Subscription is an Enterprise subscription condition record.
 type SubscriptionCondition struct {
@@ -18,4 +22,14 @@ type SubscriptionCondition struct {
 
 func (s *SubscriptionCondition) TableName() string {
 	return "enterprise_portal_subscription_conditions"
+}
+
+func (t *SubscriptionCondition) RunCustomMigrations(migrator gorm.Migrator) error {
+	// Drop the old, generated conditions -> subscription constraint
+	if c := "fk_enterprise_portal_subscription_conditions_subscription"; migrator.HasConstraint(t, c) {
+		if err := migrator.DropConstraint(t, c); err != nil {
+			return err
+		}
+	}
+	return nil
 }

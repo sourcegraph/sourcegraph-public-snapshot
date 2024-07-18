@@ -10,7 +10,7 @@
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { Alert, Badge } from '$lib/wildcard'
 
-    import RepositoryRevPicker from '../../../RepositoryRevPicker.svelte'
+    import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
 
     import type { PageData, Snapshot } from './$types'
 
@@ -70,7 +70,8 @@
         <RepositoryRevPicker
             repoURL={data.repoURL}
             revision={data.revision}
-            resolvedRevision={data.resolvedRevision}
+            commitID={data.resolvedRevision.commitID}
+            defaultBranch={data.defaultBranch}
             placement="bottom-start"
             getRepositoryBranches={data.getRepoBranches}
             getRepositoryCommits={data.getRepoCommits}

@@ -13,7 +13,7 @@
     import FileDiffHunks from './FileDiffHunks.svelte'
 
     export let fileDiff: FileDiff_Diff
-    export let expanded = !!fileDiff.newFile?.path && fileDiff.hunks.length > 0
+    export let expanded: boolean | undefined = undefined
 
     const dispatch = createEventDispatcher<{ toggle: { expanded: boolean } }>()
 
@@ -25,16 +25,16 @@
     $: isRenamed = oldFile?.path !== newFile?.path
     $: isMoved = isRenamed && oldFile && newFile && dirname(newFile.path) !== dirname(oldFile.path)
     $: linkFile = fileDiff.mostRelevantFile.__typename === 'GitBlob'
+    $: open = expanded === undefined ? !!fileDiff.newFile?.path && fileDiff.hunks.length > 0 : expanded
 
     function toggle() {
-        expanded = !expanded
-        dispatch('toggle', { expanded })
+        dispatch('toggle', { expanded: !open })
     }
 </script>
 
 <div class="header">
-    <Button variant="icon" on:click={toggle} aria-label="{expanded ? 'Hide' : 'Show'} file diff">
-        <Icon inline icon={expanded ? ILucideChevronDown : ILucideChevronRight} />
+    <Button variant="icon" on:click={toggle} aria-label="{open ? 'Hide' : 'Show'} file diff">
+        <Icon inline icon={open ? ILucideChevronDown : ILucideChevronRight} />
     </Button>
     {#if isNew}
         <Badge variant="success">Added</Badge>
@@ -65,7 +65,7 @@
         {newFile?.path || oldFile?.path}
     {/if}
 </div>
-{#if expanded}
+{#if open}
     {#if isBinary}
         <small class="info">(binary file not rendered)</small>
     {:else if fileDiff.hunks.length === 0}
