@@ -104,9 +104,6 @@ test.beforeEach(({ sg }) => {
 })
 
 test.describe('file sidebar', () => {
-    async function openSidebar(page: Page): Promise<void> {
-        return page.getByLabel('Open sidebar').click()
-    }
 
     test.skip('basic functionality', async ({ page }) => {
         const readmeEntry = page.getByRole('treeitem', { name: 'README.md' })
@@ -142,13 +139,13 @@ test.describe('file sidebar', () => {
         })
 
         await page.goto(`/${repoName}`)
-        await openSidebar(page)
+        await page.getByLabel('Open sidebar').click()
         await expect(page.getByText(/Sidebar error/)).toBeVisible()
     })
 
     test('error handling children', async ({ page, sg }) => {
         await page.goto(`/${repoName}`)
-        await openSidebar(page)
+        await page.getByLabel('Open sidebar').click()
 
         const treeItem = page.getByRole('treeitem', { name: 'src' })
         // For some reason we need to wait for the tree to be rendered
@@ -176,7 +173,7 @@ test.describe('file sidebar', () => {
         })
 
         await page.goto(`/${repoName}/-/tree/non-existing-directory`)
-        await openSidebar(page)
+        await page.getByLabel('Open sidebar').click()
         await expect(page.getByText(/Sidebar error/).first()).toBeVisible()
 
         sg.mockOperations({
@@ -188,7 +185,7 @@ test.describe('file sidebar', () => {
         })
 
         await page.goto(`/${repoName}`)
-        await openSidebar(page)
+        await page.getByLabel('Open sidebar').click()
         await expect(page.getByRole('treeitem', { name: 'README.md' })).toBeVisible()
     })
 })
