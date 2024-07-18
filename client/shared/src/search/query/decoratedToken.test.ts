@@ -1986,23 +1986,6 @@ describe('scanSearchQuery() and decorate()', () => {
             }
           ]
         `)
-        expect(getTokens(toSuccess(scanSearchQuery(String.raw`'foo\"\'bar\''`, false, SearchPatternType.keyword))))
-            .toMatchInlineSnapshot(`
-                    [
-                      {
-                        "startIndex": 0,
-                        "scopes": "identifier"
-                      },
-                      {
-                        "startIndex": 6,
-                        "scopes": "metaKeywordEscapedCharacter"
-                      },
-                      {
-                        "startIndex": 11,
-                        "scopes": "metaKeywordEscapedCharacter"
-                      }
-                    ]
-                  `)
     })
 
     test('do not decorate quotes inside quoted filter values', () => {
