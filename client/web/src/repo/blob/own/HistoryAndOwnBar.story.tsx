@@ -14,6 +14,7 @@ window.context.experimentalFeatures = { perforceChangelistMapping: 'enabled' }
 
 const barData: FetchOwnersAndHistoryResult = {
     node: {
+        id: '1',
         sourceType: RepositoryType.GIT_REPOSITORY,
         commit: {
             blob: {

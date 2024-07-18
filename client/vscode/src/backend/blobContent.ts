@@ -7,6 +7,7 @@ import { requestGraphQLFromVSCode } from './requestGraphQl'
 const blobContentQuery = gql`
     query BlobContent($repository: String!, $revision: String!, $path: String!) {
         repository(name: $repository) {
+            id
             commit(rev: $revision) {
                 blob(path: $path) {
                     content
