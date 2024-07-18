@@ -238,19 +238,22 @@
     <PanelGroup id="references">
         <Panel id="references-sidebar" defaultSize={25} minSize={20} maxSize={60}>
             <div class="sidebar">
-                <div role="radiogroup" aria-label="Select usage kind">
+                <fieldset>
+                    <legend hidden>Select usage kind</legend>
                     {#each Object.values(SymbolUsageKind) as usageKind}
                         {@const checked = usageKind === $inputs.usageKindFilter}
-                        <button
-                            role="radio"
-                            aria-checked={checked}
-                            on:click={() =>
-                                inputs.update(old => ({ ...old, usageKindFilter: checked ? undefined : usageKind }))}
-                        >
-                            {usageKind.toLowerCase()}s
-                        </button>
+                        {@const id = `usage-kind-${usageKind}`}
+                        <input
+                            type="radio"
+                            bind:group={$inputs.usageKindFilter}
+                            name="usageKind"
+                            value={usageKind}
+                            {id}
+                            {checked}
+                        />
+                        <label for={id}>{usageKind.toLowerCase()}s</label>
                     {/each}
-                </div>
+                </fieldset>
                 <div class="outline">
                     {#if repoGroups.length > 0}
                         <h4>Filter by location</h4>
@@ -311,46 +314,30 @@
         overflow-y: auto;
     }
 
-    [role='radiogroup'] {
+    fieldset {
         display: flex;
         flex-direction: column;
         border-bottom: 1px solid var(--border-color);
         padding: 0.25rem 0;
 
-        button[role='radio'] {
-            all: unset;
+        input {
+            appearance: none;
+        }
+
+        label {
             text-transform: capitalize;
-            padding: 0.375rem 0.75rem;
             cursor: pointer;
-            --icon-color: none;
-            &[aria-checked='true'] {
-                background-color: var(--primary);
-                color: var(--light-text);
-            }
-            &:not([aria-checked='true']):hover {
-                background-color: var(--secondary-4);
-            }
-        }
-    }
-
-    :global([data-treeitem]) > :global([data-treeitem-label]) {
-        cursor: pointer;
-
-        &:hover {
-            background-color: var(--secondary-4);
+            padding: 0.375rem 0.75rem;
+            background-color: transparent;
         }
 
-        word-break: break-all;
-    }
-
-    :global([data-treeitem][aria-selected='true']) > :global([data-treeitem-label]) {
-        --tree-node-expand-icon-color: var(--body-bg);
-        --file-icon-color: var(--body-bg);
-        --tree-node-label-color: var(--body-bg);
-
-        background-color: var(--primary);
-        &:hover {
+        input:checked + label {
             background-color: var(--primary);
+            color: var(--light-text);
+        }
+
+        input:not(:checked) + label:hover {
+            background-color: var(--secondary-4);
         }
     }
 
@@ -360,6 +347,27 @@
             margin: 0;
         }
         padding: 0rem;
+
+        :global([data-treeitem]) > :global([data-treeitem-label]) {
+            cursor: pointer;
+
+            &:hover {
+                background-color: var(--secondary-4);
+            }
+
+            word-break: break-all;
+        }
+
+        :global([data-treeitem][aria-selected='true']) > :global([data-treeitem-label]) {
+            --tree-node-expand-icon-color: var(--body-bg);
+            --file-icon-color: var(--body-bg);
+            --tree-node-label-color: var(--body-bg);
+
+            background-color: var(--primary);
+            &:hover {
+                background-color: var(--primary);
+            }
+        }
     }
 
     .repo-entry {

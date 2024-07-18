@@ -81,15 +81,18 @@
     style="--tree-node-nested-level: {level}"
 >
     <div bind:this={label} class="label" data-treeitem-label class:expandable>
+        <!-- TODO: scoping is an operation specific to the file tree, but this
+        is intended to be a generic tree component. We should not add a scope
+        button here. -->
         <Button variant="icon" on:click={handleScopeChange} data-scope-button>
             <Icon icon={ILucideFocus} inline aria-hidden="true" />
         </Button>
         <!-- hide the open/close button to preserve alignment with expandable entries -->
         <div class="indented">
             {#if expandable}
-                <!-- We have to stop even propagation because the tree root listens for click events for
-                 selecting items. We don't want the item to be selected when the open/close button is pressed.
-             -->
+                <!-- We have to stop even propagation because the tree root
+                listens for click events for selecting items. We don't want the
+                item to be selected when the open/close button is pressed. -->
                 <Button
                     variant="icon"
                     on:click={event => {

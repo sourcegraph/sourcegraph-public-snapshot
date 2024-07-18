@@ -477,28 +477,6 @@
         box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
     }
 
-    .bottom-panel {
-        display: flex;
-        align-items: center;
-        gap: 2rem;
-        justify-content: space-between;
-        overflow: hidden;
-        height: 100%;
-        background-color: var(--color-bg-1);
-        color: var(--text-body);
-
-        :global([data-tabs]) {
-            flex: 1;
-            min-width: 0;
-        }
-
-        &.collapsed :global([data-tabs]) {
-            // Reset min-width otherwise very long commit messages will overflow
-            // the tabs.
-            min-width: initial;
-        }
-    }
-
     .info {
         padding: 1rem;
     }
