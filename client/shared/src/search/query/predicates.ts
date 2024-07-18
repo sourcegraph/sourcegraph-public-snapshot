@@ -4,7 +4,6 @@ import { type Completion, resolveFieldAlias, FilterType } from './filters'
 interface PredicateDefinition {
     field: string
     name: string
-    // scanner?: TODO
 }
 
 // PREDICATES is a registry of predicates, grouped by field they belong to
