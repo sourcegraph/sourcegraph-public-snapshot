@@ -143,10 +143,6 @@
                 right: 0;
                 bottom: 0;
                 margin: 0;
-                // This seems necessary to ensure that the commit message overlays
-                // avatars in the commit list on mobile
-                // todo: Find a way to avoid this
-                z-index: 1;
 
                 display: flex;
                 flex-direction: column;
