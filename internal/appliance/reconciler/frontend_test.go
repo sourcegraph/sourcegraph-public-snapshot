@@ -43,13 +43,11 @@ func (suite *ApplianceTestSuite) TestAdoptFrontend() {
 	suite.Require().NoError(err)
 
 	cfgMap := suite.newConfigMap(namespace.GetName(), "frontend/adopt-service")
-	suite.Run("frontend/apdopt-service", func() {
-		suite.awaitReconciliation(namespace.GetName(), func() {
-			_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace.GetName()).Create(suite.ctx, cfgMap, metav1.CreateOptions{})
-			suite.Require().NoError(err)
-			suite.makeGoldenAssertions(namespace.GetName(), "frontend/adopt-service")
-		})
+	suite.awaitReconciliation(namespace.GetName(), func() {
+		_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace.GetName()).Create(suite.ctx, cfgMap, metav1.CreateOptions{})
+		suite.Require().NoError(err)
 	})
+	suite.makeGoldenAssertions(namespace.GetName(), "frontend/adopt-service")
 	// In order to steel thread this:
 	// look at the fixture and see what's up
 	// running with -v will give me all the output
