@@ -121,7 +121,6 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		subscriptionsservice.NewStoreV1(
 			subscriptionsservice.NewStoreV1Options{
 				DB:         dbHandle,
-				DotcomDB:   dotcomDB,
 				SAMSClient: samsClient,
 				IAMClient:  iamClient,
 			},

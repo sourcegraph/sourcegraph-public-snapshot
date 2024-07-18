@@ -247,9 +247,9 @@ func (c CreateLicenseOpts) getLicenseID() (string, error) {
 	return licenseID.String(), nil
 }
 
-// LicenseKey corresponds to *subscriptionsv1.EnterpriseSubscriptionLicenseKey
+// DataLicenseKey corresponds to *subscriptionsv1.EnterpriseSubscriptionLicenseKey
 // and the 'ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY' license type.
-type LicenseKey struct {
+type DataLicenseKey struct {
 	Info internallicense.Info
 	// Signed license key with the license information in Info.
 	SignedKey string
@@ -259,7 +259,7 @@ type LicenseKey struct {
 func (s *LicensesStore) CreateLicenseKey(
 	ctx context.Context,
 	subscriptionID string,
-	license *LicenseKey,
+	license *DataLicenseKey,
 	opts CreateLicenseOpts,
 ) (_ *LicenseWithConditions, err error) {
 	// Special behaviour: the license key embeds the creation time, and it must

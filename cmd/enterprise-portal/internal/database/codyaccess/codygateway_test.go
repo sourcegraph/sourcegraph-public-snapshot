@@ -72,7 +72,7 @@ func TestCodyGatewayStore(t *testing.T) {
 		} {
 			l, err := subscriptions.NewLicensesStore(db).CreateLicenseKey(ctx,
 				subscriptionID,
-				&subscriptions.LicenseKey{
+				&subscriptions.DataLicenseKey{
 					Info: license.Info{
 						// Set properties that are easy to assert on later
 						Tags: []string{

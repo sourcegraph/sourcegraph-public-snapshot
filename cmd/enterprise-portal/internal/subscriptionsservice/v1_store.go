@@ -8,8 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
-	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/iam"
 )
 
@@ -23,19 +21,11 @@ type StoreV1 interface {
 	// ListEnterpriseSubscriptions returns a list of enterprise subscriptions based
 	// on the given options.
 	ListEnterpriseSubscriptions(ctx context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error)
-
 	// ListDotcomEnterpriseSubscriptionLicenses returns a list of enterprise
 	// subscription license attributes with the given filters. It silently ignores
 	// any non-matching filters. The caller should check the length of the returned
 	// slice to ensure all requested licenses were found.
-	ListDotcomEnterpriseSubscriptionLicenses(context.Context, []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter, int) ([]*dotcomdb.LicenseAttributes, error)
-	// ListDotcomEnterpriseSubscriptions returns a list of enterprise subscription
-	// attributes with the given IDs from dotcom DB. It silently ignores any
-	// non-existent subscription IDs. The caller should check the length of the
-	// returned slice to ensure all requested subscriptions were found.
-	//
-	// If no IDs are provided, it returns all subscriptions.
-	ListDotcomEnterpriseSubscriptions(ctx context.Context, opts dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error)
+	ListEnterpriseSubscriptionLicenses(ctx context.Context, opts subscriptions.ListLicensesOpts) ([]*subscriptions.LicenseWithConditions, error)
 
 	// IntrospectSAMSToken takes a SAMS access token and returns relevant metadata.
 	//
@@ -60,14 +50,12 @@ type StoreV1 interface {
 
 type storeV1 struct {
 	db         *database.DB
-	dotcomDB   *dotcomdb.Reader
 	SAMSClient *sams.ClientV1
 	IAMClient  *iam.ClientV1
 }
 
 type NewStoreV1Options struct {
 	DB         *database.DB
-	DotcomDB   *dotcomdb.Reader
 	SAMSClient *sams.ClientV1
 	IAMClient  *iam.ClientV1
 }
@@ -76,7 +64,6 @@ type NewStoreV1Options struct {
 func NewStoreV1(opts NewStoreV1Options) StoreV1 {
 	return &storeV1{
 		db:         opts.DB,
-		dotcomDB:   opts.DotcomDB,
 		SAMSClient: opts.SAMSClient,
 		IAMClient:  opts.IAMClient,
 	}
@@ -90,12 +77,8 @@ func (s *storeV1) ListEnterpriseSubscriptions(ctx context.Context, opts subscrip
 	return s.db.Subscriptions().List(ctx, opts)
 }
 
-func (s *storeV1) ListDotcomEnterpriseSubscriptionLicenses(ctx context.Context, filters []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter, limit int) ([]*dotcomdb.LicenseAttributes, error) {
-	return s.dotcomDB.ListEnterpriseSubscriptionLicenses(ctx, filters, limit)
-}
-
-func (s *storeV1) ListDotcomEnterpriseSubscriptions(ctx context.Context, opts dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
-	return s.dotcomDB.ListEnterpriseSubscriptions(ctx, opts)
+func (s *storeV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, opts subscriptions.ListLicensesOpts) ([]*subscriptions.LicenseWithConditions, error) {
+	return s.db.Subscriptions().Licenses().List(ctx, opts)
 }
 
 func (s *storeV1) IntrospectSAMSToken(ctx context.Context, token string) (*sams.IntrospectTokenResponse, error) {

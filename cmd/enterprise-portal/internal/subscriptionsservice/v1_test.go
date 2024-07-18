@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/samsm2m"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/iam"
@@ -197,31 +196,6 @@ func TestHandlerV1_ListEnterpriseSubscriptions(t *testing.T) {
 			}
 		})
 	}
-
-	// This is a temporary behaviour that will be removed
-	t.Run("no filters also checks dotcom", func(t *testing.T) {
-		req := connect.NewRequest(&subscriptionsv1.ListEnterpriseSubscriptionsRequest{})
-		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
-
-		h := newTestHandlerV1()
-		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error) {
-			return []*subscriptions.SubscriptionWithConditions{}, nil
-		})
-		h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
-			assert.Empty(t, opts.SubscriptionIDs)
-			assert.False(t, opts.IsArchived)
-			return []*dotcomdb.SubscriptionAttributes{{
-				ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224",
-			}}, nil
-		})
-		_, err := h.ListEnterpriseSubscriptions(ctx, req)
-		require.NoError(t, err)
-		mockrequire.Called(t, h.mockStore.ListEnterpriseSubscriptionsFunc)
-		mockrequire.Called(t, h.mockStore.ListDotcomEnterpriseSubscriptionsFunc)
-		resp, err := h.ListEnterpriseSubscriptions(ctx, req)
-		require.NoError(t, err)
-		assert.NotNil(t, resp.Msg.Subscriptions)
-	})
 }
 
 func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
@@ -306,9 +280,11 @@ func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 			req.Header().Add("Authorization", "Bearer foolmeifyoucan")
 
 			h := newTestHandlerV1()
-			h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultReturn(
-				[]*dotcomdb.SubscriptionAttributes{
-					{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"},
+			h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultReturn(
+				[]*subscriptions.SubscriptionWithConditions{
+					{Subscription: subscriptions.Subscription{
+						ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224",
+					}},
 				}, nil)
 			h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.SubscriptionWithConditions, error) {
 				tc.wantUpdateOpts.Equal(t, opts)
@@ -448,14 +424,6 @@ func TestHandlerV1_UpdateEnterpriseSubscriptionMembership(t *testing.T) {
 			req.Header().Add("Authorization", "Bearer foolmeifyoucan")
 
 			h := newTestHandlerV1()
-			h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultHook(
-				func(_ context.Context, opts dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
-					if slices.Contains(opts.SubscriptionIDs, subscriptionID) {
-						return []*dotcomdb.SubscriptionAttributes{{ID: subscriptionID}}, nil
-					}
-					return nil, nil
-				},
-			)
 			h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(
 				func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error) {
 					if slices.Contains(opts.IDs, subscriptionID) ||

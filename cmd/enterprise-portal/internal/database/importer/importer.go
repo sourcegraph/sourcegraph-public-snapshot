@@ -305,7 +305,7 @@ func (i *Importer) importLicense(ctx context.Context, subscriptionID string, dot
 	tr.SetAttributes(attribute.Bool("already_imported", false))
 
 	if _, err := i.licenses.CreateLicenseKey(ctx, subscriptionID,
-		&subscriptions.LicenseKey{
+		&subscriptions.DataLicenseKey{
 			Info: license.Info{
 				Tags:                     dotcomLicense.Tags,
 				UserCount:                uint(pointers.DerefZero(dotcomLicense.UserCount)),

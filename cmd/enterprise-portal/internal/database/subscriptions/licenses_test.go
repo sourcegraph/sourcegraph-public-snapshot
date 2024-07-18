@@ -72,7 +72,7 @@ func TestLicensesStore(t *testing.T) {
 		}
 
 		got, err := licenses.CreateLicenseKey(ctx, subscriptionID1,
-			&subscriptions.LicenseKey{
+			&subscriptions.DataLicenseKey{
 				Info: license.Info{
 					Tags:      []string{"foo"},
 					CreatedAt: time.Time{}.Add(1 * time.Hour),
@@ -94,7 +94,7 @@ func TestLicensesStore(t *testing.T) {
 		createdLicenses = append(createdLicenses, got)
 
 		got, err = licenses.CreateLicenseKey(ctx, subscriptionID1,
-			&subscriptions.LicenseKey{
+			&subscriptions.DataLicenseKey{
 				Info: license.Info{
 					Tags:      []string{"baz"},
 					CreatedAt: time.Time{}.Add(24 * time.Hour),
@@ -116,7 +116,7 @@ func TestLicensesStore(t *testing.T) {
 		createdLicenses = append(createdLicenses, got)
 
 		got, err = licenses.CreateLicenseKey(ctx, subscriptionID2,
-			&subscriptions.LicenseKey{
+			&subscriptions.DataLicenseKey{
 				Info: license.Info{
 					Tags:      []string{"tag"},
 					CreatedAt: time.Time{}.Add(24 * time.Hour),
@@ -139,7 +139,7 @@ func TestLicensesStore(t *testing.T) {
 
 		t.Run("createdAt does not match", func(t *testing.T) {
 			_, err = licenses.CreateLicenseKey(ctx, subscriptionID2,
-				&subscriptions.LicenseKey{
+				&subscriptions.DataLicenseKey{
 					Info: license.Info{
 						Tags:      []string{"tag"},
 						CreatedAt: time.Time{}.Add(24 * time.Hour),
@@ -155,7 +155,7 @@ func TestLicensesStore(t *testing.T) {
 		})
 		t.Run("expiresAt does not match", func(t *testing.T) {
 			_, err = licenses.CreateLicenseKey(ctx, subscriptionID2,
-				&subscriptions.LicenseKey{
+				&subscriptions.DataLicenseKey{
 					Info: license.Info{
 						Tags:      []string{"tag"},
 						CreatedAt: time.Time{},
