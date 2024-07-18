@@ -116,6 +116,10 @@ type UpstreamRequest interface {
 	BuildPrompt() string
 }
 
+// maxRequestDuration is the maximum amount of time a request can take before
+// being cancelled as DeadlineExceeded.
+const maxRequestDuration = 5 * time.Minute
+
 type UpstreamHandlerConfig struct {
 	// defaultRetryAfterSeconds sets the retry-after policy on upstream rate
 	// limit events in case a retry-after is not provided by the upstream
@@ -161,7 +165,18 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// in order to call the upstream API. e.g. calling the upstreamHandlerMethods in
 	// the correct order, enforcing rate limits and anti-abuse mechanisms, etc.
 	upstreamHandler := func(w http.ResponseWriter, downstreamRequest *http.Request) {
-		ctx := downstreamRequest.Context()
+
+		// Set the context timeout: use the timeout from the request header if provided,
+		// otherwise use the default maximum request duration.
+		ctxTimeout := maxRequestDuration
+		if v := downstreamRequest.Header.Get("X-Timeout-Ms"); v != "" {
+			if t, err := strconv.Atoi(v); err == nil {
+				ctxTimeout = time.Duration(t) * time.Millisecond
+			}
+		}
+		ctx, cancel := context.WithTimeout(downstreamRequest.Context(), ctxTimeout)
+		defer cancel()
+
 		act := actor.FromContext(ctx)
 
 		// TODO: Investigate using actor propagation handler for extracting
@@ -220,6 +235,9 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			response.JSONError(logger, w, http.StatusBadRequest, err)
 			return
 		}
+		// fmt.Println()
+		// fmt.Printf("CODY GATEWAY REQ TIMEOUT: %+v\n", body)
+		// fmt.Println()
 
 		// Check the request to see if it should be flagged for abuse, or additional inspection.
 		flaggingResult, err := methods.shouldFlagRequest(ctx, logger, body)
@@ -395,7 +413,15 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				logger.Error("failed to log event", log.Error(err))
 			}
 		}()
+		// fmt.Println()
+		// fmt.Printf("CODY GATEWAY HANDLER: %+v\n", upstreamRequest)
+		// fmt.Println()
+
 		resp, err := httpClient.Do(upstreamRequest)
+		fmt.Println()
+		fmt.Printf("CODY GATEWAY HANDLER RESP: %+v\n", resp)
+		fmt.Println()
+
 		if err != nil {
 			// Ignore reporting errors where client disconnected
 			if upstreamRequest.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {

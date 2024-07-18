@@ -67,22 +67,13 @@ func newCompletionsHandler(
 			return
 		}
 
-		// We don't perform any sort of validation. So we would silently accept a totally bogus
-		// JSON payload. And just have a zero-value CompletionRequestParameters, e.g. no prompt.
-		var requestParams types.CodyCompletionRequestParameters
-		if err := json.NewDecoder(r.Body).Decode(&requestParams); err != nil {
-			logger.Warn("malformed CodyCompletionRequestParameters", log.Error(err))
-			http.Error(w, "could not decode request body", http.StatusBadRequest)
-			return
-		}
-
-		// Set the context timeout: use the timeout from the request params if provided,
+		// Set the context timeout: use the timeout from the request header if provided,
 		// otherwise use the default maximum request duration.
-		var ctxTimeout time.Duration
-		if requestParams.TimeoutMs != nil {
-			ctxTimeout = time.Duration(*requestParams.TimeoutMs) * time.Millisecond
-		} else {
-			ctxTimeout = maxRequestDuration
+		ctxTimeout := maxRequestDuration
+		if v := r.Header.Get("X-Timeout-Ms"); v != "" {
+			if t, err := strconv.Atoi(v); err == nil {
+				ctxTimeout = time.Duration(t) * time.Millisecond
+			}
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), ctxTimeout)
 		defer cancel()
@@ -117,6 +108,15 @@ func newCompletionsHandler(
 				http.Error(w, err.Error(), err.statusCode)
 				return
 			}
+		}
+
+		// We don't perform any sort of validation. So we would silently accept a totally bogus
+		// JSON payload. And just have a zero-value CompletionRequestParameters, e.g. no prompt.
+		var requestParams types.CodyCompletionRequestParameters
+		if err := json.NewDecoder(r.Body).Decode(&requestParams); err != nil {
+			logger.Warn("malformed CodyCompletionRequestParameters", log.Error(err))
+			http.Error(w, "could not decode request body", http.StatusBadRequest)
+			return
 		}
 
 		// Load the current LLM model configuration for the Sourcegraph instance.
@@ -569,9 +569,6 @@ func checkClientCodyIgnoreCompatibility(ctx context.Context, db database.DB, r *
 	}
 	var cvc clientVersionConstraint
 	switch clientName {
-	case types.CodyClientWeb:
-		// Cody Web is of the same version as the Sourcegraph instance, thus no version constraint is needed.
-		return nil
 	case types.CodyClientVscode:
 		cvc = clientVersionConstraint{client: clientName, constraint: ">= 1.20.0"}
 		if isClientsTestMode {
@@ -585,10 +582,14 @@ func checkClientCodyIgnoreCompatibility(ctx context.Context, db database.DB, r *
 			cvc.constraint = ">= 5.5.8-0"
 		}
 	default:
-		return &codyIgnoreCompatibilityError{
-			reason:     fmt.Sprintf("please use one of the supported clients: %s, %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains, types.CodyClientWeb),
-			statusCode: http.StatusNotAcceptable,
-		}
+		// By default, allow requests from any client. We only want to reject
+		// requests from older client versions that we know definitily don't
+		// support context filters. A malicious client can always bypass this
+		// check anyways by faking to be "jetbrains". All agent-based clients
+		// (JetBrains, Eclipse, Visual Studio) support context filters out of
+		// the box since the original support was added for JetBrains GA in May
+		// 2024.
+		return nil
 	}
 
 	clientVersion := r.URL.Query().Get("client-version")
