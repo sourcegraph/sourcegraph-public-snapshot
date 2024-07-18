@@ -83,10 +83,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			q: url.Values{
 				"client-name": []string{"sublime"},
 			},
-			want: &codyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("please use one of the supported clients: %s, %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains, types.CodyClientWeb),
-				statusCode: http.StatusNotAcceptable,
-			},
+			want: nil,
 		},
 		{
 			name: "version doesn't follow semver spec (missing major, minor and patch versions)",
