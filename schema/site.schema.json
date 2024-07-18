@@ -3696,7 +3696,7 @@
       "description": "No client-side model configuration is currently available.",
       "properties": {
         "openaicompatible": {
-            "$ref": "#/definitions/ClientSideModelConfigOpenAICompatible"
+          "$ref": "#/definitions/ClientSideModelConfigOpenAICompatible"
         }
       }
     },
