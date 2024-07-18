@@ -53,7 +53,7 @@ type CodyGatewayAccess struct {
 	SubscriptionID string `gorm:"type:uuid;not null;unique"`
 
 	// Whether or not a subscription has Cody Gateway access enabled.
-	Enabled bool `gorm:"not null"`
+	Enabled bool `gorm:"not null;default:false"`
 
 	// chat_completions_rate_limit
 	ChatCompletionsRateLimit                sql.NullInt64
@@ -247,7 +247,7 @@ WHERE
 
 type UpsertCodyGatewayAccessOptions struct {
 	// Whether or not a subscription has Cody Gateway access enabled.
-	Enabled bool
+	Enabled *bool
 
 	// chat_completions_rate_limit
 	ChatCompletionsRateLimit                *int64
@@ -271,7 +271,9 @@ type UpsertCodyGatewayAccessOptions struct {
 func (opts UpsertCodyGatewayAccessOptions) Exec(ctx context.Context, db *pgxpool.Pool, subscriptionID string) error {
 	b := upsert.New("enterprise_portal_cody_gateway_access", "subscription_id", opts.ForceUpdate)
 	upsert.Field(b, "subscription_id", subscriptionID)
-	upsert.Field(b, "enabled", opts.Enabled)
+	upsert.Field(b, "enabled", opts.Enabled,
+		upsert.WithColumnDefault(),
+		upsert.WithValueOnForceUpdate(false))
 	upsert.Field(b, "chat_completions_rate_limit", opts.ChatCompletionsRateLimit)
 	upsert.Field(b, "chat_completions_rate_limit_interval_seconds", opts.ChatCompletionsRateLimitIntervalSeconds)
 	upsert.Field(b, "code_completions_rate_limit", opts.CodeCompletionsRateLimit)

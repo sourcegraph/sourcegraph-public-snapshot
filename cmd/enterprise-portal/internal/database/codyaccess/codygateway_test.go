@@ -126,7 +126,7 @@ func TestCodyGatewayStore(t *testing.T) {
 			require.NoError(t, err)
 
 			_, err = codyaccess.NewCodyGatewayStore(db).Upsert(ctx, subscriptionID, codyaccess.UpsertCodyGatewayAccessOptions{
-				Enabled: true,
+				Enabled: pointers.Ptr(true),
 			})
 			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionDoesNotExist)
 		})
@@ -140,7 +140,7 @@ func TestCodyGatewayStore(t *testing.T) {
 			require.NoError(t, err)
 
 			_, err = codyaccess.NewCodyGatewayStore(db).Upsert(ctx, subscriptionID, codyaccess.UpsertCodyGatewayAccessOptions{
-				Enabled: true,
+				Enabled: pointers.Ptr(true),
 			})
 			require.NoError(t, err)
 
@@ -160,7 +160,7 @@ func CodyGatewayStoreListAndGet(t *testing.T, ctx context.Context, subscriptionI
 	// subscription still be able to get zero-value Cody Access.
 	for idx, sub := range subscriptionIDs[:len(subscriptionIDs)-1] {
 		_, err := s.Upsert(ctx, sub, codyaccess.UpsertCodyGatewayAccessOptions{
-			Enabled:                                 idx%2 == 0, // even
+			Enabled:                                 pointers.Ptr(idx%2 == 0), // even
 			ChatCompletionsRateLimit:                pointers.Ptr(int64(idx)),
 			ChatCompletionsRateLimitIntervalSeconds: pointers.Ptr(int(idx)),
 			CodeCompletionsRateLimit:                pointers.Ptr(int64(idx)),
@@ -236,7 +236,7 @@ func CodyGatewayStoreUpsert(t *testing.T, ctx context.Context, subscriptionIDs [
 		ctx,
 		subscriptionIDs[0],
 		codyaccess.UpsertCodyGatewayAccessOptions{
-			Enabled: false,
+			Enabled: pointers.Ptr(false),
 		},
 	)
 	require.NoError(t, err)
@@ -264,9 +264,22 @@ func CodyGatewayStoreUpsert(t *testing.T, ctx context.Context, subscriptionIDs [
 	t.Run("subscription does not exist", func(t *testing.T) {
 		subscriptionID := uuid.NewString()
 		_, err = s.Upsert(ctx, subscriptionID, codyaccess.UpsertCodyGatewayAccessOptions{
-			Enabled: true,
+			Enabled: pointers.Ptr(false),
 		})
 		assert.ErrorIs(t, err, codyaccess.ErrSubscriptionDoesNotExist)
+	})
+
+	t.Run("update only enabled", func(t *testing.T) {
+		t.Cleanup(func() { currentAccess = got })
+
+		got, err = s.Upsert(ctx, currentAccess.SubscriptionID, codyaccess.UpsertCodyGatewayAccessOptions{
+			Enabled: pointers.Ptr(true),
+		})
+		require.NoError(t, err)
+		assert.True(t, got.Enabled)
+		assert.Equal(t, currentAccess.DisplayName, got.DisplayName)
+		assert.Equal(t, currentAccess.CodeCompletionsRateLimit, got.CodeCompletionsRateLimit)
+		assert.EqualValues(t, currentAccess.ChatCompletionsRateLimit, got.ChatCompletionsRateLimit)
 	})
 
 	t.Run("update only chat completions", func(t *testing.T) {
@@ -276,20 +289,7 @@ func CodyGatewayStoreUpsert(t *testing.T, ctx context.Context, subscriptionIDs [
 			ChatCompletionsRateLimit: pointers.Ptr(int64(1234)),
 		})
 		require.NoError(t, err)
-		assert.Equal(t, currentAccess.Enabled, got.Enabled)
-		assert.Equal(t, currentAccess.DisplayName, got.DisplayName)
-		assert.Equal(t, currentAccess.CodeCompletionsRateLimit, got.CodeCompletionsRateLimit)
-		assert.EqualValues(t, 1234, got.ChatCompletionsRateLimit.Int64)
-	})
-
-	t.Run("update only enabled", func(t *testing.T) {
-		t.Cleanup(func() { currentAccess = got })
-
-		got, err = s.Upsert(ctx, currentAccess.SubscriptionID, codyaccess.UpsertCodyGatewayAccessOptions{
-			Enabled: true,
-		})
-		require.NoError(t, err)
-		assert.True(t, got.Enabled)
+		assert.Equal(t, true, got.Enabled)
 		assert.Equal(t, currentAccess.DisplayName, got.DisplayName)
 		assert.Equal(t, currentAccess.CodeCompletionsRateLimit, got.CodeCompletionsRateLimit)
 		assert.EqualValues(t, 1234, got.ChatCompletionsRateLimit.Int64)
