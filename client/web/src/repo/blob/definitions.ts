@@ -94,6 +94,7 @@ export const fetchDefinitionsFromRanges = memoizeObservable(
             $filePath: String!
         ) {
             repository(name: $repoName) {
+                id
                 commit(rev: $revision) {
                     blob(path: $filePath) {
                         lsif {
