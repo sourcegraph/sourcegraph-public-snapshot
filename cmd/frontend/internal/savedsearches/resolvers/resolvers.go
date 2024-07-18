@@ -236,7 +236,7 @@ func (r *Resolver) UpdateSavedSearch(ctx context.Context, args *graphqlbackend.U
 		ID:          id,
 		Description: args.Input.Description,
 		Query:       args.Input.Query,
-		Owner:       old.Owner,
+		Owner:       old.Owner, // use transferSavedSearchOwnership to update the owner
 	})
 	if err != nil {
 		return nil, err

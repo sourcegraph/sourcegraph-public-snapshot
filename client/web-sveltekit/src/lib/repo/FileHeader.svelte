@@ -5,6 +5,7 @@
     import ShrinkablePath from '$lib/path/ShrinkablePath.svelte'
     import { DropdownMenu } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
+    import MobileFileSidePanelOpenButton from './MobileFileSidePanelOpenButton.svelte'
 
     export let repoName: string
     export let revision: string | undefined
@@ -36,6 +37,7 @@
 
 <header use:sizeToFit={{ grow, shrink }}>
     <h2 data-testid="file-header-path">
+        <MobileFileSidePanelOpenButton />
         <ShrinkablePath
             bind:this={shrinkablePath}
             {path}
@@ -67,7 +69,6 @@
 <style lang="scss">
     header {
         display: flex;
-        flex-wrap: nowrap;
         justify-content: space-between;
         align-items: center;
         padding: 0.25rem 0 0.25rem 0.5rem;
@@ -76,11 +77,15 @@
         z-index: 1;
         gap: 1rem;
         height: var(--repo-header-height);
+
+        @media (--mobile) {
+            height: unset;
+            flex-wrap: wrap;
+        }
     }
 
     h2 {
         display: flex;
-        flex-wrap: nowrap;
         gap: 0.5rem;
         align-items: center;
         margin: 0;
@@ -103,7 +108,6 @@
     }
 
     .actions {
-        margin-left: auto;
         display: flex;
         justify-content: space-evenly;
         gap: 1rem;
@@ -120,6 +124,10 @@
         .divider {
             border-left: 1px solid var(--border-color);
             align-self: stretch;
+
+            @media (--mobile) {
+                display: none;
+            }
         }
     }
 </style>

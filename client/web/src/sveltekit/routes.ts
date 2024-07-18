@@ -47,6 +47,11 @@ export const svelteKitRoutes: SvelteKitRoute[] = [
         isRepoRoot: false,
     },
     {
+        id: '/[...repo=reporev]/-/compare/[...rangeSpec]',
+        pattern: new RegExp('^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/compare(?:/.*)?/?$'),
+        isRepoRoot: false,
+    },
+    {
         id: '/[...repo=reporev]/-/stats/contributors',
         pattern: new RegExp('^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/stats/contributors/?$'),
         isRepoRoot: false,

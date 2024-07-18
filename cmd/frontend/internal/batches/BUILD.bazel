@@ -10,6 +10,7 @@ go_library(
         "//cmd/frontend/internal/batches/httpapi",
         "//cmd/frontend/internal/batches/resolvers",
         "//cmd/frontend/internal/batches/webhooks",
+        "//internal/batches",
         "//internal/batches/store",
         "//internal/codeintel",
         "//internal/conf/conftypes",

@@ -282,6 +282,12 @@ type AzureDevOpsRateLimit struct {
 	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
+type BackendAPIConfig struct {
+	// AuthHeader description: Value of Authorization header (if required)
+	AuthHeader string `json:"authHeader,omitempty"`
+	// Url description: Full URL of backend API
+	Url string `json:"url"`
+}
 type BatchChangeRolloutWindow struct {
 	// Days description: Day(s) the window applies to. If omitted, this rule applies to all days of the week.
 	Days []string `json:"days,omitempty"`
@@ -670,6 +676,32 @@ type CodyProConfig struct {
 	UseEmbeddedUI bool `json:"useEmbeddedUI,omitempty"`
 }
 
+// CodyRerankerCohere description: Re-ranker using Cohere API
+type CodyRerankerCohere struct {
+	ApiKey string `json:"apiKey"`
+	Model  string `json:"model,omitempty"`
+	Type   string `json:"type"`
+}
+
+// CodyRerankerIdentity description: Identity re-ranker
+type CodyRerankerIdentity struct {
+	Type string `json:"type"`
+}
+
+// CodyServerSideContext description: Configuration for Server-side context API
+type CodyServerSideContext struct {
+	// IntentDetectionAPI description: Configuration for intent detection API
+	IntentDetectionAPI *IntentDetectionAPI `json:"intentDetectionAPI,omitempty"`
+	// Reranker description: Reranker to use for rankContext requests
+	Reranker *Reranker `json:"reranker,omitempty"`
+}
+
+// CommitGraphUpdates description: Customize strategy used for commit graph updates
+type CommitGraphUpdates struct {
+	// DefaultBranchOnly description: Disables precise code nav on non-default branches. Specify repo names using regex syntax.
+	DefaultBranchOnly []string `json:"defaultBranchOnly,omitempty"`
+}
+
 // Completions description: Configuration for the completions service.
 type Completions struct {
 	// AccessToken description: The access token used to authenticate with the external completions provider. If using the default provider 'sourcegraph', and if 'licenseKey' is set, a default access token is generated.
@@ -1037,8 +1069,12 @@ type ExperimentalFeatures struct {
 	BatchChangesEnablePerforce bool `json:"batchChanges.enablePerforce,omitempty"`
 	// CodeintelSyntacticIndexingEnabled description: When enabled, syntactic indexing jobs will be scheduled for all enabled repos
 	CodeintelSyntacticIndexingEnabled bool `json:"codeintelSyntacticIndexing.enabled,omitempty"`
+	// CodyServerSideContext description: Configuration for Server-side context API
+	CodyServerSideContext *CodyServerSideContext `json:"cody.serverSideContext,omitempty"`
 	// CodyContextIgnore description: Enabled filtering of remote Cody context based on repositories ./cody/ignore file
 	CodyContextIgnore *bool `json:"codyContextIgnore,omitempty"`
+	// CommitGraphUpdates description: Customize strategy used for commit graph updates
+	CommitGraphUpdates *CommitGraphUpdates `json:"commitGraphUpdates,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
@@ -1137,7 +1173,9 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	}
 	delete(m, "batchChanges.enablePerforce")
 	delete(m, "codeintelSyntacticIndexing.enabled")
+	delete(m, "cody.serverSideContext")
 	delete(m, "codyContextIgnore")
+	delete(m, "commitGraphUpdates")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
 	delete(m, "enableGithubInternalRepoVisibility")
@@ -1655,6 +1693,14 @@ type ImportChangesets struct {
 	ExternalIDs []any `json:"externalIDs"`
 	// Repository description: The repository name as configured on your Sourcegraph instance.
 	Repository string `json:"repository"`
+}
+
+// IntentDetectionAPI description: Configuration for intent detection API
+type IntentDetectionAPI struct {
+	// Default description: Default URL for intent detection API
+	Default *BackendAPIConfig `json:"default,omitempty"`
+	// Extra description: Array of additional intent detection API configs
+	Extra []*BackendAPIConfig `json:"extra,omitempty"`
 }
 
 // JVMPackagesConnection description: Configuration for a connection to a JVM packages repository.
@@ -2271,6 +2317,38 @@ type RequestMessage struct {
 	Params   any            `json:"params,omitempty"`
 	Settings map[string]any `json:"settings,omitempty"`
 }
+
+// Reranker description: Reranker to use for rankContext requests
+type Reranker struct {
+	Identity *CodyRerankerIdentity
+	Cohere   *CodyRerankerCohere
+}
+
+func (v Reranker) MarshalJSON() ([]byte, error) {
+	if v.Identity != nil {
+		return json.Marshal(v.Identity)
+	}
+	if v.Cohere != nil {
+		return json.Marshal(v.Cohere)
+	}
+	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
+}
+func (v *Reranker) UnmarshalJSON(data []byte) error {
+	var d struct {
+		DiscriminantProperty string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &d); err != nil {
+		return err
+	}
+	switch d.DiscriminantProperty {
+	case "cohere":
+		return json.Unmarshal(data, &v.Cohere)
+	case "identity":
+		return json.Unmarshal(data, &v.Identity)
+	}
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"identity", "cohere"})
+}
+
 type Responders struct {
 	Id       string `json:"id,omitempty"`
 	Name     string `json:"name,omitempty"`

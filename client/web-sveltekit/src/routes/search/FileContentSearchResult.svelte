@@ -37,6 +37,7 @@
     $: fileURL = getFileMatchUrl(result)
 
     const searchResultContext = getSearchResultsContext()
+    const scrollContainer = searchResultContext.scrollContainer
     let expanded: boolean = searchResultContext?.isExpanded(result)
     $: searchResultContext.setExpanded(result, expanded)
     $: expandButtonText = expanded
@@ -84,7 +85,12 @@
         <PreviewButton {result} />
     </svelte:fragment>
 
-    <div bind:this={root} use:observeIntersection on:intersecting={event => (visible = event.detail)} class="matches">
+    <div
+        bind:this={root}
+        use:observeIntersection={$scrollContainer}
+        on:intersecting={event => (visible = event.detail)}
+        class="matches"
+    >
         {#each matchesToShow as group, index}
             <div class="code">
                 <a href={getMatchURL(group.startLine + 1, group.endLine)}>

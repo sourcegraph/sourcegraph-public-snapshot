@@ -16,8 +16,9 @@
 
 <script lang="ts">
     import { derived, readable } from 'svelte/store'
-    import { observeIntersection } from '$lib/intersection-observer'
+
     import CodeExcerpt from '$lib/CodeExcerpt.svelte'
+    import { observeIntersection } from '$lib/intersection-observer'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
     import { toReadable } from '$lib/utils'
 
@@ -61,7 +62,7 @@
 </script>
 
 {#if location.range && plaintextLines.length > 0}
-    <div use:observeIntersection on:intersecting={event => (visible = visible || event.detail)}>
+    <div use:observeIntersection={null} on:intersecting={event => (visible = visible || event.detail)}>
         <CodeExcerpt
             collapseWhitespace
             hideLineNumbers

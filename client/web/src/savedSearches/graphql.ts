@@ -24,6 +24,7 @@ export const savedSearchesQuery = gql`
     query SavedSearches(
         $query: String
         $owner: ID
+        $viewerIsAffiliated: Boolean
         $first: Int
         $last: Int
         $after: String
@@ -33,6 +34,7 @@ export const savedSearchesQuery = gql`
         savedSearches(
             query: $query
             owner: $owner
+            viewerIsAffiliated: $viewerIsAffiliated
             first: $first
             last: $last
             after: $after

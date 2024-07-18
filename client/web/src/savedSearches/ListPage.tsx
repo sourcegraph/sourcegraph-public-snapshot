@@ -1,9 +1,7 @@
-import { useEffect, useMemo, type FunctionComponent, type MutableRefObject } from 'react'
+import { useEffect, useMemo, type FunctionComponent } from 'react'
 
 import { mdiLink, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
-import { useLocation } from 'react-router-dom'
-import { useCallbackRef } from 'use-callback-ref'
 
 import type { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
@@ -47,9 +45,8 @@ const SavedSearchNode: FunctionComponent<
     SearchPatternTypeProps &
         TelemetryV2Props & {
             savedSearch: SavedSearchFields
-            linkRef: MutableRefObject<HTMLAnchorElement | null> | null
         }
-> = ({ savedSearch, patternType, linkRef, telemetryRecorder }) => (
+> = ({ savedSearch, patternType, telemetryRecorder }) => (
     <div className={classNames(styles.row, 'list-group-item align-items-center flex-gap-2')}>
         <Button
             as={Link}
@@ -60,7 +57,6 @@ const SavedSearchNode: FunctionComponent<
                 'd-flex flex-gap-2 align-items-center flex-grow-1 text-left text-decoration-none pl-0',
                 styles.searchLink
             )}
-            ref={linkRef}
             onClick={() => telemetryRecordSavedSearchViewSearchResults(telemetryRecorder, savedSearch, 'List')}
         >
             <Badge
@@ -99,8 +95,6 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
     useEffect(() => {
         telemetryRecorder.recordEvent('savedSearches.list', 'view')
     }, [telemetryRecorder])
-
-    const location = useLocation()
 
     const { namespaces, loading: namespacesLoading, error: namespacesError } = useAffiliatedNamespaces()
     const filters = useMemo<
@@ -169,13 +163,12 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
         typeof connectionState
     >({
         query: savedSearchesQuery,
-        variables: { ...buildFilterArgs(filters, connectionState), query: debouncedQuery },
+        variables: { ...buildFilterArgs(filters, connectionState), viewerIsAffiliated: true, query: debouncedQuery },
         getConnection: ({ data }) => data?.savedSearches || undefined,
         state: [connectionState, setConnectionState],
     })
 
     const searchPatternType = useNavbarQueryState(state => state.searchPatternType)
-    const callbackReference = useCallbackRef<HTMLAnchorElement>(null, ref => ref?.focus())
 
     const error = namespacesError || listError
     const loading = namespacesLoading || listLoading
@@ -214,11 +207,6 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
                             {connection.nodes.map(savedSearch => (
                                 <SavedSearchNode
                                     key={savedSearch.id}
-                                    linkRef={
-                                        location.state?.description === savedSearch.description
-                                            ? callbackReference
-                                            : null
-                                    }
                                     patternType={searchPatternType}
                                     savedSearch={savedSearch}
                                     telemetryRecorder={telemetryRecorder}

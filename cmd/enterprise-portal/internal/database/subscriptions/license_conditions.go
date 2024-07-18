@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
+	"gorm.io/gorm"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
@@ -26,6 +27,16 @@ type SubscriptionLicenseCondition struct {
 
 func (*SubscriptionLicenseCondition) TableName() string {
 	return "enterprise_portal_subscription_license_conditions"
+}
+
+func (t *SubscriptionLicenseCondition) RunCustomMigrations(migrator gorm.Migrator) error {
+	// Drop the old, generated conditions -> license constraint
+	if c := "fk_enterprise_portal_subscription_license_conditions_license"; migrator.HasConstraint(t, c) {
+		if err := migrator.DropConstraint(t, c); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // subscriptionLicenseConditionJSONBAgg must be used with:

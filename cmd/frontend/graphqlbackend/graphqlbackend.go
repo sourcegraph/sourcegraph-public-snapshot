@@ -631,6 +631,11 @@ func NewSchema(
 			}
 		}
 
+		if modelconfigResolver := optional.ModelconfigResolver; modelconfigResolver != nil {
+			EnterpriseResolvers.modelconfigResolver = modelconfigResolver
+			resolver.ModelconfigResolver = modelconfigResolver
+		}
+
 		if telemetryResolver := optional.TelemetryRootResolver; telemetryResolver != nil {
 			EnterpriseResolvers.telemetryResolver = telemetryResolver
 			resolver.TelemetryRootResolver = telemetryResolver
@@ -683,6 +688,7 @@ type OptionalResolver struct {
 	InsightsAggregationResolver
 	InsightsResolver
 	LicenseResolver
+	ModelconfigResolver
 	NotebooksResolver
 	OwnResolver
 	RBACResolver
@@ -805,6 +811,7 @@ var EnterpriseResolvers = struct {
 	insightsAggregationResolver InsightsAggregationResolver
 	insightsResolver            InsightsResolver
 	licenseResolver             LicenseResolver
+	modelconfigResolver         ModelconfigResolver
 	notebooksResolver           NotebooksResolver
 	ownResolver                 OwnResolver
 	rbacResolver                RBACResolver

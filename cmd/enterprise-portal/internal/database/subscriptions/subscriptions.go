@@ -22,7 +22,7 @@ type TableSubscription struct {
 	Licenses []*TableSubscriptionLicense `gorm:"foreignKey:SubscriptionID"`
 
 	// Each Subscription has many Conditions.
-	Conditions *[]SubscriptionCondition `gorm:"foreignKey:SubscriptionID"`
+	Conditions []*SubscriptionCondition `gorm:"foreignKey:SubscriptionID"`
 
 	Subscription
 }
@@ -47,10 +47,7 @@ type Subscription struct {
 	//
 	// It must be unique across all currently un-archived subscriptions, unless
 	// it is not set.
-	//
-	// TODO: Clean up the database post-deploy and remove the 'Unnamed subscription'
-	// part of the constraint.
-	DisplayName *string `gorm:"size:256;uniqueIndex:,where:archived_at IS NULL AND display_name != 'Unnamed subscription' AND display_name != ''"`
+	DisplayName *string `gorm:"size:256;uniqueIndex:,where:archived_at IS NULL"`
 
 	// Timestamps representing the latest timestamps of key conditions related
 	// to this subscription.

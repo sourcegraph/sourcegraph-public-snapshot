@@ -1,12 +1,13 @@
-import React, { useCallback, useState } from 'react'
+import React, { useState } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { Alert, Button, Container, ErrorAlert, Form, Input } from '@sourcegraph/wildcard'
+import { Alert, Button, Code, Container, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
+import { PatternConstrainedInput } from '../../../components/PatternConstrainedInput'
 import type {
     BatchChangeFields,
     CreateBatchSpecFromRawResult,
@@ -23,8 +24,14 @@ import { CREATE_BATCH_SPEC_FROM_RAW, CREATE_EMPTY_BATCH_CHANGE } from './backend
 
 import styles from './ConfigurationForm.module.scss'
 
-/* Regex pattern for a valid batch change name. Needs to match what's defined in the BatchSpec JSON schema. */
-const NAME_PATTERN = /^[\w.-]+$/
+/**
+ * Regex pattern for a valid batch change name. Needs to match what's defined in the BatchSpec JSON
+ * schema.
+ *
+ * Note that this uses the 'v' flag, so the '-' needs to be escaped. See
+ * https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/pattern.
+ */
+const NAME_PATTERN = '[\\w.\\-]+'
 
 type ConfigurationFormProps = {
     /**
@@ -119,12 +126,6 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     const [nameInput, setNameInput] = useState(batchChange?.name || '')
     const [isNameValid, setIsNameValid] = useState<boolean>()
 
-    const onNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        const newName = event.target.value.replaceAll(' ', '-')
-        setNameInput(newName)
-        setIsNameValid(NAME_PATTERN.test(newName))
-    }, [])
-
     const { isUnlicensed, maxUnlicensedChangesets } = useBatchChangesLicense()
 
     const navigate = useNavigate()
@@ -188,13 +189,16 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                 )}
                 {error && <ErrorAlert error={error} />}
                 {namespaceSelector}
-                <Input
+                <PatternConstrainedInput
                     label="Batch change name"
                     value={nameInput}
-                    onChange={onNameChange}
-                    pattern="^[\w.-]+$"
+                    replaceSpaces={true}
+                    pattern={NAME_PATTERN}
+                    onChange={(value, isValid) => {
+                        setNameInput(value)
+                        setIsNameValid(isValid)
+                    }}
                     required={true}
-                    status={isNameValid === undefined ? undefined : isNameValid ? 'valid' : 'error'}
                     disabled={isReadOnly}
                 />
                 {!isReadOnly && (
@@ -202,7 +206,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                         Give it a short, descriptive name to reference the batch change on Sourcegraph. Do not include
                         confidential information.{' '}
                         <span className={classNames(isNameValid === false && 'text-danger')}>
-                            Only letters, numbers, _, and - are allowed.
+                            Only letters, numbers, and <Code>_.-</Code> are allowed.
                         </span>
                     </small>
                 )}

@@ -45,6 +45,8 @@ interface TokenRequester {
     /** How the redirect URL should be open: open in same tab vs open in a new-tab */
     /** Default: Open link in same tab */
     callbackType?: 'open' | 'new-tab'
+    /** If true, the `requestFrom` param will be used to determine the localhost port to redirect to */
+    hasRedirectPort?: boolean
     /** If set, the requester is only allowed on dotcom */
     onlyDotCom?: boolean
     /** If true, it will forward the `destination` param to the redirect URL if it starts with / */
@@ -109,6 +111,32 @@ const REQUESTERS: Record<string, TokenRequester> = {
         infoMessage:
             'Please make sure you still have your IDE (IntelliJ, GoLand, PyCharm, etc.) running on your machine when clicking this link.',
         callbackType: 'open',
+        hasRedirectPort: true,
+    },
+    ECLIPSE: {
+        name: 'Eclipse',
+        redirectURL: 'http://localhost:$PORT/api/sourcegraph/token?token=$TOKEN',
+        successMessage: 'Now opening Eclipse...',
+        infoMessage:
+            'Please make sure you still have your Eclipse IDE running on your machine when clicking this link.',
+        callbackType: 'open',
+        hasRedirectPort: true,
+    },
+    VISUAL_STUDIO: {
+        name: 'Visual Studio',
+        redirectURL: 'http://localhost:$PORT/api/sourcegraph/token?token=$TOKEN',
+        successMessage: 'Now opening Visual Studio...',
+        infoMessage: 'Please make sure you still have Visual Studio running on your machine when clicking this link.',
+        callbackType: 'open',
+        hasRedirectPort: true,
+    },
+    CODY_CLI: {
+        name: 'Cody CLI',
+        redirectURL: 'http://localhost:$PORT/api/sourcegraph/token?token=$TOKEN',
+        successMessage: 'Now opening your terminal...',
+        infoMessage: 'Please make sure that you are running `cody auth login --web` in a background terminal session.',
+        callbackType: 'open',
+        hasRedirectPort: true,
     },
     NEOVIM: {
         name: 'Neovim',
@@ -116,15 +144,12 @@ const REQUESTERS: Record<string, TokenRequester> = {
         successMessage: 'Restart Neovim and your credentials will be saved.',
         infoMessage: 'Please make sure you still have Neovim running on your machine when clicking this link.',
         callbackType: 'open',
+        hasRedirectPort: true,
     },
 }
 
 export function isAccessTokenCallbackPage(): boolean {
     return location.pathname.endsWith('/settings/tokens/new/callback')
-}
-
-function isRedirectable(name: string | null): boolean {
-    return name !== null && (name === 'JETBRAINS' || name === 'NEOVIM')
 }
 
 /**
@@ -162,7 +187,13 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     // port number inside requestFrom, we have a single query parameter just like with VS Code.
     if (requestFrom?.includes('-')) {
         const [requestFrom1, port1, ...rest] = requestFrom?.split('-')
-        if (requestFrom1 && port1 && rest.length === 0 && port1.match(/^\d/)) {
+        if (
+            requestFrom1 &&
+            port1 &&
+            rest.length === 0 &&
+            port1.match(/^\d/) &&
+            REQUESTERS[requestFrom1]?.hasRedirectPort
+        ) {
             requestFrom = requestFrom1
             port = port1
         }
@@ -196,8 +227,9 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
             return
         }
 
-        // SECURITY: If the request is coming from JetBrains, verify if the port is valid
-        if (isRedirectable(requestFrom) && (!port || !Number.isInteger(Number(port)))) {
+        // SECURITY: If the request is coming from a redirectable source
+        // (for example, JetBrains or CLI), verify if the port is valid.
+        if (REQUESTERS[requestFrom].hasRedirectPort && (!port || !Number.isInteger(Number(port)))) {
             navigate('../..', { relative: 'path' })
             return
         }
@@ -247,7 +279,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                     onDidCreateAccessToken(result)
                                     setNewToken(result.token)
                                     let uri = replacePlaceholder(requester?.redirectURL, 'TOKEN', result.token)
-                                    if (isRedirectable(requestFrom) && port) {
+                                    if (requestFrom && REQUESTERS[requestFrom].hasRedirectPort && port) {
                                         uri = replacePlaceholder(uri, 'PORT', port)
                                     }
 

@@ -20,3 +20,7 @@ $viewport-xl: 1200px;
 @custom-media --md-breakpoint-down (max-width: #{$viewport-lg - .02});
 @custom-media --lg-breakpoint-down (max-width: #{$viewport-xl - .02});
 @custom-media --xl-breakpoint-down (max-width: none);
+
+// Alias for --xs-breakpoint-down
+@custom-media --mobile (max-width: #{$viewport-sm - .02});
+@custom-media --not-mobile (min-width: #{$viewport-sm});
