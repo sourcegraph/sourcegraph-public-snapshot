@@ -1894,6 +1894,7 @@ ts_project(
         "src/auth/RequestAccessPage.test.tsx",
         "src/auth/SignInPage.test.tsx",
         "src/auth/SignUpPage.test.tsx",
+        "src/auth/withAuthenticatedUser.test.tsx",
         "src/backend/persistenceMapper.test.ts",
         "src/codeintel/ReferencesPanel.mocks.ts",
         "src/codeintel/ReferencesPanel.test.tsx",

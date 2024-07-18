@@ -1,4 +1,4 @@
-import type { FunctionComponent, PropsWithChildren } from 'react'
+import type { FunctionComponent } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import { Route, Routes } from 'react-router-dom'
@@ -21,7 +21,7 @@ interface Props extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
 }
 
-const AuthenticatedArea: FunctionComponent<PropsWithChildren<Props>> = ({ telemetryRecorder, isSourcegraphDotCom }) => (
+const AuthenticatedArea: FunctionComponent<Props> = ({ telemetryRecorder, isSourcegraphDotCom }) => (
     <Routes>
         <Route
             path=""
