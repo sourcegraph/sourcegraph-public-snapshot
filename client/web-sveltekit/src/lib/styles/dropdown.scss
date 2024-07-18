@@ -25,8 +25,15 @@
     --dropdown-link-active-bg: var(--primary);
     --dropdown-link-active-color: var(--white);
     --dropdown-link-disabled-color: var(--text-muted);
-    --dropdown-shadow: 0 193px 54px 0 rgba(0, 0, 0, 0), 0 123px 49px 0 rgba(0, 0, 0, 0.01),
-        0 69px 42px 0 rgba(0, 0, 0, 0.04), 0 31px 31px 0 rgba(0, 0, 0, 0.07), 0 8px 17px 0 rgba(0, 0, 0, 0.08);
+    --dropdown-shadow: 0 193px 54px 0 rgba(0, 0, 0, 0),
+        0 123px 49px 0 rgba(0, 0, 0, 0.01),
+        0 69px 42px 0 rgba(0, 0, 0, 0.04),
+        0 31px 31px 0 rgba(0, 0, 0, 0.07),
+        0 8px 17px 0 rgba(0, 0, 0, 0.08);
+    --hovercard-shadow: 0 3px 6px rgba(0, 0, 0, 0),
+        0 12px 25px rgba(0, 0, 0, 0.04),
+        0 77px 39px rgba(0, 0, 0, 0.07),
+        0 50px 42px rgba(0, 0, 0, 0.08);
 }
 
 .theme-dark {
@@ -40,6 +47,13 @@
     --dropdown-link-active-bg: var(--primary);
     --dropdown-link-active-color: var(--white);
     --dropdown-link-disabled-color: var(--text-muted);
-    --dropdown-shadow: 0 309px 87px 0 rgba(0, 0, 0, 0.01), 0 198px 79px 0 rgba(0, 0, 0, 0.07),
-        0 111px 67px 0 rgba(0, 0, 0, 0.24), 0 49px 49px 0 rgba(0, 0, 0, 0.41), 0 12px 27px 0 rgba(0, 0, 0, 0.47);
+    --dropdown-shadow: 0 309px 87px 0 rgba(0, 0, 0, 0.01),
+        0 198px 79px 0 rgba(0, 0, 0, 0.07),
+        0 111px 67px 0 rgba(0, 0, 0, 0.24),
+        0 49px 49px 0 rgba(0, 0, 0, 0.41),
+        0 12px 27px 0 rgba(0, 0, 0, 0.47);
+    --hovercard-shadow: 0 6px 13px rgba(0, 0, 0, 0.12),
+        0 24px 49px rgba(0, 0, 0, 0.17),
+        0 154px 77px rgba(0, 0, 0, 0.29),
+        0 99px 83px rgba(0, 0, 0, 0.28);
 }
