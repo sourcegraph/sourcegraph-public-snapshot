@@ -1,7 +1,7 @@
 import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../components/WebStory'
-import { ViewerAffiliatedNamespacesResult } from '../graphql-operations'
+import { type ViewerAffiliatedNamespacesResult } from '../graphql-operations'
 
 import { NamespaceSelector } from './NamespaceSelector'
 
@@ -18,8 +18,8 @@ type Namespace = ViewerAffiliatedNamespacesResult['viewer']['affiliatedNamespace
 
 const sampleNamespaces: Namespace[] = [
     { __typename: 'User', id: 'user1', namespaceName: 'alice' },
-    { __typename: 'Org', id: 'org1', namespaceName: 'abc', displayName: null },
-    { __typename: 'Org', id: 'org2', namespaceName: 'xyz', displayName: 'XYZ Inc.' },
+    { __typename: 'Org', id: 'org1', namespaceName: 'abc' },
+    { __typename: 'Org', id: 'org2', namespaceName: 'xyz' },
 ]
 
 export const Default: StoryFn = () => (
