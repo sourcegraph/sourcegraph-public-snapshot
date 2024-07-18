@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -103,8 +104,15 @@ func createOrUpdateObject[R client.Object](
 	}
 
 	if !isControlledBy(owner, existingRes) {
-		logger.Info("refusing to update non-owned resource")
-		return nil
+		if existingRes.GetObjectKind().GroupVersionKind().Kind == "Service" {
+			logger.Info(fmt.Sprintf("Taking control of previously unowned object: %s", existingRes.GetName()))
+			if err := ctrl.SetControllerReference(owner, existingRes, r.Scheme); err != nil {
+				return errors.Newf("setting controller reference for service", err)
+			}
+		} else {
+			logger.Info("refusing to update non-owned resource")
+			return nil
+		}
 	}
 
 	if cfgHash != existingRes.GetAnnotations()[config.AnnotationKeyConfigHash] {

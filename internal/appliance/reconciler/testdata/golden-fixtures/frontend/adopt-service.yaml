@@ -471,9 +471,24 @@ resources:
   - apiVersion: v1
     kind: Service
     metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: b5dce290e22d1afb4c9102ac4c245490ab01dd3be13653de391536cfe0e323b0
+        prometheus.io/port: "6060"
+        sourcegraph.prometheus/scrape: "true"
       creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        app: sourcegraph-frontend
+        app.kubernetes.io/component: sourcegraph-frontend
+        deploy: sourcegraph
       name: sourcegraph-frontend
       namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
       resourceVersion: NORMALIZED_FOR_TESTING
       uid: NORMALIZED_FOR_TESTING
     spec:
@@ -490,7 +505,7 @@ resources:
           protocol: TCP
           targetPort: http
       selector:
-        app: sourcegraph-appliance
+        app: sourcegraph-frontend
       sessionAffinity: None
       type: ClusterIP
     status:
