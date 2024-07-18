@@ -22,7 +22,7 @@ type TableSubscription struct {
 	Licenses []*TableSubscriptionLicense `gorm:"foreignKey:SubscriptionID"`
 
 	// Each Subscription has many Conditions.
-	Conditions *[]SubscriptionCondition `gorm:"foreignKey:SubscriptionID"`
+	Conditions []*SubscriptionCondition `gorm:"foreignKey:SubscriptionID"`
 
 	Subscription
 }

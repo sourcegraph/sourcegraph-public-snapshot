@@ -24,7 +24,7 @@ import (
 // and initializing tables with gorm.
 type TableSubscriptionLicense struct {
 	// ⚠️ DO NOT USE: This field is only used for creating foreign key constraint.
-	Conditions *[]SubscriptionLicenseCondition `gorm:"foreignKey:LicenseID"`
+	Conditions []*SubscriptionLicenseCondition `gorm:"foreignKey:LicenseID"`
 
 	SubscriptionLicense
 }
@@ -34,9 +34,15 @@ func (*TableSubscriptionLicense) TableName() string {
 }
 
 // Implement tables.CustomMigrator
-func (s *TableSubscriptionLicense) RunCustomMigrations(migrator gorm.Migrator) error {
-	if migrator.HasColumn(s, "license_kind") {
-		if err := migrator.DropColumn(s, "license_kind"); err != nil {
+func (t *TableSubscriptionLicense) RunCustomMigrations(migrator gorm.Migrator) error {
+	if migrator.HasColumn(t, "license_kind") {
+		if err := migrator.DropColumn(t, "license_kind"); err != nil {
+			return err
+		}
+	}
+	// Drop the old, generated license -> subscription constraint
+	if c := "fk_enterprise_portal_subscription_licenses_subscription"; migrator.HasConstraint(t, c) {
+		if err := migrator.DropConstraint(t, c); err != nil {
 			return err
 		}
 	}

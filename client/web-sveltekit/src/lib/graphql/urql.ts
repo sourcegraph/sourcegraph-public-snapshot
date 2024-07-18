@@ -178,6 +178,11 @@ export interface InfinityQueryStore<TData = any, TVariables extends AnyVariables
      * @returns The snapshot.
      */
     capture: () => TSnapshot | undefined
+
+    /**
+     * Resets the store to its initial state.
+     */
+    reset: () => void
 }
 
 /**
@@ -295,6 +300,7 @@ export function infinityQuery<
             }
             return Promise.resolve()
         },
+        reset: () => store.set(initialState),
     }
 }
 
