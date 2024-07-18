@@ -7,6 +7,8 @@
     import Tooltip from '$lib/Tooltip.svelte'
 
     import type { Commit } from './Commit.gql'
+    import { isViewportMobile } from './stores'
+    import Button from './wildcard/Button.svelte'
 
     export let commit: Commit
     export let alwaysExpanded: boolean = false
@@ -22,12 +24,13 @@
         return committer
     }
 
+    $: expanded = alwaysExpanded
+
     $: author = commit.author
     $: committer = getCommitter(commit) ?? author
     $: committerIsAuthor = committer.person.email === author.person.email
     $: commitDate = new Date(committer.date)
     $: authorAvatarTooltip = author.person.name + (committer ? ' (author)' : '')
-    let expanded = alwaysExpanded
 </script>
 
 <div class="root">
@@ -35,54 +38,79 @@
         <Tooltip tooltip={authorAvatarTooltip}>
             <Avatar avatar={author.person} />
         </Tooltip>
-    </div>
-    {#if !committerIsAuthor}
-        <div class="avatar">
+        {#if !committerIsAuthor}
             <Tooltip tooltip="{committer.person.name} (committer)">
                 <Avatar avatar={committer.person} />
             </Tooltip>
-        </div>
-    {/if}
-    <div class="info">
-        <span class="title">
-            <a class="subject" href={commit.canonicalURL}>{commit.subject}</a>
-            {#if !alwaysExpanded && commit.body}
-                <button
-                    type="button"
-                    on:click={() => (expanded = !expanded)}
-                    aria-label="{expanded ? 'Hide' : 'Show'} commit message"
-                >
-                    <Icon icon={ILucideEllipsis} inline aria-hidden />
-                </button>
-            {/if}
-        </span>
-        <span>
-            {#if !committerIsAuthor}authored by <strong>{author.person.name}</strong> and{/if}
-            committed by <strong>{committer.person.name}</strong>
-            <Timestamp date={commitDate} />
-        </span>
-        {#if expanded && commit.body}
-            <pre>{commit.body}</pre>
         {/if}
     </div>
+    <div class="title">
+        <a class="subject" href={commit.canonicalURL}>{commit.subject}</a>
+        {#if !alwaysExpanded && commit.body && !$isViewportMobile}
+            <Button
+                variant="secondary"
+                size="sm"
+                on:click={() => (expanded = !expanded)}
+                aria-label="{expanded ? 'Hide' : 'Show'} commit message"
+            >
+                <Icon icon={ILucideEllipsis} inline aria-hidden />
+            </Button>
+        {/if}
+    </div>
+    <div class="author">
+        {#if !committerIsAuthor}authored by <strong>{author.person.name}</strong> and{/if}
+        committed by <strong>{committer.person.name}</strong>
+        <Timestamp date={commitDate} />
+    </div>
+    {#if commit.body}
+        <div class="message" class:expanded>
+            {#if $isViewportMobile}
+                {#if expanded}
+                    <Button variant="secondary" size="lg" display="block" on:click={() => (expanded = false)}>
+                        Close
+                    </Button>
+                {:else}
+                    <Button variant="secondary" size="sm" display="block" on:click={() => (expanded = true)}>
+                        Show commit message
+                    </Button>
+                {/if}
+            {/if}
+
+            <pre>{commit.body}</pre>
+        </div>
+    {/if}
 </div>
 
 <style lang="scss">
     .root {
-        display: flex;
-        gap: 1rem;
+        display: grid;
+        overflow: hidden;
+        grid-template-columns: auto 1fr;
+        grid-template-areas: 'avatar title' 'avatar author' '. message';
+        column-gap: 1rem;
+
+        @media (--mobile) {
+            grid-template-columns: auto 1fr;
+            grid-template-areas: 'avatar title' 'author author' 'message message';
+            row-gap: 0.5rem;
+        }
     }
 
-    .info {
+    .avatar {
+        grid-area: avatar;
         display: flex;
-        flex-direction: column;
-        flex: 1;
-        min-width: 0;
+        gap: 0.25rem;
+        align-self: center;
     }
 
     .title {
+        grid-area: title;
+        align-self: center;
+
         display: flex;
         gap: 0.5rem;
+        align-items: center;
+        overflow: hidden;
 
         .subject {
             font-weight: 600;
@@ -98,35 +126,54 @@
         }
     }
 
-    .avatar {
-        flex: 0 0 auto;
-        display: flex;
-        width: 2.75rem;
-        height: 2.75rem;
-        font-size: 1.5rem;
-    }
-
-    span {
+    .author {
+        grid-area: author;
         color: var(--text-muted);
     }
 
-    button {
-        color: var(--body-color);
-        border: 1px solid var(--secondary);
-        cursor: pointer;
+    .message {
+        grid-area: message;
+        overflow: hidden;
 
-        @media (--xs-breakpoint-down) {
-            align-self: flex-start;
+        @media (--mobile) {
+            &.expanded {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                margin: 0;
+                // This seems necessary to ensure that the commit message overlays
+                // avatars in the commit list on mobile
+                // todo: Find a way to avoid this
+                z-index: 1;
+
+                display: flex;
+                flex-direction: column;
+
+                background-color: var(--color-bg-1);
+            }
         }
     }
 
     pre {
+        display: none;
         margin-top: 0.5rem;
         margin-bottom: 1.5rem;
+
         font-size: 0.75rem;
-        overflow: visible;
         max-width: 100%;
         word-wrap: break-word;
         white-space: pre-wrap;
+
+        .expanded & {
+            display: block;
+        }
+
+        @media (--mobile) {
+            padding: 0.5rem;
+            overflow: auto;
+            margin: 0;
+        }
     }
 </style>
