@@ -104,7 +104,7 @@ func TestCodyGatewayCodeRateLimit(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewCodyGatewayCodeRateLimit(tt.plan, tt.userCount, tt.licenseTags)
+			got := NewCodyGatewayCodeRateLimit(tt.plan, tt.userCount)
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Fatalf("incorrect rate limit computed: %s", diff)
 			}
@@ -151,7 +151,7 @@ func TestCodyGatewayEmbeddingsRateLimit(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewCodyGatewayEmbeddingsRateLimit(tt.plan, tt.userCount, tt.licenseTags)
+			got := NewCodyGatewayEmbeddingsRateLimit(tt.plan, tt.userCount)
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Fatalf("incorrect rate limit computed: %s", diff)
 			}

@@ -149,7 +149,9 @@ func TestCodyGatewayStore(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			_, err = codyaccess.NewCodyGatewayStore(db).Get(ctx, subscriptionID)
+			_, err = codyaccess.NewCodyGatewayStore(db).Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
+				SubscriptionID: subscriptionID,
+			})
 			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionDoesNotExist)
 		})
 	})
@@ -214,15 +216,36 @@ func CodyGatewayStoreListAndGet(t *testing.T, ctx context.Context, subscriptionI
 	t.Run("Get", func(t *testing.T) {
 		for idx, sub := range subscriptionIDs {
 			t.Run(fmt.Sprintf("idx=%d", idx), func(t *testing.T) {
-				got, err := s.Get(ctx, sub)
+				got, err := s.Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
+					SubscriptionID: sub,
+				})
 				require.NoError(t, err)
 
 				assertAccess(idx, got)
+
+				// Reverse lookup by license key hash
+				for _, hash := range got.LicenseKeyHashes {
+					got2, err := s.Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
+						LicenseKeyHash: hash,
+					})
+					require.NoError(t, err)
+					assert.Len(t, got2.LicenseKeyHashes, 2) // 2 valid licenses
+					assert.Equal(t, got, got2)
+				}
 			})
 		}
 
 		t.Run("ErrSubscriptionDoesNotExist", func(t *testing.T) {
-			_, err := s.Get(ctx, uuid.NewString())
+			_, err := s.Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
+				SubscriptionID: uuid.NewString(),
+			})
+			assert.Error(t, err)
+			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionDoesNotExist)
+
+			_, err = s.Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
+				LicenseKeyHash: []byte(uuid.NewString()),
+			})
+			assert.Error(t, err)
 			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionDoesNotExist)
 		})
 	})
@@ -241,7 +264,9 @@ func CodyGatewayStoreUpsert(t *testing.T, ctx context.Context, subscriptionIDs [
 	)
 	require.NoError(t, err)
 
-	got, err := s.Get(ctx, currentAccess.SubscriptionID)
+	got, err := s.Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
+		SubscriptionID: currentAccess.SubscriptionID,
+	})
 	require.NoError(t, err)
 	assert.False(t, got.Enabled)
 	assert.Equal(t, currentAccess.SubscriptionID, got.SubscriptionID)

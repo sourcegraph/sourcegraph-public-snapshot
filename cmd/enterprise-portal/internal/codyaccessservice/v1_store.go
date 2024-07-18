@@ -2,13 +2,19 @@ package codyaccessservice
 
 import (
 	"context"
+	"encoding/hex"
+	"strings"
 
 	"github.com/sourcegraph/conc/pool"
 
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/codyaccess"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayevents"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/productsubscription"
 	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -24,18 +30,33 @@ type StoreV1 interface {
 	// is no longer active. It is critical that the caller not honor tokens where
 	// `.Active == false`.
 	IntrospectSAMSToken(ctx context.Context, token string) (*sams.IntrospectTokenResponse, error)
+
 	// GetCodyGatewayUsage retrieves recent Cody Gateway usage data.
 	// The subscriptionID should not be prefixed.
 	GetCodyGatewayUsage(ctx context.Context, subscriptionID string) (*codyaccessv1.CodyGatewayUsage, error)
+
+	// GetCodyGatewayAccessBySubscription retrieves Cody Gateway access by
+	// subscription ID.
+	GetCodyGatewayAccessBySubscription(ctx context.Context, subscriptionID string) (*codyaccess.CodyGatewayAccessWithSubscriptionDetails, error)
+
+	// GetCodyGatewayAccessByAccessToken retrieves Cody Gateway access details
+	// associated with the given access token.
+	GetCodyGatewayAccessByAccessToken(ctx context.Context, token string) (*codyaccess.CodyGatewayAccessWithSubscriptionDetails, error)
+
+	// ListCodyGatewayAccesses retrieves all Cody Gateway accesses with their
+	// associated subscription details.
+	ListCodyGatewayAccesses(ctx context.Context) ([]*codyaccess.CodyGatewayAccessWithSubscriptionDetails, error)
 }
 
 type storeV1 struct {
 	SAMSClient        *sams.ClientV1
+	CodyAccess        *codyaccess.Store
 	CodyGatewayEvents *codygatewayevents.Service
 }
 
 type StoreV1Options struct {
 	SAMSClient *sams.ClientV1
+	DB         *database.DB
 	// Optional.
 	CodyGatewayEvents *codygatewayevents.Service
 }
@@ -46,6 +67,7 @@ var errStoreUnimplemented = errors.New("unimplemented")
 func NewStoreV1(opts StoreV1Options) StoreV1 {
 	return &storeV1{
 		SAMSClient:        opts.SAMSClient,
+		CodyAccess:        opts.DB.CodyAccess(),
 		CodyGatewayEvents: opts.CodyGatewayEvents,
 	}
 }
@@ -126,4 +148,34 @@ func (s *storeV1) GetCodyGatewayUsage(ctx context.Context, subscriptionID string
 		applyResult(usage)
 	}
 	return usage, nil
+
+}
+
+func (s *storeV1) GetCodyGatewayAccessBySubscription(ctx context.Context, subscriptionID string) (*codyaccess.CodyGatewayAccessWithSubscriptionDetails, error) {
+	return s.CodyAccess.CodyGateway().Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
+		SubscriptionID: subscriptionID,
+	})
+}
+
+func (s *storeV1) GetCodyGatewayAccessByAccessToken(ctx context.Context, token string) (*codyaccess.CodyGatewayAccessWithSubscriptionDetails, error) {
+	// Below is copied from 'func (t dbTokens) LookupProductSubscriptionIDByAccessToken'
+	// in 'cmd/frontend/internal/dotcom/productsubscription'.
+	if !strings.HasPrefix(token, productsubscription.AccessTokenPrefix) &&
+		!strings.HasPrefix(token, license.LicenseKeyBasedAccessTokenPrefix) {
+		return nil, errors.WithSafeDetails(codyaccess.ErrSubscriptionDoesNotExist, "invalid token with unknown prefix")
+	}
+	tokenSansPrefix := token[len(license.LicenseKeyBasedAccessTokenPrefix):]
+	decoded, err := hex.DecodeString(tokenSansPrefix)
+	if err != nil {
+		return nil, errors.WithSafeDetails(codyaccess.ErrSubscriptionDoesNotExist, "invalid token with unknown encoding")
+	}
+	// End copied code.
+
+	return s.CodyAccess.CodyGateway().Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
+		LicenseKeyHash: decoded,
+	})
+}
+
+func (s *storeV1) ListCodyGatewayAccesses(ctx context.Context) ([]*codyaccess.CodyGatewayAccessWithSubscriptionDetails, error) {
+	return s.CodyAccess.CodyGateway().List(ctx)
 }

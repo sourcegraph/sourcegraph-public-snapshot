@@ -53,7 +53,7 @@ func NewCodyGatewayChatRateLimit(plan Plan, userCount *int) CodyGatewayRateLimit
 }
 
 // NewCodyGatewayCodeRateLimit applies default Cody Gateway access based on the plan.
-func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string) CodyGatewayRateLimit {
+func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int) CodyGatewayRateLimit {
 	uc := 0
 	if userCount != nil {
 		uc = *userCount
@@ -87,7 +87,7 @@ func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string
 const tokensPerDollar = int(1 / (0.0001 / 1_000))
 
 // NewCodyGatewayEmbeddingsRateLimit applies default Cody Gateway access based on the plan.
-func NewCodyGatewayEmbeddingsRateLimit(plan Plan, userCount *int, licenseTags []string) CodyGatewayRateLimit {
+func NewCodyGatewayEmbeddingsRateLimit(plan Plan, userCount *int) CodyGatewayRateLimit {
 	uc := 0
 	if userCount != nil {
 		uc = *userCount

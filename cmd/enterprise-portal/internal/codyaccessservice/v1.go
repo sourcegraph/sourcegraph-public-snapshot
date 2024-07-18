@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/connectutil"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/codyaccess"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/samsm2m"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -23,42 +24,40 @@ import (
 
 const Name = codyaccessv1connect.CodyAccessServiceName
 
-type DotComDB interface {
-	GetCodyGatewayAccessAttributesBySubscription(ctx context.Context, subscriptionID string) (*dotcomdb.CodyGatewayAccessAttributes, error)
-	GetCodyGatewayAccessAttributesByAccessToken(ctx context.Context, subscriptionID string) (*dotcomdb.CodyGatewayAccessAttributes, error)
-	GetAllCodyGatewayAccessAttributes(ctx context.Context) ([]*dotcomdb.CodyGatewayAccessAttributes, error)
-}
-
 func RegisterV1(
 	logger log.Logger,
 	mux *http.ServeMux,
 	store StoreV1,
-	dotcom DotComDB,
 	opts ...connect.HandlerOption,
 ) {
 	mux.Handle(
 		codyaccessv1connect.NewCodyAccessServiceHandler(
-			&handlerV1{
-				logger: logger.Scoped("codyaccess.v1"),
-				store:  store,
-				dotcom: dotcom,
-			},
+			NewHandlerV1(logger, store),
 			opts...,
 		),
 	)
 }
 
-type handlerV1 struct {
+type HandlerV1 struct {
 	codyaccessv1connect.UnimplementedCodyAccessServiceHandler
 
 	logger log.Logger
 	store  StoreV1
-	dotcom DotComDB
 }
 
-var _ codyaccessv1connect.CodyAccessServiceHandler = (*handlerV1)(nil)
+func NewHandlerV1(
+	logger log.Logger,
+	store StoreV1,
+) *HandlerV1 {
+	return &HandlerV1{
+		logger: logger.Scoped("codyaccess.v1"),
+		store:  store,
+	}
+}
 
-func (s *handlerV1) GetCodyGatewayAccess(ctx context.Context, req *connect.Request[codyaccessv1.GetCodyGatewayAccessRequest]) (*connect.Response[codyaccessv1.GetCodyGatewayAccessResponse], error) {
+var _ codyaccessv1connect.CodyAccessServiceHandler = (*HandlerV1)(nil)
+
+func (s *HandlerV1) GetCodyGatewayAccess(ctx context.Context, req *connect.Request[codyaccessv1.GetCodyGatewayAccessRequest]) (*connect.Response[codyaccessv1.GetCodyGatewayAccessResponse], error) {
 	logger := trace.Logger(ctx, s.logger).
 		With(log.String("queryType", fmt.Sprintf("%T", req.Msg.GetQuery())))
 
@@ -70,19 +69,19 @@ func (s *handlerV1) GetCodyGatewayAccess(ctx context.Context, req *connect.Reque
 	}
 	logger = logger.With(clientAttrs...)
 
-	var attr *dotcomdb.CodyGatewayAccessAttributes
+	var attr *codyaccess.CodyGatewayAccessWithSubscriptionDetails
 	switch query := req.Msg.GetQuery().(type) {
 	case *codyaccessv1.GetCodyGatewayAccessRequest_SubscriptionId:
 		if len(query.SubscriptionId) == 0 {
 			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid query: subscription ID"))
 		}
-		attr, err = s.dotcom.GetCodyGatewayAccessAttributesBySubscription(ctx, query.SubscriptionId)
+		attr, err = s.store.GetCodyGatewayAccessBySubscription(ctx, query.SubscriptionId)
 
 	case *codyaccessv1.GetCodyGatewayAccessRequest_AccessToken:
 		if len(query.AccessToken) == 0 {
 			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid query: access token"))
 		}
-		attr, err = s.dotcom.GetCodyGatewayAccessAttributesByAccessToken(ctx, query.AccessToken)
+		attr, err = s.store.GetCodyGatewayAccessByAccessToken(ctx, query.AccessToken)
 
 	default:
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid query"))
@@ -103,7 +102,7 @@ func (s *handlerV1) GetCodyGatewayAccess(ctx context.Context, req *connect.Reque
 	}), nil
 }
 
-func (s *handlerV1) ListCodyGatewayAccesses(ctx context.Context, req *connect.Request[codyaccessv1.ListCodyGatewayAccessesRequest]) (*connect.Response[codyaccessv1.ListCodyGatewayAccessesResponse], error) {
+func (s *HandlerV1) ListCodyGatewayAccesses(ctx context.Context, req *connect.Request[codyaccessv1.ListCodyGatewayAccessesRequest]) (*connect.Response[codyaccessv1.ListCodyGatewayAccessesResponse], error) {
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require approrpiate M2M scope.
@@ -122,7 +121,7 @@ func (s *handlerV1) ListCodyGatewayAccesses(ctx context.Context, req *connect.Re
 		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pagination not implemented"))
 	}
 
-	attrs, err := s.dotcom.GetAllCodyGatewayAccessAttributes(ctx)
+	attrs, err := s.store.ListCodyGatewayAccesses(ctx)
 	if err != nil {
 		if err == dotcomdb.ErrCodyGatewayAccessNotFound {
 			return nil, connect.NewError(connect.CodeNotFound, err)
@@ -146,7 +145,7 @@ func (s *handlerV1) ListCodyGatewayAccesses(ctx context.Context, req *connect.Re
 	return connect.NewResponse(&resp), nil
 }
 
-func (s *handlerV1) GetCodyGatewayUsage(ctx context.Context, req *connect.Request[codyaccessv1.GetCodyGatewayUsageRequest]) (*connect.Response[codyaccessv1.GetCodyGatewayUsageResponse], error) {
+func (s *HandlerV1) GetCodyGatewayUsage(ctx context.Context, req *connect.Request[codyaccessv1.GetCodyGatewayUsageRequest]) (*connect.Response[codyaccessv1.GetCodyGatewayUsageResponse], error) {
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require appropriate M2M scope.

@@ -91,7 +91,7 @@ func (r codyGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Context)
 	var source graphqlbackend.CodyGatewayRateLimitSource
 	if activeLicense != nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
-		rateLimit = licensing.NewCodyGatewayCodeRateLimit(licensing.PlanFromTags(activeLicense.LicenseTags), activeLicense.LicenseUserCount, activeLicense.LicenseTags)
+		rateLimit = licensing.NewCodyGatewayCodeRateLimit(licensing.PlanFromTags(activeLicense.LicenseTags), activeLicense.LicenseUserCount)
 	}
 
 	// Apply overrides
@@ -131,7 +131,7 @@ func (r codyGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) (gra
 	var source graphqlbackend.CodyGatewayRateLimitSource
 	if activeLicense != nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
-		rateLimit = licensing.NewCodyGatewayEmbeddingsRateLimit(licensing.PlanFromTags(activeLicense.LicenseTags), activeLicense.LicenseUserCount, activeLicense.LicenseTags)
+		rateLimit = licensing.NewCodyGatewayEmbeddingsRateLimit(licensing.PlanFromTags(activeLicense.LicenseTags), activeLicense.LicenseUserCount)
 	}
 
 	// Apply overrides

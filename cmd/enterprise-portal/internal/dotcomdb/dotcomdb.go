@@ -125,10 +125,10 @@ func (c CodyGatewayAccessAttributes) EvaluateRateLimits() CodyGatewayRateLimits 
 		Chat:       licensing.NewCodyGatewayChatRateLimit(p, c.ActiveLicenseUserCount),
 
 		CodeSource: codyaccessv1.CodyGatewayRateLimitSource_CODY_GATEWAY_RATE_LIMIT_SOURCE_PLAN,
-		Code:       licensing.NewCodyGatewayCodeRateLimit(p, c.ActiveLicenseUserCount, c.ActiveLicenseTags),
+		Code:       licensing.NewCodyGatewayCodeRateLimit(p, c.ActiveLicenseUserCount),
 
 		EmbeddingsSource: codyaccessv1.CodyGatewayRateLimitSource_CODY_GATEWAY_RATE_LIMIT_SOURCE_PLAN,
-		Embeddings:       licensing.NewCodyGatewayEmbeddingsRateLimit(p, c.ActiveLicenseUserCount, c.ActiveLicenseTags),
+		Embeddings:       licensing.NewCodyGatewayEmbeddingsRateLimit(p, c.ActiveLicenseUserCount),
 	}
 
 	// Chat

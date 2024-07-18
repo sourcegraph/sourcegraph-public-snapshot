@@ -204,7 +204,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 			},
 		},
 		// Run importer in background
-		importer.New(ctx, logger.Scoped("importer"), dotcomDB, dbHandle, redisKVClient, config.DotComDB.ImportInterval),
+		importer.NewPeriodicImporter(ctx, logger.Scoped("importer"), dotcomDB, dbHandle, redisKVClient, config.DotComDB.ImportInterval),
 		// Stop server first
 		server,
 	}, nil
