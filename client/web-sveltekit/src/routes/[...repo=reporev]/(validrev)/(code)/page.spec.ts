@@ -248,9 +248,8 @@ test('history panel', async ({ page, sg }) => {
     await expect(page.getByText('Test commit')).toBeHidden()
 })
 
-test('file popover', async ({ page, sg }, testInfo) => {
-    // Test needs more time to teardown
-    test.setTimeout(testInfo.timeout * 3000)
+test('file popover', async ({ page, sg }) => {
+    test.slow()
 
     await page.goto(`/${repoName}`)
 
