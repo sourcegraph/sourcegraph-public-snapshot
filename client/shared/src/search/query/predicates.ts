@@ -102,7 +102,6 @@ export const scanPredicate = (field: string, value: string): PredicateInstance |
         field = field.slice(1)
     }
     field = resolveFieldAlias(field)
-    // TODO: start here
     const predicate = PREDICATES.find(predicate => predicate.field === field && predicate.name === name)
     if (!predicate) {
         return undefined
