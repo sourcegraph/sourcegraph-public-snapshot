@@ -162,7 +162,7 @@ test.describe('file sidebar', () => {
         await expect(page.getByText(/Child error/)).toBeVisible()
     })
 
-    test.skip('error handling non-existing directory -> root', async ({ page, sg }) => {
+    test('error handling non-existing directory -> root', async ({ page, sg, context }) => {
         // Here we expect the sidebar to show an error message, and after navigigating
         // to an existing directory, the directory contents
         sg.mockOperations({

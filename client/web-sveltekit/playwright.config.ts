@@ -13,7 +13,7 @@ const config: PlaywrightTestConfig = {
               reuseExistingServer: true,
           }
         : undefined,
-    reporter: 'list',
+    reporter: 'html',
     // note: if you proxy into a locally running vite preview, you may have to raise this to 60 seconds
     timeout: process.env.BAZEL ? 60_000 : 30_000,
     expect: {
@@ -21,6 +21,7 @@ const config: PlaywrightTestConfig = {
     },
     use: {
         baseURL: `http://localhost:${PORT}`,
+        trace: 'retain-on-failure',
     },
     projects: [
         {
