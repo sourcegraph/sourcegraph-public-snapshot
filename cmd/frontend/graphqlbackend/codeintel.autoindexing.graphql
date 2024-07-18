@@ -209,6 +209,9 @@ type InferAutoIndexJobsResult {
 
 """
 A list of precise code intelligence indexes.
+
+This type would more accurately be called "CodeGraphIndexJobConnection"
+since it covers both precise and syntactic indexing.
 """
 type PreciseIndexConnection {
     """
@@ -228,7 +231,13 @@ type PreciseIndexConnection {
 }
 
 """
-Metadata and status about a precise code intelligence index.
+Metadata and status about a code intelligence index.
+
+This type would more accurately be called "CodeGraphIndexJob"
+as it covers both precise and syntactic indexing.
+
+It may represent information about an indexing job which failed
+to produce an index altogether.
 """
 type PreciseIndex implements Node {
     """
@@ -346,6 +355,13 @@ type PreciseIndex implements Node {
 
 """
 Possible states for PreciseIndexes.
+
+This type would more accurately be called "CodeGraphIndexJobState"
+as it covers both precise and syntactic indexing.
+
+See https://sourcegraph.com/docs/code-search/code-navigation/auto_indexing#lifecycle-of-an-indexing-job
+and https://sourcegraph.com/docs/code-search/code-navigation/explanations/uploads#lifecycle-of-an-upload
+for details about state transitions.
 """
 enum PreciseIndexState {
     UPLOADING_INDEX
@@ -388,6 +404,8 @@ type CodeIntelIndexer {
 
 """
 Configuration and execution summary of an index job.
+
+This type would more accurately be called "IndexJobExecutionSummary".
 """
 type IndexSteps {
     """

@@ -211,7 +211,7 @@ func TestListWebhooks(t *testing.T) {
 						{"id":"V2ViaG9vazoy"}
 					],
 					"totalCount":2,
-					"pageInfo":{"hasNextPage":true, "endCursor": "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIzIiwiRGlyZWN0aW9uIjoibmV4dCJ9"}
+					"pageInfo":{"hasNextPage":true, "endCursor": "V2ViaG9va0N1cnNvcjp7ImMiOiJpZCIsInYiOiIzIiwiZCI6Im5leHQifQ=="}
 				}}`,
 		},
 		{
@@ -254,7 +254,7 @@ func TestListWebhooks(t *testing.T) {
 			`,
 			Variables: map[string]any{
 				"first": 2,
-				"after": "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIzIiwiRGlyZWN0aW9uIjoibmV4dCJ9",
+				"after": "V2ViaG9va0N1cnNvcjp7ImMiOiJpZCIsInYiOiIzIiwiZCI6Im5leHQifQ==",
 			},
 			ExpectedResult: `{"webhooks":
 				{
@@ -376,7 +376,7 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 							"id": "V2ViaG9vazow"
 						}],
 						"pageInfo": {
-						  "endCursor": "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIxIiwiRGlyZWN0aW9uIjoibmV4dCJ9"
+						  "endCursor": "V2ViaG9va0N1cnNvcjp7ImMiOiJpZCIsInYiOiIxIiwiZCI6Im5leHQifQ=="
 						}
 					}
 				}
@@ -390,7 +390,7 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 
 		graphqlbackend.RunTest(t, &graphqlbackend.Test{
 			Schema: createGqlSchema(t, db),
-			Query:  buildQuery(1, "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIxIiwiRGlyZWN0aW9uIjoibmV4dCJ9"),
+			Query:  buildQuery(1, "V2ViaG9va0N1cnNvcjp7ImMiOiJpZCIsInYiOiIyIiwiZCI6Im5leHQifQ=="),
 			ExpectedResult: `
 				{
 					"webhooks": {
@@ -398,7 +398,7 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 							"id": "V2ViaG9vazox"
 						}],
 						"pageInfo": {
-						  "endCursor": "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIyIiwiRGlyZWN0aW9uIjoibmV4dCJ9"
+						  "endCursor": "V2ViaG9va0N1cnNvcjp7ImMiOiJpZCIsInYiOiIyIiwiZCI6Im5leHQifQ=="
 						}
 					}
 				}
@@ -667,7 +667,7 @@ func TestGetWebhookWithURL(t *testing.T) {
 func TestWebhookCursor(t *testing.T) {
 	var (
 		webhookCursor       = types.Cursor{Column: "id", Value: "4", Direction: "next"}
-		opaqueWebhookCursor = "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiI0IiwiRGlyZWN0aW9uIjoibmV4dCJ9"
+		opaqueWebhookCursor = "V2ViaG9va0N1cnNvcjp7ImMiOiJpZCIsInYiOiI0IiwiZCI6Im5leHQifQ=="
 	)
 	t.Run("Marshal", func(t *testing.T) {
 		if got, want := MarshalWebhookCursor(&webhookCursor), opaqueWebhookCursor; got != want {

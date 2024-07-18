@@ -61,7 +61,7 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
     )
 
     const queryAllConnection = useCallback(
-        (args: Partial<ListAllCodeMonitorsVariables>) =>
+        (args: Omit<Partial<ListAllCodeMonitorsVariables>, 'first'> & { first?: number | null }) =>
             fetchCodeMonitors({
                 first: args.first ?? 10,
                 after: args.after ?? null,

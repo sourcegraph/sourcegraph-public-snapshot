@@ -50,20 +50,20 @@ unNixifyDylibs { inherit pkgs; } (pkgsStatic.gccStdenv.mkDerivation rec {
             {
               name = "helix-core-api";
               url = "https://filehost.perforce.com/perforce/r22.2/bin.macosx12arm64/p4api-openssl3.tgz";
-              hash = "sha256-6Bz26+1RixsK+zq6qeU3hbT8w+mNT7KBvqZ3Gnrkke4=";
+              hash = "sha256-ue+thJdwYb3j8a9fy5FbGCDyCOTEm6coYNI3GbAjQQ8=";
             }
         else
           fetchzip {
             name = "helix-core-api";
             url = "https://filehost.perforce.com/perforce/r22.2/bin.macosx12x86_64/p4api-openssl3.tgz";
-            hash = "sha256-/Ia9R+H95Yx4Sx7+Grke0d3QskuZ2YtH4LZOS7vRMZc=";
+            hash = "sha256-0jU51a239Ul5hicoCYhlzc6CmFXXWqlHEv2CsTYarS0=";
           }
       else if hostPlatform.isLinux then
         fetchzip
           {
             name = "helix-core-api";
             url = "https://filehost.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz";
-            hash = "sha256-tqWhdQQdOVAiGa6HiRajw4emoYRRRgZf6pZVEIf1qqU=";
+            hash = "sha256-OfVxND14LpgujJTl9WfhsHdPsZ/INd9iDw5DcyzglLU=";
           }
       else throw "unsupported platform ${stdenv.hostPlatform.parsed.kernel.name}"
     )

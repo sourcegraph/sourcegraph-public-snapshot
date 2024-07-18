@@ -17,8 +17,8 @@ import {
 } from '../../../components/FilteredConnection/ui'
 import { GitHubAppFailureAlert } from '../../../components/gitHubApps/GitHubAppFailureAlert'
 import {
-    type BatchChangesCodeHostFields,
     GitHubAppKind,
+    type BatchChangesCodeHostFields,
     type GlobalBatchChangesCodeHostsResult,
     type Scalars,
     type UserBatchChangesCodeHostsResult,
@@ -107,7 +107,6 @@ export const CommitSigningIntegrations: React.FunctionComponent<
                     <SummaryContainer className="mt-2">
                         <ConnectionSummary
                             noSummaryIfAllNodesVisible={true}
-                            first={30}
                             centered={true}
                             connection={connection}
                             noun="code host commit signing integration"

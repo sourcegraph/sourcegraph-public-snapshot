@@ -1,11 +1,10 @@
 import { dirname } from 'path'
 
-import { from } from 'rxjs'
 import { readable, derived, type Readable } from 'svelte/store'
 
 import { CodyContextFiltersSchema, getFiltersFromCodyContextFilters } from '$lib/cody/config'
 import type { LineOrPositionOrRange } from '$lib/common'
-import { getGraphQLClient, infinityQuery, type GraphQLClient } from '$lib/graphql'
+import { getGraphQLClient, infinityQuery, type GraphQLClient, IncrementalRestoreStrategy } from '$lib/graphql'
 import { ROOT_PATH, fetchSidebarFileTree } from '$lib/repo/api/tree'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
@@ -41,54 +40,43 @@ export const load: LayoutLoad = async ({ parent, params }) => {
         filePath,
         parentPath,
         isCodyAvailable: createCodyAvailableStore(client, repoName),
-        lastCommit: client.query(LastCommitQuery, {
-            repoName,
-            revspec: revision,
-            filePath,
-        }),
+        lastCommit: resolvedRevision
+            .then(revspec =>
+                client.query(LastCommitQuery, {
+                    repoName,
+                    revspec,
+                    filePath,
+                })
+            )
+            .then(result => result.data?.repository?.lastCommit?.ancestors.nodes[0]),
         // Fetches the most recent commits for current blob, tree or repo root
         commitHistory: infinityQuery({
             client,
             query: GitHistoryQuery,
-            variables: from(
-                resolvedRevision.then(revspec => ({
-                    repoName,
-                    revspec,
-                    filePath,
-                    first: HISTORY_COMMITS_PER_PAGE,
-                    afterCursor: null as string | null,
-                }))
-            ),
-            nextVariables: previousResult => {
-                if (previousResult?.data?.repository?.commit?.ancestors?.pageInfo?.hasNextPage) {
-                    return {
-                        afterCursor: previousResult.data.repository.commit.ancestors.pageInfo.endCursor,
-                    }
-                }
-                return undefined
-            },
-            combine: (previousResult, nextResult) => {
-                if (!nextResult.data?.repository?.commit) {
-                    return nextResult
-                }
-                const previousNodes = previousResult.data?.repository?.commit?.ancestors?.nodes ?? []
-                const nextNodes = nextResult.data.repository?.commit?.ancestors.nodes ?? []
+            variables: resolvedRevision.then(revspec => ({
+                repoName,
+                revspec,
+                filePath,
+                first: HISTORY_COMMITS_PER_PAGE,
+                afterCursor: null as string | null,
+            })),
+            map: result => {
+                const anestors = result.data?.repository?.commit?.ancestors
                 return {
-                    ...nextResult,
-                    data: {
-                        repository: {
-                            ...nextResult.data.repository,
-                            commit: {
-                                ...nextResult.data.repository.commit,
-                                ancestors: {
-                                    ...nextResult.data.repository.commit.ancestors,
-                                    nodes: [...previousNodes, ...nextNodes],
-                                },
-                            },
-                        },
-                    },
+                    nextVariables: anestors?.pageInfo.hasNextPage
+                        ? { afterCursor: anestors.pageInfo.endCursor }
+                        : undefined,
+                    data: anestors?.nodes,
+                    error: result.error,
                 }
             },
+            merge: (previous, next) => (previous ?? []).concat(next ?? []),
+            createRestoreStrategy: api =>
+                new IncrementalRestoreStrategy(
+                    api,
+                    n => n.length,
+                    n => ({ first: n.length })
+                ),
         }),
 
         // We are not extracting the selected position from the URL because that creates a dependency
@@ -97,56 +85,27 @@ export const load: LayoutLoad = async ({ parent, params }) => {
             infinityQuery({
                 client,
                 query: RepoPage_PreciseCodeIntel,
-                variables: from(
-                    resolvedRevision.then(revspec => ({
-                        repoName,
-                        revspec,
-                        filePath,
-                        first: REFERENCES_PER_PAGE,
-                        // Line and character are 1-indexed, but the API expects 0-indexed
-                        line: lineOrPosition.line - 1,
-                        character: lineOrPosition.character! - 1,
-                        afterCursor: null as string | null,
-                    }))
-                ),
-                nextVariables: previousResult => {
-                    if (previousResult?.data?.repository?.commit?.blob?.lsif?.references.pageInfo.hasNextPage) {
-                        return {
-                            afterCursor: previousResult.data.repository.commit.blob.lsif.references.pageInfo.endCursor,
-                        }
-                    }
-                    return undefined
-                },
-                combine: (previousResult, nextResult) => {
-                    if (!nextResult.data?.repository?.commit?.blob?.lsif) {
-                        return nextResult
-                    }
-
-                    const previousNodes = previousResult.data?.repository?.commit?.blob?.lsif?.references?.nodes ?? []
-                    const nextNodes = nextResult.data?.repository?.commit?.blob?.lsif?.references?.nodes ?? []
-
+                variables: resolvedRevision.then(revspec => ({
+                    repoName,
+                    revspec,
+                    filePath,
+                    first: REFERENCES_PER_PAGE,
+                    // Line and character are 1-indexed, but the API expects 0-indexed
+                    line: lineOrPosition.line - 1,
+                    character: lineOrPosition.character! - 1,
+                    afterCursor: null as string | null,
+                })),
+                map: result => {
+                    const references = result.data?.repository?.commit?.blob?.lsif?.references
                     return {
-                        ...nextResult,
-                        data: {
-                            repository: {
-                                ...nextResult.data.repository,
-                                commit: {
-                                    ...nextResult.data.repository.commit,
-                                    blob: {
-                                        ...nextResult.data.repository.commit.blob,
-                                        lsif: {
-                                            ...nextResult.data.repository.commit.blob.lsif,
-                                            references: {
-                                                ...nextResult.data.repository.commit.blob.lsif.references,
-                                                nodes: [...previousNodes, ...nextNodes],
-                                            },
-                                        },
-                                    },
-                                },
-                            },
-                        },
+                        nextVariables: references?.pageInfo.hasNextPage
+                            ? { afterCursor: references.pageInfo.endCursor }
+                            : undefined,
+                        data: references?.nodes,
+                        error: result.error,
                     }
                 },
+                merge: (previous, next) => (previous ?? []).concat(next ?? []),
             }),
     }
 }

@@ -343,8 +343,9 @@ func (c *googleCompletionStreamClient) makeGeminiRequest(ctx context.Context, re
 	if err != nil {
 		return nil, err
 	}
+
 	payload := googleRequest{
-		Model:    requestParams.Model,
+		Model:    request.ModelConfigInfo.Model.ModelName,
 		Contents: prompt,
 		GenerationConfig: googleGenerationConfig{
 			Temperature:     requestParams.Temperature,
@@ -443,7 +444,7 @@ func (c *googleCompletionStreamClient) getAPIURL(request types.CompletionRequest
 		}
 	}
 
-	model := request.Parameters.Model
+	model := request.ModelConfigInfo.Model.ModelName
 	apiURL.Path = path.Join(apiURL.Path, model) + ":" + getgRPCMethod(stream, c.apiFamily)
 
 	// We need to append the API key to the default API endpoint URL.

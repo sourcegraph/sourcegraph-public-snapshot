@@ -8,12 +8,12 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 import {
     ConnectionContainer,
     ConnectionError,
-    ConnectionLoading,
+    ConnectionForm,
     ConnectionList,
-    SummaryContainer,
+    ConnectionLoading,
     ConnectionSummary,
     ShowMoreButton,
-    ConnectionForm,
+    SummaryContainer,
 } from '../../../../components/FilteredConnection/ui'
 import { PageTitle } from '../../../../components/PageTitle'
 
@@ -36,10 +36,7 @@ export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsW
 
     const [search, setSearch] = useState<string>(searchParams.get(SEARCH_PARAM_KEY) ?? '')
 
-    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useQueryProductLicensesConnection(
-        search,
-        20
-    )
+    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useQueryProductLicensesConnection(search)
 
     useEffect(() => {
         const query = search?.trim() ?? ''
@@ -92,7 +89,6 @@ export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsW
                             {connection && (
                                 <SummaryContainer className="mt-2 mb-0">
                                     <ConnectionSummary
-                                        first={15}
                                         centered={true}
                                         connection={connection}
                                         noun="product license"

@@ -1370,7 +1370,6 @@ Go,github.com/googleapis/gax-go/v2,v2.12.0,New BSD,github.com/googleapis/gax-go,
 Go,github.com/gorilla/context,v1.1.1,New BSD,github.com/gorilla/context,Approved
 Go,github.com/gorilla/css,v1.0.0,New BSD,github.com/gorilla/css,Approved
 Go,github.com/gorilla/mux,v1.8.0,New BSD,github.com/gorilla/mux,Approved
-Go,github.com/gorilla/schema,v1.2.0,New BSD,github.com/gorilla/schema,Approved
 Go,github.com/gorilla/securecookie,v1.1.1,New BSD,github.com/gorilla/securecookie,Approved
 Go,github.com/gorilla/sessions,v1.2.1,New BSD,github.com/gorilla/sessions,Approved
 Go,github.com/gorilla/websocket,v1.5.0,Simplified BSD,github.com/gorilla/websocket,Approved

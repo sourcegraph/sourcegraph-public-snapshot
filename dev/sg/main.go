@@ -196,29 +196,53 @@ var sg = &cli.App{
 		} else {
 			cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
 		}
-
-		// Set up analytics and hooks for each command - do this as the first context
-		// setup
-		if !cmd.Bool("disable-analytics") {
-			if err := analytics.InitIdentity(cmd.Context, std.Out, secretsStore); err != nil {
-				std.Out.WriteWarningf("Failed to persist identity for analytics, continuing: %s", err)
-			}
-
-			// Add analytics to each command
-			addAnalyticsHooks([]string{"sg"}, cmd.App.Commands)
-		}
-
-		// Initialize context after analytics are set up
+		// Initialize context
 		cmd.Context, err = usershell.Context(cmd.Context)
 		if err != nil {
 			std.Out.WriteWarningf("Unable to infer user shell context: %s", err)
 		}
 		cmd.Context = background.Context(cmd.Context, verbose)
+
+		// We need to register the wait in the interrupt handlers, because if interrupted
+		// the .After on cli.App won't run. This makes sure that both the happy and sad paths
+		// are waiting for background tasks to finish.
 		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
 
-		// start the analytics publisher
-		analytics.BackgroundEventPublisher(cmd.Context)
-		interrupt.Register(analytics.StopBackgroundEventPublisher)
+		// Set up analytics and hooks for each command - do this as the first context
+		// setup
+		if !cmd.Bool("disable-analytics") {
+			if err := analytics.InitIdentity(cmd.Context, std.Out, secretsStore); err != nil {
+				std.Out.WriteWarningf("Failed to persist analytics. See below for more details")
+				msg := ""
+				if errors.As(err, &secrets.CommandErr{}) {
+					msg = "The problem occured while trying to get a secret via a tool. Below is the error:\n"
+					msg += fmt.Sprintf("\n```%v```\n", err)
+					msg += "\nPossible fixes:\n"
+					msg += "- You might missing a required tool - re-run `sg setup` to get it installed in your environment.\n"
+					msg += "- Reach out to #discuss-dev-infra to help troubleshoot\n"
+				} else if errors.As(err, &secrets.GoogleSecretErr{}) {
+					msg = "The problem occured while trying to get a secret via Google. Below is the error:\n"
+					msg += fmt.Sprintf("\n```%v```\n", err)
+					msg += "\nPossible fixes:\n"
+					msg += "- You should be in the `gcp-engineering@sourcegraph.com` group. Ask #ask-it-tech-ops or #discuss-dev-infra to check that\n"
+					msg += "- Ensure you're currently authenticated with your sourcegraph.com account by running `gcloud auth list`\n"
+					msg += "- Ensure you're authenticated with gcloud by running `gcloud auth application-default login`\n"
+				} else {
+					msg = fmt.Sprintf("The problem occured while trying to persist analytics. Below is the error:\n```%v```\n", err)
+				}
+				msg += "If the error persists please reach out to #discuss-dev-infra but you can disable analytics by doing:\n"
+				msg += "- run your command with `--disable-analytics`\n"
+				msg += "- export `SG_DISABLE_ANALYTICS=1`\n"
+				std.Out.WriteMarkdown(msg)
+				std.Out.WriteWarningf("attempting to continue ...")
+			}
+
+			// Add analytics to each command
+			addAnalyticsHooks([]string{"sg"}, cmd.App.Commands)
+			// Start the analytics publisher
+			analytics.BackgroundEventPublisher(cmd.Context)
+			interrupt.Register(analytics.StopBackgroundEventPublisher)
+		}
 
 		// Configure logger, for commands that use components that use loggers
 		if _, set := os.LookupEnv(log.EnvDevelopment); !set {
@@ -282,7 +306,6 @@ var sg = &cli.App{
 		dbCommand,
 		migrationCommand,
 		insightsCommand,
-		telemetryCommand,
 		monitoringCommand,
 		contextCommand,
 		deployCommand,

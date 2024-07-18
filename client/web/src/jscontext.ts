@@ -245,6 +245,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the own API is enabled on the Sourcegraph instance */
     ownEnabled: boolean
 
+    /** Whether the search jobs feature is enabled on the Sourcegraph instance */
+    searchJobsEnabled: boolean
+
     /** Authentication provider instances in site config. */
     authProviders: AuthProvider[]
 

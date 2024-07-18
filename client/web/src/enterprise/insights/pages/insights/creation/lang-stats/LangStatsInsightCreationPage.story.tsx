@@ -10,6 +10,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../../components/WebStory'
 import type { LangStatsInsightContentResult } from '../../../../../../graphql-operations'
+import { SearchVersion } from '../../../../../../graphql-operations'
 import { GET_LANG_STATS_GQL } from '../../../../core/hooks/live-preview-insight'
 import { useCodeInsightsLicenseState } from '../../../../stores'
 
@@ -31,7 +32,7 @@ export default defaultStory
 const LANG_STATS_MOCK: MockedResponse<LangStatsInsightContentResult> = {
     request: {
         query: getDocumentNode(GET_LANG_STATS_GQL),
-        variables: {},
+        variables: { version: SearchVersion.V3 },
     },
     result: {
         data: {

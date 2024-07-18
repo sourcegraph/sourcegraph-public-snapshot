@@ -65,8 +65,12 @@ func CheckWriteEventsScope(ctx context.Context, logger log.Logger, tokens TokenI
 	// for now until we have a concerted effort.
 	result, err := tokens.IntrospectToken(ctx, token)
 	if err != nil {
-		logger.Error("samsClient.IntrospectToken failed", log.Error(err))
-		return status.Error(codes.Internal, "unable to validate token")
+		if errors.IsContextCanceled(err) {
+			return status.Error(codes.Canceled, "request canceled")
+		} else {
+			logger.Error("samsClient.IntrospectToken failed", log.Error(err))
+			return status.Error(codes.Internal, "unable to validate token")
+		}
 	}
 	span.SetAttributes(attribute.String("client_id", result.ClientID))
 

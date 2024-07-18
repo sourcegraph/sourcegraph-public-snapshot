@@ -8,19 +8,16 @@ import (
 
 func (a *Appliance) Routes() *mux.Router {
 	r := mux.NewRouter()
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
-	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/appliance", http.StatusFound)
-	})
+	r.Use(a.checkAuthorization)
 
-	r.Handle("/appliance/login", a.getLoginHandler()).Methods(http.MethodGet)
-	r.Handle("/appliance/login", a.postLoginHandler()).Methods(http.MethodPost)
-	r.Handle("/appliance/error", a.errorHandler()).Methods(http.MethodGet)
+	// ported appliance React UI endpoints
+	r.NotFoundHandler = http.HandlerFunc(a.notFoundResponse)
+	r.MethodNotAllowedHandler = http.HandlerFunc(a.methodNotAllowedResponse)
 
-	// Auth-gated endpoints
-	r.Handle("/appliance", a.CheckAuthorization(a.applianceHandler())).Methods(http.MethodGet)
-	r.Handle("/appliance/setup", a.CheckAuthorization(a.getSetupHandler())).Methods(http.MethodGet)
-	r.Handle("/appliance/setup", a.CheckAuthorization(a.postSetupHandler())).Methods(http.MethodPost)
+	r.Handle("/api/operator/v1beta1/stage", a.getStageJSONHandler())
+	r.Handle("/api/operator/v1beta1/install/progress", a.getInstallProgressJSONHandler())
+	r.Handle("/api/operator/v1beta1/maintenance/status", a.getStageJSONHandler())
+	r.Handle("/api/operator/v1beta1/fake/stage", a.postStageJSONHandler())
 
 	return r
 }

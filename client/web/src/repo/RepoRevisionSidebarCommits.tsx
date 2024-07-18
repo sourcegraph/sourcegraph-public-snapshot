@@ -7,7 +7,7 @@ import { useLocation } from 'react-router-dom'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Icon, Link, ErrorAlert } from '@sourcegraph/wildcard'
+import { ErrorAlert, Icon, Link } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
 import {
@@ -66,8 +66,6 @@ export const RepoRevisionSidebarCommits: FC<Props> = props => {
     >({
         query: FETCH_COMMITS,
         variables: {
-            afterCursor: null,
-            first: props.defaultPageSize || 100,
             query: '',
             repo: props.repoID,
             revision: props.revision || '',
@@ -95,6 +93,7 @@ export const RepoRevisionSidebarCommits: FC<Props> = props => {
             // will ensure that the pagination works correctly.
             useAlternateAfterCursor: true,
             fetchPolicy: 'cache-first',
+            pageSize: props.defaultPageSize,
         },
     })
 

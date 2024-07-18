@@ -742,7 +742,7 @@ type Usage {
     or exceeds the number of available lines, the value is interpreted as
     until the start/end of the file.
     """
-    surroundingContent(surroundingLines: SurroundingLines = { linesBefore: 0, linesAfter: 0 }): String
+    surroundingContent(surroundingLines: SurroundingLines = { linesBefore: 0, linesAfter: 0 }): String!
 
     """
     Describes the relationship between this usage and the input symbol

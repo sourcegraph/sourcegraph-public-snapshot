@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { FilterLink, type RevisionsProps, TabIndex } from '@sourcegraph/branded'
+import { FilterLink, TabIndex, type RevisionsProps } from '@sourcegraph/branded'
 import { styles } from '@sourcegraph/branded/src/search-ui/results/sidebar/SearchFilterSection'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -11,10 +11,10 @@ import { Button, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text }
 
 import { useShowMorePagination } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
+    GitRefType,
+    type SearchSidebarGitRefFields,
     type SearchSidebarGitRefsResult,
     type SearchSidebarGitRefsVariables,
-    type SearchSidebarGitRefFields,
-    GitRefType,
 } from '../../../graphql-operations'
 
 import revisionStyles from './Revisions.module.scss'
@@ -70,7 +70,6 @@ const RevisionList: React.FunctionComponent<React.PropsWithChildren<RevisionList
     >({
         query: GIT_REVS_QUERY,
         variables: {
-            first: DEFAULT_FIRST,
             repo: repoName,
             query,
             type,
@@ -81,6 +80,9 @@ const RevisionList: React.FunctionComponent<React.PropsWithChildren<RevisionList
                 throw new Error('Unable to fetch repo revisions.')
             }
             return data?.repository?.gitRefs
+        },
+        options: {
+            pageSize: DEFAULT_FIRST,
         },
     })
 
@@ -184,6 +186,5 @@ Revisions.displayName = 'Revisions'
 
 export const getRevisions = (props: Omit<RevisionsProps, 'query'>) =>
     function RevisionsSection(query: string) {
-        // eslint-disable-next-line no-restricted-syntax
         return <Revisions {...props} query={query} />
     }

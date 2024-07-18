@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/sourcegraph/log"
@@ -147,18 +148,18 @@ func (a *anthropicClient) Stream(
 }
 
 func (a *anthropicClient) recordTokenUsage(request types.CompletionRequest, usage anthropicMessagesResponseUsage) error {
+	label := fmt.Sprintf("%s/%s", tokenusage.Anthropic, request.ModelConfigInfo.Model.ModelName)
 	return a.tokenManager.UpdateTokenCountsFromModelUsage(
 		usage.InputTokens, usage.OutputTokens,
-		"anthropic/"+request.Parameters.Model, string(request.Feature),
+		label, string(request.Feature),
 		tokenusage.Anthropic)
 }
 
 func (a *anthropicClient) makeRequest(ctx context.Context, request types.CompletionRequest, stream bool) (*http.Response, error) {
 	requestParams := request.Parameters
-	version := request.Version
 	convertedMessages := requestParams.Messages
 	stopSequences := removeWhitespaceOnlySequences(requestParams.StopSequences)
-	if version == types.CompletionsVersionLegacy {
+	if request.Version == types.CompletionsVersionLegacy {
 		convertedMessages = types.ConvertFromLegacyMessages(convertedMessages)
 	}
 	var payload any
@@ -170,7 +171,7 @@ func (a *anthropicClient) makeRequest(ctx context.Context, request types.Complet
 		Messages:      messages,
 		Stream:        stream,
 		StopSequences: stopSequences,
-		Model:         pinModel(requestParams.Model),
+		Model:         pinModel(request.ModelConfigInfo.Model.ModelName),
 		Temperature:   requestParams.Temperature,
 		MaxTokens:     requestParams.MaxTokensToSample,
 		TopP:          requestParams.TopP,

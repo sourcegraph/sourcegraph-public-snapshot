@@ -736,41 +736,41 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1rbqSkkmmv1u0qIlXaMJlECAL++8=",
+        "checksum": "Q1RWU8dFiWCX33/o5LdX/jng/cB+I=",
         "control": {
-          "checksum": "sha1-rbqSkkmmv1u0qIlXaMJlECAL++8=",
-          "range": "bytes=662-1056"
+          "checksum": "sha1-RWU8dFiWCX33/o5LdX/jng/cB+I=",
+          "range": "bytes=663-1060"
         },
         "data": {
-          "checksum": "sha256-JExtSd5jJ++EltuXBoPUSVrpPHvTzLW0EDtiqQSCU8c=",
-          "range": "bytes=1057-102062736"
+          "checksum": "sha256-ad8M+THg/r8RODDz2gI0lWe6vJdt/mKTWijOEH4iI0E=",
+          "range": "bytes=1061-106162840"
         },
         "name": "opentelemetry-collector",
         "signature": {
-          "checksum": "sha1-JHLXe7uu3KaUeeqxCaRx8ob8Zgk=",
-          "range": "bytes=0-661"
+          "checksum": "sha1-om9BmmNl44S5Z8fIkaiDLKMLThw=",
+          "range": "bytes=0-662"
         },
-        "url": "https://packages.sgdev.org/main/x86_64/opentelemetry-collector-0.92.0-r7.apk",
-        "version": "0.92.0-r7"
+        "url": "https://packages.sgdev.org/main/x86_64/opentelemetry-collector-0.103.0-r9.apk",
+        "version": "0.103.0-r9"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1ZrMuP718My90TnZrml7ylUmXGlo=",
+        "checksum": "Q1KgJAD0RtQUCakAdBGVnjppfBRD8=",
         "control": {
-          "checksum": "sha1-ZrMuP718My90TnZrml7ylUmXGlo=",
-          "range": "bytes=702-1093"
+          "checksum": "sha1-KgJAD0RtQUCakAdBGVnjppfBRD8=",
+          "range": "bytes=698-1074"
         },
         "data": {
-          "checksum": "sha256-+ZTF5s9bHKtoArLvOvIL/2seV4pE0ElEj9MlAscAdso=",
-          "range": "bytes=1094-53513"
+          "checksum": "sha256-OYnWS0GkjAi6HQutIcfq3EIqw/RWu9VjJv0MHhJj17s=",
+          "range": "bytes=1075-54087"
         },
         "name": "tini",
         "signature": {
-          "checksum": "sha1-OK9J/Z8qnRssJzNCu9hER8FuzSk=",
-          "range": "bytes=0-701"
+          "checksum": "sha1-LVT2LB/h8Oe3c/9pai1JbjXyR44=",
+          "range": "bytes=0-697"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/tini-0.19.0-r4.apk",
-        "version": "0.19.0-r4"
+        "url": "https://packages.wolfi.dev/os/x86_64/tini-0.19.0-r5.apk",
+        "version": "0.19.0-r5"
       },
       {
         "architecture": "x86_64",

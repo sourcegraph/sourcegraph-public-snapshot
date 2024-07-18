@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/executorqueue"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -27,6 +28,9 @@ func (j *janitorJob) Config() []env.Config {
 }
 
 func (j *janitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	if !batches.IsEnabled() {
+		return nil, nil
+	}
 	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("routines"))
 	workCtx := actor.WithInternalActor(context.Background())
 

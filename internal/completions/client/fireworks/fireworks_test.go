@@ -34,8 +34,12 @@ func TestErrStatusNotOK(t *testing.T) {
 	}, "", "")
 
 	compRequest := types.CompletionRequest{
-		Feature: types.CompletionsFeatureCode,
-		Version: types.CompletionsVersionLegacy,
+		Feature:         types.CompletionsFeatureCode,
+		Version:         types.CompletionsVersionLegacy,
+		ModelConfigInfo: types.ModelConfigInfo{
+			// No provider or model information available.
+			// We expect tests that need these values to fail.
+		},
 		Parameters: types.CompletionRequestParameters{
 			Messages: []types.Message{
 				{Text: "Hey"},

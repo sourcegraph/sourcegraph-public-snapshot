@@ -15,13 +15,11 @@ import (
 
 const maxPayloadSize = 10 * 1024 * 1024 // 10mb
 
-// TODO(stefan): Remove NewRequest in favor of NewRequestWithVersion.
-
-// NewRequest returns an http.Request against the streaming API for query.
+// NewRequest returns an http.Request against the Stream API. Use
+// NewRequestWithVersion if you want to specify the version of the search syntax
+// or the default patternType.
 func NewRequest(baseURL string, query string) (*http.Request, error) {
-	// We don't set version or pattern type and rely on the defaults of the route
-	// handler.
-	return NewRequestWithVersion(baseURL, query, "", nil)
+	return NewRequestWithVersion(baseURL, query, "V3", nil)
 }
 
 // NewRequestWithVersion returns an http.Request against the streaming API for

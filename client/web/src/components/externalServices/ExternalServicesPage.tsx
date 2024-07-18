@@ -47,8 +47,6 @@ export const ExternalServicesPage: FC<Props> = ({
     const repoID = searchParameters.get('repoID') || null
 
     const { loading, hasNextPage, fetchMore, connection, error } = useExternalServicesConnection({
-        first: null,
-        after: null,
         repo: repoID,
     })
 
@@ -95,7 +93,6 @@ export const ExternalServicesPage: FC<Props> = ({
                         <SummaryContainer className="mt-2" centered={true}>
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={false}
-                                first={connection.totalCount ?? 0}
                                 centered={true}
                                 connection={connection}
                                 noun="code host connection"

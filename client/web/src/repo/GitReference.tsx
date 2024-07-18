@@ -5,15 +5,15 @@ import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { createAggregateError, numberWithCommas, memoizeObservable } from '@sourcegraph/common'
+import { createAggregateError, memoizeObservable, numberWithCommas } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Badge, Icon, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import {
+    GitRefType,
     type GitRefConnectionFields,
     type GitRefFields,
-    GitRefType,
     type RepositoryGitRefsResult,
     type RepositoryGitRefsVariables,
     type Scalars,
@@ -167,7 +167,7 @@ export const REPOSITORY_GIT_REFS = gql`
 export const queryGitReferences = memoizeObservable(
     (args: {
         repo: Scalars['ID']
-        first?: number
+        first?: number | null
         query?: string
         type: GitRefType
         withBehindAhead?: boolean

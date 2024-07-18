@@ -52,14 +52,16 @@
     }
 
     div.content {
+        height: 100%;
+        width: 100%;
+        max-width: 64rem;
         padding-top: 3rem;
         flex-shrink: 0;
+
         display: flex;
         gap: 3rem;
         flex-direction: column;
         align-items: center;
-        width: 100%;
-        max-width: 64rem;
 
         :global(.search-box) {
             align-self: stretch;
@@ -77,6 +79,5 @@
     img.logo {
         width: 20rem;
         max-width: 90%;
-        min-height: 54px;
     }
 </style>

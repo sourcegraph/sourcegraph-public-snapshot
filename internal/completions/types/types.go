@@ -57,59 +57,93 @@ type CodyCompletionRequestParameters struct {
 type ModelConfigInfo struct {
 	Provider modelconfigSDK.Provider
 	Model    modelconfigSDK.Model
+
+	// CodyProUserAccessToken is an awkward hack for the asymmetry between Cody Enterprise
+	// and Cody Pro. For Cody Enterprise, requests are sent to Cody Gateway using the
+	// Sourcegraph instance's access token derived from their license key. For Cody Pro,
+	// requests are sent using the end user's access token.
+	//
+	// Leave as nil for Cody Enterprise requests, which will then use the access token
+	// from the `Provider.ServerSideConfig.SourcegraphProviderConfig`.
+	//
+	// Otherwise, for Cody Pro users, supply their dotcom access token here. It doesn't make
+	// sense to store it in the Provider's server-side config, as it is bound to this particular
+	// HTTP request.
+	//
+	// In the future, we'll be able to rectify this by having Cody Free/Cody Pro users authenticate
+	// via a shared access token bound to the "Cody Pro Team" or "Sourcegraph Tenant".
+	CodyProUserAccessToken *string
 }
 
-// Builds ModelConfigInfo for a given modelRef by looking up information in the provided modelConfig.
-func NewModelConfigInfo(
-	modelConfig *modelconfigSDK.ModelConfiguration,
-	modelRef modelconfigSDK.ModelRef,
-) (*ModelConfigInfo, error) {
-	var model *modelconfigSDK.Model
-	for _, m := range modelConfig.Models {
-		if m.ModelRef == modelRef {
-			model = &m
+// LookupModelConfigInfo returns the ModelConfigInfo for the supplied ModelRef. Returns an error if the
+// model is not found (and therefore unsupported by this Sourcegraph instance).
+func LookupModelConfigInfo(config *modelconfigSDK.ModelConfiguration, mref modelconfigSDK.ModelRef) (ModelConfigInfo, error) {
+	// Lookup the provider.
+	wantProviderID := mref.ProviderID()
+	var gotProvider *modelconfigSDK.Provider
+	for i := range config.Providers {
+		provider := &config.Providers[i]
+		if provider.ID == wantProviderID {
+			gotProvider = provider
 			break
 		}
 	}
-	if model == nil {
-		return nil, errors.Newf("model %q not found in model configuration", modelRef)
+	if gotProvider == nil {
+		return ModelConfigInfo{}, errors.Errorf("unable to locate provider mref %q", mref)
 	}
 
-	wantProviderID := modelRef.ProviderID()
-	var provider *modelconfigSDK.Provider
-	for _, p := range modelConfig.Providers {
-		if p.ID == wantProviderID {
-			provider = &p
+	// Lookup the model.
+	var gotModel *modelconfigSDK.Model
+	for i := range config.Models {
+		model := &config.Models[i]
+		if model.ModelRef == mref {
+			gotModel = model
 			break
 		}
 	}
-	if provider == nil {
-		return nil, errors.Newf("model provider %q not found in model configuration", wantProviderID)
+	if gotModel == nil {
+		return ModelConfigInfo{}, errors.Errorf("unable to locate model for mref %q", mref)
 	}
-	return &ModelConfigInfo{
-		Provider: *provider,
-		Model:    *model,
-	}, nil
+
+	modelCfg := ModelConfigInfo{
+		Provider: *gotProvider,
+		Model:    *gotModel,
+	}
+	return modelCfg, nil
 }
+
+// TaintedModelRef is a ModelRef that came from the Cody client, and therefore has no
+// guarantee if it is in the older format of "PROVIDER/MODEL" or the newer ModelRef
+// format "PROVIDER::API-VERSION::MODEL".
+//
+// You MUST NOT blindly cast this to a modelconfigSDK.ModelRef, as it will certainly
+// cause failures at runtime. Instead, it must be inspected and carefully parsed.
+type TaintedModelRef string
 
 type CompletionRequestParameters struct {
-	// Prompt exists only for backwards compatibility. Do not use it in new
-	// implementations. It will be removed once we are reasonably sure 99%
-	// of VSCode extension installations are upgraded to a new Cody version.
-	Prompt                                       string    `json:"prompt"`
-	Messages                                     []Message `json:"messages"`
-	MaxTokensToSample                            int       `json:"maxTokensToSample,omitempty"`
-	Temperature                                  float32   `json:"temperature,omitempty"`
-	StopSequences                                []string  `json:"stopSequences,omitempty"`
-	TopK                                         int       `json:"topK,omitempty"`
-	TopP                                         float32   `json:"topP,omitempty"`
-	Model                                        string    `json:"model,omitempty"`
-	Stream                                       *bool     `json:"stream,omitempty"`
-	Logprobs                                     *uint8    `json:"logprobs"`
-	User                                         string    `json:"user,omitempty"`
-	AzureChatModel                               string    `json:"azureChatModel,omitempty"`
-	AzureCompletionModel                         string    `json:"azureCompletionModel,omitempty"`
-	AzureUseDeprecatedCompletionsAPIForOldModels bool      `json:"azureUseDeprecatedCompletionsAPIForOldModels,omitempty"`
+	// RequestedModel is the user-supplied model that they would like to use.
+	// However, the server gets the ultimate say and will reject requests to use
+	// unsupported or unknown models. (Hence "requested" as opposed to "effective" or
+	// "resolved" model.)
+	//
+	// DO NOT USE THIS FIELD!
+	//
+	// It is only used as part of verifying the incomming HTTP request. When serving
+	// the HTTP response, use the effective model from the CompletionRequest.ModelConfigInfo
+	// object. As there is no guarantee this TaintedModelRef will even be valid.
+	RequestedModel TaintedModelRef `json:"model,omitempty"`
+
+	// The following fields have different meanings depending on the specific LLM
+	// API provider that is used.
+
+	Messages          []Message `json:"messages"`
+	MaxTokensToSample int       `json:"maxTokensToSample,omitempty"`
+	Temperature       float32   `json:"temperature,omitempty"`
+	StopSequences     []string  `json:"stopSequences,omitempty"`
+	TopK              int       `json:"topK,omitempty"`
+	TopP              float32   `json:"topP,omitempty"`
+	Stream            *bool     `json:"stream,omitempty"`
+	Logprobs          *uint8    `json:"logprobs"`
 }
 
 // IsStream returns whether a streaming response is requested. For backwards
@@ -134,15 +168,16 @@ func defaultStreamMode(feature CompletionsFeature) bool {
 	}
 }
 
-func (p *CompletionRequestParameters) Attrs(feature CompletionsFeature) []attribute.KeyValue {
+func (p *CompletionRequestParameters) Attrs(modelName string, feature CompletionsFeature) []attribute.KeyValue {
 	return []attribute.KeyValue{
-		attribute.Int("promptLength", len(p.Prompt)),
 		attribute.Int("numMessages", len(p.Messages)),
 		attribute.Int("maxTokensToSample", p.MaxTokensToSample),
 		attribute.Float64("temperature", float64(p.Temperature)),
 		attribute.Int("topK", p.TopK),
 		attribute.Float64("topP", float64(p.TopP)),
-		attribute.String("model", p.Model),
+		// We do not know the format of the p.RequestedModel, so we
+		// require the resolved model name to be passed in.
+		attribute.String("model", modelName),
 		attribute.Bool("stream", p.IsStream(feature)),
 	}
 }
@@ -233,9 +268,10 @@ const (
 )
 
 type CompletionRequest struct {
-	Feature    CompletionsFeature
-	Version    CompletionsVersion
-	Parameters CompletionRequestParameters
+	Feature         CompletionsFeature
+	ModelConfigInfo ModelConfigInfo
+	Parameters      CompletionRequestParameters
+	Version         CompletionsVersion
 }
 
 type CompletionsClient interface {

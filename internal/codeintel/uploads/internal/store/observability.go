@@ -16,7 +16,7 @@ type operations struct {
 	deleteSourcedCommits                *observation.Operation
 	updateSourcedCommits                *observation.Operation
 	getCommitsVisibleToUpload           *observation.Operation
-	getOldestCommitDate                 *observation.Operation
+	getCommitAndDateForOldestUpload     *observation.Operation
 	getCommitGraphMetadata              *observation.Operation
 	hasCommit                           *observation.Operation
 	repositoryIDsWithErrors             *observation.Operation
@@ -61,7 +61,7 @@ type operations struct {
 	markFailed                           *observation.Operation
 	deleteUploads                        *observation.Operation
 
-	// Dumps
+	// Completed uploads
 	findClosestCompletedUploads                   *observation.Operation
 	findClosestCompletedUploadsFromGraphFragment  *observation.Operation
 	getCompletedUploadsWithDefinitionsForMonikers *observation.Operation
@@ -121,13 +121,13 @@ func newOperations(observationCtx *observation.Context) *operations {
 		list: op("List"),
 
 		// Commits
-		getCommitsVisibleToUpload: op("CommitsVisibleToUploads"),
-		getOldestCommitDate:       op("GetOldestCommitDate"),
-		getStaleSourcedCommits:    op("GetStaleSourcedCommits"),
-		getCommitGraphMetadata:    op("GetCommitGraphMetadata"),
-		deleteSourcedCommits:      op("DeleteSourcedCommits"),
-		updateSourcedCommits:      op("UpdateSourcedCommits"),
-		hasCommit:                 op("HasCommit"),
+		getCommitsVisibleToUpload:       op("CommitsVisibleToUploads"),
+		getCommitAndDateForOldestUpload: op("GetCommitAndDateForOldestUpload"),
+		getStaleSourcedCommits:          op("GetStaleSourcedCommits"),
+		getCommitGraphMetadata:          op("GetCommitGraphMetadata"),
+		deleteSourcedCommits:            op("DeleteSourcedCommits"),
+		updateSourcedCommits:            op("UpdateSourcedCommits"),
+		hasCommit:                       op("HasCommit"),
 
 		// Repositories
 		getRepositoriesForIndexScan:             op("GetRepositoriesForIndexScan"),
@@ -168,7 +168,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		persistNearestUploadsLinks: op("persistNearestUploadsLinks"),
 		persistUploadsVisibleAtTip: op("persistUploadsVisibleAtTip"),
 
-		// Dumps
+		// Completed uploads
 		findClosestCompletedUploads:                   op("FindClosestCompletedUploads"),
 		findClosestCompletedUploadsFromGraphFragment:  op("FindClosestCompletedUploadsFromGraphFragment"),
 		getCompletedUploadsWithDefinitionsForMonikers: op("GetUploadsWithDefinitionsForMonikers"),

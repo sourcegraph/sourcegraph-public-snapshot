@@ -1,4 +1,4 @@
-import { getGraphQLClient, infinityQuery } from '$lib/graphql'
+import { getGraphQLClient, infinityQuery, OverwriteRestoreStrategy } from '$lib/graphql'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
@@ -22,17 +22,22 @@ export const load: PageLoad = ({ params, url }) => {
                 withBehindAhead: true,
                 query,
             },
-            nextVariables: previousResult => {
-                if (previousResult?.data?.repository?.branches?.pageInfo?.hasNextPage) {
-                    return {
-                        first: previousResult.data.repository.branches.nodes.length + PAGE_SIZE,
-                    }
+            map: result => {
+                const branches = result.data?.repository?.branches
+                return {
+                    nextVariables: branches?.pageInfo.hasNextPage
+                        ? { first: branches.nodes.length + PAGE_SIZE }
+                        : undefined,
+                    data: branches
+                        ? {
+                              nodes: branches.nodes,
+                              totalCount: branches.totalCount,
+                          }
+                        : undefined,
+                    error: result.error,
                 }
-                return undefined
             },
-            combine: (_previousResult, nextResult) => {
-                return nextResult
-            },
+            createRestoreStrategy: api => new OverwriteRestoreStrategy(api, data => ({ first: data.nodes.length })),
         }),
     }
 }

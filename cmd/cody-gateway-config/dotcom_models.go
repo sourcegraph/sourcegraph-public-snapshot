@@ -169,7 +169,7 @@ func getGoogleModels() []types.Model {
 		newModel(
 			modelIdentity{
 				MRef:        mRef(geminiV1, "gemini-1.5-flash-latest"),
-				Name:        "google/gemini-1.5-flash-latest",
+				Name:        "gemini-1.5-flash-latest",
 				DisplayName: "Gemini 1.5 Flash",
 			},
 			modelMetadata{
@@ -183,8 +183,12 @@ func getGoogleModels() []types.Model {
 }
 
 func getMistralModels() []types.Model {
-	// Not sure if there is a canonical API reference, since Mixtral offers 3rd
-	// party LLMs as a service.
+	// NOTE: These are all kinda fubar, since we are offering Mixtral models
+	// via the Fireworks API provider.
+	//
+	// So the ModelNames do need to have this odd format. Because there isn't an
+	// actual "Mistral API Provider" in our backend, we route all of these to
+	// Fireworks.
 	// https://deepinfra.com/mistralai/Mixtral-8x22B-Instruct-v0.1/api
 	// https://readme.fireworks.ai
 	const mistralV1 = "mistral::v1"
@@ -193,7 +197,7 @@ func getMistralModels() []types.Model {
 		newModel(
 			modelIdentity{
 				MRef:        mRef(mistralV1, "mixtral-8x7b-instruct"),
-				Name:        "mixtral-8x7b-instruct",
+				Name:        "accounts/fireworks/models/mixtral-8x7b-instruct",
 				DisplayName: "Mixtral 8x7B",
 			},
 			modelMetadata{
@@ -206,7 +210,7 @@ func getMistralModels() []types.Model {
 		newModel(
 			modelIdentity{
 				MRef:        mRef(mistralV1, "mixtral-8x22b-instruct"),
-				Name:        "mixtral-8x22b-instruct",
+				Name:        "accounts/fireworks/models/mixtral-8x22b-instruct",
 				DisplayName: "Mixtral 8x22B",
 			},
 			modelMetadata{
