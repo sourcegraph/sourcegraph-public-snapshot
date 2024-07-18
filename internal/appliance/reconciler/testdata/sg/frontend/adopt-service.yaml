@@ -10,7 +10,8 @@ spec:
   codeIntel:
     disabled: true
 
-  frontend: {}
+  frontend:
+    ingress: {}
 
   grafana:
     disabled: true

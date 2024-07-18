@@ -2,7 +2,10 @@ package reconciler
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/appliance/k8senvtest"
+	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/ingress"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	corev1 "k8s.io/api/core/v1"
+	netv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -40,6 +43,31 @@ func (suite *ApplianceTestSuite) TestAdoptFrontend() {
 		},
 	}
 	_, err = suite.k8sClient.CoreV1().Services(namespace.Name).Create(suite.ctx, &testService, metav1.CreateOptions{})
+	suite.Require().NoError(err)
+
+	testIngress := ingress.NewIngress("sourcegraph-frontend", namespace.Name)
+	testIngress.Spec.Rules = []netv1.IngressRule{{
+		Host: "an-existing-hostname.com",
+		IngressRuleValue: netv1.IngressRuleValue{
+			HTTP: &netv1.HTTPIngressRuleValue{
+				Paths: []netv1.HTTPIngressPath{{
+					Path:     "/",
+					PathType: pointers.Ptr(netv1.PathTypePrefix),
+					Backend: netv1.IngressBackend{
+						Service: &netv1.IngressServiceBackend{
+							Name: "sourcegraph-frontend",
+							Port: netv1.ServiceBackendPort{
+								Number: 30081,
+							},
+						},
+					},
+				}},
+			},
+		},
+	}}
+	ingressClassName := "nginx"
+	testIngress.Spec.IngressClassName = &ingressClassName
+	_, err = suite.k8sClient.NetworkingV1().Ingresses(namespace.Name).Create(suite.ctx, &testIngress, metav1.CreateOptions{})
 	suite.Require().NoError(err)
 
 	cfgMap := suite.newConfigMap(namespace.GetName(), "frontend/adopt-service")

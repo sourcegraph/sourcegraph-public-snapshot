@@ -104,7 +104,7 @@ func createOrUpdateObject[R client.Object](
 	}
 
 	if !isControlledBy(owner, existingRes) {
-		if existingRes.GetObjectKind().GroupVersionKind().Kind == "Service" {
+		if existingRes.GetObjectKind().GroupVersionKind().Kind == "Service" || existingRes.GetObjectKind().GroupVersionKind().Kind == "Ingress" {
 			logger.Info(fmt.Sprintf("Taking control of previously unowned object: %s", existingRes.GetName()))
 			if err := ctrl.SetControllerReference(owner, existingRes, r.Scheme); err != nil {
 				return errors.Newf("setting controller reference for service", err)
