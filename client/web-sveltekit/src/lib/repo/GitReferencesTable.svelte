@@ -8,10 +8,10 @@
     import { Badge } from '$lib/wildcard'
     import CopyButton from '$lib/wildcard/CopyButton.svelte'
 
-    import type { GitReference_Ref } from './GitReferencesTable.gql'
+    import type { GitReferencesTable_Ref } from './GitReferencesTable.gql'
     import { getHumanNameForCodeHost } from './shared/codehost'
 
-    export let references: GitReference_Ref[]
+    export let references: GitReferencesTable_Ref[]
     export let referenceType: GitRefType
     export let defaultBranch: string = ''
 
@@ -21,7 +21,7 @@
         GIT_REF_OTHER: 'Reference',
     }
 
-    function getMaxBehindAhead(references: GitReference_Ref[]): number {
+    function getMaxBehindAhead(references: GitReferencesTable_Ref[]): number {
         let max = 0
         for (const ref of references) {
             const behindAhead = ref.target.commit?.behindAhead
