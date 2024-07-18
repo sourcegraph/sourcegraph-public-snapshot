@@ -1,11 +1,18 @@
 import { error, redirect } from '@sveltejs/kit'
 
 import { loadMarkdownSyntaxHighlighting } from '$lib/common'
-import { getGraphQLClient, type GraphQLClient } from '$lib/graphql'
+import { getGraphQLClient, mapOrThrow, type GraphQLClient } from '$lib/graphql'
+import { GitRefType } from '$lib/graphql-types'
 import { CloneInProgressError, RepoNotFoundError, displayRepoName, parseRepoRevision } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
-import { ResolveRepoRevision, ResolvedRepository, type ResolveRepoRevisionResult } from './layout.gql'
+import {
+    RepositoryGitCommits,
+    RepositoryGitRefs,
+    ResolveRepoRevision,
+    ResolvedRepository,
+    type ResolveRepoRevisionResult,
+} from './layout.gql'
 
 export const load: LayoutLoad = async ({ params, url, depends }) => {
     const client = getGraphQLClient()
@@ -45,6 +52,65 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
         displayRevision: displayRevision(revision, resolvedRepository),
         defaultBranch: resolvedRepository.defaultBranch?.abbrevName || 'HEAD',
         resolvedRepository: resolvedRepository,
+
+        // Repository pickers queries (branch, tags and commits)
+        getRepoBranches: (searchTerm: string) =>
+            client
+                .query(RepositoryGitRefs, {
+                    repoName,
+                    query: searchTerm,
+                    type: GitRefType.GIT_BRANCH,
+                })
+                .then(
+                    mapOrThrow(({ data, error }) => {
+                        if (!data?.repository?.gitRefs) {
+                            throw new Error(error?.message)
+                        }
+
+                        return data.repository.gitRefs
+                    })
+                ),
+        getRepoTags: (searchTerm: string) =>
+            client
+                .query(RepositoryGitRefs, {
+                    repoName,
+                    query: searchTerm,
+                    type: GitRefType.GIT_TAG,
+                })
+                .then(
+                    mapOrThrow(({ data, error }) => {
+                        if (!data?.repository?.gitRefs) {
+                            throw new Error(error?.message)
+                        }
+
+                        return data.repository.gitRefs
+                    })
+                ),
+        getRepoCommits: (searchTerm: string) =>
+            client
+                .query(RepositoryGitCommits, {
+                    repoName,
+                    query: searchTerm,
+                    revision: resolvedRepository.commit?.oid || '',
+                })
+                .then(
+                    mapOrThrow(({ data }) => {
+                        let nodes = data?.repository?.ancestorCommits?.ancestors.nodes ?? []
+
+                        // If we got a match for the OID, add it to the list if it doesn't already exist.
+                        // We double check that the OID contains the search term because we cannot search
+                        // specifically by OID, and an empty string resolves to HEAD.
+                        const commitByHash = data?.repository?.commitByHash
+                        if (
+                            commitByHash &&
+                            commitByHash.oid.includes(searchTerm) &&
+                            !nodes.some(node => node.oid === commitByHash.oid)
+                        ) {
+                            nodes = [commitByHash, ...nodes]
+                        }
+                        return { nodes }
+                    })
+                ),
     }
 }
 

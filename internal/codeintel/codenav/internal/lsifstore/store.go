@@ -24,7 +24,7 @@ type LsifStore interface {
 	// Whole-document data
 	GetStencil(ctx context.Context, bundleID int, path core.UploadRelPath) ([]shared.Range, error)
 	GetRanges(ctx context.Context, bundleID int, path core.UploadRelPath, startLine, endLine int) ([]shared.CodeIntelligenceRange, error)
-	SCIPDocument(ctx context.Context, uploadID int, path core.UploadRelPath) (_ *scip.Document, err error)
+	SCIPDocument(ctx context.Context, uploadID int, path core.UploadRelPath) (core.Option[*scip.Document], error)
 
 	// Fetch symbol names by position
 	GetMonikersByPosition(ctx context.Context, uploadID int, path core.UploadRelPath, line, character int) ([][]precise.MonikerData, error)

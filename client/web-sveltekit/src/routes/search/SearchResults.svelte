@@ -26,7 +26,7 @@
     import type { URLQueryFilter } from '$lib/search/dynamicFilters'
     import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
     import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
-    import SearchInput from '$lib/search/input/SearchInput.svelte'
+    import SearchInput, { Style } from '$lib/search/input/SearchInput.svelte'
     import { getQueryURL, type QueryStateStore } from '$lib/search/state'
     import {
         TELEMETRY_SEARCH_SOURCE_TYPE,
@@ -36,7 +36,9 @@
         type SymbolMatch,
         type ContentMatch,
     } from '$lib/shared'
+    import { isViewportMobile } from '$lib/stores'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
+    import Button from '$lib/wildcard/Button.svelte'
     import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
     import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
     import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
@@ -63,7 +65,7 @@
     }
 
     const resultContainer = writable<HTMLElement | null>(null)
-
+    let searchResultsFiltersPanel: Panel
     const recentSearches = createRecentSearchesStore()
 
     $: state = $stream.state // 'loading', 'error', 'complete'
@@ -150,15 +152,29 @@
     }
 </script>
 
-<GlobalHeaderPortal>
+{#if $isViewportMobile}
     <div class="search-header">
-        <SearchInput {queryState} size="compat" onSubmit={handleSubmit} />
+        <SearchInput {queryState} style={Style.Compact | Style.NoBorder} onSubmit={handleSubmit} />
     </div>
-</GlobalHeaderPortal>
+{:else}
+    <GlobalHeaderPortal>
+        <div class="search-header">
+            <SearchInput {queryState} style={Style.Compact} onSubmit={handleSubmit} />
+        </div>
+    </GlobalHeaderPortal>
+{/if}
 
 <div class="search-results">
     <PanelGroup id="search-results-panels">
-        <Panel id="search-results-filters" order={1} defaultSize={25} maxSize={35} minSize={15}>
+        <Panel
+            bind:this={searchResultsFiltersPanel}
+            id="search-results-filters"
+            order={1}
+            defaultSize={25}
+            maxSize={35}
+            minSize={15}
+            overlayOnMobile
+        >
             <DynamicFiltersSidebar
                 {selectedFilters}
                 streamFilters={$stream.filters}
@@ -170,6 +186,15 @@
         <Panel id="search-results-content" order={2} minSize={35}>
             <div class="results">
                 <aside class="actions">
+                    {#if $isViewportMobile}
+                        <Button
+                            variant="secondary"
+                            display="block"
+                            aria-label="Open filters"
+                            on:click={() => searchResultsFiltersPanel.expand()}
+                            data-scope-button>Filters</Button
+                        >
+                    {/if}
                     <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} />
                 </aside>
                 <div class="result-list" bind:this={$resultContainer}>
@@ -228,6 +253,10 @@
         // This ensures that the search suggestions panel is displayed above the
         // search results panel.
         z-index: 1;
+
+        @media (--mobile) {
+            border-bottom: 1px solid var(--border-color);
+        }
     }
 
     .search-results {
@@ -235,10 +264,21 @@
         flex: 1;
         overflow: auto;
 
-        // Isolate everything in search results so they won't be displayed over
-        // the search suggestions. Previously, hovering over separator would
-        // overlap the suggestions panel.
-        isolation: isolate;
+        @media (--not-mobile) {
+            // Isolate everything in search results so they won't be displayed over
+            // the search suggestions. Previously, hovering over separator would
+            // overlap the suggestions panel.
+            // Do not do this on small screen devices because the sidebar is positioned
+            // over the content instead, but the search input would cover the sidebar.
+            isolation: isolate;
+        }
+
+        :global(#search-results-filters) {
+            @media (--mobile) {
+                // Needed to position sidebar above the search results content.
+                z-index: 1;
+            }
+        }
     }
 
     .results {
@@ -252,9 +292,16 @@
         .actions {
             border-bottom: 1px solid var(--border-color);
             padding: 0.5rem;
-            display: flex;
-            align-items: center;
-            flex-shrink: 0;
+
+            @media (--mobile) {
+                display: grid;
+                gap: 0.5rem;
+                grid-template-columns: 1fr auto;
+            }
+
+            :global([data-scope-button]) {
+                align-self: stretch;
+            }
         }
 
         .result-list {

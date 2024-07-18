@@ -44,14 +44,24 @@
 
 <style lang="scss">
     .root {
-        flex-shrink: 0;
-        display: inline-flex;
+        display: inline-grid;
+        grid-template-columns: auto auto auto auto auto;
+        grid-template-areas: 'x x x . squares';
+        grid-template-rows: auto;
+
         align-items: center;
         gap: 1rem;
+
+        @media (--mobile) {
+            gap: 0.25rem;
+            grid-template-columns: auto auto auto;
+            grid-template-areas: 'x x x' 'squares squares squares';
+        }
     }
 
     small,
-    .squares {
+    .squares,
+    .label {
         white-space: nowrap;
     }
 
@@ -60,9 +70,9 @@
     }
 
     .squares {
+        grid-area: squares;
         display: inline-flex;
         align-items: center;
-        margin-left: 1rem;
         font-weight: 700;
 
         .added {
