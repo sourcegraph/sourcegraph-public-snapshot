@@ -31,7 +31,7 @@ func init() {
 	}
 
 	timestampFromFile, err := os.ReadFile("/timestamp.txt")
-	if err == nil {
+	if err == nil && len(timestampFromFile) > 0 {
 		timestamp = string(timestampFromFile)
 	}
 

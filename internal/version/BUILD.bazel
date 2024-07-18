@@ -9,10 +9,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/version",
     tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
     deps = ["//lib/errors"],
 )
 
@@ -36,9 +32,11 @@ pkg_tar(
 expand_template(
     name = "version_file",
     out = "version.txt",
-    stamp = 0,
     stamp_substitutions = {
         "STABLE_VERSION": "{{STABLE_VERSION}}",
+    },
+    substitutions = {
+        "STABLE_VERSION": "0.0.0+dev",
     },
     template = ["STABLE_VERSION"],
 )
@@ -48,6 +46,9 @@ expand_template(
     out = "timestamp.txt",
     stamp_substitutions = {
         "VERSION_TIMESTAMP": "{{VERSION_TIMESTAMP}}",
+    },
+    substitutions = {
+        "VERSION_TIMESTAMP": "",
     },
     template = ["VERSION_TIMESTAMP"],
 )
