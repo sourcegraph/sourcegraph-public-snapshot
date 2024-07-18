@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import { scanPredicate, resolveAccess, PREDICATES } from './predicates'
+import { scanPredicate } from './predicates'
 
 expect.addSnapshotSerializer({
     serialize: value => (value ? JSON.stringify(value) : 'invalid'),
