@@ -9,9 +9,11 @@ import type { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/sr
 import {
     Alert,
     Button,
+    Container,
     ErrorAlert,
     Form,
     H3,
+    H4,
     Icon,
     Link,
     LoadingSpinner,
@@ -175,33 +177,9 @@ const EditForm: FunctionComponent<
                 submitLabel="Save"
                 onSubmit={onSubmit}
                 otherButtons={
-                    <>
-                        <div className="flex-grow-1" />
-                        {savedSearch.viewerCanAdminister && (
-                            <Button
-                                onClick={() => {
-                                    telemetryRecorder.recordEvent('savedSearches.transferOwnership', 'openModal', {
-                                        metadata: namespaceTelemetryMetadata(savedSearch.owner),
-                                    })
-                                    setShowTransferOwnershipModal(true)
-                                }}
-                                disabled={updateLoading || deleteLoading}
-                                variant="secondary"
-                            >
-                                Transfer ownership
-                            </Button>
-                        )}
-                        {savedSearch.viewerCanAdminister && (
-                            <Button
-                                onClick={onDeleteClick}
-                                disabled={updateLoading || deleteLoading}
-                                variant="danger"
-                                outline={true}
-                            >
-                                Delete
-                            </Button>
-                        )}
-                    </>
+                    <Button to={savedSearch.url} variant="secondary" outline={true} as={Link}>
+                        Cancel
+                    </Button>
                 }
                 isSourcegraphDotCom={isSourcegraphDotCom}
                 initialValue={savedSearch}
@@ -218,6 +196,37 @@ const EditForm: FunctionComponent<
                     />
                 }
             />
+
+            <H4 className="mt-5 mb-1">Other actions</H4>
+            <Container className="d-inline-block">
+                <div className="d-flex flex-column align-items-start flex-gap-4">
+                    {savedSearch.viewerCanAdminister && (
+                        <Button
+                            onClick={() => {
+                                telemetryRecorder.recordEvent('savedSearches.transferOwnership', 'openModal', {
+                                    metadata: namespaceTelemetryMetadata(savedSearch.owner),
+                                })
+                                setShowTransferOwnershipModal(true)
+                            }}
+                            disabled={updateLoading || deleteLoading}
+                            variant="secondary"
+                        >
+                            Transfer ownership
+                        </Button>
+                    )}
+                    {savedSearch.viewerCanAdminister && (
+                        <Button
+                            onClick={onDeleteClick}
+                            disabled={updateLoading || deleteLoading}
+                            variant="danger"
+                            outline={true}
+                        >
+                            Delete
+                        </Button>
+                    )}
+                </div>
+            </Container>
+
             {showTransferOwnershipModal && (
                 <TransferOwnershipModal
                     savedSearch={savedSearch}
