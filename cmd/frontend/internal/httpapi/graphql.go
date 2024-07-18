@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -53,16 +54,37 @@ func actorTypeLabel(isInternal, anonymous bool, requestSource trace.SourceType) 
 	return "unknown"
 }
 
-func exceedsLimit(costValue, limitValue int) bool {
-	return costValue > limitValue
+type violationInfo struct {
+	violationType string
+	actual        int
+	limit         int
 }
 
-func writeViolationError(w http.ResponseWriter) error {
+func exceedsLimit(costValue, limitValue int, violationType string) (bool, *violationInfo) {
+	if costValue > limitValue {
+		return true, &violationInfo{
+			violationType: violationType,
+			actual:        costValue,
+			limit:         limitValue,
+		}
+	}
+
+	return false, nil
+}
+
+func writeViolationError(w http.ResponseWriter, info violationInfo) error {
 	w.WriteHeader(http.StatusBadRequest) // 400 because retrying won't help
 	return writeJSON(w, graphql.Response{
 		Errors: []*gqlerrors.QueryError{
 			{
-				Message: "query exceeds maximum query cost",
+				Message: fmt.Sprintf("Query exceeds maximum %s limit", info.violationType),
+				Extensions: map[string]interface{}{
+					"code":     "QUERY_COMPLEXITY_LIMIT_EXCEEDED",
+					"type":     info.violationType,
+					"limit":    info.limit,
+					"actual":   info.actual,
+					"docs_url": "https://sourcegraph.com/docs/api/graphql#cost-limits",
+				},
 			},
 		},
 	})
@@ -134,12 +156,31 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 			costHistogram.WithLabelValues(actorTypeLabel(isInternal, anonymous, requestSource)).Observe(float64(cost.FieldCount))
 
 			rl := conf.RateLimits()
-			if !isInternal && (exceedsLimit(cost.AliasCount, rl.GraphQLMaxAliases) ||
-				exceedsLimit(cost.HighestDuplicateFieldCount, rl.GraphQLMaxDuplicateFieldCount) ||
-				exceedsLimit(cost.UniqueFieldCount, rl.GraphQLMaxUniqueFieldCount) ||
-				exceedsLimit(cost.FieldCount, rl.GraphQLMaxFieldCount)) {
-				writeViolationError(w)
-				return
+			limits := []struct {
+				cost          int
+				limit         int
+				violationType string
+			}{
+				{rl.GraphQLMaxAliases, rl.GraphQLMaxAliases, "alias count"},
+				{rl.GraphQLMaxFieldCount, rl.GraphQLMaxFieldCount, "field count"},
+				{rl.GraphQLMaxDepth, rl.GraphQLMaxDepth, "query depth"},
+				{rl.GraphQLMaxDuplicateFieldCount, rl.GraphQLMaxDuplicateFieldCount, "duplicate field count"},
+				{rl.GraphQLMaxUniqueFieldCount, rl.GraphQLMaxUniqueFieldCount, "unique field count"},
+			}
+
+			if !isInternal {
+				var violation violationInfo
+
+				for _, l := range limits {
+					if exceeded, info := exceedsLimit(l.cost, l.limit, l.violationType); exceeded {
+						violation = *info
+						break
+					}
+				}
+
+				if violation.violationType != "" {
+					return writeViolationError(w, violation)
+				}
 			}
 
 			if rl, enabled := rlw.Get(); enabled {
