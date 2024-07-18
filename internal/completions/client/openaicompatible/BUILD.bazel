@@ -12,6 +12,7 @@ go_library(
         "//internal/completions/tokenizer",
         "//internal/completions/tokenusage",
         "//internal/completions/types",
+        "//internal/modelconfig/types",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
         "@com_github_tmaxmax_go_sse//:go_default_library",
