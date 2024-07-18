@@ -267,7 +267,7 @@ func GetAndSaveUser(
 		}
 
 		// check if the user account already exists. If so, do not log an event.
-		//This prevents over firing when http-header auth is used, since it triggers getAndSaveUser each time.
+		// This prevents over firing when http-header auth is used, since it triggers getAndSaveUser each time.
 		if !newUserSaved && extAcctSaved && safeErrMsg == "" && err == nil {
 			return // Exit the deferred function without logging
 		}
