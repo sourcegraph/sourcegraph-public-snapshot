@@ -324,19 +324,14 @@ func convertModelCapabilities(capabilities []string) []types.ModelCapability {
 //
 // It would specify these equivalent options for them under `modelOverrides`:
 var recommendedSettings = map[types.ModelRef]types.ModelOverride{
-	"bigcode::v1::starcoder2-3b":          recommendedSettingsStarcoder2("bigcode::v1::starcoder2-3b", "Starcoder2 3B", "starcoder2-3b"),
 	"bigcode::v1::starcoder2-7b":          recommendedSettingsStarcoder2("bigcode::v1::starcoder2-7b", "Starcoder2 7B", "starcoder2-7b"),
 	"bigcode::v1::starcoder2-15b":         recommendedSettingsStarcoder2("bigcode::v1::starcoder2-15b", "Starcoder2 15B", "starcoder2-15b"),
-	"mistral::v1::mistral-7b":             recommendedSettingsMistral("mistral::v1::mistral-7b", "Mistral 7B", "mistral-7b"),
 	"mistral::v1::mistral-7b-instruct":    recommendedSettingsMistral("mistral::v1::mistral-7b-instruct", "Mistral 7B Instruct", "mistral-7b-instruct"),
-	"mistral::v1::mixtral-8x7b":           recommendedSettingsMistral("mistral::v1::mixtral-8x7b", "Mixtral 8x7B", "mixtral-8x7b"),
-	"mistral::v1::mixtral-8x22b":          recommendedSettingsMistral("mistral::v1::mixtral-8x22b", "Mixtral 8x22B", "mixtral-8x22b"),
 	"mistral::v1::mixtral-8x7b-instruct":  recommendedSettingsMistral("mistral::v1::mixtral-8x7b-instruct", "Mixtral 8x7B Instruct", "mixtral-8x7b-instruct"),
 	"mistral::v1::mixtral-8x22b-instruct": recommendedSettingsMistral("mistral::v1::mixtral-8x22b", "Mixtral 8x22B", "mixtral-8x22b-instruct"),
 }
 
 func recommendedSettingsStarcoder2(modelRef, displayName, modelName string) types.ModelOverride {
-	// TODO(slimsag): self-hosted-models: tune these further based on testing
 	return types.ModelOverride{
 		ModelRef:     types.ModelRef(modelRef),
 		DisplayName:  displayName,
@@ -347,15 +342,18 @@ func recommendedSettingsStarcoder2(modelRef, displayName, modelName string) type
 		Tier:         types.ModelTierEnterprise,
 		ContextWindow: types.ContextWindow{
 			MaxInputTokens:  8192,
-			MaxOutputTokens: 4000,
+			MaxOutputTokens: 4096,
 		},
-		ClientSideConfig: nil,
-		ServerSideConfig: nil,
+		ClientSideConfig: &types.ClientSideModelConfig{
+			OpenAICompatible: &types.ClientSideModelConfigOpenAICompatible{
+				StopSequences: []string{"<|endoftext|>", "<file_sep>"},
+				EndOfText:     "<|endoftext|>",
+			},
+		},
 	}
 }
 
 func recommendedSettingsMistral(modelRef, displayName, modelName string) types.ModelOverride {
-	// TODO(slimsag): self-hosted-models: tune these further based on testing
 	return types.ModelOverride{
 		ModelRef:     types.ModelRef(modelRef),
 		DisplayName:  displayName,
@@ -366,9 +364,10 @@ func recommendedSettingsMistral(modelRef, displayName, modelName string) types.M
 		Tier:         types.ModelTierEnterprise,
 		ContextWindow: types.ContextWindow{
 			MaxInputTokens:  8192,
-			MaxOutputTokens: 4000,
+			MaxOutputTokens: 4096,
 		},
-		ClientSideConfig: nil,
-		ServerSideConfig: nil,
+		ClientSideConfig: &types.ClientSideModelConfig{
+			OpenAICompatible: &types.ClientSideModelConfigOpenAICompatible{},
+		},
 	}
 }

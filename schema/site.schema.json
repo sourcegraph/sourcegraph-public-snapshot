@@ -3191,13 +3191,9 @@
           "items": {
             "type": "string",
             "enum": [
-              "bigcode::v1::starcoder2-3b",
               "bigcode::v1::starcoder2-7b",
               "bigcode::v1::starcoder2-15b",
-              "mistral::v1::mistral-7b",
               "mistral::v1::mistral-7b-instruct",
-              "mistral::v1::mixtral-8x7b",
-              "mistral::v1::mixtral-8x22b",
               "mistral::v1::mixtral-8x7b-instruct",
               "mistral::v1::mixtral-8x22b-instruct"
             ]
