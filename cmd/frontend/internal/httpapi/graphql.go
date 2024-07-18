@@ -4,11 +4,13 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/alecthomas/units"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -22,9 +24,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var gzipFileSizeLimit = env.MustGetInt("HTTAPI_GZIP_FILE_SIZE_LIMIT", int(units.Megabyte), "Maximum size of gzipped request bodies to read")
 
 const costEstimationMetricActorTypeLabel = "actor_type"
 
@@ -90,7 +95,13 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 				return errors.Wrap(err, "failed to decompress request body")
 			}
 
-			r.Body = gzipReader
+			r.Body = struct {
+				io.Reader
+				io.Closer
+			}{
+				Reader: io.LimitReader(gzipReader, int64(gzipFileSizeLimit)),
+				Closer: gzipReader,
+			}
 
 			defer gzipReader.Close()
 		}
