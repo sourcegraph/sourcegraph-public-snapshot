@@ -81,6 +81,8 @@ func (s *storeV1) GetCodyGatewayUsage(ctx context.Context, subscriptionID string
 		return nil, errStoreUnimplemented
 	}
 
+	subscriptionID = strings.TrimPrefix(subscriptionID, subscriptionsv1.EnterpriseSubscriptionIDPrefix)
+
 	// Collect results concurrently, cancelling on the first error result.
 	p := pool.NewWithResults[func(*codyaccessv1.CodyGatewayUsage)]().
 		WithContext(ctx).
@@ -153,7 +155,7 @@ func (s *storeV1) GetCodyGatewayUsage(ctx context.Context, subscriptionID string
 
 func (s *storeV1) GetCodyGatewayAccessBySubscription(ctx context.Context, subscriptionID string) (*codyaccess.CodyGatewayAccessWithSubscriptionDetails, error) {
 	return s.CodyAccess.CodyGateway().Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
-		SubscriptionID: subscriptionID,
+		SubscriptionID: strings.TrimPrefix(subscriptionID, subscriptionsv1.EnterpriseSubscriptionIDPrefix),
 	})
 }
 
