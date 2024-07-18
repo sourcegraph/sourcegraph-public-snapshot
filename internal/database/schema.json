@@ -25230,11 +25230,37 @@
           "Comment": ""
         },
         {
+          "Name": "created_by",
+          "Index": 11,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "description",
           "Index": 2,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "draft",
+          "Index": 13,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -25334,11 +25360,37 @@
           "Comment": ""
         },
         {
+          "Name": "updated_by",
+          "Index": 12,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "user_id",
           "Index": 8,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "visibility_secret",
+          "Index": 14,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "true",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -25361,6 +25413,13 @@
       ],
       "Constraints": [
         {
+          "Name": "saved_searches_created_by_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
           "Name": "saved_searches_notifications_disabled",
           "ConstraintType": "c",
           "RefTableName": "",
@@ -25373,6 +25432,13 @@
           "RefTableName": "orgs",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (org_id) REFERENCES orgs(id)"
+        },
+        {
+          "Name": "saved_searches_updated_by_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL"
         },
         {
           "Name": "saved_searches_user_id_fkey",
@@ -26150,6 +26216,19 @@
       "Comment": "Responsible for storing permissions at a finer granularity than repo",
       "Columns": [
         {
+          "Name": "ips",
+          "Index": 8,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "IP addresses corresponding to each path. IP in slot 0 in the array corresponds to path the in slot 0 of the path array, etc. NULL if not yet migrated, empty array for no IP restrictions."
+        },
+        {
           "Name": "paths",
           "Index": 7,
           "TypeName": "text[]",
@@ -26238,6 +26317,13 @@
         }
       ],
       "Constraints": [
+        {
+          "Name": "ips_paths_length_check",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (ips IS NULL OR array_length(ips, 1) = array_length(paths, 1) AND NOT (''::text = ANY (ips)))"
+        },
         {
           "Name": "sub_repo_permissions_repo_id_fk",
           "ConstraintType": "f",

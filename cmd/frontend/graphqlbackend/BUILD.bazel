@@ -465,6 +465,7 @@ go_test(
         "users_create_test.go",
         "users_randomize_password_test.go",
         "users_test.go",
+        "viewer_test.go",
         "virtual_file_test.go",
         "webhook_logs_test.go",
     ],
