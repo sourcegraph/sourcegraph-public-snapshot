@@ -211,7 +211,7 @@ func TestRepoHasMetaPredicate(t *testing.T) {
 			{`escaped quotes`, `"key\"quote":"value\"quote"`, &RepoHasMetaPredicate{Key: `^key"quote$`, Value: pointers.Ptr(types.RegexpPattern(`^value"quote$`)), Negated: false, KeyOnly: false}},
 			{`space padding`, `  key:value  `, &RepoHasMetaPredicate{Key: `^key$`, Value: pointers.Ptr(types.RegexpPattern(`^value$`)), Negated: false, KeyOnly: false}},
 			{`only key`, `key`, &RepoHasMetaPredicate{Key: `^key$`, Value: nil, Negated: false, KeyOnly: true}},
-			{`key tag`, `key:`, &RepoHasMetaPredicate{Key: "^key$", Value: pointers.Ptr(types.RegexpPattern("^$")), Negated: false, KeyOnly: false}},
+			{`key tag`, `key:`, &RepoHasMetaPredicate{Key: "^key$", Value: nil, Negated: false, KeyOnly: false}},
 		}
 
 		for _, tc := range valid {
@@ -257,12 +257,12 @@ func TestRepoHasKVPPredicate(t *testing.T) {
 		}
 
 		valid := []test{
-			{`key:value`, `key:value`, &RepoHasKVPPredicate{Key: "^key$", Value: "^value$", Negated: false}},
-			{`empty string value`, `key:`, &RepoHasKVPPredicate{Key: "^key$", Value: "^$", Negated: false}},
-			{`quoted special characters`, `"key:colon":"value:colon"`, &RepoHasKVPPredicate{Key: "^key:colon$", Value: "^value:colon$", Negated: false}},
-			{`escaped quotes`, `"key\"quote":"value\"quote"`, &RepoHasKVPPredicate{Key: `^key"quote$`, Value: `^value"quote$`, Negated: false}},
-			{`space padding`, `  key:value  `, &RepoHasKVPPredicate{Key: `^key$`, Value: `^value$`, Negated: false}},
-			{`single quoted`, `'  key:':'value : '`, &RepoHasKVPPredicate{Key: `^  key:$`, Value: `^value : $`, Negated: false}},
+			{`key:value`, `key:value`, &RepoHasKVPPredicate{Key: "key", Value: "value", Negated: false}},
+			{`empty string value`, `key:`, &RepoHasKVPPredicate{Key: "key", Value: "", Negated: false}},
+			{`quoted special characters`, `"key:colon":"value:colon"`, &RepoHasKVPPredicate{Key: "key:colon", Value: "value:colon", Negated: false}},
+			{`escaped quotes`, `"key\"quote":"value\"quote"`, &RepoHasKVPPredicate{Key: `key"quote`, Value: `value"quote`, Negated: false}},
+			{`space padding`, `  key:value  `, &RepoHasKVPPredicate{Key: `key`, Value: `value`, Negated: false}},
+			{`single quoted`, `'  key:':'value : '`, &RepoHasKVPPredicate{Key: `  key:`, Value: `value : `, Negated: false}},
 		}
 
 		for _, tc := range valid {

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Predicate interface {
@@ -332,49 +333,41 @@ func exactRegexpPattern(input string) types.RegexpPattern {
 }
 
 func (p *RepoHasMetaPredicate) Unmarshal(params string, negated bool) (err error) {
-	scanLiteral := func(data string) (types.RegexpPattern, int, error) {
+	scanLiteral := func(data string) (_ string, regexp bool, advance int, _ error) {
 		if strings.HasPrefix(data, `"`) {
 			s, advance, err := ScanDelimited([]byte(data), true, '"')
-			if err != nil {
-				return "", 0, err
-			}
-			return exactRegexpPattern(s), advance, nil
+			return s, false, advance, err
 		}
 		if strings.HasPrefix(data, `'`) {
 			s, advance, err := ScanDelimited([]byte(data), true, '\'')
-			if err != nil {
-				return "", 0, err
-			}
-			return exactRegexpPattern(s), advance, nil
+			return s, false, advance, err
 		}
 		if strings.HasPrefix(data, `/`) {
 			s, advance, err := ScanDelimited([]byte(data), false, '/')
-			if err != nil {
-				return "", 0, err
-			}
-			if _, err := syntax.Parse(s, syntax.Perl); err != nil {
-				return "", 0, errors.Wrap(err, "invalid regex literal")
-			}
-			return types.RegexpPattern(s), advance, nil
+			return s, true, advance, err
 		}
-		loc := strings.Index(data, ":")
-		if loc >= 0 {
-			return exactRegexpPattern(data[:loc]), loc, nil
+		if loc := strings.Index(data, ":"); loc >= 0 {
+			return data[:loc], false, loc, nil
 		}
-		return exactRegexpPattern(data), len(data), nil
+		return data, false, len(data), nil
 	}
 
 	// Trim leading and trailing spaces in params
 	params = strings.Trim(params, " \t")
 
 	// Scan the possibly-quoted key
-	key, advance, err := scanLiteral(params)
+	stringKey, isRegexp, advance, err := scanLiteral(params)
 	if err != nil {
 		return err
 	}
-
-	if len(key) == 0 {
+	if len(stringKey) == 0 {
 		return errors.New("key cannot be empty")
+	}
+	var key types.RegexpPattern
+	if isRegexp {
+		key = types.RegexpPattern(stringKey)
+	} else {
+		key = exactRegexpPattern(stringKey)
 	}
 
 	params = params[advance:]
@@ -386,7 +379,7 @@ func (p *RepoHasMetaPredicate) Unmarshal(params string, negated bool) (err error
 		params = params[len(":"):]
 
 		// Scan the possibly-quoted value
-		val, advance, err := scanLiteral(params)
+		val, isRegexp, advance, err := scanLiteral(params)
 		if err != nil {
 			return err
 		}
@@ -398,8 +391,10 @@ func (p *RepoHasMetaPredicate) Unmarshal(params string, negated bool) (err error
 		if len(params) != 0 {
 			return errors.New("unexpected extra content")
 		}
-		if len(val) > 0 {
-			value = &val
+		if len(val) > 0 && isRegexp {
+			value = pointers.Ptr(types.RegexpPattern(val))
+		} else if len(val) > 0 {
+			value = pointers.Ptr(exactRegexpPattern(val))
 		}
 	} else {
 		keyOnly = true

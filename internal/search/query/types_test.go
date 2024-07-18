@@ -48,11 +48,11 @@ func TestRepoHasKVPs(t *testing.T) {
 		},
 	}
 
-	value := types.RegexpPattern("value")
+	value := types.RegexpPattern("^value$")
 	want := []RepoKVPFilter{
-		{Key: "key", Value: &value, Negated: false, KeyOnly: false},
-		{Key: "tag", Value: nil, Negated: false, KeyOnly: false},
-		{Key: "key", Value: nil, Negated: false, KeyOnly: true},
+		{Key: "^key$", Value: &value, Negated: false, KeyOnly: false},
+		{Key: "^tag$", Value: nil, Negated: false, KeyOnly: false},
+		{Key: "^key$", Value: nil, Negated: false, KeyOnly: true},
 	}
 
 	require.Equal(t, want, ps.RepoHasKVPs())
