@@ -4,6 +4,12 @@ extend type Query {
     unauthenticated visitors can access the GraphQL API and perform a limited set of actions.
     """
     viewer: Viewer!
+
+    """
+    Whether the viewer can change the visibility of a library item (such as a saved search or prompt) to
+    public.
+    """
+    viewerCanChangeLibraryItemVisibilityToPublic: Boolean!
 }
 
 """

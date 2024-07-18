@@ -4489,6 +4489,10 @@ CREATE TABLE saved_searches (
     user_id integer,
     org_id integer,
     slack_webhook_url text,
+    created_by integer,
+    updated_by integer,
+    draft boolean DEFAULT false NOT NULL,
+    visibility_secret boolean DEFAULT true NOT NULL,
     CONSTRAINT saved_searches_notifications_disabled CHECK (((notify_owner = false) AND (notify_slack = false))),
     CONSTRAINT user_or_org_id_not_null CHECK ((((user_id IS NOT NULL) AND (org_id IS NULL)) OR ((org_id IS NOT NULL) AND (user_id IS NULL))))
 );
@@ -6980,7 +6984,13 @@ ALTER TABLE ONLY role_permissions
     ADD CONSTRAINT role_permissions_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY saved_searches
+    ADD CONSTRAINT saved_searches_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY saved_searches
     ADD CONSTRAINT saved_searches_org_id_fkey FOREIGN KEY (org_id) REFERENCES orgs(id);
+
+ALTER TABLE ONLY saved_searches
+    ADD CONSTRAINT saved_searches_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL;
 
 ALTER TABLE ONLY saved_searches
     ADD CONSTRAINT saved_searches_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);

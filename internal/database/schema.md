@@ -3823,13 +3823,19 @@ Referenced by:
  user_id           | integer                  |           |          | 
  org_id            | integer                  |           |          | 
  slack_webhook_url | text                     |           |          | 
+ created_by        | integer                  |           |          | 
+ updated_by        | integer                  |           |          | 
+ draft             | boolean                  |           | not null | false
+ visibility_secret | boolean                  |           | not null | true
 Indexes:
     "saved_searches_pkey" PRIMARY KEY, btree (id)
 Check constraints:
     "saved_searches_notifications_disabled" CHECK (notify_owner = false AND notify_slack = false)
     "user_or_org_id_not_null" CHECK (user_id IS NOT NULL AND org_id IS NULL OR org_id IS NOT NULL AND user_id IS NULL)
 Foreign-key constraints:
+    "saved_searches_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
     "saved_searches_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
+    "saved_searches_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
     "saved_searches_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 
 ```
@@ -4437,6 +4443,8 @@ Referenced by:
     TABLE "product_subscriptions" CONSTRAINT "product_subscriptions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "registry_extension_releases" CONSTRAINT "registry_extension_releases_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "registry_extensions" CONSTRAINT "registry_extensions_publisher_user_id_fkey" FOREIGN KEY (publisher_user_id) REFERENCES users(id)
+    TABLE "saved_searches" CONSTRAINT "saved_searches_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    TABLE "saved_searches" CONSTRAINT "saved_searches_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
     TABLE "saved_searches" CONSTRAINT "saved_searches_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "search_context_default" CONSTRAINT "search_context_default_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "search_context_stars" CONSTRAINT "search_context_stars_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
