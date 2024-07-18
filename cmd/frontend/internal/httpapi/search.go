@@ -82,6 +82,10 @@ func (s *searchIndexerGRPCServer) SearchConfiguration(ctx context.Context, reque
 			return err
 		}
 		r.fingerprint = tntR.fingerprint
+		tntID := tenant.FromContext(ctx).ID()
+		for i := range tntR.options {
+			tntR.options[i].TenantID = tntID
+		}
 		r.options = append(r.options, tntR.options...)
 		return nil
 	})

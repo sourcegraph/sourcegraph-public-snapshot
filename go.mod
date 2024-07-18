@@ -25,6 +25,8 @@ replace (
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
 	github.com/sourcegraph/sourcegraph/monitoring => ./monitoring
 
+	github.com/sourcegraph/zoekt => ../zoekt
+
 	// https://github.com/sourcegraph/sourcegraph/security/dependabot/397 archived but has a vulnerability
 	gopkg.in/square/go-jose.v2 v2.6.0 => gopkg.in/go-jose/go-jose.v2 v2.6.3
 )
