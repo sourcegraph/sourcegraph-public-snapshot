@@ -20,6 +20,7 @@ import (
 	codyaccessv1connect "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1/v1connect"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 const Name = codyaccessv1connect.CodyAccessServiceName
@@ -143,6 +144,130 @@ func (s *HandlerV1) ListCodyGatewayAccesses(ctx context.Context, req *connect.Re
 	logger.Scoped("audit").Info("ListCodyGatewayAccesses",
 		log.Strings("accessedSubscriptions", accessedSubscriptions))
 	return connect.NewResponse(&resp), nil
+}
+
+func (s *HandlerV1) UpdateCodyGatewayAccess(ctx context.Context, req *connect.Request[codyaccessv1.UpdateCodyGatewayAccessRequest]) (*connect.Response[codyaccessv1.UpdateCodyGatewayAccessResponse], error) {
+	logger := trace.Logger(ctx, s.logger)
+
+	// 🚨 SECURITY: Require approrpiate M2M scope.
+	requiredScope := samsm2m.EnterprisePortalScope("codyaccess", scopes.ActionRead)
+	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
+	if err != nil {
+		return nil, err
+	}
+	logger = logger.With(clientAttrs...)
+
+	subscriptionID := req.Msg.GetAccess().SubscriptionId
+	if subscriptionID == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("subscription ID is required"))
+	}
+
+	var opts codyaccess.UpsertCodyGatewayAccessOptions
+
+	update := req.Msg.GetAccess()
+	fieldPaths := req.Msg.GetUpdateMask().GetPaths()
+	// Empty field paths means update all non-empty fields.
+	if len(fieldPaths) == 0 {
+		if update.Enabled {
+			opts.Enabled = pointers.Ptr(update.Enabled)
+		}
+		if update.GetChatCompletionsRateLimit().GetLimit() > 0 {
+			opts.ChatCompletionsRateLimit = pointers.Ptr(
+				int64(update.GetChatCompletionsRateLimit().Limit),
+			)
+		}
+		if update.GetChatCompletionsRateLimit().GetIntervalDuration().GetSeconds() > 0 {
+			opts.ChatCompletionsRateLimitIntervalSeconds = pointers.Ptr(
+				int32(update.GetChatCompletionsRateLimit().GetIntervalDuration().Seconds),
+			)
+		}
+		if update.GetCodeCompletionsRateLimit().GetLimit() > 0 {
+			opts.CodeCompletionsRateLimit = pointers.Ptr(
+				int64(update.GetCodeCompletionsRateLimit().Limit),
+			)
+		}
+		if update.GetCodeCompletionsRateLimit().GetIntervalDuration().GetSeconds() > 0 {
+			opts.CodeCompletionsRateLimitIntervalSeconds = pointers.Ptr(
+				int32(update.GetCodeCompletionsRateLimit().GetIntervalDuration().Seconds),
+			)
+		}
+		if update.GetEmbeddingsRateLimit().GetLimit() > 0 {
+			opts.EmbeddingsRateLimit = pointers.Ptr(
+				int64(update.GetEmbeddingsRateLimit().Limit),
+			)
+		}
+		if update.GetEmbeddingsRateLimit().GetIntervalDuration().GetSeconds() > 0 {
+			opts.EmbeddingsRateLimitIntervalSeconds = pointers.Ptr(
+				int32(update.GetEmbeddingsRateLimit().GetIntervalDuration().Seconds),
+			)
+		}
+	} else {
+		for _, p := range fieldPaths {
+			var valid bool
+			if p == "*" {
+				valid = true
+				opts.ForceUpdate = true
+			}
+			if p == "enabled" || p == "*" {
+				valid = true
+				opts.Enabled = pointers.Ptr(update.GetEnabled())
+			}
+			if p == "chat_completions_rate_limit.limit" || p == "*" {
+				valid = true
+				opts.ChatCompletionsRateLimit = pointers.Ptr(
+					int64(update.GetChatCompletionsRateLimit().GetLimit()),
+				)
+			}
+			if p == "chat_completions_rate_limit.interval_duration" || p == "*" {
+				valid = true
+				opts.ChatCompletionsRateLimitIntervalSeconds = pointers.Ptr(
+					int32(update.GetChatCompletionsRateLimit().GetIntervalDuration().GetSeconds()),
+				)
+			}
+			if p == "code_completions_rate_limit.limit" || p == "*" {
+				valid = true
+				opts.CodeCompletionsRateLimit = pointers.Ptr(
+					int64(update.GetCodeCompletionsRateLimit().GetLimit()),
+				)
+			}
+			if p == "code_completions_rate_limit.interval_duration" || p == "*" {
+				valid = true
+				opts.CodeCompletionsRateLimitIntervalSeconds = pointers.Ptr(
+					int32(update.GetCodeCompletionsRateLimit().GetIntervalDuration().GetSeconds()),
+				)
+			}
+			if p == "embeddings_rate_limit.limit" || p == "*" {
+				valid = true
+				opts.EmbeddingsRateLimit = pointers.Ptr(
+					int64(update.GetEmbeddingsRateLimit().GetLimit()),
+				)
+			}
+			if p == "embeddings_rate_limit.interval_duration" || p == "*" {
+				valid = true
+				opts.EmbeddingsRateLimitIntervalSeconds = pointers.Ptr(
+					int32(update.GetEmbeddingsRateLimit().GetIntervalDuration().GetSeconds()),
+				)
+			}
+			if !valid {
+				return nil, connect.NewError(connect.CodeInvalidArgument, errors.Newf("invalid field path %q", p))
+			}
+		}
+	}
+
+	updated, err := s.store.UpsertCodyGatewayAccess(ctx, subscriptionID, opts)
+	if err != nil {
+		if errors.Is(err, codyaccess.ErrSubscriptionDoesNotExist) {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
+		return nil, connectutil.InternalError(ctx, logger, err, "failed to update Cody Gateway access")
+	}
+
+	logger.Scoped("audit").Info("GetCodyGatewayAccess",
+		log.String("updatedSubscription", subscriptionID))
+
+	return connect.NewResponse(&codyaccessv1.UpdateCodyGatewayAccessResponse{
+		Access: convertAccessAttrsToProto(updated),
+	}), nil
 }
 
 func (s *HandlerV1) GetCodyGatewayUsage(ctx context.Context, req *connect.Request[codyaccessv1.GetCodyGatewayUsageRequest]) (*connect.Response[codyaccessv1.GetCodyGatewayUsageResponse], error) {
