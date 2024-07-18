@@ -160,10 +160,10 @@
         max-width: var(--viewport-xl);
         width: 100%;
         margin: 0 auto;
-        padding: 0.5rem;
+        padding: 1rem;
 
-        @media (--sm-breakpoint-up) {
-            padding: 1rem;
+        @media (--mobile) {
+            padding: 0.5rem;
         }
     }
 
@@ -173,6 +173,7 @@
 
     ul.commits {
         --avatar-size: 2.5rem;
+        padding-top: 0;
 
         > li {
             border-bottom: 1px solid var(--border-color);
@@ -180,7 +181,7 @@
             padding: 0.5rem 0;
             gap: 1rem;
 
-            @media (--xs-breakpoint-down) {
+            @media (--mobile) {
                 display: block;
 
                 .actions {
