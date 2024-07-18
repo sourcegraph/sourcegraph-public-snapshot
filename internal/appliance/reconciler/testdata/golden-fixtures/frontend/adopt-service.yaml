@@ -322,14 +322,7 @@ resources:
           codeIntel:
             disabled: true
 
-          frontend:
-            service:
-              spec:
-                ports:
-                  - name: http
-                    port: 30080
-                    targetPort: http
-                selector: 'sourcegraph-frontend'
+          frontend: {}
 
           grafana:
             disabled: true
