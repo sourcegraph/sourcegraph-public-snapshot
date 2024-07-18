@@ -950,6 +950,7 @@ function comparePolicies(
         a.retentionDurationHours === b.retentionDurationHours,
         a.retainIntermediateCommits === b.retainIntermediateCommits,
         a.indexingEnabled === b.indexingEnabled,
+        a.syntacticIndexingEnabled === b.syntacticIndexingEnabled,
         a.indexCommitMaxAgeHours === b.indexCommitMaxAgeHours,
         a.indexIntermediateCommits === b.indexIntermediateCommits,
         comparePatterns(a.repositoryPatterns, b.repositoryPatterns),
