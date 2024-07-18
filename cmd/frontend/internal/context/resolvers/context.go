@@ -58,19 +58,19 @@ func (r *Resolver) RecordContext(ctx context.Context, args graphqlbackend.Record
 	if err != nil {
 		return nil, err
 	}
-	retrieverUsed, retrieverDiscarded := map[string]int{}, map[string]int{}
+	retrieverUsed, retrieverIgnored := map[string]int{}, map[string]int{}
 	for _, item := range args.UsedContextItems {
 		retrieverUsed[item.Retriever]++
 	}
-	for _, item := range args.DiscardedContextItems {
-		retrieverDiscarded[item.Retriever]++
+	for _, item := range args.IgnoredContextItems {
+		retrieverIgnored[item.Retriever]++
 	}
-	fields := []log.Field{log.String("interactionID", args.InteractionID), log.Int("includedItemCount", len(args.UsedContextItems)), log.Int("excludedItemCount", len(args.DiscardedContextItems))}
+	fields := []log.Field{log.String("interactionID", args.InteractionID), log.Int("usedItemCount", len(args.UsedContextItems)), log.Int("ignoredItemCount", len(args.IgnoredContextItems))}
 	for r, cnt := range retrieverUsed {
 		fields = append(fields, log.Int(r+"-used", cnt))
 	}
-	for r, cnt := range retrieverDiscarded {
-		fields = append(fields, log.Int(r+"-discarded", cnt))
+	for r, cnt := range retrieverIgnored {
+		fields = append(fields, log.Int(r+"-ignored", cnt))
 	}
 	r.logger.Info("recording context", fields...)
 	return nil, nil
@@ -315,9 +315,9 @@ func countLines(content string, numRunes int) int {
 }
 
 type rankContextResponse struct {
-	ranker    string
-	used      []int32
-	discarded []int32
+	ranker  string
+	used    []int32
+	ignored []int32
 }
 
 func (r rankContextResponse) Ranker() string {
@@ -328,8 +328,8 @@ func (r rankContextResponse) Used() []int32 {
 	return r.used
 }
 
-func (r rankContextResponse) Discarded() []int32 {
-	return r.discarded
+func (r rankContextResponse) Ignored() []int32 {
+	return r.ignored
 }
 
 var _ graphqlbackend.RankContextResolver = &rankContextResponse{}
