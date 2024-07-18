@@ -16,22 +16,22 @@ import (
 )
 
 func main() {
-	old, err := os.Open(os.Args[1])
+	oldf, err := os.Open(os.Args[1])
 	if err != nil {
 		panic(err)
 	}
-	defer old.Close()
+	defer oldf.Close()
 
-	new, err := os.Open(os.Args[2])
+	newf, err := os.Open(os.Args[2])
 	if err != nil {
 		panic(err)
 	}
-	defer new.Close()
+	defer newf.Close()
 
 	oldTargetSpawns := make(Map)
 	newTargetSpawns := make(Map)
 
-	r := NewSpawnLogReconstructor(old)
+	r := NewSpawnLogReconstructor(oldf)
 	for {
 		exec, err := r.GetSpawnExec()
 		if err == io.EOF {
@@ -44,7 +44,7 @@ func main() {
 		oldTargetSpawns[exec.TargetLabel] = append(oldTargetSpawns[exec.TargetLabel], exec)
 	}
 
-	r = NewSpawnLogReconstructor(new)
+	r = NewSpawnLogReconstructor(newf)
 	for {
 		exec, err := r.GetSpawnExec()
 		if err == io.EOF {
@@ -62,23 +62,25 @@ func main() {
 
 	opts := cmpopts.IgnoreUnexported(proto.SpawnExec{}, proto.EnvironmentVariable{}, proto.Platform{}, proto.Platform_Property{}, proto.File{}, proto.Digest{}, proto.SpawnMetrics{}, durationpb.Duration{}, timestamppb.Timestamp{}, protoimpl.MessageState{})
 
+	// first, show all the entries from the new log that are not in the old log
 	for _, v := range newOnly {
-		reporter := &DiffReporter{}
+		reporter := new(DiffReporter)
 		if diff := cmp.Diff(v, []*proto.SpawnExec{}, opts, cmp.Reporter(reporter)); diff != "" {
-			fmt.Fprint(os.Stderr, reporter.String())
+			fmt.Fprint(os.Stderr, reporter)
 		}
 	}
+	// then, show all the entries from the old log that are not in the new log
 	for _, v := range oldOnly {
-		reporter := &DiffReporter{}
+		reporter := new(DiffReporter)
 		if diff := cmp.Diff([]*proto.SpawnExec{}, v, opts, cmp.Reporter(reporter)); diff != "" {
-			fmt.Fprint(os.Stderr, reporter.String())
+			fmt.Fprint(os.Stderr, reporter)
 		}
 	}
 
+	// finally, show all the entries that are in both logs, but are different (or not)
 	oldShared, newShared := oldTargetSpawns.Intersection(newTargetSpawns)
-
-	reporter := &DiffReporter{}
+	reporter := new(DiffReporter)
 	if diff := cmp.Diff(oldShared, newShared, opts, cmp.Reporter(reporter)); diff != "" {
-		fmt.Fprint(os.Stderr, reporter.String())
+		fmt.Fprint(os.Stderr, reporter)
 	}
 }
