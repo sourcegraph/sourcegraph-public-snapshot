@@ -47,7 +47,7 @@
     </form>
     <Scroller bind:this={scroller} margin={600} on:more={tagsQuery.fetchMore}>
         <div class="main">
-            {#if tags}
+            {#if tags && tags.nodes.length > 0}
                 <GitReferencesTable references={tags.nodes} referenceType={GitRefType.GIT_TAG} />
             {/if}
             <div>
@@ -56,6 +56,10 @@
                 {:else if $tagsQuery.error}
                     <Alert variant="danger">
                         Unable to load tags: {$tagsQuery.error.message}
+                    </Alert>
+                {:else if !tags || tags.nodes.length === 0}
+                    <Alert variant="info">
+                        No tags found
                     </Alert>
                 {/if}
             </div>

@@ -127,6 +127,7 @@
 
         display: grid;
         grid-template-columns: [revision] 1fr [timestamp] auto [behindAhead] auto [actions] auto;
+        column-gap: 0.5rem;
 
         @media (--mobile) {
             grid-template-columns: auto auto;
@@ -256,7 +257,14 @@
 
             @media (--mobile) {
                 display: flex;
-                gap: 0.5rem;
+                gap: 0.25rem;
+
+
+                li:not(:first-child)::before {
+                    content: '•';
+                    padding-right: 0.25rem;
+                    color: var(--text-muted);
+                }
             }
         }
     }

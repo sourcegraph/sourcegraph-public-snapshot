@@ -49,7 +49,7 @@
 </form>
 <Scroller bind:this={scroller} margin={600} on:more={branchesQuery.fetchMore}>
     <div class="main">
-        {#if branches}
+        {#if branches && branches.nodes.length > 0}
             <GitReferencesTable references={branches.nodes} referenceType={GitRefType.GIT_BRANCH} />
         {/if}
         <div>
@@ -58,6 +58,10 @@
             {:else if $branchesQuery.error}
                 <Alert variant="danger">
                     Unable to load branches: {$branchesQuery.error.message}
+                </Alert>
+            {:else if !branches || branches.nodes.length === 0}
+                <Alert variant="info">
+                    No branches found
                 </Alert>
             {/if}
         </div>
@@ -85,7 +89,7 @@
     }
 
     form,
-    div {
+    .main {
         margin: 0 auto;
         max-width: var(--viewport-xl);
         width: 100%;
