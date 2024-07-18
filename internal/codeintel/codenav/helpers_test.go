@@ -2,7 +2,9 @@ package codenav
 
 import (
 	"context"
+	"testing"
 
+	genslices "github.com/life4/genesis/slices"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -169,4 +171,46 @@ func shiftAllTranslator(targetCommit api.CommitID, numLines int) GitTreeTranslat
 // A GitTreeTranslator that returns all positions and ranges unchanged
 func noopTranslator(targetCommit api.CommitID) GitTreeTranslator {
 	return shiftAllTranslator(targetCommit, 0)
+}
+
+type MatchLike interface {
+	GetRange() scip.Range
+	GetIsDefinition() bool
+}
+
+func expectRanges[T MatchLike](t *testing.T, matches []T, ranges ...scip.Range) {
+	t.Helper()
+	for _, match := range matches {
+		_, err := genslices.Find(ranges, func(r scip.Range) bool {
+			return match.GetRange().CompareStrict(r) == 0
+		})
+		if err != nil {
+			t.Errorf("Did not expect match at %q", match.GetRange().String())
+		}
+	}
+
+	for _, r := range ranges {
+		_, err := genslices.Find(matches, func(match T) bool {
+			return match.GetRange().CompareStrict(r) == 0
+		})
+		if err != nil {
+			t.Errorf("Expected match at %q", r.String())
+		}
+	}
+}
+
+func expectDefinitionRanges[T MatchLike](t *testing.T, matches []T, ranges ...scip.Range) {
+	t.Helper()
+	for _, match := range matches {
+		_, err := genslices.Find(ranges, func(r scip.Range) bool {
+			return match.GetRange().CompareStrict(r) == 0
+		})
+		if match.GetIsDefinition() && err != nil {
+			t.Errorf("Did not expect match at %q to be a definition", match.GetRange().String())
+			return
+		} else if !match.GetIsDefinition() && err == nil {
+			t.Errorf("Expected match at %q to be a definition", match.GetRange().String())
+			return
+		}
+	}
 }
