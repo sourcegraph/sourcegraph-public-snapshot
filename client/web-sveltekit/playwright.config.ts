@@ -15,7 +15,7 @@ const config: PlaywrightTestConfig = {
         : undefined,
     reporter: 'list',
     // note: if you proxy into a locally running vite preview, you may have to raise this to 60 seconds
-    timeout: 5_000,
+    timeout: 30_000,
     use: {
         baseURL: `http://localhost:${PORT}`,
     },
