@@ -104,7 +104,6 @@ test.beforeEach(({ sg }) => {
 })
 
 test.describe('file sidebar', () => {
-
     test.skip('basic functionality', async ({ page }) => {
         const readmeEntry = page.getByRole('treeitem', { name: 'README.md' })
 
