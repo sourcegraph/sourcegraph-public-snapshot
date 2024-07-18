@@ -14,6 +14,7 @@ export const PREDICATES: PredicateDefinition[] = [
     { field: 'repo', name: 'contains.content' },
     { field: 'repo', name: 'contains.commit.after' },
     { field: 'repo', name: 'contains.commit.after' },
+    { field: 'repo', name: 'has' },
     { field: 'repo', name: 'has.file' },
     { field: 'repo', name: 'has.path' },
     { field: 'repo', name: 'has.content' },

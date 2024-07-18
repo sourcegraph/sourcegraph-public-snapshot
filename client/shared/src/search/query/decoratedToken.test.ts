@@ -1686,19 +1686,27 @@ describe('scanSearchQuery() and decorate()', () => {
             },
             {
               "startIndex": 5,
-              "scopes": "identifier"
+              "scopes": "metaPredicateNameAccess"
             },
             {
               "startIndex": 8,
-              "scopes": "metaRegexpDelimited"
+              "scopes": "metaPredicateParenthesis"
             },
             {
               "startIndex": 9,
               "scopes": "identifier"
             },
             {
+              "startIndex": 12,
+              "scopes": "metaFilterSeparator"
+            },
+            {
+              "startIndex": 13,
+              "scopes": "identifier"
+            },
+            {
               "startIndex": 18,
-              "scopes": "metaRegexpDelimited"
+              "scopes": "metaPredicateParenthesis"
             }
           ]
         `)
