@@ -574,15 +574,17 @@ func checkClientCodyIgnoreCompatibility(ctx context.Context, db database.DB, r *
 			// set the constraint to a lower pre-release version to enable testing
 			cvc.constraint = ">= 5.5.8-0"
 		}
-	default:
-		// By default, allow requests from any client. We only want to reject
-		// requests from older client versions that we know definitily don't
-		// support context filters. A malicious client can always bypass this
-		// check anyways by faking to be "jetbrains". All agent-based clients
-		// (JetBrains, Eclipse, Visual Studio) support context filters out of
-		// the box since the original support was added for JetBrains GA in May
-		// 2024.
+	case types.CodyClientWeb:
+		// Don't require client version for Web because it's versioned with the Sourcegraph instance.
 		return nil
+	default:
+		// By default, allow requests from any client on any version. We only
+		// want to reject requests from older client versions that we know
+		// definitely don't support context filters.
+		// All agent-based clients (JetBrains, Eclipse, Visual Studio) support
+		// context filters out of the box since the original support was added
+		// for JetBrains GA in May 2024.
+		cvc = clientVersionConstraint{client: clientName, constraint: ">= 0.0.0"}
 	}
 
 	clientVersion := r.URL.Query().Get("client-version")
