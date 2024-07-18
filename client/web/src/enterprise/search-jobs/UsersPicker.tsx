@@ -125,8 +125,6 @@ export const UsersPicker: FC<UsersPickerProps> = props => {
                                     <span className={styles.itemUsername}>
                                         <MultiComboboxOptionText />
                                     </span>
-                                    {user.siteAdmin && <span className={styles.itemRole}>Admin</span>}
-
                                     <span className={styles.itemEmail}>
                                         {user.primaryEmail?.email ?? 'No email set'}
                                     </span>

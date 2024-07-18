@@ -1,13 +1,14 @@
 import {
+    arrow,
     autoUpdate,
     computePosition,
     flip,
-    shift,
-    arrow,
-    type Placement,
-    type Middleware,
     offset,
+    shift,
+    size,
+    type Middleware,
     type OffsetOptions,
+    type Placement,
     type ShiftOptions,
     type FlipOptions,
 } from '@floating-ui/dom'
@@ -161,7 +162,18 @@ export const popover: Action<HTMLElement, { reference: Element; options: Popover
         if (options.offset !== undefined) {
             middleware.push(offset(options.offset))
         }
-        middleware.push(shift(options.shift), flip(options.flip))
+        middleware.push(
+            shift(options.shift),
+            flip(options.flip),
+            size({
+                apply({ availableWidth, availableHeight }) {
+                    Object.assign(popover.style, {
+                        maxWidth: `${availableWidth}px`,
+                        maxHeight: `${availableHeight}px`,
+                    })
+                },
+            })
+        )
         if (arrowElement) {
             middleware.push(arrow({ element: arrowElement }))
         }
@@ -230,6 +242,10 @@ export const restrictToViewport: Action<HTMLElement, { offset?: number }> = (nod
 
     window.addEventListener('resize', setMaxHeight)
 
+    // Also update when the content changes
+    const observer = new MutationObserver(setMaxHeight)
+    observer.observe(node, { childList: true, subtree: true })
+
     setMaxHeight()
 
     return {
@@ -240,6 +256,7 @@ export const restrictToViewport: Action<HTMLElement, { offset?: number }> = (nod
 
         destroy() {
             window.removeEventListener('resize', setMaxHeight)
+            observer.disconnect()
         },
     }
 }
@@ -341,58 +358,58 @@ export const portal: Action<HTMLElement, { container?: HTMLElement | null } | un
 /**
  * An action that resizes an element with the provided grow and shrink callbacks until the target element no longer overflows.
  *
- * @param grow A callback to increase the size of the contained contents. Returns a boolean indicating more growth is possible.
- * @param shrink A callback to reduce the size of the contained contents. Returns a boolean indicating more shrinking is possible.
+ * @param grow A callback to increase the size of the contained contents. Returns a boolean indicating whether growing was successful.
+ * @param shrink A callback to reduce the size of the contained contents. Returns a boolean indicating whether shrinking was successful.
  * @returns An action that updates the overflow state of the element.
  */
 export const sizeToFit: Action<HTMLElement, { grow: () => boolean; shrink: () => boolean }> = (
     target,
     { grow, shrink }
 ) => {
-    async function resize(): Promise<void> {
-        if (target.scrollWidth > target.clientWidth) {
-            // Shrink until we fit
-            while (target.scrollWidth > target.clientWidth) {
-                if (!shrink()) {
-                    return
-                }
-                await tick()
-            }
-        } else {
-            // Grow until we overflow, then shrink once
-            while (target.scrollWidth <= target.clientWidth && grow()) {
-                await tick()
-            }
-            await tick()
-            if (target.scrollWidth > target.clientWidth) {
-                shrink()
-                await tick()
-            }
-        }
-    }
-
-    // Resizing can (and probably will) trigger mutations, so do not trigger a
-    // new resize if there is a resize in progress.
     let resizing = false
-    function resizeOnce() {
+    async function resize(): Promise<void> {
         if (resizing) {
+            // Growing and shrinking can cause child nodes to be added
+            // or removed, triggering resize observer during resizing.
+            // If we're already resizing, we can safely ignore those events.
             return
         }
         resizing = true
-        resize().then(() => {
-            resizing = false
-        })
+        // Grow until we overflow
+        while (target.scrollWidth <= target.clientWidth && grow()) {
+            await tick()
+        }
+        await tick()
+        // Then shrink until we fit
+        while (target.scrollWidth > target.clientWidth && shrink()) {
+            await tick()
+        }
+        await tick()
+        resizing = false
     }
 
-    const resizeObserver = new ResizeObserver(resizeOnce)
+    const resizeObserver = new ResizeObserver(resize)
     resizeObserver.observe(target)
-    const mutationObserver = new MutationObserver(resizeOnce)
-    mutationObserver.observe(target, { attributes: true, childList: true, characterData: true, subtree: true })
+
+    function isElement(node: Node): node is Element {
+        return node.nodeType === Node.ELEMENT_NODE
+    }
+
+    // If any children change size, that could trigger an overflow, so check the size again
+    target.childNodes.forEach(child => isElement(child) && resizeObserver.observe(child))
+    const mutationObserver = new MutationObserver(mutationList => {
+        for (const mutation of mutationList) {
+            mutation.addedNodes.forEach(node => isElement(node) && resizeObserver.observe(node))
+            mutation.removedNodes.forEach(node => isElement(node) && resizeObserver.unobserve(node))
+        }
+    })
+    mutationObserver.observe(target, { childList: true })
+
     return {
         update(params) {
             grow = params.grow
             shrink = params.shrink
-            resizeOnce()
+            resize()
         },
         destroy() {
             resizeObserver.disconnect()

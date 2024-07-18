@@ -10,6 +10,7 @@ go_library(
         "//cmd/frontend/enterprise",
         "//cmd/frontend/internal/codemonitors/resolvers",
         "//internal/codeintel",
+        "//internal/codemonitors",
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/observation",

@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { type Observable, Subject } from 'rxjs'
+import { Subject, type Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader, Button, Icon, Text, ButtonLink, Tooltip } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Container, Icon, PageHeader, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -20,8 +20,8 @@ import type {
     CreateAccessTokenResult,
 } from '../../../graphql-operations'
 import {
-    accessTokenFragment,
     AccessTokenNode,
+    accessTokenFragment,
     type AccessTokenNodeProps,
 } from '../../../settings/tokens/AccessTokenNode'
 import type { UserSettingsAreaRouteContext } from '../UserSettingsArea'
@@ -74,7 +74,7 @@ export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChil
     }, [accessTokenUpdates])
 
     const queryUserAccessTokens = useCallback(
-        (args: { first?: number }) => queryAccessTokens({ first: args.first ?? null, user: user.id }),
+        (args: { first?: number | null }) => queryAccessTokens({ first: args.first ?? null, user: user.id }),
         [user.id]
     )
 

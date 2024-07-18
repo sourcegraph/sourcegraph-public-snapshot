@@ -5,6 +5,7 @@ import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import type { BatchChangesProps } from './batches'
 import type { CodeIntelligenceProps } from './codeintel'
 import type { CodeMonitoringProps } from './codeMonitoring'
+import type { SearchJobsProps } from './enterprise/search-jobs'
 import type { CodeInsightsProps } from './insights/types'
 import type { NotebookProps } from './notebooks'
 import type { OrgAreaRoute } from './org/area/OrgArea'
@@ -62,7 +63,8 @@ export interface StaticWindowContextComputedAppConfig
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         Pick<CodeInsightsProps, 'codeInsightsEnabled'>,
         Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled'>,
-        Pick<OwnConfigProps, 'ownEnabled'> {
+        Pick<OwnConfigProps, 'ownEnabled'>,
+        Pick<SearchJobsProps, 'searchJobsEnabled'> {
     isSourcegraphDotCom: boolean
     needsRepositoryConfiguration: boolean
     batchChangesWebhookLogsEnabled: boolean
@@ -84,4 +86,5 @@ export const windowContextConfig = {
     codeMonitoringEnabled: window.context.codeMonitoringEnabled,
     searchAggregationEnabled: window.context.searchAggregationEnabled,
     ownEnabled: window.context.ownEnabled,
+    searchJobsEnabled: window.context.searchJobsEnabled,
 } satisfies StaticWindowContextComputedAppConfig

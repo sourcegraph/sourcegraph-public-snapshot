@@ -175,6 +175,21 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "commitGraphUpdates": {
+          "description": "Customize strategy used for commit graph updates",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "defaultBranchOnly": {
+              "description": "Disables precise code nav on non-default branches. Specify repo names using regex syntax.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "examples": ["github.com/myorg/huge-monorepo", "github.com/other-org/.*"]
+              }
+            }
+          }
+        },
         "scipBasedAPIs": {
           "description": "Enable usage of new CodeGraph and usagesForSymbol APIs",
           "type": "boolean",
@@ -615,6 +630,55 @@
           "description": "When enabled, syntactic indexing jobs will be scheduled for all enabled repos",
           "type": "boolean",
           "default": false
+        },
+        "cody.serverSideContext": {
+          "description": "Configuration for Server-side context API",
+          "type": "object",
+          "!go": {
+            "pointer": true
+          },
+          "group": "Cody",
+          "properties": {
+            "intentDetectionAPI": {
+              "description": "Configuration for intent detection API",
+              "type": "object",
+              "properties": {
+                "default": {
+                  "description": "Default URL for intent detection API",
+                  "$ref": "#/definitions/BackendAPIConfig"
+                },
+                "extra": {
+                  "description": "Array of additional intent detection API configs",
+                  "type": "array",
+                  "default": [],
+                  "items": {
+                    "$ref": "#/definitions/BackendAPIConfig"
+                  }
+                }
+              }
+            },
+            "reranker": {
+              "description": "Reranker to use for rankContext requests",
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["identity", "cohere"]
+                }
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/CodyRerankerIdentity"
+                },
+                {
+                  "$ref": "#/definitions/CodyRerankerCohere"
+                }
+              ],
+              "!go": {
+                "taggedUnionType": true
+              }
+            }
+          }
         }
       },
       "examples": [
@@ -4511,6 +4575,49 @@
           "description": "Regular expression which matches a set of repository names. The pattern is evaluated using Go regular expression syntax (https://golang.org/pkg/regexp/). By default, the pattern matches partially. Use \\\"^...$\\\" for whole-string matching.",
           "type": "string",
           "format": "regex"
+        }
+      }
+    },
+    "BackendAPIConfig": {
+      "type": "object",
+      "required": ["url"],
+      "properties": {
+        "url": {
+          "description": "Full URL of backend API",
+          "type": "string"
+        },
+        "authHeader": {
+          "description": "Value of Authorization header (if required)",
+          "type": "string"
+        }
+      }
+    },
+    "CodyRerankerIdentity": {
+      "description": "Identity re-ranker",
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "identity"
+        }
+      }
+    },
+    "CodyRerankerCohere": {
+      "description": "Re-ranker using Cohere API",
+      "type": "object",
+      "required": ["type", "apiKey"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "cohere"
+        },
+        "apiKey": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string",
+          "default": "rerank-english-v3.0"
         }
       }
     }

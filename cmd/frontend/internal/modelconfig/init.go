@@ -35,6 +35,10 @@ func Init(
 
 	logger := log.Scoped("modelconfig")
 
+	// We create the GraphQL resolver in this package, to avoid the circular dependency
+	// between the graphqlbackend, enterprise, and this modelconfig package.
+	enterpriseServices.ModelconfigResolver = newResolver(logger)
+
 	initialSiteConfig := initialConf.SiteConfig()
 	// If Cody isn't enabled on startup, we don't bother registering anything.
 	// Because there is no need to.

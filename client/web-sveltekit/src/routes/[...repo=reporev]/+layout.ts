@@ -1,26 +1,18 @@
-import { redirect, error } from '@sveltejs/kit'
+import { error, redirect } from '@sveltejs/kit'
 
-import { asError, loadMarkdownSyntaxHighlighting, type ErrorLike } from '$lib/common'
-import { getGraphQLClient, type GraphQLClient } from '$lib/graphql'
-import {
-    CloneInProgressError,
-    RepoNotFoundError,
-    RepoSeeOtherError,
-    RevisionNotFoundError,
-    displayRepoName,
-    isRepoSeeOtherErrorLike,
-    isRevisionNotFoundErrorLike,
-    parseRepoRevision,
-} from '$lib/shared'
+import { loadMarkdownSyntaxHighlighting } from '$lib/common'
+import { getGraphQLClient, mapOrThrow, type GraphQLClient } from '$lib/graphql'
+import { GitRefType } from '$lib/graphql-types'
+import { CloneInProgressError, RepoNotFoundError, displayRepoName, parseRepoRevision } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
-import { ResolveRepoRevision, ResolvedRepository, type ResolveRepoRevisionResult } from './layout.gql'
-
-export interface ResolvedRevision {
-    repo: ResolvedRepository & NonNullable<{ commit: ResolvedRepository['commit'] }>
-    commitID: string
-    defaultBranch: string
-}
+import {
+    RepositoryGitCommits,
+    RepositoryGitRefs,
+    ResolveRepoRevision,
+    ResolvedRepository,
+    type ResolveRepoRevisionResult,
+} from './layout.gql'
 
 export const load: LayoutLoad = async ({ params, url, depends }) => {
     const client = getGraphQLClient()
@@ -35,29 +27,12 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
 
     // An empty revision means we are at the default branch
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
-
-    let resolvedRevisionOrError: ResolvedRevision | ErrorLike
-    let resolvedRevision: ResolvedRevision | undefined
-
-    try {
-        resolvedRevisionOrError = await resolveRepoRevision({ client, repoName, revspec: revision })
-        resolvedRevision = resolvedRevisionOrError
-    } catch (repoError: unknown) {
-        const redirect = isRepoSeeOtherErrorLike(repoError)
-
-        if (redirect) {
-            redirectToExternalHost(redirect, url)
-        }
-
-        // TODO: use different error codes for different types of errors
-        // Let revision errors be handled by the nested layout so that we can
-        // still render the main repo navigation and header
-        if (!isRevisionNotFoundErrorLike(repoError)) {
-            error(400, asError(repoError))
-        }
-
-        resolvedRevisionOrError = asError(repoError)
-    }
+    const resolvedRepository = await resolveRepoRevision({
+        client,
+        repoName,
+        revspec: revision,
+        url,
+    })
 
     return {
         repoURL: '/' + params.repo,
@@ -74,9 +49,68 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
          * - an abbreviated commit SHA
          * - a symbolic revision (e.g. a branch or tag name)
          */
-        displayRevision: displayRevision(revision, resolvedRevision),
-        resolvedRevisionOrError,
-        resolvedRevision,
+        displayRevision: displayRevision(revision, resolvedRepository),
+        defaultBranch: resolvedRepository.defaultBranch?.abbrevName || 'HEAD',
+        resolvedRepository: resolvedRepository,
+
+        // Repository pickers queries (branch, tags and commits)
+        getRepoBranches: (searchTerm: string) =>
+            client
+                .query(RepositoryGitRefs, {
+                    repoName,
+                    query: searchTerm,
+                    type: GitRefType.GIT_BRANCH,
+                })
+                .then(
+                    mapOrThrow(({ data, error }) => {
+                        if (!data?.repository?.gitRefs) {
+                            throw new Error(error?.message)
+                        }
+
+                        return data.repository.gitRefs
+                    })
+                ),
+        getRepoTags: (searchTerm: string) =>
+            client
+                .query(RepositoryGitRefs, {
+                    repoName,
+                    query: searchTerm,
+                    type: GitRefType.GIT_TAG,
+                })
+                .then(
+                    mapOrThrow(({ data, error }) => {
+                        if (!data?.repository?.gitRefs) {
+                            throw new Error(error?.message)
+                        }
+
+                        return data.repository.gitRefs
+                    })
+                ),
+        getRepoCommits: (searchTerm: string) =>
+            client
+                .query(RepositoryGitCommits, {
+                    repoName,
+                    query: searchTerm,
+                    revision: resolvedRepository.commit?.oid || '',
+                })
+                .then(
+                    mapOrThrow(({ data }) => {
+                        let nodes = data?.repository?.ancestorCommits?.ancestors.nodes ?? []
+
+                        // If we got a match for the OID, add it to the list if it doesn't already exist.
+                        // We double check that the OID contains the search term because we cannot search
+                        // specifically by OID, and an empty string resolves to HEAD.
+                        const commitByHash = data?.repository?.commitByHash
+                        if (
+                            commitByHash &&
+                            commitByHash.oid.includes(searchTerm) &&
+                            !nodes.some(node => node.oid === commitByHash.oid)
+                        ) {
+                            nodes = [commitByHash, ...nodes]
+                        }
+                        return { nodes }
+                    })
+                ),
     }
 }
 
@@ -88,25 +122,16 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
  * @param resolvedRevision The resolved revision
  * @returns A human readable revision string
  */
-function displayRevision(revision: string, resolvedRevision: ResolvedRevision | undefined): string {
+function displayRevision(revision: string, resolvedRevision: ResolvedRepository | undefined): string {
     if (!resolvedRevision) {
         return revision
     }
 
-    if (revision && resolvedRevision.commitID.startsWith(revision)) {
-        return resolvedRevision.commitID.slice(0, 7)
+    if (revision && resolvedRevision.commit?.oid.startsWith(revision)) {
+        return resolvedRevision.commit.oid?.slice(0, 7)
     }
 
     return revision
-}
-
-function redirectToExternalHost(externalRedirectURL: string, currentURL: URL): never {
-    const externalHostURL = new URL(externalRedirectURL)
-    const redirectURL = new URL(currentURL)
-    // Preserve the path of the current URL and redirect to the repo on the external host.
-    redirectURL.host = externalHostURL.host
-    redirectURL.protocol = externalHostURL.protocol
-    redirect(303, redirectURL.toString())
 }
 
 // This is a cache for resolved repository information to help in the following case:
@@ -120,15 +145,28 @@ function redirectToExternalHost(externalRedirectURL: string, currentURL: URL): n
 // have previously seen in a response.
 const resolvedRepoRevision = new Map<string, ResolveRepoRevisionResult>()
 
+/**
+ * This function takes the repository name and revision from the URL and fetches the corresponding
+ * repository information.
+ * One of three things can happen:
+ * - If the repository has a server side redirect configured, the user is redirected to the new URL
+ * - If the repository was not found, is currently being cloned or is scheduled for cloning, an error is thrown
+ * - Otherwise the resolved repository information is returned
+ *
+ * Note that it's possible that the provided revision does not exist in the repository. In that case
+ * the repository information is still returned, but the commit information will be missing.
+ */
 async function resolveRepoRevision({
     client,
     repoName,
     revspec = '',
+    url,
 }: {
     client: GraphQLClient
     repoName: string
     revspec?: string
-}): Promise<ResolvedRevision> {
+    url: URL
+}): Promise<ResolvedRepository> {
     const cacheKey = `${repoName}@${revspec}`
 
     let data: ResolveRepoRevisionResult | undefined
@@ -153,42 +191,33 @@ async function resolveRepoRevision({
     }
 
     if (!data?.repositoryRedirect) {
-        throw new RepoNotFoundError(repoName)
+        error(404, new RepoNotFoundError(repoName))
     }
 
     if (data.repositoryRedirect.__typename === 'Redirect') {
-        throw new RepoSeeOtherError(data.repositoryRedirect.url)
+        const redirectURL = new URL(url)
+        const externalURL = new URL(data.repositoryRedirect.url)
+        // Preserve the path of the current URL and redirect to the repo on the external host.
+        redirectURL.host = externalURL.host
+        redirectURL.protocol = externalURL.protocol
+        redirect(303, redirectURL)
     }
     if (data.repositoryRedirect.mirrorInfo.cloneInProgress) {
-        throw new CloneInProgressError(repoName, data.repositoryRedirect.mirrorInfo.cloneProgress || undefined)
+        error(503, new CloneInProgressError(repoName, data.repositoryRedirect.mirrorInfo.cloneProgress || undefined))
     }
     if (!data.repositoryRedirect.mirrorInfo.cloned) {
-        throw new CloneInProgressError(repoName, 'queued for cloning')
+        error(503, new CloneInProgressError(repoName, 'queued for cloning'))
     }
 
     // The "revision" we queried for could be a commit or a changelist.
     const commit = data.repositoryRedirect.commit || data.repositoryRedirect.changelist?.commit
-    if (!commit) {
-        throw new RevisionNotFoundError(revspec)
-    }
-
-    const defaultBranch = data.repositoryRedirect.defaultBranch?.abbrevName || 'HEAD'
-
-    /*
-     * TODO: What exactly is this check for?
-    if (!commit.tree) {
-        throw new RevisionNotFoundError(defaultBranch)
-    }
-    */
 
     // Cache the resolved repository information
-    resolvedRepoRevision.set(`${repoName}@${commit.oid}`, data)
-
-    return {
-        repo: data.repositoryRedirect,
-        commitID: commit.oid,
-        defaultBranch,
+    if (commit) {
+        resolvedRepoRevision.set(`${repoName}@${commit.oid}`, data)
     }
+
+    return data.repositoryRedirect
 }
 
 /**

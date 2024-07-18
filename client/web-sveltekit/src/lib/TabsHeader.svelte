@@ -113,13 +113,15 @@
         span {
             display: inline-block;
 
-            // Hidden rendering of the bold tab title to prevent
-            // shifting when the tab is selected.
-            &::before {
-                content: attr(data-tab-title);
-                display: block;
-                height: 0;
-                visibility: hidden;
+            &[data-tab-title] {
+                // Hidden rendering of the bold tab title to prevent
+                // shifting when the tab is selected.
+                &::before {
+                    content: attr(data-tab-title);
+                    display: block;
+                    height: 0;
+                    visibility: hidden;
+                }
             }
         }
 

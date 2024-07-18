@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func handleFilePathPatterns(patternInfo *protocol.PatternInfo) (query.Q, error) {
+func handleSearchFilters(patternInfo *protocol.PatternInfo) (query.Q, error) {
 	var and []query.Q
 
 	// Zoekt uses regular expressions for file paths.
@@ -42,10 +42,18 @@ func handleFilePathPatterns(patternInfo *protocol.PatternInfo) (query.Q, error) 
 		and = append(and, &query.Not{Child: q})
 	}
 
+	for _, lang := range patternInfo.IncludeLangs {
+		and = append(and, &query.Language{Language: lang})
+	}
+
+	for _, lang := range patternInfo.ExcludeLangs {
+		and = append(and, &query.Not{Child: &query.Language{Language: lang}})
+	}
+
 	return query.NewAnd(and...), nil
 }
 
-func buildQuery(pattern string, branchRepos []query.BranchRepos, filePathPatterns query.Q, shortcircuit bool) (query.Q, error) {
+func buildQuery(pattern string, branchRepos []query.BranchRepos, filterQuery query.Q, shortcircuit bool) (query.Q, error) {
 	regexString := comby.StructuralPatToRegexpQuery(pattern, shortcircuit)
 	if len(regexString) == 0 {
 		return &query.Const{Value: true}, nil
@@ -56,7 +64,7 @@ func buildQuery(pattern string, branchRepos []query.BranchRepos, filePathPattern
 	}
 	return query.NewAnd(
 		&query.BranchesRepos{List: branchRepos},
-		filePathPatterns,
+		filterQuery,
 		&query.Regexp{
 			Regexp:        re,
 			CaseSensitive: true,
@@ -87,13 +95,13 @@ func zoektSearch(ctx context.Context, logger log.Logger, client zoekt.Streamer, 
 	}).ToSearchOptions(ctx)
 	searchOpts.Whole = true
 
-	filePathPatterns, err := handleFilePathPatterns(args)
+	filterQuery, err := handleSearchFilters(args)
 	if err != nil {
 		return err
 	}
 
 	t0 := time.Now()
-	q, err := buildQuery(atom.Value, branchRepos, filePathPatterns, false)
+	q, err := buildQuery(atom.Value, branchRepos, filterQuery, false)
 	if err != nil {
 		return err
 	}

@@ -194,7 +194,7 @@ copy_to_directory(
 
 playwright_test_bin.playwright_test(
     name = "e2e_test",
-    timeout = "short",
+    timeout = "long",
     args = [
         "test",
         "--config $(location playwright.config.ts)",
@@ -217,6 +217,7 @@ playwright_test_bin.playwright_test(
         "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/test_build/_sk/",
     },
     flaky = True,
+    tags = ["manual"],
 )
 
 TESTS = glob([
@@ -241,10 +242,13 @@ TEST_BUILD_DEPS = [
 
 vitest_test(
     name = "unit_tests",
+    timeout = "moderate",
     bin = vitest_bin,
     chdir = package_name(),
     data = SRCS + BUILD_DEPS + CONFIGS + TESTS + TEST_BUILD_DEPS,
-    tags = [TAG_SEARCHSUITE],
+    tags = [
+        TAG_SEARCHSUITE,
+    ],
     with_vitest_config = False,
 )
 

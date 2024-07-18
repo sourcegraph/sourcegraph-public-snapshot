@@ -80,9 +80,11 @@ func parseLegacyModelRef(
 	case conftypes.CompletionsProviderNameAWSBedrock:
 		bedrockModelRef := conftypes.NewBedrockModelRefFromModelID(modelIDFromConfig)
 		providerID = "anthropic"
-		// The model ID may contain colons or other invalid characters. So we strip those out here.
+		// The model ID may contain colons or other invalid characters. So we strip those out here,
+		// so that the Model's mref is valid.
+		// But the model NAME remains unchanged. As that's what is sent to AWS.
 		modelID = modelconfig.SanitizeResourceName(bedrockModelRef.Model)
-		modelName = modelID
+		modelName = bedrockModelRef.Model
 
 		if bedrockModelRef.ProvisionedCapacity != nil {
 			serverSideConfig = &types.ServerSideModelConfig{

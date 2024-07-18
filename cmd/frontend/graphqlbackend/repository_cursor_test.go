@@ -4,12 +4,13 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var (
 	rawCursor    = types.Cursor{Column: "foo", Value: "bar", Direction: "next"}
-	opaqueCursor = "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6ImZvbyIsIlZhbHVlIjoiYmFyIiwiRGlyZWN0aW9uIjoibmV4dCJ9"
+	opaqueCursor = "UmVwb3NpdG9yeUN1cnNvcjp7ImMiOiJmb28iLCJ2IjoiYmFyIiwiZCI6Im5leHQifQ=="
 )
 
 func TestMarshalRepositoryCursor(t *testing.T) {

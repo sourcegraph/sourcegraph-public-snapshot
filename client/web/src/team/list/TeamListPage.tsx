@@ -4,18 +4,18 @@ import { mdiAccountMultiple, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
 import { type TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { Button, Link, Icon, PageHeader, Container, useDebounce, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Button, Container, Icon, Link, PageHeader, ProductStatusBadge, useDebounce } from '@sourcegraph/wildcard'
 
 import type { UseShowMorePaginationResult } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
-    ConnectionLoading,
+    ConnectionForm,
     ConnectionList,
-    SummaryContainer,
+    ConnectionLoading,
     ConnectionSummary,
     ShowMoreButton,
-    ConnectionForm,
+    SummaryContainer,
 } from '../../components/FilteredConnection/ui'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
@@ -153,7 +153,6 @@ export const TeamList: React.FunctionComponent<TeamListProps> = ({
         {connection && (
             <SummaryContainer className="mt-2">
                 <ConnectionSummary
-                    first={15}
                     centered={true}
                     connection={connection}
                     noun="team"

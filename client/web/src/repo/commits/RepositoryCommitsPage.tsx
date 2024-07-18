@@ -1,4 +1,4 @@
-import { type FC, useEffect, useMemo } from 'react'
+import { useEffect, useMemo, type FC } from 'react'
 
 import { capitalize } from 'lodash'
 import { useLocation } from 'react-router-dom'
@@ -6,13 +6,14 @@ import { useLocation } from 'react-router-dom'
 import { basename, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import type { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Code, Heading, ErrorAlert } from '@sourcegraph/wildcard'
+import { Code, ErrorAlert, Heading } from '@sourcegraph/wildcard'
 
 import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import { useUrlSearchParamsForConnectionState } from '../../components/FilteredConnection/hooks/connectionState'
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
@@ -24,11 +25,11 @@ import {
 } from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
 import {
+    RepositoryType,
     type GitCommitFields,
     type RepositoryFields,
     type RepositoryGitCommitsResult,
     type RepositoryGitCommitsVariables,
-    RepositoryType,
 } from '../../graphql-operations'
 import { parseBrowserRepoURL } from '../../util/url'
 import { externalLinkFieldsFragment } from '../backend'
@@ -97,8 +98,6 @@ export const gitCommitFragment = gql`
     ${externalLinkFieldsFragment}
 `
 
-const REPOSITORY_GIT_COMMITS_PER_PAGE = 20
-
 export const REPOSITORY_GIT_COMMITS_QUERY = gql`
     query RepositoryGitCommits($repo: ID!, $revspec: String!, $first: Int, $afterCursor: String, $filePath: String) {
         node(id: $repo) {
@@ -137,6 +136,7 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
 
     let sourceType = RepositoryType.GIT_REPOSITORY
 
+    const connectionState = useUrlSearchParamsForConnectionState([])
     const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         RepositoryGitCommitsResult,
         RepositoryGitCommitsVariables,
@@ -147,8 +147,6 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
             repo: repo.id,
             revspec: props.revision,
             filePath: filePath ?? null,
-            first: REPOSITORY_GIT_COMMITS_PER_PAGE,
-            afterCursor: null,
         },
         getConnection: result => {
             const { node } = dataOrThrowErrors(result)
@@ -171,6 +169,7 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
             useAlternateAfterCursor: true,
             errorPolicy: 'all',
         },
+        state: connectionState,
     })
 
     const getPageTitle = (): string => {
@@ -267,7 +266,6 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
                         <SummaryContainer centered={true}>
                             <ConnectionSummary
                                 centered={true}
-                                first={REPOSITORY_GIT_COMMITS_PER_PAGE}
                                 connection={connection}
                                 noun={getRefType(sourceType)}
                                 pluralNoun={pluralize(getRefType(sourceType), 0)}

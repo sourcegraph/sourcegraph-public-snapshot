@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 
-import { mdiCog, mdiFileOutline, mdiSourceCommit, mdiGlasses, mdiInformationOutline } from '@mdi/js'
+import { mdiCog, mdiFileOutline, mdiGlasses, mdiInformationOutline, mdiSourceCommit } from '@mdi/js'
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 
@@ -340,7 +340,6 @@ const Contributors: React.FC<ContributorsProps> = ({ repo, filePath }) => {
                         <ConnectionSummary
                             compact={true}
                             connection={connection}
-                            first={COUNT}
                             noun="contributor"
                             pluralNoun="contributors"
                             hasNextPage={connection.pageInfo.hasNextPage}

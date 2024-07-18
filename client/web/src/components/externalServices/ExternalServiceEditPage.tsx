@@ -20,7 +20,6 @@ import {
 import { getBreadCrumbs } from './breadCrumbs'
 import { ExternalServiceForm } from './ExternalServiceForm'
 import { resolveExternalServiceCategory } from './externalServices'
-import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
 interface Props extends TelemetryProps, TelemetryV2Props {
     externalServicesFromFile: boolean
@@ -150,7 +149,6 @@ export const ExternalServiceEditPage: FC<Props> = ({
                         telemetryRecorder={telemetryRecorder}
                     />
                 )}
-                <ExternalServiceWebhook externalService={externalService} className="mt-3" />
             </Container>
         )
     }

@@ -1,8 +1,10 @@
 <script lang="ts">
     import { SourcegraphURL } from '$lib/common'
+    import type { InfinityQueryStore } from '$lib/graphql'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Scroller from '$lib/Scroller.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
+    import { Alert } from '$lib/wildcard'
     import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
     import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
     import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
@@ -11,8 +13,7 @@
     import type { ReferencePanel_LocationConnection, ReferencePanel_Location } from './ReferencePanel.gql'
     import ReferencePanelCodeExcerpt from './ReferencePanelCodeExcerpt.svelte'
 
-    export let connection: ReferencePanel_LocationConnection | null
-    export let loading: boolean
+    export let references: InfinityQueryStore<ReferencePanel_LocationConnection['nodes']>
 
     // It appears that the backend returns duplicate locations. We need to filter them out.
     function unique(locations: ReferencePanel_Location[]): ReferencePanel_Location[] {
@@ -41,13 +42,18 @@
     let selectedLocation: ReferencePanel_Location | null = null
 
     $: previewURL = selectedLocation ? getPreviewURL(selectedLocation) : null
-    $: locations = connection ? unique(connection.nodes) : []
+    $: locations = $references.data ? unique($references.data) : []
 </script>
 
 <div class="root">
     <PanelGroup id="references">
         <Panel id="references-list">
-            <Scroller margin={600} on:more>
+            <Scroller margin={600} on:more={references.fetchMore}>
+                {#if !$references.fetching && !$references.error && locations.length === 0}
+                    <div class="info">
+                        <Alert variant="info">No references found.</Alert>
+                    </div>
+                {/if}
                 <ul>
                     {#each locations as location (location.canonicalURL)}
                         {@const selected = selectedLocation?.canonicalURL === location.canonicalURL}
@@ -76,8 +82,12 @@
                         </li>
                     {/each}
                 </ul>
-                {#if loading}
+                {#if $references.fetching}
                     <div class="loader"><LoadingSpinner center /></div>
+                {:else if $references.error}
+                    <div class="loader">
+                        <Alert variant="danger">Unable to load references: {$references.error.message}</Alert>
+                    </div>
                 {/if}
             </Scroller>
         </Panel>

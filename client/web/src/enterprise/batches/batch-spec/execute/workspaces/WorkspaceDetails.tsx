@@ -1,15 +1,15 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import {
-    mdiClose,
-    mdiTimelineClockOutline,
-    mdiSourceBranch,
-    mdiEyeOffOutline,
-    mdiSync,
-    mdiLinkVariantRemove,
     mdiChevronDown,
     mdiChevronUp,
+    mdiClose,
+    mdiEyeOffOutline,
+    mdiLinkVariantRemove,
     mdiOpenInNew,
+    mdiSourceBranch,
+    mdiSync,
+    mdiTimelineClockOutline,
 } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
@@ -21,30 +21,30 @@ import type { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
+    Alert,
     Badge,
+    Button,
+    Card,
+    CardBody,
+    Code,
+    Collapse,
+    CollapseHeader,
+    CollapsePanel,
+    ErrorAlert,
+    H1,
+    H3,
+    H4,
+    Heading,
+    Icon,
+    Link,
     LoadingSpinner,
     Tab,
     TabList,
     TabPanel,
     TabPanels,
     Tabs,
-    Button,
-    Link,
-    CardBody,
-    Card,
-    Icon,
-    Code,
-    H1,
-    H3,
-    H4,
     Text,
-    Alert,
-    CollapsePanel,
-    CollapseHeader,
-    Collapse,
-    Heading,
     Tooltip,
-    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { DiffStat } from '../../../../../components/diff/DiffStat'
@@ -55,23 +55,23 @@ import { HeroPage } from '../../../../../components/HeroPage'
 import { LogOutput } from '../../../../../components/LogOutput'
 import { Duration } from '../../../../../components/time/Duration'
 import {
-    type BatchSpecWorkspaceChangesetSpecFields,
     BatchSpecWorkspaceState,
+    type BatchSpecWorkspaceChangesetSpecFields,
     type BatchSpecWorkspaceStepFields,
+    type BatchSpecWorkspaceStepResult,
+    type BatchSpecWorkspaceStepVariables,
+    type FileDiffFields,
     type HiddenBatchSpecWorkspaceFields,
     type Scalars,
     type VisibleBatchSpecWorkspaceFields,
-    type FileDiffFields,
-    type BatchSpecWorkspaceStepResult,
-    type BatchSpecWorkspaceStepVariables,
 } from '../../../../../graphql-operations'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
 import { ChangesetSpecFileDiffConnection } from '../../../preview/list/ChangesetSpecFileDiffConnection'
 import {
-    useBatchSpecWorkspace,
-    useRetryWorkspaceExecution,
     queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
     BATCH_SPEC_WORKSPACE_STEP,
+    useBatchSpecWorkspace,
+    useRetryWorkspaceExecution,
 } from '../backend'
 import { DiagnosticsModal } from '../DiagnosticsModal'
 
@@ -532,11 +532,9 @@ export const WorkspaceStepOutputLines: React.FunctionComponent<
         variables: {
             workspaceID,
             stepIndex: step.number,
-            first: OUTPUT_LINES_PER_PAGE,
-            after: null,
         },
         options: {
-            useURL: false,
+            pageSize: OUTPUT_LINES_PER_PAGE,
             fetchPolicy: 'cache-and-network',
         },
         getConnection: result => {

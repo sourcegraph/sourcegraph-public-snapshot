@@ -95,4 +95,6 @@ export function mediaQuery(query: string): Readable<boolean> {
     })
 }
 
-export const isViewportMediumDown = browser ? mediaQuery('(max-width: 768px)') : readable(false)
+// See breakpoints.scss for the values
+export const isViewportMediumDown = browser ? mediaQuery('(max-width: 767.98px)') : readable(false)
+export const isViewportMobile = browser ? mediaQuery('(max-width: 575.98px)') : readable(false)

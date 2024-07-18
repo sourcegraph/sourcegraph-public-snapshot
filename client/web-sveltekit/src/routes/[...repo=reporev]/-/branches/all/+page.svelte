@@ -8,39 +8,34 @@
     import GitReference from '$lib/repo/GitReference.svelte'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
     import { Alert, Button, Input } from '$lib/wildcard'
-    import type { GitBranchesConnection } from '$testing/graphql-type-mocks'
 
     import type { PageData, Snapshot } from './$types'
 
     export let data: PageData
 
-    export const snapshot: Snapshot<{ count: number; scroller: ScrollerCapture }> = {
+    export const snapshot: Snapshot<{
+        branches: ReturnType<typeof data.branchesQuery.capture>
+        scroller: ScrollerCapture
+    }> = {
         capture() {
             return {
-                count: branchesConnection?.nodes.length ?? 0,
+                branches: data.branchesQuery.capture(),
                 scroller: scroller.capture(),
             }
         },
         async restore(snapshot) {
-            if (snapshot?.count && get(navigating)?.type === 'popstate') {
-                await branchesQuery?.restore(result => {
-                    const count = result.data?.repository?.branches?.nodes?.length
-                    return !!count && count < snapshot.count
-                })
+            if (get(navigating)?.type === 'popstate') {
+                await data.branchesQuery?.restore(snapshot.branches)
             }
             scroller.restore(snapshot.scroller)
         },
     }
 
     let scroller: Scroller
-    let branchesConnection: GitBranchesConnection | undefined
 
     $: query = data.query
     $: branchesQuery = data.branchesQuery
-    $: branchesConnection = $branchesQuery.data?.repository?.branches ?? branchesConnection
-    $: if (branchesQuery) {
-        branchesConnection = undefined
-    }
+    $: branches = $branchesQuery.data
 </script>
 
 <svelte:head>
@@ -53,15 +48,15 @@
         <Button variant="primary" type="submit">Search</Button>
     </form>
     <Scroller bind:this={scroller} margin={600} on:more={branchesQuery.fetchMore}>
-        {#if !$branchesQuery.restoring && branchesConnection}
+        {#if branches}
             <table>
                 <tbody>
-                    {#each branchesConnection.nodes as tag (tag)}
-                        <GitReference ref={tag} />
+                    {#each branches.nodes as branch (branch)}
+                        <GitReference ref={branch} />
                     {:else}
                         <tr>
                             <td colspan="2">
-                                <Alert variant="info">No tags found</Alert>
+                                <Alert variant="info">No branches found</Alert>
                             </td>
                         </tr>
                     {/each}
@@ -69,7 +64,7 @@
             </table>
         {/if}
         <div>
-            {#if $branchesQuery.fetching || $branchesQuery.restoring}
+            {#if $branchesQuery.fetching}
                 <LoadingSpinner />
             {:else if $branchesQuery.error}
                 <Alert variant="danger">
@@ -78,12 +73,12 @@
             {/if}
         </div>
     </Scroller>
-    {#if branchesConnection && branchesConnection.nodes.length > 0}
+    {#if branches && branches.nodes.length > 0}
         <div class="footer">
-            {branchesConnection.totalCount}
-            {pluralize('branch', branchesConnection.totalCount)} total
-            {#if branchesConnection.totalCount > branchesConnection.nodes.length}
-                (showing {branchesConnection.nodes.length})
+            {branches.totalCount}
+            {pluralize('branch', branches.totalCount, 'branches')} total
+            {#if branches.totalCount > branches.nodes.length}
+                (showing {branches.nodes.length})
             {/if}
         </div>
     {/if}

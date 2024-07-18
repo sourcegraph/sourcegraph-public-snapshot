@@ -603,7 +603,7 @@ describe('Search', () => {
     })
 
     describe('Saved searches', () => {
-        test('is styled correctly, with saved searches', async () => {
+        test('list page', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
                 SavedSearches: () => ({
@@ -613,31 +613,76 @@ describe('Search', () => {
                                 __typename: 'SavedSearch',
                                 description: 'Demo',
                                 id: 'U2F2ZWRTZWFyY2g6NQ==',
-                                namespace: { __typename: 'User', id: 'user123', namespaceName: 'test' },
-                                notify: false,
-                                notifySlack: false,
+                                owner: { __typename: 'User', id: 'user123', namespaceName: 'test' },
+                                createdAt: '2020-04-21T10:10:10Z',
+                                updatedAt: '2020-04-21T10:10:10Z',
                                 query: 'context:global Batch Change patternType:literal',
-                                slackWebhookURL: null,
+                                url: '/saved-searches/U2F2ZWRTZWFyY2g6NQ==',
+                                viewerCanAdminister: true,
                             },
                         ],
                         totalCount: 1,
                         pageInfo: {
-                            startCursor: 'U2F2ZWRTZWFyY2g6NQ==',
-                            endCursor: 'U2F2ZWRTZWFyY2g6NQ==',
+                            startCursor:
+                                'U2F2ZWRTZWFyY2hDdXJzb3I6W3siYyI6InVwZGF0ZWRfYXQiLCJ2IjoiMTU4NzQ2MzgxMDAwMDAwMDAwMCIsImQiOiIifV0=',
+                            endCursor:
+                                'U2F2ZWRTZWFyY2hDdXJzb3I6W3siYyI6InVwZGF0ZWRfYXQiLCJ2IjoiMTU4NzQ2MzgxMDAwMDAwMDAwMCIsImQiOiIifV0=',
                             hasNextPage: false,
                             hasPreviousPage: false,
                         },
                     },
                 }),
+                ViewerAffiliatedNamespaces: () => ({
+                    viewer: {
+                        affiliatedNamespaces: {
+                            nodes: [
+                                {
+                                    __typename: 'User',
+                                    id: 'user123',
+                                    namespaceName: 'test',
+                                },
+                                {
+                                    __typename: 'Org',
+                                    id: 'org456',
+                                    namespaceName: 'test-org',
+                                    displayName: 'Test Org',
+                                },
+                            ],
+                        },
+                    },
+                }),
             })
 
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/searches')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/saved-searches')
             await driver.page.waitForSelector('[data-testid="saved-searches-list-page"]')
             await accessibilityAudit(driver.page)
         })
 
-        test('is styled correctly, with saved search form', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/searches/add')
+        test('new form', async () => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+                ViewerAffiliatedNamespaces: () => ({
+                    viewer: {
+                        affiliatedNamespaces: {
+                            nodes: [
+                                {
+                                    __typename: 'User',
+                                    id: 'user123',
+                                    namespaceName: 'test',
+                                },
+                                {
+                                    __typename: 'Org',
+                                    id: 'org456',
+                                    namespaceName: 'test-org',
+                                    displayName: 'Test Org',
+                                },
+                            ],
+                        },
+                    },
+                }),
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/saved-searches/new')
             await driver.page.waitForSelector('[data-testid="saved-search-form"]')
             await accessibilityAudit(driver.page)
         })

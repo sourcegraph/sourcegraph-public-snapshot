@@ -21,7 +21,7 @@
 
     interface Capture {
         scroll: ScrollerCapture
-        diffCount: number
+        diffs?: ReturnType<NonNullable<typeof data.diff>['capture']>
         expandedDiffs: Array<[number, boolean]>
     }
 
@@ -30,16 +30,13 @@
     export const snapshot: Snapshot<Capture> = {
         capture: () => ({
             scroll: scroller.capture(),
-            diffCount: diffs?.nodes.length ?? 0,
-            expandedDiffs: Array.from(expandedDiffs.entries()),
+            diffs: diffQuery?.capture(),
+            expandedDiffs: expandedDiffsSnapshot,
         }),
         restore: async capture => {
             expandedDiffs = new Map(capture.expandedDiffs)
-            if (capture?.diffCount !== undefined && get(navigating)?.type === 'popstate') {
-                await data.diff?.restore(result => {
-                    const count = result.data?.repository?.comparison.fileDiffs.nodes.length
-                    return !!count && count < capture.diffCount
-                })
+            if (get(navigating)?.type === 'popstate') {
+                await data.diff?.restore(capture.diffs)
             }
             scroller.restore(capture.scroll)
         },
@@ -48,14 +45,18 @@
     const repositoryContext = getRepositoryPageContext()
     let scroller: Scroller
     let expandedDiffs = new Map<number, boolean>()
+    let expandedDiffsSnapshot: Array<[number, boolean]> = []
 
     $: diffQuery = data.diff
-    $: diffs = $diffQuery?.data?.repository?.comparison.fileDiffs ?? null
+    $: diffs = $diffQuery?.data
 
     afterNavigate(() => {
         repositoryContext.set({ revision: data.commit.abbreviatedOID })
     })
     beforeNavigate(() => {
+        expandedDiffsSnapshot = Array.from(expandedDiffs.entries())
+        expandedDiffs = new Map()
+
         repositoryContext.set({})
     })
 </script>
@@ -66,7 +67,7 @@
 
 <section>
     {#if data.commit}
-        <Scroller bind:this={scroller} margin={600} on:more={data.diff?.fetchMore}>
+        <Scroller bind:this={scroller} margin={600} on:more={diffQuery?.fetchMore}>
             <div class="header">
                 <div class="info"><Commit commit={data.commit} alwaysExpanded /></div>
                 <div class="parents">
@@ -104,20 +105,24 @@
                 </div>
             </div>
             <hr />
-            {#if !$diffQuery?.restoring && diffs}
+            {#if diffs}
                 <ul class="diffs">
-                    {#each diffs.nodes as node, index}
+                    {#each diffs as node, index (index)}
                         <li>
                             <FileDiff
                                 fileDiff={node}
                                 expanded={expandedDiffs.get(index)}
-                                on:toggle={event => expandedDiffs.set(index, event.detail.expanded)}
+                                on:toggle={event => {
+                                    expandedDiffs.set(index, event.detail.expanded)
+                                    // This is needed to for Svelte to consider that expandedDiffs has changed
+                                    expandedDiffs = expandedDiffs
+                                }}
                             />
                         </li>
                     {/each}
                 </ul>
             {/if}
-            {#if $diffQuery?.fetching || $diffQuery?.restoring}
+            {#if $diffQuery?.fetching}
                 <LoadingSpinner />
             {:else if $diffQuery?.error}
                 <div class="error">

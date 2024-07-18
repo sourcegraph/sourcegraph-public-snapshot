@@ -11,7 +11,7 @@ import { WebStory } from '../components/WebStory'
 import type { WebhookByIDLogPageHeaderResult } from '../graphql-operations'
 
 import { WebhookInfoLogPageHeader } from './WebhookInfoLogPageHeader'
-import { type SelectedExternalService, WEBHOOK_BY_ID_LOG_PAGE_HEADER } from './webhooks/backend'
+import { WEBHOOK_BY_ID_LOG_PAGE_HEADER } from './webhooks/backend'
 
 const decorator: Decorator = story => (
     <Container>
@@ -36,7 +36,6 @@ export default config
 // WebhookInfoLogPageHeader.
 const WebhookInfoLogPageHeaderContainer: React.FunctionComponent<
     React.PropsWithChildren<{
-        initialExternalService?: SelectedExternalService
         initialOnlyErrors?: boolean
     }>
 > = ({ initialOnlyErrors }) => {

@@ -64,6 +64,40 @@ func TestFileMatchToContextMatches(t *testing.T) {
 				StartLine: 85,
 			},
 		},
+		{
+			// With symbol match returns context around first symbol
+			fileMatch: &result.FileMatch{
+				File: result.File{
+					Path:     "main.go",
+					CommitID: "abc123",
+					Repo: types.MinimalRepo{
+						Name: "repo",
+						ID:   1,
+					},
+				},
+				Symbols: []*result.SymbolMatch{
+					{
+						Symbol: result.Symbol{
+							Line: 23,
+							Name: "symbol",
+						},
+					},
+					{
+						Symbol: result.Symbol{
+							Line: 37,
+							Name: "symbol",
+						},
+					},
+				},
+			},
+			want: FileChunkContext{
+				RepoName:  "repo",
+				RepoID:    1,
+				CommitID:  "abc123",
+				Path:      "main.go",
+				StartLine: 18,
+			},
+		},
 	}
 
 	for _, tc := range cases {
