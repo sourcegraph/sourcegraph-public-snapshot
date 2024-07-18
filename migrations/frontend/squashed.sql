@@ -6342,6 +6342,8 @@ CREATE UNIQUE INDEX repo_id_perforce_changelist_id_unique ON repo_commits_change
 
 CREATE INDEX repo_is_not_blocked_idx ON repo USING btree (((blocked IS NULL)));
 
+CREATE INDEX repo_kvps_trgm_idx ON repo_kvps USING gin (key gin_trgm_ops, value gin_trgm_ops);
+
 CREATE INDEX repo_metadata_gin_idx ON repo USING gin (metadata);
 
 CREATE INDEX repo_name_case_sensitive_trgm_idx ON repo USING gin (((name)::text) gin_trgm_ops);

@@ -3679,6 +3679,7 @@ Referenced by:
  value   | text    |           |          | 
 Indexes:
     "repo_kvps_pkey" PRIMARY KEY, btree (repo_id, key) INCLUDE (value)
+    "repo_kvps_trgm_idx" gin (key gin_trgm_ops, value gin_trgm_ops)
 Foreign-key constraints:
     "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
