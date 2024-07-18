@@ -111,7 +111,6 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 					config.CodyGatewayEvents),
 			},
 		),
-		dotcomDB,
 		connect.WithInterceptors(otelConnctInterceptor),
 	)
 	subscriptionsservice.RegisterV1(
