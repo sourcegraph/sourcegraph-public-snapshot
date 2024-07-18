@@ -64974,6 +64974,9 @@ type MockSavedSearchStore struct {
 	// UpdateOwnerFunc is an instance of a mock function object controlling
 	// the behavior of the method UpdateOwner.
 	UpdateOwnerFunc *SavedSearchStoreUpdateOwnerFunc
+	// UpdateVisibilityFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateVisibility.
+	UpdateVisibilityFunc *SavedSearchStoreUpdateVisibilityFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *SavedSearchStoreWithFunc
@@ -65034,6 +65037,11 @@ func NewMockSavedSearchStore() *MockSavedSearchStore {
 		},
 		UpdateOwnerFunc: &SavedSearchStoreUpdateOwnerFunc{
 			defaultHook: func(context.Context, int32, types.Namespace) (r0 *types.SavedSearch, r1 error) {
+				return
+			},
+		},
+		UpdateVisibilityFunc: &SavedSearchStoreUpdateVisibilityFunc{
+			defaultHook: func(context.Context, int32, bool) (r0 *types.SavedSearch, r1 error) {
 				return
 			},
 		},
@@ -65104,6 +65112,11 @@ func NewStrictMockSavedSearchStore() *MockSavedSearchStore {
 				panic("unexpected invocation of MockSavedSearchStore.UpdateOwner")
 			},
 		},
+		UpdateVisibilityFunc: &SavedSearchStoreUpdateVisibilityFunc{
+			defaultHook: func(context.Context, int32, bool) (*types.SavedSearch, error) {
+				panic("unexpected invocation of MockSavedSearchStore.UpdateVisibility")
+			},
+		},
 		WithFunc: &SavedSearchStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) database.SavedSearchStore {
 				panic("unexpected invocation of MockSavedSearchStore.With")
@@ -65151,6 +65164,9 @@ func NewMockSavedSearchStoreFrom(i database.SavedSearchStore) *MockSavedSearchSt
 		},
 		UpdateOwnerFunc: &SavedSearchStoreUpdateOwnerFunc{
 			defaultHook: i.UpdateOwner,
+		},
+		UpdateVisibilityFunc: &SavedSearchStoreUpdateVisibilityFunc{
+			defaultHook: i.UpdateVisibility,
 		},
 		WithFunc: &SavedSearchStoreWithFunc{
 			defaultHook: i.With,
@@ -66237,6 +66253,120 @@ func (c SavedSearchStoreUpdateOwnerFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SavedSearchStoreUpdateOwnerFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// SavedSearchStoreUpdateVisibilityFunc describes the behavior when the
+// UpdateVisibility method of the parent MockSavedSearchStore instance is
+// invoked.
+type SavedSearchStoreUpdateVisibilityFunc struct {
+	defaultHook func(context.Context, int32, bool) (*types.SavedSearch, error)
+	hooks       []func(context.Context, int32, bool) (*types.SavedSearch, error)
+	history     []SavedSearchStoreUpdateVisibilityFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateVisibility delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSavedSearchStore) UpdateVisibility(v0 context.Context, v1 int32, v2 bool) (*types.SavedSearch, error) {
+	r0, r1 := m.UpdateVisibilityFunc.nextHook()(v0, v1, v2)
+	m.UpdateVisibilityFunc.appendCall(SavedSearchStoreUpdateVisibilityFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the UpdateVisibility
+// method of the parent MockSavedSearchStore instance is invoked and the
+// hook queue is empty.
+func (f *SavedSearchStoreUpdateVisibilityFunc) SetDefaultHook(hook func(context.Context, int32, bool) (*types.SavedSearch, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateVisibility method of the parent MockSavedSearchStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *SavedSearchStoreUpdateVisibilityFunc) PushHook(hook func(context.Context, int32, bool) (*types.SavedSearch, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SavedSearchStoreUpdateVisibilityFunc) SetDefaultReturn(r0 *types.SavedSearch, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, bool) (*types.SavedSearch, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SavedSearchStoreUpdateVisibilityFunc) PushReturn(r0 *types.SavedSearch, r1 error) {
+	f.PushHook(func(context.Context, int32, bool) (*types.SavedSearch, error) {
+		return r0, r1
+	})
+}
+
+func (f *SavedSearchStoreUpdateVisibilityFunc) nextHook() func(context.Context, int32, bool) (*types.SavedSearch, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SavedSearchStoreUpdateVisibilityFunc) appendCall(r0 SavedSearchStoreUpdateVisibilityFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SavedSearchStoreUpdateVisibilityFuncCall
+// objects describing the invocations of this function.
+func (f *SavedSearchStoreUpdateVisibilityFunc) History() []SavedSearchStoreUpdateVisibilityFuncCall {
+	f.mutex.Lock()
+	history := make([]SavedSearchStoreUpdateVisibilityFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SavedSearchStoreUpdateVisibilityFuncCall is an object that describes an
+// invocation of method UpdateVisibility on an instance of
+// MockSavedSearchStore.
+type SavedSearchStoreUpdateVisibilityFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.SavedSearch
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SavedSearchStoreUpdateVisibilityFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SavedSearchStoreUpdateVisibilityFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

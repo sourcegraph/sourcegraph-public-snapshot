@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEventHandler, type FunctionComponent } from 'react'
 
 import { mdiLink } from '@mdi/js'
+import { truncate } from 'lodash'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
@@ -15,6 +16,7 @@ import {
     H3,
     H4,
     Icon,
+    Label,
     Link,
     LoadingSpinner,
     Modal,
@@ -22,15 +24,20 @@ import {
     screenReaderAnnounce,
 } from '@sourcegraph/wildcard'
 
-import type {
-    SavedSearchFields,
-    SavedSearchResult,
-    SavedSearchVariables,
-    TransferSavedSearchOwnershipResult,
-    TransferSavedSearchOwnershipVariables,
-    UpdateSavedSearchResult,
-    UpdateSavedSearchVariables,
+import {
+    SavedSearchVisibility,
+    type ChangeSavedSearchVisibilityResult,
+    type ChangeSavedSearchVisibilityVariables,
+    type SavedSearchFields,
+    type SavedSearchResult,
+    type SavedSearchVariables,
+    type TransferSavedSearchOwnershipResult,
+    type TransferSavedSearchOwnershipVariables,
+    type UpdateSavedSearchResult,
+    type UpdateSavedSearchVariables,
 } from '../graphql-operations'
+import { LibraryItemVisibilityBadge } from '../library/itemBadges'
+import { useLibraryConfiguration } from '../library/useLibraryConfiguration'
 import { NamespaceSelector } from '../namespaces/NamespaceSelector'
 import { namespaceTelemetryMetadata } from '../namespaces/telemetry'
 import { useAffiliatedNamespaces } from '../namespaces/useAffiliatedNamespaces'
@@ -38,12 +45,14 @@ import { PageRoutes } from '../routes.constants'
 
 import { SavedSearchForm, type SavedSearchFormValue } from './Form'
 import {
+    changeSavedSearchVisibilityMutation,
     deleteSavedSearchMutation,
     savedSearchQuery,
     transferSavedSearchOwnershipMutation,
     updateSavedSearchMutation,
 } from './graphql'
 import { SavedSearchPage } from './Page'
+import { urlToEditSavedSearch } from './util'
 
 /**
  * Page to edit a saved search.
@@ -69,7 +78,16 @@ export const EditPage: FunctionComponent<{ isSourcegraphDotCom: boolean } & Tele
                 )
             }
             breadcrumbsNamespace={savedSearch?.owner}
-            breadcrumbs={<PageHeader.Breadcrumb>Edit</PageHeader.Breadcrumb>}
+            breadcrumbs={
+                savedSearch ? (
+                    <>
+                        <PageHeader.Breadcrumb to={savedSearch.url}>
+                            {truncate(savedSearch.description, { length: 30 })}
+                        </PageHeader.Breadcrumb>
+                        <PageHeader.Breadcrumb>Edit</PageHeader.Breadcrumb>
+                    </>
+                ) : null
+            }
         >
             {loading ? (
                 <LoadingSpinner />
@@ -106,6 +124,8 @@ const EditForm: FunctionComponent<
         })
     }, [telemetryRecorder, savedSearch.owner])
 
+    const location = useLocation()
+
     const [updateSavedSearch, { loading: updateLoading, error: updateError }] = useMutation<
         UpdateSavedSearchResult,
         UpdateSavedSearchVariables
@@ -121,6 +141,7 @@ const EditForm: FunctionComponent<
                         input: {
                             description: fields.description,
                             query: fields.query,
+                            draft: fields.draft,
                         },
                     },
                 })
@@ -161,7 +182,49 @@ const EditForm: FunctionComponent<
         }
     }, [savedSearch, deleteSavedSearch, telemetryRecorder, navigate])
 
-    const location = useLocation()
+    const [changeSavedSearchVisibility, { loading: changeVisibilityLoading, error: changeVisibilityError }] =
+        useMutation<ChangeSavedSearchVisibilityResult, ChangeSavedSearchVisibilityVariables>(
+            changeSavedSearchVisibilityMutation
+        )
+    const onChangeVisibilityClick = useCallback(async (): Promise<void> => {
+        if (!savedSearch) {
+            return
+        }
+        try {
+            const newVisibility =
+                savedSearch.visibility === SavedSearchVisibility.PUBLIC
+                    ? SavedSearchVisibility.SECRET
+                    : SavedSearchVisibility.PUBLIC
+            await changeSavedSearchVisibility({
+                variables: {
+                    id: savedSearch.id,
+                    newVisibility,
+                },
+            })
+            telemetryRecorder.recordEvent('savedSearches', 'changeVisibility', {
+                metadata: {
+                    ...namespaceTelemetryMetadata(savedSearch.owner),
+                    toVisibilityPublic: newVisibility === SavedSearchVisibility.PUBLIC ? 1 : 0,
+                    toVisibilitySecret: newVisibility === SavedSearchVisibility.SECRET ? 1 : 0,
+                },
+            })
+            screenReaderAnnounce(`Changed visibility of saved search: ${JSON.stringify(savedSearch.description)}`)
+            navigate(location, {
+                replace: true,
+                state: { [SAVED_SEARCH_CHANGED_VISIBILITY_LOCATION_STATE_KEY]: true },
+            })
+        } catch (error) {
+            logger.error(error)
+        }
+    }, [savedSearch, changeSavedSearchVisibility, telemetryRecorder, navigate, location])
+
+    // Flash after changing visibility.
+    const justChangedVisibility = !!location.state?.[SAVED_SEARCH_CHANGED_VISIBILITY_LOCATION_STATE_KEY]
+    useEffect(() => {
+        if (justChangedVisibility) {
+            setTimeout(() => navigate({}, { state: {} }), 1000)
+        }
+    }, [justChangedVisibility, navigate])
 
     // Flash after transferring ownership.
     const justTransferredOwnership = !!location.state?.[SAVED_SEARCH_TRANSFERRED_OWNERSHIP_LOCATION_STATE_KEY]
@@ -170,6 +233,8 @@ const EditForm: FunctionComponent<
             setTimeout(() => navigate({}, { state: {} }), 1000)
         }
     }, [justTransferredOwnership, navigate])
+
+    const { viewerCanChangeLibraryItemVisibilityToPublic } = useLibraryConfiguration()
 
     return (
         <>
@@ -183,17 +248,29 @@ const EditForm: FunctionComponent<
                 }
                 isSourcegraphDotCom={isSourcegraphDotCom}
                 initialValue={savedSearch}
-                loading={updateLoading || deleteLoading}
-                error={updateError ?? deleteError}
-                flash={justTransferredOwnership ? 'Transferred ownership.' : undefined}
+                loading={updateLoading || deleteLoading || changeVisibilityLoading}
+                error={updateError ?? deleteError ?? changeVisibilityError}
+                flash={
+                    justTransferredOwnership
+                        ? 'Transferred ownership.'
+                        : justChangedVisibility
+                        ? 'Changed visibility.'
+                        : undefined
+                }
                 telemetryRecorder={telemetryRecorder}
                 beforeFields={
                     <NamespaceSelector
                         namespaces={[savedSearch.owner]}
                         disabled={true}
                         label="Owner"
-                        className="w-fit-content"
+                        className="w-fit-content mb-4"
                     />
+                }
+                afterFields={
+                    <div className="form-group">
+                        <Label className="mr-2">Visibility:</Label>
+                        <LibraryItemVisibilityBadge item={savedSearch} />
+                    </div>
                 }
             />
 
@@ -208,16 +285,27 @@ const EditForm: FunctionComponent<
                                 })
                                 setShowTransferOwnershipModal(true)
                             }}
-                            disabled={updateLoading || deleteLoading}
+                            disabled={updateLoading || deleteLoading || changeVisibilityLoading}
                             variant="secondary"
                         >
                             Transfer ownership
                         </Button>
                     )}
+                    {savedSearch.viewerCanAdminister && viewerCanChangeLibraryItemVisibilityToPublic && (
+                        <Button
+                            onClick={onChangeVisibilityClick}
+                            disabled={updateLoading || deleteLoading || changeVisibilityLoading}
+                            variant="warning"
+                            outline={true}
+                        >
+                            Change visibility to{' '}
+                            {savedSearch.visibility === SavedSearchVisibility.PUBLIC ? 'secret' : 'public'}
+                        </Button>
+                    )}
                     {savedSearch.viewerCanAdminister && (
                         <Button
                             onClick={onDeleteClick}
-                            disabled={updateLoading || deleteLoading}
+                            disabled={updateLoading || deleteLoading || changeVisibilityLoading}
                             variant="danger"
                             outline={true}
                         >
@@ -276,7 +364,7 @@ const TransferOwnershipModal: FunctionComponent<{
                         [`toNamespaceType${updated.owner.__typename}`]: 1,
                     },
                 })
-                navigate(`${updated.url}/edit`, {
+                navigate(urlToEditSavedSearch(updated), {
                     state: { [SAVED_SEARCH_TRANSFERRED_OWNERSHIP_LOCATION_STATE_KEY]: true },
                 })
                 onClose()
@@ -339,3 +427,4 @@ const TransferOwnershipModal: FunctionComponent<{
 
 export const SAVED_SEARCH_UPDATED_LOCATION_STATE_KEY = 'savedSearch.updated'
 const SAVED_SEARCH_TRANSFERRED_OWNERSHIP_LOCATION_STATE_KEY = 'savedSearch.transferredOwnership'
+const SAVED_SEARCH_CHANGED_VISIBILITY_LOCATION_STATE_KEY = 'savedSearch.changedVisibility'

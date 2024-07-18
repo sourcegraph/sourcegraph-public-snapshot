@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -28,11 +29,14 @@ func TestSavedSearchesCreate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
 
 	input := types.SavedSearch{
-		Description: "d",
-		Query:       "q",
-		Owner:       types.NamespaceUser(user.ID),
+		Description:      "d",
+		Query:            "q",
+		Draft:            true,
+		Owner:            types.NamespaceUser(user.ID),
+		VisibilitySecret: true,
 	}
 	got, err := db.SavedSearches().Create(ctx, &input)
 	if err != nil {
@@ -40,6 +44,8 @@ func TestSavedSearchesCreate(t *testing.T) {
 	}
 	want := input
 	want.ID = got.ID
+	want.CreatedByUser = &user.ID
+	want.UpdatedByUser = &user.ID
 	normalizeSavedSearch(got, &want)
 	if !reflect.DeepEqual(*got, want) {
 		t.Errorf("got %+v, want %+v", *got, want)
@@ -60,6 +66,7 @@ func TestSavedSearchesUpdate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
 
 	_, err = db.SavedSearches().Create(ctx, &types.SavedSearch{
 		Description: "d",
@@ -81,6 +88,8 @@ func TestSavedSearchesUpdate(t *testing.T) {
 	}
 	want := update
 	want.Owner = types.NamespaceUser(user.ID)
+	want.CreatedByUser = &user.ID
+	want.UpdatedByUser = &user.ID
 	normalizeSavedSearch(got, &want)
 	if !reflect.DeepEqual(*got, want) {
 		t.Errorf("got %+v, want %+v", *got, want)
@@ -106,6 +115,7 @@ func TestSavedSearchesUpdateOwner(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
 	fixture1, err := db.SavedSearches().Create(ctx, &types.SavedSearch{
 		Description: "d",
 		Query:       "q",
@@ -144,6 +154,44 @@ func TestSavedSearchesUpdateOwner(t *testing.T) {
 	}
 }
 
+func TestSavedSearchesUpdateVisibility(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
+	user, err := db.Users().Create(ctx, NewUser{Username: "u"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
+
+	fixture1, err := db.SavedSearches().Create(ctx, &types.SavedSearch{
+		Description:      "d",
+		Query:            "q",
+		Owner:            types.NamespaceUser(user.ID),
+		VisibilitySecret: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Make public then secret again.
+	for _, secret := range []bool{false, true} {
+		updated, err := db.SavedSearches().UpdateVisibility(ctx, fixture1.ID, secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := updated.VisibilitySecret, secret; !reflect.DeepEqual(got, want) {
+			t.Errorf("got %+v, want %+v", got, want)
+		}
+	}
+}
+
 func TestSavedSearchesDelete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -158,6 +206,7 @@ func TestSavedSearchesDelete(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
 
 	fixture1, err := db.SavedSearches().Create(ctx, &types.SavedSearch{
 		Description: "d",
@@ -200,6 +249,7 @@ func TestSavedSearchesGetByID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
 
 	input := types.SavedSearch{
 		Description: "d",
@@ -218,6 +268,8 @@ func TestSavedSearchesGetByID(t *testing.T) {
 		}
 		want := input
 		want.ID = got.ID
+		want.CreatedByUser = &user.ID
+		want.UpdatedByUser = &user.ID
 		normalizeSavedSearch(got, &want)
 		if diff := cmp.Diff(want, *got); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
@@ -245,11 +297,13 @@ func TestSavedSearches_ListCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
 
 	fixture1, err := db.SavedSearches().Create(ctx, &types.SavedSearch{
-		Description: "fixture1",
-		Query:       "fixture1",
-		Owner:       types.NamespaceUser(user.ID),
+		Description:      "fixture1",
+		Query:            "fixture1",
+		Owner:            types.NamespaceUser(user.ID),
+		VisibilitySecret: true,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -264,23 +318,51 @@ func TestSavedSearches_ListCount(t *testing.T) {
 		t.Fatal(err)
 	}
 	fixture2, err := db.SavedSearches().Create(ctx, &types.SavedSearch{
-		Description: "fixture2",
-		Query:       "fixture2",
-		Owner:       types.NamespaceOrg(org1.ID),
+		Description:      "fixture2",
+		Query:            "fixture2",
+		Owner:            types.NamespaceOrg(org1.ID),
+		VisibilitySecret: true,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	fixture3, err := db.SavedSearches().Create(ctx, &types.SavedSearch{
-		Description: "fixture3",
-		Query:       "fixture3",
-		Owner:       types.NamespaceOrg(org2.ID),
+		Description:      "fixture3",
+		Query:            "fixture3",
+		Owner:            types.NamespaceOrg(org2.ID),
+		VisibilitySecret: true,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if _, err = db.OrgMembers().Create(ctx, org1.ID, user.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	fixture4, err := db.SavedSearches().Create(ctx, &types.SavedSearch{
+		Description:      "fixture4",
+		Query:            "fixture4",
+		Draft:            true,
+		Owner:            types.NamespaceUser(user.ID),
+		VisibilitySecret: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	user2, err := db.Users().Create(ctx, NewUser{Username: "u2"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture5, err := db.SavedSearches().Create(ctx, &types.SavedSearch{
+		Description:      "fixture5",
+		Query:            "fixture5",
+		Owner:            types.NamespaceUser(user2.ID),
+		VisibilitySecret: false,
+	})
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -310,7 +392,7 @@ func TestSavedSearches_ListCount(t *testing.T) {
 	}
 
 	t.Run("list all", func(t *testing.T) {
-		testListCount(t, SavedSearchListArgs{}, nil, []*types.SavedSearch{fixture1, fixture2, fixture3})
+		testListCount(t, SavedSearchListArgs{}, nil, []*types.SavedSearch{fixture1, fixture2, fixture3, fixture4, fixture5})
 	})
 
 	t.Run("query", func(t *testing.T) {
@@ -323,7 +405,7 @@ func TestSavedSearches_ListCount(t *testing.T) {
 
 	t.Run("list owned by user", func(t *testing.T) {
 		userNS := types.NamespaceUser(user.ID)
-		testListCount(t, SavedSearchListArgs{Owner: &userNS}, nil, []*types.SavedSearch{fixture1})
+		testListCount(t, SavedSearchListArgs{Owner: &userNS}, nil, []*types.SavedSearch{fixture1, fixture4})
 	})
 
 	t.Run("list owned by nonexistent user", func(t *testing.T) {
@@ -337,12 +419,21 @@ func TestSavedSearches_ListCount(t *testing.T) {
 	})
 
 	t.Run("affiliated with user", func(t *testing.T) {
-		testListCount(t, SavedSearchListArgs{AffiliatedUser: &user.ID}, nil, []*types.SavedSearch{fixture1, fixture2})
+		testListCount(t, SavedSearchListArgs{AffiliatedUser: &user.ID}, nil, []*types.SavedSearch{fixture1, fixture2, fixture4})
+	})
+
+	t.Run("affiliated with user and public", func(t *testing.T) {
+		testListCount(t, SavedSearchListArgs{AffiliatedUser: &user.ID, IncludeAllPublicAsAffiliated: true}, nil, []*types.SavedSearch{fixture1, fixture2, fixture4, fixture5})
+	})
+
+	t.Run("hide drafts", func(t *testing.T) {
+		userNS := types.NamespaceUser(user.ID)
+		testListCount(t, SavedSearchListArgs{Owner: &userNS, HideDrafts: true}, nil, []*types.SavedSearch{fixture1})
 	})
 
 	t.Run("order by", func(t *testing.T) {
 		orderBy, ascending := SavedSearchesOrderByUpdatedAt.ToOptions()
-		testListCount(t, SavedSearchListArgs{}, &PaginationArgs{OrderBy: orderBy, Ascending: ascending}, []*types.SavedSearch{fixture3, fixture2, fixture1})
+		testListCount(t, SavedSearchListArgs{}, &PaginationArgs{OrderBy: orderBy, Ascending: ascending}, []*types.SavedSearch{fixture5, fixture4, fixture3, fixture2, fixture1})
 	})
 }
 

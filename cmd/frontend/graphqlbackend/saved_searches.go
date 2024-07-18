@@ -23,6 +23,7 @@ type SavedSearchesResolver interface {
 	UpdateSavedSearch(ctx context.Context, args *UpdateSavedSearchArgs) (SavedSearchResolver, error)
 	DeleteSavedSearch(ctx context.Context, args *DeleteSavedSearchArgs) (*EmptyResponse, error)
 	TransferSavedSearchOwnership(ctx context.Context, args *TransferSavedSearchOwnershipArgs) (SavedSearchResolver, error)
+	ChangeSavedSearchVisibility(ctx context.Context, args *ChangeSavedSearchVisibilityArgs) (SavedSearchResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -34,14 +35,29 @@ const (
 	SavedSearchesOrderByUpdatedAt   SavedSearchesOrderBy = "SAVED_SEARCH_UPDATED_AT"
 )
 
+type SavedSearchVisibility string
+
+const (
+	SavedSearchVisibilityPublic SavedSearchVisibility = "PUBLIC"
+	SavedSearchVisibilitySecret SavedSearchVisibility = "SECRET"
+)
+
+func (v SavedSearchVisibility) IsSecret() bool {
+	return v != SavedSearchVisibilityPublic
+}
+
 type SavedSearchConnectionResolver = graphqlutil.ConnectionResolver[SavedSearchResolver]
 
 type SavedSearchResolver interface {
 	ID() graphql.ID
 	Description() string
 	Query() string
+	Draft() bool
 	Owner(context.Context) (*NamespaceResolver, error)
+	Visibility() SavedSearchVisibility
+	CreatedBy(context.Context) (*UserResolver, error)
 	CreatedAt() gqlutil.DateTime
+	UpdatedBy(context.Context) (*UserResolver, error)
 	UpdatedAt() gqlutil.DateTime
 	URL() string
 	ViewerCanAdminister(context.Context) (bool, error)
@@ -52,6 +68,7 @@ type SavedSearchesArgs struct {
 	Query              *string
 	Owner              *graphql.ID
 	ViewerIsAffiliated *bool
+	IncludeDrafts      bool
 	OrderBy            SavedSearchesOrderBy
 }
 
@@ -63,6 +80,8 @@ type SavedSearchInput struct {
 	Owner       graphql.ID
 	Description string
 	Query       string
+	Draft       bool
+	Visibility  SavedSearchVisibility
 }
 
 type UpdateSavedSearchArgs struct {
@@ -73,6 +92,7 @@ type UpdateSavedSearchArgs struct {
 type SavedSearchUpdateInput struct {
 	Description string
 	Query       string
+	Draft       bool
 }
 
 type DeleteSavedSearchArgs struct {
@@ -82,4 +102,9 @@ type DeleteSavedSearchArgs struct {
 type TransferSavedSearchOwnershipArgs struct {
 	ID       graphql.ID
 	NewOwner graphql.ID
+}
+
+type ChangeSavedSearchVisibilityArgs struct {
+	ID            graphql.ID
+	NewVisibility SavedSearchVisibility
 }

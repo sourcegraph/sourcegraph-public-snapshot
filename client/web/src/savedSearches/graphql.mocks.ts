@@ -3,7 +3,10 @@ import type { MockedResponse } from '@apollo/client/testing'
 import { getDocumentNode } from '@sourcegraph/http-client'
 
 import {
+    SavedSearchVisibility,
     SavedSearchesOrderBy,
+    type ChangeSavedSearchVisibilityResult,
+    type ChangeSavedSearchVisibilityVariables,
     type CreateSavedSearchResult,
     type CreateSavedSearchVariables,
     type DeleteSavedSearchResult,
@@ -21,6 +24,7 @@ import {
 import { viewerAffiliatedNamespacesMock } from '../namespaces/graphql.mocks'
 
 import {
+    changeSavedSearchVisibilityMutation,
     createSavedSearchMutation,
     deleteSavedSearchMutation,
     savedSearchQuery,
@@ -29,20 +33,31 @@ import {
     updateSavedSearchMutation,
 } from './graphql'
 
-export const MOCK_SAVED_SEARCH_FIELDS: Pick<
-    SavedSearchFields,
-    '__typename' | 'id' | 'description' | 'query' | 'owner' | 'createdAt' | 'updatedAt' | 'url' | 'viewerCanAdminister'
-> = {
+export const MOCK_SAVED_SEARCH_FIELDS: SavedSearchFields = {
     __typename: 'SavedSearch',
     id: '1',
     description: 'My description',
     query: 'my repo:query',
+    draft: false,
     owner: {
         __typename: 'User',
         id: 'a',
         namespaceName: 'alice',
     },
-    createdAt: '2020-04-21T10:10:10Z',
+    visibility: SavedSearchVisibility.SECRET,
+    createdBy: {
+        __typename: 'User',
+        id: 'a',
+        username: 'alice',
+        url: '',
+    },
+    createdAt: '2024-04-12T15:00:00Z',
+    updatedBy: {
+        __typename: 'User',
+        id: 'a',
+        username: 'alice',
+        url: '',
+    },
     updatedAt: '2020-04-21T10:10:10Z',
     url: '',
     viewerCanAdminister: true,
@@ -54,6 +69,7 @@ export const savedSearchesMock: MockedResponse<SavedSearchesResult, SavedSearche
         variables: {
             query: '',
             viewerIsAffiliated: true,
+            includeDrafts: true,
             owner: null,
             after: null,
             before: null,
@@ -78,26 +94,34 @@ export const savedSearchesMock: MockedResponse<SavedSearchesResult, SavedSearche
                         id: '3',
                         description: 'Yet another with a longer description that is very long',
                         query: 'foo type:diff repo:bar and a long:query repo:bar and a long:query',
+                        draft: true,
+                        visibility: SavedSearchVisibility.PUBLIC,
                     },
                     {
                         ...MOCK_SAVED_SEARCH_FIELDS,
                         id: '4',
                         description: '444',
+                        draft: true,
                     },
                     {
                         ...MOCK_SAVED_SEARCH_FIELDS,
                         id: '5',
                         description: '555',
+                        visibility: SavedSearchVisibility.PUBLIC,
+                        viewerCanAdminister: false,
                     },
                     {
                         ...MOCK_SAVED_SEARCH_FIELDS,
                         id: '6',
                         description: '666',
+                        visibility: SavedSearchVisibility.PUBLIC,
+                        viewerCanAdminister: false,
                     },
                     {
                         ...MOCK_SAVED_SEARCH_FIELDS,
                         id: '7',
                         description: '777',
+                        viewerCanAdminister: false,
                     },
                     {
                         ...MOCK_SAVED_SEARCH_FIELDS,
@@ -161,6 +185,8 @@ const createSavedSearchMock: MockedResponse<CreateSavedSearchResult, CreateSaved
                 owner: 'a',
                 description: 'My description',
                 query: 'my repo:query',
+                draft: false,
+                visibility: SavedSearchVisibility.PUBLIC,
             },
         },
     },
@@ -170,6 +196,7 @@ const createSavedSearchMock: MockedResponse<CreateSavedSearchResult, CreateSaved
             createSavedSearch: {
                 ...MOCK_SAVED_SEARCH_FIELDS,
                 id: '1',
+                draft: false,
             },
         },
     },
@@ -183,6 +210,7 @@ const updateSavedSearchMock: MockedResponse<UpdateSavedSearchResult, UpdateSaved
             input: {
                 description: 'My description',
                 query: 'my repo:query',
+                draft: true,
             },
         },
     },
@@ -192,6 +220,22 @@ const updateSavedSearchMock: MockedResponse<UpdateSavedSearchResult, UpdateSaved
             updateSavedSearch: {
                 ...MOCK_SAVED_SEARCH_FIELDS,
                 id: '1',
+                draft: true,
+            },
+        },
+    },
+}
+
+const deleteSavedSearchMock: MockedResponse<DeleteSavedSearchResult, DeleteSavedSearchVariables> = {
+    request: {
+        query: getDocumentNode(deleteSavedSearchMutation),
+        variables: { id: '1' },
+    },
+    delay: 500,
+    result: {
+        data: {
+            deleteSavedSearch: {
+                alwaysNil: null,
             },
         },
     },
@@ -219,16 +263,23 @@ const transferSavedSearchOwnershipMock: MockedResponse<
     },
 }
 
-const deleteSavedSearchMock: MockedResponse<DeleteSavedSearchResult, DeleteSavedSearchVariables> = {
+const changeSavedSearchVisibilityMock: MockedResponse<
+    ChangeSavedSearchVisibilityResult,
+    ChangeSavedSearchVisibilityVariables
+> = {
     request: {
-        query: getDocumentNode(deleteSavedSearchMutation),
-        variables: { id: '1' },
+        query: getDocumentNode(changeSavedSearchVisibilityMutation),
+        variables: {
+            id: '1',
+            newVisibility: SavedSearchVisibility.PUBLIC,
+        },
     },
     delay: 500,
     result: {
         data: {
-            deleteSavedSearch: {
-                alwaysNil: null,
+            changeSavedSearchVisibility: {
+                ...MOCK_SAVED_SEARCH_FIELDS,
+                visibility: SavedSearchVisibility.PUBLIC,
             },
         },
     },
@@ -239,7 +290,8 @@ export const MOCK_REQUESTS = [
     savedSearchMock,
     createSavedSearchMock,
     updateSavedSearchMock,
-    transferSavedSearchOwnershipMock,
     deleteSavedSearchMock,
+    transferSavedSearchOwnershipMock,
+    changeSavedSearchVisibilityMock,
     viewerAffiliatedNamespacesMock,
 ]
