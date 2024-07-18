@@ -8,7 +8,7 @@
     import { Badge } from '$lib/wildcard'
     import CopyButton from '$lib/wildcard/CopyButton.svelte'
 
-    import type { GitReference_Ref } from './GitReference.gql'
+    import type { GitReference_Ref } from './GitReferencesTable.gql'
     import { getHumanNameForCodeHost } from './shared/codehost'
 
     export let references: GitReference_Ref[]
