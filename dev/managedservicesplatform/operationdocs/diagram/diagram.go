@@ -119,7 +119,7 @@ func (d *diagram) Generate(s *spec.Spec, e string) error {
 		return errors.Wrap(err, "failed to add connection from cloudrun to monitoring")
 	}
 
-	if env.Category != spec.EnvironmentCategoryTest && env.Alerting != nil && pointers.DerefZero(env.Alerting.Opsgenie) {
+	if pointers.Deref(pointers.DerefZero(env.Alerting).Opsgenie, env.Category.IsProduction()) {
 		var opsgenieNode string
 		graph, opsgenieNode, err = newOpsgenieNode(graph)
 		if err != nil {

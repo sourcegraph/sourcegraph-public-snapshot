@@ -206,10 +206,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				// Let the team own the integration.
 				OwnerTeamId: team.Id(),
 
-				// Supress all notifications if Alerting.Opsgenie is false -
-				// this allows us to see the alerts, but not necessarily get
-				// paged by it.
-				SuppressNotifications: !pointers.DerefZero(vars.Alerting.Opsgenie),
+				// Supress all notifications if Alerting.Opsgenie is explcitly set to false or
+				// if Alerting.Opsgenie is nil suppress notifications if this is not a production environment.
+				// This allows us to see the alerts, but not necessarily get paged by it.
+				SuppressNotifications: !pointers.Deref(vars.Alerting.Opsgenie, vars.EnvironmentCategory.IsProduction()),
 
 				// Point alerts sent through this integration at the Opsgenie team.
 				Responders: []*opsgenieintegration.ApiIntegrationResponders{{
