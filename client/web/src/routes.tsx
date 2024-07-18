@@ -186,7 +186,13 @@ export const routes: RouteObject[] = [
         path: `${PageRoutes.SavedSearches}/*`,
         element: (
             <LegacyRoute
-                render={props => <SavedSearchArea {...props} />}
+                render={props => (
+                    <SavedSearchArea
+                        authenticatedUser={props.authenticatedUser}
+                        isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        telemetryRecorder={props.telemetryRecorder}
+                    />
+                )}
                 condition={() => window.context?.codeSearchEnabledOnInstance}
             />
         ),

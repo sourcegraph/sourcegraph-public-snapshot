@@ -46,9 +46,9 @@ import { SavedSearchPage } from './Page'
 /**
  * Page to edit a saved search.
  */
-export const EditPage: FunctionComponent<TelemetryV2Props & { isSourcegraphDotCom: boolean }> = ({
-    telemetryRecorder,
+export const EditPage: FunctionComponent<{ isSourcegraphDotCom: boolean } & TelemetryV2Props> = ({
     isSourcegraphDotCom,
+    telemetryRecorder,
 }) => {
     const { id } = useParams<{ id: string }>()
     const { data, loading, error } = useQuery<SavedSearchResult, SavedSearchVariables>(savedSearchQuery, {
@@ -76,6 +76,10 @@ export const EditPage: FunctionComponent<TelemetryV2Props & { isSourcegraphDotCo
             ) : !savedSearch ? (
                 <Alert variant="danger" as="p">
                     Saved search not found.
+                </Alert>
+            ) : !savedSearch.viewerCanAdminister ? (
+                <Alert variant="danger" as="p">
+                    You do not have permission to edit this saved search.
                 </Alert>
             ) : (
                 <EditForm

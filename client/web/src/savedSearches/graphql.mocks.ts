@@ -18,6 +18,7 @@ import {
     type UpdateSavedSearchResult,
     type UpdateSavedSearchVariables,
 } from '../graphql-operations'
+import { viewerAffiliatedNamespacesMock } from '../namespaces/graphql.mocks'
 
 import {
     createSavedSearchMutation,
@@ -28,11 +29,12 @@ import {
     updateSavedSearchMutation,
 } from './graphql'
 
-const SAVED_SEARCH_FIELDS: Pick<
+export const MOCK_SAVED_SEARCH_FIELDS: Pick<
     SavedSearchFields,
-    '__typename' | 'description' | 'query' | 'owner' | 'createdAt' | 'updatedAt' | 'url' | 'viewerCanAdminister'
+    '__typename' | 'id' | 'description' | 'query' | 'owner' | 'createdAt' | 'updatedAt' | 'url' | 'viewerCanAdminister'
 > = {
     __typename: 'SavedSearch',
+    id: '1',
     description: 'My description',
     query: 'my repo:query',
     owner: {
@@ -46,16 +48,16 @@ const SAVED_SEARCH_FIELDS: Pick<
     viewerCanAdminister: true,
 }
 
-const savedSearchesMock: MockedResponse<SavedSearchesResult, SavedSearchesVariables> = {
+export const savedSearchesMock: MockedResponse<SavedSearchesResult, SavedSearchesVariables> = {
     request: {
         query: getDocumentNode(savedSearchesQuery),
         variables: {
             query: '',
-            owner: '1',
             viewerIsAffiliated: true,
+            owner: null,
             after: null,
             before: null,
-            first: 100,
+            first: 20,
             last: null,
             orderBy: SavedSearchesOrderBy.SAVED_SEARCH_UPDATED_AT,
         },
@@ -64,61 +66,61 @@ const savedSearchesMock: MockedResponse<SavedSearchesResult, SavedSearchesVariab
         data: {
             savedSearches: {
                 nodes: [
-                    { ...SAVED_SEARCH_FIELDS, id: '1' },
+                    { ...MOCK_SAVED_SEARCH_FIELDS, id: '1' },
                     {
-                        ...SAVED_SEARCH_FIELDS,
+                        ...MOCK_SAVED_SEARCH_FIELDS,
                         id: '2',
                         description: 'Another',
                         query: 'foo type:diff repo:bar',
                     },
                     {
-                        ...SAVED_SEARCH_FIELDS,
+                        ...MOCK_SAVED_SEARCH_FIELDS,
                         id: '3',
                         description: 'Yet another with a longer description that is very long',
                         query: 'foo type:diff repo:bar and a long:query repo:bar and a long:query',
                     },
                     {
-                        ...SAVED_SEARCH_FIELDS,
+                        ...MOCK_SAVED_SEARCH_FIELDS,
                         id: '4',
                         description: '444',
                     },
                     {
-                        ...SAVED_SEARCH_FIELDS,
+                        ...MOCK_SAVED_SEARCH_FIELDS,
                         id: '5',
                         description: '555',
                     },
                     {
-                        ...SAVED_SEARCH_FIELDS,
+                        ...MOCK_SAVED_SEARCH_FIELDS,
                         id: '6',
                         description: '666',
                     },
                     {
-                        ...SAVED_SEARCH_FIELDS,
+                        ...MOCK_SAVED_SEARCH_FIELDS,
                         id: '7',
                         description: '777',
                     },
                     {
-                        ...SAVED_SEARCH_FIELDS,
+                        ...MOCK_SAVED_SEARCH_FIELDS,
                         id: '8',
                         description: '888',
                     },
                     {
-                        ...SAVED_SEARCH_FIELDS,
+                        ...MOCK_SAVED_SEARCH_FIELDS,
                         id: '9',
                         description: '999',
                     },
                     {
-                        ...SAVED_SEARCH_FIELDS,
+                        ...MOCK_SAVED_SEARCH_FIELDS,
                         id: '10',
                         description: '101010',
                     },
                     {
-                        ...SAVED_SEARCH_FIELDS,
+                        ...MOCK_SAVED_SEARCH_FIELDS,
                         id: '11',
                         description: '111111',
                     },
                     {
-                        ...SAVED_SEARCH_FIELDS,
+                        ...MOCK_SAVED_SEARCH_FIELDS,
                         id: '12',
                         description: '121212',
                     },
@@ -135,7 +137,7 @@ const savedSearchesMock: MockedResponse<SavedSearchesResult, SavedSearchesVariab
     },
 }
 
-const savedSearchMock: MockedResponse<SavedSearchResult, SavedSearchVariables> = {
+export const savedSearchMock: MockedResponse<SavedSearchResult, SavedSearchVariables> = {
     request: {
         query: getDocumentNode(savedSearchQuery),
         variables: { id: '1' },
@@ -143,7 +145,7 @@ const savedSearchMock: MockedResponse<SavedSearchResult, SavedSearchVariables> =
     result: {
         data: {
             node: {
-                ...SAVED_SEARCH_FIELDS,
+                ...MOCK_SAVED_SEARCH_FIELDS,
                 __typename: 'SavedSearch',
                 id: '1',
             },
@@ -166,7 +168,7 @@ const createSavedSearchMock: MockedResponse<CreateSavedSearchResult, CreateSaved
     result: {
         data: {
             createSavedSearch: {
-                ...SAVED_SEARCH_FIELDS,
+                ...MOCK_SAVED_SEARCH_FIELDS,
                 id: '1',
             },
         },
@@ -188,7 +190,7 @@ const updateSavedSearchMock: MockedResponse<UpdateSavedSearchResult, UpdateSaved
     result: {
         data: {
             updateSavedSearch: {
-                ...SAVED_SEARCH_FIELDS,
+                ...MOCK_SAVED_SEARCH_FIELDS,
                 id: '1',
             },
         },
@@ -210,7 +212,7 @@ const transferSavedSearchOwnershipMock: MockedResponse<
     result: {
         data: {
             transferSavedSearchOwnership: {
-                ...SAVED_SEARCH_FIELDS,
+                ...MOCK_SAVED_SEARCH_FIELDS,
                 id: '1',
             },
         },
@@ -239,4 +241,5 @@ export const MOCK_REQUESTS = [
     updateSavedSearchMock,
     transferSavedSearchOwnershipMock,
     deleteSavedSearchMock,
+    viewerAffiliatedNamespacesMock,
 ]

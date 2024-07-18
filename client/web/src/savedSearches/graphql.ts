@@ -23,7 +23,7 @@ const savedSearchFragment = gql`
 export const savedSearchesQuery = gql`
     query SavedSearches(
         $query: String
-        $owner: ID
+        $owner: ID = null
         $viewerIsAffiliated: Boolean
         $first: Int
         $last: Int
