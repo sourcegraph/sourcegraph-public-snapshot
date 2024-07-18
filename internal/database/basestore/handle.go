@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -155,11 +156,11 @@ func (h *savepointHandle) Transact(ctx context.Context) (TransactableHandle, err
 
 func (h *savepointHandle) Done(err error) error {
 	if err == nil {
-		_, execErr := h.ExecContext(context.Background(), fmt.Sprintf(commitSavepointQuery, h.savepointID))
+		_, execErr := h.ExecContext(tenant.InsecureGlobalContext(context.Background()), fmt.Sprintf(commitSavepointQuery, h.savepointID))
 		return execErr
 	}
 
-	_, execErr := h.ExecContext(context.Background(), fmt.Sprintf(rollbackSavepointQuery, h.savepointID))
+	_, execErr := h.ExecContext(tenant.InsecureGlobalContext(context.Background()), fmt.Sprintf(rollbackSavepointQuery, h.savepointID))
 	return errors.Append(err, execErr)
 }
 
