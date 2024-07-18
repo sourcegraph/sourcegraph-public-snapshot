@@ -78,12 +78,36 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			},
 		},
 		{
-			name: "not supported client",
+			name: "unknown client, missing version",
 			ccf:  ccf,
 			q: url.Values{
 				"client-name": []string{"sublime"},
 			},
+			want: &codyIgnoreCompatibilityError{
+				reason:     "\"client-version\" query param is required.",
+				statusCode: http.StatusNotAcceptable,
+			},
+		},
+		{
+			name: "unknown client, has version",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{"sublime"},
+				"client-version": []string{"1.1.0"},
+			},
 			want: nil,
+		},
+		{
+			name: "unknown client, invalid version",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{"sublime"},
+				"client-version": []string{"banana"},
+			},
+			want: &codyIgnoreCompatibilityError{
+				reason:     "Cody for sublime version \"banana\" doesn't follow semver spec.",
+				statusCode: http.StatusBadRequest,
+			},
 		},
 		{
 			name: "version doesn't follow semver spec (missing major, minor and patch versions)",
