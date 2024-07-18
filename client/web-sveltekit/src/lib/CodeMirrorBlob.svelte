@@ -131,6 +131,7 @@
 
     import { browser } from '$app/environment'
     import { goto } from '$app/navigation'
+    import { getExplorePanelContext } from '$lib/codenav/ExplorePanel.svelte'
     import type { LineOrPositionOrRange } from '$lib/common'
     import { type CodeIntelAPI, Occurrence } from '$lib/shared'
     import {
@@ -166,7 +167,7 @@
         getScrollSnapshot as getScrollSnapshot_internal,
     } from './codemirror/utils'
     import { registerHotkey } from './Hotkey'
-    import { goToDefinition, openImplementations, openReferences } from './repo/blob'
+    import { goToDefinition, openImplementations } from './repo/blob'
     import { createLocalWritable } from './stores'
 
     export let blobInfo: BlobInfo
@@ -229,6 +230,7 @@
         filePath: blobInfo.filePath,
         languages: blobInfo.languages,
     }
+    const { openReferences } = getExplorePanelContext()
     $: codeIntelExtension = codeIntelAPI
         ? createCodeIntelExtension({
               api: {
@@ -236,7 +238,7 @@
                   documentInfo: documentInfo,
                   goToDefinition: (view, definition, options) =>
                       goToDefinition(documentInfo, view, definition, options),
-                  openReferences,
+                  openReferences: (_view, documentInfo, occurrence) => openReferences({ documentInfo, occurrence }),
                   openImplementations,
                   createTooltipView: options => new HovercardView(options.view, options.token, options.hovercardData),
               },
