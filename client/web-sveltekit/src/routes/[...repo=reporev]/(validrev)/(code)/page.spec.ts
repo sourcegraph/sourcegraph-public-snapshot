@@ -105,7 +105,7 @@ test.beforeEach(({ sg }) => {
 
 test.describe('file sidebar', () => {
 
-    test.skip('basic functionality', async ({ page }) => {
+    test('basic functionality', async ({ page }) => {
         const readmeEntry = page.getByRole('treeitem', { name: 'README.md' })
 
         await page.goto(`/${repoName}`)
@@ -246,11 +246,6 @@ test('history panel', async ({ page, sg }) => {
 })
 
 test('file popover', async ({ page, sg }) => {
-    // This test frequently failed on CI. Locally it consistently exceeded the 5s timeout set in playwright.config.ts@4077b3ec22dad1c93675fd3e33336a35019bac00
-    // when the dev server just freshly started. Subsequent runs completed the "Open sidebar" action in less than 1s.
-    // By marking this test as slow, Playwright triples its timeout. That made it consistently pass.
-    test.slow()
-
     await page.goto(`/${repoName}`)
 
     // Open the sidebar

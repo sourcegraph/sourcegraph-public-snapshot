@@ -15,9 +15,9 @@ const config: PlaywrightTestConfig = {
         : undefined,
     reporter: 'list',
     // note: if you proxy into a locally running vite preview, you may have to raise this to 60 seconds
-    timeout: 60_000,
+    timeout: process.env.BAZEL ? 60_000 : 30_000,
     expect: {
-        timeout: 30_000,
+        timeout: process.env.BAZEL ? 20_000 : 5_000,
     },
     use: {
         baseURL: `http://localhost:${PORT}`,
