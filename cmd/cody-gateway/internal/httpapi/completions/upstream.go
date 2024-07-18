@@ -235,9 +235,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			response.JSONError(logger, w, http.StatusBadRequest, err)
 			return
 		}
-		// fmt.Println()
-		// fmt.Printf("CODY GATEWAY REQ TIMEOUT: %+v\n", body)
-		// fmt.Println()
 
 		// Check the request to see if it should be flagged for abuse, or additional inspection.
 		flaggingResult, err := methods.shouldFlagRequest(ctx, logger, body)
@@ -413,14 +410,8 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				logger.Error("failed to log event", log.Error(err))
 			}
 		}()
-		// fmt.Println()
-		// fmt.Printf("CODY GATEWAY HANDLER: %+v\n", upstreamRequest)
-		// fmt.Println()
 
 		resp, err := httpClient.Do(upstreamRequest)
-		fmt.Println()
-		fmt.Printf("CODY GATEWAY HANDLER RESP: %+v\n", resp)
-		fmt.Println()
 
 		if err != nil {
 			// Ignore reporting errors where client disconnected
