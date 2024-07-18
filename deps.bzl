@@ -6238,6 +6238,13 @@ def go_dependencies():
         version = "v0.6.1",
     )
     go_repository(
+        name = "com_github_tmaxmax_go_sse",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/tmaxmax/go-sse",
+        sum = "h1:pPpTgyyi1r7vG2o6icebnpGEh3ebcnBXqDWkb7aTofs=",
+        version = "v0.8.0",
+    )
+    go_repository(
         name = "com_github_tmc_dot",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/tmc/dot",
