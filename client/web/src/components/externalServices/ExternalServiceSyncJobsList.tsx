@@ -3,8 +3,6 @@ import React, { useCallback } from 'react'
 import type { Subject } from 'rxjs'
 import { repeat, tap } from 'rxjs/operators'
 
-import { H2 } from '@sourcegraph/wildcard'
-
 import {
     type ExternalServiceSyncJobConnectionFields,
     type ExternalServiceSyncJobListFields,
@@ -56,25 +54,22 @@ export const ExternalServiceSyncJobsList: React.FunctionComponent<ExternalServic
     )
 
     return (
-        <>
-            <H2 className="mt-3">Recent sync jobs</H2>
-            <FilteredConnection<
-                ExternalServiceSyncJobListFields,
-                Omit<ExternalServiceSyncJobNodeProps, 'node'>,
-                {},
-                ExternalServiceSyncJobConnectionFields
-            >
-                className="mb-0 mt-1"
-                noun="sync job"
-                listClassName="list-group-flush"
-                pluralNoun="sync jobs"
-                queryConnection={queryConnection}
-                nodeComponent={ExternalServiceSyncJobNode}
-                nodeComponentProps={{ onUpdate: updates }}
-                hideSearch={true}
-                noSummaryIfAllNodesVisible={true}
-                updates={updates}
-            />
-        </>
+        <FilteredConnection<
+            ExternalServiceSyncJobListFields,
+            Omit<ExternalServiceSyncJobNodeProps, 'node'>,
+            {},
+            ExternalServiceSyncJobConnectionFields
+        >
+            className="mb-0"
+            noun="sync job"
+            listClassName="list-group-flush"
+            pluralNoun="sync jobs"
+            queryConnection={queryConnection}
+            nodeComponent={ExternalServiceSyncJobNode}
+            nodeComponentProps={{ onUpdate: updates }}
+            hideSearch={true}
+            noSummaryIfAllNodesVisible={true}
+            updates={updates}
+        />
     )
 }

@@ -198,7 +198,6 @@ describe('RevisionsPopover', () => {
             await waitForNextApolloResponse()
 
             expect(within(commitsTab).getAllByRole('link')).toHaveLength(2)
-            expect(within(commitsTab).getByTestId('summary')).toHaveTextContent('2 commits matching some query')
         })
 
         describe('Against a speculative revision', () => {

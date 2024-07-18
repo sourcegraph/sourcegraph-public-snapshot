@@ -1,10 +1,12 @@
 <script lang="ts">
-    import { isErrorLike } from '$lib/common'
-    import type { TooltipViewOptions } from '$lib/web'
     import type { Observable } from 'rxjs'
     import { readable } from 'svelte/store'
-    import HovercardContent from './HovercardContent.svelte'
+
+    import { isErrorLike } from '$lib/common'
+    import type { TooltipViewOptions } from '$lib/web'
+
     import ActionItem from './ActionItem.svelte'
+    import HovercardContent from './HovercardContent.svelte'
 
     type Observed<T> = T extends Observable<infer U> ? U : never
 
@@ -85,7 +87,7 @@
         --hover-overlay-separator-color: var(--border-color-2);
 
         border-color: var(--border-color);
-        box-shadow: var(--dropdown-shadow);
+        box-shadow: var(--hovercard-shadow);
         border-radius: var(--popover-border-radius);
     }
 

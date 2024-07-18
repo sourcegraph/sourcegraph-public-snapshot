@@ -4,122 +4,64 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
-
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/stretchr/testify/require"
-
-	"github.com/sourcegraph/log"
 )
 
-var appliance = &Appliance{
-	jwtSecret: []byte("a-jwt-secret"),
-	logger:    log.NoOp(),
-}
+func TestCheckAuthorization(t *testing.T) {
+	// Create a mock Appliance
+	mockAppliance := &Appliance{
+		adminPasswordBcrypt: []byte("$2y$10$o2gHR6vUX7XPQj8tjUfi/e0zel.kpgvdTdSUkQthO9hTYooDUuoay"), // bcrypt hash for "password123"
+	}
 
-func TestCheckAuthorization_CallsNextHandlerWhenValidJWTSupplied(t *testing.T) {
-	validUntil := time.Now().Add(time.Hour).UTC()
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		jwtClaimsValidUntilKey: validUntil.Format(time.RFC3339),
-	})
-	tokenStr, err := token.SignedString(appliance.jwtSecret)
-	require.NoError(t, err)
+	tests := []struct {
+		name                  string
+		password              string
+		expectedStatus        int
+		shouldCallNextHandler bool
+	}{
+		{
+			name:                  "Valid password",
+			password:              "password123",
+			expectedStatus:        http.StatusOK,
+			shouldCallNextHandler: true,
+		},
+		{
+			name:                  "Invalid password",
+			password:              "wrongpassword",
+			expectedStatus:        http.StatusUnauthorized,
+			shouldCallNextHandler: false,
+		},
+		{
+			name:                  "Empty password",
+			password:              "",
+			expectedStatus:        http.StatusUnauthorized,
+			shouldCallNextHandler: false,
+		},
+	}
 
-	req, err := http.NewRequest("GET", "example.com", nil)
-	require.NoError(t, err)
-	req.AddCookie(&http.Cookie{
-		Name:    authCookieName,
-		Value:   tokenStr,
-		Expires: validUntil,
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			nextHandlerCalled := false
+			nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				nextHandlerCalled = true
+				if !tt.shouldCallNextHandler {
+					t.Error("Next handler should not be called after a 403")
+				}
+			})
 
-	handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		w.WriteHeader(http.StatusAccepted)
-	})
-	respSpy := httptest.NewRecorder()
-	appliance.CheckAuthorization(handler).ServeHTTP(respSpy, req)
+			req, _ := http.NewRequest("GET", "/", nil)
+			req.Header.Set(authHeaderName, tt.password)
+			rr := httptest.NewRecorder()
 
-	require.Equal(t, http.StatusAccepted, respSpy.Code)
-}
+			handler := mockAppliance.checkAuthorization(nextHandler)
+			handler.ServeHTTP(rr, req)
 
-func TestCheckAuthorization_RedirectsToErrorPageWhenNoCookieSupplied(t *testing.T) {
-	req, err := http.NewRequest("GET", "example.com", nil)
-	require.NoError(t, err)
-	assertDirectAndHandlerNotCalled(t, req)
-}
+			if status := rr.Code; status != tt.expectedStatus {
+				t.Errorf("handler returned wrong status code: got %v want %v", status, tt.expectedStatus)
+			}
 
-func TestCheckAuthorization_RedirectsToErrorPageWhenCookieContainsInvalidJWT(t *testing.T) {
-	req, err := http.NewRequest("GET", "example.com", nil)
-	require.NoError(t, err)
-	req.AddCookie(&http.Cookie{
-		Name:    authCookieName,
-		Value:   "not-a-jwt",
-		Expires: time.Now().Add(time.Hour),
-	})
-	assertDirectAndHandlerNotCalled(t, req)
-}
-
-func TestCheckAuthorization_RedirectsToErrorPageWhenCookieContainsJWTWithIncorrectSignature(t *testing.T) {
-	validUntil := time.Now().Add(time.Hour).UTC()
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		jwtClaimsValidUntilKey: validUntil.Format(time.RFC3339),
-	})
-	tokenStr, err := token.SignedString([]byte("wrong-key!"))
-
-	require.NoError(t, err)
-	req, err := http.NewRequest("GET", "example.com", nil)
-	require.NoError(t, err)
-	req.AddCookie(&http.Cookie{
-		Name:    authCookieName,
-		Value:   tokenStr,
-		Expires: validUntil,
-	})
-	assertDirectAndHandlerNotCalled(t, req)
-}
-
-func TestCheckAuthorization_RedirectsToErrorPageWhenCookieContainsJWTWithMalformedClaims(t *testing.T) {
-	validUntil := time.Now().Add(time.Hour).UTC()
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"wrong-key": validUntil.Format(time.RFC3339),
-	})
-	tokenStr, err := token.SignedString(appliance.jwtSecret)
-
-	require.NoError(t, err)
-	req, err := http.NewRequest("GET", "example.com", nil)
-	require.NoError(t, err)
-	req.AddCookie(&http.Cookie{
-		Name:    authCookieName,
-		Value:   tokenStr,
-		Expires: validUntil,
-	})
-	assertDirectAndHandlerNotCalled(t, req)
-}
-
-func TestCheckAuthorization_RedirectsToErrorPageWhenCookieContainsJWTWithExpiredValidity(t *testing.T) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		jwtClaimsValidUntilKey: time.Now().Add(-1 * time.Hour).Format(time.RFC3339),
-	})
-	tokenStr, err := token.SignedString(appliance.jwtSecret)
-
-	require.NoError(t, err)
-	req, err := http.NewRequest("GET", "example.com", nil)
-	require.NoError(t, err)
-	req.AddCookie(&http.Cookie{
-		Name:    authCookieName,
-		Value:   tokenStr,
-		Expires: time.Now().Add(time.Hour),
-	})
-	assertDirectAndHandlerNotCalled(t, req)
-}
-
-func assertDirectAndHandlerNotCalled(t *testing.T, req *http.Request) {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		require.Fail(t, "next handler should not be called")
-	})
-	respSpy := httptest.NewRecorder()
-	appliance.CheckAuthorization(handler).ServeHTTP(respSpy, req)
-
-	require.Equal(t, http.StatusFound, respSpy.Code)
+			if tt.expectedStatus == http.StatusUnauthorized && nextHandlerCalled {
+				t.Error("Next handler was called after a 403 response")
+			}
+		})
+	}
 }

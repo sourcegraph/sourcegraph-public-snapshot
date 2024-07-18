@@ -250,3 +250,202 @@ func scipFromResultRange(resultRange result.Range) (scip.Range, error) {
 		int32(resultRange.End.Column),
 	})
 }
+
+// symbolAtRange tries to look up the symbols at the given coordinates
+// in a syntactic upload. If this function returns an error you should most likely
+// log and handle it instead of rethrowing, as this could fail for a myriad of reasons
+// (some broken invariant internally, network issue etc.)
+// If this function doesn't error, the returned slice is guaranteed to be non-empty
+func symbolAtRange(
+	ctx context.Context,
+	mappedIndex MappedIndex,
+	args UsagesForSymbolArgs,
+) (*scip.Symbol, error) {
+	docOpt, err := mappedIndex.GetDocument(ctx, args.Path)
+	if err != nil {
+		return nil, err
+	}
+	doc, isSome := docOpt.Get()
+	if !isSome {
+		return nil, errors.New("no document found")
+	}
+	occs, err := doc.GetOccurrencesAtRange(ctx, args.SymbolRange)
+	if err != nil {
+		return nil, err
+	}
+	if len(occs) == 0 {
+		return nil, errors.New("no occurrences found")
+	}
+	sym, err := scip.ParseSymbol(occs[0].Symbol)
+	if err != nil {
+		return nil, err
+	}
+	return sym, nil
+}
+
+func findSyntacticMatchesForCandidateFile(
+	ctx context.Context,
+	trace observation.TraceLogger,
+	mappedIndex MappedIndex,
+	filePath core.RepoRelPath,
+	candidateFile candidateFile,
+) ([]SyntacticMatch, []SearchBasedMatch, *SyntacticUsagesError) {
+	documentOpt, docErr := mappedIndex.GetDocument(ctx, filePath)
+	if docErr != nil {
+		return nil, nil, &SyntacticUsagesError{
+			Code:            SU_Fatal,
+			UnderlyingError: docErr,
+		}
+	}
+	document, isSome := documentOpt.Get()
+	if !isSome {
+		return nil, nil, &SyntacticUsagesError{
+			Code: SU_NoSyntacticIndex,
+		}
+	}
+	syntacticMatches := []SyntacticMatch{}
+	searchBasedMatches := []SearchBasedMatch{}
+
+	failedTranslationCount := 0
+	for _, sourceCandidateRange := range candidateFile.matches {
+		foundSyntacticMatch := false
+		occurrences, occErr := document.GetOccurrencesAtRange(ctx, sourceCandidateRange)
+		if occErr != nil {
+			failedTranslationCount += 1
+			continue
+		}
+		for _, occ := range occurrences {
+			if !scip.IsLocalSymbol(occ.Symbol) {
+				foundSyntacticMatch = true
+				syntacticMatches = append(syntacticMatches, SyntacticMatch{
+					Path:         filePath,
+					Range:        sourceCandidateRange,
+					Symbol:       occ.Symbol,
+					IsDefinition: scip.SymbolRole_Definition.Matches(occ),
+				})
+			}
+		}
+		if !foundSyntacticMatch {
+			searchBasedMatches = append(searchBasedMatches, SearchBasedMatch{
+				Path:  filePath,
+				Range: sourceCandidateRange,
+			})
+		}
+	}
+	if failedTranslationCount != 0 {
+		trace.Info("findSyntacticMatchesForCandidateFile", log.Int("failedTranslationCount", failedTranslationCount))
+	}
+	return syntacticMatches, searchBasedMatches, nil
+}
+
+func syntacticUsagesImpl(
+	ctx context.Context,
+	trace observation.TraceLogger,
+	searchClient searchclient.SearchClient,
+	mappedIndex MappedIndex,
+	args UsagesForSymbolArgs,
+) (SyntacticUsagesResult, PreviousSyntacticSearch, *SyntacticUsagesError) {
+	searchSymbol, symErr := symbolAtRange(ctx, mappedIndex, args)
+	if symErr != nil {
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+			Code:            SU_NoSymbolAtRequestedRange,
+			UnderlyingError: symErr,
+		}
+	}
+	language, langErr := languageFromFilepath(trace, args.Path)
+	if langErr != nil {
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+			Code:            SU_FailedToSearch,
+			UnderlyingError: langErr,
+		}
+	}
+	symbolName, ok := nameFromGlobalSymbol(searchSymbol)
+	if !ok {
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+			Code:            SU_FailedToSearch,
+			UnderlyingError: errors.New("can't find syntactic occurrences for locals via search"),
+		}
+	}
+	searchCoords := searchArgs{
+		repo:       args.Repo.Name,
+		commit:     args.Commit,
+		identifier: symbolName,
+		language:   language,
+	}
+	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
+	if searchErr != nil {
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+			Code:            SU_FailedToSearch,
+			UnderlyingError: searchErr,
+		}
+	}
+
+	results := [][]SyntacticMatch{}
+
+	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
+		// We're assuming the upload we found earlier contains the relevant SCIP document
+		// see NOTE(id: single-syntactic-upload)
+		syntacticMatches, _, err := findSyntacticMatchesForCandidateFile(ctx, trace, mappedIndex, pair.Key, pair.Value)
+		if err != nil {
+			// TODO: Errors that are not "no index found in the DB" should be reported
+			// TODO: Track metrics about how often this happens (GRAPH-693)
+			continue
+		}
+		results = append(results, syntacticMatches)
+	}
+	return SyntacticUsagesResult{Matches: slices.Concat(results...)}, PreviousSyntacticSearch{
+		MappedIndex: mappedIndex,
+		SymbolName:  symbolName,
+		Language:    language,
+	}, nil
+}
+
+// searchBasedUsagesImpl is extracted from SearchBasedUsages to allow
+// testing of the core logic, by only mocking the search client.
+func searchBasedUsagesImpl(
+	ctx context.Context,
+	trace observation.TraceLogger,
+	searchClient searchclient.SearchClient,
+	args UsagesForSymbolArgs,
+	symbolName string,
+	language string,
+	syntacticIndex core.Option[MappedIndex],
+) (matches []SearchBasedMatch, err error) {
+	searchCoords := searchArgs{
+		repo:       args.Repo.Name,
+		commit:     args.Commit,
+		identifier: symbolName,
+		language:   language,
+	}
+	candidateMatches, err := findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
+	if err != nil {
+		return nil, err
+	}
+	candidateSymbols, err := symbolSearch(ctx, trace, searchClient, searchCoords)
+	if err != nil {
+		trace.Warn("Failed to run symbol search, will not mark any search-based usages as definitions", log.Error(err))
+	}
+
+	results := [][]SearchBasedMatch{}
+	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
+		if index, ok := syntacticIndex.Get(); ok {
+			_, searchBasedMatches, err := findSyntacticMatchesForCandidateFile(ctx, trace, index, pair.Key, pair.Value)
+			if err == nil {
+				results = append(results, searchBasedMatches)
+				continue
+			} else {
+				trace.Info("findSyntacticMatches failed, skipping filtering search-based results", log.Error(err))
+			}
+		}
+		matches := []SearchBasedMatch{}
+		for _, rg := range pair.Value.matches {
+			matches = append(matches, SearchBasedMatch{
+				Path:         pair.Key,
+				Range:        rg,
+				IsDefinition: candidateSymbols.Contains(pair.Key, rg),
+			})
+		}
+		results = append(results, matches)
+	}
+	return slices.Concat(results...), nil
+}

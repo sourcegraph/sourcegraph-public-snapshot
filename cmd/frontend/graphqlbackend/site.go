@@ -622,13 +622,8 @@ func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool {
 	return enabled
 }
 
-func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigurationResolver {
-	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
-	if c == nil {
-		return nil
-	}
-
-	return &codyLLMConfigurationResolver{config: c}
+func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) (CodyLLMConfigurationResolver, error) {
+	return EnterpriseResolvers.modelconfigResolver.CodyLLMConfiguration(ctx)
 }
 
 func (r *siteResolver) CodyConfigFeatures(ctx context.Context) *codyConfigFeaturesResolver {
@@ -647,47 +642,6 @@ func (c *codyConfigFeaturesResolver) Chat() bool         { return c.config.Chat 
 func (c *codyConfigFeaturesResolver) AutoComplete() bool { return c.config.AutoComplete }
 func (c *codyConfigFeaturesResolver) Commands() bool     { return c.config.Commands }
 func (c *codyConfigFeaturesResolver) Attribution() bool  { return c.config.Attribution }
-
-type codyLLMConfigurationResolver struct {
-	config *conftypes.CompletionsConfig
-}
-
-func (c *codyLLMConfigurationResolver) ChatModel() string { return c.config.ChatModel }
-func (c *codyLLMConfigurationResolver) ChatModelMaxTokens() *int32 {
-	if c.config.ChatModelMaxTokens != 0 {
-		max := int32(c.config.ChatModelMaxTokens)
-		return &max
-	}
-	return nil
-}
-func (c *codyLLMConfigurationResolver) SmartContextWindow() string {
-	if c.config.SmartContextWindow == "disabled" {
-		return "disabled"
-	}
-	return "enabled"
-}
-func (c *codyLLMConfigurationResolver) DisableClientConfigAPI() bool {
-	return c.config.DisableClientConfigAPI
-}
-
-func (c *codyLLMConfigurationResolver) FastChatModel() string { return c.config.FastChatModel }
-func (c *codyLLMConfigurationResolver) FastChatModelMaxTokens() *int32 {
-	if c.config.FastChatModelMaxTokens != 0 {
-		max := int32(c.config.FastChatModelMaxTokens)
-		return &max
-	}
-	return nil
-}
-
-func (c *codyLLMConfigurationResolver) Provider() string        { return string(c.config.Provider) }
-func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.CompletionModel }
-func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
-	if c.config.CompletionModelMaxTokens != 0 {
-		max := int32(c.config.CompletionModelMaxTokens)
-		return &max
-	}
-	return nil
-}
 
 type CodyContextFiltersArgs struct {
 	Version string

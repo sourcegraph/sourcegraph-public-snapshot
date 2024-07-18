@@ -67,17 +67,17 @@ export function temporarySetting<K extends TemporarySettingsKey>(
             storage?.set(key, data)
         },
         value(): Promise<TemporarySettings[K] | null> {
-            return new Promise((resolve, reject) => {
-                const unsubscribe = subscribe(result => {
+            let unsubscribe: (() => void) | null = null
+            return new Promise<TemporarySettings[K] | null>((resolve, reject) => {
+                unsubscribe = subscribe(result => {
                     if (result.loading) return
                     if (result.error) {
                         reject(result.error)
                     } else {
                         resolve(result.data)
                     }
-                    unsubscribe()
                 })
-            })
+            }).finally(() => unsubscribe?.())
         },
     }
 }

@@ -98,7 +98,7 @@
         user-select: none;
 
         &:focus-visible {
-            box-shadow: 0 0 0 2px var(--primary-2);
+            box-shadow: var(--focus-shadow-inner);
         }
     }
 

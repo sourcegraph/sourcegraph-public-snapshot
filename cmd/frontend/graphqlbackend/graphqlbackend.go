@@ -498,6 +498,16 @@ func NewSchema(
 			}
 		}
 
+		if savedSearches := optional.SavedSearchesResolver; savedSearches != nil {
+			EnterpriseResolvers.savedSearchesResolver = savedSearches
+			resolver.SavedSearchesResolver = savedSearches
+			schemas = append(schemas, savedSearchesSchema)
+			// Register NodeByID handlers.
+			for kind, res := range savedSearches.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
+		}
+
 		if gitHubApps := optional.GitHubAppsResolver; gitHubApps != nil {
 			EnterpriseResolvers.gitHubAppsResolver = gitHubApps
 			resolver.GitHubAppsResolver = gitHubApps
@@ -621,6 +631,11 @@ func NewSchema(
 			}
 		}
 
+		if modelconfigResolver := optional.ModelconfigResolver; modelconfigResolver != nil {
+			EnterpriseResolvers.modelconfigResolver = modelconfigResolver
+			resolver.ModelconfigResolver = modelconfigResolver
+		}
+
 		if telemetryResolver := optional.TelemetryRootResolver; telemetryResolver != nil {
 			EnterpriseResolvers.telemetryResolver = telemetryResolver
 			resolver.TelemetryRootResolver = telemetryResolver
@@ -673,10 +688,12 @@ type OptionalResolver struct {
 	InsightsAggregationResolver
 	InsightsResolver
 	LicenseResolver
+	ModelconfigResolver
 	NotebooksResolver
 	OwnResolver
 	RBACResolver
 	SearchContextsResolver
+	SavedSearchesResolver
 	WebhooksResolver
 	ContentLibraryResolver
 	*TelemetryRootResolver
@@ -724,7 +741,7 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 			return r.gitCommitByID(ctx, id)
 		},
 		"SavedSearch": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return r.savedSearchByID(ctx, id)
+			return r.SavedSearchByID(ctx, id)
 		},
 		"Site": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.siteByGQLID(ctx, id)
@@ -794,10 +811,12 @@ var EnterpriseResolvers = struct {
 	insightsAggregationResolver InsightsAggregationResolver
 	insightsResolver            InsightsResolver
 	licenseResolver             LicenseResolver
+	modelconfigResolver         ModelconfigResolver
 	notebooksResolver           NotebooksResolver
 	ownResolver                 OwnResolver
 	rbacResolver                RBACResolver
 	searchContextsResolver      SearchContextsResolver
+	savedSearchesResolver       SavedSearchesResolver
 	webhooksResolver            WebhooksResolver
 	contentLibraryResolver      ContentLibraryResolver
 	telemetryResolver           *TelemetryRootResolver

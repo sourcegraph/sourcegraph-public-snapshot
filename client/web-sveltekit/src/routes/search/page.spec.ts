@@ -131,11 +131,13 @@ test('copy path button appears and copies path', async ({ page, sg }) => {
     )
     await stream.close()
 
-    const copyPathButton = page.getByRole('button', { name: 'Copy path to clipboard' })
-
     for (const match of [contentMatch, pathMatch, symbolMatch]) {
-        await page.getByRole('link', { name: match.path }).hover()
-        expect(copyPathButton).toBeVisible()
+        await page.getByText(match.path).hover()
+        const copyPathButton = page
+            .locator('article')
+            .filter({ hasText: match.path })
+            .getByLabel('Copy path to clipboard')
+        await expect(copyPathButton).toBeVisible()
         await copyPathButton.click()
         const clipboardText = await page.evaluate('navigator.clipboard.readText()')
         expect(clipboardText).toBe(match.path)
@@ -258,6 +260,32 @@ test.describe('search results', async () => {
 
         const alert = page.getByRole('heading', { name: 'Test alert' })
         await expect(alert).toBeVisible()
+    })
+
+    test('toggle regexp', async ({ page, sg }) => {
+        sg.mockOperations({
+            Init: () => ({
+                currentUser: null,
+                viewerSettings: {
+                    final: '{"search.defaultPatternType": "standard"}',
+                },
+            }),
+        })
+
+        await page.goto('/search?q=test')
+
+        const searchInput = page.getByRole('textbox')
+        const regexpToggle = page.getByTitle('regexp toggle')
+
+        // Toggle regexp on and submit search
+        await regexpToggle.click()
+        await searchInput.press('Enter')
+        await expect(page).toHaveURL(/\/search\?q=test&patternType=regexp&sm=0/)
+
+        // Toggle regexp off and submit: should use default pattern type
+        await regexpToggle.click()
+        await searchInput.press('Enter')
+        await expect(page).toHaveURL(/\/search\?q=test&patternType=standard&sm=0/)
     })
 })
 

@@ -22,9 +22,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	modelconfigSDK "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 )
 
 func NewClient(cli httpcli.Doer, endpoint, accessToken string, tokenManager tokenusage.Manager) types.CompletionsClient {
@@ -175,10 +176,10 @@ func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 }
 
 func (c *awsBedrockAnthropicCompletionStreamClient) recordTokenUsage(request types.CompletionRequest, usage bedrockAnthropicMessagesResponseUsage) error {
-	parsedModelRef := conftypes.NewBedrockModelRefFromModelID(request.Parameters.Model)
+	label := fmt.Sprintf("anthropic/%s", request.ModelConfigInfo.Model.ModelName)
 	return c.tokenManager.UpdateTokenCountsFromModelUsage(
 		usage.InputTokens, usage.OutputTokens,
-		"anthropic/"+parsedModelRef.Model, string(request.Feature),
+		label, string(request.Feature),
 		tokenusage.AwsBedrock)
 }
 
@@ -244,7 +245,8 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 		return nil, errors.Wrap(err, "marshalling request body")
 	}
 
-	apiURL := buildApiUrl(c.endpoint, requestParams.Model, stream, defaultConfig.Region)
+	model := request.ModelConfigInfo.Model
+	apiURL := buildApiUrl(c.endpoint, model, stream, defaultConfig.Region)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL.String(), bytes.NewReader(reqBody))
 	if err != nil {
@@ -284,7 +286,7 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 
 // Builds a bedrock api URL from the configured endpoint url.
 // If the endpoint isn't valid, falls back to the default endpoint for the specified fallbackRegion
-func buildApiUrl(endpoint string, model string, stream bool, fallbackRegion string) *url.URL {
+func buildApiUrl(endpoint string, model modelconfigSDK.Model, stream bool, fallbackRegion string) *url.URL {
 	apiURL, err := url.Parse(endpoint)
 	if err != nil || apiURL.Scheme == "" {
 		apiURL = &url.URL{
@@ -293,24 +295,28 @@ func buildApiUrl(endpoint string, model string, stream bool, fallbackRegion stri
 		}
 	}
 
-	bedrockModelRef := conftypes.NewBedrockModelRefFromModelID(model)
+	var awsBedrockModelConfig *modelconfigSDK.AWSBedrockProvisionedThroughput
+	if modelSSConfig := model.ServerSideConfig; modelSSConfig != nil {
+		awsBedrockModelConfig = modelSSConfig.AWSBedrockProvisionedThroughput
+	}
 
-	if bedrockModelRef.ProvisionedCapacity != nil {
+	if awsBedrockModelConfig != nil {
+		arn := awsBedrockModelConfig.ARN
 		// We need to Query escape the provisioned capacity ARN, since otherwise
 		// the AWS API Gateway interprets the path as a path and doesn't route
 		// to the Bedrock service. This would results in abstract Coral errors
 		if stream {
-			apiURL.RawPath = fmt.Sprintf("/model/%s/invoke-with-response-stream", url.QueryEscape(*bedrockModelRef.ProvisionedCapacity))
-			apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", *bedrockModelRef.ProvisionedCapacity)
+			apiURL.RawPath = fmt.Sprintf("/model/%s/invoke-with-response-stream", url.QueryEscape(arn))
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", arn)
 		} else {
-			apiURL.RawPath = fmt.Sprintf("/model/%s/invoke", url.QueryEscape(*bedrockModelRef.ProvisionedCapacity))
-			apiURL.Path = fmt.Sprintf("/model/%s/invoke", *bedrockModelRef.ProvisionedCapacity)
+			apiURL.RawPath = fmt.Sprintf("/model/%s/invoke", url.QueryEscape(arn))
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke", arn)
 		}
 	} else {
 		if stream {
-			apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", bedrockModelRef.Model)
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", model.ModelName)
 		} else {
-			apiURL.Path = fmt.Sprintf("/model/%s/invoke", bedrockModelRef.Model)
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke", model.ModelName)
 		}
 	}
 

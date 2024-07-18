@@ -97,9 +97,9 @@ func (r *RequestState) SetUploadsDataLoader(uploads []shared.CompletedUpload) {
 }
 
 func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *sgTypes.Repo, commit api.CommitID, hunkCache HunkCache) {
-	args := &translationBase{
-		repo:   repo,
-		commit: commit,
+	args := &TranslationBase{
+		Repo:   repo,
+		Commit: commit,
 	}
 
 	r.GitTreeTranslator = NewGitTreeTranslator(client, args, hunkCache)

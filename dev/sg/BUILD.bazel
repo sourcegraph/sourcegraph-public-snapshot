@@ -39,7 +39,6 @@ go_library(
         "sg_src.go",
         "sg_start.go",
         "sg_teammate.go",
-        "sg_telemetry.go",
         "sg_tests.go",
         "sg_update.go",
         "sg_version.go",

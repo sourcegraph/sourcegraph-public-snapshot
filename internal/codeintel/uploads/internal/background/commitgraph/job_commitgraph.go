@@ -2,12 +2,17 @@ package commitgraph
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/grafana/regexp"
+	genslices "github.com/life4/genesis/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -90,7 +95,7 @@ func (s *commitGraphUpdater) lockAndUpdateUploadsVisibleToCommits(ctx context.Co
 
 	// The following process pulls the commit graph for the given repository from gitserver, pulls the set of LSIF
 	// upload objects for the given repository from Postgres, and correlates them into a visibility
-	// graph. This graph is then upserted back into Postgres for use by find closest dumps queries.
+	// graph. This graph is then upserted back into Postgres for use by find closest completd uploads queries.
 	//
 	// The user should supply a dirty token that is associated with the given repository so that
 	// the repository can be unmarked as long as the repository is not marked as dirty again before
@@ -126,6 +131,13 @@ func mapRefsToCommits(refs []gitdomain.Ref) map[string][]gitdomain.Ref {
 	return commitsByRef
 }
 
+type CommitGraphRefreshStrategy string
+
+const (
+	HeadTopoOnly CommitGraphRefreshStrategy = "head-topo-only"
+	AllRefsSince CommitGraphRefreshStrategy = "all-refs-since"
+)
+
 // getCommitGraph builds a partial commit graph that includes the most recent commits on each branch
 // extending back as as the date of the oldest commit for which we have a processed upload for this
 // repository.
@@ -138,25 +150,53 @@ func mapRefsToCommits(refs []gitdomain.Ref) map[string][]gitdomain.Ref {
 // accelerating rate, as we routinely expire old information for active repositories in a janitor
 // process.
 func (s *commitGraphUpdater) getCommitGraph(ctx context.Context, repositoryID int, repo api.RepoName) (*commitgraph.CommitGraph, error) {
-	commitDate, ok, err := s.store.GetOldestCommitDate(ctx, repositoryID)
+	optCommitWithDate, err := s.store.GetCommitAndDateForOldestUpload(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
+	commitWithDate, ok := optCommitWithDate.Get()
 	if !ok {
-		// No uploads exist for this repository
 		return commitgraph.ParseCommitGraph(nil), nil
 	}
 
-	// The --since flag for git log is exclusive, but we want to include the commit where the
-	// oldest dump is defined. This flag only has second resolution, so we shouldn't be pulling
-	// back any more data than we wanted.
-	commitDate = commitDate.Add(-time.Second)
+	siteConfig := conf.SiteConfig()
+	exptFeatures := siteConfig.ExperimentalFeatures
+	var strat CommitGraphRefreshStrategy = AllRefsSince
+	var defaultBranchRef string
+	if exptFeatures != nil && exptFeatures.CommitGraphUpdates != nil {
+		match := genslices.Any(exptFeatures.CommitGraphUpdates.DefaultBranchOnly, func(repoPattern string) bool {
+			matched, err := regexp.MatchString(repoPattern, string(repo))
+			return err == nil && matched
+		})
+		if match {
+			if refName, _, err := s.gitserverClient.GetDefaultBranch(ctx, repo, false); err == nil {
+				defaultBranchRef = refName
+				strat = HeadTopoOnly
+			}
+		}
+	}
 
-	commits, err := s.gitserverClient.Commits(ctx, repo, gitserver.CommitsOptions{
-		AllRefs: true,
-		Order:   gitserver.CommitsOrderTopoDate,
-		After:   commitDate,
-	})
+	var opts gitserver.CommitsOptions
+	switch strat {
+	case HeadTopoOnly:
+		opts = gitserver.CommitsOptions{
+			Ranges: []string{string(commitWithDate.Commit) + ".." + defaultBranchRef},
+			Order:  gitserver.CommitsOrderTopoDate,
+		}
+	case AllRefsSince:
+		opts = gitserver.CommitsOptions{
+			AllRefs: true,
+			Order:   gitserver.CommitsOrderTopoDate,
+			// The --since flag for git log is exclusive, but we want to include the commit where the
+			// oldest dump is defined. This flag only has second resolution, so we shouldn't be pulling
+			// back any more data than we wanted.
+			After: commitWithDate.CommitterDate.Add(-time.Second),
+		}
+	default:
+		panic(fmt.Sprintf("Unhandled case for strategy: %q", strat))
+	}
+
+	commits, err := s.gitserverClient.Commits(ctx, repo, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "gitserver.Commits")
 	}

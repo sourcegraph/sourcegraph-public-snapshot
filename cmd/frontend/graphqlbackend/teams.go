@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -996,6 +997,9 @@ var ErrNoAccessToTeam = errors.New("user cannot modify team")
 func areTeamEndpointsAvailable() error {
 	if dotcom.SourcegraphDotComMode() {
 		return errors.New("teams are not available on sourcegraph.com")
+	}
+	if !own.IsEnabled() {
+		return errors.New("teams are disabled")
 	}
 	return nil
 }

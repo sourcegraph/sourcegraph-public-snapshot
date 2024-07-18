@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/modelconfig"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
@@ -42,49 +41,30 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", err
 	}
 
-	completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
-	if completionsConfig == nil {
-		return "", errors.New("completions are not configured")
+	// This GraphQL endpoint doesn't support picking the specific model, and just relies on the default
+	// Chat/FastChat model instead.
+	modelconfigSvc := modelconfig.Get()
+	modelConfig, err := modelconfigSvc.Get()
+	if err != nil {
+		return "", errors.Wrap(err, "getting current LLM configuration")
 	}
 
-	var chatModel string
+	mref := modelConfig.DefaultModels.Chat
 	if args.Fast {
-		chatModel = completionsConfig.FastChatModel
-	} else {
-		chatModel = completionsConfig.ChatModel
+		mref = modelConfig.DefaultModels.FastChat
+	}
+	modelConfigInfo, err := types.LookupModelConfigInfo(modelConfig, mref)
+	if err != nil {
+		return "", errors.Wrapf(err, "resolving mref %q", mref)
 	}
 
-	var modelConfigInfo *types.ModelConfigInfo
-	if conf.UseExperimentalModelConfiguration() {
-		// TODO(slimsag): self-hosted-models: this logic only handles Cody Enterprise with Self-hosted models
-		modelConfig, err := modelconfig.Get().Get()
-		if err != nil {
-			return "", err
-		}
-		// Request doesn't specify a particular model at all, so use default.
-		requestModelRef := modelConfig.DefaultModels.Chat
-		if args.Fast {
-			requestModelRef = modelConfig.DefaultModels.FastChat
-		}
-		modelConfigInfo, err = types.NewModelConfigInfo(modelConfig, requestModelRef)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	ctx, done := completions.Trace(ctx, "resolver", chatModel, int(args.Input.MaxTokensToSample)).
+	modelName := modelConfigInfo.Model.ModelName
+	ctx, done := completions.Trace(ctx, "resolver", modelName, int(args.Input.MaxTokensToSample)).
 		WithErrorP(&err).
 		Build()
 	defer done()
 
-	client, err := client.Get(
-		c.logger,
-		telemetryrecorder.New(c.db),
-		completionsConfig.Endpoint,
-		completionsConfig.Provider,
-		completionsConfig.AccessToken,
-		modelConfigInfo,
-	)
+	client, err := client.Get(c.logger, telemetryrecorder.New(c.db), modelConfigInfo)
 	if err != nil {
 		return "", errors.Wrap(err, "GetCompletionStreamClient")
 	}
@@ -95,14 +75,12 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 	}
 
 	params := convertParams(args)
-	// No way to configure the model through the request, we hard code to chat.
-	params.Model = chatModel
-
 	request := types.CompletionRequest{
-		Feature: types.CompletionsFeatureChat,
+		Feature:         types.CompletionsFeatureChat,
+		ModelConfigInfo: modelConfigInfo,
+		Parameters:      params,
 		// GraphQL API is considered a legacy API.
-		Version:    types.CompletionsVersionLegacy,
-		Parameters: params,
+		Version: types.CompletionsVersionLegacy,
 	}
 	resp, err := client.Complete(ctx, c.logger, request)
 	if err != nil {

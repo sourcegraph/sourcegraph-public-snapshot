@@ -150,7 +150,9 @@ function highlightNodeHelper(
                 }
 
                 let newNode: Node
-                if (newNodes.length === 1) {
+                if (newNodes.length === 0) {
+                    newNode = document.createTextNode('')
+                } else if (newNodes.length === 1) {
                     // If we only have one new node, no need to wrap it in a containing span
                     newNode = newNodes[0]
                 } else {

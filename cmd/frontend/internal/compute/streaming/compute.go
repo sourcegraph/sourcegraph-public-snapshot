@@ -73,7 +73,7 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, se
 	searchClient := client.New(logger, db, gitserver.NewClient("http.compute.search"))
 	inputs, err := searchClient.Plan(
 		ctx,
-		"",
+		"V3",
 		&patternType,
 		searchQuery,
 		search.Precise,

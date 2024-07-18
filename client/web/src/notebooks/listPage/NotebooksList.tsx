@@ -43,7 +43,7 @@ export const NotebooksList: FC<NotebooksListProps> = ({
     }, [logEventName, telemetryService])
 
     const queryConnection = useCallback(
-        (args: Partial<ListNotebooksVariables>) => {
+        (args: Omit<Partial<ListNotebooksVariables>, 'first'> & { first?: number | null }) => {
             const { orderBy, descending } = args as {
                 orderBy: NotebooksOrderBy | undefined
                 descending: boolean | undefined

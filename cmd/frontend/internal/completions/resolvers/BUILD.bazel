@@ -13,7 +13,6 @@ go_library(
         "//cmd/frontend/internal/modelconfig",
         "//internal/completions/client",
         "//internal/completions/types",
-        "//internal/conf",
         "//internal/database",
         "//internal/redispool",
         "//internal/telemetry/telemetryrecorder",

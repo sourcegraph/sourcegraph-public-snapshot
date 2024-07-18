@@ -1,6 +1,7 @@
 package modelconfig
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -58,6 +59,53 @@ func TestApplyModelOverrides(t *testing.T) {
 
 		assert.Equal(t, 100_000, mod.ContextWindow.MaxInputTokens)
 		assert.Equal(t, unchangedModel.ContextWindow.MaxOutputTokens, mod.ContextWindow.MaxOutputTokens)
+	})
+
+	// The configuration data is applied too, but it isn't a copy rather we just update the pointers
+	// to point to the original data.
+	t.Run("ConfigPointers", func(t *testing.T) {
+		{
+			// This test skips validation for the `model.ClientSideConfig` value because there isn't a
+			// reliable way to actually confirm the pointer was changed. Since the size of the data type
+			// is 0, the Go compiler can do all sorts of optimization schenanigans.
+			//
+			// When this scenario fails when we finally add a field to the ClientSideConfig struct, just
+			// uncomment the relevant parts of the code below.
+			clientSideConfig := types.ClientSideModelConfig{}
+			assert.EqualValues(t, 0, reflect.TypeOf(clientSideConfig).Size(), "See comment in the code...")
+		}
+
+		mod := getValidModel()
+		origClientCfg := mod.ClientSideConfig
+		origServerCfg := mod.ServerSideConfig
+
+		// Confirm mod starts with non-nil pointers for client and server config.
+		require.NotNil(t, origClientCfg)
+		require.NotNil(t, origServerCfg)
+
+		// Create an override that specifies new values.
+		override := types.ModelOverride{
+			ClientSideConfig: &types.ClientSideModelConfig{},
+			ServerSideConfig: &types.ServerSideModelConfig{},
+		}
+
+		// Confirm the override has different pointers for the model config.
+		// require.True(t, origClientCfg != override.ClientSideConfig, "orig = %p, override = %p", origClientCfg, override.ClientSideConfig)
+		// ^-- 0-byte type schenanigans...
+		require.True(t, origServerCfg != override.ServerSideConfig)
+
+		err := ApplyModelOverride(&mod, override)
+		require.NoError(t, err)
+
+		assert.NotNil(t, mod.ClientSideConfig)
+		assert.NotNil(t, mod.ServerSideConfig)
+
+		// assert.True(t, mod.ClientSideConfig != origClientCfg)
+		// ^-- 0-byte type schenanigans...
+		assert.True(t, mod.ServerSideConfig != origServerCfg)
+
+		assert.True(t, mod.ClientSideConfig == override.ClientSideConfig)
+		assert.True(t, mod.ServerSideConfig == override.ServerSideConfig)
 	})
 
 	t.Run("Errors", func(t *testing.T) {

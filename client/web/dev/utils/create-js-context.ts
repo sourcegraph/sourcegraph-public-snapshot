@@ -48,6 +48,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         codeIntelRankingDocumentReferenceCountsEnabled: false,
         codeInsightsEnabled: true,
         codeMonitoringEnabled: true,
+        searchJobsEnabled: true,
         productResearchPageEnabled: true,
         assetsRoot: '/.assets',
         deployType: 'dev',

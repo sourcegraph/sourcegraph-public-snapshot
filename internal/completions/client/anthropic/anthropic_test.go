@@ -76,11 +76,12 @@ func TestValidAnthropicMessagesStream(t *testing.T) {
 	}
 
 	compRequest := types.CompletionRequest{
-		Feature: types.CompletionsFeatureChat,
-		Version: types.CompletionsVersionLegacy,
+		Feature:         types.CompletionsFeatureChat,
+		ModelConfigInfo: types.ModelConfigInfo{},
 		Parameters: types.CompletionRequestParameters{
 			Stream: pointers.Ptr(true),
 		},
+		Version: types.CompletionsVersionLegacy,
 	}
 
 	err := mockClient.Stream(context.Background(), logger, compRequest, sendEventFn)
@@ -97,9 +98,10 @@ func TestInvalidAnthropicMessagesStream(t *testing.T) {
 	mockClient := getMockClient(linesToResponse(mockAnthropicInvalidResponseLines, "\r\n\r\n"))
 
 	compRequest := types.CompletionRequest{
-		Feature:    types.CompletionsFeatureChat,
-		Version:    types.CompletionsVersionLegacy,
-		Parameters: types.CompletionRequestParameters{},
+		Feature:         types.CompletionsFeatureChat,
+		ModelConfigInfo: types.ModelConfigInfo{},
+		Parameters:      types.CompletionRequestParameters{},
+		Version:         types.CompletionsVersionLegacy,
 	}
 	sendEventFn := func(event types.CompletionResponse) error { return nil }
 
@@ -122,9 +124,10 @@ func TestErrStatusNotOK(t *testing.T) {
 	}, "", "", false, *tokenManager)
 
 	compRequest := types.CompletionRequest{
-		Feature:    types.CompletionsFeatureChat,
-		Version:    types.CompletionsVersionLegacy,
-		Parameters: types.CompletionRequestParameters{},
+		Feature:         types.CompletionsFeatureChat,
+		ModelConfigInfo: types.ModelConfigInfo{},
+		Parameters:      types.CompletionRequestParameters{},
+		Version:         types.CompletionsVersionLegacy,
 	}
 
 	t.Run("Complete", func(t *testing.T) {
@@ -177,11 +180,12 @@ func TestCompleteApiToMessages(t *testing.T) {
 	t.Run("Complete", func(t *testing.T) {
 		logger := log.Scoped("completions")
 		compRequest := types.CompletionRequest{
-			Feature: types.CompletionsFeatureChat,
-			Version: types.CompletionsVersionLegacy,
+			Feature:         types.CompletionsFeatureChat,
+			ModelConfigInfo: types.ModelConfigInfo{},
 			Parameters: types.CompletionRequestParameters{
 				Messages: messages,
 			},
+			Version: types.CompletionsVersionLegacy,
 		}
 
 		resp, err := mockClient.Complete(context.Background(), logger, compRequest)
@@ -198,12 +202,13 @@ func TestCompleteApiToMessages(t *testing.T) {
 	t.Run("Stream", func(t *testing.T) {
 		logger := log.Scoped("completions")
 		compRequest := types.CompletionRequest{
-			Feature: types.CompletionsFeatureChat,
-			Version: types.CompletionsVersionLegacy,
+			Feature:         types.CompletionsFeatureChat,
+			ModelConfigInfo: types.ModelConfigInfo{},
 			Parameters: types.CompletionRequestParameters{
 				Messages: messages,
 				Stream:   pointers.Ptr(true),
 			},
+			Version: types.CompletionsVersionLegacy,
 		}
 		sendEventFn := func(event types.CompletionResponse) error { return nil }
 		err := mockClient.Stream(context.Background(), logger, compRequest, sendEventFn)

@@ -38,6 +38,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     notebooksEnabled: true,
     codeMonitoringEnabled: true,
     ownEnabled: true,
+    searchJobsEnabled: true,
     showFeedbackModal: () => undefined,
 }
 

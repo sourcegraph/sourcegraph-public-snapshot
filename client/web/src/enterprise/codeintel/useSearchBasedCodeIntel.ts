@@ -16,6 +16,7 @@ import { CODE_INTEL_SEARCH_QUERY, LOCAL_CODE_INTEL_QUERY } from '../../codeintel
 import type { SettingsGetter } from '../../codeintel/settings'
 import { isDefined } from '../../codeintel/util/helpers'
 import type { CodeIntelSearch2Variables } from '../../graphql-operations'
+import { SearchVersion } from '../../graphql-operations'
 import { syntaxHighlight } from '../../repo/blob/codemirror/highlight'
 import { getBlobEditView } from '../../repo/blob/use-blob-store'
 
@@ -367,6 +368,7 @@ async function executeSearchQuery(terms: string[]): Promise<SearchResult[]> {
         query: getDocumentNode(CODE_INTEL_SEARCH_QUERY),
         variables: {
             query: terms.join(' '),
+            version: SearchVersion.V3,
         },
     })
 

@@ -3,7 +3,7 @@ import type { FC } from 'react'
 import { CodyWebHistory, CodyWebChatProvider } from 'cody-web-experimental'
 import { Navigate } from 'react-router-dom'
 
-import { Badge, ButtonLink, PageHeader, Text } from '@sourcegraph/wildcard'
+import { ButtonLink, PageHeader, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
@@ -31,7 +31,11 @@ export const NewCodyChatPage: FC<NewCodyChatPageProps> = props => {
             <CodyPageHeader isSourcegraphDotCom={isSourcegraphDotCom} className={styles.pageHeader} />
 
             <div className={styles.chatContainer}>
-                <CodyWebChatProvider accessToken="" serverEndpoint={window.location.origin}>
+                <CodyWebChatProvider
+                    accessToken=""
+                    serverEndpoint={window.location.origin}
+                    customHeaders={window.context.xhrHeaders}
+                >
                     <CodyWebHistory>
                         {history => (
                             <div className={styles.chatHistory}>
@@ -95,9 +99,7 @@ const CodyPageHeader: FC<CodyPageHeaderProps> = props => {
                 <PageHeader.Breadcrumb icon={CodyColorIcon}>
                     <div className="d-inline-flex align-items-center">
                         Cody Chat
-                        <Badge variant="info" className="ml-2">
-                            Experimental
-                        </Badge>
+                        <ProductStatusBadge status="beta" className="ml-2" />
                     </div>
                 </PageHeader.Breadcrumb>
             </PageHeader.Heading>

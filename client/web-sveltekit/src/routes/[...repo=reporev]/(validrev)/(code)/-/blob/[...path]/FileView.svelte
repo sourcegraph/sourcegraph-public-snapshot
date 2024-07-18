@@ -22,6 +22,7 @@
     import FileIcon from '$lib/repo/FileIcon.svelte'
     import { renderMermaid } from '$lib/repo/mermaid'
     import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
+    import OpenCodyAction from '$lib/repo/OpenCodyAction.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI, replaceRevisionInURL } from '$lib/shared'
     import { isLightTheme, settings } from '$lib/stores'
@@ -36,7 +37,6 @@
     import { FileViewGitBlob, FileViewHighlightedFile } from './FileView.gql'
     import FileViewModeSwitcher from './FileViewModeSwitcher.svelte'
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
-    import OpenCodyAction from '$lib/repo/OpenCodyAction.svelte'
     import { CodeViewMode, toCodeViewMode } from './util'
 
     export let data: Extract<PageData, { type: 'FileView' }>
@@ -166,14 +166,12 @@
 
 {#if embedded}
     <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
-        <FileIcon slot="icon" file={blob} inline />
-        <svelte:fragment slot="actions">
-            <slot name="actions" />
-        </svelte:fragment>
+        <FileIcon slot="file-icon" file={blob} inline />
+        <slot name="actions" slot="actions" />
     </FileHeader>
 {:else}
     <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
-        <FileIcon slot="icon" file={blob} inline />
+        <FileIcon slot="file-icon" file={blob} inline />
         <svelte:fragment slot="actions">
             {#if !revisionOverride}
                 {#await data.externalServiceType then externalServiceType}

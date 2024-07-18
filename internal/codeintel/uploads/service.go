@@ -112,10 +112,10 @@ func (s *Service) InferClosestUploads(ctx context.Context, opts shared.UploadMat
 		return nil, err
 	}
 
-	// The parameters exactPath and rootMustEnclosePath align here: if we're looking for dumps
-	// that can answer queries for a directory (e.g. diagnostics), we want any dump that happens
-	// to intersect the target directory. If we're looking for dumps that can answer queries for
-	// a single file, then we need a dump with a root that properly encloses that file.
+	// The parameters exactPath and rootMustEnclosePath align here: if we're looking for completed uploads
+	// that can answer queries for a directory (e.g. diagnostics), we want any completed upload that happens
+	// to intersect the target directory. If we're looking for completed uploads that can answer queries for
+	// a single file, then we need a completed upload with a root that properly encloses that file.
 	if uploads, err := s.store.FindClosestCompletedUploads(ctx, opts); err != nil {
 		return nil, errors.Wrap(err, "store.FindClosestCompletedUploads")
 	} else if len(uploads) != 0 {
@@ -129,7 +129,7 @@ func (s *Service) InferClosestUploads(ctx context.Context, opts shared.UploadMat
 		return nil, nil
 	}
 
-	// Commit is known and the empty dumps list explicitly means nothing is visible
+	// Commit is known and the empty completed uploads list explicitly means nothing is visible
 	if commitExists, err := s.store.HasCommit(ctx, opts.RepositoryID, opts.Commit); err != nil {
 		return nil, errors.Wrap(err, "dbstore.HasCommit")
 	} else if commitExists {

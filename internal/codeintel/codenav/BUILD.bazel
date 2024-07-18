@@ -9,6 +9,8 @@ go_library(
         "gittree_translator.go",
         "iface.go",
         "init.go",
+        "mapped_index.go",
+        "mocks_temp.go",
         "observability.go",
         "request_state.go",
         "scip_utils.go",
@@ -51,6 +53,7 @@ go_library(
         "@com_github_sourcegraph_scip//bindings/go/scip",
         "@com_github_wk8_go_ordered_map_v2//:go-ordered-map",
         "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_google_protobuf//proto",
     ],
 )
 
@@ -59,7 +62,7 @@ go_test(
     timeout = "short",
     srcs = [
         "gittree_translator_test.go",
-        "mocks_test.go",
+        "mapped_index_test.go",
         "scip_utils_test.go",
         "service_closest_uploads_test.go",
         "service_definitions_test.go",
@@ -106,7 +109,7 @@ go_test(
 
 go_mockgen(
     name = "generate_mocks",
-    out = "mocks_test.go",
+    out = "mocks_temp.go",
     manifests = [
         "//:mockgen.yaml",
         "//:mockgen.test.yaml",

@@ -60,8 +60,6 @@ export const useOutboundWebhookLogsConnection = (
     useShowMorePagination<OutboundWebhookLogsResult, OutboundWebhookLogsVariables, OutboundWebhookLogFields>({
         query: OUTBOUND_WEBHOOK_LOGS,
         variables: {
-            first: 20,
-            after: null,
             id,
             onlyErrors,
         },

@@ -164,8 +164,8 @@ func (c *openAIChatCompletionStreamClient) Stream(
 
 func (c *openAIChatCompletionStreamClient) recordTokenUsage(request types.CompletionRequest, promptTokens, completionTokens int) error {
 	feature := string(request.Feature)
-	model := request.Parameters.Model
-	label := tokenizer.OpenAIModel + "/" + model
+	model := request.ModelConfigInfo.Model.ModelName
+	label := tokenizer.OpenAIModel + "/" + string(model)
 	return c.tokenManager.UpdateTokenCountsFromModelUsage(
 		promptTokens, completionTokens,
 		label, feature, tokenusage.OpenAI)
@@ -183,7 +183,7 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 
 	// TODO(sqs): make CompletionRequestParameters non-anthropic-specific
 	payload := openAIChatCompletionsRequestParameters{
-		Model:       requestParams.Model,
+		Model:       request.ModelConfigInfo.Model.ModelName,
 		Temperature: requestParams.Temperature,
 		TopP:        requestParams.TopP,
 		// TODO(sqs): map requestParams.TopK to openai
@@ -260,7 +260,7 @@ func (c *openAIChatCompletionStreamClient) makeCompletionRequest(ctx context.Con
 	}
 
 	payload := openAICompletionsRequestParameters{
-		Model:       requestParams.Model,
+		Model:       request.ModelConfigInfo.Model.ModelName,
 		Temperature: requestParams.Temperature,
 		TopP:        requestParams.TopP,
 		N:           1,

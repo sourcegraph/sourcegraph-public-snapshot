@@ -10,29 +10,28 @@
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { Alert, Badge } from '$lib/wildcard'
 
-    import RepositoryRevPicker from '../../../RepositoryRevPicker.svelte'
+    import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
 
     import type { PageData, Snapshot } from './$types'
-    import type { CommitsPage_GitCommitConnection } from './page.gql'
 
     export let data: PageData
 
     // This tracks the number of commits that have been loaded and the current scroll
     // position, so both can be restored when the user refreshes the page or navigates
     // back to it.
-    export const snapshot: Snapshot<{ commitCount: number; scroller: ScrollerCapture }> = {
+    export const snapshot: Snapshot<{
+        commits: ReturnType<typeof data.commitsQuery.capture>
+        scroller: ScrollerCapture
+    }> = {
         capture() {
             return {
-                commitCount: commits?.nodes.length ?? 0,
+                commits: commitsQuery.capture(),
                 scroller: scroller.capture(),
             }
         },
         async restore(snapshot) {
-            if (snapshot?.commitCount !== undefined && get(navigating)?.type === 'popstate') {
-                await commitsQuery?.restore(result => {
-                    const count = result.data?.repository?.commit?.ancestors.nodes?.length
-                    return !!count && count < snapshot.commitCount
-                })
+            if (get(navigating)?.type === 'popstate') {
+                await commitsQuery?.restore(snapshot.commits)
             }
             scroller.restore(snapshot.scroller)
         },
@@ -43,14 +42,9 @@
     }
 
     let scroller: Scroller
-    let commits: CommitsPage_GitCommitConnection | null = null
 
     $: commitsQuery = data.commitsQuery
-    // We conditionally check for the ancestors field to be able to show
-    // previously loaded commits when an error occurs while fetching more commits.
-    $: if ($commitsQuery?.data?.repository?.commit?.ancestors) {
-        commits = $commitsQuery.data.repository.commit.ancestors
-    }
+    $: commits = $commitsQuery.data
     $: pageTitle = (() => {
         const parts = ['Commits']
         if (data.path) {
@@ -76,7 +70,8 @@
         <RepositoryRevPicker
             repoURL={data.repoURL}
             revision={data.revision}
-            resolvedRevision={data.resolvedRevision}
+            commitID={data.resolvedRevision.commitID}
+            defaultBranch={data.defaultBranch}
             placement="bottom-start"
             getRepositoryBranches={data.getRepoBranches}
             getRepositoryCommits={data.getRepoCommits}
@@ -86,9 +81,9 @@
 </header>
 <section>
     <Scroller bind:this={scroller} margin={600} on:more={fetchMore}>
-        {#if !$commitsQuery.restoring && commits}
+        {#if commits}
             <ul class="commits">
-                {#each commits.nodes as commit (commit.canonicalURL)}
+                {#each commits as commit (commit.canonicalURL)}
                     <li>
                         <div class="commit">
                             <Commit {commit} />
@@ -122,7 +117,7 @@
                 {/each}
             </ul>
         {/if}
-        {#if $commitsQuery.fetching || $commitsQuery.restoring}
+        {#if $commitsQuery.fetching}
             <div class="footer">
                 <LoadingSpinner />
             </div>
@@ -165,10 +160,10 @@
         max-width: var(--viewport-xl);
         width: 100%;
         margin: 0 auto;
-        padding: 0.5rem;
+        padding: 1rem;
 
-        @media (--sm-breakpoint-up) {
-            padding: 1rem;
+        @media (--mobile) {
+            padding: 0.5rem;
         }
     }
 
@@ -178,6 +173,7 @@
 
     ul.commits {
         --avatar-size: 2.5rem;
+        padding-top: 0;
 
         > li {
             border-bottom: 1px solid var(--border-color);
@@ -185,7 +181,7 @@
             padding: 0.5rem 0;
             gap: 1rem;
 
-            @media (--xs-breakpoint-down) {
+            @media (--mobile) {
                 display: block;
 
                 .actions {

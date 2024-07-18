@@ -104,19 +104,15 @@ BUILD_DEPS = [
     ":node_modules/@sourcegraph/shared",
     ":node_modules/@sourcegraph/telemetry",
     ":node_modules/@sourcegraph/web",
-    ":node_modules/@sourcegraph/wildcard",
     ":node_modules/@storybook/svelte",
     ":node_modules/@sveltejs/adapter-static",
     ":node_modules/@sveltejs/kit",
     ":node_modules/@sveltejs/vite-plugin-svelte",
-    ":node_modules/@types/prismjs",
     ":node_modules/@urql/core",
     ":node_modules/cody-web-experimental",
-    ":node_modules/fzf",
     ":node_modules/graphql",
     ":node_modules/hotkeys-js",
     ":node_modules/mermaid",
-    ":node_modules/prismjs",
     ":node_modules/re2js",
     ":node_modules/sass",
     ":node_modules/signale",
@@ -198,7 +194,7 @@ copy_to_directory(
 
 playwright_test_bin.playwright_test(
     name = "e2e_test",
-    timeout = "short",
+    timeout = "long",
     args = [
         "test",
         "--config $(location playwright.config.ts)",
@@ -245,10 +241,13 @@ TEST_BUILD_DEPS = [
 
 vitest_test(
     name = "unit_tests",
+    timeout = "moderate",
     bin = vitest_bin,
     chdir = package_name(),
     data = SRCS + BUILD_DEPS + CONFIGS + TESTS + TEST_BUILD_DEPS,
-    tags = [TAG_SEARCHSUITE],
+    tags = [
+        TAG_SEARCHSUITE,
+    ],
     with_vitest_config = False,
 )
 

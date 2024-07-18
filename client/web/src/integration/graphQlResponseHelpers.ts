@@ -4,7 +4,7 @@ import { RepositoryType, type TreeEntriesResult } from '@sourcegraph/shared/src/
 
 import {
     type BlobResult,
-    ContextFiltersResult,
+    type ContextFiltersResult,
     ExternalServiceKind,
     type FileExternalLinksResult,
     type FileNamesResult,
@@ -39,6 +39,7 @@ export const createFileTreeEntriesResult = (url: string, toplevelFiles: string[]
 
 export const createBlobContentResult = (content: string, lsif?: JsonDocument): BlobResult => ({
     repository: {
+        id: '1',
         commit: {
             __typename: 'GitCommit',
             oid: '1',
