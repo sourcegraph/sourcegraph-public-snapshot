@@ -199,7 +199,7 @@ SELECT migrate_table('user_public_repos');
 SELECT migrate_table('user_repo_permissions');
 SELECT migrate_table('user_roles');
 SELECT migrate_table('users');
-SELECT migrate_table('versions');
+-- SELECT migrate_table('versions');
 SELECT migrate_table('vulnerabilities');
 SELECT migrate_table('vulnerability_affected_packages');
 SELECT migrate_table('vulnerability_affected_symbols');
