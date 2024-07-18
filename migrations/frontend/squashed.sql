@@ -4618,12 +4618,16 @@ CREATE TABLE sub_repo_permissions (
     user_id integer NOT NULL,
     version integer DEFAULT 1 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    paths text[]
+    paths text[],
+    ips text[],
+    CONSTRAINT ips_paths_length_check CHECK (((ips IS NULL) OR ((array_length(ips, 1) = array_length(paths, 1)) AND (NOT (''::text = ANY (ips))))))
 );
 
 COMMENT ON TABLE sub_repo_permissions IS 'Responsible for storing permissions at a finer granularity than repo';
 
 COMMENT ON COLUMN sub_repo_permissions.paths IS 'Paths that begin with a minus sign (-) are exclusion paths.';
+
+COMMENT ON COLUMN sub_repo_permissions.ips IS 'IP addresses corresponding to each path. IP in slot 0 in the array corresponds to path the in slot 0 of the path array, etc. NULL if not yet migrated, empty array for no IP restrictions.';
 
 CREATE TABLE survey_responses (
     id bigint NOT NULL,
