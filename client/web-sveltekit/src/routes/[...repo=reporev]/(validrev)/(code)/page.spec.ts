@@ -172,7 +172,7 @@ test.describe('file sidebar', () => {
         })
 
         await page.goto(`/${repoName}/-/tree/non-existing-directory`)
-        await page.getByLabel('Open sidebar').click()
+        await page.getByLabel('Open sidebar FALSE').click()
         await expect(page.getByText(/Sidebar error/).first()).toBeVisible()
 
         sg.mockOperations({
