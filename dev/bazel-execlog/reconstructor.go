@@ -35,6 +35,7 @@ import (
 	"google.golang.org/protobuf/encoding/protodelim"
 
 	"github.com/sourcegraph/sourcegraph/dev/bazel-execlog/proto"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // SpawnLogReconstructor reconstructs "compact execution log" format back to the original format.
@@ -73,7 +74,7 @@ func (slr *SpawnLogReconstructor) GetSpawnExec() (*proto.SpawnExec, error) {
 			return nil, io.EOF
 		}
 		if err != nil {
-			return nil, fmt.Errorf("failed to read execution log entry: %s", err)
+			return nil, errors.Newf("failed to read execution log entry: %s", err)
 		}
 
 		switch e := entry.GetType().(type) {
