@@ -1,100 +1,37 @@
 /* eslint-disable no-template-curly-in-string */
 import { type Completion, resolveFieldAlias, FilterType } from './filters'
 
-interface Access {
+interface PredicateDefinition {
+    field: string
     name: string
-    fields?: Access[]
+    // scanner?: TODO
 }
 
-/**
- * Represents recognized predicate accesses associated with fields. The
- * data structure is a tree, where nodes are lists to preserve ordering
- * for autocomplete suggestions.
- */
-export const PREDICATES: Access[] = [
-    {
-        name: 'repo',
-        fields: [
-            {
-                name: 'contains',
-                fields: [
-                    { name: 'file' },
-                    { name: 'path' },
-                    { name: 'content' },
-                    {
-                        name: 'commit',
-                        fields: [{ name: 'after' }],
-                    },
-                ],
-            },
-            {
-                name: 'has',
-                fields: [
-                    { name: 'file' },
-                    { name: 'path' },
-                    { name: 'content' },
-                    {
-                        name: 'commit',
-                        fields: [{ name: 'after' }],
-                    },
-                    { name: 'description' },
-                    { name: 'tag' },
-                    { name: 'key' },
-                    { name: 'meta' },
-                    { name: 'topic' },
-                ],
-            },
-        ],
-    },
-    {
-        name: 'file',
-        fields: [
-            {
-                name: 'contains',
-                fields: [{ name: 'content' }],
-            },
-            {
-                name: 'has',
-                fields: [{ name: 'content' }, { name: 'owner' }],
-            },
-        ],
-    },
-    {
-        name: 'rev',
-        fields: [
-            {
-                name: 'at',
-                fields: [{ name: 'time' }],
-            },
-        ],
-    },
+// PREDICATES is a registry of predicates, grouped by field they belong to
+export const PREDICATES: PredicateDefinition[] = [
+    { field: 'repo', name: 'contains.file' },
+    { field: 'repo', name: 'contains.path' },
+    { field: 'repo', name: 'contains.content' },
+    { field: 'repo', name: 'contains.commit.after' },
+    { field: 'repo', name: 'contains.commit.after' },
+    { field: 'repo', name: 'has.file' },
+    { field: 'repo', name: 'has.path' },
+    { field: 'repo', name: 'has.content' },
+    { field: 'repo', name: 'has.commit.after' },
+    { field: 'repo', name: 'has.description' },
+    { field: 'repo', name: 'has.tag' },
+    { field: 'repo', name: 'has.key' },
+    { field: 'repo', name: 'has.meta' },
+    { field: 'repo', name: 'has.topic' },
+    { field: 'file', name: 'contains.content' },
+    { field: 'file', name: 'has.content' },
+    { field: 'file', name: 'has.owner' },
+    { field: 'rev', name: 'at.time' },
 ]
 
 /** Represents a predicate's components corresponding to the syntax path(parameters). */
-export interface Predicate {
-    path: string[]
+export interface PredicateInstance extends PredicateDefinition {
     parameters: string
-}
-
-/** Returns the access tree for a predicate path. */
-export const resolveAccess = (path: string[], tree: Access[]): Access[] | undefined => {
-    if (path.length === 0) {
-        return tree
-    }
-
-    // repo:contains() and file:contains() are not supported
-    if (path.length === 1 && path[0] === 'contains') {
-        return undefined
-    }
-
-    const subtree = tree.find(value => value.name === path[0])
-    if (!subtree) {
-        return undefined
-    }
-    if (!subtree.fields) {
-        return []
-    }
-    return resolveAccess(path.slice(1), subtree.fields)
 }
 
 // scans a string up to closing parentheses. Examples:
@@ -154,23 +91,23 @@ const scanBalancedParens = (input: string): string | undefined => {
  * (1) The (field, name) pair is a recognized predicate.
  * (2) The parameters value is well-balanced.
  */
-export const scanPredicate = (field: string, value: string): Predicate | undefined => {
+export const scanPredicate = (field: string, value: string): PredicateInstance | undefined => {
     const match = value.match(/^[.a-z]+/i)
     if (!match) {
         return undefined
     }
     const name = match[0]
-    const path = name.split('.')
     // Remove negation from the field for lookup
     if (field.startsWith('-')) {
         field = field.slice(1)
     }
     field = resolveFieldAlias(field)
-    const access = resolveAccess([field, ...path], PREDICATES)
-    if (!access) {
+    // TODO: start here
+    const predicate = PREDICATES.find(predicate => predicate.field === field && predicate.name === name)
+    if (!predicate) {
         return undefined
     }
-    const rest = value.slice(name.length)
+    const rest = value.slice(predicate.name.length)
     const parameters = scanBalancedParens(rest)
     if (!parameters) {
         return undefined
@@ -179,7 +116,7 @@ export const scanPredicate = (field: string, value: string): Predicate | undefin
         return undefined
     }
 
-    return { path, parameters }
+    return { ...predicate, parameters }
 }
 
 export const predicateCompletion = (field: FilterType): Completion[] => {

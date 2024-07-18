@@ -3,6 +3,7 @@ package query
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -47,7 +48,7 @@ func TestRepoHasKVPs(t *testing.T) {
 		},
 	}
 
-	value := "value"
+	value := types.RegexpPattern("value")
 	want := []RepoKVPFilter{
 		{Key: "key", Value: &value, Negated: false, KeyOnly: false},
 		{Key: "tag", Value: nil, Negated: false, KeyOnly: false},

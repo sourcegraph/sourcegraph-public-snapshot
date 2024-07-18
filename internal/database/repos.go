@@ -743,9 +743,9 @@ type ReposListOptions struct {
 
 type RepoKVPFilter struct {
 	// A regex pattern that matches the key
-	Key string
+	Key types.RegexpPattern
 	// A regex pattern that matches the value
-	Value *string
+	Value *types.RegexpPattern
 	// If negated is true, this filter will select only repos
 	// that do _not_ have the associated key and value
 	Negated bool
@@ -1703,12 +1703,12 @@ func kvpCondition(filter RepoKVPFilter) (res *sqlf.Query, _ error) {
 	}
 }
 
-func keyOrValueCondition(target string, p string) (*sqlf.Query, error) {
+func keyOrValueCondition(target string, p types.RegexpPattern) (*sqlf.Query, error) {
 	if target != "key" && target != "value" {
 		panic("safety: only allow static targets")
 	}
 
-	exact, like, pattern, err := parseIncludePattern(p)
+	exact, like, pattern, err := parseIncludePattern(string(p))
 	if err != nil {
 		return nil, err
 	}

@@ -2982,16 +2982,16 @@ func TestRepos_List_KVPFilter(t *testing.T) {
 	}{
 		{"no filters", []RepoKVPFilter{}, []*types.Repo{repo1, repo2, repo3, repo4}},
 		{"all", []RepoKVPFilter{{Key: ".*", KeyOnly: true}}, []*types.Repo{repo1, repo2, repo3, repo4}},
-		{"key and value matches all", []RepoKVPFilter{{Key: ".*", Value: pointers.Ptr(".*")}}, []*types.Repo{repo1, repo2, repo3, repo4}},
-		{"negated all", []RepoKVPFilter{{Key: ".*", Value: pointers.Ptr(".*"), Negated: true}}, nil},
-		{"none", []RepoKVPFilter{{Key: "noexist", Value: pointers.Ptr("noexist")}}, nil},
+		{"key and value matches all", []RepoKVPFilter{{Key: ".*", Value: pointers.Ptr(types.RegexpPattern(".*"))}}, []*types.Repo{repo1, repo2, repo3, repo4}},
+		{"negated all", []RepoKVPFilter{{Key: ".*", Value: pointers.Ptr(types.RegexpPattern(".*")), Negated: true}}, nil},
+		{"none", []RepoKVPFilter{{Key: "noexist", Value: pointers.Ptr(types.RegexpPattern("noexist"))}}, nil},
 		{"all (key)", []RepoKVPFilter{{Key: "key", KeyOnly: true}}, []*types.Repo{repo1, repo2, repo3, repo4}},
 		{"all (key\\d)", []RepoKVPFilter{{Key: "key\\d", KeyOnly: true}}, []*types.Repo{repo1, repo2, repo3, repo4}},
 		{"all (A$)", []RepoKVPFilter{{Key: "(?-i)A$", KeyOnly: true}}, []*types.Repo{repo1, repo2, repo3, repo4}},
 		{"all (^key)", []RepoKVPFilter{{Key: "^key", KeyOnly: true}}, []*types.Repo{repo1, repo2, repo3, repo4}},
 		{"evens (^key[24])", []RepoKVPFilter{{Key: "^key[24]", KeyOnly: true}}, []*types.Repo{repo2, repo4}},
 		{"evens (^key[24])", []RepoKVPFilter{{Key: "^key[24]", KeyOnly: true}}, []*types.Repo{repo2, repo4}},
-		{"even values (^value[24])", []RepoKVPFilter{{Key: ".*", Value: pointers.Ptr("^value[24]")}}, []*types.Repo{repo2, repo4}},
+		{"even values (^value[24])", []RepoKVPFilter{{Key: ".*", Value: pointers.Ptr(types.RegexpPattern("^value[24]"))}}, []*types.Repo{repo2, repo4}},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := db.Repos().List(ctx, ReposListOptions{KVPFilters: tt.kvpFilters})

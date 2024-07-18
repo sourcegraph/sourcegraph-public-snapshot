@@ -9,6 +9,7 @@ import (
 	"github.com/grafana/regexp/syntax"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -319,28 +320,32 @@ func (f *RepoHasTagPredicate) Name() string  { return "has.tag" }
 
 type RepoHasMetaPredicate struct {
 	// A regex pattern matching the value
-	Key string
+	Key types.RegexpPattern
 	// A regex pattern matching the value
-	Value   *string
+	Value   *types.RegexpPattern
 	Negated bool
 	KeyOnly bool
 }
 
+func exactRegexpPattern(input string) types.RegexpPattern {
+	return types.RegexpPattern("^" + regexp.QuoteMeta(input) + "$")
+}
+
 func (p *RepoHasMetaPredicate) Unmarshal(params string, negated bool) (err error) {
-	scanLiteral := func(data string) (string, int, error) {
+	scanLiteral := func(data string) (types.RegexpPattern, int, error) {
 		if strings.HasPrefix(data, `"`) {
 			s, advance, err := ScanDelimited([]byte(data), true, '"')
 			if err != nil {
 				return "", 0, err
 			}
-			return "^" + regexp.QuoteMeta(s) + "$", advance, nil
+			return exactRegexpPattern(s), advance, nil
 		}
 		if strings.HasPrefix(data, `'`) {
 			s, advance, err := ScanDelimited([]byte(data), true, '\'')
 			if err != nil {
 				return "", 0, err
 			}
-			return "^" + regexp.QuoteMeta(s) + "$", advance, nil
+			return exactRegexpPattern(s), advance, nil
 		}
 		if strings.HasPrefix(data, `/`) {
 			s, advance, err := ScanDelimited([]byte(data), false, '/')
@@ -350,13 +355,13 @@ func (p *RepoHasMetaPredicate) Unmarshal(params string, negated bool) (err error
 			if _, err := syntax.Parse(s, syntax.Perl); err != nil {
 				return "", 0, errors.Wrap(err, "invalid regex literal")
 			}
-			return s, advance, nil
+			return types.RegexpPattern(s), advance, nil
 		}
 		loc := strings.Index(data, ":")
 		if loc >= 0 {
-			return data[:loc], loc, nil
+			return exactRegexpPattern(data[:loc]), loc, nil
 		}
-		return data, len(data), nil
+		return exactRegexpPattern(data), len(data), nil
 	}
 
 	// Trim leading and trailing spaces in params
@@ -375,7 +380,7 @@ func (p *RepoHasMetaPredicate) Unmarshal(params string, negated bool) (err error
 	params = params[advance:]
 
 	keyOnly := false
-	var value *string = nil
+	var value *types.RegexpPattern = nil
 	if strings.HasPrefix(params, ":") {
 		// Chomp the leading ":"
 		params = params[len(":"):]
