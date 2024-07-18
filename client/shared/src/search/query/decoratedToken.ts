@@ -1019,9 +1019,8 @@ const decorateRepoHasMetaBody = (body: string, offset: number): DecoratedToken[]
         token.range.end += offset
         return token
     }
-    console.log(decoratePattern(matches[1]) ?? [])
 
-    const res: DecoratedToken[] = [
+    return [
         ...(decoratePattern(matches[1])?.map(offsetToken(offset)) ?? []),
         {
             type: 'metaFilterSeparator',
@@ -1030,8 +1029,6 @@ const decorateRepoHasMetaBody = (body: string, offset: number): DecoratedToken[]
         },
         ...(decoratePattern(matches[2])?.map(offsetToken(offset + matches[1].length + 1)) ?? []),
     ]
-    console.log(res)
-    return res
 }
 
 const decoratePattern = (token: string): DecoratedToken[] | undefined => {
