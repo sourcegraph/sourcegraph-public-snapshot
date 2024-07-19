@@ -1,5 +1,6 @@
-// Package kv provides a key-value store which can be backed by S3, GCS or blobstore.
-package kv
+// Package object provides an interface to object storage that abstracts over
+// S3, GCS and blobstore.
+package object
 
 import (
 	"context"
@@ -10,8 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
-// Store is an expiring key/value store backed by a managed blob store.
-type Store interface {
+// Storage represents the API for some managed object storage.
+//
+// We use 'Storage' instead of 'Store' since 'Store' commonly refers to
+// interfaces backed by database tables in the rest of the codebase.
+type Storage interface {
 	// Init ensures that the underlying target bucket exists and has the expected ACL
 	// and lifecycle configuration.
 	Init(ctx context.Context) error
@@ -38,7 +42,7 @@ type Store interface {
 	List(ctx context.Context, prefix string) (*iterator.Iterator[string], error)
 }
 
-var storeConstructors = map[string]func(ctx context.Context, config Config, operations *Operations) (Store, error){
+var storeConstructors = map[string]func(ctx context.Context, config Config, operations *Operations) (Storage, error){
 	"s3":        newS3FromConfig,
 	"blobstore": newS3FromConfig,
 	"gcs":       newGCSFromConfig,
@@ -47,7 +51,7 @@ var storeConstructors = map[string]func(ctx context.Context, config Config, oper
 // CreateLazy initialize a new store from the given configuration that is initialized
 // on it first method call. If initialization fails, all methods calls will return a
 // the initialization error.
-func CreateLazy(ctx context.Context, config Config, ops *Operations) (Store, error) {
+func CreateLazy(ctx context.Context, config Config, ops *Operations) (Storage, error) {
 	store, err := create(ctx, config, ops)
 	if err != nil {
 		return nil, err
@@ -57,7 +61,7 @@ func CreateLazy(ctx context.Context, config Config, ops *Operations) (Store, err
 }
 
 // create creates but does not initialize a new store from the given configuration.
-func create(ctx context.Context, config Config, ops *Operations) (Store, error) {
+func create(ctx context.Context, config Config, ops *Operations) (Storage, error) {
 	newStore, ok := storeConstructors[config.Backend]
 	if !ok {
 		return nil, errors.Errorf("unknown upload store backend '%s'", config.Backend)

@@ -31,7 +31,7 @@ go_library(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/goroutine",
-        "//internal/kv",
+        "//internal/object",
         "//internal/observation",
         "//internal/paths",
         "//internal/workerutil",

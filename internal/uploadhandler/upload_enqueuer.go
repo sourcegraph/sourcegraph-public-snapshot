@@ -8,7 +8,7 @@ import (
 	sglog "github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/kv"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -16,11 +16,11 @@ import (
 type UploadEnqueuer[T any] struct {
 	logger      sglog.Logger
 	dbStore     DBStore[T]
-	uploadStore kv.Store
+	uploadStore object.Storage
 	operations  EnqueuerOperations
 }
 
-func NewUploadEnqueuer[T any](observationCtx *observation.Context, dbStore DBStore[T], uploadStore kv.Store) UploadEnqueuer[T] {
+func NewUploadEnqueuer[T any](observationCtx *observation.Context, dbStore DBStore[T], uploadStore object.Storage) UploadEnqueuer[T] {
 	return UploadEnqueuer[T]{
 		logger:      observationCtx.Logger.Scoped("upload_enqueuer"),
 		dbStore:     dbStore,

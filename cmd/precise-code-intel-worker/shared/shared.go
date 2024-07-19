@@ -24,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/kv"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -136,7 +136,7 @@ func mustInitializeCodeIntelDB(observationCtx *observation.Context) codeintelsha
 	return codeintelshared.NewCodeIntelDB(observationCtx.Logger, db)
 }
 
-func initializeUploadStore(ctx context.Context, uploadStore kv.Store) error {
+func initializeUploadStore(ctx context.Context, uploadStore object.Storage) error {
 	for {
 		if err := uploadStore.Init(ctx); err == nil || !isRequestError(err) {
 			return err

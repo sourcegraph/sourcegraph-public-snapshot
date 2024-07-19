@@ -3,7 +3,7 @@ load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "kv",
+    name = "object",
     srcs = [
         "config.go",
         "expirer.go",
@@ -17,7 +17,7 @@ go_library(
         "s3_client.go",
         "store.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/kv",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/object",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/goroutine",
@@ -41,7 +41,7 @@ go_library(
 )
 
 go_test(
-    name = "kv_test",
+    name = "object_test",
     srcs = [
         "config_test.go",
         "gcs_client_test.go",
@@ -49,7 +49,7 @@ go_test(
         "s3_client_test.go",
         "store_test.go",
     ],
-    embed = [":kv"],
+    embed = [":object"],
     deps = [
         "//internal/observation",
         "//lib/errors",
@@ -72,5 +72,5 @@ go_mockgen(
         "//:mockgen.test.yaml",
         "//:mockgen.temp.yaml",
     ],
-    deps = [":kv"],
+    deps = [":object"],
 )

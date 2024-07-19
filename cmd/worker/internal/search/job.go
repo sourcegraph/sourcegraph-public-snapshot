@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/kv"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive"
@@ -83,7 +83,7 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 func (j *searchJob) newSearchJobRoutines(
 	workCtx context.Context,
 	observationCtx *observation.Context,
-	uploadStore kv.Store,
+	uploadStore object.Storage,
 	newSearcherFactory func(*observation.Context, database.DB) service.NewSearcher,
 ) ([]goroutine.BackgroundRoutine, error) {
 	j.once.Do(func() {

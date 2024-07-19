@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/kv"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
@@ -16,9 +16,9 @@ type fakeUploadStore struct {
 	files map[string][]byte
 }
 
-var _ kv.Store = &fakeUploadStore{}
+var _ object.Storage = &fakeUploadStore{}
 
-func NewFakeUploadStore() kv.Store {
+func NewFakeUploadStore() object.Storage {
 	return &fakeUploadStore{files: map[string][]byte{}}
 }
 

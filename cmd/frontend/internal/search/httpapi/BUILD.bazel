@@ -31,7 +31,7 @@ go_test(
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",
-        "//internal/kv/mocks",
+        "//internal/object/mocks",
         "//internal/observation",
         "//internal/search/exhaustive/service",
         "//internal/search/exhaustive/store",

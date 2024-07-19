@@ -299,8 +299,8 @@
   interfaces:
     - Migrator
     - storeIface
-- filename: internal/kv/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/kv
+- filename: internal/object/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/object
   interfaces:
     - gcsAPI
     - gcsBucketHandle
@@ -308,7 +308,7 @@
     - gcsObjectHandle
     - s3API
     - s3Uploader
-  package: kv
+  package: object
 - filename: internal/workerutil/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/workerutil
   interfaces:

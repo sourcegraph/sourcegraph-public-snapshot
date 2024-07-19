@@ -28,7 +28,7 @@ go_library(
         "//internal/goroutine",
         "//internal/honey",
         "//internal/httpserver",
-        "//internal/kv",
+        "//internal/object",
         "//internal/observation",
         "//internal/service",
         "//internal/symbols",

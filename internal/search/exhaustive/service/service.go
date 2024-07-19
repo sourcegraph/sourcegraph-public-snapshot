@@ -13,8 +13,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/kv"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
@@ -26,7 +26,7 @@ import (
 func New(
 	observationCtx *observation.Context,
 	store *store.Store,
-	uploadStore kv.Store,
+	uploadStore object.Storage,
 	newSearcher NewSearcher,
 ) *Service {
 	logger := log.Scoped("searchjobs.Service")
@@ -45,7 +45,7 @@ func New(
 type Service struct {
 	logger      log.Logger
 	store       *store.Store
-	uploadStore kv.Store
+	uploadStore object.Storage
 	newSearcher NewSearcher
 	operations  *operations
 }
@@ -378,7 +378,7 @@ func (s *Service) GetAggregateRepoRevState(ctx context.Context, id int64) (_ *ty
 	return &stats, nil
 }
 
-func writeSearchJobJSON(ctx context.Context, iter *iterator.Iterator[string], uploadStore kv.Store, w io.Writer) (int64, error) {
+func writeSearchJobJSON(ctx context.Context, iter *iterator.Iterator[string], uploadStore object.Storage, w io.Writer) (int64, error) {
 	// keep a single bufio.Reader so we can reuse its buffer.
 	var br bufio.Reader
 

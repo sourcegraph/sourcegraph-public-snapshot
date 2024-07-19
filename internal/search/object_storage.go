@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/kv"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -59,12 +59,12 @@ func (c *ObjectStorageConfig) Load() {
 
 var ConfigInst = &ObjectStorageConfig{}
 
-func NewObjectStorage(ctx context.Context, observationCtx *observation.Context, conf *ObjectStorageConfig) (kv.Store, error) {
-	c := kv.Config{
+func NewObjectStorage(ctx context.Context, observationCtx *observation.Context, conf *ObjectStorageConfig) (object.Storage, error) {
+	c := object.Config{
 		Backend:      conf.Backend,
 		ManageBucket: conf.ManageBucket,
 		Bucket:       conf.Bucket,
-		S3: kv.S3Config{
+		S3: object.S3Config{
 			Region:          conf.S3Region,
 			Endpoint:        conf.S3Endpoint,
 			UsePathStyle:    conf.S3UsePathStyle,
@@ -72,11 +72,11 @@ func NewObjectStorage(ctx context.Context, observationCtx *observation.Context, 
 			SecretAccessKey: conf.S3SecretAccessKey,
 			SessionToken:    conf.S3SessionToken,
 		},
-		GCS: kv.GCSConfig{
+		GCS: object.GCSConfig{
 			ProjectID:               conf.GCSProjectID,
 			CredentialsFile:         conf.GCSCredentialsFile,
 			CredentialsFileContents: conf.GCSCredentialsFileContents,
 		},
 	}
-	return kv.CreateLazy(ctx, c, kv.NewOperations(observationCtx, "search_jobs", "uploadstore"))
+	return object.CreateLazy(ctx, c, object.NewOperations(observationCtx, "search_jobs", "uploadstore"))
 }

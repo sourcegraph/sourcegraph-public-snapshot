@@ -29,7 +29,7 @@ go_library(
         "//internal/gitserver",
         "//internal/goroutine",
         "//internal/httpserver",
-        "//internal/kv",
+        "//internal/object",
         "//internal/observation",
         "//internal/service",
         "//internal/uploadhandler",

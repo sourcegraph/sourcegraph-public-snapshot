@@ -28,7 +28,7 @@ go_library(
         "//internal/featureflag",
         "//internal/gitserver/gitdomain",
         "//internal/grpc/defaults",
-        "//internal/kv",
+        "//internal/object",
         "//internal/observation",
         "//internal/search/backend",
         "//internal/search/filter",

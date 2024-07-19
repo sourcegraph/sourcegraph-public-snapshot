@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/kv"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -22,7 +22,7 @@ var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
 func newHandler(
 	observationCtx *observation.Context,
 	repoStore RepoStore,
-	uploadStore kv.Store,
+	uploadStore object.Storage,
 	dbStore uploadhandler.DBStore[uploads.UploadMetadata],
 	operations *uploadhandler.Operations,
 ) http.Handler {

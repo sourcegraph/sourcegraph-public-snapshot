@@ -27,7 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	kvmocks "github.com/sourcegraph/sourcegraph/internal/kv/mocks"
+	kvmocks "github.com/sourcegraph/sourcegraph/internal/object/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"

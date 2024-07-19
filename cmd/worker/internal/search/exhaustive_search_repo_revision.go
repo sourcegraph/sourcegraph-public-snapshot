@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 
-	"github.com/sourcegraph/sourcegraph/internal/kv"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -28,7 +28,7 @@ func newExhaustiveSearchRepoRevisionWorker(
 	workerStore dbworkerstore.Store[*types.ExhaustiveSearchRepoRevisionJob],
 	exhaustiveSearchStore *store.Store,
 	newSearcher service.NewSearcher,
-	uploadStore kv.Store,
+	uploadStore object.Storage,
 	config config,
 ) goroutine.BackgroundRoutine {
 	handler := &exhaustiveSearchRepoRevHandler{
@@ -54,7 +54,7 @@ type exhaustiveSearchRepoRevHandler struct {
 	logger      log.Logger
 	store       *store.Store
 	newSearcher service.NewSearcher
-	uploadStore kv.Store
+	uploadStore object.Storage
 }
 
 var _ workerutil.Handler[*types.ExhaustiveSearchRepoRevisionJob] = &exhaustiveSearchRepoRevHandler{}

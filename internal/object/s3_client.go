@@ -1,4 +1,4 @@
-package kv
+package object
 
 import (
 	"context"
@@ -30,7 +30,7 @@ type s3Store struct {
 	operations   *Operations
 }
 
-var _ Store = &s3Store{}
+var _ Storage = &s3Store{}
 
 type S3Config struct {
 	IsBlobstore     bool
@@ -43,7 +43,7 @@ type S3Config struct {
 }
 
 // newS3FromConfig creates a new store backed by AWS Simple Storage Service.
-func newS3FromConfig(ctx context.Context, config Config, operations *Operations) (Store, error) {
+func newS3FromConfig(ctx context.Context, config Config, operations *Operations) (Storage, error) {
 	cfg, err := s3ClientConfig(ctx, config.S3)
 	if err != nil {
 		return nil, err

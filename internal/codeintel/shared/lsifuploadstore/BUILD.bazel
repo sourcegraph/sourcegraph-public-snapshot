@@ -13,7 +13,7 @@ go_library(
     deps = [
         "//internal/conf/deploy",
         "//internal/env",
-        "//internal/kv",
+        "//internal/object",
         "//internal/observation",
         "//lib/errors",
     ],

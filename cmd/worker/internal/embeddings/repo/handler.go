@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/kv"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -29,7 +29,7 @@ import (
 
 type handler struct {
 	db                     database.DB
-	uploadStore            kv.Store
+	uploadStore            object.Storage
 	gitserverClient        gitserver.Client
 	contextService         embed.ContextService
 	repoEmbeddingJobsStore bgrepo.RepoEmbeddingJobsStore
