@@ -92,6 +92,16 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *conf
 	}
 
 	podTemplate := pod.NewPodTemplate(name, cfg)
+	redisConnSpecs, err := r.getRedisSecrets(ctx, sg)
+	if err != nil {
+		return err
+	}
+	redisConnHash, err := configHash(redisConnSpecs)
+	if err != nil {
+		return err
+	}
+	podTemplate.Template.ObjectMeta.Annotations["checksum/redis"] = redisConnHash
+
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr}
 	podTemplate.Template.Spec.ServiceAccountName = name
 	podTemplate.Template.Spec.Volumes = podVolumes
@@ -105,7 +115,14 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *conf
 	sset.Spec.Template = podTemplate.Template
 	sset.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{pvc}
 
-	return reconcileObject(ctx, r, sg.Spec.GitServer, &sset, &appsv1.StatefulSet{}, sg, owner)
+	ifChanged := struct {
+		config.GitServerSpec
+		RedisConnSpecs
+	}{
+		GitServerSpec:  cfg,
+		RedisConnSpecs: redisConnSpecs,
+	}
+	return reconcileObject(ctx, r, ifChanged, &sset, &appsv1.StatefulSet{}, sg, owner)
 }
 
 func (r *Reconciler) reconcileGitServerService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {

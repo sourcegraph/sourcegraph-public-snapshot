@@ -91,6 +91,16 @@ func (r *Reconciler) reconcileSearcherStatefulSet(ctx context.Context, sg *confi
 	}
 
 	podTemplate := pod.NewPodTemplate(name, cfg)
+	redisConnSpecs, err := r.getRedisSecrets(ctx, sg)
+	if err != nil {
+		return err
+	}
+	redisConnHash, err := configHash(redisConnSpecs)
+	if err != nil {
+		return err
+	}
+	podTemplate.Template.ObjectMeta.Annotations["checksum/redis"] = redisConnHash
+
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr}
 	podTemplate.Template.Spec.Volumes = []corev1.Volume{
 		{Name: "cache"},
@@ -108,7 +118,14 @@ func (r *Reconciler) reconcileSearcherStatefulSet(ctx context.Context, sg *confi
 	sset.Spec.Replicas = &cfg.Replicas
 	sset.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{pvc}
 
-	return reconcileObject(ctx, r, cfg, &sset, &appsv1.StatefulSet{}, sg, owner)
+	ifChanged := struct {
+		config.SearcherSpec
+		RedisConnSpecs
+	}{
+		SearcherSpec:   cfg,
+		RedisConnSpecs: redisConnSpecs,
+	}
+	return reconcileObject(ctx, r, ifChanged, &sset, &appsv1.StatefulSet{}, sg, owner)
 }
 
 func (r *Reconciler) reconcileSearcherService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
