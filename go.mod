@@ -269,6 +269,7 @@ require (
 	github.com/bevzzz/nb v0.3.0
 	github.com/bevzzz/nb-synth v0.0.0-20240128164931-35fdda0583a0
 	github.com/bevzzz/nb/extension/extra/goldmark-jupyter v0.0.0-20240131001330-e69229bd9da4
+	github.com/cohere-ai/cohere-go/v2 v2.8.2
 	github.com/derision-test/go-mockgen/v2 v2.0.1
 	github.com/dghubble/gologin/v2 v2.4.0
 	github.com/edsrzf/mmap-go v1.1.0
@@ -581,7 +582,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20240409012703-83162a5b38cd // indirect
-	github.com/googleapis/gax-go/v2 v2.12.4 // indirect
+	github.com/googleapis/gax-go/v2 v2.12.4
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/gopherjs/gopherwasm v1.1.0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect

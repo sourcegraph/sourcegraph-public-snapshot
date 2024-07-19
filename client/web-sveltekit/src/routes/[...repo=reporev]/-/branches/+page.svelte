@@ -1,10 +1,12 @@
 <script lang="ts">
     // @sg EnableRollout
+
+    import { GitRefType } from '$lib/graphql-types'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import GitReference from '$lib/repo/GitReference.svelte'
+    import GitReferencesTable from '$lib/repo/GitReferencesTable.svelte'
+    import { Alert } from '$lib/wildcard'
 
     import type { PageData } from './$types'
-    import { Alert } from '$lib/wildcard'
 
     export let data: PageData
 </script>
@@ -13,31 +15,26 @@
     <title>Branches - {data.displayRepoName} - Sourcegraph</title>
 </svelte:head>
 
-<section>
-    <div>
+<div class="scroller">
+    <div class="content">
         {#await data.overview}
             <LoadingSpinner />
         {:then result}
             {@const activeBranches = result.branches.nodes.filter(branch => branch.id !== result.defaultBranch?.id)}
 
+            <h2>Default branch</h2>
             {#if result.defaultBranch}
-                <table>
-                    <thead><tr><th colspan="3">Default branch</th></tr></thead>
-                    <tbody>
-                        <GitReference ref={result.defaultBranch} />
-                    </tbody>
-                </table>
+                <GitReferencesTable
+                    references={[result.defaultBranch]}
+                    referenceType={GitRefType.GIT_BRANCH}
+                    defaultBranch={result.defaultBranch.displayName}
+                />
             {/if}
 
+            <h2>Active branches</h2>
+
             {#if activeBranches.length > 0}
-                <table>
-                    <thead><tr><th colspan="3">Active branches</th></tr></thead>
-                    <tbody>
-                        {#each activeBranches as branch (branch.id)}
-                            <GitReference ref={branch} />
-                        {/each}
-                    </tbody>
-                </table>
+                <GitReferencesTable references={activeBranches} referenceType={GitRefType.GIT_BRANCH} />
             {/if}
         {:catch error}
             <Alert variant="danger">
@@ -46,36 +43,33 @@
             </Alert>
         {/await}
     </div>
-</section>
+</div>
 
 <style lang="scss">
-    section {
+    .scroller {
         overflow: auto;
     }
 
-    div {
+    .content {
         max-width: var(--viewport-xl);
         width: 100%;
         margin: 0 auto;
 
-        padding: 1rem;
-    }
+        padding: 0 1rem;
 
-    table {
-        width: 100%;
-        border: 1px solid var(--border-color-2);
-        background-color: var(--color-bg-1);
-        border-radius: var(--border-radius);
-        border-spacing: 0;
-
-        & + table {
-            margin-top: 1rem;
+        @media (--mobile) {
+            padding: 0;
         }
     }
 
-    thead th {
-        font-weight: normal;
-        padding: 0.5rem;
-        background-color: var(--color-bg-2);
+    h2 {
+        font-weight: 500;
+        margin: 1rem 0;
+        font-size: var(--font-size-base);
+
+        @media (--mobile) {
+            margin-left: 0.5rem;
+            margin-right: 0.5rem;
+        }
     }
 </style>

@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -30,6 +31,7 @@ func TestSavedSearchesConnectionStore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
 
 	for i := range 10 {
 		created, err := db.SavedSearches().Create(ctx, &types.SavedSearch{

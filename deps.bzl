@@ -1182,6 +1182,13 @@ def go_dependencies():
         version = "v0.0.0-20150114235600-33e0aa1cb7c0",
     )
     go_repository(
+        name = "com_github_cohere_ai_cohere_go_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/cohere-ai/cohere-go/v2",
+        sum = "h1:NtxtcqkJ3ZBj8DFgk/4hpOrGK7CGnllGNpQn1bkaqQs=",
+        version = "v2.8.2",
+    )
+    go_repository(
         name = "com_github_common_nighthawk_go_figure",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/common-nighthawk/go-figure",

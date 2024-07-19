@@ -37,9 +37,9 @@ type RankContextArgs struct {
 }
 
 type RecordContextArgs struct {
-	InteractionID         string
-	UsedContextItems      []InputContextItem
-	DiscardedContextItems []InputContextItem
+	InteractionID       string
+	UsedContextItems    []InputContextItem
+	IgnoredContextItems []InputContextItem
 }
 
 type InputContextItem struct {
@@ -96,5 +96,5 @@ func (f *FileChunkContextResolver) ChunkContent(ctx context.Context) (string, er
 type RankContextResolver interface {
 	Ranker() string
 	Used() []int32
-	Discarded() []int32
+	Ignored() []int32
 }

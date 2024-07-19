@@ -65,7 +65,8 @@ func TestGetLang_language(t *testing.T) {
 		t.Run(label, func(t *testing.T) {
 			lang, err := getLang(context.Background(),
 				test.file,
-				makeFileReader(test.file.Contents))
+				makeFileReader(test.file.Contents),
+				false)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -74,6 +75,91 @@ func TestGetLang_language(t *testing.T) {
 			}
 		})
 	}
+}
+
+type mockCloser struct {
+	closeFunc func() error
+}
+
+func (m *mockCloser) Close() error {
+	return m.closeFunc()
+}
+
+func TestGetLang_fileReader(t *testing.T) {
+	t.Run("If the file reader is opened, it must be closed", func(t *testing.T) {
+
+		openCalled := false
+		closeCalled := false
+
+		fakeFileReader := func(ctx context.Context, path string) (io.ReadCloser, error) {
+			openCalled = true
+			return struct {
+				io.Reader
+				io.Closer
+			}{
+				Reader: strings.NewReader(""),
+				Closer: &mockCloser{closeFunc: func() error {
+					closeCalled = true
+					return nil
+				}},
+			}, nil
+		}
+
+		_, err := getLang(context.Background(),
+			fi{"a.java", ""},
+			fakeFileReader,
+			false)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !openCalled {
+			t.Fatal("Open should have been called")
+		}
+
+		if !closeCalled {
+			t.Error("Close should have been called")
+		}
+	})
+
+	t.Run("If the file reader is NOT opened, it should not be closed", func(t *testing.T) {
+
+		openCalled := false
+		closeCalled := false
+
+		fakeFileReader := func(ctx context.Context, path string) (io.ReadCloser, error) {
+			openCalled = true
+			return struct {
+				io.Reader
+				io.Closer
+			}{
+				Reader: strings.NewReader(""),
+				Closer: &mockCloser{closeFunc: func() error {
+					closeCalled = true
+					return nil
+				}},
+			}, nil
+		}
+
+		_, err := getLang(context.Background(),
+			fi{"a.java", ""},
+			fakeFileReader,
+			true)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if openCalled {
+			t.Fatal("Open should NOT have been called")
+		}
+
+		if closeCalled {
+			t.Error("Close should NOT have been called")
+		}
+	})
+
 }
 
 func makeFileReader(contents string) func(context.Context, string) (io.ReadCloser, error) {
@@ -135,7 +221,7 @@ func TestGet_readFile(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.file.Name(), func(t *testing.T) {
 			fr := makeFileReader(test.file.(fi).Contents)
-			lang, err := getLang(context.Background(), test.file, fr)
+			lang, err := getLang(context.Background(), test.file, fr, false)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -169,7 +255,7 @@ func BenchmarkGetLang(b *testing.B) {
 	b.ResetTimer()
 	for range b.N {
 		for _, file := range files {
-			_, err = getLang(context.Background(), file, fr)
+			_, err = getLang(context.Background(), file, fr, false)
 			if err != nil {
 				b.Fatal(err)
 			}

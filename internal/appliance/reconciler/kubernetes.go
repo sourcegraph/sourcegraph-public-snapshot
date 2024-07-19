@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
@@ -63,7 +64,11 @@ func createOrUpdateObject[R client.Object](
 	ctx context.Context, r *Reconciler, updateIfChanged any,
 	owner client.Object, obj, objKind R,
 ) error {
-	logger := log.FromContext(ctx).WithValues("kind", obj.GetObjectKind().GroupVersionKind(), "namespace", obj.GetNamespace(), "name", obj.GetName())
+	gvk, err := apiutil.GVKForObject(obj, r.Scheme)
+	if err != nil {
+		return errors.Wrap(err, "getting GVK for object")
+	}
+	logger := log.FromContext(ctx).WithValues("kind", gvk.String(), "namespace", obj.GetNamespace(), "name", obj.GetName())
 	namespacedName := types.NamespacedName{Namespace: obj.GetNamespace(), Name: obj.GetName()}
 
 	cfgHash, err := configHash(updateIfChanged)
@@ -148,8 +153,12 @@ func ensureObjectDeleted[T client.Object](ctx context.Context, r *Reconciler, ow
 			return nil
 		}
 	}
+	gvk, err := apiutil.GVKForObject(obj, r.Scheme)
+	if err != nil {
+		return errors.Wrap(err, "getting GVK for object")
+	}
 
-	logger := log.FromContext(ctx).WithValues("kind", obj.GetObjectKind().GroupVersionKind(), "namespace", obj.GetNamespace(), "name", obj.GetName())
+	logger := log.FromContext(ctx).WithValues("kind", gvk.String(), "namespace", obj.GetNamespace(), "name", obj.GetName())
 
 	if !isControlledBy(owner, obj) {
 		logger.Info("refusing to delete non-owned resource")

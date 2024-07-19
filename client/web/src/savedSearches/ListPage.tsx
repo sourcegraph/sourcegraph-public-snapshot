@@ -32,12 +32,14 @@ import {
     type SavedSearchesResult,
     type SavedSearchesVariables,
 } from '../graphql-operations'
+import { LibraryItemStatusBadge, LibraryItemVisibilityBadge } from '../library/itemBadges'
 import { useAffiliatedNamespaces } from '../namespaces/useAffiliatedNamespaces'
 import { PageRoutes } from '../routes.constants'
 import { useNavbarQueryState } from '../stores'
 
 import { savedSearchesQuery } from './graphql'
 import { telemetryRecordSavedSearchViewSearchResults } from './telemetry'
+import { urlToEditSavedSearch } from './util'
 
 import styles from './ListPage.module.scss'
 
@@ -67,6 +69,8 @@ const SavedSearchNode: FunctionComponent<
                 Run search
             </Badge>
             <span className={styles.searchLinkDescription}>{savedSearch.description}</span>
+            <LibraryItemVisibilityBadge item={savedSearch} />
+            <LibraryItemStatusBadge item={savedSearch} />
         </Button>
         <div className="flex-1" />
         <Badge variant="outlineSecondary" tooltip="Owner">
@@ -77,7 +81,7 @@ const SavedSearchNode: FunctionComponent<
             <Icon aria-label="Permalink" svgPath={mdiLink} />
         </Button>
         {savedSearch.viewerCanAdminister && (
-            <Button to={`${savedSearch.url}/edit`} variant="secondary" as={Link}>
+            <Button to={urlToEditSavedSearch(savedSearch)} variant="secondary" as={Link}>
                 Edit
             </Button>
         )}
@@ -98,29 +102,27 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
 
     const { namespaces, loading: namespacesLoading, error: namespacesError } = useAffiliatedNamespaces()
     const filters = useMemo<
-        Filter<
-            Exclude<keyof SavedSearchesVariables, PaginationKeys | 'query'>,
-            Partial<Omit<SavedSearchesVariables, PaginationKeys | 'query'>>
-        >[]
+        Filter<'drafts' | 'owner' | 'order', Partial<Omit<SavedSearchesVariables, PaginationKeys | 'query'>>>[]
     >(
         () => [
             {
-                label: 'Sort',
+                label: 'Show drafts',
                 type: 'select',
-                id: 'orderBy',
+                id: 'drafts',
+                tooltip: 'Include draft saved searches',
                 options: [
                     {
-                        value: 'updated-at-desc',
-                        label: 'Recently updated',
+                        value: 'true',
+                        label: 'Yes',
                         args: {
-                            orderBy: SavedSearchesOrderBy.SAVED_SEARCH_UPDATED_AT,
+                            includeDrafts: true,
                         },
                     },
                     {
-                        value: 'description-asc',
-                        label: 'By description',
+                        value: 'false',
+                        label: 'No',
                         args: {
-                            orderBy: SavedSearchesOrderBy.SAVED_SEARCH_DESCRIPTION,
+                            includeDrafts: false,
                         },
                     },
                 ],
@@ -143,6 +145,27 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
                             owner: namespace.id,
                         },
                     })) ?? []),
+                ],
+            },
+            {
+                label: 'Sort',
+                type: 'select',
+                id: 'order',
+                options: [
+                    {
+                        value: 'updated-at-desc',
+                        label: 'Recently updated',
+                        args: {
+                            orderBy: SavedSearchesOrderBy.SAVED_SEARCH_UPDATED_AT,
+                        },
+                    },
+                    {
+                        value: 'description-asc',
+                        label: 'By description',
+                        args: {
+                            orderBy: SavedSearchesOrderBy.SAVED_SEARCH_DESCRIPTION,
+                        },
+                    },
                 ],
             },
         ],

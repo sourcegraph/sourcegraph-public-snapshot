@@ -1,0 +1,56 @@
+query RepositoryComparison($repoName: String!, $base: String, $head: String) {
+    repository(name: $repoName) {
+        comparison(base: $base, head: $head) {
+            range {
+                baseRevSpec {
+                    object {
+                        oid
+                    }
+                }
+                headRevSpec {
+                    object {
+                        oid
+                    }
+                }
+            }
+        }
+    }
+}
+
+query RepositoryComparisonCommits($repoName: String!, $base: String, $head: String, $first: Int, $path: String) {
+    repository(name: $repoName) {
+        comparison(base: $base, head: $head) {
+            commits(first: $first, path: $path) {
+                nodes {
+                    ...Commit
+                }
+                pageInfo {
+                    hasNextPage
+                }
+            }
+        }
+    }
+}
+
+query RepositoryComparisonDiffs(
+    $repoName: String!
+    $base: String
+    $head: String
+    $first: Int
+    $after: String
+    $paths: [String!]
+) {
+    repository(name: $repoName) {
+        comparison(base: $base, head: $head) {
+            fileDiffs(first: $first, after: $after, paths: $paths) {
+                nodes {
+                    ...FileDiff_Diff
+                }
+                pageInfo {
+                    hasNextPage
+                    endCursor
+                }
+            }
+        }
+    }
+}

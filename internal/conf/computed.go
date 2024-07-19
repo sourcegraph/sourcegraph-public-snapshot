@@ -293,6 +293,30 @@ func CodyIntentConfig() *schema.IntentDetectionAPI {
 	return Get().ExperimentalFeatures.CodyServerSideContext.IntentDetectionAPI
 }
 
+type CodyRerankerBackend string
+
+const (
+	CodyRerankerIdentity CodyRerankerBackend = "identity"
+	CodyRerankerCohere   CodyRerankerBackend = "cohere"
+)
+
+func CodyReranker() CodyRerankerBackend {
+	if Get().ExperimentalFeatures == nil || Get().ExperimentalFeatures.CodyServerSideContext == nil || Get().ExperimentalFeatures.CodyServerSideContext.Reranker == nil {
+		return CodyRerankerIdentity
+	}
+	if Get().ExperimentalFeatures.CodyServerSideContext.Reranker.Identity != nil {
+		return CodyRerankerIdentity
+	}
+	return CodyRerankerCohere
+}
+
+func CodyRerankerCohereConfig() *schema.CodyRerankerCohere {
+	if CodyReranker() != CodyRerankerCohere {
+		return nil
+	}
+	return Get().ExperimentalFeatures.CodyServerSideContext.Reranker.Cohere
+}
+
 func ExecutorsEnabled() bool {
 	return Get().ExecutorsAccessToken != ""
 }

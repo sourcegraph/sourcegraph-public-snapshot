@@ -37,7 +37,14 @@ interface PromiseStore<D, E = Error> extends Readable<Loadable<D | null, E>> {
      * is optional to make it easier to work with optional data coming from loaders.
      */
     set: (promise?: PromiseLike<D> | null) => void
+
+    /**
+     * Resets the store to its initial state.
+     */
+    reset: () => void
 }
+
+const initialLoadable: Loadable<any, any> = { value: null, error: null, pending: true }
 
 /**
  * Returns multiple stores to track the promises state, resolved value and rejection error.
@@ -46,7 +53,7 @@ interface PromiseStore<D, E = Error> extends Readable<Loadable<D | null, E>> {
 export function createPromiseStore<D, E = Error>(): PromiseStore<D, E> {
     let currentPromise: PromiseLike<D> | null | undefined
 
-    const resultStore = writable<Loadable<D | null, E>>({ value: null, error: null, pending: true })
+    const resultStore = writable<Loadable<D | null, E>>(initialLoadable)
 
     function resolve(promise?: PromiseLike<D> | null) {
         currentPromise = promise
@@ -78,6 +85,9 @@ export function createPromiseStore<D, E = Error>(): PromiseStore<D, E> {
             if (promise !== currentPromise) {
                 resolve(promise)
             }
+        },
+        reset() {
+            resultStore.set(initialLoadable)
         },
     }
 }

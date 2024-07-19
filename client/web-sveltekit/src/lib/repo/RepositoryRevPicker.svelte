@@ -28,11 +28,11 @@
 
 <script lang="ts">
     import type { Placement } from '@floating-ui/dom'
+    import type { HTMLButtonAttributes } from 'svelte/elements'
 
     import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
-    import type { ResolvedRevision } from '$lib/repo/utils'
     import { replaceRevisionInURL } from '$lib/shared'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
@@ -45,45 +45,50 @@
     import Picker from './Picker.svelte'
     import RepositoryRevPickerItem from './RepositoryRevPickerItem.svelte'
 
+    type $$Props = HTMLButtonAttributes & {
+        repoURL: string
+        revision?: string
+        commitID?: string
+        defaultBranch: string
+        placement?: Placement
+        onSelect?: (revision: string) => void
+        getRepositoryTags: (query: string) => PromiseLike<RepositoryTags>
+        getRepositoryCommits: (query: string) => PromiseLike<RepositoryCommits>
+        getRepositoryBranches: (query: string) => PromiseLike<RepositoryBranches>
+    }
+
     export let repoURL: string
-    export let revision: string | undefined
-    export let resolvedRevision: ResolvedRevision
+    export let revision: string | undefined = undefined
+    export let commitID: string | undefined = undefined
+    export let defaultBranch: string
     export let placement: Placement = 'right-start'
+    /**
+     * Optional handler for revision selection.
+     * If not provided, the default handler will replace the revision in the current URL.
+     */
+    export let onSelect = defaultHandleSelect
 
     // Pickers data sources
     export let getRepositoryTags: (query: string) => PromiseLike<RepositoryTags>
     export let getRepositoryCommits: (query: string) => PromiseLike<RepositoryCommits>
     export let getRepositoryBranches: (query: string) => PromiseLike<RepositoryBranches>
 
+    function defaultHandleSelect(revision: string) {
+        goto(replaceRevisionInURL(location.pathname + location.search + location.hash, revision))
+    }
+
     // Show specific short revision if it's presented in the URL
     // otherwise fallback on the default branch name
-    $: revisionLabel = revision
-        ? revision === resolvedRevision.commitID
-            ? resolvedRevision.commitID.slice(0, 7)
-            : revision
-        : resolvedRevision.defaultBranch ?? ''
-
-    $: isOnSpecificRev = revisionLabel !== resolvedRevision.defaultBranch
-
-    const handleGoToDefaultBranch = (defaultBranch: string): void => {
-        goto(replaceRevisionInURL(location.pathname + location.search + location.hash, defaultBranch))
-    }
-
-    const handleBranchOrTagSelect = (branchOrTag: RepositoryBranch | RepositoryTag): void => {
-        goto(replaceRevisionInURL(location.pathname + location.search + location.hash, branchOrTag.abbrevName))
-    }
-
-    const handleCommitSelect = (commit: RepositoryGitCommit): void => {
-        goto(replaceRevisionInURL(location.pathname + location.search + location.hash, commit.oid))
-    }
+    $: revisionLabel = revision ? (revision === commitID ? commitID.slice(0, 7) : revision) : defaultBranch ?? ''
+    $: isOnSpecificRev = revisionLabel !== defaultBranch
 
     const buttonClass = getButtonClassName({ variant: 'secondary', outline: false, size: 'sm' })
 </script>
 
 <Popover let:registerTrigger let:registerTarget let:toggle {placement}>
-    <div use:registerTarget data-repo-rev-picker-trigger>
+    <span use:registerTarget data-repo-rev-picker-trigger>
         <ButtonGroup>
-            <button use:registerTrigger class="{buttonClass} rev-name" on:click={() => toggle()}>
+            <button use:registerTrigger class="{buttonClass} rev-name" on:click={() => toggle()} {...$$restProps}>
                 @{revisionLabel}
             </button>
 
@@ -102,14 +107,14 @@
                 <Tooltip tooltip="Go to default branch">
                     <button
                         class="{buttonClass} close-button hoverable-button"
-                        on:click={() => handleGoToDefaultBranch(resolvedRevision.defaultBranch)}
+                        on:click={() => onSelect(defaultBranch)}
                     >
                         <Icon icon={ILucideX} aria-hidden="true" />
                     </button>
                 </Tooltip>
             {/if}
         </ButtonGroup>
-    </div>
+    </span>
 
     <div slot="content" class="content" let:toggle>
         <Tabs>
@@ -121,7 +126,7 @@
                     toOption={branch => ({ value: branch.id, label: branch.displayName })}
                     onSelect={branch => {
                         toggle(false)
-                        handleBranchOrTagSelect(branch)
+                        onSelect(branch.abbrevName)
                     }}
                     let:value
                 >
@@ -133,7 +138,7 @@
                         <svelte:fragment slot="title">
                             <Icon icon={ILucideGitBranch} inline aria-hidden="true" />
                             <Badge variant="link">{value.displayName}</Badge>
-                            {#if value.displayName === resolvedRevision.defaultBranch}
+                            {#if value.displayName === defaultBranch}
                                 <Badge variant="secondary" small>DEFAULT</Badge>
                             {/if}
                         </svelte:fragment>
@@ -148,7 +153,7 @@
                     toOption={tag => ({ value: tag.id, label: tag.displayName })}
                     onSelect={tag => {
                         toggle(false)
-                        handleBranchOrTagSelect(tag)
+                        onSelect(tag.abbrevName)
                     }}
                     let:value
                 >
@@ -167,7 +172,7 @@
                     toOption={commit => ({ value: commit.id, label: commit.oid })}
                     onSelect={commit => {
                         toggle(false)
-                        handleCommitSelect(commit)
+                        onSelect(commit.oid)
                     }}
                     let:value
                 >
@@ -185,7 +190,7 @@
 </Popover>
 
 <style lang="scss">
-    div[data-repo-rev-picker-trigger] > :global(*) {
+    span[data-repo-rev-picker-trigger] > :global(*) {
         width: 100%;
         height: 100%;
     }

@@ -21,6 +21,8 @@ go_library(
         "//lib/errors",
         "//lib/pointers",
         "//schema",
+        "@com_github_cohere_ai_cohere_go_v2//:cohere-go",
+        "@com_github_cohere_ai_cohere_go_v2//client",
         "@com_github_sourcegraph_conc//iter",
         "@com_github_sourcegraph_log//:log",
     ],
