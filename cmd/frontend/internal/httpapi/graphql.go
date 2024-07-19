@@ -83,7 +83,7 @@ func writeViolationError(w http.ResponseWriter, info violationInfo) error {
 					"type":     info.violationType,
 					"limit":    info.limit,
 					"actual":   info.actual,
-					"docs_url": "https://sourcegraph.com/docs/api/graphql#cost-limits",
+					"docs_url": conf.ExternalURL() + "/help/api/graphql#cost-limits",
 				},
 			},
 		},
@@ -161,11 +161,11 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 				limit         int
 				violationType string
 			}{
-				{rl.GraphQLMaxAliases, rl.GraphQLMaxAliases, "alias count"},
-				{rl.GraphQLMaxFieldCount, rl.GraphQLMaxFieldCount, "field count"},
-				{rl.GraphQLMaxDepth, rl.GraphQLMaxDepth, "query depth"},
-				{rl.GraphQLMaxDuplicateFieldCount, rl.GraphQLMaxDuplicateFieldCount, "duplicate field count"},
-				{rl.GraphQLMaxUniqueFieldCount, rl.GraphQLMaxUniqueFieldCount, "unique field count"},
+				{cost.AliasCount, rl.GraphQLMaxAliases, "alias count"},
+				{cost.FieldCount, rl.GraphQLMaxFieldCount, "field count"},
+				{cost.MaxDepth, rl.GraphQLMaxDepth, "query depth"},
+				{cost.HighestDuplicateFieldCount, rl.GraphQLMaxDuplicateFieldCount, "duplicate field count"},
+				{cost.UniqueFieldCount, rl.GraphQLMaxUniqueFieldCount, "unique field count"},
 			}
 
 			if !isInternal {
