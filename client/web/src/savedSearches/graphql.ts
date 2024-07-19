@@ -10,9 +10,6 @@ const savedSearchFragment = gql`
             __typename
             id
             namespaceName
-            ... on Org {
-                displayName
-            }
         }
         visibility
         createdAt

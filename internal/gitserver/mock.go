@@ -78,6 +78,9 @@ type MockGitserverServiceClient struct {
 	// MergeBaseFunc is an instance of a mock function object controlling
 	// the behavior of the method MergeBase.
 	MergeBaseFunc *GitserverServiceClientMergeBaseFunc
+	// MergeBaseOctopusFunc is an instance of a mock function object
+	// controlling the behavior of the method MergeBaseOctopus.
+	MergeBaseOctopusFunc *GitserverServiceClientMergeBaseOctopusFunc
 	// PerforceGetChangelistFunc is an instance of a mock function object
 	// controlling the behavior of the method PerforceGetChangelist.
 	PerforceGetChangelistFunc *GitserverServiceClientPerforceGetChangelistFunc
@@ -216,6 +219,11 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 		},
 		MergeBaseFunc: &GitserverServiceClientMergeBaseFunc{
 			defaultHook: func(context.Context, *v1.MergeBaseRequest, ...grpc.CallOption) (r0 *v1.MergeBaseResponse, r1 error) {
+				return
+			},
+		},
+		MergeBaseOctopusFunc: &GitserverServiceClientMergeBaseOctopusFunc{
+			defaultHook: func(context.Context, *v1.MergeBaseOctopusRequest, ...grpc.CallOption) (r0 *v1.MergeBaseOctopusResponse, r1 error) {
 				return
 			},
 		},
@@ -387,6 +395,11 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 				panic("unexpected invocation of MockGitserverServiceClient.MergeBase")
 			},
 		},
+		MergeBaseOctopusFunc: &GitserverServiceClientMergeBaseOctopusFunc{
+			defaultHook: func(context.Context, *v1.MergeBaseOctopusRequest, ...grpc.CallOption) (*v1.MergeBaseOctopusResponse, error) {
+				panic("unexpected invocation of MockGitserverServiceClient.MergeBaseOctopus")
+			},
+		},
 		PerforceGetChangelistFunc: &GitserverServiceClientPerforceGetChangelistFunc{
 			defaultHook: func(context.Context, *v1.PerforceGetChangelistRequest, ...grpc.CallOption) (*v1.PerforceGetChangelistResponse, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.PerforceGetChangelist")
@@ -516,6 +529,9 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		},
 		MergeBaseFunc: &GitserverServiceClientMergeBaseFunc{
 			defaultHook: i.MergeBase,
+		},
+		MergeBaseOctopusFunc: &GitserverServiceClientMergeBaseOctopusFunc{
+			defaultHook: i.MergeBaseOctopus,
 		},
 		PerforceGetChangelistFunc: &GitserverServiceClientPerforceGetChangelistFunc{
 			defaultHook: i.PerforceGetChangelist,
@@ -2853,6 +2869,128 @@ func (c GitserverServiceClientMergeBaseFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientMergeBaseFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverServiceClientMergeBaseOctopusFunc describes the behavior when
+// the MergeBaseOctopus method of the parent MockGitserverServiceClient
+// instance is invoked.
+type GitserverServiceClientMergeBaseOctopusFunc struct {
+	defaultHook func(context.Context, *v1.MergeBaseOctopusRequest, ...grpc.CallOption) (*v1.MergeBaseOctopusResponse, error)
+	hooks       []func(context.Context, *v1.MergeBaseOctopusRequest, ...grpc.CallOption) (*v1.MergeBaseOctopusResponse, error)
+	history     []GitserverServiceClientMergeBaseOctopusFuncCall
+	mutex       sync.Mutex
+}
+
+// MergeBaseOctopus delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverServiceClient) MergeBaseOctopus(v0 context.Context, v1 *v1.MergeBaseOctopusRequest, v2 ...grpc.CallOption) (*v1.MergeBaseOctopusResponse, error) {
+	r0, r1 := m.MergeBaseOctopusFunc.nextHook()(v0, v1, v2...)
+	m.MergeBaseOctopusFunc.appendCall(GitserverServiceClientMergeBaseOctopusFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the MergeBaseOctopus
+// method of the parent MockGitserverServiceClient instance is invoked and
+// the hook queue is empty.
+func (f *GitserverServiceClientMergeBaseOctopusFunc) SetDefaultHook(hook func(context.Context, *v1.MergeBaseOctopusRequest, ...grpc.CallOption) (*v1.MergeBaseOctopusResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MergeBaseOctopus method of the parent MockGitserverServiceClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverServiceClientMergeBaseOctopusFunc) PushHook(hook func(context.Context, *v1.MergeBaseOctopusRequest, ...grpc.CallOption) (*v1.MergeBaseOctopusResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverServiceClientMergeBaseOctopusFunc) SetDefaultReturn(r0 *v1.MergeBaseOctopusResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.MergeBaseOctopusRequest, ...grpc.CallOption) (*v1.MergeBaseOctopusResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverServiceClientMergeBaseOctopusFunc) PushReturn(r0 *v1.MergeBaseOctopusResponse, r1 error) {
+	f.PushHook(func(context.Context, *v1.MergeBaseOctopusRequest, ...grpc.CallOption) (*v1.MergeBaseOctopusResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverServiceClientMergeBaseOctopusFunc) nextHook() func(context.Context, *v1.MergeBaseOctopusRequest, ...grpc.CallOption) (*v1.MergeBaseOctopusResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverServiceClientMergeBaseOctopusFunc) appendCall(r0 GitserverServiceClientMergeBaseOctopusFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverServiceClientMergeBaseOctopusFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverServiceClientMergeBaseOctopusFunc) History() []GitserverServiceClientMergeBaseOctopusFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverServiceClientMergeBaseOctopusFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverServiceClientMergeBaseOctopusFuncCall is an object that
+// describes an invocation of method MergeBaseOctopus on an instance of
+// MockGitserverServiceClient.
+type GitserverServiceClientMergeBaseOctopusFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.MergeBaseOctopusRequest
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []grpc.CallOption
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v1.MergeBaseOctopusResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverServiceClientMergeBaseOctopusFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverServiceClientMergeBaseOctopusFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

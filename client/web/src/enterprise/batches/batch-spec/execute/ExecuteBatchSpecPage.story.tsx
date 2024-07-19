@@ -29,9 +29,9 @@ import {
 } from '../batch-spec.mock'
 
 import {
+    type queryWorkspacesList as _queryWorkspacesList,
     BATCH_SPEC_WORKSPACE_BY_ID,
     FETCH_BATCH_SPEC_EXECUTION,
-    type queryWorkspacesList as _queryWorkspacesList,
 } from './backend'
 import { ExecuteBatchSpecPage } from './ExecuteBatchSpecPage'
 
@@ -58,7 +58,6 @@ export default config
 const MOCK_ORGANIZATION = {
     __typename: 'Org',
     name: 'acme-corp',
-    displayName: 'ACME Corporation',
     id: 'acme-corp-id',
 }
 
@@ -142,12 +141,12 @@ const PROCESSING_WORKSPACE_WITH_END_TIMES = {
     ...PROCESSING_WORKSPACE,
     finishedAt: addMinutes(Date.parse(PROCESSING_WORKSPACE.startedAt!), 15).toISOString(),
     steps: [
-        PROCESSING_WORKSPACE.steps[0]!,
+        PROCESSING_WORKSPACE.steps[0],
         {
             ...PROCESSING_WORKSPACE.steps[1],
             startedAt: null,
         },
-        PROCESSING_WORKSPACE.steps[2]!,
+        PROCESSING_WORKSPACE.steps[2],
     ],
 }
 

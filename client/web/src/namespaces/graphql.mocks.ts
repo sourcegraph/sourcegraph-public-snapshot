@@ -1,8 +1,8 @@
-import { type MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
-import { type ViewerAffiliatedNamespacesResult, type ViewerAffiliatedNamespacesVariables } from '../graphql-operations'
+import type { ViewerAffiliatedNamespacesResult, ViewerAffiliatedNamespacesVariables } from '../graphql-operations'
 
 import { viewerAffiliatedNamespacesQuery } from './useAffiliatedNamespaces'
 
@@ -21,13 +21,11 @@ export const viewerAffiliatedNamespacesMock: MockedResponse<
                             __typename: 'Org',
                             id: 'org1',
                             namespaceName: 'abc',
-                            displayName: 'ABC',
                         },
                         {
                             __typename: 'Org',
                             id: 'org2',
                             namespaceName: 'xyz',
-                            displayName: 'XYZ',
                         },
                     ],
                 },

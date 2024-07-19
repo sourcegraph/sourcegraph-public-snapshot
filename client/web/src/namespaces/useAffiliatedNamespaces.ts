@@ -71,9 +71,6 @@ export const viewerAffiliatedNamespacesQuery = gql`
                     __typename
                     id
                     namespaceName
-                    ... on Org {
-                        displayName
-                    }
                 }
             }
         }

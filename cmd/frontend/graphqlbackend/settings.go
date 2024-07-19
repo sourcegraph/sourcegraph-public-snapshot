@@ -64,6 +64,9 @@ var globalSettingsAllowEdits, _ = strconv.ParseBool(env.Get("GLOBAL_SETTINGS_ALL
 // like database.Settings.CreateIfUpToDate, except it handles notifying the
 // query-runner if any saved queries have changed.
 func settingsCreateIfUpToDate(ctx context.Context, db database.DB, subject *settingsSubjectResolver, lastID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
+	// 🚨 SECURITY: Ensure that we've already checked the viewer's access to the subject's settings.
+	subject.assertCheckedAccess()
+
 	if os.Getenv("GLOBAL_SETTINGS_FILE") != "" && subject.site != nil && !globalSettingsAllowEdits {
 		return nil, errors.New("Updating global settings not allowed when using GLOBAL_SETTINGS_FILE")
 	}
