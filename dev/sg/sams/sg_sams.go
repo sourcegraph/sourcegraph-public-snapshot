@@ -94,7 +94,7 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 		Subcommands: []*cli.Command{{
 			Name:      "create",
 			ArgsUsage: "<display name>",
-			Usage:     "Create an IdP client in the target SAMS insance",
+			Usage:     "Create an IdP client in the target SAMS instance",
 			Flags: []cli.Flag{
 				&cli.StringSliceFlag{
 					Name:     "redirect-uris",
