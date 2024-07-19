@@ -188,9 +188,9 @@ test.describe('file sidebar', () => {
             }),
         })
 
-        await expect(page.getByText(/500/)).not.toBeVisible()
 
         await page.goto(`/${repoName}`)
+        await expect(page.getByText(/500/)).not.toBeVisible()
         await page.getByLabel('Open sidebar').click()
         await expect(page.getByRole('treeitem', {name: 'README.md'})).toBeVisible()
     });
