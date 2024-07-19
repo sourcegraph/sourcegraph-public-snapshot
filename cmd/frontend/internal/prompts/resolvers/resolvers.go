@@ -170,7 +170,7 @@ func (r *promptResolver) ViewerCanAdminister(ctx context.Context) (bool, error) 
 	// administer it if they are authorized for the namespace (as an org member or their own user
 	// account).
 	err := graphqlbackend.CheckAuthorizedForNamespaceByIDs(ctx, r.db, r.s.Owner)
-	return err == nil, err
+	return err == nil, nil
 }
 
 func (r *Resolver) toPromptResolver(entry types.Prompt) *promptResolver {

@@ -44,6 +44,7 @@ export const PromptPage: FunctionComponent<{
                 </PageHeader.Heading>
             </PageHeader>
             {children}
+            <div className="pb-4" />
         </Page>
     )
 }

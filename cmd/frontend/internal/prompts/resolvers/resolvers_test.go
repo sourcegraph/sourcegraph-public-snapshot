@@ -567,10 +567,8 @@ func TestPromptPermissions(t *testing.T) {
 				}
 				if result != nil {
 					gotCanAdminister, err := result.ViewerCanAdminister(ctx)
-					if tt.opErrIs == nil {
-						require.NoError(t, err)
-					} else {
-						require.ErrorAs(t, err, &tt.opErrIs)
+					if err != nil {
+						t.Fatal(err)
 					}
 					if gotCanAdminister != tt.viewerCanAdminister {
 						t.Errorf("got %v, want %v", gotCanAdminister, tt.viewerCanAdminister)
