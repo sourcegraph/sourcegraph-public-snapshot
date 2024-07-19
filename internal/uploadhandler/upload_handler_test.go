@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/object"
-	uploadstoremocks "github.com/sourcegraph/sourcegraph/internal/object/mocks"
+	objectmocks "github.com/sourcegraph/sourcegraph/internal/object/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -34,7 +34,7 @@ const testCommit = "deadbeef01deadbeef02deadbeef03deadbeef04"
 
 func TestHandleEnqueueSinglePayload(t *testing.T) {
 	mockDBStore := NewMockDBStore[testUploadMetadata]()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockUploadStore := objectmocks.NewMockStorage()
 
 	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(tx DBStore[testUploadMetadata]) error) error { return f(mockDBStore) })
 	mockDBStore.InsertUploadFunc.SetDefaultReturn(42, nil)
@@ -113,7 +113,7 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 
 func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 	mockDBStore := NewMockDBStore[testUploadMetadata]()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockUploadStore := objectmocks.NewMockStorage()
 
 	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(tx DBStore[testUploadMetadata]) error) error { return f(mockDBStore) })
 	mockDBStore.InsertUploadFunc.SetDefaultReturn(42, nil)
@@ -173,7 +173,7 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 
 func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	mockDBStore := NewMockDBStore[testUploadMetadata]()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockUploadStore := objectmocks.NewMockStorage()
 
 	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(tx DBStore[testUploadMetadata]) error) error { return f(mockDBStore) })
 	mockDBStore.InsertUploadFunc.SetDefaultReturn(42, nil)
@@ -231,7 +231,7 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 
 func TestHandleEnqueueMultipartUpload(t *testing.T) {
 	mockDBStore := NewMockDBStore[testUploadMetadata]()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockUploadStore := objectmocks.NewMockStorage()
 
 	upload := Upload[testUploadMetadata]{
 		ID:            42,
@@ -301,7 +301,7 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 
 func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 	mockDBStore := NewMockDBStore[testUploadMetadata]()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockUploadStore := objectmocks.NewMockStorage()
 
 	upload := Upload[testUploadMetadata]{
 		ID:            42,
@@ -362,7 +362,7 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 
 func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 	mockDBStore := NewMockDBStore[testUploadMetadata]()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockUploadStore := objectmocks.NewMockStorage()
 
 	upload := Upload[testUploadMetadata]{
 		ID:            42,
