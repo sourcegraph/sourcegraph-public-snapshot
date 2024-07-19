@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -234,18 +233,14 @@ func (s *membersConnectionStore) UnmarshalCursor(cursor string, _ database.Order
 	return []any{nodeID}, nil
 }
 
-func (o *OrgResolver) settingsSubject() api.SettingsSubject {
-	return api.SettingsSubject{Org: &o.org.ID}
-}
-
 func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	// 🚨 SECURITY: Only organization members and site admins (not on cloud) may access the settings,
-	// because they may contain secrets or other sensitive data.
-	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
+	// 🚨 SECURITY: Check that the viewer can access these settings.
+	subject, err := settingsSubjectForNodeAndCheckAccess(ctx, o)
+	if err != nil {
 		return nil, err
 	}
 
-	settings, err := o.db.Settings().GetLatest(ctx, o.settingsSubject())
+	settings, err := o.db.Settings().GetLatest(ctx, subject.toSubject())
 	if err != nil {
 		return nil, err
 	}
@@ -253,14 +248,21 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 		return nil, nil
 	}
 
-	return &settingsResolver{db: o.db, subject: &settingsSubjectResolver{org: o}, settings: settings}, nil
+	return &settingsResolver{db: o.db, subject: subject, settings: settings}, nil
 }
 
-func (o *OrgResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: o.db, subject: &settingsSubjectResolver{org: o}}
+func (o *OrgResolver) SettingsCascade(ctx context.Context) (*settingsCascade, error) {
+	// 🚨 SECURITY: Check that the viewer can access these settings.
+	subject, err := settingsSubjectForNodeAndCheckAccess(ctx, o)
+	if err != nil {
+		return nil, err
+	}
+	return &settingsCascade{db: o.db, subject: subject}, nil
 }
 
-func (o *OrgResolver) ConfigurationCascade() *settingsCascade { return o.SettingsCascade() }
+func (o *OrgResolver) ConfigurationCascade(ctx context.Context) (*settingsCascade, error) {
+	return o.SettingsCascade(ctx)
+}
 
 func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
 	if actor := sgactor.FromContext(ctx); actor.IsAuthenticated() {
