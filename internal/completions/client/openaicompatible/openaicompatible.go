@@ -72,7 +72,7 @@ func (c *client) Complete(
 
 	requestID := c.rng.Uint32()
 	providerConfig := request.ModelConfigInfo.Provider.ServerSideConfig.OpenAICompatible
-	if providerConfig.DebugConnections {
+	if providerConfig.EnableVerboseLogs {
 		logger.Info("request",
 			log.Uint32("id", requestID),
 			log.String("kind", "non-streaming"),
@@ -110,7 +110,7 @@ func (c *client) Complete(
 		)
 		return nil, errors.Wrap(err, "decoding response")
 	}
-	if providerConfig.DebugConnections {
+	if providerConfig.EnableVerboseLogs {
 		// When debugging connections, log more verbose information like the actual completion we got back.
 		completion := ""
 		if len(response.Choices) > 0 {
@@ -268,7 +268,7 @@ func (c *client) Stream(
 
 	requestID := c.rng.Uint32()
 	providerConfig := request.ModelConfigInfo.Provider.ServerSideConfig.OpenAICompatible
-	if providerConfig.DebugConnections {
+	if providerConfig.EnableVerboseLogs {
 		logger.Info("request",
 			log.Uint32("id", requestID),
 			log.String("kind", "streaming"),
@@ -308,7 +308,7 @@ func (c *client) Stream(
 		return errors.Wrap(err, "NewConnection")
 	}
 
-	if providerConfig.DebugConnections {
+	if providerConfig.EnableVerboseLogs {
 		// When debugging connections, log more verbose information like the actual completion we got back.
 		logger.Info("request success",
 			log.Uint32("id", requestID),

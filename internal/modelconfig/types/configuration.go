@@ -72,62 +72,20 @@ type GenericProviderConfig struct {
 	Endpoint    string `json:"endpoint"`
 }
 
-// OpenAICompatibleServiceName is an enum for describing the names of services/software
-// which provide OpenAI-compatible APIs that we are currently aware of.
-type OpenAICompatibleServiceName string
-
-const (
-	OpenAICompatibleServiceNameHuggingfaceTGI OpenAICompatibleServiceName = "huggingface-tgi"
-	OpenAICompatibleServiceNameNvidiaNim      OpenAICompatibleServiceName = "nvidia-nim"
-	OpenAICompatibleServiceNameAwsLisa        OpenAICompatibleServiceName = "aws-lisa"
-	OpenAICompatibleServiceNameAwsLisaV2      OpenAICompatibleServiceName = "aws-lisa-v2"
-	OpenAICompatibleServiceNameOllama         OpenAICompatibleServiceName = "ollama"
-)
-
-// Returns (enum, ok bool) depending on whether or not s is a valid OpenAICompatibleServiceName
-// constant.
-func ValidateOpenAICompatibleServiceName(input string) (OpenAICompatibleServiceName, bool) {
-	for _, v := range []OpenAICompatibleServiceName{
-		OpenAICompatibleServiceNameHuggingfaceTGI,
-		OpenAICompatibleServiceNameNvidiaNim,
-		OpenAICompatibleServiceNameAwsLisa,
-		OpenAICompatibleServiceNameAwsLisaV2,
-		OpenAICompatibleServiceNameOllama,
-	} {
-		if input == string(v) {
-			return v, true
-		}
-	}
-	return "", false
-}
-
 // OpenAICompatibleProvider is a provider for connecting to OpenAI-compatible API endpoints
-// supplied by various third-party software. Much of this software does not follow the OpenAI
-// API protocol exactly, and so this provider configuration allows for much more extensive
-// configuration and even logic aware of the service on the other side.
+// supplied by various third-party software.
+//
+// Because many of these third-party providers provide slightly different semantics for the OpenAI API
+// protocol, the Sourcegraph instance exposes this provider configuration which allows for much more
+// extensive configuration than would be needed for the official OpenAI API.
 type OpenAICompatibleProviderConfig struct {
-	// ServiceName is the name of the service being connected to, e.g. "huggingface-tgi" being the
-	// name of the software actually hosting the OpenAI-compatible API endpoint. This is used to
-	// handle any nuance in communicating with that service, as different software has various
-	// bugs/quirks we may want to handle differently.
-	//
-	// This field may only be used if the service name is one we are aware of, i.e. a valid enum
-	// OpenAICompatibleServiceName.
-	ServiceName OpenAICompatibleServiceName `json:"serviceName,omitempty"`
-
-	// ServiceNameCustom is exactly the same as ServiceName, except it is used if the service name
-	// is not one currently known to Sourcegraph, i.e. it is not a valid OpenAICompatibleServiceName
-	// enum but rather just an arbitrary string the site admin plugged in. e.g. "my-enterprise-openai-api"
-	// or "brand-new-openai-compatible-software-that-is-popular"
-	ServiceNameCustom string `json:"serviceNameCustom,omitempty"`
-
-	// Endpoints where this API can be reached. If multiple are present, Sourcegraph should distribute
-	// load between them.
+	// Endpoints where this API can be reached. If multiple are present, Sourcegraph will distribute
+	// load between them as it sees fit.
 	Endpoints []OpenAICompatibleEndpoint `json:"endpoints,omitempty"`
 
 	// Whether to enable verbose logging of requests, allowing for grepping the logs for "OpenAICompatible"
 	// and seeing e.g. what requests Cody is actually sending to your API endpoint.
-	DebugConnections bool `json:"debugConnections,omitempty"`
+	EnableVerboseLogs bool `json:"enableVerboseLogs,omitempty"`
 }
 
 // A single API endpoint for an OpenAI-compatible API.
@@ -255,7 +213,7 @@ type AWSBedrockProvisionedThroughput struct {
 }
 
 type ServerSideModelConfigOpenAICompatible struct {
-	// APIModel is value actually sent to the OpenAI-compatible API in the "model" field. THis
+	// APIModel is value actually sent to the OpenAI-compatible API in the "model" field. This
 	// is less like a "model name" or "model identifier", and more like "an opaque, potentially
 	// secret string."
 	//
@@ -267,7 +225,7 @@ type ServerSideModelConfigOpenAICompatible struct {
 	//
 	// If this field is not an empty string, we treat it as an opaque string to be sent with API
 	// requests (similar to an access token) and use it for nothing else. If this field is not
-	// specified, we default to the ModelName.
+	// specified, we default to the Model.ModelName.
 	//
 	// Examples (these would be sent in the OpenAI /chat/completions `"model"` field):
 	//

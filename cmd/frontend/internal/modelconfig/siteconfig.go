@@ -176,23 +176,16 @@ func convertServerSideProviderConfig(cfg *schema.ServerSideProviderConfig) *type
 	} else if v := cfg.HuggingfaceTgi; v != nil {
 		return &types.ServerSideProviderConfig{
 			OpenAICompatible: &types.OpenAICompatibleProviderConfig{
-				ServiceName:      types.OpenAICompatibleServiceNameHuggingfaceTGI,
-				Endpoints:        convertOpenAICompatibleEndpoints(v.Endpoints),
-				DebugConnections: v.DebugConnections,
+				Endpoints:         convertOpenAICompatibleEndpoints(v.Endpoints),
+				EnableVerboseLogs: v.EnableVerboseLogs,
 			},
 		}
 	} else if v := cfg.Openaicompatible; v != nil {
-		providerConfig := types.OpenAICompatibleProviderConfig{
-			Endpoints:        convertOpenAICompatibleEndpoints(v.Endpoints),
-			DebugConnections: v.DebugConnections,
-		}
-		if serviceName, ok := types.ValidateOpenAICompatibleServiceName(v.ServiceName); ok {
-			providerConfig.ServiceName = serviceName
-		} else {
-			providerConfig.ServiceNameCustom = v.ServiceName
-		}
 		return &types.ServerSideProviderConfig{
-			OpenAICompatible: &providerConfig,
+			OpenAICompatible: &types.OpenAICompatibleProviderConfig{
+				Endpoints:         convertOpenAICompatibleEndpoints(v.Endpoints),
+				EnableVerboseLogs: v.EnableVerboseLogs,
+			},
 		}
 	} else if v := cfg.Sourcegraph; v != nil {
 		return &types.ServerSideProviderConfig{

@@ -2750,18 +2750,16 @@ type ServerSideProviderConfigGoogleProvider struct {
 	Type        string `json:"type"`
 }
 type ServerSideProviderConfigHuggingfaceTGIProvider struct {
-	// DebugConnections description: Whether to enable verbose logging of requests. When enabled, grep for 'OpenAICompatible' in the frontend container logs to see the requests Cody makes to the endpoint.
-	DebugConnections bool                        `json:"debugConnections,omitempty"`
-	Endpoints        []*OpenAICompatibleEndpoint `json:"endpoints"`
-	Type             string                      `json:"type"`
+	// EnableVerboseLogs description: Whether to enable verbose logging of requests. When enabled, grep for 'OpenAICompatible' in the frontend container logs to see the requests Cody makes to the endpoint.
+	EnableVerboseLogs bool                        `json:"enableVerboseLogs,omitempty"`
+	Endpoints         []*OpenAICompatibleEndpoint `json:"endpoints"`
+	Type              string                      `json:"type"`
 }
 type ServerSideProviderConfigOpenAICompatibleProvider struct {
-	// DebugConnections description: Whether to enable verbose logging of requests. When enabled, grep for 'OpenAICompatible' in the frontend container logs to see the requests Cody makes to the endpoint.
-	DebugConnections bool                        `json:"debugConnections,omitempty"`
-	Endpoints        []*OpenAICompatibleEndpoint `json:"endpoints"`
-	// ServiceName description: The name of the service being connected to, e.g. 'huggingface-tgi'. If known to Sourcegraph, it may employ various tricks to communicate more effectively with that service. Use lowcase alphanumeric and dashes only.
-	ServiceName string `json:"serviceName"`
-	Type        string `json:"type"`
+	// EnableVerboseLogs description: Whether to enable verbose logging of requests. When enabled, grep for 'OpenAICompatible' in the frontend container logs to see the requests Cody makes to the endpoint.
+	EnableVerboseLogs bool                        `json:"enableVerboseLogs,omitempty"`
+	Endpoints         []*OpenAICompatibleEndpoint `json:"endpoints"`
+	Type              string                      `json:"type"`
 }
 type ServerSideProviderConfigOpenAIProvider struct {
 	AccessToken string `json:"accessToken"`

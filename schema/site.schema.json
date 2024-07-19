@@ -3624,7 +3624,7 @@
         "endpoints": {
           "$ref": "#/definitions/OpenAICompatibleEndpoint"
         },
-        "debugConnections": {
+        "enableVerboseLogs": {
           "description": "Whether to enable verbose logging of requests. When enabled, grep for 'OpenAICompatible' in the frontend container logs to see the requests Cody makes to the endpoint.",
           "type": "boolean",
           "default": false
@@ -3633,21 +3633,16 @@
     },
     "ServerSideProviderConfigOpenAICompatibleProvider": {
       "type": "object",
-      "required": ["type", "serviceName", "endpoints"],
+      "required": ["type", "endpoints"],
       "properties": {
         "type": {
           "type": "string",
           "const": "openaicompatible"
         },
-        "serviceName": {
-          "description": "The name of the service being connected to, e.g. 'huggingface-tgi'. If known to Sourcegraph, it may employ various tricks to communicate more effectively with that service. Use lowcase alphanumeric and dashes only.",
-          "type": "string",
-          "examples": ["huggingface-tgi", "my-custom-service-name"]
-        },
         "endpoints": {
           "$ref": "#/definitions/OpenAICompatibleEndpoint"
         },
-        "debugConnections": {
+        "enableVerboseLogs": {
           "description": "Whether to enable verbose logging of requests. When enabled, grep for 'OpenAICompatible' in the frontend container logs to see the requests Cody makes to the endpoint.",
           "type": "boolean",
           "default": false
