@@ -13,7 +13,6 @@
 </script>
 
 <script lang="ts">
-    import { browser } from '$app/environment'
     import { page } from '$app/stores'
     import { onClickOutside } from '$lib/dom'
     import Icon from '$lib/Icon.svelte'
@@ -32,10 +31,6 @@
     export let authenticatedUser: GlobalNavigation_User | null | undefined
     export let handleOptOut: (() => Promise<void>) | undefined
     export let entries: (NavigationEntry | NavigationMenu)[]
-
-    const isDevOrS2 =
-        (browser && window.location.hostname === 'localhost') ||
-        window.location.hostname === 'sourcegraph.sourcegraph.com'
 
     let sidebarNavigationOpen: boolean = false
     let closeMenuTimer: number = 0
