@@ -153,12 +153,12 @@ func TestNoUploadIfNotData(t *testing.T) {
 	}
 }
 
-func setupMockStore(t *testing.T) *mocks.MockStore {
+func setupMockStore(t *testing.T) *mocks.MockStorage {
 	t.Helper()
 
 	bucket := make(map[string][]byte)
 
-	mockStore := mocks.NewMockStore()
+	mockStore := mocks.NewMockStorage()
 	mockStore.UploadFunc.SetDefaultHook(func(ctx context.Context, key string, r io.Reader) (int64, error) {
 		b, err := io.ReadAll(r)
 		if err != nil {
