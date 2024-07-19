@@ -99,16 +99,30 @@ func TestCheckConnection_Ping(t *testing.T) {
 			db := dbtest.NewDB(t)
 			defer db.Close()
 
+			var currentUser string
+			err := db.QueryRow("SELECT current_user").Scan(&currentUser)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				t.FailNow()
+			}
+
+			url, err := dbtest.GetDSN()
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				t.FailNow()
+			}
+			password, _ := url.User.Password()
+
 			var dbName string
-			err := db.QueryRow("SELECT current_database()").Scan(&dbName)
+			err = db.QueryRow("SELECT current_database()").Scan(&dbName)
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 				t.FailNow()
 			}
 
 			t.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
-			t.Setenv("PGUSER", "sourcegraph")
-			t.Setenv("PGPASSWORD", "sourcegraph")
+			t.Setenv("PGUSER", currentUser)
+			t.Setenv("PGPASSWORD", password)
 			t.Setenv("PGDATABASE", dbName)
 			t.Setenv("PGSSLMODE", "disable")
 			t.Setenv("PGTZ", "UTC")
