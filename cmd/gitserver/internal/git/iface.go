@@ -87,11 +87,11 @@ type GitBackend interface {
 	RevAtTime(ctx context.Context, revspec string, time time.Time) (api.CommitID, error)
 	// RawDiff returns the raw git diff for the given range.
 	// Diffs returned from this function will have the following settings applied:
-	// - 3 lines of context
+	// - N lines of context according to opts
 	// - No a/ b/ prefixes
 	// - Rename detection
 	// If either base or head don't exist, a RevisionNotFoundError is returned.
-	RawDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, paths ...string) (io.ReadCloser, error)
+	RawDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, opts RawDiffOpts, paths ...string) (io.ReadCloser, error)
 	// ContributorCounts returns the number of commits per contributor in the
 	// set of commits specified by the options.
 	// Aggregations are done by email address.
@@ -354,4 +354,18 @@ type ReadDirIterator interface {
 	Next() (fs.FileInfo, error)
 	// Close closes the iterator.
 	Close() error
+}
+
+// RawDiffOpts contaions extra options for the RawDiff method.
+type RawDiffOpts struct {
+	// InterHunkContext specifies the number of lines to consider for fusing hunks
+	// together. I.e., when set to 5 and between 2 hunks there are at most 5 lines,
+	// the 2 hunks will be fused together into a single chunk.
+	InterHunkContext int
+	// ContextLines specifies the number of lines of context to show around added/removed
+	// lines.
+	// This is the number of lines that will be shown before and after each line that
+	// has been added/removed. If InterHunkContext is not zero, the context will still
+	// be fused together with other hunks if they meet the threshold.
+	ContextLines int
 }

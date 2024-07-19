@@ -316,14 +316,14 @@ func (hr *observableRefIterator) Close() error {
 	return err
 }
 
-func (b *observableBackend) RawDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, paths ...string) (_ io.ReadCloser, err error) {
+func (b *observableBackend) RawDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, opts RawDiffOpts, paths ...string) (_ io.ReadCloser, err error) {
 	ctx, errCollector, endObservation := b.operations.rawDiff.WithErrors(ctx, &err, observation.Args{})
 	ctx, cancel := context.WithCancel(ctx)
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	concurrentOps.WithLabelValues("RawDiff").Inc()
 
-	r, err := b.backend.RawDiff(ctx, base, head, typ, paths...)
+	r, err := b.backend.RawDiff(ctx, base, head, typ, opts, paths...)
 	if err != nil {
 		concurrentOps.WithLabelValues("RawDiff").Dec()
 		cancel()

@@ -323,6 +323,22 @@ type DiffOptions struct {
 	// NOTE: Rename detection does not work if only the old path or the new path
 	// is specified in this slice.
 	Paths []string
+
+	// InterHunkContext specifies the number of lines to consider for fusing hunks
+	// together. I.e., when set to 5 and between 2 hunks there are at most 5 lines,
+	// the 2 hunks will be fused together into a single chunk.
+	//
+	// The default for this is 3.
+	InterHunkContext *int
+
+	// ContextLines specifies the number of lines of context to show around added/removed
+	// lines.
+	// This is the number of lines that will be shown before and after each line that
+	// has been added/removed. If InterHunkContext is not zero, the context will still
+	// be fused together with other hunks if they meet the threshold.
+	//
+	// The default for this is 3.
+	ContextLines *int
 }
 
 type Client interface {

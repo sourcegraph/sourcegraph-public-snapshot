@@ -45,6 +45,14 @@ func (c *clientImplementor) Diff(ctx context.Context, repo api.RepoName, opts Di
 		Paths:       stringsToByteSlices(opts.Paths),
 	}
 
+	if opts.InterHunkContext != nil {
+		req.InterHunkContext = pointers.Ptr(uint32(*opts.InterHunkContext))
+	}
+
+	if opts.ContextLines != nil {
+		req.ContextLines = pointers.Ptr(uint32(*opts.ContextLines))
+	}
+
 	// Rare case: the base is the empty tree, in which case we must use ..
 	// instead of ... as the latter only works for commits.
 	if opts.Base == DevNullSHA {

@@ -887,6 +887,8 @@ func rawDiffRequestToLogFields(req *proto.RawDiffRequest) []log.Field {
 		log.String("headRevSpec", string(req.GetHeadRevSpec())),
 		log.String("comparisonType", req.GetComparisonType().String()),
 		log.Strings("paths", byteSlicesToStrings(req.GetPaths())),
+		log.Int("interHunkContext", int(req.GetInterHunkContext())),
+		log.Int("contextLines", int(req.GetContextLines())),
 	}
 }
 
