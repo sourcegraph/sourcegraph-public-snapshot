@@ -40,8 +40,6 @@ func RegisterV1(
 }
 
 type HandlerV1 struct {
-	codyaccessv1connect.UnimplementedCodyAccessServiceHandler
-
 	logger log.Logger
 	store  StoreV1
 }
