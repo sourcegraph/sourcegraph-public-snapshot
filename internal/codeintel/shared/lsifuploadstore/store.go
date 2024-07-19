@@ -12,7 +12,6 @@ func New(ctx context.Context, observationCtx *observation.Context, conf *Config)
 		Backend:      conf.Backend,
 		ManageBucket: conf.ManageBucket,
 		Bucket:       conf.Bucket,
-		TTL:          conf.TTL,
 		S3: object.S3Config{
 			Region:          conf.S3Region,
 			Endpoint:        conf.S3Endpoint,

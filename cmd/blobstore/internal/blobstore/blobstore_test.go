@@ -295,7 +295,6 @@ func initTestStore(ctx context.Context, t *testing.T, dataDir string) (object.St
 		Backend:      "blobstore",
 		ManageBucket: false,
 		Bucket:       "lsif-uploads",
-		TTL:          168 * time.Hour,
 		S3: object.S3Config{
 			Region:       "us-east-1",
 			Endpoint:     ts.URL,

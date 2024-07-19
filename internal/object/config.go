@@ -2,16 +2,14 @@ package object
 
 import (
 	"strings"
-	"time"
 )
 
-// StorageConfig captures all parameters required for instanciating an uploadstore.
-// This struct needs to be passed in in full, there will be no `Load` call.
+// StorageConfig captures all parameters required for instantiating an object.Storage.
+// This struct needs to be passed in full, there will be no `Load` call.
 type StorageConfig struct {
 	Backend      string
 	ManageBucket bool
 	Bucket       string
-	TTL          time.Duration
 	S3           S3Config
 	GCS          GCSConfig
 }
