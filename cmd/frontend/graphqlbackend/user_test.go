@@ -251,17 +251,6 @@ func TestUser_LatestSettings(t *testing.T) {
 				})
 			},
 		},
-		{
-			name:     "site admin on dotcom",
-			isDotcom: true,
-			ctx:      actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-			wantErr:  "must be authenticated as user with id 1",
-			setup: func() {
-				users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-					return &types.User{ID: id, SiteAdmin: true}, nil
-				})
-			},
-		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

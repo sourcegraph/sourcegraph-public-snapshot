@@ -67,11 +67,11 @@ func TestSettingsSubjectForNodeAndCheckAccess(t *testing.T) {
 			wantSubject: &settingsSubjectResolver{user: &UserResolver{user: &types.User{ID: userID}, db: db}},
 		},
 		{
-			name:      "user settings - site admin on dotcom",
-			node:      &UserResolver{user: &types.User{ID: userID}, db: db},
-			actor:     actor.FromActualUser(&types.User{ID: otherUserID, SiteAdmin: true}),
-			isDotcom:  true,
-			wantError: &auth.InsufficientAuthorizationError{},
+			name:        "user settings - site admin on dotcom",
+			node:        &UserResolver{user: &types.User{ID: userID}, db: db},
+			actor:       actor.FromActualUser(&types.User{ID: otherUserID, SiteAdmin: true}),
+			isDotcom:    true,
+			wantSubject: &settingsSubjectResolver{user: &UserResolver{user: &types.User{ID: userID}, db: db}},
 		},
 		{
 			name:      "user settings - different user",
@@ -98,11 +98,11 @@ func TestSettingsSubjectForNodeAndCheckAccess(t *testing.T) {
 			wantSubject: &settingsSubjectResolver{org: &OrgResolver{org: &types.Org{ID: orgID}, db: db}},
 		},
 		{
-			name:      "org settings - non-member site admin on dotcom",
-			node:      &OrgResolver{org: &types.Org{ID: orgID}, db: db},
-			actor:     actor.FromActualUser(&types.User{ID: otherUserID, SiteAdmin: true}),
-			isDotcom:  true,
-			wantError: auth.ErrNotAnOrgMember,
+			name:        "org settings - non-member site admin on dotcom",
+			node:        &OrgResolver{org: &types.Org{ID: orgID}, db: db},
+			actor:       actor.FromActualUser(&types.User{ID: otherUserID, SiteAdmin: true}),
+			isDotcom:    true,
+			wantSubject: &settingsSubjectResolver{org: &OrgResolver{org: &types.Org{ID: orgID}, db: db}},
 		},
 		{
 			name:      "unknown node type",

@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 
@@ -172,7 +173,7 @@ func (r *schemaResolver) OrganizationFeatureFlagValue(ctx context.Context, args 
 		return false, err
 	}
 	// same behavior as if the flag does not exist
-	if err := auth.CheckOrgAccess(ctx, r.db, org); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, org); err != nil {
 		return false, nil
 	}
 
