@@ -41,8 +41,8 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Button, H2, H4, Icon, Link, Panel, useLocalStorage, useScrollManager } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../../auth'
+import type { SearchJobsProps } from '../../../../enterprise/search-jobs'
 import { fetchBlob } from '../../../../repo/blob/backend'
-import { isSearchJobsEnabled } from '../../../../search-jobs/utility'
 import { buildSearchURLQueryFromQueryState } from '../../../../stores'
 import { GettingStartedTour } from '../../../../tour/GettingStartedTour'
 import { DidYouMean } from '../../../suggestion/DidYouMean'
@@ -72,6 +72,7 @@ interface NewSearchContentProps
         SettingsCascadeProps,
         PlatformContextProps,
         SearchPatternTypeProps,
+        SearchJobsProps,
         SearchPatternTypeMutationProps {
     submittedURLQuery: string
     queryState: QueryState
@@ -132,6 +133,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         onDisableSmartSearch,
         onTogglePatternType,
         onLogSearchResultClick,
+        searchJobsEnabled,
     } = props
 
     const telemetryRecorder = platformContext.telemetryRecorder
@@ -243,7 +245,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                             progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
                             state={results?.state || 'loading'}
                             onSearchAgain={onSearchAgain}
-                            isSearchJobsEnabled={isSearchJobsEnabled()}
+                            isSearchJobsEnabled={searchJobsEnabled}
                             telemetryService={props.telemetryService}
                             telemetryRecorder={telemetryRecorder}
                         />

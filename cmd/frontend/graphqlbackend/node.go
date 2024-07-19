@@ -206,8 +206,8 @@ func (r *NodeResolver) ToGitCommit() (*GitCommitResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
-	n, ok := r.Node.(*savedSearchResolver)
+func (r *NodeResolver) ToSavedSearch() (SavedSearchResolver, bool) {
+	n, ok := r.Node.(SavedSearchResolver)
 	return n, ok
 }
 
@@ -384,5 +384,10 @@ func (r *NodeResolver) ToSearchJob() (SearchJobResolver, bool) {
 
 func (r *NodeResolver) ToCodeGraphData() (resolverstubs.CodeGraphDataResolver, bool) {
 	n, ok := r.Node.(resolverstubs.CodeGraphDataResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToPrompt() (PromptResolver, bool) {
+	n, ok := r.Node.(PromptResolver)
 	return n, ok
 }

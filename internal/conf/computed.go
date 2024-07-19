@@ -23,6 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+const CodyGatewayProdEndpoint = "https://cody-gateway.sourcegraph.com"
+
 func init() {
 	deployType := deploy.Type()
 	if !deploy.IsValidDeployType(deployType) {
@@ -282,6 +284,37 @@ func CodyPermissionsEnabled() bool {
 		return *enabled
 	}
 	return true // default to enabled
+}
+
+func CodyIntentConfig() *schema.IntentDetectionAPI {
+	if Get().ExperimentalFeatures == nil || Get().ExperimentalFeatures.CodyServerSideContext == nil {
+		return nil
+	}
+	return Get().ExperimentalFeatures.CodyServerSideContext.IntentDetectionAPI
+}
+
+type CodyRerankerBackend string
+
+const (
+	CodyRerankerIdentity CodyRerankerBackend = "identity"
+	CodyRerankerCohere   CodyRerankerBackend = "cohere"
+)
+
+func CodyReranker() CodyRerankerBackend {
+	if Get().ExperimentalFeatures == nil || Get().ExperimentalFeatures.CodyServerSideContext == nil || Get().ExperimentalFeatures.CodyServerSideContext.Reranker == nil {
+		return CodyRerankerIdentity
+	}
+	if Get().ExperimentalFeatures.CodyServerSideContext.Reranker.Identity != nil {
+		return CodyRerankerIdentity
+	}
+	return CodyRerankerCohere
+}
+
+func CodyRerankerCohereConfig() *schema.CodyRerankerCohere {
+	if CodyReranker() != CodyRerankerCohere {
+		return nil
+	}
+	return Get().ExperimentalFeatures.CodyServerSideContext.Reranker.Cohere
 }
 
 func ExecutorsEnabled() bool {
@@ -674,6 +707,12 @@ func HashedLicenseKeyWithPrefix(licenseKey string, prefix string) string {
 	return hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(prefix + licenseKey)))
 }
 
+// UseExperimentalModelConfiguration tells whether or not "modelConfiguration" has been specified
+// in the site configuration
+func UseExperimentalModelConfiguration() bool {
+	return Get().SiteConfig().ModelConfiguration != nil
+}
+
 // GetCompletionsConfig evaluates a complete completions configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
 func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.CompletionsConfig) {
@@ -720,7 +759,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	if completionsConfig.Provider == string(conftypes.CompletionsProviderNameSourcegraph) {
 		// If no endpoint is configured, use a default value.
 		if completionsConfig.Endpoint == "" {
-			completionsConfig.Endpoint = "https://cody-gateway.sourcegraph.com"
+			completionsConfig.Endpoint = CodyGatewayProdEndpoint
 		}
 
 		// Set the access token, either use the configured one, or generate one for the platform.

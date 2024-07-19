@@ -212,7 +212,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 				`,
 				ExpectedResult: `{
 					"randomizeUserPassword": {
-						"resetPasswordURL": "http://example.com/password-reset?code=code&userID=42"
+						"resetPasswordURL": "http://example.com/password-reset?code=code&email=&userID=42"
 					}
 				}`,
 				Variables: map[string]any{"user": userIDBase64},
@@ -257,7 +257,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 				`,
 				ExpectedResult: `{
 					"randomizeUserPassword": {
-						"resetPasswordURL": "http://example.com/password-reset?code=code&userID=42"
+						"resetPasswordURL": "http://example.com/password-reset?code=code&email=&userID=42"
 					}
 				}`,
 				Variables: map[string]any{"user": userIDBase64},

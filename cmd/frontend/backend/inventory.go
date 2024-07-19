@@ -10,8 +10,6 @@ import (
 
 	"golang.org/x/sync/semaphore"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
@@ -20,6 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -27,7 +27,7 @@ import (
 // filenames. Enabled by default.
 var useEnhancedLanguageDetection, _ = strconv.ParseBool(env.Get("USE_ENHANCED_LANGUAGE_DETECTION", "true", "Enable more accurate but slower language detection that uses file contents"))
 
-var inventoryCache = rcache.New(fmt.Sprintf("inv:v2:enhanced_%v", useEnhancedLanguageDetection))
+var inventoryCache = rcache.New(redispool.Cache, fmt.Sprintf("inv:v2:enhanced_%v", useEnhancedLanguageDetection))
 
 var gitServerConcurrency, _ = strconv.Atoi(env.Get("GET_INVENTORY_GIT_SERVER_CONCURRENCY", "4", "Changes the number of concurrent requests against the gitserver for getInventory requests."))
 
@@ -52,20 +52,16 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 		return inventory.Context{}, errors.Errorf("refusing to compute inventory for non-absolute commit ID %q", commitID)
 	}
 
-	cacheKey := func(e fs.FileInfo) string {
-		info, ok := e.Sys().(gitdomain.ObjectInfo)
-		if !ok {
-			return "" // not cacheable
-		}
-		return info.OID().String()
-	}
-
 	gitServerSemaphore := semaphore.NewWeighted(int64(gitServerConcurrency))
 	redisSemaphore := semaphore.NewWeighted(int64(redisConcurrency))
 
 	logger = logger.Scoped("InventoryContext").
 		With(log.String("repo", string(repo)), log.String("commitID", string(commitID)))
 	invCtx := inventory.Context{
+		Repo:                                repo,
+		CommitID:                            commitID,
+		ShouldSkipEnhancedLanguageDetection: !useEnhancedLanguageDetection && !forceEnhancedLanguageDetection,
+		GitServerClient:                     gsClient,
 		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
 			trc, ctx := trace.New(ctx, "ReadTree waits for semaphore")
 			err := gitServerSemaphore.Acquire(ctx, 1)
@@ -109,14 +105,20 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 				gitServerSemaphore.Release(1)
 			}}, nil
 		},
-		CacheGet: func(ctx context.Context, e fs.FileInfo) (inventory.Inventory, bool) {
-			cacheKey := cacheKey(e)
+		CacheKey: func(e fs.FileInfo) string {
+			info, ok := e.Sys().(gitdomain.ObjectInfo)
+			if !ok {
+				return "" // not cacheable
+			}
+			return info.OID().String()
+		},
+		CacheGet: func(ctx context.Context, cacheKey string) (inventory.Inventory, bool) {
 			if cacheKey == "" {
 				return inventory.Inventory{}, false // not cacheable
 			}
 
 			if err := redisSemaphore.Acquire(ctx, 1); err != nil {
-				logger.Warn("Failed to acquire semaphore for redis cache.", log.String("path", e.Name()), log.Error(err))
+				logger.Warn("Failed to acquire semaphore for redis cache.", log.String("cacheKey", cacheKey), log.Error(err))
 				return inventory.Inventory{}, false
 			}
 			defer redisSemaphore.Release(1)
@@ -124,39 +126,30 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 			if b, ok := inventoryCache.Get(cacheKey); ok {
 				var inv inventory.Inventory
 				if err := json.Unmarshal(b, &inv); err != nil {
-					logger.Warn("Failed to unmarshal cached JSON inventory.", log.String("path", e.Name()), log.Error(err))
+					logger.Warn("Failed to unmarshal cached JSON inventory.", log.String("cacheKey", cacheKey), log.Error(err))
 					return inventory.Inventory{}, false
 				}
 				return inv, true
 			}
 			return inventory.Inventory{}, false
 		},
-		CacheSet: func(ctx context.Context, e fs.FileInfo, inv inventory.Inventory) {
-			cacheKey := cacheKey(e)
+		CacheSet: func(ctx context.Context, cacheKey string, inv inventory.Inventory) {
 			if cacheKey == "" {
 				return // not cacheable
 			}
 			b, err := json.Marshal(&inv)
 			if err != nil {
-				logger.Warn("Failed to marshal JSON inventory for cache.", log.String("path", e.Name()), log.Error(err))
+				logger.Warn("Failed to marshal JSON inventory for cache.", log.String("cacheKey", cacheKey), log.Error(err))
 				return
 			}
 
 			if err := redisSemaphore.Acquire(ctx, 1); err != nil {
-				logger.Warn("Failed to acquire semaphore for redis cache.", log.String("path", e.Name()), log.Error(err))
+				logger.Warn("Failed to acquire semaphore for redis cache.", log.String("cacheKey", cacheKey), log.Error(err))
 				return
 			}
 			defer redisSemaphore.Release(1)
 			inventoryCache.Set(cacheKey, b)
 		},
-	}
-
-	if !useEnhancedLanguageDetection && !forceEnhancedLanguageDetection {
-		// If USE_ENHANCED_LANGUAGE_DETECTION is disabled, do not read file contents to determine
-		// the language. This means we won't calculate the number of lines per language.
-		invCtx.NewFileReader = func(ctx context.Context, path string) (io.ReadCloser, error) {
-			return nil, nil
-		}
 	}
 
 	return invCtx, nil

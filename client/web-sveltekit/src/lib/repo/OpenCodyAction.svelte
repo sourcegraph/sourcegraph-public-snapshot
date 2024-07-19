@@ -1,23 +1,27 @@
 <script lang="ts">
+    import { CODY_SIDEBAR_ID } from '$lib/cody/CodySidebar.svelte'
     import Icon from '$lib/Icon.svelte'
-    import { rightPanelOpen } from '$lib/repo/stores'
+    import { rightSidePanelOpen } from '$lib/repo/stores'
     import Tooltip from '$lib/Tooltip.svelte'
 
     function handleClick(): void {
-        $rightPanelOpen = true
+        $rightSidePanelOpen = true
     }
 </script>
 
-<Tooltip tooltip="Open Cody chat">
-    <button on:click={handleClick}>
-        <Icon icon={ISgCody} />
-        <span data-action-label>Cody</span>
-    </button>
-</Tooltip>
+{#if !$rightSidePanelOpen}
+    <Tooltip tooltip="Open Cody chat">
+        <button on:click={handleClick} aria-controls={CODY_SIDEBAR_ID} aria-expanded={$rightSidePanelOpen}>
+            <Icon icon={ISgCody} />
+            <span data-action-label>Cody</span>
+        </button>
+    </Tooltip>
+{/if}
 
 <style lang="scss">
     button {
         all: unset;
         white-space: nowrap;
+        cursor: pointer;
     }
 </style>

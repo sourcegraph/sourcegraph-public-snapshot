@@ -28,7 +28,7 @@
     import { SearchPatternType } from '$lib/graphql-operations'
     import Icon from '$lib/Icon.svelte'
     import BaseCodeMirrorQueryInput from '$lib/search/BaseQueryInput.svelte'
-    import { user } from '$lib/stores'
+    import { user, settings } from '$lib/stores'
     import Tooltip from '$lib/Tooltip.svelte'
     import { createSuggestionsSource } from '$lib/web'
 
@@ -78,8 +78,7 @@
                 borderRadius: 'var(--border-radius)',
                 borderColor: 'var(--border-color)',
                 // To ensure that the input doesn't overflow the parent
-                minWidth: 0,
-                marginRight: '0.5rem',
+                maxWidth: '100%',
             },
             '&.cm-editor.cm-focused': {
                 outline: 'none',
@@ -109,13 +108,24 @@
         // This is a hack to make urlq work with the API that createSuggestionsSource expects
         return result.data ?? ({} as any)
     }
+
+    export const enum Style {
+        /**
+         * Reduced paddings and margins.
+         */
+        Compact = 1 << 0,
+        /**
+         * No border around the input.
+         */
+        NoBorder = 1 << 1,
+    }
 </script>
 
 <script lang="ts">
     import { registerHotkey } from '$lib/Hotkey'
 
     export let autoFocus = false
-    export let size: 'normal' | 'compat' = 'normal'
+    export let style: Style | undefined = undefined
     export let queryState: QueryStateStore
     export let onSubmit: (state: QueryState) => void = () => {}
     export let extension: Extension = []
@@ -137,7 +147,11 @@
     let userHasInteracted = !autoFocus
     const hasInteractedExtension = EditorView.updateListener.of(update => {
         if (!userHasInteracted) {
-            if (update.transactions.some(tr => tr.isUserEvent('select') || tr.isUserEvent('input'))) {
+            if (
+                update.transactions.some(
+                    tr => tr.isUserEvent('select') || tr.isUserEvent('input') || tr.isUserEvent('delete')
+                )
+            ) {
                 userHasInteracted = true
             }
         }
@@ -188,8 +202,16 @@
 
     function setOrUnsetPatternType(patternType: SearchPatternType): void {
         queryState.setPatternType(currentPatternType =>
-            currentPatternType === patternType ? SearchPatternType.keyword : patternType
+            currentPatternType === patternType ? getUnselectedPatternType() : patternType
         )
+    }
+
+    // When a toggle is unset, we revert back to the default pattern type. However, if the default pattern type
+    // is regexp, we should revert to keyword instead (otherwise it's not possible to disable the toggle).
+    function getUnselectedPatternType(): SearchPatternType {
+        const defaultPatternType =
+            ($settings?.['search.defaultPatternType'] as SearchPatternType) ?? SearchPatternType.keyword
+        return defaultPatternType === SearchPatternType.regexp ? SearchPatternType.keyword : defaultPatternType
     }
 
     async function submitQuery(state: QueryState): Promise<void> {
@@ -236,7 +258,8 @@
     method="get"
     action="/search"
     class="search-box"
-    class:compat={size === 'compat'}
+    class:compact={style && style & Style.Compact}
+    class:no-border={style && style & Style.NoBorder}
     on:submit={handleSubmit}
     bind:clientHeight={suggestionsPaddingTop}
 >
@@ -265,38 +288,41 @@
             {extension}
         />
         {#if !mode}
-            <Tooltip tooltip={`${$queryState.caseSensitive ? 'Disable' : 'Enable'} case sensitivity`}>
-                <button
-                    class="toggle icon"
-                    type="button"
-                    class:active={$queryState.caseSensitive}
-                    on:click={() => queryState.setCaseSensitive(caseSensitive => !caseSensitive)}
-                >
-                    <Icon icon={ILucideCaseSensitive} inline aria-hidden />
-                </button>
-            </Tooltip>
-            <Tooltip tooltip="{regularExpressionEnabled ? 'Disable' : 'Enable'} regular expression">
-                <button
-                    class="toggle icon"
-                    type="button"
-                    class:active={regularExpressionEnabled}
-                    on:click={() => setOrUnsetPatternType(SearchPatternType.regexp)}
-                >
-                    <Icon icon={ILucideRegex} inline aria-hidden />
-                </button>
-            </Tooltip>
-            {#if structuralEnabled}
-                <Tooltip tooltip="Disable structural search">
+            <span class="actions">
+                <Tooltip tooltip={`${$queryState.caseSensitive ? 'Disable' : 'Enable'} case sensitivity`}>
                     <button
                         class="toggle icon"
                         type="button"
-                        class:active={structuralEnabled}
-                        on:click={() => setOrUnsetPatternType(SearchPatternType.structural)}
+                        class:active={$queryState.caseSensitive}
+                        on:click={() => queryState.setCaseSensitive(caseSensitive => !caseSensitive)}
                     >
-                        <Icon icon={ILucideBrackets} inline aria-hidden />
+                        <Icon icon={IMdiFormatLetterCase} inline aria-hidden />
                     </button>
                 </Tooltip>
-            {/if}
+                <Tooltip tooltip="{regularExpressionEnabled ? 'Disable' : 'Enable'} regular expression">
+                    <button
+                        class="toggle icon"
+                        type="button"
+                        title="regexp toggle"
+                        class:active={regularExpressionEnabled}
+                        on:click={() => setOrUnsetPatternType(SearchPatternType.regexp)}
+                    >
+                        <Icon icon={IMdiRegex} inline aria-hidden />
+                    </button>
+                </Tooltip>
+                {#if structuralEnabled}
+                    <Tooltip tooltip="Disable structural search">
+                        <button
+                            class="toggle icon"
+                            type="button"
+                            class:active={structuralEnabled}
+                            on:click={() => setOrUnsetPatternType(SearchPatternType.structural)}
+                        >
+                            <Icon icon={ILucideBrackets} inline aria-hidden />
+                        </button>
+                    </Tooltip>
+                {/if}
+            </span>
         {/if}
     </div>
     <div class="suggestions" style:padding-top="{suggestionsPaddingTop}px">
@@ -317,7 +343,7 @@
             }
         }
 
-        &.compat {
+        &.compact {
             padding: 0.25rem;
             margin: -0.25rem;
             width: calc(100% + 0.5rem);
@@ -329,9 +355,9 @@
     }
 
     .focus-container {
+        --gap: 0.25rem;
+
         flex: 1;
-        display: flex;
-        align-items: center;
         min-height: 32px;
         padding: 0 0.25rem;
         border-radius: 4px;
@@ -341,6 +367,21 @@
         // This is necessary to ensure that the input is shown above the suggestions container
         z-index: 1;
 
+        display: grid;
+        grid-template-columns: min-content 1fr auto;
+        grid-template-areas: 'mode-switcher input actions';
+        align-items: center;
+        gap: var(--gap);
+
+        .no-border & {
+            border: none;
+            border-radius: 0;
+        }
+
+        :global([data-query-input]) {
+            grid-area: input;
+        }
+
         &:focus-within {
             @media (--sm-breakpoint-up) {
                 outline: 2px solid var(--primary-2);
@@ -349,50 +390,33 @@
             }
         }
 
-        @media (--xs-breakpoint-down) {
-            flex-direction: column;
-            align-items: start;
+        @media (--mobile) {
+            --gap: 0.5rem;
+
+            grid-template-columns: min-content 1fr;
+            grid-template-areas: 'input input' 'mode-switcher actions';
             padding: 0.5rem;
-            gap: 0.5rem;
-        }
-    }
 
-    .suggestions {
-        display: none;
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        border-radius: 8px;
-        background-color: var(--color-bg-1);
-        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.15);
+            :global(.cm-content) {
+                white-space: break-spaces;
+                word-break: break-word;
+                overflow-wrap: anywhere;
+                flex-shrink: 1;
+            }
 
-        // Set a default paddings to the suggestion panel (see Suggestions.module.scss)
-        --suggestions-padding: 0.75rem;
+            :global([data-query-input]) {
+                border-radius: 4px;
+                border: 1px solid var(--border-color-2);
+                background-color: var(--input-bg);
+                padding: inherit;
+                width: 100%;
 
-        :global(.theme-dark) & {
-            box-shadow: 0 10px 60px rgba(0, 0, 0, 0.8);
-        }
-    }
-
-    button.toggle {
-        --icon-color: currentColor;
-
-        width: 1.5rem;
-        height: 1.5rem;
-        cursor: pointer;
-        border-radius: var(--border-radius);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        &.active {
-            background-color: var(--primary);
-            color: var(--light-text);
-        }
-
-        :global(svg) {
-            transform: scale(1.172);
+                &:focus-within {
+                    outline: 2px solid var(--primary-2);
+                    outline-offset: 0;
+                    border-color: var(--primary-2);
+                }
+            }
         }
     }
 
@@ -404,11 +428,37 @@
         cursor: pointer;
     }
 
+    .actions {
+        grid-area: actions;
+
+        button.toggle {
+            --icon-color: currentColor;
+
+            width: 1.5rem;
+            height: 1.5rem;
+            cursor: pointer;
+            border-radius: var(--border-radius);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            &.active {
+                background-color: var(--primary);
+                color: var(--light-text);
+            }
+
+            :global(svg) {
+                transform: scale(1.172);
+            }
+        }
+    }
+
     .mode-switcher {
+        grid-area: mode-switcher;
+
         display: flex;
         align-items: center;
-        padding-right: 0.1875rem;
-        margin-right: 0.25rem;
+        padding-right: var(--gap);
         border-right: 1px solid var(--border-color-2);
         font-family: var(--code-font-family);
         font-size: var(--code-font-size);
@@ -443,6 +493,28 @@
 
         @media (--xs-breakpoint-down) {
             border: 0;
+
+            span {
+                display: none;
+            }
+        }
+    }
+
+    .suggestions {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        border-radius: 8px;
+        background-color: var(--color-bg-1);
+        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.15);
+
+        // Set a default paddings to the suggestion panel (see Suggestions.module.scss)
+        --suggestions-padding: 0.75rem;
+
+        :global(.theme-dark) & {
+            box-shadow: 0 10px 60px rgba(0, 0, 0, 0.8);
         }
     }
 </style>

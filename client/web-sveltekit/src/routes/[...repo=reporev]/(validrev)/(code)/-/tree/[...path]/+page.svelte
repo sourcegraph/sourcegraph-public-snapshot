@@ -22,6 +22,7 @@
     const treeEntriesWithCommitInfo = createPromiseStore<TreeEntryWithCommitInfo[]>()
 
     $: treeEntriesWithCommitInfo.set(data.treeEntriesWithCommitInfo)
+    $: isCodyAvailable = data.isCodyAvailable
 
     afterNavigate(() => {
         repositoryContext.set({ directoryPath: data.filePath })
@@ -38,7 +39,9 @@
 <FileHeader type="tree" repoName={data.repoName} revision={data.revision} path={data.filePath}>
     <svelte:fragment slot="actions">
         <Permalink commitID={data.resolvedRevision.commitID} />
-        <OpenCodyAction />
+        {#if isCodyAvailable}
+            <OpenCodyAction />
+        {/if}
     </svelte:fragment>
 </FileHeader>
 

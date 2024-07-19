@@ -62,6 +62,7 @@ BUILD_DEPS = [
     "//:node_modules/@mdi/js",
     "//:node_modules/@reach/combobox",
     "//:node_modules/@reach/menu-button",
+    "//:node_modules/@sourcegraph/cody-context-filters-test-dataset",
     "//:node_modules/@types/lodash",
     "//:node_modules/@types/node",
     "//:node_modules/@types/react",
@@ -91,6 +92,7 @@ BUILD_DEPS = [
     ":node_modules/@iconify-json/devicon-plain",
     ":node_modules/@iconify-json/file-icons",
     ":node_modules/@iconify-json/lucide",
+    ":node_modules/@iconify-json/mdi",
     ":node_modules/@iconify-json/ph",
     ":node_modules/@iconify-json/simple-icons",
     ":node_modules/@melt-ui/svelte",
@@ -102,19 +104,16 @@ BUILD_DEPS = [
     ":node_modules/@sourcegraph/shared",
     ":node_modules/@sourcegraph/telemetry",
     ":node_modules/@sourcegraph/web",
-    ":node_modules/@sourcegraph/wildcard",
     ":node_modules/@storybook/svelte",
     ":node_modules/@sveltejs/adapter-static",
     ":node_modules/@sveltejs/kit",
     ":node_modules/@sveltejs/vite-plugin-svelte",
-    ":node_modules/@types/prismjs",
     ":node_modules/@urql/core",
     ":node_modules/cody-web-experimental",
-    ":node_modules/fzf",
     ":node_modules/graphql",
     ":node_modules/hotkeys-js",
     ":node_modules/mermaid",
-    ":node_modules/prismjs",
+    ":node_modules/re2js",
     ":node_modules/sass",
     ":node_modules/signale",
     ":node_modules/svelte",
@@ -124,6 +123,7 @@ BUILD_DEPS = [
     ":node_modules/vite",
     ":node_modules/vite-plugin-inspect",
     ":node_modules/wonka",
+    ":node_modules/zod",
 ] + glob([
     "dev/**/*.cjs",
     "dev/**/*.ts",
@@ -194,7 +194,7 @@ copy_to_directory(
 
 playwright_test_bin.playwright_test(
     name = "e2e_test",
-    timeout = "short",
+    timeout = "long",
     args = [
         "test",
         "--config $(location playwright.config.ts)",
@@ -214,7 +214,6 @@ playwright_test_bin.playwright_test(
     env = {
         "CHROMIUM_BIN": "$(rootpath //dev/tools:chromium)",
         "BAZEL": "1",
-        "BAZEL_SKIP_TESTS": "clone in progress;commit not found;not cloned;error loading commit information",
         "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/test_build/_sk/",
     },
     flaky = True,
@@ -242,10 +241,13 @@ TEST_BUILD_DEPS = [
 
 vitest_test(
     name = "unit_tests",
+    timeout = "moderate",
     bin = vitest_bin,
     chdir = package_name(),
     data = SRCS + BUILD_DEPS + CONFIGS + TESTS + TEST_BUILD_DEPS,
-    tags = [TAG_SEARCHSUITE],
+    tags = [
+        TAG_SEARCHSUITE,
+    ],
     with_vitest_config = False,
 )
 

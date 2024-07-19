@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -347,6 +348,10 @@ func (r *Resolver) doQueryDB(ctx context.Context, tr trace.Trace, op search.Repo
 	associatedRepoRevs, missingRepoRevs := r.associateReposWithRevs(repos, searchContextRepositoryRevisions, includePatternRevs)
 	tr.AddEvent("completed rev association")
 
+	tr.AddEvent("starting remapping for perforce")
+	associatedRepoRevs = r.resolvePerforceChangeListIdsToCommitSHAs(ctx, associatedRepoRevs)
+	tr.AddEvent("completed remapping for perforce")
+
 	return dbResolved{
 		Associated: associatedRepoRevs,
 		Missing:    missingRepoRevs,
@@ -464,6 +469,85 @@ func (r *Resolver) associateReposWithRevs(
 	}
 
 	return associatedRevs[:notMissingCount], associatedRevs[notMissingCount:]
+}
+
+var changelistRegex = regexp.MustCompile(`^changelist/(\d+)$`)
+
+func extractChangelistNumber(revSpec string) (int64, error) {
+	matches := changelistRegex.FindStringSubmatch(revSpec)
+	if matches == nil {
+		return 0, errors.Newf("invalid changelist format: %s", revSpec)
+	}
+
+	numberStr := matches[1]
+	number, err := strconv.ParseInt(numberStr, 10, 0)
+	if err != nil {
+		return 0, errors.Newf("failed to parse changelist number: %w", err)
+	}
+
+	return number, nil
+}
+
+// resolvePerforceChangeListIds re-writes resolved refs for perforce repos
+// to use the sha of the changelist instead of the changelist id
+func (r *Resolver) resolvePerforceChangeListIdsToCommitSHAs(
+	ctx context.Context,
+	repoRevs []RepoRevSpecs,
+) []RepoRevSpecs {
+	c := conf.Get()
+
+	isPerforceChangelistMappingEnabled := c.ExperimentalFeatures != nil && c.ExperimentalFeatures.PerforceChangelistMapping == "enabled"
+	if !isPerforceChangelistMappingEnabled {
+		return repoRevs
+	}
+
+	reposToMap := []database.RepoChangelistIDs{}
+	for _, repoRev := range repoRevs {
+		if repoRev.Repo.ExternalRepo.ServiceType == extsvc.TypePerforce && len(repoRev.Revs) > 0 {
+			repoToMap := database.RepoChangelistIDs{
+				RepoID: repoRev.Repo.ID,
+			}
+			for _, rev := range repoRev.Revs {
+				// We assume that if a repo is a perforce repo and the revs looks like changelist ids
+				// then we want to map those to underlying shas
+				if changelistNumber, err := extractChangelistNumber(rev.RevSpec); err == nil {
+					repoToMap.ChangelistIDs = append(repoToMap.ChangelistIDs, changelistNumber)
+				}
+			}
+			if len(repoToMap.ChangelistIDs) > 0 {
+				reposToMap = append(reposToMap, repoToMap)
+			}
+		}
+	}
+
+	if len(reposToMap) <= 0 {
+		return repoRevs
+	}
+
+	changelistIDsToCommits, err := r.db.RepoCommitsChangelists().BatchGetRepoCommitChangelist(ctx, reposToMap...)
+	if err != nil {
+		r.logger.Warn("failed to get repo commit changelists", log.Error(err))
+		return repoRevs
+	}
+
+	// Remap the revs if we resolved in the db
+	for i := range repoRevs {
+		repoRev := &repoRevs[i]
+		if subMap, ok := changelistIDsToCommits[repoRev.Repo.ID]; ok &&
+			repoRev.Repo.ExternalRepo.ServiceType == extsvc.TypePerforce &&
+			len(repoRev.Revs) > 0 {
+			for j := range repoRev.Revs {
+				rev := &repoRev.Revs[j]
+				if changelistNumber, err := extractChangelistNumber(rev.RevSpec); err == nil {
+					if commit, ok := subMap[changelistNumber]; ok {
+						rev.RevSpec = string(commit.CommitSHA)
+					}
+				}
+			}
+		}
+	}
+
+	return repoRevs
 }
 
 // normalizeRefs handles three jobs:

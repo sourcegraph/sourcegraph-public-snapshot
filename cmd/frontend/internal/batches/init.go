@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -29,6 +30,10 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
+	if !batches.IsEnabled() {
+		return nil
+	}
+
 	// Initialize store.
 	bstore := store.New(db, observationCtx, keyring.Default().BatchChangesCredentialKey)
 

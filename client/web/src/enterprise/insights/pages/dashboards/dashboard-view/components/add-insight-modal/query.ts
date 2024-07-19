@@ -7,14 +7,14 @@ import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/http-clien
 import type { Connection } from '../../../../../../../components/FilteredConnection'
 import { useShowMorePagination } from '../../../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
+    GroupByField,
     type AssignableInsight,
     type DashboardInsights,
     type FindInsightsBySearchTermResult,
     type FindInsightsBySearchTermVariables,
-    GroupByField,
 } from '../../../../../../../graphql-operations'
 
-import { type DashboardInsight, type InsightSuggestion, InsightType } from './types'
+import { InsightType, type DashboardInsight, type InsightSuggestion } from './types'
 
 const SYNC_DASHBOARD_INSIGHTS = gql`
     fragment DashboardInsights on InsightsDashboard {
@@ -108,7 +108,7 @@ export function useInsightSuggestions(input: UseInsightSuggestionsInput): UseIns
         AssignableInsight | null
     >({
         query: GET_INSIGHTS_BY_SEARCH_TERM,
-        variables: { first: 20, after: null, search, excludeIds },
+        variables: { search, excludeIds },
         getConnection: result => {
             const { insightViews } = dataOrThrowErrors(result)
 

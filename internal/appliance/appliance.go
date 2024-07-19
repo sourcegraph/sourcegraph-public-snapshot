@@ -2,7 +2,6 @@ package appliance
 
 import (
 	"context"
-	"crypto/rand"
 
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
@@ -13,6 +12,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	pb "github.com/sourcegraph/sourcegraph/internal/appliance/v1"
 	"github.com/sourcegraph/sourcegraph/internal/releaseregistry"
@@ -21,7 +21,6 @@ import (
 )
 
 type Appliance struct {
-	jwtSecret           []byte
 	adminPasswordBcrypt []byte
 
 	client                 client.Client
@@ -42,9 +41,13 @@ type Appliance struct {
 type Status string
 
 const (
-	StatusUnknown    Status = "unknown"
-	StatusSetup      Status = "setup"
-	StatusInstalling Status = "installing"
+	StatusUnknown         Status = "unknown"
+	StatusInstall         Status = "install"
+	StatusInstalling      Status = "installing"
+	StatusIdle            Status = "idle"
+	StatusUpgrading       Status = "upgrading"
+	StatusWaitingForAdmin Status = "wait-for-admin"
+	StatusRefresh         Status = "refresh"
 
 	// Secret and key names
 	dataSecretName                   = "appliance-data"
@@ -70,7 +73,7 @@ func NewAppliance(
 		releaseRegistryClient:  relregClient,
 		latestSupportedVersion: latestSupportedVersion,
 		namespace:              namespace,
-		status:                 StatusSetup,
+		status:                 StatusInstall,
 		sourcegraph:            &config.Sourcegraph{},
 		logger:                 logger,
 	}
@@ -109,13 +112,6 @@ func (a *Appliance) ensureBackingSecretKeysExist(ctx context.Context, secret *co
 	if secret.Data == nil {
 		secret.Data = map[string][]byte{}
 	}
-	if _, ok := secret.Data[dataSecretJWTSigningKeyKey]; !ok {
-		jwtSigningKey, err := genRandomBytes(32)
-		if err != nil {
-			return err
-		}
-		secret.Data[dataSecretJWTSigningKeyKey] = jwtSigningKey
-	}
 
 	if _, ok := secret.Data[dataSecretEncryptedPasswordKey]; !ok {
 		// Get admin-supplied password from separate secret, then delete it
@@ -150,20 +146,7 @@ func (a *Appliance) ensureBackingSecretKeysExist(ctx context.Context, secret *co
 }
 
 func (a *Appliance) loadValuesFromSecret(secret *corev1.Secret) {
-	a.jwtSecret = secret.Data[dataSecretJWTSigningKeyKey]
 	a.adminPasswordBcrypt = secret.Data[dataSecretEncryptedPasswordKey]
-}
-
-func genRandomBytes(length int) ([]byte, error) {
-	randomBytes := make([]byte, length)
-	bytesRead, err := rand.Read(randomBytes)
-	if err != nil {
-		return nil, errors.Wrap(err, "reading random bytes")
-	}
-	if bytesRead != length {
-		return nil, errors.Newf("expected to read %d random bytes, got %d", length, bytesRead)
-	}
-	return randomBytes, nil
 }
 
 func (a *Appliance) GetCurrentVersion(ctx context.Context) string {
@@ -218,7 +201,7 @@ func (a *Appliance) GetConfigMap(ctx context.Context, name string) (*corev1.Conf
 }
 
 func (a *Appliance) shouldSetupRun(ctx context.Context) (bool, error) {
-	cfgMap, err := a.GetConfigMap(ctx, "sourcegraph-appliance")
+	cfgMap, err := a.GetConfigMap(ctx, config.ConfigmapName)
 	switch {
 	case err != nil:
 		return false, err

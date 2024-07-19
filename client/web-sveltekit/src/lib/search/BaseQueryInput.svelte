@@ -98,8 +98,10 @@
     }))
 
     function createEditor(container: HTMLDivElement, doc: string, extensions: Extension): EditorView {
+        // Moves the cursor to the end of the document by default
+        const selection = { anchor: doc.length }
         const view = new EditorView({
-            state: EditorState.create({ doc, extensions }),
+            state: EditorState.create({ doc, extensions, selection }),
             parent: container,
         })
         return view
@@ -144,9 +146,9 @@
 </script>
 
 {#if browser}
-    <div bind:this={container} class="root test-query-input test-editor" data-editor="codemirror6" />
+    <div bind:this={container} class="root test-query-input test-editor" data-editor="codemirror6" data-query-input />
 {:else}
-    <div class="root">
+    <div class="root" data-query-input>
         <input value={normalizedValue} {placeholder} />
     </div>
 {/if}

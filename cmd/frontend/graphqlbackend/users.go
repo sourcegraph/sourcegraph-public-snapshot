@@ -24,9 +24,11 @@ type usersArgs struct {
 }
 
 func (r *schemaResolver) Users(ctx context.Context, args *usersArgs) (*userConnectionResolver, error) {
-	// 🚨 SECURITY: Verify listing users is allowed.
-	if err := checkMembersAccess(ctx, r.db); err != nil {
-		return nil, err
+	// 🚨 SECURITY: Only site admins can list all users on sourcegraph.com.
+	if dotcom.SourcegraphDotComMode() {
+		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+			return nil, err
+		}
 	}
 
 	opt := database.UsersListOptions{
@@ -140,14 +142,4 @@ func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.Pag
 		return graphqlutil.NextPageCursor(strconv.Itoa(after)), nil
 	}
 	return graphqlutil.HasNextPage(false), nil
-}
-
-func checkMembersAccess(ctx context.Context, db database.DB) error {
-	// 🚨 SECURITY: Only site admins can list users on sourcegraph.com.
-	if dotcom.SourcegraphDotComMode() {
-		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
-			return err
-		}
-	}
-	return nil
 }

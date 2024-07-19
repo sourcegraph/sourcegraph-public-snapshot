@@ -87,7 +87,7 @@
         }
         nodesCopy.add(path)
 
-        $treeState = { focused: path, selected: path, expandedNodes: nodesCopy }
+        $treeState = { focused: path, selected: path, expandedNodes: nodesCopy, disableScope: false }
     }
 
     // Since context is only set once when the component is created
@@ -122,10 +122,18 @@
                     We handle navigation via the TreeView's select event, to preserve the focus state.
                     Using a link here allows us to benefit from data preloading.
                 -->
-                <Popover trigger={label} placement="right-start" showOnHover offset={{ mainAxis: 8, crossAxis: -32 }}>
+                <Popover
+                    let:toggle
+                    trigger={label}
+                    placement="right-start"
+                    showOnHover
+                    offset={{ mainAxis: 8, crossAxis: -32 }}
+                >
                     <a
                         href={replaceRevisionInURL(entry.canonicalURL, revision)}
-                        on:click|preventDefault={() => {}}
+                        on:click|preventDefault={() => {
+                            toggle(false)
+                        }}
                         tabindex={-1}
                         data-go-up={isRoot ? true : undefined}
                         on:mouseover={/* Preload */ () =>
@@ -156,18 +164,20 @@
     div {
         overflow: auto;
 
-        :global([data-treeitem][aria-selected]) > :global([data-treeitem-label]) {
+        :global([data-treeitem]) > :global([data-treeitem-label]) {
             cursor: pointer;
 
             &:hover {
-                background-color: var(--color-bg-3);
+                background-color: var(--secondary-4);
             }
         }
 
         :global([data-treeitem][aria-selected='true']) > :global([data-treeitem-label]) {
             --tree-node-expand-icon-color: var(--body-bg);
-            background-color: var(--primary);
+            --file-icon-color: var(--body-bg);
+            --tree-node-label-color: var(--body-bg);
 
+            background-color: var(--primary);
             &:hover {
                 background-color: var(--primary);
             }

@@ -1,9 +1,9 @@
 import type { FC } from 'react'
 
-import { ChatHistory, CodyWebChatProvider } from 'cody-web-experimental'
+import { CodyWebHistory, CodyWebChatProvider } from 'cody-web-experimental'
 import { Navigate } from 'react-router-dom'
 
-import { Badge, ButtonLink, PageHeader, Text } from '@sourcegraph/wildcard'
+import { ButtonLink, PageHeader, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
@@ -34,9 +34,9 @@ export const NewCodyChatPage: FC<NewCodyChatPageProps> = props => {
                 <CodyWebChatProvider
                     accessToken=""
                     serverEndpoint={window.location.origin}
-                    initialContext={{ repositories: [] }}
+                    customHeaders={window.context.xhrHeaders}
                 >
-                    <ChatHistory>
+                    <CodyWebHistory>
                         {history => (
                             <div className={styles.chatHistory}>
                                 {history.loading && (
@@ -59,7 +59,7 @@ export const NewCodyChatPage: FC<NewCodyChatPageProps> = props => {
                                 )}
                             </div>
                         )}
-                    </ChatHistory>
+                    </CodyWebHistory>
                     <ChatUi className={styles.chat} />
                 </CodyWebChatProvider>
             </div>
@@ -99,9 +99,7 @@ const CodyPageHeader: FC<CodyPageHeaderProps> = props => {
                 <PageHeader.Breadcrumb icon={CodyColorIcon}>
                     <div className="d-inline-flex align-items-center">
                         Cody Chat
-                        <Badge variant="info" className="ml-2">
-                            Experimental
-                        </Badge>
+                        <ProductStatusBadge status="beta" className="ml-2" />
                     </div>
                 </PageHeader.Breadcrumb>
             </PageHeader.Heading>

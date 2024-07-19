@@ -81,7 +81,7 @@ export default defineConfig(({ mode }) => {
             proxy: {
                 // Proxy requests to specific endpoints to a real Sourcegraph
                 // instance.
-                '^(/sign-(in|out)|/.assets|/-|/.api|/.auth|/search/stream|/users|/notebooks|/insights|/batch-changes)|/-/(raw|compare|own|code-graph|batch-changes|settings)(/|$)':
+                '^(/sign-(in|out)|/.assets|/-|/.api|/.auth|/search/stream|/users|/notebooks|/insights|/batch-changes|/contexts)|/-/(raw|own|code-graph|batch-changes|settings)(/|$)':
                     {
                         target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.sourcegraph.com',
                         changeOrigin: true,

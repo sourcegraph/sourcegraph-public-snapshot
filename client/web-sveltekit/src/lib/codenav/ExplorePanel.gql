@@ -1,0 +1,50 @@
+query ExplorePanel_Usages(
+    $repoName: String!
+    $revspec: String!
+    $filePath: String!
+    $rangeStart: PositionInput!
+    $rangeEnd: PositionInput!
+    $symbolComparator: SymbolComparator
+    $first: Int!
+    $afterCursor: String
+) {
+    usagesForSymbol(
+        symbol: $symbolComparator
+        range: { repository: $repoName, revision: $revspec, path: $filePath, start: $rangeStart, end: $rangeEnd }
+        first: $first
+        after: $afterCursor
+    ) {
+        ...ExplorePanel_UsageConnection
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+    }
+}
+
+fragment ExplorePanel_UsageConnection on UsageConnection {
+    nodes {
+        ...ExplorePanel_Usage
+    }
+}
+
+fragment ExplorePanel_Usage on Usage {
+    provenance
+    usageRange {
+        repository
+        revision
+        path
+        range {
+            start {
+                line
+                character
+            }
+            end {
+                line
+                character
+            }
+        }
+    }
+    surroundingContent
+    usageKind
+}

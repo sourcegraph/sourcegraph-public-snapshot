@@ -13,28 +13,28 @@
     import FileDiffHunks from './FileDiffHunks.svelte'
 
     export let fileDiff: FileDiff_Diff
-    export let expanded = !!fileDiff.newPath
+    export let expanded: boolean | undefined = undefined
 
     const dispatch = createEventDispatcher<{ toggle: { expanded: boolean } }>()
 
-    $: isBinary = fileDiff.newFile?.binary
-    $: isNew = !fileDiff.oldPath
-    $: isDeleted = !fileDiff.newPath
-    $: isRenamed = fileDiff.newPath && fileDiff.oldPath && fileDiff.newPath !== fileDiff.oldPath
-    $: isMoved = isRenamed && dirname(fileDiff.newPath!) !== dirname(fileDiff.oldPath!)
-    $: path = isRenamed ? `${fileDiff.oldPath} -> ${fileDiff.newPath}` : isDeleted ? fileDiff.oldPath : fileDiff.newPath
-    $: stat = fileDiff.stat
+    $: ({ oldFile, newFile, stat } = fileDiff)
+
+    $: isBinary = (newFile && newFile.binary) || !!oldFile?.binary
+    $: isNew = !oldFile
+    $: isDeleted = !newFile
+    $: isRenamed = oldFile?.path !== newFile?.path
+    $: isMoved = isRenamed && oldFile && newFile && dirname(newFile.path) !== dirname(oldFile.path)
     $: linkFile = fileDiff.mostRelevantFile.__typename === 'GitBlob'
+    $: open = expanded === undefined ? !!fileDiff.newFile?.path && fileDiff.hunks.length > 0 : expanded
 
     function toggle() {
-        expanded = !expanded
-        dispatch('toggle', { expanded })
+        dispatch('toggle', { expanded: !open })
     }
 </script>
 
 <div class="header">
-    <Button variant="icon" on:click={toggle} aria-label="{expanded ? 'Hide' : 'Show'} file diff">
-        <Icon inline icon={expanded ? ILucideChevronDown : ILucideChevronRight} />
+    <Button variant="icon" on:click={toggle} aria-label="{open ? 'Hide' : 'Show'} file diff">
+        <Icon inline icon={open ? ILucideChevronDown : ILucideChevronRight} />
     </Button>
     {#if isNew}
         <Badge variant="success">Added</Badge>
@@ -44,20 +44,37 @@
         <Badge variant="warning">{isMoved ? 'Moved' : 'Renamed'}</Badge>
     {/if}
     {#if stat}
-        <small class="added">+{numberWithCommas(stat.added)}</small>
-        <small class="deleted">-{numberWithCommas(stat.deleted)}</small>
+        <small class="added">+{numberWithCommas(stat.added)}<span class="visually-hidden">lines added</span></small>
+        <small class="deleted"
+            >-{numberWithCommas(stat.deleted)}<span class="visually-hidden">lines removed</span></small
+        >
         <DiffSquares added={stat.added} deleted={stat.deleted} />
     {/if}
     {#if linkFile}
-        <a href={fileDiff.mostRelevantFile.url}><span title={path}>{path}</span></a>
+        {#if oldFile && newFile && isRenamed}
+            <span>
+                <a href={oldFile.canonicalURL}>{oldFile.path}</a>
+                <Icon icon={ILucideArrowRight} inline aria-hidden />
+                <span class="visually-hidden">{isMoved ? 'moved' : 'renamed'} to</span>
+                <a href={newFile.canonicalURL}>{newFile.path}</a>
+            </span>
+        {:else}
+            <a href={fileDiff.mostRelevantFile.url}>{fileDiff.mostRelevantFile.path}</a>
+        {/if}
     {:else}
-        <span title={path}>{path}</span>
+        {newFile?.path || oldFile?.path}
     {/if}
 </div>
-{#if !isBinary && expanded}
-    <div class="hunks">
-        <FileDiffHunks hunks={fileDiff.hunks} />
-    </div>
+{#if open}
+    {#if isBinary}
+        <small class="info">(binary file not rendered)</small>
+    {:else if fileDiff.hunks.length === 0}
+        <small>(no changes)</small>
+    {:else}
+        <div class="hunks">
+            <FileDiffHunks hunks={fileDiff.hunks} />
+        </div>
+    {/if}
 {/if}
 
 <style lang="scss">
@@ -73,8 +90,11 @@
     }
 
     .hunks {
-        border-radius: var(--border-radius);
         border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        // This prevents the inner element from leaking over the rounded border
+        // but also ensures that hunks are horizontally scrollable.
+        overflow: auto hidden;
     }
 
     .added {
@@ -83,5 +103,9 @@
 
     .deleted {
         color: var(--danger);
+    }
+
+    small {
+        color: var(--text-muted);
     }
 </style>

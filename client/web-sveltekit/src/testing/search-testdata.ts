@@ -104,7 +104,7 @@ function createUnifiedDiff(): string {
 
 export function createContentMatch(): ContentMatch {
     const repository = createRepoName()
-    const path = faker.system.filePath()
+    const path = faker.system.filePath().slice(1)
 
     return {
         type: 'content',
@@ -160,7 +160,7 @@ export function createTeamMatch(): TeamMatch {
 }
 
 export function createPathMatch(): PathMatch {
-    const path = faker.system.filePath()
+    const path = faker.system.filePath().slice(1)
     return {
         type: 'path',
         repository: createRepoName(),
@@ -172,7 +172,7 @@ export function createPathMatch(): PathMatch {
     }
 }
 export function createSymbolMatch(): SymbolMatch {
-    const path = faker.system.filePath()
+    const path = faker.system.filePath().slice(1)
     return {
         type: 'symbol',
         repository: createRepoName(),

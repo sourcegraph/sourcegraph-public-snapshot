@@ -1,18 +1,22 @@
 <script lang="ts">
     import { page } from '$app/stores'
+    import TabsHeader from '$lib/TabsHeader.svelte'
 
     import type { LayoutData } from './$types'
 
     export let data: LayoutData
 
-    $: subpage = $page.url.pathname.includes('/branches/all') ? 'all' : 'overview'
+    const tabs = [
+        { id: 'overview', title: 'Overview', href: `${data.repoURL}/-/branches` },
+        { id: 'all', title: 'All branches', href: `${data.repoURL}/-/branches/all` },
+    ]
+    $: selected = tabs.findIndex(tab => tab.href === $page.url.pathname)
 </script>
 
 <section>
-    <ul>
-        <li class:active={subpage === 'overview'}><a href="{data.repoURL}/-/branches">Overview</a></li>
-        <li class:active={subpage === 'all'}><a href="{data.repoURL}/-/branches/all">All branches</a></li>
-    </ul>
+    <div class="header">
+        <TabsHeader {tabs} id="branche page" {selected} />
+    </div>
     <slot />
 </section>
 
@@ -22,25 +26,24 @@
         flex-direction: column;
         height: 100%;
         overflow: hidden;
+        gap: 1rem;
+        padding: 0.5rem 0;
+
+        @media (--mobile) {
+            padding: 0;
+        }
     }
 
-    ul {
-        align-self: center;
-        max-width: var(--viewport-xl);
-        width: 100%;
+    .header {
+        --tabs-header-align: center;
 
-        padding: 1rem;
-        margin: 0;
-
-        display: flex;
-        gap: 1rem;
-
-        list-style: none;
-
-        li {
-            &.active {
-                font-weight: bold;
-            }
+        &::after {
+            content: '';
+            display: block;
+            border-bottom: 1px solid var(--border-color);
+            position: absolute;
+            left: 0;
+            right: 0;
         }
     }
 </style>

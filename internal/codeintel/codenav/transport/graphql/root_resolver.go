@@ -25,8 +25,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var ErrNotEnabled = errors.New("experimentalFeatures.scipBasedAPIs is not enabled")
 
 type rootResolver struct {
 	svc                            CodeNavService
@@ -118,9 +121,12 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	if !conf.SCIPBasedAPIsEnabled() {
-		return nil, nil
+		return nil, ErrNotEnabled
 	}
 
+	// TODO: The resolvers may be invoked in parallel. Is GitTreeTranslator
+	// concurrency-safe? It looks like
+	gitTreeTranslator := r.MakeGitTreeTranslator(opts.Repo, opts.Commit)
 	makeResolvers := func(prov resolverstubs.CodeGraphDataProvenance) ([]resolverstubs.CodeGraphDataResolver, error) {
 		indexer := ""
 		if prov == resolverstubs.ProvenanceSyntactic {
@@ -137,8 +143,10 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 			return nil, err
 		}
 		resolvers := []resolverstubs.CodeGraphDataResolver{}
-		for _, upload := range preferUploadsWithLongestRoots(uploads) {
-			resolvers = append(resolvers, newCodeGraphDataResolver(r.svc, upload, opts, prov, r.operations))
+		filteredUploads := preferUploadsWithLongestRoots(uploads)
+
+		for _, upload := range filteredUploads {
+			resolvers = append(resolvers, newCodeGraphDataResolver(r.svc, gitTreeTranslator, upload, opts, prov, r.operations))
 		}
 		return resolvers, nil
 	}
@@ -169,8 +177,32 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 	return &[]resolverstubs.CodeGraphDataResolver{}, nil
 }
 
-func (r *rootResolver) CodeGraphDataByID(ctx context.Context, id graphql.ID) (resolverstubs.CodeGraphDataResolver, error) {
-	return newCodeGraphDataResolverFromID(ctx, r.repoStore, r.svc, r.operations, id)
+func (r *rootResolver) CodeGraphDataByID(ctx context.Context, rawID graphql.ID) (resolverstubs.CodeGraphDataResolver, error) {
+	var id CodeGraphDataID
+	if err := relay.UnmarshalSpec(rawID, &id); err != nil {
+		return nil, errors.Wrap(err, "malformed ID")
+	}
+	repo, err := r.repoStore.Get(ctx, id.RepoID)
+	if err != nil {
+		return nil, err
+	}
+	opts := resolverstubs.CodeGraphDataOpts{
+		Args:   id.Args,
+		Repo:   repo,
+		Commit: id.Commit,
+		Path:   core.NewRepoRelPathUnchecked(id.Path),
+	}
+	return &codeGraphDataResolver{
+		sync.Once{},
+		/*document*/ nil,
+		/*documentRetrievalError*/ nil,
+		r.svc,
+		r.MakeGitTreeTranslator(repo, id.Commit),
+		id.UploadData,
+		&opts,
+		id.CodeGraphDataProvenance,
+		r.operations,
+	}, nil
 }
 
 func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.CompletedUpload {
@@ -198,7 +230,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{Attrs: unresolvedArgs.Attrs()})
 
 	if !conf.SCIPBasedAPIsEnabled() {
-		return nil, nil
+		return nil, ErrNotEnabled
 	}
 
 	numPreciseResults := 0
@@ -219,6 +251,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	}
 	remainingCount := int(args.RemainingCount)
 	provsForSCIPData := args.Symbol.ProvenancesForSCIPData()
+	linesGetter := newCachedLinesGetter(r.gitserverClient, 5*1024*1024 /* 5MB */)
 	usageResolvers := []resolverstubs.UsageResolver{}
 
 	if provsForSCIPData.Precise {
@@ -232,9 +265,12 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 		Path:        args.Path,
 		SymbolRange: args.Range,
 	}
+
+	gitTreeTranslator := r.MakeGitTreeTranslator(&args.Repo, args.CommitID)
+
 	var previousSyntacticSearch core.Option[codenav.PreviousSyntacticSearch]
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
-		syntacticResult, prevSearch, err := r.svc.SyntacticUsages(ctx, usagesForSymbolArgs)
+		syntacticResult, prevSearch, err := r.svc.SyntacticUsages(ctx, gitTreeTranslator, usagesForSymbolArgs)
 		if err != nil {
 			switch err.Code {
 			case codenav.SU_Fatal:
@@ -248,16 +284,16 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 		} else {
 			for _, result := range syntacticResult.Matches {
-				usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo, args.CommitID))
+				usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo, args.CommitID, linesGetter))
 			}
 			numSyntacticResults = len(syntacticResult.Matches)
 			remainingCount = remainingCount - numSyntacticResults
-			previousSyntacticSearch = core.Some[codenav.PreviousSyntacticSearch](prevSearch)
+			previousSyntacticSearch = core.Some(prevSearch)
 		}
 	}
 
 	if remainingCount > 0 && provsForSCIPData.SearchBased {
-		results, err := r.svc.SearchBasedUsages(ctx, usagesForSymbolArgs, previousSyntacticSearch)
+		results, err := r.svc.SearchBasedUsages(ctx, gitTreeTranslator, usagesForSymbolArgs, previousSyntacticSearch)
 		if err != nil {
 			// We only want to fail the request on an error here if we didn't get any precise or syntactic results before
 			if len(usageResolvers) == 0 {
@@ -268,7 +304,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 		} else {
 			for _, result := range results {
-				usageResolvers = append(usageResolvers, NewSearchBasedUsageResolver(result, args.Repo, args.CommitID))
+				usageResolvers = append(usageResolvers, NewSearchBasedUsageResolver(result, args.Repo, args.CommitID, linesGetter))
 			}
 		}
 	}
@@ -281,6 +317,10 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	}
 
 	return nil, errors.New("Not implemented yet")
+}
+
+func (r *rootResolver) MakeGitTreeTranslator(repo *sgtypes.Repo, baseCommit api.CommitID) codenav.GitTreeTranslator {
+	return codenav.NewGitTreeTranslator(r.gitserverClient, &codenav.TranslationBase{repo, baseCommit}, r.hunkCache)
 }
 
 // gitBlobLSIFDataResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
@@ -365,10 +405,11 @@ type codeGraphDataResolver struct {
 	documentRetrievalError error
 
 	// Arguments
-	svc        CodeNavService
-	upload     UploadData
-	opts       *resolverstubs.CodeGraphDataOpts
-	provenance resolverstubs.CodeGraphDataProvenance
+	svc               CodeNavService
+	gitTreeTranslator codenav.GitTreeTranslator
+	upload            UploadData
+	opts              *resolverstubs.CodeGraphDataOpts
+	provenance        resolverstubs.CodeGraphDataProvenance
 
 	// O11y
 	operations *operations
@@ -381,14 +422,30 @@ type codeGraphDataResolver struct {
 type UploadData struct {
 	UploadID       int
 	Commit         string
+	Root           string
 	Indexer        string
 	IndexerVersion string
 }
+
+func (u UploadData) GetID() int {
+	return u.UploadID
+}
+
+func (u UploadData) GetRoot() string {
+	return u.Root
+}
+
+func (u UploadData) GetCommit() api.CommitID {
+	return api.CommitID(u.Commit)
+}
+
+var _ core.UploadLike = UploadData{}
 
 func NewUploadData(upload shared.CompletedUpload) UploadData {
 	return UploadData{
 		UploadID:       upload.ID,
 		Commit:         upload.Commit,
+		Root:           upload.Root,
 		Indexer:        upload.Indexer,
 		IndexerVersion: upload.IndexerVersion,
 	}
@@ -396,6 +453,7 @@ func NewUploadData(upload shared.CompletedUpload) UploadData {
 
 func newCodeGraphDataResolver(
 	svc CodeNavService,
+	gitTreeTranslator codenav.GitTreeTranslator,
 	upload shared.CompletedUpload,
 	opts *resolverstubs.CodeGraphDataOpts,
 	provenance resolverstubs.CodeGraphDataProvenance,
@@ -406,6 +464,7 @@ func newCodeGraphDataResolver(
 		/*document*/ nil,
 		/*documentRetrievalError*/ nil,
 		svc,
+		gitTreeTranslator,
 		NewUploadData(upload),
 		opts,
 		provenance,
@@ -426,45 +485,12 @@ type CodeGraphDataID struct {
 	resolverstubs.CodeGraphDataProvenance
 }
 
-func newCodeGraphDataResolverFromID(
-	ctx context.Context,
-	repoStore database.RepoStore,
-	svc CodeNavService,
-	operations *operations,
-	rawID graphql.ID,
-) (resolverstubs.CodeGraphDataResolver, error) {
-	var id CodeGraphDataID
-	if err := relay.UnmarshalSpec(rawID, &id); err != nil {
-		return nil, errors.Wrap(err, "malformed ID")
-	}
-	repo, err := repoStore.Get(ctx, id.RepoID)
-	if err != nil {
-		return nil, err
-	}
-	opts := resolverstubs.CodeGraphDataOpts{
-		Args:   id.Args,
-		Repo:   repo,
-		Commit: id.Commit,
-		Path:   core.NewRepoRelPathUnchecked(id.Path),
-	}
-	return &codeGraphDataResolver{
-		sync.Once{},
-		/*document*/ nil,
-		/*documentRetrievalError*/ nil,
-		svc,
-		id.UploadData,
-		&opts,
-		id.CodeGraphDataProvenance,
-		operations,
-	}, nil
-}
-
 func (c *codeGraphDataResolver) tryRetrieveDocument(ctx context.Context) (*scip.Document, error) {
 	// NOTE(id: scip-doc-optimization): In the case of pagination, if we retrieve the document ID
 	// from the database, we can avoid performing a JOIN between codeintel_scip_document_lookup
 	// and codeintel_scip_documents
 	c.retrievedDocument.Do(func() {
-		c.document, c.documentRetrievalError = c.svc.SCIPDocument(ctx, c.upload.UploadID, c.opts.Path)
+		c.document, c.documentRetrievalError = c.svc.SCIPDocument(ctx, c.gitTreeTranslator, c.upload, c.opts.Path)
 	})
 	return c.document, c.documentRetrievalError
 }

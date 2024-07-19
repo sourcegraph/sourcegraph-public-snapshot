@@ -29,6 +29,7 @@ import (
 //    pointers, which is ugly and inefficient.
 
 type BatchSpec struct {
+	Version           int                      `json:"version,omitempty" yaml:"version"`
 	Name              string                   `json:"name,omitempty" yaml:"name"`
 	Description       string                   `json:"description,omitempty" yaml:"description"`
 	On                []OnQueryOrRepository    `json:"on,omitempty" yaml:"on"`

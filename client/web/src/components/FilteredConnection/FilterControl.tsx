@@ -6,10 +6,14 @@ import { RadioButtons } from '../RadioButtons'
 
 import styles from './FilterControl.module.scss'
 
+export type BasicFilterArgs = Record<string, string | number | boolean | null | undefined>
+
 /**
  * A filter to display next to the search input field.
+ * @template TKey The IDs of all filters ({@link Filter.id} values).
+ * @template TArg The type of option args ({@link Filter.options} {@link FilterOption.args} values).
  */
-export interface Filter {
+export interface Filter<TKey extends string = string, TArg extends BasicFilterArgs = BasicFilterArgs> {
     /** The UI label for the filter. */
     label: string
 
@@ -20,7 +24,7 @@ export interface Filter {
      * The URL query parameter name for this filter (conventionally the label, lowercased and
      * without spaces and punctuation).
      */
-    id: string
+    id: TKey
 
     /** An optional tooltip to display for this filter. */
     tooltip?: string
@@ -28,13 +32,14 @@ export interface Filter {
     /**
      * All of the possible values for this filter that the user can select.
      */
-    options: FilterOption[]
+    options: FilterOption<TArg>[]
 }
 
 /**
  * An option that the user can select for a filter ({@link Filter}).
+ * @template TArg The type of option args ({@link Filter.options} {@link FilterOption.args} values).
  */
-export interface FilterOption {
+export interface FilterOption<TArg extends BasicFilterArgs = BasicFilterArgs> {
     /**
      * The value (corresponding to the key in {@link Filter.id}) if this option is chosen. For
      * example, if a filter has {@link Filter.id} of `sort` and the user selects a
@@ -44,32 +49,31 @@ export interface FilterOption {
     value: string
     label: string
     tooltip?: string
-    args: { [name: string]: string | number | boolean }
+    args: TArg
 }
 
 /**
  * The values of all filters, keyed by the filter ID ({@link Filter.id}).
+ * @template K The IDs of all filters ({@link Filter.id} values).
  */
-export interface FilterValues extends Record<string, FilterOption['value'] | null> {}
+export type FilterValues<TKey extends string = string> = Partial<Record<TKey, FilterOption['value']>>
 
-interface FilterControlProps {
-    /** All filters. */
-    filters: Filter[]
-
-    /** Called when a filter is selected. */
-    onValueSelect: (filter: Filter, value: FilterOption['value']) => void
-
-    values: FilterValues
-}
-
-export const FilterControl: React.FunctionComponent<React.PropsWithChildren<FilterControlProps>> = ({
+export function FilterControl<TKey extends string = string>({
     filters,
     values,
     onValueSelect,
     children,
-}) => {
+}: React.PropsWithChildren<{
+    /** All filters. */
+    filters: Filter<TKey>[]
+
+    /** Called when a filter is selected. */
+    onValueSelect: (filter: Filter<TKey>, value: FilterOption['value']) => void
+
+    values: FilterValues<TKey>
+}>): JSX.Element {
     const onChange = useCallback(
-        (filter: Filter, id: string) => {
+        (filter: Filter<TKey>, id: string) => {
             const value = filter.options.find(opt => opt.value === id)
             if (value === undefined) {
                 return

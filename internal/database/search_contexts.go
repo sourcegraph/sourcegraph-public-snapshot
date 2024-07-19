@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var ErrSearchContextNotFound = errors.New("search context not found")
+var ErrSearchContextNotFound = resourceNotFoundError{noun: "search context"}
 
 func SearchContextsWith(logger log.Logger, other basestore.ShareableStore) SearchContextsStore {
 	return &searchContextsStore{logger: logger, Store: basestore.NewWithHandle(other.Handle())}

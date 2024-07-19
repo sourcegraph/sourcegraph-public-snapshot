@@ -17,13 +17,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var MockCountGoImporters func(ctx context.Context, repo api.RepoName) (int, error)
 
 var (
-	goImportersCountCache = rcache.NewWithTTL("go-importers-count", 14400) // 4 hours
+	goImportersCountCache = rcache.NewWithTTL(redispool.Cache, "go-importers-count", 14400) // 4 hours
 )
 
 // CountGoImporters returns the number of Go importers for the repository's Go subpackages. This is
@@ -63,7 +64,8 @@ func CountGoImporters(ctx context.Context, cli httpcli.Doer, repo api.RepoName) 
 
 	q.Query = countGoImportersGraphQLQuery
 	q.Variables = map[string]any{
-		"query": countGoImportersSearchQuery(repo),
+		"query":   countGoImportersSearchQuery(repo),
+		"version": "V3",
 	}
 
 	body, err := json.Marshal(q)
@@ -143,6 +145,6 @@ func countGoImportersSearchQuery(repo api.RepoName) string {
 }
 
 const countGoImportersGraphQLQuery = `
-query CountGoImporters($query: String!) {
-  search(query: $query) { results { matchCount } }
+query CountGoImporters($query: String!, $version: SearchVersion!) {
+  search(query: $query, version: $version) { results { matchCount } }
 }`

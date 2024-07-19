@@ -16,8 +16,10 @@ import (
 	subscriptionsv1connect "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1/v1connect"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/iam"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/connectutil"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/samsm2m"
@@ -311,7 +313,8 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("subscription.id is required"))
 	}
 
-	// Double check with the dotcom DB that the subscription ID is valid.
+	// TEMPORARY: Double check with the dotcom DB that the subscription ID is valid.
+	// This currently ensures we never actually create new subscriptions.
 	subscriptionAttrs, err := s.store.ListDotcomEnterpriseSubscriptions(ctx, dotcomdb.ListEnterpriseSubscriptionsOptions{
 		SubscriptionIDs: []string{subscriptionID},
 	})
@@ -327,26 +330,41 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 	// Empty field paths means update all non-empty fields.
 	if len(fieldPaths) == 0 {
 		if v := req.Msg.GetSubscription().GetInstanceDomain(); v != "" {
-			opts.InstanceDomain = v
+			opts.InstanceDomain = pointers.Ptr(database.NewNullString(v))
+		}
+		if v := req.Msg.GetSubscription().GetDisplayName(); v != "" {
+			opts.DisplayName = pointers.Ptr(database.NewNullString(v))
 		}
 	} else {
 		for _, p := range fieldPaths {
 			switch p {
 			case "instance_domain":
-				opts.InstanceDomain = req.Msg.GetSubscription().GetInstanceDomain()
+				opts.InstanceDomain = pointers.Ptr(
+					database.NewNullString(req.Msg.GetSubscription().GetInstanceDomain()),
+				)
+			case "display_name":
+				opts.DisplayName = pointers.Ptr(
+					database.NewNullString(req.Msg.GetSubscription().GetDisplayName()),
+				)
 			case "*":
 				opts.ForceUpdate = true
-				opts.InstanceDomain = req.Msg.GetSubscription().GetInstanceDomain()
+				opts.InstanceDomain = pointers.Ptr(
+					database.NewNullString(req.Msg.GetSubscription().GetInstanceDomain()),
+				)
+				opts.DisplayName = pointers.Ptr(
+					database.NewNullString(req.Msg.GetSubscription().GetDisplayName()),
+				)
 			}
 		}
 	}
 
 	// Validate and normalize the domain
-	if opts.InstanceDomain != "" {
-		opts.InstanceDomain, err = subscriptionsv1.NormalizeInstanceDomain(opts.InstanceDomain)
+	if opts.InstanceDomain != nil && opts.InstanceDomain.Valid {
+		normalizedDomain, err := subscriptionsv1.NormalizeInstanceDomain(opts.InstanceDomain.String)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInvalidArgument, errors.Wrap(err, "invalid instance domain"))
 		}
+		opts.InstanceDomain.String = normalizedDomain
 	}
 
 	subscription, err := s.store.UpsertEnterpriseSubscription(ctx, subscriptionID, opts)

@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Return the subset of allVersions that are at most n minor revisions behind
+// NMinorVersions returns the subset of allVersions that are at most n minor revisions behind
 // latestSupportedVersion.
 func NMinorVersions(allVersions []string, latestSupportedVersion string, n uint64) ([]string, error) {
 	latestSupported, err := semver.NewVersion(latestSupportedVersion)
@@ -17,18 +17,10 @@ func NMinorVersions(allVersions []string, latestSupportedVersion string, n uint6
 		return nil, errors.Wrap(err, "parsing latest supported version")
 	}
 
-	versionsAndErrs := slices.Map(allVersions, func(versionStr string) semverAndError {
-		version, err := semver.NewVersion(versionStr)
-		return semverAndError{semver: version, err: errors.Wrapf(err, "error parsing semver: %s", versionStr)}
-	})
-	versions := make([]*semver.Version, len(versionsAndErrs))
-	for i, versionAndErr := range versionsAndErrs {
-		if versionAndErr.err != nil {
-			return nil, err
-		}
-		versions[i] = versionAndErr.semver
+	versions, err := ParseVersions(allVersions)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing versions")
 	}
-	sort.Sort(semver.Collection(versions))
 
 	var nminor []*semver.Version
 	for _, version := range versions {
@@ -67,6 +59,22 @@ func NMinorVersions(allVersions []string, latestSupportedVersion string, n uint6
 
 	sort.Sort(sort.Reverse(semver.Collection(nminor)))
 	return slices.Map(nminor, func(semver *semver.Version) string { return semver.String() }), nil
+}
+
+func ParseVersions(versionStrs []string) ([]*semver.Version, error) {
+	versionsAndErrs := slices.Map(versionStrs, func(versionStr string) semverAndError {
+		version, err := semver.NewVersion(versionStr)
+		return semverAndError{semver: version, err: errors.Wrapf(err, "error parsing semver: %s", versionStr)}
+	})
+	versions := make([]*semver.Version, len(versionsAndErrs))
+	for i, versionAndErr := range versionsAndErrs {
+		if versionAndErr.err != nil {
+			return nil, versionAndErr.err
+		}
+		versions[i] = versionAndErr.semver
+	}
+	sort.Sort(semver.Collection(versions))
+	return versions, nil
 }
 
 func highestMinorInMajorSeries(versions []*semver.Version, major uint64) uint64 {

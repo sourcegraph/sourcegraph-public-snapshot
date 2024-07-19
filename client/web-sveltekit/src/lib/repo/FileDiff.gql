@@ -1,12 +1,17 @@
 fragment FileDiff_Diff on FileDiff {
-    newPath
-    oldPath
     mostRelevantFile {
         canonicalURL # key field
         url
+        path
     }
     newFile {
         canonicalURL # key field
+        path
+        binary
+    }
+    oldFile {
+        canonicalURL # key field
+        path
         binary
     }
     stat {

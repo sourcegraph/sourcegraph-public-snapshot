@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/google/go-github/v55/github"
@@ -38,7 +37,6 @@ func TestGitHubInstallationWorker(t *testing.T) {
 		return apps, nil
 	})
 	ghStore.SyncInstallationsFunc.SetDefaultHook(func(ctx context.Context, app ghtypes.GitHubApp, logger log.Logger, client ghtypes.GitHubAppClient) (errs errors.MultiError) {
-		fmt.Println("sync installations: ", app.ID)
 		return nil
 	})
 

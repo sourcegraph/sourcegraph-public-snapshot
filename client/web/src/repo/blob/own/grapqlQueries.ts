@@ -191,6 +191,7 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
         node(id: $repo) {
             ... on Repository {
                 __typename
+                id
                 sourceType
                 commit(rev: $revision) {
                     __typename

@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 type janitorJob struct{}
@@ -32,7 +33,7 @@ func (j *janitorJob) Routines(_ context.Context, observationCtx *observation.Con
 		return nil, err
 	}
 
-	dequeueCache := rcache.New(executortypes.DequeueCachePrefix)
+	dequeueCache := rcache.New(redispool.Cache, executortypes.DequeueCachePrefix)
 
 	routines := []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(

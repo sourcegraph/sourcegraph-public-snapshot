@@ -9,8 +9,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gorilla/schema"
-
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -39,13 +37,6 @@ func HTTP(err error) int {
 	var e interface{ HTTPStatusCode() int }
 	if errors.AsInterface(err, &e) {
 		return e.HTTPStatusCode()
-	}
-
-	if errors.HasType[schema.ConversionError](err) {
-		return http.StatusBadRequest
-	}
-	if errors.HasType[schema.MultiError](err) {
-		return http.StatusBadRequest
 	}
 
 	if errors.Is(err, os.ErrNotExist) {

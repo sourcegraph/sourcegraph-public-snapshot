@@ -40,7 +40,7 @@ type UserCredential struct {
 }
 
 // IsGitHubApp returns true if the user credential is a GitHub App.
-func (uc *UserCredential) IsGitHubApp() bool { return uc.GitHubAppID != 0 }
+func (uc *UserCredential) IsGitHubApp() bool { return uc.GitHubAppID > 0 }
 
 // Authenticator decrypts and creates the authenticator associated with the user credential.
 func (uc *UserCredential) Authenticator(ctx context.Context, opts ghauth.CreateAuthenticatorForCredentialOpts) (auth.Authenticator, error) {

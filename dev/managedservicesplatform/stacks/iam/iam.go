@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiamcustomrole"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/secretmanagersecretiammember"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/serviceaccountiammember"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta/googleprojectserviceidentity"
 	google_beta "github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta/provider"
 
@@ -33,6 +34,9 @@ type CrossStackOutput struct {
 	// IsFinalStageOfRollout is true for this environment.
 	CloudDeployExecutionServiceAccount *serviceaccount.Output
 	CloudDeployReleaserServiceAccount  *serviceaccount.Output
+	// DatastreamCloudSQLProxyServiceAccount is a service account for a proxy
+	// to Cloud SQL to allow Datastream to connect to Cloud SQL for replication.
+	DatastreamToCloudSQLServiceAccount *serviceaccount.Output
 }
 
 type Variables struct {
@@ -61,6 +65,10 @@ const (
 	OutputOperatorServiceAccount = "operator_access_service_account"
 
 	OutputCloudDeployReleaserServiceAccountID = "cloud_deploy_releaser_service_account_id"
+
+	// tfcRobotMember is the service account used as the identity for our
+	// Terraform Cloud runners.
+	tfcRobotMember = "serviceAccount:terraform-cloud@sourcegraph-ci.iam.gserviceaccount.com"
 )
 
 func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
@@ -133,6 +141,28 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			// the workload access to external resources, so guard it from deletes.
 			PreventDestroys: vars.PreventDestroys,
 		})
+
+	// Let the TFC robot impersonate the workload service account to provision
+	// things on its behalf if needed.
+	{
+		id := id.Group("tfc_impersonate_workload")
+		workloadSAID := pointers.Stringf("projects/%s/serviceAccounts/%s",
+			vars.ProjectID, workloadServiceAccount.Email)
+		_ = serviceaccountiammember.NewServiceAccountIamMember(stack,
+			id.TerraformID("serviceaccountuser"),
+			&serviceaccountiammember.ServiceAccountIamMemberConfig{
+				ServiceAccountId: workloadSAID,
+				Role:             pointers.Ptr("roles/iam.serviceAccountUser"),
+				Member:           pointers.Ptr(tfcRobotMember),
+			})
+		_ = serviceaccountiammember.NewServiceAccountIamMember(stack,
+			id.TerraformID("serviceaccounttokencreator"),
+			&serviceaccountiammember.ServiceAccountIamMemberConfig{
+				ServiceAccountId: workloadSAID,
+				Role:             pointers.Ptr("roles/iam.serviceAccountTokenCreator"),
+				Member:           pointers.Ptr(tfcRobotMember),
+			})
+	}
 
 	// Create a service account for operators to impersonate to access other
 	// provisioned MSP resources. We use a randomized ID for more predictable
@@ -260,6 +290,19 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			"Service Account ID for Cloud Deploy release creation - intended for workload identity federation in CI")
 	}
 
+	datastreamToCloudSQLServiceAccount := serviceaccount.New(stack,
+		id.Group("datastream-to-cloudsql"),
+		serviceaccount.Config{
+			ProjectID:   vars.ProjectID,
+			AccountID:   "datastream-to-cloudsql",
+			DisplayName: fmt.Sprintf("%s Datastream-to-Cloud-SQL service account", vars.Service.GetName()),
+			Roles: []serviceaccount.Role{{
+				ID:   resourceid.New("role_cloudsql_client"),
+				Role: "roles/cloudsql.client",
+			}},
+		},
+	)
+
 	// Collect outputs
 	locals.Add(OutputCloudRunServiceAccount, workloadServiceAccount.Email,
 		"Service Account email used as Cloud Run resource workload identity")
@@ -271,6 +314,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		OperatorAccessServiceAccount:       operatorAccessServiceAccount,
 		CloudDeployExecutionServiceAccount: cloudDeployExecutorServiceAccount,
 		CloudDeployReleaserServiceAccount:  cloudDeployReleaserServiceAccount,
+		DatastreamToCloudSQLServiceAccount: datastreamToCloudSQLServiceAccount,
 	}, nil
 }
 

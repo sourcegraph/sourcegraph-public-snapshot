@@ -21,22 +21,20 @@
 </script>
 
 <span class="copy-button">
-    <Tooltip {tooltip} placement="bottom">
-        <slot name="custom" {handleCopy}>
-            <Button on:click={handleCopy} variant="icon" size="sm" aria-label={label}>
-                <Icon inline icon={ILucideCopy} aria-hidden />
-            </Button>
-        </slot>
-    </Tooltip>
-</span>
+    <Tooltip {tooltip} placement="bottom"
+        ><slot name="custom" {handleCopy}
+            ><Button on:click={handleCopy} variant="icon" size="sm" aria-label={label}
+                ><Icon inline icon={ILucideCopy} aria-hidden /></Button
+            ></slot
+        ></Tooltip
+    ></span
+>
 
 <style lang="scss">
     .copy-button {
         display: contents;
-        color: var(--text-muted);
-
         &:hover {
-            color: var(--body-color);
+            --icon-color: var(--body-color);
         }
     }
 </style>

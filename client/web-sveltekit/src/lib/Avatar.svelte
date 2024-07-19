@@ -32,14 +32,13 @@
 {#if avatarURL}
     <img src={avatarURL} role="presentation" aria-hidden="true" alt="Avatar of {name}" data-avatar />
 {:else}
-    <div data-avatar>
+    <div data-avatar title={name}>
         <span>{getInitials(name)}</span>
     </div>
 {/if}
 
 <style lang="scss">
     span {
-        z-index: 1;
         color: var(--text-muted);
         font-size: calc(var(--size) * 0.5);
         font-weight: 500;
@@ -50,29 +49,21 @@
         --min-size: 1.25rem;
         --size: var(--avatar-size, var(--icon-inline-size, var(--min-size)));
 
+        flex: none;
+
         min-width: var(--min-size);
         min-height: var(--min-size);
         width: var(--size);
         height: var(--size);
-        isolation: isolate;
-        display: inline-flex;
         border-radius: 50%;
-        text-transform: capitalize;
-        color: var(--color-bg-1);
+
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        position: relative;
-        background: var(--secondary);
-        flex: none;
-    }
 
-    div::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        border-radius: 50%;
+        text-transform: capitalize;
+        color: var(--color-bg-1);
+        background: var(--secondary);
+        user-select: none;
     }
 </style>

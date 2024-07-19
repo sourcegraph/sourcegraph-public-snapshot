@@ -29,6 +29,7 @@ type PipelineEvent struct {
 // PushEvent represents a push to a repository.
 // https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html#push-events
 type PushEvent struct {
+	ProjectID  int `json:"project_id,omitempty"`
 	Repository struct {
 		GitSSHURL string `json:"git_ssh_url,omitempty"`
 	} `json:"repository"`

@@ -783,7 +783,11 @@ This command supports completions on services and environments.
 						}
 
 						// Run proxy until stopped
-						return proxy.Start(c.Context, c.Int("session.timeout"))
+						err = proxy.Start(c.Context, c.Int("session.timeout"))
+						if errors.Is(err, cloudsqlproxy.ErrPortInUse) {
+							std.Out.WriteSuggestionf("try a different port using '-port' flag")
+						}
+						return err
 					},
 				},
 			},

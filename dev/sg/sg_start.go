@@ -139,16 +139,26 @@ sg start --commands frontend gitserver
 				Destination: &onlyServices,
 			},
 		},
-		BashComplete: completions.CompleteArgs(func() (options []string) {
+		BashComplete: func(c *cli.Context) {
 			config, _ := getConfig()
 			if config == nil {
 				return
 			}
-			for name := range config.Commandsets {
-				options = append(options, name)
-			}
-			return
-		}),
+			completions.CompleteArgs(func() (options []string) {
+				if c.Bool("commands") {
+					// Suggest commands
+					for name := range config.Commands {
+						options = append(options, name)
+					}
+				} else {
+					// Suggest commandsets
+					for name := range config.Commandsets {
+						options = append(options, name)
+					}
+				}
+				return
+			})(c)
+		},
 		Action: startExec,
 	}
 )
