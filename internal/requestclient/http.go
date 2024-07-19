@@ -4,12 +4,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-var useCloudflareHeaders = env.MustGetBool("SRC_USE_CLOUDFLARE_HEADERS",
-	dotcom.SourcegraphDotComMode(), "Use Cloudflare headers for request metadata")
+var useCloudflareHeaders = env.MustGetBool("SRC_USE_CLOUDFLARE_HEADERS", false, "Use Cloudflare headers for request metadata")
 
 const (
 	// Sourcegraph-specific client IP header key
