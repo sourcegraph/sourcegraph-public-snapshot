@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -28,50 +27,14 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 	if err != nil {
 		return nil, err
 	}
-	// 🚨 SECURITY: Only org members can get org details on Cloud
-	if dotcom.SourcegraphDotComMode() {
-		hasAccess := func() error {
-			if auth.CheckOrgAccess(ctx, r.db, org.ID) == nil {
-				return nil
-			}
-
-			if a := sgactor.FromContext(ctx); a.IsAuthenticated() {
-				_, err = r.db.OrgInvitations().GetPending(ctx, org.ID, a.UID)
-				if err == nil {
-					return nil
-				}
-			}
-
-			// NOTE: We want to present a unified error to unauthorized users to prevent
-			// them from differentiating service states by different error messages.
-			return &database.OrgNotFoundError{Message: fmt.Sprintf("name %s", args.Name)}
-		}
-		if err := hasAccess(); err != nil {
-			// site admin can access org ID
-			if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
-				if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
-					// Log action for site admin vieweing an organization's details in dotcom
-					if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
-						r.logger.Warn("Error logging security event", log.Error(err))
-
-					}
-				}
-				onlyOrgID := &types.Org{ID: org.ID}
-				return &OrgResolver{db: r.db, org: onlyOrgID}, nil
-			}
-			return nil, err
-		}
-	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
 		// Log action for siteadmin viewing an organization's details
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
-
 		}
 	}
+
 	return &OrgResolver{db: r.db, org: org}, nil
 }
 
@@ -93,28 +56,6 @@ func OrgByID(ctx context.Context, db database.DB, id graphql.ID) (*OrgResolver, 
 }
 
 func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolver, error) {
-	return orgByIDInt32WithForcedAccess(ctx, db, orgID, false)
-}
-
-func orgByIDInt32WithForcedAccess(ctx context.Context, db database.DB, orgID int32, forceAccess bool) (*OrgResolver, error) {
-	// 🚨 SECURITY: Only org members can get org details on Cloud
-	//              And all invited users by email
-	if !forceAccess && dotcom.SourcegraphDotComMode() {
-		err := auth.CheckOrgAccess(ctx, db, orgID)
-		if err != nil {
-			hasAccess := false
-			// allow invited user to view org details
-			if a := sgactor.FromContext(ctx); a.IsAuthenticated() {
-				_, err := db.OrgInvitations().GetPending(ctx, orgID, a.UID)
-				if err == nil {
-					hasAccess = true
-				}
-			}
-			if !hasAccess {
-				return nil, &database.OrgNotFoundError{Message: fmt.Sprintf("id %d", orgID)}
-			}
-		}
-	}
 	org, err := db.Orgs().GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err

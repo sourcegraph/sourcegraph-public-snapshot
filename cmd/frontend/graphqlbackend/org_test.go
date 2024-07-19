@@ -43,7 +43,7 @@ func TestOrganization(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 
-	t.Run("anyone can access by default", func(t *testing.T) {
+	t.Run("can access organizations", func(t *testing.T) {
 		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t, db),
@@ -61,160 +61,6 @@ func TestOrganization(t *testing.T) {
 					}
 				}
 			`,
-			},
-		})
-	})
-
-	t.Run("users not invited or not a member cannot access on Sourcegraph.com", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(t, true)
-
-		RunTests(t, []*Test{
-			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query: `
-				{
-					organization(name: "acme") {
-						name
-					}
-				}
-			`,
-				ExpectedResult: `
-				{
-					"organization": null
-				}
-				`,
-				ExpectedErrors: []*gqlerrors.QueryError{
-					{
-						Message: "org not found: name acme",
-						Path:    []any{"organization"},
-					},
-				},
-			},
-		})
-	})
-
-	t.Run("org members can access on Sourcegraph.com", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(t, true)
-
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-
-		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
-
-		orgMembers := dbmocks.NewMockOrgMemberStore()
-		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{OrgID: 1, UserID: 1}, nil)
-
-		db := dbmocks.NewMockDBFrom(db)
-		db.UsersFunc.SetDefaultReturn(users)
-		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-
-		RunTests(t, []*Test{
-			{
-				Schema:  mustParseGraphQLSchema(t, db),
-				Context: ctx,
-				Query: `
-				{
-					organization(name: "acme") {
-						name
-					}
-				}
-			`,
-				ExpectedResult: `
-				{
-					"organization": {
-						"name": "acme"
-					}
-				}
-				`,
-			},
-		})
-	})
-
-	t.Run("invited users can access on Sourcegraph.com", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(t, true)
-
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-
-		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
-
-		orgMembers := dbmocks.NewMockOrgMemberStore()
-		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
-
-		orgInvites := dbmocks.NewMockOrgInvitationStore()
-		orgInvites.GetPendingFunc.SetDefaultReturn(nil, nil)
-
-		db := dbmocks.NewMockDBFrom(db)
-		db.OrgsFunc.SetDefaultReturn(orgs)
-		db.UsersFunc.SetDefaultReturn(users)
-		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-		db.OrgInvitationsFunc.SetDefaultReturn(orgInvites)
-
-		RunTests(t, []*Test{
-			{
-				Schema:  mustParseGraphQLSchema(t, db),
-				Context: ctx,
-				Query: `
-				{
-					organization(name: "acme") {
-						name
-					}
-				}
-			`,
-				ExpectedResult: `
-				{
-					"organization": {
-						"name": "acme"
-					}
-				}
-				`,
-			},
-		})
-	})
-
-	t.Run("invited users can access org by ID on Sourcegraph.com", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(t, true)
-
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-
-		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
-
-		orgMembers := dbmocks.NewMockOrgMemberStore()
-		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
-
-		orgInvites := dbmocks.NewMockOrgInvitationStore()
-		orgInvites.GetPendingFunc.SetDefaultReturn(nil, nil)
-
-		db := dbmocks.NewMockDBFrom(db)
-		db.OrgsFunc.SetDefaultReturn(orgs)
-		db.UsersFunc.SetDefaultReturn(users)
-		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-		db.OrgInvitationsFunc.SetDefaultReturn(orgInvites)
-
-		RunTests(t, []*Test{
-			{
-				Schema:  mustParseGraphQLSchema(t, db),
-				Context: ctx,
-				Query: `
-				{
-					node(id: "T3JnOjE=") {
-						__typename
-						id
-						... on Org {
-						  name
-						}
-					}
-				}
-				`,
-				ExpectedResult: `
-				{
-					"node": {
-						"__typename":"Org",
-						"id":"T3JnOjE=", "name":"acme"
-					}
-				}
-				`,
 			},
 		})
 	})
@@ -327,8 +173,8 @@ func TestOrganizationMembers(t *testing.T) {
 				`,
 					ExpectedErrors: []*gqlerrors.QueryError{
 						{
-							Message: "org not found: name acme",
-							Path:    []any{"organization"},
+							Message: "current user is not an org member",
+							Path:    []any{"organization", "members"},
 						},
 					},
 				},
