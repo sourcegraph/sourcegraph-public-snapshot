@@ -91,6 +91,6 @@ func checkConnection(obsvCtx *observation.Context, name, dsn string) error {
 		}
 	}
 
-	fmt.Printf("✅ Connection to %s database successful.", name)
+	fmt.Printf("✅ Connection to %s database successful.\n", name)
 	return nil
 }

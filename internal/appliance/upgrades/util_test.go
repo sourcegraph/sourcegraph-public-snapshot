@@ -1,6 +1,7 @@
 package upgrades
 
 import (
+	"os"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -74,7 +75,7 @@ func TestDetermineUpgradePolicy(t *testing.T) {
 	}
 }
 
-func TestCheckConnection(t *testing.T) {
+func TestCheckConnection_Ping(t *testing.T) {
 	tests := []struct {
 		name       string
 		schema     string
@@ -86,35 +87,16 @@ func TestCheckConnection(t *testing.T) {
 			connection: true,
 		},
 		{
-			name:       "codeintel single db connection",
-			schema:     "codeintel",
-			connection: true,
-		},
-		{
-			name:       "codeinsights single db connection",
-			schema:     "codeinsights",
-			connection: true,
-		},
-		{
 			name:       "malformed dsn",
 			schema:     "doombot",
 			connection: false,
 		},
 	}
 
-	// Setup mock db and attempt to connect using the given env vars
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			// dbtest.NewDB(t)
 			t.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
-			switch test.schema {
-			case "frontend":
-				t.Setenv("PGUSER", "sourcegraph")
-			case "codeintel":
-				t.Setenv("CODEINTEL_PGUSER", "sourcegraph")
-			case "codeinsights":
-				t.Setenv("CODEINSIGHTS_PGUSER", "sourcegraph")
-			}
+			t.Setenv("PGUSER", "sourcegraph")
 
 			dsns, err := getApplianceDSNs()
 			if err != nil {
@@ -127,6 +109,90 @@ func TestCheckConnection(t *testing.T) {
 			if err != nil && test.connection {
 				t.Errorf("unexpected error: %v", err)
 				t.FailNow()
+			}
+		})
+	}
+}
+
+// TODO: This should check that the connections with no envvars set remain as default,
+// theres some odd handling of defaults setting current user in the postgresdsns package
+// this may need further investigation.
+func TestGetApplianceDSNs(t *testing.T) {
+	tests := []struct {
+		name        string
+		schema      string
+		envvars     map[string]string
+		expectedDSN string
+	}{
+		{
+			name:   "default frontend",
+			schema: "frontend",
+			envvars: map[string]string{
+				"PGHOST":     "pgsql",
+				"PGPORT":     "5432",
+				"PGUSER":     "sg",
+				"PGPASSWORD": "sg",
+				"PGDATABASE": "sg",
+				"PGSSLMODE":  "disable",
+			},
+			expectedDSN: "postgres://sg:sg@pgsql:5432/sg?sslmode=disable",
+		},
+		{
+			name:   "default codeintel",
+			schema: "codeintel",
+			envvars: map[string]string{
+				"CODEINTEL_PGHOST":     "codeintel-db",
+				"CODEINTEL_PGPORT":     "5432",
+				"CODEINTEL_PGUSER":     "sg",
+				"CODEINTEL_PGPASSWORD": "sg",
+				"CODEINTEL_PGDATABASE": "sg",
+				"CODEINTEL_PGSSLMODE":  "disable",
+			},
+			expectedDSN: "postgres://sg:sg@codeintel-db:5432/sg?sslmode=disable",
+		},
+		{
+			name:   "default codeinsights",
+			schema: "codeinsights",
+			envvars: map[string]string{
+				"CODEINSIGHTS_PGHOST":     "codeinsights-db",
+				"CODEINSIGHTS_PGPORT":     "5432",
+				"CODEINSIGHTS_PGUSER":     "postgres",
+				"CODEINSIGHTS_PGPASSWORD": "password",
+				"CODEINSIGHTS_PGDATABASE": "postgres",
+				"CODEINSIGHTS_PGSSLMODE":  "disable",
+			},
+			expectedDSN: "postgres://postgres:password@codeinsights-db:5432/postgres?sslmode=disable",
+		},
+		{
+			name:   "unusual dsn",
+			schema: "frontend",
+			envvars: map[string]string{
+				"PGHOST":     "latveria",
+				"PGPORT":     "6969",
+				"PGUSER":     "doombot",
+				"PGPASSWORD": "allhaildoom",
+				"PGDATABASE": "postgres",
+				"PGSSLMODE":  "disable",
+			},
+			expectedDSN: "postgres://doombot:allhaildoom@latveria:6969/postgres?sslmode=disable",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			for k, v := range test.envvars {
+				os.Setenv(k, v)
+			}
+
+			dsns, err := getApplianceDSNs()
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				t.FailNow()
+			}
+			t.Log("dsn: ", dsns)
+
+			if dsns[test.schema] != test.expectedDSN {
+				t.Errorf("expected dsn %s, got %s", test.expectedDSN, dsns[test.schema])
 			}
 		})
 	}
