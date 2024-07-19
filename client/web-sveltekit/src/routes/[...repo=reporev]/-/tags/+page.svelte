@@ -4,8 +4,9 @@
 
     import { navigating } from '$app/stores'
     import { pluralize } from '$lib/common'
+    import { GitRefType } from '$lib/graphql-types'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import GitReference from '$lib/repo/GitReference.svelte'
+    import GitReferencesTable from '$lib/repo/GitReferencesTable.svelte'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
     import { Alert, Button, Input } from '$lib/wildcard'
 
@@ -45,29 +46,21 @@
         <Button variant="primary" type="submit">Search</Button>
     </form>
     <Scroller bind:this={scroller} margin={600} on:more={tagsQuery.fetchMore}>
-        {#if tags}
-            <table>
-                <tbody>
-                    {#each tags.nodes as tag (tag)}
-                        <GitReference ref={tag} />
-                    {:else}
-                        <tr>
-                            <td colspan="2">
-                                <Alert variant="info">No tags found</Alert>
-                            </td>
-                        </tr>
-                    {/each}
-                </tbody>
-            </table>
-        {/if}
-        <div>
-            {#if $tagsQuery.fetching}
-                <LoadingSpinner />
-            {:else if $tagsQuery.error}
-                <Alert variant="danger">
-                    Unable to load tags: {$tagsQuery.error.message}
-                </Alert>
+        <div class="main">
+            {#if tags && tags.nodes.length > 0}
+                <GitReferencesTable references={tags.nodes} referenceType={GitRefType.GIT_TAG} />
             {/if}
+            <div>
+                {#if $tagsQuery.fetching}
+                    <LoadingSpinner />
+                {:else if $tagsQuery.error}
+                    <Alert variant="danger">
+                        Unable to load tags: {$tagsQuery.error.message}
+                    </Alert>
+                {:else if !tags || tags.nodes.length === 0}
+                    <Alert variant="info">No tags found</Alert>
+                {/if}
+            </div>
         </div>
     </Scroller>
     {#if tags && tags.nodes.length > 0}
@@ -87,16 +80,12 @@
         flex-direction: column;
         height: 100%;
         overflow: hidden;
+        gap: 1rem;
+        padding: 0.5rem 0;
 
         :global([data-scroller]) {
             display: flex;
             flex-direction: column;
-        }
-
-        form,
-        div,
-        :global([data-scroller]) {
-            padding: 1rem;
         }
     }
 
@@ -110,15 +99,18 @@
     }
 
     form,
-    div,
-    table {
+    .footer,
+    .main {
         align-self: center;
-        max-width: var(--viewport-xl);
+        max-width: var(--viewport-lg);
         width: 100%;
+        padding: 0 1rem;
     }
 
-    table {
-        border-spacing: 0;
+    @media (--mobile) {
+        .main {
+            padding: 0;
+        }
     }
 
     .footer {

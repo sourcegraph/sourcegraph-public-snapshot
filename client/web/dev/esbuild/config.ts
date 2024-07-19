@@ -15,6 +15,7 @@ import { MONACO_LANGUAGES_AND_FEATURES } from '@sourcegraph/build-config/src/mon
 
 import type { EnvironmentConfig } from '../utils'
 
+import chunkCleaner from './chunkCleaner'
 import { manifestPlugin } from './manifestPlugin'
 import { WEB_BUILD_MANIFEST_FILENAME, webManifestBuilder } from './webmanifest'
 
@@ -40,6 +41,7 @@ export function esbuildBuildOptions(ENVIRONMENT_CONFIG: EnvironmentConfig): esbu
         entryNames: '[name]-[hash]',
         outdir: STATIC_ASSETS_PATH,
         plugins: [
+            chunkCleaner,
             stylePlugin,
             manifestPlugin({
                 manifestFilename: WEB_BUILD_MANIFEST_FILENAME,

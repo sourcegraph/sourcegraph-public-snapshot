@@ -1,10 +1,17 @@
 package secrets
 
 import (
+	"bytes"
+	"context"
 	"os"
 	"testing"
 
+	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"github.com/google/go-cmp/cmp"
+	"github.com/googleapis/gax-go/v2"
+	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mySecrets struct {
@@ -103,8 +110,44 @@ func TestSecrets(t *testing.T) {
 		if err != nil {
 			t.Fatalf("couldn't load temp secret file: %q", err)
 		}
-		if diff := cmp.Diff(s.m, got.m); diff != "" {
+		if diff := cmp.Diff(s.persistedData, got.persistedData); diff != "" {
 			t.Fatalf("(-want +got):\n%s", diff)
 		}
 	})
+
+	t.Run("GetExternal does not get saved by SaveFile", func(t *testing.T) {
+		store := newStore("")
+		store.secretmanagerOnce.Do(func() {
+			store.secretmanager = &mockSecretManagerClient{
+				payload: &secretmanagerpb.SecretPayload{
+					Data: []byte(t.Name()),
+				},
+			}
+		})
+
+		es := ExternalSecret{
+			Project: "foo",
+			Name:    "bar",
+		}
+		secret, err := store.GetExternal(context.Background(), es)
+		require.NoError(t, err)
+		assert.Equal(t, t.Name(), secret)
+		assert.Equal(t, secret, store.externalData[es.id()].Value, "Stored in-memory")
+		assert.Len(t, store.persistedData, 0, "Nothing pending persistence to disk")
+
+		var persisted bytes.Buffer
+		require.NoError(t, store.Write(&persisted))
+		autogold.Expect("{}\n").Equal(t, persisted.String())
+	})
+}
+
+type mockSecretManagerClient struct {
+	payload *secretmanagerpb.SecretPayload
+}
+
+func (m *mockSecretManagerClient) AccessSecretVersion(ctx context.Context, req *secretmanagerpb.AccessSecretVersionRequest, opts ...gax.CallOption) (*secretmanagerpb.AccessSecretVersionResponse, error) {
+	return &secretmanagerpb.AccessSecretVersionResponse{
+		Name:    req.GetName(),
+		Payload: m.payload,
+	}, nil
 }

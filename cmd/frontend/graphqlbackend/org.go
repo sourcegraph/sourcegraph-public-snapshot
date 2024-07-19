@@ -163,9 +163,11 @@ func (o *OrgResolver) Members(ctx context.Context, args struct {
 	Query *string
 },
 ) (*graphqlutil.ConnectionResolver[*UserResolver], error) {
-	// 🚨 SECURITY: Verify listing users is allowed.
-	if err := checkMembersAccess(ctx, o.db); err != nil {
-		return nil, err
+	// 🚨 SECURITY: On dotcom, only an org's members can list its members.
+	if dotcom.SourcegraphDotComMode() {
+		if err := auth.CheckOrgAccess(ctx, o.db, o.org.ID); err != nil {
+			return nil, err
+		}
 	}
 
 	connectionStore := &membersConnectionStore{
@@ -251,7 +253,7 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 		return nil, nil
 	}
 
-	return &settingsResolver{o.db, &settingsSubjectResolver{org: o}, settings, nil}, nil
+	return &settingsResolver{db: o.db, subject: &settingsSubjectResolver{org: o}, settings: settings}, nil
 }
 
 func (o *OrgResolver) SettingsCascade() *settingsCascade {

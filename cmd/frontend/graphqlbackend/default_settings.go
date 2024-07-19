@@ -35,7 +35,7 @@ func (r *defaultSettingsResolver) LatestSettings(_ context.Context) (*settingsRe
 		Subject:  api.SettingsSubject{Default: true},
 		Contents: `{"experimentalFeatures": {}}`,
 	}
-	return &settingsResolver{r.db, &settingsSubjectResolver{defaultSettings: r}, settings, nil}, nil
+	return &settingsResolver{db: r.db, subject: &settingsSubjectResolver{defaultSettings: r}, settings: settings}, nil
 }
 
 func (r *defaultSettingsResolver) SettingsURL() *string { return nil }

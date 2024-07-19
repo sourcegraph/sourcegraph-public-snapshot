@@ -458,6 +458,20 @@ message RawDiffRequest {
   // paths is a list of paths to filter the diff to. If empty, all paths are
   // diffed.
   repeated bytes paths = 6;
+  // inter_hunk_context specifies the number of lines to consider for fusing hunks
+  // together. I.e., when set to 5 and between 2 hunks there are at most 5 lines,
+  // the 2 hunks will be fused together into a single chunk.
+  //
+  // The default for this is 3.
+  optional uint32 inter_hunk_context = 7;
+  // context_lines specifies the number of lines of context to show around added/removed
+  // lines.
+  // This is the number of lines that will be shown before and after each line that
+  // has been added/removed. If inter_hunk_context is not zero, the context will still
+  // be fused together with other hunks if they meet the threshold.
+  //
+  // The default for this is 3.
+  optional uint32 context_lines = 8;
 }
 
 message RawDiffResponse {

@@ -25,19 +25,21 @@ import {
     usePageSwitcherPagination,
     type PaginationKeys,
 } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
-import { ConnectionContainer, ConnectionForm } from '../components/FilteredConnection/ui'
+import { ConnectionForm } from '../components/FilteredConnection/ui'
 import {
     SavedSearchesOrderBy,
     type SavedSearchFields,
     type SavedSearchesResult,
     type SavedSearchesVariables,
 } from '../graphql-operations'
+import { LibraryItemStatusBadge, LibraryItemVisibilityBadge } from '../library/itemBadges'
 import { useAffiliatedNamespaces } from '../namespaces/useAffiliatedNamespaces'
 import { PageRoutes } from '../routes.constants'
 import { useNavbarQueryState } from '../stores'
 
 import { savedSearchesQuery } from './graphql'
 import { telemetryRecordSavedSearchViewSearchResults } from './telemetry'
+import { urlToEditSavedSearch } from './util'
 
 import styles from './ListPage.module.scss'
 
@@ -67,6 +69,8 @@ const SavedSearchNode: FunctionComponent<
                 Run search
             </Badge>
             <span className={styles.searchLinkDescription}>{savedSearch.description}</span>
+            <LibraryItemVisibilityBadge item={savedSearch} />
+            <LibraryItemStatusBadge item={savedSearch} />
         </Button>
         <div className="flex-1" />
         <Badge variant="outlineSecondary" tooltip="Owner">
@@ -77,7 +81,7 @@ const SavedSearchNode: FunctionComponent<
             <Icon aria-label="Permalink" svgPath={mdiLink} />
         </Button>
         {savedSearch.viewerCanAdminister && (
-            <Button to={`${savedSearch.url}/edit`} variant="secondary" as={Link}>
+            <Button to={urlToEditSavedSearch(savedSearch)} variant="secondary" as={Link}>
                 Edit
             </Button>
         )}
@@ -98,29 +102,27 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
 
     const { namespaces, loading: namespacesLoading, error: namespacesError } = useAffiliatedNamespaces()
     const filters = useMemo<
-        Filter<
-            Exclude<keyof SavedSearchesVariables, PaginationKeys | 'query'>,
-            Partial<Omit<SavedSearchesVariables, PaginationKeys | 'query'>>
-        >[]
+        Filter<'drafts' | 'owner' | 'order', Partial<Omit<SavedSearchesVariables, PaginationKeys | 'query'>>>[]
     >(
         () => [
             {
-                label: 'Sort',
+                label: 'Show drafts',
                 type: 'select',
-                id: 'orderBy',
+                id: 'drafts',
+                tooltip: 'Include draft saved searches',
                 options: [
                     {
-                        value: 'updated-at-desc',
-                        label: 'Recently updated',
+                        value: 'true',
+                        label: 'Yes',
                         args: {
-                            orderBy: SavedSearchesOrderBy.SAVED_SEARCH_UPDATED_AT,
+                            includeDrafts: true,
                         },
                     },
                     {
-                        value: 'description-asc',
-                        label: 'By description',
+                        value: 'false',
+                        label: 'No',
                         args: {
-                            orderBy: SavedSearchesOrderBy.SAVED_SEARCH_DESCRIPTION,
+                            includeDrafts: false,
                         },
                     },
                 ],
@@ -143,6 +145,27 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
                             owner: namespace.id,
                         },
                     })) ?? []),
+                ],
+            },
+            {
+                label: 'Sort',
+                type: 'select',
+                id: 'order',
+                options: [
+                    {
+                        value: 'updated-at-desc',
+                        label: 'Recently updated',
+                        args: {
+                            orderBy: SavedSearchesOrderBy.SAVED_SEARCH_UPDATED_AT,
+                        },
+                    },
+                    {
+                        value: 'description-asc',
+                        label: 'By description',
+                        args: {
+                            orderBy: SavedSearchesOrderBy.SAVED_SEARCH_DESCRIPTION,
+                        },
+                    },
                 ],
             },
         ],
@@ -176,45 +199,41 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
     return (
         <>
             <Container data-testid="saved-searches-list-page">
-                <ConnectionContainer>
-                    <ConnectionForm
-                        hideSearch={false}
-                        showSearchFirst={true}
-                        inputClassName="mw-30"
-                        inputPlaceholder="Find a saved search..."
-                        inputAriaLabel=""
-                        inputValue={connectionState.query}
-                        onInputChange={event => {
-                            setConnectionState(prev => ({ ...prev, query: event.target.value }))
-                        }}
-                        autoFocus={false}
-                        filters={filters}
-                        onFilterSelect={(filter, value) =>
-                            setConnectionState(prev => ({ ...prev, [filter.id]: value }))
-                        }
-                        filterValues={connectionState}
-                        compact={false}
-                        formClassName="flex-gap-4 mb-4"
-                    />
-                    {loading ? (
-                        <LoadingSpinner />
-                    ) : error ? (
-                        <ErrorAlert error={error} className="mb-3" />
-                    ) : !connection?.nodes || connection.nodes.length === 0 ? (
-                        <Text className="text-center text-muted mb-0">No saved searches found.</Text>
-                    ) : (
-                        <div className="list-group list-group-flush">
-                            {connection.nodes.map(savedSearch => (
-                                <SavedSearchNode
-                                    key={savedSearch.id}
-                                    patternType={searchPatternType}
-                                    savedSearch={savedSearch}
-                                    telemetryRecorder={telemetryRecorder}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </ConnectionContainer>
+                <ConnectionForm
+                    hideSearch={false}
+                    showSearchFirst={true}
+                    inputClassName="mw-30"
+                    inputPlaceholder="Find a saved search..."
+                    inputAriaLabel=""
+                    inputValue={connectionState.query}
+                    onInputChange={event => {
+                        setConnectionState(prev => ({ ...prev, query: event.target.value }))
+                    }}
+                    autoFocus={false}
+                    filters={filters}
+                    onFilterSelect={(filter, value) => setConnectionState(prev => ({ ...prev, [filter.id]: value }))}
+                    filterValues={connectionState}
+                    compact={false}
+                    formClassName="flex-gap-4 mb-4"
+                />
+                {loading ? (
+                    <LoadingSpinner />
+                ) : error ? (
+                    <ErrorAlert error={error} className="mb-3" />
+                ) : !connection?.nodes || connection.nodes.length === 0 ? (
+                    <Text className="text-center text-muted mb-0">No saved searches found.</Text>
+                ) : (
+                    <div className="list-group list-group-flush">
+                        {connection.nodes.map(savedSearch => (
+                            <SavedSearchNode
+                                key={savedSearch.id}
+                                patternType={searchPatternType}
+                                savedSearch={savedSearch}
+                                telemetryRecorder={telemetryRecorder}
+                            />
+                        ))}
+                    </div>
+                )}
             </Container>
             <PageSwitcher {...paginationProps} className="mt-4" totalCount={connection?.totalCount ?? null} />
         </>

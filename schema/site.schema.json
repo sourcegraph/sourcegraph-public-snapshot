@@ -3191,13 +3191,9 @@
           "items": {
             "type": "string",
             "enum": [
-              "bigcode::v1::starcoder2-3b",
               "bigcode::v1::starcoder2-7b",
               "bigcode::v1::starcoder2-15b",
-              "mistral::v1::mistral-7b",
               "mistral::v1::mistral-7b-instruct",
-              "mistral::v1::mixtral-8x7b",
-              "mistral::v1::mixtral-8x22b",
               "mistral::v1::mixtral-8x7b-instruct",
               "mistral::v1::mixtral-8x22b-instruct"
             ]
@@ -3466,6 +3462,7 @@
             "fireworks",
             "google",
             "openai",
+            "huggingface-tgi",
             "openaicompatible",
             "sourcegraph"
           ]
@@ -3489,6 +3486,9 @@
         },
         {
           "$ref": "#/definitions/ServerSideProviderConfigOpenAIProvider"
+        },
+        {
+          "$ref": "#/definitions/ServerSideProviderConfigHuggingfaceTGIProvider"
         },
         {
           "$ref": "#/definitions/ServerSideProviderConfigOpenAICompatibleProvider"
@@ -3613,19 +3613,56 @@
         }
       }
     },
+    "ServerSideProviderConfigHuggingfaceTGIProvider": {
+      "type": "object",
+      "required": ["type", "endpoints"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "huggingface-tgi"
+        },
+        "endpoints": {
+          "$ref": "#/definitions/OpenAICompatibleEndpoint"
+        },
+        "enableVerboseLogs": {
+          "description": "Whether to enable verbose logging of requests. When enabled, grep for 'OpenAICompatible' in the frontend container logs to see the requests Cody makes to the endpoint.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
     "ServerSideProviderConfigOpenAICompatibleProvider": {
       "type": "object",
-      "required": ["type", "accessToken", "endpoint"],
+      "required": ["type", "endpoints"],
       "properties": {
         "type": {
           "type": "string",
           "const": "openaicompatible"
         },
-        "accessToken": {
-          "type": "string"
+        "endpoints": {
+          "$ref": "#/definitions/OpenAICompatibleEndpoint"
         },
-        "endpoint": {
-          "type": "string"
+        "enableVerboseLogs": {
+          "description": "Whether to enable verbose logging of requests. When enabled, grep for 'OpenAICompatible' in the frontend container logs to see the requests Cody makes to the endpoint.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "OpenAICompatibleEndpoint": {
+      "description": "Endpoints to connect to. If multiple are specified, Sourcegraph will randomly distribute requests between them.",
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "type": "object",
+        "required": ["url"],
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "accessToken": {
+            "type": "string"
+          }
         }
       }
     },
@@ -3652,7 +3689,81 @@
       },
       "default": null,
       "description": "No client-side model configuration is currently available.",
-      "properties": {}
+      "properties": {
+        "openaicompatible": {
+          "$ref": "#/definitions/ClientSideModelConfigOpenAICompatible"
+        }
+      }
+    },
+    "ClientSideModelConfigOpenAICompatible": {
+      "type": "object",
+      "!go": {
+        "pointer": true
+      },
+      "default": null,
+      "description": "Advanced configuration options that are only respected if the model is provided by an openaicompatible provider.",
+      "properties": {
+        "stopSequences": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "List of stop sequences to use for this model.",
+            "examples": ["\n"]
+          }
+        },
+        "endOfText": {
+          "type": "string",
+          "description": "End of text identifier used by the model.",
+          "examples": ["<|endoftext|>", "<EOT>"]
+        },
+        "contextSizeHintTotalCharacters": {
+          "!go": { "pointer": true },
+          "default": null,
+          "type": "integer",
+          "description": "A hint the client should use when producing context to send to the LLM.\nThe maximum length of all context (prefix + suffix + snippets), in characters."
+        },
+        "contextSizeHintPrefixCharacters": {
+          "!go": { "pointer": true },
+          "default": null,
+          "type": "integer",
+          "description": "A hint the client should use when producing context to send to the LLM.\nThe maximum length of the document prefix (text before the cursor) to include, in characters."
+        },
+        "contextSizeHintSuffixCharacters": {
+          "!go": { "pointer": true },
+          "default": null,
+          "type": "integer",
+          "description": "A hint the client should use when producing context to send to the LLM.\nThe maximum length of the document suffix (text after the cursor) to include, in characters."
+        },
+        "chatPreInstruction": {
+          "type": "string",
+          "description": "Custom instruction to be included at the start of all chat messages\nwhen using this model, e.g. 'Answer all questions in Spanish.'\n\nNote: similar to Cody client config option 'cody.chat.preInstruction'; if user has configured that it will be used instead of this."
+        },
+        "editPostInstruction": {
+          "type": "string",
+          "description": "Custom instruction to be included at the end of all edit commands\nwhen using this model, e.g. 'Write all unit tests with Jest instead of detected framework.'\n\nNote: similar to Cody client config option 'cody.edit.preInstruction'; if user has configured that it will be respected instead of this."
+        },
+        "autocompleteSinglelineTimeout": {
+          "type": "integer",
+          "description": "How long the client should wait for autocomplete results to come back (milliseconds), before giving up and not displaying an autocomplete result at all.\n\nThis applies on single-line completions, e.g. 'var i = <completion>'\n\nNote: similar to hidden Cody client config option 'cody.autocomplete.advanced.timeout.singleline' If user has configured that, it will be respected instead of this."
+        },
+        "autocompleteMultilineTimeout": {
+          "type": "integer",
+          "description": "How long the client should wait for autocomplete results to come back (milliseconds), before giving up and not displaying an autocomplete result at all.\n\nThis applies on multi-line completions, which are based on intent-detection when e.g. a code block is being completed, e.g. 'func parseURL(url string) {<completion>'\n\nNote: similar to hidden Cody client config option 'cody.autocomplete.advanced.timeout.multiline' If user has configured that, it will be respected instead of this."
+        },
+        "chatTopK": { "type": "number" },
+        "chatTopP": { "type": "number" },
+        "chatTemperature": { "type": "number" },
+        "chatMaxTokens": { "type": "integer" },
+        "autoCompleteTopK": { "type": "number" },
+        "autoCompleteTopP": { "type": "number" },
+        "autoCompleteTemperature": { "type": "number" },
+        "autoCompleteSinglelineMaxTokens": { "type": "integer" },
+        "autoCompleteMultilineMaxTokens": { "type": "integer" },
+        "editTopK": { "type": "number" },
+        "editTopP": { "type": "number" },
+        "editTemperature": { "type": "number" },
+        "editMaxTokens": { "type": "integer" }
+      }
     },
     "ServerSideModelConfig": {
       "type": "object",
@@ -3665,12 +3776,15 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["awsBedrockProvisionedThroughput"]
+          "enum": ["awsBedrockProvisionedThroughput", "openaicompatible"]
         }
       },
       "oneOf": [
         {
           "$ref": "#/definitions/ServerSideModelConfigAwsBedrockProvisionedThroughput"
+        },
+        {
+          "$ref": "#/definitions/ServerSideModelConfigOpenAICompatible"
         },
         {
           "$ref": "#/definitions/DoNotUsePhonyDiscriminantType"
@@ -3687,6 +3801,21 @@
         },
         "arn": {
           "description": "The 'provisioned throughput ARN' to use when sending requests to AWS Bedrock",
+          "type": "string"
+        }
+      }
+    },
+    "ServerSideModelConfigOpenAICompatible": {
+      "description": "Configuration that is only respected if the model is provided by an openaicompatible provider.",
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "openaicompatible"
+        },
+        "apiModel": {
+          "description": "The literal string value of the 'model' field that will be sent to the /chat/completions API, for example. If set, Sourcegraph treats this as an opaque string and sends it directly to the API, inferring no information from it. By default, the configured model name is sent.",
           "type": "string"
         }
       }

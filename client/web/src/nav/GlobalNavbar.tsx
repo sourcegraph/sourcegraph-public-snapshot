@@ -306,12 +306,16 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
 
     const toolsItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
-            // Don't show "Saved Searches" on dotcom yet because it results in a Tools menu with
-            // only 1 item, which looks weird. Users can still find it in their user menu.
-            props.authenticatedUser && !isSourcegraphDotCom
+            props.authenticatedUser
                 ? {
                       path: PageRoutes.SavedSearches,
                       content: 'Saved Searches',
+                  }
+                : false,
+            window.context?.codyEnabledOnInstance
+                ? {
+                      path: PageRoutes.Prompts,
+                      content: 'Prompt Library',
                   }
                 : false,
             showSearchContext && { path: PageRoutes.Contexts, content: 'Contexts' },
@@ -325,14 +329,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [
-        props.authenticatedUser,
-        isSourcegraphDotCom,
-        showSearchContext,
-        showSearchNotebook,
-        showCodeMonitoring,
-        showSearchJobs,
-    ])
+    }, [props.authenticatedUser, showSearchContext, showSearchNotebook, showCodeMonitoring, showSearchJobs])
     const toolsItem = toolsItems.length > 0 && (
         <NavDropdown
             key="tools"

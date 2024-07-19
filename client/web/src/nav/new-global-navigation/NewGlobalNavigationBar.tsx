@@ -377,6 +377,11 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                                 <NavItemLink url={PageRoutes.SavedSearches} onClick={handleNavigationClick}>
                                     Saved Searches
                                 </NavItemLink>
+                                {window.context?.codyEnabledOnInstance && (
+                                    <NavItemLink url={PageRoutes.Prompts} onClick={handleNavigationClick}>
+                                        Prompt Library
+                                    </NavItemLink>
+                                )}
                                 {showSearchContext && (
                                     <NavItemLink url={PageRoutes.Contexts} onClick={handleNavigationClick}>
                                         Contexts

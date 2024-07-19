@@ -7,7 +7,7 @@ export interface TreeProvider<T> {
      */
     getEntries(): T[]
     /**
-     * Whether or not the provided entry is has (possibly) children or not.
+     * Whether or not the provided entry has (possibly) children or not.
      */
     isExpandable(entry: T): boolean
     /**
@@ -29,6 +29,7 @@ export interface SingleSelectTreeState {
     focused: string
     selected: string
     expandedNodes: Set<string>
+    disableScope: boolean
 }
 
 export type TreeState = SingleSelectTreeState
@@ -38,6 +39,7 @@ export function createEmptySingleSelectTreeState(): SingleSelectTreeState {
         focused: '',
         selected: '',
         expandedNodes: new Set(),
+        disableScope: false,
     }
 }
 

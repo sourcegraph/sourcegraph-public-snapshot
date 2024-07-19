@@ -592,7 +592,7 @@ func checkClientCodyIgnoreCompatibility(ctx context.Context, db database.DB, r *
 		// All agent-based clients (JetBrains, Eclipse, Visual Studio) support
 		// context filters out of the box since the original support was added
 		// for JetBrains GA in May 2024.
-		cvc = clientVersionConstraint{client: clientName, constraint: ">= 0.0.0"}
+		cvc = clientVersionConstraint{client: clientName, constraint: ">= 0.0.0-0"}
 	}
 
 	clientVersion := r.URL.Query().Get("client-version")

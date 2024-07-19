@@ -31,7 +31,7 @@ func TestOrganization(t *testing.T) {
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
 	orgMembers := dbmocks.NewMockOrgMemberStore()
-	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
 
 	orgs := dbmocks.NewMockOrgStore()
 	mockedOrg := types.Org{ID: 1, Name: "acme"}
@@ -216,6 +216,123 @@ func TestOrganization(t *testing.T) {
 				}
 				`,
 			},
+		})
+	})
+}
+
+func TestOrganizationMembers(t *testing.T) {
+	users := dbmocks.NewMockUserStore()
+	users.ListByOrgFunc.SetDefaultReturn([]*types.User{
+		{ID: 1, Username: "alice"},
+		{ID: 2, Username: "bob"},
+	}, nil)
+
+	orgMembers := dbmocks.NewMockOrgMemberStore()
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
+		if orgID == 1 && userID == 1 {
+			return &types.OrgMembership{OrgID: 1, UserID: 1}, nil
+		}
+		return nil, &database.ErrOrgMemberNotFound{}
+	})
+
+	orgs := dbmocks.NewMockOrgStore()
+	mockedOrg := types.Org{ID: 1, Name: "acme"}
+	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
+
+	db := dbmocks.NewMockDB()
+	db.OrgsFunc.SetDefaultReturn(orgs)
+	db.UsersFunc.SetDefaultReturn(users)
+	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+
+	t.Run("org members can list members", func(t *testing.T) {
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{Username: "alice", ID: 1}, nil)
+		for _, isDotcom := range []bool{true, false} {
+			t.Run(fmt.Sprintf("dotcom=%v", isDotcom), func(t *testing.T) {
+				dotcom.MockSourcegraphDotComMode(t, isDotcom)
+				RunTests(t, []*Test{
+					{
+						Schema: mustParseGraphQLSchema(t, db),
+						Query: `
+					{
+						organization(name: "acme") {
+							members {
+								nodes { username }
+							}
+						}
+					}
+				`,
+						ExpectedResult: `
+					{
+						"organization": {
+							"members": {
+								"nodes": [{"username": "alice"}, {"username": "bob"}]
+							}
+						}
+					}
+				`,
+					},
+				})
+			})
+		}
+	})
+
+	t.Run("non-members", func(t *testing.T) {
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{Username: "xavier", ID: 10}, nil)
+
+		t.Run("can list members on non-dotcom", func(t *testing.T) {
+			dotcom.MockSourcegraphDotComMode(t, false)
+			RunTests(t, []*Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+						{
+							organization(name: "acme") {
+								members {
+									nodes { username }
+								}
+							}
+						}
+					`,
+					ExpectedResult: `
+						{
+							"organization": {
+								"members": {
+									"nodes": [{"username": "alice"}, {"username": "bob"}]
+								}
+							}
+						}
+					`,
+				},
+			})
+		})
+
+		t.Run("cannot list members on dotcom", func(t *testing.T) {
+			dotcom.MockSourcegraphDotComMode(t, true)
+			RunTests(t, []*Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+					{
+						organization(name: "acme") {
+							members {
+								nodes { username }
+							}
+						}
+					}
+				`,
+					ExpectedResult: `
+				{
+					"organization": null
+				}
+				`,
+					ExpectedErrors: []*gqlerrors.QueryError{
+						{
+							Message: "org not found: name acme",
+							Path:    []any{"organization"},
+						},
+					},
+				},
+			})
 		})
 	})
 }
