@@ -95,8 +95,8 @@ class Sourcegraph {
             // so in order to make this the fallback we register it first
             // all unmatched routes are treated as routes within the application
             // and so only route to the manifest
-            await this.page.route('/**/*', route => {
-                route.fulfill({
+            await this.page.route('/**/*', async route => {
+                await route.fulfill({
                     status: 200,
                     contentType: 'text/html',
                     body: readFileSync(path.join(ASSETS_DIR, 'index.html')),
@@ -104,11 +104,11 @@ class Sourcegraph {
             })
 
             // Intercept any asset calls and replace them with static files
-            await this.page.route(/.assets|_app/, route => {
+            await this.page.route(/.assets|_app/, async route => {
                 const assetPath = new URL(route.request().url()).pathname.replace('/.assets/', '')
                 const asset = joinDistinct(ASSETS_DIR, assetPath)
                 const contentType = mime.contentType(path.basename(asset)) || undefined
-                route.fulfill({
+                await route.fulfill({
                     status: 200,
                     contentType,
                     body: readFileSync(asset),
@@ -119,7 +119,7 @@ class Sourcegraph {
             })
         }
         // mock graphql calls
-        await this.page.route(/\.api\/graphql/, route => {
+        await this.page.route(/\.api\/graphql/, async route => {
             const { query, variables, operationName } = JSON.parse(route.request().postData() ?? '')
             const result = this.graphqlMock.query(
                 query,
@@ -132,7 +132,7 @@ class Sourcegraph {
                       }
                     : undefined
             )
-            route.fulfill({ json: result })
+            await route.fulfill({ json: result })
         })
     }
 
