@@ -23,7 +23,10 @@ func ClientCredentials() []cli.Flag {
 			Aliases: []string{"sams"},
 			EnvVars: []string{"SG_SAMS_SERVER_URL"},
 			Value:   SAMSDevURL,
-			Usage: fmt.Sprintf("URL of the Sourcegraph Accounts Management System (SAMS) server - one of %q or %q",
+			Usage: fmt.Sprintf("URL of the Sourcegraph Accounts Management System (SAMS) server - one of %q or %q,"+
+				// TODO: 9091 currently conflicts with embeddings, we may want
+				// to change the default in the future
+				" or http://127.0.0.1:9091 for a locally running server.",
 				SAMSProdURL, SAMSDevURL),
 		},
 		&cli.StringFlag{
