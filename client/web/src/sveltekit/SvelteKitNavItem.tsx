@@ -1,12 +1,15 @@
-import type { FC } from 'react'
+import { type useState, FC } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import { mdiFlaskEmptyOutline } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
 
-import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { Badge } from '@sourcegraph/wildcard/src/components/Badge'
+import { Popover, PopoverTrigger, PopoverContent } from '@sourcegraph/wildcard/src/components/Popover'
 
 import { enableSvelteAndReload, canEnableSvelteKit } from './util'
+
+import styles from './SvelteKitNavItem.module.scss'
 
 export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
     const location = useLocation()
@@ -17,12 +20,22 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
     }
 
     return (
-        <Tooltip content="Go to experimental web app">
-            <Button variant="icon" onClick={() => enableSvelteAndReload(client, userID)}>
-                <span className="text-muted">
-                    <Icon svgPath={mdiFlaskEmptyOutline} aria-hidden={true} inline={false} />
-                </span>
-            </Button>
-        </Tooltip>
+        <div className={styles.container}>
+            <Toggle
+                value={false}
+                onToggle={() => enableSvelteAndReload(client, userID)}
+                title={'Go to experimental web app'}
+                className={styles.toggle}
+            />
+            <Popover>
+                <PopoverTrigger className={styles.badge}>
+                    <Badge variant={'warning'}>Try the new experience</Badge>
+                </PopoverTrigger>
+                <PopoverContent className={styles.popover}>
+                    <h3>Sourcegraph is getting a refresh!</h3>
+                    <p>Try it out early with the toggle above.</p>
+                </PopoverContent>
+            </Popover>
+        </div>
     )
 }

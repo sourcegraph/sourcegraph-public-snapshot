@@ -20,8 +20,10 @@
     import MainNavigationLink from '$lib/navigation/MainNavigationLink.svelte'
     import Popover from '$lib/Popover.svelte'
     import SourcegraphLogo from '$lib/SourcegraphLogo.svelte'
-    import { isViewportMediumDown, isViewportMobile } from '$lib/stores'
-    import { Badge, Button } from '$lib/wildcard'
+    import { isViewportMediumDown } from '$lib/stores'
+    import { Button } from '$lib/wildcard'
+    import Badge from '$lib/wildcard/Badge.svelte'
+    import Toggle from '$lib/wildcard/Toggle.svelte'
 
     import { GlobalNavigation_User } from './GlobalNavigation.gql'
     import { type NavigationEntry, type NavigationMenu, isNavigationMenu, isCurrent } from './mainNavigation'
@@ -122,29 +124,31 @@
 
     <div class="global-portal" bind:this={$extensionElement} />
 
-    <Popover let:registerTrigger let:toggle showOnHover={!$isViewportMobile} hoverDelay={100} hoverCloseDelay={50}>
-        <button class="web-next-badge" use:registerTrigger on:click={() => toggle()}>
-            <Badge variant="warning">Experimental</Badge>
-        </button>
-        <div slot="content" class="web-next-content">
-            <h3>Experimental web app</h3>
-            <p>
-                You are using an experimental version of the Sourcegraph web app. This version is under active
-                development and may contain bugs or incomplete features.
-            </p>
-            {#if isDevOrS2}
+    <div class="web-next-notice">
+        {#if handleOptOut}
+            <Toggle on={true} on:click={() => handleOptOut && handleOptOut()} />
+        {/if}
+        <Popover let:toggle let:registerTrigger>
+            <button class="web-next-badge" use:registerTrigger on:click={() => toggle()}>
+                <Badge variant="warning">Experimental</Badge>
+            </button>
+            <div slot="content" class="web-next-content">
+                <h3>Experimental web app</h3>
                 <p>
-                    If you encounter any issues, please report them in our <a
-                        href="https://sourcegraph.slack.com/archives/C05MHAP318B">Slack channel</a
+                    You are using an experimental version of the Sourcegraph web app. This version is under active
+                    development and may contain bugs or incomplete features.
+                </p>
+                <p>
+                    If you encounter any issues, please report them in our <a href="https://community.sourcegraph.com/"
+                        >community forums</a
                     >.
                 </p>
-            {/if}
-            {#if handleOptOut}
-                Or you can <button role="link" class="opt-out" on:click={handleOptOut}>opt out</button> of the Sveltekit
-                experiment.
-            {/if}
-        </div>
-    </Popover>
+                {#if handleOptOut}
+                    <p>You can opt out of the new experience with the toggle above.</p>
+                {/if}
+            </div>
+        </Popover>
+    </div>
     <div>
         {#if authenticatedUser}
             <UserMenu user={authenticatedUser} />
@@ -419,10 +423,17 @@
         text-decoration: underline;
     }
 
+    .web-next-notice {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
     .web-next-badge {
         all: unset;
+        display: flex;
+        align-items: center;
         cursor: pointer;
-        padding: 0.25rem;
         margin-left: auto;
     }
 
