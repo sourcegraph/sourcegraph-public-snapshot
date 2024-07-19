@@ -130,7 +130,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 		}
 	}
 
-	var indexes []uploadsshared.Index
+	var indexes []uploadsshared.AutoIndexJob
 	totalIndexCount := 0
 	if !skipIndexes {
 		if indexes, totalIndexCount, err = r.uploadSvc.GetIndexes(ctx, uploadsshared.GetIndexesOptions{
@@ -148,11 +148,11 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	type pair struct {
 		upload *shared.Upload
-		index  *uploadsshared.Index
+		index  *uploadsshared.AutoIndexJob
 	}
 	pairs := make([]pair, 0, pageSize)
 	addUpload := func(upload shared.Upload) { pairs = append(pairs, pair{&upload, nil}) }
-	addIndex := func(index uploadsshared.Index) { pairs = append(pairs, pair{nil, &index}) }
+	addIndex := func(index uploadsshared.AutoIndexJob) { pairs = append(pairs, pair{nil, &index}) }
 
 	uIdx := 0
 	iIdx := 0
@@ -246,7 +246,7 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 		}
 
 		// Create index loader with data we already have
-		indexLoader := r.indexLoaderFactory.CreateWithInitialData([]shared.Index{index})
+		indexLoader := r.indexLoaderFactory.CreateWithInitialData([]shared.AutoIndexJob{index})
 
 		// Pre-submit associated upload id for subsequent loading
 		uploadLoader := r.uploadLoaderFactory.Create()

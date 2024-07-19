@@ -34,7 +34,7 @@ type MultiHandler struct {
 	executorStore         database.ExecutorStore
 	jobTokenStore         executorstore.JobTokenStore
 	metricsStore          metricsstore.DistributedStore
-	CodeIntelQueueHandler QueueHandler[uploadsshared.Index]
+	CodeIntelQueueHandler QueueHandler[uploadsshared.AutoIndexJob]
 	BatchesQueueHandler   QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]
 	DequeueCache          *rcache.Cache
 	dequeueCacheConfig    *schema.DequeueCacheConfig
@@ -46,7 +46,7 @@ func NewMultiHandler(
 	executorStore database.ExecutorStore,
 	jobTokenStore executorstore.JobTokenStore,
 	metricsStore metricsstore.DistributedStore,
-	codeIntelQueueHandler QueueHandler[uploadsshared.Index],
+	codeIntelQueueHandler QueueHandler[uploadsshared.AutoIndexJob],
 	batchesQueueHandler QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob],
 ) MultiHandler {
 	siteConfig := conf.Get().SiteConfiguration

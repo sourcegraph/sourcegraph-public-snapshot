@@ -38,7 +38,7 @@ func (e *accessLogTransformer) Create(ctx context.Context, log *database.Executo
 	return e.ExecutorSecretAccessLogCreator.Create(ctx, log)
 }
 
-func transformRecord(ctx context.Context, db database.DB, index uploadsshared.Index, resourceMetadata handler.ResourceMetadata, accessToken string) (apiclient.Job, error) {
+func transformRecord(ctx context.Context, db database.DB, index uploadsshared.AutoIndexJob, resourceMetadata handler.ResourceMetadata, accessToken string) (apiclient.Job, error) {
 	resourceEnvironment := makeResourceEnvironment(resourceMetadata)
 
 	var secrets []*database.ExecutorSecret

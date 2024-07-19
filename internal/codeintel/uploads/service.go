@@ -200,15 +200,15 @@ func (s *Service) ReindexUploadByID(ctx context.Context, id int) error {
 	return s.store.ReindexUploadByID(ctx, id)
 }
 
-func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]uploadsshared.Index, int, error) {
+func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]uploadsshared.AutoIndexJob, int, error) {
 	return s.store.GetIndexes(ctx, opts)
 }
 
-func (s *Service) GetIndexByID(ctx context.Context, id int) (uploadsshared.Index, bool, error) {
+func (s *Service) GetIndexByID(ctx context.Context, id int) (uploadsshared.AutoIndexJob, bool, error) {
 	return s.store.GetIndexByID(ctx, id)
 }
 
-func (s *Service) GetIndexesByIDs(ctx context.Context, ids ...int) ([]uploadsshared.Index, error) {
+func (s *Service) GetIndexesByIDs(ctx context.Context, ids ...int) ([]uploadsshared.AutoIndexJob, error) {
 	return s.store.GetIndexesByIDs(ctx, ids...)
 }
 

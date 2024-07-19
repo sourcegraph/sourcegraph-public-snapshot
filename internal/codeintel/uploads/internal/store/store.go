@@ -37,10 +37,10 @@ type Store interface {
 	ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error
 	ReindexUploadByID(ctx context.Context, id int) error
 
-	// Index records
-	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]shared.Index, int, error)
-	GetIndexByID(ctx context.Context, id int) (shared.Index, bool, error)
-	GetIndexesByIDs(ctx context.Context, ids ...int) ([]shared.Index, error)
+	// AutoIndexJob records
+	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]shared.AutoIndexJob, int, error)
+	GetIndexByID(ctx context.Context, id int) (shared.AutoIndexJob, bool, error)
+	GetIndexesByIDs(ctx context.Context, ids ...int) ([]shared.AutoIndexJob, error)
 	DeleteIndexByID(ctx context.Context, id int) (bool, error)
 	DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) error
 	ReindexIndexByID(ctx context.Context, id int) error

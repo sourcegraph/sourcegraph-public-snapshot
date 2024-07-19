@@ -129,7 +129,7 @@ func (s *Service) GetInferenceScript(ctx context.Context) (string, error) {
 	return s.store.GetInferenceScript(ctx)
 }
 
-func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]uploadsshared.Index, error) {
+func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]uploadsshared.AutoIndexJob, error) {
 	return s.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, force, bypassLimit)
 }
 

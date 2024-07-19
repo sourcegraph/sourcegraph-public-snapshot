@@ -23,7 +23,7 @@ const stalledIndexMaxAge = time.Second * 25
 // "queued" on its next reset.
 const indexMaxNumResets = 3
 
-var IndexWorkerStoreOptions = dbworkerstore.Options[uploadsshared.Index]{
+var IndexWorkerStoreOptions = dbworkerstore.Options[uploadsshared.AutoIndexJob]{
 	Name:              "codeintel_index",
 	TableName:         "lsif_indexes",
 	ViewName:          "lsif_indexes_with_repository_name u",
@@ -61,7 +61,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf(`u.enqueuer_user_id`),
 }
 
-func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {
+func scanIndex(s dbutil.Scanner) (index uploadsshared.AutoIndexJob, err error) {
 	var executionLogs []executor.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,

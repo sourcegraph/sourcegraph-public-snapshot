@@ -44,7 +44,7 @@ func (f *PreciseIndexResolverFactory) Create(
 	locationResolver *gitresolvers.CachedLocationResolver,
 	traceErrs *observation.ErrCollector,
 	upload *shared.Upload,
-	index *uploadsshared.Index,
+	index *uploadsshared.AutoIndexJob,
 ) (resolverstubs.PreciseIndexResolver, error) {
 	return newPreciseIndexResolver(
 		ctx,

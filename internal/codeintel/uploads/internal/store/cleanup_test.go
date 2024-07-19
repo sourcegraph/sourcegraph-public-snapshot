@@ -232,11 +232,11 @@ func TestProcessStaleSourcedCommits(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
 	insertIndexes(t, db,
-		uploadsshared.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
-		uploadsshared.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
-		uploadsshared.Index{ID: 3, RepositoryID: 50, Commit: makeCommit(3)},
-		uploadsshared.Index{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
-		uploadsshared.Index{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
+		uploadsshared.AutoIndexJob{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
+		uploadsshared.AutoIndexJob{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
+		uploadsshared.AutoIndexJob{ID: 3, RepositoryID: 50, Commit: makeCommit(3)},
+		uploadsshared.AutoIndexJob{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
+		uploadsshared.AutoIndexJob{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
 	)
 
 	const (
@@ -531,10 +531,10 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	var indexes []uploadsshared.Index
+	var indexes []uploadsshared.AutoIndexJob
 	for i := range 25 {
 		for range 10 + i {
-			indexes = append(indexes, uploadsshared.Index{ID: len(indexes) + 1, RepositoryID: 50 + i})
+			indexes = append(indexes, uploadsshared.AutoIndexJob{ID: len(indexes) + 1, RepositoryID: 50 + i})
 		}
 	}
 	insertIndexes(t, db, indexes...)
@@ -575,24 +575,24 @@ func TestExpireFailedRecords(t *testing.T) {
 
 	insertIndexes(t, db,
 		// young failures (none removed)
-		uploadsshared.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(1), FinishedAt: pointers.Ptr(now.Add(-time.Minute * 10)), State: "failed"},
-		uploadsshared.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2), FinishedAt: pointers.Ptr(now.Add(-time.Minute * 20)), State: "failed"},
-		uploadsshared.Index{ID: 3, RepositoryID: 50, Commit: makeCommit(3), FinishedAt: pointers.Ptr(now.Add(-time.Minute * 20)), State: "failed"},
+		uploadsshared.AutoIndexJob{ID: 1, RepositoryID: 50, Commit: makeCommit(1), FinishedAt: pointers.Ptr(now.Add(-time.Minute * 10)), State: "failed"},
+		uploadsshared.AutoIndexJob{ID: 2, RepositoryID: 50, Commit: makeCommit(2), FinishedAt: pointers.Ptr(now.Add(-time.Minute * 20)), State: "failed"},
+		uploadsshared.AutoIndexJob{ID: 3, RepositoryID: 50, Commit: makeCommit(3), FinishedAt: pointers.Ptr(now.Add(-time.Minute * 20)), State: "failed"},
 
 		// failures prior to a success (both removed)
-		uploadsshared.Index{ID: 4, RepositoryID: 50, Commit: makeCommit(4), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 10)), Root: "foo", State: "completed"},
-		uploadsshared.Index{ID: 5, RepositoryID: 50, Commit: makeCommit(5), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 12)), Root: "foo", State: "failed"},
-		uploadsshared.Index{ID: 6, RepositoryID: 50, Commit: makeCommit(6), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 14)), Root: "foo", State: "failed"},
+		uploadsshared.AutoIndexJob{ID: 4, RepositoryID: 50, Commit: makeCommit(4), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 10)), Root: "foo", State: "completed"},
+		uploadsshared.AutoIndexJob{ID: 5, RepositoryID: 50, Commit: makeCommit(5), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 12)), Root: "foo", State: "failed"},
+		uploadsshared.AutoIndexJob{ID: 6, RepositoryID: 50, Commit: makeCommit(6), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 14)), Root: "foo", State: "failed"},
 
 		// old failures (one is left for debugging)
-		uploadsshared.Index{ID: 7, RepositoryID: 51, Commit: makeCommit(7), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 3)), State: "failed"},
-		uploadsshared.Index{ID: 8, RepositoryID: 51, Commit: makeCommit(8), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 4)), State: "failed"},
-		uploadsshared.Index{ID: 9, RepositoryID: 51, Commit: makeCommit(9), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 5)), State: "failed"},
+		uploadsshared.AutoIndexJob{ID: 7, RepositoryID: 51, Commit: makeCommit(7), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 3)), State: "failed"},
+		uploadsshared.AutoIndexJob{ID: 8, RepositoryID: 51, Commit: makeCommit(8), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 4)), State: "failed"},
+		uploadsshared.AutoIndexJob{ID: 9, RepositoryID: 51, Commit: makeCommit(9), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 5)), State: "failed"},
 
 		// failures prior to queued uploads (one removed; queued does not reset failures)
-		uploadsshared.Index{ID: 10, RepositoryID: 52, Commit: makeCommit(10), Root: "foo", State: "queued"},
-		uploadsshared.Index{ID: 11, RepositoryID: 52, Commit: makeCommit(11), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 12)), Root: "foo", State: "failed"},
-		uploadsshared.Index{ID: 12, RepositoryID: 52, Commit: makeCommit(12), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 14)), Root: "foo", State: "failed"},
+		uploadsshared.AutoIndexJob{ID: 10, RepositoryID: 52, Commit: makeCommit(10), Root: "foo", State: "queued"},
+		uploadsshared.AutoIndexJob{ID: 11, RepositoryID: 52, Commit: makeCommit(11), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 12)), Root: "foo", State: "failed"},
+		uploadsshared.AutoIndexJob{ID: 12, RepositoryID: 52, Commit: makeCommit(12), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 14)), Root: "foo", State: "failed"},
 	)
 
 	if _, _, err := store.ExpireFailedRecords(ctx, 100, time.Hour, now); err != nil {

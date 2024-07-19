@@ -22,10 +22,10 @@ func TestIsQueued(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	insertIndexes(t, db, uploadsshared.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
-	insertIndexes(t, db, uploadsshared.Index{ID: 2, RepositoryID: 1, Commit: makeCommit(1), ShouldReindex: true})
-	insertIndexes(t, db, uploadsshared.Index{ID: 3, RepositoryID: 4, Commit: makeCommit(1), ShouldReindex: true})
-	insertIndexes(t, db, uploadsshared.Index{ID: 4, RepositoryID: 5, Commit: makeCommit(4), ShouldReindex: true})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 2, RepositoryID: 1, Commit: makeCommit(1), ShouldReindex: true})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 3, RepositoryID: 4, Commit: makeCommit(1), ShouldReindex: true})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 4, RepositoryID: 5, Commit: makeCommit(4), ShouldReindex: true})
 	insertUploads(t, db, upload{ID: 2, RepositoryID: 2, Commit: makeCommit(2)})
 	insertUploads(t, db, upload{ID: 3, RepositoryID: 3, Commit: makeCommit(3), State: "deleted"})
 	insertUploads(t, db, upload{ID: 4, RepositoryID: 5, Commit: makeCommit(4), ShouldReindex: true})
@@ -67,12 +67,12 @@ func TestIsQueuedRootIndexer(t *testing.T) {
 	store := New(observation.TestContextTB(t), db)
 
 	now := time.Now()
-	insertIndexes(t, db, uploadsshared.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
-	insertIndexes(t, db, uploadsshared.Index{ID: 2, RepositoryID: 1, Commit: makeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2)})
-	insertIndexes(t, db, uploadsshared.Index{ID: 3, RepositoryID: 2, Commit: makeCommit(2), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1), ShouldReindex: true})
-	insertIndexes(t, db, uploadsshared.Index{ID: 4, RepositoryID: 2, Commit: makeCommit(2), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2)})
-	insertIndexes(t, db, uploadsshared.Index{ID: 5, RepositoryID: 3, Commit: makeCommit(3), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
-	insertIndexes(t, db, uploadsshared.Index{ID: 6, RepositoryID: 3, Commit: makeCommit(3), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2), ShouldReindex: true})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 1, RepositoryID: 1, Commit: makeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 2, RepositoryID: 1, Commit: makeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2)})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 3, RepositoryID: 2, Commit: makeCommit(2), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1), ShouldReindex: true})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 4, RepositoryID: 2, Commit: makeCommit(2), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2)})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 5, RepositoryID: 3, Commit: makeCommit(3), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 6, RepositoryID: 3, Commit: makeCommit(3), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2), ShouldReindex: true})
 
 	testCases := []struct {
 		repositoryID int
@@ -110,7 +110,7 @@ func TestInsertIndexes(t *testing.T) {
 
 	insertRepo(t, db, 50, "")
 
-	indexes, err := store.InsertIndexes(ctx, []uploadsshared.Index{
+	indexes, err := store.InsertIndexes(ctx, []uploadsshared.AutoIndexJob{
 		{
 			State:        "queued",
 			Commit:       makeCommit(1),
@@ -161,7 +161,7 @@ func TestInsertIndexes(t *testing.T) {
 
 	rank1 := 1
 	rank2 := 2
-	expected := []uploadsshared.Index{
+	expected := []uploadsshared.AutoIndexJob{
 		{
 			ID:             1,
 			Commit:         makeCommit(1),
@@ -240,7 +240,7 @@ func TestInsertIndexWithActor(t *testing.T) {
 		actor.WithInternalActor(context.Background()),
 		context.Background(),
 	} {
-		indexes, err := store.InsertIndexes(ctx, []uploadsshared.Index{
+		indexes, err := store.InsertIndexes(ctx, []uploadsshared.AutoIndexJob{
 			{ID: i, RepositoryID: 50, Commit: makeCommit(i), State: "queued"},
 		})
 		if err != nil {

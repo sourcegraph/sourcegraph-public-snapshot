@@ -40,7 +40,7 @@ type Store interface {
 	// Enqueuer
 	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
 	IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (bool, error)
-	InsertIndexes(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error)
+	InsertIndexes(ctx context.Context, indexes []uploadsshared.AutoIndexJob) ([]uploadsshared.AutoIndexJob, error)
 
 	// Dependency indexing
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)

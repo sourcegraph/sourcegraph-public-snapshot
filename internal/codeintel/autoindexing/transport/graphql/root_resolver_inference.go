@@ -185,7 +185,7 @@ func (r *autoIndexJobDescriptionResolver) ComparisonKey() string {
 }
 
 func (r *autoIndexJobDescriptionResolver) Steps() resolverstubs.IndexStepsResolver {
-	return uploadsgraphql.NewIndexStepsResolver(r.siteAdminChecker, uploadsshared.Index{
+	return uploadsgraphql.NewIndexStepsResolver(r.siteAdminChecker, uploadsshared.AutoIndexJob{
 		DockerSteps:      r.steps,
 		LocalSteps:       r.indexJob.LocalSteps,
 		Root:             r.indexJob.Root,

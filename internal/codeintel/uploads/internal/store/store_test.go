@@ -96,7 +96,7 @@ func insertPackageReferences(t testing.TB, store Store, packageReferences []shar
 }
 
 // insertIndexes populates the lsif_indexes table with the given index models.
-func insertIndexes(t testing.TB, db database.DB, indexes ...uploadsshared.Index) {
+func insertIndexes(t testing.TB, db database.DB, indexes ...uploadsshared.AutoIndexJob) {
 	for _, index := range indexes {
 		if index.Commit == "" {
 			index.Commit = makeCommit(index.ID)

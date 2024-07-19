@@ -33,18 +33,18 @@ func Test_AutoIndexingManualEnqueuedDequeueOrder(t *testing.T) {
 	workerstore := store.New(observation.TestContextTB(t), db.Handle(), opts)
 
 	for i, test := range []struct {
-		indexes []shared.Index
+		indexes []shared.AutoIndexJob
 		nextID  int
 	}{
 		{
-			indexes: []shared.Index{
+			indexes: []shared.AutoIndexJob{
 				{ID: 1, RepositoryID: 1, EnqueuerUserID: 51234},
 				{ID: 2, RepositoryID: 4},
 			},
 			nextID: 1,
 		},
 		{
-			indexes: []shared.Index{
+			indexes: []shared.AutoIndexJob{
 				{ID: 1, RepositoryID: 1, EnqueuerUserID: 50, State: "completed", FinishedAt: dbutil.NullTimeColumn(clock.Now().Add(-time.Hour * 3))},
 				{ID: 2, RepositoryID: 2},
 				{ID: 3, RepositoryID: 1, EnqueuerUserID: 1},
@@ -69,7 +69,7 @@ func Test_AutoIndexingManualEnqueuedDequeueOrder(t *testing.T) {
 	}
 }
 
-func insertIndexes(t testing.TB, db database.DB, indexes ...shared.Index) {
+func insertIndexes(t testing.TB, db database.DB, indexes ...shared.AutoIndexJob) {
 	for _, index := range indexes {
 		if index.Commit == "" {
 			index.Commit = fmt.Sprintf("%040d", index.ID)

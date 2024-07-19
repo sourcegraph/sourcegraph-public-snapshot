@@ -30,7 +30,7 @@ type ReposStore interface {
 }
 
 type IndexEnqueuer interface {
-	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []uploadsshared.Index, err error)
+	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []uploadsshared.AutoIndexJob, err error)
 	QueueIndexesForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo) (err error)
 }
 

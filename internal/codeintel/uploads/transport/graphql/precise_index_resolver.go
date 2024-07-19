@@ -32,7 +32,7 @@ type preciseIndexResolver struct {
 	locationResolver *gitresolvers.CachedLocationResolver
 	traceErrs        *observation.ErrCollector
 	upload           *shared.Upload
-	index            *uploadsshared.Index
+	index            *uploadsshared.AutoIndexJob
 }
 
 func newPreciseIndexResolver(
@@ -47,7 +47,7 @@ func newPreciseIndexResolver(
 	locationResolver *gitresolvers.CachedLocationResolver,
 	traceErrs *observation.ErrCollector,
 	upload *shared.Upload,
-	index *uploadsshared.Index,
+	index *uploadsshared.AutoIndexJob,
 ) (resolverstubs.PreciseIndexResolver, error) {
 	if index != nil && index.AssociatedUploadID != nil && upload == nil {
 		v, ok, err := uploadLoader.GetByID(ctx, *index.AssociatedUploadID)

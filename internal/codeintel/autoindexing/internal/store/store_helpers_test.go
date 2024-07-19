@@ -114,7 +114,7 @@ func insertUploads(t testing.TB, db database.DB, uploads ...upload) {
 	}
 }
 
-func insertIndexes(t testing.TB, db database.DB, indexes ...uploadsshared.Index) {
+func insertIndexes(t testing.TB, db database.DB, indexes ...uploadsshared.AutoIndexJob) {
 	for _, index := range indexes {
 		if index.Commit == "" {
 			index.Commit = makeCommit(index.ID)

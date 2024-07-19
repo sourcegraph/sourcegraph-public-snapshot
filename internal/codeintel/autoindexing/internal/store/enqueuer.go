@@ -110,7 +110,7 @@ LIMIT 1
 // - canonization methods
 // - share code with uploads store (should own this?)
 
-func (s *store) InsertIndexes(ctx context.Context, indexes []shared.Index) (_ []shared.Index, err error) {
+func (s *store) InsertIndexes(ctx context.Context, indexes []shared.AutoIndexJob) (_ []shared.AutoIndexJob, err error) {
 	ctx, _, endObservation := s.operations.insertIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("numIndexes", len(indexes)),
 	}})
@@ -151,7 +151,7 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []shared.Index) (_ []
 		))
 	}
 
-	indexes = []shared.Index{}
+	indexes = []shared.AutoIndexJob{}
 	err = s.withTransaction(ctx, func(tx *store) error {
 		ids, err := basestore.ScanInts(tx.db.Query(ctx, sqlf.Sprintf(insertIndexQuery, sqlf.Join(values, ","))))
 		if err != nil {
@@ -239,7 +239,7 @@ ORDER BY u.id
 //
 //
 
-func scanIndex(s dbutil.Scanner) (index shared.Index, err error) {
+func scanIndex(s dbutil.Scanner) (index shared.AutoIndexJob, err error) {
 	var executionLogs []executor.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,

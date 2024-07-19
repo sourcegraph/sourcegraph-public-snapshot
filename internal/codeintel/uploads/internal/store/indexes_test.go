@@ -43,16 +43,16 @@ func TestGetIndexes(t *testing.T) {
 	uploadID1, uploadID2, uploadID3, uploadID4 := 10, 11, 12, 13
 
 	insertIndexes(t, db,
-		uploadsshared.Index{ID: 1, Commit: makeCommit(3331), QueuedAt: t1, State: "queued", AssociatedUploadID: &uploadID1},
-		uploadsshared.Index{ID: 2, QueuedAt: t2, State: "errored", FailureMessage: &failureMessage},
-		uploadsshared.Index{ID: 3, Commit: makeCommit(3333), QueuedAt: t3, State: "queued", AssociatedUploadID: &uploadID1},
-		uploadsshared.Index{ID: 4, QueuedAt: t4, State: "queued", RepositoryID: 51, RepositoryName: "foo bar x"},
-		uploadsshared.Index{ID: 5, Commit: makeCommit(3333), QueuedAt: t5, State: "processing", AssociatedUploadID: &uploadID1},
-		uploadsshared.Index{ID: 6, QueuedAt: t6, State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
-		uploadsshared.Index{ID: 7, QueuedAt: t7, Indexer: "lsif-typescript"},
-		uploadsshared.Index{ID: 8, QueuedAt: t8, Indexer: "scip-ocaml"},
-		uploadsshared.Index{ID: 9, QueuedAt: t9, State: "queued"},
-		uploadsshared.Index{ID: 10, QueuedAt: t10},
+		uploadsshared.AutoIndexJob{ID: 1, Commit: makeCommit(3331), QueuedAt: t1, State: "queued", AssociatedUploadID: &uploadID1},
+		uploadsshared.AutoIndexJob{ID: 2, QueuedAt: t2, State: "errored", FailureMessage: &failureMessage},
+		uploadsshared.AutoIndexJob{ID: 3, Commit: makeCommit(3333), QueuedAt: t3, State: "queued", AssociatedUploadID: &uploadID1},
+		uploadsshared.AutoIndexJob{ID: 4, QueuedAt: t4, State: "queued", RepositoryID: 51, RepositoryName: "foo bar x"},
+		uploadsshared.AutoIndexJob{ID: 5, Commit: makeCommit(3333), QueuedAt: t5, State: "processing", AssociatedUploadID: &uploadID1},
+		uploadsshared.AutoIndexJob{ID: 6, QueuedAt: t6, State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
+		uploadsshared.AutoIndexJob{ID: 7, QueuedAt: t7, Indexer: "lsif-typescript"},
+		uploadsshared.AutoIndexJob{ID: 8, QueuedAt: t8, Indexer: "scip-ocaml"},
+		uploadsshared.AutoIndexJob{ID: 9, QueuedAt: t9, State: "queued"},
+		uploadsshared.AutoIndexJob{ID: 10, QueuedAt: t10},
 	)
 	insertUploads(t, db,
 		shared.Upload{ID: uploadID1, AssociatedIndexID: &indexID1},
@@ -165,7 +165,7 @@ func TestGetIndexByID(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	// Index does not exist initially
+	// AutoIndexJob does not exist initially
 	if _, exists, err := store.GetIndexByID(ctx, 1); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
 	} else if exists {
@@ -175,7 +175,7 @@ func TestGetIndexByID(t *testing.T) {
 	uploadID := 5
 	queuedAt := time.Unix(1587396557, 0).UTC()
 	startedAt := queuedAt.Add(time.Minute)
-	expected := uploadsshared.Index{
+	expected := uploadsshared.AutoIndexJob{
 		ID:             1,
 		Commit:         makeCommit(1),
 		QueuedAt:       queuedAt,
@@ -253,13 +253,13 @@ func TestGetQueuedIndexRank(t *testing.T) {
 	t7 := t1.Add(+time.Minute * 5)
 
 	insertIndexes(t, db,
-		uploadsshared.Index{ID: 1, QueuedAt: t1, State: "queued"},
-		uploadsshared.Index{ID: 2, QueuedAt: t2, State: "queued"},
-		uploadsshared.Index{ID: 3, QueuedAt: t3, State: "queued"},
-		uploadsshared.Index{ID: 4, QueuedAt: t4, State: "queued"},
-		uploadsshared.Index{ID: 5, QueuedAt: t5, State: "queued"},
-		uploadsshared.Index{ID: 6, QueuedAt: t6, State: "processing"},
-		uploadsshared.Index{ID: 7, QueuedAt: t1, State: "queued", ProcessAfter: &t7},
+		uploadsshared.AutoIndexJob{ID: 1, QueuedAt: t1, State: "queued"},
+		uploadsshared.AutoIndexJob{ID: 2, QueuedAt: t2, State: "queued"},
+		uploadsshared.AutoIndexJob{ID: 3, QueuedAt: t3, State: "queued"},
+		uploadsshared.AutoIndexJob{ID: 4, QueuedAt: t4, State: "queued"},
+		uploadsshared.AutoIndexJob{ID: 5, QueuedAt: t5, State: "queued"},
+		uploadsshared.AutoIndexJob{ID: 6, QueuedAt: t6, State: "processing"},
+		uploadsshared.AutoIndexJob{ID: 7, QueuedAt: t1, State: "queued", ProcessAfter: &t7},
 	)
 
 	if index, _, _ := store.GetIndexByID(context.Background(), 1); index.Rank == nil || *index.Rank != 1 {
@@ -299,16 +299,16 @@ func TestGetIndexesByIDs(t *testing.T) {
 	uploadID1, uploadID2, uploadID3, uploadID4 := 10, 11, 12, 13
 
 	insertIndexes(t, db,
-		uploadsshared.Index{ID: 1, AssociatedUploadID: &uploadID1},
-		uploadsshared.Index{ID: 2},
-		uploadsshared.Index{ID: 3, AssociatedUploadID: &uploadID1},
-		uploadsshared.Index{ID: 4},
-		uploadsshared.Index{ID: 5, AssociatedUploadID: &uploadID1},
-		uploadsshared.Index{ID: 6},
-		uploadsshared.Index{ID: 7},
-		uploadsshared.Index{ID: 8},
-		uploadsshared.Index{ID: 9},
-		uploadsshared.Index{ID: 10},
+		uploadsshared.AutoIndexJob{ID: 1, AssociatedUploadID: &uploadID1},
+		uploadsshared.AutoIndexJob{ID: 2},
+		uploadsshared.AutoIndexJob{ID: 3, AssociatedUploadID: &uploadID1},
+		uploadsshared.AutoIndexJob{ID: 4},
+		uploadsshared.AutoIndexJob{ID: 5, AssociatedUploadID: &uploadID1},
+		uploadsshared.AutoIndexJob{ID: 6},
+		uploadsshared.AutoIndexJob{ID: 7},
+		uploadsshared.AutoIndexJob{ID: 8},
+		uploadsshared.AutoIndexJob{ID: 9},
+		uploadsshared.AutoIndexJob{ID: 10},
 	)
 	insertUploads(t, db,
 		shared.Upload{ID: uploadID1, AssociatedIndexID: &indexID1},
@@ -363,7 +363,7 @@ func TestDeleteIndexByID(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	insertIndexes(t, db, uploadsshared.Index{ID: 1})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 1})
 
 	if found, err := store.DeleteIndexByID(context.Background(), 1); err != nil {
 		t.Fatalf("unexpected error deleting index: %s", err)
@@ -371,7 +371,7 @@ func TestDeleteIndexByID(t *testing.T) {
 		t.Fatalf("expected record to exist")
 	}
 
-	// Index no longer exists
+	// AutoIndexJob no longer exists
 	if _, exists, err := store.GetIndexByID(context.Background(), 1); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
 	} else if exists {
@@ -384,8 +384,8 @@ func TestDeleteIndexes(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	insertIndexes(t, db, uploadsshared.Index{ID: 1, State: "completed"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 2, State: "errored"})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 1, State: "completed"})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 2, State: "errored"})
 
 	if err := store.DeleteIndexes(context.Background(), shared.DeleteIndexesOptions{
 		States:       []string{"errored"},
@@ -395,7 +395,7 @@ func TestDeleteIndexes(t *testing.T) {
 		t.Fatalf("unexpected error deleting indexes: %s", err)
 	}
 
-	// Index no longer exists
+	// AutoIndexJob no longer exists
 	if _, exists, err := store.GetIndexByID(context.Background(), 2); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
 	} else if exists {
@@ -408,10 +408,10 @@ func TestDeleteIndexesWithIndexerKey(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	insertIndexes(t, db, uploadsshared.Index{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 2, Indexer: "sourcegraph/scip-go"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 3, Indexer: "sourcegraph/scip-typescript"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 4, Indexer: "sourcegraph/scip-typescript"})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 2, Indexer: "sourcegraph/scip-go"})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 3, Indexer: "sourcegraph/scip-typescript"})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 4, Indexer: "sourcegraph/scip-typescript"})
 
 	if err := store.DeleteIndexes(context.Background(), shared.DeleteIndexesOptions{
 		IndexerNames: []string{"scip-go"},
@@ -443,14 +443,14 @@ func TestReindexIndexByID(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	insertIndexes(t, db, uploadsshared.Index{ID: 1, State: "completed"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 2, State: "errored"})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 1, State: "completed"})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 2, State: "errored"})
 
 	if err := store.ReindexIndexByID(context.Background(), 2); err != nil {
 		t.Fatalf("unexpected error deleting indexes: %s", err)
 	}
 
-	// Index has been marked for reindexing
+	// AutoIndexJob has been marked for reindexing
 	if index, exists, err := store.GetIndexByID(context.Background(), 2); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
 	} else if !exists {
@@ -465,8 +465,8 @@ func TestReindexIndexes(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	insertIndexes(t, db, uploadsshared.Index{ID: 1, State: "completed"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 2, State: "errored"})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 1, State: "completed"})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 2, State: "errored"})
 
 	if err := store.ReindexIndexes(context.Background(), shared.ReindexIndexesOptions{
 		States:       []string{"errored"},
@@ -476,7 +476,7 @@ func TestReindexIndexes(t *testing.T) {
 		t.Fatalf("unexpected error deleting indexes: %s", err)
 	}
 
-	// Index has been marked for reindexing
+	// AutoIndexJob has been marked for reindexing
 	if index, exists, err := store.GetIndexByID(context.Background(), 2); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
 	} else if !exists {
@@ -491,10 +491,10 @@ func TestReindexIndexesWithIndexerKey(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	insertIndexes(t, db, uploadsshared.Index{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 2, Indexer: "sourcegraph/scip-go"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 3, Indexer: "sourcegraph/scip-typescript"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 4, Indexer: "sourcegraph/scip-typescript"})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 2, Indexer: "sourcegraph/scip-go"})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 3, Indexer: "sourcegraph/scip-typescript"})
+	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 4, Indexer: "sourcegraph/scip-typescript"})
 
 	if err := store.ReindexIndexes(context.Background(), shared.ReindexIndexesOptions{
 		IndexerNames: []string{"scip-go"},

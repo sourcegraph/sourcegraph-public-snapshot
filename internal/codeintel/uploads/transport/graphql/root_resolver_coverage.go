@@ -131,7 +131,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 		allUploads = append(allUploads, recentUpload.Uploads...)
 	}
 
-	var allIndexes []shared.Index
+	var allIndexes []shared.AutoIndexJob
 	for _, recentIndex := range recentIndexes {
 		allIndexes = append(allIndexes, recentIndex.Indexes...)
 	}

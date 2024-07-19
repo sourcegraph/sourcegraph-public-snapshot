@@ -51,7 +51,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 	}`
 
 	mockDBStore := NewMockStore()
-	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error) {
+	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.AutoIndexJob) ([]uploadsshared.AutoIndexJob, error) {
 		return indexes, nil
 	})
 	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
@@ -86,12 +86,12 @@ func TestQueueIndexesExplicit(t *testing.T) {
 		}
 	}
 
-	var indexes []uploadsshared.Index
+	var indexes []uploadsshared.AutoIndexJob
 	for _, call := range mockDBStore.InsertIndexesFunc.History() {
 		indexes = append(indexes, call.Result0...)
 	}
 
-	expectedIndexes := []uploadsshared.Index{
+	expectedIndexes := []uploadsshared.AutoIndexJob{
 		{
 			RepositoryID: 42,
 			Commit:       "cr42",
@@ -149,7 +149,7 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 	}
 
 	mockDBStore := NewMockStore()
-	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error) {
+	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.AutoIndexJob) ([]uploadsshared.AutoIndexJob, error) {
 		return indexes, nil
 	})
 	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(indexConfiguration, true, nil)
@@ -198,12 +198,12 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 		}
 	}
 
-	var indexes []uploadsshared.Index
+	var indexes []uploadsshared.AutoIndexJob
 	for _, call := range mockDBStore.InsertIndexesFunc.History() {
 		indexes = append(indexes, call.Result0...)
 	}
 
-	expectedIndexes := []uploadsshared.Index{
+	expectedIndexes := []uploadsshared.AutoIndexJob{
 		{
 			RepositoryID: 42,
 			Commit:       "cr42",
@@ -252,7 +252,7 @@ index_jobs:
 
 func TestQueueIndexesInRepository(t *testing.T) {
 	mockDBStore := NewMockStore()
-	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error) {
+	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.AutoIndexJob) ([]uploadsshared.AutoIndexJob, error) {
 		return indexes, nil
 	})
 	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
@@ -290,12 +290,12 @@ func TestQueueIndexesInRepository(t *testing.T) {
 		}
 	}
 
-	var indexes []uploadsshared.Index
+	var indexes []uploadsshared.AutoIndexJob
 	for _, call := range mockDBStore.InsertIndexesFunc.History() {
 		indexes = append(indexes, call.Result0...)
 	}
 
-	expectedIndexes := []uploadsshared.Index{
+	expectedIndexes := []uploadsshared.AutoIndexJob{
 		{
 			RepositoryID: 42,
 			Commit:       "cr42",
@@ -327,7 +327,7 @@ func TestQueueIndexesInRepository(t *testing.T) {
 
 func TestQueueIndexesInferred(t *testing.T) {
 	mockDBStore := NewMockStore()
-	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error) {
+	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.AutoIndexJob) ([]uploadsshared.AutoIndexJob, error) {
 		return indexes, nil
 	})
 	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
@@ -396,7 +396,7 @@ func TestQueueIndexesInferred(t *testing.T) {
 
 func TestQueueIndexesForPackage(t *testing.T) {
 	mockDBStore := NewMockStore()
-	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error) {
+	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.AutoIndexJob) ([]uploadsshared.AutoIndexJob, error) {
 		return indexes, nil
 	})
 	mockDBStore.IsQueuedFunc.SetDefaultReturn(false, nil)
@@ -469,12 +469,12 @@ func TestQueueIndexesForPackage(t *testing.T) {
 	if len(mockDBStore.InsertIndexesFunc.History()) != 1 {
 		t.Errorf("unexpected number of calls to InsertIndexes. want=%d have=%d", 1, len(mockDBStore.InsertIndexesFunc.History()))
 	} else {
-		var indexes []uploadsshared.Index
+		var indexes []uploadsshared.AutoIndexJob
 		for _, call := range mockDBStore.InsertIndexesFunc.History() {
 			indexes = append(indexes, call.Result0...)
 		}
 
-		expectedIndexes := []uploadsshared.Index{
+		expectedIndexes := []uploadsshared.AutoIndexJob{
 			{
 				RepositoryID: 42,
 				Commit:       "c42",

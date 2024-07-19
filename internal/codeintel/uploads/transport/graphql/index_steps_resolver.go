@@ -25,10 +25,10 @@ import (
 // The setup and teardown steps match the executor setup and teardown.
 type indexStepsResolver struct {
 	siteAdminChecker sharedresolvers.SiteAdminChecker
-	index            uploadsshared.Index
+	index            uploadsshared.AutoIndexJob
 }
 
-func NewIndexStepsResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, index uploadsshared.Index) resolverstubs.IndexStepsResolver {
+func NewIndexStepsResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, index uploadsshared.AutoIndexJob) resolverstubs.IndexStepsResolver {
 	return &indexStepsResolver{siteAdminChecker: siteAdminChecker, index: index}
 }
 
@@ -154,11 +154,11 @@ func (r *preIndexStepResolver) LogEntry() resolverstubs.ExecutionLogEntryResolve
 
 type indexStepResolver struct {
 	siteAdminChecker sharedresolvers.SiteAdminChecker
-	index            uploadsshared.Index
+	index            uploadsshared.AutoIndexJob
 	entry            *executor.ExecutionLogEntry
 }
 
-func newIndexStepResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, index uploadsshared.Index, entry *executor.ExecutionLogEntry) resolverstubs.IndexStepResolver {
+func newIndexStepResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, index uploadsshared.AutoIndexJob, entry *executor.ExecutionLogEntry) resolverstubs.IndexStepResolver {
 	return &indexStepResolver{
 		siteAdminChecker: siteAdminChecker,
 		index:            index,

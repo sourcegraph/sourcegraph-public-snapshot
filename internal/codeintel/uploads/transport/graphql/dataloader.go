@@ -7,9 +7,9 @@ import (
 
 type (
 	UploadLoaderFactory = *dataloader.LoaderFactory[int, shared.Upload]
-	IndexLoaderFactory  = *dataloader.LoaderFactory[int, shared.Index]
+	IndexLoaderFactory  = *dataloader.LoaderFactory[int, shared.AutoIndexJob]
 	UploadLoader        = *dataloader.Loader[int, shared.Upload]
-	IndexLoader         = *dataloader.Loader[int, shared.Index]
+	IndexLoader         = *dataloader.Loader[int, shared.AutoIndexJob]
 )
 
 func NewUploadLoaderFactory(uploadService UploadsService) UploadLoaderFactory {
@@ -17,7 +17,7 @@ func NewUploadLoaderFactory(uploadService UploadsService) UploadLoaderFactory {
 }
 
 func NewIndexLoaderFactory(uploadService UploadsService) IndexLoaderFactory {
-	return dataloader.NewLoaderFactory[int, shared.Index](dataloader.BackingServiceFunc[int, shared.Index](uploadService.GetIndexesByIDs))
+	return dataloader.NewLoaderFactory[int, shared.AutoIndexJob](dataloader.BackingServiceFunc[int, shared.AutoIndexJob](uploadService.GetIndexesByIDs))
 }
 
 func PresubmitAssociatedIndexes(indexLoader IndexLoader, uploads ...shared.Upload) {
@@ -28,7 +28,7 @@ func PresubmitAssociatedIndexes(indexLoader IndexLoader, uploads ...shared.Uploa
 	}
 }
 
-func PresubmitAssociatedUploads(uploadLoader UploadLoader, indexes ...shared.Index) {
+func PresubmitAssociatedUploads(uploadLoader UploadLoader, indexes ...shared.AutoIndexJob) {
 	for _, index := range indexes {
 		if index.AssociatedUploadID != nil {
 			uploadLoader.Presubmit(*index.AssociatedUploadID)

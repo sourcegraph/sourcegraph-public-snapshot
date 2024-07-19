@@ -164,7 +164,8 @@ const (
 	IndexStateCompleted  = IndexState(StateCompleted)
 )
 
-type Index struct {
+// AutoIndexJob represents an auto-indexing job as represented in lsif_indexes.
+type AutoIndexJob struct {
 	ID       int       `json:"id"`
 	Commit   string    `json:"commit"`
 	QueuedAt time.Time `json:"queuedAt"`
@@ -193,11 +194,11 @@ type Index struct {
 	EnqueuerUserID     int32                        `json:"enqueuerUserID"`
 }
 
-func (i Index) RecordID() int {
+func (i AutoIndexJob) RecordID() int {
 	return i.ID
 }
 
-func (i Index) RecordUID() string {
+func (i AutoIndexJob) RecordUID() string {
 	return strconv.Itoa(i.ID)
 }
 
@@ -337,7 +338,7 @@ type ExportedUpload struct {
 type IndexesWithRepositoryNamespace struct {
 	Root    string
 	Indexer string
-	Indexes []Index
+	Indexes []AutoIndexJob
 }
 
 type RepositoryWithCount struct {

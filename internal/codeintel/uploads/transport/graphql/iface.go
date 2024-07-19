@@ -12,12 +12,12 @@ import (
 )
 
 type UploadsService interface {
-	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Index, err error)
+	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.AutoIndexJob, err error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error)
-	GetIndexes(ctx context.Context, opts uploadshared.GetIndexesOptions) (_ []uploadsshared.Index, _ int, err error)
+	GetIndexes(ctx context.Context, opts uploadshared.GetIndexesOptions) (_ []uploadsshared.AutoIndexJob, _ int, err error)
 	GetUploads(ctx context.Context, opts uploadshared.GetUploadsOptions) (uploads []shared.Upload, totalCount int, err error)
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error)
-	GetIndexByID(ctx context.Context, id int) (_ uploadsshared.Index, _ bool, err error)
+	GetIndexByID(ctx context.Context, id int) (_ uploadsshared.AutoIndexJob, _ bool, err error)
 	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 	DeleteIndexes(ctx context.Context, opts uploadshared.DeleteIndexesOptions) (err error)
 	ReindexIndexByID(ctx context.Context, id int) (err error)

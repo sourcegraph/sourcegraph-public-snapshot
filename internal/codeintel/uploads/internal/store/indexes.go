@@ -17,7 +17,7 @@ import (
 )
 
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
-func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []shared.Index, _ int, err error) {
+func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []shared.AutoIndexJob, _ int, err error) {
 	ctx, trace, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", opts.RepositoryID),
 		attribute.String("state", opts.State),
@@ -53,7 +53,7 @@ func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (
 		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
 	}
 
-	var a []shared.Index
+	var a []shared.AutoIndexJob
 	var b int
 	err = s.withTransaction(ctx, func(tx *store) error {
 		authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, tx.db))
@@ -147,7 +147,7 @@ var scanIndexes = basestore.NewSliceScanner(scanIndex)
 // scanFirstIndex scans a slice of indexes from the return value of `*Store.query` and returns the first.
 var scanFirstIndex = basestore.NewFirstScanner(scanIndex)
 
-func scanIndex(s dbutil.Scanner) (index shared.Index, err error) {
+func scanIndex(s dbutil.Scanner) (index shared.AutoIndexJob, err error) {
 	var executionLogs []executor.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,
@@ -184,7 +184,7 @@ func scanIndex(s dbutil.Scanner) (index shared.Index, err error) {
 }
 
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
-func (s *store) GetIndexByID(ctx context.Context, id int) (_ shared.Index, _ bool, err error) {
+func (s *store) GetIndexByID(ctx context.Context, id int) (_ shared.AutoIndexJob, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("id", id),
 	}})
@@ -192,7 +192,7 @@ func (s *store) GetIndexByID(ctx context.Context, id int) (_ shared.Index, _ boo
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 	if err != nil {
-		return shared.Index{}, false, err
+		return shared.AutoIndexJob{}, false, err
 	}
 
 	return scanFirstIndex(s.db.Query(ctx, sqlf.Sprintf(getIndexByIDQuery, id, authzConds)))
@@ -233,7 +233,7 @@ WHERE repo.deleted_at IS NULL AND u.id = %s AND %s
 
 // GetIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
 // have a corresponding element in the returned list.
-func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Index, err error) {
+func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.AutoIndexJob, err error) {
 	ctx, _, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.IntSlice("ids", ids),
 	}})
