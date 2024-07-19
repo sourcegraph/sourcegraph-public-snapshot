@@ -170,7 +170,9 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		// otherwise use the default maximum request duration.
 		ctxTimeout := maxRequestDuration
 		if v := downstreamRequest.Header.Get("X-Timeout-Ms"); v != "" {
-			if t, err := strconv.Atoi(v); err == nil {
+			if t, err := strconv.Atoi(v); err != nil {
+				baseLogger.Warn("error parsing X-Timeout-Ms header", log.Error(err))
+			} else {
 				ctxTimeout = time.Duration(t) * time.Millisecond
 			}
 		}
