@@ -20,9 +20,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/kv"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -68,7 +68,7 @@ func NewIndexingHandler(ctx context.Context,
 	db database.DB,
 	codeintelDB codeintelshared.CodeIntelDB,
 	gitserverClient gitserver.Client,
-	uploadStore uploadstore.Store,
+	uploadStore kv.Store,
 ) (*indexingHandler, error) {
 
 	uploadsService := uploads.NewService(observationCtx, db, codeintelDB, gitserverClient)

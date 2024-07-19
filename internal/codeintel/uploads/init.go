@@ -16,8 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/kv"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
 func NewService(
@@ -53,7 +53,7 @@ func NewUploadProcessorJob(
 	observationCtx *observation.Context,
 	uploadSvc *Service,
 	db database.DB,
-	uploadStore uploadstore.Store,
+	uploadStore kv.Store,
 	workerConcurrency int,
 	workerBudget int64,
 	workerPollInterval time.Duration,

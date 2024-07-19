@@ -12,13 +12,13 @@ import (
 	"sync"
 	"time"
 
-	uploadstore "github.com/sourcegraph/sourcegraph/internal/uploadstore"
+	kv "github.com/sourcegraph/sourcegraph/internal/kv"
 	iterator "github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 // MockStore is a mock implementation of the Store interface (from the
-// package github.com/sourcegraph/sourcegraph/internal/uploadstore) used for
-// unit testing.
+// package github.com/sourcegraph/sourcegraph/internal/kv) used for unit
+// testing.
 type MockStore struct {
 	// ComposeFunc is an instance of a mock function object controlling the
 	// behavior of the method Compose.
@@ -129,7 +129,7 @@ func NewStrictMockStore() *MockStore {
 
 // NewMockStoreFrom creates a new mock of the MockStore interface. All
 // methods delegate to the given implementation, unless overwritten.
-func NewMockStoreFrom(i uploadstore.Store) *MockStore {
+func NewMockStoreFrom(i kv.Store) *MockStore {
 	return &MockStore{
 		ComposeFunc: &StoreComposeFunc{
 			defaultHook: i.Compose,

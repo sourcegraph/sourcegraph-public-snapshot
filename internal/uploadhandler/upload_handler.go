@@ -12,16 +12,16 @@ import (
 
 	sglog "github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/kv"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type UploadHandler[T any] struct {
 	logger              sglog.Logger
 	dbStore             DBStore[T]
-	uploadStore         uploadstore.Store
+	uploadStore         kv.Store
 	enqueuer            UploadEnqueuer[T]
 	operations          *Operations
 	metadataFromRequest func(ctx context.Context, r *http.Request) (T, int, error)
@@ -30,7 +30,7 @@ type UploadHandler[T any] struct {
 func NewUploadHandler[T any](
 	observationCtx *observation.Context,
 	dbStore DBStore[T],
-	uploadStore uploadstore.Store,
+	uploadStore kv.Store,
 	operations *Operations,
 	metadataFromRequest func(ctx context.Context, r *http.Request) (T, int, error),
 ) http.Handler {

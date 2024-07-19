@@ -1,4 +1,5 @@
-package uploadstore
+// Package kv provides a key-value store which can be backed by S3, GCS or blobstore.
+package kv
 
 import (
 	"context"

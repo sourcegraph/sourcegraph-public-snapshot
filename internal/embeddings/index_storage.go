@@ -11,8 +11,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/kv"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -26,7 +26,7 @@ const (
 	EmbeddingModelVersion                           // Added the model name used to create embeddings
 )
 
-func DownloadIndex[T any](ctx context.Context, uploadStore uploadstore.Store, key string) (_ *T, err error) {
+func DownloadIndex[T any](ctx context.Context, uploadStore kv.Store, key string) (_ *T, err error) {
 	file, err := uploadStore.Get(ctx, key)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func DownloadIndex[T any](ctx context.Context, uploadStore uploadstore.Store, ke
 	return &index, nil
 }
 
-func UploadIndex[T any](ctx context.Context, uploadStore uploadstore.Store, key string, index T) error {
+func UploadIndex[T any](ctx context.Context, uploadStore kv.Store, key string, index T) error {
 	buffer := bytes.NewBuffer(nil)
 	if err := gob.NewEncoder(buffer).Encode(index); err != nil {
 		return err
@@ -50,7 +50,7 @@ func UploadIndex[T any](ctx context.Context, uploadStore uploadstore.Store, key 
 	return err
 }
 
-func UploadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string, index *RepoEmbeddingIndex) error {
+func UploadRepoEmbeddingIndex(ctx context.Context, uploadStore kv.Store, key string, index *RepoEmbeddingIndex) error {
 	pr, pw := io.Pipe()
 
 	eg, ctx := errgroup.WithContext(ctx)
@@ -83,7 +83,7 @@ func UploadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store
 
 func UpdateRepoEmbeddingIndex(
 	ctx context.Context,
-	uploadStore uploadstore.Store,
+	uploadStore kv.Store,
 	key string,
 	previous *RepoEmbeddingIndex,
 	new *RepoEmbeddingIndex,
@@ -117,7 +117,7 @@ func UpdateRepoEmbeddingIndex(
 // TODO: 2023/07: Remove this wrapper either after we have forced a complete
 // reindex or after we have removed the internal embeddings store, whichever
 // comes first.
-func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, repoID api.RepoID, repoName api.RepoName) (_ *RepoEmbeddingIndex, err error) {
+func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore kv.Store, repoID api.RepoID, repoName api.RepoName) (_ *RepoEmbeddingIndex, err error) {
 	index, err1 := downloadRepoEmbeddingIndex(ctx, uploadStore, string(GetRepoEmbeddingIndexName(repoID)))
 	if err1 != nil {
 		var err2 error
@@ -129,7 +129,7 @@ func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 	return index, nil
 }
 
-func downloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string) (_ *RepoEmbeddingIndex, err error) {
+func downloadRepoEmbeddingIndex(ctx context.Context, uploadStore kv.Store, key string) (_ *RepoEmbeddingIndex, err error) {
 	tr, ctx := trace.New(ctx, "DownloadRepoEmbeddingIndex", attribute.String("key", key))
 	defer tr.EndWithErr(&err)
 
@@ -160,7 +160,7 @@ type decoder struct {
 	formatVersion IndexFormatVersion
 }
 
-func newDecoder(ctx context.Context, uploadStore uploadstore.Store, key string) (*decoder, error) {
+func newDecoder(ctx context.Context, uploadStore kv.Store, key string) (*decoder, error) {
 	f, err := uploadStore.Get(ctx, key)
 	if err != nil {
 		return nil, err

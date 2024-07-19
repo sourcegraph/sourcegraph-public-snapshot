@@ -1,4 +1,4 @@
-package uploadstore
+package kv
 
 import (
 	"fmt"

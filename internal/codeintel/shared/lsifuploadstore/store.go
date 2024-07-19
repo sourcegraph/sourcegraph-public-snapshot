@@ -3,17 +3,17 @@ package lsifuploadstore
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/kv"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
-func New(ctx context.Context, observationCtx *observation.Context, conf *Config) (uploadstore.Store, error) {
-	c := uploadstore.Config{
+func New(ctx context.Context, observationCtx *observation.Context, conf *Config) (kv.Store, error) {
+	c := kv.Config{
 		Backend:      conf.Backend,
 		ManageBucket: conf.ManageBucket,
 		Bucket:       conf.Bucket,
 		TTL:          conf.TTL,
-		S3: uploadstore.S3Config{
+		S3: kv.S3Config{
 			Region:          conf.S3Region,
 			Endpoint:        conf.S3Endpoint,
 			UsePathStyle:    conf.S3UsePathStyle,
@@ -21,12 +21,12 @@ func New(ctx context.Context, observationCtx *observation.Context, conf *Config)
 			SecretAccessKey: conf.S3SecretAccessKey,
 			SessionToken:    conf.S3SessionToken,
 		},
-		GCS: uploadstore.GCSConfig{
+		GCS: kv.GCSConfig{
 			ProjectID:               conf.GCSProjectID,
 			CredentialsFile:         conf.GCSCredentialsFile,
 			CredentialsFileContents: conf.GCSCredentialsFileContents,
 		},
 	}
 
-	return uploadstore.CreateLazy(ctx, c, uploadstore.NewOperations(observationCtx, "codeintel", "uploadstore"))
+	return kv.CreateLazy(ctx, c, kv.NewOperations(observationCtx, "codeintel", "uploadstore"))
 }

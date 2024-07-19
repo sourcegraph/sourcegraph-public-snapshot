@@ -16,8 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/kv"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -74,7 +74,7 @@ func newRepoEmbeddingJobWorker(
 	observationCtx *observation.Context,
 	workerStore dbworkerstore.Store[*repoembeddingsbg.RepoEmbeddingJob],
 	db database.DB,
-	uploadStore uploadstore.Store,
+	uploadStore kv.Store,
 	gitserverClient gitserver.Client,
 	contextService embed.ContextService,
 	repoEmbeddingJobsStore repoembeddingsbg.RepoEmbeddingJobsStore,

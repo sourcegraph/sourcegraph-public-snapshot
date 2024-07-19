@@ -6,8 +6,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/kv"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -60,14 +60,14 @@ func (c *Config) Load() {
 var ConfigInst = &Config{}
 
 // Store type alias avoids ugly import statements at call sites.
-type Store uploadstore.Store
+type Store kv.Store
 
 func New(ctx context.Context, observationCtx *observation.Context, conf *Config) (Store, error) {
-	c := uploadstore.Config{
+	c := kv.Config{
 		Backend:      conf.Backend,
 		ManageBucket: conf.ManageBucket,
 		Bucket:       conf.Bucket,
-		S3: uploadstore.S3Config{
+		S3: kv.S3Config{
 			Region:          conf.S3Region,
 			Endpoint:        conf.S3Endpoint,
 			UsePathStyle:    conf.S3UsePathStyle,
@@ -75,11 +75,11 @@ func New(ctx context.Context, observationCtx *observation.Context, conf *Config)
 			SecretAccessKey: conf.S3SecretAccessKey,
 			SessionToken:    conf.S3SessionToken,
 		},
-		GCS: uploadstore.GCSConfig{
+		GCS: kv.GCSConfig{
 			ProjectID:               conf.GCSProjectID,
 			CredentialsFile:         conf.GCSCredentialsFile,
 			CredentialsFileContents: conf.GCSCredentialsFileContents,
 		},
 	}
-	return uploadstore.CreateLazy(ctx, c, uploadstore.NewOperations(observationCtx, "search_jobs", "uploadstore"))
+	return kv.CreateLazy(ctx, c, kv.NewOperations(observationCtx, "search_jobs", "uploadstore"))
 }

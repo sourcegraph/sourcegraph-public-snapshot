@@ -90,7 +90,7 @@ env:
   # Default `NODE_ENV` to `development`
   NODE_ENV: development
 
-  # Required for codeintel uploadstore
+  # Required for codeintel kv
   PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:9000
   PRECISE_CODE_INTEL_UPLOAD_BACKEND: blobstore
 

@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/blobstore/internal/blobstore"
+	"github.com/sourcegraph/sourcegraph/internal/kv"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
 // Initialize uploadstore, shutdown.
@@ -46,7 +46,7 @@ func TestGetNotExists(t *testing.T) {
 	assertObjectDoesNotExist(ctx, store, t, "does-not-exist-key")
 }
 
-func assertObjectDoesNotExist(ctx context.Context, store uploadstore.Store, t *testing.T, key string) {
+func assertObjectDoesNotExist(ctx context.Context, store kv.Store, t *testing.T, key string) {
 	reader, err := store.Get(ctx, key)
 	if err != nil {
 		t.Fatal("expected a reader, got an error", err)
@@ -281,7 +281,7 @@ func TestExpireObjects(t *testing.T) {
 	assertObjectDoesNotExist(ctx, store, t, "foobar2")
 }
 
-func initTestStore(ctx context.Context, t *testing.T, dataDir string) (uploadstore.Store, *httptest.Server, *blobstore.Service) {
+func initTestStore(ctx context.Context, t *testing.T, dataDir string) (kv.Store, *httptest.Server, *blobstore.Service) {
 	observationCtx := observation.TestContextTB(t)
 	svc := &blobstore.Service{
 		DataDir:        dataDir,
@@ -291,12 +291,12 @@ func initTestStore(ctx context.Context, t *testing.T, dataDir string) (uploadsto
 	}
 	ts := httptest.NewServer(svc)
 
-	config := uploadstore.Config{
+	config := kv.Config{
 		Backend:      "blobstore",
 		ManageBucket: false,
 		Bucket:       "lsif-uploads",
 		TTL:          168 * time.Hour,
-		S3: uploadstore.S3Config{
+		S3: kv.S3Config{
 			Region:       "us-east-1",
 			Endpoint:     ts.URL,
 			UsePathStyle: false,
@@ -305,7 +305,7 @@ func initTestStore(ctx context.Context, t *testing.T, dataDir string) (uploadsto
 			// credentials and we want to confirm s3 client doesn't break.
 		},
 	}
-	store, err := uploadstore.CreateLazy(ctx, config, uploadstore.NewOperations(observationCtx, "test", "lsifstore"))
+	store, err := kv.CreateLazy(ctx, config, kv.NewOperations(observationCtx, "test", "lsifstore"))
 	if err != nil {
 		t.Fatal("CreateLazy", err)
 	}

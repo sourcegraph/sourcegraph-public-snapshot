@@ -18,10 +18,10 @@ go_library(
     tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/kv",
         "//internal/metrics",
         "//internal/observation",
         "//internal/trace/policy",
-        "//internal/uploadstore",
         "//lib/errors",
         "@com_github_aws_aws_sdk_go_v2_feature_s3_manager//:manager",
         "@com_github_sourcegraph_log//:log",
@@ -39,9 +39,9 @@ go_test(
     embed = [":uploadhandler"],
     tags = [TAG_PLATFORM_GRAPH],
     deps = [
+        "//internal/kv",
+        "//internal/kv/mocks",
         "//internal/observation",
-        "//internal/uploadstore",
-        "//internal/uploadstore/mocks",
         "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",

@@ -95,8 +95,8 @@
   path: github.com/sourcegraph/sourcegraph/internal/search/job
   interfaces:
     - Job
-- filename: internal/uploadstore/mocks/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/internal/uploadstore
+- filename: internal/kv/mocks/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/kv
   interfaces:
     - Store
 - filename: internal/workerutil/dbworker/store/mocks/mocks_temp.go

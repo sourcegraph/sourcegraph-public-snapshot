@@ -17,9 +17,9 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/kv"
+	uploadstoremocks "github.com/sourcegraph/sourcegraph/internal/kv/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
-	uploadstoremocks "github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 )
 
 func TestMain(m *testing.M) {
@@ -408,7 +408,7 @@ type testUploadMetadata struct {
 	AssociatedIndexID int
 }
 
-func newTestUploadHandler(t *testing.T, dbStore DBStore[testUploadMetadata], uploadStore uploadstore.Store) http.Handler {
+func newTestUploadHandler(t *testing.T, dbStore DBStore[testUploadMetadata], uploadStore kv.Store) http.Handler {
 	metadataFromRequest := func(ctx context.Context, r *http.Request) (testUploadMetadata, int, error) {
 		return testUploadMetadata{
 			RepositoryID:      50,

@@ -14,14 +14,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/kv"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 type noOpUploadStore struct{}
 
-func newNoOpUploadStore() uploadstore.Store {
+func newNoOpUploadStore() kv.Store {
 	return &noOpUploadStore{}
 }
 
@@ -70,7 +70,7 @@ type mockUploadStore struct {
 	files map[string][]byte
 }
 
-func newMockUploadStore() uploadstore.Store {
+func newMockUploadStore() kv.Store {
 	return &mockUploadStore{files: map[string][]byte{}}
 }
 
