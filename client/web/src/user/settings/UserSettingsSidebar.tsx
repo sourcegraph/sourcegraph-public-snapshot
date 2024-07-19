@@ -3,7 +3,7 @@ import { type FC, useCallback, useState } from 'react'
 import { mdiMenu, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, Icon, Link, ProductStatusBadge, type ProductStatusType, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, ProductStatusBadge, type ProductStatusType } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import type { BatchChangesProps } from '../../batches'
@@ -89,9 +89,7 @@ export const UserSettingsSidebar: FC<UserSettingsSidebarProps> = props => {
                                 onClick={collapseMobileSidebar}
                             >
                                 <OrgAvatar org={org.name} className="d-inline-flex mr-1" />
-                                <Tooltip content={org.name}>
-                                    <span className="text-truncate overflow-hidden">{org.name}</span>
-                                </Tooltip>
+                                <span className="text-truncate overflow-hidden">{org.name}</span>
                             </SidebarNavItem>
                         ))}
                         {!siteAdminViewingOtherUser && (

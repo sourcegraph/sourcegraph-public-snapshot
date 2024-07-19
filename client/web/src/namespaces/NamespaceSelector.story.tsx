@@ -1,7 +1,7 @@
 import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../components/WebStory'
-import { type ViewerAffiliatedNamespacesResult } from '../graphql-operations'
+import type { ViewerAffiliatedNamespacesResult } from '../graphql-operations'
 
 import { NamespaceSelector } from './NamespaceSelector'
 
