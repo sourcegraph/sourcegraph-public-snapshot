@@ -4172,12 +4172,35 @@ COMMENT ON COLUMN product_subscriptions.cody_gateway_embeddings_api_rate_interva
 
 COMMENT ON COLUMN product_subscriptions.cody_gateway_embeddings_api_allowed_models IS 'Custom override for the set of models allowed for embedding';
 
-CREATE TABLE query_runner_state (
-    query text,
-    last_executed timestamp with time zone,
-    latest_result timestamp with time zone,
-    exec_duration_ns bigint
+CREATE TABLE prompts (
+    id integer NOT NULL,
+    name citext NOT NULL,
+    description text NOT NULL,
+    definition_text text NOT NULL,
+    draft boolean DEFAULT false NOT NULL,
+    visibility_secret boolean DEFAULT true NOT NULL,
+    owner_user_id integer,
+    owner_org_id integer,
+    created_by integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_by integer,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT prompts_definition_text_max_length CHECK ((char_length(definition_text) <= (1024 * 100))),
+    CONSTRAINT prompts_description_max_length CHECK ((char_length(description) <= (1024 * 50))),
+    CONSTRAINT prompts_has_valid_owner CHECK ((((owner_user_id IS NOT NULL) AND (owner_org_id IS NULL)) OR ((owner_org_id IS NOT NULL) AND (owner_user_id IS NULL)))),
+    CONSTRAINT prompts_name_max_length CHECK ((char_length((name)::text) <= 255)),
+    CONSTRAINT prompts_name_valid_chars CHECK ((name OPERATOR(~) '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext))
 );
+
+CREATE SEQUENCE prompts_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE prompts_id_seq OWNED BY prompts.id;
 
 CREATE TABLE users (
     id integer NOT NULL,
@@ -4204,6 +4227,31 @@ CREATE TABLE users (
     CONSTRAINT users_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT users_username_max_length CHECK ((char_length((username)::text) <= 255)),
     CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^\w(?:\w|[-.](?=\w))*-?$'::citext))
+);
+
+CREATE VIEW prompts_view AS
+ SELECT prompts.id,
+    prompts.name,
+    prompts.description,
+    prompts.definition_text,
+    prompts.draft,
+    prompts.visibility_secret,
+    prompts.owner_user_id,
+    prompts.owner_org_id,
+    prompts.created_by,
+    prompts.created_at,
+    prompts.updated_by,
+    prompts.updated_at,
+    (((COALESCE(users.username, orgs.name))::text || '/'::text) || (prompts.name)::text) AS name_with_owner
+   FROM ((prompts
+     LEFT JOIN users ON ((users.id = prompts.owner_user_id)))
+     LEFT JOIN orgs ON ((orgs.id = prompts.owner_org_id)));
+
+CREATE TABLE query_runner_state (
+    query text,
+    last_executed timestamp with time zone,
+    latest_result timestamp with time zone,
+    exec_duration_ns bigint
 );
 
 CREATE VIEW reconciler_changesets AS
@@ -5305,6 +5353,8 @@ ALTER TABLE ONLY permissions ALTER COLUMN id SET DEFAULT nextval('permissions_id
 
 ALTER TABLE ONLY phabricator_repos ALTER COLUMN id SET DEFAULT nextval('phabricator_repos_id_seq'::regclass);
 
+ALTER TABLE ONLY prompts ALTER COLUMN id SET DEFAULT nextval('prompts_id_seq'::regclass);
+
 ALTER TABLE ONLY registry_extension_releases ALTER COLUMN id SET DEFAULT nextval('registry_extension_releases_id_seq'::regclass);
 
 ALTER TABLE ONLY registry_extensions ALTER COLUMN id SET DEFAULT nextval('registry_extensions_id_seq'::regclass);
@@ -5772,6 +5822,9 @@ ALTER TABLE ONLY product_licenses
 
 ALTER TABLE ONLY product_subscriptions
     ADD CONSTRAINT product_subscriptions_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY prompts
+    ADD CONSTRAINT prompts_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY redis_key_value
     ADD CONSTRAINT redis_key_value_pkey PRIMARY KEY (namespace, key) INCLUDE (value);
@@ -6309,6 +6362,10 @@ CREATE UNIQUE INDEX permissions_unique_namespace_action ON permissions USING btr
 CREATE INDEX process_after_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (process_after);
 
 CREATE UNIQUE INDEX product_licenses_license_check_token_idx ON product_licenses USING btree (license_check_token);
+
+CREATE UNIQUE INDEX prompts_name_is_unique_in_owner_org ON prompts USING btree (owner_org_id, name) WHERE (owner_org_id IS NOT NULL);
+
+CREATE UNIQUE INDEX prompts_name_is_unique_in_owner_user ON prompts USING btree (owner_user_id, name) WHERE (owner_user_id IS NOT NULL);
 
 CREATE INDEX registry_extension_releases_registry_extension_id ON registry_extension_releases USING btree (registry_extension_id, release_tag, created_at DESC) WHERE (deleted_at IS NULL);
 
@@ -6949,6 +7006,18 @@ ALTER TABLE ONLY product_licenses
 
 ALTER TABLE ONLY product_subscriptions
     ADD CONSTRAINT product_subscriptions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY prompts
+    ADD CONSTRAINT prompts_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY prompts
+    ADD CONSTRAINT prompts_owner_org_id_fkey FOREIGN KEY (owner_org_id) REFERENCES orgs(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY prompts
+    ADD CONSTRAINT prompts_owner_user_id_fkey FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY prompts
+    ADD CONSTRAINT prompts_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL;
 
 ALTER TABLE ONLY registry_extension_releases
     ADD CONSTRAINT registry_extension_releases_creator_user_id_fkey FOREIGN KEY (creator_user_id) REFERENCES users(id);

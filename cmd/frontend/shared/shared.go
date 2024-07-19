@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	// sourcegraph/internal
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/prompts"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -81,6 +82,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"contentLibrary": contentlibrary.Init,
 	"search":         search.Init,
 	"telemetry":      telemetry.Init,
+	"prompts":        prompts.Init,
 }
 
 func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {

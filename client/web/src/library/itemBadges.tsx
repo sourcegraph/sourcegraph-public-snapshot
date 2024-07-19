@@ -4,9 +4,9 @@ import classNames from 'classnames'
 
 import { Badge } from '@sourcegraph/wildcard'
 
-import { SavedSearchVisibility, type SavedSearchFields } from '../graphql-operations'
+import { SavedSearchVisibility, type PromptFields, type SavedSearchFields } from '../graphql-operations'
 
-type LibraryItem = SavedSearchFields
+type LibraryItem = SavedSearchFields | PromptFields
 
 export const LibraryItemStatusBadge: FunctionComponent<{
     item: Pick<LibraryItem, 'draft'>

@@ -386,3 +386,8 @@ func (r *NodeResolver) ToCodeGraphData() (resolverstubs.CodeGraphDataResolver, b
 	n, ok := r.Node.(resolverstubs.CodeGraphDataResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToPrompt() (PromptResolver, bool) {
+	n, ok := r.Node.(PromptResolver)
+	return n, ok
+}
