@@ -31,7 +31,6 @@ export const currentAuthStateQuery = gql`
                     __typename
                     id
                     name
-                    displayName
                     url
                     settingsURL
                 }

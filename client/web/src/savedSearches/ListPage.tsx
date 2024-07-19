@@ -74,8 +74,7 @@ const SavedSearchNode: FunctionComponent<
         </Button>
         <div className="flex-1" />
         <Badge variant="outlineSecondary" tooltip="Owner">
-            {('displayName' in savedSearch.owner ? savedSearch.owner.displayName : null) ??
-                savedSearch.owner.namespaceName}
+            {savedSearch.owner.namespaceName}
         </Badge>
         <Button to={savedSearch.url} variant="secondary" as={Link}>
             <Icon aria-label="Permalink" svgPath={mdiLink} />
@@ -140,7 +139,7 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
                     },
                     ...(namespaces?.map(namespace => ({
                         value: namespace.id,
-                        label: (namespace.__typename === 'Org' && namespace.displayName) || namespace.namespaceName,
+                        label: namespace.namespaceName,
                         args: {
                             owner: namespace.id,
                         },
