@@ -34,7 +34,7 @@ func (s *repoEmbeddingJob) Description() string {
 }
 
 func (s *repoEmbeddingJob) Config() []env.Config {
-	return []env.Config{embeddings.EmbeddingsUploadStoreConfigInst}
+	return []env.Config{embeddings.ObjectStorageConfigInst}
 }
 
 func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
@@ -43,7 +43,7 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 		return nil, err
 	}
 
-	uploadStore, err := embeddings.NewEmbeddingsUploadStore(context.Background(), observationCtx, embeddings.EmbeddingsUploadStoreConfigInst)
+	uploadStore, err := embeddings.NewObjectStorage(context.Background(), observationCtx, embeddings.ObjectStorageConfigInst)
 	if err != nil {
 		return nil, err
 	}

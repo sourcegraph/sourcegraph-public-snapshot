@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type EmbeddingsUploadStoreConfig struct {
+type ObjectStorageConfig struct {
 	env.BaseConfig
 
 	Backend      string
@@ -31,7 +31,7 @@ type EmbeddingsUploadStoreConfig struct {
 	GCSCredentialsFileContents string
 }
 
-func (c *EmbeddingsUploadStoreConfig) Load() {
+func (c *ObjectStorageConfig) Load() {
 	c.Backend = strings.ToLower(c.Get("EMBEDDINGS_UPLOAD_BACKEND", "blobstore", "The target file service for embeddings. S3, GCS, and Blobstore are supported."))
 	c.ManageBucket = c.GetBool("EMBEDDINGS_UPLOAD_MANAGE_BUCKET", "false", "Whether or not the client should manage the target bucket configuration.")
 	c.Bucket = c.Get("EMBEDDINGS_UPLOAD_BUCKET", "embeddings", "The name of the bucket to store embeddings in.")
@@ -58,9 +58,9 @@ func (c *EmbeddingsUploadStoreConfig) Load() {
 	}
 }
 
-var EmbeddingsUploadStoreConfigInst = &EmbeddingsUploadStoreConfig{}
+var ObjectStorageConfigInst = &ObjectStorageConfig{}
 
-func NewEmbeddingsUploadStore(ctx context.Context, observationCtx *observation.Context, conf *EmbeddingsUploadStoreConfig) (object.Storage, error) {
+func NewObjectStorage(ctx context.Context, observationCtx *observation.Context, conf *ObjectStorageConfig) (object.Storage, error) {
 	c := object.StorageConfig{
 		Backend:      conf.Backend,
 		ManageBucket: conf.ManageBucket,
