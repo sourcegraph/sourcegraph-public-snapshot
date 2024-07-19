@@ -18,7 +18,6 @@ const messageSender =
  * Functions that can be invoked from content scripts that will be executed in the background page.
  */
 export const background: BackgroundPageApi = {
-    createBlobURL: messageSender('createBlobURL'),
     openOptionsPage: messageSender('openOptionsPage'),
     requestGraphQL: messageSender('requestGraphQL'),
     notifyRepoSyncError: messageSender('notifyRepoSyncError'),

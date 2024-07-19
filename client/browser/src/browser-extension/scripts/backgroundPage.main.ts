@@ -29,7 +29,6 @@ import { getHeaders } from '../../shared/backend/headers'
 import { fetchSite } from '../../shared/backend/server'
 import { initializeOmniboxInterface } from '../../shared/cli'
 import { browserPortToMessagePort, findMessagePorts } from '../../shared/platform/ports'
-import { createBlobURLForBundle } from '../../shared/platform/worker'
 import { initSentry } from '../../shared/sentry'
 import { ConditionalTelemetryRecorderProvider } from '../../shared/telemetry'
 import { EventLogger } from '../../shared/tracking/eventLogger'
@@ -225,10 +224,6 @@ async function main(): Promise<void> {
     const handlers: BackgroundPageApiHandlers = {
         async openOptionsPage(): Promise<void> {
             await browser.runtime.openOptionsPage()
-        },
-
-        async createBlobURL(bundleUrl: string): Promise<string> {
-            return createBlobURLForBundle(bundleUrl)
         },
 
         async requestGraphQL<T, V = object>({
