@@ -6,15 +6,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
 
+const DefaultAssetPath = "dist"
+
 func init() {
 	path := os.Getenv("SRC_ASSETS_DIR")
 	if path == "" {
-		panic("SRC_ASSETS_DIR not set")
+		path = DefaultAssetPath
 	}
 
-	_, err := os.Stat(path)
-	if err != nil {
-		panic(err)
-	}
+	// _, err := os.Stat(path)
+	// if err != nil {
+	// 	panic(err)
+	// }
 	assets.UseAssetsProviderForPath(path)
 }
