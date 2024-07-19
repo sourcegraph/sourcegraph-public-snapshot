@@ -15,6 +15,7 @@ go_library(
         "//internal/completions/client/azureopenai:__pkg__",
         "//internal/completions/client/codygateway:__pkg__",
         "//internal/completions/client/openai:__pkg__",
+        "//internal/completions/client/openaicompatible:__pkg__",
         "//internal/updatecheck:__pkg__",
     ],
     deps = [
