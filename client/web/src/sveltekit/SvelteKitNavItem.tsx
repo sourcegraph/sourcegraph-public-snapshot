@@ -4,8 +4,7 @@ import { useApolloClient } from '@apollo/client'
 import { useLocation } from 'react-router-dom'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { Badge } from '@sourcegraph/wildcard/src/components/Badge'
-import { Popover, PopoverTrigger, PopoverContent } from '@sourcegraph/wildcard/src/components/Popover'
+import { Text, H3, Popover, PopoverTrigger, PopoverContent, Badge } from '@sourcegraph/wildcard'
 
 import { enableSvelteAndReload, canEnableSvelteKit } from './util'
 
@@ -24,16 +23,16 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
             <Toggle
                 value={false}
                 onToggle={() => enableSvelteAndReload(client, userID)}
-                title={'Go to experimental web app'}
+                title="Go to experimental web app"
                 className={styles.toggle}
             />
             <Popover>
                 <PopoverTrigger className={styles.badge}>
-                    <Badge variant={'warning'}>Try the new experience</Badge>
+                    <Badge variant="warning">Try the new experience</Badge>
                 </PopoverTrigger>
                 <PopoverContent className={styles.popover}>
-                    <h3>Sourcegraph is getting a refresh!</h3>
-                    <p>Try it out early with the toggle above.</p>
+                    <H3>Sourcegraph is getting a refresh!</H3>
+                    <Text>Try it out early with the toggle above.</Text>
                 </PopoverContent>
             </Popover>
         </div>
