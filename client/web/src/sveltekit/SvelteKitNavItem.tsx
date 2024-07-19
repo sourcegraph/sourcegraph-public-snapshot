@@ -1,4 +1,4 @@
-import { type useState, FC } from 'react'
+import { FC } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { useLocation } from 'react-router-dom'
