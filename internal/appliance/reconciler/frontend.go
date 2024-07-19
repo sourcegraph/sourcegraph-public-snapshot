@@ -7,12 +7,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/container"
@@ -26,25 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
-
-const (
-	pgsqlSecretName          = "pgsql-auth"
-	codeInsightsDBSecretName = "codeinsights-db-auth"
-	codeIntelDBSecretName    = "codeintel-db-auth"
-	redisCacheSecretName     = "redis-cache"
-	redisStoreSecretName     = "redis-store"
-)
-
-type DBConnSpecs struct {
-	PG           *config.DatabaseConnectionSpec `json:"pg,omitempty"`
-	CodeIntel    *config.DatabaseConnectionSpec `json:"codeintel,omitempty"`
-	CodeInsights *config.DatabaseConnectionSpec `json:"codeinsights,omitempty"`
-}
-
-type RedisConnSpecs struct {
-	Cache string `json:"cache,omitempty"`
-	Store string `json:"store,omitempty"`
-}
 
 func (r *Reconciler) reconcileFrontend(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	if err := r.reconcileFrontendDeployment(ctx, sg, owner); err != nil {
@@ -130,23 +108,9 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 	}
 
 	template := pod.NewPodTemplate("sourcegraph-frontend", cfg)
-
-	dbConnSpec, err := r.getDBSecret(ctx, sg, pgsqlSecretName)
+	dbConnSpecs, err := r.getDBSecrets(ctx, sg)
 	if err != nil {
 		return err
-	}
-	codeIntelConnSpec, err := r.getDBSecret(ctx, sg, codeIntelDBSecretName)
-	if err != nil {
-		return err
-	}
-	codeInsightsConnSpec, err := r.getDBSecret(ctx, sg, codeInsightsDBSecretName)
-	if err != nil {
-		return err
-	}
-	dbConnSpecs := DBConnSpecs{
-		PG:           dbConnSpec,
-		CodeIntel:    codeIntelConnSpec,
-		CodeInsights: codeInsightsConnSpec,
 	}
 	dbConnHash, err := configHash(dbConnSpecs)
 	if err != nil {
@@ -154,17 +118,9 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 	}
 	template.Template.ObjectMeta.Annotations["checksum/auth"] = dbConnHash
 
-	redisCacheEndpoint, err := r.getRedisSecret(ctx, sg, "redis-cache")
+	redisConnSpecs, err := r.getRedisSecrets(ctx, sg)
 	if err != nil {
 		return err
-	}
-	redisStoreEndpoint, err := r.getRedisSecret(ctx, sg, "redis-store")
-	if err != nil {
-		return err
-	}
-	redisConnSpecs := RedisConnSpecs{
-		Cache: redisCacheEndpoint,
-		Store: redisStoreEndpoint,
 	}
 	redisConnHash, err := configHash(redisConnSpecs)
 	if err != nil {
@@ -216,58 +172,6 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 	}
 
 	return reconcileObject(ctx, r, ifChanged, &dep, &appsv1.Deployment{}, sg, owner)
-}
-
-func (r *Reconciler) getDBSecret(ctx context.Context, sg *config.Sourcegraph, secretName string) (*config.DatabaseConnectionSpec, error) {
-	dbSecret, err := r.getSecret(ctx, sg, secretName)
-	if err != nil {
-		return nil, err
-	}
-
-	return &config.DatabaseConnectionSpec{
-		Host:     string(dbSecret.Data["host"]),
-		Port:     string(dbSecret.Data["port"]),
-		User:     string(dbSecret.Data["user"]),
-		Password: string(dbSecret.Data["password"]),
-		Database: string(dbSecret.Data["database"]),
-	}, nil
-}
-
-func (r *Reconciler) getRedisSecret(ctx context.Context, sg *config.Sourcegraph, secretName string) (string, error) {
-	redisSecret, err := r.getSecret(ctx, sg, secretName)
-	if err != nil {
-		return "", err
-	}
-
-	return string(redisSecret.Data["endpoint"]), nil
-}
-
-func (r *Reconciler) getSecret(ctx context.Context, sg *config.Sourcegraph, secretName string) (*corev1.Secret, error) {
-	var secret corev1.Secret
-	secretNsName := types.NamespacedName{Name: secretName, Namespace: sg.Namespace}
-	if err := r.Client.Get(ctx, secretNsName, &secret); err != nil {
-		if !kerrors.IsNotFound(err) {
-			return nil, errors.Wrapf(err, "getting secret %s", secretName)
-		}
-
-		// If we cannot find the secret, return nil but also no error. We can
-		// still serialize an ifChanged object in reconcileFrontendDeployment().
-		// We should do this rather than fail the reconcile loop here, because
-		// Kubernetes does not have inter-service dependencies, so it is
-		// idiomatic to finish the loop even if the desired global final state
-		// has not been reached. The next reconciliation after the secret exists
-		// will yield a different result, which will cause deployed pods to roll
-		// (since the spec.template.metadata.annotations changes).
-		//
-		// We return a zero-valued secret to avoid nil pointer explosions. All
-		// data fields will be empty. Currently, all callers only use this
-		// function to hash the data to see if its changed, so this seems ok to
-		// do.
-		log.FromContext(ctx).Info("could not find secret", "secretName", secretName, "err", err)
-		return &corev1.Secret{}, nil
-	}
-
-	return &secret, nil
 }
 
 func (r *Reconciler) reconcileFrontendService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
