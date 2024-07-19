@@ -3,6 +3,7 @@ package upgrades
 // This file contains handler logic for appliances upgrades.
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/Masterminds/semver"
@@ -52,27 +53,44 @@ func DetermineUpgradePolicy(currentVersion, targetVersion string) (downtime bool
 	return false, nil
 }
 
-// checkConnection to standard databases(pgsql, codeintel, codeinsights)
-func CheckConnection(obsvCtx *observation.Context, schema string) error {
-	fmt.Println("Checking connection to frontend databases...")
-
+// WIP this is a place holder for now and construncts DSNs from os.Getenv,
+// ultimately we want to get the env vars from dbAuthVars as in frontend.go.
+func getApplianceDSNs() (map[string]string, error) {
 	dsns, err := postgresdsn.DSNsBySchema(schemas.SchemaNames)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	fmt.Println(dsns["frontend"])
+	return dsns, nil
+}
 
-	frontDB, err := connections.RawNewFrontendDB(obsvCtx, "", "appliance")
-	if err != nil {
-		return err
+// checkConnection to one of our standard databases(pgsql, codeintel, codeinsights)
+func checkConnection(obsvCtx *observation.Context, name, dsn string) error {
+	if name != "frontend" && name != "codeintel" && name != "codeinsights" {
+		return errors.Newf("invalid database name: %s", name)
 	}
-	defer frontDB.Close()
 
-	err = frontDB.Ping()
-	if err != nil {
-		return err
+	var f func(*observation.Context, string, string) (*sql.DB, error)
+	switch name {
+	case "frontend":
+		f = connections.RawNewFrontendDB
+	case "codeintel":
+		f = connections.RawNewCodeIntelDB
+	case "codeinsights":
+		f = connections.RawNewCodeInsightsDB
 	}
-	fmt.Println("✅ Connection to frontend databases successful.")
 
+	fmt.Printf("Checking connection to %s database...\n", name)
+
+	if db, err := f(obsvCtx, dsn, "appliance"); err != nil {
+		return err
+	} else {
+		defer db.Close()
+
+		if err := db.Ping(); err != nil {
+			return err
+		}
+	}
+
+	fmt.Printf("✅ Connection to %s database successful.", name)
 	return nil
 }

@@ -1,7 +1,6 @@
 package upgrades
 
 import (
-	"os"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -78,49 +77,56 @@ func TestDetermineUpgradePolicy(t *testing.T) {
 func TestCheckConnection(t *testing.T) {
 	tests := []struct {
 		name       string
+		schema     string
 		connection bool
-		envvars    map[string]string
 	}{
 		{
-			name:       "default appliance",
+			name:       "frontend single db connection",
+			schema:     "frontend",
 			connection: true,
-			envvars: map[string]string{
-				"PGHOST":     "pgsql",
-				"PGPORT":     "5432",
-				"PGUSER":     "sg",
-				"PGPASSWORD": "sg",
-				"PGDATABASE": "sg",
-				"PGSSLMODE":  "disable",
-			},
+		},
+		{
+			name:       "codeintel single db connection",
+			schema:     "codeintel",
+			connection: true,
+		},
+		{
+			name:       "codeinsights single db connection",
+			schema:     "codeinsights",
+			connection: true,
 		},
 		{
 			name:       "malformed dsn",
+			schema:     "doombot",
 			connection: false,
-			envvars: map[string]string{
-				"PGHOST":     "pgsql",
-				"PGPORT":     "42069",
-				"PGUSER":     "DrDoom",
-				"PGPASSWORD": "Doombot",
-				"PGDATABASE": "Latveria",
-				"PGSSLMODE":  "disable",
-			},
 		},
 	}
 
+	// Setup mock db and attempt to connect using the given env vars
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			for k, v := range test.envvars {
-				os.Setenv(k, v)
-			}
-			err := CheckConnection(&observation.TestContext, "postgres")
-			if err != nil {
-				t.Errorf("unexpected error: %v", err)
+			// dbtest.NewDB(t)
+			t.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
+			switch test.schema {
+			case "frontend":
+				t.Setenv("PGUSER", "sourcegraph")
+			case "codeintel":
+				t.Setenv("CODEINTEL_PGUSER", "sourcegraph")
+			case "codeinsights":
+				t.Setenv("CODEINSIGHTS_PGUSER", "sourcegraph")
 			}
 
-			if test.connection {
-				t.Log("connection")
-			} else {
-				t.Log("no connection")
+			dsns, err := getApplianceDSNs()
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				t.FailNow()
+			}
+
+			t.Log("test dsn: ", dsns[test.schema])
+			err = checkConnection(&observation.TestContext, test.schema, dsns[test.schema])
+			if err != nil && test.connection {
+				t.Errorf("unexpected error: %v", err)
+				t.FailNow()
 			}
 		})
 	}
