@@ -10,9 +10,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend",
     visibility = ["//visibility:private"],
     deps = [
-        "//client/web/dist",
         "//cmd/frontend/shared",
         "//internal/sanitycheck",
+        "//ui/assets/dist",
     ],
 )
 
@@ -24,7 +24,10 @@ go_binary(
 
 pkg_tar(
     name = "tar_frontend",
-    srcs = [":frontend"],
+    srcs = [
+        ":frontend",
+        "//client/web/dist:copy_bundle",
+    ],
 )
 
 oci_image(
