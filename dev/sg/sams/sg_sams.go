@@ -209,7 +209,7 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 				}
 
 				if u, err := url.Parse(samsServer); err == nil &&
-					(u.Hostname() == "127.0.0.1" || u.Hostname() == "localhost") {
+					(u.Hostname() == "127.0.0.1" || u.Hostname() == "localhost") { // CI:LOCALHOST_OK
 					std.Out.WriteSuggestionf("These client credentials can NOT be shown again - if you lose them you will need to create another one.")
 				} else {
 					std.Out.WriteWarningf("These client credentials are highly sensitive and can NOT be shown again. Please store them securely in Google Secret Manager or 1Password.")
