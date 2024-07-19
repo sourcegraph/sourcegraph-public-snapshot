@@ -42,16 +42,16 @@ type Storage interface {
 	List(ctx context.Context, prefix string) (*iterator.Iterator[string], error)
 }
 
-var storeConstructors = map[string]func(ctx context.Context, config Config, operations *Operations) (Storage, error){
+var storeConstructors = map[string]func(ctx context.Context, config StorageConfig, operations *Operations) (Storage, error){
 	"s3":        newS3FromConfig,
 	"blobstore": newS3FromConfig,
 	"gcs":       newGCSFromConfig,
 }
 
-// CreateLazy initialize a new store from the given configuration that is initialized
+// CreateLazyStorage initialize a new store from the given configuration that is initialized
 // on it first method call. If initialization fails, all methods calls will return a
 // the initialization error.
-func CreateLazy(ctx context.Context, config Config, ops *Operations) (Storage, error) {
+func CreateLazyStorage(ctx context.Context, config StorageConfig, ops *Operations) (Storage, error) {
 	store, err := create(ctx, config, ops)
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func CreateLazy(ctx context.Context, config Config, ops *Operations) (Storage, e
 }
 
 // create creates but does not initialize a new store from the given configuration.
-func create(ctx context.Context, config Config, ops *Operations) (Storage, error) {
+func create(ctx context.Context, config StorageConfig, ops *Operations) (Storage, error) {
 	newStore, ok := storeConstructors[config.Backend]
 	if !ok {
 		return nil, errors.Errorf("unknown upload store backend '%s'", config.Backend)

@@ -11,7 +11,7 @@ import (
 )
 
 func TestS3ClientOptions(t *testing.T) {
-	config := Config{
+	config := StorageConfig{
 		S3: S3Config{
 			Endpoint:     "http://blobstore:9000",
 			UsePathStyle: true,
@@ -38,7 +38,7 @@ func TestS3ClientOptions(t *testing.T) {
 }
 
 func TestS3ClientConfig(t *testing.T) {
-	config := normalizeConfig(Config{
+	config := normalizeConfig(StorageConfig{
 		Backend:      "blobstore",
 		Bucket:       "lsif-uploads",
 		ManageBucket: true,

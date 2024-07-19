@@ -291,7 +291,7 @@ func initTestStore(ctx context.Context, t *testing.T, dataDir string) (object.St
 	}
 	ts := httptest.NewServer(svc)
 
-	config := object.Config{
+	config := object.StorageConfig{
 		Backend:      "blobstore",
 		ManageBucket: false,
 		Bucket:       "lsif-uploads",
@@ -305,9 +305,9 @@ func initTestStore(ctx context.Context, t *testing.T, dataDir string) (object.St
 			// credentials and we want to confirm s3 client doesn't break.
 		},
 	}
-	store, err := object.CreateLazy(ctx, config, object.NewOperations(observationCtx, "test", "lsifstore"))
+	store, err := object.CreateLazyStorage(ctx, config, object.NewOperations(observationCtx, "test", "lsifstore"))
 	if err != nil {
-		t.Fatal("CreateLazy", err)
+		t.Fatal("CreateLazyStorage", err)
 	}
 	if err := store.Init(ctx); err != nil {
 		t.Fatal("Init", err)

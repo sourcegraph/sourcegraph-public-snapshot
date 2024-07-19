@@ -61,7 +61,7 @@ func (c *EmbeddingsUploadStoreConfig) Load() {
 var EmbeddingsUploadStoreConfigInst = &EmbeddingsUploadStoreConfig{}
 
 func NewEmbeddingsUploadStore(ctx context.Context, observationCtx *observation.Context, conf *EmbeddingsUploadStoreConfig) (object.Storage, error) {
-	c := object.Config{
+	c := object.StorageConfig{
 		Backend:      conf.Backend,
 		ManageBucket: conf.ManageBucket,
 		Bucket:       conf.Bucket,
@@ -79,5 +79,5 @@ func NewEmbeddingsUploadStore(ctx context.Context, observationCtx *observation.C
 			CredentialsFileContents: conf.GCSCredentialsFileContents,
 		},
 	}
-	return object.CreateLazy(ctx, c, object.NewOperations(observationCtx, "embeddings", "uploadstore"))
+	return object.CreateLazyStorage(ctx, c, object.NewOperations(observationCtx, "embeddings", "uploadstore"))
 }

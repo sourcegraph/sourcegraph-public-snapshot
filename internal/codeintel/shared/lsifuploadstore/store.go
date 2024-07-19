@@ -8,7 +8,7 @@ import (
 )
 
 func New(ctx context.Context, observationCtx *observation.Context, conf *Config) (object.Storage, error) {
-	c := object.Config{
+	c := object.StorageConfig{
 		Backend:      conf.Backend,
 		ManageBucket: conf.ManageBucket,
 		Bucket:       conf.Bucket,
@@ -28,5 +28,5 @@ func New(ctx context.Context, observationCtx *observation.Context, conf *Config)
 		},
 	}
 
-	return object.CreateLazy(ctx, c, object.NewOperations(observationCtx, "codeintel", "uploadstore"))
+	return object.CreateLazyStorage(ctx, c, object.NewOperations(observationCtx, "codeintel", "uploadstore"))
 }

@@ -15,9 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/searchkv"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 )
@@ -57,7 +57,7 @@ func (j *searchJob) Description() string {
 }
 
 func (j *searchJob) Config() []env.Config {
-	return []env.Config{searchkv.ConfigInst}
+	return []env.Config{search.ObjectStorageConfigInst}
 }
 
 func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
@@ -66,7 +66,7 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 	}
 	workCtx := actor.WithInternalActor(context.Background())
 
-	uploadStore, err := searchkv.NewObjectStorage(workCtx, observationCtx, searchkv.ConfigInst)
+	uploadStore, err := search.NewObjectStorage(workCtx, observationCtx, search.ObjectStorageConfigInst)
 	if err != nil {
 		j.err = err
 		return nil, err

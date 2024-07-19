@@ -43,7 +43,7 @@ type S3Config struct {
 }
 
 // newS3FromConfig creates a new store backed by AWS Simple Storage Service.
-func newS3FromConfig(ctx context.Context, config Config, operations *Operations) (Storage, error) {
+func newS3FromConfig(ctx context.Context, config StorageConfig, operations *Operations) (Storage, error) {
 	cfg, err := s3ClientConfig(ctx, config.S3)
 	if err != nil {
 		return nil, err

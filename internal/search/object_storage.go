@@ -11,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var ObjectStorageConfigInst = &ObjectStorageConfig{}
+
 type ObjectStorageConfig struct {
 	env.BaseConfig
 
@@ -60,7 +62,7 @@ func (c *ObjectStorageConfig) Load() {
 var ConfigInst = &ObjectStorageConfig{}
 
 func NewObjectStorage(ctx context.Context, observationCtx *observation.Context, conf *ObjectStorageConfig) (object.Storage, error) {
-	c := object.Config{
+	c := object.StorageConfig{
 		Backend:      conf.Backend,
 		ManageBucket: conf.ManageBucket,
 		Bucket:       conf.Bucket,
@@ -78,5 +80,5 @@ func NewObjectStorage(ctx context.Context, observationCtx *observation.Context, 
 			CredentialsFileContents: conf.GCSCredentialsFileContents,
 		},
 	}
-	return object.CreateLazy(ctx, c, object.NewOperations(observationCtx, "search_jobs", "uploadstore"))
+	return object.CreateLazyStorage(ctx, c, object.NewOperations(observationCtx, "search_jobs", "uploadstore"))
 }
