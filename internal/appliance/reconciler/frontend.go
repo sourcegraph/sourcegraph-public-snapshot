@@ -192,11 +192,29 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 }
 
 func (r *Reconciler) getDBSecret(ctx context.Context, sg *config.Sourcegraph, secretName string) (*config.DatabaseConnectionSpec, error) {
-	var dbSecret corev1.Secret
-	dbSecretName := types.NamespacedName{Name: secretName, Namespace: sg.Namespace}
-	if err := r.Client.Get(ctx, dbSecretName, &dbSecret); err != nil {
+	dbSecret, err := r.getSecret(ctx, sg, secretName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config.DatabaseConnectionSpec{
+		Host:     string(dbSecret.Data["host"]),
+		Port:     string(dbSecret.Data["port"]),
+		User:     string(dbSecret.Data["user"]),
+		Password: string(dbSecret.Data["password"]),
+		Database: string(dbSecret.Data["database"]),
+	}, nil
+}
+
+// func (r *Reconciler) getRedisSecret(ctx context.Context, sg *config.Sourcegraph, secretName string) (string, error) {
+// }
+
+func (r *Reconciler) getSecret(ctx context.Context, sg *config.Sourcegraph, secretName string) (*corev1.Secret, error) {
+	var secret corev1.Secret
+	secretNsName := types.NamespacedName{Name: secretName, Namespace: sg.Namespace}
+	if err := r.Client.Get(ctx, secretNsName, &secret); err != nil {
 		if !kerrors.IsNotFound(err) {
-			return nil, errors.Wrapf(err, "getting DB secret %s", secretName)
+			return nil, errors.Wrapf(err, "getting secret %s", secretName)
 		}
 
 		// If we cannot find the secret, return nil but also no error. We can
@@ -207,17 +225,16 @@ func (r *Reconciler) getDBSecret(ctx context.Context, sg *config.Sourcegraph, se
 		// has not been reached. The next reconciliation after the secret exists
 		// will yield a different result, which will cause deployed pods to roll
 		// (since the spec.template.metadata.annotations changes).
-		log.FromContext(ctx).Info("could not find database secret", "secretName", secretName, "err", err)
-		return nil, nil
+		//
+		// We return a zero-valued secret to avoid nil pointer explosions. All
+		// data fields will be empty. Currently, all callers only use this
+		// function to hash the data to see if its changed, so this seems ok to
+		// do.
+		log.FromContext(ctx).Info("could not find secret", "secretName", secretName, "err", err)
+		return &corev1.Secret{}, nil
 	}
 
-	return &config.DatabaseConnectionSpec{
-		Host:     string(dbSecret.Data["host"]),
-		Port:     string(dbSecret.Data["port"]),
-		User:     string(dbSecret.Data["user"]),
-		Password: string(dbSecret.Data["password"]),
-		Database: string(dbSecret.Data["database"]),
-	}, nil
+	return &secret, nil
 }
 
 func (r *Reconciler) reconcileFrontendService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
