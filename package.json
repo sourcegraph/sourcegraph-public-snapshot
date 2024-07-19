@@ -262,7 +262,7 @@
     "utc-version": "^2.0.2",
     "vite": "^4.1.4",
     "vite-plugin-turbosnap": "^1.0.3",
-    "vitest": "1.0.0-beta.4",
+    "vitest": "2.0.3",
     "vitest-fetch-mock": "^0.2.2",
     "vsce": "^2.7.0",
     "wildcard-mock-link": "^2.0.1",
@@ -271,6 +271,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.8.0-alpha.7",
+    "@bufbuild/protobuf": "^1.10.0",
     "@codemirror/autocomplete": "^6.1.0",
     "@codemirror/commands": "^6.0.1",
     "@codemirror/lang-json": "^6.0.0",
@@ -281,6 +282,9 @@
     "@codemirror/search": "^6.0.1",
     "@codemirror/state": "^6.4.0",
     "@codemirror/view": "^6.26.3",
+    "@connectrpc/connect": "^1.4.0",
+    "@connectrpc/connect-query": "^1.4.1",
+    "@connectrpc/connect-web": "^1.4.0",
     "@date-fns/utc": "^1.1.1",
     "@graphiql/react": "^0.10.0",
     "@lezer/common": "^1.0.0",
@@ -427,11 +431,7 @@
     "webextension-polyfill": "^0.6.0",
     "whatwg-url": "^14.0.0",
     "yaml-ast-parser": "^0.0.43",
-    "zustand": "^3.6.9",
-    "@bufbuild/protobuf": "^1.10.0",
-    "@connectrpc/connect": "^1.4.0",
-    "@connectrpc/connect-query": "^1.4.1",
-    "@connectrpc/connect-web": "^1.4.0"
+    "zustand": "^3.6.9"
   },
   "packageManager": "pnpm@8.9.2",
   "pnpm": {
