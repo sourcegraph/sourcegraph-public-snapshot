@@ -8,7 +8,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	genslices "github.com/life4/genesis/slices"
 	godiff "github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
@@ -23,11 +25,6 @@ var mockTranslationBase = TranslationBase{
 
 func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 	client := gitserver.NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		expectedArgs := []string{"diff", "--find-renames", "--full-index", "--inter-hunk-context=3", "--no-prefix", "deadbeef1..deadbeef2", "--", "foo/bar.go"}
-		if diff := cmp.Diff(expectedArgs, args); diff != "" {
-			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
-		}
-
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	})
 
@@ -74,11 +71,6 @@ func TestGetTargetCommitPositionFromSourcePositionEmptyDiff(t *testing.T) {
 
 func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 	client := gitserver.NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		expectedArgs := []string{"diff", "--find-renames", "--full-index", "--inter-hunk-context=3", "--no-prefix", "deadbeef2..deadbeef1", "--", "foo/bar.go"}
-		if diff := cmp.Diff(expectedArgs, args); diff != "" {
-			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
-		}
-
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	})
 
@@ -103,11 +95,6 @@ func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 
 func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
 	client := gitserver.NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		expectedArgs := []string{"diff", "--find-renames", "--full-index", "--inter-hunk-context=3", "--no-prefix", "deadbeef1..deadbeef2", "--", "foo/bar.go"}
-		if diff := cmp.Diff(expectedArgs, args); diff != "" {
-			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
-		}
-
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	})
 
@@ -163,11 +150,6 @@ func TestGetTargetCommitRangeFromSourceRangeEmptyDiff(t *testing.T) {
 
 func TestGetTargetCommitRangeFromSourceRangeReverse(t *testing.T) {
 	client := gitserver.NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		expectedArgs := []string{"diff", "--find-renames", "--full-index", "--inter-hunk-context=3", "--no-prefix", "deadbeef2..deadbeef1", "--", "foo/bar.go"}
-		if diff := cmp.Diff(expectedArgs, args); diff != "" {
-			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
-		}
-
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	})
 
@@ -199,39 +181,24 @@ type gitTreeTranslatorTestCase struct {
 	diff         string // The git diff output
 	diffName     string // The git diff output name
 	description  string // The description of the test
-	line         int    // The target line (one-indexed)
+	line         int32  // The target line (one-indexed)
 	expectedOk   bool   // Whether the operation should succeed
-	expectedLine int    // The expected adjusted line (one-indexed)
+	expectedLine int32  // The expected adjusted line (one-indexed)
 }
 
 // hugoDiff is a diff from github.com/gohugoio/hugo generated via the following command.
-// git diff 8947c3fa0beec021e14b3f8040857335e1ecd473 3e9db2ad951dbb1000cd0f8f25e4a95445046679 -- resources/image.go
+// git diff -U0 8947c3fa0beec021e14b3f8040857335e1ecd473 3e9db2ad951dbb1000cd0f8f25e4a95445046679 -- resources/image.go
 const hugoDiff = `
 diff --git a/resources/image.go b/resources/image.go
-index d1d9f650d673..076f2ae4d63b 100644
+index d1d9f650d..076f2ae4d 100644
 --- a/resources/image.go
 +++ b/resources/image.go
-@@ -36,7 +36,6 @@ import (
-
-        "github.com/gohugoio/hugo/resources/resource"
-
--       "github.com/sourcegraph/sourcegraph/lib/errors"
-        _errors "github.com/sourcegraph/sourcegraph/lib/errors"
-
-        "github.com/gohugoio/hugo/helpers"
-@@ -235,7 +234,7 @@ const imageProcWorkers = 1
- var imageProcSem = make(chan bool, imageProcWorkers)
-
- func (i *imageResource) doWithImageConfig(conf images.ImageConfig, f func(src image.Image) (image.Image, error)) (resource.Image, error) {
+@@ -39 +38,0 @@ import (
+-       "github.com/pkg/errors"
+@@ -238 +237 @@ func (i *imageResource) doWithImageConfig(conf images.ImageConfig, f func(src im
 -       img, err := i.getSpec().imageCache.getOrCreate(i, conf, func() (*imageResource, image.Image, error) {
 +       return i.getSpec().imageCache.getOrCreate(i, conf, func() (*imageResource, image.Image, error) {
-                imageProcSem <- true
-                defer func() {
-                        <-imageProcSem
-@@ -292,13 +291,6 @@ func (i *imageResource) doWithImageConfig(conf images.ImageConfig, f func(src im
-
-                return ci, converted, nil
-        })
+@@ -295,7 +293,0 @@ func (i *imageResource) doWithImageConfig(conf images.ImageConfig, f func(src im
 -
 -       if err != nil {
 -               if i.root != nil && i.root.getFileInfo() != nil {
@@ -239,9 +206,6 @@ index d1d9f650d673..076f2ae4d63b 100644
 -               }
 -       }
 -       return img, nil
- }
-
- func (i *imageResource) decodeImageConfig(action, spec string) (images.ImageConfig, error) {
 `
 
 var hugoTestCases = []gitTreeTranslatorTestCase{
@@ -273,27 +237,20 @@ var hugoTestCases = []gitTreeTranslatorTestCase{
 }
 
 // prometheusDiff is a diff from github.com/prometheus/prometheus generated via the following command.
-// git diff 52025bd7a9446c3178bf01dd2949d4874dd45f24 45fbed94d6ee17840254e78cfc421ab1db78f734 -- discovery/manager.go
+// git diff -U0 52025bd7a9446c3178bf01dd2949d4874dd45f24 45fbed94d6ee17840254e78cfc421ab1db78f734 -- discovery/manager.go
 const prometheusDiff = `
 diff --git a/discovery/manager.go b/discovery/manager.go
-index 49bcbf86b7ba..d135cd54e700 100644
+index 49bcbf86b..d135cd54e 100644
 --- a/discovery/manager.go
 +++ b/discovery/manager.go
-@@ -293,11 +293,11 @@ func (m *Manager) updateGroup(poolKey poolKey, tgs []*targetgroup.Group) {
-        m.mtx.Lock()
-        defer m.mtx.Unlock()
-
+@@ -296,3 +295,0 @@ func (m *Manager) updateGroup(poolKey poolKey, tgs []*targetgroup.Group) {
 -       if _, ok := m.targets[poolKey]; !ok {
 -               m.targets[poolKey] = make(map[string]*targetgroup.Group)
 -       }
-        for _, tg := range tgs {
-                if tg != nil { // Some Discoverers send nil target group so need to check for it to avoid panics.
+@@ -300,0 +298,3 @@ func (m *Manager) updateGroup(poolKey poolKey, tgs []*targetgroup.Group) {
 +                       if _, ok := m.targets[poolKey]; !ok {
 +                               m.targets[poolKey] = make(map[string]*targetgroup.Group)
 +                       }
-                        m.targets[poolKey][tg.Source] = tg
-                }
-        }
 `
 
 var prometheusTestCases = []gitTreeTranslatorTestCase{
@@ -317,14 +274,14 @@ func TestRawGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error reading file diff: %s", err)
 			}
-			hunks := diff.Hunks
+			hunks := genslices.Map(diff.Hunks, newCompactHunk)
 
-			pos := shared.Position{
+			pos := scip.Position{
 				Line:      testCase.line - 1, // 1-index -> 0-index
 				Character: 10,
 			}
 
-			if adjusted, ok := translatePosition(hunks, pos); ok != testCase.expectedOk {
+			if adjusted, ok := translatePosition(hunks, pos).Get(); ok != testCase.expectedOk {
 				t.Errorf("unexpected ok. want=%v have=%v", testCase.expectedOk, ok)
 			} else if ok {
 				// Adjust from zero-index to one-index

@@ -66,6 +66,20 @@ type Position struct {
 	Character int
 }
 
+func (p Position) ToSCIPPosition() scip.Position {
+	return scip.Position{
+		Line:      int32(p.Line),
+		Character: int32(p.Character),
+	}
+}
+
+func TranslatePosition(r scip.Position) Position {
+	return Position{
+		Line:      int(r.Line),
+		Character: int(r.Character),
+	}
+}
+
 func NewRange(startLine, startCharacter, endLine, endCharacter int) Range {
 	return Range{
 		Start: Position{
