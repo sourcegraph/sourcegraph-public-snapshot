@@ -1695,7 +1695,7 @@ func kvpCondition(filter RepoKVPFilter) (res *sqlf.Query, _ error) {
 		if err != nil {
 			return nil, err
 		}
-		q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value IS NULL)"
+		q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND %s AND value IS NULL)"
 		if filter.Negated {
 			q = "NOT " + q
 		}
