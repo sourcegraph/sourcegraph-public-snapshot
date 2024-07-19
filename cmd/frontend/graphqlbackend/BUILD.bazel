@@ -450,6 +450,7 @@ go_test(
         "search_test.go",
         "settings_cascade_test.go",
         "settings_mutation_test.go",
+        "settings_subject_test.go",
         "site_admin_test.go",
         "site_alerts_test.go",
         "site_config_change_connection_test.go",
