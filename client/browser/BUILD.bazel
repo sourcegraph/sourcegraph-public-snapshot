@@ -206,7 +206,6 @@ ts_project(
         "src/shared/platform/inlineExtensionsService.ts",
         "src/shared/platform/ports.ts",
         "src/shared/platform/settings.ts",
-        "src/shared/platform/worker.ts",
         "src/shared/polyfills.ts",
         "src/shared/repo/backend.tsx",
         "src/shared/repo/index.tsx",

@@ -1,5 +1,5 @@
 import { type Remote, proxy } from 'comlink'
-import { type Unsubscribable, Subscription, from, of, lastValueFrom, ReplaySubject } from 'rxjs'
+import { type Unsubscribable, from, lastValueFrom, of, ReplaySubject, Subscription } from 'rxjs'
 import { share, switchMap } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
@@ -141,7 +141,7 @@ export const initMainThreadAPI = (
             return proxySubscribable(of([]))
         },
         logEvent: (eventName, eventProperties) => platformContext.telemetryService?.log(eventName, eventProperties),
-        getTelemetryRecorder: () => platformContext.telemetryRecorder,
+        recordEvent: platformContext.telemetryRecorder.recordEvent as MainThreadAPI['recordEvent'],
         logExtensionMessage: (...data) => logger.log(...data),
     }
 
