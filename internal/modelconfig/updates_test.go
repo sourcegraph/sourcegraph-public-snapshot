@@ -60,6 +60,40 @@ func TestApplyModelOverrides(t *testing.T) {
 		assert.Equal(t, unchangedModel.ContextWindow.MaxOutputTokens, mod.ContextWindow.MaxOutputTokens)
 	})
 
+	// The configuration data is applied too, but it isn't a copy rather we just update the pointers
+	// to point to the original data.
+	t.Run("ConfigPointers", func(t *testing.T) {
+		mod := getValidModel()
+		origClientCfg := mod.ClientSideConfig
+		origServerCfg := mod.ServerSideConfig
+
+		// Confirm mod starts with non-nil pointers for client and server config.
+		require.NotNil(t, origClientCfg)
+		require.NotNil(t, origServerCfg)
+
+		// Create an override that specifies new values.
+		override := types.ModelOverride{
+			ClientSideConfig: &types.ClientSideModelConfig{},
+			ServerSideConfig: &types.ServerSideModelConfig{},
+		}
+
+		// Confirm the override has different pointers for the model config.
+		require.True(t, origClientCfg != override.ClientSideConfig, "orig = %p, override = %p", origClientCfg, override.ClientSideConfig)
+		require.True(t, origServerCfg != override.ServerSideConfig)
+
+		err := ApplyModelOverride(&mod, override)
+		require.NoError(t, err)
+
+		assert.NotNil(t, mod.ClientSideConfig)
+		assert.NotNil(t, mod.ServerSideConfig)
+
+		assert.True(t, mod.ClientSideConfig != origClientCfg)
+		assert.True(t, mod.ServerSideConfig != origServerCfg)
+
+		assert.True(t, mod.ClientSideConfig == override.ClientSideConfig)
+		assert.True(t, mod.ServerSideConfig == override.ServerSideConfig)
+	})
+
 	t.Run("Errors", func(t *testing.T) {
 		noModErr := ApplyModelOverride(nil, types.ModelOverride{})
 		assert.ErrorContains(t, noModErr, "no model provided")

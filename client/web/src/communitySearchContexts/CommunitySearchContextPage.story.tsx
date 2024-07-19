@@ -52,8 +52,8 @@ const authUser: AuthenticatedUser = {
     siteAdmin: true,
     organizations: {
         nodes: [
-            { id: '0', settingsURL: '#', displayName: 'Acme Corp' },
-            { id: '1', settingsURL: '#', displayName: 'Beta Inc' },
+            { id: '0', settingsURL: '#' },
+            { id: '1', settingsURL: '#' },
         ] as AuthenticatedUser['organizations']['nodes'],
     },
     viewerCanAdminister: true,

@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/own/background"
 )
 
@@ -26,6 +27,9 @@ func (o *ownRepoIndexingQueue) Config() []env.Config {
 }
 
 func (o *ownRepoIndexingQueue) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	if !own.IsEnabled() {
+		return nil, nil
+	}
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err

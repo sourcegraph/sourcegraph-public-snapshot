@@ -37,7 +37,7 @@ func TestGetLatestTag_ReturnsLatestSupportedPublicVersion(t *testing.T) {
 		{Version: "v3.17.1", Public: true},
 	}, nil)
 
-	latest, err := selfUpdater.getLatestTag(context.Background(), "4.3.0")
+	latest, err := selfUpdater.getLatestTag(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, "4.5.5", latest)
 }

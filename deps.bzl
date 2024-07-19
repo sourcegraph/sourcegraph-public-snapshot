@@ -1129,8 +1129,8 @@ def go_dependencies():
         name = "com_github_cncf_xds_go",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/cncf/xds/go",
-        sum = "h1:DBmgJDC9dTfkVyGgipamEh2BpGYxScCH1TOF1LL1cXc=",
-        version = "v0.0.0-20240318125728-8a4994d93e50",
+        sum = "h1:ga8SEFjZ60pxLcmhnThWgvH2wg8376yUJmPhEH4H3kw=",
+        version = "v0.0.0-20240423153145-555b57ec207b",
     )
     go_repository(
         name = "com_github_cockroachdb_apd",
@@ -1180,6 +1180,13 @@ def go_dependencies():
         importpath = "github.com/codegangsta/inject",
         sum = "h1:sDMmm+q/3+BukdIpxwO365v/Rbspp2Nt5XntgQRXq8Q=",
         version = "v0.0.0-20150114235600-33e0aa1cb7c0",
+    )
+    go_repository(
+        name = "com_github_cohere_ai_cohere_go_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/cohere-ai/cohere-go/v2",
+        sum = "h1:NtxtcqkJ3ZBj8DFgk/4hpOrGK7CGnllGNpQn1bkaqQs=",
+        version = "v2.8.2",
     )
     go_repository(
         name = "com_github_common_nighthawk_go_figure",
@@ -2551,8 +2558,8 @@ def go_dependencies():
         name = "com_github_golang_glog",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/golang/glog",
-        sum = "h1:uCdmnmatrKCgMBlM4rMuJZWOkPDqdbZPnrMXDY4gI68=",
-        version = "v1.2.0",
+        sum = "h1:OptwRhECazUx5ix5TTWC3EZhsZEHWcYWY4FQHTIubm4=",
+        version = "v1.2.1",
     )
     go_repository(
         name = "com_github_golang_groupcache",
@@ -6231,6 +6238,13 @@ def go_dependencies():
         version = "v0.6.1",
     )
     go_repository(
+        name = "com_github_tmaxmax_go_sse",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/tmaxmax/go-sse",
+        sum = "h1:pPpTgyyi1r7vG2o6icebnpGEh3ebcnBXqDWkb7aTofs=",
+        version = "v0.8.0",
+    )
+    go_repository(
         name = "com_github_tmc_dot",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/tmc/dot",
@@ -6418,13 +6432,6 @@ def go_dependencies():
         importpath = "github.com/vvakame/gcplogurl",
         sum = "h1:dH55ru2OQOIAKjZi5wwXjNnSfN0oXLFYkMQy908s+tU=",
         version = "v0.2.0",
-    )
-    go_repository(
-        name = "com_github_wagslane_go_password_validator",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/wagslane/go-password-validator",
-        sum = "h1:vfxOPzGHkz5S146HDpavl0cw1DSVP061Ry2PX0/ON6I=",
-        version = "v0.3.0",
     )
     go_repository(
         name = "com_github_wk8_go_ordered_map_v2",
@@ -7624,6 +7631,13 @@ def go_dependencies():
         version = "v1.4.2-0.20221206192828-e4803b10ae17",
     )
     go_repository(
+        name = "dev_cel_expr",
+        build_file_proto_mode = "disable_global",
+        importpath = "cel.dev/expr",
+        sum = "h1:O1jzfJCQBfL5BFoYktaxwIhuttaQPsVWerH9/EEKx0w=",
+        version = "v0.15.0",
+    )
+    go_repository(
         name = "dev_chainguard_apko",
         build_file_proto_mode = "disable_global",
         importpath = "chainguard.dev/apko",
@@ -8560,8 +8574,8 @@ def go_dependencies():
         name = "org_golang_google_grpc",
         build_file_proto_mode = "disable_global",
         importpath = "google.golang.org/grpc",
-        sum = "h1:KH3VH9y/MgNQg1dE7b3XfVK0GsPSIzJwdF617gUSbvY=",
-        version = "v1.64.0",
+        sum = "h1:bs/cUb4lp1G5iImFFd3u5ixQzweKizoZJAwBNLR42lc=",
+        version = "v1.65.0",
     )
     go_repository(
         name = "org_golang_google_protobuf",
@@ -8630,8 +8644,8 @@ def go_dependencies():
         name = "org_golang_x_oauth2",
         build_file_proto_mode = "disable_global",
         importpath = "golang.org/x/oauth2",
-        sum = "h1:4mQdhULixXKP1rwYBW0vAijoXnkTG0BLCDRzfe1idMo=",
-        version = "v0.20.0",
+        sum = "h1:tsimM75w1tF/uws5rbeHzIWxEqElMehnc+iW793zsZs=",
+        version = "v0.21.0",
     )
     go_repository(
         name = "org_golang_x_sync",

@@ -17,11 +17,10 @@
     import { page } from '$app/stores'
     import { onClickOutside } from '$lib/dom'
     import Icon from '$lib/Icon.svelte'
-    import { mark } from '$lib/images'
     import MainNavigationLink from '$lib/navigation/MainNavigationLink.svelte'
     import Popover from '$lib/Popover.svelte'
     import SourcegraphLogo from '$lib/SourcegraphLogo.svelte'
-    import { isViewportMediumDown } from '$lib/stores'
+    import { isViewportMediumDown, isViewportMobile } from '$lib/stores'
     import { Badge, Button } from '$lib/wildcard'
 
     import { GlobalNavigation_User } from './GlobalNavigation.gql'
@@ -62,7 +61,7 @@
         </button>
 
         <a href="/search">
-            <img src={mark} alt="Sourcegraph" width="25" height="25" />
+            <Icon icon={ISgMark} aria-label="Sourcegraph" aria-hidden="true" --icon-color="initial" />
         </a>
     </div>
 
@@ -75,11 +74,12 @@
         >
             <div class="sidebar-navigation-header">
                 <button class="close-button" on:click={() => (sidebarNavigationOpen = false)}>
-                    <Icon icon={ILucideX} aria-label="Close sidebar navigation" />
+                    <Icon icon={ILucideX} />
                 </button>
 
                 <a href="/search" class="logo-link">
-                    <SourcegraphLogo width="9.1rem" />
+                    <!-- Match the size of the mark when the panel is closed so the mark doesn't shift -->
+                    <SourcegraphLogo height={24} />
                 </a>
             </div>
             <ul class="top-navigation">
@@ -122,10 +122,10 @@
 
     <div class="global-portal" bind:this={$extensionElement} />
 
-    <Popover let:registerTrigger showOnHover hoverDelay={100} hoverCloseDelay={50}>
-        <span class="web-next-badge" use:registerTrigger>
+    <Popover let:registerTrigger let:toggle showOnHover={!$isViewportMobile} hoverDelay={100} hoverCloseDelay={50}>
+        <button class="web-next-badge" use:registerTrigger on:click={() => toggle()}>
             <Badge variant="warning">Experimental</Badge>
-        </span>
+        </button>
         <div slot="content" class="web-next-content">
             <h3>Experimental web app</h3>
             <p>
@@ -182,7 +182,7 @@
             margin-left: 0;
         }
 
-        img:hover {
+        :global([data-icon]):hover {
             @keyframes spin {
                 50% {
                     transform: rotate(180deg) scale(1.2);
@@ -420,6 +420,7 @@
     }
 
     .web-next-badge {
+        all: unset;
         cursor: pointer;
         padding: 0.25rem;
         margin-left: auto;

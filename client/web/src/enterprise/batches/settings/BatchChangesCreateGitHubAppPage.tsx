@@ -23,16 +23,18 @@ interface BatchChangesCreateGitHubAppPageProps {
     authenticatedUser: AuthenticatedUser
     minimizedMode?: boolean
     kind: GitHubAppKind
+    externalServiceURL?: string
 }
 
 export const BatchChangesCreateGitHubAppPage: FC<BatchChangesCreateGitHubAppPageProps> = ({
     minimizedMode,
     kind,
     authenticatedUser,
+    externalServiceURL,
 }) => {
     const location = useLocation()
     const searchParams = new URLSearchParams(location.search)
-    const baseURL = searchParams.get('baseURL')
+    const baseURL = externalServiceURL || searchParams.get('baseURL')
 
     const isGitHubAppKindCredential = kind === GitHubAppKind.USER_CREDENTIAL || kind === GitHubAppKind.SITE_CREDENTIAL
 

@@ -45,13 +45,14 @@ type ConfigFeatures struct {
 type CompletionsProviderName string
 
 const (
-	CompletionsProviderNameAnthropic   CompletionsProviderName = "anthropic"
-	CompletionsProviderNameOpenAI      CompletionsProviderName = "openai"
-	CompletionsProviderNameGoogle      CompletionsProviderName = "google"
-	CompletionsProviderNameAzureOpenAI CompletionsProviderName = "azure-openai"
-	CompletionsProviderNameSourcegraph CompletionsProviderName = "sourcegraph"
-	CompletionsProviderNameFireworks   CompletionsProviderName = "fireworks"
-	CompletionsProviderNameAWSBedrock  CompletionsProviderName = "aws-bedrock"
+	CompletionsProviderNameAnthropic        CompletionsProviderName = "anthropic"
+	CompletionsProviderNameOpenAI           CompletionsProviderName = "openai"
+	CompletionsProviderNameGoogle           CompletionsProviderName = "google"
+	CompletionsProviderNameAzureOpenAI      CompletionsProviderName = "azure-openai"
+	CompletionsProviderNameOpenAICompatible CompletionsProviderName = "openai-compatible"
+	CompletionsProviderNameSourcegraph      CompletionsProviderName = "sourcegraph"
+	CompletionsProviderNameFireworks        CompletionsProviderName = "fireworks"
+	CompletionsProviderNameAWSBedrock       CompletionsProviderName = "aws-bedrock"
 )
 
 type EmbeddingsConfig struct {

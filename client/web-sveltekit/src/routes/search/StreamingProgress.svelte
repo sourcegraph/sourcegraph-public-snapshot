@@ -154,7 +154,7 @@
     }
 
     .streaming-popover {
-        width: 24rem;
+        max-width: 24rem;
 
         p,
         h3,

@@ -15,7 +15,7 @@ export const NamespaceSelector: React.FunctionComponent<{
     /** Selected namespace ID. */
     value?: string
 
-    onSelect: (namespace: Namespace['id']) => void
+    onSelect?: (namespace: Namespace['id']) => void
 
     label?: string
     description?: ReactNode
@@ -40,7 +40,7 @@ export const NamespaceSelector: React.FunctionComponent<{
             const selectedNamespace =
                 namespaces?.find(namespace => namespace.id === event.target.value) || namespaces?.at(0)
             if (selectedNamespace) {
-                parentOnSelect(selectedNamespace.id)
+                parentOnSelect?.(selectedNamespace.id)
             }
         },
         [disabled, parentOnSelect, namespaces]
@@ -62,7 +62,7 @@ export const NamespaceSelector: React.FunctionComponent<{
             ) : (
                 namespaces?.map(namespace => (
                     <option key={namespace.id} value={namespace.id}>
-                        {(namespace.__typename === 'Org' && namespace.displayName) || namespace.namespaceName}
+                        {namespace.namespaceName}
                     </option>
                 ))
             )}

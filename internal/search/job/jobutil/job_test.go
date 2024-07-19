@@ -1516,6 +1516,10 @@ func TestToTextPatternInfo(t *testing.T) {
 		input:  `repo:^github\.com/sgtest/sourcegraph-typescript$ file:^README\.md "basic :[_] access :[_]" patterntype:structural`,
 		output: autogold.Expect(`{"Query":{"Value":"\"basic :[_] access :[_]\"","IsNegated":false,"IsRegExp":false},"IsStructuralPat":true,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":["^README\\.md"],"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
+		input:  `repo:^github\.com/sgtest/sourcegraph-typescript$ lang:typescript "basic :[_] access :[_]" patterntype:structural`,
+		feat:   search.Features{ContentBasedLangFilters: true},
+		output: autogold.Expect(`{"Query":{"Value":"\"basic :[_] access :[_]\"","IsNegated":false,"IsRegExp":false},"IsStructuralPat":true,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":null,"ExcludePaths":"","IncludeLangs":["TypeScript"],"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":["typescript"]}`),
+	}, {
 		input:  `sgtest lang:magik type:file`,
 		feat:   search.Features{ContentBasedLangFilters: true},
 		output: autogold.Expect(`{"Query":{"Value":"sgtest","IsNegated":false,"IsRegExp":false},"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":null,"ExcludePaths":"","IncludeLangs":["Magik"],"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":false,"Languages":["magik"]}`),

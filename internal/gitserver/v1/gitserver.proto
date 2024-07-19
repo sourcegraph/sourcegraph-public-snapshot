@@ -344,6 +344,27 @@ service GitserverService {
   rpc CommitLog(CommitLogRequest) returns (stream CommitLogResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // MergeBaseOctopus returns the octopus merge base commit sha for the specified
+  // revspecs.
+  // If no common merge base exists, an empty string is returned.
+  // See the following diagrams from git-merge-base docs on what octopus merge bases
+  // are:
+  // Given three commits A, B, and C, MergeBaseOctopus(A, B, C) will compute the
+  // best common ancestor of all commits.
+  // For example, with this topology:
+  //            o---o---o---o---C
+  //           /
+  //          /   o---o---o---B
+  //         /   /
+  //     ---2---1---o---o---o---A
+  // The result of MergeBaseOctopus(A, B, C) is 2, because 2 is the
+  // best common ancestor of all commits.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  rpc MergeBaseOctopus(MergeBaseOctopusRequest) returns (MergeBaseOctopusResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message CommitLogRequest {
@@ -458,6 +479,20 @@ message RawDiffRequest {
   // paths is a list of paths to filter the diff to. If empty, all paths are
   // diffed.
   repeated bytes paths = 6;
+  // inter_hunk_context specifies the number of lines to consider for fusing hunks
+  // together. I.e., when set to 5 and between 2 hunks there are at most 5 lines,
+  // the 2 hunks will be fused together into a single chunk.
+  //
+  // The default for this is 3.
+  optional uint32 inter_hunk_context = 7;
+  // context_lines specifies the number of lines of context to show around added/removed
+  // lines.
+  // This is the number of lines that will be shown before and after each line that
+  // has been added/removed. If inter_hunk_context is not zero, the context will still
+  // be fused together with other hunks if they meet the threshold.
+  //
+  // The default for this is 3.
+  optional uint32 context_lines = 8;
 }
 
 message RawDiffResponse {
@@ -1248,6 +1283,22 @@ message MergeBaseRequest {
 // MergeBaseResponse is the response from finding the merge base of two
 // revspecs.
 message MergeBaseResponse {
+  string merge_base_commit_sha = 1;
+}
+
+// MergeBaseOctopusRequest is a request to find the octopus merge base of revspecs.
+message MergeBaseOctopusRequest {
+  // repo_name is the name of the repo to get the octopus merge base for.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // revspecs are the revspecs to consider for merge-base. For now, we allow non-utf8
+  // revspecs.
+  repeated bytes revspecs = 3;
+}
+
+// MergeBaseOctopusResponse is the response from finding the octopus merge base of
+// the given revspecs.
+message MergeBaseOctopusResponse {
   string merge_base_commit_sha = 1;
 }
 

@@ -1,14 +1,24 @@
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 
 import type { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
 
-import { type GraphQLResult, useQuery } from '@sourcegraph/http-client'
-import { useSearchParameters, useInterval } from '@sourcegraph/wildcard'
+import { useQuery, type GraphQLResult } from '@sourcegraph/http-client'
+import { useInterval } from '@sourcegraph/wildcard'
 
-import type { Connection, ConnectionQueryArguments } from '../ConnectionType'
-import { asGraphQLResult, hasNextPage, parseQueryInt } from '../utils'
+import type { Connection } from '../ConnectionType'
+import { asGraphQLResult, hasNextPage } from '../utils'
 
-import { useShowMorePaginationUrl } from './useShowMorePaginationUrl'
+import {
+    useConnectionStateOrMemoryFallback,
+    useConnectionStateWithImplicitPageSize,
+    type UseConnectionStateResult,
+} from './connectionState'
+import { DEFAULT_PAGE_SIZE } from './usePageSwitcherPagination'
+
+export interface ShowMoreConnectionQueryArguments {
+    first?: number | null
+    after?: string | null
+}
 
 export interface UseShowMorePaginationResult<TResult, TData> {
     data?: TResult
@@ -29,12 +39,15 @@ export interface UseShowMorePaginationResult<TResult, TData> {
 }
 
 interface UseShowMorePaginationConfig<TResult> {
-    /** Set if query variables should be updated in and derived from the URL */
-    useURL?: boolean
-    /** Allows modifying how the query interacts with the Apollo cache */
+    /** The number of items per page. Defaults to 20. */
+    pageSize?: number
+
+    /** Allows modifying how the query interacts with the Apollo cache. */
     fetchPolicy?: WatchQueryFetchPolicy
-    /** Allows specifying the Apollo error policy */
+
+    /** Allows specifying the Apollo error policy. */
     errorPolicy?: 'all' | 'none' | 'ignore'
+
     /**
      * Set to enable polling of all the nodes currently loaded in the connection.
      *
@@ -43,82 +56,95 @@ interface UseShowMorePaginationConfig<TResult> {
      * the data from polling responses when the two are in flight simultaneously.
      */
     pollInterval?: number
-    /** Allows running an optional callback on any successful request */
+
+    /** Allows running an optional callback on any successful request. */
     onCompleted?: (data: TResult) => void
     onError?: (error: ApolloError) => void
 
-    // useAlternateAfterCursor is used to indicate that a custom field instead of the
-    // standard "after" field is used to for pagination. This is typically a
-    // workaround for existing APIs where after may already be in use for
-    // another field.
+    /**
+     * useAlternateAfterCursor is used to indicate that a custom field instead of the
+     * standard "after" field is used to for pagination. This is typically a
+     * workaround for existing APIs where after may already be in use for
+     * another field.
+     */
     useAlternateAfterCursor?: boolean
-    /** Skip the query if this condition is true */
+
+    /** Skip the query if this condition is true. */
     skip?: boolean
 }
 
-interface UseShowMorePaginationParameters<TResult, TVariables, TData> {
+interface UseShowMorePaginationParameters<TResult, TVariables, TData, TState extends ShowMoreConnectionQueryArguments> {
     query: string
-    variables: TVariables & ConnectionQueryArguments
+    variables: Omit<TVariables, keyof ShowMoreConnectionQueryArguments | 'afterCursor'>
     getConnection: (result: GraphQLResult<TResult>) => Connection<TData>
     options?: UseShowMorePaginationConfig<TResult>
+
+    /**
+     * The value and setter for the state parameters (such as `first`, `after`, `before`, and
+     * filters).
+     */
+    state?: UseConnectionStateResult<TState>
 }
 
-const DEFAULT_AFTER: ConnectionQueryArguments['after'] = undefined
-const DEFAULT_FIRST: ConnectionQueryArguments['first'] = 20
-
 /**
- * Request a GraphQL connection query and handle pagination options.
- * Valid queries should follow the connection specification at https://relay.dev/graphql/connections.htm
+ * Request a GraphQL connection query and handle pagination options. When the user presses "show
+ * more", all of the previous items still remain visible. This is for GraphQL connections that only
+ * support fetching results in one direction (support for `first` is required, and support for
+ * `after`/`endCursor` is optional) and/or where this "show more" behavior is desirable.
  *
+ * For paginated behavior (where the user can press "next page" and see a different set of results),
+ * and if the GraphQL connection supports full
+ * `endCursor`/`startCursor`/`after`/`before`/`first`/`last`, use {@link usePageSwitcherPagination}
+ * instead.
+ *
+ * Valid queries should follow the connection specification at
+ * https://relay.dev/graphql/connections.htm.
  * @param query The GraphQL connection query
  * @param variables The GraphQL connection variables
- * @param getConnection A function that filters and returns the relevant data from the connection response.
+ * @param getConnection A function that filters and returns the relevant data from the connection
+ * response.
  * @param options Additional configuration options
  */
-export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
+export const useShowMorePagination = <
+    TResult,
+    TVariables extends ShowMoreConnectionQueryArguments,
+    TData,
+    TState extends ShowMoreConnectionQueryArguments = ShowMoreConnectionQueryArguments &
+        Partial<Record<string | 'query', string>>
+>({
     query,
     variables,
     getConnection: getConnectionFromGraphQLResult,
     options,
-}: UseShowMorePaginationParameters<TResult, TVariables, TData>): UseShowMorePaginationResult<TResult, TData> => {
-    const searchParameters = useSearchParameters()
-
-    const { first = DEFAULT_FIRST, after = DEFAULT_AFTER } = variables
-    const firstReference = useRef({
-        /**
-         * The number of results that we will typically want to load in the next request (unless `visible` is used).
-         * This value will typically be static for cursor-based pagination, but will be dynamic for batch-based pagination.
-         */
-        actual: (options?.useURL && parseQueryInt(searchParameters, 'first')) || first,
-        /**
-         * Primarily used to determine original request state for URL search parameter logic.
-         */
-        default: first,
-    })
-
-    const initialControls = useMemo(
-        () => ({
-            /**
-             * The `first` variable for our **initial** query.
-             * If this is our first query and we were supplied a value for `visible` load that many results.
-             * If we weren't given such a value or this is a subsequent request, only ask for one page of results.
-             *
-             * 'visible' is the number of results that were visible from previous requests. The initial request of
-             * a result set will load `visible` items, then will request `first` items on each subsequent
-             * request. This has the effect of loading the correct number of visible results when a URL
-             * is copied during pagination. This value is only useful with cursor-based paging for the initial request.
-             */
-            first: (options?.useURL && parseQueryInt(searchParameters, 'visible')) || firstReference.current.actual,
-            /**
-             * The `after` variable for our **initial** query.
-             * Subsequent requests through `fetchMore` will use a valid `cursor` value here, where possible.
-             */
-            after: (options?.useURL && searchParameters.get('after')) || after,
-        }),
-        // We only need these controls for the initial request. We do not care about dependency updates.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
+    state,
+}: UseShowMorePaginationParameters<TResult, TVariables, TData, TState>): UseShowMorePaginationResult<
+    TResult,
+    TData
+> => {
+    const pageSize = options?.pageSize ?? DEFAULT_PAGE_SIZE
+    const [connectionState, setConnectionState] = useConnectionStateWithImplicitPageSize(
+        useConnectionStateOrMemoryFallback(state),
+        pageSize
     )
+
+    const first = connectionState.first ?? pageSize
+
+    /**
+     * Map over Apollo results to provide type-compatible `GraphQLResult`s for consumers.
+     * This ensures good interoperability between `FilteredConnection` and `useShowMorePagination`.
+     */
+    const getConnection = ({ data, error }: Pick<QueryResult<TResult>, 'data' | 'error'>): Connection<TData> => {
+        const result = asGraphQLResult({ data, errors: error?.graphQLErrors || [] })
+        return getConnectionFromGraphQLResult(result)
+    }
+
+    // These will change when the user clicks "show more", but we want those fetches to go through
+    // `fetchMore` and not through `useQuery` noticing that its variables have changed, so
+    // use a ref to achieve that.
+    const initialPaginationArgs = useRef({
+        first,
+        after: connectionState.after,
+    })
 
     /**
      * Initial query of the hook.
@@ -134,8 +160,8 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
     } = useQuery<TResult, TVariables>(query, {
         variables: {
             ...variables,
-            ...initialControls,
-        },
+            ...initialPaginationArgs.current,
+        } as TVariables,
         notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
         skip: options?.skip,
         fetchPolicy: options?.fetchPolicy,
@@ -144,28 +170,13 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
         errorPolicy: options?.errorPolicy,
     })
 
-    /**
-     * Map over Apollo results to provide type-compatible `GraphQLResult`s for consumers.
-     * This ensures good interoperability between `FilteredConnection` and `useShowMorePagination`.
-     */
-    const getConnection = ({ data, error }: Pick<QueryResult<TResult>, 'data' | 'error'>): Connection<TData> => {
-        const result = asGraphQLResult({ data, errors: error?.graphQLErrors || [] })
-        return getConnectionFromGraphQLResult(result)
-    }
-
     const data = currentData ?? previousData
     const connection = data ? getConnection({ data, error }) : undefined
-
-    useShowMorePaginationUrl({
-        enabled: options?.useURL,
-        first: firstReference.current,
-        visibleResultCount: connection?.nodes.length,
-    })
 
     const fetchMoreData = async (): Promise<void> => {
         const cursor = connection?.pageInfo?.endCursor
 
-        // Use cursor paging if possible, otherwise fallback to multiplying `first`.
+        // Use cursor paging if possible, otherwise fallback to increasing `first`.
         const afterVariables: { after?: string; first?: number; afterCursor?: string } = {}
         if (cursor) {
             if (options?.useAlternateAfterCursor) {
@@ -173,9 +184,15 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
             } else {
                 afterVariables.after = cursor
             }
+            afterVariables.first = pageSize
         } else {
-            afterVariables.first = firstReference.current.actual * 2
+            afterVariables.first = first + pageSize
         }
+
+        // Don't reflect `after` in the URL because the page shows *all* items from the beginning,
+        // not just those after the `after` cursor. The cursor is only used in the GraphQL request.
+        setConnectionState(prev => ({ ...prev, first: first + pageSize }))
+
         await fetchMore({
             variables: {
                 ...variables,
@@ -194,9 +211,9 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
                     const previousNodes = getConnection({ data: previousResult }).nodes
                     getConnection({ data: fetchMoreResult }).nodes.unshift(...previousNodes)
                 } else {
-                    // With batch-based pagination, we have all the results already in `fetchMoreResult`,
-                    // we just need to update `first` to fetch more results next time
-                    firstReference.current.actual *= 2
+                    // With batch-based pagination, we have all the results already in
+                    // `fetchMoreResult`. We already updated `first` via `setConnectionState` above
+                    // to fetch more results next time.
                 }
 
                 return fetchMoreResult
@@ -206,22 +223,23 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
 
     // Refetch the current nodes
     const refetchAll = useCallback(async (): Promise<void> => {
-        const first = connection?.nodes.length || firstReference.current.actual
-
+        // No change in connection state (`state.setValue`) needed.
         await refetch({
             ...variables,
             first,
-        })
-    }, [connection?.nodes.length, refetch, variables])
+        } as Partial<TVariables>)
+    }, [first, refetch, variables])
 
     // Refetch the first page. Use this function if the number of nodes in the
     // connection might have changed since the last refetch.
     const refetchFirst = useCallback(async (): Promise<void> => {
+        // Reset connection state to just fetch the first page.
+        setConnectionState(prev => ({ ...prev, first: pageSize }))
         await refetch({
             ...variables,
             first,
-        })
-    }, [first, refetch, variables])
+        } as Partial<TVariables>)
+    }, [first, pageSize, refetch, setConnectionState, variables])
 
     // We use `refetchAll` to poll for all the nodes currently loaded in the
     // connection, vs. just providing a `pollInterval` to the underlying `useQuery`, which

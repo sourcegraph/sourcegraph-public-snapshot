@@ -60,6 +60,7 @@
         flex-direction: column;
         height: 100%;
         overflow: hidden;
+        background-color: var(--body-bg);
     }
 
     .header {

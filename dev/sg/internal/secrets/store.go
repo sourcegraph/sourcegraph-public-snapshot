@@ -12,6 +12,7 @@ import (
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
+	"github.com/googleapis/gax-go/v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -31,13 +32,23 @@ var (
 
 type FallbackFunc func(context.Context) (string, error)
 
+type secretManagerClient interface {
+	AccessSecretVersion(ctx context.Context, req *secretmanagerpb.AccessSecretVersionRequest, opts ...gax.CallOption) (*secretmanagerpb.AccessSecretVersionResponse, error)
+}
+
 // Store holds secrets regardless on their form, as long as they are marshallable in JSON.
 type Store struct {
 	filepath string
-	m        map[string]json.RawMessage
+	// persistedData holds secrets that should be persisted to filepath.
+	persistedData map[string]json.RawMessage
+
+	// externalData holds secrets that are fetched from external sources. This
+	// is NOT persisted to disk, as it should be fetched from the external source
+	// on every use for security.
+	externalData map[string]externalSecretValue
 
 	secretmanagerOnce sync.Once
-	secretmanager     *secretmanager.Client
+	secretmanager     secretManagerClient
 	secretmanagerErr  error
 }
 
@@ -94,7 +105,11 @@ func WithContext(ctx context.Context, store *Store) context.Context {
 
 // newStore returns an empty store that if saved, will be written at filepath.
 func newStore(filepath string) *Store {
-	return &Store{filepath: filepath, m: map[string]json.RawMessage{}}
+	return &Store{
+		filepath:      filepath,
+		persistedData: map[string]json.RawMessage{},
+		externalData:  map[string]externalSecretValue{},
+	}
 }
 
 // LoadFromFile deserialize from a file into a Store, returning an error if
@@ -110,7 +125,7 @@ func LoadFromFile(filepath string) (*Store, error) {
 	}
 	defer f.Close()
 	dec := json.NewDecoder(f)
-	if err := dec.Decode(&s.m); err != nil {
+	if err := dec.Decode(&s.persistedData); err != nil {
 		// Ignore EOF which is returned when the file is empty, we just pretend the file isn't there.
 		// Note that invalid JSON might still return "unexpected EOF" and
 		// we let that one get through.
@@ -118,13 +133,29 @@ func LoadFromFile(filepath string) (*Store, error) {
 			return nil, err
 		}
 	}
+	var deletedExpired bool
+	for k := range s.persistedData {
+		// Migration: external secrets that were persisted before we stopped
+		// persisting external secrets
+		var value externalSecretValue
+		if err := s.Get(k, &value); err != nil {
+			continue
+		}
+		if !value.Fetched.IsZero() && value.Value != "" {
+			deletedExpired = true
+			delete(s.persistedData, k)
+		}
+	}
+	if deletedExpired {
+		return s, s.SaveFile()
+	}
 	return s, nil
 }
 
 // Write serializes the store content in the given writer.
 func (s *Store) Write(w io.Writer) error {
 	enc := json.NewEncoder(w)
-	return enc.Encode(s.m)
+	return enc.Encode(s.persistedData)
 }
 
 // SaveFile persists in a file the content of the store.
@@ -143,7 +174,7 @@ func (s *Store) Put(key string, data any) error {
 	if err != nil {
 		return err
 	}
-	s.m[key] = b
+	s.persistedData[key] = b
 	return nil
 }
 
@@ -158,8 +189,16 @@ func (s *Store) PutAndSave(key string, data any) error {
 
 // Get fetches a value from memory and uses the given target to deserialize it.
 func (s *Store) Get(key string, target any) error {
-	if v, ok := s.m[key]; ok {
+	if v, ok := s.persistedData[key]; ok {
 		return json.Unmarshal(v, target)
+	}
+	if v, ok := s.externalData[key]; ok {
+		// Must be an *externalSecretValue
+		if tv, ok := target.(*externalSecretValue); ok {
+			*tv = v
+			return nil
+		}
+		return errors.Newf("target must be *externalSecretValue, got %T", target)
 	}
 	return errors.Newf("%w: %s not found", ErrSecretNotFound, key)
 }
@@ -173,8 +212,8 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallback
 			return value.Value, nil
 		}
 
-		// If expired, remove the secret and fetch a new one.
-		_ = s.Remove(secret.id())
+		// If expired, fetch a new one. We don't need to remove anything because
+		// external secrets are only stored in-memory.
 		value = externalSecretValue{}
 	}
 
@@ -193,7 +232,6 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallback
 
 	// Failed to get the secret normally, so lets try getting it with the fallback if it exists
 	if err != nil && len(fallbacks) > 0 {
-
 		for _, fallback := range fallbacks {
 			val, fallbackErr := fallback(ctx)
 
@@ -224,13 +262,14 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallback
 
 	// Return and persist the fetched secret
 	value.Fetched = time.Now()
-	return value.Value, s.PutAndSave(secret.id(), &value)
+	s.externalData[secret.id()] = value
+	return value.Value, nil
 }
 
 // Remove deletes a value from memory.
 func (s *Store) Remove(key string) error {
-	if _, exists := s.m[key]; exists {
-		delete(s.m, key)
+	if _, exists := s.persistedData[key]; exists {
+		delete(s.persistedData, key)
 		return nil
 	}
 	return errors.Newf("%w: %s not found", ErrSecretNotFound, key)
@@ -238,15 +277,15 @@ func (s *Store) Remove(key string) error {
 
 // Keys returns out all keys
 func (s *Store) Keys() []string {
-	keys := make([]string, 0, len(s.m))
-	for key := range s.m {
+	keys := make([]string, 0, len(s.persistedData))
+	for key := range s.persistedData {
 		keys = append(keys, key)
 	}
 	return keys
 }
 
 // getSecretmanagerClient instantiates a Google Secrets Manager client once and returns it.
-func (s *Store) getSecretmanagerClient(ctx context.Context) (*secretmanager.Client, error) {
+func (s *Store) getSecretmanagerClient(ctx context.Context) (secretManagerClient, error) {
 	s.secretmanagerOnce.Do(func() {
 		var err error
 		s.secretmanager, err = secretmanager.NewClient(ctx)

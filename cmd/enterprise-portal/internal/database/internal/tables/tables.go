@@ -12,9 +12,9 @@ import (
 // ⚠️ WARNING: This list is meant to be read-only.
 func All() []schema.Tabler {
 	return []schema.Tabler{
-		&subscriptions.Subscription{},
+		&subscriptions.TableSubscription{},
 		&subscriptions.SubscriptionCondition{},
-		&subscriptions.SubscriptionLicense{},
+		&subscriptions.TableSubscriptionLicense{},
 		&subscriptions.SubscriptionLicenseCondition{},
 
 		&codyaccess.CodyGatewayAccess{},

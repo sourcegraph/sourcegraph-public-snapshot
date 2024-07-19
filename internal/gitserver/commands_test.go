@@ -27,6 +27,7 @@ import (
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Generate a random archive format.
@@ -782,6 +783,73 @@ index e5af166..d44c3fc 100644
 
 		r, err := c.Diff(context.Background(), "repo", DiffOptions{})
 		require.NoError(t, err)
+
+		_, err = r.Next()
+		require.True(t, errors.Is(err, io.EOF))
+		require.NoError(t, r.Close())
+	})
+	t.Run("custom context amount", func(t *testing.T) {
+		var zeroContextDiff = []byte(`diff --git f f
+index 0ef51c52043997fdd257a0b77d761e9ca58bcc1f..58692a00a73d1f78df00014edf4ef39ef4ba0019 100644
+--- f
++++ f
+@@ -1 +1 @@
+-line1
++line1.1
+@@ -5 +5 @@ lin4
+-line5
++line5.5
+`)
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_RawDiffClient()
+				rfc.RecvFunc.PushReturn(&v1.RawDiffResponse{
+					Chunk: zeroContextDiff,
+				}, nil)
+				rfc.RecvFunc.PushReturn(nil, io.EOF)
+				c.RawDiffFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		r, err := c.Diff(context.Background(), "repo", DiffOptions{
+			InterHunkContext: pointers.Ptr(0),
+			ContextLines:     pointers.Ptr(0),
+		})
+		require.NoError(t, err)
+
+		hunk, err := r.Next()
+		require.NoError(t, err)
+		require.Equal(t, &godiff.FileDiff{
+			OrigName: "f",
+			NewName:  "f",
+			Extended: []string{"diff --git f f", "index 0ef51c52043997fdd257a0b77d761e9ca58bcc1f..58692a00a73d1f78df00014edf4ef39ef4ba0019 100644"},
+			Hunks: []*godiff.Hunk{
+				{
+					OrigStartLine:   1,
+					OrigLines:       1,
+					OrigNoNewlineAt: 0,
+					NewStartLine:    1,
+					NewLines:        1,
+					Section:         "",
+					StartPosition:   1,
+					Body:            []byte("-line1\n+line1.1\n"),
+				},
+				{
+					OrigStartLine:   5,
+					OrigLines:       1,
+					OrigNoNewlineAt: 0,
+					NewStartLine:    5,
+					NewLines:        1,
+					Section:         "lin4",
+					StartPosition:   4,
+					Body:            []byte("-line5\n+line5.5\n"),
+				},
+			},
+		}, hunk)
 
 		_, err = r.Next()
 		require.True(t, errors.Is(err, io.EOF))
@@ -2027,6 +2095,56 @@ func TestClient_Commits(t *testing.T) {
 			// contains [5,4,3], and we have enough for N=3 with [7,5,4].
 			mockrequire.CalledN(t, c.CommitLogFunc, 2)
 		})
+	})
+}
+
+func TestClient_MergeBaseOctopus(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.MergeBaseOctopusFunc.SetDefaultReturn(&proto.MergeBaseOctopusResponse{MergeBaseCommitSha: "deadbeef"}, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		sha, err := c.MergeBaseOctopus(context.Background(), "repo", "master", "b2")
+		require.NoError(t, err)
+		require.Equal(t, api.CommitID("deadbeef"), sha)
+	})
+	t.Run("returns empty for empty merge base", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.MergeBaseOctopusFunc.SetDefaultReturn(&proto.MergeBaseOctopusResponse{MergeBaseCommitSha: ""}, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		sha, err := c.MergeBaseOctopus(context.Background(), "repo", "master", "b2")
+		require.NoError(t, err)
+		require.Equal(t, api.CommitID(""), sha)
+	})
+	t.Run("revision not found", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				s, err := status.New(codes.NotFound, "bad revision").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo"})
+				require.NoError(t, err)
+				c.MergeBaseOctopusFunc.SetDefaultReturn(nil, s.Err())
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, err := c.MergeBaseOctopus(context.Background(), "repo", "master", "b2")
+		require.Error(t, err)
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 }
 

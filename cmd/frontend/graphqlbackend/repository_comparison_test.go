@@ -61,6 +61,10 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 }
 
 func TestRepositoryComparisonRootCommit(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, nil)
@@ -94,6 +98,10 @@ func TestRepositoryComparisonRootCommit(t *testing.T) {
 }
 
 func TestRepositoryComparison(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, nil)

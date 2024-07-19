@@ -17,8 +17,8 @@ import {
 } from '../../../components/FilteredConnection/ui'
 import { GitHubAppFailureAlert } from '../../../components/gitHubApps/GitHubAppFailureAlert'
 import {
-    type BatchChangesCodeHostFields,
     GitHubAppKind,
+    type BatchChangesCodeHostFields,
     type GlobalBatchChangesCodeHostsResult,
     type UserAreaUserFields,
     type UserBatchChangesCodeHostsResult,
@@ -111,7 +111,6 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
                     <SummaryContainer className="mt-2">
                         <ConnectionSummary
                             noSummaryIfAllNodesVisible={true}
-                            first={15}
                             centered={true}
                             connection={connection}
                             noun="code host"

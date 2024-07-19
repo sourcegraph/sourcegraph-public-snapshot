@@ -10,57 +10,96 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/openaicompatible"
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	modelconfigSDK "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 )
 
 func Get(
 	logger log.Logger,
 	events *telemetry.EventRecorder,
-	endpoint string,
-	provider conftypes.CompletionsProviderName,
-	accessToken string,
-	modelConfigInfo *types.ModelConfigInfo,
-) (types.CompletionsClient, error) {
-	client, err := getBasic(endpoint, provider, accessToken, modelConfigInfo)
+	modelConfigInfo types.ModelConfigInfo) (types.CompletionsClient, error) {
+	client, err := getAPIProvider(modelConfigInfo)
 	if err != nil {
 		return nil, err
 	}
 	return newObservedClient(logger, events, client), nil
 }
 
-func getBasic(endpoint string, provider conftypes.CompletionsProviderName, accessToken string, modelConfigInfo *types.ModelConfigInfo) (types.CompletionsClient, error) {
+// getAPIProvider returns the CompletionsClient needed to serve the given LLM request. There is
+// a super-important detail here! Typically, "Provider" is referring to the "Model Provider". Or
+// a 3rd party that built various models. The "API Provider" on the other hand is the actual API
+// or service we use to make LLM requests. And the two may be very different.
+//
+// For example, the Model Provider may be "openai" but the API Provider could be Cody Gateway,
+// AzureOpenAI, or even AWS Bedrock.
+//
+// So the `modelConfigInfo.Provider` isn't strictly necessary. We don't care _who built_ the model,
+// instead we care about the API we need to call in order to serve the request. So we look at the
+// `modelConfigInfo.Provider.ServerSideConfig` to determine which CompletionsClient should be used
+// to make the actual LLM request.
+func getAPIProvider(modelConfigInfo types.ModelConfigInfo) (types.CompletionsClient, error) {
 	tokenManager := tokenusage.NewManager()
 
-	if conf.UseExperimentalModelConfiguration() {
-		// Using the new "modelConfiguration" site config
-		// TODO(slimsag): self-hosted-models: this logic only handles Cody Enterprise with Self-hosted models
-		// Only in this case do we have modelConfigInfo != nil
-		_ = modelConfigInfo
-		return nil, errors.Newf("TODO: implement self-hosted-models")
+	ssConfig := modelConfigInfo.Provider.ServerSideConfig
+	if ssConfig == nil {
+		return nil, errors.Errorf("no server-side config available for provider %q", modelConfigInfo.Provider.ID)
 	}
 
-	switch provider {
-	case conftypes.CompletionsProviderNameAnthropic:
-		return anthropic.NewClient(httpcli.UncachedExternalDoer, endpoint, accessToken, false, *tokenManager), nil
-	case conftypes.CompletionsProviderNameOpenAI:
-		return openai.NewClient(httpcli.UncachedExternalDoer, endpoint, accessToken, *tokenManager), nil
-	case conftypes.CompletionsProviderNameAzureOpenAI:
-		return azureopenai.NewClient(azureopenai.GetAPIClient, endpoint, accessToken, *tokenManager)
-	case conftypes.CompletionsProviderNameGoogle:
-		return google.NewClient(httpcli.UncachedExternalDoer, endpoint, accessToken, false /* via gateway */)
-	case conftypes.CompletionsProviderNameSourcegraph:
-		return codygateway.NewClient(httpcli.CodyGatewayDoer, endpoint, accessToken, *tokenManager)
-	case conftypes.CompletionsProviderNameFireworks:
-		return fireworks.NewClient(httpcli.UncachedExternalDoer, endpoint, accessToken), nil
-	case conftypes.CompletionsProviderNameAWSBedrock:
-		return awsbedrock.NewClient(httpcli.UncachedExternalDoer, endpoint, accessToken, *tokenManager), nil
-	default:
-		return nil, errors.Newf("unknown completion stream provider: %s", provider)
+	// AWS Bedrock.
+	if awsBedrockCfg := ssConfig.AWSBedrock; awsBedrockCfg != nil {
+		client := awsbedrock.NewClient(
+			httpcli.UncachedExternalDoer, awsBedrockCfg.Endpoint, awsBedrockCfg.AccessToken, *tokenManager)
+		return client, nil
 	}
+
+	// Azure OpenAI
+	if azureOpenAICfg := ssConfig.AzureOpenAI; azureOpenAICfg != nil {
+		client, err := azureopenai.NewClient(
+			azureopenai.GetAPIClient, azureOpenAICfg.Endpoint, azureOpenAICfg.AccessToken, *tokenManager)
+		return client, errors.Wrap(err, "getting api provider")
+	}
+
+	// OpenAI Compatible
+	if openAICompatibleCfg := ssConfig.OpenAICompatible; openAICompatibleCfg != nil {
+		return openaicompatible.NewClient(httpcli.UncachedExternalClient, *tokenManager), nil
+	}
+
+	// The "GenericProvider" is an escape hatch for a set of API Providers not needing any additional configuration.
+	if genProviderCfg := ssConfig.GenericProvider; genProviderCfg != nil {
+		token := genProviderCfg.AccessToken
+		endpoint := genProviderCfg.Endpoint
+
+		switch genProviderCfg.ServiceName {
+		case modelconfigSDK.GenericServiceProviderAnthropic:
+			client := anthropic.NewClient(httpcli.UncachedExternalDoer, endpoint, token, false, *tokenManager)
+			return client, nil
+		case modelconfigSDK.GenericServiceProviderFireworks:
+			client := fireworks.NewClient(httpcli.UncachedExternalDoer, endpoint, token)
+			return client, nil
+		case modelconfigSDK.GenericServiceProviderGoogle:
+			// Don't resolve Google LLM requests via Cody Gateway, contact Google directly.
+			viaGateway := false
+			return google.NewClient(httpcli.UncachedExternalDoer, endpoint, token, viaGateway)
+		case modelconfigSDK.GenericServiceProviderOpenAI:
+			client := openai.NewClient(httpcli.UncachedExternalDoer, endpoint, token, *tokenManager)
+			return client, nil
+		default:
+			return nil, errors.Errorf("unknown GeneralProvider %q", genProviderCfg.ServiceName)
+		}
+	}
+
+	// The "Sourcegraph" provider, AKA Cody Gateway.
+	if sgProviderCfg := ssConfig.SourcegraphProvider; sgProviderCfg != nil {
+		client, err := codygateway.NewClient(
+			httpcli.CodyGatewayDoer, sgProviderCfg.Endpoint, sgProviderCfg.AccessToken, *tokenManager)
+		return client, err
+	}
+
+	return nil, errors.Newf("no LLM API provider available for %q", modelConfigInfo.Provider.ID)
 }

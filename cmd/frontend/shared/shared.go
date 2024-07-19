@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	// sourcegraph/internal
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/prompts"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -30,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches"
 	codeintelinit "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/completions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/compute"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/contentlibrary"
@@ -48,6 +48,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/rbac"
 	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/repos/webhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/savedsearches"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/scim"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/searchcontexts"
@@ -77,10 +78,11 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"repos.webhooks": webhooks.Init,
 	"scim":           scim.Init,
 	"searchcontexts": searchcontexts.Init,
+	"savedsearches":  savedsearches.Init,
 	"contentLibrary": contentlibrary.Init,
 	"search":         search.Init,
 	"telemetry":      telemetry.Init,
-	"codycontext":    codycontext.Init,
+	"prompts":        prompts.Init,
 }
 
 func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {

@@ -260,10 +260,7 @@ func (p *ConnectionPageInfo[N]) EndCursor() (cursor *string, err error) {
 	if len(p.nodes) == 0 {
 		return nil, nil
 	}
-
-	cursor, err = p.store.MarshalCursor(p.nodes[len(p.nodes)-1], p.orderBy)
-
-	return
+	return p.store.MarshalCursor(p.nodes[len(p.nodes)-1], p.orderBy)
 }
 
 // StartCursor returns value for connection.pageInfo.startCursor and is called by the graphql api.
@@ -271,10 +268,7 @@ func (p *ConnectionPageInfo[N]) StartCursor() (cursor *string, err error) {
 	if len(p.nodes) == 0 {
 		return nil, nil
 	}
-
-	cursor, err = p.store.MarshalCursor(p.nodes[0], p.orderBy)
-
-	return
+	return p.store.MarshalCursor(p.nodes[0], p.orderBy)
 }
 
 // NewConnectionResolver returns a new connection resolver built using the store and connection args.
@@ -303,12 +297,28 @@ type TB interface {
 	Fatalf(format string, args ...interface{})
 }
 
+// TestPaginationArgs is a subset of database.PaginationArgs that can be passed as the base
+// pagination args to TestConnectionResolverStoreSuite.
+type TestPaginationArgs struct {
+	OrderBy   database.OrderBy
+	Ascending bool
+}
+
 // TestConnectionResolverStoreSuite can be used in tests to verify that a ConnectionResolverStore
 // implements the interface correctly.
 // This test makes the following assumptions:
 // - There are at least 10 records total in the connection
-func TestConnectionResolverStoreSuite[N any](t TB, store ConnectionResolverStore[N]) {
+func TestConnectionResolverStoreSuite[N any](t TB, store ConnectionResolverStore[N], testPaginationArgs *TestPaginationArgs) {
+	pgArgs := func(args database.PaginationArgs) *database.PaginationArgs {
+		if testPaginationArgs != nil {
+			args.OrderBy = testPaginationArgs.OrderBy
+			args.Ascending = testPaginationArgs.Ascending
+		}
+		return &args
+	}
+
 	ctx := context.Background()
+
 	total, err := store.ComputeTotal(ctx)
 	if err != nil {
 		t.Fatalf("failed to compute total: %v", err)
@@ -317,54 +327,55 @@ func TestConnectionResolverStoreSuite[N any](t TB, store ConnectionResolverStore
 		t.Fatalf("total is less than 10, please create at least 10 entities for this test suite. Have=%d", total)
 	}
 	// Basic case: Getting all without any limits works.
-	allNodes, err := store.ComputeNodes(ctx, &database.PaginationArgs{})
+	allNodes, err := store.ComputeNodes(ctx, pgArgs(database.PaginationArgs{}))
 	if err != nil {
 		t.Fatalf("failed to list all nodes: %v", err)
 	}
 	// Check that all nodes were actually returned.
-	if len(allNodes) != int(total) {
-		t.Fatal("wrong number of nodes returned. want=%d, have=%d", total, len(allNodes))
+	if got, want := len(allNodes), int(total); got != want {
+		t.Fatalf("got %d nodes, want %d", got, want)
 	}
 
 	// Pagination tests:
 	// Check that first is properly working:
 	for i := range int(total) {
-		page, err := store.ComputeNodes(ctx, &database.PaginationArgs{First: pointers.Ptr(i + 1)})
+		page, err := store.ComputeNodes(ctx, pgArgs(database.PaginationArgs{First: pointers.Ptr(i + 1)}))
 		if err != nil {
 			t.Fatalf("failed to list page nodes: %v", err)
 		}
 		// Check that all nodes were actually returned.
-		if len(page) != i+1 {
-			t.Fatal("wrong number of nodes returned. want=%d, have=%d", i+1, len(allNodes))
+		if got, want := len(page), i+1; got != want {
+			t.Fatalf("got %d nodes, want %d", got, want)
 		}
 	}
 	// Check that last is properly working:
 	for i := range int(total) {
-		page, err := store.ComputeNodes(ctx, &database.PaginationArgs{Last: pointers.Ptr(i + 1)})
+		page, err := store.ComputeNodes(ctx, pgArgs(database.PaginationArgs{Last: pointers.Ptr(i + 1)}))
 		if err != nil {
 			t.Fatalf("failed to list page nodes: %v", err)
 		}
 		// Check that all nodes were actually returned.
-		if len(page) != i+1 {
-			t.Fatal("wrong number of nodes returned. want=%d, have=%d", i+1, len(allNodes))
+		if got, want := len(page), i+1; got != want {
+			t.Fatalf("got %d nodes, want %d", got, want)
 		}
 	}
 	// Check that first with cursor is properly working:
 	currentCursor := []any{}
 	for range int(total) {
-		page, err := store.ComputeNodes(ctx, &database.PaginationArgs{First: pointers.Ptr(1), After: currentCursor})
+		pgArgs := pgArgs(database.PaginationArgs{First: pointers.Ptr(1), After: currentCursor})
+		page, err := store.ComputeNodes(ctx, pgArgs)
 		if err != nil {
 			t.Fatalf("failed to list page nodes: %v", err)
 		}
 		// Check that exactly one node was returned.
-		if len(page) != 1 {
-			t.Fatal("wrong number of nodes returned. want=%d, have=%d", 1, len(allNodes))
+		if got, want := len(page), 1; got != want {
+			t.Fatalf("got %d nodes, want %d", got, want)
 		}
-		encodedCursor, err := store.MarshalCursor(page[0], nil)
+		encodedCursor, err := store.MarshalCursor(page[0], pgArgs.OrderBy)
 		if err != nil {
 			t.Fatalf("failed to marshal cursor: %v", err)
 		}
-		currentCursor, err = store.UnmarshalCursor(*encodedCursor, nil)
+		currentCursor, err = store.UnmarshalCursor(*encodedCursor, pgArgs.OrderBy)
 		if err != nil {
 			t.Fatalf("failed to unmarshal cursor: %v", err)
 		}
@@ -372,19 +383,20 @@ func TestConnectionResolverStoreSuite[N any](t TB, store ConnectionResolverStore
 	// Check that last with cursor is properly working:
 	currentCursor = []any{}
 	for range int(total) {
-		page, err := store.ComputeNodes(ctx, &database.PaginationArgs{Last: pointers.Ptr(1), Before: currentCursor})
+		pgArgs := pgArgs(database.PaginationArgs{Last: pointers.Ptr(1), Before: currentCursor})
+		page, err := store.ComputeNodes(ctx, pgArgs)
 		if err != nil {
 			t.Fatalf("failed to list page nodes: %v", err)
 		}
 		// Check that exactly one node was returned.
-		if len(page) != 1 {
-			t.Fatal("wrong number of nodes returned. want=%d, have=%d", 1, len(allNodes))
+		if got, want := len(page), 1; got != want {
+			t.Fatalf("got %d nodes, want %d", got, want)
 		}
-		encodedCursor, err := store.MarshalCursor(page[0], nil)
+		encodedCursor, err := store.MarshalCursor(page[0], pgArgs.OrderBy)
 		if err != nil {
 			t.Fatalf("failed to marshal cursor: %v", err)
 		}
-		currentCursor, err = store.UnmarshalCursor(*encodedCursor, nil)
+		currentCursor, err = store.UnmarshalCursor(*encodedCursor, pgArgs.OrderBy)
 		if err != nil {
 			t.Fatalf("failed to unmarshal cursor: %v", err)
 		}

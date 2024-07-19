@@ -7,6 +7,7 @@ import (
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -87,7 +88,7 @@ type Store interface {
 	SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, maxTraversal int) (int, int, error)
 
 	// Commit date
-	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
+	GetCommitAndDateForOldestUpload(ctx context.Context, repositoryID int) (core.Option[CommitWithDate], error)
 	UpdateCommittedAt(ctx context.Context, repositoryID int, commit, commitDateString string) error
 	SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) ([]SourcedCommits, error)
 

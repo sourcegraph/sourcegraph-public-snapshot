@@ -20,6 +20,7 @@ ts_project(
     name = "dev",
     srcs = [
         "esbuild/build.ts",
+        "esbuild/chunkCleaner.ts",
         "esbuild/config.ts",
         "esbuild/manifestPlugin.ts",
         "esbuild/server.ts",

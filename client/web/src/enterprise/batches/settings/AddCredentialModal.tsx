@@ -383,6 +383,7 @@ const AddToken: FC<AddTokenProps> = ({
                         authenticatedUser={user as unknown as AuthenticatedUser}
                         minimizedMode={true}
                         kind={kind}
+                        externalServiceURL={externalServiceURL}
                     />
                 )}
             </>

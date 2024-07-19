@@ -155,7 +155,6 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
         options: {
             pollInterval: 5000,
             fetchPolicy: 'cache-and-network',
-            pageSize: 15,
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)

@@ -56,7 +56,7 @@ export function fetchAllSurveyResponses(): Observable<FetchSurveyResponsesResult
  */
 export function fetchAllUsersWithSurveyResponses(args: {
     activePeriod?: UserActivePeriod
-    first?: number
+    first?: number | null
     query?: string
 }): Observable<FetchAllUsersWithSurveyResponsesResult['users']> {
     return requestGraphQL<FetchAllUsersWithSurveyResponsesResult, FetchAllUsersWithSurveyResponsesVariables>(

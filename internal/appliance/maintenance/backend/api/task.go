@@ -3,16 +3,24 @@ package api
 import (
 	"math/rand"
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/internal/appliance/maintenance/backend/operator"
 )
 
 const InstallTaskWaitForCluster = 0
 const InstallTaskSetup = 1
 const InstallTaskStart = 2
 
-func createInstallTasks() []operator.Task {
-	return []operator.Task{
+type Task struct {
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Started     bool      `json:"started"`
+	Finished    bool      `json:"finished"`
+	Weight      int       `json:"weight"`
+	Progress    int       `json:"progress"`
+	LastUpdate  time.Time `json:"lastUpdate"`
+}
+
+func createInstallTasks() []Task {
+	return []Task{
 		{
 			Title:       "Warming up",
 			Description: "Setting up basic resources",
@@ -37,8 +45,8 @@ func createInstallTasks() []operator.Task {
 	}
 }
 
-func createFakeUpgradeTasks() []operator.Task {
-	return []operator.Task{
+func createFakeUpgradeTasks() []Task {
+	return []Task{
 		{
 			Title:       "Upgrade",
 			Description: "Upgrade Sourcegraph",
@@ -56,8 +64,8 @@ func createFakeUpgradeTasks() []operator.Task {
 	}
 }
 
-func progressTasks(tasks []operator.Task) []operator.Task {
-	var result []operator.Task
+func progressTasks(tasks []Task) []Task {
+	var result []Task
 
 	var previousStarted bool = true
 	var previousFinished bool = true
@@ -76,8 +84,8 @@ func progressTasks(tasks []operator.Task) []operator.Task {
 	return result
 }
 
-func calculateProgress() ([]operator.Task, int) {
-	var result []operator.Task
+func calculateProgress() ([]Task, int) {
+	var result []Task
 
 	var taskWeights int = 0
 	for _, t := range installTasks {

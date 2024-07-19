@@ -110,6 +110,16 @@ func (g *GitRepo) IsDirty(ctx context.Context) (bool, error) {
 	return len(files) > 0, nil
 }
 
+// Add a file to staged changes
+func (g *GitRepo) Add(ctx context.Context, file string) (string, error) {
+	return run.Cmd(ctx, "git", "add", file).Run().String()
+}
+
+// Commit commits the staged changes with the given message
+func (g *GitRepo) Commit(ctx context.Context, message string) (string, error) {
+	return run.Cmd(ctx, "git", "commit", "-m", message).Run().String()
+}
+
 // Push pushes the current branch to origin using the specific push options
 func (g *GitRepo) Push(ctx context.Context, opts ...pushOpt) (string, error) {
 	cmd := []string{"git", "push", "origin", g.Branch}

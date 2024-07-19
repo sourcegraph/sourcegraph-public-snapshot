@@ -9,13 +9,13 @@
     import Icon from '$lib/Icon.svelte'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
     import { createScopeSuggestions } from '$lib/search/codemirror/suggestions'
-    import SearchInput from '$lib/search/input/SearchInput.svelte'
+    import SearchInput, { Style } from '$lib/search/input/SearchInput.svelte'
     import { queryStateStore } from '$lib/search/state'
     import { TELEMETRY_SEARCH_SOURCE_TYPE, repositoryInsertText } from '$lib/shared'
-    import { settings } from '$lib/stores'
+    import { settings, isViewportMobile } from '$lib/stores'
     import { default as TabsHeader } from '$lib/TabsHeader.svelte'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
-    import { DropdownMenu, MenuLink } from '$lib/wildcard'
+    import { Button, DropdownMenu, MenuLink } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
 
     import type { LayoutData } from './$types'
@@ -80,6 +80,8 @@
             }
         },
     })
+    // This is used on mobile to show the search input as a popover
+    let showSearchInput = false
 
     setRepositoryPageContext(repositoryContext)
 
@@ -87,6 +89,7 @@
         entry => entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)
     )
     $: visibleNavEntryCount = viewableNavEntries.length
+
     function grow(): boolean {
         if (visibleNavEntryCount < viewableNavEntries.length) {
             visibleNavEntryCount++
@@ -148,8 +151,23 @@
 </script>
 
 <GlobalHeaderPortal>
-    <div class="search-header">
-        <SearchInput {queryState} size="compat" onSubmit={handleSearchSubmit} extension={contextSearchSuggestions} />
+    {#if $isViewportMobile}
+        <Button id="mobile-search-button" variant="secondary" outline on:click={() => (showSearchInput = true)}>
+            <Icon icon={ILucideSearch} inline aria-hidden /> Search
+        </Button>
+    {/if}
+    <div class="search-header" class:showSearchInput>
+        {#if $isViewportMobile}
+            <Button variant="secondary" size="lg" display="block" on:click={() => (showSearchInput = false)}>
+                Close
+            </Button>
+        {/if}
+        <SearchInput
+            {queryState}
+            style={Style.Compact}
+            onSubmit={handleSearchSubmit}
+            extension={contextSearchSuggestions}
+        />
     </div>
 </GlobalHeaderPortal>
 
@@ -158,8 +176,8 @@
         repoName={data.repoName}
         displayRepoName={data.displayRepoName}
         repoURL={data.repoURL}
-        externalURL={data.resolvedRevision?.repo?.externalURLs?.[0].url}
-        externalServiceKind={data.resolvedRevision?.repo?.externalURLs?.[0].serviceKind ?? undefined}
+        externalURL={data.resolvedRepository.externalURLs[0]?.url}
+        externalServiceKind={data.resolvedRepository.externalURLs[0]?.serviceKind ?? undefined}
     />
 
     <TabsHeader id="repoheader" {tabs} selected={selectedTab} />
@@ -195,9 +213,27 @@
         --repo-header-height: 2rem;
     }
 
+    :global(#mobile-search-button) {
+        width: 100%;
+    }
+
     .search-header {
         width: 100%;
         z-index: 1;
+
+        @media (--mobile) {
+            display: none;
+
+            &.showSearchInput {
+                display: block;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: var(--color-bg-1);
+            }
+        }
     }
 
     nav {

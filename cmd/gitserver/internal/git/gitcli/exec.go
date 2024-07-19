@@ -27,7 +27,7 @@ var (
 		"ls-files":     {"--with-tree", "-z"},
 		"for-each-ref": {"--format", "--points-at", "--contains", "--sort", "-creatordate", "-refname", "-HEAD"},
 		"tag":          {"--list", "--sort", "-creatordate", "--format", "--points-at"},
-		"merge-base":   {"--"},
+		"merge-base":   {"--octopus", "--"},
 		"show-ref":     {"--heads"},
 		"shortlog":     {"--summary", "--numbered", "--email", "--no-merges", "--after", "--before"},
 		"cat-file":     {"-p", "-t"},

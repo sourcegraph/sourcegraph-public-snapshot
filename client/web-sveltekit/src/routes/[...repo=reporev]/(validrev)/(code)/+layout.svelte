@@ -11,6 +11,8 @@
     interface Capture {
         selectedTab: number | null
         historyPanel: HistoryCapture
+        exploreInputs: ExplorePanelInputs | undefined
+        // TODO: consider also capturing the file in the references panel
     }
 
     // Not ideal solution, [TODO] Improve Tabs component API in order
@@ -37,34 +39,43 @@
 </script>
 
 <script lang="ts">
-    import { tick } from 'svelte'
+    import { onMount } from 'svelte'
+    import { get, writable } from 'svelte/store'
 
-    import { afterNavigate, goto } from '$app/navigation'
+    import { goto } from '$app/navigation'
     import { page } from '$app/stores'
+    import ExplorePanel, {
+        setExplorePanelContext,
+        getUsagesStore,
+        entryIDForFilter,
+        type ExplorePanelInputs,
+        type ActiveOccurrence,
+    } from '$lib/codenav/ExplorePanel.svelte'
     import CodySidebar from '$lib/cody/CodySidebar.svelte'
-    import { isErrorLike, SourcegraphURL } from '$lib/common'
+    import { isErrorLike } from '$lib/common'
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import { filesHotkey } from '$lib/fuzzyfinder/keys'
+    import { getGraphQLClient } from '$lib/graphql'
+    import { SymbolUsageKind } from '$lib/graphql-types'
     import Icon from '$lib/Icon.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
     import HistoryPanel from '$lib/repo/HistoryPanel.svelte'
     import LastCommit from '$lib/repo/LastCommit.svelte'
-    import { rightPanelOpen } from '$lib/repo/stores'
+    import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
+    import { rightSidePanelOpen, fileTreeSidePanel } from '$lib/repo/stores'
+    import { isViewportMobile } from '$lib/stores'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
+    import { createEmptySingleSelectTreeState, type SingleSelectTreeState } from '$lib/TreeView'
     import { Alert, PanelGroup, Panel, PanelResizeHandle, Button } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
-
-    import RepositoryRevPicker from '../RepositoryRevPicker.svelte'
 
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
     import { createFileTreeStore } from './fileTreeStore'
-    import type { GitHistory_HistoryConnection, RepoPage_ReferencesLocationConnection } from './layout.gql'
-    import ReferencePanel from './ReferencePanel.svelte'
 
     export let data: LayoutData
 
@@ -73,14 +84,14 @@
             return {
                 selectedTab,
                 historyPanel: historyPanel?.capture(),
+                exploreInputs: get(exploreInputs),
             }
         },
-        async restore(data) {
+        restore(data) {
             selectedTab = data.selectedTab
-            // Wait until DOM was updated to possibly show the history panel
-            await tick()
-
-            // Restore history panel state if it is open
+            if (data.exploreInputs) {
+                exploreInputs.set(data.exploreInputs)
+            }
             if (data.historyPanel) {
                 historyPanel?.restore(data.historyPanel)
             }
@@ -88,48 +99,37 @@
     }
 
     let bottomPanel: Panel
-    let fileTreeSidePanel: Panel
+    let rightSidePanel: Panel
     let historyPanel: HistoryPanel
     let selectedTab: number | null = null
-    let commitHistory: GitHistory_HistoryConnection | null
-    let references: RepoPage_ReferencesLocationConnection | null
     const fileTreeStore = createFileTreeStore({ fetchFileTreeData: fetchSidebarFileTree })
 
     $: ({ revision = '', parentPath, repoName, resolvedRevision, isCodyAvailable } = data)
     $: fileTreeStore.set({ repoName, revision: resolvedRevision.commitID, path: parentPath })
-    $: commitHistoryQuery = data.commitHistory
-    $: if (!!commitHistoryQuery) {
-        // Reset commit history when the query observable changes. Without
-        // this we are showing the commit history of the previously selected
-        // file/folder until the new commit history is loaded.
-        commitHistory = null
-    }
 
-    $: commitHistory = $commitHistoryQuery?.data?.repository?.commit?.ancestors ?? null
-
-    // The observable query to fetch references (due to infinite scrolling)
-    $: sgURL = SourcegraphURL.from($page.url)
-    $: selectedLine = sgURL.lineRange
-    $: referenceQuery =
-        sgURL.viewState === 'references' && selectedLine?.line ? data.getReferenceStore(selectedLine) : null
-    $: references = $referenceQuery?.data?.repository?.commit?.blob?.lsif?.references ?? null
-
-    afterNavigate(async () => {
-        // We need to wait for referenceQuery to be updated before checking its state
-        await tick()
-
-        // todo(fkling): Figure out a proper way to represent bottom panel state
-        if (sgURL.viewState === 'references') {
-            selectedTab = TabPanels.References
-        } else if ($page.url.searchParams.has('rev')) {
-            // The file view/history panel use the 'rev' parameter to specify the commit to load
-            selectedTab = TabPanels.History
-        } else if (selectedTab === TabPanels.References) {
-            // Close references panel when navigating to a URL that doesn't have the 'references' view state
-            selectedTab = null
-        }
+    const exploreTreeState = writable<SingleSelectTreeState>({
+        ...createEmptySingleSelectTreeState(),
+        disableScope: true,
     })
-
+    const exploreInputs = writable<ExplorePanelInputs>({})
+    setExplorePanelContext({
+        openReferences(occurrence: ActiveOccurrence) {
+            exploreInputs.set({ activeOccurrence: occurrence, usageKindFilter: SymbolUsageKind.REFERENCE })
+            // Open the tab when we find references
+            selectedTab = TabPanels.References
+        },
+    })
+    $: usagesConnection = $exploreInputs.activeOccurrence
+        ? getUsagesStore(
+              getGraphQLClient(),
+              $exploreInputs.activeOccurrence.documentInfo,
+              $exploreInputs.activeOccurrence.occurrence
+          )
+        : undefined
+    $: exploreTreeState.update(old => ({
+        ...old,
+        selected: $exploreInputs.treeFilter ? entryIDForFilter($exploreInputs.treeFilter) : '',
+    }))
     function selectTab(event: { detail: number | null }) {
         trackHistoryPanelTabAction(selectedTab, event.detail)
 
@@ -141,7 +141,7 @@
 
     function handleBottomPanelExpand() {
         if (selectedTab == null) {
-            selectedTab = 0
+            selectedTab = TabPanels.History
         }
     }
 
@@ -156,10 +156,10 @@
     }
 
     function toggleFileSidePanel() {
-        if (fileTreeSidePanel.isExpanded()) {
-            fileTreeSidePanel.collapse()
+        if ($fileTreeSidePanel?.isExpanded()) {
+            $fileTreeSidePanel?.collapse()
         } else {
-            fileTreeSidePanel.expand()
+            $fileTreeSidePanel?.expand()
         }
     }
 
@@ -170,12 +170,27 @@
             bottomPanel?.expand()
         }
     }
+
+    $: if ($isViewportMobile) {
+        if ($rightSidePanelOpen) {
+            rightSidePanel?.expand()
+        } else {
+            rightSidePanel?.collapse()
+        }
+    }
+
+    onMount(() => {
+        if ($isViewportMobile) {
+            // Ensure that cody sidebar is closed on mobile
+            $rightSidePanelOpen = false
+        }
+    })
     const sidebarButtonClass = getButtonClassName({ variant: 'secondary', outline: true, size: 'sm' })
 </script>
 
 <PanelGroup id="blob-page-panels" direction="horizontal">
     <Panel
-        bind:this={fileTreeSidePanel}
+        bind:this={$fileTreeSidePanel}
         id="sidebar-panel"
         order={1}
         defaultSize={1}
@@ -183,6 +198,7 @@
         maxSize={35}
         collapsible
         collapsedSize={1}
+        overlayOnMobile
         let:isCollapsed
     >
         <div class="sidebar" class:collapsed={isCollapsed}>
@@ -194,9 +210,11 @@
                 </Tooltip>
 
                 <RepositoryRevPicker
+                    display="block"
                     repoURL={data.repoURL}
                     revision={data.revision}
-                    resolvedRevision={data.resolvedRevision}
+                    commitID={data.resolvedRevision.commitID}
+                    defaultBranch={data.defaultBranch}
                     getRepositoryBranches={data.getRepoBranches}
                     getRepositoryCommits={data.getRepoCommits}
                     getRepositoryTags={data.getRepoTags}
@@ -245,13 +263,21 @@
                     <Panel order={1} id="main-content-panel">
                         <slot />
                     </Panel>
-                    {#if $isCodyAvailable && $rightPanelOpen}
+                    {#if $isCodyAvailable && $rightSidePanelOpen}
                         <PanelResizeHandle id="right-sidebar-resize-handle" />
-                        <Panel id="right-sidebar-panel" order={2} minSize={20} maxSize={70}>
+                        <Panel
+                            id="right-sidebar-panel"
+                            bind:this={rightSidePanel}
+                            order={2}
+                            minSize={20}
+                            maxSize={70}
+                            overlayOnMobile
+                            onClose={() => ($rightSidePanelOpen = false)}
+                        >
                             <CodySidebar
                                 repository={data.resolvedRevision.repo}
                                 filePath={data.filePath}
-                                on:close={() => ($rightPanelOpen = false)}
+                                on:close={() => ($rightSidePanelOpen = false)}
                             />
                         </Panel>
                     {/if}
@@ -264,68 +290,52 @@
                 order={2}
                 defaultSize={1}
                 minSize={20}
-                maxSize={50}
+                maxSize={70}
                 collapsible
                 collapsedSize={1}
                 onExpand={handleBottomPanelExpand}
                 onCollapse={handleBottomPanelCollapse}
                 let:isCollapsed
             >
-                <div class="bottom-panel" class:collapsed={isCollapsed}>
-                    <Tabs selected={selectedTab} toggable on:select={selectTab}>
-                        <svelte:fragment slot="header-actions">
-                            {#if !isCollapsed}
-                                <Button
-                                    variant="text"
-                                    size="sm"
-                                    aria-label="Hide bottom panel"
-                                    on:click={handleBottomPanelCollapse}
-                                >
-                                    <Icon icon={ILucideArrowDownFromLine} inline aria-hidden /> Hide
-                                </Button>
-                            {/if}
-                        </svelte:fragment>
-                        <TabPanel title="History" shortcut={historyHotkey}>
-                            {#key data.filePath}
-                                <HistoryPanel
-                                    bind:this={historyPanel}
-                                    history={commitHistory}
-                                    loading={$commitHistoryQuery?.fetching ?? true}
-                                    fetchMore={commitHistoryQuery.fetchMore}
-                                    enableInlineDiff={$page.data.enableInlineDiff}
-                                    enableViewAtCommit={$page.data.enableViewAtCommit}
-                                />
-                            {/key}
-                        </TabPanel>
-                        <TabPanel title="References" shortcut={referenceHotkey}>
-                            {#if !referenceQuery}
-                                <div class="info">
-                                    <Alert variant="info"
-                                        >Hover over a symbol and click "Find references" to find references to the
-                                        symbol.</Alert
-                                    >
-                                </div>
-                            {:else if $referenceQuery && !$referenceQuery.fetching && (!references || references.nodes.length === 0)}
-                                <div class="info">
-                                    <Alert variant="info">No references found.</Alert>
-                                </div>
-                            {:else}
-                                <ReferencePanel
-                                    connection={references}
-                                    loading={$referenceQuery?.fetching ?? false}
-                                    on:more={referenceQuery?.fetchMore}
-                                />
-                            {/if}
-                        </TabPanel>
-                    </Tabs>
-                    {#await data.lastCommit then lastCommit}
-                        {#if lastCommit && isCollapsed}
-                            <div class="last-commit">
-                                <LastCommit {lastCommit} />
-                            </div>
+                <Tabs selected={selectedTab} toggable on:select={selectTab}>
+                    <svelte:fragment slot="header-actions">
+                        {#if !isCollapsed}
+                            <Button
+                                variant="text"
+                                size="sm"
+                                aria-label="Hide bottom panel"
+                                on:click={handleBottomPanelCollapse}
+                            >
+                                <Icon icon={ILucideArrowDownFromLine} inline aria-hidden /> Hide
+                            </Button>
+                        {:else}
+                            {#await data.lastCommit then lastCommit}
+                                {#if lastCommit && isCollapsed}
+                                    <div class="last-commit">
+                                        <LastCommit {lastCommit} />
+                                    </div>
+                                {/if}
+                            {/await}
                         {/if}
-                    {/await}
-                </div>
+                    </svelte:fragment>
+                    <TabPanel title="History" shortcut={historyHotkey}>
+                        {#key data.filePath}
+                            <HistoryPanel
+                                bind:this={historyPanel}
+                                history={data.commitHistory}
+                                enableInlineDiff={$page.data.enableInlineDiff}
+                                enableViewAtCommit={$page.data.enableViewAtCommit}
+                            />
+                        {/key}
+                    </TabPanel>
+                    <TabPanel title="Explore" shortcut={referenceHotkey}>
+                        <ExplorePanel
+                            inputs={exploreInputs}
+                            connection={usagesConnection}
+                            treeState={exploreTreeState}
+                        />
+                    </TabPanel>
+                </Tabs>
             </Panel>
         </PanelGroup>
     </Panel>
@@ -360,13 +370,21 @@
             // over any panel elements
             z-index: 2 !important;
         }
+
+        @media (--mobile) {
+            // !important is necessary to overwrit the elements own style
+            display: none !important;
+        }
     }
 
     .sidebar {
-        height: 100%;
         display: flex;
         flex-direction: column;
         background-color: var(--color-bg-1);
+
+        // Allow sidebar to shrink
+        min-height: 0;
+        height: 100%;
 
         header {
             display: grid;
@@ -401,6 +419,15 @@
                     flex-grow: 1;
                     flex-shrink: 1;
                     text-align: left;
+                }
+            }
+
+            @media (--mobile) {
+                grid-template-columns: 1fr;
+                grid-template-areas: 'rev-picker' 'search-files';
+
+                .collapse-button {
+                    display: none;
                 }
             }
         }
@@ -449,34 +476,6 @@
     :global([data-panel-id='right-sidebar-panel']) {
         z-index: 1;
         box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .bottom-panel {
-        display: flex;
-        align-items: center;
-        gap: 2rem;
-        justify-content: space-between;
-        overflow: hidden;
-        height: 100%;
-        background-color: var(--color-bg-1);
-        color: var(--text-body);
-
-        :global([data-tabs]) {
-            flex: 1;
-            min-width: 0;
-        }
-
-        &.collapsed :global([data-tabs]) {
-            // Reset min-width otherwise very long commit messages will overflow
-            // the tabs.
-            min-width: initial;
-        }
-
-        .last-commit {
-            min-width: 0;
-            max-width: min-content;
-            margin-right: 0.5rem;
-        }
     }
 
     .info {

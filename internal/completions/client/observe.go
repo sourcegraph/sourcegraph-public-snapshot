@@ -35,15 +35,16 @@ var _ types.CompletionsClient = (*observedClient)(nil)
 
 func (o *observedClient) Stream(ctx context.Context, logger log.Logger, request types.CompletionRequest, send types.SendCompletionEvent) (err error) {
 	feature := request.Feature
-	version := request.Version
+	modelName := request.ModelConfigInfo.Model.ModelName
 	params := request.Parameters
+	version := request.Version
 
 	ctx, tr, endObservation := o.ops.stream.With(ctx, &err, observation.Args{
 		Attrs: append(
-			params.Attrs(feature),
+			params.Attrs(modelName, feature),
 			attribute.String("feature", string(feature)),
 			attribute.Int("version", int(version))),
-		MetricLabelValues: []string{params.Model},
+		MetricLabelValues: []string{modelName},
 	})
 	defer endObservation(1, observation.Args{})
 
@@ -62,15 +63,16 @@ func (o *observedClient) Stream(ctx context.Context, logger log.Logger, request 
 
 func (o *observedClient) Complete(ctx context.Context, logger log.Logger, request types.CompletionRequest) (resp *types.CompletionResponse, err error) {
 	feature := request.Feature
-	version := request.Version
+	modelName := request.ModelConfigInfo.Model.ModelName
 	params := request.Parameters
+	version := request.Version
 
 	ctx, _, endObservation := o.ops.complete.With(ctx, &err, observation.Args{
 		Attrs: append(
-			params.Attrs(feature),
+			params.Attrs(modelName, feature),
 			attribute.String("feature", string(feature)),
 			attribute.Int("version", int(version))),
-		MetricLabelValues: []string{params.Model},
+		MetricLabelValues: []string{modelName},
 	})
 	defer endObservation(1, observation.Args{})
 

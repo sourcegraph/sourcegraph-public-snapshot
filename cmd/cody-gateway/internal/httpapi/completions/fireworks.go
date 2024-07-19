@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
@@ -23,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-func NewFireworksHandler(baseLogger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, rateLimitNotifier notify.RateLimitNotifier, httpClient httpcli.Doer, config config.FireworksConfig, promptRecorder PromptRecorder, upstreamConfig UpstreamHandlerConfig) http.Handler {
+func NewFireworksHandler(baseLogger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, rateLimitNotifier notify.RateLimitNotifier, httpClient httpcli.Doer, config config.FireworksConfig, promptRecorder PromptRecorder, upstreamConfig UpstreamHandlerConfig, tracedRequestsCounter metric.Int64Counter) http.Handler {
 	// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
 	// do any retries
 	upstreamConfig.DefaultRetryAfterSeconds = 30
@@ -37,9 +38,10 @@ func NewFireworksHandler(baseLogger log.Logger, eventLogger events.Logger, rs li
 		string(conftypes.CompletionsProviderNameFireworks),
 		config.AllowedModels,
 		&FireworksHandlerMethods{
-			baseLogger:  baseLogger,
-			eventLogger: eventLogger,
-			config:      config,
+			baseLogger:            baseLogger,
+			eventLogger:           eventLogger,
+			config:                config,
+			tracedRequestsCounter: tracedRequestsCounter,
 		},
 		promptRecorder,
 		upstreamConfig,
@@ -100,9 +102,10 @@ type fireworksResponse struct {
 }
 
 type FireworksHandlerMethods struct {
-	baseLogger  log.Logger
-	eventLogger events.Logger
-	config      config.FireworksConfig
+	baseLogger            log.Logger
+	eventLogger           events.Logger
+	config                config.FireworksConfig
+	tracedRequestsCounter metric.Int64Counter
 }
 
 func (f *FireworksHandlerMethods) getAPIURL(feature codygateway.Feature, _ fireworksRequest) string {
@@ -147,6 +150,7 @@ func (f *FireworksHandlerMethods) transformRequest(downstreamRequest, upstreamRe
 	// Enable tracing if the client requests it, see https://readme.fireworks.ai/docs/enabling-tracing
 	if downstreamRequest.Header.Get("X-Fireworks-Genie") == "true" {
 		upstreamRequest.Header.Set("X-Fireworks-Genie", "true")
+		f.tracedRequestsCounter.Add(downstreamRequest.Context(), 1)
 	}
 	upstreamRequest.Header.Set("Content-Type", "application/json")
 	upstreamRequest.Header.Set("Authorization", "Bearer "+f.config.AccessToken)
@@ -262,12 +266,14 @@ func pickFineTunedModel(model string, language string) string {
 	case fireworks.FineTunedFIMLangDeepSeekLogsTrained:
 		{
 			switch language {
-			case "typescript", "typescriptreact":
+			case "typescript":
 				return fireworks.FineTunedDeepseekLogsTrainedTypescript
-			case "javascript", "javascriptreact":
+			case "javascript":
 				return fireworks.FineTunedDeepseekLogsTrainedJavascript
 			case "python":
 				return fireworks.FineTunedDeepseekLogsTrainedPython
+			case "typescriptreact", "javascriptreact":
+				return fireworks.FineTunedDeepseekLogsTrainedReact
 			default:
 				return fireworks.DeepseekCoder7b
 			}

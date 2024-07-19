@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	modelconfigSDK "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 )
 
 type mockDoer struct {
@@ -36,9 +37,19 @@ func TestErrStatusNotOK(t *testing.T) {
 	}, "", "", *tokenManager)
 
 	compRequest := types.CompletionRequest{
-		Feature:    types.CompletionsFeatureChat,
-		Version:    types.CompletionsVersionLegacy,
-		Parameters: types.CompletionRequestParameters{},
+		Feature: types.CompletionsFeatureChat,
+		Version: types.CompletionsVersionLegacy,
+		ModelConfigInfo: types.ModelConfigInfo{
+			Provider: modelconfigSDK.Provider{
+				ID: modelconfigSDK.ProviderID("xxx-provider-id-xxx"),
+			},
+			Model: modelconfigSDK.Model{
+				ModelRef: modelconfigSDK.ModelRef("provider::apiversion::test-model"),
+			},
+		},
+		Parameters: types.CompletionRequestParameters{
+			RequestedModel: "xxx-requested-model-xxx",
+		},
 	}
 
 	t.Run("Complete", func(t *testing.T) {

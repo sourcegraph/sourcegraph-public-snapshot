@@ -1,43 +1,11 @@
-import { MockedProvider, MockedResponse } from '@apollo/client/testing'
+import { MockedProvider } from '@apollo/client/testing'
 import { renderHook } from '@testing-library/react'
 import { describe, expect, test } from 'vitest'
 
-import { getDocumentNode } from '@sourcegraph/http-client'
 import { waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 
-import { ViewerAffiliatedNamespacesResult, ViewerAffiliatedNamespacesVariables } from '../graphql-operations'
-
-import { useAffiliatedNamespaces, viewerAffiliatedNamespacesQuery } from './useAffiliatedNamespaces'
-
-const viewerAffiliatedNamespacesMock: MockedResponse<
-    ViewerAffiliatedNamespacesResult,
-    ViewerAffiliatedNamespacesVariables
-> = {
-    request: { query: getDocumentNode(viewerAffiliatedNamespacesQuery) },
-    result: {
-        data: {
-            viewer: {
-                affiliatedNamespaces: {
-                    nodes: [
-                        { __typename: 'User', id: 'user1', namespaceName: 'alice' },
-                        {
-                            __typename: 'Org',
-                            id: 'org1',
-                            namespaceName: 'abc',
-                            displayName: 'ABC',
-                        },
-                        {
-                            __typename: 'Org',
-                            id: 'org2',
-                            namespaceName: 'xyz',
-                            displayName: 'XYZ',
-                        },
-                    ],
-                },
-            },
-        },
-    },
-}
+import { viewerAffiliatedNamespacesMock } from './graphql.mocks'
+import { useAffiliatedNamespaces } from './useAffiliatedNamespaces'
 
 describe('useAffiliatedNamespaces', () => {
     test('fetches namespaces', async () => {

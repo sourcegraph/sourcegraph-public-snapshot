@@ -1,6 +1,6 @@
 import path from 'path'
 
-import { type UserConfig, type UserWorkspaceConfig, defineProject, mergeConfig } from 'vitest/config'
+import { defineProject, mergeConfig, type UserConfig, type UserWorkspaceConfig } from 'vitest/config'
 
 /** Whether we're running in Bazel. */
 export const BAZEL = !!process.env.BAZEL

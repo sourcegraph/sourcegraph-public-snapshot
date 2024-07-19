@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
@@ -136,10 +135,6 @@ func (s *Service) CreateSearchJob(ctx context.Context, query string) (_ *types.E
 		attribute.String("query", query),
 	))
 	defer endObservation(1, observation.Args{})
-
-	if !isEnabled() {
-		return nil, errors.New("search jobs is an experimental feature, enable it by setting \"experimentalFeatures.searchJobs: true\" in site configuration")
-	}
 
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
@@ -474,12 +469,4 @@ func (c *writeCounter) Write(p []byte) (n int, err error) {
 	n, err = c.w.Write(p)
 	c.n += int64(n)
 	return
-}
-
-func isEnabled() bool {
-	experimentalFeatures := conf.SiteConfig().ExperimentalFeatures
-	if experimentalFeatures != nil && experimentalFeatures.SearchJobs != nil {
-		return *experimentalFeatures.SearchJobs
-	}
-	return true
 }
