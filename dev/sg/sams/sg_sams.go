@@ -14,14 +14,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/sams/samsflags"
 )
 
-var clientCredentialsFlags = append(samsflags.ClientCredentials(),
-	&cli.StringSliceFlag{
-		Name:    "scopes",
-		Aliases: []string{"s"},
-		Value:   cli.NewStringSlice("openid", "profile", "email"),
-		Usage:   "OAuth scopes ('$SERVICE::$PERM::$ACTION') to request from the Sourcegraph Accounts Management System (SAMS) server",
-	},
-)
+func clientCredentialsFlags() []cli.Flag {
+	return append(samsflags.ClientCredentials(),
+		&cli.StringSliceFlag{
+			Name:    "scopes",
+			Aliases: []string{"s"},
+			Value:   cli.NewStringSlice("openid", "profile", "email"),
+			Usage:   "OAuth scopes ('$SERVICE::$PERM::$ACTION') to request from the Sourcegraph Accounts Management System (SAMS) server",
+		},
+	)
+}
 
 // Command is the 'sg sams' toolchain for the Sourcegraph Accounts Management System (SAMS).
 var Command = &cli.Command{
@@ -33,54 +35,51 @@ var Command = &cli.Command{
 
 Please reach out to #discuss-core-services for assistance if you have any questions!`,
 	Subcommands: []*cli.Command{{
-		Name:  "introspect-token",
-		Usage: "Generate a short-lived OAuth access token and introspect it from the Sourcegraph Accounts Management System (SAMS)",
-		Flags: clientCredentialsFlags,
-		Action: func(c *cli.Context) error {
-			samsScopes := scopes.ToScopes(c.StringSlice("scopes"))
+		Name:  "token",
+		Usage: "Request and interact with SAMS tokens",
+		Subcommands: []*cli.Command{{
+			Name:  "introspect",
+			Usage: "Generate a short-lived OAuth access token for the configured SAMS client and introspect its attributes",
+			Flags: append(clientCredentialsFlags(),
+				&cli.BoolFlag{
+					Name:    "print-token",
+					Aliases: []string{"p"},
+					Usage:   "Print the requested token, in addition to the introspection response",
+				}),
+			Action: func(c *cli.Context) error {
+				samsScopes := scopes.ToScopes(c.StringSlice("scopes"))
 
-			client, err := samsflags.NewClientFromFlags(c, samsScopes)
-			if err != nil {
-				return errors.Wrap(err, "create client")
-			}
+				client, err := samsflags.NewClientFromFlags(c, samsScopes)
+				if err != nil {
+					return errors.Wrap(err, "create client")
+				}
 
-			token, err := samsflags.NewClientCredentialsFromFlags(c, samsScopes).
-				TokenSource(c.Context).
-				Token()
-			if err != nil {
-				return errors.Wrap(err, "generate token")
-			}
-			resp, err := client.Tokens().IntrospectToken(c.Context, token.AccessToken)
-			if err != nil {
-				return errors.Wrap(err, "introspect token")
-			}
+				cfg, err := samsflags.NewClientCredentialsFromFlags(c, samsScopes)
+				if err != nil {
+					return errors.Wrap(err, "create client credentials")
+				}
+				token, err := cfg.TokenSource(c.Context).Token()
+				if err != nil {
+					return errors.Wrap(err, "generate token")
+				}
+				resp, err := client.Tokens().IntrospectToken(c.Context, token.AccessToken)
+				if err != nil {
+					return errors.Wrap(err, "introspect token")
+				}
 
-			data, err := json.MarshalIndent(resp, "", "  ")
-			if err != nil {
-				return err
-			}
-			std.Out.Write(string(data))
-			return nil
-		},
-	}, {
-		Name:  "create-client-token",
-		Usage: "Generate a short-lived OAuth access token for use as a bearer token to SAMS clients",
-		Flags: clientCredentialsFlags,
-		Action: func(c *cli.Context) error {
-			samsScopes := scopes.ToScopes(c.StringSlice("scopes"))
-			tokenSource := samsflags.NewClientCredentialsFromFlags(c, samsScopes).
-				TokenSource(c.Context)
-			token, err := tokenSource.Token()
-			if err != nil {
-				return errors.Wrap(err, "generate token")
-			}
+				output := map[string]any{
+					"introspect": resp,
+				}
+				if c.Bool("print-token") {
+					output["token"] = token
+				}
 
-			data, err := json.MarshalIndent(token, "", "  ")
-			if err != nil {
-				return err
-			}
-			std.Out.Write(string(data))
-			return nil
-		},
+				data, err := json.MarshalIndent(output, "", "  ")
+				if err != nil {
+					return err
+				}
+				return std.Out.WriteCode("json", string(data))
+			},
+		}},
 	}},
 }
