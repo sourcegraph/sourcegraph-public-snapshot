@@ -63,6 +63,7 @@
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
     import HistoryPanel from '$lib/repo/HistoryPanel.svelte'
     import LastCommit from '$lib/repo/LastCommit.svelte'
+    import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
     import { rightSidePanelOpen, fileTreeSidePanel } from '$lib/repo/stores'
     import { isViewportMobile } from '$lib/stores'
     import TabPanel from '$lib/TabPanel.svelte'
@@ -71,8 +72,6 @@
     import { createEmptySingleSelectTreeState, type SingleSelectTreeState } from '$lib/TreeView'
     import { Alert, PanelGroup, Panel, PanelResizeHandle, Button } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
-
-    import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
 
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
@@ -211,6 +210,7 @@
                 </Tooltip>
 
                 <RepositoryRevPicker
+                    display="block"
                     repoURL={data.repoURL}
                     revision={data.revision}
                     commitID={data.resolvedRevision.commitID}
