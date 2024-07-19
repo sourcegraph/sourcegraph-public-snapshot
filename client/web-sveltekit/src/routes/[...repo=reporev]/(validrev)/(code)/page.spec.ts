@@ -162,7 +162,7 @@ test.describe('file sidebar', () => {
         await expect(page.getByText(/Child error/)).toBeVisible()
     })
 
-    test('error handling non-existing directory -> root', async ({ page, sg }) => {
+    test('error handling non-existing directory -> root', async ({page, sg}) => {
         // Here we expect the sidebar to show an error message, and after navigating
         // to an existing directory, the directory contents
         sg.mockOperations({
@@ -172,6 +172,11 @@ test.describe('file sidebar', () => {
         })
 
         await page.goto(`/${repoName}/-/tree/non-existing-directory`)
+
+        // Testing locally I noticed that there was a 500 error message on display.
+        // Since we only got a timeout from the "open sidebar" condition below, I added this check to give more context on failures.
+        await expect(page.getByText(/500/)).not.toBeVisible()
+
         await page.getByLabel('Open sidebar').click()
         await expect(page.getByText(/Sidebar error/).first()).toBeVisible()
 
@@ -185,8 +190,8 @@ test.describe('file sidebar', () => {
 
         await page.goto(`/${repoName}`)
         await page.getByLabel('Open sidebar').click()
-        await expect(page.getByRole('treeitem', { name: 'README.md' })).toBeVisible()
-    })
+        await expect(page.getByRole('treeitem', {name: 'README.md'})).toBeVisible()
+    });
 })
 
 test('repo readme', async ({ page }) => {
