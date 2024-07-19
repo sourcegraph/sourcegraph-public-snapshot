@@ -21,6 +21,7 @@ const config: PlaywrightTestConfig = {
     },
     use: {
         baseURL: `http://localhost:${PORT}`,
+        screenshot: 'only-on-failure',
     },
     projects: [
         {
