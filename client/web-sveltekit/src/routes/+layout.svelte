@@ -79,7 +79,6 @@
     })
 
     $: currentUserID = data.user?.id
-    $: console.log(currentUserID)
     $: handleOptOut = currentUserID
         ? async (): Promise<void> => {
               if (currentUserID) {
