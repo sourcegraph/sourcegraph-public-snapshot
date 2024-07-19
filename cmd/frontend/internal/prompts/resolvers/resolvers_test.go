@@ -103,7 +103,7 @@ func TestPrompts(t *testing.T) {
 		orgID := int32(2)
 		om := dbmocks.NewMockOrgMemberStore()
 		om.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(ctx context.Context, oid, uid int32) (*types.OrgMembership, error) {
-			return nil, nil
+			return nil, &database.ErrOrgMemberNotFound{}
 		})
 
 		ss := dbmocks.NewMockPromptStore()
@@ -551,7 +551,7 @@ func TestPromptPermissions(t *testing.T) {
 				if orgID == userID {
 					return &types.OrgMembership{}, nil
 				}
-				return nil, nil
+				return nil, &database.ErrOrgMemberNotFound{}
 			})
 
 			db := dbmocks.NewMockDB()

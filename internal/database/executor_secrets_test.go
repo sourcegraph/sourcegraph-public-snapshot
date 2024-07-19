@@ -45,7 +45,7 @@ func TestEnsureActorHasNamespaceWriteAccess(t *testing.T) {
 			// Is a member.
 			return &types.OrgMembership{}, nil
 		}
-		return nil, nil
+		return nil, &database.ErrOrgMemberNotFound{}
 	})
 	db.OrgMembersFunc.SetDefaultReturn(om)
 
