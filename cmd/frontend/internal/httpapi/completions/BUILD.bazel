@@ -79,6 +79,7 @@ go_test(
         "//internal/featureflag",
         "//internal/httpcli",
         "//internal/licensing",
+        "//internal/modelconfig/embedded",
         "//internal/modelconfig/types",
         "//internal/rcache",
         "//internal/telemetry",
