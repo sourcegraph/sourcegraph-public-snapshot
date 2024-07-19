@@ -34,7 +34,7 @@ func TestServeSearchJobDownload(t *testing.T) {
 	observationCtx := observation.TestContextTB(t)
 	logger := observationCtx.Logger
 
-	mockUploadStore := mocks.NewMockStore()
+	mockUploadStore := mocks.NewMockStorage()
 	mockUploadStore.ListFunc.SetDefaultHook(
 		func(ctx context.Context, prefix string) (*iterator.Iterator[string], error) {
 			return iterator.From([]string{}), nil
