@@ -47,5 +47,3 @@ func (r *defaultSettingsResolver) ViewerCanAdminister(_ context.Context) (bool, 
 func (r *defaultSettingsResolver) SettingsCascade() *settingsCascade {
 	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{defaultSettings: r}}
 }
-
-func (r *defaultSettingsResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }

@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-// settingsCascade implements the GraphQL type SettingsCascade (and the deprecated type ConfigurationCascade).
+// settingsCascade implements the GraphQL type SettingsCascade.
 //
 // It resolves settings from multiple sources.  When there is overlap between values, they will be
 // merged in the following cascading order (first is lowest precedence):
@@ -65,9 +65,4 @@ func (r *schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, 
 		return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{site: NewSiteResolver(log.Scoped("settings"), r.db)}}, nil
 	}
 	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{user: user}}, nil
-}
-
-// Deprecated: in the GraphQL API
-func (r *schemaResolver) ViewerConfiguration(ctx context.Context) (*settingsCascade, error) {
-	return newSchemaResolver(r.db, r.gitserverClient).ViewerSettings(ctx)
 }

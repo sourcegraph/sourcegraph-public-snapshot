@@ -260,8 +260,6 @@ func (o *OrgResolver) SettingsCascade() *settingsCascade {
 	return &settingsCascade{db: o.db, subject: &settingsSubjectResolver{org: o}}
 }
 
-func (o *OrgResolver) ConfigurationCascade() *settingsCascade { return o.SettingsCascade() }
-
 func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
 	if actor := sgactor.FromContext(ctx); actor.IsAuthenticated() {
 		orgInvitation, err := o.db.OrgInvitations().GetPending(ctx, o.org.ID, actor.UID)

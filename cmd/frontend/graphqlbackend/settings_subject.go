@@ -200,7 +200,3 @@ func (s *settingsSubjectResolver) SettingsCascade() (*settingsCascade, error) {
 		return nil, errUnknownSettingsSubject
 	}
 }
-
-func (s *settingsSubjectResolver) ConfigurationCascade() (*settingsCascade, error) {
-	return s.SettingsCascade()
-}

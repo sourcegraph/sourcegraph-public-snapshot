@@ -400,8 +400,6 @@ func (r *UserResolver) SettingsCascade() *settingsCascade {
 	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{user: r}}
 }
 
-func (r *UserResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
-
 func (r *UserResolver) SiteAdmin() (bool, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to determine if the user is a site admin.
 	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
