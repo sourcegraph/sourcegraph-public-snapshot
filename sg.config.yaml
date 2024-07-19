@@ -1127,8 +1127,12 @@ commands:
       Run SAMS from a clone of https://github.com/sourcegraph/sourcegraph-accounts
       expected to be configured in '../sourcegraph-accounts'
     install: |
-      createdb -h $PGHOST -p $PGPORT -U $PGUSER --encoding=UTF8 --template=template0 accounts || true
+      if [ -d "../sourcegraph-accounts" ]; then
+        echo "../sourcegraph-accounts must be a clone of https://github.com/sourcegraph/sourcegraph-accounts"
+      fi
       cd ../sourcegraph-accounts
+
+      createdb -h $PGHOST -p $PGPORT -U $PGUSER --encoding=UTF8 --template=template0 accounts || true
       asdf install
       go build -v -o ./.bin/accounts-server ./cmd/accounts-server
     checkBinary: ../sourcegraph-accounts/.bin/accounts-server
@@ -1165,16 +1169,12 @@ commands:
       # TODO: Port conflicts with embeddings, but all our pre-made credentials
       # use this port as the redirect URL, so we just stick to it for now.
       PORT: 9991
-      NOTIFICATION_GCP_PUBSUB_PROJECT: sourcegraph-local-dev # used by gcp-pubsub-emulator
-      NOTIFICATION_GCP_PUBSUB_TOPIC: notifications
       REDIS_HOST: localhost
       REDIS_PORT: 6379
       REDIS_ENDPOINT: 'redis://@127.0.0.1:6379' # Use
       MANAGEMENT_SECRET: sekret # For authentication when using admin APIs to register new SAMS clients.
       GITHUB_REDIRECT_URI: "http://localhost:$PORT/auth/github/callback"
       GITLAB_REDIRECT_URI: http://localhost:$PORT/auth/gitlab/callback
-      GOOGLE_CLIENT_ID: 923713072939-0obb753ktf8t5nsh901rqdca9mb3786t.apps.googleusercontent.com"
-      GOOGLE_CLIENT_SECRET: "********"
       GOOGLE_REDIRECT_URI: http://localhost:$PORT/auth/google/callback
       IDENTITY_PROVIDER_INSECURE_DEBUG: true
       IDENTITY_PROVIDER_OIDC_GLOBAL_SECRET: "some-cool-secret-that-is-32bytes"
@@ -1224,13 +1224,19 @@ commands:
     description: |
       Run SAMS from a clone of https://github.com/sourcegraph/sourcegraph-accounts
       expected to be configured in '../sourcegraph-accounts'
-    cmd: |
-      cd ../sourcegraph-accounts/web
+    install: |
+      if [ -d "../sourcegraph-accounts" ]; then
+        echo "../sourcegraph-accounts must be a clone of https://github.com/sourcegraph/sourcegraph-accounts"
+      fi
+      cd ../sourcegraph-accounts
+
       asdf install
       pnpm install
+    cmd: |
+      cd ../sourcegraph-accounts/web
       pnpm run dev
     watch:
-      - ../sourcegraph-accounts/web
+      - ../sourcegraph-accounts/pnpm-lock.yaml
 
 bazelCommands:
   blobstore:
