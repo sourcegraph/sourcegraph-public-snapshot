@@ -49,7 +49,7 @@ func serveOpenCodeGraph(logger log.Logger) func(w http.ResponseWriter, r *http.R
 				io.Reader
 				io.Closer
 			}{
-				Reader: io.LimitReader(gzipReader, int64(gzipFileSizeLimit)),
+				Reader: io.LimitReader(gzipReader, int64(gzipRequestSizeLimit)),
 				Closer: gzipReader,
 			}
 			defer gzipReader.Close()
