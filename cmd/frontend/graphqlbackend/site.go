@@ -163,8 +163,6 @@ func (r *siteResolver) SettingsCascade() *settingsCascade {
 	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{site: r}}
 }
 
-func (r *siteResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
-
 func (r *siteResolver) SettingsURL() *string { return strptr("/site-admin/global-settings") }
 
 func (r *siteResolver) CanReloadSite(ctx context.Context) bool {

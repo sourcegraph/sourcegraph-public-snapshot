@@ -1750,10 +1750,6 @@ type Query {
     """
     viewerSettings: SettingsCascade!
     """
-    DEPRECATED
-    """
-    viewerConfiguration: ConfigurationCascade! @deprecated(reason: "use viewerSettings instead")
-    """
     The configuration for clients.
     """
     clientConfiguration: ClientConfigurationDetails!
@@ -6323,13 +6319,6 @@ type User implements Node & SettingsSubject & Namespace {
     """
     settingsCascade: SettingsCascade!
     """
-    DEPRECATED
-    """
-    configurationCascade: ConfigurationCascade!
-        @deprecated(
-            reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
-        )
-    """
     The organizations that this user is a member of.
     """
     organizations: OrgConnection!
@@ -6860,13 +6849,6 @@ type Org implements Node & SettingsSubject & Namespace {
     settingsCascade: SettingsCascade!
     """
     DEPRECATED
-    """
-    configurationCascade: ConfigurationCascade!
-        @deprecated(
-            reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
-        )
-    """
-    DEPRECATED
     A pending invitation for the viewer to join this organization, if any.
     """
     viewerPendingInvitation: OrganizationInvitation
@@ -7025,13 +7007,6 @@ type DefaultSettings implements SettingsSubject {
     All viewers can access this field.
     """
     settingsCascade: SettingsCascade!
-    """
-    DEPRECATED
-    """
-    configurationCascade: ConfigurationCascade!
-        @deprecated(
-            reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
-        )
 }
 
 """
@@ -7088,13 +7063,6 @@ type Site implements SettingsSubject {
     All viewers can access this field.
     """
     settingsCascade: SettingsCascade!
-    """
-    DEPRECATED
-    """
-    configurationCascade: ConfigurationCascade!
-        @deprecated(
-            reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
-        )
     """
     The URL to the site's settings.
     """
@@ -7682,13 +7650,6 @@ interface SettingsSubject {
     that were merged to produce the final merged settings.
     """
     settingsCascade: SettingsCascade!
-    """
-    DEPRECATED
-    """
-    configurationCascade: ConfigurationCascade!
-        @deprecated(
-            reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
-        )
 }
 
 """
@@ -7710,20 +7671,6 @@ type SettingsCascade {
     The effective final merged settings, merged from all of the subjects.
     """
     merged: Configuration! @deprecated(reason: "use final instead")
-}
-
-"""
-DEPRECATED: Renamed to SettingsCascade.
-"""
-type ConfigurationCascade {
-    """
-    DEPRECATED
-    """
-    subjects: [SettingsSubject!]! @deprecated(reason: "use SettingsCascade.subjects instead")
-    """
-    DEPRECATED
-    """
-    merged: Configuration! @deprecated(reason: "use SettingsCascade.final instead")
 }
 
 """
