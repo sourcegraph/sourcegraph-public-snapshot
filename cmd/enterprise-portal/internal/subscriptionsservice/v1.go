@@ -2,7 +2,6 @@ package subscriptionsservice
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -351,7 +350,7 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 				opts.DisplayName =
 					database.NewNullString(req.Msg.GetSubscription().GetDisplayName())
 			default:
-				return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("unknown field path: %s", p))
+				return nil, connect.NewError(connect.CodeInvalidArgument, errors.Newf("unknown field path: %s", p))
 			}
 		}
 	}
