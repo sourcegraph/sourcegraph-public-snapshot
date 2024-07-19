@@ -77,7 +77,7 @@ export class CopyableText extends React.PureComponent<Props, State> {
                                 aria-label="Copy"
                             >
                                 <Icon aria-hidden={true} svgPath={mdiContentCopy} />{' '}
-                                {this.props.secret ? '' : this.state.copied ? 'Copied' : 'Copy'}
+                                {this.state.copied ? 'Copied' : 'Copy'}
                             </Button>
                         </div>
                         {this.props.secret && (

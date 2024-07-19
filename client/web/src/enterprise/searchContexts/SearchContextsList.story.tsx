@@ -3,7 +3,6 @@ import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import {
     mockAuthenticatedUser,
     mockFetchSearchContexts,
-    mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
@@ -30,7 +29,6 @@ export default config
 const defaultProps: SearchContextsListProps = {
     authenticatedUser: mockAuthenticatedUser,
     fetchSearchContexts: mockFetchSearchContexts,
-    getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     platformContext: NOOP_PLATFORM_CONTEXT,
     setAlert: () => undefined,
 }

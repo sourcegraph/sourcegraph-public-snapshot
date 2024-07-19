@@ -53,7 +53,7 @@ func (r *schemaResolver) SettingsMutation(ctx context.Context, args *settingsMut
 		return nil, err
 	}
 
-	subject, err := settingsSubjectForNode(ctx, n)
+	subject, err := settingsSubjectForNodeAndCheckAccess(ctx, n)
 	if err != nil {
 		return nil, err
 	}

@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -144,26 +143,35 @@ func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (r *siteResolver) settingsSubject() api.SettingsSubject {
-	return api.SettingsSubject{Site: true}
-}
-
 func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := r.db.Settings().GetLatest(ctx, r.settingsSubject())
+	// 🚨 SECURITY: Check that the viewer can access these settings.
+	subject, err := settingsSubjectForNodeAndCheckAccess(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+
+	settings, err := r.db.Settings().GetLatest(ctx, subject.toSubject())
 	if err != nil {
 		return nil, err
 	}
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{r.db, &settingsSubjectResolver{site: r}, settings, nil}, nil
+	return &settingsResolver{db: r.db, subject: subject, settings: settings}, nil
 }
 
-func (r *siteResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{site: r}}
+func (r *siteResolver) SettingsCascade(ctx context.Context) (*settingsCascade, error) {
+	// 🚨 SECURITY: Check that the viewer can access these settings.
+	subject, err := settingsSubjectForNodeAndCheckAccess(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	return &settingsCascade{db: r.db, subject: subject}, nil
 }
 
-func (r *siteResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
+func (r *siteResolver) ConfigurationCascade(ctx context.Context) (*settingsCascade, error) {
+	return r.SettingsCascade(ctx)
+}
 
 func (r *siteResolver) SettingsURL() *string { return strptr("/site-admin/global-settings") }
 

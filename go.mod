@@ -318,6 +318,7 @@ require (
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20240524140455-2589fef13ea8
 	github.com/sourcegraph/sourcegraph/lib/managedservicesplatform v0.0.0-00010101000000-000000000000
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-00010101000000-000000000000
+	github.com/tmaxmax/go-sse v0.8.0
 	github.com/vektah/gqlparser/v2 v2.4.5
 	github.com/vvakame/gcplogurl v0.2.0
 	go.opentelemetry.io/collector/config/confighttp v0.103.0
@@ -582,7 +583,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20240409012703-83162a5b38cd // indirect
-	github.com/googleapis/gax-go/v2 v2.12.4 // indirect
+	github.com/googleapis/gax-go/v2 v2.12.4
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/gopherjs/gopherwasm v1.1.0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect

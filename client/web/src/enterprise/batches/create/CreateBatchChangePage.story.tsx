@@ -29,7 +29,6 @@ export default config
 const MOCK_ORGANIZATION = {
     __typename: 'Org',
     name: 'acme-corp',
-    displayName: 'ACME Corporation',
     id: 'acme-corp-id',
 }
 
