@@ -23,7 +23,7 @@ import {
     usePageSwitcherPagination,
     type PaginationKeys,
 } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
-import { ConnectionContainer, ConnectionForm } from '../components/FilteredConnection/ui'
+import { ConnectionForm } from '../components/FilteredConnection/ui'
 import { PromptsOrderBy, type PromptFields, type PromptsResult, type PromptsVariables } from '../graphql-operations'
 import { LibraryItemStatusBadge, LibraryItemVisibilityBadge } from '../library/itemBadges'
 import { useAffiliatedNamespaces } from '../namespaces/useAffiliatedNamespaces'
@@ -167,40 +167,36 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
     return (
         <>
             <Container data-testid="prompts-list-page">
-                <ConnectionContainer>
-                    <ConnectionForm
-                        hideSearch={false}
-                        showSearchFirst={true}
-                        inputClassName="mw-30"
-                        inputPlaceholder="Find a prompt..."
-                        inputAriaLabel=""
-                        inputValue={connectionState.query}
-                        onInputChange={event => {
-                            setConnectionState(prev => ({ ...prev, query: event.target.value }))
-                        }}
-                        autoFocus={false}
-                        filters={filters}
-                        onFilterSelect={(filter, value) =>
-                            setConnectionState(prev => ({ ...prev, [filter.id]: value }))
-                        }
-                        filterValues={connectionState}
-                        compact={false}
-                        formClassName="flex-gap-4 mb-4"
-                    />
-                    {loading ? (
-                        <LoadingSpinner />
-                    ) : error ? (
-                        <ErrorAlert error={error} className="mb-3" />
-                    ) : !connection?.nodes || connection.nodes.length === 0 ? (
-                        <Text className="text-center text-muted mb-0">No prompts found.</Text>
-                    ) : (
-                        <div className="list-group list-group-flush">
-                            {connection.nodes.map(prompt => (
-                                <PromptNode key={prompt.id} prompt={prompt} telemetryRecorder={telemetryRecorder} />
-                            ))}
-                        </div>
-                    )}
-                </ConnectionContainer>
+                <ConnectionForm
+                    hideSearch={false}
+                    showSearchFirst={true}
+                    inputClassName="mw-30"
+                    inputPlaceholder="Find a prompt..."
+                    inputAriaLabel=""
+                    inputValue={connectionState.query}
+                    onInputChange={event => {
+                        setConnectionState(prev => ({ ...prev, query: event.target.value }))
+                    }}
+                    autoFocus={false}
+                    filters={filters}
+                    onFilterSelect={(filter, value) => setConnectionState(prev => ({ ...prev, [filter.id]: value }))}
+                    filterValues={connectionState}
+                    compact={false}
+                    formClassName="flex-gap-4 mb-4"
+                />
+                {loading ? (
+                    <LoadingSpinner />
+                ) : error ? (
+                    <ErrorAlert error={error} className="mb-3" />
+                ) : !connection?.nodes || connection.nodes.length === 0 ? (
+                    <Text className="text-center text-muted mb-0">No prompts found.</Text>
+                ) : (
+                    <div className="list-group list-group-flush">
+                        {connection.nodes.map(prompt => (
+                            <PromptNode key={prompt.id} prompt={prompt} telemetryRecorder={telemetryRecorder} />
+                        ))}
+                    </div>
+                )}
             </Container>
             <PageSwitcher {...paginationProps} className="mt-4" totalCount={connection?.totalCount ?? null} />
         </>
