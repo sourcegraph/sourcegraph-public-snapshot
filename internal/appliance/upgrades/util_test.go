@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -95,8 +96,22 @@ func TestCheckConnection_Ping(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			db := dbtest.NewDB(t)
+			defer db.Close()
+
+			var dbName string
+			err := db.QueryRow("SELECT current_database()").Scan(&dbName)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				t.FailNow()
+			}
+
 			t.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
 			t.Setenv("PGUSER", "sourcegraph")
+			t.Setenv("PGPASSWORD", "sourcegraph")
+			t.Setenv("PGDATABASE", dbName)
+			t.Setenv("PGSSLMODE", "disable")
+			t.Setenv("PGTZ", "UTC")
 
 			dsns, err := getApplianceDSNs()
 			if err != nil {

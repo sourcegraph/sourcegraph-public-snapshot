@@ -23,5 +23,8 @@ go_test(
     srcs = ["util_test.go"],
     embed = [":upgrades"],
     tags = ["requires-network"],
-    deps = ["//internal/observation"],
+    deps = [
+        "//internal/database/dbtest",
+        "//internal/observation",
+    ],
 )
