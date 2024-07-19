@@ -156,7 +156,7 @@ func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{r.db, &settingsSubjectResolver{site: r}, settings, nil}, nil
+	return &settingsResolver{db: r.db, subject: &settingsSubjectResolver{site: r}, settings: settings}, nil
 }
 
 func (r *siteResolver) SettingsCascade() *settingsCascade {

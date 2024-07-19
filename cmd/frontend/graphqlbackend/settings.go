@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -17,7 +18,10 @@ type settingsResolver struct {
 	db       database.DB
 	subject  *settingsSubjectResolver
 	settings *api.Settings
-	user     *types.User
+
+	authorUserOnce sync.Once
+	authorUser     *types.User
+	authorUserErr  error
 }
 
 func (o *settingsResolver) ID() int32 {
@@ -45,14 +49,14 @@ func (o *settingsResolver) Author(ctx context.Context) (*UserResolver, error) {
 	if o.settings.AuthorUserID == nil {
 		return nil, nil
 	}
-	if o.user == nil {
-		var err error
-		o.user, err = o.db.Users().GetByID(ctx, *o.settings.AuthorUserID)
-		if err != nil {
-			return nil, err
-		}
+
+	o.authorUserOnce.Do(func() {
+		o.authorUser, o.authorUserErr = o.db.Users().GetByID(ctx, *o.settings.AuthorUserID)
+	})
+	if o.authorUserErr != nil {
+		return nil, o.authorUserErr
 	}
-	return NewUserResolver(ctx, o.db, o.user), nil
+	return NewUserResolver(ctx, o.db, o.authorUser), nil
 }
 
 var globalSettingsAllowEdits, _ = strconv.ParseBool(env.Get("GLOBAL_SETTINGS_ALLOW_EDITS", "false", "When GLOBAL_SETTINGS_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
