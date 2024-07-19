@@ -217,8 +217,7 @@ func TestValidateSiteConfig(t *testing.T) {
 	getValidSiteConfiguration := func() *types.SiteModelConfiguration {
 		return &types.SiteModelConfiguration{
 			SourcegraphModelConfig: &types.SourcegraphModelConfig{
-				PollingInterval: pointers.Ptr("8h"),
-				Endpoint:        pointers.Ptr("https://cody-gateway.sourcegraph.com/current-models.json"),
+				Endpoint: pointers.Ptr("https://cody-gateway.sourcegraph.com/current-models.json"),
 				ModelFilters: &types.ModelFilters{
 					StatusFilter: []string{string(types.ModelStatusStable)},
 					Allow:        []string{"openai::*", "anthropic::*"},
