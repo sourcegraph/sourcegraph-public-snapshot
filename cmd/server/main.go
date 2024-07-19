@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/server/shared"
 	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 
-	_ "github.com/sourcegraph/sourcegraph/client/web/dist" // use assets
+	_ "github.com/sourcegraph/sourcegraph/ui/assets/dist" // use assets
 )
 
 func main() {

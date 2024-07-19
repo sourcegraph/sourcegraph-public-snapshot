@@ -9,25 +9,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const assetsDir = "client/web/dist"
-
 // UseDevAssetsProvider installs the development variant of the UseDevAssetsProvider
 // which expects assets to be generated on the fly by an external web builder process.
 func UseDevAssetsProvider() {
-	Provider = DevProvider{assets: http.Dir(assetsDir)}
+	devAssetsDir := "client/web/dist"
+	Provider = DirProvider{dir: devAssetsDir, assets: http.Dir(devAssetsDir)}
 }
 
-// DevProvider is the development variant of the UseDevAssetsProvider
+func UseAssetsProviderForPath(path string) {
+	Provider = DirProvider{dir: path, assets: http.Dir(path)}
+}
+
+// DirProvider is the development variant of the UseDevAssetsProvider
 // which expects assets to be generated on the fly by an external web builder process.
-type DevProvider struct {
+type DirProvider struct {
+	dir    string
 	assets http.FileSystem
 }
 
-func (p DevProvider) LoadWebBuildManifest() (*WebBuildManifest, error) {
-	return loadWebBuildManifest()
+func (p DirProvider) LoadWebBuildManifest() (*WebBuildManifest, error) {
+	return loadWebBuildManifest(p.dir)
 }
 
-func (p DevProvider) Assets() http.FileSystem {
+func (p DirProvider) Assets() http.FileSystem {
 	return p.assets
 }
 
@@ -37,12 +41,12 @@ var MockLoadWebBuildManifest func() (*WebBuildManifest, error)
 // serve to the client. In dev mode, we load this file from disk on demand, so it doesn't
 // have to exist at compile time, to avoid a build dependency between frontend
 // and client.
-func loadWebBuildManifest() (m *WebBuildManifest, err error) {
+func loadWebBuildManifest(rootDir string) (m *WebBuildManifest, err error) {
 	if MockLoadWebBuildManifest != nil {
 		return MockLoadWebBuildManifest()
 	}
 
-	manifestContent, err := os.ReadFile(filepath.Join(assetsDir, "web.manifest.json"))
+	manifestContent, err := os.ReadFile(filepath.Join(rootDir, "web.manifest.json"))
 	if err != nil {
 		return nil, errors.Wrap(err, "loading web build manifest file from disk")
 	}

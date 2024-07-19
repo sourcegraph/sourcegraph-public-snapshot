@@ -4,8 +4,7 @@ package main
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
-
-	_ "github.com/sourcegraph/sourcegraph/client/web/dist" // use assets
+	_ "github.com/sourcegraph/sourcegraph/ui/assets/dist"
 )
 
 func main() {
