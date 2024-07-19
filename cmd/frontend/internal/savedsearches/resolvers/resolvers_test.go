@@ -597,10 +597,7 @@ func TestSavedSearchPermissions(t *testing.T) {
 					t.Fatalf("got couldView %v (error %v), want %v", couldView, err, tt.viewerCanView)
 				}
 				if result != nil {
-					gotCanAdminister, err := result.ViewerCanAdminister(ctx)
-					if err != nil {
-						t.Fatal(err)
-					}
+					gotCanAdminister := result.ViewerCanAdminister(ctx)
 					if gotCanAdminister != tt.viewerCanAdminister {
 						t.Errorf("got %v, want %v", gotCanAdminister, tt.viewerCanAdminister)
 					}

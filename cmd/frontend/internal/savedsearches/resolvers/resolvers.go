@@ -158,12 +158,12 @@ func (r *savedSearchResolver) URL() string {
 	return "/saved-searches/" + string(r.ID())
 }
 
-func (r *savedSearchResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+func (r *savedSearchResolver) ViewerCanAdminister(ctx context.Context) bool {
 	// 🚨 SECURITY: If the visibility is public, then the user can see it, but they can only
 	// administer it if they are authorized for the namespace (as an org member or their own user
 	// account).
 	err := graphqlbackend.CheckAuthorizedForNamespaceByIDs(ctx, r.db, r.s.Owner)
-	return err == nil, nil
+	return err == nil
 }
 
 func (r *Resolver) toSavedSearchResolver(entry types.SavedSearch) *savedSearchResolver {
