@@ -107,7 +107,7 @@ func createOrUpdateObject[R client.Object](
 		return err
 	}
 
-	if !isControlledBy(owner, existingRes) && !isNamespaced(obj) {
+	if !isControlledBy(owner, existingRes) && !isNamespaced(obj) && !config.ShouldAdopt(obj) {
 		logger.Info("refusing to update non-owned resource")
 		return nil
 	}
