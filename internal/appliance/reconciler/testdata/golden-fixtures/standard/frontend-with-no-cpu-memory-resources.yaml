@@ -3,7 +3,7 @@ resources:
     kind: Deployment
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: e9e0837cc01eaabff90d9772835de8fbf79f814f32b58b2bac75ef8bfbc1d93d
+        appliance.sourcegraph.com/configHash: ee9f46b5b3822109e7eb4903d5cacba5f88db2d2c3481fdc93114346e92279c3
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
@@ -38,7 +38,8 @@ resources:
       template:
         metadata:
           annotations:
-            checksum/auth: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+            checksum/auth: 64bb092df26e6c62383322ffa1cedee5083dbd8bfeba3e4a2f29492c1d8abfa4
+            checksum/redis: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
             kubectl.kubernetes.io/default-container: sourcegraph-frontend
           creationTimestamp: null
           labels:

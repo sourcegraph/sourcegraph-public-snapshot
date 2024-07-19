@@ -128,6 +128,7 @@ resources:
         metadata:
           annotations:
             checksum/auth: 64bb092df26e6c62383322ffa1cedee5083dbd8bfeba3e4a2f29492c1d8abfa4
+            checksum/redis: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
             kubectl.kubernetes.io/default-container: sourcegraph-frontend
           creationTimestamp: null
           labels:

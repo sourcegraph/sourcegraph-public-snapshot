@@ -31,12 +31,19 @@ const (
 	pgsqlSecretName          = "pgsql-auth"
 	codeInsightsDBSecretName = "codeinsights-db-auth"
 	codeIntelDBSecretName    = "codeintel-db-auth"
+	redisCacheSecretName     = "redis-cache"
+	redisStoreSecretName     = "redis-store"
 )
 
 type DBConnSpecs struct {
 	PG           *config.DatabaseConnectionSpec `json:"pg,omitempty"`
 	CodeIntel    *config.DatabaseConnectionSpec `json:"codeintel,omitempty"`
 	CodeInsights *config.DatabaseConnectionSpec `json:"codeinsights,omitempty"`
+}
+
+type RedisConnSpecs struct {
+	Cache string `json:"cache,omitempty"`
+	Store string `json:"store,omitempty"`
 }
 
 func (r *Reconciler) reconcileFrontend(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
@@ -122,6 +129,8 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 		{Name: "home-dir", MountPath: "/home/sourcegraph"},
 	}
 
+	template := pod.NewPodTemplate("sourcegraph-frontend", cfg)
+
 	dbConnSpec, err := r.getDBSecret(ctx, sg, pgsqlSecretName)
 	if err != nil {
 		return err
@@ -139,17 +148,33 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 		CodeIntel:    codeIntelConnSpec,
 		CodeInsights: codeInsightsConnSpec,
 	}
-
-	template := pod.NewPodTemplate("sourcegraph-frontend", cfg)
-	template.Template.Spec.Containers = []corev1.Container{ctr}
-	template.Template.Spec.Volumes = []corev1.Volume{pod.NewVolumeEmptyDir("home-dir")}
-	template.Template.Spec.ServiceAccountName = "sourcegraph-frontend"
-
 	dbConnHash, err := configHash(dbConnSpecs)
 	if err != nil {
 		return err
 	}
 	template.Template.ObjectMeta.Annotations["checksum/auth"] = dbConnHash
+
+	redisCacheEndpoint, err := r.getRedisSecret(ctx, sg, "redis-cache")
+	if err != nil {
+		return err
+	}
+	redisStoreEndpoint, err := r.getRedisSecret(ctx, sg, "redis-store")
+	if err != nil {
+		return err
+	}
+	redisConnSpecs := RedisConnSpecs{
+		Cache: redisCacheEndpoint,
+		Store: redisStoreEndpoint,
+	}
+	redisConnHash, err := configHash(redisConnSpecs)
+	if err != nil {
+		return err
+	}
+	template.Template.ObjectMeta.Annotations["checksum/redis"] = redisConnHash
+
+	template.Template.Spec.Containers = []corev1.Container{ctr}
+	template.Template.Spec.Volumes = []corev1.Volume{pod.NewVolumeEmptyDir("home-dir")}
+	template.Template.Spec.ServiceAccountName = "sourcegraph-frontend"
 
 	if cfg.Migrator {
 		migratorImage := config.GetDefaultImage(sg, "migrator")
@@ -183,9 +208,11 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 	ifChanged := struct {
 		config.FrontendSpec
 		DBConnSpecs
+		RedisConnSpecs
 	}{
-		FrontendSpec: cfg,
-		DBConnSpecs:  dbConnSpecs,
+		FrontendSpec:   cfg,
+		DBConnSpecs:    dbConnSpecs,
+		RedisConnSpecs: redisConnSpecs,
 	}
 
 	return reconcileObject(ctx, r, ifChanged, &dep, &appsv1.Deployment{}, sg, owner)
@@ -206,8 +233,14 @@ func (r *Reconciler) getDBSecret(ctx context.Context, sg *config.Sourcegraph, se
 	}, nil
 }
 
-// func (r *Reconciler) getRedisSecret(ctx context.Context, sg *config.Sourcegraph, secretName string) (string, error) {
-// }
+func (r *Reconciler) getRedisSecret(ctx context.Context, sg *config.Sourcegraph, secretName string) (string, error) {
+	redisSecret, err := r.getSecret(ctx, sg, secretName)
+	if err != nil {
+		return "", err
+	}
+
+	return string(redisSecret.Data["endpoint"]), nil
+}
 
 func (r *Reconciler) getSecret(ctx context.Context, sg *config.Sourcegraph, secretName string) (*corev1.Secret, error) {
 	var secret corev1.Secret
