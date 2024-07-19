@@ -1,9 +1,9 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "uploadstore",
+    name = "searchkv",
     srcs = ["store.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/search/exhaustive/uploadstore",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/exhaustive/searchkv",
     tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [

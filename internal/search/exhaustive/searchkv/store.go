@@ -1,4 +1,6 @@
-package uploadstore
+// Package searchkv is a tiny wrapper around the internal/kv package,
+// adding some conveniences for search-related code.
+package searchkv
 
 import (
 	"context"
@@ -59,10 +61,7 @@ func (c *Config) Load() {
 
 var ConfigInst = &Config{}
 
-// Store type alias avoids ugly import statements at call sites.
-type Store kv.Store
-
-func New(ctx context.Context, observationCtx *observation.Context, conf *Config) (Store, error) {
+func New(ctx context.Context, observationCtx *observation.Context, conf *Config) (kv.Store, error) {
 	c := kv.Config{
 		Backend:      conf.Backend,
 		ManageBucket: conf.ManageBucket,

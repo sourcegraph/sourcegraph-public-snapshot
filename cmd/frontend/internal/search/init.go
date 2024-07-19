@@ -14,13 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/searchkv"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
-	uploadstore "github.com/sourcegraph/sourcegraph/internal/search/exhaustive/uploadstore"
 )
 
 func LoadConfig() {
-	uploadstore.ConfigInst.Load()
+	searchkv.ConfigInst.Load()
 }
 
 // Init initializes the given enterpriseServices to include the required resolvers for search.
@@ -38,7 +38,7 @@ func Init(
 	logger := observationCtx.Logger
 	store := store.New(db, observationCtx)
 
-	uploadStore, err := uploadstore.New(ctx, observationCtx, uploadstore.ConfigInst)
+	uploadStore, err := searchkv.New(ctx, observationCtx, searchkv.ConfigInst)
 	if err != nil {
 		return err
 	}

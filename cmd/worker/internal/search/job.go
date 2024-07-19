@@ -13,12 +13,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/kv"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/searchkv"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/uploadstore"
 )
 
 // config stores shared config we can override in each worker. We don't expose
@@ -56,7 +57,7 @@ func (j *searchJob) Description() string {
 }
 
 func (j *searchJob) Config() []env.Config {
-	return []env.Config{uploadstore.ConfigInst}
+	return []env.Config{searchkv.ConfigInst}
 }
 
 func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
@@ -65,7 +66,7 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 	}
 	workCtx := actor.WithInternalActor(context.Background())
 
-	uploadStore, err := uploadstore.New(workCtx, observationCtx, uploadstore.ConfigInst)
+	uploadStore, err := searchkv.New(workCtx, observationCtx, searchkv.ConfigInst)
 	if err != nil {
 		j.err = err
 		return nil, err
@@ -82,7 +83,7 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 func (j *searchJob) newSearchJobRoutines(
 	workCtx context.Context,
 	observationCtx *observation.Context,
-	uploadStore uploadstore.Store,
+	uploadStore kv.Store,
 	newSearcherFactory func(*observation.Context, database.DB) service.NewSearcher,
 ) ([]goroutine.BackgroundRoutine, error) {
 	j.once.Do(func() {
