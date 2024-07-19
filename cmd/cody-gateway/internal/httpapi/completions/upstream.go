@@ -118,8 +118,7 @@ type UpstreamRequest interface {
 
 // maxRequestDuration is the maximum amount of time a request can take before
 // being cancelled as DeadlineExceeded.
-// Value comes from the Cody Gateway infra setup (https://github.com/sourcegraph/infrastructure/blob/a697a5c2f3f01fc0886f4c6b6efec2ae5f40f1cb/cody-gateway/modules/cloudrun/cloudrun.tf#L50-L67).
-const maxRequestDuration = 5 * time.Minute
+const maxRequestDuration = 1 * time.Minute
 
 type UpstreamHandlerConfig struct {
 	// defaultRetryAfterSeconds sets the retry-after policy on upstream rate
