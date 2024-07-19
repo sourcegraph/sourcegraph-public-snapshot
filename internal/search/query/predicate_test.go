@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -195,7 +196,7 @@ func TestRepoHasTopicPredicate(t *testing.T) {
 	})
 }
 
-func TestRepoHasKVPMetaPredicate(t *testing.T) {
+func TestRepoHasMetaPredicate(t *testing.T) {
 	t.Run("Unmarshal", func(t *testing.T) {
 		type test struct {
 			name     string
@@ -204,13 +205,13 @@ func TestRepoHasKVPMetaPredicate(t *testing.T) {
 		}
 
 		valid := []test{
-			{`key:value`, `key:value`, &RepoHasMetaPredicate{Key: "key", Value: pointers.Ptr("value"), Negated: false, KeyOnly: false}},
-			{`double quoted special characters`, `"key:colon":"value:colon"`, &RepoHasMetaPredicate{Key: "key:colon", Value: pointers.Ptr("value:colon"), Negated: false, KeyOnly: false}},
-			{`single quoted special characters`, `'  key:':'value : '`, &RepoHasMetaPredicate{Key: `  key:`, Value: pointers.Ptr(`value : `), Negated: false, KeyOnly: false}},
-			{`escaped quotes`, `"key\"quote":"value\"quote"`, &RepoHasMetaPredicate{Key: `key"quote`, Value: pointers.Ptr(`value"quote`), Negated: false, KeyOnly: false}},
-			{`space padding`, `  key:value  `, &RepoHasMetaPredicate{Key: `key`, Value: pointers.Ptr(`value`), Negated: false, KeyOnly: false}},
-			{`only key`, `key`, &RepoHasMetaPredicate{Key: `key`, Value: nil, Negated: false, KeyOnly: true}},
-			{`key tag`, `key:`, &RepoHasMetaPredicate{Key: "key", Value: nil, Negated: false, KeyOnly: false}},
+			{`key:value`, `key:value`, &RepoHasMetaPredicate{Key: "^key$", Value: pointers.Ptr(types.RegexpPattern("^value$")), Negated: false, KeyOnly: false}},
+			{`double quoted special characters`, `"key:colon":"value:colon"`, &RepoHasMetaPredicate{Key: "^key:colon$", Value: pointers.Ptr(types.RegexpPattern("^value:colon$")), Negated: false, KeyOnly: false}},
+			{`single quoted special characters`, `'  key:':'value : '`, &RepoHasMetaPredicate{Key: `^  key:$`, Value: pointers.Ptr(types.RegexpPattern(`^value : $`)), Negated: false, KeyOnly: false}},
+			{`escaped quotes`, `"key\"quote":"value\"quote"`, &RepoHasMetaPredicate{Key: `^key"quote$`, Value: pointers.Ptr(types.RegexpPattern(`^value"quote$`)), Negated: false, KeyOnly: false}},
+			{`space padding`, `  key:value  `, &RepoHasMetaPredicate{Key: `^key$`, Value: pointers.Ptr(types.RegexpPattern(`^value$`)), Negated: false, KeyOnly: false}},
+			{`only key`, `key`, &RepoHasMetaPredicate{Key: `^key$`, Value: nil, Negated: false, KeyOnly: true}},
+			{`key tag`, `key:`, &RepoHasMetaPredicate{Key: "^key$", Value: nil, Negated: false, KeyOnly: false}},
 		}
 
 		for _, tc := range valid {
