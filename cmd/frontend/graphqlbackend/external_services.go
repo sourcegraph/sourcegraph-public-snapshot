@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -334,7 +335,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 	if args.Async {
 		// run deletion in the background and return right away
 		go func() {
-			if err := r.db.ExternalServices().Delete(context.Background(), id); err != nil {
+			if err := r.db.ExternalServices().Delete(tenant.Background(ctx), id); err != nil {
 				r.logger.Error("Background external service deletion failed", log.Error(err))
 			}
 		}()

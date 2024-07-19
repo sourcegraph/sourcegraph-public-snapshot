@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -79,7 +80,7 @@ func checkAnomalies(logger log.Logger, db database.DB, clock glock.Clock, client
 		return
 	}
 
-	ctx := context.Background()
+	ctx := tenant.InsecureGlobalContext(context.Background())
 
 	allSubs, err := dbSubscriptions{db: db}.List(ctx, dbSubscriptionsListOptions{
 		IncludeArchived: false,
