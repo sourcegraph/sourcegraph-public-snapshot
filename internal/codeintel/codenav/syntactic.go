@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	genslices "github.com/life4/genesis/slices"
+	conciter "github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
@@ -380,19 +381,21 @@ func syntacticUsagesImpl(
 		}
 	}
 
-	results := [][]SyntacticMatch{}
-
+	tasks := make([]orderedmap.Pair[core.RepoRelPath, candidateFile], 0, candidateMatches.Len())
 	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
-		// We're assuming the upload we found earlier contains the relevant SCIP document
+		tasks = append(tasks, *pair)
+	}
+	results := conciter.Map(tasks, func(pair *orderedmap.Pair[core.RepoRelPath, candidateFile]) []SyntacticMatch {
+		// We're assuming the index we found earlier contains the relevant SCIP document
 		// see NOTE(id: single-syntactic-upload)
-		syntacticMatches, _, err := findSyntacticMatchesForCandidateFile(ctx, trace, mappedIndex, pair.Key, pair.Value)
+		syntacticMatches, _, err := findSyntacticMatchesForCandidateFile(ctx, trace, mappedIndex, (*pair).Key, (*pair).Value)
 		if err != nil {
 			// TODO: Errors that are not "no index found in the DB" should be reported
 			// TODO: Track metrics about how often this happens (GRAPH-693)
-			continue
+			return []SyntacticMatch{}
 		}
-		results = append(results, syntacticMatches)
-	}
+		return syntacticMatches
+	})
 	return SyntacticUsagesResult{Matches: slices.Concat(results...)}, PreviousSyntacticSearch{
 		MappedIndex: mappedIndex,
 		SymbolName:  symbolName,
@@ -425,14 +428,16 @@ func searchBasedUsagesImpl(
 	if err != nil {
 		trace.Warn("Failed to run symbol search, will not mark any search-based usages as definitions", log.Error(err))
 	}
-
-	results := [][]SearchBasedMatch{}
+	tasks := make([]orderedmap.Pair[core.RepoRelPath, candidateFile], 0, candidateMatches.Len())
 	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
+		tasks = append(tasks, *pair)
+	}
+
+	results := conciter.Map(tasks, func(pair *orderedmap.Pair[core.RepoRelPath, candidateFile]) []SearchBasedMatch {
 		if index, ok := syntacticIndex.Get(); ok {
 			_, searchBasedMatches, err := findSyntacticMatchesForCandidateFile(ctx, trace, index, pair.Key, pair.Value)
 			if err == nil {
-				results = append(results, searchBasedMatches)
-				continue
+				return searchBasedMatches
 			} else {
 				trace.Info("findSyntacticMatches failed, skipping filtering search-based results", log.Error(err))
 			}
@@ -445,7 +450,7 @@ func searchBasedUsagesImpl(
 				IsDefinition: candidateSymbols.Contains(pair.Key, rg),
 			})
 		}
-		results = append(results, matches)
-	}
+		return matches
+	})
 	return slices.Concat(results...), nil
 }
