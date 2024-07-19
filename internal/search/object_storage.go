@@ -1,6 +1,4 @@
-// Package searchkv is a tiny wrapper around the internal/kv package,
-// adding some conveniences for search-related code.
-package searchkv
+package search
 
 import (
 	"context"
@@ -13,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type Config struct {
+type ObjectStorageConfig struct {
 	env.BaseConfig
 
 	Backend      string
@@ -32,7 +30,7 @@ type Config struct {
 	GCSCredentialsFileContents string
 }
 
-func (c *Config) Load() {
+func (c *ObjectStorageConfig) Load() {
 	c.Backend = strings.ToLower(c.Get("SEARCH_JOBS_UPLOAD_BACKEND", "blobstore", "The target file service for search jobs. S3, GCS, and Blobstore are supported."))
 	c.ManageBucket = c.GetBool("SEARCH_JOBS_UPLOAD_MANAGE_BUCKET", "false", "Whether or not the client should manage the target bucket configuration.")
 	c.Bucket = c.Get("SEARCH_JOBS_UPLOAD_BUCKET", "search-jobs", "The name of the bucket to store search job results in.")
@@ -59,9 +57,9 @@ func (c *Config) Load() {
 	}
 }
 
-var ConfigInst = &Config{}
+var ConfigInst = &ObjectStorageConfig{}
 
-func New(ctx context.Context, observationCtx *observation.Context, conf *Config) (kv.Store, error) {
+func NewObjectStorage(ctx context.Context, observationCtx *observation.Context, conf *ObjectStorageConfig) (kv.Store, error) {
 	c := kv.Config{
 		Backend:      conf.Backend,
 		ManageBucket: conf.ManageBucket,

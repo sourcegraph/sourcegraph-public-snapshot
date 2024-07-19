@@ -66,7 +66,7 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 	}
 	workCtx := actor.WithInternalActor(context.Background())
 
-	uploadStore, err := searchkv.New(workCtx, observationCtx, searchkv.ConfigInst)
+	uploadStore, err := searchkv.NewObjectStorage(workCtx, observationCtx, searchkv.ConfigInst)
 	if err != nil {
 		j.err = err
 		return nil, err

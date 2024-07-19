@@ -38,7 +38,7 @@ func Init(
 	logger := observationCtx.Logger
 	store := store.New(db, observationCtx)
 
-	uploadStore, err := searchkv.New(ctx, observationCtx, searchkv.ConfigInst)
+	uploadStore, err := searchkv.NewObjectStorage(ctx, observationCtx, searchkv.ConfigInst)
 	if err != nil {
 		return err
 	}

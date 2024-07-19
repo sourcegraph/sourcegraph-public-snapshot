@@ -32,7 +32,6 @@ go_library(
         "//internal/search",
         "//internal/search/client",
         "//internal/search/exhaustive",
-        "//internal/search/exhaustive/searchkv",
         "//internal/search/exhaustive/service",
         "//internal/search/exhaustive/store",
         "//internal/search/query",
