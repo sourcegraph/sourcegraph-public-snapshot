@@ -487,9 +487,6 @@ importers:
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
-      webext-domain-permission-toggle:
-        specifier: ^1.0.1
-        version: 1.0.1
       webextension-polyfill:
         specifier: ^0.6.0
         version: 0.6.0
@@ -6037,7 +6034,7 @@ packages:
     dependencies:
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 20.11.19
+      '@types/node': 20.8.0
       jest-mock: 29.7.0
     dev: false
 
@@ -6047,7 +6044,7 @@ packages:
     dependencies:
       '@jest/types': 29.6.3
       '@sinonjs/fake-timers': 10.3.0
-      '@types/node': 20.11.19
+      '@types/node': 20.8.0
       jest-message-util: 29.7.0
       jest-mock: 29.7.0
       jest-util: 29.7.0
@@ -6086,7 +6083,7 @@ packages:
     dependencies:
       '@types/istanbul-lib-coverage': 2.0.6
       '@types/istanbul-reports': 3.0.4
-      '@types/node': 20.11.19
+      '@types/node': 20.8.0
       '@types/yargs': 15.0.19
       chalk: 4.1.2
     dev: false
@@ -6109,7 +6106,7 @@ packages:
       '@jest/schemas': 29.6.3
       '@types/istanbul-lib-coverage': 2.0.6
       '@types/istanbul-reports': 3.0.4
-      '@types/node': 20.11.19
+      '@types/node': 20.8.0
       '@types/yargs': 17.0.23
       chalk: 4.1.2
 
@@ -10337,7 +10334,7 @@ packages:
       '@storybook/preview-api': 7.6.17
       '@storybook/theming': 7.6.17(react-dom@18.1.0)(react@18.1.0)
       '@storybook/types': 7.6.17
-      '@types/lodash': 4.17.0
+      '@types/lodash': 4.14.167
       color-convert: 2.0.1
       dequal: 2.0.3
       lodash: 4.17.21
@@ -11976,13 +11973,6 @@ packages:
       '@types/responselike': 1.0.0
     dev: false
 
-  /@types/chrome@0.0.106:
-    resolution: {integrity: sha512-sCQa+QJL/Kl+6ngU4xD1VjTFIkQDizOHN94zbb7byK9D3U79x/KXjqXyS7lHoa2q9xw3bWePb+giLhBKOILRuA==}
-    dependencies:
-      '@types/filesystem': 0.0.29
-      '@types/har-format': 1.2.4
-    dev: false
-
   /@types/chrome@0.0.127:
     resolution: {integrity: sha512-hBB9EApLYKKn2GvklVkTxVP6vZvxsH9okyIRUinNtMzZHIgIKWQk/ESbX+O5g4Bihfy38+aFGn7Kl7Cxou5JUg==}
     dependencies:
@@ -12184,9 +12174,11 @@ packages:
     resolution: {integrity: sha512-85/1KfRedmfPGsbK8YzeaQUyV1FQAvMPMTuWFQ5EkLd2w7szhNO96bk3Rh/SKmOfd9co2rCLf0Voy4o7ECBOvw==}
     dependencies:
       '@types/filewriter': 0.0.28
+    dev: true
 
   /@types/filewriter@0.0.28:
     resolution: {integrity: sha512-AR2KUJIMdSfl/SaAHpRotBAlaJpmhgHwehEeSJQOG0hS3IrjDU16xUEEUTdqcvdLa1q16ZK5MMrtOagfLvm0gw==}
+    dev: true
 
   /@types/find-cache-dir@3.2.1:
     resolution: {integrity: sha512-frsJrz2t/CeGifcu/6uRo4b+SzAwT4NYCVPu1GN8IB9XTzrpPkGuV0tmh9mN+/L0PklAlsC3u5Fxt0ju00LXIw==}
@@ -12214,11 +12206,12 @@ packages:
   /@types/graceful-fs@4.1.5:
     resolution: {integrity: sha512-anKkLmZZ+xm4p8JWBf4hElkM4XR+EZeA2M9BAkkTldmcyDY4mbdIJnRghDJH3Ov5ooY7/UAoENtmdMSkaAd7Cw==}
     dependencies:
-      '@types/node': 20.11.19
+      '@types/node': 20.8.0
     dev: true
 
   /@types/har-format@1.2.4:
     resolution: {integrity: sha512-iUxzm1meBm3stxUMzRqgOVHjj4Kgpgu5w9fm4X7kPRfSgVRzythsucEN7/jtOo8SQzm+HfcxWWzJS0mJDH/3DQ==}
+    dev: true
 
   /@types/hast@2.3.1:
     resolution: {integrity: sha512-viwwrB+6xGzw+G1eWpF9geV3fnsDgXqHG+cqgiHrvQfDUW5hzhCyV7Sy3UJxhfRFBsgky2SSW33qi/YrIkjX5Q==}
@@ -15002,7 +14995,7 @@ packages:
     engines: {node: '>=12.13.0'}
     hasBin: true
     dependencies:
-      '@types/node': 20.11.19
+      '@types/node': 20.8.0
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -15037,7 +15030,7 @@ packages:
   /chromium-edge-launcher@1.0.0:
     resolution: {integrity: sha512-pgtgjNKZ7i5U++1g1PWv75umkHvhVTDOQIZ+sjeUX9483S7Y6MUvO0lrd7ShGlQlFHMN4SwKTCq/X8hWrbv2KA==}
     dependencies:
-      '@types/node': 20.11.19
+      '@types/node': 20.8.0
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -20183,7 +20176,7 @@ packages:
       '@jest/environment': 29.7.0
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 20.11.19
+      '@types/node': 20.8.0
       jest-mock: 29.7.0
       jest-util: 29.7.0
     dev: false
@@ -20204,7 +20197,7 @@ packages:
     dependencies:
       '@jest/types': 29.6.3
       '@types/graceful-fs': 4.1.5
-      '@types/node': 20.11.19
+      '@types/node': 20.8.0
       anymatch: 3.1.3
       fb-watchman: 2.0.2
       graceful-fs: 4.2.11
@@ -20262,7 +20255,7 @@ packages:
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 20.11.19
+      '@types/node': 20.8.0
       jest-util: 29.7.0
     dev: false
 
@@ -20276,7 +20269,7 @@ packages:
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 20.11.19
+      '@types/node': 20.8.0
       chalk: 4.1.2
       ci-info: 3.9.0
       graceful-fs: 4.2.11
@@ -20307,7 +20300,7 @@ packages:
     resolution: {integrity: sha512-eIz2msL/EzL9UFTFFx7jBTkeZfku0yUAyZZZmJ93H2TYEiroIx2PQjEXcwYtYl8zXCxb+PAmA2hLIt/6ZEkPHw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
-      '@types/node': 20.11.19
+      '@types/node': 20.8.0
       jest-util: 29.7.0
       merge-stream: 2.0.0
       supports-color: 8.1.1
@@ -28238,18 +28231,6 @@ packages:
       pvtsutils: 1.3.2
       tslib: 2.1.0
     dev: true
-
-  /webext-additional-permissions@1.0.0:
-    resolution: {integrity: sha512-QHMAah++muVoK/d+aYM56BY2DdpMAFMvW/dG28/+SdYJxgUsShsm3fOuwCPIiAIgsC8lsM52hZNJ1ROeii1lKg==}
-    dependencies:
-      '@types/chrome': 0.0.106
-    dev: false
-
-  /webext-domain-permission-toggle@1.0.1:
-    resolution: {integrity: sha512-vP3Io5KB+9YSlexDpSykcPKyu/U9pH07YGRIN1snwl92mvHy0aQlOmwYhAdfxLf4KKT7E1te1Bo0+ZvZJYFK2g==}
-    dependencies:
-      webext-additional-permissions: 1.0.0
-    dev: false
 
   /webextension-polyfill@0.6.0:
     resolution: {integrity: sha512-PlYwiX8e4bNZrEeBFxbFFsLtm0SMPxJliLTGdNCA0Bq2XkWrAn2ejUd+89vZm+8BnfFB1BclJyCz3iKsm2atNg==}

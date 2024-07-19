@@ -18,7 +18,6 @@ import {
     catchError,
     distinctUntilChanged,
 } from 'rxjs/operators'
-import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 
 import { isDefined, fetchCache } from '@sourcegraph/common'
 import { type GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
@@ -292,9 +291,6 @@ async function main(): Promise<void> {
     // The `popup=true` param is used by the options page to determine if it's
     // loaded in the popup or in th standalone options page.
     browser.browserAction.setPopup({ popup: 'options.html?popup=true' })
-
-    // Add "Enable Sourcegraph on this domain" context menu item
-    addDomainPermissionToggle()
 
     const ENDPOINT_KIND_REGEX = /^(proxy|expose)-/
 

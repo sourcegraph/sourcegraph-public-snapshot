@@ -162,7 +162,10 @@ declare namespace browser.browserAction {
     function openPopup(): Promise<void>
     function setBadgeText(details: { text: string | null; tabId?: number }): void
     function getBadgeText(details: { tabId?: number }): Promise<string>
-    function setBadgeBackgroundColor(details: { color: string | ColorArray | null; tabId?: number }): void
+    function setBadgeBackgroundColor(details: {
+        color: string | ColorArray | null
+        tabId?: number
+    }): void
     function getBadgeBackgroundColor(details: { tabId?: number }): Promise<ColorArray>
 
     interface SetBadgeTextColorDetails {
@@ -176,12 +179,10 @@ declare namespace browser.browserAction {
     }
     function setBadgeTextColor(details: SetBadgeTextColorDetails & { tabId?: number }): void
     // a union type would allow specifying both, which is not allowed.
-    // eslint-disable-next-line @typescript-eslint/unified-signatures
     function setBadgeTextColor(details: SetBadgeTextColorDetails & { windowId?: number }): void
 
     function getBadgeTextColor(details: { tabId?: string }): Promise<ColorArray>
     // a union type would allow specifying both, which is not allowed.
-    // eslint-disable-next-line @typescript-eslint/unified-signatures
     function getBadgeTextColor(details: { windowId?: string }): Promise<ColorArray>
 
     function enable(tabId?: number): void
@@ -342,7 +343,11 @@ declare namespace browser.contextualIdentities {
         name: string
     }
 
-    function create(details: { name: string; color: IdentityColor; icon: IdentityIcon }): Promise<ContextualIdentity>
+    function create(details: {
+        name: string
+        color: IdentityColor
+        icon: IdentityIcon
+    }): Promise<ContextualIdentity>
     function get(cookieStoreId: string): Promise<ContextualIdentity | null>
     function query(details: { name?: string }): Promise<ContextualIdentity[]>
     function update(
@@ -424,13 +429,19 @@ declare namespace browser.contentScripts {
         unregister: () => void
     }
 
-    function register(contentScriptOptions: RegisteredContentScriptOptions): Promise<RegisteredContentScript>
+    function register(
+        contentScriptOptions: RegisteredContentScriptOptions
+    ): Promise<RegisteredContentScript>
 }
 
 declare namespace browser.devtools.inspectedWindow {
     const tabId: number
 
-    function reload(reloadOptions?: { ignoreCache?: boolean; userAgent?: string; injectedScript?: string }): void
+    function reload(reloadOptions?: {
+        ignoreCache?: boolean
+        userAgent?: string
+        injectedScript?: string
+    }): void
 }
 
 declare namespace browser.devtools.network {
@@ -690,7 +701,10 @@ declare namespace browser.history {
 
     function deleteUrl(details: { url: string }): Promise<void>
 
-    function deleteRange(range: { startTime: number | string | Date; endTime: number | string | Date }): Promise<void>
+    function deleteRange(range: {
+        startTime: number | string | Date
+        endTime: number | string | Date
+    }): Promise<void>
 
     function deleteAll(): Promise<void>
 
@@ -787,8 +801,12 @@ declare namespace browser.omnibox {
     function setDefaultSuggestion(suggestion: { description: string }): void
 
     const onInputStarted: EventEmitter<void>
-    const onInputChanged: CallbackEventEmitter<(text: string, suggest: (arg: SuggestResult[]) => void) => void>
-    const onInputEntered: CallbackEventEmitter<(text: string, disposition: OnInputEnteredDisposition) => void>
+    const onInputChanged: CallbackEventEmitter<
+        (text: string, suggest: (arg: SuggestResult[]) => void) => void
+    >
+    const onInputEntered: CallbackEventEmitter<
+        (text: string, disposition: OnInputEnteredDisposition) => void
+    >
     const onInputCancelled: EventEmitter<void>
 }
 
@@ -803,7 +821,11 @@ declare namespace browser.pageAction {
 
     function getTitle(details: { tabId: number }): Promise<string>
 
-    function setIcon(details: { tabId: number; path?: string | object; imageData?: ImageDataType }): Promise<void>
+    function setIcon(details: {
+        tabId: number
+        path?: string | object
+        imageData?: ImageDataType
+    }): Promise<void>
 
     function setPopup(details: { tabId: number; popup: string }): void
 
@@ -1403,7 +1425,10 @@ declare namespace browser.tabs {
     function captureVisibleTab(windowId?: number, options?: extensionTypes.ImageDetails): Promise<string>
     function detectLanguage(tabId?: number): Promise<string>
     function duplicate(tabId: number): Promise<Tab>
-    function executeScript(tabId: number | undefined, details: extensionTypes.InjectDetails): Promise<object[]>
+    function executeScript(
+        tabId: number | undefined,
+        details: extensionTypes.InjectDetails
+    ): Promise<object[]>
     function get(tabId: number): Promise<Tab>
     // deprecated: function getAllInWindow(): x;
     function getCurrent(): Promise<Tab>
@@ -1415,7 +1440,10 @@ declare namespace browser.tabs {
     //     windowId?: number,
     //     tabs: number[]|number,
     // }): Promise<browser.windows.Window>;
-    function insertCSS(tabId: number | undefined, details: extensionTypes.InjectDetailsCSS): Promise<void>
+    function insertCSS(
+        tabId: number | undefined,
+        details: extensionTypes.InjectDetailsCSS
+    ): Promise<void>
     function removeCSS(tabId: number | undefined, details: extensionTypes.InjectDetails): Promise<void>
     function move(
         tabIds: number | number[],
@@ -1930,7 +1958,10 @@ declare namespace browser.windows {
 
     function getCurrent(getInfo?: { populate?: boolean; windowTypes?: WindowType[] }): Promise<Window>
 
-    function getLastFocused(getInfo?: { populate?: boolean; windowTypes?: WindowType[] }): Promise<Window>
+    function getLastFocused(getInfo?: {
+        populate?: boolean
+        windowTypes?: WindowType[]
+    }): Promise<Window>
 
     function getAll(getInfo?: { populate?: boolean; windowTypes?: WindowType[] }): Promise<Window[]>
 
