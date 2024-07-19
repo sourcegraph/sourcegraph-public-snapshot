@@ -1096,6 +1096,33 @@ func commitLogRequestToLogFields(req *proto.CommitLogRequest) []log.Field {
 	}
 }
 
+func (l *loggingGRPCServer) MergeBaseOctopus(ctx context.Context, request *proto.MergeBaseOctopusRequest) (response *proto.MergeBaseOctopusResponse, err error) {
+	start := time.Now()
+
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+			proto.GitserverService_MergeBaseOctopus_FullMethodName,
+			status.Code(err),
+			trace.Context(ctx).TraceID,
+			elapsed,
+
+			mergeBaseOctopusRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.MergeBaseOctopus(ctx, request)
+}
+
+func mergeBaseOctopusRequestToLogFields(req *proto.MergeBaseOctopusRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+		log.Strings("revspecs", byteSlicesToStrings(req.GetRevspecs())),
+	}
+}
+
 type loggingRepositoryServiceServer struct {
 	base   proto.GitserverRepositoryServiceServer
 	logger log.Logger

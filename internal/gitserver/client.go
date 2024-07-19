@@ -387,6 +387,9 @@ type Client interface {
 	// MergeBase returns the merge base commit sha for the specified revspecs.
 	MergeBase(ctx context.Context, repo api.RepoName, base, head string) (api.CommitID, error)
 
+	// MergeBaseOctopus returns the octopus merge base commit sha for the specified revspecs.
+	MergeBaseOctopus(ctx context.Context, repo api.RepoName, revspecs ...string) (api.CommitID, error)
+
 	RepoCloneProgress(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)
 
 	// ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is

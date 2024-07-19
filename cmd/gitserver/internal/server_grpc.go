@@ -687,6 +687,54 @@ func (gs *grpcServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 	}, nil
 }
 
+func (gs *grpcServer) MergeBaseOctopus(ctx context.Context, req *proto.MergeBaseOctopusRequest) (*proto.MergeBaseOctopusResponse, error) {
+	revspecs := byteSlicesToStrings(req.GetRevspecs())
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.Int("revspecs", len(revspecs)),
+	)
+
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	if len(revspecs) < 2 {
+		return nil, status.New(codes.InvalidArgument, "at least 2 revspecs must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.checkRepoExists(repoName); err != nil {
+		return nil, err
+	}
+
+	backend := gs.gitBackendSource(repoDir, repoName)
+
+	sha, err := backend.MergeBaseOctopus(ctx, revspecs...)
+	if err != nil {
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		return nil, err
+	}
+
+	return &proto.MergeBaseOctopusResponse{
+		MergeBaseCommitSha: string(sha),
+	}, nil
+}
+
 func (gs *grpcServer) GetCommit(ctx context.Context, req *proto.GetCommitRequest) (*proto.GetCommitResponse, error) {
 	accesslog.Record(
 		ctx,
