@@ -224,6 +224,7 @@ func (n *extendedConn) ExecContext(ctx context.Context, query string, args []dri
 	if !strings.HasPrefix(query, "ROLLBACK") {
 		t := tenant.FromContext(ctx)
 		if t.ID() != 0 {
+			// TODO: Use sqlf.Sprintf here.
 			_, err := n.execerContext.ExecContext(ctx, fmt.Sprintf("SET app.current_tenant = '%d'", t.ID()), nil)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to set tenant")
@@ -243,6 +244,7 @@ func (n *extendedConn) QueryContext(ctx context.Context, query string, args []dr
 	if !strings.HasPrefix(query, "ROLLBACK") {
 		t := tenant.FromContext(ctx)
 		if t.ID() != 0 {
+			// TODO: Use sqlf.Sprintf here.
 			_, err := n.queryerContext.QueryContext(ctx, fmt.Sprintf("SET app.current_tenant = '%d'", t.ID()), nil)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to set tenant")
