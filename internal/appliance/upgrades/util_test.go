@@ -134,8 +134,9 @@ func TestGetApplianceDSNs(t *testing.T) {
 				"PGPASSWORD": "sg",
 				"PGDATABASE": "sg",
 				"PGSSLMODE":  "disable",
+				"PGTZ":       "UTC",
 			},
-			expectedDSN: "postgres://sg:sg@pgsql:5432/sg?sslmode=disable",
+			expectedDSN: "postgres://sg:sg@pgsql:5432/sg?sslmode=disable&timezone=UTC",
 		},
 		{
 			name:   "default codeintel",
@@ -147,8 +148,9 @@ func TestGetApplianceDSNs(t *testing.T) {
 				"CODEINTEL_PGPASSWORD": "sg",
 				"CODEINTEL_PGDATABASE": "sg",
 				"CODEINTEL_PGSSLMODE":  "disable",
+				"CODEINTEL_PGTZ":       "UTC",
 			},
-			expectedDSN: "postgres://sg:sg@codeintel-db:5432/sg?sslmode=disable",
+			expectedDSN: "postgres://sg:sg@codeintel-db:5432/sg?sslmode=disable&timezone=UTC",
 		},
 		{
 			name:   "default codeinsights",
@@ -160,8 +162,9 @@ func TestGetApplianceDSNs(t *testing.T) {
 				"CODEINSIGHTS_PGPASSWORD": "password",
 				"CODEINSIGHTS_PGDATABASE": "postgres",
 				"CODEINSIGHTS_PGSSLMODE":  "disable",
+				"CODEINSIGHTS_PGTZ":       "UTC",
 			},
-			expectedDSN: "postgres://postgres:password@codeinsights-db:5432/postgres?sslmode=disable",
+			expectedDSN: "postgres://postgres:password@codeinsights-db:5432/postgres?sslmode=disable&timezone=UTC",
 		},
 		{
 			name:   "unusual dsn",
@@ -173,8 +176,9 @@ func TestGetApplianceDSNs(t *testing.T) {
 				"PGPASSWORD": "allhaildoom",
 				"PGDATABASE": "postgres",
 				"PGSSLMODE":  "disable",
+				"PGTZ":       "UTC",
 			},
-			expectedDSN: "postgres://doombot:allhaildoom@latveria:6969/postgres?sslmode=disable",
+			expectedDSN: "postgres://doombot:allhaildoom@latveria:6969/postgres?sslmode=disable&timezone=UTC",
 		},
 	}
 
