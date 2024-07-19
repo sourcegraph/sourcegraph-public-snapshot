@@ -27,7 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	kvmocks "github.com/sourcegraph/sourcegraph/internal/object/mocks"
+	objectmocks "github.com/sourcegraph/sourcegraph/internal/object/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
@@ -51,7 +51,7 @@ func TestHandle(t *testing.T) {
 	mockDBStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLSIFStore := NewMockLSIFStore()
-	mockUploadStore := kvmocks.NewMockStore()
+	mockUploadStore := objectmocks.NewMockStorage()
 	gitserverClient := gitserver.NewMockClient()
 
 	// Set default transaction behavior
@@ -300,7 +300,7 @@ func TestHandleError(t *testing.T) {
 	mockDBStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLSIFStore := NewMockLSIFStore()
-	mockUploadStore := kvmocks.NewMockStore()
+	mockUploadStore := objectmocks.NewMockStorage()
 	gitserverClient := gitserver.NewMockClient()
 
 	// Set default transaction behavior
@@ -365,7 +365,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
 	mockDBStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
-	mockUploadStore := kvmocks.NewMockStore()
+	mockUploadStore := objectmocks.NewMockStorage()
 	gitserverClient := gitserver.NewMockClient()
 
 	mockRepoStore.GetFunc.SetDefaultHook(func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
