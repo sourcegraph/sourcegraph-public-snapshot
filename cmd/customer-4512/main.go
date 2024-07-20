@@ -161,7 +161,6 @@ func (ps *Proxy) handleProxy(w http.ResponseWriter, req *http.Request) {
 
 	// Add accesstoken headers
 	proxyReq.Header.Set("Api-Key", bearerToken)
-	fmt.Println("the request is made plsease")
 	resp, err := ps.client.Do(proxyReq)
 	if err != nil {
 		http.Error(w, "Bad Gateway", http.StatusBadGateway)
