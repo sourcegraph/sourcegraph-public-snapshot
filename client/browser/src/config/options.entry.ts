@@ -1,1 +1,1 @@
-window.EXTENSION_ENV = 'OPTIONS'
+globalThis.EXTENSION_ENV = 'OPTIONS'

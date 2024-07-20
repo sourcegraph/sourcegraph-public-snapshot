@@ -33,7 +33,7 @@ export function esbuildBuildOptions(mode: 'dev' | 'prod', extraPlugins: esbuild.
             // Worker
             path.resolve(browserSourcePath, 'shared/extensionHostWorker.ts'),
         ],
-        format: 'esm',
+        format: 'cjs',
         platform: 'browser',
         plugins: [stylePlugin, ...extraPlugins],
         define: {

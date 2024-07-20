@@ -1,1 +1,1 @@
-window.SG_ENV = 'EXTENSION'
+globalThis.SG_ENV = 'EXTENSION'

@@ -281,7 +281,7 @@ async function main(): Promise<void> {
 
     // The `popup=true` param is used by the options page to determine if it's
     // loaded in the popup or in th standalone options page.
-    browser.action.setPopup({ popup: 'options.html?popup=true' })
+    ;(browser.action ?? browser.browserAction).setPopup({ popup: 'options.html?popup=true' })
 
     const ENDPOINT_KIND_REGEX = /^(proxy|expose)-/
 
@@ -363,8 +363,8 @@ function handleBrowserPortPair(
     const subscriptions = new Subscription()
 
     console.log('Extension host client connected')
-    const { worker, clientEndpoints } = createExtensionHostWorker(workerBundleURL)
-    subscriptions.add(() => worker.terminate())
+    const { terminate: terminateExtensionHost, clientEndpoints } = createExtensionHostWorker(workerBundleURL)
+    subscriptions.add(() => terminateExtensionHost())
 
     /** Forwards all messages between two endpoints (in one direction) */
     const forwardEndpoint = (from: Endpoint, to: Endpoint): void => {

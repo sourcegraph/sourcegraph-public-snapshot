@@ -13,7 +13,9 @@ export function observeSourcegraphURL(isExtension: boolean): Observable<string> 
             map(sourcegraphURL => sourcegraphURL || DEFAULT_SOURCEGRAPH_URL)
         )
     }
-    return of(window.SOURCEGRAPH_URL || window.localStorage.getItem('SOURCEGRAPH_URL') || DEFAULT_SOURCEGRAPH_URL)
+    return of(
+        globalThis.SOURCEGRAPH_URL || globalThis.localStorage.getItem('SOURCEGRAPH_URL') || DEFAULT_SOURCEGRAPH_URL
+    )
 }
 
 /**
@@ -27,7 +29,7 @@ export function observeSourcegraphURL(isExtension: boolean): Observable<string> 
  * Otherwise, the given `sourcegraphURL` will be used.
  */
 export function getAssetsURL(sourcegraphURL: string): string {
-    const assetsURL = window.SOURCEGRAPH_ASSETS_URL || new URL('/.assets/extension/', sourcegraphURL).href
+    const assetsURL = globalThis.SOURCEGRAPH_ASSETS_URL || new URL('/.assets/extension/', sourcegraphURL).href
     return assetsURL.endsWith('/') ? assetsURL : assetsURL + '/'
 }
 
@@ -38,11 +40,11 @@ export type PlatformName =
     | 'safari-extension'
 
 export function getPlatformName(): PlatformName {
-    if (window.SOURCEGRAPH_PHABRICATOR_EXTENSION) {
+    if (globalThis.SOURCEGRAPH_PHABRICATOR_EXTENSION) {
         return 'phabricator-integration'
     }
-    if (window.SOURCEGRAPH_INTEGRATION) {
-        return window.SOURCEGRAPH_INTEGRATION
+    if (globalThis.SOURCEGRAPH_INTEGRATION) {
+        return globalThis.SOURCEGRAPH_INTEGRATION
     }
     if (isSafari()) {
         return 'safari-extension'
@@ -51,13 +53,16 @@ export function getPlatformName(): PlatformName {
 }
 
 export function getTelemetryClientName(): string {
-    if (window.SOURCEGRAPH_PHABRICATOR_EXTENSION || window.SOURCEGRAPH_INTEGRATION === 'phabricator-integration') {
+    if (
+        globalThis.SOURCEGRAPH_PHABRICATOR_EXTENSION ||
+        globalThis.SOURCEGRAPH_INTEGRATION === 'phabricator-integration'
+    ) {
         return 'phabricator.integration'
     }
-    if (window.SOURCEGRAPH_INTEGRATION === 'bitbucket-integration') {
+    if (globalThis.SOURCEGRAPH_INTEGRATION === 'bitbucket-integration') {
         return 'bitbucket.integration'
     }
-    if (window.SOURCEGRAPH_INTEGRATION === 'gitlab-integration') {
+    if (globalThis.SOURCEGRAPH_INTEGRATION === 'gitlab-integration') {
         return 'gitlab.integration'
     }
     if (isSafari()) {
@@ -78,7 +83,7 @@ export function getExtensionVersion(): string {
 function isSafari(): boolean {
     // Chrome's user agent contains "Safari" as well as "Chrome", so for Safari
     // we must check that it does not include "Chrome"
-    return window.navigator.userAgent.includes('Safari') && !window.navigator.userAgent.includes('Chrome')
+    return globalThis.navigator.userAgent.includes('Safari') && !globalThis.navigator.userAgent.includes('Chrome')
 }
 
 export function isDefaultSourcegraphUrl(url?: string): boolean {

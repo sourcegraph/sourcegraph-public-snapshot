@@ -72,7 +72,7 @@ import {
 } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import type { PlatformContext, URLToFileContext } from '@sourcegraph/shared/src/platform/context'
-import { type TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import {
@@ -666,7 +666,7 @@ const isSafeToContinueCodeIntel = async ({
         if (isExtension) {
             // Notify to show extension alert-icon
             background.notifyRepoSyncError({ sourcegraphURL, hasRepoSyncError: true }).catch(error => {
-                console.error('Error notifying background page of private cloud.', error)
+                console.error('Error notifying background page of repository sync error.', error)
             })
         }
 
@@ -841,7 +841,7 @@ export async function handleCodeHost({
                     setRepoSyncError(hasRepoSyncError)
                     if (isExtension) {
                         background.notifyRepoSyncError({ sourcegraphURL, hasRepoSyncError }).catch(error => {
-                            console.error('Error notifying background page of private cloud error:', error)
+                            console.error('Error notifying background page of repository sync error:', error)
                         })
                     }
                 }

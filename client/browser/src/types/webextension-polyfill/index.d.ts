@@ -191,6 +191,11 @@ declare namespace browser.action {
     const onClicked: EventEmitter<tabs.Tab>
 }
 
+declare namespace browser.browserAction {
+    function setIcon(details: IconViaPath | IconViaImageData | IconReset): Promise<void>
+    function setPopup(details: { popup: string | null; tabId?: number }): void
+}
+
 declare namespace browser.browsingData {
     interface DataTypeSet {
         cache?: boolean

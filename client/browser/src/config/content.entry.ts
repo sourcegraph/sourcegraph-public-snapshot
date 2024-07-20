@@ -1,1 +1,1 @@
-window.EXTENSION_ENV = 'CONTENT'
+globalThis.EXTENSION_ENV = 'CONTENT'

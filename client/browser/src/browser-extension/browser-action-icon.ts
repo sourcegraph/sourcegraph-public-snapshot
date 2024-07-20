@@ -9,8 +9,10 @@ import { IsProductionVersion } from './util'
  * on the state of the browser extension.
  */
 
-/** State of the Sourcegraph browser extension, as represented by the browser
- * action icon. */
+/**
+ * State of the Sourcegraph browser extension, as represented by the browser
+ * action icon.
+ */
 export type BrowserActionIconState = 'active' | 'active-with-alert' | 'inactive'
 interface BrowserActionIconPaths {
     '32': string
@@ -21,36 +23,36 @@ interface BrowserActionIconPaths {
 const browserActionIconPaths: Record<BrowserActionIconState, BrowserActionIconPaths> = IsProductionVersion
     ? {
           active: {
-              '32': 'img/icon-32.png',
-              '48': 'img/icon-48.png',
-              '128': 'img/icon-128.png',
+              '32': '/img/icon-32.png',
+              '48': '/img/icon-48.png',
+              '128': '/img/icon-128.png',
           },
           'active-with-alert': {
-              '32': 'img/icon-active-with-alert-32.png',
-              '48': 'img/icon-active-with-alert-48.png',
-              '128': 'img/icon-active-with-alert-128.png',
+              '32': '/img/icon-active-with-alert-32.png',
+              '48': '/img/icon-active-with-alert-48.png',
+              '128': '/img/icon-active-with-alert-128.png',
           },
           inactive: {
-              '32': 'img/icon-inactive-32.png',
-              '48': 'img/icon-inactive-48.png',
-              '128': 'img/icon-inactive-128.png',
+              '32': '/img/icon-inactive-32.png',
+              '48': '/img/icon-inactive-48.png',
+              '128': '/img/icon-inactive-128.png',
           },
       }
     : {
           active: {
-              '32': 'img/dev/icon-32.png',
-              '48': 'img/dev/icon-48.png',
-              '128': 'img/dev/icon-128.png',
+              '32': '/img/dev/icon-32.png',
+              '48': '/img/dev/icon-48.png',
+              '128': '/img/dev/icon-128.png',
           },
           'active-with-alert': {
-              '32': 'img/dev/icon-active-with-alert-32.png',
-              '48': 'img/dev/icon-active-with-alert-48.png',
-              '128': 'img/dev/icon-active-with-alert-128.png',
+              '32': '/img/dev/icon-active-with-alert-32.png',
+              '48': '/img/dev/icon-active-with-alert-48.png',
+              '128': '/img/dev/icon-active-with-alert-128.png',
           },
           inactive: {
-              '32': 'img/dev/icon-inactive-32.png',
-              '48': 'img/dev/icon-inactive-48.png',
-              '128': 'img/dev/icon-inactive-128.png',
+              '32': '/img/dev/icon-inactive-32.png',
+              '48': '/img/dev/icon-inactive-48.png',
+              '128': '/img/dev/icon-inactive-128.png',
           },
       }
 
@@ -60,7 +62,7 @@ const browserActionIconPaths: Record<BrowserActionIconState, BrowserActionIconPa
 export function setBrowserActionIconState(iconState: BrowserActionIconState): void {
     const iconPaths = browserActionIconPaths[iconState]
     console.log('Setting icons to', iconPaths)
-    browser.action.setIcon({ path: iconPaths }).catch(error => {
+    ;(browser.action ?? browser.browserAction).setIcon({ path: iconPaths }).catch(error => {
         console.error(error)
     })
 }

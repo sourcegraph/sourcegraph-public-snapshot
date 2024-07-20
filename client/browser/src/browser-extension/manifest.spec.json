@@ -28,7 +28,7 @@
       "run_at": "document_idle"
     }
   ],
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["activeTab", "storage", "scripting"],
   "host_permissions": ["https://github.com/*", "https://sourcegraph.com/*"],
   "optional_host_permissions": ["https://*/*", "http://*/*"],
   "options_ui": {
@@ -40,17 +40,12 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["img/*", "css/*"],
+      "resources": ["img/*", "css/*", "extensions/*", "extensions/sourcegraph-go/*"],
       "matches": ["<all_urls>"]
     }
   ],
   "omnibox": {
     "keyword": "src"
-  },
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "sourcegraph-for-firefox@sourcegraph.com"
-    }
   },
   "dev": {
     "key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCl2X/axNHMbP0K/NCpMzGo/pgBSsHB2xKx6tfohORKtEv2wUMBPmkK3++kirrwYO2f8Ficyq6pjlXV8LjwPSjSw9KZj6bkDn8QNoSdCp6x9i8ZOWPw6UTQ6s54b3rGQNyvrvfD7S6LphxGEx8rNlkjpWKcrvY3+DyoFKHP/hax7wIDAQAB"

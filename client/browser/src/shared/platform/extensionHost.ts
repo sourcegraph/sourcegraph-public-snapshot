@@ -1,7 +1,7 @@
 import { Subscription } from 'rxjs'
 import * as uuid from 'uuid'
 
-import type { EndpointPair, ClosableEndpointPair } from '@sourcegraph/shared/src/platform/context'
+import type { ClosableEndpointPair, EndpointPair } from '@sourcegraph/shared/src/platform/context'
 
 import { isInPage } from '../context'
 
@@ -72,6 +72,7 @@ function createInPageExtensionHost({
 export function createExtensionHost(
     urls: Pick<SourcegraphIntegrationURLs, 'assetsURL'>
 ): Promise<ClosableEndpointPair> {
+    // TODO!(sqs): in-page ext host doesnt need a separate code path anymore if just importing the exthost entrypoint here works
     if (isInPage) {
         return createInPageExtensionHost(urls)
     }

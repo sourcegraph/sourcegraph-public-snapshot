@@ -1,6 +1,6 @@
+import '../../config/extension.entry'
 // Set globals first before any imports.
 import '../../config/content.entry'
-import '../../config/extension.entry'
 // Polyfill before other imports.
 import '../../shared/polyfills'
 
