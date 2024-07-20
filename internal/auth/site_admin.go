@@ -72,8 +72,9 @@ func CheckSiteAdminOrSameUser(ctx context.Context, db database.DB, subjectUserID
 	return CheckSiteAdminOrSameUserFromActor(a, db, subjectUserID)
 }
 
-// CheckSameUser returns an error if the user is not the user specified by
-// subjectUserID.
+// CheckSameUser returns an error if the user is not the user specified by subjectUserID. It is used
+// for actions that can ONLY be performed by that user. In most cases, site admins should also be
+// able to perform the action, and you should use CheckSiteAdminOrSameUser instead.
 func CheckSameUser(ctx context.Context, subjectUserID int32) error {
 	a := actor.FromContext(ctx)
 	if a.IsInternal() || (a.IsAuthenticated() && a.UID == subjectUserID) {

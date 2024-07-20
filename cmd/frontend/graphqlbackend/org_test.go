@@ -123,9 +123,8 @@ func TestOrganizationMembers(t *testing.T) {
 	})
 
 	t.Run("non-members", func(t *testing.T) {
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{Username: "xavier", ID: 10}, nil)
-
 		t.Run("can list members on non-dotcom", func(t *testing.T) {
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{Username: "xavier", ID: 10}, nil)
 			dotcom.MockSourcegraphDotComMode(t, false)
 			RunTests(t, []*Test{
 				{
@@ -152,7 +151,36 @@ func TestOrganizationMembers(t *testing.T) {
 			})
 		})
 
-		t.Run("cannot list members on dotcom", func(t *testing.T) {
+		t.Run("who are site admin can list members on non-dotcom", func(t *testing.T) {
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{Username: "xavier", ID: 10, SiteAdmin: true}, nil)
+			dotcom.MockSourcegraphDotComMode(t, true)
+			RunTests(t, []*Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+						{
+							organization(name: "acme") {
+								members {
+									nodes { username }
+								}
+							}
+						}
+					`,
+					ExpectedResult: `
+						{
+							"organization": {
+								"members": {
+									"nodes": [{"username": "alice"}, {"username": "bob"}]
+								}
+							}
+						}
+					`,
+				},
+			})
+		})
+
+		t.Run("who are not site admin cannot list members on dotcom", func(t *testing.T) {
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{Username: "xavier", ID: 10}, nil)
 			dotcom.MockSourcegraphDotComMode(t, true)
 			RunTests(t, []*Test{
 				{

@@ -21,15 +21,6 @@ func CheckOrgAccessOrSiteAdmin(ctx context.Context, db database.DB, orgID int32)
 	return checkOrgAccess(ctx, db, orgID, true)
 }
 
-// CheckOrgAccess returns an error if the user is not a member of the
-// organization with the specified ID.
-//
-// It is used when an action on an org can be performed by the organization's
-// members, but nobody else.
-func CheckOrgAccess(ctx context.Context, db database.DB, orgID int32) error {
-	return checkOrgAccess(ctx, db, orgID, false)
-}
-
 // checkOrgAccess is a helper method used above which allows optionally allowing
 // site admins to access all organizations.
 func checkOrgAccess(ctx context.Context, db database.DB, orgID int32, allowAdmin bool) error {
