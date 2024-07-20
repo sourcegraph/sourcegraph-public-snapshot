@@ -33,7 +33,7 @@ export function esbuildBuildOptions(mode: 'dev' | 'prod', extraPlugins: esbuild.
             // Worker
             path.resolve(browserSourcePath, 'shared/extensionHostWorker.ts'),
         ],
-        format: 'cjs',
+        format: 'esm',
         platform: 'browser',
         plugins: [stylePlugin, ...extraPlugins],
         define: {
@@ -41,6 +41,7 @@ export function esbuildBuildOptions(mode: 'dev' | 'prod', extraPlugins: esbuild.
             'process.env.BUNDLE_UID': JSON.stringify(generateBundleUID()),
         },
         bundle: true,
+        treeShaking: true,
         minify: false,
         logLevel: 'error',
         jsx: 'automatic',
@@ -49,7 +50,12 @@ export function esbuildBuildOptions(mode: 'dev' | 'prod', extraPlugins: esbuild.
         entryNames: '[ext]/[name].bundle',
         target: 'esnext',
         sourcemap: true,
-        alias: { path: 'path-browserify' },
+        alias: { path: 'path-browserify', lodash: 'lodash-es' },
+        banner: {
+            // HACK: lodash has a `Function("return this")`, which Firefox's CSP protection
+            // complains about. This ensures we do not encounter it.
+            js: 'globalThis.global = globalThis;',
+        },
         loader: {
             '.svg': 'text',
         },
