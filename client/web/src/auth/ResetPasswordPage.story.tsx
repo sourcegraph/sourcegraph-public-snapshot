@@ -9,9 +9,7 @@ import { ResetPasswordPage } from './ResetPasswordPage'
 
 const config: Meta = {
     title: 'web/auth/ResetPasswordPage',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

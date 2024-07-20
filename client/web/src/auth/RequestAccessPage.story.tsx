@@ -8,9 +8,7 @@ import { RequestAccessPage } from './RequestAccessPage'
 
 const config: Meta = {
     title: 'web/auth/RequestAccessPage',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

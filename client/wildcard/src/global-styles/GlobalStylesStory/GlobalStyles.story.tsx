@@ -23,11 +23,7 @@ const decorator: Decorator = story => (
 const config: Meta = {
     title: 'branded/Global styles',
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            enableDarkMode: true,
-        },
-    },
+    parameters: {},
 }
 
 export default config

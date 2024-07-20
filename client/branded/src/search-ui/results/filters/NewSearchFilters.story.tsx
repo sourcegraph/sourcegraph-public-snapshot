@@ -11,9 +11,7 @@ const decorator: Decorator = story => <BrandedStory>{props => story()}</BrandedS
 const config: Meta = {
     title: 'branded/search-ui/filters',
     decorators: [decorator],
-    parameters: {
-        chromatic: { viewports: [575, 700] },
-    },
+    parameters: {},
 }
 
 export default config

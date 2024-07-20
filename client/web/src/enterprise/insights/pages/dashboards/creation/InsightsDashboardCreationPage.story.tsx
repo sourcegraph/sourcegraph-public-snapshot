@@ -15,12 +15,7 @@ import { InsightsDashboardCreationPage } from './InsightsDashboardCreationPage'
 const config: Meta = {
     title: 'web/insights/InsightsDashboardCreationPage',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-    parameters: {
-        chromatic: {
-            viewports: [576, 1440],
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default config

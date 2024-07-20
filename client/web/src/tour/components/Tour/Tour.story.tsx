@@ -18,10 +18,6 @@ const config: Meta = {
     decorators: [decorator],
     parameters: {
         component: Tour,
-        chromatic: {
-            enableDarkMode: true,
-            disableSnapshot: false,
-        },
     },
 }
 

@@ -11,11 +11,7 @@ const decorator: Decorator = story => <div style={{ width: '192px' }}>{story()}<
 const config: Meta = {
     title: 'web/site-admin/AdminSidebar',
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default config

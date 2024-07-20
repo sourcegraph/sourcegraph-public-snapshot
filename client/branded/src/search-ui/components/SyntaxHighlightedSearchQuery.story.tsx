@@ -8,9 +8,7 @@ import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
 
 const config: Meta = {
     title: 'branded/search-ui/SyntaxHighlightedSearchQuery',
-    parameters: {
-        chromatic: { viewports: [480] },
-    },
+    parameters: {},
 }
 
 export default config

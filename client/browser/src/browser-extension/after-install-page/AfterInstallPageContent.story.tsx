@@ -8,12 +8,7 @@ import brandedStyles from '../../branded.scss'
 
 const config: Meta = {
     title: 'browser/AfterInstallPage',
-    parameters: {
-        chromatic: {
-            enableDarkMode: true,
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default config
