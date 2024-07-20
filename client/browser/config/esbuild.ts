@@ -38,6 +38,7 @@ export function esbuildBuildOptions(mode: 'dev' | 'prod', extraPlugins: esbuild.
         plugins: [stylePlugin, ...extraPlugins],
         define: {
             'process.env.NODE_ENV': JSON.stringify(mode === 'dev' ? 'development' : 'production'),
+            'process.env.NODE_DEBUG': 'false',
             'process.env.BUNDLE_UID': JSON.stringify(generateBundleUID()),
         },
         bundle: true,

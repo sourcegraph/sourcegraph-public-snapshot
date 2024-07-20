@@ -60,9 +60,10 @@ import {
 import type { WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
 import type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import type { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
+import { createCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
+import type { CodeIntelContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import type { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions, registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import {
@@ -354,6 +355,13 @@ function initCodeIntelligence({
         })
     )
 
+    const codeintelContext: CodeIntelContext = { ...platformContext, telemetryRecorder, settings: () => undefined }
+    const codeintelAPI = createCodeIntelAPI(codeintelContext)
+
+    function thenMaybeLoadingResult<T>(result: T): MaybeLoadingResult<T> {
+        return { isLoading: false, result }
+    }
+
     // Code views come and go, but there is always a single hoverifier on the page
     const hoverifier = createHoverifier<
         RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
@@ -369,17 +377,22 @@ function initCodeIntelligence({
         getHover: ({ line, character, part, ...rest }) =>
             concat(
                 [{ isLoading: true, result: null }],
-                from(extensionsController.extHostAPI)
+                of(true /* TODO!(sqs) */)
                     .pipe(
                         withLatestFrom(repoSyncErrors),
-                        switchMap(([extensionHost, hasRepoSyncError]) =>
+                        switchMap(([, hasRepoSyncError]) =>
                             // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
                             hasRepoSyncError
                                 ? of({ isLoading: true, result: null })
-                                : wrapRemoteObservable(
-                                      extensionHost.getHover(
-                                          toTextDocumentPositionParameters({ ...rest, position: { line, character } })
-                                      )
+                                : from(
+                                      codeintelAPI
+                                          .getHover(
+                                              toTextDocumentPositionParameters({
+                                                  ...rest,
+                                                  position: { line, character },
+                                              })
+                                          )
+                                          .then(thenMaybeLoadingResult)
                                   )
                         )
                     )
@@ -393,19 +406,20 @@ function initCodeIntelligence({
                     )
             ),
         getDocumentHighlights: ({ line, character, part, ...rest }) =>
-            from(extensionsController.extHostAPI).pipe(
+            of(true /* TODO!(sqs) */).pipe(
                 withLatestFrom(repoSyncErrors),
-                switchMap(([extensionHost, hasRepoSyncError]) =>
+                switchMap(([, hasRepoSyncError]) =>
                     // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
                     hasRepoSyncError
                         ? of([])
-                        : wrapRemoteObservable(
-                              extensionHost.getDocumentHighlights(
+                        : from(
+                              codeintelAPI.getDocumentHighlights(
                                   toTextDocumentPositionParameters({ ...rest, position: { line, character } })
                               )
                           )
                 )
             ),
+        // TODO!(sqs): just gotta make it so the actions are determined programmatically AND we only trigger it on supported languages
         getActions: context =>
             // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
             repoSyncErrors.pipe(
