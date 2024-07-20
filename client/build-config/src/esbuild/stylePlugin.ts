@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-import { ResolverFactory, CachedInputFileSystem } from 'enhanced-resolve'
+import { CachedInputFileSystem, ResolverFactory } from 'enhanced-resolve'
 import type esbuild from 'esbuild'
 import postcss from 'postcss'
 import postcssModules from 'postcss-modules'
@@ -27,7 +27,7 @@ export const stylePlugin: esbuild.Plugin = {
 
         const modulesMap = new Map<string, string>()
         const modulesPlugin = postcssModules({
-            generateScopedName: '[name]__[local]', // omit hash for local dev
+            generateScopedName: '[name]__[local]___[hash:base64:5]',
             localsConvention: 'camelCase',
             getJSON: (cssPath, json) => modulesMap.set(cssPath, JSON.stringify(json)),
         })
@@ -46,7 +46,7 @@ export const stylePlugin: esbuild.Plugin = {
             const isSCSS = inputPath.endsWith('.scss')
             const sassResult = isSCSS
                 ? // renderSync is ~20% faster than render with an async callback (because it's blocked on CPU, not IO).
-                  // eslint-disable-next-line no-sync
+
                   sass.renderSync({
                       file: inputPath,
                       data: inputContents,
