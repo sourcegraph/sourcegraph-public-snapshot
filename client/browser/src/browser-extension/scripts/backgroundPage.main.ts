@@ -203,9 +203,9 @@ async function main(): Promise<void> {
                          * Loading content script dynamically
                          * See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts#loading_content_scripts
                          */
-                        await browser.tabs.executeScript(tabId, {
-                            file: 'js/contentPage.main.bundle.js',
-                            runAt: 'document_end',
+                        await browser.scripting.executeScript({
+                            files: ['js/contentPage.main.bundle.js'],
+                            target: { tabId },
                         })
                     }
                 })
@@ -281,7 +281,7 @@ async function main(): Promise<void> {
 
     // The `popup=true` param is used by the options page to determine if it's
     // loaded in the popup or in th standalone options page.
-    browser.browserAction.setPopup({ popup: 'options.html?popup=true' })
+    browser.action.setPopup({ popup: 'options.html?popup=true' })
 
     const ENDPOINT_KIND_REGEX = /^(proxy|expose)-/
 

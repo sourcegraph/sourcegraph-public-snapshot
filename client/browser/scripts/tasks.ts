@@ -186,6 +186,11 @@ function writeManifest(environment: BuildEnvironment, browser: Browser, writeDir
         delete manifest.storage
     }
 
+    if (browser === 'firefox') {
+        // activeTab is not sufficient to call browser.scripting.executeScript (as it is in Chrome).
+        manifest.permissions.push('scripting')
+    }
+
     if (browser === 'safari') {
         // If any modifications need to be done to the manifest for Safari, they
         // can be done here.
@@ -194,9 +199,12 @@ function writeManifest(environment: BuildEnvironment, browser: Browser, writeDir
         }
     }
 
-    // Add the inline extensions to web accessible resources
-    manifest.web_accessible_resources = manifest.web_accessible_resources || []
-    manifest.web_accessible_resources.push('extensions/*')
+    // Firefox doesn't support service workers, so we need a workaround. See
+    // https://github.com/mozilla/web-ext/issues/2532.
+    if (browser === 'firefox') {
+        manifest.background!.scripts = [manifest.background!.service_worker]
+        delete manifest.background!.service_worker
+    }
 
     delete manifest.$schema
 

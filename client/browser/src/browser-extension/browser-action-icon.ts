@@ -60,7 +60,7 @@ const browserActionIconPaths: Record<BrowserActionIconState, BrowserActionIconPa
 export function setBrowserActionIconState(iconState: BrowserActionIconState): void {
     const iconPaths = browserActionIconPaths[iconState]
     console.log('Setting icons to', iconPaths)
-    browser.browserAction.setIcon({ path: iconPaths }).catch(error => {
+    browser.action.setIcon({ path: iconPaths }).catch(error => {
         console.error(error)
     })
 }

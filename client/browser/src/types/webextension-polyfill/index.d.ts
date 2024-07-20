@@ -133,7 +133,7 @@ declare namespace browser.bookmarks {
     >
 }
 
-declare namespace browser.browserAction {
+declare namespace browser.action {
     type ColorArray = [number, number, number, number]
     type ImageDataType = ImageData
 
@@ -1361,6 +1361,10 @@ declare namespace browser.storage {
     const onChanged: CallbackEventEmitter<(changes: ChangeDict<any>, areaName: AreaName) => void>
 }
 
+declare namespace browser.scripting {
+    function executeScript(details: { files: string[], target: any }): Promise<object[]>
+}
+
 declare namespace browser.tabs {
     type MutedInfoReason = 'capture' | 'extension' | 'user'
     interface MutedInfo {
@@ -1425,10 +1429,6 @@ declare namespace browser.tabs {
     function captureVisibleTab(windowId?: number, options?: extensionTypes.ImageDetails): Promise<string>
     function detectLanguage(tabId?: number): Promise<string>
     function duplicate(tabId: number): Promise<Tab>
-    function executeScript(
-        tabId: number | undefined,
-        details: extensionTypes.InjectDetails
-    ): Promise<object[]>
     function get(tabId: number): Promise<Tab>
     // deprecated: function getAllInWindow(): x;
     function getCurrent(): Promise<Tab>
