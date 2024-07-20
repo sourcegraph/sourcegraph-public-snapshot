@@ -1,25 +1,25 @@
 // Set globals first before any imports.
-import '../../config/extension.entry'
 import '../../config/background.entry'
+import '../../config/extension.entry'
 // Polyfill before other imports.
 import '../../shared/polyfills'
 
 import type { Endpoint } from 'comlink'
-import { combineLatest, merge, type Observable, of, Subject, Subscription, timer, lastValueFrom } from 'rxjs'
+import { combineLatest, lastValueFrom, merge, type Observable, of, Subject, Subscription, timer } from 'rxjs'
 import {
     bufferCount,
+    catchError,
+    concatMap,
+    distinctUntilChanged,
     filter,
     groupBy,
     map,
     mergeMap,
     switchMap,
     take,
-    concatMap,
-    catchError,
-    distinctUntilChanged,
 } from 'rxjs/operators'
 
-import { isDefined, fetchCache } from '@sourcegraph/common'
+import { fetchCache, isDefined } from '@sourcegraph/common'
 import { type GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
 import { createExtensionHostWorker } from '@sourcegraph/shared/src/api/extension/worker'
 import type { EndpointPair } from '@sourcegraph/shared/src/platform/context'
@@ -153,10 +153,6 @@ async function main(): Promise<void> {
                     })
             )
         }
-
-        browser.tabs.create({ url: browser.extension.getURL('after_install.html') }).catch(error => {
-            console.error('Error opening after-install page:', error)
-        })
     })
 
     // Mirror the managed sourcegraphURL to sync storage

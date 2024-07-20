@@ -23,10 +23,8 @@ ts_project(
     deps = [
         "//:node_modules/@types/mocha",
         "//:node_modules/@types/node",
-        "//:node_modules/@types/puppeteer",
         "//:node_modules/expect",
         "//:node_modules/mocha",
-        "//:node_modules/puppeteer",
         "//client/browser:node_modules/@sourcegraph/shared",
     ],
 )

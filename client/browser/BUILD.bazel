@@ -116,14 +116,12 @@ ts_project(
     srcs = [
         "code-intel-extensions.json",
         "src/browser-extension/ThemeWrapper.tsx",
-        "src/browser-extension/after-install-page/AfterInstallPageContent.tsx",
         "src/browser-extension/browser-action-icon.ts",
         "src/browser-extension/environmentAssertion.ts",
         "src/browser-extension/knownCodeHosts.ts",
         "src/browser-extension/options-menu/OptionsPage.tsx",
         "src/browser-extension/options-menu/OptionsPageAdvancedSettings.tsx",
         "src/browser-extension/options-menu/components/OptionsPageContainer.tsx",
-        "src/browser-extension/scripts/afterInstallPage.main.tsx",
         "src/browser-extension/scripts/backgroundPage.main.ts",
         "src/browser-extension/scripts/contentPage.main.ts",
         "src/browser-extension/scripts/optionsPage.main.tsx",
@@ -365,7 +363,6 @@ esbuild(
         "src/browser-extension/scripts/backgroundPage.main.js",
         "src/browser-extension/scripts/contentPage.main.js",
         "src/browser-extension/scripts/optionsPage.main.js",
-        "src/browser-extension/scripts/afterInstallPage.main.js",
         "src/native-integration/nativeIntegration.main.js",
         "src/native-integration/phabricator/phabricatorNativeIntegration.main.js",
         "src/app.css",
@@ -404,7 +401,6 @@ copy_to_directory(
 ts_project(
     name = "stories",
     srcs = [
-        "src/browser-extension/after-install-page/AfterInstallPageContent.story.tsx",
         "src/browser-extension/options-menu/OptionsPage.story.tsx",
         "src/shared/components/HoverOverlay.story.tsx",
     ],

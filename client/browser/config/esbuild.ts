@@ -20,7 +20,6 @@ export function esbuildBuildOptions(mode: 'dev' | 'prod', extraPlugins: esbuild.
             path.resolve(browserSourcePath, 'browser-extension/scripts/backgroundPage.main.ts'),
             path.resolve(browserSourcePath, 'browser-extension/scripts/contentPage.main.ts'),
             path.resolve(browserSourcePath, 'browser-extension/scripts/optionsPage.main.tsx'),
-            path.resolve(browserSourcePath, 'browser-extension/scripts/afterInstallPage.main.tsx'),
 
             // Common native integration entry point (Gitlab, Bitbucket)
             path.resolve(browserSourcePath, 'native-integration/nativeIntegration.main.ts'),
