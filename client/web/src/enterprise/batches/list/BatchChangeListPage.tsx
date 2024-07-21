@@ -57,7 +57,6 @@ export interface BatchChangeListPageProps extends TelemetryProps, TelemetryV2Pro
     canCreate: true | string
     headingElement: 'h1' | 'h2'
     namespaceID?: Scalars['ID']
-    isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
     /** For testing only. */
     openTab?: SelectedTab
@@ -78,7 +77,6 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     settingsCascade,
     telemetryService,
     telemetryRecorder,
-    isSourcegraphDotCom,
     authenticatedUser,
 }) => {
     const location = useLocation()
@@ -92,6 +90,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     const canUseBatchChanges = !!window.context.licenseInfo?.batchChanges
 
     const { selectedFilters, setSelectedFilters, availableFilters } = useBatchChangeListFilters({ isExecutionEnabled })
+    const isSourcegraphDotCom = Boolean(window.context?.sourcegraphDotComMode)
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(
         openTab ?? (isSourcegraphDotCom || !canUseBatchChanges ? 'gettingStarted' : 'batchChanges')
     )
