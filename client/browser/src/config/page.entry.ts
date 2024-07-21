@@ -1,2 +1,2 @@
-window.SG_ENV = 'PAGE'
-window.EXTENSION_ENV = null
+globalThis.SG_ENV = 'PAGE'
+globalThis.EXTENSION_ENV = null

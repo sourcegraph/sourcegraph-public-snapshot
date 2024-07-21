@@ -51,13 +51,22 @@ export function getInlineExtensions(assetsURL: string): Observable<ExecutableExt
         promises.push(
             fetch(manifestURL)
                 .then(response => checkOk(response).json())
-                .then(
-                    (manifest: ExtensionManifest): ExecutableExtension => ({
+                .then((manifest: ExtensionManifest): ExecutableExtension => {
+                    // HACK(sqs): Remove the not-super-useful "Find implementations" action.
+                    try {
+                        if (manifest.contributes?.actions) {
+                            manifest.contributes.actions = []
+                        }
+                    } catch {
+                        /* noop */
+                    }
+
+                    return {
                         id: extensionID,
                         manifest,
                         scriptURL,
-                    })
-                )
+                    }
+                })
         )
     }
 

@@ -286,7 +286,7 @@ export class Driver {
     /**
      * Navigates to the Sourcegraph browser extension page.
      */
-    public async openBrowserExtensionPage(page: 'options' | 'after_install'): Promise<void> {
+    public async openBrowserExtensionPage(page: 'options'): Promise<void> {
         await this.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/${page}.html`)
     }
 

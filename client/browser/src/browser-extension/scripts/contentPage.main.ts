@@ -1,12 +1,12 @@
-// Set globals first before any imports.
 import '../../config/extension.entry'
+// Set globals first before any imports.
 import '../../config/content.entry'
 // Polyfill before other imports.
 import '../../shared/polyfills'
 
 import { firstValueFrom, fromEvent, Subscription } from 'rxjs'
 
-import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
+import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 import { determineCodeHost } from '../../shared/code-hosts/shared/codeHost'
 import { injectCodeIntelligence } from '../../shared/code-hosts/shared/inject'
@@ -46,7 +46,7 @@ function loadStyleSheet(options: { id: string; path: string }): HTMLLinkElement 
         styleSheet.id = id
         styleSheet.rel = 'stylesheet'
         styleSheet.type = 'text/css'
-        styleSheet.href = browser.extension.getURL(path)
+        styleSheet.href = browser.runtime.getURL(path)
     }
     return styleSheet
 }

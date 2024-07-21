@@ -4,7 +4,7 @@ import { catchError, concatMap, distinctUntilChanged, first, map, switchMap, tap
 import type sourcegraph from 'sourcegraph'
 
 import type { Contributions } from '@sourcegraph/client-api'
-import { asError, isErrorLike, hashCode, logger } from '@sourcegraph/common'
+import { asError, hashCode, isErrorLike, logger } from '@sourcegraph/common'
 
 import {
     type ConfiguredExtension,
@@ -66,18 +66,17 @@ const DEPRECATED_EXTENSION_IDS = new Set(['sourcegraph/code-stats-insights', 'so
 
 export function activateExtensions(
     state: Pick<ExtensionHostState, 'activeExtensions' | 'contributions' | 'haveInitialExtensionsLoaded' | 'settings'>,
-    mainAPI: Remote<Pick<MainThreadAPI, 'logEvent' | 'getTelemetryRecorder'>>,
+    mainAPI: Remote<Pick<MainThreadAPI, 'logEvent' | 'recordEvent'>>,
     createExtensionAPI: (extensionID: string) => typeof sourcegraph,
-    mainThreadAPIInitializations: Observable<boolean>,
     /**
      * Function that activates an extension.
      * Returns a promise that resolves once the extension is activated.
-     * */
+     */
     activate = activateExtension,
     /**
      * Function that de-activates an extension.
      * Returns a promise that resolves once the extension is de-activated.
-     * */
+     */
     deactivate = deactivateExtension
 ): Subscription {
     const previouslyActivatedExtensions = new Set<string>()
@@ -168,8 +167,7 @@ export function activateExtensions(
                                                 .catch(() => {
                                                     // noop
                                                 })
-                                            const telemetryRecorder = await mainAPI.getTelemetryRecorder()
-                                            telemetryRecorder.recordEvent('blob.extension', 'activate', {
+                                            mainAPI.recordEvent('blob.extension', 'activate', {
                                                 privateMetadata: { extensionID: telemetryExtensionID },
                                             })
                                         } catch (error) {
@@ -365,7 +363,6 @@ export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'm
  *
  * Because `require` is replaced on each extension activation with the API created for that extension,
  * the API can only be imported once to prevent extensions importing APIs created for other extensions.
- *
  * @param extensionAPI The extension API instance for the extension to be activated.
  * @throws error to give extension authors feedback if they try to import an API instance that was
  * already imported (e.g. if they asynchronously import the extension API and the current `require` was

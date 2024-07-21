@@ -32,11 +32,11 @@ import type { ViewResolver } from '../shared/views'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
 import {
+    getEmbeddedData,
     getFileContainers,
-    parseURL,
     getSelectorFor,
     isNewGitHubUI,
-    getEmbeddedData,
+    parseURL,
     windowLocation__testingOnly,
 } from './util'
 
@@ -725,14 +725,14 @@ export const githubCodeHost: GithubCodeHost = {
     }),
     getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
     viewOnSourcegraphButtonClassProps: {
-        className: 'btn btn-sm tooltipped tooltipped-s',
+        className: 'Button Button--iconOnly Button--secondary Button--medium AppHeader-button',
         iconClassName,
     },
     check: checkIsGitHub,
     codeViewToolbarClassProps: {
         className: styles.codeViewToolbar,
         listItemClass: classNames(styles.codeViewToolbarItem, 'BtnGroup'),
-        actionItemClass: classNames('btn btn-sm tooltipped tooltipped-s BtnGroup-item', styles.actionItem),
+        actionItemClass: 'Button Button--iconOnly Button--secondary Button--medium',
         actionItemPressedClass: 'selected',
         actionItemIconClass: classNames(styles.icon, 'v-align-text-bottom'),
     },

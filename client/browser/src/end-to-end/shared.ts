@@ -2,7 +2,6 @@ import assert from 'assert'
 
 import expect from 'expect'
 import { describe, it } from 'mocha'
-import type puppeteer from 'puppeteer'
 
 import type { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
@@ -43,9 +42,6 @@ export function testSingleFilePage({
     describe('File views', () => {
         it('adds "View on Sourcegraph" buttons to files', async () => {
             await getDriver().page.goto(url)
-
-            // Make sure the tab is active, because it might not be active if the install page has opened.
-            await closeInstallPageTab(getDriver().page.browser())
 
             await getDriver().page.waitForSelector(
                 '[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]',
@@ -104,20 +100,4 @@ export function testSingleFilePage({
             })
         }
     })
-}
-
-/**
- * Find a tab that contains the browser extension's after-install page (url
- * ending in `/after_install.html`) and, if found, close it.
- *
- * The after-install page is opened automatically when the browser extension is
- * installed. In tests, this means that it's opened automatically every time we
- * start the browser (with the browser extension loaded).
- */
-export async function closeInstallPageTab(browser: puppeteer.Browser): Promise<void> {
-    const pages = await browser.pages()
-    const installPage = pages.find(page => page.url().endsWith('/after_install.html'))
-    if (installPage) {
-        await installPage.close()
-    }
 }

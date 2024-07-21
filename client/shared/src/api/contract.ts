@@ -1,22 +1,22 @@
-import type { Remote, ProxyMarked } from 'comlink'
+import type { ProxyMarked, Remote } from 'comlink'
 import type { Unsubscribable } from 'rxjs'
 
 import type {
     Contributions,
     Evaluated,
+    HoverMerged,
     Raw,
     TextDocumentPositionParameters,
-    HoverMerged,
 } from '@sourcegraph/client-api'
 import type { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import type * as clientType from '@sourcegraph/extension-api-types'
 import type { GraphQLResult } from '@sourcegraph/http-client'
+import type { KnownKeys, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import type { DocumentHighlight, ReferenceContext } from '../codeintel/legacy-extensions/api'
 import type { Occurrence } from '../codeintel/scip'
 import type { ConfiguredExtension } from '../extensions/extension'
 import type { SettingsCascade } from '../settings/settings'
-import type { TelemetryV2Props } from '../telemetry'
 
 import type { SettingsEdit } from './client/services/settings'
 import type { ExecutableExtension } from './extension/activation'
@@ -75,7 +75,6 @@ export interface FlatExtensionHostAPI extends CodeIntelExtensionHostAPI {
     /**
      * Sets the given context keys and values.
      * If a value is `null`, the context key is removed.
-     *
      * @param update Object with context keys as values
      */
     updateContext: (update: { [k: string]: unknown }) => void
@@ -89,7 +88,6 @@ export interface FlatExtensionHostAPI extends CodeIntelExtensionHostAPI {
     /**
      * Returns an observable that emits all contributions (merged) evaluated in the current model
      * (with the optional scope). It emits whenever there is any change.
-     *
      * @template T Extra allowed property value types for the {@link Context} value. See
      * {@link Context}'s `T` type parameter for more information.
      * @param scope The scope in which contributions are fetched. A scope can be a sub-component of
@@ -111,7 +109,6 @@ export interface FlatExtensionHostAPI extends CodeIntelExtensionHostAPI {
 
     /**
      * Add a viewer.
-     *
      * @param viewer The description of the viewer to add.
      * @returns The added code viewer (which must be passed as the first argument to other
      * viewer methods to operate on this viewer).
@@ -125,7 +122,6 @@ export interface FlatExtensionHostAPI extends CodeIntelExtensionHostAPI {
 
     /**
      * Sets the selections for a CodeEditor.
-     *
      * @param codeEditor The editor for which to set the selections.
      * @param selections The new selections to apply.
      * @throws if no editor exists with the given editor ID.
@@ -136,7 +132,6 @@ export interface FlatExtensionHostAPI extends CodeIntelExtensionHostAPI {
     /**
      * Removes a viewer.
      * Also removes the corresponding model if no other viewer is referencing it.
-     *
      * @param viewer The viewer to remove.
      */
     removeViewer(viewer: ViewerId): void
@@ -176,15 +171,29 @@ export interface MainThreadAPI {
 
     /**
      * Log an event (by sending it to the server).
-     *
-     * @deprecated use getTelemetryRecorder().recordEvent instead
+     * @deprecated use {@link MainThreadAPI.recordEvent} instead
      */
     logEvent: (eventName: string, eventProperties?: any) => void
 
     /**
-     * Get a TelemetryRecorder for recording telemetry events to the server.
+     * Record a telemetry event.
+     *
+     * The type signature should be kept in sync with {@link TelemetryRecorder.recordEvent}.
      */
-    getTelemetryRecorder: () => TelemetryV2Props['telemetryRecorder']
+    recordEvent: (
+        feature: string,
+        action: string,
+        parameters?: TelemetryEventParameters<
+            KnownKeys<
+                string,
+                {
+                    [key in string]: number
+                }
+            >,
+            string,
+            string
+        >
+    ) => void
 
     /**
      * Log messages from extensions in the main thread. Makes it easier to debug extensions for applications

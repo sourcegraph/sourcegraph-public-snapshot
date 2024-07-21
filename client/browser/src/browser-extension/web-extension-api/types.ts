@@ -68,7 +68,6 @@ export interface ManagedStorageItems extends SourcegraphURL {
  */
 export interface BackgroundPageApi {
     openOptionsPage(): Promise<void>
-    createBlobURL(bundleUrl: string): Promise<string>
     requestGraphQL<T, V = object>(options: {
         request: string
         variables: V

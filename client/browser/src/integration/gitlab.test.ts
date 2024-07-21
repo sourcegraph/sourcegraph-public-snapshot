@@ -9,13 +9,11 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { readEnvironmentString, retry } from '@sourcegraph/shared/src/testing/utils'
 
 import { type BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
-import { closeInstallPageTab } from './shared'
 
 describe('GitLab', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest({ loadExtension: true })
-        await closeInstallPageTab(driver.browser)
         if (driver.sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             await driver.setExtensionSourcegraphUrl()
         }

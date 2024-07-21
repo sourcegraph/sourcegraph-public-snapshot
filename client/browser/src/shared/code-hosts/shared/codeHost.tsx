@@ -7,35 +7,35 @@ import type { Renderer } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import {
     asyncScheduler,
+    BehaviorSubject,
     combineLatest,
+    concat,
     EMPTY,
     from,
+    fromEvent,
+    lastValueFrom,
     type Observable,
     of,
     Subject,
     Subscription,
-    type Unsubscribable,
-    concat,
-    BehaviorSubject,
-    fromEvent,
-    lastValueFrom,
     throwError,
+    type Unsubscribable,
 } from 'rxjs'
 import {
     catchError,
     concatAll,
     concatMap,
+    distinctUntilChanged,
     filter,
     map,
     mergeMap,
     observeOn,
-    switchMap,
-    withLatestFrom,
-    tap,
-    startWith,
-    distinctUntilChanged,
     retry,
+    startWith,
+    switchMap,
     take,
+    tap,
+    withLatestFrom,
 } from 'rxjs/operators'
 
 import type { HoverMerged } from '@sourcegraph/client-api'
@@ -51,18 +51,19 @@ import {
     asError,
     asObservable,
     isDefined,
+    isExternalLink,
     isInstanceOf,
+    type LineOrPositionOrRange,
     property,
     registerHighlightContributions,
-    isExternalLink,
-    type LineOrPositionOrRange,
 } from '@sourcegraph/common'
 import type { WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
 import type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import type { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
+import { createCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
+import type { CodeIntelContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import type { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions, registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import {
@@ -72,18 +73,18 @@ import {
 } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import type { PlatformContext, URLToFileContext } from '@sourcegraph/shared/src/platform/context'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import {
     type FileSpec,
-    type UIPositionSpec,
+    makeRepoGitURI,
     type RawRepoSpec,
     type RepoSpec,
     type ResolvedRevisionSpec,
     type RevisionSpec,
+    type UIPositionSpec,
     type ViewStateSpec,
-    makeRepoGitURI,
 } from '@sourcegraph/shared/src/util/url'
 
 import { background } from '../../../browser-extension/web-extension-api/runtime'
@@ -95,8 +96,8 @@ import { CodeViewToolbar, type CodeViewToolbarClassProps } from '../../component
 import { TrackAnchorClick } from '../../components/TrackAnchorClick'
 import { WildcardThemeProvider } from '../../components/WildcardThemeProvider'
 import { isExtension, isInPage } from '../../context'
-import type { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
-import { resolveRevision, retryWhenCloneInProgressError, resolvePrivateRepo } from '../../repo/backend'
+import type { BrowserPlatformContext, SourcegraphIntegrationURLs } from '../../platform/context'
+import { resolvePrivateRepo, resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
 import { ConditionalTelemetryRecorderProvider } from '../../telemetry'
 import { ConditionalTelemetryService, EventLogger } from '../../tracking/eventLogger'
 import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
@@ -109,16 +110,16 @@ import { type GithubCodeHost, githubCodeHost, isGithubCodeHost } from '../github
 import { gitlabCodeHost } from '../gitlab/codeHost'
 import { phabricatorCodeHost } from '../phabricator/codeHost'
 
-import { type CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
+import { type CodeView, fetchFileContentForDiffOrFileInfo, trackCodeViews } from './codeViews'
 import { NotAuthenticatedError, RepoURLParseError } from './errors'
 import { initializeExtensions } from './extensions'
 import { SignInButton } from './SignInButton'
-import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
+import { defaultRevisionToCommitID, resolveRepoNamesForDiffOrFileInfo } from './util/fileInfo'
 import { lprToSelectionsZeroIndexed } from './util/selections'
 import {
-    type ViewOnSourcegraphButtonClassProps,
-    ViewOnSourcegraphButton,
     ConfigureSourcegraphButton,
+    ViewOnSourcegraphButton,
+    type ViewOnSourcegraphButtonClassProps,
 } from './ViewOnSourcegraphButton'
 import { delayUntilIntersecting, trackViews, type ViewResolver } from './views'
 
@@ -227,7 +228,6 @@ export interface CodeHost {
 
     /**
      * Construct the URL to the specified file.
-     *
      * @param sourcegraphURL The URL of the Sourcegraph instance.
      * @param target The target to build a URL for.
      * @param context Context information about this invocation.
@@ -355,6 +355,13 @@ function initCodeIntelligence({
         })
     )
 
+    const codeintelContext: CodeIntelContext = { ...platformContext, telemetryRecorder, settings: () => undefined }
+    const codeintelAPI = createCodeIntelAPI(codeintelContext)
+
+    function thenMaybeLoadingResult<T>(result: T): MaybeLoadingResult<T> {
+        return { isLoading: false, result }
+    }
+
     // Code views come and go, but there is always a single hoverifier on the page
     const hoverifier = createHoverifier<
         RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
@@ -370,17 +377,22 @@ function initCodeIntelligence({
         getHover: ({ line, character, part, ...rest }) =>
             concat(
                 [{ isLoading: true, result: null }],
-                from(extensionsController.extHostAPI)
+                of(true /* TODO!(sqs) */)
                     .pipe(
                         withLatestFrom(repoSyncErrors),
-                        switchMap(([extensionHost, hasRepoSyncError]) =>
+                        switchMap(([, hasRepoSyncError]) =>
                             // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
                             hasRepoSyncError
                                 ? of({ isLoading: true, result: null })
-                                : wrapRemoteObservable(
-                                      extensionHost.getHover(
-                                          toTextDocumentPositionParameters({ ...rest, position: { line, character } })
-                                      )
+                                : from(
+                                      codeintelAPI
+                                          .getHover(
+                                              toTextDocumentPositionParameters({
+                                                  ...rest,
+                                                  position: { line, character },
+                                              })
+                                          )
+                                          .then(thenMaybeLoadingResult)
                                   )
                         )
                     )
@@ -394,19 +406,20 @@ function initCodeIntelligence({
                     )
             ),
         getDocumentHighlights: ({ line, character, part, ...rest }) =>
-            from(extensionsController.extHostAPI).pipe(
+            of(true /* TODO!(sqs) */).pipe(
                 withLatestFrom(repoSyncErrors),
-                switchMap(([extensionHost, hasRepoSyncError]) =>
+                switchMap(([, hasRepoSyncError]) =>
                     // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
                     hasRepoSyncError
                         ? of([])
-                        : wrapRemoteObservable(
-                              extensionHost.getDocumentHighlights(
+                        : from(
+                              codeintelAPI.getDocumentHighlights(
                                   toTextDocumentPositionParameters({ ...rest, position: { line, character } })
                               )
                           )
                 )
             ),
+        // TODO!(sqs): just gotta make it so the actions are determined programmatically AND we only trigger it on supported languages
         getActions: context =>
             // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
             repoSyncErrors.pipe(
@@ -474,6 +487,7 @@ function initCodeIntelligence({
                     <HoverOverlay
                         {...this.state.hoverOverlayProps}
                         {...codeHost.hoverOverlayClassProps}
+                        badgeClassName={styles.badgeHidden} // hide badges in browser ext
                         className={classNames(styles.hoverOverlay, codeHost.hoverOverlayClassProps?.className)}
                         telemetryService={telemetryService}
                         telemetryRecorder={telemetryRecorder}
@@ -666,7 +680,7 @@ const isSafeToContinueCodeIntel = async ({
         if (isExtension) {
             // Notify to show extension alert-icon
             background.notifyRepoSyncError({ sourcegraphURL, hasRepoSyncError: true }).catch(error => {
-                console.error('Error notifying background page of private cloud.', error)
+                console.error('Error notifying background page of repository sync error.', error)
             })
         }
 
@@ -748,7 +762,7 @@ export async function handleCodeHost({
      * active Sourcegraph URL.
      * 2. It is a repository not added to the Sourcegraph instance (other than Cloud).
      * If the current state is `true`, we can short circuit subsequent requests.
-     * */
+     */
     const repoSyncErrors = new BehaviorSubject<boolean>(false)
     // Set by `ViewOnSourcegraphButton` (cleans up and sets to `false` whenever it is unmounted).
     const setRepoSyncError = repoSyncErrors.next.bind(repoSyncErrors)
@@ -759,7 +773,7 @@ export async function handleCodeHost({
      * - repository is not added to other than Cloud Sourcegraph instance.
      *
      * (no side effects, doesn't notify `repoSyncErrors`)
-     * */
+     */
     const checkRepoSyncError = async (error: any): Promise<boolean> =>
         isRepoNotFoundErrorLike(error) &&
         (isDefaultSourcegraphUrl(sourcegraphURL) ? !!(await codeHost.getContext?.())?.privateRepository : true)
@@ -841,7 +855,7 @@ export async function handleCodeHost({
                     setRepoSyncError(hasRepoSyncError)
                     if (isExtension) {
                         background.notifyRepoSyncError({ sourcegraphURL, hasRepoSyncError }).catch(error => {
-                            console.error('Error notifying background page of private cloud error:', error)
+                            console.error('Error notifying background page of repository sync error:', error)
                         })
                     }
                 }

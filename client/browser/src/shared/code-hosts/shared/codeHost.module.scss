@@ -1,4 +1,9 @@
 .hover-overlay {
     isolation: isolate;
     z-index: 2000 !important;
+    min-width: 20rem !important;
+}
+
+.badge-hidden {
+    display: none !important;
 }

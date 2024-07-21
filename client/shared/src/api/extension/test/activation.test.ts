@@ -1,4 +1,4 @@
-import { BehaviorSubject, firstValueFrom, of } from 'rxjs'
+import { BehaviorSubject, firstValueFrom } from 'rxjs'
 import { filter, first } from 'rxjs/operators'
 import sinon from 'sinon'
 import type sourcegraph from 'sourcegraph'
@@ -18,9 +18,9 @@ describe('Extension activation', () => {
         it('logs events for activated extensions', async () => {
             const logEvent = sinon.spy()
 
-            const mockMain = pretendRemote<Pick<MainThreadAPI, 'logEvent' | 'getTelemetryRecorder'>>({
+            const mockMain = pretendRemote<Pick<MainThreadAPI, 'logEvent' | 'recordEvent'>>({
                 logEvent,
-                getTelemetryRecorder: () => noOpTelemetryRecorder,
+                recordEvent: noOpTelemetryRecorder.recordEvent as MainThreadAPI['recordEvent'],
             })
 
             const FIXTURE_EXTENSION: ExecutableExtension = {
@@ -53,8 +53,6 @@ describe('Extension activation', () => {
                 function createExtensionAPI() {
                     return {} as typeof sourcegraph
                 },
-                of(true),
-                noopPromise,
                 noopPromise
             )
 

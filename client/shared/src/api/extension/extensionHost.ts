@@ -35,7 +35,6 @@ export interface InitData {
  *
  * It expects to receive a message containing {@link InitData} from the client application as the
  * first message.
- *
  * @param endpoints The endpoints to the client.
  * @returns An unsubscribable to terminate the extension host.
  */
@@ -74,7 +73,6 @@ export function startExtensionHost(
  *
  * The extension API is made globally available to all requires/imports of the "sourcegraph" module
  * by other scripts running in the same JavaScript context.
- *
  * @param endpoints The endpoints to the client.
  * @param initData The information to initialize this extension host.
  * @returns An unsubscribable to terminate the extension host.
@@ -137,7 +135,7 @@ function createExtensionAndExtensionHostAPIs(
     const createExtensionAPI = createExtensionAPIFactory(extensionHostState, proxy, initData)
 
     // Activate extensions. Create extension APIs on extension activation.
-    subscription.add(activateExtensions(extensionHostState, proxy, createExtensionAPI, mainThreadAPIInitializations))
+    subscription.add(activateExtensions(extensionHostState, proxy, createExtensionAPI))
 
     // Observe settings and update active loggers state
     subscription.add(setActiveLoggers(extensionHostState))

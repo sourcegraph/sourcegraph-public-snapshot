@@ -1,16 +1,17 @@
 {
-  "$schema": "http://json.schemastore.org/webextension",
+  "$schema": "https://json.schemastore.org/chrome-manifest",
   "version": "0.0.0",
   "name": "Sourcegraph",
-  "manifest_version": 2,
+  "manifest_version": 3,
   "description": "Adds code intelligence to GitHub, GitLab, and other hosts: hovers, definitions, references. For 20+ languages.",
-  "browser_action": {
+  "action": {
     "default_title": "Sourcegraph",
     "default_icon": {
       "32": "img/icon-32.png",
       "48": "img/icon-48.png",
       "128": "img/icon-128.png"
-    }
+    },
+    "default_popup": "options.html"
   },
   "icons": {
     "32": "img/icon-32.png",
@@ -18,8 +19,18 @@
     "128": "img/icon-128.png"
   },
   "background": {
-    "scripts": ["js/backgroundPage.main.bundle.js"]
+    "service_worker": "js/backgroundPage.main.bundle.js"
   },
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*"],
+      "js": ["js/contentPage.main.bundle.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["activeTab", "storage", "scripting"],
+  "host_permissions": ["https://github.com/*", "https://sourcegraph.com/*"],
+  "optional_host_permissions": ["https://*/*", "http://*/*"],
   "options_ui": {
     "page": "options.html",
     "open_in_tab": true
@@ -27,31 +38,16 @@
   "storage": {
     "managed_schema": "schema.json"
   },
-  "optional_permissions": ["tabs", "http://*/*", "https://*/*"],
-  "content_security_policy": "script-src 'self' blob:; object-src 'self'",
-  "web_accessible_resources": ["img/*", "css/*"],
+  "web_accessible_resources": [
+    {
+      "resources": ["img/*", "css/*", "extensions/*", "extensions/sourcegraph-go/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "omnibox": {
     "keyword": "src"
   },
-  "applications": {
-    "gecko": {
-      "id": "sourcegraph-for-firefox@sourcegraph.com"
-    }
-  },
   "dev": {
-    "permissions": [
-      "storage",
-      "activeTab",
-      "contextMenus",
-      "https://github.com/*",
-      "https://gitlab.com/*",
-      "https://localhost:3443/*",
-      "https://sourcegraph.com/*",
-      "http://localhost:32773/*"
-    ],
     "key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCl2X/axNHMbP0K/NCpMzGo/pgBSsHB2xKx6tfohORKtEv2wUMBPmkK3++kirrwYO2f8Ficyq6pjlXV8LjwPSjSw9KZj6bkDn8QNoSdCp6x9i8ZOWPw6UTQ6s54b3rGQNyvrvfD7S6LphxGEx8rNlkjpWKcrvY3+DyoFKHP/hax7wIDAQAB"
-  },
-  "prod": {
-    "permissions": ["activeTab", "storage", "contextMenus", "https://github.com/*", "https://sourcegraph.com/*"]
   }
 }

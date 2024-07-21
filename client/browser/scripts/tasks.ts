@@ -2,7 +2,7 @@
 import fs from 'fs'
 import path from 'path'
 
-import { omit, cloneDeep, curry } from 'lodash'
+import { cloneDeep, curry, omit } from 'lodash'
 import shelljs from 'shelljs'
 import signale from 'signale'
 import utcVersion from 'utc-version'
@@ -175,7 +175,7 @@ function writeManifest(environment: BuildEnvironment, browser: Browser, writeDir
     if (EXTENSION_PERMISSIONS_ALL_URLS) {
         manifest.permissions!.push('<all_urls>')
         /** Set key to make extension id deterministic */
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
         // @ts-ignore
         manifest.key = manifestSpec.dev.key
         signale.info('Adding <all_urls> to permissions because of env var setting')
@@ -194,9 +194,20 @@ function writeManifest(environment: BuildEnvironment, browser: Browser, writeDir
         }
     }
 
-    // Add the inline extensions to web accessible resources
-    manifest.web_accessible_resources = manifest.web_accessible_resources || []
-    manifest.web_accessible_resources.push('extensions/*')
+    // Firefox doesn't support service workers, so we need a workaround. See
+    // https://github.com/mozilla/web-ext/issues/2532.
+    if (browser === 'firefox') {
+        manifest.background!.scripts = [manifest.background!.service_worker]
+        delete manifest.background!.service_worker
+    }
+
+    if (browser === 'firefox') {
+        manifest.browser_specific_settings = {
+            gecko: {
+                id: 'sourcegraph-for-firefox@sourcegraph.com',
+            },
+        }
+    }
 
     delete manifest.$schema
 

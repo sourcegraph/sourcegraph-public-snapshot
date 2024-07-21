@@ -20,7 +20,6 @@ export function esbuildBuildOptions(mode: 'dev' | 'prod', extraPlugins: esbuild.
             path.resolve(browserSourcePath, 'browser-extension/scripts/backgroundPage.main.ts'),
             path.resolve(browserSourcePath, 'browser-extension/scripts/contentPage.main.ts'),
             path.resolve(browserSourcePath, 'browser-extension/scripts/optionsPage.main.tsx'),
-            path.resolve(browserSourcePath, 'browser-extension/scripts/afterInstallPage.main.tsx'),
 
             // Common native integration entry point (Gitlab, Bitbucket)
             path.resolve(browserSourcePath, 'native-integration/nativeIntegration.main.ts'),
@@ -39,9 +38,11 @@ export function esbuildBuildOptions(mode: 'dev' | 'prod', extraPlugins: esbuild.
         plugins: [stylePlugin, ...extraPlugins],
         define: {
             'process.env.NODE_ENV': JSON.stringify(mode === 'dev' ? 'development' : 'production'),
+            'process.env.NODE_DEBUG': 'false',
             'process.env.BUNDLE_UID': JSON.stringify(generateBundleUID()),
         },
         bundle: true,
+        treeShaking: true,
         minify: false,
         logLevel: 'error',
         jsx: 'automatic',
@@ -50,7 +51,12 @@ export function esbuildBuildOptions(mode: 'dev' | 'prod', extraPlugins: esbuild.
         entryNames: '[ext]/[name].bundle',
         target: 'esnext',
         sourcemap: true,
-        alias: { path: 'path-browserify' },
+        alias: { path: 'path-browserify', lodash: 'lodash-es' },
+        banner: {
+            // HACK: lodash has a `Function("return this")`, which Firefox's CSP protection
+            // complains about. This ensures we do not encounter it.
+            js: 'globalThis.global = globalThis;',
+        },
         loader: {
             '.svg': 'text',
         },

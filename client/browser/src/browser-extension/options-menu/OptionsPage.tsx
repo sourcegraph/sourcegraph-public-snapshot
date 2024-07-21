@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
-    mdiEarth,
+    mdiBlockHelper,
     mdiBookOpenPageVariant,
     mdiCheckCircleOutline,
-    mdiLock,
-    mdiBlockHelper,
-    mdiOpenInNew,
     mdiClose,
+    mdiEarth,
+    mdiLock,
+    mdiOpenInNew,
 } from '@mdi/js'
 import classNames from 'classnames'
 import type { Observable } from 'rxjs'
@@ -17,18 +17,18 @@ import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { type InputValidationState, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
 import {
+    Button,
     Combobox,
     ComboboxInput,
+    ComboboxList,
     ComboboxOption,
     ComboboxPopover,
-    ComboboxList,
-    Button,
-    Link,
-    Icon,
-    Label,
     H4,
-    Text,
+    Icon,
     InputStatus,
+    Label,
+    Link,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import type { CurrentUserResult } from '../../graphql-operations'
@@ -38,8 +38,6 @@ import { OptionsPageContainer } from './components/OptionsPageContainer'
 import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
 
 import styles from './OptionsPage.module.scss'
-
-import '@reach/combobox/styles.css'
 
 export interface OptionsPageProps {
     version: string
@@ -350,7 +348,6 @@ export const SourcegraphURLForm: React.FunctionComponent<React.PropsWithChildren
 
     /**
      * BEGIN: Workaround for reach/combobox undesirably expanded
-     *
      * @see https://github.com/reach/reach-ui/issues/755
      */
     const [hasInteracted, setHasInteracted] = useState(false)

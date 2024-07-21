@@ -1,26 +1,25 @@
 // Set globals first before any imports.
-import '../../config/extension.entry'
 import '../../config/background.entry'
+import '../../config/extension.entry'
 // Polyfill before other imports.
 import '../../shared/polyfills'
 
 import type { Endpoint } from 'comlink'
-import { combineLatest, merge, type Observable, of, Subject, Subscription, timer, lastValueFrom } from 'rxjs'
+import { combineLatest, lastValueFrom, merge, type Observable, of, Subject, Subscription, timer } from 'rxjs'
 import {
     bufferCount,
+    catchError,
+    concatMap,
+    distinctUntilChanged,
     filter,
     groupBy,
     map,
     mergeMap,
     switchMap,
     take,
-    concatMap,
-    catchError,
-    distinctUntilChanged,
 } from 'rxjs/operators'
-import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 
-import { isDefined, fetchCache } from '@sourcegraph/common'
+import { fetchCache, isDefined } from '@sourcegraph/common'
 import { type GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
 import { createExtensionHostWorker } from '@sourcegraph/shared/src/api/extension/worker'
 import type { EndpointPair } from '@sourcegraph/shared/src/platform/context'
@@ -30,7 +29,6 @@ import { getHeaders } from '../../shared/backend/headers'
 import { fetchSite } from '../../shared/backend/server'
 import { initializeOmniboxInterface } from '../../shared/cli'
 import { browserPortToMessagePort, findMessagePorts } from '../../shared/platform/ports'
-import { createBlobURLForBundle } from '../../shared/platform/worker'
 import { initSentry } from '../../shared/sentry'
 import { ConditionalTelemetryRecorderProvider } from '../../shared/telemetry'
 import { EventLogger } from '../../shared/tracking/eventLogger'
@@ -155,10 +153,6 @@ async function main(): Promise<void> {
                     })
             )
         }
-
-        browser.tabs.create({ url: browser.extension.getURL('after_install.html') }).catch(error => {
-            console.error('Error opening after-install page:', error)
-        })
     })
 
     // Mirror the managed sourcegraphURL to sync storage
@@ -209,9 +203,9 @@ async function main(): Promise<void> {
                          * Loading content script dynamically
                          * See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts#loading_content_scripts
                          */
-                        await browser.tabs.executeScript(tabId, {
-                            file: 'js/contentPage.main.bundle.js',
-                            runAt: 'document_end',
+                        await browser.scripting.executeScript({
+                            files: ['js/contentPage.main.bundle.js'],
+                            target: { tabId },
                         })
                     }
                 })
@@ -226,10 +220,6 @@ async function main(): Promise<void> {
     const handlers: BackgroundPageApiHandlers = {
         async openOptionsPage(): Promise<void> {
             await browser.runtime.openOptionsPage()
-        },
-
-        async createBlobURL(bundleUrl: string): Promise<string> {
-            return createBlobURLForBundle(bundleUrl)
         },
 
         async requestGraphQL<T, V = object>({
@@ -291,10 +281,7 @@ async function main(): Promise<void> {
 
     // The `popup=true` param is used by the options page to determine if it's
     // loaded in the popup or in th standalone options page.
-    browser.browserAction.setPopup({ popup: 'options.html?popup=true' })
-
-    // Add "Enable Sourcegraph on this domain" context menu item
-    addDomainPermissionToggle()
+    ;(browser.action ?? browser.browserAction).setPopup({ popup: 'options.html?popup=true' })
 
     const ENDPOINT_KIND_REGEX = /^(proxy|expose)-/
 
@@ -376,8 +363,8 @@ function handleBrowserPortPair(
     const subscriptions = new Subscription()
 
     console.log('Extension host client connected')
-    const { worker, clientEndpoints } = createExtensionHostWorker(workerBundleURL)
-    subscriptions.add(() => worker.terminate())
+    const { terminate: terminateExtensionHost, clientEndpoints } = createExtensionHostWorker(workerBundleURL)
+    subscriptions.add(() => terminateExtensionHost())
 
     /** Forwards all messages between two endpoints (in one direction) */
     const forwardEndpoint = (from: Endpoint, to: Endpoint): void => {
