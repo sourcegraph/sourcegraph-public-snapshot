@@ -18,8 +18,9 @@ type MappedIndex interface {
 	// GetDocument returns None if the index does not contain a document at the given path.
 	// There is no caching here, every call to GetDocument re-fetches the full document from the database.
 	GetDocument(context.Context, core.RepoRelPath) (core.Option[MappedDocument], error)
+	// GetDocuments uses batch APIs to fetch multiple documents and pre-fetches diff contents
+	GetDocuments(context.Context, []core.RepoRelPath) ([]core.Option[MappedDocument], error)
 	GetUploadSummary() core.UploadSummary
-	// TODO: Should there be a bulk-API for getting multiple documents?
 }
 
 var _ MappedIndex = mappedIndex{}
@@ -31,6 +32,7 @@ type MappedDocument interface {
 	GetOccurrences(context.Context) ([]*scip.Occurrence, error)
 	// GetOccurrencesAtRange returns shared slices. Do not modify the returned slice or Occurrences without copying them first
 	GetOccurrencesAtRange(context.Context, scip.Range) ([]*scip.Occurrence, error)
+	GetPath() core.RepoRelPath
 }
 
 var _ MappedDocument = &mappedDocument{}
@@ -65,28 +67,49 @@ func (i mappedIndex) GetUploadSummary() core.UploadSummary {
 	}
 }
 
+func (i mappedIndex) makeMappedDocument(path core.RepoRelPath, scipDocument *scip.Document) MappedDocument {
+	return &mappedDocument{
+		gitTreeTranslator: i.gitTreeTranslator,
+		indexCommit:       i.upload.GetCommit(),
+		targetCommit:      i.targetCommit,
+		path:              path,
+		document: &lockedDocument{
+			inner:      scipDocument,
+			isMapped:   false,
+			mapErrored: nil,
+			lock:       sync.RWMutex{},
+		},
+		mapOnce: sync.Once{},
+	}
+}
+
 func (i mappedIndex) GetDocument(ctx context.Context, path core.RepoRelPath) (core.Option[MappedDocument], error) {
 	optDocument, err := i.lsifStore.SCIPDocument(ctx, i.upload.GetID(), core.NewUploadRelPath(i.upload, path))
 	if err != nil {
 		return core.None[MappedDocument](), err
 	}
 	if document, ok := optDocument.Get(); ok {
-		return core.Some[MappedDocument](&mappedDocument{
-			gitTreeTranslator: i.gitTreeTranslator,
-			indexCommit:       i.upload.GetCommit(),
-			targetCommit:      i.targetCommit,
-			path:              path,
-			document: &lockedDocument{
-				inner:      document,
-				isMapped:   false,
-				mapErrored: nil,
-				lock:       sync.RWMutex{},
-			},
-			mapOnce: sync.Once{},
-		}), nil
+		return core.Some[MappedDocument](i.makeMappedDocument(path, document)), nil
 	} else {
 		return core.None[MappedDocument](), nil
 	}
+}
+
+func (i mappedIndex) GetDocuments(ctx context.Context, paths []core.RepoRelPath) ([]core.Option[MappedDocument], error) {
+	i.gitTreeTranslator.Prefetch(ctx, i.gitTreeTranslator.GetSourceCommit(), i.upload.GetCommit(), paths)
+	documentMap, err := i.lsifStore.SCIPDocuments(ctx, i.upload.GetID(), genslices.Map(paths, func(p core.RepoRelPath) core.UploadRelPath {
+		return core.NewUploadRelPath(i.upload, p)
+	}))
+	if err != nil {
+		return nil, err
+	}
+	return genslices.Map(paths, func(path core.RepoRelPath) core.Option[MappedDocument] {
+		if document, ok := documentMap[core.NewUploadRelPath(i.upload, path)]; ok {
+			return core.Some[MappedDocument](i.makeMappedDocument(path, document))
+		} else {
+			return core.None[MappedDocument]()
+		}
+	}), nil
 }
 
 type mappedDocument struct {
@@ -104,6 +127,10 @@ type lockedDocument struct {
 	isMapped   bool
 	mapErrored error
 	lock       sync.RWMutex
+}
+
+func (d *mappedDocument) GetPath() core.RepoRelPath {
+	return d.path
 }
 
 func cloneOccurrence(occ *scip.Occurrence) *scip.Occurrence {

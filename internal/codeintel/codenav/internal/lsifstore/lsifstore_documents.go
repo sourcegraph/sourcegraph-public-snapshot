@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
+	genslices "github.com/life4/genesis/slices"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
@@ -15,6 +16,55 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
+
+func (s *store) SCIPDocuments(ctx context.Context, uploadID int, paths []core.UploadRelPath) (_ map[core.UploadRelPath]*scip.Document, err error) {
+	stringPaths := genslices.Map(paths, func(p core.UploadRelPath) string { return p.RawValue() })
+	ctx, _, endObservation := s.operations.scipDocuments.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("uploadID", uploadID),
+		attribute.StringSlice("paths", stringPaths),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	scanner := basestore.NewMapScanner(func(dbs dbutil.Scanner) (core.UploadRelPath, *scip.Document, error) {
+		var compressedSCIPPayload []byte
+		var path string
+		emptyPath := core.NewUploadRelPathUnchecked("")
+		if err := dbs.Scan(&path, &compressedSCIPPayload); err != nil {
+			return emptyPath, nil, err
+		}
+
+		scipPayload, err := shared.Decompressor.Decompress(bytes.NewReader(compressedSCIPPayload))
+		if err != nil {
+			return emptyPath, nil, err
+		}
+
+		var document scip.Document
+		if err := proto.Unmarshal(scipPayload, &document); err != nil {
+			return emptyPath, nil, err
+		}
+		return core.NewUploadRelPathUnchecked(path), &document, nil
+	})
+	searchPaths := make([]*sqlf.Query, 0, len(paths))
+	for _, path := range stringPaths {
+		searchPaths = append(searchPaths, sqlf.Sprintf("%s", path))
+	}
+	doc, err := scanner(s.db.Query(ctx, sqlf.Sprintf(fetchSCIPDocumentsQuery, uploadID, sqlf.Join(searchPaths, ","))))
+	if err != nil {
+		return nil, nil
+	}
+	return doc, nil
+}
+
+const fetchSCIPDocumentsQuery = `
+SELECT
+	sid.document_path,
+	sd.raw_scip_payload
+FROM codeintel_scip_document_lookup sid
+JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
+WHERE
+	sid.upload_id = %s AND
+	sid.document_path IN (%s)
+`
 
 func (s *store) SCIPDocument(ctx context.Context, uploadID int, path core.UploadRelPath) (_ core.Option[*scip.Document], err error) {
 	ctx, _, endObservation := s.operations.scipDocument.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{

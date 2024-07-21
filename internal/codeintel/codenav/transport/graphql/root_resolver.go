@@ -251,7 +251,6 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	}
 	remainingCount := int(args.RemainingCount)
 	provsForSCIPData := args.Symbol.ProvenancesForSCIPData()
-	linesGetter := newCachedLinesGetter(r.gitserverClient, 5*1024*1024 /* 5MB */)
 	usageResolvers := []resolverstubs.UsageResolver{}
 
 	if provsForSCIPData.Precise {
@@ -284,7 +283,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 		} else {
 			for _, result := range syntacticResult.Matches {
-				usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo, args.CommitID, linesGetter))
+				usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo, args.CommitID))
 			}
 			numSyntacticResults = len(syntacticResult.Matches)
 			remainingCount = remainingCount - numSyntacticResults
@@ -304,7 +303,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 		} else {
 			for _, result := range results {
-				usageResolvers = append(usageResolvers, NewSearchBasedUsageResolver(result, args.Repo, args.CommitID, linesGetter))
+				usageResolvers = append(usageResolvers, NewSearchBasedUsageResolver(result, args.Repo, args.CommitID))
 			}
 		}
 	}

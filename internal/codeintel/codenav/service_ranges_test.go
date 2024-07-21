@@ -21,10 +21,10 @@ import (
 )
 
 const rangesDiff = `
-diff --git a/changed.go b/changed.go
+diff --git sub3/changed.go sub3/changed.go
 index deadbeef1..deadbeef2 100644
---- a/changed.go
-+++ b/changed.go
+--- sub3/changed.go
++++ sub3/changed.go
 @@ -12,7 +12,7 @@ const imageProcWorkers = 1
  var imageProcSem = make(chan bool, imageProcWorkers)
  var random = "banana"

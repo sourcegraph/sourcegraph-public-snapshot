@@ -1102,6 +1102,7 @@ func (s *Service) getSyntacticUpload(ctx context.Context, trace observation.Trac
 type SearchBasedMatch struct {
 	Path         core.RepoRelPath
 	Range        scip.Range
+	LineContent  string
 	IsDefinition bool
 }
 
@@ -1109,6 +1110,7 @@ type SyntacticMatch struct {
 	Path         core.RepoRelPath
 	Range        scip.Range
 	IsDefinition bool
+	LineContent  string
 	Symbol       string
 }
 

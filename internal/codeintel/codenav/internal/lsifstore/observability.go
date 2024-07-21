@@ -21,6 +21,7 @@ type operations struct {
 	getHover                   *observation.Operation
 	getDiagnostics             *observation.Operation
 	scipDocument               *observation.Operation
+	scipDocuments              *observation.Operation
 	findDocumentIDs            *observation.Operation
 }
 
@@ -58,6 +59,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getHover:                   op("GetHover"),
 		getDiagnostics:             op("GetDiagnostics"),
 		scipDocument:               op("SCIPDocument"),
+		scipDocuments:              op("SCIPDocuments"),
 		findDocumentIDs:            op("FindDocumentIDs"),
 	}
 }

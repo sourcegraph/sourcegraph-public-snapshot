@@ -71,6 +71,9 @@ type MockLsifStore struct {
 	// SCIPDocumentFunc is an instance of a mock function object controlling
 	// the behavior of the method SCIPDocument.
 	SCIPDocumentFunc *LsifStoreSCIPDocumentFunc
+	// SCIPDocumentsFunc is an instance of a mock function object
+	// controlling the behavior of the method SCIPDocuments.
+	SCIPDocumentsFunc *LsifStoreSCIPDocumentsFunc
 }
 
 // NewMockLsifStore creates a new mock of the LsifStore interface. All
@@ -144,6 +147,11 @@ func NewMockLsifStore() *MockLsifStore {
 		},
 		SCIPDocumentFunc: &LsifStoreSCIPDocumentFunc{
 			defaultHook: func(context.Context, int, core.UploadRelPath) (r0 core.Option[*scip.Document], r1 error) {
+				return
+			},
+		},
+		SCIPDocumentsFunc: &LsifStoreSCIPDocumentsFunc{
+			defaultHook: func(context.Context, int, []core.UploadRelPath) (r0 map[core.UploadRelPath]*scip.Document, r1 error) {
 				return
 			},
 		},
@@ -224,6 +232,11 @@ func NewStrictMockLsifStore() *MockLsifStore {
 				panic("unexpected invocation of MockLsifStore.SCIPDocument")
 			},
 		},
+		SCIPDocumentsFunc: &LsifStoreSCIPDocumentsFunc{
+			defaultHook: func(context.Context, int, []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error) {
+				panic("unexpected invocation of MockLsifStore.SCIPDocuments")
+			},
+		},
 	}
 }
 
@@ -272,6 +285,9 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		},
 		SCIPDocumentFunc: &LsifStoreSCIPDocumentFunc{
 			defaultHook: i.SCIPDocument,
+		},
+		SCIPDocumentsFunc: &LsifStoreSCIPDocumentsFunc{
+			defaultHook: i.SCIPDocuments,
 		},
 	}
 }
@@ -1919,6 +1935,117 @@ func (c LsifStoreSCIPDocumentFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// LsifStoreSCIPDocumentsFunc describes the behavior when the SCIPDocuments
+// method of the parent MockLsifStore instance is invoked.
+type LsifStoreSCIPDocumentsFunc struct {
+	defaultHook func(context.Context, int, []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error)
+	hooks       []func(context.Context, int, []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error)
+	history     []LsifStoreSCIPDocumentsFuncCall
+	mutex       sync.Mutex
+}
+
+// SCIPDocuments delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockLsifStore) SCIPDocuments(v0 context.Context, v1 int, v2 []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error) {
+	r0, r1 := m.SCIPDocumentsFunc.nextHook()(v0, v1, v2)
+	m.SCIPDocumentsFunc.appendCall(LsifStoreSCIPDocumentsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the SCIPDocuments method
+// of the parent MockLsifStore instance is invoked and the hook queue is
+// empty.
+func (f *LsifStoreSCIPDocumentsFunc) SetDefaultHook(hook func(context.Context, int, []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SCIPDocuments method of the parent MockLsifStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *LsifStoreSCIPDocumentsFunc) PushHook(hook func(context.Context, int, []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LsifStoreSCIPDocumentsFunc) SetDefaultReturn(r0 map[core.UploadRelPath]*scip.Document, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LsifStoreSCIPDocumentsFunc) PushReturn(r0 map[core.UploadRelPath]*scip.Document, r1 error) {
+	f.PushHook(func(context.Context, int, []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error) {
+		return r0, r1
+	})
+}
+
+func (f *LsifStoreSCIPDocumentsFunc) nextHook() func(context.Context, int, []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LsifStoreSCIPDocumentsFunc) appendCall(r0 LsifStoreSCIPDocumentsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LsifStoreSCIPDocumentsFuncCall objects
+// describing the invocations of this function.
+func (f *LsifStoreSCIPDocumentsFunc) History() []LsifStoreSCIPDocumentsFuncCall {
+	f.mutex.Lock()
+	history := make([]LsifStoreSCIPDocumentsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LsifStoreSCIPDocumentsFuncCall is an object that describes an invocation
+// of method SCIPDocuments on an instance of MockLsifStore.
+type LsifStoreSCIPDocumentsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []core.UploadRelPath
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[core.UploadRelPath]*scip.Document
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LsifStoreSCIPDocumentsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LsifStoreSCIPDocumentsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // MockGitTreeTranslator is a mock implementation of the GitTreeTranslator
 // interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/codenav) used for
@@ -1935,6 +2062,9 @@ type MockGitTreeTranslator struct {
 	// function object controlling the behavior of the method
 	// GetTargetCommitRangeFromSourceRange.
 	GetTargetCommitRangeFromSourceRangeFunc *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc
+	// PrefetchFunc is an instance of a mock function object controlling the
+	// behavior of the method Prefetch.
+	PrefetchFunc *GitTreeTranslatorPrefetchFunc
 }
 
 // NewMockGitTreeTranslator creates a new mock of the GitTreeTranslator
@@ -1954,6 +2084,11 @@ func NewMockGitTreeTranslator() *MockGitTreeTranslator {
 		},
 		GetTargetCommitRangeFromSourceRangeFunc: &GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc{
 			defaultHook: func(context.Context, string, string, shared.Range, bool) (r0 shared.Range, r1 bool, r2 error) {
+				return
+			},
+		},
+		PrefetchFunc: &GitTreeTranslatorPrefetchFunc{
+			defaultHook: func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath) {
 				return
 			},
 		},
@@ -1980,6 +2115,11 @@ func NewStrictMockGitTreeTranslator() *MockGitTreeTranslator {
 				panic("unexpected invocation of MockGitTreeTranslator.GetTargetCommitRangeFromSourceRange")
 			},
 		},
+		PrefetchFunc: &GitTreeTranslatorPrefetchFunc{
+			defaultHook: func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath) {
+				panic("unexpected invocation of MockGitTreeTranslator.Prefetch")
+			},
+		},
 	}
 }
 
@@ -1996,6 +2136,9 @@ func NewMockGitTreeTranslatorFrom(i GitTreeTranslator) *MockGitTreeTranslator {
 		},
 		GetTargetCommitRangeFromSourceRangeFunc: &GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc{
 			defaultHook: i.GetTargetCommitRangeFromSourceRange,
+		},
+		PrefetchFunc: &GitTreeTranslatorPrefetchFunc{
+			defaultHook: i.Prefetch,
 		},
 	}
 }
@@ -2352,6 +2495,114 @@ func (c GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall) Args() []i
 // invocation.
 func (c GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// GitTreeTranslatorPrefetchFunc describes the behavior when the Prefetch
+// method of the parent MockGitTreeTranslator instance is invoked.
+type GitTreeTranslatorPrefetchFunc struct {
+	defaultHook func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath)
+	hooks       []func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath)
+	history     []GitTreeTranslatorPrefetchFuncCall
+	mutex       sync.Mutex
+}
+
+// Prefetch delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitTreeTranslator) Prefetch(v0 context.Context, v1 api.CommitID, v2 api.CommitID, v3 []core.RepoRelPath) {
+	m.PrefetchFunc.nextHook()(v0, v1, v2, v3)
+	m.PrefetchFunc.appendCall(GitTreeTranslatorPrefetchFuncCall{v0, v1, v2, v3})
+	return
+}
+
+// SetDefaultHook sets function that is called when the Prefetch method of
+// the parent MockGitTreeTranslator instance is invoked and the hook queue
+// is empty.
+func (f *GitTreeTranslatorPrefetchFunc) SetDefaultHook(hook func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Prefetch method of the parent MockGitTreeTranslator instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitTreeTranslatorPrefetchFunc) PushHook(hook func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitTreeTranslatorPrefetchFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitTreeTranslatorPrefetchFunc) PushReturn() {
+	f.PushHook(func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath) {
+		return
+	})
+}
+
+func (f *GitTreeTranslatorPrefetchFunc) nextHook() func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitTreeTranslatorPrefetchFunc) appendCall(r0 GitTreeTranslatorPrefetchFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitTreeTranslatorPrefetchFuncCall objects
+// describing the invocations of this function.
+func (f *GitTreeTranslatorPrefetchFunc) History() []GitTreeTranslatorPrefetchFuncCall {
+	f.mutex.Lock()
+	history := make([]GitTreeTranslatorPrefetchFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitTreeTranslatorPrefetchFuncCall is an object that describes an
+// invocation of method Prefetch on an instance of MockGitTreeTranslator.
+type GitTreeTranslatorPrefetchFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.CommitID
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.CommitID
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 []core.RepoRelPath
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitTreeTranslatorPrefetchFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitTreeTranslatorPrefetchFuncCall) Results() []interface{} {
+	return []interface{}{}
 }
 
 // MockUploadService is a mock implementation of the UploadService interface
