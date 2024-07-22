@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/bg"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -44,7 +43,7 @@ func (e eventLogsJob) Routines(_ context.Context, observationCtx *observation.Co
 
 func NewEventLogsJob(observationCtx *observation.Context, db database.DB) goroutine.BackgroundRoutine {
 	handler := goroutine.HandlerFunc(func(ctx context.Context) error {
-		return bg.DeleteOldEventLogsInPostgres(ctx, db)
+		return deleteOldEventLogsInPostgres(ctx, db)
 	})
 
 	operation := observationCtx.Operation(observation.Op{
@@ -68,7 +67,7 @@ func NewEventLogsJob(observationCtx *observation.Context, db database.DB) gorout
 
 func NewSecurityEventLogsJob(observationCtx *observation.Context, db database.DB) goroutine.BackgroundRoutine {
 	handler := goroutine.HandlerFunc(func(ctx context.Context) error {
-		return bg.DeleteOldSecurityEventLogsInPostgres(ctx, db)
+		return deleteOldSecurityEventLogsInPostgres(ctx, db)
 	})
 
 	operation := observationCtx.Operation(observation.Op{

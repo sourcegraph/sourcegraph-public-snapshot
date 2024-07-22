@@ -1,4 +1,4 @@
-package bg
+package eventlogs
 
 import (
 	"context"
@@ -37,7 +37,7 @@ func TestDeleteOldEventLogsInPostgres(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = DeleteOldEventLogsInPostgres(ctx, db)
+	err = deleteOldEventLogsInPostgres(ctx, db)
 	require.NoError(t, err)
 
 	got, err := db.EventLogs().ListAll(ctx, database.EventLogsListOptions{})
@@ -75,7 +75,7 @@ func TestDeleteOldSecurityEventLogsInPostgres(t *testing.T) {
 	require.NoError(t, err)
 
 	assertSecurityEventCount(t, db, 2)
-	err = DeleteOldSecurityEventLogsInPostgres(ctx, db)
+	err = deleteOldSecurityEventLogsInPostgres(ctx, db)
 	require.NoError(t, err)
 	assertSecurityEventCount(t, db, 1)
 }
