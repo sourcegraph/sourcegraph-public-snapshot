@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -10,4 +11,11 @@ go_library(
         "//internal/oobmigration",
         "//lib/errors",
     ],
+)
+
+go_test(
+    name = "gitops_test",
+    srcs = ["git_ops_test.go"],
+    embed = [":gitops"],
+    deps = ["@com_github_stretchr_testify//require"],
 )
