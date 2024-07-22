@@ -531,13 +531,13 @@ func TestDeleteAutoIndexJobsWithoutRepository(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	var indexes []uploadsshared.AutoIndexJob
+	var jobs []uploadsshared.AutoIndexJob
 	for i := range 25 {
 		for range 10 + i {
-			indexes = append(indexes, uploadsshared.AutoIndexJob{ID: len(indexes) + 1, RepositoryID: 50 + i})
+			jobs = append(jobs, uploadsshared.AutoIndexJob{ID: len(jobs) + 1, RepositoryID: 50 + i})
 		}
 	}
-	insertAutoIndexJobs(t, db, indexes...)
+	insertAutoIndexJobs(t, db, jobs...)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-deletedRepositoryGracePeriod + time.Minute)

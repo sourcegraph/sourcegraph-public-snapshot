@@ -53,7 +53,7 @@ func Init(
 	siteAdminChecker := sharedresolvers.NewSiteAdminChecker(db)
 	locationResolverFactory := gitresolvers.NewCachedLocationResolverFactory(repoStore, codeIntelServices.GitserverClient)
 	uploadLoaderFactory := uploadgraphql.NewUploadLoaderFactory(codeIntelServices.UploadsService)
-	indexLoaderFactory := uploadgraphql.NewIndexLoaderFactory(codeIntelServices.UploadsService)
+	autoIndexJobLoaderFactory := uploadgraphql.NewAutoIndexJobLoaderFactory(codeIntelServices.UploadsService)
 	preciseIndexResolverFactory := uploadgraphql.NewPreciseIndexResolverFactory(
 		codeIntelServices.UploadsService,
 		codeIntelServices.PoliciesService,
@@ -67,7 +67,7 @@ func Init(
 		codeIntelServices.AutoIndexingService,
 		siteAdminChecker,
 		uploadLoaderFactory,
-		indexLoaderFactory,
+		autoIndexJobLoaderFactory,
 		locationResolverFactory,
 		preciseIndexResolverFactory,
 	)
@@ -80,7 +80,7 @@ func Init(
 		siteAdminChecker,
 		repoStore,
 		uploadLoaderFactory,
-		indexLoaderFactory,
+		autoIndexJobLoaderFactory,
 		preciseIndexResolverFactory,
 		locationResolverFactory,
 		ConfigInst.HunkCacheSize,
@@ -103,7 +103,7 @@ func Init(
 		codeIntelServices.AutoIndexingService,
 		siteAdminChecker,
 		uploadLoaderFactory,
-		indexLoaderFactory,
+		autoIndexJobLoaderFactory,
 		locationResolverFactory,
 		preciseIndexResolverFactory,
 	)

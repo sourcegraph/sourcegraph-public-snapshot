@@ -61,40 +61,40 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf(`u.enqueuer_user_id`),
 }
 
-func scanJob(s dbutil.Scanner) (index uploadsshared.AutoIndexJob, err error) {
+func scanJob(s dbutil.Scanner) (job uploadsshared.AutoIndexJob, err error) {
 	var executionLogs []executor.ExecutionLogEntry
 	if err := s.Scan(
-		&index.ID,
-		&index.Commit,
-		&index.QueuedAt,
-		&index.State,
-		&index.FailureMessage,
-		&index.StartedAt,
-		&index.FinishedAt,
-		&index.ProcessAfter,
-		&index.NumResets,
-		&index.NumFailures,
-		&index.RepositoryID,
-		&index.RepositoryName,
-		pq.Array(&index.DockerSteps),
-		&index.Root,
-		&index.Indexer,
-		pq.Array(&index.IndexerArgs),
-		&index.Outfile,
+		&job.ID,
+		&job.Commit,
+		&job.QueuedAt,
+		&job.State,
+		&job.FailureMessage,
+		&job.StartedAt,
+		&job.FinishedAt,
+		&job.ProcessAfter,
+		&job.NumResets,
+		&job.NumFailures,
+		&job.RepositoryID,
+		&job.RepositoryName,
+		pq.Array(&job.DockerSteps),
+		&job.Root,
+		&job.Indexer,
+		pq.Array(&job.IndexerArgs),
+		&job.Outfile,
 		pq.Array(&executionLogs),
-		&index.Rank,
-		pq.Array(&index.LocalSteps),
-		&index.AssociatedUploadID,
-		&index.ShouldReindex,
-		pq.Array(&index.RequestedEnvVars),
-		&index.EnqueuerUserID,
+		&job.Rank,
+		pq.Array(&job.LocalSteps),
+		&job.AssociatedUploadID,
+		&job.ShouldReindex,
+		pq.Array(&job.RequestedEnvVars),
+		&job.EnqueuerUserID,
 	); err != nil {
-		return index, err
+		return job, err
 	}
 
-	index.ExecutionLogs = append(index.ExecutionLogs, executionLogs...)
+	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
 
-	return index, nil
+	return job, nil
 }
 
 // stalledDependencySyncingJobMaxAge is the maximum allowable duration between updating

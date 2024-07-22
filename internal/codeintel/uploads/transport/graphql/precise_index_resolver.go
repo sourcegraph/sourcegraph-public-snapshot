@@ -41,7 +41,7 @@ func newPreciseIndexResolver(
 	policySvc PolicyService,
 	gitserverClient gitserver.Client,
 	uploadLoader UploadLoader,
-	indexLoader IndexLoader,
+	autoIndexJobLoader AutoIndexJobLoader,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
 	locationResolver *gitresolvers.CachedLocationResolver,
@@ -61,7 +61,7 @@ func newPreciseIndexResolver(
 
 	if upload != nil {
 		if upload.AssociatedIndexID != nil {
-			v, ok, err := indexLoader.GetByID(ctx, *upload.AssociatedIndexID)
+			v, ok, err := autoIndexJobLoader.GetByID(ctx, *upload.AssociatedIndexID)
 			if err != nil {
 				return nil, err
 			}
@@ -157,9 +157,9 @@ func (r *preciseIndexResolver) ProcessingFinishedAt() *gqlutil.DateTime {
 	return nil
 }
 
-func (r *preciseIndexResolver) Steps() resolverstubs.IndexStepsResolver {
+func (r *preciseIndexResolver) Steps() resolverstubs.AutoIndexJobStepsResolver {
 	if r.index != nil {
-		return NewIndexStepsResolver(r.siteAdminChecker, *r.index)
+		return NewAutoIndexJobStepsResolver(r.siteAdminChecker, *r.index)
 	}
 
 	return nil

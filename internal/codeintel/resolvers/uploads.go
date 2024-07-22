@@ -83,7 +83,7 @@ type PreciseIndexResolver interface {
 	ProcessingStartedAt() *gqlutil.DateTime
 	IndexingFinishedAt() *gqlutil.DateTime
 	ProcessingFinishedAt() *gqlutil.DateTime
-	Steps() IndexStepsResolver
+	Steps() AutoIndexJobStepsResolver
 	Failure() *string
 	PlaceInQueue() *int32
 	ShouldReindex(ctx context.Context) bool
@@ -129,7 +129,7 @@ type AutoIndexJobDescriptionResolver interface {
 	Root() string
 	Indexer() CodeIntelIndexerResolver
 	ComparisonKey() string
-	Steps() IndexStepsResolver
+	Steps() AutoIndexJobStepsResolver
 }
 
 type CodeIntelIndexerResolver interface {
@@ -139,7 +139,7 @@ type CodeIntelIndexerResolver interface {
 	ImageName() *string
 }
 
-type IndexStepsResolver interface {
+type AutoIndexJobStepsResolver interface {
 	Setup() []ExecutionLogEntryResolver
 	PreIndex() []PreIndexStepResolver
 	Index() IndexStepResolver

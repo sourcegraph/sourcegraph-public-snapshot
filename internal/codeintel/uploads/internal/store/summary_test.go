@@ -139,14 +139,14 @@ func TestRecentIndexesSummary(t *testing.T) {
 	r1 := 1
 	r2 := 2
 
-	addDefaults := func(index uploadsshared.AutoIndexJob) uploadsshared.AutoIndexJob {
-		index.Commit = makeCommit(index.ID)
-		index.RepositoryID = 50
-		index.RepositoryName = "n-50"
-		index.DockerSteps = []uploadsshared.DockerStep{}
-		index.IndexerArgs = []string{}
-		index.LocalSteps = []string{}
-		return index
+	addDefaults := func(job uploadsshared.AutoIndexJob) uploadsshared.AutoIndexJob {
+		job.Commit = makeCommit(job.ID)
+		job.RepositoryID = 50
+		job.RepositoryName = "n-50"
+		job.DockerSteps = []uploadsshared.DockerStep{}
+		job.IndexerArgs = []string{}
+		job.LocalSteps = []string{}
+		return job
 	}
 
 	jobs := []uploadsshared.AutoIndexJob{

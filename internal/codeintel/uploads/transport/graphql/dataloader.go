@@ -6,24 +6,24 @@ import (
 )
 
 type (
-	UploadLoaderFactory = *dataloader.LoaderFactory[int, shared.Upload]
-	IndexLoaderFactory  = *dataloader.LoaderFactory[int, shared.AutoIndexJob]
-	UploadLoader        = *dataloader.Loader[int, shared.Upload]
-	IndexLoader         = *dataloader.Loader[int, shared.AutoIndexJob]
+	UploadLoaderFactory       = *dataloader.LoaderFactory[int, shared.Upload]
+	AutoIndexJobLoaderFactory = *dataloader.LoaderFactory[int, shared.AutoIndexJob]
+	UploadLoader              = *dataloader.Loader[int, shared.Upload]
+	AutoIndexJobLoader        = *dataloader.Loader[int, shared.AutoIndexJob]
 )
 
 func NewUploadLoaderFactory(uploadService UploadsService) UploadLoaderFactory {
 	return dataloader.NewLoaderFactory[int, shared.Upload](dataloader.BackingServiceFunc[int, shared.Upload](uploadService.GetUploadsByIDs))
 }
 
-func NewIndexLoaderFactory(uploadService UploadsService) IndexLoaderFactory {
+func NewAutoIndexJobLoaderFactory(uploadService UploadsService) AutoIndexJobLoaderFactory {
 	return dataloader.NewLoaderFactory[int, shared.AutoIndexJob](dataloader.BackingServiceFunc[int, shared.AutoIndexJob](uploadService.GetAutoIndexJobsByIDs))
 }
 
-func PresubmitAssociatedIndexes(indexLoader IndexLoader, uploads ...shared.Upload) {
+func PresubmitAssociatedAutoIndexJobs(autoIndexJobLoader AutoIndexJobLoader, uploads ...shared.Upload) {
 	for _, upload := range uploads {
 		if upload.AssociatedIndexID != nil {
-			indexLoader.Presubmit(*upload.AssociatedIndexID)
+			autoIndexJobLoader.Presubmit(*upload.AssociatedIndexID)
 		}
 	}
 }
