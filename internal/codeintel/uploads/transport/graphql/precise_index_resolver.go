@@ -276,19 +276,19 @@ func (r *preciseIndexResolver) State() string {
 		}
 	}
 
-	switch shared.IndexState(strings.ToLower(r.index.State)) {
-	case shared.IndexStateQueued:
+	switch shared.AutoIndexJobState(strings.ToLower(r.index.State)) {
+	case shared.JobStateQueued:
 		return "QUEUED_FOR_INDEXING"
 
-	case shared.IndexStateProcessing:
+	case shared.JobStateProcessing:
 		return "INDEXING"
 
-	case shared.IndexStateFailed:
+	case shared.JobStateFailed:
 		fallthrough
-	case shared.IndexStateErrored:
+	case shared.JobStateErrored:
 		return "INDEXING_ERRORED"
 
-	case shared.IndexStateCompleted:
+	case shared.JobStateCompleted:
 		// Should not actually occur in practice (where did upload go?)
 		return "INDEXING_COMPLETED"
 

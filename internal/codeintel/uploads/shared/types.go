@@ -154,14 +154,14 @@ type UploadLog struct {
 	Operation         string
 }
 
-type IndexState UploadState
+type AutoIndexJobState UploadState
 
 const (
-	IndexStateQueued     = IndexState(StateQueued)
-	IndexStateProcessing = IndexState(StateProcessing)
-	IndexStateFailed     = IndexState(StateFailed)
-	IndexStateErrored    = IndexState(StateErrored)
-	IndexStateCompleted  = IndexState(StateCompleted)
+	JobStateQueued     = AutoIndexJobState(StateQueued)
+	JobStateProcessing = AutoIndexJobState(StateProcessing)
+	JobStateFailed     = AutoIndexJobState(StateFailed)
+	JobStateErrored    = AutoIndexJobState(StateErrored)
+	JobStateCompleted  = AutoIndexJobState(StateCompleted)
 )
 
 // AutoIndexJob represents an auto-indexing job as represented in lsif_indexes.
@@ -169,8 +169,8 @@ type AutoIndexJob struct {
 	ID       int       `json:"id"`
 	Commit   string    `json:"commit"`
 	QueuedAt time.Time `json:"queuedAt"`
-	// TODO(id: state-refactoring) Use IndexState type here.
-	// IMPORTANT: IndexState must transitively wrap 'string' for back-compat
+	// TODO(id: state-refactoring) Use AutoIndexJobState type here.
+	// IMPORTANT: AutoIndexJobState must transitively wrap 'string' for back-compat
 	State              string                       `json:"state"`
 	FailureMessage     *string                      `json:"failureMessage"`
 	StartedAt          *time.Time                   `json:"startedAt"`
