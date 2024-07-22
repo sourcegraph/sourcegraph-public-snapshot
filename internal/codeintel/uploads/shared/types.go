@@ -196,7 +196,7 @@ type AutoIndexJob struct {
 	EnqueuerUserID     int32                        `json:"enqueuerUserID"`
 }
 
-func NewAutoIndexJob(job config.IndexJob, repositoryID api.RepoID, commit api.CommitID, state AutoIndexJobState) AutoIndexJob {
+func NewAutoIndexJob(job config.AutoIndexJobSpec, repositoryID api.RepoID, commit api.CommitID, state AutoIndexJobState) AutoIndexJob {
 	dockerSteps := genslices.Map(job.Steps, func(step config.DockerStep) DockerStep {
 		return DockerStep{
 			Root:     step.Root,

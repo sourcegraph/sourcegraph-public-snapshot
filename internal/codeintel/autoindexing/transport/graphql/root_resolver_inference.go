@@ -54,7 +54,7 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 		return nil, err
 	}
 
-	jobResolvers, err := newDescriptionResolvers(r.siteAdminChecker, &config.IndexConfiguration{IndexJobs: result.IndexJobs})
+	jobResolvers, err := newDescriptionResolvers(r.siteAdminChecker, &config.AutoIndexJobSpecList{JobSpecs: result.IndexJobs})
 	if err != nil {
 		return nil, err
 	}
@@ -146,13 +146,13 @@ func (r *inferAutoIndexJobsResultResolver) InferenceOutput() string {
 
 type autoIndexJobDescriptionResolver struct {
 	siteAdminChecker sharedresolvers.SiteAdminChecker
-	indexJob         config.IndexJob
+	indexJob         config.AutoIndexJobSpec
 	steps            []uploadsshared.DockerStep
 }
 
-func newDescriptionResolvers(siteAdminChecker sharedresolvers.SiteAdminChecker, indexConfiguration *config.IndexConfiguration) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
+func newDescriptionResolvers(siteAdminChecker sharedresolvers.SiteAdminChecker, indexConfiguration *config.AutoIndexJobSpecList) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
 	var resolvers []resolverstubs.AutoIndexJobDescriptionResolver
-	for _, indexJob := range indexConfiguration.IndexJobs {
+	for _, indexJob := range indexConfiguration.JobSpecs {
 		var steps []uploadsshared.DockerStep
 		for _, step := range indexJob.Steps {
 			steps = append(steps, uploadsshared.DockerStep{

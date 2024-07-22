@@ -140,7 +140,7 @@ func makeExplicitConfigurationFactory(configuration string) configurationFactory
 			return nil, true, nil
 		}
 
-		return makeQueuedJobs(indexConfiguration.IndexJobs, repositoryID, commit), true, nil
+		return makeQueuedJobs(indexConfiguration.JobSpecs, repositoryID, commit), true, nil
 	}
 }
 
@@ -164,7 +164,7 @@ func (s *JobSelector) getJobsFromConfigInDatabase(ctx context.Context, repositor
 		return nil, true, nil
 	}
 
-	return makeQueuedJobs(indexConfiguration.IndexJobs, repositoryID, commit), true, nil
+	return makeQueuedJobs(indexConfiguration.JobSpecs, repositoryID, commit), true, nil
 }
 
 // getJobsFromConfigInRepo returns a set of index jobs configured via a committed
@@ -200,7 +200,7 @@ func (s *JobSelector) getJobsFromConfigInRepo(ctx context.Context, repositoryID 
 		return nil, true, nil
 	}
 
-	return makeQueuedJobs(indexConfiguration.IndexJobs, repositoryID, commit), true, nil
+	return makeQueuedJobs(indexConfiguration.JobSpecs, repositoryID, commit), true, nil
 }
 
 // inferJobsFromRepoContents looks at the repository contents at the given commit and
@@ -216,8 +216,8 @@ func (s *JobSelector) inferJobsFromRepoContents(ctx context.Context, repositoryI
 }
 
 // TODO: Push api.RepoID and api.CommitID much further up.
-func makeQueuedJobs(indexJobs []config.IndexJob, repoID int, commit string) []uploadsshared.AutoIndexJob {
-	return genslices.Map(indexJobs, func(job config.IndexJob) uploadsshared.AutoIndexJob {
+func makeQueuedJobs(indexJobs []config.AutoIndexJobSpec, repoID int, commit string) []uploadsshared.AutoIndexJob {
+	return genslices.Map(indexJobs, func(job config.AutoIndexJobSpec) uploadsshared.AutoIndexJob {
 		return uploadsshared.NewAutoIndexJob(job, api.RepoID(repoID), api.CommitID(commit), uploadsshared.JobStateQueued)
 	})
 }

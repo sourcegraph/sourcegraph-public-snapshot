@@ -343,9 +343,9 @@ func TestQueueAutoIndexJobsInferred(t *testing.T) {
 	inferenceService.InferIndexJobsFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, s1, s2 string) (*shared.InferenceResult, error) {
 		switch string(rn) {
 		case "r42":
-			return &shared.InferenceResult{IndexJobs: []config.IndexJob{{Root: ""}}}, nil
+			return &shared.InferenceResult{IndexJobs: []config.AutoIndexJobSpec{{Root: ""}}}, nil
 		case "r44":
-			return &shared.InferenceResult{IndexJobs: []config.IndexJob{{Root: "a"}, {Root: "b"}}}, nil
+			return &shared.InferenceResult{IndexJobs: []config.AutoIndexJobSpec{{Root: "a"}, {Root: "b"}}}, nil
 		default:
 			return &shared.InferenceResult{IndexJobs: nil}, nil
 		}
@@ -415,7 +415,7 @@ func TestQueueAutoIndexJobsForPackage(t *testing.T) {
 	inferenceService := NewMockInferenceService()
 	inferenceService.InferIndexJobsFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, s1, s2 string) (*shared.InferenceResult, error) {
 		return &shared.InferenceResult{
-			IndexJobs: []config.IndexJob{
+			IndexJobs: []config.AutoIndexJobSpec{
 				{
 					Root: "",
 					Steps: []config.DockerStep{
