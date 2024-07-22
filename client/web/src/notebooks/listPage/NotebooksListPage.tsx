@@ -8,7 +8,7 @@ import { catchError, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike, type ErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { type TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, ButtonLink, PageHeader, useEventObservable } from '@sourcegraph/wildcard'
 
@@ -169,7 +169,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
         () =>
             authenticatedUser?.organizations.nodes.map(org => ({
                 id: `org-${org.id}-notebooks`,
-                label: `${org.displayName} notebooks`,
+                label: `${org.name} notebooks`,
                 logEventName: 'orgNotebooks',
                 namespace: org.id,
             })),

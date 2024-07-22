@@ -47,7 +47,6 @@ export const NewGlobalNavigationBarDemo: StoryFn = () => (
                             __typename: 'Org',
                             id: 'acme',
                             name: 'acme',
-                            displayName: 'Acme',
                             url: 'https://example.com',
                             settingsURL: null,
                         },

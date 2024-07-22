@@ -10,9 +10,7 @@ const config: Meta = {
     title: 'web/savedSearches/SavedSearchForm',
     component: SavedSearchForm,
     decorators: [story => <div className="container mt-5">{story()}</div>],
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

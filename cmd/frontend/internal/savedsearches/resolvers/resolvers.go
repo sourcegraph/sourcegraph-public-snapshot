@@ -57,6 +57,20 @@ func unmarshalSavedSearchID(id graphql.ID) (savedSearchID int32, err error) {
 	return
 }
 
+func checkActorCanViewSavedSearch(ctx context.Context, db database.DB, ss *types.SavedSearch) error {
+	// 🚨 SECURITY: Public (non-secret) saved searches can be viewed by anyone.
+	if !ss.VisibilitySecret {
+		return nil
+	}
+
+	// 🚨 SECURITY: Make sure the current user has permission to get the secret saved search.
+	if err := graphqlbackend.CheckAuthorizedForNamespaceByIDs(ctx, db, ss.Owner); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *Resolver) SavedSearchByID(ctx context.Context, id graphql.ID) (graphqlbackend.SavedSearchResolver, error) {
 	intID, err := unmarshalSavedSearchID(id)
 	if err != nil {
@@ -71,8 +85,8 @@ func (r *Resolver) SavedSearchByID(ctx context.Context, id graphql.ID) (graphqlb
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Make sure the current user has permission to get the saved search.
-	if err := graphqlbackend.CheckAuthorizedForNamespaceByIDs(ctx, r.db, ss.Owner); err != nil {
+	// 🚨 SECURITY: Check whether the actor can view the saved search.
+	if err := checkActorCanViewSavedSearch(ctx, r.db, ss); err != nil {
 		return nil, err
 	}
 
@@ -90,6 +104,8 @@ func (r *savedSearchResolver) ID() graphql.ID {
 func (r *savedSearchResolver) Description() string { return r.s.Description }
 
 func (r *savedSearchResolver) Query() string { return r.s.Query }
+
+func (r *savedSearchResolver) Draft() bool { return r.s.Draft }
 
 func (r *savedSearchResolver) Owner(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
 	if r.s.Owner.User != nil {
@@ -109,8 +125,29 @@ func (r *savedSearchResolver) Owner(ctx context.Context) (*graphqlbackend.Namesp
 	return nil, errors.New("no owner")
 }
 
+func (r *savedSearchResolver) Visibility() graphqlbackend.SavedSearchVisibility {
+	if r.s.VisibilitySecret {
+		return graphqlbackend.SavedSearchVisibilitySecret
+	}
+	return graphqlbackend.SavedSearchVisibilityPublic
+}
+
+func (r *savedSearchResolver) CreatedBy(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	if userID := r.s.CreatedByUser; userID != nil {
+		return graphqlbackend.UserByIDInt32(ctx, r.db, *userID)
+	}
+	return nil, nil
+}
+
 func (r *savedSearchResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.s.CreatedAt}
+}
+
+func (r *savedSearchResolver) UpdatedBy(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	if userID := r.s.UpdatedByUser; userID != nil {
+		return graphqlbackend.UserByIDInt32(ctx, r.db, *userID)
+	}
+	return nil, nil
 }
 
 func (r *savedSearchResolver) UpdatedAt() gqlutil.DateTime {
@@ -121,10 +158,12 @@ func (r *savedSearchResolver) URL() string {
 	return "/saved-searches/" + string(r.ID())
 }
 
-func (r *savedSearchResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	// Right now, any user who can see a saved search can edit/administer it, but in the future we
-	// can add more access levels.
-	return true, nil
+func (r *savedSearchResolver) ViewerCanAdminister(ctx context.Context) bool {
+	// 🚨 SECURITY: If the visibility is public, then the user can see it, but they can only
+	// administer it if they are authorized for the namespace (as an org member or their own user
+	// account).
+	err := graphqlbackend.CheckAuthorizedForNamespaceByIDs(ctx, r.db, r.s.Owner)
+	return err == nil
 }
 
 func (r *Resolver) toSavedSearchResolver(entry types.SavedSearch) *savedSearchResolver {
@@ -137,6 +176,7 @@ func (r *Resolver) SavedSearches(ctx context.Context, args graphqlbackend.SavedS
 	if args.Query != nil {
 		connectionStore.listArgs.Query = *args.Query
 	}
+	connectionStore.listArgs.HideDrafts = !args.IncludeDrafts
 
 	if args.Owner != nil {
 		// 🚨 SECURITY: Make sure the current user has permission to view saved searches of the
@@ -155,15 +195,16 @@ func (r *Resolver) SavedSearches(ctx context.Context, args graphqlbackend.SavedS
 		if err != nil {
 			return nil, err
 		}
-		if currentUser == nil {
-			// 🚨 SECURITY: Just in case, ensure the user is signed in.
-			return nil, auth.ErrNotAuthenticated
+		if currentUser != nil {
+			connectionStore.listArgs.AffiliatedUser = &currentUser.ID
+		} else {
+			// For anonymous visitors, just show all public saved searches.
+			connectionStore.listArgs.PublicOnly = true
 		}
-		connectionStore.listArgs.AffiliatedUser = &currentUser.ID
 	}
 
-	// 🚨 SECURITY: Only site admins can list all saved searches.
-	if connectionStore.listArgs.Owner == nil && connectionStore.listArgs.AffiliatedUser == nil {
+	// 🚨 SECURITY: Only site admins can list all non-public saved searches.
+	if connectionStore.listArgs.Owner == nil && connectionStore.listArgs.AffiliatedUser == nil && !connectionStore.listArgs.PublicOnly {
 		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return nil, errors.Wrap(err, "must specify owner or viewerIsAffiliated args")
 		}
@@ -199,10 +240,19 @@ func (r *Resolver) CreateSavedSearch(ctx context.Context, args *graphqlbackend.C
 		return nil, errMissingPatternType
 	}
 
+	// 🚨 SECURITY: Check that the user can create public-visibility items on this instance.
+	if !args.Input.Visibility.IsSecret() {
+		if err := graphqlbackend.ViewerCanChangeLibraryItemVisibilityToPublic(ctx, r.db); err != nil {
+			return nil, err
+		}
+	}
+
 	ss, err := r.db.SavedSearches().Create(ctx, &types.SavedSearch{
-		Description: args.Input.Description,
-		Query:       args.Input.Query,
-		Owner:       *namespace,
+		Description:      args.Input.Description,
+		Query:            args.Input.Query,
+		Draft:            args.Input.Draft,
+		Owner:            *namespace,
+		VisibilitySecret: args.Input.Visibility.IsSecret(),
 	})
 	if err != nil {
 		return nil, err
@@ -236,6 +286,7 @@ func (r *Resolver) UpdateSavedSearch(ctx context.Context, args *graphqlbackend.U
 		ID:          id,
 		Description: args.Input.Description,
 		Query:       args.Input.Query,
+		Draft:       args.Input.Draft,
 		Owner:       old.Owner, // use transferSavedSearchOwnership to update the owner
 	})
 	if err != nil {
@@ -270,6 +321,33 @@ func (r *Resolver) TransferSavedSearchOwnership(ctx context.Context, args *graph
 	}
 
 	ss, err = r.db.SavedSearches().UpdateOwner(ctx, id, *newOwner)
+	if err != nil {
+		return nil, err
+	}
+	return r.toSavedSearchResolver(*ss), nil
+}
+
+func (r *Resolver) ChangeSavedSearchVisibility(ctx context.Context, args *graphqlbackend.ChangeSavedSearchVisibilityArgs) (graphqlbackend.SavedSearchResolver, error) {
+	// 🚨 SECURITY: Check that the user can change the visibility on this instance.
+	if err := graphqlbackend.ViewerCanChangeLibraryItemVisibilityToPublic(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	id, err := unmarshalSavedSearchID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+	ss, err := r.db.SavedSearches().GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Check the user can administer saved searches in the owner's namespace.
+	if err := graphqlbackend.CheckAuthorizedForNamespaceByIDs(ctx, r.db, ss.Owner); err != nil {
+		return nil, err
+	}
+
+	ss, err = r.db.SavedSearches().UpdateVisibility(ctx, id, args.NewVisibility.IsSecret())
 	if err != nil {
 		return nil, err
 	}

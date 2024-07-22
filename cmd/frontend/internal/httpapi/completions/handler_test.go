@@ -98,6 +98,24 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			want: nil,
 		},
 		{
+			name: "unknown client, semver suffix",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{"sublime"},
+				"client-version": []string{"1.2.0-M1"},
+			},
+			want: nil,
+		},
+		{
+			name: "unknown client, semver suffix 2",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{"sublime"},
+				"client-version": []string{"1.2.0-localbuild"},
+			},
+			want: nil,
+		},
+		{
 			name: "unknown client, invalid version",
 			ccf:  ccf,
 			q: url.Values{

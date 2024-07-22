@@ -1,0 +1,22 @@
+.container {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.toggle {
+    margin: 0;
+}
+
+.badge {
+    all: unset;
+}
+
+.popover {
+    padding: 1rem;
+    width: 20rem;
+
+    p:last-child {
+        margin-bottom: 0;
+    }
+}

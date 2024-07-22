@@ -20,6 +20,10 @@ import (
 )
 
 func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, nil)
 	defaultBranchRef := "refs/heads/main"

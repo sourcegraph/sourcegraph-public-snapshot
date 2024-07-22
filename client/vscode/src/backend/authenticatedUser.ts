@@ -28,7 +28,6 @@ const currentAuthStateQuery = gql`
                 nodes {
                     id
                     name
-                    displayName
                     url
                     settingsURL
                 }

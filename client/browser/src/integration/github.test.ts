@@ -52,8 +52,8 @@ describe('GitHub', () => {
         })
 
         testContext.overrideGraphQL({
-            ViewerConfiguration: () => ({
-                viewerConfiguration: {
+            ViewerSettings: () => ({
+                viewerSettings: {
                     subjects: [],
                     merged: { contents: '', messages: [] },
                 },
@@ -158,8 +158,8 @@ describe('GitHub', () => {
     //         extensions: extensionSettings,
     //     }
     //     testContext.overrideGraphQL({
-    //         ViewerConfiguration: () => ({
-    //             viewerConfiguration: {
+    //         ViewerSettings: () => ({
+    //             viewerSettings: {
     //                 subjects: [
     //                     {
     //                         __typename: 'User',
@@ -321,8 +321,8 @@ describe('GitHub', () => {
                     extensions: extensionSettings,
                 }
                 testContext.overrideGraphQL({
-                    ViewerConfiguration: () => ({
-                        viewerConfiguration: {
+                    ViewerSettings: () => ({
+                        viewerSettings: {
                             subjects: [
                                 {
                                     __typename: 'User',
@@ -643,8 +643,8 @@ describe('GitHub', () => {
                     extensions: extensionSettings,
                 }
                 testContext.overrideGraphQL({
-                    ViewerConfiguration: () => ({
-                        viewerConfiguration: {
+                    ViewerSettings: () => ({
+                        viewerSettings: {
                             subjects: [
                                 {
                                     __typename: 'User',

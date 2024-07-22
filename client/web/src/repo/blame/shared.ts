@@ -157,7 +157,7 @@ function fetchRawBlameHunks(repoName: string, revision: string, filePath: string
                 if (response.ok && response.headers.get('content-type') === EventStreamContentType) {
                     return
                 }
-                subscriber.error(new Error('request for blame data failed: ' + (await response.text())))
+                throw new Error('request for blame data failed: ' + (await response.text()))
             },
             onmessage(event) {
                 if (event.event === 'hunk') {
@@ -165,8 +165,8 @@ function fetchRawBlameHunks(repoName: string, revision: string, filePath: string
                     subscriber.next(rawHunks)
                 }
             },
-            onerror(event) {
-                subscriber.error(event)
+            onerror(err) {
+                throw err
             },
         }).then(
             () => subscriber.complete(),

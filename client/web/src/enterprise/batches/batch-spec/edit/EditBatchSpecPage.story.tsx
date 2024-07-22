@@ -95,7 +95,6 @@ const FIRST_TIME_MOCKS = new WildcardMockLink([
 const MOCK_ORGANIZATION = {
     __typename: 'Org',
     name: 'acme-corp',
-    displayName: 'ACME Corporation',
     id: 'acme-corp-id',
 }
 

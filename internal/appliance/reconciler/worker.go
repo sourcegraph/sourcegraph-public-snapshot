@@ -90,6 +90,15 @@ func (r *Reconciler) reconcileWorkerDeployment(ctx context.Context, sg *config.S
 
 	podTemplate := pod.NewPodTemplate(name, cfg)
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr}
+	redisConnSpecs, err := r.getRedisSecrets(ctx, sg)
+	if err != nil {
+		return err
+	}
+	redisConnHash, err := configHash(redisConnSpecs)
+	if err != nil {
+		return err
+	}
+	podTemplate.Template.ObjectMeta.Annotations["checksum/redis"] = redisConnHash
 
 	dep := deployment.NewDeployment(name, sg.Namespace, sg.Spec.RequestedVersion)
 	dep.Spec.Replicas = pointers.Ptr(cfg.Replicas)
@@ -99,7 +108,14 @@ func (r *Reconciler) reconcileWorkerDeployment(ctx context.Context, sg *config.S
 	}
 	dep.Spec.Template = podTemplate.Template
 
-	return reconcileObject(ctx, r, cfg, &dep, &appsv1.Deployment{}, sg, owner)
+	ifChanged := struct {
+		config.WorkerSpec
+		RedisConnSpecs
+	}{
+		WorkerSpec:     cfg,
+		RedisConnSpecs: redisConnSpecs,
+	}
+	return reconcileObject(ctx, r, ifChanged, &dep, &appsv1.Deployment{}, sg, owner)
 }
 
 func (r *Reconciler) reconcileWorkerService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {

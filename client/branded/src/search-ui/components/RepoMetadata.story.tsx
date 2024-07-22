@@ -7,9 +7,7 @@ import { type RepoMetadataItem, RepoMetadata } from './RepoMetadata'
 
 const config: Meta = {
     title: 'branded/search-ui/RepoMetadata',
-    parameters: {
-        chromatic: { viewports: [480] },
-    },
+    parameters: {},
 }
 
 export default config
@@ -50,8 +48,3 @@ export const RepoMetadataStory: StoryFn = () => (
 )
 
 RepoMetadataStory.storyName = 'RepoMetadata'
-RepoMetadataStory.parameters = {
-    chromatic: {
-        disableSnapshot: false,
-    },
-}

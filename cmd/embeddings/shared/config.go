@@ -12,13 +12,13 @@ const defaultEmbeddingsCacheSize = "6GiB"
 type Config struct {
 	env.BaseConfig
 
-	EmbeddingsUploadStoreConfig *emb.EmbeddingsUploadStoreConfig
+	EmbeddingsUploadStoreConfig *emb.ObjectStorageConfig
 
 	EmbeddingsCacheSize uint64
 }
 
 func (c *Config) Load() {
-	c.EmbeddingsUploadStoreConfig = &emb.EmbeddingsUploadStoreConfig{}
+	c.EmbeddingsUploadStoreConfig = &emb.ObjectStorageConfig{}
 	c.EmbeddingsUploadStoreConfig.Load()
 
 	c.EmbeddingsCacheSize = env.MustGetBytes("EMBEDDINGS_CACHE_SIZE", defaultEmbeddingsCacheSize, "The size of the in-memory cache for embeddings indexes")

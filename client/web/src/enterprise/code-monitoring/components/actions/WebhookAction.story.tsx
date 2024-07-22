@@ -11,9 +11,7 @@ import { WebhookAction } from './WebhookAction'
 
 const config: Meta = {
     title: 'web/enterprise/code-monitoring/actions/WebhookAction',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

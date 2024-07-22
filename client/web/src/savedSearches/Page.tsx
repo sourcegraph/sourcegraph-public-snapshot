@@ -7,7 +7,7 @@ import { PageHeader } from '@sourcegraph/wildcard'
 
 import { Page } from '../components/Page'
 import { PageTitle } from '../components/PageTitle'
-import { type SavedSearchFields } from '../graphql-operations'
+import type { SavedSearchFields } from '../graphql-operations'
 import { PageRoutes } from '../routes.constants'
 
 import { urlToSavedSearchesList } from './ListPage'
@@ -47,6 +47,7 @@ export const SavedSearchPage: FunctionComponent<{
                 </PageHeader.Heading>
             </PageHeader>
             {children}
+            <div className="pb-4" />
         </Page>
     )
 }

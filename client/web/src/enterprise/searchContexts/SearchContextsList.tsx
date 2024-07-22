@@ -12,14 +12,11 @@ import {
 } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
-import {
-    FilteredConnection,
-    type Connection,
-    type Filter,
-    type FilterOption,
-} from '../../components/FilteredConnection'
+import { FilteredConnection, type Connection, type Filter } from '../../components/FilteredConnection'
+import { useAffiliatedNamespaces } from '../../namespaces/useAffiliatedNamespaces'
 
 import { useDefaultContext } from './hooks/useDefaultContext'
 import { SearchContextNode, type SearchContextNodeProps } from './SearchContextNode'
@@ -27,19 +24,22 @@ import { SearchContextNode, type SearchContextNodeProps } from './SearchContextN
 import styles from './SearchContextsList.module.scss'
 
 export interface SearchContextsListProps
-    extends Pick<SearchContextProps, 'fetchSearchContexts' | 'getUserSearchContextNamespaces'>,
+    extends Pick<SearchContextProps, 'fetchSearchContexts'>,
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
     setAlert: (message: string) => void
 }
 
+const GLOBAL_NAMESPACE_KEY = 'global' as const
+
 export const SearchContextsList: React.FunctionComponent<SearchContextsListProps> = ({
     authenticatedUser,
-    getUserSearchContextNamespaces,
     fetchSearchContexts,
     platformContext,
     setAlert,
 }) => {
+    const { namespaces, loading: namespacesLoading, error: namespacesError } = useAffiliatedNamespaces()
+
     const queryConnection = useCallback(
         (args: Omit<Partial<ListSearchContextsVariables>, 'first'> & { first?: number | null }) => {
             const { namespace, orderBy, descending } = args as {
@@ -47,44 +47,19 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
                 orderBy: SearchContextsOrderBy
                 descending: boolean
             }
-            const namespaces = namespace
-                ? [namespace === 'global' ? null : namespace]
-                : getUserSearchContextNamespaces(authenticatedUser)
-
             return fetchSearchContexts({
                 first: args.first ?? 10,
                 query: args.query ?? undefined,
                 after: args.after ?? undefined,
-                namespaces,
+                namespaces: namespace
+                    ? [namespace === GLOBAL_NAMESPACE_KEY ? null : namespace]
+                    : [null, ...(namespaces?.map(namespace => namespace.id) ?? [])],
                 orderBy,
                 descending,
                 platformContext,
             })
         },
-        [authenticatedUser, fetchSearchContexts, getUserSearchContextNamespaces, platformContext]
-    )
-
-    const ownerNamespaceFilterValues: FilterOption[] = useMemo(
-        () =>
-            authenticatedUser
-                ? [
-                      {
-                          value: authenticatedUser.id,
-                          label: authenticatedUser.username,
-                          args: {
-                              namespace: authenticatedUser.id,
-                          },
-                      },
-                      ...authenticatedUser.organizations.nodes.map(org => ({
-                          value: org.id,
-                          label: org.displayName || org.name,
-                          args: {
-                              namespace: org.id,
-                          },
-                      })),
-                  ]
-                : [],
-        [authenticatedUser]
+        [fetchSearchContexts, namespaces, platformContext]
     )
 
     const filters = useMemo<Filter[]>(
@@ -128,14 +103,20 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
                         value: 'global-owner',
                         label: 'Global',
                         args: {
-                            namespace: 'global',
+                            namespace: GLOBAL_NAMESPACE_KEY,
                         },
                     },
-                    ...ownerNamespaceFilterValues,
+                    ...(namespaces?.map(namespace => ({
+                        value: namespace.id,
+                        label: namespace.namespaceName,
+                        args: {
+                            namespace: namespace.id,
+                        },
+                    })) ?? []),
                 ],
             },
         ],
-        [ownerNamespaceFilterValues]
+        [namespaces]
     )
 
     const [contextsOrError, setContextsOrError] = useState<
@@ -166,7 +147,14 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
         [setAlert, setAsDefault]
     )
 
-    return (
+    const error = namespacesError
+    const loading = namespacesLoading
+
+    return loading ? (
+        <LoadingSpinner />
+    ) : error ? (
+        <ErrorAlert error={error} className="mb-3" />
+    ) : (
         <FilteredConnection<
             SearchContextMinimalFields,
             Omit<SearchContextNodeProps, 'node'>,

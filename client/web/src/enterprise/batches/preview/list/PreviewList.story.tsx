@@ -73,10 +73,4 @@ export const DefaultStory: StoryFn = args => {
     )
 }
 
-DefaultStory.parameters = {
-    chromatic: {
-        viewports: [320, 576, 978, 1440],
-    },
-}
-
 DefaultStory.storyName = 'default'

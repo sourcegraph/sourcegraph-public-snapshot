@@ -40,7 +40,7 @@ import (
 
 // maxRequestDuration is the maximum amount of time a request can take before
 // being cancelled as DeadlineExceeded.
-const maxRequestDuration = 8 * time.Minute
+const maxRequestDuration = 1 * time.Minute
 
 var timeToFirstEventMetrics = metrics.NewREDMetrics(
 	prometheus.DefaultRegisterer,
@@ -67,7 +67,17 @@ func newCompletionsHandler(
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
+		// Set the context timeout: use the timeout from the request header if provided,
+		// otherwise use the default maximum request duration.
+		ctxTimeout := maxRequestDuration
+		if v := r.Header.Get("X-Timeout-Ms"); v != "" {
+			if t, err := strconv.Atoi(v); err != nil {
+				logger.Warn("error parsing X-Timeout-Ms header", log.Error(err))
+			} else {
+				ctxTimeout = time.Duration(t) * time.Millisecond
+			}
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), ctxTimeout)
 		defer cancel()
 
 		// First check that Cody is enabled for this Sourcegraph instance.
@@ -584,7 +594,7 @@ func checkClientCodyIgnoreCompatibility(ctx context.Context, db database.DB, r *
 		// All agent-based clients (JetBrains, Eclipse, Visual Studio) support
 		// context filters out of the box since the original support was added
 		// for JetBrains GA in May 2024.
-		cvc = clientVersionConstraint{client: clientName, constraint: ">= 0.0.0"}
+		cvc = clientVersionConstraint{client: clientName, constraint: ">= 0.0.0-0"}
 	}
 
 	clientVersion := r.URL.Query().Get("client-version")

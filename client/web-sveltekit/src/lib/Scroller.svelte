@@ -8,9 +8,11 @@
     import { afterUpdate, createEventDispatcher } from 'svelte'
 
     export let margin: number
+    export let viewport: HTMLElement | undefined = undefined
+    export let scroller: HTMLElement | undefined = undefined
 
     export function capture(): Capture {
-        return { scroll: scroller.scrollTop }
+        return { scroll: scroller?.scrollTop || 0 }
     }
 
     export function restore(data?: Capture) {
@@ -31,14 +33,13 @@
 
     const dispatch = createEventDispatcher<{ more: void }>()
 
-    let viewport: HTMLElement
-    let scroller: HTMLElement
-
     function handleScroll() {
-        const remaining = scroller.scrollHeight - (scroller.scrollTop + viewport.clientHeight)
+        if (scroller && viewport) {
+            const remaining = scroller.scrollHeight - (scroller.scrollTop + (viewport?.clientHeight ?? 0))
 
-        if (remaining < margin) {
-            dispatch('more')
+            if (remaining < margin) {
+                dispatch('more')
+            }
         }
     }
 
@@ -46,13 +47,13 @@
         // This premptively triggers a 'more' event when the scrollable content is smaller than than
         // scroller. Without this, the 'more' event would not be triggered because there is nothing
         // to scroll.
-        if (scroller.scrollHeight <= scroller.clientHeight) {
+        if (scroller && scroller.scrollHeight <= scroller.clientHeight) {
             dispatch('more')
         }
     })
 </script>
 
-<div class="viewport" bind:this={viewport}>
+<div class="viewport" bind:this={viewport} data-viewport>
     <div class="scroller" bind:this={scroller} on:scroll={handleScroll} data-scroller>
         <slot />
     </div>

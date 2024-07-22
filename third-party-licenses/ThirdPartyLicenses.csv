@@ -857,7 +857,6 @@ PNPM,cheerio-select,2.1.0,Simplified BSD,"",Approved
 PNPM,chokidar,3.5.1,MIT,"",Approved
 PNPM,chokidar-cli,2.1.0,MIT,"",Approved
 PNPM,chownr,1.1.4,ISC,"",Approved
-PNPM,chromatic,10.2.0,MIT,"",Approved
 PNPM,chrome-trace-event,1.0.3,MIT,"",Approved
 PNPM,chrome-webstore-upload,0.2.2,MIT,"",Approved
 PNPM,chrome-webstore-upload-cli,1.2.0,MIT,"",Approved
@@ -2595,7 +2594,6 @@ PNPM,vary,1.1.2,MIT,"",Approved
 PNPM,vite,4.4.7,MIT,"",Approved
 PNPM,vite-node,0.33.0,MIT,"",Approved
 PNPM,vite-plugin-inspect,0.7.35,MIT,"",Approved
-PNPM,vite-plugin-turbosnap,1.0.3,MIT,"",Approved
 PNPM,vitefu,0.2.4,MIT,"",Approved
 PNPM,vitest,0.33.0,MIT,"",Approved
 PNPM,vitest-fetch-mock,0.2.2,MIT,"",Approved

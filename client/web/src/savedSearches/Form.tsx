@@ -10,6 +10,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
     Alert,
     Button,
+    Checkbox,
     Container,
     ErrorAlert,
     Form,
@@ -26,7 +27,7 @@ import { defaultPatternTypeFromSettings } from '../util/settings'
 import { telemetryRecordSavedSearchViewSearchResults } from './telemetry'
 
 export interface SavedSearchFormValue
-    extends Pick<SavedSearchInput | SavedSearchUpdateInput, 'description' | 'query'> {}
+    extends Pick<SavedSearchInput | SavedSearchUpdateInput, 'description' | 'query' | 'draft'> {}
 
 export interface SavedSearchFormProps extends TelemetryV2Props {
     initialValue?: Partial<SavedSearchFormValue>
@@ -38,6 +39,7 @@ export interface SavedSearchFormProps extends TelemetryV2Props {
     flash?: ReactNode
     isSourcegraphDotCom: boolean
     beforeFields?: ReactNode
+    afterFields?: ReactNode
 }
 
 export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSearchFormProps>> = ({
@@ -51,10 +53,12 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
     isSourcegraphDotCom,
     telemetryRecorder,
     beforeFields,
+    afterFields,
 }) => {
-    const [formValue, setFormValue] = useState<SavedSearchFormValue>(() => ({
-        description: initialValue?.description || '',
-        query: initialValue?.query || '',
+    const [value, setValue] = useState<SavedSearchFormValue>(() => ({
+        description: initialValue?.description ?? '',
+        query: initialValue?.query ?? '',
+        draft: initialValue?.draft ?? true,
     }))
 
     /**
@@ -65,16 +69,16 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
         (key: keyof SavedSearchFormValue): React.FormEventHandler<HTMLInputElement> =>
         event => {
             const { value, checked, type } = event.currentTarget
-            setFormValue(formValue => ({
+            setValue(formValue => ({
                 ...formValue,
                 [key]: type === 'checkbox' ? checked : value,
             }))
         }
 
-    const [queryState, setQueryState] = useState<QueryState>({ query: formValue.query || '' })
+    const [queryState, setQueryState] = useState<QueryState>({ query: value.query || '' })
     const defaultPatternType: SearchPatternType = defaultPatternTypeFromSettings(useSettingsCascade())
     useEffect(() => {
-        setFormValue(formValue => ({ ...formValue, query: queryState.query }))
+        setValue(formValue => ({ ...formValue, query: queryState.query }))
     }, [queryState.query])
 
     const QUERY_LABEL_ID = 'query-input-label'
@@ -83,7 +87,7 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
         <Form
             onSubmit={event => {
                 event.preventDefault()
-                onSubmit(formValue)
+                onSubmit(value)
             }}
             data-testid="saved-search-form"
             className="d-flex flex-column flex-gap-4"
@@ -93,7 +97,7 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                 <Input
                     name="description"
                     required={true}
-                    value={formValue.description}
+                    value={value.description}
                     onChange={createInputChangeHandler('description')}
                     className="form-group"
                     label="Description"
@@ -101,7 +105,7 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                     autoComplete="off"
                     autoCapitalize="off"
                 />
-                <div>
+                <div className="form-group">
                     <Label id={QUERY_LABEL_ID}>Query</Label>
                     <LazyQueryInputFormControl
                         patternType={defaultPatternType}
@@ -141,6 +145,19 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                         </InputDescription>
                     </div>
                 </div>
+                <div className="form-group d-flex align-items-center">
+                    <Checkbox
+                        id="prompt-draft"
+                        name="draft"
+                        checked={value.draft}
+                        onChange={createInputChangeHandler('draft')}
+                        label="Draft"
+                    />
+                    <small className="text-muted">
+                        &nbsp;&mdash; marking as draft means other people shouldn't use it yet
+                    </small>
+                </div>
+                {afterFields}
             </Container>
             <div className="d-flex flex-gap-4">
                 <Button type="submit" disabled={loading} variant="primary">

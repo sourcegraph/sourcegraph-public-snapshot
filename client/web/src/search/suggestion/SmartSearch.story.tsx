@@ -10,9 +10,7 @@ import { SmartSearch } from './SmartSearch'
 
 const config: Meta = {
     title: 'web/search/suggestion/SmartSearch',
-    parameters: {
-        chromatic: { viewports: [480, 993], disableSnapshot: false },
-    },
+    parameters: {},
 }
 export default config
 

@@ -127,3 +127,6 @@ var telemetrySchema string
 
 //go:embed viewer.graphql
 var viewerSchema string
+
+//go:embed prompts.graphql
+var promptsSchema string

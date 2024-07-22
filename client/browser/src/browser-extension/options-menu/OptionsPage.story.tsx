@@ -162,10 +162,3 @@ AllOptionsPages.args = {
     version: '0.0.0',
     showSourcegraphComAlert: false,
 }
-
-AllOptionsPages.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}

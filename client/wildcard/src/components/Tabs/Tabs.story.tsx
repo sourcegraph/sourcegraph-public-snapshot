@@ -27,10 +27,6 @@ const config: Meta = {
     component: Tabs,
     decorators: [story => <BrandedStory>{() => story()}</BrandedStory>],
     parameters: {
-        chromatic: {
-            enableDarkMode: true,
-            disableSnapshot: false,
-        },
         design: [
             {
                 type: 'figma',
