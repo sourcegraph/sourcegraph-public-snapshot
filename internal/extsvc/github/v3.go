@@ -809,6 +809,10 @@ func (c *V3Client) listPublicRepositories(ctx context.Context, requestURI string
 	}
 	repos := make([]*PublicRepository, 0, len(restPublicRepos))
 	for _, r := range restPublicRepos {
+		if r.ID == "" {
+			c.log.Warn("GitHub returned a public repository without an ID", log.String("restPublicRepository", fmt.Sprintf("%#v", r)))
+			continue
+		}
 		repos = append(repos, convertRestPublicRepo(r))
 	}
 	return repos, respState.hasNextPage(), nil
