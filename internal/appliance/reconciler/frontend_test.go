@@ -77,8 +77,9 @@ func (suite *ApplianceTestSuite) TestAdoptsHelmProvisionedFrontendResources() {
 		suite.Require().NoError(err)
 	})
 	suite.makeGoldenAssertions(namespace.GetName(), "frontend/adopt-service")
+}
 
- func (suite *ApplianceTestSuite) TestFrontendDeploymentRollsWhenPGSecretsChange() {
+func (suite *ApplianceTestSuite) TestFrontendDeploymentRollsWhenPGSecretsChange() {
 	for _, tc := range []struct {
 		secret string
 	}{
