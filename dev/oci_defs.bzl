@@ -26,7 +26,8 @@ def oci_tarball(name, **kwargs):
 def oci_image(name, **kwargs):
     _oci_image(
         name = name + "_underlying",
-        tars = kwargs.pop("tars", []) + ["//internal/version:stamps"],
+        tars = kwargs.pop("tars", []),
+        # + ["//internal/version:stamps"],
         **kwargs
     )
 

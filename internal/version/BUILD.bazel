@@ -9,6 +9,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/version",
     tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
     deps = ["//lib/errors"],
 )
 
