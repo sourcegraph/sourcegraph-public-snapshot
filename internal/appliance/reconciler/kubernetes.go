@@ -86,7 +86,7 @@ func createOrUpdateObject[R client.Object](
 	// error: "cluster-scoped resource must not have a namespace-scoped owner".
 	// non-namespaced resources will therefore not be garbage-collected when the
 	// ConfigMap is deleted.
-	if !isNamespaced(obj) {
+	if isNamespaced(obj) {
 		if err := ctrl.SetControllerReference(owner, obj, r.Scheme); err != nil {
 			return errors.Newf("setting controller reference: %w", err)
 		}
@@ -107,7 +107,7 @@ func createOrUpdateObject[R client.Object](
 		return err
 	}
 
-	if !isControlledBy(owner, existingRes) && !isNamespaced(obj) && !config.ShouldAdopt(obj) {
+	if !isControlledBy(owner, existingRes) && isNamespaced(obj) && !config.ShouldAdopt(obj) {
 		logger.Info("refusing to update non-owned resource")
 		return nil
 	}
@@ -127,12 +127,12 @@ func createOrUpdateObject[R client.Object](
 
 func isNamespaced(obj client.Object) bool {
 	if _, ok := obj.(*rbacv1.ClusterRole); ok {
-		return true
+		return false
 	}
 	if _, ok := obj.(*rbacv1.ClusterRoleBinding); ok {
-		return true
+		return false
 	}
-	return false
+	return true
 }
 
 func ensureObjectDeleted[T client.Object](ctx context.Context, r *Reconciler, owner client.Object, obj T) error {
@@ -152,7 +152,7 @@ func ensureObjectDeleted[T client.Object](ctx context.Context, r *Reconciler, ow
 
 	logger := log.FromContext(ctx).WithValues("kind", gvk.String(), "namespace", obj.GetNamespace(), "name", obj.GetName())
 
-	if !isControlledBy(owner, obj) && !isNamespaced(obj) {
+	if !isControlledBy(owner, obj) && isNamespaced(obj) {
 		logger.Info("refusing to delete non-owned resource")
 		return nil
 	}
