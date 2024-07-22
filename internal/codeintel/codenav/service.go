@@ -384,8 +384,8 @@ func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs
 		observation.Args{Attrs: observation.MergeAttributes(args.Attrs(), requestState.Attrs()...)})
 	defer endObservation()
 
-	visibleUploads := s.filterCachedUploadsContainingPath(ctx, trace, requestState, args.Path)
-	if len(visibleUploads) == 0 {
+	uploads := s.filterCachedUploadsContainingPath(ctx, trace, requestState, args.Path)
+	if len(uploads) == 0 {
 		return nil, 0, errors.New("No valid upload found for provided (repo, commit, path)")
 	}
 
@@ -396,13 +396,13 @@ func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs
 	if checkerEnabled {
 		a = actor.FromContext(ctx)
 	}
-	for i := range visibleUploads {
-		trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", visibleUploads[i].Upload.ID))
+	for _, upload := range uploads {
+		trace.AddEvent("GetDiagnostics", attribute.Int("upload.ID", upload.ID))
 
 		diagnostics, count, err := s.lsifstore.GetDiagnostics(
 			ctx,
-			visibleUploads[i].Upload.ID,
-			visibleUploads[i].TargetPathWithoutRoot(),
+			upload.ID,
+			core.NewUploadRelPath(upload, args.Path),
 			args.Limit-len(diagnosticsAtUploads),
 			0,
 		)
@@ -411,7 +411,7 @@ func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs
 		}
 
 		for _, diagnostic := range diagnostics {
-			adjustedDiagnostic, err := s.getRequestedCommitDiagnostic(ctx, args.RequestArgs, requestState, visibleUploads[i], diagnostic)
+			adjustedDiagnostic, err := s.getRequestedCommitDiagnostic(ctx, args.RequestArgs, requestState, upload, diagnostic)
 			if err != nil {
 				return nil, 0, err
 			}
@@ -444,7 +444,7 @@ func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs
 
 // getRequestedCommitDiagnostic translates a diagnostic (relative to the indexed commit) into an equivalent diagnostic
 // in the requested commit.
-func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args RequestArgs, requestState RequestState, adjustedUpload visibleUpload, diagnostic shared.Diagnostic[core.UploadRelPath]) (DiagnosticAtUpload, error) {
+func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args RequestArgs, requestState RequestState, adjustedUpload uploadsshared.CompletedUpload, diagnostic shared.Diagnostic[core.UploadRelPath]) (DiagnosticAtUpload, error) {
 	rn := shared.Range{
 		Start: shared.Position{
 			Line:      diagnostic.StartLine,
@@ -458,14 +458,14 @@ func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args Request
 
 	// Adjust path in diagnostic before reading it. This value is used in the adjustRange
 	// call below, and is also reflected in the embedded diagnostic value in the return.
-	diagnostic2 := shared.AdjustDiagnostic(diagnostic, adjustedUpload.Upload)
+	diagnostic2 := shared.AdjustDiagnostic(diagnostic, adjustedUpload)
 
 	adjustedCommit, adjustedRange, _, err := s.getSourceRange(
 		ctx,
 		args,
 		requestState,
-		adjustedUpload.Upload.RepositoryID,
-		adjustedUpload.Upload.Commit,
+		adjustedUpload.RepositoryID,
+		adjustedUpload.Commit,
 		diagnostic2.Path,
 		rn,
 	)
@@ -475,7 +475,7 @@ func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args Request
 
 	return DiagnosticAtUpload{
 		Diagnostic:     diagnostic2,
-		Upload:         adjustedUpload.Upload,
+		Upload:         adjustedUpload,
 		AdjustedCommit: adjustedCommit,
 		AdjustedRange:  adjustedRange,
 	}, nil
@@ -489,17 +489,12 @@ func (s *Service) VisibleUploadsForPath(ctx context.Context, requestState Reques
 		}})
 	}()
 
-	visibleUploads := s.filterCachedUploadsContainingPath(ctx, trace, requestState, requestState.Path)
-	for _, upload := range visibleUploads {
-		uploads = append(uploads, upload.Upload)
-	}
-
-	return
+	return s.filterCachedUploadsContainingPath(ctx, trace, requestState, requestState.Path), nil
 }
 
 // filterCachedUploadsContainingPath adjusts the current target path for each upload visible from the current target
 // commit. If an upload cannot be adjusted, it will be omitted from the returned slice.
-func (s *Service) filterCachedUploadsContainingPath(ctx context.Context, trace observation.TraceLogger, requestState RequestState, path core.RepoRelPath) []visibleUpload {
+func (s *Service) filterCachedUploadsContainingPath(ctx context.Context, trace observation.TraceLogger, requestState RequestState, path core.RepoRelPath) []uploadsshared.CompletedUpload {
 	// NOTE(id: path-based-upload-filtering):
 	//
 	// (70% confidence) There are a few cases here for the uploads cached earlier.
@@ -526,9 +521,7 @@ func (s *Service) filterCachedUploadsContainingPath(ctx context.Context, trace o
 		trace.Warn("FindDocumentIDs failed", log.Error(err))
 	}
 
-	return genslices.Map(filteredUploads, func(u uploadsshared.CompletedUpload) visibleUpload {
-		return visibleUpload{Upload: u, TargetPath: path}
-	})
+	return filteredUploads
 }
 
 func (s *Service) GetRanges(ctx context.Context, args PositionalRequestArgs, requestState RequestState, startLine, endLine int) (adjustedRanges []AdjustedCodeIntelligenceRange, err error) {
@@ -544,13 +537,13 @@ func (s *Service) GetRanges(ctx context.Context, args PositionalRequestArgs, req
 		return nil, errors.New("No valid upload found for provided (repo, commit, path)")
 	}
 
-	for i := range uploadsWithPath {
-		trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", uploadsWithPath[i].Upload.ID))
+	for _, upload := range uploadsWithPath {
+		trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", upload.ID))
 
 		ranges, err := s.lsifstore.GetRanges(
 			ctx,
-			uploadsWithPath[i].Upload.ID,
-			uploadsWithPath[i].TargetPathWithoutRoot(),
+			upload.ID,
+			core.NewUploadRelPath(upload, args.Path),
 			startLine,
 			endLine,
 		)
@@ -559,7 +552,7 @@ func (s *Service) GetRanges(ctx context.Context, args PositionalRequestArgs, req
 		}
 
 		for _, rn := range ranges {
-			adjustedRange, ok, err := s.getCodeIntelligenceRange(ctx, args.RequestArgs, requestState, uploadsWithPath[i], rn)
+			adjustedRange, ok, err := s.getCodeIntelligenceRange(ctx, args.RequestArgs, requestState, upload, args.Path, rn)
 			if err != nil {
 				return nil, err
 			}
@@ -578,8 +571,8 @@ func (s *Service) GetRanges(ctx context.Context, args PositionalRequestArgs, req
 // getCodeIntelligenceRange translates a range summary (relative to the indexed commit) into an
 // equivalent range summary in the requested commit. If the translation fails, a false-valued flag
 // is returned.
-func (s *Service) getCodeIntelligenceRange(ctx context.Context, args RequestArgs, requestState RequestState, upload visibleUpload, rn shared.CodeIntelligenceRange) (AdjustedCodeIntelligenceRange, bool, error) {
-	_, adjustedRange, ok, err := s.getSourceRange(ctx, args, requestState, upload.Upload.RepositoryID, upload.Upload.Commit, upload.TargetPath, rn.Range)
+func (s *Service) getCodeIntelligenceRange(ctx context.Context, args RequestArgs, requestState RequestState, upload uploadsshared.CompletedUpload, targetPath core.RepoRelPath, rn shared.CodeIntelligenceRange) (AdjustedCodeIntelligenceRange, bool, error) {
+	_, adjustedRange, ok, err := s.getSourceRange(ctx, args, requestState, upload.RepositoryID, upload.Commit, targetPath, rn.Range)
 	if err != nil || !ok {
 		return AdjustedCodeIntelligenceRange{}, false, err
 	}
@@ -613,19 +606,15 @@ func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, re
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getStencil, serviceObserverThreshold, observation.Args{Attrs: requestState.Attrs()})
 	defer endObservation()
 
-	adjustedUploads := s.filterCachedUploadsContainingPath(ctx, trace, requestState, args.Path)
-	if len(adjustedUploads) == 0 {
+	filteredUploads := s.filterCachedUploadsContainingPath(ctx, trace, requestState, args.Path)
+	if len(filteredUploads) == 0 {
 		return nil, errors.New("No valid upload found for provided (repo, commit, path)")
 	}
 
-	for i := range adjustedUploads {
-		trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", adjustedUploads[i].Upload.ID))
+	for _, upload := range filteredUploads {
+		trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", upload.ID))
 
-		ranges, err := s.lsifstore.GetStencil(
-			ctx,
-			adjustedUploads[i].Upload.ID,
-			adjustedUploads[i].TargetPathWithoutRoot(),
-		)
+		ranges, err := s.lsifstore.GetStencil(ctx, upload.ID, core.NewUploadRelPath(upload, args.Path))
 		if err != nil {
 			return nil, errors.Wrap(err, "lsifStore.Stencil")
 		}
