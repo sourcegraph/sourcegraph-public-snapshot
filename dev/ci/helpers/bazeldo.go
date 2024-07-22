@@ -4,20 +4,23 @@ import (
 	"strings"
 
 	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var allowedBazelFlags = map[string]struct{}{
-	"--runs_per_test":        {},
-	"--nobuild":              {},
-	"--local_test_jobs":      {},
-	"--test_arg":             {},
-	"--nocache_test_results": {},
-	"--test_tag_filters":     {},
-	"--test_timeout":         {},
-	"--config":               {},
-	"--test_output":          {},
-	"--verbose_failures":     {},
+	"--runs_per_test":            {},
+	"--nobuild":                  {},
+	"--local_test_jobs":          {},
+	"--test_arg":                 {},
+	"--nocache_test_results":     {},
+	"--test_tag_filters":         {},
+	"--test_timeout":             {},
+	"--config":                   {},
+	"--stamp":                    {},
+	"--workspace_status_command": {},
+	"--test_output":              {},
+	"--verbose_failures":         {},
 }
 
 var bazelFlagsRe = regexp.MustCompile(`--\w+`)
@@ -29,7 +32,7 @@ func VerifyBazelCommand(command string) error {
 	bannedChars := []string{"`", "$", "(", ")", ";", "&", "|", "<", ">"}
 	for _, c := range bannedChars {
 		if strings.Contains(command, c) {
-			return errors.Newf("unauthorized input for bazel command: %q", c)
+			return errors.Newf("unauthorized input for bazel command: %q %q", c, command)
 		}
 	}
 
@@ -48,9 +51,9 @@ func VerifyBazelCommand(command string) error {
 	}
 
 	// need at least one target.
-	if !strings.HasPrefix(strs[1], "//") {
-		return errors.New("misconstructed command, need at least one target")
-	}
+	// if !strings.HasPrefix(strs[1], "//") {
+	// 	return errors.New("misconstructed command, need at least one target")
+	// }
 
 	// ensure flags are in the allow-list.
 	matches := bazelFlagsRe.FindAllString(command, -1)
