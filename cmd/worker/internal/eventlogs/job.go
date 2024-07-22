@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -37,15 +35,15 @@ func (e eventLogsJob) Routines(_ context.Context, observationCtx *observation.Co
 	}
 
 	return []goroutine.BackgroundRoutine{
-			NewEventLogsJob(observationCtx.Logger, db),
-			NewSecurityEventLogsJob(observationCtx.Logger, db),
+			NewEventLogsJob(db),
+			NewSecurityEventLogsJob(db),
 		},
 		nil
 }
 
-func NewEventLogsJob(logger log.Logger, db database.DB) goroutine.BackgroundRoutine {
+func NewEventLogsJob(db database.DB) goroutine.BackgroundRoutine {
 	handler := goroutine.HandlerFunc(func(ctx context.Context) error {
-		return bg.DeleteOldEventLogsInPostgres(ctx, logger, db)
+		return bg.DeleteOldEventLogsInPostgres(ctx, db)
 	})
 
 	return goroutine.NewPeriodicGoroutine(
@@ -57,9 +55,9 @@ func NewEventLogsJob(logger log.Logger, db database.DB) goroutine.BackgroundRout
 	)
 }
 
-func NewSecurityEventLogsJob(logger log.Logger, db database.DB) goroutine.BackgroundRoutine {
+func NewSecurityEventLogsJob(db database.DB) goroutine.BackgroundRoutine {
 	handler := goroutine.HandlerFunc(func(ctx context.Context) error {
-		return bg.DeleteOldSecurityEventLogsInPostgres(ctx, logger, db)
+		return bg.DeleteOldSecurityEventLogsInPostgres(ctx, db)
 	})
 
 	return goroutine.NewPeriodicGoroutine(

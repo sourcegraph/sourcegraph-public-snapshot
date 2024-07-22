@@ -37,7 +37,7 @@ func TestDeleteOldEventLogsInPostgres(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = DeleteOldEventLogsInPostgres(ctx, logger, db)
+	err = DeleteOldEventLogsInPostgres(ctx, db)
 	require.NoError(t, err)
 
 	got, err := db.EventLogs().ListAll(ctx, database.EventLogsListOptions{})
@@ -75,7 +75,7 @@ func TestDeleteOldSecurityEventLogsInPostgres(t *testing.T) {
 	require.NoError(t, err)
 
 	assertSecurityEventCount(t, db, 2)
-	err = DeleteOldSecurityEventLogsInPostgres(ctx, logger, db)
+	err = DeleteOldSecurityEventLogsInPostgres(ctx, db)
 	require.NoError(t, err)
 	assertSecurityEventCount(t, db, 1)
 }

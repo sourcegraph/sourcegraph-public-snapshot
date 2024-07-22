@@ -3,15 +3,11 @@ package bg
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func DeleteOldEventLogsInPostgres(ctx context.Context, logger log.Logger, db database.DB) error {
-	logger = logger.Scoped("deleteOldEventLogs")
-
+func DeleteOldEventLogsInPostgres(ctx context.Context, db database.DB) error {
 	// We choose 93 days as the interval to ensure that we have at least the last three months
 	// of logs at all times.
 	_, err := db.ExecContext(
@@ -21,9 +17,7 @@ func DeleteOldEventLogsInPostgres(ctx context.Context, logger log.Logger, db dat
 	return err
 }
 
-func DeleteOldSecurityEventLogsInPostgres(ctx context.Context, logger log.Logger, db database.DB) error {
-	logger = logger.Scoped("deleteOldSecurityEventLogs")
-
+func DeleteOldSecurityEventLogsInPostgres(ctx context.Context, db database.DB) error {
 	// Only clean up if security event logs are being stored in the database.
 	c := conf.Get()
 	if c.Log == nil || c.Log.SecurityEventLog == nil {
