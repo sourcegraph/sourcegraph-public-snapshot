@@ -34,6 +34,10 @@ func TestRockskipIntegration(t *testing.T) {
 		"github.com/sourcegraph/rockskiptest": gitserverintegration.RepoWithCommands(t,
 			"echo '# Title' > README.md",
 			"git add README.md",
+			"echo '_global magik_global << 1' > magik.magik",
+			"git add magik.magik",
+			"echo 'int c_function() {}' > c.c",
+			"git add c.c",
 			"git commit -m commit --author='Foo Author <foo@sourcegraph.com>'",
 		),
 	})
@@ -115,6 +119,20 @@ func TestRockskipIntegration(t *testing.T) {
 			Line:      0,
 			Character: 2,
 			Kind:      "chapter",
+		},
+		{
+			Name:      "c_function",
+			Path:      "c.c",
+			Line:      0,
+			Character: 4,
+			Kind:      "function",
+		},
+		{
+			Name:      "magik_global",
+			Path:      "magik.magik",
+			Line:      0,
+			Character: 8,
+			Kind:      "variable",
 		},
 	}, res)
 }
