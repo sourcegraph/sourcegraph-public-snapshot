@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/jobselector"
@@ -116,7 +117,7 @@ func TestQueueAutoIndexJobsExplicit(t *testing.T) {
 			Outfile:      "lsif.dump",
 		},
 	}
-	if diff := cmp.Diff(expectedIndexes, indexes); diff != "" {
+	if diff := cmp.Diff(expectedIndexes, indexes, cmpopts.EquateEmpty()); diff != "" {
 		t.Errorf("unexpected indexes (-want +got):\n%s", diff)
 	}
 }
@@ -228,7 +229,7 @@ func TestQueueAutoIndexJobsInDatabase(t *testing.T) {
 			Outfile:      "lsif.dump",
 		},
 	}
-	if diff := cmp.Diff(expectedIndexes, indexes); diff != "" {
+	if diff := cmp.Diff(expectedIndexes, indexes, cmpopts.EquateEmpty()); diff != "" {
 		t.Errorf("unexpected indexes (-want +got):\n%s", diff)
 	}
 }
@@ -320,7 +321,7 @@ func TestQueueAutoIndexJobsInRepository(t *testing.T) {
 			Outfile:      "lsif.dump",
 		},
 	}
-	if diff := cmp.Diff(expectedIndexes, indexes); diff != "" {
+	if diff := cmp.Diff(expectedIndexes, indexes, cmpopts.EquateEmpty()); diff != "" {
 		t.Errorf("unexpected indexes (-want +got):\n%s", diff)
 	}
 }
@@ -489,7 +490,7 @@ func TestQueueAutoIndexJobsForPackage(t *testing.T) {
 				IndexerArgs: []string{"lsif-go", "--no-animation"},
 			},
 		}
-		if diff := cmp.Diff(expectedIndexes, indexes); diff != "" {
+		if diff := cmp.Diff(expectedIndexes, indexes, cmpopts.EquateEmpty()); diff != "" {
 			t.Errorf("unexpected indexes (-want +got):\n%s", diff)
 		}
 	}

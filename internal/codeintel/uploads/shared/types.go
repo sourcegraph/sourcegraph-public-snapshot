@@ -6,11 +6,13 @@ import (
 	"strconv"
 	"time"
 
+	genslices "github.com/life4/genesis/slices"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -192,6 +194,29 @@ type AutoIndexJob struct {
 	ShouldReindex      bool                         `json:"shouldReindex"`
 	RequestedEnvVars   []string                     `json:"requestedEnvVars"`
 	EnqueuerUserID     int32                        `json:"enqueuerUserID"`
+}
+
+func NewAutoIndexJob(job config.IndexJob, repositoryID api.RepoID, commit api.CommitID, state AutoIndexJobState) AutoIndexJob {
+	dockerSteps := genslices.Map(job.Steps, func(step config.DockerStep) DockerStep {
+		return DockerStep{
+			Root:     step.Root,
+			Image:    step.Image,
+			Commands: step.Commands,
+		}
+	})
+
+	return AutoIndexJob{
+		Commit:           string(commit),
+		RepositoryID:     int(repositoryID),
+		State:            string(state),
+		DockerSteps:      dockerSteps,
+		LocalSteps:       job.LocalSteps,
+		Root:             job.Root,
+		Indexer:          job.Indexer,
+		IndexerArgs:      job.IndexerArgs,
+		Outfile:          job.Outfile,
+		RequestedEnvVars: job.RequestedEnvVars,
+	}
 }
 
 func (i AutoIndexJob) RecordID() int {
