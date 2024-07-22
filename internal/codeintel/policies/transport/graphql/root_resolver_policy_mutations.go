@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -82,8 +81,6 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println(args);
 
 	opts := shared.ConfigurationPolicy{
 		ID:                        id,
