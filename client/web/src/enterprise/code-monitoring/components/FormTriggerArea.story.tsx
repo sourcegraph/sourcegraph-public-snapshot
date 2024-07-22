@@ -16,11 +16,6 @@ const config: Meta = {
             type: 'Figma',
             url: 'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=3891%3A41568',
         },
-        chromatic: {
-            delay: 600, // Delay screenshot for input validation debouncing
-            viewports: [720],
-            disableSnapshot: false,
-        },
     },
 }
 

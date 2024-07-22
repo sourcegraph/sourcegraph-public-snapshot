@@ -18,11 +18,7 @@ const decorator: Decorator = story => (
 
 const config: Meta = {
     title: 'web/site-admin/webhooks/WebhookLogPageHeader',
-    parameters: {
-        chromatic: {
-            viewports: [320, 576, 978, 1440],
-        },
-    },
+    parameters: {},
     decorators: [decorator],
     argTypes: {
         externalServiceCount: {

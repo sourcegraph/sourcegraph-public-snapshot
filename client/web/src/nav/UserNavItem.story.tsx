@@ -17,10 +17,6 @@ const config: Meta = {
             type: 'figma',
             url: 'https://www.figma.com/file/HWLuLefEdev5KYtoEGHjFj/Sourcegraph-Components-Contractor?node-id=1346%3A0',
         },
-        chromatic: {
-            enableDarkMode: true,
-            viewports: [600],
-        },
     },
     argTypes: {
         isSourcegraphDotCom: {

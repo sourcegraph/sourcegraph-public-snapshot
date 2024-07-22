@@ -17,11 +17,7 @@ const decorator: Decorator = story => (
 const config: Meta = {
     title: 'web/batches/create/CreateBatchChangePage',
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default config

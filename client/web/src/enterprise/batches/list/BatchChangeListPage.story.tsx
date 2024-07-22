@@ -30,12 +30,7 @@ const config: Meta = {
     title: 'web/batches/list/BatchChangeListPage',
     decorators: [decorator],
 
-    parameters: {
-        chromatic: {
-            viewports: [320, 576, 978, 1440],
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default config

@@ -31,10 +31,6 @@ const config: Meta = {
             type: 'figma',
             url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=2877%3A35469',
         },
-        chromatic: {
-            enableDarkMode: true,
-            disableSnapshot: false,
-        },
     },
     decorators: [decorator],
 }

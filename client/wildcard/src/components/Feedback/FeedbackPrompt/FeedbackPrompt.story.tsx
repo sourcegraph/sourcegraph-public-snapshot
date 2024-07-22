@@ -1,8 +1,8 @@
 import React from 'react'
 
-import type { Meta, StoryFn, Args } from '@storybook/react'
+import type { Args, Meta, StoryFn } from '@storybook/react'
 
-import { PopoverTrigger, H1 } from '../..'
+import { H1, PopoverTrigger } from '../..'
 import { BrandedStory } from '../../../stories/BrandedStory'
 import { Button } from '../../Button'
 
@@ -15,13 +15,6 @@ const config: Meta = {
 
     decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
     parameters: {
-        /**
-         * Uncomment this once Storybook is upgraded to v6.4.* and the `play` function
-         * is used to show the feedback prompt component.
-         *
-         * https://www.chromatic.com/docs/hoverfocus#javascript-triggered-hover-states
-         */
-        // chromatic: { disableSnapshot: false },
         component: FeedbackPrompt,
         design: {
             type: 'figma',

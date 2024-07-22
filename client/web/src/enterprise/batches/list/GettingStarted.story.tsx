@@ -11,11 +11,7 @@ const decorator: Decorator = story => <div className="p-3 container">{story()}</
 const config: Meta = {
     title: 'web/batches/GettingStarted',
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
     argTypes: {
         isSourcegraphDotCom: {
             control: { type: 'boolean' },

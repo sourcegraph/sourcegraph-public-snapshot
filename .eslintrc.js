@@ -114,10 +114,6 @@ const config = {
             importNames: ['Link'],
             message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
           },
-          {
-            name: 'chromatic/isChromatic',
-            message: 'Please use `isChromatic` from the `@sourcegraph/storybook` package.',
-          },
         ],
         patterns: [
           {

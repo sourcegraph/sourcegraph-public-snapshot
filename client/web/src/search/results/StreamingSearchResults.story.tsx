@@ -72,9 +72,7 @@ const decorator: Decorator = Story => {
 const config: Meta = {
     title: 'web/search/results/StreamingSearchResults',
     decorators: [decorator],
-    parameters: {
-        chromatic: { viewports: [577, 769, 993], disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

@@ -24,7 +24,6 @@ const renderChart = ({ series }: RenderChartArgs) =>
 
 describe('LineChart', () => {
     // Non-exhaustive smoke tests to check that the chart renders correctly
-    // All other general rendering tests are covered by chromatic
     describe('should render', () => {
         it('empty series', () => {
             renderChart({ ...defaultArgs, series: [] })

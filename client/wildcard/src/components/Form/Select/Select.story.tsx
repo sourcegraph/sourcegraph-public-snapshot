@@ -82,10 +82,3 @@ export const SelectExamples: StoryFn = () => (
         <SelectVariants isCustomStyle={true} />
     </>
 )
-
-SelectExamples.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}

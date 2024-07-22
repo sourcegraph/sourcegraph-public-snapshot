@@ -19,9 +19,7 @@ const decorator: Decorator = story => (
 const config: Meta = {
     title: 'web/enterprise/searchContexts/SearchContextsListTab',
     decorators: [decorator],
-    parameters: {
-        chromatic: { viewports: [1200, 767], disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config
