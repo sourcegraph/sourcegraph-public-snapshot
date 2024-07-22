@@ -139,7 +139,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
             return handleDeleteConfig({
                 variables: { id },
-                update: cache => cache.modify({ fields: { node: () => { } } }),
+                update: cache => cache.modify({ fields: { node: () => {} } }),
             }).then(() =>
                 navigate(
                     {
@@ -388,7 +388,7 @@ const GitConfiguration: FunctionComponent<GitConfigurationProps> = ({ policy, up
     useEffect(() => {
         if (repo && policy?.type) {
             // Update git preview on policy detail changes
-            updateGitPreview({}).catch(() => { })
+            updateGitPreview({}).catch(() => {})
         }
     }, [repo, updateGitPreview, policy?.type, policy?.pattern, policy?.indexCommitMaxAgeHours])
 
