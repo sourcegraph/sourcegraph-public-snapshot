@@ -15,7 +15,7 @@ const CREATE_POLICY_CONFIGURATION = gql`
         $retentionDurationHours: Int
         $retainIntermediateCommits: Boolean!
         $indexingEnabled: Boolean!
-        $syntacticIndexingEnabled: Boolean
+        $syntacticIndexingEnabled: Boolean!
         $indexCommitMaxAgeHours: Int
         $indexIntermediateCommits: Boolean!
     ) {

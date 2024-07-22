@@ -53,7 +53,7 @@ import { useSavePolicyConfiguration } from '../hooks/useSavePolicyConfiguration'
 import { hasGlobalPolicyViolation } from '../shared'
 
 import styles from './CodeIntelConfigurationPolicyPage.module.scss'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { SourcegraphContext } from 'src/jscontext'
 
 const DEBOUNCED_WAIT = 250
 
@@ -64,6 +64,7 @@ export interface CodeIntelConfigurationPolicyPageProps extends TelemetryProps, T
     authenticatedUser: AuthenticatedUser | null
     indexingEnabled?: boolean
     allowGlobalPolicies?: boolean
+    syntacticIndexingEnabled?: boolean
 }
 
 type PolicyUpdater = <K extends keyof CodeIntelligenceConfigurationPolicyFields>(updates: {
@@ -74,6 +75,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     repo,
     authenticatedUser,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
+    syntacticIndexingEnabled = window.context?.experimentalFeatures['codeintelSyntacticIndexing.enabled'],
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
     telemetryService,
     telemetryRecorder,
@@ -228,7 +230,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 <GitConfiguration policy={policy} updatePolicy={updatePolicy} repo={repo} />
                 {!policy.repository && <RepositorySettingsSection policy={policy} updatePolicy={updatePolicy} />}
 
-                {indexingEnabled && <IndexSettingsSection policy={policy} updatePolicy={updatePolicy} repo={repo} />}
+                {indexingEnabled && <IndexSettingsSection policy={policy} updatePolicy={updatePolicy} repo={repo} context={window.context} />}
                 <RetentionSettingsSection policy={policy} updatePolicy={updatePolicy} />
 
                 <div className="mt-4">
@@ -677,14 +679,17 @@ interface IndexSettingsSectionProps {
     policy: CodeIntelligenceConfigurationPolicyFields
     updatePolicy: PolicyUpdater
     repo?: { id: string; name: string }
+    context: SourcegraphContext
 }
 
-const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({ policy, updatePolicy, repo }) => {
+const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({ policy, updatePolicy, repo, context }) => {
 
-    const syntacticIndexingEnabled = useExperimentalFeatures(features => {
-        console.log(features);
-        return features['codeintelSyntacticIndexing.enabled'] ?? false;
-    });
+    // const syntacticIndexingEnabled = useExperimentalFeatures(features => {
+    //     console.log(features);
+    //     return features['codeintelSyntacticIndexing.enabled'] ?? false;
+    // });
+
+    const syntacticIndexingEnabled = context.experimentalFeatures['codeintelSyntacticIndexing.enabled'] ?? false;
 
     return (
         <div>

@@ -20,6 +20,8 @@ type configurationPolicyResolver struct {
 	errTracer           *observation.ErrCollector
 }
 
+var _ resolverstubs.CodeIntelligenceConfigurationPolicyResolver = &configurationPolicyResolver{}
+
 func NewConfigurationPolicyResolver(repoStore database.RepoStore, configurationPolicy shared.ConfigurationPolicy, errTracer *observation.ErrCollector) resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
 		repoStore:           repoStore,
@@ -97,7 +99,7 @@ func (r *configurationPolicyResolver) IndexingEnabled() bool {
 	return r.configurationPolicy.IndexingEnabled
 }
 
-func (r *configurationPolicyResolver) SyntacticIndexingEnabled() *bool {
+func (r *configurationPolicyResolver) SyntacticIndexingEnabled() bool {
 	return r.configurationPolicy.SyntacticIndexingEnabled
 }
 
