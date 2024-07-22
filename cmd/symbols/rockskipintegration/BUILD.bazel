@@ -3,7 +3,10 @@ load("//dev:go_defs.bzl", "go_test")
 go_test(
     name = "rockskipintegration_test",
     srcs = ["main_test.go"],
-    data = ["//dev/tools:universal-ctags"],
+    data = [
+        "//dev/tools:scip-ctags",
+        "//dev/tools:universal-ctags",
+    ],
     env = {
         "CTAGS_RLOCATIONPATH": "$(rlocationpath //dev/tools:universal-ctags)",
         "SCIP_CTAGS_RLOCATIONPATH": "$(rlocationpath //dev/tools:scip-ctags)",
