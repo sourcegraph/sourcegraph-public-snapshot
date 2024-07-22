@@ -347,7 +347,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
                 label: 'file',
                 description: 'Search for file content',
             },
-        ],
+        ].sort((a, b) => a.label.localeCompare(b.label)),
     },
     [FilterType.visibility]: {
         discreteValues: () => ['any', 'private', 'public'].map(value => ({ label: value })),
