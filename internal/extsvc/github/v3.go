@@ -809,6 +809,10 @@ func (c *V3Client) listPublicRepositories(ctx context.Context, requestURI string
 	}
 	repos := make([]*PublicRepository, 0, len(restPublicRepos))
 	for _, r := range restPublicRepos {
+		// Sometimes GitHub API returns null JSON objects and JSON decoder unmarshalls
+		// them as a zero-valued `restRepository` objects.
+		//
+		// See https://github.com/sourcegraph/customer/issues/1688 for details.
 		if r.ID == "" {
 			c.log.Warn("GitHub returned a public repository without an ID", log.String("restPublicRepository", fmt.Sprintf("%#v", r)))
 			continue
