@@ -1,6 +1,7 @@
 package gitops
 
 import (
+	"bytes"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -17,17 +18,19 @@ var ErrNoTags = errors.New("no tags found")
 // Git often writes error messages to stderr, but it might still exit with a status code of 0 (indicating success).
 // In this case, CombinedOutput() won't return an error, but the error message will be in the out variable.
 func handleGitCommandExec(cmd *exec.Cmd) ([]byte, error) {
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		maybeErrMessage := string(out)
-		if strings.Contains(maybeErrMessage, "fatal:") || strings.Contains(maybeErrMessage, "error:") {
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		maybeErrMessage := strings.Trim(stderr.String(), "\n")
+		if strings.HasPrefix(maybeErrMessage, "fatal:") || strings.HasPrefix(maybeErrMessage, "error:") {
 			return nil, errors.New(maybeErrMessage)
 		}
-
 		return nil, err
 	}
 
-	return out, nil
+	return stdout.Bytes(), nil
 }
 
 func determineDiffArgs(baseBranch, commit string) (string, error) {
