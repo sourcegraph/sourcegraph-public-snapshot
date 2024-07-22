@@ -1,6 +1,6 @@
 extend type Query {
     """
-    EXPERIMENTAL: Get pieces of context related to the query from a set of repositories.
+    Get pieces of context related to the query from a set of repositories.
     """
     getCodyContext(
         """
@@ -90,6 +90,28 @@ extend type Query {
         """
         ignoredContextItems: [InputContextItem!]!
     ): EmptyResponse
+
+    """
+    EXPERIMENTAL: Get pieces of context related to the query from a single repository.
+    """
+    chatContext(
+        """
+        A natural language query string.
+        """
+        query: String!
+        """
+        The repository to search.
+        """
+        repo: String!
+        """
+        Interaction ID.
+        """
+        interactionId: String!
+        """
+        The number of results to return.
+        """
+        resultsCount: Int
+    ): ChatContextResult!
 }
 
 """
@@ -190,4 +212,26 @@ type RankingResponse {
     Indices of context items that were ignored by the ranker. Order is undefined.
     """
     ignored: [Int!]!
+}
+
+
+type ChatContextResult {
+    """
+    Context items fetched for this chat interaction.
+    """
+    contextItems: [RetrieverContextItem!]!
+    """
+    Partial errors that happened while fetching context items (but did not block the whole request).
+    """
+    partialErrors: [String!]!
+    """
+    Partial errors that happened while fetching context items (but did not block the whole request).
+    """
+    stopReason: String!
+}
+
+type RetrieverContextItem{
+    retriever: String!
+    score: Float
+    item: CodyContextResult!
 }

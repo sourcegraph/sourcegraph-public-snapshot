@@ -7,8 +7,9 @@ import (
 )
 
 type CodyContextResolver interface {
-	GetCodyContext(ctx context.Context, args GetContextArgs) ([]ContextResultResolver, error)
+	GetCodyContext(ctx context.Context, args GetContextArgs) ([]ContextResultResolver, error) // GA Enterprise method
 	ChatIntent(ctx context.Context, args ChatIntentArgs) (IntentResolver, error)
+	ChatContext(ctx context.Context, args ChatContextArgs) (ChatContextResolver, error)
 	RankContext(ctx context.Context, args RankContextArgs) (RankContextResolver, error)
 	RecordContext(ctx context.Context, args RecordContextArgs) (*EmptyResponse, error)
 }
@@ -20,9 +21,49 @@ type GetContextArgs struct {
 	TextResultsCount int32
 }
 
+type ContextResultResolver interface {
+	ToFileChunkContext() (*FileChunkContextResolver, bool)
+}
+
+func NewFileChunkContextResolver(gitTreeEntryResolver *GitTreeEntryResolver, startLine, endLine int) *FileChunkContextResolver {
+	return &FileChunkContextResolver{
+		treeEntry: gitTreeEntryResolver,
+		startLine: int32(startLine),
+		endLine:   int32(endLine),
+	}
+}
+
+type FileChunkContextResolver struct {
+	treeEntry          *GitTreeEntryResolver
+	startLine, endLine int32
+}
+
+var _ ContextResultResolver = (*FileChunkContextResolver)(nil)
+
+func (f *FileChunkContextResolver) Blob() *GitTreeEntryResolver { return f.treeEntry }
+func (f *FileChunkContextResolver) StartLine() int32            { return f.startLine }
+func (f *FileChunkContextResolver) EndLine() int32              { return f.endLine }
+func (f *FileChunkContextResolver) ToFileChunkContext() (*FileChunkContextResolver, bool) {
+	return f, true
+}
+
+func (f *FileChunkContextResolver) ChunkContent(ctx context.Context) (string, error) {
+	return f.treeEntry.Content(ctx, &GitTreeContentPageArgs{
+		StartLine: &f.startLine,
+		EndLine:   &f.endLine,
+	})
+}
+
 type ChatIntentArgs struct {
 	Query         string
 	InteractionID string
+}
+
+type ChatContextArgs struct {
+	Query         string
+	InteractionID string
+	Repo          string
+	ResultsCount  *int32
 }
 
 type RankContextArgs struct {
@@ -60,41 +101,20 @@ type IntentResolver interface {
 	Score() float64
 }
 
-type ContextResultResolver interface {
-	ToFileChunkContext() (*FileChunkContextResolver, bool)
-}
-
-func NewFileChunkContextResolver(gitTreeEntryResolver *GitTreeEntryResolver, startLine, endLine int) *FileChunkContextResolver {
-	return &FileChunkContextResolver{
-		treeEntry: gitTreeEntryResolver,
-		startLine: int32(startLine),
-		endLine:   int32(endLine),
-	}
-}
-
-type FileChunkContextResolver struct {
-	treeEntry          *GitTreeEntryResolver
-	startLine, endLine int32
-}
-
-var _ ContextResultResolver = (*FileChunkContextResolver)(nil)
-
-func (f *FileChunkContextResolver) Blob() *GitTreeEntryResolver { return f.treeEntry }
-func (f *FileChunkContextResolver) StartLine() int32            { return f.startLine }
-func (f *FileChunkContextResolver) EndLine() int32              { return f.endLine }
-func (f *FileChunkContextResolver) ToFileChunkContext() (*FileChunkContextResolver, bool) {
-	return f, true
-}
-
-func (f *FileChunkContextResolver) ChunkContent(ctx context.Context) (string, error) {
-	return f.treeEntry.Content(ctx, &GitTreeContentPageArgs{
-		StartLine: &f.startLine,
-		EndLine:   &f.endLine,
-	})
-}
-
 type RankContextResolver interface {
 	Ranker() string
 	Used() []int32
 	Ignored() []int32
+}
+
+type ChatContextResolver interface {
+	ContextItems() []RetrieverContextItemResolver
+	PartialErrors() []string
+	StopReason() string
+}
+
+type RetrieverContextItemResolver interface {
+	Item() ContextResultResolver
+	Score() *float64
+	Retriever() string
 }

@@ -11,10 +11,12 @@ import (
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"go.uber.org/zap"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
@@ -42,6 +44,11 @@ func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient
 	}
 }
 
+const (
+	StopReasonTimeout = "TIMEOUT"
+	StopReasonDone    = "DONE"
+)
+
 type Resolver struct {
 	db                  database.DB
 	gitserverClient     gitserver.Client
@@ -51,6 +58,54 @@ type Resolver struct {
 	intentBackendConfig *schema.IntentDetectionAPI
 	reranker            conf.CodyRerankerBackend
 	cohereConfig        *schema.CodyRerankerCohere
+}
+
+func (r *Resolver) ChatContext(ctx context.Context, args graphqlbackend.ChatContextArgs) (graphqlbackend.ChatContextResolver, error) {
+	if !dotcom.SourcegraphDotComMode() {
+		return nil, errors.New("chat context is not available on Sourcegraph.com")
+	}
+	// Set a more aggressive timeout for this request so slow experimental retrievers won't block client
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	repo, err := r.db.Repos().GetByName(ctx, api.RepoName(args.Repo))
+	if err != nil {
+		return nil, err
+	}
+	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
+		Repos: []types.RepoIDName{{ID: repo.ID, Name: repo.Name}},
+		Query: args.Query,
+	})
+	if err != nil {
+		return nil, err
+	}
+	res := &chatContextResponse{
+		stopReason: StopReasonDone,
+	}
+	var partialErrors []error
+	for _, fc := range fileChunks {
+		fcr, err := r.fileChunkToResolver(ctx, &fc)
+		if err != nil {
+			partialErrors = append(partialErrors, errors.Wrapf(err, "resolving file chunk %s", fc.Path))
+			continue
+		}
+		blob, _ := fcr.ToFileChunkContext()
+		res.contextItems = append(res.contextItems, retrieverContextItem{
+			retriever: "zoekt",
+			item:      blob,
+		})
+	}
+	if len(partialErrors) > 0 {
+		res.partialErrors = partialErrors
+		fields := []zap.Field{log.Int("count", len(partialErrors)), log.String("interactionID", args.InteractionID)}
+		for _, err := range partialErrors {
+			fields = append(fields, zap.Error(err))
+		}
+		r.logger.Warn("partial errors when fetching context", fields...)
+	}
+	if errors.Is(context.Cause(ctx), context.DeadlineExceeded) {
+		res.stopReason = StopReasonTimeout
+	}
+	return res, nil
 }
 
 func (r *Resolver) RecordContext(ctx context.Context, args graphqlbackend.RecordContextArgs) (*graphqlbackend.EmptyResponse, error) {
@@ -332,4 +387,42 @@ func (r rankContextResponse) Ignored() []int32 {
 	return r.ignored
 }
 
-var _ graphqlbackend.RankContextResolver = &rankContextResponse{}
+type chatContextResponse struct {
+	contextItems  []graphqlbackend.RetrieverContextItemResolver
+	partialErrors []error
+	stopReason    string
+}
+
+func (c chatContextResponse) ContextItems() []graphqlbackend.RetrieverContextItemResolver {
+	return c.contextItems
+}
+
+func (c chatContextResponse) PartialErrors() []string {
+	return iter.Map(c.partialErrors, func(err *error) string {
+		return (*err).Error()
+	})
+}
+
+func (c chatContextResponse) StopReason() string {
+	return c.stopReason
+}
+
+type retrieverContextItem struct {
+	item      graphqlbackend.ContextResultResolver
+	score     *float64
+	retriever string
+}
+
+func (r retrieverContextItem) Item() graphqlbackend.ContextResultResolver {
+	return r.item
+}
+
+func (r retrieverContextItem) Score() *float64 {
+	return r.score
+}
+
+func (r retrieverContextItem) Retriever() string {
+	return r.retriever
+}
+
+var _ graphqlbackend.RetrieverContextItemResolver = retrieverContextItem{}
