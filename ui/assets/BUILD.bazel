@@ -12,7 +12,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = select({
         "//conditions:default": {},
-        "//:integration_testing_enabled": {"github.com/sourcegraph/sourcegraph/client/web/dist.assetsSubdir": "integration"},
+        "//:integration_testing_enabled": {"github.com/sourcegraph/sourcegraph/ui/assets/dist.assetsPath": "integration"},
     }),
     deps = ["//lib/errors"],
 )

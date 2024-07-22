@@ -24,10 +24,11 @@ go_binary(
 
 pkg_tar(
     name = "tar_frontend",
-    srcs = [
-        ":frontend",
-        "//client/web/dist:copy_bundle",
-    ],
+    srcs = [":frontend"] +
+           select({
+               "//conditions:default": ["//client/web/dist:copy_bundle"],
+               "//:integration_testing_enabled": [":dummy_web_manifest"],
+           }),
 )
 
 oci_image(
