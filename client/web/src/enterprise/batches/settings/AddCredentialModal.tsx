@@ -4,7 +4,19 @@ import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Button, Modal, Link, Code, Label, Text, Input, ErrorAlert, Form, Select } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Modal,
+    Link,
+    Code,
+    Label,
+    Text,
+    Input,
+    ErrorAlert,
+    Form,
+    Select,
+    renderError,
+} from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, GitHubAppKind, type UserAreaUserFields } from '../../../graphql-operations'
@@ -303,79 +315,92 @@ const AddToken: FC<AddTokenProps> = ({
     const patLabel = computeCredentialLabel(externalServiceKind, authStrategy)
     const isStrategyPAT = authStrategy === AuthenticationStrategy.PERSONAL_ACCESS_TOKEN
     const kind = user ? GitHubAppKind.USER_CREDENTIAL : GitHubAppKind.SITE_CREDENTIAL
+    const timedOut = renderError(error).includes('Timed out')
 
     if (step === 'add-token') {
         return (
             <>
-                {error && <ErrorAlert error={error} />}
+                {error &&
+                    (timedOut ? (
+                        <ErrorAlert variant="warning" error={error} />
+                    ) : (
+                        <ErrorAlert variant="warning" error={error} />
+                    ))}
                 {isStrategyPAT ? (
                     <Form onSubmit={onSubmit}>
-                        <div className="form-group">
-                            {requiresUsername && (
-                                <>
-                                    <Input
-                                        id="username"
-                                        name="username"
-                                        autoComplete="off"
-                                        inputClassName="mb-2"
-                                        className="mb-0"
-                                        required={true}
-                                        spellCheck="false"
-                                        minLength={1}
-                                        value={username}
-                                        onChange={onChangeUsername}
-                                        label="Username"
-                                    />
-                                </>
-                            )}
-                            <Label htmlFor="token">{patLabel}</Label>
-                            <Input
-                                id="token"
-                                name="token"
-                                type="password"
-                                autoComplete="off"
-                                data-testid="test-add-credential-modal-input"
-                                required={true}
-                                spellCheck="false"
-                                minLength={1}
-                                value={credential}
-                                onChange={onChangeCredential}
-                            />
-                            <Text className="form-text">
-                                <Link
-                                    to={HELP_TEXT_LINK_URL}
-                                    rel="noreferrer noopener"
-                                    target="_blank"
-                                    aria-label={`Follow our docs to learn how to create a new ${patLabel.toLocaleLowerCase()} on this code host`}
-                                >
-                                    Create a new {patLabel.toLocaleLowerCase()}
-                                </Link>{' '}
-                                {scopeRequirements[externalServiceKind]}
-                            </Text>
-                        </div>
-                        <div className="d-flex justify-content-end align-items-center">
-                            {isStrategyPAT && (
-                                <>
-                                    <Button
-                                        disabled={loading}
-                                        className="mr-2"
-                                        onClick={onCancel}
-                                        outline={true}
-                                        variant="secondary"
+                        {!timedOut && (
+                            <div className="form-group">
+                                {requiresUsername && (
+                                    <>
+                                        <Input
+                                            id="username"
+                                            name="username"
+                                            autoComplete="off"
+                                            inputClassName="mb-2"
+                                            className="mb-0"
+                                            required={true}
+                                            spellCheck="false"
+                                            minLength={1}
+                                            value={username}
+                                            onChange={onChangeUsername}
+                                            label="Username"
+                                        />
+                                    </>
+                                )}
+                                <Label htmlFor="token">{patLabel}</Label>
+                                <Input
+                                    id="token"
+                                    name="token"
+                                    type="password"
+                                    autoComplete="off"
+                                    data-testid="test-add-credential-modal-input"
+                                    required={true}
+                                    spellCheck="false"
+                                    minLength={1}
+                                    value={credential}
+                                    onChange={onChangeCredential}
+                                />
+                                <Text className="form-text">
+                                    <Link
+                                        to={HELP_TEXT_LINK_URL}
+                                        rel="noreferrer noopener"
+                                        target="_blank"
+                                        aria-label={`Follow our docs to learn how to create a new ${patLabel.toLocaleLowerCase()} on this code host`}
                                     >
-                                        Cancel
+                                        Create a new {patLabel.toLocaleLowerCase()}
+                                    </Link>{' '}
+                                    {scopeRequirements[externalServiceKind]}
+                                </Text>
+                            </div>
+                        )}
+                        <div className="d-flex justify-content-end align-items-center">
+                            {isStrategyPAT &&
+                                (!timedOut ? (
+                                    <>
+                                        <Button
+                                            disabled={loading}
+                                            className="mr-2"
+                                            onClick={onCancel}
+                                            outline={true}
+                                            variant="secondary"
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <LoaderButton
+                                            type="submit"
+                                            disabled={loading || credential.length === 0}
+                                            className="test-add-credential-modal-submit"
+                                            variant="primary"
+                                            loading={loading}
+                                            alwaysShowLabel={true}
+                                            label={requiresSSH ? 'Next' : 'Add credential'}
+                                        />
+                                    </>
+                                ) : (
+                                    <Button variant="primary" onClick={onCancel}>
+                                        Done
                                     </Button>
-                                    <LoaderButton
-                                        type="submit"
-                                        disabled={loading || credential.length === 0}
-                                        className="test-add-credential-modal-submit"
-                                        variant="primary"
-                                        loading={loading}
-                                        alwaysShowLabel={true}
-                                        label={requiresSSH ? 'Next' : 'Add credential'}
-                                    />
-                                </>
-                            )}
+                                ))}
                         </div>
                     </Form>
                 ) : (

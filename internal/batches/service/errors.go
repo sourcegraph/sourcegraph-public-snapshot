@@ -1,6 +1,10 @@
 package service
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
 
 type ErrDuplicateCredential struct{}
 
@@ -23,3 +27,5 @@ func (e ErrVerifyCredentialFailed) Error() string {
 func (e ErrVerifyCredentialFailed) Extensions() map[string]any {
 	return map[string]any{"code": "ErrVerifyCredentialFailed"}
 }
+
+var VerifyCredentialTimeoutError = errors.New("verifying credential timed out")
