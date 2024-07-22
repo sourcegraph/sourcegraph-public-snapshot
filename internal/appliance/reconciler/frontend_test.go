@@ -1,7 +1,8 @@
 package reconciler
 
 import (
-  "fmt"
+	"fmt"
+
 	"github.com/sourcegraph/sourcegraph/internal/appliance/k8senvtest"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/ingress"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -71,7 +72,7 @@ func (suite *ApplianceTestSuite) TestAdoptsHelmProvisionedFrontendResources() {
 	_, err = suite.k8sClient.NetworkingV1().Ingresses(namespace.Name).Create(suite.ctx, &testIngress, metav1.CreateOptions{})
 	suite.Require().NoError(err)
 
-	cfgMap := suite.newConfigMap(namespace.GetName(), "frontend/default")
+	cfgMap := suite.newConfigMap(namespace.GetName(), "frontend/with-ingress")
 	suite.awaitReconciliation(namespace.GetName(), func() {
 		_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace.GetName()).Create(suite.ctx, cfgMap, metav1.CreateOptions{})
 		suite.Require().NoError(err)
