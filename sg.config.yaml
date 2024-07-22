@@ -143,6 +143,13 @@ env:
   EXTSVC_CONFIG_ALLOW_EDITS: true
 
 commands:
+  bolaji:
+    cmd: |
+      echo $BOLAJI_ENV_VAR
+      echo $BOLAJI_NODE_ENV
+    env:
+      BOLAJI_ENV_VAR: 'base command'
+      BOLAJI_NODE_ENV: development
   server:
     description: Run an all-in-one sourcegraph/server image
     cmd: ./dev/run-server-image.sh
@@ -1502,6 +1509,14 @@ dockerCommands:
 #
 defaultCommandset: enterprise
 commandsets:
+  obolaji:
+    checks:
+      - redis
+    commands:
+      - bolaji
+    env:
+      BOLAJI_ENV_VAR: 'base commandset'
+      WILLIAMS_CHECK: true
   enterprise-bazel: &enterprise_bazel_set
     checks:
       - redis
