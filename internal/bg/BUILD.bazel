@@ -16,6 +16,7 @@ go_test(
     name = "bg_test",
     srcs = ["delete_old_event_logs_in_postgres_test.go"],
     embed = [":bg"],
+    tags = ["requires-network"],
     deps = [
         "//internal/conf",
         "//internal/database",
