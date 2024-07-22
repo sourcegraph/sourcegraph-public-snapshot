@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -74,15 +75,23 @@ func exceedsLimit(costValue, limitValue int, violationType string) (bool, *viola
 
 func writeViolationError(w http.ResponseWriter, info []violationInfo) error {
 	errors := make([]*gqlerrors.QueryError, 0, len(info))
+
+	baseUrl, err := url.Parse(conf.ExternalURL())
+	if err != nil {
+		baseUrl, _ = url.Parse("https://sourcegraph.com")
+	}
+
+	docsUrl := baseUrl.ResolveReference(&url.URL{Path: "/help/api/graphql#cost-limits"}).String()
+
 	for _, info := range info {
 		errors = append(errors, &gqlerrors.QueryError{
 			Message: fmt.Sprintf("Query exceeds maximum %s limit", info.violationType),
 			Extensions: map[string]interface{}{
-				"code":     "errQueryComplexityLimitExceeded",
+				"code":     "ErrQueryComplexityLimitExceeded",
 				"type":     info.violationType,
 				"limit":    info.limit,
 				"actual":   info.actual,
-				"docs_url": conf.ExternalURL() + "/help/api/graphql#cost-limits",
+				"docs_url": docsUrl,
 			},
 		})
 	}
@@ -159,19 +168,19 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 			costHistogram.WithLabelValues(actorTypeLabel(isInternal, anonymous, requestSource)).Observe(float64(cost.FieldCount))
 
 			rl := conf.RateLimits()
-			limits := []struct {
-				cost          int
-				limit         int
-				violationType string
-			}{
-				{cost.AliasCount, rl.GraphQLMaxAliases, "alias count"},
-				{cost.FieldCount, rl.GraphQLMaxFieldCount, "field count"},
-				{cost.MaxDepth, rl.GraphQLMaxDepth, "query depth"},
-				{cost.HighestDuplicateFieldCount, rl.GraphQLMaxDuplicateFieldCount, "duplicate field count"},
-				{cost.UniqueFieldCount, rl.GraphQLMaxUniqueFieldCount, "unique field count"},
-			}
-
 			if !isInternal {
+				limits := []struct {
+					cost          int
+					limit         int
+					violationType string
+				}{
+					{cost.AliasCount, rl.GraphQLMaxAliases, "alias count"},
+					{cost.FieldCount, rl.GraphQLMaxFieldCount, "field count"},
+					{cost.MaxDepth, rl.GraphQLMaxDepth, "query depth"},
+					{cost.HighestDuplicateFieldCount, rl.GraphQLMaxDuplicateFieldCount, "duplicate field count"},
+					{cost.UniqueFieldCount, rl.GraphQLMaxUniqueFieldCount, "unique field count"},
+				}
+
 				var violations []violationInfo
 
 				for _, l := range limits {
