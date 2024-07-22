@@ -38,16 +38,16 @@ func (e *accessLogTransformer) Create(ctx context.Context, log *database.Executo
 	return e.ExecutorSecretAccessLogCreator.Create(ctx, log)
 }
 
-func transformRecord(ctx context.Context, db database.DB, index uploadsshared.AutoIndexJob, resourceMetadata handler.ResourceMetadata, accessToken string) (apiclient.Job, error) {
+func transformRecord(ctx context.Context, db database.DB, autoIndexJob uploadsshared.AutoIndexJob, resourceMetadata handler.ResourceMetadata, accessToken string) (apiclient.Job, error) {
 	resourceEnvironment := makeResourceEnvironment(resourceMetadata)
 
 	var secrets []*database.ExecutorSecret
 	var err error
-	if len(index.RequestedEnvVars) > 0 {
+	if len(autoIndexJob.RequestedEnvVars) > 0 {
 		secretsStore := db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
 		secrets, _, err = secretsStore.List(ctx, database.ExecutorSecretScopeCodeIntel, database.ExecutorSecretsListOpts{
 			// Note: No namespace set, codeintel secrets are only available in the global namespace for now.
-			Keys: index.RequestedEnvVars,
+			Keys: autoIndexJob.RequestedEnvVars,
 		})
 		if err != nil {
 			return apiclient.Job{}, err
@@ -73,8 +73,8 @@ func transformRecord(ctx context.Context, db database.DB, index uploadsshared.Au
 
 	envVars := append(resourceEnvironment, secretEnvVars...)
 
-	dockerSteps := make([]apiclient.DockerStep, 0, len(index.DockerSteps)+2)
-	for i, dockerStep := range index.DockerSteps {
+	dockerSteps := make([]apiclient.DockerStep, 0, len(autoIndexJob.DockerSteps)+2)
+	for i, dockerStep := range autoIndexJob.DockerSteps {
 		dockerSteps = append(dockerSteps, apiclient.DockerStep{
 			Key:      fmt.Sprintf("pre-index.%d", i),
 			Image:    dockerStep.Image,
@@ -84,12 +84,12 @@ func transformRecord(ctx context.Context, db database.DB, index uploadsshared.Au
 		})
 	}
 
-	if index.Indexer != "" {
+	if autoIndexJob.Indexer != "" {
 		dockerSteps = append(dockerSteps, apiclient.DockerStep{
 			Key:      "indexer",
-			Image:    index.Indexer,
-			Commands: append(index.LocalSteps, shellquote.Join(index.IndexerArgs...)),
-			Dir:      index.Root,
+			Image:    autoIndexJob.Indexer,
+			Commands: append(autoIndexJob.LocalSteps, shellquote.Join(autoIndexJob.IndexerArgs...)),
+			Dir:      autoIndexJob.Root,
 			Env:      envVars,
 		})
 	}
@@ -99,18 +99,18 @@ func transformRecord(ctx context.Context, db database.DB, index uploadsshared.Au
 	redactedAuthorizationHeader := makeAuthHeaderValue("REDACTED")
 	srcCliImage := fmt.Sprintf("%s:%s", conf.ExecutorsSrcCLIImage(), conf.ExecutorsSrcCLIImageTag())
 
-	root := index.Root
+	root := autoIndexJob.Root
 	if root == "" {
 		root = "."
 	}
 
-	outfile := index.Outfile
+	outfile := autoIndexJob.Outfile
 	if outfile == "" {
 		outfile = defaultOutfile
 	}
 
 	// TODO: Temporary workaround. LSIF-go needs tags, but they make git fetching slower.
-	fetchTags := strings.HasPrefix(index.Indexer, conf.ExecutorsLsifGoImage())
+	fetchTags := strings.HasPrefix(autoIndexJob.Indexer, conf.ExecutorsLsifGoImage())
 
 	dockerSteps = append(dockerSteps, apiclient.DockerStep{
 		Key:   "upload",
@@ -121,15 +121,15 @@ func transformRecord(ctx context.Context, db database.DB, index uploadsshared.Au
 				"code-intel",
 				"upload",
 				"-no-progress",
-				"-repo", index.RepositoryName,
-				"-commit", index.Commit,
+				"-repo", autoIndexJob.RepositoryName,
+				"-commit", autoIndexJob.Commit,
 				"-root", root,
 				"-upload-route", uploadRoute,
 				"-file", outfile,
-				"-associated-index-id", strconv.Itoa(index.ID),
+				"-associated-index-id", strconv.Itoa(autoIndexJob.ID),
 			),
 		},
-		Dir: index.Root,
+		Dir: autoIndexJob.Root,
 		Env: []string{
 			fmt.Sprintf("SRC_ENDPOINT=%s", frontendURL),
 			fmt.Sprintf("SRC_HEADER_AUTHORIZATION=%s", authorizationHeader),
@@ -151,9 +151,9 @@ func transformRecord(ctx context.Context, db database.DB, index uploadsshared.Au
 	maps.Copy(allRedactedValues, redactedEnvVars)
 
 	aj := apiclient.Job{
-		ID:             index.ID,
-		Commit:         index.Commit,
-		RepositoryName: index.RepositoryName,
+		ID:             autoIndexJob.ID,
+		Commit:         autoIndexJob.Commit,
+		RepositoryName: autoIndexJob.RepositoryName,
 		ShallowClone:   true,
 		FetchTags:      fetchTags,
 		DockerSteps:    dockerSteps,

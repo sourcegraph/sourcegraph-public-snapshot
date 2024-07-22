@@ -197,11 +197,11 @@ func (s *store) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (
 	}})
 	defer endObservation(1, observation.Args{})
 
-	indexes, err := scanIndexes(s.db.Query(ctx, sqlf.Sprintf(recentIndexesSummaryQuery, repositoryID, repositoryID)))
+	indexes, err := scanJobs(s.db.Query(ctx, sqlf.Sprintf(recentIndexesSummaryQuery, repositoryID, repositoryID)))
 	if err != nil {
 		return nil, err
 	}
-	logger.AddEvent("scanIndexes", attribute.Int("numIndexes", len(indexes)))
+	logger.AddEvent("scanJobs", attribute.Int("numIndexes", len(indexes)))
 
 	groupedIndexes := make([]uploadsshared.IndexesWithRepositoryNamespace, 1, len(indexes)+1)
 	for _, index := range indexes {

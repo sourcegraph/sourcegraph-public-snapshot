@@ -28,7 +28,7 @@ var IndexWorkerStoreOptions = dbworkerstore.Options[uploadsshared.AutoIndexJob]{
 	TableName:         "lsif_indexes",
 	ViewName:          "lsif_indexes_with_repository_name u",
 	ColumnExpressions: indexColumnsWithNullRank,
-	Scan:              dbworkerstore.BuildWorkerScan(scanIndex),
+	Scan:              dbworkerstore.BuildWorkerScan(scanJob),
 	OrderByExpression: sqlf.Sprintf("(u.enqueuer_user_id > 0) DESC, u.queued_at, u.id"),
 	StalledMaxAge:     stalledIndexMaxAge,
 	MaxNumResets:      indexMaxNumResets,
@@ -61,7 +61,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf(`u.enqueuer_user_id`),
 }
 
-func scanIndex(s dbutil.Scanner) (index uploadsshared.AutoIndexJob, err error) {
+func scanJob(s dbutil.Scanner) (index uploadsshared.AutoIndexJob, err error) {
 	var executionLogs []executor.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,

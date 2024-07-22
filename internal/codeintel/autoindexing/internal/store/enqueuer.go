@@ -110,8 +110,8 @@ LIMIT 1
 // - canonization methods
 // - share code with uploads store (should own this?)
 
-func (s *store) InsertIndexes(ctx context.Context, indexes []shared.AutoIndexJob) (_ []shared.AutoIndexJob, err error) {
-	ctx, _, endObservation := s.operations.insertIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+func (s *store) jobsToInsertctx context.Context, indexes []shared.AutoIndexJob) (_ []shared.AutoIndexJob, err error) {
+	ctx, _, endObservation := s.operations.insertAutoIndexJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("numIndexes", len(indexes)),
 	}})
 	endObservation(1, observation.Args{})
@@ -170,7 +170,7 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []shared.AutoIndexJob
 			queries = append(queries, sqlf.Sprintf("%d", id))
 		}
 
-		indexes, err = scanIndexes(tx.db.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
+		indexes, err = scanJobs(tx.db.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
 		return err
 	})
 
@@ -239,7 +239,7 @@ ORDER BY u.id
 //
 //
 
-func scanIndex(s dbutil.Scanner) (index shared.AutoIndexJob, err error) {
+func scanJob(s dbutil.Scanner) (index shared.AutoIndexJob, err error) {
 	var executionLogs []executor.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,
@@ -274,4 +274,4 @@ func scanIndex(s dbutil.Scanner) (index shared.AutoIndexJob, err error) {
 	return index, nil
 }
 
-var scanIndexes = basestore.NewSliceScanner(scanIndex)
+var scanJobs = basestore.NewSliceScanner(scanJob)

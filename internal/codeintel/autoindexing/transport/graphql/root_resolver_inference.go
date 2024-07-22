@@ -96,7 +96,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 		configuration = *args.Configuration
 	}
 
-	indexes, err := r.autoindexSvc.QueueIndexes(ctx, int(repositoryID), rev, configuration, true, true)
+	indexes, err := r.autoindexSvc.QueueAutoIndexJobs(ctx, int(repositoryID), rev, configuration, true, true)
 	if err != nil {
 		return nil, err
 	}

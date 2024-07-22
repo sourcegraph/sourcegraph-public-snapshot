@@ -231,7 +231,7 @@ func TestProcessStaleSourcedCommits(t *testing.T) {
 	ctx := context.Background()
 	now := time.Unix(1587396557, 0).UTC()
 
-	insertIndexes(t, db,
+	insertAutoIndexJobs(t, db,
 		uploadsshared.AutoIndexJob{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
 		uploadsshared.AutoIndexJob{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
 		uploadsshared.AutoIndexJob{ID: 3, RepositoryID: 50, Commit: makeCommit(3)},
@@ -537,7 +537,7 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 			indexes = append(indexes, uploadsshared.AutoIndexJob{ID: len(indexes) + 1, RepositoryID: 50 + i})
 		}
 	}
-	insertIndexes(t, db, indexes...)
+	insertAutoIndexJobs(t, db, indexes...)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-deletedRepositoryGracePeriod + time.Minute)
@@ -573,7 +573,7 @@ func TestExpireFailedRecords(t *testing.T) {
 	ctx := context.Background()
 	now := time.Unix(1587396557, 0).UTC()
 
-	insertIndexes(t, db,
+	insertAutoIndexJobs(t, db,
 		// young failures (none removed)
 		uploadsshared.AutoIndexJob{ID: 1, RepositoryID: 50, Commit: makeCommit(1), FinishedAt: pointers.Ptr(now.Add(-time.Minute * 10)), State: "failed"},
 		uploadsshared.AutoIndexJob{ID: 2, RepositoryID: 50, Commit: makeCommit(2), FinishedAt: pointers.Ptr(now.Add(-time.Minute * 20)), State: "failed"},

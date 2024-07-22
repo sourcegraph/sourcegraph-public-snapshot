@@ -28,10 +28,10 @@ func PresubmitAssociatedIndexes(indexLoader IndexLoader, uploads ...shared.Uploa
 	}
 }
 
-func PresubmitAssociatedUploads(uploadLoader UploadLoader, indexes ...shared.AutoIndexJob) {
-	for _, index := range indexes {
-		if index.AssociatedUploadID != nil {
-			uploadLoader.Presubmit(*index.AssociatedUploadID)
+func PresubmitAssociatedUploads(uploadLoader UploadLoader, jobs ...shared.AutoIndexJob) {
+	for _, job := range jobs {
+		if job.AssociatedUploadID != nil {
+			uploadLoader.Presubmit(*job.AssociatedUploadID)
 		}
 	}
 }

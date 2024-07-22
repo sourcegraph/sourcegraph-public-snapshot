@@ -42,7 +42,7 @@ func NewIndexEnqueuer(
 	}
 }
 
-// QueueIndexes enqueues a set of index jobs for the following repository and commit. If a non-empty
+// QueueAutoIndexJobs enqueues a set of index jobs for the following repository and commit. If a non-empty
 // configuration is given, it will be used to determine the set of jobs to enqueue. Otherwise, it will
 // the configuration will be determined based on the regular index scheduling rules: first read any
 // in-repo configuration (e.g., sourcegraph.yaml), then look for any existing in-database configuration,
@@ -52,7 +52,7 @@ func NewIndexEnqueuer(
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
-func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []uploadsshared.AutoIndexJob, err error) {
+func (s *IndexEnqueuer) QueueAutoIndexJobs(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []uploadsshared.AutoIndexJob, err error) {
 	ctx, trace, endObservation := s.operations.queueIndex.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
 		attribute.String("rev", rev),
@@ -71,12 +71,12 @@ func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev,
 	commit := string(commitID)
 	trace.AddEvent("ResolveRevision", attribute.String("commit", commit))
 
-	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configuration, force, bypassLimit)
+	return s.queueJobsForRepoAndCommit(ctx, repositoryID, commit, configuration, force, bypassLimit)
 }
 
-// QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
+// QueueAutoIndexJobsForPackage enqueues index jobs for a dependency of a recently-processed precise code
 // intelligence index.
-func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo) (err error) {
+func (s *IndexEnqueuer) QueueAutoIndexJobsForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo) (err error) {
 	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("scheme", pkg.Scheme),
 		attribute.String("name", string(pkg.Name)),
@@ -107,16 +107,16 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg dependen
 		return errors.Wrap(err, "gitserverClient.ResolveRevision")
 	}
 
-	_, err = s.queueIndexForRepositoryAndCommit(ctx, repoID, string(commit), "", false, false)
+	_, err = s.queueJobsForRepoAndCommit(ctx, repoID, string(commit), "", false, false)
 	return err
 }
 
-// queueIndexForRepositoryAndCommit determines a set of index jobs to enqueue for the given repository and commit.
+// queueJobsForRepoAndCommit determines a set of index jobs to enqueue for the given repository and commit.
 //
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
-func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force, bypassLimit bool) ([]uploadsshared.AutoIndexJob, error) {
+func (s *IndexEnqueuer) queueJobsForRepoAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force, bypassLimit bool) ([]uploadsshared.AutoIndexJob, error) {
 	if !force {
 		isQueued, err := s.store.IsQueued(ctx, repositoryID, commit)
 		if err != nil {
@@ -135,19 +135,19 @@ func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, re
 		return nil, nil
 	}
 
-	indexesToInsert := indexes
+	jobsToInsert := indexes
 	if !force {
-		indexesToInsert = []uploadsshared.AutoIndexJob{}
+		jobsToInsert = []uploadsshared.AutoIndexJob{}
 		for _, index := range indexes {
 			isQueued, err := s.store.IsQueuedRootIndexer(ctx, repositoryID, commit, index.Root, index.Indexer)
 			if err != nil {
 				return nil, errors.Wrap(err, "dbstore.IsQueuedRootIndexer")
 			}
 			if !isQueued {
-				indexesToInsert = append(indexesToInsert, index)
+				jobsToInsert = append(jobsToInsert, index)
 			}
 		}
 	}
 
-	return s.store.InsertIndexes(ctx, indexesToInsert)
+	return s.store.InsertJobs(ctx, jobsToInsert)
 }

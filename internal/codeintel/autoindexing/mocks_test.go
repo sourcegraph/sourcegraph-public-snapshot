@@ -40,9 +40,9 @@ type MockStore struct {
 	// object controlling the behavior of the method
 	// InsertDependencyIndexingJob.
 	InsertDependencyIndexingJobFunc *StoreInsertDependencyIndexingJobFunc
-	// InsertIndexesFunc is an instance of a mock function object
-	// controlling the behavior of the method InsertIndexes.
-	InsertIndexesFunc *StoreInsertIndexesFunc
+	// InsertJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method InsertJobs.
+	InsertJobsFunc *StoreInsertJobsFunc
 	// IsQueuedFunc is an instance of a mock function object controlling the
 	// behavior of the method IsQueued.
 	IsQueuedFunc *StoreIsQueuedFunc
@@ -117,7 +117,7 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
-		InsertIndexesFunc: &StoreInsertIndexesFunc{
+		InsertJobsFunc: &StoreInsertJobsFunc{
 			defaultHook: func(context.Context, []shared1.AutoIndexJob) (r0 []shared1.AutoIndexJob, r1 error) {
 				return
 			},
@@ -219,9 +219,9 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.InsertDependencyIndexingJob")
 			},
 		},
-		InsertIndexesFunc: &StoreInsertIndexesFunc{
+		InsertJobsFunc: &StoreInsertJobsFunc{
 			defaultHook: func(context.Context, []shared1.AutoIndexJob) ([]shared1.AutoIndexJob, error) {
-				panic("unexpected invocation of MockStore.InsertIndexes")
+				panic("unexpected invocation of MockStore.InsertJobs")
 			},
 		},
 		IsQueuedFunc: &StoreIsQueuedFunc{
@@ -311,8 +311,8 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		InsertDependencyIndexingJobFunc: &StoreInsertDependencyIndexingJobFunc{
 			defaultHook: i.InsertDependencyIndexingJob,
 		},
-		InsertIndexesFunc: &StoreInsertIndexesFunc{
-			defaultHook: i.InsertIndexes,
+		InsertJobsFunc: &StoreInsertJobsFunc{
+			defaultHook: i.InsertJobs,
 		},
 		IsQueuedFunc: &StoreIsQueuedFunc{
 			defaultHook: i.IsQueued,
@@ -913,34 +913,34 @@ func (c StoreInsertDependencyIndexingJobFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreInsertIndexesFunc describes the behavior when the InsertIndexes
+// StoreInsertJobsFunc describes the behavior when the InsertJobs
 // method of the parent MockStore instance is invoked.
-type StoreInsertIndexesFunc struct {
+type StoreInsertJobsFunc struct {
 	defaultHook func(context.Context, []shared1.AutoIndexJob) ([]shared1.AutoIndexJob, error)
 	hooks       []func(context.Context, []shared1.AutoIndexJob) ([]shared1.AutoIndexJob, error)
-	history     []StoreInsertIndexesFuncCall
+	history     []StoreInsertJobsFuncCall
 	mutex       sync.Mutex
 }
 
-// InsertIndexes delegates to the next hook function in the queue and stores
+// InsertJobs delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) InsertIndexes(v0 context.Context, v1 []shared1.AutoIndexJob) ([]shared1.AutoIndexJob, error) {
-	r0, r1 := m.InsertIndexesFunc.nextHook()(v0, v1)
-	m.InsertIndexesFunc.appendCall(StoreInsertIndexesFuncCall{v0, v1, r0, r1})
+func (m *MockStore) InsertJobs(v0 context.Context, v1 []shared1.AutoIndexJob) ([]shared1.AutoIndexJob, error) {
+	r0, r1 := m.InsertJobsFunc.nextHook()(v0, v1)
+	m.InsertJobsFunc.appendCall(StoreInsertJobsFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the InsertIndexes method
+// SetDefaultHook sets function that is called when the InsertJobs method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreInsertIndexesFunc) SetDefaultHook(hook func(context.Context, []shared1.AutoIndexJob) ([]shared1.AutoIndexJob, error)) {
+func (f *StoreInsertJobsFunc) SetDefaultHook(hook func(context.Context, []shared1.AutoIndexJob) ([]shared1.AutoIndexJob, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// InsertIndexes method of the parent MockStore instance invokes the hook at
+// InsertJobs method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreInsertIndexesFunc) PushHook(hook func(context.Context, []shared1.AutoIndexJob) ([]shared1.AutoIndexJob, error)) {
+func (f *StoreInsertJobsFunc) PushHook(hook func(context.Context, []shared1.AutoIndexJob) ([]shared1.AutoIndexJob, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -948,20 +948,20 @@ func (f *StoreInsertIndexesFunc) PushHook(hook func(context.Context, []shared1.A
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreInsertIndexesFunc) SetDefaultReturn(r0 []shared1.AutoIndexJob, r1 error) {
+func (f *StoreInsertJobsFunc) SetDefaultReturn(r0 []shared1.AutoIndexJob, r1 error) {
 	f.SetDefaultHook(func(context.Context, []shared1.AutoIndexJob) ([]shared1.AutoIndexJob, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreInsertIndexesFunc) PushReturn(r0 []shared1.AutoIndexJob, r1 error) {
+func (f *StoreInsertJobsFunc) PushReturn(r0 []shared1.AutoIndexJob, r1 error) {
 	f.PushHook(func(context.Context, []shared1.AutoIndexJob) ([]shared1.AutoIndexJob, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreInsertIndexesFunc) nextHook() func(context.Context, []shared1.AutoIndexJob) ([]shared1.AutoIndexJob, error) {
+func (f *StoreInsertJobsFunc) nextHook() func(context.Context, []shared1.AutoIndexJob) ([]shared1.AutoIndexJob, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -974,26 +974,26 @@ func (f *StoreInsertIndexesFunc) nextHook() func(context.Context, []shared1.Auto
 	return hook
 }
 
-func (f *StoreInsertIndexesFunc) appendCall(r0 StoreInsertIndexesFuncCall) {
+func (f *StoreInsertJobsFunc) appendCall(r0 StoreInsertJobsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreInsertIndexesFuncCall objects
+// History returns a sequence of StoreInsertJobsFuncCall objects
 // describing the invocations of this function.
-func (f *StoreInsertIndexesFunc) History() []StoreInsertIndexesFuncCall {
+func (f *StoreInsertJobsFunc) History() []StoreInsertJobsFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreInsertIndexesFuncCall, len(f.history))
+	history := make([]StoreInsertJobsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreInsertIndexesFuncCall is an object that describes an invocation of
-// method InsertIndexes on an instance of MockStore.
-type StoreInsertIndexesFuncCall struct {
+// StoreInsertJobsFuncCall is an object that describes an invocation of
+// method InsertJobs on an instance of MockStore.
+type StoreInsertJobsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1010,13 +1010,13 @@ type StoreInsertIndexesFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreInsertIndexesFuncCall) Args() []interface{} {
+func (c StoreInsertJobsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreInsertIndexesFuncCall) Results() []interface{} {
+func (c StoreInsertJobsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

@@ -149,7 +149,7 @@ func TestRecentIndexesSummary(t *testing.T) {
 		return index
 	}
 
-	indexes := []uploadsshared.AutoIndexJob{
+	jobs := []uploadsshared.AutoIndexJob{
 		addDefaults(uploadsshared.AutoIndexJob{ID: 150, QueuedAt: t0, Root: "r1", Indexer: "i1", State: "queued", Rank: &r2}), // visible (group 1)
 		addDefaults(uploadsshared.AutoIndexJob{ID: 151, QueuedAt: t1, Root: "r1", Indexer: "i1", State: "queued", Rank: &r1}), // visible (group 1)
 		addDefaults(uploadsshared.AutoIndexJob{ID: 152, FinishedAt: &t2, Root: "r1", Indexer: "i1", State: "errored"}),        // visible (group 1)
@@ -161,7 +161,7 @@ func TestRecentIndexesSummary(t *testing.T) {
 		addDefaults(uploadsshared.AutoIndexJob{ID: 158, FinishedAt: &t8, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
 		addDefaults(uploadsshared.AutoIndexJob{ID: 159, FinishedAt: &t9, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
 	}
-	insertIndexes(t, db, indexes...)
+	insertAutoIndexJobs(t, db, jobs...)
 
 	summary, err := store.GetRecentIndexesSummary(ctx, 50)
 	if err != nil {
@@ -169,10 +169,10 @@ func TestRecentIndexesSummary(t *testing.T) {
 	}
 
 	expected := []uploadsshared.IndexesWithRepositoryNamespace{
-		{Root: "r1", Indexer: "i1", Indexes: []uploadsshared.AutoIndexJob{indexes[0], indexes[1], indexes[2]}},
-		{Root: "r1", Indexer: "i2", Indexes: []uploadsshared.AutoIndexJob{indexes[3]}},
-		{Root: "r2", Indexer: "i1", Indexes: []uploadsshared.AutoIndexJob{indexes[4]}},
-		{Root: "r2", Indexer: "i2", Indexes: []uploadsshared.AutoIndexJob{indexes[6]}},
+		{Root: "r1", Indexer: "i1", Indexes: []uploadsshared.AutoIndexJob{jobs[0], jobs[1], jobs[2]}},
+		{Root: "r1", Indexer: "i2", Indexes: []uploadsshared.AutoIndexJob{jobs[3]}},
+		{Root: "r2", Indexer: "i1", Indexes: []uploadsshared.AutoIndexJob{jobs[4]}},
+		{Root: "r2", Indexer: "i2", Indexes: []uploadsshared.AutoIndexJob{jobs[6]}},
 	}
 	if diff := cmp.Diff(expected, summary); diff != "" {
 		t.Errorf("unexpected index summary (-want +got):\n%s", diff)
@@ -211,7 +211,7 @@ func TestRepositoryIDsWithErrors(t *testing.T) {
 		shared.Upload{ID: 171, RepositoryID: 58, State: "failed", FinishedAt: &t2},
 		shared.Upload{ID: 172, RepositoryID: 58, State: "failed", FinishedAt: &t3},
 	)
-	insertIndexes(t, db,
+	insertAutoIndexJobs(t, db,
 		uploadsshared.AutoIndexJob{ID: 201, RepositoryID: 51},                  // Repo 51 = success
 		uploadsshared.AutoIndexJob{ID: 202, RepositoryID: 52, State: "failed"}, // Repo 52 = failing index
 		uploadsshared.AutoIndexJob{ID: 203, RepositoryID: 53},                  // Repo 53 = success (+ failing upload)

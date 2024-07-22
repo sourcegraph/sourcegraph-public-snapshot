@@ -504,7 +504,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			} else {
 				for _, event := range test.dequeueEvents {
 					if test.codeintelTransformerFunc != nil {
-						mh.CodeIntelQueueHandler.RecordTransformer = test.codeintelTransformerFunc
+						mh.AutoIndexQueueHandler.RecordTransformer = test.codeintelTransformerFunc
 					}
 					if test.batchesTransformerFunc != nil {
 						mh.BatchesQueueHandler.RecordTransformer = test.batchesTransformerFunc
@@ -1099,7 +1099,7 @@ func TestMultiHandler_SelectNonEmptyQueues(t *testing.T) {
 			codeIntelMockStore := dbworkerstoremocks.NewMockStore[uploadsshared.AutoIndexJob]()
 			batchesMockStore := dbworkerstoremocks.NewMockStore[*btypes.BatchSpecWorkspaceExecutionJob]()
 			m := &handler.MultiHandler{
-				CodeIntelQueueHandler: handler.QueueHandler[uploadsshared.AutoIndexJob]{Name: "codeintel", Store: codeIntelMockStore},
+				AutoIndexQueueHandler: handler.QueueHandler[uploadsshared.AutoIndexJob]{Name: "codeintel", Store: codeIntelMockStore},
 				BatchesQueueHandler:   handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Name: "batches", Store: batchesMockStore},
 			}
 

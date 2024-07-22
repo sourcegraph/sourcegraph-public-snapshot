@@ -33,18 +33,18 @@ func Test_AutoIndexingManualEnqueuedDequeueOrder(t *testing.T) {
 	workerstore := store.New(observation.TestContextTB(t), db.Handle(), opts)
 
 	for i, test := range []struct {
-		indexes []shared.AutoIndexJob
-		nextID  int
+		jobs   []shared.AutoIndexJob
+		nextID int
 	}{
 		{
-			indexes: []shared.AutoIndexJob{
+			jobs: []shared.AutoIndexJob{
 				{ID: 1, RepositoryID: 1, EnqueuerUserID: 51234},
 				{ID: 2, RepositoryID: 4},
 			},
 			nextID: 1,
 		},
 		{
-			indexes: []shared.AutoIndexJob{
+			jobs: []shared.AutoIndexJob{
 				{ID: 1, RepositoryID: 1, EnqueuerUserID: 50, State: "completed", FinishedAt: dbutil.NullTimeColumn(clock.Now().Add(-time.Hour * 3))},
 				{ID: 2, RepositoryID: 2},
 				{ID: 3, RepositoryID: 1, EnqueuerUserID: 1},
@@ -56,7 +56,7 @@ func Test_AutoIndexingManualEnqueuedDequeueOrder(t *testing.T) {
 			if _, err := db.ExecContext(context.Background(), "TRUNCATE lsif_indexes RESTART IDENTITY CASCADE"); err != nil {
 				t.Fatal(err)
 			}
-			insertIndexes(t, db, test.indexes...)
+			insertAutoIndexJobs(t, db, test.jobs...)
 			job, _, err := workerstore.Dequeue(context.Background(), "borgir", nil)
 			if err != nil {
 				t.Fatal(err)
@@ -69,29 +69,29 @@ func Test_AutoIndexingManualEnqueuedDequeueOrder(t *testing.T) {
 	}
 }
 
-func insertIndexes(t testing.TB, db database.DB, indexes ...shared.AutoIndexJob) {
-	for _, index := range indexes {
-		if index.Commit == "" {
-			index.Commit = fmt.Sprintf("%040d", index.ID)
+func insertAutoIndexJobs(t testing.TB, db database.DB, jobs ...shared.AutoIndexJob) {
+	for _, job := range jobs {
+		if job.Commit == "" {
+			job.Commit = fmt.Sprintf("%040d", job.ID)
 		}
-		if index.State == "" {
-			index.State = "queued"
+		if job.State == "" {
+			job.State = "queued"
 		}
-		if index.RepositoryID == 0 {
-			index.RepositoryID = 50
+		if job.RepositoryID == 0 {
+			job.RepositoryID = 50
 		}
-		if index.DockerSteps == nil {
-			index.DockerSteps = []shared.DockerStep{}
+		if job.DockerSteps == nil {
+			job.DockerSteps = []shared.DockerStep{}
 		}
-		if index.IndexerArgs == nil {
-			index.IndexerArgs = []string{}
+		if job.IndexerArgs == nil {
+			job.IndexerArgs = []string{}
 		}
-		if index.LocalSteps == nil {
-			index.LocalSteps = []string{}
+		if job.LocalSteps == nil {
+			job.LocalSteps = []string{}
 		}
 
 		// Ensure we have a repo for the inner join in select queries
-		insertRepo(t, db, index.RepositoryID, index.RepositoryName)
+		insertRepo(t, db, job.RepositoryID, job.RepositoryName)
 
 		query := sqlf.Sprintf(`
 			INSERT INTO lsif_indexes (
@@ -117,26 +117,26 @@ func insertIndexes(t testing.TB, db database.DB, indexes ...shared.AutoIndexJob)
 				enqueuer_user_id
 			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
-			index.ID,
-			index.Commit,
-			index.QueuedAt,
-			index.State,
-			index.FailureMessage,
-			index.StartedAt,
-			index.FinishedAt,
-			index.ProcessAfter,
-			index.NumResets,
-			index.NumFailures,
-			index.RepositoryID,
-			pq.Array(index.DockerSteps),
-			index.Root,
-			index.Indexer,
-			pq.Array(index.IndexerArgs),
-			index.Outfile,
-			pq.Array(index.ExecutionLogs),
-			pq.Array(index.LocalSteps),
-			index.ShouldReindex,
-			index.EnqueuerUserID,
+			job.ID,
+			job.Commit,
+			job.QueuedAt,
+			job.State,
+			job.FailureMessage,
+			job.StartedAt,
+			job.FinishedAt,
+			job.ProcessAfter,
+			job.NumResets,
+			job.NumFailures,
+			job.RepositoryID,
+			pq.Array(job.DockerSteps),
+			job.Root,
+			job.Indexer,
+			pq.Array(job.IndexerArgs),
+			job.Outfile,
+			pq.Array(job.ExecutionLogs),
+			pq.Array(job.LocalSteps),
+			job.ShouldReindex,
+			job.EnqueuerUserID,
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {

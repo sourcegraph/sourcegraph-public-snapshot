@@ -5,13 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore"
 	testutils "github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/testkit"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/stretchr/testify/require"
 )
 
 func TestSyntacticIndexingStoreDequeue(t *testing.T) {
@@ -150,7 +151,7 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 		},
 	})
 
-	// Assertions below verify the interactions between InsertIndexes and IsQueued
+	// Assertions below verify the interactions between InsertJobs and IsQueued
 	tacosIsQueued, err := jobStore.IsQueued(ctx, tacosRepoId, tacosCommit)
 	require.NoError(t, err)
 	require.True(t, tacosIsQueued)
@@ -163,7 +164,7 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, mangosIsQueued)
 
-	// Assertions below verify that records inserted by InsertIndexes are
+	// Assertions below verify that records inserted by InsertJobs are
 	// still visible by DB Worker interface
 	afterCount, _ := store.QueuedCount(ctx, true)
 

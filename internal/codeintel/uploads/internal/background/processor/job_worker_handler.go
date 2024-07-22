@@ -437,7 +437,7 @@ func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, git
 // NOTE(scip-index-size-stats) In practice, the following seem to be true:
 //   - The size of an uncompressed index is about 5x-10x the size of
 //     the gzip-compressed index
-//   - The memory usage of a full deserialized scip.AutoIndexJob is about
+//   - The memory usage of a full deserialized scip.Index is about
 //     2.5x-4.5x times the size of the uncompressed index byte slice.
 //
 // The code intel worker sometimes has as little as 2GB of RAM, so 1/4-th of

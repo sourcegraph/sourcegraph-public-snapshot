@@ -62,7 +62,7 @@ func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (
 		}
 		conds = append(conds, authzConds)
 
-		indexes, err := scanIndexes(tx.db.Query(ctx, sqlf.Sprintf(
+		indexes, err := scanJobs(tx.db.Query(ctx, sqlf.Sprintf(
 			getIndexesSelectQuery,
 			sqlf.Join(conds, " AND "),
 			opts.Limit,
@@ -71,7 +71,7 @@ func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (
 		if err != nil {
 			return err
 		}
-		trace.AddEvent("scanIndexesWithCount",
+		trace.AddEvent("scanJobsWithCount",
 			attribute.Int("numIndexes", len(indexes)))
 
 		totalCount, _, err := basestore.ScanFirstInt(tx.db.Query(ctx, sqlf.Sprintf(
@@ -81,7 +81,7 @@ func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (
 		if err != nil {
 			return err
 		}
-		trace.AddEvent("scanIndexesWithCount",
+		trace.AddEvent("scanJobsWithCount",
 			attribute.Int("totalCount", totalCount),
 		)
 
@@ -141,13 +141,13 @@ WHERE
 	%s
 `
 
-// scanIndexes scans a slice of indexes from the return value of `*Store.query`.
-var scanIndexes = basestore.NewSliceScanner(scanIndex)
+// scanJobs scans a slice of indexes from the return value of `*Store.query`.
+var scanJobs = basestore.NewSliceScanner(scanJob)
 
 // scanFirstIndex scans a slice of indexes from the return value of `*Store.query` and returns the first.
-var scanFirstIndex = basestore.NewFirstScanner(scanIndex)
+var scanFirstIndex = basestore.NewFirstScanner(scanJob)
 
-func scanIndex(s dbutil.Scanner) (index shared.AutoIndexJob, err error) {
+func scanJob(s dbutil.Scanner) (index shared.AutoIndexJob, err error) {
 	var executionLogs []executor.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,
@@ -253,7 +253,7 @@ func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Aut
 		queries = append(queries, sqlf.Sprintf("%d", id))
 	}
 
-	return scanIndexes(s.db.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
+	return scanJobs(s.db.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
 }
 
 const getIndexesByIDsQuery = `

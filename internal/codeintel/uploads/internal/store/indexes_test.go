@@ -42,7 +42,7 @@ func TestGetIndexes(t *testing.T) {
 	indexID1, indexID2, indexID3, indexID4 := 1, 3, 5, 5 // note the duplication
 	uploadID1, uploadID2, uploadID3, uploadID4 := 10, 11, 12, 13
 
-	insertIndexes(t, db,
+	insertAutoIndexJobs(t, db,
 		uploadsshared.AutoIndexJob{ID: 1, Commit: makeCommit(3331), QueuedAt: t1, State: "queued", AssociatedUploadID: &uploadID1},
 		uploadsshared.AutoIndexJob{ID: 2, QueuedAt: t2, State: "errored", FailureMessage: &failureMessage},
 		uploadsshared.AutoIndexJob{ID: 3, Commit: makeCommit(3333), QueuedAt: t3, State: "queued", AssociatedUploadID: &uploadID1},
@@ -204,7 +204,7 @@ func TestGetIndexByID(t *testing.T) {
 		AssociatedUploadID: &uploadID,
 	}
 
-	insertIndexes(t, db, expected)
+	insertAutoIndexJobs(t, db, expected)
 	insertUploads(t, db, shared.Upload{ID: uploadID, AssociatedIndexID: &expected.ID})
 
 	if index, exists, err := store.GetIndexByID(ctx, 1); err != nil {
@@ -252,7 +252,7 @@ func TestGetQueuedIndexRank(t *testing.T) {
 	t6 := t1.Add(+time.Minute * 2)
 	t7 := t1.Add(+time.Minute * 5)
 
-	insertIndexes(t, db,
+	insertAutoIndexJobs(t, db,
 		uploadsshared.AutoIndexJob{ID: 1, QueuedAt: t1, State: "queued"},
 		uploadsshared.AutoIndexJob{ID: 2, QueuedAt: t2, State: "queued"},
 		uploadsshared.AutoIndexJob{ID: 3, QueuedAt: t3, State: "queued"},
@@ -298,7 +298,7 @@ func TestGetIndexesByIDs(t *testing.T) {
 	indexID1, indexID2, indexID3, indexID4 := 1, 3, 5, 5 // note the duplication
 	uploadID1, uploadID2, uploadID3, uploadID4 := 10, 11, 12, 13
 
-	insertIndexes(t, db,
+	insertAutoIndexJobs(t, db,
 		uploadsshared.AutoIndexJob{ID: 1, AssociatedUploadID: &uploadID1},
 		uploadsshared.AutoIndexJob{ID: 2},
 		uploadsshared.AutoIndexJob{ID: 3, AssociatedUploadID: &uploadID1},
@@ -363,7 +363,7 @@ func TestDeleteIndexByID(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 1})
+	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 1})
 
 	if found, err := store.DeleteIndexByID(context.Background(), 1); err != nil {
 		t.Fatalf("unexpected error deleting index: %s", err)
@@ -384,8 +384,8 @@ func TestDeleteIndexes(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 1, State: "completed"})
-	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 2, State: "errored"})
+	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 1, State: "completed"})
+	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 2, State: "errored"})
 
 	if err := store.DeleteIndexes(context.Background(), shared.DeleteIndexesOptions{
 		States:       []string{"errored"},
@@ -408,10 +408,10 @@ func TestDeleteIndexesWithIndexerKey(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
-	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 2, Indexer: "sourcegraph/scip-go"})
-	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 3, Indexer: "sourcegraph/scip-typescript"})
-	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 4, Indexer: "sourcegraph/scip-typescript"})
+	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
+	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 2, Indexer: "sourcegraph/scip-go"})
+	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 3, Indexer: "sourcegraph/scip-typescript"})
+	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 4, Indexer: "sourcegraph/scip-typescript"})
 
 	if err := store.DeleteIndexes(context.Background(), shared.DeleteIndexesOptions{
 		IndexerNames: []string{"scip-go"},
@@ -443,8 +443,8 @@ func TestReindexIndexByID(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 1, State: "completed"})
-	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 2, State: "errored"})
+	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 1, State: "completed"})
+	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 2, State: "errored"})
 
 	if err := store.ReindexIndexByID(context.Background(), 2); err != nil {
 		t.Fatalf("unexpected error deleting indexes: %s", err)
@@ -465,8 +465,8 @@ func TestReindexIndexes(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 1, State: "completed"})
-	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 2, State: "errored"})
+	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 1, State: "completed"})
+	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 2, State: "errored"})
 
 	if err := store.ReindexIndexes(context.Background(), shared.ReindexIndexesOptions{
 		States:       []string{"errored"},
@@ -491,10 +491,10 @@ func TestReindexIndexesWithIndexerKey(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
 
-	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
-	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 2, Indexer: "sourcegraph/scip-go"})
-	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 3, Indexer: "sourcegraph/scip-typescript"})
-	insertIndexes(t, db, uploadsshared.AutoIndexJob{ID: 4, Indexer: "sourcegraph/scip-typescript"})
+	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
+	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 2, Indexer: "sourcegraph/scip-go"})
+	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 3, Indexer: "sourcegraph/scip-typescript"})
+	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 4, Indexer: "sourcegraph/scip-typescript"})
 
 	if err := store.ReindexIndexes(context.Background(), shared.ReindexIndexesOptions{
 		IndexerNames: []string{"scip-go"},
