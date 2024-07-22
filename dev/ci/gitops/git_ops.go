@@ -19,12 +19,12 @@ var ErrNoTags = errors.New("no tags found")
 func handleGitCommandExec(cmd *exec.Cmd) ([]byte, error) {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, err
-	}
+		maybeErrMessage := string(out)
+		if strings.Contains(maybeErrMessage, "fatal:") || strings.Contains(maybeErrMessage, "error:") {
+			return nil, errors.New(maybeErrMessage)
+		}
 
-	maybeErrMessage := string(out)
-	if strings.Contains(maybeErrMessage, "fatal:") || strings.Contains(maybeErrMessage, "error:") {
-		return nil, errors.New(maybeErrMessage)
+		return nil, err
 	}
 
 	return out, nil
