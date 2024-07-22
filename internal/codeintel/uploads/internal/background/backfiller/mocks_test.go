@@ -205,10 +205,10 @@ type MockStore struct {
 	// SetRerunAutoIndexJobByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method SetRerunAutoIndexJobByID.
 	SetRerunAutoIndexJobByIDFunc *StoreSetRerunAutoIndexJobByIDFunc
-	// SetRerunAutoIndexJobsByIDsFunc is an instance of a mock function
+	// SetRerunAutoIndexJobsFunc is an instance of a mock function
 	// object controlling the behavior of the method
-	// SetRerunAutoIndexJobsByIDs.
-	SetRerunAutoIndexJobsByIDsFunc *StoreSetRerunAutoIndexJobsByIDsFunc
+	// SetRerunAutoIndexJobs.
+	SetRerunAutoIndexJobsFunc *StoreSetRerunAutoIndexJobsFunc
 	// SoftDeleteExpiredUploadsFunc is an instance of a mock function object
 	// controlling the behavior of the method SoftDeleteExpiredUploads.
 	SoftDeleteExpiredUploadsFunc *StoreSoftDeleteExpiredUploadsFunc
@@ -513,8 +513,8 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
-		SetRerunAutoIndexJobsByIDsFunc: &StoreSetRerunAutoIndexJobsByIDsFunc{
-			defaultHook: func(context.Context, shared.SetRerunAutoIndexJobsByIDsOptions) (r0 error) {
+		SetRerunAutoIndexJobsFunc: &StoreSetRerunAutoIndexJobsFunc{
+			defaultHook: func(context.Context, shared.SetRerunAutoIndexJobsOptions) (r0 error) {
 				return
 			},
 		},
@@ -840,9 +840,9 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.SetRerunAutoIndexJobByID")
 			},
 		},
-		SetRerunAutoIndexJobsByIDsFunc: &StoreSetRerunAutoIndexJobsByIDsFunc{
-			defaultHook: func(context.Context, shared.SetRerunAutoIndexJobsByIDsOptions) error {
-				panic("unexpected invocation of MockStore.SetRerunAutoIndexJobsByIDs")
+		SetRerunAutoIndexJobsFunc: &StoreSetRerunAutoIndexJobsFunc{
+			defaultHook: func(context.Context, shared.SetRerunAutoIndexJobsOptions) error {
+				panic("unexpected invocation of MockStore.SetRerunAutoIndexJobs")
 			},
 		},
 		SoftDeleteExpiredUploadsFunc: &StoreSoftDeleteExpiredUploadsFunc{
@@ -1061,8 +1061,8 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		SetRerunAutoIndexJobByIDFunc: &StoreSetRerunAutoIndexJobByIDFunc{
 			defaultHook: i.SetRerunAutoIndexJobByID,
 		},
-		SetRerunAutoIndexJobsByIDsFunc: &StoreSetRerunAutoIndexJobsByIDsFunc{
-			defaultHook: i.SetRerunAutoIndexJobsByIDs,
+		SetRerunAutoIndexJobsFunc: &StoreSetRerunAutoIndexJobsFunc{
+			defaultHook: i.SetRerunAutoIndexJobs,
 		},
 		SoftDeleteExpiredUploadsFunc: &StoreSoftDeleteExpiredUploadsFunc{
 			defaultHook: i.SoftDeleteExpiredUploads,
@@ -7012,37 +7012,37 @@ func (c StoreSetRerunAutoIndexJobByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// StoreSetRerunAutoIndexJobsByIDsFunc describes the behavior when the
-// SetRerunAutoIndexJobsByIDs method of the parent MockStore instance is
+// StoreSetRerunAutoIndexJobsFunc describes the behavior when the
+// SetRerunAutoIndexJobs method of the parent MockStore instance is
 // invoked.
-type StoreSetRerunAutoIndexJobsByIDsFunc struct {
-	defaultHook func(context.Context, shared.SetRerunAutoIndexJobsByIDsOptions) error
-	hooks       []func(context.Context, shared.SetRerunAutoIndexJobsByIDsOptions) error
-	history     []StoreSetRerunAutoIndexJobsByIDsFuncCall
+type StoreSetRerunAutoIndexJobsFunc struct {
+	defaultHook func(context.Context, shared.SetRerunAutoIndexJobsOptions) error
+	hooks       []func(context.Context, shared.SetRerunAutoIndexJobsOptions) error
+	history     []StoreSetRerunAutoIndexJobsFuncCall
 	mutex       sync.Mutex
 }
 
-// SetRerunAutoIndexJobsByIDs delegates to the next hook function in the
+// SetRerunAutoIndexJobs delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) SetRerunAutoIndexJobsByIDs(v0 context.Context, v1 shared.SetRerunAutoIndexJobsByIDsOptions) error {
-	r0 := m.SetRerunAutoIndexJobsByIDsFunc.nextHook()(v0, v1)
-	m.SetRerunAutoIndexJobsByIDsFunc.appendCall(StoreSetRerunAutoIndexJobsByIDsFuncCall{v0, v1, r0})
+func (m *MockStore) SetRerunAutoIndexJobs(v0 context.Context, v1 shared.SetRerunAutoIndexJobsOptions) error {
+	r0 := m.SetRerunAutoIndexJobsFunc.nextHook()(v0, v1)
+	m.SetRerunAutoIndexJobsFunc.appendCall(StoreSetRerunAutoIndexJobsFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
-// SetRerunAutoIndexJobsByIDs method of the parent MockStore instance is
+// SetRerunAutoIndexJobs method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreSetRerunAutoIndexJobsByIDsFunc) SetDefaultHook(hook func(context.Context, shared.SetRerunAutoIndexJobsByIDsOptions) error) {
+func (f *StoreSetRerunAutoIndexJobsFunc) SetDefaultHook(hook func(context.Context, shared.SetRerunAutoIndexJobsOptions) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// SetRerunAutoIndexJobsByIDs method of the parent MockStore instance
+// SetRerunAutoIndexJobs method of the parent MockStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreSetRerunAutoIndexJobsByIDsFunc) PushHook(hook func(context.Context, shared.SetRerunAutoIndexJobsByIDsOptions) error) {
+func (f *StoreSetRerunAutoIndexJobsFunc) PushHook(hook func(context.Context, shared.SetRerunAutoIndexJobsOptions) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -7050,20 +7050,20 @@ func (f *StoreSetRerunAutoIndexJobsByIDsFunc) PushHook(hook func(context.Context
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreSetRerunAutoIndexJobsByIDsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, shared.SetRerunAutoIndexJobsByIDsOptions) error {
+func (f *StoreSetRerunAutoIndexJobsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, shared.SetRerunAutoIndexJobsOptions) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreSetRerunAutoIndexJobsByIDsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, shared.SetRerunAutoIndexJobsByIDsOptions) error {
+func (f *StoreSetRerunAutoIndexJobsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, shared.SetRerunAutoIndexJobsOptions) error {
 		return r0
 	})
 }
 
-func (f *StoreSetRerunAutoIndexJobsByIDsFunc) nextHook() func(context.Context, shared.SetRerunAutoIndexJobsByIDsOptions) error {
+func (f *StoreSetRerunAutoIndexJobsFunc) nextHook() func(context.Context, shared.SetRerunAutoIndexJobsOptions) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -7076,33 +7076,33 @@ func (f *StoreSetRerunAutoIndexJobsByIDsFunc) nextHook() func(context.Context, s
 	return hook
 }
 
-func (f *StoreSetRerunAutoIndexJobsByIDsFunc) appendCall(r0 StoreSetRerunAutoIndexJobsByIDsFuncCall) {
+func (f *StoreSetRerunAutoIndexJobsFunc) appendCall(r0 StoreSetRerunAutoIndexJobsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreSetRerunAutoIndexJobsByIDsFuncCall
+// History returns a sequence of StoreSetRerunAutoIndexJobsFuncCall
 // objects describing the invocations of this function.
-func (f *StoreSetRerunAutoIndexJobsByIDsFunc) History() []StoreSetRerunAutoIndexJobsByIDsFuncCall {
+func (f *StoreSetRerunAutoIndexJobsFunc) History() []StoreSetRerunAutoIndexJobsFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreSetRerunAutoIndexJobsByIDsFuncCall, len(f.history))
+	history := make([]StoreSetRerunAutoIndexJobsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreSetRerunAutoIndexJobsByIDsFuncCall is an object that describes an
-// invocation of method SetRerunAutoIndexJobsByIDs on an instance of
+// StoreSetRerunAutoIndexJobsFuncCall is an object that describes an
+// invocation of method SetRerunAutoIndexJobs on an instance of
 // MockStore.
-type StoreSetRerunAutoIndexJobsByIDsFuncCall struct {
+type StoreSetRerunAutoIndexJobsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 shared.SetRerunAutoIndexJobsByIDsOptions
+	Arg1 shared.SetRerunAutoIndexJobsOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -7110,13 +7110,13 @@ type StoreSetRerunAutoIndexJobsByIDsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreSetRerunAutoIndexJobsByIDsFuncCall) Args() []interface{} {
+func (c StoreSetRerunAutoIndexJobsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreSetRerunAutoIndexJobsByIDsFuncCall) Results() []interface{} {
+func (c StoreSetRerunAutoIndexJobsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

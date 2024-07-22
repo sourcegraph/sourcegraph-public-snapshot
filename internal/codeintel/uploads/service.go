@@ -224,8 +224,8 @@ func (s *Service) SetRerunAutoIndexJobByID(ctx context.Context, id int) error {
 	return s.store.SetRerunAutoIndexJobByID(ctx, id)
 }
 
-func (s *Service) SetRerunAutoIndexJobsByIDs(ctx context.Context, opts shared.SetRerunAutoIndexJobsByIDsOptions) error {
-	return s.store.SetRerunAutoIndexJobsByIDs(ctx, opts)
+func (s *Service) SetRerunAutoIndexJobs(ctx context.Context, opts shared.SetRerunAutoIndexJobsOptions) error {
+	return s.store.SetRerunAutoIndexJobs(ctx, opts)
 }
 
 func (s *Service) GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadsshared.IndexesWithRepositoryNamespace, error) {

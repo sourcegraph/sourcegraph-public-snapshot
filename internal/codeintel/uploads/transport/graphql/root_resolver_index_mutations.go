@@ -179,7 +179,7 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 		}
 	}
 	if !skipIndexes {
-		if err := r.uploadSvc.SetRerunAutoIndexJobsByIDs(ctx, uploadsshared.SetRerunAutoIndexJobsByIDsOptions{
+		if err := r.uploadSvc.SetRerunAutoIndexJobs(ctx, uploadsshared.SetRerunAutoIndexJobsOptions{
 			States:        indexStates,
 			IndexerNames:  indexerNames,
 			Term:          term,

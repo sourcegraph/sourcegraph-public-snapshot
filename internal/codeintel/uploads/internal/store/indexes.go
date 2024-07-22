@@ -18,7 +18,7 @@ import (
 
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
 func (s *store) GetAutoIndexJobs(ctx context.Context, opts shared.GetIndexesOptions) (_ []shared.AutoIndexJob, _ int, err error) {
-	ctx, trace, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, trace, endObservation := s.operations.getAutoIndexJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", opts.RepositoryID),
 		attribute.String("state", opts.State),
 		attribute.String("term", opts.Term),
@@ -185,7 +185,7 @@ func scanJob(s dbutil.Scanner) (index shared.AutoIndexJob, err error) {
 
 // GetAutoIndexJobByID returns an index by its identifier and boolean flag indicating its existence.
 func (s *store) GetAutoIndexJobByID(ctx context.Context, id int) (_ shared.AutoIndexJob, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, _, endObservation := s.operations.getAutoIndexJobByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -234,7 +234,7 @@ WHERE repo.deleted_at IS NULL AND u.id = %s AND %s
 // GetAutoIndexJobsByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
 // have a corresponding element in the returned list.
 func (s *store) GetAutoIndexJobsByIDs(ctx context.Context, ids ...int) (_ []shared.AutoIndexJob, err error) {
-	ctx, _, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, _, endObservation := s.operations.getAutoIndexJobsByIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.IntSlice("ids", ids),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -292,7 +292,7 @@ ORDER BY u.id
 
 // DeleteAutoIndexJobByID deletes an index by its identifier.
 func (s *store) DeleteAutoIndexJobByID(ctx context.Context, id int) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.deleteIndexByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, _, endObservation := s.operations.deleteAutoIndexJobByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -307,7 +307,7 @@ DELETE FROM lsif_indexes WHERE id = %s RETURNING repository_id
 
 // DeleteAutoIndexJobs deletes indexes matching the given filter criteria.
 func (s *store) DeleteAutoIndexJobs(ctx context.Context, opts shared.DeleteAutoIndexJobsOptions) (err error) {
-	ctx, _, endObservation := s.operations.deleteIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, _, endObservation := s.operations.deleteAutoIndexJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", opts.RepositoryID),
 		attribute.StringSlice("states", opts.States),
 		attribute.String("term", opts.Term),
@@ -359,7 +359,7 @@ WHERE u.repository_id = repo.id AND %s
 
 // SetRerunAutoIndexJobByID reindexes an index by its identifier.
 func (s *store) SetRerunAutoIndexJobByID(ctx context.Context, id int) (err error) {
-	ctx, _, endObservation := s.operations.reindexIndexByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, _, endObservation := s.operations.setRerunAutoIndexJobByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -373,9 +373,9 @@ SET should_reindex = true
 WHERE id = %s
 `
 
-// SetRerunAutoIndexJobsByIDs reindexes indexes matching the given filter criteria.
-func (s *store) SetRerunAutoIndexJobsByIDs(ctx context.Context, opts shared.SetRerunAutoIndexJobsByIDsOptions) (err error) {
-	ctx, _, endObservation := s.operations.reindexIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// SetRerunAutoIndexJobs reindexes indexes matching the given filter criteria.
+func (s *store) SetRerunAutoIndexJobs(ctx context.Context, opts shared.SetRerunAutoIndexJobsOptions) (err error) {
+	ctx, _, endObservation := s.operations.setRerunAutoIndexJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", opts.RepositoryID),
 		attribute.StringSlice("states", opts.States),
 		attribute.String("term", opts.Term),

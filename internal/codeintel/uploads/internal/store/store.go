@@ -44,7 +44,7 @@ type Store interface {
 	DeleteAutoIndexJobByID(ctx context.Context, id int) (bool, error)
 	DeleteAutoIndexJobs(ctx context.Context, opts shared.DeleteAutoIndexJobsOptions) error
 	SetRerunAutoIndexJobByID(ctx context.Context, id int) error
-	SetRerunAutoIndexJobsByIDs(ctx context.Context, opts shared.SetRerunAutoIndexJobsByIDsOptions) error
+	SetRerunAutoIndexJobs(ctx context.Context, opts shared.SetRerunAutoIndexJobsOptions) error
 
 	// Upload record insertion + processing
 	InsertUpload(ctx context.Context, upload shared.Upload) (int, error)

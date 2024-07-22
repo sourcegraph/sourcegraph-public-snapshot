@@ -319,7 +319,7 @@ type DeleteAutoIndexJobsOptions struct {
 	WithoutUpload bool
 }
 
-type SetRerunAutoIndexJobsByIDsOptions struct {
+type SetRerunAutoIndexJobsOptions struct {
 	States        []string
 	IndexerNames  []string
 	Term          string

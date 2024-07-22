@@ -460,7 +460,7 @@ func TestSetRerunAutoIndexJobByID(t *testing.T) {
 	}
 }
 
-func TestSetRerunAutoIndexJobsByIDs(t *testing.T) {
+func TestSetRerunAutoIndexJobs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
@@ -468,7 +468,7 @@ func TestSetRerunAutoIndexJobsByIDs(t *testing.T) {
 	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 1, State: "completed"})
 	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 2, State: "errored"})
 
-	if err := store.SetRerunAutoIndexJobsByIDs(context.Background(), shared.SetRerunAutoIndexJobsByIDsOptions{
+	if err := store.SetRerunAutoIndexJobs(context.Background(), shared.SetRerunAutoIndexJobsOptions{
 		States:       []string{"errored"},
 		Term:         "",
 		RepositoryID: 0,
@@ -486,7 +486,7 @@ func TestSetRerunAutoIndexJobsByIDs(t *testing.T) {
 	}
 }
 
-func TestSetRerunAutoIndexJobsByIDsWithIndexerKey(t *testing.T) {
+func TestSetRerunAutoIndexJobsWithIndexerKey(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
@@ -496,7 +496,7 @@ func TestSetRerunAutoIndexJobsByIDsWithIndexerKey(t *testing.T) {
 	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 3, Indexer: "sourcegraph/scip-typescript"})
 	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 4, Indexer: "sourcegraph/scip-typescript"})
 
-	if err := store.SetRerunAutoIndexJobsByIDs(context.Background(), shared.SetRerunAutoIndexJobsByIDsOptions{
+	if err := store.SetRerunAutoIndexJobs(context.Background(), shared.SetRerunAutoIndexJobsOptions{
 		IndexerNames: []string{"scip-go"},
 		Term:         "",
 		RepositoryID: 0,

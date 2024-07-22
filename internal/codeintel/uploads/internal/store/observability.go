@@ -85,13 +85,13 @@ type operations struct {
 	reindexUploadByID              *observation.Operation
 	deleteIndexesWithoutRepository *observation.Operation
 
-	getIndexes                 *observation.Operation
-	getIndexByID               *observation.Operation
-	getIndexesByIDs            *observation.Operation
-	deleteIndexByID            *observation.Operation
-	deleteIndexes              *observation.Operation
-	reindexIndexByID           *observation.Operation
-	reindexIndexes             *observation.Operation
+	getAutoIndexJobs           *observation.Operation
+	getAutoIndexJobByID        *observation.Operation
+	getAutoIndexJobsByIDs      *observation.Operation
+	deleteAutoIndexJobByID     *observation.Operation
+	deleteAutoIndexJobs        *observation.Operation
+	setRerunAutoIndexJobByID   *observation.Operation
+	setRerunAutoIndexJobs      *observation.Operation
 	processStaleSourcedCommits *observation.Operation
 	expireFailedRecords        *observation.Operation
 }
@@ -192,13 +192,13 @@ func newOperations(observationCtx *observation.Context) *operations {
 		reindexUploadByID:              op("ReindexUploadByID"),
 		deleteIndexesWithoutRepository: op("DeleteAutoIndexJobsWithoutRepository"),
 
-		getIndexes:                          op("GetAutoIndexJobs"),
-		getIndexByID:                        op("GetAutoIndexJobByID"),
-		getIndexesByIDs:                     op("GetAutoIndexJobsByIDs"),
-		deleteIndexByID:                     op("DeleteAutoIndexJobByID"),
-		deleteIndexes:                       op("DeleteAutoIndexJobs"),
-		reindexIndexByID:                    op("SetRerunAutoIndexJobByID"),
-		reindexIndexes:                      op("SetRerunAutoIndexJobsByIDs"),
+		getAutoIndexJobs:                    op("GetAutoIndexJobs"),
+		getAutoIndexJobByID:                 op("GetAutoIndexJobByID"),
+		getAutoIndexJobsByIDs:               op("GetAutoIndexJobsByIDs"),
+		deleteAutoIndexJobByID:              op("DeleteAutoIndexJobByID"),
+		deleteAutoIndexJobs:                 op("DeleteAutoIndexJobs"),
+		setRerunAutoIndexJobByID:            op("SetRerunAutoIndexJobByID"),
+		setRerunAutoIndexJobs:               op("SetRerunAutoIndexJobs"),
 		processStaleSourcedCommits:          op("ProcessStaleSourcedCommits"),
 		expireFailedRecords:                 op("ExpireFailedRecords"),
 		repositoryIDsWithErrors:             op("RepositoryIDsWithErrors"),

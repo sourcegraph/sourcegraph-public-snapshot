@@ -21,7 +21,7 @@ type UploadsService interface {
 	DeleteAutoIndexJobByID(ctx context.Context, id int) (_ bool, err error)
 	DeleteAutoIndexJobs(ctx context.Context, opts uploadshared.DeleteAutoIndexJobsOptions) (err error)
 	SetRerunAutoIndexJobByID(ctx context.Context, id int) (err error)
-	SetRerunAutoIndexJobsByIDs(ctx context.Context, opts uploadshared.SetRerunAutoIndexJobsByIDsOptions) (err error)
+	SetRerunAutoIndexJobs(ctx context.Context, opts uploadshared.SetRerunAutoIndexJobsOptions) (err error)
 	GetIndexers(ctx context.Context, opts uploadshared.GetIndexersOptions) ([]string, error)
 	GetUploadByID(ctx context.Context, id int) (_ shared.Upload, _ bool, err error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
