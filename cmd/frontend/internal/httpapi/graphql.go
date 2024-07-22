@@ -72,21 +72,24 @@ func exceedsLimit(costValue, limitValue int, violationType string) (bool, *viola
 	return false, nil
 }
 
-func writeViolationError(w http.ResponseWriter, info violationInfo) error {
+func writeViolationError(w http.ResponseWriter, info []violationInfo) error {
+	errors := make([]*gqlerrors.QueryError, 0, len(info))
+	for _, info := range info {
+		errors = append(errors, &gqlerrors.QueryError{
+			Message: fmt.Sprintf("Query exceeds maximum %s limit", info.violationType),
+			Extensions: map[string]interface{}{
+				"code":     "errQueryComplexityLimitExceeded",
+				"type":     info.violationType,
+				"limit":    info.limit,
+				"actual":   info.actual,
+				"docs_url": conf.ExternalURL() + "/help/api/graphql#cost-limits",
+			},
+		})
+	}
+
 	w.WriteHeader(http.StatusBadRequest) // 400 because retrying won't help
 	return writeJSON(w, graphql.Response{
-		Errors: []*gqlerrors.QueryError{
-			{
-				Message: fmt.Sprintf("Query exceeds maximum %s limit", info.violationType),
-				Extensions: map[string]interface{}{
-					"code":     "errQueryComplexityLimitExceeded",
-					"type":     info.violationType,
-					"limit":    info.limit,
-					"actual":   info.actual,
-					"docs_url": conf.ExternalURL() + "/help/api/graphql#cost-limits",
-				},
-			},
-		},
+		Errors: errors,
 	})
 }
 
@@ -169,17 +172,16 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 			}
 
 			if !isInternal {
-				var violation violationInfo
+				var violations []violationInfo
 
 				for _, l := range limits {
 					if exceeded, info := exceedsLimit(l.cost, l.limit, l.violationType); exceeded {
-						violation = *info
-						break
+						violations = append(violations, *info)
 					}
 				}
 
-				if violation.violationType != "" {
-					return writeViolationError(w, violation)
+				if len(violations) > 0 {
+					return writeViolationError(w, violations)
 				}
 			}
 
