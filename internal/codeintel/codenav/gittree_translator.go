@@ -284,14 +284,13 @@ func precedingHunk(hunks []compactHunk, line int32) core.Option[compactHunk] {
 		// No preceding hunk means the position was not affected by any hunks
 		return core.None[compactHunk]()
 	}
-	ix := precedingHunkIx
 	if !found {
-		ix -= 1
+		precedingHunkIx -= 1
 	}
-	return core.Some(hunks[ix])
+	return core.Some(hunks[precedingHunkIx])
 }
 
-func newTranslateLine(
+func translateLine(
 	hunks []compactHunk,
 	line int32,
 ) core.Option[int32] {
@@ -319,7 +318,7 @@ func translateRange(
 ) core.Option[scip.Range] {
 	// Fast path for single-line ranges
 	if range_.Start.Line == range_.End.Line {
-		newLine, ok := newTranslateLine(hunks, range_.Start.Line).Get()
+		newLine, ok := translateLine(hunks, range_.Start.Line).Get()
 		if !ok {
 			return core.None[scip.Range]()
 		}
@@ -390,9 +389,6 @@ func (h *compactHunk) shiftPosition(position scip.Position) core.Option[scip.Pos
 	newLine, ok := h.shiftLine(position.Line).Get()
 	if !ok {
 		return core.None[scip.Position]()
-	}
-	if newLine == position.Line {
-		return core.Some(position)
 	}
 	return core.Some(scip.Position{Line: newLine, Character: position.Character})
 }
