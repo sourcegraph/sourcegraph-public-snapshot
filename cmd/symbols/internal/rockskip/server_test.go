@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -30,7 +31,7 @@ func TestIndex(t *testing.T) {
 	defer db.Close()
 
 	state := map[string][]string{}
-	verifyBlobs := func() {
+	verifyBlobs := func(lang string, ext string) {
 		out, err := gitserver.CreateGitCommand(repoDir, "git", "rev-parse", "HEAD").CombinedOutput()
 		require.NoError(t, err, string(out))
 		commit := string(bytes.TrimSpace(out))
@@ -39,7 +40,7 @@ func TestIndex(t *testing.T) {
 			Repo:         repo,
 			CommitID:     api.CommitID(commit),
 			Query:        "",
-			IncludeLangs: []string{"Text"}}
+			IncludeLangs: []string{lang}}
 		symbols, err := service.Search(context.Background(), args)
 		require.NoError(t, err)
 
@@ -54,8 +55,7 @@ func TestIndex(t *testing.T) {
 		}
 		wantPaths := []string{}
 		for wantPath := range state {
-			// We only want .txt files since we're filtering by lang: text
-			if strings.Contains(wantPath, ".txt") {
+			if strings.Contains(wantPath, ext) {
 				wantPaths = append(wantPaths, wantPath)
 			}
 		}
@@ -90,22 +90,26 @@ func TestIndex(t *testing.T) {
 	}
 
 	gitAdd(t, repoDir, state, "a.txt", "sym1\n")
-	verifyBlobs()
+	verifyBlobs("Text", ".txt")
 
 	gitAdd(t, repoDir, state, "b.txt", "sym1\n")
-	verifyBlobs()
+	verifyBlobs("Text", ".txt")
 
 	gitAdd(t, repoDir, state, "c.txt", "sym1\nsym2")
-	verifyBlobs()
+	verifyBlobs("Text", ".txt")
 
 	gitAdd(t, repoDir, state, "a.java", "sym1\nsym2")
-	verifyBlobs()
+	verifyBlobs("Java", ".java")
 
 	gitAdd(t, repoDir, state, "a.txt", "sym1\nsym2")
-	verifyBlobs()
+	verifyBlobs("Text", ".txt")
 
 	gitRm(t, repoDir, state, "a.txt")
-	verifyBlobs()
+	verifyBlobs("Text", ".txt")
+
+	// Go uses scip-ctags, so added this to ensure coverage
+	gitAddWithSpecificParser(t, repoDir, state, "a.go", "sym1\nsym2", ctags_config.ScipCtags)
+	verifyBlobs("Go", ".go")
 }
 
 func TestRuler(t *testing.T) {

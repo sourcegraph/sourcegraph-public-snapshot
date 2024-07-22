@@ -6,19 +6,20 @@ import (
 	"github.com/sourcegraph/go-ctags"
 
 	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type ParserFactory func(ctags_config.ParserType) (ctags.Parser, error)
 
-type parserPool struct {
+type ParserPool struct {
 	newParser ParserFactory
 	pool      map[ctags_config.ParserType]chan ctags.Parser
 }
 
 var DefaultParserTypes = []ctags_config.ParserType{ctags_config.UniversalCtags, ctags_config.ScipCtags}
 
-func NewParserPool(newParser ParserFactory, numParserProcesses int, parserTypes []ctags_config.ParserType) (*parserPool, error) {
+func NewParserPool(newParser ParserFactory, numParserProcesses int, parserTypes []ctags_config.ParserType) (*ParserPool, error) {
 	pool := make(map[ctags_config.ParserType]chan ctags.Parser)
 
 	if len(parserTypes) == 0 {
@@ -37,7 +38,7 @@ func NewParserPool(newParser ParserFactory, numParserProcesses int, parserTypes 
 		}
 	}
 
-	parserPool := &parserPool{
+	parserPool := &ParserPool{
 		newParser: newParser,
 		pool:      pool,
 	}
@@ -51,7 +52,7 @@ func NewParserPool(newParser ParserFactory, numParserProcesses int, parserTypes 
 // the pool. This method always returns a non-nil parser with a nil error value.
 //
 // This method blocks until a parser is available or the given context is canceled.
-func (p *parserPool) Get(ctx context.Context, source ctags_config.ParserType) (ctags.Parser, error) {
+func (p *ParserPool) Get(ctx context.Context, source ctags_config.ParserType) (ctags.Parser, error) {
 	if ctags_config.ParserIsNoop(source) {
 		return nil, errors.New("NoCtags is not a valid ParserType")
 	}
@@ -71,7 +72,20 @@ func (p *parserPool) Get(ctx context.Context, source ctags_config.ParserType) (c
 	}
 }
 
-func (p *parserPool) Done(parser ctags.Parser, source ctags_config.ParserType) {
+func (p *ParserPool) Done(parser ctags.Parser, source ctags_config.ParserType) {
 	pool := p.pool[source]
 	pool <- parser
+}
+
+func (p *ParserPool) GetParserType(ctx context.Context, path string, contents []byte) (ctags_config.ParserType, error) {
+	language, found := languages.GetMostLikelyLanguage(path, string(contents))
+	if !found {
+		return ctags_config.UnknownCtags, errors.New("Unable to find language for source file")
+	}
+
+	source := GetParserType(language)
+	if ctags_config.ParserIsNoop(source) {
+		return ctags_config.UnknownCtags, errors.New("Invalid parser type")
+	}
+	return source, nil
 }

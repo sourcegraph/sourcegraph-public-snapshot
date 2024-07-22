@@ -20,8 +20,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
+	symbolparser "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/byteutils"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -30,14 +33,22 @@ import (
 )
 
 // mockParser converts each line to a symbol.
-type mockParser struct{}
+type mockParser struct {
+	parserType ctags_config.ParserType
+}
 
-func (mockParser) Parse(path string, bytes []byte) ([]*ctags.Entry, error) {
+func (p mockParser) Parse(path string, bytes []byte) ([]*ctags.Entry, error) {
 	symbols := []*ctags.Entry{}
 
 	for lineNumber, line := range strings.Split(string(bytes), "\n") {
 		if line == "" {
 			continue
+		}
+
+		// If scip ctags parser, prefix symbol so we can test for different parser being
+		// chosen
+		if p.parserType == ctags_config.ScipCtags {
+			line = fmt.Sprintf("SCIP_%s", line)
 		}
 
 		symbols = append(symbols, &ctags.Entry{Name: line, Line: lineNumber + 1})
@@ -52,9 +63,13 @@ func mockService(t *testing.T, git *subprocessGit) (*sql.DB, *Service) {
 	observationCtx := &observation.TestContext
 	db := dbtest.NewDB(t)
 	repoFetcher := newMockRepositoryFetcher(git)
-	createParser := func() (ctags.Parser, error) { return mockParser{}, nil }
-
-	service, err := NewService(observationCtx, db, git, repoFetcher, createParser, 1, 1, false, 1, 1, 1, false)
+	createParser := func(parserType ctags_config.ParserType) (ctags.Parser, error) {
+		return mockParser{parserType: parserType}, nil
+	}
+	conf.MockAndNotifyWatchers(&conf.Unified{})
+	symbolParserPool, err := symbolparser.NewParserPool(createParser, 1, symbolparser.DefaultParserTypes)
+	require.NoError(t, err)
+	service, err := NewService(observationCtx, db, git, repoFetcher, symbolParserPool, 1, 1, false, 1, 1, 1, false)
 	require.NoError(t, err)
 
 	return db, service
@@ -67,9 +82,13 @@ func gitRm(t *testing.T, repoDir string, state map[string][]string, filename str
 }
 
 func gitAdd(t *testing.T, repoDir string, state map[string][]string, filename string, contents string) {
+	gitAddWithSpecificParser(t, repoDir, state, filename, contents, ctags_config.UniversalCtags)
+}
+
+func gitAddWithSpecificParser(t *testing.T, repoDir string, state map[string][]string, filename string, contents string, parserType ctags_config.ParserType) {
 	require.NoError(t, os.WriteFile(path.Join(repoDir, filename), []byte(contents), 0644), "os.WriteFile")
 	gitRun(t, repoDir, "add", filename)
-	symbols, err := mockParser{}.Parse(filename, []byte(contents))
+	symbols, err := mockParser{parserType}.Parse(filename, []byte(contents))
 	require.NoError(t, err)
 	state[filename] = []string{}
 	for _, symbol := range symbols {

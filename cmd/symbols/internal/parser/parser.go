@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -33,7 +32,7 @@ type SymbolOrError struct {
 }
 
 type parser struct {
-	parserPool         *parserPool
+	parserPool         *ParserPool
 	repositoryFetcher  fetcher.RepositoryFetcher
 	requestBufferSize  int
 	numParserProcesses int
@@ -42,7 +41,7 @@ type parser struct {
 
 func NewParser(
 	observationCtx *observation.Context,
-	parserPool *parserPool,
+	parserPool *ParserPool,
 	repositoryFetcher fetcher.RepositoryFetcher,
 	requestBufferSize int,
 	numParserProcesses int,
@@ -144,17 +143,14 @@ func (p *parser) handleParseRequest(
 	}})
 	defer endObservation(1, observation.Args{})
 
-	language, found := languages.GetMostLikelyLanguage(parseRequest.Path, string(parseRequest.Data))
-	if !found {
+	parserType, err := p.parserPool.GetParserType(ctx, parseRequest.Path, parseRequest.Data)
+
+	// If we get an error it means the file is of an unsupported language type
+	// so we bail out and don't try to get symbols
+	if err != nil {
 		return nil
 	}
-
-	source := GetParserType(language)
-	if ctags_config.ParserIsNoop(source) {
-		return nil
-	}
-
-	parser, err := p.parserFromPool(ctx, source)
+	parser, err := p.parserFromPool(ctx, parserType)
 	if err != nil {
 		return err
 	}
@@ -168,7 +164,7 @@ func (p *parser) handleParseRequest(
 		}
 
 		if err == nil {
-			p.parserPool.Done(parser, source)
+			p.parserPool.Done(parser, parserType)
 		} else {
 			// If we are canceled we still kill the parser just in case, but
 			// we do not record as failure nor logspam since this is a more
@@ -182,7 +178,7 @@ func (p *parser) handleParseRequest(
 			// Close parser and return nil to pool, indicating that the next
 			// receiver should create a new parser
 			parser.Close()
-			p.parserPool.Done(nil, source)
+			p.parserPool.Done(nil, parserType)
 		}
 	}()
 
