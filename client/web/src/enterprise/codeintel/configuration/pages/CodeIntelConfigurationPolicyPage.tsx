@@ -53,6 +53,7 @@ import { useSavePolicyConfiguration } from '../hooks/useSavePolicyConfiguration'
 import { hasGlobalPolicyViolation } from '../shared'
 
 import styles from './CodeIntelConfigurationPolicyPage.module.scss'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 
 const DEBOUNCED_WAIT = 250
 
@@ -678,84 +679,85 @@ interface IndexSettingsSectionProps {
     repo?: { id: string; name: string }
 }
 
-const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({ policy, updatePolicy, repo }) => (
-    <div>
-        <div className="form-group">
-            <Label className="mb-0">
-                Auto-indexing
-                <div className={styles.toggleContainer}>
-                    <Toggle
-                        id="indexing-enabled"
-                        value={policy.indexingEnabled}
-                        className={styles.toggle}
-                        onToggle={indexingEnabled => {
-                            if (indexingEnabled) {
-                                updatePolicy({ indexingEnabled })
-                            } else {
-                                updatePolicy({
-                                    indexingEnabled,
-                                    indexIntermediateCommits: false,
-                                    indexCommitMaxAgeHours: null,
-                                })
-                            }
-                        }}
-                    />
+const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({ policy, updatePolicy, repo }) => {
 
-                    <Text size="small" className="text-muted mb-0">
-                        Sourcegraph will automatically generate precise code intelligence data for matching
-                        {repo ? '' : ' repositories and'} revisions. Indexing configuration will be inferred from the
-                        content at matching revisions if not explicitly configured for{' '}
-                        {repo ? 'this repository' : 'matching repositories'}.{' '}
-                        {repo && (
-                            <>
-                                See this repository's <Link to="../index-configuration">index configuration</Link>.
-                            </>
-                        )}
-                    </Text>
+    const syntacticIndexingEnabled = useExperimentalFeatures(features => {
+        console.log(features);
+        return features['codeintelSyntacticIndexing.enabled'] ?? false;
+    });
+
+    return (
+        <div>
+            <div className="form-group">
+                <Label className="mb-0">
+                    Auto-indexing
+                    <div className={styles.toggleContainer}>
+                        <Toggle
+                            id="indexing-enabled"
+                            value={policy.indexingEnabled}
+                            className={styles.toggle}
+                            onToggle={indexingEnabled => {
+                                if (indexingEnabled) {
+                                    updatePolicy({ indexingEnabled })
+                                } else {
+                                    updatePolicy({
+                                        indexingEnabled,
+                                        indexIntermediateCommits: false,
+                                        indexCommitMaxAgeHours: null,
+                                    })
+                                }
+                            }}
+                        />
+
+                        <Text size="small" className="text-muted mb-0">
+                            Sourcegraph will automatically generate precise code intelligence data for matching
+                            {repo ? '' : ' repositories and'} revisions. Indexing configuration will be inferred from the
+                            content at matching revisions if not explicitly configured for{' '}
+                            {repo ? 'this repository' : 'matching repositories'}.{' '}
+                            {repo && (
+                                <>
+                                    See this repository's <Link to="../index-configuration">index configuration</Link>.
+                                </>
+                            )}
+                        </Text>
+                    </div>
+                </Label>
+                <IndexSettings policy={policy} updatePolicy={updatePolicy} />
+            </div>
+            {syntacticIndexingEnabled && (
+                <div className="form-group">
+                    <Label className="mb-0">
+                        Syntactic indexing
+                        <div className={styles.toggleContainer}>
+                            <Toggle
+                                id="syntactic-indexing-enabled"
+                                value={policy.syntacticIndexingEnabled == null ? undefined : policy.syntacticIndexingEnabled}
+                                className={styles.toggle}
+                                onToggle={syntacticIndexingEnabled => {
+                                    if (syntacticIndexingEnabled) {
+                                        updatePolicy({ syntacticIndexingEnabled })
+                                    } else {
+                                        updatePolicy({
+                                            syntacticIndexingEnabled,
+                                            indexIntermediateCommits: false,
+                                            indexCommitMaxAgeHours: null,
+                                        })
+                                    }
+                                }}
+                            />
+
+                            <Text size="small" className="text-muted mb-0">
+                                Sourcegraph will automatically generate syntactic code intelligence data for matching
+                                {repo ? '' : ' repositories and'} revisions.
+                            </Text>
+                        </div>
+                    </Label>
                 </div>
-            </Label>
-
-            <IndexSettings policy={policy} updatePolicy={updatePolicy} />
+            )}
         </div>
+    )
+}
 
-
-        <div className="form-group">
-            <Label className="mb-0">
-                Syntactic indexing
-                <div className={styles.toggleContainer}>
-                    <Toggle
-                        id="syntactic-indexing-enabled"
-                        value={policy.syntacticIndexingEnabled == null ?  undefined : policy.syntacticIndexingEnabled}
-                        className={styles.toggle}
-                        onToggle={syntacticIndexingEnabled => {
-                            if (syntacticIndexingEnabled) {
-                                updatePolicy({ syntacticIndexingEnabled })
-                            } else {
-                                updatePolicy({
-                                    syntacticIndexingEnabled,
-                                    indexIntermediateCommits: false,
-                                    indexCommitMaxAgeHours: null,
-                                })
-                            }
-                        }}
-                    />
-
-                    <Text size="small" className="text-muted mb-0">
-                        Sourcegraph will automatically generate syntactic code intelligence data for matching
-                        {repo ? '' : ' repositories and'} revisions. Indexing configuration will be inferred from the
-                        content at matching revisions if not explicitly configured for{' '}
-                        {repo ? 'this repository' : 'matching repositories'}.{' '}
-                        {repo && (
-                            <>
-                                See this repository's <Link to="../index-configuration">index configuration</Link>.
-                            </>
-                        )}
-                    </Text>
-                </div>
-            </Label>
-        </div>
-    </div>
-)
 
 interface IndexSettingsProps {
     policy: CodeIntelligenceConfigurationPolicyFields
@@ -805,6 +807,7 @@ const IndexSettings: FunctionComponent<IndexSettingsProps> = ({ policy, updatePo
     ) : (
         <></>
     )
+
 
 interface RetentionSettingsSectionProps {
     policy: CodeIntelligenceConfigurationPolicyFields
