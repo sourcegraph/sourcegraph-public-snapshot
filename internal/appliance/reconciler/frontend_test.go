@@ -27,7 +27,7 @@ func (suite *ApplianceTestSuite) TestDeployFrontend() {
 	}
 }
 
-func (suite *ApplianceTestSuite) TestAdoptFrontend() {
+func (suite *ApplianceTestSuite) TestAdoptsHelmProvisionedFrontendResources() {
 	namespace, err := k8senvtest.NewRandomNamespace("test-appliance")
 	suite.Require().NoError(err)
 	_, err = suite.k8sClient.CoreV1().Namespaces().Create(suite.ctx, namespace, metav1.CreateOptions{})
