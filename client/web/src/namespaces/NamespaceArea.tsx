@@ -1,4 +1,4 @@
-import { type PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
 import type { AuthenticatedUser } from '../auth'
 import type { BatchChangesProps } from '../batches'
@@ -11,13 +11,10 @@ import type { NamespaceProps } from '.'
  */
 export interface NamespaceAreaContext extends PlatformContextProps, NamespaceProps {
     authenticatedUser: AuthenticatedUser | null
-    isSourcegraphDotCom: boolean
 }
 
 export interface NamespaceAreaRoute extends RouteV6Descriptor<NamespaceAreaContext> {}
 
-interface NavItemDescriptorContext extends BatchChangesProps {
-    isSourcegraphDotCom: boolean
-}
+interface NavItemDescriptorContext extends BatchChangesProps {}
 
 export interface NamespaceAreaNavItem extends NavItemWithIconDescriptor<NavItemDescriptorContext> {}

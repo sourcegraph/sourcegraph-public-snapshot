@@ -130,33 +130,6 @@ func TestSelfUpdateLoop(t *testing.T) {
 	<-loopDone
 }
 
-func TestSelfUpdate_ExitsWithNoErrorWhenConfigmapNotFound(t *testing.T) {
-	ns, err := k8senvtest.NewRandomNamespace("test-appliance-self-update")
-	require.NoError(t, err)
-	err = k8sClient.Create(ctx, ns)
-	require.NoError(t, err)
-	nsName := ns.GetName()
-
-	// provision example appliance deployment
-	dep := buildTestDeployment(nsName)
-	err = k8sClient.Create(ctx, dep)
-	require.NoError(t, err)
-
-	selfUpdater := &selfupdate.SelfUpdate{
-		Logger:         logtest.Scoped(t),
-		K8sClient:      k8sClient,
-		DeploymentName: "appliance",
-		Namespace:      nsName,
-	}
-
-	err = selfUpdater.Once(ctx)
-	require.NoError(t, err)
-
-	depName := types.NamespacedName{Name: "appliance", Namespace: nsName}
-	require.NoError(t, k8sClient.Get(ctx, depName, dep))
-	require.Equal(t, "index.docker.io/sourcegraph/appliance:4.3.1", dep.Spec.Template.Spec.Containers[0].Image)
-}
-
 func buildTestDeployment(namespace string) *appsv1.Deployment {
 	name := "appliance"
 	defaultContainer := container.NewContainer(name, nil, config.ContainerConfig{

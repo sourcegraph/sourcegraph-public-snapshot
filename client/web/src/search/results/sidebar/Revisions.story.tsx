@@ -25,9 +25,7 @@ const meta: Meta = {
     title: 'web/search/results/sidebar/Revisions',
     component: Revisions,
     argTypes: { onFilterClick: { action: 'onFilterClick' } },
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default meta

@@ -17,6 +17,6 @@ func All() []schema.Tabler {
 		&subscriptions.TableSubscriptionLicense{},
 		&subscriptions.SubscriptionLicenseCondition{},
 
-		&codyaccess.CodyGatewayAccess{},
+		&codyaccess.TableCodyGatewayAccess{},
 	}
 }

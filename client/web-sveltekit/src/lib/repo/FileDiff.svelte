@@ -93,7 +93,8 @@
         border: 1px solid var(--border-color);
         border-radius: var(--border-radius);
         // This prevents the inner element from leaking over the rounded border
-        overflow: hidden;
+        // but also ensures that hunks are horizontally scrollable.
+        overflow: auto hidden;
     }
 
     .added {

@@ -1,9 +1,9 @@
-import { type FC, useState, useCallback } from 'react'
+import { type FC, useCallback, useState } from 'react'
 
 import { mdiMenu, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ProductStatusBadge, Button, Link, Icon, type ProductStatusType, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, ProductStatusBadge, type ProductStatusType } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import type { BatchChangesProps } from '../../batches'
@@ -89,30 +89,23 @@ export const UserSettingsSidebar: FC<UserSettingsSidebarProps> = props => {
                                 onClick={collapseMobileSidebar}
                             >
                                 <OrgAvatar org={org.name} className="d-inline-flex mr-1" />
-                                <Tooltip content={org.name}>
-                                    <span className="text-truncate overflow-hidden">{org.name}</span>
-                                </Tooltip>
+                                <span className="text-truncate overflow-hidden">{org.name}</span>
                             </SidebarNavItem>
                         ))}
-                        {!siteAdminViewingOtherUser &&
-                            (window.context.sourcegraphDotComMode ? (
-                                <SidebarNavItem to="./about-organizations" onClick={collapseMobileSidebar}>
-                                    About organizations
-                                </SidebarNavItem>
-                            ) : (
-                                <div className={styles.newOrgBtnWrapper}>
-                                    <Button
-                                        to="/organizations/new"
-                                        variant="secondary"
-                                        outline={true}
-                                        size="sm"
-                                        as={Link}
-                                        onClick={collapseMobileSidebar}
-                                    >
-                                        <Icon aria-hidden={true} svgPath={mdiPlus} /> New organization
-                                    </Button>
-                                </div>
-                            ))}
+                        {!siteAdminViewingOtherUser && (
+                            <div className={styles.newOrgBtnWrapper}>
+                                <Button
+                                    to="/organizations/new"
+                                    variant="secondary"
+                                    outline={true}
+                                    size="sm"
+                                    as={Link}
+                                    onClick={collapseMobileSidebar}
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} /> New organization
+                                </Button>
+                            </div>
+                        )}
                     </SidebarGroup>
                 )}
                 <SidebarGroup>

@@ -19,10 +19,6 @@ const config: Meta = {
 
     parameters: {
         component: Tree,
-        chromatic: {
-            enableDarkMode: false,
-            disableSnapshot: false,
-        },
     },
 }
 

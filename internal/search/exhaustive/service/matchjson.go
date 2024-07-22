@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -16,7 +16,7 @@ import (
 // reached 100 MiB or Flush() is called. The object key combines a prefix with
 // the shard number, except for the first shard where the shard number is
 // omitted.
-func NewJSONWriter(ctx context.Context, store uploadstore.Store, prefix string) (*MatchJSONWriter, error) {
+func NewJSONWriter(ctx context.Context, store object.Storage, prefix string) (*MatchJSONWriter, error) {
 	blobUploader := &blobUploader{
 		ctx:    ctx,
 		store:  store,
@@ -47,7 +47,7 @@ func (m MatchJSONWriter) Write(match result.Match) error {
 
 type blobUploader struct {
 	ctx    context.Context
-	store  uploadstore.Store
+	store  object.Storage
 	prefix string
 	shard  int
 }

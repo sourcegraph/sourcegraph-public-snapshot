@@ -87,11 +87,11 @@ type GitBackend interface {
 	RevAtTime(ctx context.Context, revspec string, time time.Time) (api.CommitID, error)
 	// RawDiff returns the raw git diff for the given range.
 	// Diffs returned from this function will have the following settings applied:
-	// - 3 lines of context
+	// - N lines of context according to opts
 	// - No a/ b/ prefixes
 	// - Rename detection
 	// If either base or head don't exist, a RevisionNotFoundError is returned.
-	RawDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, paths ...string) (io.ReadCloser, error)
+	RawDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, opts RawDiffOpts, paths ...string) (io.ReadCloser, error)
 	// ContributorCounts returns the number of commits per contributor in the
 	// set of commits specified by the options.
 	// Aggregations are done by email address.
@@ -162,6 +162,25 @@ type GitBackend interface {
 	// This value can be used to determine if a repository changed since the last
 	// time the hash has been computed.
 	RefHash(ctx context.Context) ([]byte, error)
+
+	// MergeBaseOctopus returns the octopus merge base commit sha for the specified
+	// revspecs.
+	// If no common merge base exists, an empty string is returned.
+	// See the following diagrams from git-merge-base docs on what octopus merge bases
+	// are:
+	// Given three commits A, B, and C, MergeBaseOctopus(A, B, C) will compute the
+	// best common ancestor of all commits.
+	// For example, with this topology:
+	//            o---o---o---o---C
+	//           /
+	//          /   o---o---o---B
+	//         /   /
+	//     ---2---1---o---o---o---A
+	// The result of MergeBaseOctopus(A, B, C) is 2, because 2 is the
+	// best common ancestor of all commits.
+	//
+	// If one of the given revspecs does not exist, a RevisionNotFoundError is returned.
+	MergeBaseOctopus(ctx context.Context, revspecs ...string) (api.CommitID, error)
 }
 
 // CommitLogOrder is the order of the commits returned by CommitLog.
@@ -354,4 +373,18 @@ type ReadDirIterator interface {
 	Next() (fs.FileInfo, error)
 	// Close closes the iterator.
 	Close() error
+}
+
+// RawDiffOpts contaions extra options for the RawDiff method.
+type RawDiffOpts struct {
+	// InterHunkContext specifies the number of lines to consider for fusing hunks
+	// together. I.e., when set to 5 and between 2 hunks there are at most 5 lines,
+	// the 2 hunks will be fused together into a single chunk.
+	InterHunkContext int
+	// ContextLines specifies the number of lines of context to show around added/removed
+	// lines.
+	// This is the number of lines that will be shown before and after each line that
+	// has been added/removed. If InterHunkContext is not zero, the context will still
+	// be fused together with other hunks if they meet the threshold.
+	ContextLines int
 }

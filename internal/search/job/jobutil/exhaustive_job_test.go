@@ -212,7 +212,7 @@ func TestNewExhaustive(t *testing.T) {
 (REPOPAGER
   (containsRefGlobs . false)
   (repoOpts.useIndex . no)
-  (repoOpts.hasKVPs[0].key . cognition)
+  (repoOpts.hasKVPs[0].key . ^cognition$)
   (PARTIALREPOS
     (SEARCHERTEXTSEARCH
       (useFullDeadline . true)

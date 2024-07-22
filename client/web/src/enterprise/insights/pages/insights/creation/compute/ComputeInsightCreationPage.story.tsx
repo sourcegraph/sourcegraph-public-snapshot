@@ -13,12 +13,7 @@ import { ComputeInsightCreationPage as ComputeInsightCreationPageComponent } fro
 const defaultStory: Meta = {
     title: 'web/insights/creation-ui/compute/ComputeInsightCreationPage',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-    parameters: {
-        chromatic: {
-            viewports: [576, 1440],
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default defaultStory

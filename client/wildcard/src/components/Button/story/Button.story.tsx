@@ -117,13 +117,6 @@ export const AllButtons: StoryFn = () => (
     </div>
 )
 
-AllButtons.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}
-
 type ButtonSizesType = typeof BUTTON_SIZES[number] | undefined
 
 export const Group: StoryFn = () => {
@@ -328,9 +321,3 @@ export const Group: StoryFn = () => {
 }
 
 Group.storyName = 'Button Group'
-Group.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}

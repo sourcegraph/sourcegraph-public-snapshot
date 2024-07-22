@@ -24,11 +24,7 @@ type SearchJob = SearchJobsResult['searchJobs']['nodes'][number]
 const defaultStory: Meta = {
     title: 'web/search-jobs',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-    parameters: {
-        chromatic: {
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default defaultStory

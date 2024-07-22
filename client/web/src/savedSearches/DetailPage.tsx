@@ -5,11 +5,23 @@ import classNames from 'classnames'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
 import { useSettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Alert, Button, Container, ErrorAlert, H3, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    Button,
+    Container,
+    ErrorAlert,
+    H3,
+    Icon,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+    Text,
+} from '@sourcegraph/wildcard'
 
 import type {
     SavedSearchFields,
@@ -17,6 +29,7 @@ import type {
     SavedSearchVariables,
     SearchPatternType,
 } from '../graphql-operations'
+import { LibraryItemStatusBadge, LibraryItemVisibilityBadge } from '../library/itemBadges'
 import { namespaceTelemetryMetadata } from '../namespaces/telemetry'
 import { defaultPatternTypeFromSettings } from '../util/settings'
 
@@ -24,6 +37,7 @@ import { SAVED_SEARCH_UPDATED_LOCATION_STATE_KEY } from './EditPage'
 import { savedSearchQuery } from './graphql'
 import { SavedSearchPage } from './Page'
 import { telemetryRecordSavedSearchViewSearchResults } from './telemetry'
+import { urlToEditSavedSearch } from './util'
 
 import styles from './DetailPage.module.scss'
 
@@ -54,7 +68,7 @@ export const DetailPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecor
             title={savedSearch ? `${savedSearch.description} - saved search` : 'Saved search'}
             actions={
                 savedSearch?.viewerCanAdminister && (
-                    <Button to={`${savedSearch.url}/edit`} variant="secondary" as={Link}>
+                    <Button to={urlToEditSavedSearch(savedSearch)} variant="secondary" as={Link}>
                         Edit
                     </Button>
                 )
@@ -97,20 +111,40 @@ const Detail: FunctionComponent<TelemetryV2Props & { savedSearch: SavedSearchFie
     const defaultPatternType: SearchPatternType = defaultPatternTypeFromSettings(useSettingsCascade())
     const searchURL = `/search?${buildSearchURLQuery(savedSearch.query, defaultPatternType, false)}`
     return (
-        <Container className={classNames(styles.container)}>
-            <Button
-                variant="primary"
-                size="lg"
-                to={searchURL}
-                as={Link}
-                onClick={() => telemetryRecordSavedSearchViewSearchResults(telemetryRecorder, savedSearch, 'Detail')}
-            >
-                <Icon aria-hidden={true} svgPath={mdiMagnify} className="flex-shrink-0" size="sm" /> Run search
-            </Button>
-            <div className="d-flex flex-column flex-gap-2 align-items-center">
-                <H3>{savedSearch.description}</H3>
-                <SyntaxHighlightedSearchQuery query={savedSearch.query} />
-            </div>
-        </Container>
+        <>
+            <Text>
+                <LibraryItemVisibilityBadge item={savedSearch} className="mr-1" />
+                <LibraryItemStatusBadge item={savedSearch} className="mr-1" />
+                <small>
+                    Last updated <Timestamp date={savedSearch.updatedAt} noAbout={true} />
+                    {savedSearch.updatedBy && (
+                        <>
+                            {' '}
+                            by{' '}
+                            <Link to={savedSearch.updatedBy.url}>
+                                <strong>{savedSearch.updatedBy.username}</strong>
+                            </Link>
+                        </>
+                    )}
+                </small>
+            </Text>
+            <Container className={classNames(styles.container)}>
+                <div className="d-flex flex-column flex-gap-2 align-items-center">
+                    <H3>{savedSearch.description}</H3>
+                    <SyntaxHighlightedSearchQuery query={savedSearch.query} />
+                </div>
+                <Button
+                    variant="primary"
+                    size="lg"
+                    to={searchURL}
+                    as={Link}
+                    onClick={() =>
+                        telemetryRecordSavedSearchViewSearchResults(telemetryRecorder, savedSearch, 'Detail')
+                    }
+                >
+                    <Icon aria-hidden={true} svgPath={mdiMagnify} className="flex-shrink-0" size="sm" /> Run search
+                </Button>
+            </Container>
+        </>
     )
 }

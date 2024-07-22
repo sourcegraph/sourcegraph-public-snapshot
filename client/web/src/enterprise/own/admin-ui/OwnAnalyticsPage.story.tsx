@@ -17,9 +17,7 @@ import { GET_INSTANCE_OWN_STATS, GET_OWN_JOB_CONFIGURATIONS } from './query'
 
 const config: Meta = {
     title: 'web/enterprise/own/admin-ui/OwnAnalyticsPage',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

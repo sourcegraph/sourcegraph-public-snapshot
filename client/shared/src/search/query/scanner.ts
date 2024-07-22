@@ -93,7 +93,7 @@ const zeroOrMore =
 /**
  * Returns a {@link Scanner} that succeeds if any of the given scanner succeeds.
  */
-const oneOf =
+export const oneOf =
     <T>(...scanners: Scanner<T>[]): Scanner<T> =>
     (input, start) => {
         const expected: string[] = []
@@ -115,7 +115,7 @@ const oneOf =
  * A {@link Scanner} that will attempt to scan delimited strings for an arbitrary
  * delimiter. `\` is treated as an escape character for the delimited string.
  */
-const quoted =
+export const quoted =
     (delimiter: string): Scanner<Literal> =>
     (input, start) => {
         if (input[start] !== delimiter) {
@@ -297,7 +297,7 @@ export const scanPredicateValue = (input: string, start: number, field: Literal)
             at: start,
         }
     }
-    const value = `${result.path.join('.')}${result.parameters}`
+    const value = `${result.name}${result.parameters}`
     return {
         type: 'success',
         term: createLiteral(value, { start, end: start + value.length }),

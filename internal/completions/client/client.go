@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/openaicompatible"
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -62,6 +63,11 @@ func getAPIProvider(modelConfigInfo types.ModelConfigInfo) (types.CompletionsCli
 		client, err := azureopenai.NewClient(
 			azureopenai.GetAPIClient, azureOpenAICfg.Endpoint, azureOpenAICfg.AccessToken, *tokenManager)
 		return client, errors.Wrap(err, "getting api provider")
+	}
+
+	// OpenAI Compatible
+	if openAICompatibleCfg := ssConfig.OpenAICompatible; openAICompatibleCfg != nil {
+		return openaicompatible.NewClient(httpcli.UncachedExternalClient, *tokenManager), nil
 	}
 
 	// The "GenericProvider" is an escape hatch for a set of API Providers not needing any additional configuration.

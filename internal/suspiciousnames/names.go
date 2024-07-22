@@ -119,6 +119,7 @@ var suspiciousNames = map[string]struct{}{
 	"free":           {},
 	"ftp":            {},
 	"games":          {},
+	"global":         {},
 	"group":          {},
 	"groups":         {},
 	"guest":          {},

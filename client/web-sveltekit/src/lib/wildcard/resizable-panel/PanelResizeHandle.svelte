@@ -5,10 +5,12 @@
 <script lang="ts">
     import { getContext, onMount } from 'svelte'
     import { writable, type Writable } from 'svelte/store'
-    import { getId } from './utils/common'
-    import { assert } from './utils/assert'
-    import type { PanelGroupContext, ResizeHandlerAction, ResizeEvent } from './types'
+
     import { PanelResizeHandleRegistry } from '$lib/wildcard/resizable-panel/PanelResizeHandleRegistry'
+
+    import type { PanelGroupContext, ResizeHandlerAction, ResizeEvent } from './types'
+    import { assert } from './utils/assert'
+    import { getId } from './utils/common'
 
     export let id: string | null = null
 
@@ -78,25 +80,23 @@
 />
 
 <style lang="scss">
-    :root {
-        --resize-handle-bg: var(--border-color);
-        --resize-handle-hover-bg: var(--border-color-2);
-        --resize-handle-drag-bg: var(--oc-blue-3);
-        --resize-handle-size: 1px;
-        --resize-handle-active-size: 3px;
-    }
+    $resize-handle-bg: var(--border-color);
+    $resize-handle-hover-bg: var(--border-color-2);
+    $resize-handle-drag-bg: var(--oc-blue-3);
+    $resize-handle-size: 1px;
+    $resize-handle-active-size: 3px;
 
     .separator {
         // Since drag handler is always rendered within flex
         // PanelGroup component is safe to assume that flex rules
         // can applied here.
-        flex: 0 0 var(--resize-handle-size);
+        flex: 0 0 $resize-handle-size;
         display: flex;
         touch-action: none;
         user-select: none;
         width: 100%;
         height: 100%;
-        background: var(--resize-handle-bg);
+        background: $resize-handle-bg;
         position: relative;
 
         &::before {
@@ -108,18 +108,18 @@
             transform: translate(-50%, -50%);
             width: 100%;
             height: 100%;
-            min-width: var(--resize-handle-active-size);
-            min-height: var(--resize-handle-active-size);
+            min-width: $resize-handle-active-size;
+            min-height: $resize-handle-active-size;
         }
 
         &[data-resize-handle-state='hover']::before {
             display: block;
-            background: var(--resize-handle-hover-bg);
+            background: $resize-handle-hover-bg;
         }
 
         &[data-resize-handle-state='drag']::before {
             display: block;
-            background: var(--resize-handle-drag-bg);
+            background: $resize-handle-drag-bg;
         }
     }
 </style>
