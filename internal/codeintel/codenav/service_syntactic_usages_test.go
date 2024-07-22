@@ -48,12 +48,12 @@ func TestSearchBasedUsages_ResultWithSymbol(t *testing.T) {
 	expectDefinitionRanges(t, usages, defRange)
 }
 
-func TestSearchBasedUsages_FiltersSyntacticMatches(t *testing.T) {
-	refRange := testRange(1)
+func TestSearchBasedUsages_SyntacticMatchesGetRemovedFromSearchBasedResults(t *testing.T) {
+	commentRange := testRange(1)
 	syntacticRange := testRange(2)
 
 	commit := api.CommitID("deadbeef")
-	mockSearchClient := FakeSearchClient().WithFile("path.java", refRange, syntacticRange).Build()
+	mockSearchClient := FakeSearchClient().WithFile("path.java", commentRange, syntacticRange).Build()
 	upload, lsifStore := setupUpload(commit, "", doc("path.java", ref("ref", syntacticRange)))
 	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, noopTranslator(commit), upload)
 
@@ -63,7 +63,7 @@ func TestSearchBasedUsages_FiltersSyntacticMatches(t *testing.T) {
 	)
 
 	require.NoError(t, searchErr)
-	expectRanges(t, usages, refRange)
+	expectRanges(t, usages, commentRange)
 }
 
 func TestSyntacticUsages(t *testing.T) {
