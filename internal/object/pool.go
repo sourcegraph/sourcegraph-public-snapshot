@@ -1,4 +1,4 @@
-package uploadstore
+package object
 
 import (
 	"runtime"

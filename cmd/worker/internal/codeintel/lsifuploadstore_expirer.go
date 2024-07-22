@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -40,7 +40,7 @@ func (j *lsifuploadstoreExpirer) Routines(_ context.Context, observationCtx *obs
 	}
 
 	return []goroutine.BackgroundRoutine{
-		uploadstore.NewExpirer(ctx, uploadStore, lsifuploadstoreExpirerConfigInst.prefix, lsifuploadstoreExpirerConfigInst.maxAge, lsifuploadstoreExpirerConfigInst.interval),
+		object.NewExpirer(ctx, uploadStore, lsifuploadstoreExpirerConfigInst.prefix, lsifuploadstoreExpirerConfigInst.maxAge, lsifuploadstoreExpirerConfigInst.interval),
 	}, nil
 }
 

@@ -1,4 +1,4 @@
-package uploadstore
+package object
 
 import (
 	"context"
@@ -25,7 +25,7 @@ type gcsStore struct {
 	operations   *Operations
 }
 
-var _ Store = &gcsStore{}
+var _ Storage = &gcsStore{}
 
 type GCSConfig struct {
 	ProjectID               string
@@ -34,7 +34,7 @@ type GCSConfig struct {
 }
 
 // newGCSFromConfig creates a new store backed by GCP storage.
-func newGCSFromConfig(ctx context.Context, config Config, operations *Operations) (Store, error) {
+func newGCSFromConfig(ctx context.Context, config StorageConfig, operations *Operations) (Storage, error) {
 	client, err := storage.NewClient(ctx, gcsClientOptions(config.GCS)...)
 	if err != nil {
 		return nil, err

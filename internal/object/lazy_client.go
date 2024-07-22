@@ -1,4 +1,4 @@
-package uploadstore
+package object
 
 import (
 	"context"
@@ -10,14 +10,14 @@ import (
 )
 
 type lazyStore struct {
-	store       Store
+	store       Storage
 	m           sync.RWMutex
 	initialized bool
 }
 
-var _ Store = &gcsStore{}
+var _ Storage = &gcsStore{}
 
-func newLazyStore(store Store) Store {
+func newLazyStore(store Storage) Storage {
 	return &lazyStore{store: store}
 }
 

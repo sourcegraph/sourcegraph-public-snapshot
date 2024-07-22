@@ -4,7 +4,7 @@
 // this repository. To add additional mocks to this or another package, add a new entry
 // to the mockgen.yaml file in the root of this repository.
 
-package uploadstore
+package object
 
 import (
 	"context"
@@ -16,8 +16,8 @@ import (
 )
 
 // MockGcsAPI is a mock implementation of the gcsAPI interface (from the
-// package github.com/sourcegraph/sourcegraph/internal/uploadstore) used for
-// unit testing.
+// package github.com/sourcegraph/sourcegraph/internal/object) used for unit
+// testing.
 type MockGcsAPI struct {
 	// BucketFunc is an instance of a mock function object controlling the
 	// behavior of the method Bucket.
@@ -49,8 +49,8 @@ func NewStrictMockGcsAPI() *MockGcsAPI {
 }
 
 // surrogateMockGcsAPI is a copy of the gcsAPI interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/uploadstore). It is redefined
-// here as it is unexported in the source package.
+// github.com/sourcegraph/sourcegraph/internal/object). It is redefined here
+// as it is unexported in the source package.
 type surrogateMockGcsAPI interface {
 	Bucket(string) gcsBucketHandle
 }
@@ -168,7 +168,7 @@ func (c GcsAPIBucketFuncCall) Results() []interface{} {
 
 // MockGcsBucketHandle is a mock implementation of the gcsBucketHandle
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/uploadstore) used for unit
+// github.com/sourcegraph/sourcegraph/internal/object) used for unit
 // testing.
 type MockGcsBucketHandle struct {
 	// AttrsFunc is an instance of a mock function object controlling the
@@ -241,9 +241,8 @@ func NewStrictMockGcsBucketHandle() *MockGcsBucketHandle {
 }
 
 // surrogateMockGcsBucketHandle is a copy of the gcsBucketHandle interface
-// (from the package
-// github.com/sourcegraph/sourcegraph/internal/uploadstore). It is redefined
-// here as it is unexported in the source package.
+// (from the package github.com/sourcegraph/sourcegraph/internal/object). It
+// is redefined here as it is unexported in the source package.
 type surrogateMockGcsBucketHandle interface {
 	Attrs(context.Context) (*storage.BucketAttrs, error)
 	Create(context.Context, string, *storage.BucketAttrs) error
@@ -692,9 +691,8 @@ func (c GcsBucketHandleObjectsFuncCall) Results() []interface{} {
 }
 
 // MockGcsComposer is a mock implementation of the gcsComposer interface
-// (from the package
-// github.com/sourcegraph/sourcegraph/internal/uploadstore) used for unit
-// testing.
+// (from the package github.com/sourcegraph/sourcegraph/internal/object)
+// used for unit testing.
 type MockGcsComposer struct {
 	// RunFunc is an instance of a mock function object controlling the
 	// behavior of the method Run.
@@ -726,7 +724,7 @@ func NewStrictMockGcsComposer() *MockGcsComposer {
 }
 
 // surrogateMockGcsComposer is a copy of the gcsComposer interface (from the
-// package github.com/sourcegraph/sourcegraph/internal/uploadstore). It is
+// package github.com/sourcegraph/sourcegraph/internal/object). It is
 // redefined here as it is unexported in the source package.
 type surrogateMockGcsComposer interface {
 	Run(context.Context) (*storage.ObjectAttrs, error)
@@ -849,7 +847,7 @@ func (c GcsComposerRunFuncCall) Results() []interface{} {
 
 // MockGcsObjectHandle is a mock implementation of the gcsObjectHandle
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/uploadstore) used for unit
+// github.com/sourcegraph/sourcegraph/internal/object) used for unit
 // testing.
 type MockGcsObjectHandle struct {
 	// ComposerFromFunc is an instance of a mock function object controlling
@@ -922,9 +920,8 @@ func NewStrictMockGcsObjectHandle() *MockGcsObjectHandle {
 }
 
 // surrogateMockGcsObjectHandle is a copy of the gcsObjectHandle interface
-// (from the package
-// github.com/sourcegraph/sourcegraph/internal/uploadstore). It is redefined
-// here as it is unexported in the source package.
+// (from the package github.com/sourcegraph/sourcegraph/internal/object). It
+// is redefined here as it is unexported in the source package.
 type surrogateMockGcsObjectHandle interface {
 	ComposerFrom(...gcsObjectHandle) gcsComposer
 	Delete(context.Context) error
@@ -1380,8 +1377,8 @@ func (c GcsObjectHandleNewWriterFuncCall) Results() []interface{} {
 }
 
 // MockS3API is a mock implementation of the s3API interface (from the
-// package github.com/sourcegraph/sourcegraph/internal/uploadstore) used for
-// unit testing.
+// package github.com/sourcegraph/sourcegraph/internal/object) used for unit
+// testing.
 type MockS3API struct {
 	// AbortMultipartUploadFunc is an instance of a mock function object
 	// controlling the behavior of the method AbortMultipartUpload.
@@ -1531,8 +1528,8 @@ func NewStrictMockS3API() *MockS3API {
 }
 
 // surrogateMockS3API is a copy of the s3API interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/uploadstore). It is redefined
-// here as it is unexported in the source package.
+// github.com/sourcegraph/sourcegraph/internal/object). It is redefined here
+// as it is unexported in the source package.
 type surrogateMockS3API interface {
 	AbortMultipartUpload(context.Context, *s3.AbortMultipartUploadInput) (*s3.AbortMultipartUploadOutput, error)
 	CompleteMultipartUpload(context.Context, *s3.CompleteMultipartUploadInput) (*s3.CompleteMultipartUploadOutput, error)
@@ -2666,8 +2663,8 @@ func (c S3APIUploadPartCopyFuncCall) Results() []interface{} {
 }
 
 // MockS3Uploader is a mock implementation of the s3Uploader interface (from
-// the package github.com/sourcegraph/sourcegraph/internal/uploadstore) used
-// for unit testing.
+// the package github.com/sourcegraph/sourcegraph/internal/object) used for
+// unit testing.
 type MockS3Uploader struct {
 	// UploadFunc is an instance of a mock function object controlling the
 	// behavior of the method Upload.
@@ -2699,7 +2696,7 @@ func NewStrictMockS3Uploader() *MockS3Uploader {
 }
 
 // surrogateMockS3Uploader is a copy of the s3Uploader interface (from the
-// package github.com/sourcegraph/sourcegraph/internal/uploadstore). It is
+// package github.com/sourcegraph/sourcegraph/internal/object). It is
 // redefined here as it is unexported in the source package.
 type surrogateMockS3Uploader interface {
 	Upload(context.Context, *s3.PutObjectInput) error

@@ -1,4 +1,4 @@
-package uploadstore
+package search
 
 import (
 	"context"
@@ -6,12 +6,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type Config struct {
+var ObjectStorageConfigInst = &ObjectStorageConfig{}
+
+type ObjectStorageConfig struct {
 	env.BaseConfig
 
 	Backend      string
@@ -30,7 +32,7 @@ type Config struct {
 	GCSCredentialsFileContents string
 }
 
-func (c *Config) Load() {
+func (c *ObjectStorageConfig) Load() {
 	c.Backend = strings.ToLower(c.Get("SEARCH_JOBS_UPLOAD_BACKEND", "blobstore", "The target file service for search jobs. S3, GCS, and Blobstore are supported."))
 	c.ManageBucket = c.GetBool("SEARCH_JOBS_UPLOAD_MANAGE_BUCKET", "false", "Whether or not the client should manage the target bucket configuration.")
 	c.Bucket = c.Get("SEARCH_JOBS_UPLOAD_BUCKET", "search-jobs", "The name of the bucket to store search job results in.")
@@ -57,17 +59,14 @@ func (c *Config) Load() {
 	}
 }
 
-var ConfigInst = &Config{}
+var ConfigInst = &ObjectStorageConfig{}
 
-// Store type alias avoids ugly import statements at call sites.
-type Store uploadstore.Store
-
-func New(ctx context.Context, observationCtx *observation.Context, conf *Config) (Store, error) {
-	c := uploadstore.Config{
+func NewObjectStorage(ctx context.Context, observationCtx *observation.Context, conf *ObjectStorageConfig) (object.Storage, error) {
+	c := object.StorageConfig{
 		Backend:      conf.Backend,
 		ManageBucket: conf.ManageBucket,
 		Bucket:       conf.Bucket,
-		S3: uploadstore.S3Config{
+		S3: object.S3Config{
 			Region:          conf.S3Region,
 			Endpoint:        conf.S3Endpoint,
 			UsePathStyle:    conf.S3UsePathStyle,
@@ -75,11 +74,11 @@ func New(ctx context.Context, observationCtx *observation.Context, conf *Config)
 			SecretAccessKey: conf.S3SecretAccessKey,
 			SessionToken:    conf.S3SessionToken,
 		},
-		GCS: uploadstore.GCSConfig{
+		GCS: object.GCSConfig{
 			ProjectID:               conf.GCSProjectID,
 			CredentialsFile:         conf.GCSCredentialsFile,
 			CredentialsFileContents: conf.GCSCredentialsFileContents,
 		},
 	}
-	return uploadstore.CreateLazy(ctx, c, uploadstore.NewOperations(observationCtx, "search_jobs", "uploadstore"))
+	return object.CreateLazyStorage(ctx, c, object.NewOperations(observationCtx, "search_jobs", "uploadstore"))
 }

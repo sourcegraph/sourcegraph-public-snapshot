@@ -1,4 +1,4 @@
-package uploadstore
+package object
 
 import (
 	"bytes"
@@ -363,7 +363,7 @@ func TestS3Delete(t *testing.T) {
 	}
 }
 
-func testS3Client(client s3API, uploader s3Uploader) Store {
+func testS3Client(client s3API, uploader s3Uploader) Storage {
 	return newLazyStore(rawS3Client(client, uploader))
 }
 

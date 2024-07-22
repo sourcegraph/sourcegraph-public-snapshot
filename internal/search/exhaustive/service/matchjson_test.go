@@ -10,9 +10,9 @@ import (
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/object/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
@@ -153,12 +153,12 @@ func TestNoUploadIfNotData(t *testing.T) {
 	}
 }
 
-func setupMockStore(t *testing.T) *mocks.MockStore {
+func setupMockStore(t *testing.T) *mocks.MockStorage {
 	t.Helper()
 
 	bucket := make(map[string][]byte)
 
-	mockStore := mocks.NewMockStore()
+	mockStore := mocks.NewMockStorage()
 	mockStore.UploadFunc.SetDefaultHook(func(ctx context.Context, key string, r io.Reader) (int64, error) {
 		b, err := io.ReadAll(r)
 		if err != nil {

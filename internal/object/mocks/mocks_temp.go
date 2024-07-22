@@ -12,72 +12,72 @@ import (
 	"sync"
 	"time"
 
-	uploadstore "github.com/sourcegraph/sourcegraph/internal/uploadstore"
+	object "github.com/sourcegraph/sourcegraph/internal/object"
 	iterator "github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
-// MockStore is a mock implementation of the Store interface (from the
-// package github.com/sourcegraph/sourcegraph/internal/uploadstore) used for
-// unit testing.
-type MockStore struct {
+// MockStorage is a mock implementation of the Storage interface (from the
+// package github.com/sourcegraph/sourcegraph/internal/object) used for unit
+// testing.
+type MockStorage struct {
 	// ComposeFunc is an instance of a mock function object controlling the
 	// behavior of the method Compose.
-	ComposeFunc *StoreComposeFunc
+	ComposeFunc *StorageComposeFunc
 	// DeleteFunc is an instance of a mock function object controlling the
 	// behavior of the method Delete.
-	DeleteFunc *StoreDeleteFunc
+	DeleteFunc *StorageDeleteFunc
 	// ExpireObjectsFunc is an instance of a mock function object
 	// controlling the behavior of the method ExpireObjects.
-	ExpireObjectsFunc *StoreExpireObjectsFunc
+	ExpireObjectsFunc *StorageExpireObjectsFunc
 	// GetFunc is an instance of a mock function object controlling the
 	// behavior of the method Get.
-	GetFunc *StoreGetFunc
+	GetFunc *StorageGetFunc
 	// InitFunc is an instance of a mock function object controlling the
 	// behavior of the method Init.
-	InitFunc *StoreInitFunc
+	InitFunc *StorageInitFunc
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
-	ListFunc *StoreListFunc
+	ListFunc *StorageListFunc
 	// UploadFunc is an instance of a mock function object controlling the
 	// behavior of the method Upload.
-	UploadFunc *StoreUploadFunc
+	UploadFunc *StorageUploadFunc
 }
 
-// NewMockStore creates a new mock of the Store interface. All methods
+// NewMockStorage creates a new mock of the Storage interface. All methods
 // return zero values for all results, unless overwritten.
-func NewMockStore() *MockStore {
-	return &MockStore{
-		ComposeFunc: &StoreComposeFunc{
+func NewMockStorage() *MockStorage {
+	return &MockStorage{
+		ComposeFunc: &StorageComposeFunc{
 			defaultHook: func(context.Context, string, ...string) (r0 int64, r1 error) {
 				return
 			},
 		},
-		DeleteFunc: &StoreDeleteFunc{
+		DeleteFunc: &StorageDeleteFunc{
 			defaultHook: func(context.Context, string) (r0 error) {
 				return
 			},
 		},
-		ExpireObjectsFunc: &StoreExpireObjectsFunc{
+		ExpireObjectsFunc: &StorageExpireObjectsFunc{
 			defaultHook: func(context.Context, string, time.Duration) (r0 error) {
 				return
 			},
 		},
-		GetFunc: &StoreGetFunc{
+		GetFunc: &StorageGetFunc{
 			defaultHook: func(context.Context, string) (r0 io.ReadCloser, r1 error) {
 				return
 			},
 		},
-		InitFunc: &StoreInitFunc{
+		InitFunc: &StorageInitFunc{
 			defaultHook: func(context.Context) (r0 error) {
 				return
 			},
 		},
-		ListFunc: &StoreListFunc{
+		ListFunc: &StorageListFunc{
 			defaultHook: func(context.Context, string) (r0 *iterator.Iterator[string], r1 error) {
 				return
 			},
 		},
-		UploadFunc: &StoreUploadFunc{
+		UploadFunc: &StorageUploadFunc{
 			defaultHook: func(context.Context, string, io.Reader) (r0 int64, r1 error) {
 				return
 			},
@@ -85,104 +85,104 @@ func NewMockStore() *MockStore {
 	}
 }
 
-// NewStrictMockStore creates a new mock of the Store interface. All methods
-// panic on invocation, unless overwritten.
-func NewStrictMockStore() *MockStore {
-	return &MockStore{
-		ComposeFunc: &StoreComposeFunc{
+// NewStrictMockStorage creates a new mock of the Storage interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockStorage() *MockStorage {
+	return &MockStorage{
+		ComposeFunc: &StorageComposeFunc{
 			defaultHook: func(context.Context, string, ...string) (int64, error) {
-				panic("unexpected invocation of MockStore.Compose")
+				panic("unexpected invocation of MockStorage.Compose")
 			},
 		},
-		DeleteFunc: &StoreDeleteFunc{
+		DeleteFunc: &StorageDeleteFunc{
 			defaultHook: func(context.Context, string) error {
-				panic("unexpected invocation of MockStore.Delete")
+				panic("unexpected invocation of MockStorage.Delete")
 			},
 		},
-		ExpireObjectsFunc: &StoreExpireObjectsFunc{
+		ExpireObjectsFunc: &StorageExpireObjectsFunc{
 			defaultHook: func(context.Context, string, time.Duration) error {
-				panic("unexpected invocation of MockStore.ExpireObjects")
+				panic("unexpected invocation of MockStorage.ExpireObjects")
 			},
 		},
-		GetFunc: &StoreGetFunc{
+		GetFunc: &StorageGetFunc{
 			defaultHook: func(context.Context, string) (io.ReadCloser, error) {
-				panic("unexpected invocation of MockStore.Get")
+				panic("unexpected invocation of MockStorage.Get")
 			},
 		},
-		InitFunc: &StoreInitFunc{
+		InitFunc: &StorageInitFunc{
 			defaultHook: func(context.Context) error {
-				panic("unexpected invocation of MockStore.Init")
+				panic("unexpected invocation of MockStorage.Init")
 			},
 		},
-		ListFunc: &StoreListFunc{
+		ListFunc: &StorageListFunc{
 			defaultHook: func(context.Context, string) (*iterator.Iterator[string], error) {
-				panic("unexpected invocation of MockStore.List")
+				panic("unexpected invocation of MockStorage.List")
 			},
 		},
-		UploadFunc: &StoreUploadFunc{
+		UploadFunc: &StorageUploadFunc{
 			defaultHook: func(context.Context, string, io.Reader) (int64, error) {
-				panic("unexpected invocation of MockStore.Upload")
+				panic("unexpected invocation of MockStorage.Upload")
 			},
 		},
 	}
 }
 
-// NewMockStoreFrom creates a new mock of the MockStore interface. All
+// NewMockStorageFrom creates a new mock of the MockStorage interface. All
 // methods delegate to the given implementation, unless overwritten.
-func NewMockStoreFrom(i uploadstore.Store) *MockStore {
-	return &MockStore{
-		ComposeFunc: &StoreComposeFunc{
+func NewMockStorageFrom(i object.Storage) *MockStorage {
+	return &MockStorage{
+		ComposeFunc: &StorageComposeFunc{
 			defaultHook: i.Compose,
 		},
-		DeleteFunc: &StoreDeleteFunc{
+		DeleteFunc: &StorageDeleteFunc{
 			defaultHook: i.Delete,
 		},
-		ExpireObjectsFunc: &StoreExpireObjectsFunc{
+		ExpireObjectsFunc: &StorageExpireObjectsFunc{
 			defaultHook: i.ExpireObjects,
 		},
-		GetFunc: &StoreGetFunc{
+		GetFunc: &StorageGetFunc{
 			defaultHook: i.Get,
 		},
-		InitFunc: &StoreInitFunc{
+		InitFunc: &StorageInitFunc{
 			defaultHook: i.Init,
 		},
-		ListFunc: &StoreListFunc{
+		ListFunc: &StorageListFunc{
 			defaultHook: i.List,
 		},
-		UploadFunc: &StoreUploadFunc{
+		UploadFunc: &StorageUploadFunc{
 			defaultHook: i.Upload,
 		},
 	}
 }
 
-// StoreComposeFunc describes the behavior when the Compose method of the
-// parent MockStore instance is invoked.
-type StoreComposeFunc struct {
+// StorageComposeFunc describes the behavior when the Compose method of the
+// parent MockStorage instance is invoked.
+type StorageComposeFunc struct {
 	defaultHook func(context.Context, string, ...string) (int64, error)
 	hooks       []func(context.Context, string, ...string) (int64, error)
-	history     []StoreComposeFuncCall
+	history     []StorageComposeFuncCall
 	mutex       sync.Mutex
 }
 
 // Compose delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) Compose(v0 context.Context, v1 string, v2 ...string) (int64, error) {
+func (m *MockStorage) Compose(v0 context.Context, v1 string, v2 ...string) (int64, error) {
 	r0, r1 := m.ComposeFunc.nextHook()(v0, v1, v2...)
-	m.ComposeFunc.appendCall(StoreComposeFuncCall{v0, v1, v2, r0, r1})
+	m.ComposeFunc.appendCall(StorageComposeFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Compose method of
-// the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreComposeFunc) SetDefaultHook(hook func(context.Context, string, ...string) (int64, error)) {
+// the parent MockStorage instance is invoked and the hook queue is empty.
+func (f *StorageComposeFunc) SetDefaultHook(hook func(context.Context, string, ...string) (int64, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Compose method of the parent MockStore instance invokes the hook at the
+// Compose method of the parent MockStorage instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreComposeFunc) PushHook(hook func(context.Context, string, ...string) (int64, error)) {
+func (f *StorageComposeFunc) PushHook(hook func(context.Context, string, ...string) (int64, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -190,20 +190,20 @@ func (f *StoreComposeFunc) PushHook(hook func(context.Context, string, ...string
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreComposeFunc) SetDefaultReturn(r0 int64, r1 error) {
+func (f *StorageComposeFunc) SetDefaultReturn(r0 int64, r1 error) {
 	f.SetDefaultHook(func(context.Context, string, ...string) (int64, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreComposeFunc) PushReturn(r0 int64, r1 error) {
+func (f *StorageComposeFunc) PushReturn(r0 int64, r1 error) {
 	f.PushHook(func(context.Context, string, ...string) (int64, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreComposeFunc) nextHook() func(context.Context, string, ...string) (int64, error) {
+func (f *StorageComposeFunc) nextHook() func(context.Context, string, ...string) (int64, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -216,26 +216,26 @@ func (f *StoreComposeFunc) nextHook() func(context.Context, string, ...string) (
 	return hook
 }
 
-func (f *StoreComposeFunc) appendCall(r0 StoreComposeFuncCall) {
+func (f *StorageComposeFunc) appendCall(r0 StorageComposeFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreComposeFuncCall objects describing the
-// invocations of this function.
-func (f *StoreComposeFunc) History() []StoreComposeFuncCall {
+// History returns a sequence of StorageComposeFuncCall objects describing
+// the invocations of this function.
+func (f *StorageComposeFunc) History() []StorageComposeFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreComposeFuncCall, len(f.history))
+	history := make([]StorageComposeFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreComposeFuncCall is an object that describes an invocation of method
-// Compose on an instance of MockStore.
-type StoreComposeFuncCall struct {
+// StorageComposeFuncCall is an object that describes an invocation of
+// method Compose on an instance of MockStorage.
+type StorageComposeFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -257,7 +257,7 @@ type StoreComposeFuncCall struct {
 // invocation. The variadic slice argument is flattened in this array such
 // that one positional argument and three variadic arguments would result in
 // a slice of four, not two.
-func (c StoreComposeFuncCall) Args() []interface{} {
+func (c StorageComposeFuncCall) Args() []interface{} {
 	trailing := []interface{}{}
 	for _, val := range c.Arg2 {
 		trailing = append(trailing, val)
@@ -268,38 +268,38 @@ func (c StoreComposeFuncCall) Args() []interface{} {
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreComposeFuncCall) Results() []interface{} {
+func (c StorageComposeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreDeleteFunc describes the behavior when the Delete method of the
-// parent MockStore instance is invoked.
-type StoreDeleteFunc struct {
+// StorageDeleteFunc describes the behavior when the Delete method of the
+// parent MockStorage instance is invoked.
+type StorageDeleteFunc struct {
 	defaultHook func(context.Context, string) error
 	hooks       []func(context.Context, string) error
-	history     []StoreDeleteFuncCall
+	history     []StorageDeleteFuncCall
 	mutex       sync.Mutex
 }
 
 // Delete delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) Delete(v0 context.Context, v1 string) error {
+func (m *MockStorage) Delete(v0 context.Context, v1 string) error {
 	r0 := m.DeleteFunc.nextHook()(v0, v1)
-	m.DeleteFunc.appendCall(StoreDeleteFuncCall{v0, v1, r0})
+	m.DeleteFunc.appendCall(StorageDeleteFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the Delete method of the
-// parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreDeleteFunc) SetDefaultHook(hook func(context.Context, string) error) {
+// parent MockStorage instance is invoked and the hook queue is empty.
+func (f *StorageDeleteFunc) SetDefaultHook(hook func(context.Context, string) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Delete method of the parent MockStore instance invokes the hook at the
+// Delete method of the parent MockStorage instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreDeleteFunc) PushHook(hook func(context.Context, string) error) {
+func (f *StorageDeleteFunc) PushHook(hook func(context.Context, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -307,20 +307,20 @@ func (f *StoreDeleteFunc) PushHook(hook func(context.Context, string) error) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreDeleteFunc) SetDefaultReturn(r0 error) {
+func (f *StorageDeleteFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, string) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreDeleteFunc) PushReturn(r0 error) {
+func (f *StorageDeleteFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, string) error {
 		return r0
 	})
 }
 
-func (f *StoreDeleteFunc) nextHook() func(context.Context, string) error {
+func (f *StorageDeleteFunc) nextHook() func(context.Context, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -333,26 +333,26 @@ func (f *StoreDeleteFunc) nextHook() func(context.Context, string) error {
 	return hook
 }
 
-func (f *StoreDeleteFunc) appendCall(r0 StoreDeleteFuncCall) {
+func (f *StorageDeleteFunc) appendCall(r0 StorageDeleteFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreDeleteFuncCall objects describing the
-// invocations of this function.
-func (f *StoreDeleteFunc) History() []StoreDeleteFuncCall {
+// History returns a sequence of StorageDeleteFuncCall objects describing
+// the invocations of this function.
+func (f *StorageDeleteFunc) History() []StorageDeleteFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreDeleteFuncCall, len(f.history))
+	history := make([]StorageDeleteFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreDeleteFuncCall is an object that describes an invocation of method
-// Delete on an instance of MockStore.
-type StoreDeleteFuncCall struct {
+// StorageDeleteFuncCall is an object that describes an invocation of method
+// Delete on an instance of MockStorage.
+type StorageDeleteFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -366,44 +366,45 @@ type StoreDeleteFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreDeleteFuncCall) Args() []interface{} {
+func (c StorageDeleteFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreDeleteFuncCall) Results() []interface{} {
+func (c StorageDeleteFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// StoreExpireObjectsFunc describes the behavior when the ExpireObjects
-// method of the parent MockStore instance is invoked.
-type StoreExpireObjectsFunc struct {
+// StorageExpireObjectsFunc describes the behavior when the ExpireObjects
+// method of the parent MockStorage instance is invoked.
+type StorageExpireObjectsFunc struct {
 	defaultHook func(context.Context, string, time.Duration) error
 	hooks       []func(context.Context, string, time.Duration) error
-	history     []StoreExpireObjectsFuncCall
+	history     []StorageExpireObjectsFuncCall
 	mutex       sync.Mutex
 }
 
 // ExpireObjects delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) ExpireObjects(v0 context.Context, v1 string, v2 time.Duration) error {
+func (m *MockStorage) ExpireObjects(v0 context.Context, v1 string, v2 time.Duration) error {
 	r0 := m.ExpireObjectsFunc.nextHook()(v0, v1, v2)
-	m.ExpireObjectsFunc.appendCall(StoreExpireObjectsFuncCall{v0, v1, v2, r0})
+	m.ExpireObjectsFunc.appendCall(StorageExpireObjectsFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the ExpireObjects method
-// of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreExpireObjectsFunc) SetDefaultHook(hook func(context.Context, string, time.Duration) error) {
+// of the parent MockStorage instance is invoked and the hook queue is
+// empty.
+func (f *StorageExpireObjectsFunc) SetDefaultHook(hook func(context.Context, string, time.Duration) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ExpireObjects method of the parent MockStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
+// ExpireObjects method of the parent MockStorage instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreExpireObjectsFunc) PushHook(hook func(context.Context, string, time.Duration) error) {
+func (f *StorageExpireObjectsFunc) PushHook(hook func(context.Context, string, time.Duration) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -411,20 +412,20 @@ func (f *StoreExpireObjectsFunc) PushHook(hook func(context.Context, string, tim
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreExpireObjectsFunc) SetDefaultReturn(r0 error) {
+func (f *StorageExpireObjectsFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, string, time.Duration) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreExpireObjectsFunc) PushReturn(r0 error) {
+func (f *StorageExpireObjectsFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, string, time.Duration) error {
 		return r0
 	})
 }
 
-func (f *StoreExpireObjectsFunc) nextHook() func(context.Context, string, time.Duration) error {
+func (f *StorageExpireObjectsFunc) nextHook() func(context.Context, string, time.Duration) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -437,26 +438,26 @@ func (f *StoreExpireObjectsFunc) nextHook() func(context.Context, string, time.D
 	return hook
 }
 
-func (f *StoreExpireObjectsFunc) appendCall(r0 StoreExpireObjectsFuncCall) {
+func (f *StorageExpireObjectsFunc) appendCall(r0 StorageExpireObjectsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreExpireObjectsFuncCall objects
+// History returns a sequence of StorageExpireObjectsFuncCall objects
 // describing the invocations of this function.
-func (f *StoreExpireObjectsFunc) History() []StoreExpireObjectsFuncCall {
+func (f *StorageExpireObjectsFunc) History() []StorageExpireObjectsFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreExpireObjectsFuncCall, len(f.history))
+	history := make([]StorageExpireObjectsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreExpireObjectsFuncCall is an object that describes an invocation of
-// method ExpireObjects on an instance of MockStore.
-type StoreExpireObjectsFuncCall struct {
+// StorageExpireObjectsFuncCall is an object that describes an invocation of
+// method ExpireObjects on an instance of MockStorage.
+type StorageExpireObjectsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -473,44 +474,44 @@ type StoreExpireObjectsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreExpireObjectsFuncCall) Args() []interface{} {
+func (c StorageExpireObjectsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreExpireObjectsFuncCall) Results() []interface{} {
+func (c StorageExpireObjectsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// StoreGetFunc describes the behavior when the Get method of the parent
-// MockStore instance is invoked.
-type StoreGetFunc struct {
+// StorageGetFunc describes the behavior when the Get method of the parent
+// MockStorage instance is invoked.
+type StorageGetFunc struct {
 	defaultHook func(context.Context, string) (io.ReadCloser, error)
 	hooks       []func(context.Context, string) (io.ReadCloser, error)
-	history     []StoreGetFuncCall
+	history     []StorageGetFuncCall
 	mutex       sync.Mutex
 }
 
 // Get delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) Get(v0 context.Context, v1 string) (io.ReadCloser, error) {
+func (m *MockStorage) Get(v0 context.Context, v1 string) (io.ReadCloser, error) {
 	r0, r1 := m.GetFunc.nextHook()(v0, v1)
-	m.GetFunc.appendCall(StoreGetFuncCall{v0, v1, r0, r1})
+	m.GetFunc.appendCall(StorageGetFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Get method of the
-// parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetFunc) SetDefaultHook(hook func(context.Context, string) (io.ReadCloser, error)) {
+// parent MockStorage instance is invoked and the hook queue is empty.
+func (f *StorageGetFunc) SetDefaultHook(hook func(context.Context, string) (io.ReadCloser, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Get method of the parent MockStore instance invokes the hook at the front
-// of the queue and discards it. After the queue is empty, the default hook
-// function is invoked for any future action.
-func (f *StoreGetFunc) PushHook(hook func(context.Context, string) (io.ReadCloser, error)) {
+// Get method of the parent MockStorage instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *StorageGetFunc) PushHook(hook func(context.Context, string) (io.ReadCloser, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -518,20 +519,20 @@ func (f *StoreGetFunc) PushHook(hook func(context.Context, string) (io.ReadClose
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
+func (f *StorageGetFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
 	f.SetDefaultHook(func(context.Context, string) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetFunc) PushReturn(r0 io.ReadCloser, r1 error) {
+func (f *StorageGetFunc) PushReturn(r0 io.ReadCloser, r1 error) {
 	f.PushHook(func(context.Context, string) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreGetFunc) nextHook() func(context.Context, string) (io.ReadCloser, error) {
+func (f *StorageGetFunc) nextHook() func(context.Context, string) (io.ReadCloser, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -544,26 +545,26 @@ func (f *StoreGetFunc) nextHook() func(context.Context, string) (io.ReadCloser, 
 	return hook
 }
 
-func (f *StoreGetFunc) appendCall(r0 StoreGetFuncCall) {
+func (f *StorageGetFunc) appendCall(r0 StorageGetFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreGetFuncCall objects describing the
+// History returns a sequence of StorageGetFuncCall objects describing the
 // invocations of this function.
-func (f *StoreGetFunc) History() []StoreGetFuncCall {
+func (f *StorageGetFunc) History() []StorageGetFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreGetFuncCall, len(f.history))
+	history := make([]StorageGetFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreGetFuncCall is an object that describes an invocation of method Get
-// on an instance of MockStore.
-type StoreGetFuncCall struct {
+// StorageGetFuncCall is an object that describes an invocation of method
+// Get on an instance of MockStorage.
+type StorageGetFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -580,44 +581,44 @@ type StoreGetFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreGetFuncCall) Args() []interface{} {
+func (c StorageGetFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreGetFuncCall) Results() []interface{} {
+func (c StorageGetFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreInitFunc describes the behavior when the Init method of the parent
-// MockStore instance is invoked.
-type StoreInitFunc struct {
+// StorageInitFunc describes the behavior when the Init method of the parent
+// MockStorage instance is invoked.
+type StorageInitFunc struct {
 	defaultHook func(context.Context) error
 	hooks       []func(context.Context) error
-	history     []StoreInitFuncCall
+	history     []StorageInitFuncCall
 	mutex       sync.Mutex
 }
 
 // Init delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) Init(v0 context.Context) error {
+func (m *MockStorage) Init(v0 context.Context) error {
 	r0 := m.InitFunc.nextHook()(v0)
-	m.InitFunc.appendCall(StoreInitFuncCall{v0, r0})
+	m.InitFunc.appendCall(StorageInitFuncCall{v0, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the Init method of the
-// parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreInitFunc) SetDefaultHook(hook func(context.Context) error) {
+// parent MockStorage instance is invoked and the hook queue is empty.
+func (f *StorageInitFunc) SetDefaultHook(hook func(context.Context) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Init method of the parent MockStore instance invokes the hook at the
+// Init method of the parent MockStorage instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreInitFunc) PushHook(hook func(context.Context) error) {
+func (f *StorageInitFunc) PushHook(hook func(context.Context) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -625,20 +626,20 @@ func (f *StoreInitFunc) PushHook(hook func(context.Context) error) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreInitFunc) SetDefaultReturn(r0 error) {
+func (f *StorageInitFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreInitFunc) PushReturn(r0 error) {
+func (f *StorageInitFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context) error {
 		return r0
 	})
 }
 
-func (f *StoreInitFunc) nextHook() func(context.Context) error {
+func (f *StorageInitFunc) nextHook() func(context.Context) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -651,26 +652,26 @@ func (f *StoreInitFunc) nextHook() func(context.Context) error {
 	return hook
 }
 
-func (f *StoreInitFunc) appendCall(r0 StoreInitFuncCall) {
+func (f *StorageInitFunc) appendCall(r0 StorageInitFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreInitFuncCall objects describing the
+// History returns a sequence of StorageInitFuncCall objects describing the
 // invocations of this function.
-func (f *StoreInitFunc) History() []StoreInitFuncCall {
+func (f *StorageInitFunc) History() []StorageInitFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreInitFuncCall, len(f.history))
+	history := make([]StorageInitFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreInitFuncCall is an object that describes an invocation of method
-// Init on an instance of MockStore.
-type StoreInitFuncCall struct {
+// StorageInitFuncCall is an object that describes an invocation of method
+// Init on an instance of MockStorage.
+type StorageInitFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -681,44 +682,44 @@ type StoreInitFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreInitFuncCall) Args() []interface{} {
+func (c StorageInitFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreInitFuncCall) Results() []interface{} {
+func (c StorageInitFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// StoreListFunc describes the behavior when the List method of the parent
-// MockStore instance is invoked.
-type StoreListFunc struct {
+// StorageListFunc describes the behavior when the List method of the parent
+// MockStorage instance is invoked.
+type StorageListFunc struct {
 	defaultHook func(context.Context, string) (*iterator.Iterator[string], error)
 	hooks       []func(context.Context, string) (*iterator.Iterator[string], error)
-	history     []StoreListFuncCall
+	history     []StorageListFuncCall
 	mutex       sync.Mutex
 }
 
 // List delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) List(v0 context.Context, v1 string) (*iterator.Iterator[string], error) {
+func (m *MockStorage) List(v0 context.Context, v1 string) (*iterator.Iterator[string], error) {
 	r0, r1 := m.ListFunc.nextHook()(v0, v1)
-	m.ListFunc.appendCall(StoreListFuncCall{v0, v1, r0, r1})
+	m.ListFunc.appendCall(StorageListFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the List method of the
-// parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreListFunc) SetDefaultHook(hook func(context.Context, string) (*iterator.Iterator[string], error)) {
+// parent MockStorage instance is invoked and the hook queue is empty.
+func (f *StorageListFunc) SetDefaultHook(hook func(context.Context, string) (*iterator.Iterator[string], error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// List method of the parent MockStore instance invokes the hook at the
+// List method of the parent MockStorage instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreListFunc) PushHook(hook func(context.Context, string) (*iterator.Iterator[string], error)) {
+func (f *StorageListFunc) PushHook(hook func(context.Context, string) (*iterator.Iterator[string], error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -726,20 +727,20 @@ func (f *StoreListFunc) PushHook(hook func(context.Context, string) (*iterator.I
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreListFunc) SetDefaultReturn(r0 *iterator.Iterator[string], r1 error) {
+func (f *StorageListFunc) SetDefaultReturn(r0 *iterator.Iterator[string], r1 error) {
 	f.SetDefaultHook(func(context.Context, string) (*iterator.Iterator[string], error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreListFunc) PushReturn(r0 *iterator.Iterator[string], r1 error) {
+func (f *StorageListFunc) PushReturn(r0 *iterator.Iterator[string], r1 error) {
 	f.PushHook(func(context.Context, string) (*iterator.Iterator[string], error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreListFunc) nextHook() func(context.Context, string) (*iterator.Iterator[string], error) {
+func (f *StorageListFunc) nextHook() func(context.Context, string) (*iterator.Iterator[string], error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -752,26 +753,26 @@ func (f *StoreListFunc) nextHook() func(context.Context, string) (*iterator.Iter
 	return hook
 }
 
-func (f *StoreListFunc) appendCall(r0 StoreListFuncCall) {
+func (f *StorageListFunc) appendCall(r0 StorageListFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreListFuncCall objects describing the
+// History returns a sequence of StorageListFuncCall objects describing the
 // invocations of this function.
-func (f *StoreListFunc) History() []StoreListFuncCall {
+func (f *StorageListFunc) History() []StorageListFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreListFuncCall, len(f.history))
+	history := make([]StorageListFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreListFuncCall is an object that describes an invocation of method
-// List on an instance of MockStore.
-type StoreListFuncCall struct {
+// StorageListFuncCall is an object that describes an invocation of method
+// List on an instance of MockStorage.
+type StorageListFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -788,44 +789,44 @@ type StoreListFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreListFuncCall) Args() []interface{} {
+func (c StorageListFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreListFuncCall) Results() []interface{} {
+func (c StorageListFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreUploadFunc describes the behavior when the Upload method of the
-// parent MockStore instance is invoked.
-type StoreUploadFunc struct {
+// StorageUploadFunc describes the behavior when the Upload method of the
+// parent MockStorage instance is invoked.
+type StorageUploadFunc struct {
 	defaultHook func(context.Context, string, io.Reader) (int64, error)
 	hooks       []func(context.Context, string, io.Reader) (int64, error)
-	history     []StoreUploadFuncCall
+	history     []StorageUploadFuncCall
 	mutex       sync.Mutex
 }
 
 // Upload delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) Upload(v0 context.Context, v1 string, v2 io.Reader) (int64, error) {
+func (m *MockStorage) Upload(v0 context.Context, v1 string, v2 io.Reader) (int64, error) {
 	r0, r1 := m.UploadFunc.nextHook()(v0, v1, v2)
-	m.UploadFunc.appendCall(StoreUploadFuncCall{v0, v1, v2, r0, r1})
+	m.UploadFunc.appendCall(StorageUploadFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Upload method of the
-// parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreUploadFunc) SetDefaultHook(hook func(context.Context, string, io.Reader) (int64, error)) {
+// parent MockStorage instance is invoked and the hook queue is empty.
+func (f *StorageUploadFunc) SetDefaultHook(hook func(context.Context, string, io.Reader) (int64, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Upload method of the parent MockStore instance invokes the hook at the
+// Upload method of the parent MockStorage instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreUploadFunc) PushHook(hook func(context.Context, string, io.Reader) (int64, error)) {
+func (f *StorageUploadFunc) PushHook(hook func(context.Context, string, io.Reader) (int64, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -833,20 +834,20 @@ func (f *StoreUploadFunc) PushHook(hook func(context.Context, string, io.Reader)
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreUploadFunc) SetDefaultReturn(r0 int64, r1 error) {
+func (f *StorageUploadFunc) SetDefaultReturn(r0 int64, r1 error) {
 	f.SetDefaultHook(func(context.Context, string, io.Reader) (int64, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreUploadFunc) PushReturn(r0 int64, r1 error) {
+func (f *StorageUploadFunc) PushReturn(r0 int64, r1 error) {
 	f.PushHook(func(context.Context, string, io.Reader) (int64, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreUploadFunc) nextHook() func(context.Context, string, io.Reader) (int64, error) {
+func (f *StorageUploadFunc) nextHook() func(context.Context, string, io.Reader) (int64, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -859,26 +860,26 @@ func (f *StoreUploadFunc) nextHook() func(context.Context, string, io.Reader) (i
 	return hook
 }
 
-func (f *StoreUploadFunc) appendCall(r0 StoreUploadFuncCall) {
+func (f *StorageUploadFunc) appendCall(r0 StorageUploadFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreUploadFuncCall objects describing the
-// invocations of this function.
-func (f *StoreUploadFunc) History() []StoreUploadFuncCall {
+// History returns a sequence of StorageUploadFuncCall objects describing
+// the invocations of this function.
+func (f *StorageUploadFunc) History() []StorageUploadFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreUploadFuncCall, len(f.history))
+	history := make([]StorageUploadFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreUploadFuncCall is an object that describes an invocation of method
-// Upload on an instance of MockStore.
-type StoreUploadFuncCall struct {
+// StorageUploadFuncCall is an object that describes an invocation of method
+// Upload on an instance of MockStorage.
+type StorageUploadFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -898,12 +899,12 @@ type StoreUploadFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreUploadFuncCall) Args() []interface{} {
+func (c StorageUploadFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreUploadFuncCall) Results() []interface{} {
+func (c StorageUploadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }

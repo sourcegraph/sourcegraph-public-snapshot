@@ -26,9 +26,9 @@ import (
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -43,7 +43,7 @@ func NewUploadProcessorWorker(
 	gitserverClient gitserver.Client,
 	repoStore RepoStore,
 	workerStore dbworkerstore.Store[uploadsshared.Upload],
-	uploadStore uploadstore.Store,
+	uploadStore object.Storage,
 	config *Config,
 ) *workerutil.Worker[uploadsshared.Upload] {
 	rootContext := actor.WithInternalActor(context.Background())
@@ -78,7 +78,7 @@ type handler struct {
 	gitserverClient gitserver.Client
 	repoStore       RepoStore
 	workerStore     dbworkerstore.Store[uploadsshared.Upload]
-	uploadStore     uploadstore.Store
+	uploadStore     object.Storage
 	handleOp        *observation.Operation
 	budgetRemaining int64
 	enableBudget    bool
@@ -98,7 +98,7 @@ func NewUploadProcessorHandler(
 	gitserverClient gitserver.Client,
 	repoStore RepoStore,
 	workerStore dbworkerstore.Store[uploadsshared.Upload],
-	uploadStore uploadstore.Store,
+	uploadStore object.Storage,
 	budgetMax int64,
 ) workerutil.Handler[uploadsshared.Upload] {
 	operations := newWorkerOperations(observationCtx)
@@ -202,7 +202,7 @@ func (c *handler) defaultBranchContains(ctx context.Context, repo api.RepoName, 
 
 // HandleRawUpload converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
-func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload uploadsshared.Upload, uploadStore uploadstore.Store, trace observation.TraceLogger) (requeued bool, err error) {
+func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload uploadsshared.Upload, uploadStore object.Storage, trace observation.TraceLogger) (requeued bool, err error) {
 	repo, err := h.repoStore.Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
 		return false, errors.Wrap(err, "Repos.Get")
@@ -472,7 +472,7 @@ func (grs *gzipReadSeeker) seekToStart() (err error) {
 // withUploadData will invoke the given function with a reader of the upload's raw data. The
 // consumer should expect raw newline-delimited JSON content. If the function returns without
 // an error, the upload file will be deleted.
-func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadstore.Store, uploadStats uploadsshared.UploadSizeStats, trace observation.TraceLogger, fn func(r gzipReadSeeker) error) error {
+func withUploadData(ctx context.Context, logger log.Logger, uploadStore object.Storage, uploadStats uploadsshared.UploadSizeStats, trace observation.TraceLogger, fn func(r gzipReadSeeker) error) error {
 	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", uploadStats.ID)
 
 	trace.AddEvent("TODO Domain Owner", attribute.String("uploadFilename", uploadFilename))

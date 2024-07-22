@@ -1,4 +1,4 @@
-package uploadstore
+package object
 
 import (
 	"context"
@@ -8,12 +8,12 @@ import (
 )
 
 type expirer struct {
-	store  Store
+	store  Storage
 	prefix string
 	maxAge time.Duration
 }
 
-func NewExpirer(ctx context.Context, store Store, prefix string, maxAge time.Duration, interval time.Duration) goroutine.BackgroundRoutine {
+func NewExpirer(ctx context.Context, store Storage, prefix string, maxAge time.Duration, interval time.Duration) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
 		&expirer{

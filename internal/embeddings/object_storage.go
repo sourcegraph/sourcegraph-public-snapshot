@@ -8,11 +8,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
-type EmbeddingsUploadStoreConfig struct {
+type ObjectStorageConfig struct {
 	env.BaseConfig
 
 	Backend      string
@@ -31,7 +31,7 @@ type EmbeddingsUploadStoreConfig struct {
 	GCSCredentialsFileContents string
 }
 
-func (c *EmbeddingsUploadStoreConfig) Load() {
+func (c *ObjectStorageConfig) Load() {
 	c.Backend = strings.ToLower(c.Get("EMBEDDINGS_UPLOAD_BACKEND", "blobstore", "The target file service for embeddings. S3, GCS, and Blobstore are supported."))
 	c.ManageBucket = c.GetBool("EMBEDDINGS_UPLOAD_MANAGE_BUCKET", "false", "Whether or not the client should manage the target bucket configuration.")
 	c.Bucket = c.Get("EMBEDDINGS_UPLOAD_BUCKET", "embeddings", "The name of the bucket to store embeddings in.")
@@ -58,14 +58,14 @@ func (c *EmbeddingsUploadStoreConfig) Load() {
 	}
 }
 
-var EmbeddingsUploadStoreConfigInst = &EmbeddingsUploadStoreConfig{}
+var ObjectStorageConfigInst = &ObjectStorageConfig{}
 
-func NewEmbeddingsUploadStore(ctx context.Context, observationCtx *observation.Context, conf *EmbeddingsUploadStoreConfig) (uploadstore.Store, error) {
-	c := uploadstore.Config{
+func NewObjectStorage(ctx context.Context, observationCtx *observation.Context, conf *ObjectStorageConfig) (object.Storage, error) {
+	c := object.StorageConfig{
 		Backend:      conf.Backend,
 		ManageBucket: conf.ManageBucket,
 		Bucket:       conf.Bucket,
-		S3: uploadstore.S3Config{
+		S3: object.S3Config{
 			Region:          conf.S3Region,
 			Endpoint:        conf.S3Endpoint,
 			UsePathStyle:    conf.S3UsePathStyle,
@@ -73,11 +73,11 @@ func NewEmbeddingsUploadStore(ctx context.Context, observationCtx *observation.C
 			SecretAccessKey: conf.S3SecretAccessKey,
 			SessionToken:    conf.S3SessionToken,
 		},
-		GCS: uploadstore.GCSConfig{
+		GCS: object.GCSConfig{
 			ProjectID:               conf.GCSProjectID,
 			CredentialsFile:         conf.GCSCredentialsFile,
 			CredentialsFileContents: conf.GCSCredentialsFileContents,
 		},
 	}
-	return uploadstore.CreateLazy(ctx, c, uploadstore.NewOperations(observationCtx, "embeddings", "uploadstore"))
+	return object.CreateLazyStorage(ctx, c, object.NewOperations(observationCtx, "embeddings", "uploadstore"))
 }

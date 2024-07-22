@@ -1,4 +1,4 @@
-package uploadstore
+package object
 
 import (
 	"bytes"
@@ -303,7 +303,7 @@ func TestGCSDelete(t *testing.T) {
 	}
 }
 
-func testGCSClient(client gcsAPI, manageBucket bool) Store {
+func testGCSClient(client gcsAPI, manageBucket bool) Storage {
 	return newLazyStore(rawGCSClient(client, manageBucket))
 }
 
