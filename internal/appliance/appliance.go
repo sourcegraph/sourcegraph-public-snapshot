@@ -3,10 +3,10 @@ package appliance
 import (
 	"context"
 
+	"dario.cat/mergo"
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -157,64 +157,44 @@ func (a *Appliance) GetCurrentStatus(ctx context.Context) Status {
 	return a.status
 }
 
-func (a *Appliance) CreateConfigMap(ctx context.Context, name string) (*corev1.ConfigMap, error) {
-	spec, err := yaml.Marshal(a.sourcegraph)
-	if err != nil {
-		return nil, err
-	}
+func (a *Appliance) reconcileConfigMap(ctx context.Context, configMap *corev1.ConfigMap) error {
+	existingCfgMapName := types.NamespacedName{Name: config.ConfigmapName, Namespace: a.namespace}
+	existingCfgMap := &corev1.ConfigMap{}
+	if err := a.client.Get(ctx, existingCfgMapName, existingCfgMap); err != nil {
+		// Create the ConfigMap if not found
+		if apierrors.IsNotFound(err) {
+			spec, err := yaml.Marshal(a.sourcegraph)
+			if err != nil {
+				return errors.Wrap(err, "failed to marshal configmap yaml")
+			}
 
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: a.namespace,
-			Labels: map[string]string{
+			existingCfgMap.Labels = map[string]string{
 				"deploy": "sourcegraph",
-			},
-			Annotations: map[string]string{
+			}
+
+			existingCfgMap.Annotations = map[string]string{
 				// required annotation for our controller filter.
 				config.AnnotationKeyManaged: "true",
-			},
-		},
-		Immutable: pointers.Ptr(false),
-		Data: map[string]string{
-			"spec": string(spec),
-		},
+				config.AnnotationConditions: "",
+			}
+
+			if configMap.ObjectMeta.Annotations != nil {
+				existingCfgMap.ObjectMeta.Annotations = configMap.ObjectMeta.Annotations
+			}
+
+			existingCfgMap.Immutable = pointers.Ptr(false)
+			existingCfgMap.Data = map[string]string{"spec": string(spec)}
+
+			return a.client.Create(ctx, existingCfgMap)
+		}
+
+		return errors.Wrap(err, "getting configmap")
 	}
 
-	if err := a.client.Create(ctx, configMap); err != nil {
-		return nil, err
+	// The configmap already exists, update with any changed values
+	if err := mergo.Merge(existingCfgMap, configMap, mergo.WithOverride); err != nil {
+		return errors.Wrap(err, "merging configmaps")
 	}
 
-	return configMap, nil
-}
-
-func (a *Appliance) GetConfigMap(ctx context.Context, name string) (*corev1.ConfigMap, error) {
-	var applianceSpec corev1.ConfigMap
-	err := a.client.Get(ctx, types.NamespacedName{Name: name, Namespace: a.namespace}, &applianceSpec)
-	if apierrors.IsNotFound(err) {
-		return nil, nil
-	} else if err != nil {
-		return nil, err
-	}
-
-	return &applianceSpec, nil
-}
-
-func (a *Appliance) shouldSetupRun(ctx context.Context) (bool, error) {
-	cfgMap, err := a.GetConfigMap(ctx, config.ConfigmapName)
-	switch {
-	case err != nil:
-		return false, err
-	case a.status == StatusInstalling:
-		// configMap does not exist but is being created
-		return false, nil
-	case cfgMap == nil:
-		// configMap does not exist
-		return true, nil
-	case cfgMap.Annotations[config.AnnotationKeyManaged] == "false":
-		// appliance is not managed
-		return false, nil
-	default:
-		return true, nil
-	}
+	return a.client.Update(ctx, existingCfgMap)
 }
