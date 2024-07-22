@@ -119,7 +119,7 @@ elif [[ "$BUILDKITE_BRANCH" =~ ^[0-9]+\.[0-9]+$ ]]; then
   # format introduced by https://github.com/sourcegraph/sourcegraph/pull/48050
   # by release branch deployments.
   push_prod=true
-elif [[ "$BUILDKITE_BRANCH" =~ ^will/[0-9]+\.[0-9]+\.(x|[0-9]+)$ ]]; then
+elif [[ "$BUILDKITE_BRANCH" =~ ^will-[0-9]+\.[0-9]+\.(x|[0-9]+)$ ]]; then
   # Patch release builds only need to be pushed to internal registries.
   push_prod=false
   dev_tags+=("$BUILDKITE_BRANCH-insiders")
