@@ -53,7 +53,6 @@ import { useSavePolicyConfiguration } from '../hooks/useSavePolicyConfiguration'
 import { hasGlobalPolicyViolation } from '../shared'
 
 import styles from './CodeIntelConfigurationPolicyPage.module.scss'
-import { SourcegraphContext } from 'src/jscontext'
 
 const DEBOUNCED_WAIT = 250
 
@@ -74,8 +73,8 @@ type PolicyUpdater = <K extends keyof CodeIntelligenceConfigurationPolicyFields>
 export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfigurationPolicyPageProps> = ({
     repo,
     authenticatedUser,
-    indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
-    syntacticIndexingEnabled = window.context?.experimentalFeatures['codeintelSyntacticIndexing.enabled'],
+    indexingEnabled: preciseIndexingEnabled = window.context?.codeIntelAutoIndexingEnabled ?? false,
+    syntacticIndexingEnabled = window.context?.experimentalFeatures['codeintelSyntacticIndexing.enabled'] ?? false,
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
     telemetryService,
     telemetryRecorder,
@@ -140,7 +139,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
             return handleDeleteConfig({
                 variables: { id },
-                update: cache => cache.modify({ fields: { node: () => { } } }),
+                update: cache => cache.modify({ fields: { node: () => {} } }),
             }).then(() =>
                 navigate(
                     {
@@ -163,8 +162,8 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             urlType === 'branch'
                 ? { type: GitObjectType.GIT_TREE, pattern: '*' }
                 : urlType === 'tag'
-                    ? { type: GitObjectType.GIT_TAG, pattern: '*' }
-                    : { type: GitObjectType.GIT_COMMIT, retentionEnabled: true }
+                ? { type: GitObjectType.GIT_TAG, pattern: '*' }
+                : { type: GitObjectType.GIT_COMMIT, retentionEnabled: true }
 
         const repoDefaults = repo ? { repository: repo } : {}
         const typeDefaults = policyConfig?.type === GitObjectType.GIT_UNKNOWN ? defaultTypes : {}
@@ -209,8 +208,8 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 ]}
                 description={
                     <>
-                        Rules that control{indexingEnabled && <> auto-indexing and</>} data retention behavior of code
-                        graph data.
+                        Rules that control{preciseIndexingEnabled && <> auto-indexing and</>} data retention behavior of
+                        code graph data.
                     </>
                 }
                 className="mb-3"
@@ -230,7 +229,15 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 <GitConfiguration policy={policy} updatePolicy={updatePolicy} repo={repo} />
                 {!policy.repository && <RepositorySettingsSection policy={policy} updatePolicy={updatePolicy} />}
 
-                {indexingEnabled && <IndexSettingsSection policy={policy} updatePolicy={updatePolicy} repo={repo} context={window.context} />}
+                {(preciseIndexingEnabled || syntacticIndexingEnabled) && (
+                    <IndexSettingsSection
+                        policy={policy}
+                        updatePolicy={updatePolicy}
+                        repo={repo}
+                        syntacticIndexingEnabled={syntacticIndexingEnabled}
+                        preciseIndexingEnabled={preciseIndexingEnabled}
+                    />
+                )}
                 <RetentionSettingsSection policy={policy} updatePolicy={updatePolicy} />
 
                 <div className="mt-4">
@@ -265,8 +272,9 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
                     {!policy.protected && policy.id !== '' && (
                         <Tooltip
-                            content={`Deleting this policy may immediately affect data retention${indexingEnabled ? ' and auto-indexing' : ''
-                                }.`}
+                            content={`Deleting this policy may immediately affect data retention${
+                                preciseIndexingEnabled ? ' and auto-indexing' : ''
+                            }.`}
                         >
                             <Button
                                 type="button"
@@ -345,8 +353,9 @@ const NameSettingsSection: FunctionComponent<NameSettingsSectionProps> = ({ repo
                 disabled={policy.protected}
                 required={true}
                 error={policy.name === '' ? 'Please supply a value' : undefined}
-                placeholder={`Custom ${!repo ? 'global ' : ''}${policy.indexingEnabled ? 'indexing ' : policy.retentionEnabled ? 'retention ' : ''
-                    }policy${repo ? ` for ${displayRepoName(repo.name)}` : ''}`}
+                placeholder={`Custom ${!repo ? 'global ' : ''}${
+                    policy.indexingEnabled ? 'indexing ' : policy.retentionEnabled ? 'retention ' : ''
+                }policy${repo ? ` for ${displayRepoName(repo.name)}` : ''}`}
             />
         </div>
     </div>
@@ -381,7 +390,7 @@ const GitConfiguration: FunctionComponent<GitConfigurationProps> = ({ policy, up
     useEffect(() => {
         if (repo && policy?.type) {
             // Update git preview on policy detail changes
-            updateGitPreview({}).catch(() => { })
+            updateGitPreview({}).catch(() => {})
         }
     }, [repo, updateGitPreview, policy?.type, policy?.pattern, policy?.indexCommitMaxAgeHours])
 
@@ -435,10 +444,10 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
                 {policy.type === GitObjectType.GIT_COMMIT
                     ? 'commits'
                     : policy.type === GitObjectType.GIT_TREE
-                        ? 'branches'
-                        : policy.type === GitObjectType.GIT_TAG
-                            ? 'tags'
-                            : ''}{' '}
+                    ? 'branches'
+                    : policy.type === GitObjectType.GIT_TAG
+                    ? 'tags'
+                    : ''}{' '}
                 match this policy?
             </Label>
             <Text size="small" className="text-muted mb-2">
@@ -608,7 +617,7 @@ const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({ policy, pr
                             {policy.indexingEnabled &&
                                 policy.indexCommitMaxAgeHours !== null &&
                                 (new Date().getTime() - new Date(tag.committedAt).getTime()) / MS_IN_HOURS >
-                                policy.indexCommitMaxAgeHours && (
+                                    policy.indexCommitMaxAgeHours && (
                                     <span className="float-right text-muted">
                                         <Tooltip content="This commit is too old to be auto-indexed by this policy.">
                                             <Icon
@@ -679,20 +688,19 @@ interface IndexSettingsSectionProps {
     policy: CodeIntelligenceConfigurationPolicyFields
     updatePolicy: PolicyUpdater
     repo?: { id: string; name: string }
-    context: SourcegraphContext
+    syntacticIndexingEnabled: boolean
+    preciseIndexingEnabled: boolean
 }
 
-const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({ policy, updatePolicy, repo, context }) => {
-
-    // const syntacticIndexingEnabled = useExperimentalFeatures(features => {
-    //     console.log(features);
-    //     return features['codeintelSyntacticIndexing.enabled'] ?? false;
-    // });
-
-    const syntacticIndexingEnabled = context.experimentalFeatures['codeintelSyntacticIndexing.enabled'] ?? false;
-
-    return (
-        <div>
+const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({
+    policy,
+    updatePolicy,
+    repo,
+    syntacticIndexingEnabled,
+    preciseIndexingEnabled,
+}) => (
+    <div>
+        {preciseIndexingEnabled && (
             <div className="form-group">
                 <Label className="mb-0">
                     Auto-indexing
@@ -716,8 +724,8 @@ const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({ po
 
                         <Text size="small" className="text-muted mb-0">
                             Sourcegraph will automatically generate precise code intelligence data for matching
-                            {repo ? '' : ' repositories and'} revisions. Indexing configuration will be inferred from the
-                            content at matching revisions if not explicitly configured for{' '}
+                            {repo ? '' : ' repositories and'} revisions. Indexing configuration will be inferred from
+                            the content at matching revisions if not explicitly configured for{' '}
                             {repo ? 'this repository' : 'matching repositories'}.{' '}
                             {repo && (
                                 <>
@@ -729,40 +737,32 @@ const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({ po
                 </Label>
                 <IndexSettings policy={policy} updatePolicy={updatePolicy} />
             </div>
-            {syntacticIndexingEnabled && (
-                <div className="form-group">
-                    <Label className="mb-0">
-                        Syntactic indexing
-                        <div className={styles.toggleContainer}>
-                            <Toggle
-                                id="syntactic-indexing-enabled"
-                                value={policy.syntacticIndexingEnabled == null ? undefined : policy.syntacticIndexingEnabled}
-                                className={styles.toggle}
-                                onToggle={syntacticIndexingEnabled => {
-                                    if (syntacticIndexingEnabled) {
-                                        updatePolicy({ syntacticIndexingEnabled })
-                                    } else {
-                                        updatePolicy({
-                                            syntacticIndexingEnabled,
-                                            indexIntermediateCommits: false,
-                                            indexCommitMaxAgeHours: null,
-                                        })
-                                    }
-                                }}
-                            />
+        )}
 
-                            <Text size="small" className="text-muted mb-0">
-                                Sourcegraph will automatically generate syntactic code intelligence data for matching
-                                {repo ? '' : ' repositories and'} revisions.
-                            </Text>
-                        </div>
-                    </Label>
-                </div>
-            )}
-        </div>
-    )
-}
+        {syntacticIndexingEnabled && (
+            <div className="form-group">
+                <Label className="mb-0">
+                    Syntactic indexing
+                    <div className={styles.toggleContainer}>
+                        <Toggle
+                            id="syntactic-indexing-enabled"
+                            value={policy.syntacticIndexingEnabled}
+                            className={styles.toggle}
+                            onToggle={syntacticIndexingEnabled => {
+                                updatePolicy({ syntacticIndexingEnabled })
+                            }}
+                        />
 
+                        <Text size="small" className="text-muted mb-0">
+                            Sourcegraph will automatically generate syntactic code intelligence data for matching
+                            {repo ? '' : ' repositories and'} revisions.
+                        </Text>
+                    </div>
+                </Label>
+            </div>
+        )}
+    </div>
+)
 
 interface IndexSettingsProps {
     policy: CodeIntelligenceConfigurationPolicyFields
@@ -812,7 +812,6 @@ const IndexSettings: FunctionComponent<IndexSettingsProps> = ({ policy, updatePo
     ) : (
         <></>
     )
-
 
 interface RetentionSettingsSectionProps {
     policy: CodeIntelligenceConfigurationPolicyFields
@@ -930,9 +929,9 @@ function validatePolicy(
 
         // If numeric values are supplied they must be between 1 and maxDuration (inclusive)
         policy.retentionDurationHours !== null &&
-        (policy.retentionDurationHours < 0 || policy.retentionDurationHours > maxDuration),
+            (policy.retentionDurationHours < 0 || policy.retentionDurationHours > maxDuration),
         policy.indexCommitMaxAgeHours !== null &&
-        (policy.indexCommitMaxAgeHours < 0 || policy.indexCommitMaxAgeHours > maxDuration),
+            (policy.indexCommitMaxAgeHours < 0 || policy.indexCommitMaxAgeHours > maxDuration),
 
         // If global indexing is disabled, the policy must be scoped to a repository
         !globalAutoIndexingEnabled && hasGlobalPolicyViolation(policy),
