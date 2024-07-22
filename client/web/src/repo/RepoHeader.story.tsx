@@ -159,10 +159,3 @@ const createProps = (path: string, forceWrap: boolean = false): React.ComponentP
     platformContext: {} as any,
     forceWrap,
 })
-
-Default.parameters = {
-    chromatic: {
-        enableDarkMode: false,
-        disableSnapshot: false,
-    },
-}

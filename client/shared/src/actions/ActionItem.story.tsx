@@ -63,12 +63,6 @@ export const CommandAction: StoryFn = () => (
 )
 
 CommandAction.storyName = 'Command action'
-CommandAction.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}
 
 export const LinkAction: StoryFn = () => (
     <ActionItem

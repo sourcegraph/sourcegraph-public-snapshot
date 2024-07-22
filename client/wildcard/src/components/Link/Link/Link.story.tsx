@@ -17,10 +17,6 @@ const config: Meta = {
 
     parameters: {
         component: Link,
-        chromatic: {
-            enableDarkMode: true,
-            disableSnapshot: false,
-        },
     },
 }
 

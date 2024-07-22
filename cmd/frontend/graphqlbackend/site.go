@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -144,26 +143,35 @@ func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (r *siteResolver) settingsSubject() api.SettingsSubject {
-	return api.SettingsSubject{Site: true}
-}
-
 func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := r.db.Settings().GetLatest(ctx, r.settingsSubject())
+	// 🚨 SECURITY: Check that the viewer can access these settings.
+	subject, err := settingsSubjectForNodeAndCheckAccess(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+
+	settings, err := r.db.Settings().GetLatest(ctx, subject.toSubject())
 	if err != nil {
 		return nil, err
 	}
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{r.db, &settingsSubjectResolver{site: r}, settings, nil}, nil
+	return &settingsResolver{db: r.db, subject: subject, settings: settings}, nil
 }
 
-func (r *siteResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{site: r}}
+func (r *siteResolver) SettingsCascade(ctx context.Context) (*settingsCascade, error) {
+	// 🚨 SECURITY: Check that the viewer can access these settings.
+	subject, err := settingsSubjectForNodeAndCheckAccess(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	return &settingsCascade{db: r.db, subject: subject}, nil
 }
 
-func (r *siteResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
+func (r *siteResolver) ConfigurationCascade(ctx context.Context) (*settingsCascade, error) {
+	return r.SettingsCascade(ctx)
+}
 
 func (r *siteResolver) SettingsURL() *string { return strptr("/site-admin/global-settings") }
 
@@ -622,13 +630,8 @@ func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool {
 	return enabled
 }
 
-func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigurationResolver {
-	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
-	if c == nil {
-		return nil
-	}
-
-	return &codyLLMConfigurationResolver{config: c}
+func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) (CodyLLMConfigurationResolver, error) {
+	return EnterpriseResolvers.modelconfigResolver.CodyLLMConfiguration(ctx)
 }
 
 func (r *siteResolver) CodyConfigFeatures(ctx context.Context) *codyConfigFeaturesResolver {
@@ -647,47 +650,6 @@ func (c *codyConfigFeaturesResolver) Chat() bool         { return c.config.Chat 
 func (c *codyConfigFeaturesResolver) AutoComplete() bool { return c.config.AutoComplete }
 func (c *codyConfigFeaturesResolver) Commands() bool     { return c.config.Commands }
 func (c *codyConfigFeaturesResolver) Attribution() bool  { return c.config.Attribution }
-
-type codyLLMConfigurationResolver struct {
-	config *conftypes.CompletionsConfig
-}
-
-func (c *codyLLMConfigurationResolver) ChatModel() string { return c.config.ChatModel }
-func (c *codyLLMConfigurationResolver) ChatModelMaxTokens() *int32 {
-	if c.config.ChatModelMaxTokens != 0 {
-		max := int32(c.config.ChatModelMaxTokens)
-		return &max
-	}
-	return nil
-}
-func (c *codyLLMConfigurationResolver) SmartContextWindow() string {
-	if c.config.SmartContextWindow == "disabled" {
-		return "disabled"
-	}
-	return "enabled"
-}
-func (c *codyLLMConfigurationResolver) DisableClientConfigAPI() bool {
-	return c.config.DisableClientConfigAPI
-}
-
-func (c *codyLLMConfigurationResolver) FastChatModel() string { return c.config.FastChatModel }
-func (c *codyLLMConfigurationResolver) FastChatModelMaxTokens() *int32 {
-	if c.config.FastChatModelMaxTokens != 0 {
-		max := int32(c.config.FastChatModelMaxTokens)
-		return &max
-	}
-	return nil
-}
-
-func (c *codyLLMConfigurationResolver) Provider() string        { return string(c.config.Provider) }
-func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.CompletionModel }
-func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
-	if c.config.CompletionModelMaxTokens != 0 {
-		max := int32(c.config.CompletionModelMaxTokens)
-		return &max
-	}
-	return nil
-}
 
 type CodyContextFiltersArgs struct {
 	Version string

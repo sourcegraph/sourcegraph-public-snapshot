@@ -19,9 +19,7 @@ import { SearchAggregationResult } from './SearchAggregationResult'
 
 const config: Meta = {
     title: 'web/search/results/SearchAggregationResult',
-    parameters: {
-        chromatic: { disableSnapshots: false },
-    },
+    parameters: {},
 }
 
 export default config

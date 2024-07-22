@@ -87,13 +87,6 @@ Simple.args = {
     totalLabel: 'pages',
 }
 
-Simple.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}
-
 function sleep(timeout: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, timeout))
 }

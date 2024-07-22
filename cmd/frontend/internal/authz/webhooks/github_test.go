@@ -273,7 +273,9 @@ func TestGitHubWebhooks(t *testing.T) {
 			req := newReq(t, webhookTest.eventType, webhookTest.event)
 
 			responseRecorder := httptest.NewRecorder()
-			hook.ServeHTTP(responseRecorder, req)
+			go func() {
+				hook.ServeHTTP(responseRecorder, req)
+			}()
 			waitUntil(t, webhookCalled)
 		})
 	}

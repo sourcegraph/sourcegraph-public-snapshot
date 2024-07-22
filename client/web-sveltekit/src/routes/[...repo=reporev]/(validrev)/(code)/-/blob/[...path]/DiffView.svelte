@@ -76,7 +76,6 @@
         z-index: 1;
         border-top: 1px solid var(--border-color);
 
-
         @media (--mobile) {
             padding: 0.25rem 0.5rem;
         }

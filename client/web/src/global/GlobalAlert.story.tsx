@@ -21,9 +21,6 @@ const config: Meta = {
 
     parameters: {
         component: GlobalAlert,
-        chromatic: {
-            disableSnapshot: false,
-        },
     },
 }
 

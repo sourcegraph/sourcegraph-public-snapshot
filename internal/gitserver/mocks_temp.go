@@ -81,6 +81,9 @@ type MockClient struct {
 	// MergeBaseFunc is an instance of a mock function object controlling
 	// the behavior of the method MergeBase.
 	MergeBaseFunc *ClientMergeBaseFunc
+	// MergeBaseOctopusFunc is an instance of a mock function object
+	// controlling the behavior of the method MergeBaseOctopus.
+	MergeBaseOctopusFunc *ClientMergeBaseOctopusFunc
 	// NewFileReaderFunc is an instance of a mock function object
 	// controlling the behavior of the method NewFileReader.
 	NewFileReaderFunc *ClientNewFileReaderFunc
@@ -227,6 +230,11 @@ func NewMockClient() *MockClient {
 		},
 		MergeBaseFunc: &ClientMergeBaseFunc{
 			defaultHook: func(context.Context, api.RepoName, string, string) (r0 api.CommitID, r1 error) {
+				return
+			},
+		},
+		MergeBaseOctopusFunc: &ClientMergeBaseOctopusFunc{
+			defaultHook: func(context.Context, api.RepoName, ...string) (r0 api.CommitID, r1 error) {
 				return
 			},
 		},
@@ -412,6 +420,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.MergeBase")
 			},
 		},
+		MergeBaseOctopusFunc: &ClientMergeBaseOctopusFunc{
+			defaultHook: func(context.Context, api.RepoName, ...string) (api.CommitID, error) {
+				panic("unexpected invocation of MockClient.MergeBaseOctopus")
+			},
+		},
 		NewFileReaderFunc: &ClientNewFileReaderFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, string) (io.ReadCloser, error) {
 				panic("unexpected invocation of MockClient.NewFileReader")
@@ -555,6 +568,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		MergeBaseFunc: &ClientMergeBaseFunc{
 			defaultHook: i.MergeBase,
+		},
+		MergeBaseOctopusFunc: &ClientMergeBaseOctopusFunc{
+			defaultHook: i.MergeBaseOctopus,
 		},
 		NewFileReaderFunc: &ClientNewFileReaderFunc{
 			defaultHook: i.NewFileReader,
@@ -2684,6 +2700,124 @@ func (c ClientMergeBaseFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientMergeBaseFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientMergeBaseOctopusFunc describes the behavior when the
+// MergeBaseOctopus method of the parent MockClient instance is invoked.
+type ClientMergeBaseOctopusFunc struct {
+	defaultHook func(context.Context, api.RepoName, ...string) (api.CommitID, error)
+	hooks       []func(context.Context, api.RepoName, ...string) (api.CommitID, error)
+	history     []ClientMergeBaseOctopusFuncCall
+	mutex       sync.Mutex
+}
+
+// MergeBaseOctopus delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockClient) MergeBaseOctopus(v0 context.Context, v1 api.RepoName, v2 ...string) (api.CommitID, error) {
+	r0, r1 := m.MergeBaseOctopusFunc.nextHook()(v0, v1, v2...)
+	m.MergeBaseOctopusFunc.appendCall(ClientMergeBaseOctopusFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the MergeBaseOctopus
+// method of the parent MockClient instance is invoked and the hook queue is
+// empty.
+func (f *ClientMergeBaseOctopusFunc) SetDefaultHook(hook func(context.Context, api.RepoName, ...string) (api.CommitID, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MergeBaseOctopus method of the parent MockClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ClientMergeBaseOctopusFunc) PushHook(hook func(context.Context, api.RepoName, ...string) (api.CommitID, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientMergeBaseOctopusFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, ...string) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientMergeBaseOctopusFunc) PushReturn(r0 api.CommitID, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, ...string) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientMergeBaseOctopusFunc) nextHook() func(context.Context, api.RepoName, ...string) (api.CommitID, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientMergeBaseOctopusFunc) appendCall(r0 ClientMergeBaseOctopusFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientMergeBaseOctopusFuncCall objects
+// describing the invocations of this function.
+func (f *ClientMergeBaseOctopusFunc) History() []ClientMergeBaseOctopusFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientMergeBaseOctopusFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientMergeBaseOctopusFuncCall is an object that describes an invocation
+// of method MergeBaseOctopus on an instance of MockClient.
+type ClientMergeBaseOctopusFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 api.CommitID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c ClientMergeBaseOctopusFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientMergeBaseOctopusFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

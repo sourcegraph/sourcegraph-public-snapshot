@@ -36,8 +36,8 @@ func TestUnmarshalJSON(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	expected := IndexConfiguration{
-		IndexJobs: []IndexJob{
+	expected := AutoIndexJobSpecList{
+		JobSpecs: []AutoIndexJobSpec{
 			{
 				Steps: []DockerStep{
 					{

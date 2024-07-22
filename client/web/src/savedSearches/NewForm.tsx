@@ -7,7 +7,11 @@ import { useSettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, ErrorAlert, Link, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
-import type { CreateSavedSearchResult, CreateSavedSearchVariables } from '../graphql-operations'
+import {
+    SavedSearchVisibility,
+    type CreateSavedSearchResult,
+    type CreateSavedSearchVariables,
+} from '../graphql-operations'
 import { NamespaceSelector } from '../namespaces/NamespaceSelector'
 import { namespaceTelemetryMetadata } from '../namespaces/telemetry'
 import { useAffiliatedNamespaces } from '../namespaces/useAffiliatedNamespaces'
@@ -50,9 +54,11 @@ export const NewForm: FunctionComponent<
                 const { data } = await createSavedSearch({
                     variables: {
                         input: {
+                            owner: selectedNamespaceOrInitial!,
                             description: fields.description,
                             query: fields.query,
-                            owner: selectedNamespaceOrInitial!,
+                            draft: fields.draft,
+                            visibility: SavedSearchVisibility.SECRET,
                         },
                     },
                 })

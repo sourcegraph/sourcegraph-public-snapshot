@@ -1,16 +1,17 @@
 package httpapi
 
 import (
-	"compress/gzip"
 	"encoding/json"
 	"net/http"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/opencodegraph"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/limitedgzip"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -39,12 +40,12 @@ func serveOpenCodeGraph(logger log.Logger) func(w http.ResponseWriter, r *http.R
 		r = r.WithContext(trace.WithRequestSource(r.Context(), requestSource))
 
 		if r.Header.Get("Content-Encoding") == "gzip" {
-			gzipReader, err := gzip.NewReader(r.Body)
+			r.Body, err = limitedgzip.WithReader(r.Body, int64(gzipFileSizeLimit))
 			if err != nil {
 				return errors.Wrap(err, "failed to decompress request body")
 			}
-			r.Body = gzipReader
-			defer gzipReader.Close()
+
+			defer r.Body.Close()
 		}
 
 		method, cap, ann, err := opencodegraph.DecodeRequestMessage(json.NewDecoder(r.Body))

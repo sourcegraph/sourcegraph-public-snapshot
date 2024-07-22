@@ -58,7 +58,7 @@
         Wrap the anchor element with a span because otherwise it adds
         spaces around it when copied
         --><span
-            class:after={last}
+            class:last
             data-path-item
             >{#if pathHref}<a href={pathHref(path)}>{part}</a>{:else}{part}{/if}<!--
             --></span
@@ -73,8 +73,7 @@
     elements. Otherwise, an invisible button might wrap to its own line, which looks weird.
     -->{#if showCopyButton}<!--
         --><span
-            data-copy-button
-            class="after"><CopyButton value={path} label="Copy path to clipboard" /></span
+            data-copy-button><CopyButton value={path} label="Copy path to clipboard" /></span
         ><!--
     -->{/if}
 </span>
@@ -111,7 +110,7 @@
     // HACK: The file icon is placed after the file name in the DOM so it
     // doesn't add any spaces in the file path when copied. This visually
     // reorders the last path element after the file icon.
-    .after {
+    .last {
         order: 1;
     }
 
@@ -123,6 +122,7 @@
     }
 
     [data-copy-button] {
+        order: 1;
         margin-left: 0.5rem;
         user-select: none; // Avoids a trailing space on select + copy
     }

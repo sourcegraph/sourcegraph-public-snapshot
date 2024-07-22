@@ -1,0 +1,275 @@
+extend type Mutation {
+    """
+    Create a prompt.
+    """
+    createPrompt(input: PromptInput!): Prompt!
+
+    """
+    Update a prompt.
+    """
+    updatePrompt(id: ID!, input: PromptUpdateInput!): Prompt!
+
+    """
+    Delete a prompt.
+    """
+    deletePrompt(id: ID!): EmptyResponse
+
+    """
+    Transfer ownership of a prompt to a new owner (a namespace, either a user or organization).
+
+    Only users who can administer the prompt may transfer it.
+    """
+    transferPromptOwnership(id: ID!, newOwner: ID!): Prompt!
+
+    """
+    Change the visibility state of a prompt.
+
+    Only users who can administer the prompt may change its visibility state.
+    """
+    changePromptVisibility(id: ID!, newVisibility: PromptVisibility!): Prompt!
+}
+
+extend type Query {
+    """
+    List of prompts, which are templates for chat prompts that can be shared and reused.
+    """
+    prompts(
+        """
+        Search prompts by name, description, or prompt template text.
+        """
+        query: String
+
+        """
+        Filter by prompt owner (a namespace, either a user or organization).
+        """
+        owner: ID
+
+        """
+        Filter to only prompts owned by the viewer or one of viewer's organizations. All public
+        prompts are also included. If null or false, no such filtering is performed.
+        """
+        viewerIsAffiliated: Boolean
+
+        """
+        Whether to include draft prompts.
+        """
+        includeDrafts: Boolean = true
+
+        """
+        The limit argument for forward pagination.
+        """
+        first: Int
+
+        """
+        The limit argument for backward pagination.
+        """
+        last: Int
+
+        """
+        The cursor argument for forward pagination.
+        """
+        after: String
+
+        """
+        The cursor argument for backward pagination.
+        """
+        before: String
+
+        """
+        The field to sort by.
+        """
+        orderBy: PromptsOrderBy = PROMPT_UPDATED_AT
+    ): PromptsConnection!
+}
+
+"""
+The input that describes a prompt template to create.
+"""
+input PromptInput {
+    """
+    The owner of the prompt, either a user or organization.
+    """
+    owner: ID!
+
+    """
+    The name of the prompt.
+    """
+    name: String!
+
+    """
+    The description of the prompt.
+    """
+    description: String!
+
+    """
+    The prompt template definition.
+    """
+    definitionText: String!
+
+    """
+    Whether the prompt is a draft.
+    """
+    draft: Boolean!
+
+    """
+    The visibility state for the prompt.
+    """
+    visibility: PromptVisibility!
+}
+
+"""
+The input that describes an edit to a prompt template.
+"""
+input PromptUpdateInput {
+    """
+    The name of the prompt.
+    """
+    name: String!
+
+    """
+    The description of the prompt.
+    """
+    description: String!
+
+    """
+    The prompt template definition.
+    """
+    definitionText: String!
+
+    """
+    Whether the prompt is a draft.
+    """
+    draft: Boolean!
+}
+
+"""
+The visibility states for a prompt.
+"""
+enum PromptVisibility {
+    """
+    The prompt is visible to all users on the instance.
+    """
+    PUBLIC
+
+    """
+    The prompt is visible only to the owner organization's members (if the owner is an organization)
+    or the owner user (if the owner is a user).
+    """
+    SECRET
+}
+
+"""
+The ways that a list of prompts can be ordered.
+"""
+enum PromptsOrderBy {
+    PROMPT_NAME_WITH_OWNER
+    PROMPT_UPDATED_AT
+}
+
+"""
+A paginated connection for prompts.
+"""
+type PromptsConnection implements Connection {
+    """
+    A list of prompts.
+    """
+    nodes: [Prompt!]!
+
+    """
+    The total number of prompts in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+A prompt.
+"""
+type Prompt implements Node {
+    """
+    The unique ID of this prompt.
+    """
+    id: ID!
+
+    """
+    The name of the prompt, which is unique among all of the owner's prompts.
+    """
+    name: String!
+
+    """
+    The description of the prompt.
+    """
+    description: String!
+
+    """
+    The content of the prompt template.
+    """
+    definition: PromptDefinition!
+
+    """
+    Whether the prompt is a draft.
+    """
+    draft: Boolean!
+
+    """
+    The owner of the prompt, either a user or organization.
+    """
+    owner: Namespace!
+
+    """
+    The visibility state of the prompt.
+    """
+    visibility: PromptVisibility!
+
+    """
+    A string of the form `{owner}/{name}`, which is unique among all prompts site-wide. In the
+    future, this value might be extended to contain more than 2 '/'-separated components.
+    """
+    nameWithOwner: String!
+
+    """
+    The user who created the prompt.
+    """
+    createdBy: User
+
+    """
+    The date of the prompt's creation.
+    """
+    createdAt: DateTime!
+
+    """
+    The user who last updated the prompt.
+    """
+    updatedBy: User
+
+    """
+    The date of the prompt's last update.
+    """
+    updatedAt: DateTime!
+
+    """
+    The URL of this prompt.
+    """
+    url: String!
+
+    """
+    Whether the viewer can edit and delete this prompt.
+    """
+    viewerCanAdminister: Boolean!
+}
+
+"""
+The content of a prompt.
+"""
+type PromptDefinition {
+    """
+    The text of the prompt template. In the future, prompt templates may contain placeholders and
+    other rich formatting. The text field will always be a raw string and may contain human-readable
+    (but not necessarily machine-parseable) punctuation to indicate these rich elements.
+    """
+    text: String!
+}

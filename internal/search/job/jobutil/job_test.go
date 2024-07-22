@@ -978,11 +978,11 @@ func TestNewPlanJob(t *testing.T) {
         (limit . 10000)
         (PARALLEL
           (REPOSCOMPUTEEXCLUDED
-            (repoOpts.hasKVPs[0].key . key)
-            (repoOpts.hasKVPs[0].value . value))
+            (repoOpts.hasKVPs[0].key . ^key$)
+            (repoOpts.hasKVPs[0].value . ^value$))
           (REPOSEARCH
-            (repoOpts.hasKVPs[0].key . key)
-            (repoOpts.hasKVPs[0].value . value)
+            (repoOpts.hasKVPs[0].key . ^key$)
+            (repoOpts.hasKVPs[0].value . ^value$)
             (repoNamePatterns . [])))))))
 `),
 		}, {
@@ -1004,9 +1004,9 @@ func TestNewPlanJob(t *testing.T) {
         (limit . 10000)
         (PARALLEL
           (REPOSCOMPUTEEXCLUDED
-            (repoOpts.hasKVPs[0].key . tag))
+            (repoOpts.hasKVPs[0].key . ^tag$))
           (REPOSEARCH
-            (repoOpts.hasKVPs[0].key . tag)
+            (repoOpts.hasKVPs[0].key . ^tag$)
             (repoNamePatterns . [])))))))
 `),
 		}, {
@@ -1055,7 +1055,7 @@ func TestNewPlanJob(t *testing.T) {
             (ensureUnique . false)
             (REPOPAGER
               (containsRefGlobs . false)
-              (repoOpts.hasKVPs[0].key . tag)
+              (repoOpts.hasKVPs[0].key . ^tag$)
               (PARTIALREPOS
                 (ZOEKTREPOSUBSETTEXTSEARCH
                   (fileMatchLimit . 10000)
@@ -1065,7 +1065,7 @@ func TestNewPlanJob(t *testing.T) {
                   (type . text))))
             (REPOPAGER
               (containsRefGlobs . false)
-              (repoOpts.hasKVPs[0].key . tag)
+              (repoOpts.hasKVPs[0].key . ^tag$)
               (PARTIALREPOS
                 (SEARCHERTEXTSEARCH
                   (useFullDeadline . true)
@@ -1075,11 +1075,11 @@ func TestNewPlanJob(t *testing.T) {
                   (indexed . false))))
             (REPOSEARCH
               (repoOpts.repoFilters . [foo])
-              (repoOpts.hasKVPs[0].key . tag)
+              (repoOpts.hasKVPs[0].key . ^tag$)
               (repoNamePatterns . ["(?i)foo"])))
           NOOP
           (REPOSCOMPUTEEXCLUDED
-            (repoOpts.hasKVPs[0].key . tag))
+            (repoOpts.hasKVPs[0].key . ^tag$))
           NOOP)))))
 `),
 		}, {

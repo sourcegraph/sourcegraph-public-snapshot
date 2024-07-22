@@ -18,7 +18,6 @@ const config: Meta = {
             type: 'figma',
             url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/?node-id=1018%3A13883',
         },
-        chromatic: { viewports: [544, 577, 993], disableSnapshot: false },
     },
 }
 

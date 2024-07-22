@@ -246,8 +246,7 @@ func cleanupRepos(
 	}()
 
 	maybeDeleteWrongShardRepos := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
-		// Record the number of repos that should not belong on this instance and
-		// remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
+		// Record the number of repos that should not belong on this instance.
 		addr := gitServerAddrs.AddrForRepo(ctx, repoName)
 
 		if hostnameMatch(shardID, addr) {

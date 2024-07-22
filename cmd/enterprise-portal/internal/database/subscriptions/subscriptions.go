@@ -22,7 +22,7 @@ type TableSubscription struct {
 	Licenses []*TableSubscriptionLicense `gorm:"foreignKey:SubscriptionID"`
 
 	// Each Subscription has many Conditions.
-	Conditions *[]SubscriptionCondition `gorm:"foreignKey:SubscriptionID"`
+	Conditions []*SubscriptionCondition `gorm:"foreignKey:SubscriptionID"`
 
 	Subscription
 }
@@ -210,7 +210,7 @@ func (opts UpsertSubscriptionOptions) Exec(ctx context.Context, db *pgxpool.Pool
 // Upsert upserts a subscription record based on the given options.
 func (s *Store) Upsert(ctx context.Context, subscriptionID string, opts UpsertSubscriptionOptions) (*Subscription, error) {
 	if err := opts.Exec(ctx, s.db, subscriptionID); err != nil {
-		return nil, errors.Wrap(err, "exec")
+		return nil, err
 	}
 	return s.Get(ctx, subscriptionID)
 }

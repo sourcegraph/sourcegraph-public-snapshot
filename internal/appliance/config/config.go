@@ -1,6 +1,9 @@
 package config
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
 
 type StandardComponent interface {
 	Disableable
@@ -62,4 +65,21 @@ func (c StandardConfig) GetPodTemplateConfig() PodTemplateConfig { return c.PodT
 func (c StandardConfig) GetPrometheusPort() *int                 { return c.PrometheusPort }
 func (c StandardConfig) GetServiceAccountAnnotations() map[string]string {
 	return c.ServiceAccountAnnotations
+}
+
+func MarkObjectForAdoption(obj client.Object) {
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
+	annotations[AnnotationKeyShouldTakeOwnership] = "true"
+	obj.SetAnnotations(annotations)
+}
+
+func ShouldAdopt(obj client.Object) bool {
+	if annotations := obj.GetAnnotations(); annotations != nil {
+		_, ok := annotations[AnnotationKeyShouldTakeOwnership]
+		return ok
+	}
+	return false
 }

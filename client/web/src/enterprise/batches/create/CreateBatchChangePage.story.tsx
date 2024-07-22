@@ -17,11 +17,7 @@ const decorator: Decorator = story => (
 const config: Meta = {
     title: 'web/batches/create/CreateBatchChangePage',
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default config
@@ -29,7 +25,6 @@ export default config
 const MOCK_ORGANIZATION = {
     __typename: 'Org',
     name: 'acme-corp',
-    displayName: 'ACME Corporation',
     id: 'acme-corp-id',
 }
 

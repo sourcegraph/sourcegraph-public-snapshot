@@ -20,12 +20,7 @@ import { SmartInsightsViewGrid } from './SmartInsightsViewGrid'
 const defaultStory: Meta = {
     title: 'web/insights/SmartInsightsViewGridExample',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-    parameters: {
-        chromatic: {
-            viewports: [576, 1440],
-            enableDarkMode: true,
-        },
-    },
+    parameters: {},
 }
 
 export default defaultStory

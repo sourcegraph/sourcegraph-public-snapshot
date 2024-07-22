@@ -88,7 +88,7 @@ extend type Query {
         """
         Context items that were not passed to the LLM.
         """
-        discardedContextItems: [InputContextItem!]!
+        ignoredContextItems: [InputContextItem!]!
     ): EmptyResponse
 }
 
@@ -187,7 +187,7 @@ type RankingResponse {
     """
     used: [Int!]!
     """
-    Indices of context items that were discarded by the ranker. Order is undefined.
+    Indices of context items that were ignored by the ranker. Order is undefined.
     """
-    discarded: [Int!]!
+    ignored: [Int!]!
 }

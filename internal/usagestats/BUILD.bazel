@@ -25,6 +25,7 @@ go_library(
         "migrated_extensions.go",
         "notebooks.go",
         "own.go",
+        "prompts.go",
         "repositories.go",
         "retention.go",
         "saved_searches.go",

@@ -111,6 +111,14 @@ func (c *codyGatewayClient) clientForParams(logger log.Logger, feature types.Com
 	// IMPORTANT: We set the endpoint and access token for the API provider to "". The trick is that
 	// the `httpcli.Doer` returned from `tokenManager` will route this to Cody Gateway, and use the
 	// the codyGatewayClient's access token and endpoint.
+	//
+	// For Cody Pro / Sourcegraph.com this is even tricker, since that uses a different auth mechanism.
+	// Hence why we update the access token used below based on the request we are resolving.
+	// (Which assumes that this codyGatewayClient will NOT be reused across different requests.)
+	if request.ModelConfigInfo.CodyProUserAccessToken != nil {
+		c.accessToken = *request.ModelConfigInfo.CodyProUserAccessToken
+	}
+
 	switch conftypes.CompletionsProviderName(providerID) {
 	case conftypes.CompletionsProviderNameAnthropic:
 		doer := gatewayDoer(

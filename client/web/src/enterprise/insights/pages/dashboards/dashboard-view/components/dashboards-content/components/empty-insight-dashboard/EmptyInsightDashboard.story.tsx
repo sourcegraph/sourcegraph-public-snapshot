@@ -10,11 +10,7 @@ const decorator: Decorator = story => <WebStory>{() => story()}</WebStory>
 const config: Meta = {
     title: 'web/insights/EmptyInsightDashboard',
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            viewports: [576, 1440],
-        },
-    },
+    parameters: {},
 }
 
 export default config

@@ -3,9 +3,8 @@ import path from 'path'
 import type { StorybookConfigVite } from '@storybook/builder-vite'
 import type { StorybookConfig as ReactViteStorybookConfig } from '@storybook/react-vite'
 import type { StorybookConfig } from '@storybook/types'
-import turbosnap from 'vite-plugin-turbosnap'
 
-import { ROOT_PATH, STATIC_ASSETS_PATH, getEnvironmentBoolean } from '@sourcegraph/build-config'
+import { ROOT_PATH, STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 
 import { ENVIRONMENT_CONFIG } from './environment-config'
 
@@ -26,12 +25,7 @@ const getStoriesGlob = (): string[] => {
 }
 
 const config: StorybookConfig & StorybookConfigVite & ReactViteStorybookConfig = {
-    // TODO: This has to be an object and not a string for now due to a bug in Chromatic
-    // that would cause the builder to not be identified correctly.
-    framework: {
-        name: '@storybook/react-vite',
-        options: {},
-    },
+    framework: '@storybook/react-vite',
     staticDirs: [path.resolve(__dirname, '../assets'), STATIC_ASSETS_PATH],
     stories: getStoriesGlob(),
 
@@ -56,15 +50,6 @@ const config: StorybookConfig & StorybookConfigVite & ReactViteStorybookConfig =
     },
 
     viteFinal: (config, { configType }) => {
-        const isChromatic = getEnvironmentBoolean('CHROMATIC')
-        config.define = { ...config.define, 'process.env.CHROMATIC': isChromatic }
-        if (isChromatic && configType === 'PRODUCTION') {
-            // eslint-disable-next-line no-console
-            console.log('Using TurboSnap plugin!')
-            config.plugins = config.plugins ?? []
-            config.plugins.push(turbosnap({ rootDir: config.root ?? ROOT_PATH }))
-        }
-
         config.build = {
             ...config.build,
             minify: false,
@@ -112,25 +97,6 @@ const config: StorybookConfig & StorybookConfigVite & ReactViteStorybookConfig =
 
         return config
     },
-}
-
-// TODO: We need to replace the @storybook/addon-storysource plugin with an object
-// definition to supply options here because chromatic CLI does not properly understand
-// the configured addons otherwise.
-const idx = config.addons?.findIndex(addon => addon === '@storybook/addon-storysource')
-if (idx !== undefined && idx >= 0) {
-    config.addons![idx] = {
-        name: '@storybook/addon-storysource',
-        options: {
-            rule: {
-                test: /\.story\.tsx?$/,
-            },
-            sourceLoaderOptions: {
-                injectStoryParameters: false,
-                prettierConfig: { printWidth: 80, singleQuote: false },
-            },
-        },
-    }
 }
 
 module.exports = config

@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { CardBody, Card, H3, H4, Link, Code, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Card, CardBody, Code, H3, H4, Link, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
@@ -16,8 +16,7 @@ import styles from './BatchChangesListIntro.module.scss'
 const CURRENT_VERSION = '5.4'
 /**
  * SHOW_CHANGELOG has to be set to true when a changelog entry is added for a release.
- * After every release, this will be set back to `false`. Chromatic will also verify
- * changes to this variable via visual regression testing.
+ * After every release, this will be set back to `false`.
  */
 const SHOW_CHANGELOG = false
 

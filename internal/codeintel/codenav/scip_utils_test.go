@@ -82,7 +82,7 @@ func Test_findOccurrencesWithEqualRange(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := findOccurrencesWithEqualRange(tt.args.occurrences, tt.args.search)
+			got := FindOccurrencesWithEqualRange(tt.args.occurrences, tt.args.search)
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Errorf("unexpected ranges (-want +got):\n%s", diff)
 			}

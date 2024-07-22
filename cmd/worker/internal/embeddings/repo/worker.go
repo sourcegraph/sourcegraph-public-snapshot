@@ -16,8 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -34,7 +34,7 @@ func (s *repoEmbeddingJob) Description() string {
 }
 
 func (s *repoEmbeddingJob) Config() []env.Config {
-	return []env.Config{embeddings.EmbeddingsUploadStoreConfigInst}
+	return []env.Config{embeddings.ObjectStorageConfigInst}
 }
 
 func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
@@ -43,7 +43,7 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 		return nil, err
 	}
 
-	uploadStore, err := embeddings.NewEmbeddingsUploadStore(context.Background(), observationCtx, embeddings.EmbeddingsUploadStoreConfigInst)
+	uploadStore, err := embeddings.NewObjectStorage(context.Background(), observationCtx, embeddings.ObjectStorageConfigInst)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func newRepoEmbeddingJobWorker(
 	observationCtx *observation.Context,
 	workerStore dbworkerstore.Store[*repoembeddingsbg.RepoEmbeddingJob],
 	db database.DB,
-	uploadStore uploadstore.Store,
+	uploadStore object.Storage,
 	gitserverClient gitserver.Client,
 	contextService embed.ContextService,
 	repoEmbeddingJobsStore repoembeddingsbg.RepoEmbeddingJobsStore,

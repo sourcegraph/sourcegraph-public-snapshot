@@ -1025,8 +1025,8 @@ def go_dependencies():
         name = "com_github_charmbracelet_glamour",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/charmbracelet/glamour",
-        sum = "h1:wu15ykPdB7X6chxugG/NNfDUbyyrCLV9XBalj5wdu3g=",
-        version = "v0.5.0",
+        sum = "h1:2BtKGZ4iVJCDfMF229EzbeR1QRKLWztO9dMtjmqZSng=",
+        version = "v0.7.0",
     )
     go_repository(
         name = "com_github_chromedp_cdproto",
@@ -1180,6 +1180,13 @@ def go_dependencies():
         importpath = "github.com/codegangsta/inject",
         sum = "h1:sDMmm+q/3+BukdIpxwO365v/Rbspp2Nt5XntgQRXq8Q=",
         version = "v0.0.0-20150114235600-33e0aa1cb7c0",
+    )
+    go_repository(
+        name = "com_github_cohere_ai_cohere_go_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/cohere-ai/cohere-go/v2",
+        sum = "h1:NtxtcqkJ3ZBj8DFgk/4hpOrGK7CGnllGNpQn1bkaqQs=",
+        version = "v2.8.2",
     )
     go_repository(
         name = "com_github_common_nighthawk_go_figure",
@@ -6231,6 +6238,13 @@ def go_dependencies():
         version = "v0.6.1",
     )
     go_repository(
+        name = "com_github_tmaxmax_go_sse",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/tmaxmax/go-sse",
+        sum = "h1:pPpTgyyi1r7vG2o6icebnpGEh3ebcnBXqDWkb7aTofs=",
+        version = "v0.8.0",
+    )
+    go_repository(
         name = "com_github_tmc_dot",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/tmc/dot",
@@ -6577,8 +6591,8 @@ def go_dependencies():
         name = "com_github_yuin_goldmark_emoji",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/yuin/goldmark-emoji",
-        sum = "h1:ctuWEyzGBwiucEqxzwe0SOYDXPAucOrE9NQC18Wa1os=",
-        version = "v1.0.1",
+        sum = "h1:c/RgTShNgHTtc6xdz2KKI74jJr6rWi7FPgnP9GAsO5s=",
+        version = "v1.0.2",
     )
     go_repository(
         name = "com_github_yuin_goldmark_highlighting_v2",
