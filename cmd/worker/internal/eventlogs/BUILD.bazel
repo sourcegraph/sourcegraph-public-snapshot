@@ -25,6 +25,7 @@ go_test(
     name = "eventlogs_test",
     srcs = ["janitor_test.go"],
     embed = [":eventlogs"],
+    tags = ["requires-network"],
     deps = [
         "//internal/conf",
         "//internal/database",
