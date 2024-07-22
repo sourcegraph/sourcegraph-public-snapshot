@@ -105,7 +105,6 @@ type SourcegraphProviderConfig struct {
 
 // The "Provider" is conceptually a namespace for models. The server-side provider configuration
 // is needed to describe the API endpoint needed to serve its models.
-// SECURITY: The JSON marshaller should exclude these fields to ensure they are never exposed (see also: RedactServerSideConfig)
 type ServerSideProviderConfig struct {
 	AWSBedrock          *AWSBedrockProviderConfig       `json:"awsBedrock,omitempty"`
 	AzureOpenAI         *AzureOpenAIProviderConfig      `json:"azureOpenAi,omitempty"`
