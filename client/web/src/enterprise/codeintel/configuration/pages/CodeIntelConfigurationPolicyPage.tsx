@@ -74,7 +74,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     repo,
     authenticatedUser,
     preciseIndexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
-    syntacticIndexingEnabled = window.context?.experimentalFeatures['codeintelSyntacticIndexing.enabled'],
+    syntacticIndexingEnabled = window.context?.experimentalFeatures['codeintelSyntacticIndexing.enabled'] ?? false,
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
     telemetryService,
     telemetryRecorder,
