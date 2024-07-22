@@ -6,6 +6,7 @@ go_test(
     data = ["//dev/tools:universal-ctags"],
     env = {
         "CTAGS_RLOCATIONPATH": "$(rlocationpath //dev/tools:universal-ctags)",
+        "SCIP_CTAGS_RLOCATIONPATH": "$(rlocationpath //dev/tools:scip-ctags)",
     },
     tags = [
         TAG_PLATFORM_SEARCH,
