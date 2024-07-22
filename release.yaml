@@ -75,7 +75,7 @@ internal:
           fi
       - name: 'Trigger Security scan'
         cmd: |
-          curl --location 'https://incoming.sgdev.org/new-image-scan?tag={{tag}}&scanType=release&dev=true' --header 'X-Special-Header: ${SCANNER_TOKEN}'
+          curl --location 'https://security-manager.sgdev.org/internal-release-scan?release={{tag}}' --request POST --header "Authorization: Bearer ${SCANNER_TOKEN}"
       - name: 'notifications'
         cmd: |
           set -eu
@@ -234,6 +234,10 @@ promoteToPublic:
           fi
   finalize:
     steps:
+      - name: 'Check Security Approval'
+        cmd: |
+          curl --location 'https://security-manager.sgdev.org/approve-release?release={{tag}}' --header "Authorization: Bearer ${SCANNER_TOKEN}" --fail && "Release {{tag}} has security approval"
+            || echo "Release {{tag}} does not have security approval - reach out to the Security Team to resolve."
       - name: 'Promote on release registry'
         cmd: |
           echo "Promoting sourcegraph/sourcegraph {{version}} release on release registry"
