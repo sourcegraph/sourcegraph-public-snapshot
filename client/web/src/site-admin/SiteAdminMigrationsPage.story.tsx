@@ -10,11 +10,7 @@ const decorator: Decorator = story => <div className="p-3 container">{story()}</
 
 const config: Meta = {
     title: 'web/Site Admin/Migrations',
-    parameters: {
-        chromatic: {
-            viewports: [320, 576, 978, 1440],
-        },
-    },
+    parameters: {},
     decorators: [decorator],
 }
 

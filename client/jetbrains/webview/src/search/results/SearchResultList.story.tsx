@@ -123,9 +123,3 @@ export const JetBrainsSearchResultListStory: StoryFn = () => {
         </div>
     )
 }
-
-JetBrainsSearchResultListStory.parameters = {
-    chromatic: {
-        disableSnapshot: false,
-    },
-}

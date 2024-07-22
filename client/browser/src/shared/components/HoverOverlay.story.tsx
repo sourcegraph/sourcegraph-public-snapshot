@@ -28,12 +28,7 @@ const config: Meta = {
     // it uses the browser extension styles and bitbucket CSS module styles.
     title: 'shared/HoverOverlay',
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            enableDarkMode: true,
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default config

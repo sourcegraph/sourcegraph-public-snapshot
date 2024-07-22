@@ -10,9 +10,7 @@ const decorator: Decorator = story => <div className="p-3 container">{story()}</
 
 const config: Meta = {
     title: 'shared/SymbolTag',
-    parameters: {
-        chromatic: { disableSnapshots: false },
-    },
+    parameters: {},
     decorators: [decorator],
 }
 

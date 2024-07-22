@@ -14,7 +14,6 @@ const config: Meta = {
             type: 'figma',
             url: 'https://www.figma.com/file/IyiXZIbPHK447NCXov0AvK/13928-Streaming-search?node-id=280%3A17768',
         },
-        chromatic: { viewports: [350], disableSnapshot: false },
     },
 }
 

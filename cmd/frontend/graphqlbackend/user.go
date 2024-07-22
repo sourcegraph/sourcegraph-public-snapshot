@@ -516,7 +516,7 @@ func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPla
 	}
 
 	// 🚨 SECURITY: Only the authenticated user can update their properties.
-	if err := auth.CheckSameUser(ctx, userID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
 		return nil, err
 	}
 

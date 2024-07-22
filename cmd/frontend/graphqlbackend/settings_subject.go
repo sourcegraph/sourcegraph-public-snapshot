@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -102,31 +101,16 @@ func settingsSubjectForNodeAndCheckAccess(ctx context.Context, n Node) (*setting
 		subject.site = s
 
 	case *UserResolver:
-		// 🚨 SECURITY: Only the authenticated user can view their settings on
-		// Sourcegraph.com.
-		if dotcom.SourcegraphDotComMode() {
-			if err := auth.CheckSameUser(ctx, s.user.ID); err != nil {
-				return nil, err
-			}
-		} else {
-			// 🚨 SECURITY: The user and site admins are allowed to view the user's settings otherwise.
-			if err := auth.CheckSiteAdminOrSameUser(ctx, s.db, s.user.ID); err != nil {
-				return nil, err
-			}
+		// 🚨 SECURITY: The user and site admins are allowed to view the user's settings otherwise.
+		if err := auth.CheckSiteAdminOrSameUser(ctx, s.db, s.user.ID); err != nil {
+			return nil, err
 		}
 		subject.user = s
 
 	case *OrgResolver:
-		if dotcom.SourcegraphDotComMode() {
-			// 🚨 SECURITY: Only org members (not any site admin) can view org settings on Sourcegraph.com.
-			if err := auth.CheckOrgAccess(ctx, s.db, s.org.ID); err != nil {
-				return nil, err
-			}
-		} else {
-			// 🚨 SECURITY: Org members or site admins can view the org settings otherwise.
-			if err := auth.CheckOrgAccessOrSiteAdmin(ctx, s.db, s.org.ID); err != nil {
-				return nil, err
-			}
+		// 🚨 SECURITY: Only org members or site admins can view the org settings.
+		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, s.db, s.org.ID); err != nil {
+			return nil, err
 		}
 		subject.org = s
 

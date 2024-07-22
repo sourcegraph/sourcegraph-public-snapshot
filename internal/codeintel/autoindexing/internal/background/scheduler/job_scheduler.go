@@ -190,12 +190,12 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 			}
 
 			// Attempt to queue an index if one does not exist for each of the matching commits
-			if _, err := b.indexEnqueuer.QueueIndexes(ctx, repositoryID, commit, "", false, false); err != nil {
+			if _, err := b.indexEnqueuer.QueueAutoIndexJobs(ctx, repositoryID, commit, "", false, false); err != nil {
 				if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 					continue
 				}
 
-				return errors.Wrap(err, "indexEnqueuer.QueueIndexes")
+				return errors.Wrap(err, "indexEnqueuer.QueueAutoIndexJobs")
 			}
 		}
 
@@ -221,7 +221,7 @@ func NewOnDemandScheduler(s store.Store, indexEnqueuer IndexEnqueuer, config *Co
 
 				ids := make([]int, 0, len(repoRevs))
 				for _, repoRev := range repoRevs {
-					if _, err := indexEnqueuer.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
+					if _, err := indexEnqueuer.QueueAutoIndexJobs(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
 						return err
 					}
 

@@ -10,7 +10,6 @@ import (
 // e.g. by adding flags, and not as a condition for adding steps or commands.
 type CoreTestOperationsOptions struct {
 	MinimumUpgradeableVersion string
-	ForceReadyForReview       bool
 
 	CacheBundleSize      bool // for addWebAppEnterpriseBuild
 	CreateBundleSizeDiff bool // for addWebAppEnterpriseBuild

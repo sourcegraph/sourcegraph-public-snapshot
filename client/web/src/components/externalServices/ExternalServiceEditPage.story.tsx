@@ -25,12 +25,7 @@ const decorator: Decorator = story => (
 
 const config: Meta = {
     title: 'web/External services/ExternalServiceEditPage',
-    parameters: {
-        chromatic: {
-            // Delay screenshot taking, so Monaco has some time to get syntax highlighting prepared.
-            delay: 2000,
-        },
-    },
+    parameters: {},
     decorators: [decorator],
 }
 

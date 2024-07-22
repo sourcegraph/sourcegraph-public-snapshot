@@ -2,7 +2,6 @@ package codenav
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
@@ -15,153 +14,16 @@ import (
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 )
 
-var uploadIDSupply = 0
-
-func newUploadID() int {
-	uploadIDSupply += 1
-	return uploadIDSupply
-}
-
-func testRange(r int) scip.Range {
-	return scip.NewRangeUnchecked([]int32{int32(r), int32(r), int32(r)})
-}
-
-type fakeOccurrence struct {
-	symbol       string
-	isDefinition bool
-	rg           scip.Range
-}
-
-type fakeDocument struct {
-	path        core.UploadRelPath
-	occurrences []fakeOccurrence
-}
-
-func (d fakeDocument) Occurrences() []*scip.Occurrence {
-	occs := make([]*scip.Occurrence, 0, len(d.occurrences))
-	for _, occ := range d.occurrences {
-		var symbolRoles scip.SymbolRole = 0
-		if occ.isDefinition {
-			symbolRoles = scip.SymbolRole_Definition
-		}
-		occs = append(occs, &scip.Occurrence{
-			Range:       occ.rg.SCIPRange(),
-			Symbol:      occ.symbol,
-			SymbolRoles: int32(symbolRoles),
-		})
-	}
-	return occs
-}
-
-func ref(symbol string, rg int) fakeOccurrence {
-	return fakeOccurrence{
-		symbol:       symbol,
-		isDefinition: false,
-		rg:           testRange(rg),
-	}
-}
-
-func doc(path string, occurrences ...fakeOccurrence) fakeDocument {
-	return fakeDocument{
-		path:        core.NewUploadRelPathUnchecked(path),
-		occurrences: occurrences,
-	}
-}
-
-// Set up uploads + lsifstore
-func setupUpload(commit api.CommitID, root string, documents ...fakeDocument) (uploadsshared.CompletedUpload, lsifstore.LsifStore) {
-	id := newUploadID()
-	lsifStore := NewMockLsifStore()
-	lsifStore.SCIPDocumentFunc.SetDefaultHook(func(ctx context.Context, uploadId int, path core.UploadRelPath) (core.Option[*scip.Document], error) {
-		if id != uploadId {
-			return core.None[*scip.Document](), errors.New("unknown upload id")
-		}
-		for _, document := range documents {
-			if document.path.Equal(path) {
-				return core.Some(&scip.Document{
-					RelativePath: document.path.RawValue(),
-					Occurrences:  document.Occurrences(),
-				}), nil
-			}
-		}
-		return core.None[*scip.Document](), nil
-	})
-
-	return uploadsshared.CompletedUpload{
-		ID:     id,
-		Commit: string(commit),
-		Root:   root,
-	}, lsifStore
-}
-
-func shiftSCIPRange(r scip.Range, numLines int) scip.Range {
-	return scip.NewRangeUnchecked([]int32{
-		r.Start.Line + int32(numLines),
-		r.Start.Character,
-		r.End.Line + int32(numLines),
-		r.End.Character,
-	})
-}
-
-func shiftPos(pos shared.Position, numLines int) shared.Position {
-	return shared.Position{
-		Line:      pos.Line + numLines,
-		Character: pos.Character,
-	}
-}
-
-// A GitTreeTranslator that returns positions and ranges shifted by numLines
-// and returns failed translations for path/range pairs if shouldFail returns true
-func fakeTranslator(
-	targetCommit api.CommitID,
-	numLines int,
-	shouldFail func(string, shared.Range) bool,
-) GitTreeTranslator {
-	translator := NewMockGitTreeTranslator()
-	translator.GetSourceCommitFunc.SetDefaultReturn(targetCommit)
-	translator.GetTargetCommitPositionFromSourcePositionFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, pos shared.Position, reverse bool) (shared.Position, bool, error) {
-		numLines := numLines
-		if reverse {
-			numLines = -numLines
-		}
-		if shouldFail(path, shared.Range{Start: pos, End: pos}) {
-			return shared.Position{}, false, nil
-		}
-		return shiftPos(pos, numLines), true, nil
-	})
-	translator.GetTargetCommitRangeFromSourceRangeFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, rg shared.Range, reverse bool) (shared.Range, bool, error) {
-		numLines := numLines
-		if reverse {
-			numLines = -numLines
-		}
-		if shouldFail(path, rg) {
-			return shared.Range{}, false, nil
-		}
-		return shared.Range{Start: shiftPos(rg.Start, numLines), End: shiftPos(rg.End, numLines)}, true, nil
-	})
-	return translator
-}
-
-// A GitTreeTranslator that returns all positions and ranges shifted by numLines.
-func shiftAllTranslator(targetCommit api.CommitID, numLines int) GitTreeTranslator {
-	return fakeTranslator(targetCommit, numLines, func(path string, rg shared.Range) bool { return false })
-}
-
-// A GitTreeTranslator that returns all positions and ranges unchanged
-func noopTranslator(targetCommit api.CommitID) GitTreeTranslator {
-	return shiftAllTranslator(targetCommit, 0)
-}
-
 func setupSimpleUpload() (api.CommitID, uploadsshared.CompletedUpload, lsifstore.LsifStore) {
 	indexCommit := api.CommitID("deadbeef")
 	targetCommit := api.CommitID("beefdead")
 	upload, lsifStore := setupUpload(indexCommit, "indexRoot/",
 		doc("a.go",
-			ref("a", 1),
-			ref("b", 2),
-			ref("c", 3)),
+			ref("a", testRange(1)),
+			ref("b", testRange(2)),
+			ref("c", testRange(3))),
 		doc("b.go",
-			ref("a", 2)))
+			ref("a", testRange(2))))
 	return targetCommit, upload, lsifStore
 }
 

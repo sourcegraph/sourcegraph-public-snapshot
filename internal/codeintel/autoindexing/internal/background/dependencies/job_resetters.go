@@ -13,7 +13,7 @@ import (
 // NewIndexResetter returns a background routine that periodically resets index
 // records that are marked as being processed but are no longer being processed
 // by a worker.
-func NewIndexResetter(logger log.Logger, interval time.Duration, store dbworkerstore.Store[uploadsshared.Index], metrics *resetterMetrics) *dbworker.Resetter[uploadsshared.Index] {
+func NewIndexResetter(logger log.Logger, interval time.Duration, store dbworkerstore.Store[uploadsshared.AutoIndexJob], metrics *resetterMetrics) *dbworker.Resetter[uploadsshared.AutoIndexJob] {
 	return dbworker.NewResetter(logger.Scoped("indexResetter"), store, dbworker.ResetterOptions{
 		Name:     "precise_code_intel_index_worker_resetter",
 		Interval: interval,

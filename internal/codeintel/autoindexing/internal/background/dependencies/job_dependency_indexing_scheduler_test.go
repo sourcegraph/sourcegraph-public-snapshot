@@ -77,11 +77,11 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 		t.Errorf("unexpected number of calls to extsvcStore.List. want=%d have=%d", 0, len(mockExtSvcStore.ListFunc.History()))
 	}
 
-	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 6 {
-		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 6, len(indexEnqueuer.QueueIndexesForPackageFunc.History()))
+	if len(indexEnqueuer.QueueAutoIndexJobsForPackageFunc.History()) != 6 {
+		t.Errorf("unexpected number of calls to QueueAutoIndexJobsForPackage. want=%d have=%d", 6, len(indexEnqueuer.QueueAutoIndexJobsForPackageFunc.History()))
 	} else {
 		var packages []dependencies.MinimialVersionedPackageRepo
-		for _, call := range indexEnqueuer.QueueIndexesForPackageFunc.History() {
+		for _, call := range indexEnqueuer.QueueAutoIndexJobsForPackageFunc.History() {
 			packages = append(packages, call.Arg1)
 		}
 		sort.Slice(packages, func(i, j int) bool {
@@ -169,8 +169,8 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 		t.Errorf("unexpected number of calls to extsvcStore.List. want=%d have=%d", 0, len(mockExtSvcStore.ListFunc.History()))
 	}
 
-	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 0 {
-		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 0, len(indexEnqueuer.QueueIndexesForPackageFunc.History()))
+	if len(indexEnqueuer.QueueAutoIndexJobsForPackageFunc.History()) != 0 {
+		t.Errorf("unexpected number of calls to QueueAutoIndexJobsForPackage. want=%d have=%d", 0, len(indexEnqueuer.QueueAutoIndexJobsForPackageFunc.History()))
 	}
 }
 
@@ -206,8 +206,8 @@ func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
-	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 0 {
-		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 0, len(indexEnqueuer.QueueIndexesForPackageFunc.History()))
+	if len(indexEnqueuer.QueueAutoIndexJobsForPackageFunc.History()) != 0 {
+		t.Errorf("unexpected number of calls to QueueAutoIndexJobsForPackage. want=%d have=%d", 0, len(indexEnqueuer.QueueAutoIndexJobsForPackageFunc.History()))
 	}
 }
 
@@ -254,7 +254,7 @@ func TestDependencyIndexingSchedulerHandlerNoExtsvc(t *testing.T) {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
-	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 0 {
-		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 0, len(indexEnqueuer.QueueIndexesForPackageFunc.History()))
+	if len(indexEnqueuer.QueueAutoIndexJobsForPackageFunc.History()) != 0 {
+		t.Errorf("unexpected number of calls to QueueAutoIndexJobsForPackage. want=%d have=%d", 0, len(indexEnqueuer.QueueAutoIndexJobsForPackageFunc.History()))
 	}
 }

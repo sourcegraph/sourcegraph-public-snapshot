@@ -1105,11 +1105,27 @@ type SearchBasedMatch struct {
 	IsDefinition bool
 }
 
+func (s SearchBasedMatch) GetRange() scip.Range {
+	return s.Range
+}
+
+func (s SearchBasedMatch) GetIsDefinition() bool {
+	return s.IsDefinition
+}
+
 type SyntacticMatch struct {
 	Path         core.RepoRelPath
 	Range        scip.Range
 	IsDefinition bool
 	Symbol       string
+}
+
+func (s SyntacticMatch) GetRange() scip.Range {
+	return s.Range
+}
+
+func (s SyntacticMatch) GetIsDefinition() bool {
+	return s.IsDefinition
 }
 
 type SyntacticUsagesResult struct {

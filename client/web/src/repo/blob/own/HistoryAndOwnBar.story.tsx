@@ -150,9 +150,7 @@ const mockLoaded: MockedResponse = {
 
 const config: Meta = {
     title: 'web/repo/blob/own/HistoryAndOwnBar',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

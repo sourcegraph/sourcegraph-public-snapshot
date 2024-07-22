@@ -2,11 +2,11 @@ package config
 
 import "strings"
 
-type IndexConfiguration struct {
-	IndexJobs []IndexJob `json:"index_jobs" yaml:"index_jobs"`
+type AutoIndexJobSpecList struct {
+	JobSpecs []AutoIndexJobSpec `json:"index_jobs" yaml:"index_jobs"`
 }
 
-type IndexJob struct {
+type AutoIndexJobSpec struct {
 	Steps            []DockerStep `json:"steps" yaml:"steps"`
 	LocalSteps       []string     `json:"local_steps" yaml:"local_steps"`
 	Root             string       `json:"root" yaml:"root"`
@@ -16,7 +16,7 @@ type IndexJob struct {
 	RequestedEnvVars []string     `json:"requestedEnvVars" yaml:"requestedEnvVars"`
 }
 
-func (j IndexJob) GetRoot() string {
+func (j AutoIndexJobSpec) GetRoot() string {
 	return j.Root
 }
 
@@ -24,7 +24,7 @@ func (j IndexJob) GetRoot() string {
 // from the indexer name.
 // Example:
 // sourcegraph/lsif-go@sha256:... => lsif-go
-func (j IndexJob) GetIndexerName() string {
+func (j AutoIndexJobSpec) GetIndexerName() string {
 	return extractIndexerName(j.Indexer)
 }
 

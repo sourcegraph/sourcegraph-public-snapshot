@@ -162,7 +162,7 @@ func queryBundle(bundle *precise.GroupedBundleDataMaps, path string, line, chara
 				fmt.Printf("Abridging definitions...\n")
 				break
 			}
-			fmt.Printf("Definition:   %v:%v:(%v, %v)\n", definition.URI, definition.StartLine, definition.StartCharacter, definition.EndCharacter)
+			fmt.Printf("Definition:   %v:%v:(%v, %v)\n", definition.DocumentPath, definition.StartLine, definition.StartCharacter, definition.EndCharacter)
 		}
 
 		for idx, reference := range result.References {
@@ -170,7 +170,7 @@ func queryBundle(bundle *precise.GroupedBundleDataMaps, path string, line, chara
 				fmt.Printf("Abridging references...\n")
 				break
 			}
-			fmt.Printf("Reference:    %v:%v:(%v, %v)\n", reference.URI, reference.StartLine, reference.StartCharacter, reference.EndCharacter)
+			fmt.Printf("Reference:    %v:%v:(%v, %v)\n", reference.DocumentPath, reference.StartLine, reference.StartCharacter, reference.EndCharacter)
 		}
 
 		for idx, moniker := range result.Monikers {

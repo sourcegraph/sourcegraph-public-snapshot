@@ -9,9 +9,7 @@ import { SignInPage, type SignInPageProps } from './SignInPage'
 
 const config: Meta = {
     title: 'web/auth/SignInPage',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

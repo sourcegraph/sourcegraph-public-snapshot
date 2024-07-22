@@ -13,10 +13,7 @@ const Story: Meta = {
 
     parameters: {
         component: Input,
-        chromatic: {
-            enableDarkMode: true,
-            disableSnapshot: false,
-        },
+
         design: {
             type: 'figma',
             name: 'Figma',

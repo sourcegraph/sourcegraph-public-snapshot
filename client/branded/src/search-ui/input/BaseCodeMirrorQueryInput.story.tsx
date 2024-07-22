@@ -10,9 +10,7 @@ import { BaseCodeMirrorQueryInput, type BaseCodeMirrorQueryInputProps } from './
 
 const config: Meta = {
     title: 'branded/search-ui/input/BaseCodeMirrorQueryInput',
-    parameters: {
-        chromatic: { viewports: [500] },
-    },
+    parameters: {},
 }
 
 export default config

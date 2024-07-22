@@ -102,7 +102,7 @@ SET data = %s
 //
 //
 
-func scanIndexConfiguration(s dbutil.Scanner) (indexConfiguration shared.IndexConfiguration, err error) {
+func scanJobConfiguration(s dbutil.Scanner) (indexConfiguration shared.IndexConfiguration, err error) {
 	return indexConfiguration, s.Scan(
 		&indexConfiguration.ID,
 		&indexConfiguration.RepositoryID,
@@ -110,4 +110,4 @@ func scanIndexConfiguration(s dbutil.Scanner) (indexConfiguration shared.IndexCo
 	)
 }
 
-var scanFirstIndexConfiguration = basestore.NewFirstScanner(scanIndexConfiguration)
+var scanFirstIndexConfiguration = basestore.NewFirstScanner(scanJobConfiguration)

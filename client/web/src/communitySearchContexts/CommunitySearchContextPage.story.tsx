@@ -27,7 +27,6 @@ const config: Meta = {
             type: 'figma',
             url: 'https://www.figma.com/file/Xc4M24VTQq8itU0Lgb1Wwm/RFC-159-Visual-Design?node-id=66%3A611',
         },
-        chromatic: { viewports: [769, 1200] },
     },
 }
 

@@ -1,0 +1,25 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mocks",
+    srcs = ["mocks_temp.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/object/mocks",
+    tags = [TAG_PLATFORM_GRAPH],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/object",
+        "//lib/iterator",
+    ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_temp.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = ["//internal/object"],
+)

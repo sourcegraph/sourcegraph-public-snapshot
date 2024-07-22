@@ -23,12 +23,12 @@ const stalledIndexMaxAge = time.Second * 25
 // "queued" on its next reset.
 const indexMaxNumResets = 3
 
-var IndexWorkerStoreOptions = dbworkerstore.Options[uploadsshared.Index]{
+var IndexWorkerStoreOptions = dbworkerstore.Options[uploadsshared.AutoIndexJob]{
 	Name:              "codeintel_index",
 	TableName:         "lsif_indexes",
 	ViewName:          "lsif_indexes_with_repository_name u",
 	ColumnExpressions: indexColumnsWithNullRank,
-	Scan:              dbworkerstore.BuildWorkerScan(scanIndex),
+	Scan:              dbworkerstore.BuildWorkerScan(scanJob),
 	OrderByExpression: sqlf.Sprintf("(u.enqueuer_user_id > 0) DESC, u.queued_at, u.id"),
 	StalledMaxAge:     stalledIndexMaxAge,
 	MaxNumResets:      indexMaxNumResets,
@@ -61,40 +61,40 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf(`u.enqueuer_user_id`),
 }
 
-func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {
+func scanJob(s dbutil.Scanner) (job uploadsshared.AutoIndexJob, err error) {
 	var executionLogs []executor.ExecutionLogEntry
 	if err := s.Scan(
-		&index.ID,
-		&index.Commit,
-		&index.QueuedAt,
-		&index.State,
-		&index.FailureMessage,
-		&index.StartedAt,
-		&index.FinishedAt,
-		&index.ProcessAfter,
-		&index.NumResets,
-		&index.NumFailures,
-		&index.RepositoryID,
-		&index.RepositoryName,
-		pq.Array(&index.DockerSteps),
-		&index.Root,
-		&index.Indexer,
-		pq.Array(&index.IndexerArgs),
-		&index.Outfile,
+		&job.ID,
+		&job.Commit,
+		&job.QueuedAt,
+		&job.State,
+		&job.FailureMessage,
+		&job.StartedAt,
+		&job.FinishedAt,
+		&job.ProcessAfter,
+		&job.NumResets,
+		&job.NumFailures,
+		&job.RepositoryID,
+		&job.RepositoryName,
+		pq.Array(&job.DockerSteps),
+		&job.Root,
+		&job.Indexer,
+		pq.Array(&job.IndexerArgs),
+		&job.Outfile,
 		pq.Array(&executionLogs),
-		&index.Rank,
-		pq.Array(&index.LocalSteps),
-		&index.AssociatedUploadID,
-		&index.ShouldReindex,
-		pq.Array(&index.RequestedEnvVars),
-		&index.EnqueuerUserID,
+		&job.Rank,
+		pq.Array(&job.LocalSteps),
+		&job.AssociatedUploadID,
+		&job.ShouldReindex,
+		pq.Array(&job.RequestedEnvVars),
+		&job.EnqueuerUserID,
 	); err != nil {
-		return index, err
+		return job, err
 	}
 
-	index.ExecutionLogs = append(index.ExecutionLogs, executionLogs...)
+	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
 
-	return index, nil
+	return job, nil
 }
 
 // stalledDependencySyncingJobMaxAge is the maximum allowable duration between updating

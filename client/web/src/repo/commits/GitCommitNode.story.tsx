@@ -15,9 +15,7 @@ window.context.experimentalFeatures = { perforceChangelistMapping: 'enabled' }
 
 const config: Meta = {
     title: 'web/GitCommitNode',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
     decorators: [decorator],
 }
 
