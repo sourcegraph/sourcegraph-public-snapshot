@@ -70,7 +70,7 @@ func (suite *ApplianceTestSuite) TestAdoptsHelmProvisionedFrontendResources() {
 	_, err = suite.k8sClient.NetworkingV1().Ingresses(namespace.Name).Create(suite.ctx, &testIngress, metav1.CreateOptions{})
 	suite.Require().NoError(err)
 
-	cfgMap := suite.newConfigMap(namespace.GetName(), "frontend/adopt-service")
+	cfgMap := suite.newConfigMap(namespace.GetName(), "frontend/default")
 	suite.awaitReconciliation(namespace.GetName(), func() {
 		_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace.GetName()).Create(suite.ctx, cfgMap, metav1.CreateOptions{})
 		suite.Require().NoError(err)
