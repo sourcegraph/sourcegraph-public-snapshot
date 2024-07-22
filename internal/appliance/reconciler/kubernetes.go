@@ -107,7 +107,7 @@ func createOrUpdateObject[R client.Object](
 		return err
 	}
 
-	if !isControlledBy(owner, existingRes) {
+	if !isControlledBy(owner, existingRes) && !isNamespaced(obj) && !config.ShouldAdopt(obj) {
 		logger.Info("refusing to update non-owned resource")
 		return nil
 	}
@@ -152,7 +152,7 @@ func ensureObjectDeleted[T client.Object](ctx context.Context, r *Reconciler, ow
 
 	logger := log.FromContext(ctx).WithValues("kind", gvk.String(), "namespace", obj.GetNamespace(), "name", obj.GetName())
 
-	if !isControlledBy(owner, obj) {
+	if !isControlledBy(owner, obj) && !isNamespaced(obj) {
 		logger.Info("refusing to delete non-owned resource")
 		return nil
 	}

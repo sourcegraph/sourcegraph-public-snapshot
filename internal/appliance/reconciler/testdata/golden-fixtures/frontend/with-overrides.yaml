@@ -371,6 +371,7 @@ resources:
     kind: Service
     metadata:
       annotations:
+        appliance.sourcegraph.com/adopted: "true"
         appliance.sourcegraph.com/configHash: f6325ffd3262b0ff8bdb406ba80aabad2daea7ecc342353fabd7bbda7ea1f4a9
         prometheus.io/port: "6060"
         sourcegraph.prometheus/scrape: "true"
