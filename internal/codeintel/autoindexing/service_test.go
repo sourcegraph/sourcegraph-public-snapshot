@@ -52,8 +52,8 @@ func TestQueueAutoIndexJobsExplicit(t *testing.T) {
 	}`
 
 	mockDBStore := NewMockStore()
-	mockDBStore.InsertJobsFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.AutoIndexJob) ([]uploadsshared.AutoIndexJob, error) {
-		return indexes, nil
+	mockDBStore.InsertJobsFunc.SetDefaultHook(func(ctx context.Context, jobs []uploadsshared.AutoIndexJob) ([]uploadsshared.AutoIndexJob, error) {
+		return jobs, nil
 	})
 	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
 
@@ -87,9 +87,9 @@ func TestQueueAutoIndexJobsExplicit(t *testing.T) {
 		}
 	}
 
-	var indexes []uploadsshared.AutoIndexJob
+	var jobs []uploadsshared.AutoIndexJob
 	for _, call := range mockDBStore.InsertJobsFunc.History() {
-		indexes = append(indexes, call.Result0...)
+		jobs = append(jobs, call.Result0...)
 	}
 
 	expectedIndexes := []uploadsshared.AutoIndexJob{
@@ -117,7 +117,7 @@ func TestQueueAutoIndexJobsExplicit(t *testing.T) {
 			Outfile:      "lsif.dump",
 		},
 	}
-	if diff := cmp.Diff(expectedIndexes, indexes, cmpopts.EquateEmpty()); diff != "" {
+	if diff := cmp.Diff(expectedIndexes, jobs, cmpopts.EquateEmpty()); diff != "" {
 		t.Errorf("unexpected indexes (-want +got):\n%s", diff)
 	}
 }
@@ -150,8 +150,8 @@ func TestQueueAutoIndexJobsInDatabase(t *testing.T) {
 	}
 
 	mockDBStore := NewMockStore()
-	mockDBStore.InsertJobsFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.AutoIndexJob) ([]uploadsshared.AutoIndexJob, error) {
-		return indexes, nil
+	mockDBStore.InsertJobsFunc.SetDefaultHook(func(ctx context.Context, jobs []uploadsshared.AutoIndexJob) ([]uploadsshared.AutoIndexJob, error) {
+		return jobs, nil
 	})
 	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(indexConfiguration, true, nil)
 	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
@@ -199,9 +199,9 @@ func TestQueueAutoIndexJobsInDatabase(t *testing.T) {
 		}
 	}
 
-	var indexes []uploadsshared.AutoIndexJob
+	var jobs []uploadsshared.AutoIndexJob
 	for _, call := range mockDBStore.InsertJobsFunc.History() {
-		indexes = append(indexes, call.Result0...)
+		jobs = append(jobs, call.Result0...)
 	}
 
 	expectedIndexes := []uploadsshared.AutoIndexJob{
@@ -229,7 +229,7 @@ func TestQueueAutoIndexJobsInDatabase(t *testing.T) {
 			Outfile:      "lsif.dump",
 		},
 	}
-	if diff := cmp.Diff(expectedIndexes, indexes, cmpopts.EquateEmpty()); diff != "" {
+	if diff := cmp.Diff(expectedIndexes, jobs, cmpopts.EquateEmpty()); diff != "" {
 		t.Errorf("unexpected indexes (-want +got):\n%s", diff)
 	}
 }
@@ -253,8 +253,8 @@ index_jobs:
 
 func TestQueueAutoIndexJobsInRepository(t *testing.T) {
 	mockDBStore := NewMockStore()
-	mockDBStore.InsertJobsFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.AutoIndexJob) ([]uploadsshared.AutoIndexJob, error) {
-		return indexes, nil
+	mockDBStore.InsertJobsFunc.SetDefaultHook(func(ctx context.Context, jobs []uploadsshared.AutoIndexJob) ([]uploadsshared.AutoIndexJob, error) {
+		return jobs, nil
 	})
 	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
 
@@ -291,9 +291,9 @@ func TestQueueAutoIndexJobsInRepository(t *testing.T) {
 		}
 	}
 
-	var indexes []uploadsshared.AutoIndexJob
+	var jobs []uploadsshared.AutoIndexJob
 	for _, call := range mockDBStore.InsertJobsFunc.History() {
-		indexes = append(indexes, call.Result0...)
+		jobs = append(jobs, call.Result0...)
 	}
 
 	expectedIndexes := []uploadsshared.AutoIndexJob{
@@ -321,15 +321,15 @@ func TestQueueAutoIndexJobsInRepository(t *testing.T) {
 			Outfile:      "lsif.dump",
 		},
 	}
-	if diff := cmp.Diff(expectedIndexes, indexes, cmpopts.EquateEmpty()); diff != "" {
+	if diff := cmp.Diff(expectedIndexes, jobs, cmpopts.EquateEmpty()); diff != "" {
 		t.Errorf("unexpected indexes (-want +got):\n%s", diff)
 	}
 }
 
 func TestQueueAutoIndexJobsInferred(t *testing.T) {
 	mockDBStore := NewMockStore()
-	mockDBStore.InsertJobsFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.AutoIndexJob) ([]uploadsshared.AutoIndexJob, error) {
-		return indexes, nil
+	mockDBStore.InsertJobsFunc.SetDefaultHook(func(ctx context.Context, jobs []uploadsshared.AutoIndexJob) ([]uploadsshared.AutoIndexJob, error) {
+		return jobs, nil
 	})
 	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
 
@@ -397,8 +397,8 @@ func TestQueueAutoIndexJobsInferred(t *testing.T) {
 
 func TestQueueAutoIndexJobsForPackage(t *testing.T) {
 	mockDBStore := NewMockStore()
-	mockDBStore.InsertJobsFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.AutoIndexJob) ([]uploadsshared.AutoIndexJob, error) {
-		return indexes, nil
+	mockDBStore.InsertJobsFunc.SetDefaultHook(func(ctx context.Context, jobs []uploadsshared.AutoIndexJob) ([]uploadsshared.AutoIndexJob, error) {
+		return jobs, nil
 	})
 	mockDBStore.IsQueuedFunc.SetDefaultReturn(false, nil)
 	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
@@ -470,9 +470,9 @@ func TestQueueAutoIndexJobsForPackage(t *testing.T) {
 	if len(mockDBStore.InsertJobsFunc.History()) != 1 {
 		t.Errorf("unexpected number of calls to InsertJobs. want=%d have=%d", 1, len(mockDBStore.InsertJobsFunc.History()))
 	} else {
-		var indexes []uploadsshared.AutoIndexJob
+		var jobs []uploadsshared.AutoIndexJob
 		for _, call := range mockDBStore.InsertJobsFunc.History() {
-			indexes = append(indexes, call.Result0...)
+			jobs = append(jobs, call.Result0...)
 		}
 
 		expectedIndexes := []uploadsshared.AutoIndexJob{
@@ -490,7 +490,7 @@ func TestQueueAutoIndexJobsForPackage(t *testing.T) {
 				IndexerArgs: []string{"lsif-go", "--no-animation"},
 			},
 		}
-		if diff := cmp.Diff(expectedIndexes, indexes, cmpopts.EquateEmpty()); diff != "" {
+		if diff := cmp.Diff(expectedIndexes, jobs, cmpopts.EquateEmpty()); diff != "" {
 			t.Errorf("unexpected indexes (-want +got):\n%s", diff)
 		}
 	}
