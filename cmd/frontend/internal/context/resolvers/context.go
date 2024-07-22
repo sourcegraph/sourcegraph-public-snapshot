@@ -10,22 +10,20 @@ import (
 
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/schema"
-	"go.uber.org/zap"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	cohere "github.com/cohere-ai/cohere-go/v2"
 	"github.com/cohere-ai/cohere-go/v2/client"
@@ -96,9 +94,9 @@ func (r *Resolver) ChatContext(ctx context.Context, args graphqlbackend.ChatCont
 	}
 	if len(partialErrors) > 0 {
 		res.partialErrors = partialErrors
-		fields := []zap.Field{log.Int("count", len(partialErrors)), log.String("interactionID", args.InteractionID)}
+		fields := []log.Field{log.Int("count", len(partialErrors)), log.String("interactionID", args.InteractionID)}
 		for _, err := range partialErrors {
-			fields = append(fields, zap.Error(err))
+			fields = append(fields, log.Error(err))
 		}
 		r.logger.Warn("partial errors when fetching context", fields...)
 	}
