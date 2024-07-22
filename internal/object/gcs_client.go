@@ -18,7 +18,6 @@ import (
 
 type gcsStore struct {
 	bucket       string
-	ttl          time.Duration
 	manageBucket bool
 	config       GCSConfig
 	client       gcsAPI
@@ -40,13 +39,12 @@ func newGCSFromConfig(ctx context.Context, config StorageConfig, operations *Ope
 		return nil, err
 	}
 
-	return newGCSWithClient(&gcsAPIShim{client}, config.Bucket, config.TTL, config.ManageBucket, config.GCS, operations), nil
+	return newGCSWithClient(&gcsAPIShim{client}, config.Bucket, config.ManageBucket, config.GCS, operations), nil
 }
 
-func newGCSWithClient(client gcsAPI, bucket string, ttl time.Duration, manageBucket bool, config GCSConfig, operations *Operations) *gcsStore {
+func newGCSWithClient(client gcsAPI, bucket string, manageBucket bool, config GCSConfig, operations *Operations) *gcsStore {
 	return &gcsStore{
 		bucket:       bucket,
-		ttl:          ttl,
 		config:       config,
 		manageBucket: manageBucket,
 		client:       client,

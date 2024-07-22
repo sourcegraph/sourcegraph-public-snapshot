@@ -6,7 +6,6 @@ import (
 	"io"
 	"strings"
 	"testing"
-	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/google/go-cmp/cmp"
@@ -308,7 +307,7 @@ func testGCSClient(client gcsAPI, manageBucket bool) Storage {
 }
 
 func rawGCSClient(client gcsAPI, manageBucket bool) *gcsStore {
-	return newGCSWithClient(client, "test-bucket", time.Hour*24*3, manageBucket, GCSConfig{ProjectID: "pid"}, NewOperations(&observation.TestContext, "test", "brittlestore"))
+	return newGCSWithClient(client, "test-bucket", manageBucket, GCSConfig{ProjectID: "pid"}, NewOperations(&observation.TestContext, "test", "brittlestore"))
 }
 
 type nopCloser struct {

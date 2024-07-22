@@ -3,7 +3,6 @@ package object
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -42,7 +41,6 @@ func TestS3ClientConfig(t *testing.T) {
 		Backend:      "blobstore",
 		Bucket:       "lsif-uploads",
 		ManageBucket: true,
-		TTL:          8 * time.Hour,
 		S3: S3Config{
 			Region:          "us-east-2",
 			AccessKeyID:     "access-key-id",
