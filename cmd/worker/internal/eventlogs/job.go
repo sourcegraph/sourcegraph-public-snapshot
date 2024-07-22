@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/bg"
@@ -35,15 +36,24 @@ func (e eventLogsJob) Routines(_ context.Context, observationCtx *observation.Co
 	}
 
 	return []goroutine.BackgroundRoutine{
-			NewEventLogsJob(db),
-			NewSecurityEventLogsJob(db),
+			NewEventLogsJob(observationCtx, db),
+			NewSecurityEventLogsJob(observationCtx, db),
 		},
 		nil
 }
 
-func NewEventLogsJob(db database.DB) goroutine.BackgroundRoutine {
+func NewEventLogsJob(observationCtx *observation.Context, db database.DB) goroutine.BackgroundRoutine {
 	handler := goroutine.HandlerFunc(func(ctx context.Context) error {
 		return bg.DeleteOldEventLogsInPostgres(ctx, db)
+	})
+
+	operation := observationCtx.Operation(observation.Op{
+		Name: "event_logs.janitor.run",
+		Metrics: metrics.NewREDMetrics(
+			observationCtx.Registerer,
+			"event_logs_janitor",
+			metrics.WithCountHelp("Total number of event_logs janitor executions"),
+		),
 	})
 
 	return goroutine.NewPeriodicGoroutine(
@@ -52,12 +62,22 @@ func NewEventLogsJob(db database.DB) goroutine.BackgroundRoutine {
 		goroutine.WithName("delete_old_event_logs"),
 		goroutine.WithDescription("deleting expired rows from event_logs table"),
 		goroutine.WithInterval(time.Hour),
+		goroutine.WithOperation(operation),
 	)
 }
 
-func NewSecurityEventLogsJob(db database.DB) goroutine.BackgroundRoutine {
+func NewSecurityEventLogsJob(observationCtx *observation.Context, db database.DB) goroutine.BackgroundRoutine {
 	handler := goroutine.HandlerFunc(func(ctx context.Context) error {
 		return bg.DeleteOldSecurityEventLogsInPostgres(ctx, db)
+	})
+
+	operation := observationCtx.Operation(observation.Op{
+		Name: "security_event_logs.janitor.run",
+		Metrics: metrics.NewREDMetrics(
+			observationCtx.Registerer,
+			"security_event_logs_janitor",
+			metrics.WithCountHelp("Total number of security_event_logs janitor executions"),
+		),
 	})
 
 	return goroutine.NewPeriodicGoroutine(
@@ -67,5 +87,6 @@ func NewSecurityEventLogsJob(db database.DB) goroutine.BackgroundRoutine {
 		goroutine.WithDescription("deleting expired rows from security_event_logs table"),
 		goroutine.WithInterval(time.Hour),
 		goroutine.WithInitialDelay(time.Hour),
+		goroutine.WithOperation(operation),
 	)
 }
