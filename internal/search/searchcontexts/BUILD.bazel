@@ -3,7 +3,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "searchcontexts",
-    srcs = ["search_contexts.go"],
+    srcs = [
+        "conf.go",
+        "search_contexts.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/searchcontexts",
     tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],

@@ -11,9 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
 var (
@@ -22,7 +22,7 @@ var (
 	handlerOnce     sync.Once
 )
 
-func GetHandler(svc *uploads.Service, db database.DB, gitserverClient gitserver.Client, uploadStore uploadstore.Store, withCodeHostAuthAuth bool) http.Handler {
+func GetHandler(svc *uploads.Service, db database.DB, gitserverClient gitserver.Client, uploadStore object.Storage, withCodeHostAuthAuth bool) http.Handler {
 	handlerOnce.Do(func() {
 		logger := log.Scoped(
 			"uploads.handler",

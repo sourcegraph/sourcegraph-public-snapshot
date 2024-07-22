@@ -14,12 +14,7 @@ const decorator: Decorator = story => <div className="p-3 container">{story()}</
 const config: Meta = {
     title: 'web/executors/secrets/RemoveSecretModal',
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            // Delay screenshot taking, so the modal has opened by the time the screenshot is taken.
-            delay: 2000,
-        },
-    },
+    parameters: {},
 }
 
 export default config

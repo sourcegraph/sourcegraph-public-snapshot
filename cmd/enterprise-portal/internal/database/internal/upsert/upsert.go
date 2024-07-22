@@ -37,8 +37,9 @@ func New(table, primaryKey constString, forceUpdate bool) *Builder {
 }
 
 type fieldOptions struct {
-	useColumnDefault    bool
-	ignoreOnForceUpdate bool
+	useColumnDefault        bool
+	ignoreOnForceUpdate     bool
+	forceUpdateDefaultValue any
 }
 
 type fieldOptionFn func(*fieldOptions)
@@ -61,6 +62,10 @@ func WithColumnDefault() FieldOption {
 // performing a force update.
 func WithIgnoreOnForceUpdate() FieldOption {
 	return fieldOptionFn(func(opt *fieldOptions) { opt.ignoreOnForceUpdate = true })
+}
+
+func WithValueOnForceUpdate(v any) FieldOption {
+	return fieldOptionFn(func(opt *fieldOptions) { opt.forceUpdateDefaultValue = v })
 }
 
 // Field registers a field that can be set in the upsert to value T. If T is
@@ -86,6 +91,9 @@ func Field[T comparable](b *Builder, column constString, value T, opts ...FieldO
 
 	b.insertColumns = append(b.insertColumns, string(column))
 	b.args[string(column)] = value
+	if b.forceUpdate && value == zero && opt.forceUpdateDefaultValue != nil {
+		b.args[string(column)] = opt.forceUpdateDefaultValue
+	}
 
 	// If we are force-updating, or value is not zero, update the column in
 	// existing rows (on conflict).

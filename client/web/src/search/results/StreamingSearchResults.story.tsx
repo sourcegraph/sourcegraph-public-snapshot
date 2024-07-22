@@ -61,6 +61,7 @@ const defaultProps: StreamingSearchResultsProps = {
     searchAggregationEnabled: true,
     codeMonitoringEnabled: true,
     ownEnabled: true,
+    searchJobsEnabled: true,
 }
 
 const decorator: Decorator = Story => {
@@ -71,9 +72,7 @@ const decorator: Decorator = Story => {
 const config: Meta = {
     title: 'web/search/results/StreamingSearchResults',
     decorators: [decorator],
-    parameters: {
-        chromatic: { viewports: [577, 769, 993], disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

@@ -24,12 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-const (
-	pgsqlSecretName          = "pgsql-auth"
-	codeInsightsDBSecretName = "codeinsights-db-auth"
-	codeIntelDBSecretName    = "codeintel-db-auth"
-)
-
 func (r *Reconciler) reconcileFrontend(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	if err := r.reconcileFrontendDeployment(ctx, sg, owner); err != nil {
 		return errors.Wrap(err, "reconciling Deployment")
@@ -114,6 +108,26 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 	}
 
 	template := pod.NewPodTemplate("sourcegraph-frontend", cfg)
+	dbConnSpecs, err := r.getDBSecrets(ctx, sg)
+	if err != nil {
+		return err
+	}
+	dbConnHash, err := configHash(dbConnSpecs)
+	if err != nil {
+		return err
+	}
+	template.Template.ObjectMeta.Annotations["checksum/auth"] = dbConnHash
+
+	redisConnSpecs, err := r.getRedisSecrets(ctx, sg)
+	if err != nil {
+		return err
+	}
+	redisConnHash, err := configHash(redisConnSpecs)
+	if err != nil {
+		return err
+	}
+	template.Template.ObjectMeta.Annotations["checksum/redis"] = redisConnHash
+
 	template.Template.Spec.Containers = []corev1.Container{ctr}
 	template.Template.Spec.Volumes = []corev1.Volume{pod.NewVolumeEmptyDir("home-dir")}
 	template.Template.Spec.ServiceAccountName = "sourcegraph-frontend"
@@ -147,7 +161,17 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 	}
 	dep.Spec.Template = template.Template
 
-	return reconcileObject(ctx, r, cfg, &dep, &appsv1.Deployment{}, sg, owner)
+	ifChanged := struct {
+		config.FrontendSpec
+		DBConnSpecs
+		RedisConnSpecs
+	}{
+		FrontendSpec:   cfg,
+		DBConnSpecs:    dbConnSpecs,
+		RedisConnSpecs: redisConnSpecs,
+	}
+
+	return reconcileObject(ctx, r, ifChanged, &dep, &appsv1.Deployment{}, sg, owner)
 }
 
 func (r *Reconciler) reconcileFrontendService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
@@ -230,7 +254,7 @@ func (r *Reconciler) reconcileFrontendIngress(ctx context.Context, sg *config.So
 	cfg := sg.Spec.Frontend
 	ingress := ingress.NewIngress(name, sg.Namespace)
 	if cfg.Ingress == nil {
-		return r.ensureObjectDeleted(ctx, &ingress)
+		return ensureObjectDeleted(ctx, r, owner, &ingress)
 	}
 
 	ingress.SetAnnotations(cfg.Ingress.Annotations)

@@ -112,6 +112,16 @@ func (b *observableBackend) MergeBase(ctx context.Context, baseRevspec, headRevs
 	return b.backend.MergeBase(ctx, baseRevspec, headRevspec)
 }
 
+func (b *observableBackend) MergeBaseOctopus(ctx context.Context, revspecs ...string) (_ api.CommitID, err error) {
+	ctx, _, endObservation := b.operations.mergeBaseOctopus.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("MergeBaseOctopus").Inc()
+	defer concurrentOps.WithLabelValues("MergeBaseOctopus").Dec()
+
+	return b.backend.MergeBaseOctopus(ctx, revspecs...)
+}
+
 func (b *observableBackend) Blame(ctx context.Context, commit api.CommitID, path string, opt BlameOptions) (_ BlameHunkReader, err error) {
 	ctx, errCollector, endObservation := b.operations.blame.WithErrors(ctx, &err, observation.Args{})
 	ctx, cancel := context.WithCancel(ctx)
@@ -316,14 +326,14 @@ func (hr *observableRefIterator) Close() error {
 	return err
 }
 
-func (b *observableBackend) RawDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, paths ...string) (_ io.ReadCloser, err error) {
+func (b *observableBackend) RawDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, opts RawDiffOpts, paths ...string) (_ io.ReadCloser, err error) {
 	ctx, errCollector, endObservation := b.operations.rawDiff.WithErrors(ctx, &err, observation.Args{})
 	ctx, cancel := context.WithCancel(ctx)
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	concurrentOps.WithLabelValues("RawDiff").Inc()
 
-	r, err := b.backend.RawDiff(ctx, base, head, typ, paths...)
+	r, err := b.backend.RawDiff(ctx, base, head, typ, opts, paths...)
 	if err != nil {
 		concurrentOps.WithLabelValues("RawDiff").Dec()
 		cancel()
@@ -536,6 +546,7 @@ type operations struct {
 	latestCommitTimestamp *observation.Operation
 	refHash               *observation.Operation
 	commitLog             *observation.Operation
+	mergeBaseOctopus      *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -588,6 +599,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		latestCommitTimestamp: op("latest-commit-timestamp"),
 		refHash:               op("ref-hash"),
 		commitLog:             op("commit-log"),
+		mergeBaseOctopus:      op("merge-base-octopus"),
 	}
 }
 

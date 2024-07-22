@@ -63,8 +63,10 @@
     .info {
         display: flex;
         justify-content: space-between;
-        align-items: baseline;
+        align-items: center;
         gap: 1rem;
+        overflow: hidden;
+
         padding: 0.5rem 1rem;
         color: var(--text-muted);
         background-color: var(--code-bg);
@@ -74,14 +76,24 @@
         z-index: 1;
         border-top: 1px solid var(--border-color);
 
-        align-items: center;
+        @media (--mobile) {
+            padding: 0.25rem 0.5rem;
+        }
 
-        // This is used to avoid having the whitespace being underlined on hover
         a {
             text-decoration: none;
+            white-space: nowrap;
 
+            // This is used to avoid having the whitespace being underlined on hover
             &:hover span {
                 text-decoration: underline;
+            }
+
+            @media (--mobile) {
+                // Hide link label on mobile
+                span {
+                    display: none;
+                }
             }
         }
     }

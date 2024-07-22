@@ -161,7 +161,7 @@ func containsAny(prompt string, patterns []string) (bool, string) {
 // requestBlockedError returns an error indicating that the request was blocked, including the trace ID.
 func requestBlockedError(ctx context.Context) error {
 	traceID := trace.FromContext(ctx).SpanContext().TraceID().String()
-	return errors.Errorf("request blocked - if you think this is a mistake, please contact support@sourcegraph.com and reference this ID: %s", traceID)
+	return errors.Errorf("We blocked your request because we detected your prompt to be against our Acceptable Use Policy (https://sourcegraph.com/terms/aup). Try again by removing any phrases that may violate our AUP. If you think this is a mistake, please contact support@sourcegraph.com and reference this ID: %s", traceID)
 }
 
 // PromptRecorder implementations should save select completions prompts for

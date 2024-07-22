@@ -15,7 +15,6 @@ const config: Meta = {
             type: 'figma',
             url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
         },
-        chromatic: { viewports: [544, 577, 769, 993], disableSnapshot: false },
     },
 }
 

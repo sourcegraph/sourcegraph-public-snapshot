@@ -8,11 +8,7 @@ const decorator: Decorator = story => <div className="p-3 container">{story()}</
 
 const config: Meta = {
     title: 'web/site-admin/webhooks/StatusCode',
-    parameters: {
-        chromatic: {
-            viewports: [576],
-        },
-    },
+    parameters: {},
     decorators: [decorator],
 }
 

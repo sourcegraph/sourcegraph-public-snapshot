@@ -24,6 +24,7 @@ export const windowContextConfig = {
     codeMonitoringEnabled: true,
     searchAggregationEnabled: true,
     ownEnabled: true,
+    searchJobsEnabled: true,
 } satisfies StaticWindowContextComputedAppConfig
 
 export const injectedAppConfig = {} as unknown as StaticInjectedAppConfig

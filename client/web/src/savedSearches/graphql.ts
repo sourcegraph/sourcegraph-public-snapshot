@@ -5,16 +5,25 @@ const savedSearchFragment = gql`
         id
         description
         query
+        draft
         owner {
             __typename
             id
             namespaceName
-            ... on Org {
-                displayName
-            }
         }
+        visibility
         createdAt
+        createdBy {
+            id
+            username
+            url
+        }
         updatedAt
+        updatedBy {
+            id
+            username
+            url
+        }
         url
         viewerCanAdminister
     }
@@ -23,7 +32,9 @@ const savedSearchFragment = gql`
 export const savedSearchesQuery = gql`
     query SavedSearches(
         $query: String
-        $owner: ID
+        $owner: ID = null
+        $viewerIsAffiliated: Boolean
+        $includeDrafts: Boolean = true
         $first: Int
         $last: Int
         $after: String
@@ -33,6 +44,8 @@ export const savedSearchesQuery = gql`
         savedSearches(
             query: $query
             owner: $owner
+            viewerIsAffiliated: $viewerIsAffiliated
+            includeDrafts: $includeDrafts
             first: $first
             last: $last
             after: $after
@@ -87,6 +100,15 @@ export const updateSavedSearchMutation = gql`
 export const transferSavedSearchOwnershipMutation = gql`
     mutation TransferSavedSearchOwnership($id: ID!, $newOwner: ID!) {
         transferSavedSearchOwnership(id: $id, newOwner: $newOwner) {
+            ...SavedSearchFields
+        }
+    }
+    ${savedSearchFragment}
+`
+
+export const changeSavedSearchVisibilityMutation = gql`
+    mutation ChangeSavedSearchVisibility($id: ID!, $newVisibility: SavedSearchVisibility!) {
+        changeSavedSearchVisibility(id: $id, newVisibility: $newVisibility) {
             ...SavedSearchFields
         }
     }

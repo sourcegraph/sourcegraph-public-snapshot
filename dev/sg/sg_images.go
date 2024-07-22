@@ -11,6 +11,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -47,8 +48,15 @@ var imagesCommand = &cli.Command{
 		},
 		{
 			Name:      "build",
-			Usage:     "builds a container image by matching [pattern] using glob syntax to the target.\nExamples:\n- sg images build worker\n- sg images build cmd/*\n- sg images build postgres*",
-			UsageText: "build [pattern1] ([pattern2] ...)",
+			Usage:     "builds a container image by matching [pattern] using glob syntax to the target",
+			ArgsUsage: "build [pattern1] ([pattern2] ...)",
+			UsageText: `
+sg images build worker
+# Build everything under 'cmd/*'
+sg images build cmd/*
+# Build all postgres images
+sg images build postgres*
+`,
 			Flags: []cli.Flag{
 				&cli.BoolFlag{
 					Name:  "load",

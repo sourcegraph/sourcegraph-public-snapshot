@@ -631,10 +631,25 @@ func NewSchema(
 			}
 		}
 
+		if modelconfigResolver := optional.ModelconfigResolver; modelconfigResolver != nil {
+			EnterpriseResolvers.modelconfigResolver = modelconfigResolver
+			resolver.ModelconfigResolver = modelconfigResolver
+		}
+
 		if telemetryResolver := optional.TelemetryRootResolver; telemetryResolver != nil {
 			EnterpriseResolvers.telemetryResolver = telemetryResolver
 			resolver.TelemetryRootResolver = telemetryResolver
 			schemas = append(schemas, telemetrySchema)
+		}
+
+		if promptsResolver := optional.PromptsResolver; promptsResolver != nil {
+			EnterpriseResolvers.promptsResolver = promptsResolver
+			resolver.PromptsResolver = promptsResolver
+			schemas = append(schemas, promptsSchema)
+			// Register NodeByID handlers.
+			for kind, res := range promptsResolver.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
 		}
 	}
 
@@ -683,6 +698,7 @@ type OptionalResolver struct {
 	InsightsAggregationResolver
 	InsightsResolver
 	LicenseResolver
+	ModelconfigResolver
 	NotebooksResolver
 	OwnResolver
 	RBACResolver
@@ -691,6 +707,7 @@ type OptionalResolver struct {
 	WebhooksResolver
 	ContentLibraryResolver
 	*TelemetryRootResolver
+	PromptsResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -805,6 +822,7 @@ var EnterpriseResolvers = struct {
 	insightsAggregationResolver InsightsAggregationResolver
 	insightsResolver            InsightsResolver
 	licenseResolver             LicenseResolver
+	modelconfigResolver         ModelconfigResolver
 	notebooksResolver           NotebooksResolver
 	ownResolver                 OwnResolver
 	rbacResolver                RBACResolver
@@ -813,6 +831,7 @@ var EnterpriseResolvers = struct {
 	webhooksResolver            WebhooksResolver
 	contentLibraryResolver      ContentLibraryResolver
 	telemetryResolver           *TelemetryRootResolver
+	promptsResolver             PromptsResolver
 }{}
 
 // Root returns a new schemaResolver.

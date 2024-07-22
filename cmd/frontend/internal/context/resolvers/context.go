@@ -11,8 +11,10 @@ import (
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
@@ -22,6 +24,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
+
+	cohere "github.com/cohere-ai/cohere-go/v2"
+	"github.com/cohere-ai/cohere-go/v2/client"
 )
 
 func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient *codycontext.CodyContextClient, logger log.Logger) graphqlbackend.CodyContextResolver {
@@ -31,6 +36,9 @@ func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient
 		contextClient:       contextClient,
 		logger:              logger,
 		intentApiHttpClient: httpcli.UncachedExternalDoer,
+		intentBackendConfig: conf.CodyIntentConfig(),
+		reranker:            conf.CodyReranker(),
+		cohereConfig:        conf.CodyRerankerCohereConfig(),
 	}
 }
 
@@ -40,6 +48,9 @@ type Resolver struct {
 	contextClient       *codycontext.CodyContextClient
 	logger              log.Logger
 	intentApiHttpClient httpcli.Doer
+	intentBackendConfig *schema.IntentDetectionAPI
+	reranker            conf.CodyRerankerBackend
+	cohereConfig        *schema.CodyRerankerCohere
 }
 
 func (r *Resolver) RecordContext(ctx context.Context, args graphqlbackend.RecordContextArgs) (*graphqlbackend.EmptyResponse, error) {
@@ -47,19 +58,19 @@ func (r *Resolver) RecordContext(ctx context.Context, args graphqlbackend.Record
 	if err != nil {
 		return nil, err
 	}
-	retrieverUsed, retrieverDiscarded := map[string]int{}, map[string]int{}
+	retrieverUsed, retrieverIgnored := map[string]int{}, map[string]int{}
 	for _, item := range args.UsedContextItems {
 		retrieverUsed[item.Retriever]++
 	}
-	for _, item := range args.DiscardedContextItems {
-		retrieverDiscarded[item.Retriever]++
+	for _, item := range args.IgnoredContextItems {
+		retrieverIgnored[item.Retriever]++
 	}
-	fields := []log.Field{log.String("interactionID", args.InteractionID), log.Int("includedItemCount", len(args.UsedContextItems)), log.Int("excludedItemCount", len(args.DiscardedContextItems))}
+	fields := []log.Field{log.String("interactionID", args.InteractionID), log.Int("usedItemCount", len(args.UsedContextItems)), log.Int("ignoredItemCount", len(args.IgnoredContextItems))}
 	for r, cnt := range retrieverUsed {
 		fields = append(fields, log.Int(r+"-used", cnt))
 	}
-	for r, cnt := range retrieverDiscarded {
-		fields = append(fields, log.Int(r+"-discarded", cnt))
+	for r, cnt := range retrieverIgnored {
+		fields = append(fields, log.Int(r+"-ignored", cnt))
 	}
 	r.logger.Info("recording context", fields...)
 	return nil, nil
@@ -70,14 +81,15 @@ func (r *Resolver) RankContext(ctx context.Context, args graphqlbackend.RankCont
 	if err != nil {
 		return nil, err
 	}
+	ranker, used, err := r.rerank(ctx, args)
+	if err != nil {
+		return nil, err
+	}
 	res := rankContextResponse{
-		ranker: "identity",
+		ranker: string(ranker),
+		used:   used,
 	}
 	r.logger.Info("ranking context", log.String("interactionID", args.InteractionID), log.String("ranker", res.ranker), log.Int("contextItemCount", len(args.ContextItems)))
-
-	for i := range args.ContextItems {
-		res.used = append(res.used, int32(i))
-	}
 	return res, nil
 }
 
@@ -128,20 +140,49 @@ func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatInten
 	if err != nil {
 		return nil, err
 	}
+	backend := r.intentBackendConfig
+	if backend == nil || backend.Default == nil {
+		return nil, errors.New("intent detection backend not configured")
+	}
 	intentRequest := intentApiRequest{Query: args.Query}
 	buf, err := json.Marshal(&intentRequest)
 	if err != nil {
 		return nil, err
 	}
+	intentResponse, err := r.sendIntentRequest(ctx, *backend.Default, buf)
+	// ignore cancellation from top-level context - we allow extra requests to extend beyond the lifetime of parent request, but we'll rely on short timeouts to make sure they don't last too long
+	extraContext := context.WithoutCancel(ctx)
+	iter.ForEach(backend.Extra, func(extraBackend **schema.BackendAPIConfig) {
+		if *extraBackend == nil {
+			return
+		}
+		response, err := r.sendIntentRequest(extraContext, **extraBackend, buf)
+		if err != nil {
+			r.logger.Warn("error fetching intent from extra backend", log.String("interactionID", args.InteractionID), log.String("backend", (*extraBackend).Url), log.Error(err))
+			return
+		}
+		r.logger.Debug("fetched intent from extra backend", log.String("interactionID", args.InteractionID), log.String("backend", (*extraBackend).Url), log.String("query", args.Query), log.String("intent", response.Intent), log.Float64("score", response.Score))
+	})
+	if err != nil {
+		return nil, err
+	}
+	r.logger.Info("detecting intent", log.String("interactionID", args.InteractionID), log.String("query", args.Query), log.String("intent", intentResponse.Intent), log.Float64("score", intentResponse.Score))
+	return &chatIntentResponse{intent: intentResponse.Intent, score: intentResponse.Score}, nil
+}
+
+func (r *Resolver) sendIntentRequest(ctx context.Context, backend schema.BackendAPIConfig, request []byte) (*intentApiResponse, error) {
 	// Fail-fast
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	// Proof-of-concept warning - this needs to be deployed behind Cody Gateway, or exposed with HTTPS and authentication.
-	req, err := http.NewRequestWithContext(ctx, "POST", "http://34.123.181.109:8000/predict/linearv2", bytes.NewReader(buf))
+	req, err := http.NewRequestWithContext(ctx, "POST", backend.Url, bytes.NewReader(request))
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	if backend.AuthHeader != "" {
+		req.Header.Set("Authorization", backend.AuthHeader)
+	}
 	resp, err := r.intentApiHttpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -156,8 +197,7 @@ func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatInten
 	if err != nil {
 		return nil, err
 	}
-	r.logger.Info("detecting intent", log.String("interactionID", args.InteractionID), log.String("query", args.Query), log.String("intent", intentResponse.Intent), log.Float64("score", intentResponse.Score))
-	return &chatIntentResponse{intent: intentResponse.Intent, score: intentResponse.Score}, nil
+	return &intentResponse, nil
 }
 
 func (r *Resolver) contextApiEnabled(ctx context.Context) error {
@@ -228,6 +268,35 @@ func (r *Resolver) fileChunkToResolver(ctx context.Context, chunk *codycontext.F
 	return graphqlbackend.NewFileChunkContextResolver(gitTreeEntryResolver, chunk.StartLine, endLine), nil
 }
 
+func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextArgs) (conf.CodyRerankerBackend, []int32, error) {
+	if r.reranker == conf.CodyRerankerIdentity {
+		var used []int32
+		for i := range args.ContextItems {
+			used = append(used, int32(i))
+		}
+		return conf.CodyRerankerIdentity, used, nil
+	}
+	co := client.NewClient(client.WithToken(r.cohereConfig.ApiKey))
+
+	req := &cohere.RerankRequest{
+		Query: args.Query,
+		Model: cohere.String(r.cohereConfig.Model),
+	}
+	for _, ci := range args.ContextItems {
+		req.Documents = append(req.Documents, &cohere.RerankRequestDocumentsItem{String: ci.Content})
+	}
+	resp, err := co.Rerank(ctx, req)
+	if err != nil {
+		r.logger.Error("cohere reranking error", log.String("interactionId", args.InteractionID), log.String("query", args.Query), log.Error(err))
+		return conf.CodyRerankerCohere, nil, err
+	}
+	var used []int32
+	for _, r := range resp.Results {
+		used = append(used, int32(r.Index))
+	}
+	return conf.CodyRerankerCohere, used, nil
+}
+
 // countLines finds the number of lines corresponding to the number of runes. We 'round down'
 // to ensure that we don't return more characters than our budget.
 func countLines(content string, numRunes int) int {
@@ -246,9 +315,9 @@ func countLines(content string, numRunes int) int {
 }
 
 type rankContextResponse struct {
-	ranker    string
-	used      []int32
-	discarded []int32
+	ranker  string
+	used    []int32
+	ignored []int32
 }
 
 func (r rankContextResponse) Ranker() string {
@@ -259,8 +328,8 @@ func (r rankContextResponse) Used() []int32 {
 	return r.used
 }
 
-func (r rankContextResponse) Discarded() []int32 {
-	return r.discarded
+func (r rankContextResponse) Ignored() []int32 {
+	return r.ignored
 }
 
 var _ graphqlbackend.RankContextResolver = &rankContextResponse{}

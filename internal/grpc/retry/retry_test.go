@@ -116,11 +116,13 @@ func (s *failingService) PingList(ping *testpb.PingListRequest, stream testpb.Te
 		return err
 	}
 
+	s.mu.Lock()
 	stream = &failingListServiceStreamWrapper{
 		shouldFail:                 s.streamFailureFunc,
 		respError:                  s.streamError,
 		TestService_PingListServer: stream,
 	}
+	s.mu.Unlock()
 
 	return s.TestServiceServer.PingList(ping, stream)
 }

@@ -14,7 +14,7 @@ import { SearchContextsList } from './SearchContextsList'
 import styles from './SearchContextsListPage.module.scss'
 
 export interface SearchContextsListPageProps
-    extends Pick<SearchContextProps, 'fetchSearchContexts' | 'getUserSearchContextNamespaces'>,
+    extends Pick<SearchContextProps, 'fetchSearchContexts'>,
         PlatformContextProps<'requestGraphQL' | 'telemetryRecorder'> {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
@@ -22,10 +22,8 @@ export interface SearchContextsListPageProps
 
 export const SearchContextsListPage: React.FunctionComponent<SearchContextsListPageProps> = ({
     authenticatedUser,
-    getUserSearchContextNamespaces,
     fetchSearchContexts,
     platformContext,
-    isSourcegraphDotCom,
 }) => {
     const [alert, setAlert] = useState<string | undefined>()
 
@@ -68,7 +66,6 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                 <div role="tabpanel" id="search-context-list">
                     <SearchContextsList
                         authenticatedUser={authenticatedUser}
-                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                         fetchSearchContexts={fetchSearchContexts}
                         platformContext={platformContext}
                         setAlert={setAlert}

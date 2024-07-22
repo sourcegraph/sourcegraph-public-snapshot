@@ -36,6 +36,7 @@ const defaultProps: GlobalNavbarProps = {
     setFuzzyFinderIsVisible: () => {},
     notebooksEnabled: true,
     codeMonitoringEnabled: true,
+    searchJobsEnabled: true,
     ownEnabled: true,
     showFeedbackModal: () => undefined,
 }
@@ -73,15 +74,7 @@ const decorator: Decorator<GlobalNavbarProps> = Story => {
 const config: Meta<typeof GlobalNavbar> = {
     title: 'web/nav/GlobalNav',
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            disableSnapshot: false,
-            viewports: [
-                // 320, // TODO: Mobile size detection is not working in Storybook
-                576, 978,
-            ],
-        },
-    },
+    parameters: {},
 }
 
 export default config

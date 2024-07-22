@@ -8,6 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -16,9 +17,10 @@ import (
 )
 
 type SavedSearchStore interface {
-	Create(context.Context, *types.SavedSearch) (*types.SavedSearch, error)
-	Update(context.Context, *types.SavedSearch) (*types.SavedSearch, error)
+	Create(_ context.Context, _ *types.SavedSearch) (*types.SavedSearch, error)
+	Update(_ context.Context, _ *types.SavedSearch) (*types.SavedSearch, error)
 	UpdateOwner(_ context.Context, id int32, newOwner types.Namespace) (*types.SavedSearch, error)
+	UpdateVisibility(_ context.Context, id int32, secret bool) (*types.SavedSearch, error)
 	Delete(context.Context, int32) error
 	GetByID(context.Context, int32) (*types.SavedSearch, error)
 	List(context.Context, SavedSearchListArgs, *PaginationArgs) ([]*types.SavedSearch, error)
@@ -49,9 +51,10 @@ func (s *savedSearchStore) WithTransact(ctx context.Context, f func(SavedSearchS
 	})
 }
 
-var errSavedSearchNotFound = resourceNotFoundError{noun: "saved search"}
-
-var savedSearchColumns = sqlf.Sprintf("description, query, user_id, org_id, created_at, updated_at")
+var (
+	errSavedSearchNotFound = resourceNotFoundError{noun: "saved search"}
+	savedSearchColumns     = sqlf.Sprintf("description, query, draft, user_id, org_id, visibility_secret, created_by, created_at, updated_by, updated_at")
+)
 
 // Create creates a new saved search with the specified parameters. The ID field must be zero, or an
 // error will be returned.
@@ -66,14 +69,20 @@ func (s *savedSearchStore) Create(ctx context.Context, newSavedSearch *types.Sav
 	tr, ctx := trace.New(ctx, "database.SavedSearches.Create")
 	defer tr.EndWithErr(&err)
 
+	actorUID := actor.FromContext(ctx).UID
+
 	return scanSavedSearch(
 		s.QueryRow(ctx,
-			sqlf.Sprintf(`INSERT INTO saved_searches(%v) VALUES(%v, %v, %v, %v, DEFAULT, DEFAULT) RETURNING id, %v`,
+			sqlf.Sprintf(`INSERT INTO saved_searches(%v) VALUES(%v, %v, %v, %v, %v, %v, %v, DEFAULT, %v, DEFAULT) RETURNING id, %v`,
 				savedSearchColumns,
 				newSavedSearch.Description,
 				newSavedSearch.Query,
+				newSavedSearch.Draft,
 				newSavedSearch.Owner.User,
 				newSavedSearch.Owner.Org,
+				newSavedSearch.VisibilitySecret,
+				actorUID,
+				actorUID,
 				savedSearchColumns,
 			),
 		))
@@ -90,6 +99,7 @@ func (s *savedSearchStore) Update(ctx context.Context, savedSearch *types.SavedS
 	return s.update(ctx, savedSearch.ID, []*sqlf.Query{
 		sqlf.Sprintf("description=%s", savedSearch.Description),
 		sqlf.Sprintf("query=%s", savedSearch.Query),
+		sqlf.Sprintf("draft=%v", savedSearch.Draft),
 	})
 }
 
@@ -106,8 +116,19 @@ func (s *savedSearchStore) UpdateOwner(ctx context.Context, id int32, newOwner t
 	})
 }
 
+// UpdateVisibility updates the visibility state of an existing saved search.
+//
+// 🚨 SECURITY: This method does NOT verify that the user has permissions to do this. The caller
+// MUST do so.
+func (s *savedSearchStore) UpdateVisibility(ctx context.Context, id int32, secret bool) (updated *types.SavedSearch, err error) {
+	tr, ctx := trace.New(ctx, "database.SavedSearches.UpdateVisibility")
+	defer tr.EndWithErr(&err)
+	return s.update(ctx, id, []*sqlf.Query{sqlf.Sprintf("visibility_secret=%v", secret)})
+}
+
 func (s *savedSearchStore) update(ctx context.Context, id int32, updates []*sqlf.Query) (updated *types.SavedSearch, err error) {
-	updates = append(updates, sqlf.Sprintf("updated_at=now()"))
+	actorUID := actor.FromContext(ctx).UID
+	updates = append(updates, sqlf.Sprintf("updated_at=now()"), sqlf.Sprintf("updated_by=%v", actorUID))
 	return scanSavedSearch(
 		s.QueryRow(ctx,
 			sqlf.Sprintf(
@@ -152,7 +173,9 @@ func (s *savedSearchStore) GetByID(ctx context.Context, id int32) (_ *types.Save
 type SavedSearchListArgs struct {
 	Query          string
 	AffiliatedUser *int32
+	PublicOnly     bool
 	Owner          *types.Namespace
+	HideDrafts     bool
 }
 
 type SavedSearchesOrderBy uint8
@@ -186,12 +209,17 @@ func (a SavedSearchListArgs) toSQL() (where []*sqlf.Query, err error) {
 		where = append(where, sqlf.Sprintf("(description ILIKE %v OR query ILIKE %v)", queryStr, queryStr))
 	}
 	if a.AffiliatedUser != nil {
+		affiliatedConds := []*sqlf.Query{
+			sqlf.Sprintf("user_id=%v", *a.AffiliatedUser),
+			sqlf.Sprintf("org_id IN (SELECT org_members.org_id FROM org_members LEFT JOIN orgs ON orgs.id=org_members.org_id WHERE orgs.deleted_at IS NULL AND org_members.user_id=%v)", *a.AffiliatedUser),
+			sqlf.Sprintf("NOT visibility_secret"), // treat all public items as though they're affiliated with the current user
+		}
 		where = append(where,
-			sqlf.Sprintf("(%v OR %v)",
-				sqlf.Sprintf("user_id=%v", *a.AffiliatedUser),
-				sqlf.Sprintf("org_id IN (SELECT org_members.org_id FROM org_members LEFT JOIN orgs ON orgs.id=org_members.org_id WHERE orgs.deleted_at IS NULL AND org_members.user_id=%v)", *a.AffiliatedUser),
-			),
+			sqlf.Sprintf("(%v)", sqlf.Join(affiliatedConds, ") OR (")),
 		)
+	}
+	if a.PublicOnly {
+		where = append(where, sqlf.Sprintf("NOT visibility_secret"))
 	}
 	if a.Owner != nil {
 		if a.Owner.User != nil && *a.Owner.User != 0 {
@@ -201,6 +229,9 @@ func (a SavedSearchListArgs) toSQL() (where []*sqlf.Query, err error) {
 		} else {
 			return nil, errors.New("invalid owner (no user or org ID)")
 		}
+	}
+	if a.HideDrafts {
+		where = append(where, sqlf.Sprintf("NOT draft"))
 	}
 	if len(where) == 0 {
 		where = append(where, sqlf.Sprintf("TRUE"))
@@ -245,9 +276,13 @@ func scanSavedSearch(s dbutil.Scanner) (*types.SavedSearch, error) {
 		&row.ID,
 		&row.Description,
 		&row.Query,
+		&row.Draft,
 		&row.Owner.User,
 		&row.Owner.Org,
+		&row.VisibilitySecret,
+		&row.CreatedByUser,
 		&row.CreatedAt,
+		&row.UpdatedByUser,
 		&row.UpdatedAt,
 	); err != nil {
 		if err == sql.ErrNoRows {

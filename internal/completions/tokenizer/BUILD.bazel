@@ -11,6 +11,7 @@ go_library(
         "//internal/completions/client/anthropic:__pkg__",
         "//internal/completions/client/azureopenai:__pkg__",
         "//internal/completions/client/openai:__pkg__",
+        "//internal/completions/client/openaicompatible:__pkg__",
         "//internal/completions/tokenusage:__pkg__",
     ],
     deps = [

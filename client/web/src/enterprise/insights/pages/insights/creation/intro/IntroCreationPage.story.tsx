@@ -12,12 +12,7 @@ import { IntroCreationPage } from './IntroCreationPage'
 const config: Meta = {
     title: 'web/insights/creation-ui/IntroPage',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-    parameters: {
-        chromatic: {
-            viewports: [576, 978, 1440],
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default config

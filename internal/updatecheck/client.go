@@ -176,6 +176,16 @@ func getAndMarshalSavedSearchesJSON(ctx context.Context, db database.DB) (_ json
 	return json.Marshal(savedSearches)
 }
 
+func getAndMarshalPromptsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalPromptsJSON")(&err)
+
+	prompts, err := usagestats.GetPrompts(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(prompts)
+}
+
 func getAndMarshalHomepagePanelsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalHomepagePanelsJSON")(&err)
 
@@ -603,6 +613,10 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx, db)
 	if err != nil {
 		logFunc("getAndMarshalSavedSearchesJSON failed", log.Error(err))
+	}
+	r.Prompts, err = getAndMarshalPromptsJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMarshalPromptsJSON failed", log.Error(err))
 	}
 
 	r.HomepagePanels, err = getAndMarshalHomepagePanelsJSON(ctx, db)

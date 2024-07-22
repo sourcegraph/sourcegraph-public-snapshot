@@ -13,16 +13,16 @@
 </script>
 
 <script lang="ts">
-    import { browser } from '$app/environment'
     import { page } from '$app/stores'
     import { onClickOutside } from '$lib/dom'
     import Icon from '$lib/Icon.svelte'
-    import { mark } from '$lib/images'
     import MainNavigationLink from '$lib/navigation/MainNavigationLink.svelte'
     import Popover from '$lib/Popover.svelte'
     import SourcegraphLogo from '$lib/SourcegraphLogo.svelte'
     import { isViewportMediumDown } from '$lib/stores'
-    import { Badge, Button } from '$lib/wildcard'
+    import { Button } from '$lib/wildcard'
+    import Badge from '$lib/wildcard/Badge.svelte'
+    import Toggle from '$lib/wildcard/Toggle.svelte'
 
     import { GlobalNavigation_User } from './GlobalNavigation.gql'
     import { type NavigationEntry, type NavigationMenu, isNavigationMenu, isCurrent } from './mainNavigation'
@@ -31,10 +31,6 @@
     export let authenticatedUser: GlobalNavigation_User | null | undefined
     export let handleOptOut: (() => Promise<void>) | undefined
     export let entries: (NavigationEntry | NavigationMenu)[]
-
-    const isDevOrS2 =
-        (browser && window.location.hostname === 'localhost') ||
-        window.location.hostname === 'sourcegraph.sourcegraph.com'
 
     let sidebarNavigationOpen: boolean = false
     let closeMenuTimer: number = 0
@@ -62,7 +58,7 @@
         </button>
 
         <a href="/search">
-            <img src={mark} alt="Sourcegraph" width="25" height="25" />
+            <Icon icon={ISgMark} aria-label="Sourcegraph" aria-hidden="true" --icon-color="initial" />
         </a>
     </div>
 
@@ -75,11 +71,12 @@
         >
             <div class="sidebar-navigation-header">
                 <button class="close-button" on:click={() => (sidebarNavigationOpen = false)}>
-                    <Icon icon={ILucideX} aria-label="Close sidebar navigation" />
+                    <Icon icon={ILucideX} />
                 </button>
 
                 <a href="/search" class="logo-link">
-                    <SourcegraphLogo width="9.1rem" />
+                    <!-- Match the size of the mark when the panel is closed so the mark doesn't shift -->
+                    <SourcegraphLogo height={24} />
                 </a>
             </div>
             <ul class="top-navigation">
@@ -122,29 +119,31 @@
 
     <div class="global-portal" bind:this={$extensionElement} />
 
-    <Popover let:registerTrigger showOnHover hoverDelay={100} hoverCloseDelay={50}>
-        <span class="web-next-badge" use:registerTrigger>
-            <Badge variant="warning">Experimental</Badge>
-        </span>
-        <div slot="content" class="web-next-content">
-            <h3>Experimental web app</h3>
-            <p>
-                You are using an experimental version of the Sourcegraph web app. This version is under active
-                development and may contain bugs or incomplete features.
-            </p>
-            {#if isDevOrS2}
+    <div class="web-next-notice">
+        {#if handleOptOut}
+            <Toggle on={true} on:click={() => handleOptOut && handleOptOut()} />
+        {/if}
+        <Popover let:toggle let:registerTrigger>
+            <button class="web-next-badge" use:registerTrigger on:click={() => toggle()}>
+                <Badge variant="warning">Experimental</Badge>
+            </button>
+            <div slot="content" class="web-next-content">
+                <h3>Experimental web app</h3>
                 <p>
-                    If you encounter any issues, please report them in our <a
-                        href="https://sourcegraph.slack.com/archives/C05MHAP318B">Slack channel</a
+                    You are using an experimental version of the Sourcegraph web app. This version is under active
+                    development and may contain bugs or incomplete features.
+                </p>
+                <p>
+                    If you encounter any issues, please report them in our <a href="https://community.sourcegraph.com/"
+                        >community forums</a
                     >.
                 </p>
-            {/if}
-            {#if handleOptOut}
-                Or you can <button role="link" class="opt-out" on:click={handleOptOut}>opt out</button> of the Sveltekit
-                experiment.
-            {/if}
-        </div>
-    </Popover>
+                {#if handleOptOut}
+                    <p>You can opt out of the new experience with the toggle above.</p>
+                {/if}
+            </div>
+        </Popover>
+    </div>
     <div>
         {#if authenticatedUser}
             <UserMenu user={authenticatedUser} />
@@ -182,7 +181,7 @@
             margin-left: 0;
         }
 
-        img:hover {
+        :global([data-icon]):hover {
             @keyframes spin {
                 50% {
                     transform: rotate(180deg) scale(1.2);
@@ -419,9 +418,17 @@
         text-decoration: underline;
     }
 
+    .web-next-notice {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
     .web-next-badge {
+        all: unset;
+        display: flex;
+        align-items: center;
         cursor: pointer;
-        padding: 0.25rem;
         margin-left: auto;
     }
 

@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pgxerrors",
+    srcs = ["pgxerrors.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/pgxerrors",
+    visibility = ["//cmd/enterprise-portal:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_jackc_pgx_v5//pgconn",
+    ],
+)

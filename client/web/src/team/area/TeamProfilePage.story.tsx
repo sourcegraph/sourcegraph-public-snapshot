@@ -7,9 +7,7 @@ import { testContext } from './testContext.mock'
 
 const config: Meta = {
     title: 'web/teams/TeamProfilePage',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 export default config
 

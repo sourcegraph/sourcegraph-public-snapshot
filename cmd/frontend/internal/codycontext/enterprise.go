@@ -50,11 +50,8 @@ type enterpriseRepoFilter struct {
 
 // newEnterpriseFilter creates a new repoContentFilter that filters out
 // content based on the Cody context filters value in the site config.
-func newEnterpriseFilter(logger log.Logger, db database.DB) repoContentFilter {
-	f := &enterpriseRepoFilter{
-		logger: logger.Scoped("filter"),
-		db:     db,
-	}
+func newEnterpriseFilter(logger log.Logger) repoContentFilter {
+	f := &enterpriseRepoFilter{logger: logger.Scoped("filter")}
 	f.configure()
 	conf.Watch(func() {
 		f.configure()
@@ -70,16 +67,6 @@ func (f *enterpriseRepoFilter) getFiltersConfig() (_ filtersConfig, ok bool) {
 
 // getMatcher returns the list of repos that can be filtered based on the Cody context filter value in the site config.
 func (f *enterpriseRepoFilter) getMatcher(ctx context.Context, repos []types.RepoIDName) ([]types.RepoIDName, fileMatcher, error) {
-	// TODO: remove this check after `CodyContextFilters` support is added to the IDE clients.
-	enabled, err := checkFeatureFlagEnabled(ctx, f.db)
-	if err != nil {
-		return []types.RepoIDName{}, func(api.RepoID, string) bool { return false }, err
-	}
-	if !enabled {
-		// Cody context filters are not enabled, so allow everything.
-		return repos, func(api.RepoID, string) bool { return true }, nil
-	}
-
 	fc, ok := f.getFiltersConfig()
 	if !ok {
 		// our configuration is invalid, so filter everything out.

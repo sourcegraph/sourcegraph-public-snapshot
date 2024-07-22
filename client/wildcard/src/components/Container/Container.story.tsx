@@ -86,10 +86,6 @@ export const Overview: StoryFn = () => (
 )
 
 Overview.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
     design: {
         type: 'figma',
         name: 'Figma',

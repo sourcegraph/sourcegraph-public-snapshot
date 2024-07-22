@@ -34,7 +34,6 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -116,9 +115,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Scheduler: updateScheduler,
 	}
 
-	// No Batch Changes on dotcom, so we don't need to spawn the
-	// background jobs for this feature.
-	if !dotcom.SourcegraphDotComMode() {
+	if batches.IsEnabled() {
 		syncRegistry := batches.InitBackgroundJobs(ctx, db, keyring.Default().BatchChangesCredentialKey, cf)
 		server.ChangesetSyncRegistry = syncRegistry
 	}

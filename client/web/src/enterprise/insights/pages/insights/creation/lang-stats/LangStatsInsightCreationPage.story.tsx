@@ -19,12 +19,7 @@ import { LangStatsInsightCreationPage as LangStatsInsightCreationPageComponent }
 const defaultStory: Meta = {
     title: 'web/insights/creation-ui/lang-stats/LangStatsInsightCreationPage',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-    parameters: {
-        chromatic: {
-            viewports: [576, 1440],
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default defaultStory

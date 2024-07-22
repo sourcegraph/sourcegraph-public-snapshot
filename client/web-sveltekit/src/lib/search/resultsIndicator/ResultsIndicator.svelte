@@ -45,13 +45,15 @@
 
     <div class="messages">
         <ProgressMessage {state} {progress} {severity} />
-        {#if !done && takingTooLong}
-            <TimeoutMessage />
-        {:else if done}
-            <SuggestedAction {progress} {suggestedItems} {severity} {state} />
-        {:else}
-            <span>Running search...</span>
-        {/if}
+        <div class="info">
+            {#if !done && takingTooLong}
+                <TimeoutMessage />
+            {:else if done}
+                <SuggestedAction {progress} {suggestedItems} {severity} {state} />
+            {:else}
+                <span>Running search...</span>
+            {/if}
+        </div>
     </div>
 
     <Icon icon={ILucideChevronDown} --icon-size="12px" />
@@ -83,6 +85,12 @@
             justify-content: center;
             align-items: flex-start;
             row-gap: 0.25rem;
+
+            @media (--mobile) {
+                .info {
+                    display: none;
+                }
+            }
         }
 
         span {

@@ -4,8 +4,8 @@ import classNames from 'classnames'
 import type { NavigateFunction } from 'react-router-dom'
 
 import type { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { Button, Modal, Select, H3, Form } from '@sourcegraph/wildcard'
+import { type TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { Button, Form, H3, Modal, Select } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 
@@ -82,7 +82,7 @@ export class SavedSearchModal extends React.Component<Props, State> {
                                     </option>
                                     {this.props.authenticatedUser.organizations.nodes.map(org => (
                                         <option value={org.name} key={org.name}>
-                                            {org.displayName ? org.displayName : org.name}
+                                            {org.name}
                                         </option>
                                     ))}
                                 </Select>

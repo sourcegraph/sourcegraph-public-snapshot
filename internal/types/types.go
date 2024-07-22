@@ -2182,3 +2182,10 @@ func (rm ReposModified) ReposModified(modified RepoModifiedFields) Repos {
 
 	return repos
 }
+
+// RegexpPattern is a string that carries the additional intent that it is a
+// valid regex pattern, as validated by non-error return of
+// `syntax.Parse(pattern, syntax.Perl)`. Compilation of this string should not
+// fail, but still prefer checking an error to panicking because some
+// compilation errors (e.g. complexity checks) are not errors during parsing.
+type RegexpPattern string

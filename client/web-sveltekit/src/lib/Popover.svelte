@@ -5,6 +5,7 @@
     import { createHotkey } from '$lib/Hotkey'
 
     import { popover, onClickOutside, portal } from './dom'
+    import { isViewportMobile } from './stores'
 
     /**
      * Show the popover when hovering over the trigger.
@@ -94,7 +95,6 @@
         trigger.addEventListener('mouseenter', handleMouseEnterTrigger)
         trigger.addEventListener('mouseleave', handleMouseLeaveTrigger)
         trigger.addEventListener('mousemove', handleMouseMoveTrigger)
-        trigger.addEventListener('click', close)
         window.addEventListener('blur', close)
     }
 
@@ -102,7 +102,6 @@
         trigger.removeEventListener('mouseenter', handleMouseEnterTrigger)
         trigger.removeEventListener('mouseleave', handleMouseLeaveTrigger)
         trigger.removeEventListener('mousemove', handleMouseMoveTrigger)
-        trigger.removeEventListener('click', close)
         window.removeEventListener('blur', close)
     }
 
@@ -111,7 +110,9 @@
     let oldTrigger: HTMLElement | null
     $: {
         oldTrigger && showOnHover && unwatchTrigger(oldTrigger)
-        trigger && showOnHover && watchTrigger(trigger)
+        if (!$isViewportMobile) {
+            trigger && showOnHover && watchTrigger(trigger)
+        }
         oldTrigger = trigger
     }
 
@@ -155,6 +156,9 @@
                 placement,
                 offset,
                 shift: { padding: 4 },
+                flip: {
+                    fallbackAxisSideDirection: 'start',
+                },
             },
         }}
         on:click-outside={handleClickOutside}
@@ -178,7 +182,7 @@
         border: 1px solid var(--dropdown-border-color);
         border-radius: var(--popover-border-radius);
         // Ensure child elements do not overflow the border radius
-        overflow: hidden;
+        overflow-y: scroll;
 
         // We always display the popover on hover, but there may not be anything
         // inside until something we load something. This ensures we do not
