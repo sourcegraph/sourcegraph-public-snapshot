@@ -59,9 +59,7 @@ type Resolver struct {
 }
 
 func (r *Resolver) ChatContext(ctx context.Context, args graphqlbackend.ChatContextArgs) (graphqlbackend.ChatContextResolver, error) {
-	if !dotcom.SourcegraphDotComMode() {
-		return nil, errors.New("chat context is not available on Sourcegraph.com")
-	}
+	err := r.contextApiEnabled(ctx)
 	// Set a more aggressive timeout for this request so slow experimental retrievers won't block client
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()

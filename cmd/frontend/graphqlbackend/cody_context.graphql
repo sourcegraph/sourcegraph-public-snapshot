@@ -104,7 +104,7 @@ extend type Query {
         """
         repo: String!
         """
-        Interaction ID.
+        Cody interaction ID - used to join requests for intent detection/context fetching/ranking.
         """
         interactionId: String!
         """
@@ -227,7 +227,7 @@ type ChatContextResult {
     """
     partialErrors: [String!]!
     """
-    Partial errors that happened while fetching context items (but did not block the whole request).
+    Reason this request was stopped - either completed successfully (DONE), timeout (TIMEOUT) or in the future other reasons like context item budget exhausted.
     """
     stopReason: String!
 }
