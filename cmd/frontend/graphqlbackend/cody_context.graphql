@@ -214,7 +214,9 @@ type RankingResponse {
     ignored: [Int!]!
 }
 
-
+"""
+EXPERIMENTAL: A response from Cody Chat context retrieval API.
+"""
 type ChatContextResult {
     """
     Context items fetched for this chat interaction.
@@ -230,8 +232,20 @@ type ChatContextResult {
     stopReason: String!
 }
 
+"""
+EXPERIMENTAL: Representation of a context item returned by a retriever.
+"""
 type RetrieverContextItem{
+    """
+    Retriever that produced this item.
+    """
     retriever: String!
+    """
+    Retriever-assigned score for this item <0.0,1.0>.
+    """
     score: Float
+    """
+    Represents the content of the context item.
+    """
     item: CodyContextResult!
 }
