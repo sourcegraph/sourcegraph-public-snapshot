@@ -148,7 +148,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	type pair struct {
 		upload *shared.Upload
-		index  *uploadsshared.AutoIndexJob
+		job    *uploadsshared.AutoIndexJob
 	}
 	pairs := make([]pair, 0, pageSize)
 	addUpload := func(upload shared.Upload) { pairs = append(pairs, pair{&upload, nil}) }
@@ -199,7 +199,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(pairs))
 	for _, pair := range pairs {
-		resolver, err := r.preciseIndexResolverFactory.Create(ctx, uploadLoader, autoIndexJobLoader, locationResolver, errTracer, pair.upload, pair.index)
+		resolver, err := r.preciseIndexResolverFactory.Create(ctx, uploadLoader, autoIndexJobLoader, locationResolver, errTracer, pair.upload, pair.job)
 		if err != nil {
 			return nil, err
 		}
