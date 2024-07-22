@@ -1831,6 +1831,8 @@ type CreateBatchChangesUserCredentialArgs struct {
 	GitHubAppKind       ghtypes.GitHubAppKind
 }
 
+var timeOutError = errors.New("Timed out while verifying credential. Credential has been saved, but might not be valid.")
+
 func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, as sources.AuthenticationStrategy, args CreateBatchChangesUserCredentialArgs) (*database.UserCredential, error) {
 	// 🚨 SECURITY: Check that the requesting user can create the credential.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), args.UserID); err != nil {
@@ -1884,7 +1886,7 @@ func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, as sourc
 	}
 
 	if timedOut {
-		return nil, errors.New("Timed out while verifying credential. Credential has been saved, but might not be valid.")
+		return nil, timeOutError
 	}
 
 	return cred, nil
@@ -1949,7 +1951,7 @@ func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, as sourc
 	}
 
 	if timedOut {
-		return nil, errors.New("Timed out while verifying credential. Credential has been saved, but might not be valid.")
+		return nil, timeOutError
 	}
 
 	return cred, nil
