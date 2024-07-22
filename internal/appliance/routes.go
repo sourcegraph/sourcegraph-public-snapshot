@@ -8,7 +8,7 @@ import (
 
 func (a *Appliance) Routes() *mux.Router {
 	r := mux.NewRouter()
-	//r.Use(a.checkAuthorization)
+	r.Use(a.checkAuthorization)
 
 	// Route errors
 	r.NotFoundHandler = http.HandlerFunc(a.notFoundResponse)
