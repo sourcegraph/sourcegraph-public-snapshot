@@ -95,11 +95,7 @@ func TestSyntacticUsages(t *testing.T) {
 			SymbolRange: initialRange,
 		},
 	)
-
-	if err != nil {
-		t.Error(err)
-	}
-
+	require.NoError(t, err)
 	// We expect syntactic usages to filter both the comment range that was included in the search result,
 	// but not in the index as well as the range referencing the local symbol.
 	expectRanges(t, syntacticUsages.Matches, initialRange, refRange, defRange)
@@ -124,9 +120,7 @@ func TestSyntacticUsages_DocumentNotInIndex(t *testing.T) {
 			SymbolRange: initialRange,
 		},
 	)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 	expectRanges(t, syntacticUsages.Matches)
 }
 
@@ -160,8 +154,6 @@ func TestSyntacticUsages_IndexCommitTranslated(t *testing.T) {
 			SymbolRange: initialRange,
 		},
 	)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 	expectRanges(t, syntacticUsages.Matches, refRange)
 }

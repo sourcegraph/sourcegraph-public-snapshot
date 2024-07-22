@@ -6,6 +6,7 @@ import (
 
 	genslices "github.com/life4/genesis/slices"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
@@ -184,18 +185,14 @@ func expectRanges[T MatchLike](t *testing.T, matches []T, ranges ...scip.Range) 
 		_, err := genslices.Find(ranges, func(r scip.Range) bool {
 			return match.GetRange().CompareStrict(r) == 0
 		})
-		if err != nil {
-			t.Errorf("Did not expect match at %q", match.GetRange().String())
-		}
+		require.NoErrorf(t, err, "Did not expect match at %q", match.GetRange().String())
 	}
 
 	for _, r := range ranges {
 		_, err := genslices.Find(matches, func(match T) bool {
 			return match.GetRange().CompareStrict(r) == 0
 		})
-		if err != nil {
-			t.Errorf("Expected match at %q", r.String())
-		}
+		require.NoErrorf(t, err, "Expected match at %q", r.String())
 	}
 }
 
