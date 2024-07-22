@@ -213,7 +213,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 		testCases := []struct {
 			explanation    string
 			document       *scip.Document
-			occurrence     *scip.Occurrence
+			lookup         *scip.Occurrence
 			expectedRanges []scip.Range
 		}{
 			{
@@ -235,7 +235,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 						},
 					},
 				},
-				occurrence: &scip.Occurrence{
+				lookup: &scip.Occurrence{
 					Symbol:      "react 17.1 main.go func1",
 					SymbolRoles: 1, // is definition
 				},
@@ -262,7 +262,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 						},
 					},
 				},
-				occurrence: &scip.Occurrence{
+				lookup: &scip.Occurrence{
 					Symbol:      "react-jest main.js func7",
 					SymbolRoles: 1, // is definition
 				},
@@ -287,7 +287,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 						},
 					},
 				},
-				occurrence: &scip.Occurrence{
+				lookup: &scip.Occurrence{
 					Symbol:      "react-test index.js func2",
 					SymbolRoles: 0, // not a definition
 				},
@@ -296,7 +296,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 		}
 
 		for _, testCase := range testCases {
-			if diff := cmp.Diff(testCase.expectedRanges, extractOccurrenceData(testCase.document, testCase.occurrence).definitions); diff != "" {
+			if diff := cmp.Diff(testCase.expectedRanges, extractOccurrenceData(testCase.document, testCase.lookup).definitions); diff != "" {
 				t.Errorf("unexpected ranges (-want +got):\n%s  -- %s", diff, testCase.explanation)
 			}
 		}
