@@ -158,12 +158,12 @@ func (r *savedSearchResolver) URL() string {
 	return "/saved-searches/" + string(r.ID())
 }
 
-func (r *savedSearchResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+func (r *savedSearchResolver) ViewerCanAdminister(ctx context.Context) bool {
 	// 🚨 SECURITY: If the visibility is public, then the user can see it, but they can only
 	// administer it if they are authorized for the namespace (as an org member or their own user
 	// account).
 	err := graphqlbackend.CheckAuthorizedForNamespaceByIDs(ctx, r.db, r.s.Owner)
-	return err == nil, err
+	return err == nil
 }
 
 func (r *Resolver) toSavedSearchResolver(entry types.SavedSearch) *savedSearchResolver {
@@ -195,18 +195,16 @@ func (r *Resolver) SavedSearches(ctx context.Context, args graphqlbackend.SavedS
 		if err != nil {
 			return nil, err
 		}
-		if currentUser == nil {
-			// 🚨 SECURITY: Just in case, ensure the user is signed in.
-			return nil, auth.ErrNotAuthenticated
+		if currentUser != nil {
+			connectionStore.listArgs.AffiliatedUser = &currentUser.ID
+		} else {
+			// For anonymous visitors, just show all public saved searches.
+			connectionStore.listArgs.PublicOnly = true
 		}
-		connectionStore.listArgs.AffiliatedUser = &currentUser.ID
-
-		// Consider public saved searches to be affiliated with all users.
-		connectionStore.listArgs.IncludeAllPublicAsAffiliated = true
 	}
 
-	// 🚨 SECURITY: Only site admins can list all saved searches.
-	if connectionStore.listArgs.Owner == nil && connectionStore.listArgs.AffiliatedUser == nil {
+	// 🚨 SECURITY: Only site admins can list all non-public saved searches.
+	if connectionStore.listArgs.Owner == nil && connectionStore.listArgs.AffiliatedUser == nil && !connectionStore.listArgs.PublicOnly {
 		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return nil, errors.Wrap(err, "must specify owner or viewerIsAffiliated args")
 		}

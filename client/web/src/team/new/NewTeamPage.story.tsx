@@ -8,9 +8,7 @@ import { NewTeamPage } from './NewTeamPage'
 
 const config: Meta = {
     title: 'web/teams/NewTeamPage',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 export default config
 

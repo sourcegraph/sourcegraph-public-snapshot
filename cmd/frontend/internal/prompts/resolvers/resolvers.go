@@ -165,12 +165,12 @@ func (r *promptResolver) URL() string {
 	return "/prompts/" + string(r.ID())
 }
 
-func (r *promptResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+func (r *promptResolver) ViewerCanAdminister(ctx context.Context) bool {
 	// 🚨 SECURITY: If the visibility is public, then the user can see it, but they can only
 	// administer it if they are authorized for the namespace (as an org member or their own user
 	// account).
 	err := graphqlbackend.CheckAuthorizedForNamespaceByIDs(ctx, r.db, r.s.Owner)
-	return err == nil, err
+	return err == nil
 }
 
 func (r *Resolver) toPromptResolver(entry types.Prompt) *promptResolver {
@@ -202,19 +202,16 @@ func (r *Resolver) Prompts(ctx context.Context, args graphqlbackend.PromptsArgs)
 		if err != nil {
 			return nil, err
 		}
-		if currentUser == nil {
-			// 🚨 SECURITY: Just in case, ensure the user is signed in.
-			return nil, auth.ErrNotAuthenticated
+		if currentUser != nil {
+			connectionStore.listArgs.AffiliatedUser = &currentUser.ID
+		} else {
+			// For anonymous visitors, just show all public prompts.
+			connectionStore.listArgs.PublicOnly = true
 		}
-		connectionStore.listArgs.AffiliatedUser = &currentUser.ID
-
-		// Consider public prompts to be affiliated with all users.
-		connectionStore.listArgs.IncludeAllPublicAsAffiliated = true
 	}
 
-	// 🚨 SECURITY: Only site admins can list prompts owned by other users or orgs that they are
-	// not a member of.
-	if connectionStore.listArgs.Owner == nil && connectionStore.listArgs.AffiliatedUser == nil {
+	// 🚨 SECURITY: Only site admins can list all non-public prompts.
+	if connectionStore.listArgs.Owner == nil && connectionStore.listArgs.AffiliatedUser == nil && !connectionStore.listArgs.PublicOnly {
 		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return nil, errors.Wrap(err, "must specify owner or viewerIsAffiliated args")
 		}

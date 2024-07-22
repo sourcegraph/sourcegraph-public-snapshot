@@ -30,12 +30,18 @@ func marshalDefaultSettingsGQLID(defaultSettingsID string) graphql.ID {
 
 func (r *defaultSettingsResolver) ID() graphql.ID { return marshalDefaultSettingsGQLID(r.gqlID) }
 
-func (r *defaultSettingsResolver) LatestSettings(_ context.Context) (*settingsResolver, error) {
+func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
+	// 🚨 SECURITY: Check that the viewer can access these settings.
+	subject, err := settingsSubjectForNodeAndCheckAccess(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+
 	settings := &api.Settings{
 		Subject:  api.SettingsSubject{Default: true},
 		Contents: `{"experimentalFeatures": {}}`,
 	}
-	return &settingsResolver{r.db, &settingsSubjectResolver{defaultSettings: r}, settings, nil}, nil
+	return &settingsResolver{db: r.db, subject: subject, settings: settings}, nil
 }
 
 func (r *defaultSettingsResolver) SettingsURL() *string { return nil }
@@ -44,8 +50,15 @@ func (r *defaultSettingsResolver) ViewerCanAdminister(_ context.Context) (bool, 
 	return false, nil
 }
 
-func (r *defaultSettingsResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{defaultSettings: r}}
+func (r *defaultSettingsResolver) SettingsCascade(ctx context.Context) (*settingsCascade, error) {
+	// 🚨 SECURITY: Check that the viewer can access these settings.
+	subject, err := settingsSubjectForNodeAndCheckAccess(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	return &settingsCascade{db: r.db, subject: subject}, nil
 }
 
-func (r *defaultSettingsResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
+func (r *defaultSettingsResolver) ConfigurationCascade(ctx context.Context) (*settingsCascade, error) {
+	return r.SettingsCascade(ctx)
+}

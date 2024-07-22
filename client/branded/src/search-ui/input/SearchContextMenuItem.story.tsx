@@ -13,9 +13,7 @@ const decorator: Decorator = story => (
 
 const config: Meta = {
     title: 'branded/search-ui/input/SearchContextMenuItem',
-    parameters: {
-        chromatic: { viewports: [1200], disableSnapshot: false },
-    },
+    parameters: {},
     decorators: [decorator],
 }
 

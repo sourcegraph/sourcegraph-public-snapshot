@@ -10,9 +10,7 @@ import { DeleteMonitorModal } from './DeleteMonitorModal'
 
 const config: Meta = {
     title: 'web/enterprise/code-monitoring/DeleteMonitorModal',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

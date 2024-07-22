@@ -259,7 +259,6 @@
                 display: flex;
                 gap: 0.25rem;
 
-
                 li:not(:first-child)::before {
                     content: '•';
                     padding-right: 0.25rem;

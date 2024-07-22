@@ -13,8 +13,8 @@ import type {
 
 import { SearchPatternType } from '../../graphql-operations'
 
-import { type Predicate, scanPredicate } from './predicates'
-import { scanSearchQuery } from './scanner'
+import { type PredicateInstance, scanPredicate } from './predicates'
+import { quoted, scanSearchQuery, oneOf, ScanResult, toPatternResult } from './scanner'
 import { type Token, type Pattern, type Literal, PatternKind, type CharacterRange, createLiteral } from './token'
 
 /* eslint-disable unicorn/better-regex */
@@ -200,7 +200,7 @@ export interface MetaPredicate {
     range: CharacterRange
     groupRange?: CharacterRange
     kind: MetaPredicateKind
-    value: Predicate
+    value: PredicateInstance
 }
 
 enum MetaKeywordKind {
@@ -1014,33 +1014,48 @@ const decorateRepoHasMetaBody = (body: string, offset: number): DecoratedToken[]
         return undefined
     }
 
+    const offsetToken = (offset: number) => (token: DecoratedToken) => {
+        token.range.start += offset
+        token.range.end += offset
+        return token
+    }
+
     return [
-        {
-            type: 'literal',
-            value: matches[1],
-            range: { start: offset, end: offset + matches[1].length },
-            quoted: false,
-        },
+        ...(decoratePattern(matches[1])?.map(offsetToken(offset)) ?? []),
         {
             type: 'metaFilterSeparator',
             range: { start: offset + matches[1].length, end: offset + matches[1].length + 1 },
             value: ':',
         },
-        {
-            type: 'literal',
-            value: matches[1],
-            range: { start: offset + matches[1].length + 1, end: offset + matches[1].length + 1 + matches[2].length },
-            quoted: false,
-        },
+        ...(decoratePattern(matches[2])?.map(offsetToken(offset + matches[1].length + 1)) ?? []),
     ]
+}
+
+const decoratePattern = (token: string): DecoratedToken[] | undefined => {
+    const plainString = (token: string, offset: number): ScanResult<Literal> => ({
+        type: 'success',
+        term: createLiteral(token, { start: offset, end: offset + token.length }),
+    })
+
+    const scanner = oneOf<Pattern>(
+        toPatternResult(quoted("'"), PatternKind.Literal),
+        toPatternResult(quoted('"'), PatternKind.Literal),
+        toPatternResult(quoted('/'), PatternKind.Regexp),
+        toPatternResult(plainString, PatternKind.Literal)
+    )
+    const scanResult = scanner(token, 0)
+    if (scanResult.type === 'error') {
+        return undefined
+    }
+    return decorate(scanResult.term)
 }
 
 /**
  * Decorates the body part of predicate syntax `name(body)`.
  */
-const decoratePredicateBody = (path: string[], body: string, offset: number): DecoratedToken[] => {
+const decoratePredicateBody = (name: string, body: string, offset: number): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
-    switch (path.join('.')) {
+    switch (name) {
         case 'contains.file':
         case 'has.file': {
             const result = decorateContainsFileBody(body, offset)
@@ -1108,18 +1123,18 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
     return decorated
 }
 
-const decoratePredicate = (predicate: Predicate, range: CharacterRange): DecoratedToken[] => {
+const decoratePredicate = (predicate: PredicateInstance, range: CharacterRange): DecoratedToken[] => {
     let offset = range.start
     const decorated: DecoratedToken[] = []
-    for (const nameAccess of predicate.path) {
+    for (const namePart of predicate.name.split('.')) {
         decorated.push({
             type: 'metaPredicate',
             kind: MetaPredicateKind.NameAccess,
-            range: { start: offset, end: offset + nameAccess.length },
+            range: { start: offset, end: offset + namePart.length },
             groupRange: range,
             value: predicate,
         })
-        offset = offset + nameAccess.length
+        offset = offset + namePart.length
         decorated.push({
             type: 'metaPredicate',
             kind: MetaPredicateKind.Dot,
@@ -1140,7 +1155,7 @@ const decoratePredicate = (predicate: Predicate, range: CharacterRange): Decorat
         value: predicate,
     })
     offset = offset + 1
-    decorated.push(...decoratePredicateBody(predicate.path, body, offset))
+    decorated.push(...decoratePredicateBody(predicate.name, body, offset))
     offset = offset + body.length
     decorated.push({
         type: 'metaPredicate',

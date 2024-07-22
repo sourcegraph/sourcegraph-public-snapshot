@@ -9,5 +9,5 @@ import (
 
 type UploadService interface {
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error)
-	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadsshared.IndexesWithRepositoryNamespace, error)
+	GetRecentAutoIndexJobsSummary(ctx context.Context, repositoryID int) ([]uploadsshared.GroupedAutoIndexJobs, error)
 }

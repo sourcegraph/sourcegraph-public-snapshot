@@ -62,7 +62,7 @@ type PromptResolver interface {
 	UpdatedBy(context.Context) (*UserResolver, error)
 	UpdatedAt() gqlutil.DateTime
 	URL() string
-	ViewerCanAdminister(context.Context) (bool, error)
+	ViewerCanAdminister(context.Context) bool
 }
 
 type PromptDefinitionResolver struct {

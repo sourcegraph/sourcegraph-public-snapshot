@@ -60,9 +60,7 @@
                     Unable to load branches: {$branchesQuery.error.message}
                 </Alert>
             {:else if !branches || branches.nodes.length === 0}
-                <Alert variant="info">
-                    No branches found
-                </Alert>
+                <Alert variant="info">No branches found</Alert>
             {/if}
         </div>
     </div>

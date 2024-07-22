@@ -111,6 +111,10 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 				Context: ctx,
 				Logger:  gormlogger.Default.LogMode(gormlogger.Warn),
 			})
+			// Initialize extensions.
+			if err := conn.Exec(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`).Error; err != nil {
+				return errors.Wrap(err, "install pgcrypto extension")
+			}
 			// Auto-migrate database table definitions.
 			for _, table := range tables.All() {
 				span.AddEvent(fmt.Sprintf("automigrate.%s", table.TableName()))

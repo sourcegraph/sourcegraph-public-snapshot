@@ -24909,6 +24909,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX repo_kvps_pkey ON repo_kvps USING btree (repo_id, key) INCLUDE (value)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (repo_id, key) INCLUDE (value)"
+        },
+        {
+          "Name": "repo_kvps_trgm_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX repo_kvps_trgm_idx ON repo_kvps USING gin (key gin_trgm_ops, value gin_trgm_ops)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [

@@ -25,7 +25,7 @@ import {
     usePageSwitcherPagination,
     type PaginationKeys,
 } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
-import { ConnectionContainer, ConnectionForm } from '../components/FilteredConnection/ui'
+import { ConnectionForm } from '../components/FilteredConnection/ui'
 import {
     SavedSearchesOrderBy,
     type SavedSearchFields,
@@ -74,8 +74,7 @@ const SavedSearchNode: FunctionComponent<
         </Button>
         <div className="flex-1" />
         <Badge variant="outlineSecondary" tooltip="Owner">
-            {('displayName' in savedSearch.owner ? savedSearch.owner.displayName : null) ??
-                savedSearch.owner.namespaceName}
+            {savedSearch.owner.namespaceName}
         </Badge>
         <Button to={savedSearch.url} variant="secondary" as={Link}>
             <Icon aria-label="Permalink" svgPath={mdiLink} />
@@ -140,7 +139,7 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
                     },
                     ...(namespaces?.map(namespace => ({
                         value: namespace.id,
-                        label: (namespace.__typename === 'Org' && namespace.displayName) || namespace.namespaceName,
+                        label: namespace.namespaceName,
                         args: {
                             owner: namespace.id,
                         },
@@ -199,45 +198,41 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
     return (
         <>
             <Container data-testid="saved-searches-list-page">
-                <ConnectionContainer>
-                    <ConnectionForm
-                        hideSearch={false}
-                        showSearchFirst={true}
-                        inputClassName="mw-30"
-                        inputPlaceholder="Find a saved search..."
-                        inputAriaLabel=""
-                        inputValue={connectionState.query}
-                        onInputChange={event => {
-                            setConnectionState(prev => ({ ...prev, query: event.target.value }))
-                        }}
-                        autoFocus={false}
-                        filters={filters}
-                        onFilterSelect={(filter, value) =>
-                            setConnectionState(prev => ({ ...prev, [filter.id]: value }))
-                        }
-                        filterValues={connectionState}
-                        compact={false}
-                        formClassName="flex-gap-4 mb-4"
-                    />
-                    {loading ? (
-                        <LoadingSpinner />
-                    ) : error ? (
-                        <ErrorAlert error={error} className="mb-3" />
-                    ) : !connection?.nodes || connection.nodes.length === 0 ? (
-                        <Text className="text-center text-muted mb-0">No saved searches found.</Text>
-                    ) : (
-                        <div className="list-group list-group-flush">
-                            {connection.nodes.map(savedSearch => (
-                                <SavedSearchNode
-                                    key={savedSearch.id}
-                                    patternType={searchPatternType}
-                                    savedSearch={savedSearch}
-                                    telemetryRecorder={telemetryRecorder}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </ConnectionContainer>
+                <ConnectionForm
+                    hideSearch={false}
+                    showSearchFirst={true}
+                    inputClassName="mw-30"
+                    inputPlaceholder="Find a saved search..."
+                    inputAriaLabel=""
+                    inputValue={connectionState.query}
+                    onInputChange={event => {
+                        setConnectionState(prev => ({ ...prev, query: event.target.value }))
+                    }}
+                    autoFocus={false}
+                    filters={filters}
+                    onFilterSelect={(filter, value) => setConnectionState(prev => ({ ...prev, [filter.id]: value }))}
+                    filterValues={connectionState}
+                    compact={false}
+                    formClassName="flex-gap-4 mb-4"
+                />
+                {loading ? (
+                    <LoadingSpinner />
+                ) : error ? (
+                    <ErrorAlert error={error} className="mb-3" />
+                ) : !connection?.nodes || connection.nodes.length === 0 ? (
+                    <Text className="text-center text-muted mb-0">No saved searches found.</Text>
+                ) : (
+                    <div className="list-group list-group-flush">
+                        {connection.nodes.map(savedSearch => (
+                            <SavedSearchNode
+                                key={savedSearch.id}
+                                patternType={searchPatternType}
+                                savedSearch={savedSearch}
+                                telemetryRecorder={telemetryRecorder}
+                            />
+                        ))}
+                    </div>
+                )}
             </Container>
             <PageSwitcher {...paginationProps} className="mt-4" totalCount={connection?.totalCount ?? null} />
         </>

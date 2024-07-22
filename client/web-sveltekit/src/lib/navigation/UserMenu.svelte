@@ -41,7 +41,7 @@
         <h6>Your organizations</h6>
         {#each organizations.slice(0, MAX_VISIBLE_ORGS) as org}
             <MenuLink href={org.settingsURL || org.url}>
-                {org.displayName || org.name}
+                {org.name}
             </MenuLink>
         {/each}
         {#if organizations.length > MAX_VISIBLE_ORGS}

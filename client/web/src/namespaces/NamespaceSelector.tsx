@@ -62,7 +62,7 @@ export const NamespaceSelector: React.FunctionComponent<{
             ) : (
                 namespaces?.map(namespace => (
                     <option key={namespace.id} value={namespace.id}>
-                        {(namespace.__typename === 'Org' && namespace.displayName) || namespace.namespaceName}
+                        {namespace.namespaceName}
                     </option>
                 ))
             )}

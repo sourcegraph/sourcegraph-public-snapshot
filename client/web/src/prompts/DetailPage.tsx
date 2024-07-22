@@ -85,10 +85,10 @@ const Detail: FunctionComponent<TelemetryV2Props & { prompt: PromptFields }> = (
     return (
         <>
             <Text>
-                <LibraryItemVisibilityBadge item={prompt} className="mr-1" />
-                <LibraryItemStatusBadge item={prompt} className="mr-1" />
                 {prompt.description}
                 {prompt.description ? ' — ' : ''}
+                <LibraryItemVisibilityBadge item={prompt} />
+                <LibraryItemStatusBadge item={prompt} className="ml-1" />{' '}
                 <small>
                     Last updated <Timestamp date={prompt.updatedAt} noAbout={true} />
                     {prompt.updatedBy && (

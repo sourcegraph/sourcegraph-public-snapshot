@@ -46,8 +46,8 @@ extend type Query {
         owner: ID
 
         """
-        Filter to only saved searches owned by the viewer or one of viewer's organizations. If null
-        or false, no such filtering is performed.
+        Filter to only saved searches owned by the viewer or one of viewer's organizations. All
+        public saved searches are also included. If null or false, no such filtering is performed.
         """
         viewerIsAffiliated: Boolean
 

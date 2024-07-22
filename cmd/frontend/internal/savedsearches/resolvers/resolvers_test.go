@@ -9,12 +9,16 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestSavedSearches(t *testing.T) {
@@ -25,7 +29,7 @@ func TestSavedSearches(t *testing.T) {
 
 		ss := dbmocks.NewMockSavedSearchStore()
 		ss.ListFunc.SetDefaultHook(func(_ context.Context, args database.SavedSearchListArgs, paginationArgs *database.PaginationArgs) ([]*types.SavedSearch, error) {
-			return []*types.SavedSearch{{ID: userID, Description: "test query", Query: "test type:diff patternType:regexp", Owner: *args.Owner}}, nil
+			return []*types.SavedSearch{{ID: 1, Description: "test query", Query: "test type:diff patternType:regexp", Owner: *args.Owner}}, nil
 		})
 		ss.CountFunc.SetDefaultHook(func(_ context.Context, args database.SavedSearchListArgs) (int, error) {
 			return 1, nil
@@ -54,7 +58,7 @@ func TestSavedSearches(t *testing.T) {
 
 		wantNodes := []graphqlbackend.SavedSearchResolver{
 			&savedSearchResolver{db, types.SavedSearch{
-				ID:          userID,
+				ID:          1,
 				Description: "test query",
 				Query:       "test type:diff patternType:regexp",
 				Owner:       types.NamespaceUser(userID),
@@ -104,7 +108,7 @@ func TestSavedSearches(t *testing.T) {
 		orgID := int32(2)
 		om := dbmocks.NewMockOrgMemberStore()
 		om.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(ctx context.Context, oid, uid int32) (*types.OrgMembership, error) {
-			return nil, nil
+			return nil, &database.ErrOrgMemberNotFound{}
 		})
 
 		ss := dbmocks.NewMockSavedSearchStore()
@@ -130,6 +134,70 @@ func TestSavedSearches(t *testing.T) {
 		if _, err := newTestResolver(t, db).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(userID)), args); err != auth.ErrNotAnOrgMember {
 			t.Errorf("got %v+, want %v+", err, auth.ErrNotAnOrgMember)
 		}
+	})
+
+	t.Run("anonymous visitor", func(t *testing.T) {
+		userID := int32(1)
+		users := dbmocks.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, nil)
+
+		ss := dbmocks.NewMockSavedSearchStore()
+		ss.ListFunc.SetDefaultReturn([]*types.SavedSearch{{ID: 1, Description: "d", Owner: types.NamespaceUser(userID), VisibilitySecret: false}}, nil)
+		ss.CountFunc.SetDefaultHook(func(_ context.Context, args database.SavedSearchListArgs) (int, error) {
+			return 1, nil
+		})
+
+		db := dbmocks.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.SavedSearchesFunc.SetDefaultReturn(ss)
+
+		args := graphqlbackend.SavedSearchesArgs{
+			ViewerIsAffiliated:     pointers.Ptr(true),
+			OrderBy:                graphqlbackend.SavedSearchesOrderByUpdatedAt,
+			ConnectionResolverArgs: dummyConnectionResolverArgs,
+		}
+		ctx := actor.WithActor(context.Background(), actor.FromAnonymousUser(""))
+		resolver, err := newTestResolver(t, db).SavedSearches(ctx, args)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if _, err := resolver.Nodes(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		mockrequire.CalledOnceWith(t, ss.ListFunc, mockrequire.Values(mockrequire.Skip,
+			database.SavedSearchListArgs{
+				PublicOnly: true,
+				HideDrafts: true,
+			},
+		))
+	})
+
+	t.Run("forbid enumerating non-public results by non-site admin", func(t *testing.T) {
+		userID := int32(1)
+		users := dbmocks.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID}, nil)
+
+		ss := dbmocks.NewMockSavedSearchStore()
+
+		db := dbmocks.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.SavedSearchesFunc.SetDefaultReturn(ss)
+
+		args := graphqlbackend.SavedSearchesArgs{
+			OrderBy:                graphqlbackend.SavedSearchesOrderByUpdatedAt,
+			ConnectionResolverArgs: dummyConnectionResolverArgs,
+		}
+		ctx := actor.WithActor(context.Background(), actor.FromUser(userID))
+		resolver, err := newTestResolver(t, db).SavedSearches(ctx, args)
+		if want := auth.ErrMustBeSiteAdmin; !errors.Is(err, want) {
+			t.Fatalf("got %v+, want %v+", err, want)
+		}
+		if resolver != nil {
+			t.Fatal("want nil resolver")
+		}
+
+		mockrequire.NotCalled(t, ss.ListFunc)
 	})
 }
 
@@ -206,7 +274,6 @@ func TestSavedSearchByID(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: otherUserID})
 
 		_, err := newTestResolver(t, db).SavedSearchByID(ctx, fixtureID)
-		t.Log(err)
 		if err == nil {
 			t.Fatal("expected an error")
 		}
@@ -582,7 +649,7 @@ func TestSavedSearchPermissions(t *testing.T) {
 				if orgID == userID {
 					return &types.OrgMembership{}, nil
 				}
-				return nil, nil
+				return nil, &database.ErrOrgMemberNotFound{}
 			})
 
 			db := dbmocks.NewMockDB()
@@ -597,12 +664,7 @@ func TestSavedSearchPermissions(t *testing.T) {
 					t.Fatalf("got couldView %v (error %v), want %v", couldView, err, tt.viewerCanView)
 				}
 				if result != nil {
-					gotCanAdminister, err := result.ViewerCanAdminister(ctx)
-					if tt.opErrIs == nil {
-						require.NoError(t, err)
-					} else {
-						require.ErrorAs(t, err, &tt.opErrIs)
-					}
+					gotCanAdminister := result.ViewerCanAdminister(ctx)
 					if gotCanAdminister != tt.viewerCanAdminister {
 						t.Errorf("got %v, want %v", gotCanAdminister, tt.viewerCanAdminister)
 					}
@@ -705,5 +767,5 @@ func TestDeleteSavedSearch(t *testing.T) {
 
 func newTestResolver(t *testing.T, db database.DB) *Resolver {
 	t.Helper()
-	return &Resolver{db: db}
+	return &Resolver{db: db, logger: logtest.Scoped(t)}
 }

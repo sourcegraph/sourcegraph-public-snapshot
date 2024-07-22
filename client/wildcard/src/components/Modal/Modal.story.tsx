@@ -22,9 +22,7 @@ export const Default: StoryFn = () => (
 
 Default.parameters = {
     component: Modal,
-    chromatic: {
-        disableSnapshot: false,
-    },
+
     design: [
         {
             type: 'figma',

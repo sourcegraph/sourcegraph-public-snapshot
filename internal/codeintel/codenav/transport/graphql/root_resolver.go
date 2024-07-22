@@ -38,7 +38,7 @@ type rootResolver struct {
 	siteAdminChecker               sharedresolvers.SiteAdminChecker
 	repoStore                      database.RepoStore
 	uploadLoaderFactory            uploadsgraphql.UploadLoaderFactory
-	indexLoaderFactory             uploadsgraphql.IndexLoaderFactory
+	autoIndexJobLoaderFactory      uploadsgraphql.AutoIndexJobLoaderFactory
 	locationResolverFactory        *gitresolvers.CachedLocationResolverFactory
 	hunkCache                      codenav.HunkCache
 	indexResolverFactory           *uploadsgraphql.PreciseIndexResolverFactory
@@ -54,7 +54,7 @@ func NewRootResolver(
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
 	uploadLoaderFactory uploadsgraphql.UploadLoaderFactory,
-	indexLoaderFactory uploadsgraphql.IndexLoaderFactory,
+	autoIndexJobLoaderFactory uploadsgraphql.AutoIndexJobLoaderFactory,
 	indexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
 	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
 	maxIndexSearch int,
@@ -72,7 +72,7 @@ func NewRootResolver(
 		siteAdminChecker:               siteAdminChecker,
 		repoStore:                      repoStore,
 		uploadLoaderFactory:            uploadLoaderFactory,
-		indexLoaderFactory:             indexLoaderFactory,
+		autoIndexJobLoaderFactory:      autoIndexJobLoaderFactory,
 		indexResolverFactory:           indexResolverFactory,
 		locationResolverFactory:        locationResolverFactory,
 		hunkCache:                      hunkCache,
@@ -110,7 +110,7 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 		r.indexResolverFactory,
 		reqState,
 		r.uploadLoaderFactory.Create(),
-		r.indexLoaderFactory.Create(),
+		r.autoIndexJobLoaderFactory.Create(),
 		r.locationResolverFactory.Create(),
 		r.operations,
 	), nil
@@ -332,7 +332,7 @@ type gitBlobLSIFDataResolver struct {
 	indexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory
 	requestState         codenav.RequestState
 	uploadLoader         uploadsgraphql.UploadLoader
-	indexLoader          uploadsgraphql.IndexLoader
+	autoIndexJobLoader   uploadsgraphql.AutoIndexJobLoader
 	locationResolver     *gitresolvers.CachedLocationResolver
 	operations           *operations
 }
@@ -345,14 +345,14 @@ func newGitBlobLSIFDataResolver(
 	indexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
 	requestState codenav.RequestState,
 	uploadLoader uploadsgraphql.UploadLoader,
-	indexLoader uploadsgraphql.IndexLoader,
+	autoIndexJobLoader uploadsgraphql.AutoIndexJobLoader,
 	locationResolver *gitresolvers.CachedLocationResolver,
 	operations *operations,
 ) resolverstubs.GitBlobLSIFDataResolver {
 	return &gitBlobLSIFDataResolver{
 		codeNavSvc:           codeNavSvc,
 		uploadLoader:         uploadLoader,
-		indexLoader:          indexLoader,
+		autoIndexJobLoader:   autoIndexJobLoader,
 		indexResolverFactory: indexResolverFactory,
 		requestState:         requestState,
 		locationResolver:     locationResolver,
@@ -383,7 +383,7 @@ func (r *gitBlobLSIFDataResolver) VisibleIndexes(ctx context.Context) (_ *[]reso
 		resolver, err := r.indexResolverFactory.Create(
 			ctx,
 			r.uploadLoader,
-			r.indexLoader,
+			r.autoIndexJobLoader,
 			r.locationResolver,
 			traceErrs,
 			&upload,

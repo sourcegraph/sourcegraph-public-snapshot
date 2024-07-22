@@ -21,6 +21,7 @@ go_library(
         "redis.go",
         "repo_updater.go",
         "searcher.go",
+        "secret_management.go",
         "symbols.go",
         "syntect.go",
         "worker.go",

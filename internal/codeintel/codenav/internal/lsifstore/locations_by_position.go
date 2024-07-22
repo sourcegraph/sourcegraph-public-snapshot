@@ -77,7 +77,7 @@ outer:
 
 			locations = append(locations, shared.Location{
 				UploadID: monikerLocations.UploadID,
-				Path:     core.NewUploadRelPathUnchecked(row.URI),
+				Path:     core.NewUploadRelPathUnchecked(row.DocumentPath),
 				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 			})
 
@@ -127,36 +127,38 @@ type extractedOccurrenceData struct {
 	hoverText       []string
 }
 
-func extractDefinitionRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
-	return extractOccurrenceData(document, occurrence).definitions
+func extractDefinitionRanges(document *scip.Document, lookup *scip.Occurrence) []scip.Range {
+	return extractOccurrenceData(document, lookup).definitions
 }
 
-func extractReferenceRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
-	return extractOccurrenceData(document, occurrence).references
+func extractReferenceRanges(document *scip.Document, lookup *scip.Occurrence) []scip.Range {
+	return extractOccurrenceData(document, lookup).references
 }
 
-func extractImplementationRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
-	return extractOccurrenceData(document, occurrence).implementations
+func extractImplementationRanges(document *scip.Document, lookup *scip.Occurrence) []scip.Range {
+	return extractOccurrenceData(document, lookup).implementations
 }
 
-func extractPrototypesRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
-	return extractOccurrenceData(document, occurrence).prototypes
+func extractPrototypesRanges(document *scip.Document, lookup *scip.Occurrence) []scip.Range {
+	return extractOccurrenceData(document, lookup).prototypes
 }
 
-func extractHoverData(document *scip.Document, occurrence *scip.Occurrence) []string {
-	return extractOccurrenceData(document, occurrence).hoverText
+func extractHoverData(document *scip.Document, lookup *scip.Occurrence) []string {
+	return extractOccurrenceData(document, lookup).hoverText
 }
 
-func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence) extractedOccurrenceData {
-	if occurrence.Symbol == "" {
+// extractOccurrenceData identifies occurrences inside document that are related to
+// lookupOccurrence in various ways (e.g. defs/refs/impls/supers etc.)
+func extractOccurrenceData(document *scip.Document, lookupOccurrence *scip.Occurrence) extractedOccurrenceData {
+	if lookupOccurrence.Symbol == "" {
 		return extractedOccurrenceData{
-			hoverText: occurrence.OverrideDocumentation,
+			hoverText: lookupOccurrence.OverrideDocumentation,
 		}
 	}
 
 	var (
 		hoverText               []string
-		definitionSymbol        = occurrence.Symbol
+		definitionSymbol        = lookupOccurrence.Symbol
 		referencesBySymbol      = collections.NewSet[string]()
 		implementationsBySymbol = collections.NewSet[string]()
 		prototypeBySymbol       = collections.NewSet[string]()
@@ -166,10 +168,10 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	// matches the given occurrence. This will give us additional symbol names that
 	// we should include in reference and implementation searches.
 
-	if symbol := scip.FindSymbol(document, occurrence.Symbol); symbol != nil {
-		hoverText = symbolHoverText(symbol)
+	if lookupSymbolInfo := scip.FindSymbol(document, lookupOccurrence.Symbol); lookupSymbolInfo != nil {
+		hoverText = symbolHoverText(lookupSymbolInfo)
 
-		for _, rel := range symbol.Relationships {
+		for _, rel := range lookupSymbolInfo.Relationships {
 			if rel.IsDefinition {
 				definitionSymbol = rel.Symbol
 			}
@@ -185,7 +187,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	for _, sym := range document.Symbols {
 		for _, rel := range sym.Relationships {
 			if rel.IsImplementation {
-				if rel.Symbol == occurrence.Symbol {
+				if rel.Symbol == lookupOccurrence.Symbol {
 					implementationsBySymbol.Add(sym.Symbol)
 				}
 			}
@@ -198,7 +200,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	prototypes := []scip.Range{}
 
 	// Include original symbol names for reference search below
-	referencesBySymbol.Add(occurrence.Symbol)
+	referencesBySymbol.Add(lookupOccurrence.Symbol)
 
 	// For each occurrence that references one of the definition, reference, or
 	// implementation symbol names, extract and aggregate their source positions.
@@ -228,8 +230,8 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	}
 
 	// Override symbol documentation with occurrence documentation, if it exists
-	if len(occurrence.OverrideDocumentation) != 0 {
-		hoverText = occurrence.OverrideDocumentation
+	if len(lookupOccurrence.OverrideDocumentation) != 0 {
+		hoverText = lookupOccurrence.OverrideDocumentation
 	}
 
 	return extractedOccurrenceData{
@@ -436,7 +438,7 @@ outer:
 
 			locations = append(locations, shared.Location{
 				UploadID: monikerLocations.UploadID,
-				Path:     core.NewUploadRelPathUnchecked(row.URI),
+				Path:     core.NewUploadRelPathUnchecked(row.DocumentPath),
 				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 			})
 

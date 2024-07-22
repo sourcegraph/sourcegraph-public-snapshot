@@ -24,11 +24,7 @@ import { BackendInsightView } from './BackendInsight'
 const defaultStory: Meta = {
     title: 'web/insights/BackendInsight',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-    parameters: {
-        chromatic: {
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default defaultStory

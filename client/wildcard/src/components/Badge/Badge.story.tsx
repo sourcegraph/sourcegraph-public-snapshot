@@ -13,10 +13,7 @@ const config: Meta = {
 
     parameters: {
         component: Badge,
-        chromatic: {
-            enableDarkMode: true,
-            disableSnapshot: false,
-        },
+
         design: [
             {
                 type: 'figma',

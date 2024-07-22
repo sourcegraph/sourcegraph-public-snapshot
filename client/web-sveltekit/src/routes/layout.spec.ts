@@ -14,8 +14,8 @@ test('has experimental opt out popover', async ({ sg, page }) => {
     sg.signIn({ username: 'test' })
 
     await page.goto('/')
-    await page.getByText('Experimental').hover()
-    await expect(page.getByRole('link', { name: 'opt out' })).toBeVisible()
+    await page.getByText('Experimental').click()
+    await expect(page.getByText('opt out')).toBeVisible()
 })
 
 test('has user menu', async ({ sg, page }) => {

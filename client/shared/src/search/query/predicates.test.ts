@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import { scanPredicate, resolveAccess, PREDICATES } from './predicates'
+import { scanPredicate } from './predicates'
 
 expect.addSnapshotSerializer({
     serialize: value => (value ? JSON.stringify(value) : 'invalid'),
@@ -10,19 +10,19 @@ expect.addSnapshotSerializer({
 describe('scanPredicate', () => {
     test('scan recognized and valid syntax', () => {
         expect(scanPredicate('repo', 'contains.file(content:stuff)')).toMatchInlineSnapshot(
-            '{"path":["contains","file"],"parameters":"(content:stuff)"}'
+            '{"field":"repo","name":"contains.file","parameters":"(content:stuff)"}'
         )
     })
 
     test('scan recognized dot syntax', () => {
         expect(scanPredicate('repo', 'contains.commit.after(stuff)')).toMatchInlineSnapshot(
-            '{"path":["contains","commit","after"],"parameters":"(stuff)"}'
+            '{"field":"repo","name":"contains.commit.after","parameters":"(stuff)"}'
         )
     })
 
     test('scan recognized and valid syntax with escapes', () => {
         expect(scanPredicate('repo', 'contains.file(content:\\((stuff))')).toMatchInlineSnapshot(
-            '{"path":["contains","file"],"parameters":"(content:\\\\((stuff))"}'
+            '{"field":"repo","name":"contains.file","parameters":"(content:\\\\((stuff))"}'
         )
     })
 
@@ -40,13 +40,13 @@ describe('scanPredicate', () => {
 
     test('resolve field aliases for predicates', () => {
         expect(scanPredicate('r', 'contains.file(content:stuff)')).toMatchInlineSnapshot(
-            '{"path":["contains","file"],"parameters":"(content:stuff)"}'
+            '{"field":"repo","name":"contains.file","parameters":"(content:stuff)"}'
         )
     })
 
     test('scan recognized file:contains.content syntax', () => {
         expect(scanPredicate('file', 'contains.content(stuff)')).toMatchInlineSnapshot(
-            '{"path":["contains","content"],"parameters":"(stuff)"}'
+            '{"field":"file","name":"contains.content","parameters":"(stuff)"}'
         )
     })
 
@@ -57,28 +57,10 @@ describe('scanPredicate', () => {
     test('scan invalid file:contains() syntax', () => {
         expect(scanPredicate('file', 'contains(stuff')).toMatchInlineSnapshot('invalid')
     })
-})
 
-describe('resolveAccess', () => {
-    test('resolves partial access tree', () => {
-        expect(resolveAccess(['repo'], PREDICATES)).toMatchInlineSnapshot(
-            '[{"name":"contains","fields":[{"name":"file"},{"name":"path"},{"name":"content"},{"name":"commit","fields":[{"name":"after"}]}]},{"name":"has","fields":[{"name":"file"},{"name":"path"},{"name":"content"},{"name":"commit","fields":[{"name":"after"}]},{"name":"description"},{"name":"tag"},{"name":"key"},{"name":"meta"},{"name":"topic"}]}]'
+    test('scan repo:has.meta with regex', () => {
+        expect(scanPredicate('repo', 'has.meta(/abc.*/:/def.*/)')).toMatchInlineSnapshot(
+            '{"field":"repo","name":"has.meta","parameters":"(/abc.*/:/def.*/)"}'
         )
-    })
-
-    test('resolves partial access tree depth 2', () => {
-        expect(resolveAccess(['repo', 'contains', 'commit'], PREDICATES)).toMatchInlineSnapshot('[{"name":"after"}]')
-    })
-
-    test('resolves fully qualified path', () => {
-        expect(resolveAccess(['repo', 'contains', 'file'], PREDICATES)).toMatchInlineSnapshot('[]')
-    })
-
-    test('undefind path', () => {
-        expect(resolveAccess(['OCOTILLO', 'contains', 'file'], PREDICATES)).toMatchInlineSnapshot('invalid')
-    })
-
-    test('invalid predicate syntax', () => {
-        expect(resolveAccess(['repo', 'contains'], PREDICATES)).toMatchInlineSnapshot('invalid')
     })
 })

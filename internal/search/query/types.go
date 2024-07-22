@@ -9,6 +9,8 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // ExpectedOperand is a 'marker' error type that the frontend logic
@@ -441,8 +443,8 @@ func (p Parameters) RepoContainsCommitAfter() (res *RepoHasCommitAfterArgs) {
 }
 
 type RepoKVPFilter struct {
-	Key     string
-	Value   *string
+	Key     types.RegexpPattern
+	Value   *types.RegexpPattern
 	Negated bool
 	KeyOnly bool
 }
@@ -459,22 +461,22 @@ func (p Parameters) RepoHasKVPs() (res []RepoKVPFilter) {
 
 	VisitTypedPredicate(toNodes(p), func(pred *RepoHasKVPPredicate) {
 		res = append(res, RepoKVPFilter{
-			Key:     pred.Key,
-			Value:   &pred.Value,
+			Key:     exactRegexpPattern(pred.Key),
+			Value:   pointers.Ptr(exactRegexpPattern(pred.Value)),
 			Negated: pred.Negated,
 		})
 	})
 
 	VisitTypedPredicate(toNodes(p), func(pred *RepoHasTagPredicate) {
 		res = append(res, RepoKVPFilter{
-			Key:     pred.Key,
+			Key:     exactRegexpPattern(pred.Key),
 			Negated: pred.Negated,
 		})
 	})
 
 	VisitTypedPredicate(toNodes(p), func(pred *RepoHasKeyPredicate) {
 		res = append(res, RepoKVPFilter{
-			Key:     pred.Key,
+			Key:     exactRegexpPattern(pred.Key),
 			Negated: pred.Negated,
 			KeyOnly: true,
 		})

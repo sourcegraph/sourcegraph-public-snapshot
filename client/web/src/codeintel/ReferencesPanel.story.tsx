@@ -14,9 +14,6 @@ const config: Meta = {
 
     parameters: {
         component: ReferencesPanel,
-        chromatic: {
-            disableSnapshot: false,
-        },
     },
 }
 

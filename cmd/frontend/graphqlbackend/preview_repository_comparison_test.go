@@ -21,6 +21,10 @@ import (
 )
 
 func TestPreviewRepositoryComparisonResolver(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, nil)

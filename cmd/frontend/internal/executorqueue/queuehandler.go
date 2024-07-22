@@ -41,14 +41,14 @@ func newExecutorQueuesHandler(
 	// in the worker.
 	//
 	// Note: In order register a new queue type please change the validate() check code in cmd/executor/config.go
-	codeIntelQueueHandler := codeintelqueue.QueueHandler(observationCtx, db, accessToken)
+	autoIndexQueueHandler := codeintelqueue.QueueHandler(observationCtx, db, accessToken)
 	batchesQueueHandler := batches.QueueHandler(observationCtx, db, accessToken)
 
-	codeintelHandler := handler.NewHandler(executorStore, jobTokenStore, metricsStore, codeIntelQueueHandler)
+	codeintelHandler := handler.NewHandler(executorStore, jobTokenStore, metricsStore, autoIndexQueueHandler)
 	batchesHandler := handler.NewHandler(executorStore, jobTokenStore, metricsStore, batchesQueueHandler)
 	handlers := []handler.ExecutorHandler{codeintelHandler, batchesHandler}
 
-	multiHandler := handler.NewMultiHandler(executorStore, jobTokenStore, metricsStore, codeIntelQueueHandler, batchesQueueHandler)
+	multiHandler := handler.NewMultiHandler(executorStore, jobTokenStore, metricsStore, autoIndexQueueHandler, batchesQueueHandler)
 
 	// Auth middleware
 	executorAuth := executorAuthMiddleware(logger, accessToken)
