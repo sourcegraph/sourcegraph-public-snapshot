@@ -3,9 +3,9 @@ resources:
     kind: Deployment
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 9749a17bd6b4982408effad39834fd1b74760e0518af90e920e9a418904cb792
+        appliance.sourcegraph.com/configHash: eca9597d0eccefd3eb40039ed5d5afaf1b81989733f82692b933206540242d93
       creationTimestamp: "2024-04-19T00:00:00Z"
-      generation: 2
+      generation: 1
       labels:
         app.kubernetes.io/component: sourcegraph-frontend
         app.kubernetes.io/name: sourcegraph
@@ -38,7 +38,7 @@ resources:
       template:
         metadata:
           annotations:
-            checksum/auth: 42a16845bd61ad6619bcd81416e81c6e1761497b10b0c3082b04e459b8f75364
+            checksum/auth: 64bb092df26e6c62383322ffa1cedee5083dbd8bfeba3e4a2f29492c1d8abfa4
             checksum/redis: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
             kubectl.kubernetes.io/default-container: sourcegraph-frontend
           creationTimestamp: null
@@ -324,7 +324,8 @@ resources:
           codeIntel:
             disabled: true
 
-          frontend: {}
+          frontend:
+            ingress: {}
 
           grafana:
             disabled: true
@@ -375,7 +376,6 @@ resources:
       annotations:
         appliance.sourcegraph.com/currentVersion: 5.3.9104
         appliance.sourcegraph.com/managed: "true"
-        force-reconcile: "1"
       creationTimestamp: "2024-04-19T00:00:00Z"
       name: sg
       namespace: NORMALIZED_FOR_TESTING
@@ -385,7 +385,7 @@ resources:
     kind: Role
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: b5dce290e22d1afb4c9102ac4c245490ab01dd3be13653de391536cfe0e323b0
+        appliance.sourcegraph.com/configHash: d3eb623947fedba566dfc56adc4733ff5ef1b2887a5cb63d75dbc1df452b0b5c
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -422,7 +422,7 @@ resources:
     kind: RoleBinding
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: b5dce290e22d1afb4c9102ac4c245490ab01dd3be13653de391536cfe0e323b0
+        appliance.sourcegraph.com/configHash: d3eb623947fedba566dfc56adc4733ff5ef1b2887a5cb63d75dbc1df452b0b5c
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -446,25 +446,10 @@ resources:
         name: sourcegraph-frontend
         namespace: NORMALIZED_FOR_TESTING
   - apiVersion: v1
-    data:
-      database: c2c=
-      host: ZXhhbXBsZS5jb20=
-      password: bGV0bWVpbg==
-      port: NTQzMg==
-      user: YWxpY2U=
-    kind: Secret
-    metadata:
-      creationTimestamp: "2024-04-19T00:00:00Z"
-      name: codeintel-db-auth
-      namespace: NORMALIZED_FOR_TESTING
-      resourceVersion: NORMALIZED_FOR_TESTING
-      uid: NORMALIZED_FOR_TESTING
-    type: Opaque
-  - apiVersion: v1
     kind: ServiceAccount
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: b5dce290e22d1afb4c9102ac4c245490ab01dd3be13653de391536cfe0e323b0
+        appliance.sourcegraph.com/configHash: d3eb623947fedba566dfc56adc4733ff5ef1b2887a5cb63d75dbc1df452b0b5c
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -484,7 +469,7 @@ resources:
     metadata:
       annotations:
         appliance.sourcegraph.com/adopted: "true"
-        appliance.sourcegraph.com/configHash: b5dce290e22d1afb4c9102ac4c245490ab01dd3be13653de391536cfe0e323b0
+        appliance.sourcegraph.com/configHash: d3eb623947fedba566dfc56adc4733ff5ef1b2887a5cb63d75dbc1df452b0b5c
         prometheus.io/port: "6060"
         sourcegraph.prometheus/scrape: "true"
       creationTimestamp: "2024-04-19T00:00:00Z"
@@ -526,7 +511,7 @@ resources:
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: b5dce290e22d1afb4c9102ac4c245490ab01dd3be13653de391536cfe0e323b0
+        appliance.sourcegraph.com/configHash: d3eb623947fedba566dfc56adc4733ff5ef1b2887a5cb63d75dbc1df452b0b5c
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         app: sourcegraph-frontend-internal
@@ -560,5 +545,39 @@ resources:
         app: sourcegraph-frontend
       sessionAffinity: None
       type: ClusterIP
+    status:
+      loadBalancer: {}
+  - apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/adopted: "true"
+        appliance.sourcegraph.com/configHash: d3eb623947fedba566dfc56adc4733ff5ef1b2887a5cb63d75dbc1df452b0b5c
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      generation: 2
+      labels:
+        deploy: sourcegraph
+      name: sourcegraph-frontend
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+    spec:
+      rules:
+        - http:
+            paths:
+              - backend:
+                  service:
+                    name: sourcegraph-frontend
+                    port:
+                      number: 30080
+                path: /
+                pathType: Prefix
     status:
       loadBalancer: {}

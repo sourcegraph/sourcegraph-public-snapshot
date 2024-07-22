@@ -186,6 +186,7 @@ func (r *Reconciler) reconcileFrontendService(ctx context.Context, sg *config.So
 		"app": name,
 	}
 
+	config.MarkObjectForAdoption(&svc)
 	return reconcileObject(ctx, r, cfg, &svc, &corev1.Service{}, sg, owner)
 }
 
@@ -288,6 +289,7 @@ func (r *Reconciler) reconcileFrontendIngress(ctx context.Context, sg *config.So
 
 	ingress.Spec.IngressClassName = cfg.Ingress.IngressClassName
 
+	config.MarkObjectForAdoption(&ingress)
 	return reconcileObject(ctx, r, sg.Spec.Frontend, &ingress, &netv1.Ingress{}, sg, owner)
 }
 
