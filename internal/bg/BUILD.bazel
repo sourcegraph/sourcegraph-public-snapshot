@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "bg",
+    srcs = ["delete_old_event_logs_in_postgres.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/bg",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf",
+        "//internal/database",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "bg_test",
+    srcs = ["delete_old_event_logs_in_postgres_test.go"],
+    embed = [":bg"],
+    deps = [
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//schema",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+    ],
+)

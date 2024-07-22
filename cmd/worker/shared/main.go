@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codygateway"
 	repoembeddings "github.com/sourcegraph/sourcegraph/cmd/worker/internal/embeddings/repo"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/eventlogs"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/executormultiqueue"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/executors"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/githubapps"
@@ -104,6 +105,7 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 		"permission-sync-job-scheduler":         permissions.NewPermissionSyncJobScheduler(),
 		"export-usage-telemetry":                telemetry.NewTelemetryJob(),
 		"telemetrygateway-exporter":             telemetrygatewayexporter.NewJob(),
+		"event-logs-janitor":                    eventlogs.NewEventLogsJanitorJob(),
 
 		"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
 		"codeintel-autoindexing-summary-builder":      codeintel.NewAutoindexingSummaryBuilder(),
