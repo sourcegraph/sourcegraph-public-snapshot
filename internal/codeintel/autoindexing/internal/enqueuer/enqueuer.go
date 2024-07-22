@@ -127,7 +127,7 @@ func (s *IndexEnqueuer) queueJobsForRepoAndCommit(ctx context.Context, repositor
 		}
 	}
 
-	indexes, err := s.jobSelector.GetIndexRecords(ctx, repositoryID, commit, configuration, bypassLimit)
+	indexes, err := s.jobSelector.GetJobs(ctx, repositoryID, commit, configuration, bypassLimit)
 	if err != nil {
 		return nil, err
 	}

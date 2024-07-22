@@ -87,14 +87,14 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 
 type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]uploadsshared.AutoIndexJob, bool, error)
 
-// GetIndexRecords determines the set of index records that should be enqueued for the given commit.
+// GetJobs determines the set of index records that should be enqueued for the given commit.
 // For each repository, we look for index configuration in the following order:
 //
 //   - supplied explicitly via parameter
 //   - in the database
 //   - committed to `sourcegraph.yaml` in the repository
 //   - inferred from the repository structure
-func (s *JobSelector) GetIndexRecords(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]uploadsshared.AutoIndexJob, error) {
+func (s *JobSelector) GetJobs(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]uploadsshared.AutoIndexJob, error) {
 	if canSchedule, _, err := s.store.RepositoryExceptions(ctx, repositoryID); err != nil {
 		return nil, err
 	} else if !canSchedule {
