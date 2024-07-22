@@ -311,7 +311,7 @@ type GetIndexesOptions struct {
 	Offset        int
 }
 
-type DeleteIndexesOptions struct {
+type DeleteAutoIndexJobsOptions struct {
 	States        []string
 	IndexerNames  []string
 	Term          string
@@ -319,7 +319,7 @@ type DeleteIndexesOptions struct {
 	WithoutUpload bool
 }
 
-type ReindexIndexesOptions struct {
+type SetRerunAutoIndexJobsByIDsOptions struct {
 	States        []string
 	IndexerNames  []string
 	Term          string

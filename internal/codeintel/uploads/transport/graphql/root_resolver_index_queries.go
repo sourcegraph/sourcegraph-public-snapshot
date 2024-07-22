@@ -240,7 +240,7 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 		return r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolverFactory, errTracer, &upload, nil)
 	}
 	if indexID != 0 {
-		index, ok, err := r.uploadSvc.GetIndexByID(ctx, indexID)
+		index, ok, err := r.uploadSvc.GetAutoIndexJobByID(ctx, indexID)
 		if err != nil || !ok {
 			return nil, err
 		}

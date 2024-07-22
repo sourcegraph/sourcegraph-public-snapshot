@@ -526,7 +526,7 @@ func TestDeleteSourcedCommits(t *testing.T) {
 	}
 }
 
-func TestDeleteIndexesWithoutRepository(t *testing.T) {
+func TestDeleteAutoIndexJobsWithoutRepository(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
@@ -556,7 +556,7 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 		}
 	}
 
-	_, count, err := store.DeleteIndexesWithoutRepository(context.Background(), t1)
+	_, count, err := store.DeleteAutoIndexJobsWithoutRepository(context.Background(), t1)
 	if err != nil {
 		t.Fatalf("unexpected error deleting indexes: %s", err)
 	}

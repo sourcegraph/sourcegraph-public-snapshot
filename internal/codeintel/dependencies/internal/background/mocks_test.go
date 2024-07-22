@@ -20,8 +20,9 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/background)
 // used for unit testing.
 type MockAutoIndexingService struct {
-	// QueueAutoIndexJobsForPackageFunc is an instance of a mock function object
-	// controlling the behavior of the method QueueAutoIndexJobsForPackage.
+	// QueueAutoIndexJobsForPackageFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// QueueAutoIndexJobsForPackage.
 	QueueAutoIndexJobsForPackageFunc *AutoIndexingServiceQueueAutoIndexJobsForPackageFunc
 }
 
@@ -62,9 +63,9 @@ func NewMockAutoIndexingServiceFrom(i AutoIndexingService) *MockAutoIndexingServ
 	}
 }
 
-// AutoIndexingServiceQueueAutoIndexJobsForPackageFunc describes the behavior when
-// the QueueAutoIndexJobsForPackage method of the parent MockAutoIndexingService
-// instance is invoked.
+// AutoIndexingServiceQueueAutoIndexJobsForPackageFunc describes the
+// behavior when the QueueAutoIndexJobsForPackage method of the parent
+// MockAutoIndexingService instance is invoked.
 type AutoIndexingServiceQueueAutoIndexJobsForPackageFunc struct {
 	defaultHook func(context.Context, shared.MinimialVersionedPackageRepo) error
 	hooks       []func(context.Context, shared.MinimialVersionedPackageRepo) error
@@ -72,8 +73,8 @@ type AutoIndexingServiceQueueAutoIndexJobsForPackageFunc struct {
 	mutex       sync.Mutex
 }
 
-// QueueAutoIndexJobsForPackage delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
+// QueueAutoIndexJobsForPackage delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
 func (m *MockAutoIndexingService) QueueAutoIndexJobsForPackage(v0 context.Context, v1 shared.MinimialVersionedPackageRepo) error {
 	r0 := m.QueueAutoIndexJobsForPackageFunc.nextHook()(v0, v1)
 	m.QueueAutoIndexJobsForPackageFunc.appendCall(AutoIndexingServiceQueueAutoIndexJobsForPackageFuncCall{v0, v1, r0})
@@ -133,8 +134,8 @@ func (f *AutoIndexingServiceQueueAutoIndexJobsForPackageFunc) appendCall(r0 Auto
 }
 
 // History returns a sequence of
-// AutoIndexingServiceQueueAutoIndexJobsForPackageFuncCall objects describing the
-// invocations of this function.
+// AutoIndexingServiceQueueAutoIndexJobsForPackageFuncCall objects
+// describing the invocations of this function.
 func (f *AutoIndexingServiceQueueAutoIndexJobsForPackageFunc) History() []AutoIndexingServiceQueueAutoIndexJobsForPackageFuncCall {
 	f.mutex.Lock()
 	history := make([]AutoIndexingServiceQueueAutoIndexJobsForPackageFuncCall, len(f.history))
@@ -145,8 +146,8 @@ func (f *AutoIndexingServiceQueueAutoIndexJobsForPackageFunc) History() []AutoIn
 }
 
 // AutoIndexingServiceQueueAutoIndexJobsForPackageFuncCall is an object that
-// describes an invocation of method QueueAutoIndexJobsForPackage on an instance
-// of MockAutoIndexingService.
+// describes an invocation of method QueueAutoIndexJobsForPackage on an
+// instance of MockAutoIndexingService.
 type AutoIndexingServiceQueueAutoIndexJobsForPackageFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.

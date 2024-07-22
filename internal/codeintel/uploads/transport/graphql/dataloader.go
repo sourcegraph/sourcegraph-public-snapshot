@@ -17,7 +17,7 @@ func NewUploadLoaderFactory(uploadService UploadsService) UploadLoaderFactory {
 }
 
 func NewIndexLoaderFactory(uploadService UploadsService) IndexLoaderFactory {
-	return dataloader.NewLoaderFactory[int, shared.AutoIndexJob](dataloader.BackingServiceFunc[int, shared.AutoIndexJob](uploadService.GetIndexesByIDs))
+	return dataloader.NewLoaderFactory[int, shared.AutoIndexJob](dataloader.BackingServiceFunc[int, shared.AutoIndexJob](uploadService.GetAutoIndexJobsByIDs))
 }
 
 func PresubmitAssociatedIndexes(indexLoader IndexLoader, uploads ...shared.Upload) {

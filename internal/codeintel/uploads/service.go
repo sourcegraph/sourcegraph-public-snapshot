@@ -201,31 +201,31 @@ func (s *Service) ReindexUploadByID(ctx context.Context, id int) error {
 }
 
 func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]uploadsshared.AutoIndexJob, int, error) {
-	return s.store.GetIndexes(ctx, opts)
+	return s.store.GetAutoIndexJobs(ctx, opts)
 }
 
-func (s *Service) GetIndexByID(ctx context.Context, id int) (uploadsshared.AutoIndexJob, bool, error) {
-	return s.store.GetIndexByID(ctx, id)
+func (s *Service) GetAutoIndexJobByID(ctx context.Context, id int) (uploadsshared.AutoIndexJob, bool, error) {
+	return s.store.GetAutoIndexJobByID(ctx, id)
 }
 
-func (s *Service) GetIndexesByIDs(ctx context.Context, ids ...int) ([]uploadsshared.AutoIndexJob, error) {
-	return s.store.GetIndexesByIDs(ctx, ids...)
+func (s *Service) GetAutoIndexJobsByIDs(ctx context.Context, ids ...int) ([]uploadsshared.AutoIndexJob, error) {
+	return s.store.GetAutoIndexJobsByIDs(ctx, ids...)
 }
 
-func (s *Service) DeleteIndexByID(ctx context.Context, id int) (bool, error) {
-	return s.store.DeleteIndexByID(ctx, id)
+func (s *Service) DeleteAutoIndexJobByID(ctx context.Context, id int) (bool, error) {
+	return s.store.DeleteAutoIndexJobByID(ctx, id)
 }
 
-func (s *Service) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) error {
-	return s.store.DeleteIndexes(ctx, opts)
+func (s *Service) DeleteAutoIndexJobs(ctx context.Context, opts shared.DeleteAutoIndexJobsOptions) error {
+	return s.store.DeleteAutoIndexJobs(ctx, opts)
 }
 
-func (s *Service) ReindexIndexByID(ctx context.Context, id int) error {
-	return s.store.ReindexIndexByID(ctx, id)
+func (s *Service) SetRerunAutoIndexJobByID(ctx context.Context, id int) error {
+	return s.store.SetRerunAutoIndexJobByID(ctx, id)
 }
 
-func (s *Service) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) error {
-	return s.store.ReindexIndexes(ctx, opts)
+func (s *Service) SetRerunAutoIndexJobsByIDs(ctx context.Context, opts shared.SetRerunAutoIndexJobsByIDsOptions) error {
+	return s.store.SetRerunAutoIndexJobsByIDs(ctx, opts)
 }
 
 func (s *Service) GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadsshared.IndexesWithRepositoryNamespace, error) {
