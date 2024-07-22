@@ -111,11 +111,11 @@ func (s *store) scanQualifiedMonikerLocations(rows *sql.Rows, queryErr error) (_
 }
 
 func (s *store) scanSingleQualifiedMonikerLocationsObject(rows *sql.Rows) (qualifiedMonikerLocations, error) {
-	var uri string
+	var documentPath string
 	var scipPayload []byte
 	var record qualifiedMonikerLocations
 
-	if err := rows.Scan(&record.UploadID, &record.Scheme, &record.Identifier, &scipPayload, &uri); err != nil {
+	if err := rows.Scan(&record.UploadID, &record.Scheme, &record.Identifier, &scipPayload, &documentPath); err != nil {
 		return qualifiedMonikerLocations{}, err
 	}
 
@@ -127,7 +127,7 @@ func (s *store) scanSingleQualifiedMonikerLocationsObject(rows *sql.Rows) (quali
 	locations := make([]precise.LocationData, 0, len(ranges))
 	for _, r := range ranges {
 		locations = append(locations, precise.LocationData{
-			URI:            uri,
+			DocumentPath:   documentPath,
 			StartLine:      int(r.Start.Line),
 			StartCharacter: int(r.Start.Character),
 			EndLine:        int(r.End.Line),
@@ -169,11 +169,11 @@ func (s *store) scanDeduplicatedQualifiedMonikerLocations(rows *sql.Rows, queryE
 }
 
 func (s *store) scanSingleMinimalQualifiedMonikerLocationsObject(rows *sql.Rows) (qualifiedMonikerLocations, error) {
-	var uri string
+	var documentPath string
 	var scipPayload []byte
 	var record qualifiedMonikerLocations
 
-	if err := rows.Scan(&record.UploadID, &scipPayload, &uri); err != nil {
+	if err := rows.Scan(&record.UploadID, &scipPayload, &documentPath); err != nil {
 		return qualifiedMonikerLocations{}, err
 	}
 
@@ -185,7 +185,7 @@ func (s *store) scanSingleMinimalQualifiedMonikerLocationsObject(rows *sql.Rows)
 	locations := make([]precise.LocationData, 0, len(ranges))
 	for _, r := range ranges {
 		locations = append(locations, precise.LocationData{
-			URI:            uri,
+			DocumentPath:   documentPath,
 			StartLine:      int(r.Start.Line),
 			StartCharacter: int(r.Start.Character),
 			EndLine:        int(r.End.Line),
@@ -198,5 +198,5 @@ func (s *store) scanSingleMinimalQualifiedMonikerLocationsObject(rows *sql.Rows)
 }
 
 func locationDataKey(v precise.LocationData) string {
-	return fmt.Sprintf("%s:%d:%d:%d:%d", v.URI, v.StartLine, v.StartCharacter, v.EndLine, v.EndCharacter)
+	return fmt.Sprintf("%s:%d:%d:%d:%d", v.DocumentPath, v.StartLine, v.StartCharacter, v.EndLine, v.EndCharacter)
 }

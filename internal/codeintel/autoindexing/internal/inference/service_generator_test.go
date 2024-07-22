@@ -3,14 +3,15 @@ package inference
 import (
 	"context"
 	"flag"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/stretchr/testify/require"
 	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/stretchr/testify/require"
 
 	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v3"
@@ -162,7 +163,7 @@ func testGenerator(t *testing.T, testCase generatorTestCase) {
 		require.NoError(t, err)
 		bytes, err := io.ReadAll(file)
 		require.NoError(t, err)
-		var expected []config.IndexJob
+		var expected []config.AutoIndexJobSpec
 		require.NoError(t, yaml.Unmarshal(bytes, &expected))
 		if diff := cmp.Diff(expected, result.IndexJobs, cmpopts.EquateEmpty()); diff != "" {
 			t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
@@ -170,7 +171,7 @@ func testGenerator(t *testing.T, testCase generatorTestCase) {
 	})
 }
 
-func sortIndexJobs(s []config.IndexJob) []config.IndexJob {
+func sortIndexJobs(s []config.AutoIndexJobSpec) []config.AutoIndexJobSpec {
 	sort.Slice(s, func(i, j int) bool {
 		return s[i].Indexer < s[j].Indexer || (s[i].Indexer == s[j].Indexer && s[i].Root < s[j].Root)
 	})

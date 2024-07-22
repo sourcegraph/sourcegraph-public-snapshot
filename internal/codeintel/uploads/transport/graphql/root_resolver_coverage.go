@@ -65,7 +65,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 		return nil, err
 	}
 
-	recentIndexes, err := r.uploadSvc.GetRecentIndexesSummary(ctx, id)
+	recentIndexes, err := r.uploadSvc.GetRecentAutoIndexJobsSummary(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 		allUploads = append(allUploads, recentUpload.Uploads...)
 	}
 
-	var allIndexes []shared.Index
+	var allIndexes []shared.AutoIndexJob
 	for _, recentIndex := range recentIndexes {
 		allIndexes = append(allIndexes, recentIndex.Indexes...)
 	}
@@ -140,9 +140,9 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 	uploadLoader := r.uploadLoaderFactory.CreateWithInitialData(allUploads)
 	PresubmitAssociatedUploads(uploadLoader, allIndexes...)
 
-	// Create index loader with data we already have, and pre-submit associated indexes from upload records
-	indexLoader := r.indexLoaderFactory.CreateWithInitialData(allIndexes)
-	PresubmitAssociatedIndexes(indexLoader, allUploads...)
+	// Create job loader with data we already have, and pre-submit associated indexes from upload records
+	autoIndexJobLoader := r.autoIndexJobLoaderFactory.CreateWithInitialData(allIndexes)
+	PresubmitAssociatedAutoIndexJobs(autoIndexJobLoader, allUploads...)
 
 	// No data to load for git data (yet)
 	locationResolver := r.locationResolverFactory.Create()
@@ -153,7 +153,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 		inferredAvailableIndexersResolver,
 		limitErr,
 		uploadLoader,
-		indexLoader,
+		autoIndexJobLoader,
 		errTracer,
 		r.preciseIndexResolverFactory,
 	), nil
@@ -295,7 +295,7 @@ func (r *indexerWithCountResolver) Count() int32                                
 
 type RepositorySummary struct {
 	RecentUploads           []uploadsShared.UploadsWithRepositoryNamespace
-	RecentIndexes           []uploadsShared.IndexesWithRepositoryNamespace
+	RecentIndexes           []uploadsShared.GroupedAutoIndexJobs
 	LastUploadRetentionScan *time.Time
 	LastIndexScan           *time.Time
 }
@@ -324,7 +324,7 @@ type repositorySummaryResolver struct {
 	availableIndexers           []inferredAvailableIndexers2
 	limitErr                    error
 	uploadLoader                UploadLoader
-	indexLoader                 IndexLoader
+	autoIndexJobLoader          AutoIndexJobLoader
 	locationResolver            *gitresolvers.CachedLocationResolver
 	errTracer                   *observation.ErrCollector
 	preciseIndexResolverFactory *PreciseIndexResolverFactory
@@ -341,7 +341,7 @@ func newRepositorySummaryResolver(
 	availableIndexers []inferredAvailableIndexers2,
 	limitErr error,
 	uploadLoader UploadLoader,
-	indexLoader IndexLoader,
+	autoIndexJobLoader AutoIndexJobLoader,
 	errTracer *observation.ErrCollector,
 	preciseIndexResolverFactory *PreciseIndexResolverFactory,
 ) resolverstubs.CodeIntelRepositorySummaryResolver {
@@ -350,7 +350,7 @@ func newRepositorySummaryResolver(
 		availableIndexers:           availableIndexers,
 		limitErr:                    limitErr,
 		uploadLoader:                uploadLoader,
-		indexLoader:                 indexLoader,
+		autoIndexJobLoader:          autoIndexJobLoader,
 		locationResolver:            locationResolver,
 		errTracer:                   errTracer,
 		preciseIndexResolverFactory: preciseIndexResolverFactory,
@@ -372,7 +372,7 @@ func (r *repositorySummaryResolver) RecentActivity(ctx context.Context) ([]resol
 		for _, upload := range recentUploads.Uploads {
 			upload := upload
 
-			resolver, err := r.preciseIndexResolverFactory.Create(ctx, r.uploadLoader, r.indexLoader, r.locationResolver, r.errTracer, &upload, nil)
+			resolver, err := r.preciseIndexResolverFactory.Create(ctx, r.uploadLoader, r.autoIndexJobLoader, r.locationResolver, r.errTracer, &upload, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -391,7 +391,7 @@ func (r *repositorySummaryResolver) RecentActivity(ctx context.Context) ([]resol
 				}
 			}
 
-			resolver, err := r.preciseIndexResolverFactory.Create(ctx, r.uploadLoader, r.indexLoader, r.locationResolver, r.errTracer, nil, &index)
+			resolver, err := r.preciseIndexResolverFactory.Create(ctx, r.uploadLoader, r.autoIndexJobLoader, r.locationResolver, r.errTracer, nil, &index)
 			if err != nil {
 				return nil, err
 			}

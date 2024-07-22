@@ -40,11 +40,11 @@ func NewPreciseIndexResolverFactory(
 func (f *PreciseIndexResolverFactory) Create(
 	ctx context.Context,
 	uploadLoader UploadLoader,
-	indexLoader IndexLoader,
+	autoIndexJobLoader AutoIndexJobLoader,
 	locationResolver *gitresolvers.CachedLocationResolver,
 	traceErrs *observation.ErrCollector,
 	upload *shared.Upload,
-	index *uploadsshared.Index,
+	index *uploadsshared.AutoIndexJob,
 ) (resolverstubs.PreciseIndexResolver, error) {
 	return newPreciseIndexResolver(
 		ctx,
@@ -52,7 +52,7 @@ func (f *PreciseIndexResolverFactory) Create(
 		f.policySvc,
 		f.gitserverClient,
 		uploadLoader,
-		indexLoader,
+		autoIndexJobLoader,
 		f.siteAdminChecker,
 		f.repoStore,
 		locationResolver,

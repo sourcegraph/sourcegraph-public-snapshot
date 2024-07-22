@@ -12,7 +12,7 @@ type rootResolver struct {
 	autoindexSvc                AutoIndexingService
 	siteAdminChecker            sharedresolvers.SiteAdminChecker
 	uploadLoaderFactory         UploadLoaderFactory
-	indexLoaderFactory          IndexLoaderFactory
+	autoIndexJobLoaderFactory   AutoIndexJobLoaderFactory
 	locationResolverFactory     *gitresolvers.CachedLocationResolverFactory
 	preciseIndexResolverFactory *PreciseIndexResolverFactory
 	operations                  *operations
@@ -24,7 +24,7 @@ func NewRootResolver(
 	autoindexSvc AutoIndexingService,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	uploadLoaderFactory UploadLoaderFactory,
-	indexLoaderFactory IndexLoaderFactory,
+	autoIndexJobLoaderFactory AutoIndexJobLoaderFactory,
 	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
 	preciseIndexResolverFactory *PreciseIndexResolverFactory,
 ) resolverstubs.UploadsServiceResolver {
@@ -33,7 +33,7 @@ func NewRootResolver(
 		autoindexSvc:                autoindexSvc,
 		siteAdminChecker:            siteAdminChecker,
 		uploadLoaderFactory:         uploadLoaderFactory,
-		indexLoaderFactory:          indexLoaderFactory,
+		autoIndexJobLoaderFactory:   autoIndexJobLoaderFactory,
 		locationResolverFactory:     locationResolverFactory,
 		preciseIndexResolverFactory: preciseIndexResolverFactory,
 		operations:                  newOperations(observationCtx),

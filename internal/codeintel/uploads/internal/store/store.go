@@ -37,14 +37,14 @@ type Store interface {
 	ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error
 	ReindexUploadByID(ctx context.Context, id int) error
 
-	// Index records
-	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]shared.Index, int, error)
-	GetIndexByID(ctx context.Context, id int) (shared.Index, bool, error)
-	GetIndexesByIDs(ctx context.Context, ids ...int) ([]shared.Index, error)
-	DeleteIndexByID(ctx context.Context, id int) (bool, error)
-	DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) error
-	ReindexIndexByID(ctx context.Context, id int) error
-	ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) error
+	// AutoIndexJob records
+	GetAutoIndexJobs(ctx context.Context, opts shared.GetAutoIndexJobsOptions) ([]shared.AutoIndexJob, int, error)
+	GetAutoIndexJobByID(ctx context.Context, id int) (shared.AutoIndexJob, bool, error)
+	GetAutoIndexJobsByIDs(ctx context.Context, ids ...int) ([]shared.AutoIndexJob, error)
+	DeleteAutoIndexJobByID(ctx context.Context, id int) (bool, error)
+	DeleteAutoIndexJobs(ctx context.Context, opts shared.DeleteAutoIndexJobsOptions) error
+	SetRerunAutoIndexJobByID(ctx context.Context, id int) error
+	SetRerunAutoIndexJobs(ctx context.Context, opts shared.SetRerunAutoIndexJobsOptions) error
 
 	// Upload record insertion + processing
 	InsertUpload(ctx context.Context, upload shared.Upload) (int, error)
@@ -62,7 +62,7 @@ type Store interface {
 	// Summary
 	GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) ([]string, error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) ([]shared.UploadsWithRepositoryNamespace, error)
-	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]shared.IndexesWithRepositoryNamespace, error)
+	GetRecentAutoIndexJobsSummary(ctx context.Context, repositoryID int) ([]shared.GroupedAutoIndexJobs, error)
 	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]shared.RepositoryWithCount, int, error)
 	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
 
@@ -99,7 +99,7 @@ type Store interface {
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (numRecordsScanned, numRecordsAltered int, _ error)
 	ReconcileCandidates(ctx context.Context, batchSize int) ([]int, error)
 	ProcessStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, commitResolverBatchSize int, commitResolverMaximumCommitLag time.Duration, shouldDelete func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error)) (int, int, error)
-	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (int, int, error)
+	DeleteAutoIndexJobsWithoutRepository(ctx context.Context, now time.Time) (int, int, error)
 	ExpireFailedRecords(ctx context.Context, batchSize int, failedIndexMaxAge time.Duration, now time.Time) (int, int, error)
 	ProcessSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, commitResolverMaximumCommitLag time.Duration, limit int, f func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error), now time.Time) (int, int, error)
 
