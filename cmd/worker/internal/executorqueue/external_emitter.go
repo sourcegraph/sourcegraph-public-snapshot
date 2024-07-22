@@ -17,7 +17,7 @@ type externalEmitter[T workerutil.Record] struct {
 	allocation QueueAllocation
 }
 
-var _ goroutine.Handler = &externalEmitter[uploadsshared.Index]{}
+var _ goroutine.Handler = &externalEmitter[uploadsshared.AutoIndexJob]{}
 
 type reporter interface {
 	ReportCount(ctx context.Context, queueName string, count int)

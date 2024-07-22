@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	genslices "github.com/life4/genesis/slices"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -85,16 +86,16 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 	return result, nil
 }
 
-type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]uploadsshared.Index, bool, error)
+type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]uploadsshared.AutoIndexJob, bool, error)
 
-// GetIndexRecords determines the set of index records that should be enqueued for the given commit.
+// GetJobs determines the set of index records that should be enqueued for the given commit.
 // For each repository, we look for index configuration in the following order:
 //
 //   - supplied explicitly via parameter
 //   - in the database
 //   - committed to `sourcegraph.yaml` in the repository
 //   - inferred from the repository structure
-func (s *JobSelector) GetIndexRecords(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]uploadsshared.Index, error) {
+func (s *JobSelector) GetJobs(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]uploadsshared.AutoIndexJob, error) {
 	if canSchedule, _, err := s.store.RepositoryExceptions(ctx, repositoryID); err != nil {
 		return nil, err
 	} else if !canSchedule {
@@ -104,9 +105,9 @@ func (s *JobSelector) GetIndexRecords(ctx context.Context, repositoryID int, com
 
 	fns := []configurationFactoryFunc{
 		makeExplicitConfigurationFactory(configuration),
-		s.getIndexRecordsFromConfigurationInDatabase,
-		s.getIndexRecordsFromConfigurationInRepository,
-		s.inferIndexRecordsFromRepositoryStructure,
+		s.getJobsFromConfigInDatabase,
+		s.getJobsFromConfigInRepo,
+		s.inferJobsFromRepoContents,
 	}
 
 	for _, fn := range fns {
@@ -125,7 +126,7 @@ func (s *JobSelector) GetIndexRecords(ctx context.Context, repositoryID int, com
 // flag is returned.
 func makeExplicitConfigurationFactory(configuration string) configurationFactoryFunc {
 	logger := log.Scoped("explicitConfigurationFactory")
-	return func(ctx context.Context, repositoryID int, commit string, _ bool) ([]uploadsshared.Index, bool, error) {
+	return func(ctx context.Context, repositoryID int, commit string, _ bool) ([]uploadsshared.AutoIndexJob, bool, error) {
 		if configuration == "" {
 			return nil, false, nil
 		}
@@ -139,13 +140,13 @@ func makeExplicitConfigurationFactory(configuration string) configurationFactory
 			return nil, true, nil
 		}
 
-		return convertIndexConfiguration(repositoryID, commit, indexConfiguration), true, nil
+		return makeQueuedJobs(indexConfiguration.JobSpecs, repositoryID, commit), true, nil
 	}
 }
 
-// getIndexRecordsFromConfigurationInDatabase returns a set of index jobs configured via the UI for
+// getJobsFromConfigInDatabase returns a set of index jobs configured via the UI for
 // the given repository. If no jobs are configured via the UI then a false valued flag is returned.
-func (s *JobSelector) getIndexRecordsFromConfigurationInDatabase(ctx context.Context, repositoryID int, commit string, _ bool) ([]uploadsshared.Index, bool, error) {
+func (s *JobSelector) getJobsFromConfigInDatabase(ctx context.Context, repositoryID int, commit string, _ bool) ([]uploadsshared.AutoIndexJob, bool, error) {
 	indexConfigurationRecord, ok, err := s.store.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "dbstore.GetIndexConfigurationByRepositoryID")
@@ -163,13 +164,13 @@ func (s *JobSelector) getIndexRecordsFromConfigurationInDatabase(ctx context.Con
 		return nil, true, nil
 	}
 
-	return convertIndexConfiguration(repositoryID, commit, indexConfiguration), true, nil
+	return makeQueuedJobs(indexConfiguration.JobSpecs, repositoryID, commit), true, nil
 }
 
-// getIndexRecordsFromConfigurationInRepository returns a set of index jobs configured via a committed
+// getJobsFromConfigInRepo returns a set of index jobs configured via a committed
 // configuration file at the given commit. If no jobs are configured within the repository then a false
 // valued flag is returned.
-func (s *JobSelector) getIndexRecordsFromConfigurationInRepository(ctx context.Context, repositoryID int, commit string, _ bool) ([]uploadsshared.Index, bool, error) {
+func (s *JobSelector) getJobsFromConfigInRepo(ctx context.Context, repositoryID int, commit string, _ bool) ([]uploadsshared.AutoIndexJob, bool, error) {
 	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
 	if err != nil {
 		return nil, false, err
@@ -199,77 +200,24 @@ func (s *JobSelector) getIndexRecordsFromConfigurationInRepository(ctx context.C
 		return nil, true, nil
 	}
 
-	return convertIndexConfiguration(repositoryID, commit, indexConfiguration), true, nil
+	return makeQueuedJobs(indexConfiguration.JobSpecs, repositoryID, commit), true, nil
 }
 
-// inferIndexRecordsFromRepositoryStructure looks at the repository contents at the given commit and
+// inferJobsFromRepoContents looks at the repository contents at the given commit and
 // determines a set of index jobs that are likely to succeed. If no jobs could be inferred then a
 // false valued flag is returned.
-func (s *JobSelector) inferIndexRecordsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]uploadsshared.Index, bool, error) {
+func (s *JobSelector) inferJobsFromRepoContents(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]uploadsshared.AutoIndexJob, bool, error) {
 	result, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, "", bypassLimit)
 	if err != nil || len(result.IndexJobs) == 0 {
 		return nil, false, err
 	}
 
-	return convertInferredConfiguration(repositoryID, commit, result.IndexJobs), true, nil
+	return makeQueuedJobs(result.IndexJobs, repositoryID, commit), true, nil
 }
 
-// convertIndexConfiguration converts an index configuration object into a set of index records to be
-// inserted into the database.
-func convertIndexConfiguration(repositoryID int, commit string, indexConfiguration config.IndexConfiguration) (indexes []uploadsshared.Index) {
-	for _, indexJob := range indexConfiguration.IndexJobs {
-		var dockerSteps []uploadsshared.DockerStep
-		for _, dockerStep := range indexJob.Steps {
-			dockerSteps = append(dockerSteps, uploadsshared.DockerStep{
-				Root:     dockerStep.Root,
-				Image:    dockerStep.Image,
-				Commands: dockerStep.Commands,
-			})
-		}
-
-		indexes = append(indexes, uploadsshared.Index{
-			Commit:           commit,
-			RepositoryID:     repositoryID,
-			State:            "queued",
-			DockerSteps:      dockerSteps,
-			LocalSteps:       indexJob.LocalSteps,
-			Root:             indexJob.Root,
-			Indexer:          indexJob.Indexer,
-			IndexerArgs:      indexJob.IndexerArgs,
-			Outfile:          indexJob.Outfile,
-			RequestedEnvVars: indexJob.RequestedEnvVars,
-		})
-	}
-
-	return indexes
-}
-
-// convertInferredConfiguration converts a set of index jobs into a set of index records to be inserted
-// into the database.
-func convertInferredConfiguration(repositoryID int, commit string, indexJobs []config.IndexJob) (indexes []uploadsshared.Index) {
-	for _, indexJob := range indexJobs {
-		var dockerSteps []uploadsshared.DockerStep
-		for _, dockerStep := range indexJob.Steps {
-			dockerSteps = append(dockerSteps, uploadsshared.DockerStep{
-				Root:     dockerStep.Root,
-				Image:    dockerStep.Image,
-				Commands: dockerStep.Commands,
-			})
-		}
-
-		indexes = append(indexes, uploadsshared.Index{
-			RepositoryID:     repositoryID,
-			Commit:           commit,
-			State:            "queued",
-			DockerSteps:      dockerSteps,
-			LocalSteps:       indexJob.LocalSteps,
-			Root:             indexJob.Root,
-			Indexer:          indexJob.Indexer,
-			IndexerArgs:      indexJob.IndexerArgs,
-			Outfile:          indexJob.Outfile,
-			RequestedEnvVars: indexJob.RequestedEnvVars,
-		})
-	}
-
-	return indexes
+// TODO: Push api.RepoID and api.CommitID much further up.
+func makeQueuedJobs(indexJobs []config.AutoIndexJobSpec, repoID int, commit string) []uploadsshared.AutoIndexJob {
+	return genslices.Map(indexJobs, func(job config.AutoIndexJobSpec) uploadsshared.AutoIndexJob {
+		return uploadsshared.NewAutoIndexJob(job, api.RepoID(repoID), api.CommitID(commit), uploadsshared.JobStateQueued)
+	})
 }

@@ -9,13 +9,13 @@ import (
 )
 
 // IndexJobFromTable decodes a single Lua table value into an index job instance.
-func IndexJobFromTable(value lua.LValue) (config.IndexJob, error) {
+func IndexJobFromTable(value lua.LValue) (config.AutoIndexJobSpec, error) {
 	table, ok := value.(*lua.LTable)
 	if !ok {
-		return config.IndexJob{}, util.NewTypeError("table", value)
+		return config.AutoIndexJobSpec{}, util.NewTypeError("table", value)
 	}
 
-	job := config.IndexJob{}
+	job := config.AutoIndexJobSpec{}
 	if err := util.DecodeTable(table, map[string]func(lua.LValue) error{
 		"steps":             setDockerSteps(&job.Steps),
 		"local_steps":       util.SetStrings(&job.LocalSteps),
@@ -25,11 +25,11 @@ func IndexJobFromTable(value lua.LValue) (config.IndexJob, error) {
 		"outfile":           util.SetString(&job.Outfile),
 		"requested_envvars": util.SetStrings(&job.RequestedEnvVars),
 	}); err != nil {
-		return config.IndexJob{}, err
+		return config.AutoIndexJobSpec{}, err
 	}
 
 	if job.Indexer == "" {
-		return config.IndexJob{}, errors.Newf("no indexer supplied")
+		return config.AutoIndexJobSpec{}, errors.Newf("no indexer supplied")
 	}
 
 	return job, nil
