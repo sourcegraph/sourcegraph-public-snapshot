@@ -110,50 +110,50 @@ LIMIT 1
 // - canonization methods
 // - share code with uploads store (should own this?)
 
-func (s *store) jobsToInsertctx context.Context, indexes []shared.AutoIndexJob) (_ []shared.AutoIndexJob, err error) {
+func (s *store) InsertJobs(ctx context.Context, autoIndexJobs []shared.AutoIndexJob) (_ []shared.AutoIndexJob, err error) {
 	ctx, _, endObservation := s.operations.insertAutoIndexJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numIndexes", len(indexes)),
+		attribute.Int("numIndexes", len(autoIndexJobs)),
 	}})
 	endObservation(1, observation.Args{})
 
-	if len(indexes) == 0 {
+	if len(autoIndexJobs) == 0 {
 		return nil, nil
 	}
 
 	actor := actor.FromContext(ctx)
 
-	values := make([]*sqlf.Query, 0, len(indexes))
-	for _, index := range indexes {
-		if index.DockerSteps == nil {
-			index.DockerSteps = []shared.DockerStep{}
+	values := make([]*sqlf.Query, 0, len(autoIndexJobs))
+	for _, job := range autoIndexJobs {
+		if job.DockerSteps == nil {
+			job.DockerSteps = []shared.DockerStep{}
 		}
-		if index.LocalSteps == nil {
-			index.LocalSteps = []string{}
+		if job.LocalSteps == nil {
+			job.LocalSteps = []string{}
 		}
-		if index.IndexerArgs == nil {
-			index.IndexerArgs = []string{}
+		if job.IndexerArgs == nil {
+			job.IndexerArgs = []string{}
 		}
 
 		values = append(values, sqlf.Sprintf(
 			"(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-			index.State,
-			index.Commit,
-			index.RepositoryID,
-			pq.Array(index.DockerSteps),
-			pq.Array(index.LocalSteps),
-			index.Root,
-			index.Indexer,
-			pq.Array(index.IndexerArgs),
-			index.Outfile,
-			pq.Array(index.ExecutionLogs),
-			pq.Array(index.RequestedEnvVars),
+			job.State,
+			job.Commit,
+			job.RepositoryID,
+			pq.Array(job.DockerSteps),
+			pq.Array(job.LocalSteps),
+			job.Root,
+			job.Indexer,
+			pq.Array(job.IndexerArgs),
+			job.Outfile,
+			pq.Array(job.ExecutionLogs),
+			pq.Array(job.RequestedEnvVars),
 			actor.UID,
 		))
 	}
 
-	indexes = []shared.AutoIndexJob{}
+	autoIndexJobs = []shared.AutoIndexJob{}
 	err = s.withTransaction(ctx, func(tx *store) error {
-		ids, err := basestore.ScanInts(tx.db.Query(ctx, sqlf.Sprintf(insertIndexQuery, sqlf.Join(values, ","))))
+		ids, err := basestore.ScanInts(tx.db.Query(ctx, sqlf.Sprintf(insertAutoIndexJobQuery, sqlf.Join(values, ","))))
 		if err != nil {
 			return err
 		}
@@ -170,14 +170,14 @@ func (s *store) jobsToInsertctx context.Context, indexes []shared.AutoIndexJob) 
 			queries = append(queries, sqlf.Sprintf("%d", id))
 		}
 
-		indexes, err = scanJobs(tx.db.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
+		autoIndexJobs, err = scanJobs(tx.db.Query(ctx, sqlf.Sprintf(getAutoIndexJobsByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
 		return err
 	})
 
-	return indexes, err
+	return autoIndexJobs, err
 }
 
-const insertIndexQuery = `
+const insertAutoIndexJobQuery = `
 INSERT INTO lsif_indexes (
 	state,
 	commit,
@@ -196,7 +196,7 @@ VALUES %s
 RETURNING id
 `
 
-const getIndexesByIDsQuery = `
+const getAutoIndexJobsByIDsQuery = `
 SELECT
 	u.id,
 	u.commit,
