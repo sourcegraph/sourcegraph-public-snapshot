@@ -40,8 +40,8 @@ type MockStore struct {
 	// object controlling the behavior of the method
 	// InsertDependencyIndexingJob.
 	InsertDependencyIndexingJobFunc *StoreInsertDependencyIndexingJobFunc
-	// InsertJobsFunc is an instance of a mock function object
-	// controlling the behavior of the method InsertJobs.
+	// InsertJobsFunc is an instance of a mock function object controlling
+	// the behavior of the method InsertJobs.
 	InsertJobsFunc *StoreInsertJobsFunc
 	// IsQueuedFunc is an instance of a mock function object controlling the
 	// behavior of the method IsQueued.
@@ -913,8 +913,8 @@ func (c StoreInsertDependencyIndexingJobFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreInsertJobsFunc describes the behavior when the InsertJobs
-// method of the parent MockStore instance is invoked.
+// StoreInsertJobsFunc describes the behavior when the InsertJobs method of
+// the parent MockStore instance is invoked.
 type StoreInsertJobsFunc struct {
 	defaultHook func(context.Context, []shared1.AutoIndexJob) ([]shared1.AutoIndexJob, error)
 	hooks       []func(context.Context, []shared1.AutoIndexJob) ([]shared1.AutoIndexJob, error)
@@ -930,8 +930,8 @@ func (m *MockStore) InsertJobs(v0 context.Context, v1 []shared1.AutoIndexJob) ([
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the InsertJobs method
-// of the parent MockStore instance is invoked and the hook queue is empty.
+// SetDefaultHook sets function that is called when the InsertJobs method of
+// the parent MockStore instance is invoked and the hook queue is empty.
 func (f *StoreInsertJobsFunc) SetDefaultHook(hook func(context.Context, []shared1.AutoIndexJob) ([]shared1.AutoIndexJob, error)) {
 	f.defaultHook = hook
 }
@@ -980,8 +980,8 @@ func (f *StoreInsertJobsFunc) appendCall(r0 StoreInsertJobsFuncCall) {
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreInsertJobsFuncCall objects
-// describing the invocations of this function.
+// History returns a sequence of StoreInsertJobsFuncCall objects describing
+// the invocations of this function.
 func (f *StoreInsertJobsFunc) History() []StoreInsertJobsFuncCall {
 	f.mutex.Lock()
 	history := make([]StoreInsertJobsFuncCall, len(f.history))

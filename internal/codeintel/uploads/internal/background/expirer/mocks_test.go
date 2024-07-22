@@ -548,9 +548,8 @@ type MockStore struct {
 	// SetRerunAutoIndexJobByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method SetRerunAutoIndexJobByID.
 	SetRerunAutoIndexJobByIDFunc *StoreSetRerunAutoIndexJobByIDFunc
-	// SetRerunAutoIndexJobsFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// SetRerunAutoIndexJobs.
+	// SetRerunAutoIndexJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method SetRerunAutoIndexJobs.
 	SetRerunAutoIndexJobsFunc *StoreSetRerunAutoIndexJobsFunc
 	// SoftDeleteExpiredUploadsFunc is an instance of a mock function object
 	// controlling the behavior of the method SoftDeleteExpiredUploads.
@@ -7356,8 +7355,7 @@ func (c StoreSetRerunAutoIndexJobByIDFuncCall) Results() []interface{} {
 }
 
 // StoreSetRerunAutoIndexJobsFunc describes the behavior when the
-// SetRerunAutoIndexJobs method of the parent MockStore instance is
-// invoked.
+// SetRerunAutoIndexJobs method of the parent MockStore instance is invoked.
 type StoreSetRerunAutoIndexJobsFunc struct {
 	defaultHook func(context.Context, shared1.SetRerunAutoIndexJobsOptions) error
 	hooks       []func(context.Context, shared1.SetRerunAutoIndexJobsOptions) error
@@ -7365,8 +7363,8 @@ type StoreSetRerunAutoIndexJobsFunc struct {
 	mutex       sync.Mutex
 }
 
-// SetRerunAutoIndexJobs delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
+// SetRerunAutoIndexJobs delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
 func (m *MockStore) SetRerunAutoIndexJobs(v0 context.Context, v1 shared1.SetRerunAutoIndexJobsOptions) error {
 	r0 := m.SetRerunAutoIndexJobsFunc.nextHook()(v0, v1)
 	m.SetRerunAutoIndexJobsFunc.appendCall(StoreSetRerunAutoIndexJobsFuncCall{v0, v1, r0})
@@ -7374,17 +7372,16 @@ func (m *MockStore) SetRerunAutoIndexJobs(v0 context.Context, v1 shared1.SetReru
 }
 
 // SetDefaultHook sets function that is called when the
-// SetRerunAutoIndexJobs method of the parent MockStore instance is
-// invoked and the hook queue is empty.
+// SetRerunAutoIndexJobs method of the parent MockStore instance is invoked
+// and the hook queue is empty.
 func (f *StoreSetRerunAutoIndexJobsFunc) SetDefaultHook(hook func(context.Context, shared1.SetRerunAutoIndexJobsOptions) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// SetRerunAutoIndexJobs method of the parent MockStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
+// SetRerunAutoIndexJobs method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
 func (f *StoreSetRerunAutoIndexJobsFunc) PushHook(hook func(context.Context, shared1.SetRerunAutoIndexJobsOptions) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
@@ -7425,8 +7422,8 @@ func (f *StoreSetRerunAutoIndexJobsFunc) appendCall(r0 StoreSetRerunAutoIndexJob
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreSetRerunAutoIndexJobsFuncCall
-// objects describing the invocations of this function.
+// History returns a sequence of StoreSetRerunAutoIndexJobsFuncCall objects
+// describing the invocations of this function.
 func (f *StoreSetRerunAutoIndexJobsFunc) History() []StoreSetRerunAutoIndexJobsFuncCall {
 	f.mutex.Lock()
 	history := make([]StoreSetRerunAutoIndexJobsFuncCall, len(f.history))
@@ -7437,8 +7434,7 @@ func (f *StoreSetRerunAutoIndexJobsFunc) History() []StoreSetRerunAutoIndexJobsF
 }
 
 // StoreSetRerunAutoIndexJobsFuncCall is an object that describes an
-// invocation of method SetRerunAutoIndexJobs on an instance of
-// MockStore.
+// invocation of method SetRerunAutoIndexJobs on an instance of MockStore.
 type StoreSetRerunAutoIndexJobsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
