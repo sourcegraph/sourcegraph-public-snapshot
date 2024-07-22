@@ -14,7 +14,7 @@ import (
 type UploadsService interface {
 	GetAutoIndexJobsByIDs(ctx context.Context, ids ...int) (_ []shared.AutoIndexJob, err error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error)
-	GetIndexes(ctx context.Context, opts uploadshared.GetIndexesOptions) (_ []uploadsshared.AutoIndexJob, _ int, err error)
+	GetAutoIndexJobs(ctx context.Context, opts uploadshared.GetAutoIndexJobsOptions) (_ []uploadsshared.AutoIndexJob, _ int, err error)
 	GetUploads(ctx context.Context, opts uploadshared.GetUploadsOptions) (uploads []shared.Upload, totalCount int, err error)
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error)
 	GetAutoIndexJobByID(ctx context.Context, id int) (_ uploadsshared.AutoIndexJob, _ bool, err error)
@@ -31,7 +31,7 @@ type UploadsService interface {
 	GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) ([]uploadshared.UploadsWithRepositoryNamespace, error)
 	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
-	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadshared.IndexesWithRepositoryNamespace, error)
+	GetRecentAutoIndexJobsSummary(ctx context.Context, repositoryID int) ([]uploadshared.GroupedAutoIndexJobs, error)
 	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
 	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []uploadshared.RepositoryWithCount, totalCount int, err error)
 }

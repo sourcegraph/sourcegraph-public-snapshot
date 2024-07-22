@@ -325,7 +325,7 @@ type PackageReferenceScanner interface {
 	Close() error
 }
 
-type GetIndexesOptions struct {
+type GetAutoIndexJobsOptions struct {
 	RepositoryID  int
 	State         string
 	States        []string
@@ -360,7 +360,7 @@ type ExportedUpload struct {
 	Root             string
 }
 
-type IndexesWithRepositoryNamespace struct {
+type GroupedAutoIndexJobs struct {
 	Root    string
 	Indexer string
 	Indexes []AutoIndexJob

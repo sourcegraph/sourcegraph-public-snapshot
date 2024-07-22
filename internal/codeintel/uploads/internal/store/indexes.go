@@ -16,8 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// GetIndexes returns a list of indexes and the total count of records matching the given conditions.
-func (s *store) GetAutoIndexJobs(ctx context.Context, opts shared.GetIndexesOptions) (_ []shared.AutoIndexJob, _ int, err error) {
+// GetAutoIndexJobs returns a list of indexes and the total count of records matching the given conditions.
+func (s *store) GetAutoIndexJobs(ctx context.Context, opts shared.GetAutoIndexJobsOptions) (_ []shared.AutoIndexJob, _ int, err error) {
 	ctx, trace, endObservation := s.operations.getAutoIndexJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", opts.RepositoryID),
 		attribute.String("state", opts.State),

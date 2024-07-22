@@ -200,7 +200,7 @@ func (s *Service) ReindexUploadByID(ctx context.Context, id int) error {
 	return s.store.ReindexUploadByID(ctx, id)
 }
 
-func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]uploadsshared.AutoIndexJob, int, error) {
+func (s *Service) GetAutoIndexJobs(ctx context.Context, opts shared.GetAutoIndexJobsOptions) ([]uploadsshared.AutoIndexJob, int, error) {
 	return s.store.GetAutoIndexJobs(ctx, opts)
 }
 
@@ -228,8 +228,8 @@ func (s *Service) SetRerunAutoIndexJobs(ctx context.Context, opts shared.SetReru
 	return s.store.SetRerunAutoIndexJobs(ctx, opts)
 }
 
-func (s *Service) GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadsshared.IndexesWithRepositoryNamespace, error) {
-	return s.store.GetRecentIndexesSummary(ctx, repositoryID)
+func (s *Service) GetRecentAutoIndexJobsSummary(ctx context.Context, repositoryID int) ([]uploadsshared.GroupedAutoIndexJobs, error) {
+	return s.store.GetRecentAutoIndexJobsSummary(ctx, repositoryID)
 }
 
 func (s *Service) NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error) {

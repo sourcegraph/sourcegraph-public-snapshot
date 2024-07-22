@@ -163,12 +163,12 @@ func TestRecentIndexesSummary(t *testing.T) {
 	}
 	insertAutoIndexJobs(t, db, jobs...)
 
-	summary, err := store.GetRecentIndexesSummary(ctx, 50)
+	summary, err := store.GetRecentAutoIndexJobsSummary(ctx, 50)
 	if err != nil {
 		t.Fatalf("unexpected error querying recent index summary: %s", err)
 	}
 
-	expected := []uploadsshared.IndexesWithRepositoryNamespace{
+	expected := []uploadsshared.GroupedAutoIndexJobs{
 		{Root: "r1", Indexer: "i1", Indexes: []uploadsshared.AutoIndexJob{jobs[0], jobs[1], jobs[2]}},
 		{Root: "r1", Indexer: "i2", Indexes: []uploadsshared.AutoIndexJob{jobs[3]}},
 		{Root: "r2", Indexer: "i1", Indexes: []uploadsshared.AutoIndexJob{jobs[4]}},

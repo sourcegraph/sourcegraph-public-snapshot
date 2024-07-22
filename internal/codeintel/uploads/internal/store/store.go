@@ -38,7 +38,7 @@ type Store interface {
 	ReindexUploadByID(ctx context.Context, id int) error
 
 	// AutoIndexJob records
-	GetAutoIndexJobs(ctx context.Context, opts shared.GetIndexesOptions) ([]shared.AutoIndexJob, int, error)
+	GetAutoIndexJobs(ctx context.Context, opts shared.GetAutoIndexJobsOptions) ([]shared.AutoIndexJob, int, error)
 	GetAutoIndexJobByID(ctx context.Context, id int) (shared.AutoIndexJob, bool, error)
 	GetAutoIndexJobsByIDs(ctx context.Context, ids ...int) ([]shared.AutoIndexJob, error)
 	DeleteAutoIndexJobByID(ctx context.Context, id int) (bool, error)
@@ -62,7 +62,7 @@ type Store interface {
 	// Summary
 	GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) ([]string, error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) ([]shared.UploadsWithRepositoryNamespace, error)
-	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]shared.IndexesWithRepositoryNamespace, error)
+	GetRecentAutoIndexJobsSummary(ctx context.Context, repositoryID int) ([]shared.GroupedAutoIndexJobs, error)
 	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]shared.RepositoryWithCount, int, error)
 	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
 

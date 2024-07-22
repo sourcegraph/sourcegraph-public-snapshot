@@ -65,7 +65,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 		return nil, err
 	}
 
-	recentIndexes, err := r.uploadSvc.GetRecentIndexesSummary(ctx, id)
+	recentIndexes, err := r.uploadSvc.GetRecentAutoIndexJobsSummary(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -295,7 +295,7 @@ func (r *indexerWithCountResolver) Count() int32                                
 
 type RepositorySummary struct {
 	RecentUploads           []uploadsShared.UploadsWithRepositoryNamespace
-	RecentIndexes           []uploadsShared.IndexesWithRepositoryNamespace
+	RecentIndexes           []uploadsShared.GroupedAutoIndexJobs
 	LastUploadRetentionScan *time.Time
 	LastIndexScan           *time.Time
 }

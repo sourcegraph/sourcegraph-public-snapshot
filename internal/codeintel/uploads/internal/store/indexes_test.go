@@ -102,7 +102,7 @@ func TestGetIndexes(t *testing.T) {
 			)
 
 			t.Run(name, func(t *testing.T) {
-				indexes, totalCount, err := store.GetAutoIndexJobs(ctx, shared.GetIndexesOptions{
+				indexes, totalCount, err := store.GetAutoIndexJobs(ctx, shared.GetAutoIndexJobsOptions{
 					RepositoryID:  testCase.repositoryID,
 					State:         testCase.state,
 					States:        testCase.states,
@@ -146,7 +146,7 @@ func TestGetIndexes(t *testing.T) {
 		t.Cleanup(func() { conf.Mock(nil) })
 
 		indexes, totalCount, err := store.GetAutoIndexJobs(ctx,
-			shared.GetIndexesOptions{
+			shared.GetAutoIndexJobsOptions{
 				Limit: 1,
 			},
 		)

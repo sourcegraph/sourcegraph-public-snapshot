@@ -133,7 +133,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 	var indexes []uploadsshared.AutoIndexJob
 	totalIndexCount := 0
 	if !skipIndexes {
-		if indexes, totalIndexCount, err = r.uploadSvc.GetIndexes(ctx, uploadsshared.GetIndexesOptions{
+		if indexes, totalIndexCount, err = r.uploadSvc.GetAutoIndexJobs(ctx, uploadsshared.GetAutoIndexJobsOptions{
 			RepositoryID:  repositoryID,
 			States:        indexStates,
 			Term:          term,

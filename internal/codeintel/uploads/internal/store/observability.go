@@ -21,7 +21,7 @@ type operations struct {
 	hasCommit                           *observation.Operation
 	repositoryIDsWithErrors             *observation.Operation
 	numRepositoriesWithCodeIntelligence *observation.Operation
-	getRecentIndexesSummary             *observation.Operation
+	getRecentAutoIndexJobsSummary       *observation.Operation
 
 	// Repositories
 	getRepositoriesForIndexScan             *observation.Operation
@@ -203,6 +203,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		expireFailedRecords:                 op("ExpireFailedRecords"),
 		repositoryIDsWithErrors:             op("RepositoryIDsWithErrors"),
 		numRepositoriesWithCodeIntelligence: op("NumRepositoriesWithCodeIntelligence"),
-		getRecentIndexesSummary:             op("GetRecentIndexesSummary"),
+		getRecentAutoIndexJobsSummary:       op("GetRecentAutoIndexJobsSummary"),
 	}
 }

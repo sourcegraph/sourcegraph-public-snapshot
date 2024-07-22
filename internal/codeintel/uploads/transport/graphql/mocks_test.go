@@ -37,6 +37,9 @@ type MockUploadsService struct {
 	// GetAutoIndexJobByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method GetAutoIndexJobByID.
 	GetAutoIndexJobByIDFunc *UploadsServiceGetAutoIndexJobByIDFunc
+	// GetAutoIndexJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetAutoIndexJobs.
+	GetAutoIndexJobsFunc *UploadsServiceGetAutoIndexJobsFunc
 	// GetAutoIndexJobsByIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetAutoIndexJobsByIDs.
 	GetAutoIndexJobsByIDsFunc *UploadsServiceGetAutoIndexJobsByIDsFunc
@@ -46,16 +49,14 @@ type MockUploadsService struct {
 	// GetIndexersFunc is an instance of a mock function object controlling
 	// the behavior of the method GetIndexers.
 	GetIndexersFunc *UploadsServiceGetIndexersFunc
-	// GetIndexesFunc is an instance of a mock function object controlling
-	// the behavior of the method GetIndexes.
-	GetIndexesFunc *UploadsServiceGetIndexesFunc
 	// GetLastUploadRetentionScanForRepositoryFunc is an instance of a mock
 	// function object controlling the behavior of the method
 	// GetLastUploadRetentionScanForRepository.
 	GetLastUploadRetentionScanForRepositoryFunc *UploadsServiceGetLastUploadRetentionScanForRepositoryFunc
-	// GetRecentIndexesSummaryFunc is an instance of a mock function object
-	// controlling the behavior of the method GetRecentIndexesSummary.
-	GetRecentIndexesSummaryFunc *UploadsServiceGetRecentIndexesSummaryFunc
+	// GetRecentAutoIndexJobsSummaryFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetRecentAutoIndexJobsSummary.
+	GetRecentAutoIndexJobsSummaryFunc *UploadsServiceGetRecentAutoIndexJobsSummaryFunc
 	// GetRecentUploadsSummaryFunc is an instance of a mock function object
 	// controlling the behavior of the method GetRecentUploadsSummary.
 	GetRecentUploadsSummaryFunc *UploadsServiceGetRecentUploadsSummaryFunc
@@ -123,6 +124,11 @@ func NewMockUploadsService() *MockUploadsService {
 				return
 			},
 		},
+		GetAutoIndexJobsFunc: &UploadsServiceGetAutoIndexJobsFunc{
+			defaultHook: func(context.Context, shared.GetAutoIndexJobsOptions) (r0 []shared.AutoIndexJob, r1 int, r2 error) {
+				return
+			},
+		},
 		GetAutoIndexJobsByIDsFunc: &UploadsServiceGetAutoIndexJobsByIDsFunc{
 			defaultHook: func(context.Context, ...int) (r0 []shared.AutoIndexJob, r1 error) {
 				return
@@ -138,18 +144,13 @@ func NewMockUploadsService() *MockUploadsService {
 				return
 			},
 		},
-		GetIndexesFunc: &UploadsServiceGetIndexesFunc{
-			defaultHook: func(context.Context, shared.GetIndexesOptions) (r0 []shared.AutoIndexJob, r1 int, r2 error) {
-				return
-			},
-		},
 		GetLastUploadRetentionScanForRepositoryFunc: &UploadsServiceGetLastUploadRetentionScanForRepositoryFunc{
 			defaultHook: func(context.Context, int) (r0 *time.Time, r1 error) {
 				return
 			},
 		},
-		GetRecentIndexesSummaryFunc: &UploadsServiceGetRecentIndexesSummaryFunc{
-			defaultHook: func(context.Context, int) (r0 []shared.IndexesWithRepositoryNamespace, r1 error) {
+		GetRecentAutoIndexJobsSummaryFunc: &UploadsServiceGetRecentAutoIndexJobsSummaryFunc{
+			defaultHook: func(context.Context, int) (r0 []shared.GroupedAutoIndexJobs, r1 error) {
 				return
 			},
 		},
@@ -240,6 +241,11 @@ func NewStrictMockUploadsService() *MockUploadsService {
 				panic("unexpected invocation of MockUploadsService.GetAutoIndexJobByID")
 			},
 		},
+		GetAutoIndexJobsFunc: &UploadsServiceGetAutoIndexJobsFunc{
+			defaultHook: func(context.Context, shared.GetAutoIndexJobsOptions) ([]shared.AutoIndexJob, int, error) {
+				panic("unexpected invocation of MockUploadsService.GetAutoIndexJobs")
+			},
+		},
 		GetAutoIndexJobsByIDsFunc: &UploadsServiceGetAutoIndexJobsByIDsFunc{
 			defaultHook: func(context.Context, ...int) ([]shared.AutoIndexJob, error) {
 				panic("unexpected invocation of MockUploadsService.GetAutoIndexJobsByIDs")
@@ -255,19 +261,14 @@ func NewStrictMockUploadsService() *MockUploadsService {
 				panic("unexpected invocation of MockUploadsService.GetIndexers")
 			},
 		},
-		GetIndexesFunc: &UploadsServiceGetIndexesFunc{
-			defaultHook: func(context.Context, shared.GetIndexesOptions) ([]shared.AutoIndexJob, int, error) {
-				panic("unexpected invocation of MockUploadsService.GetIndexes")
-			},
-		},
 		GetLastUploadRetentionScanForRepositoryFunc: &UploadsServiceGetLastUploadRetentionScanForRepositoryFunc{
 			defaultHook: func(context.Context, int) (*time.Time, error) {
 				panic("unexpected invocation of MockUploadsService.GetLastUploadRetentionScanForRepository")
 			},
 		},
-		GetRecentIndexesSummaryFunc: &UploadsServiceGetRecentIndexesSummaryFunc{
-			defaultHook: func(context.Context, int) ([]shared.IndexesWithRepositoryNamespace, error) {
-				panic("unexpected invocation of MockUploadsService.GetRecentIndexesSummary")
+		GetRecentAutoIndexJobsSummaryFunc: &UploadsServiceGetRecentAutoIndexJobsSummaryFunc{
+			defaultHook: func(context.Context, int) ([]shared.GroupedAutoIndexJobs, error) {
+				panic("unexpected invocation of MockUploadsService.GetRecentAutoIndexJobsSummary")
 			},
 		},
 		GetRecentUploadsSummaryFunc: &UploadsServiceGetRecentUploadsSummaryFunc{
@@ -346,6 +347,9 @@ func NewMockUploadsServiceFrom(i UploadsService) *MockUploadsService {
 		GetAutoIndexJobByIDFunc: &UploadsServiceGetAutoIndexJobByIDFunc{
 			defaultHook: i.GetAutoIndexJobByID,
 		},
+		GetAutoIndexJobsFunc: &UploadsServiceGetAutoIndexJobsFunc{
+			defaultHook: i.GetAutoIndexJobs,
+		},
 		GetAutoIndexJobsByIDsFunc: &UploadsServiceGetAutoIndexJobsByIDsFunc{
 			defaultHook: i.GetAutoIndexJobsByIDs,
 		},
@@ -355,14 +359,11 @@ func NewMockUploadsServiceFrom(i UploadsService) *MockUploadsService {
 		GetIndexersFunc: &UploadsServiceGetIndexersFunc{
 			defaultHook: i.GetIndexers,
 		},
-		GetIndexesFunc: &UploadsServiceGetIndexesFunc{
-			defaultHook: i.GetIndexes,
-		},
 		GetLastUploadRetentionScanForRepositoryFunc: &UploadsServiceGetLastUploadRetentionScanForRepositoryFunc{
 			defaultHook: i.GetLastUploadRetentionScanForRepository,
 		},
-		GetRecentIndexesSummaryFunc: &UploadsServiceGetRecentIndexesSummaryFunc{
-			defaultHook: i.GetRecentIndexesSummary,
+		GetRecentAutoIndexJobsSummaryFunc: &UploadsServiceGetRecentAutoIndexJobsSummaryFunc{
+			defaultHook: i.GetRecentAutoIndexJobsSummary,
 		},
 		GetRecentUploadsSummaryFunc: &UploadsServiceGetRecentUploadsSummaryFunc{
 			defaultHook: i.GetRecentUploadsSummary,
@@ -1058,6 +1059,119 @@ func (c UploadsServiceGetAutoIndexJobByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
+// UploadsServiceGetAutoIndexJobsFunc describes the behavior when the
+// GetAutoIndexJobs method of the parent MockUploadsService instance is
+// invoked.
+type UploadsServiceGetAutoIndexJobsFunc struct {
+	defaultHook func(context.Context, shared.GetAutoIndexJobsOptions) ([]shared.AutoIndexJob, int, error)
+	hooks       []func(context.Context, shared.GetAutoIndexJobsOptions) ([]shared.AutoIndexJob, int, error)
+	history     []UploadsServiceGetAutoIndexJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetAutoIndexJobs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUploadsService) GetAutoIndexJobs(v0 context.Context, v1 shared.GetAutoIndexJobsOptions) ([]shared.AutoIndexJob, int, error) {
+	r0, r1, r2 := m.GetAutoIndexJobsFunc.nextHook()(v0, v1)
+	m.GetAutoIndexJobsFunc.appendCall(UploadsServiceGetAutoIndexJobsFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetAutoIndexJobs
+// method of the parent MockUploadsService instance is invoked and the hook
+// queue is empty.
+func (f *UploadsServiceGetAutoIndexJobsFunc) SetDefaultHook(hook func(context.Context, shared.GetAutoIndexJobsOptions) ([]shared.AutoIndexJob, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetAutoIndexJobs method of the parent MockUploadsService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UploadsServiceGetAutoIndexJobsFunc) PushHook(hook func(context.Context, shared.GetAutoIndexJobsOptions) ([]shared.AutoIndexJob, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceGetAutoIndexJobsFunc) SetDefaultReturn(r0 []shared.AutoIndexJob, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared.GetAutoIndexJobsOptions) ([]shared.AutoIndexJob, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceGetAutoIndexJobsFunc) PushReturn(r0 []shared.AutoIndexJob, r1 int, r2 error) {
+	f.PushHook(func(context.Context, shared.GetAutoIndexJobsOptions) ([]shared.AutoIndexJob, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *UploadsServiceGetAutoIndexJobsFunc) nextHook() func(context.Context, shared.GetAutoIndexJobsOptions) ([]shared.AutoIndexJob, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceGetAutoIndexJobsFunc) appendCall(r0 UploadsServiceGetAutoIndexJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceGetAutoIndexJobsFuncCall
+// objects describing the invocations of this function.
+func (f *UploadsServiceGetAutoIndexJobsFunc) History() []UploadsServiceGetAutoIndexJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceGetAutoIndexJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceGetAutoIndexJobsFuncCall is an object that describes an
+// invocation of method GetAutoIndexJobs on an instance of
+// MockUploadsService.
+type UploadsServiceGetAutoIndexJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.GetAutoIndexJobsOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.AutoIndexJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceGetAutoIndexJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceGetAutoIndexJobsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
 // UploadsServiceGetAutoIndexJobsByIDsFunc describes the behavior when the
 // GetAutoIndexJobsByIDs method of the parent MockUploadsService instance is
 // invoked.
@@ -1399,117 +1513,6 @@ func (c UploadsServiceGetIndexersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// UploadsServiceGetIndexesFunc describes the behavior when the GetIndexes
-// method of the parent MockUploadsService instance is invoked.
-type UploadsServiceGetIndexesFunc struct {
-	defaultHook func(context.Context, shared.GetIndexesOptions) ([]shared.AutoIndexJob, int, error)
-	hooks       []func(context.Context, shared.GetIndexesOptions) ([]shared.AutoIndexJob, int, error)
-	history     []UploadsServiceGetIndexesFuncCall
-	mutex       sync.Mutex
-}
-
-// GetIndexes delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockUploadsService) GetIndexes(v0 context.Context, v1 shared.GetIndexesOptions) ([]shared.AutoIndexJob, int, error) {
-	r0, r1, r2 := m.GetIndexesFunc.nextHook()(v0, v1)
-	m.GetIndexesFunc.appendCall(UploadsServiceGetIndexesFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the GetIndexes method of
-// the parent MockUploadsService instance is invoked and the hook queue is
-// empty.
-func (f *UploadsServiceGetIndexesFunc) SetDefaultHook(hook func(context.Context, shared.GetIndexesOptions) ([]shared.AutoIndexJob, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetIndexes method of the parent MockUploadsService instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *UploadsServiceGetIndexesFunc) PushHook(hook func(context.Context, shared.GetIndexesOptions) ([]shared.AutoIndexJob, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UploadsServiceGetIndexesFunc) SetDefaultReturn(r0 []shared.AutoIndexJob, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, shared.GetIndexesOptions) ([]shared.AutoIndexJob, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadsServiceGetIndexesFunc) PushReturn(r0 []shared.AutoIndexJob, r1 int, r2 error) {
-	f.PushHook(func(context.Context, shared.GetIndexesOptions) ([]shared.AutoIndexJob, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *UploadsServiceGetIndexesFunc) nextHook() func(context.Context, shared.GetIndexesOptions) ([]shared.AutoIndexJob, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UploadsServiceGetIndexesFunc) appendCall(r0 UploadsServiceGetIndexesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UploadsServiceGetIndexesFuncCall objects
-// describing the invocations of this function.
-func (f *UploadsServiceGetIndexesFunc) History() []UploadsServiceGetIndexesFuncCall {
-	f.mutex.Lock()
-	history := make([]UploadsServiceGetIndexesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UploadsServiceGetIndexesFuncCall is an object that describes an
-// invocation of method GetIndexes on an instance of MockUploadsService.
-type UploadsServiceGetIndexesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 shared.GetIndexesOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []shared.AutoIndexJob
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UploadsServiceGetIndexesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UploadsServiceGetIndexesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
 // UploadsServiceGetLastUploadRetentionScanForRepositoryFunc describes the
 // behavior when the GetLastUploadRetentionScanForRepository method of the
 // parent MockUploadsService instance is invoked.
@@ -1624,37 +1627,37 @@ func (c UploadsServiceGetLastUploadRetentionScanForRepositoryFuncCall) Results()
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// UploadsServiceGetRecentIndexesSummaryFunc describes the behavior when the
-// GetRecentIndexesSummary method of the parent MockUploadsService instance
-// is invoked.
-type UploadsServiceGetRecentIndexesSummaryFunc struct {
-	defaultHook func(context.Context, int) ([]shared.IndexesWithRepositoryNamespace, error)
-	hooks       []func(context.Context, int) ([]shared.IndexesWithRepositoryNamespace, error)
-	history     []UploadsServiceGetRecentIndexesSummaryFuncCall
+// UploadsServiceGetRecentAutoIndexJobsSummaryFunc describes the behavior
+// when the GetRecentAutoIndexJobsSummary method of the parent
+// MockUploadsService instance is invoked.
+type UploadsServiceGetRecentAutoIndexJobsSummaryFunc struct {
+	defaultHook func(context.Context, int) ([]shared.GroupedAutoIndexJobs, error)
+	hooks       []func(context.Context, int) ([]shared.GroupedAutoIndexJobs, error)
+	history     []UploadsServiceGetRecentAutoIndexJobsSummaryFuncCall
 	mutex       sync.Mutex
 }
 
-// GetRecentIndexesSummary delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockUploadsService) GetRecentIndexesSummary(v0 context.Context, v1 int) ([]shared.IndexesWithRepositoryNamespace, error) {
-	r0, r1 := m.GetRecentIndexesSummaryFunc.nextHook()(v0, v1)
-	m.GetRecentIndexesSummaryFunc.appendCall(UploadsServiceGetRecentIndexesSummaryFuncCall{v0, v1, r0, r1})
+// GetRecentAutoIndexJobsSummary delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockUploadsService) GetRecentAutoIndexJobsSummary(v0 context.Context, v1 int) ([]shared.GroupedAutoIndexJobs, error) {
+	r0, r1 := m.GetRecentAutoIndexJobsSummaryFunc.nextHook()(v0, v1)
+	m.GetRecentAutoIndexJobsSummaryFunc.appendCall(UploadsServiceGetRecentAutoIndexJobsSummaryFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// GetRecentIndexesSummary method of the parent MockUploadsService instance
-// is invoked and the hook queue is empty.
-func (f *UploadsServiceGetRecentIndexesSummaryFunc) SetDefaultHook(hook func(context.Context, int) ([]shared.IndexesWithRepositoryNamespace, error)) {
+// GetRecentAutoIndexJobsSummary method of the parent MockUploadsService
+// instance is invoked and the hook queue is empty.
+func (f *UploadsServiceGetRecentAutoIndexJobsSummaryFunc) SetDefaultHook(hook func(context.Context, int) ([]shared.GroupedAutoIndexJobs, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetRecentIndexesSummary method of the parent MockUploadsService instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *UploadsServiceGetRecentIndexesSummaryFunc) PushHook(hook func(context.Context, int) ([]shared.IndexesWithRepositoryNamespace, error)) {
+// GetRecentAutoIndexJobsSummary method of the parent MockUploadsService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *UploadsServiceGetRecentAutoIndexJobsSummaryFunc) PushHook(hook func(context.Context, int) ([]shared.GroupedAutoIndexJobs, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1662,20 +1665,20 @@ func (f *UploadsServiceGetRecentIndexesSummaryFunc) PushHook(hook func(context.C
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadsServiceGetRecentIndexesSummaryFunc) SetDefaultReturn(r0 []shared.IndexesWithRepositoryNamespace, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) ([]shared.IndexesWithRepositoryNamespace, error) {
+func (f *UploadsServiceGetRecentAutoIndexJobsSummaryFunc) SetDefaultReturn(r0 []shared.GroupedAutoIndexJobs, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]shared.GroupedAutoIndexJobs, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadsServiceGetRecentIndexesSummaryFunc) PushReturn(r0 []shared.IndexesWithRepositoryNamespace, r1 error) {
-	f.PushHook(func(context.Context, int) ([]shared.IndexesWithRepositoryNamespace, error) {
+func (f *UploadsServiceGetRecentAutoIndexJobsSummaryFunc) PushReturn(r0 []shared.GroupedAutoIndexJobs, r1 error) {
+	f.PushHook(func(context.Context, int) ([]shared.GroupedAutoIndexJobs, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadsServiceGetRecentIndexesSummaryFunc) nextHook() func(context.Context, int) ([]shared.IndexesWithRepositoryNamespace, error) {
+func (f *UploadsServiceGetRecentAutoIndexJobsSummaryFunc) nextHook() func(context.Context, int) ([]shared.GroupedAutoIndexJobs, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1688,28 +1691,28 @@ func (f *UploadsServiceGetRecentIndexesSummaryFunc) nextHook() func(context.Cont
 	return hook
 }
 
-func (f *UploadsServiceGetRecentIndexesSummaryFunc) appendCall(r0 UploadsServiceGetRecentIndexesSummaryFuncCall) {
+func (f *UploadsServiceGetRecentAutoIndexJobsSummaryFunc) appendCall(r0 UploadsServiceGetRecentAutoIndexJobsSummaryFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// UploadsServiceGetRecentIndexesSummaryFuncCall objects describing the
-// invocations of this function.
-func (f *UploadsServiceGetRecentIndexesSummaryFunc) History() []UploadsServiceGetRecentIndexesSummaryFuncCall {
+// UploadsServiceGetRecentAutoIndexJobsSummaryFuncCall objects describing
+// the invocations of this function.
+func (f *UploadsServiceGetRecentAutoIndexJobsSummaryFunc) History() []UploadsServiceGetRecentAutoIndexJobsSummaryFuncCall {
 	f.mutex.Lock()
-	history := make([]UploadsServiceGetRecentIndexesSummaryFuncCall, len(f.history))
+	history := make([]UploadsServiceGetRecentAutoIndexJobsSummaryFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// UploadsServiceGetRecentIndexesSummaryFuncCall is an object that describes
-// an invocation of method GetRecentIndexesSummary on an instance of
-// MockUploadsService.
-type UploadsServiceGetRecentIndexesSummaryFuncCall struct {
+// UploadsServiceGetRecentAutoIndexJobsSummaryFuncCall is an object that
+// describes an invocation of method GetRecentAutoIndexJobsSummary on an
+// instance of MockUploadsService.
+type UploadsServiceGetRecentAutoIndexJobsSummaryFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1718,7 +1721,7 @@ type UploadsServiceGetRecentIndexesSummaryFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.IndexesWithRepositoryNamespace
+	Result0 []shared.GroupedAutoIndexJobs
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -1726,13 +1729,13 @@ type UploadsServiceGetRecentIndexesSummaryFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c UploadsServiceGetRecentIndexesSummaryFuncCall) Args() []interface{} {
+func (c UploadsServiceGetRecentAutoIndexJobsSummaryFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c UploadsServiceGetRecentIndexesSummaryFuncCall) Results() []interface{} {
+func (c UploadsServiceGetRecentAutoIndexJobsSummaryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
