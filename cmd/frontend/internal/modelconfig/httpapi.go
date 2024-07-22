@@ -3,6 +3,7 @@ package modelconfig
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/log"
 
@@ -64,5 +65,13 @@ func (h *HTTPHandlers) GetSupportedModelsHandler(w http.ResponseWriter, r *http.
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+
+	// Ensure sensitive server-side data has been redacted
+	if strings.Contains(string(rawJSON), "serverSideDataRedactionCanaryToken") {
+		h.logger.Error("sensitive data not redacted from model configuration", log.Error(err))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	http.Error(w, string(rawJSON), http.StatusOK)
 }

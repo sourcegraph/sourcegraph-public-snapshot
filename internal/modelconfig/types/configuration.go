@@ -112,6 +112,8 @@ type ServerSideProviderConfig struct {
 	OpenAICompatible    *OpenAICompatibleProviderConfig `json:"-"`
 	GenericProvider     *GenericProviderConfig          `json:"-"`
 	SourcegraphProvider *SourcegraphProviderConfig      `json:"-"`
+	// Canary token that is checked for to ensure sensitive server-side configuration has been redacted
+	ServerSideDataRedactionCanaryToken string `json:"serverSideDataRedactionCanaryToken"`
 }
 
 // ========================================================
