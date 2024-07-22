@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -87,14 +90,14 @@ func (a *Appliance) readJSON(w http.ResponseWriter, r *http.Request, output any)
 	return nil
 }
 
-func (a *Appliance) getStageJSONHandler() http.Handler {
+func (a *Appliance) getStatusJSONHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		data := struct {
-			Stage string `json:"stage"`
-			Data  string `json:"data,omitempty"`
+			Status string `json:"status"`
+			Data   string `json:"data,omitempty"`
 		}{
-			Stage: a.status.String(),
-			Data:  "",
+			Status: a.status.String(),
+			Data:   "",
 		}
 
 		if err := a.writeJSON(w, http.StatusOK, responseData{"status": data}, nil); err != nil {
@@ -105,21 +108,36 @@ func (a *Appliance) getStageJSONHandler() http.Handler {
 
 func (a *Appliance) getInstallProgressJSONHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		currentTasks, progress := calculateProgress(installTasks())
 
+		installProgress := struct {
+			Version  string `json:"version"`
+			Progress int    `json:"progress"`
+			Error    string `json:"error"`
+			Tasks    []Task `json:"tasks"`
+		}{
+			Version:  "",
+			Progress: progress,
+			Error:    "",
+			Tasks:    currentTasks,
+		}
+
+		if err := a.writeJSON(w, http.StatusOK, responseData{"progress": installProgress}, nil); err != nil {
+			a.serverErrorResponse(w, r, err)
+		}
 	})
 }
 
-func (a *Appliance) getStatusHandler() http.Handler {
+func (a *Appliance) getMaintenanceStatusHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	})
 }
 
-// TODO actually handles the state for install. Rename this to reflect and validate input.
-func (a *Appliance) postStageJSONHandler() http.Handler {
+func (a *Appliance) postStatusJSONHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Stage string `json:"stage"`
+			State string `json:"state"`
 			Data  string `json:"data,omitempty"`
 		}
 
@@ -127,5 +145,23 @@ func (a *Appliance) postStageJSONHandler() http.Handler {
 			a.badRequestResponse(w, r, err)
 			return
 		}
+
+		a.sourcegraph.Spec.RequestedVersion = input.Data
+
+		//TODO(jdpleiness) check form for value if this should be set or not
+		a.sourcegraph.SetLocalDevMode()
+
+		cfgMap := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "sourcegraph-appliance",
+				Namespace: a.namespace,
+			},
+		}
+		err := a.reconcileConfigMap(r.Context(), cfgMap)
+		if err != nil {
+			a.serverErrorResponse(w, r, err)
+		}
+
+		a.status = StatusInstalling
 	})
 }

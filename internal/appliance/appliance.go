@@ -37,18 +37,7 @@ type Appliance struct {
 	pb.UnimplementedApplianceServiceServer
 }
 
-// Status is a Stage that an Appliance can be in.
-type Status string
-
 const (
-	StatusUnknown         Status = "unknown"
-	StatusInstall         Status = "install"
-	StatusInstalling      Status = "installing"
-	StatusIdle            Status = "idle"
-	StatusUpgrading       Status = "upgrading"
-	StatusWaitingForAdmin Status = "wait-for-admin"
-	StatusRefresh         Status = "refresh"
-
 	// Secret and key names
 	dataSecretName                   = "appliance-data"
 	dataSecretJWTSigningKeyKey       = "jwt-signing-key"
@@ -56,10 +45,6 @@ const (
 	initialPasswordSecretName        = "appliance-password"
 	initialPasswordSecretPasswordKey = "password"
 )
-
-func (s Status) String() string {
-	return string(s)
-}
 
 func NewAppliance(
 	client client.Client,
@@ -167,6 +152,9 @@ func (a *Appliance) reconcileConfigMap(ctx context.Context, configMap *corev1.Co
 			if err != nil {
 				return errors.Wrap(err, "failed to marshal configmap yaml")
 			}
+
+			existingCfgMap.Name = config.ConfigmapName
+			existingCfgMap.Namespace = a.namespace
 
 			existingCfgMap.Labels = map[string]string{
 				"deploy": "sourcegraph",

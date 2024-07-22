@@ -5,6 +5,7 @@ import './App.css'
 import { useOutletContext } from 'react-router-dom'
 
 import { OutletContext } from './Frame'
+import React from "react";
 
 export const Home: React.FC = () => {
     const context = useOutletContext<OutletContext>()

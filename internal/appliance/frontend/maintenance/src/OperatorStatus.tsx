@@ -3,6 +3,7 @@ import { styled } from '@mui/material'
 import { Navigate } from 'react-router-dom'
 
 import { ContextProps } from './Frame'
+import React from "react";
 
 const Circle = styledReact.div`
   width: 18px;
@@ -20,7 +21,7 @@ export const OperatorStatus: React.FC<ContextProps> = ({ context }) => {
     const Status = () =>
         context.online === undefined ? (
             <div className="status connecting">connecting</div>
-        ) : context.online === true || context.needsLogin === true ? (
+        ) : context.online || context.needsLogin ? (
             <div className="status online">
                 <OnlineIcon />
             </div>
@@ -39,7 +40,7 @@ export const OperatorStatus: React.FC<ContextProps> = ({ context }) => {
     return (
         <div id="operator-status">
             Status: <Status />
-            {context.online === false && <Navigate to="/" />}
+            {!context.online && <Navigate to="/" />}
             {context.stage === 'unknown' && <Navigate to="/" />}
             {context.stage === 'install' && <Navigate to="/install" />}
             {context.stage === 'installing' && <Navigate to="/install/progress" />}
