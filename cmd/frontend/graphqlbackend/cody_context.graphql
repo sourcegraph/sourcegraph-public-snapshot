@@ -235,7 +235,7 @@ type ChatContextResult {
 """
 EXPERIMENTAL: Representation of a context item returned by a retriever.
 """
-type RetrieverContextItem{
+type RetrieverContextItem {
     """
     Retriever that produced this item.
     """
