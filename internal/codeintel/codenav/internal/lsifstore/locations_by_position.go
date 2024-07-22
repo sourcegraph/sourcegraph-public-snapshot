@@ -77,7 +77,7 @@ outer:
 
 			locations = append(locations, shared.Location{
 				UploadID: monikerLocations.UploadID,
-				Path:     core.NewUploadRelPathUnchecked(row.URI),
+				Path:     core.NewUploadRelPathUnchecked(row.DocumentPath),
 				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 			})
 
@@ -436,7 +436,7 @@ outer:
 
 			locations = append(locations, shared.Location{
 				UploadID: monikerLocations.UploadID,
-				Path:     core.NewUploadRelPathUnchecked(row.URI),
+				Path:     core.NewUploadRelPathUnchecked(row.DocumentPath),
 				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 			})
 
