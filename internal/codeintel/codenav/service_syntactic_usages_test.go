@@ -21,11 +21,11 @@ func TestSearchBasedUsages_ResultWithoutSymbols(t *testing.T) {
 		WithFile("path.java", refRange, refRange2).
 		Build()
 
-	usages, searchErr := searchBasedUsagesImpl(
+	usages, err := searchBasedUsagesImpl(
 		context.Background(), observation.TestTraceLogger(log.NoOp()), mockSearchClient,
 		UsagesForSymbolArgs{}, "symbol", "Java", core.None[MappedIndex](),
 	)
-	require.NoError(t, searchErr)
+	require.NoError(t, err)
 	expectRanges(t, usages, refRange, refRange2)
 }
 
@@ -39,11 +39,11 @@ func TestSearchBasedUsages_ResultWithSymbol(t *testing.T) {
 		WithSymbols("path.java", defRange).
 		Build()
 
-	usages, searchErr := searchBasedUsagesImpl(
+	usages, err := searchBasedUsagesImpl(
 		context.Background(), observation.TestTraceLogger(log.NoOp()), mockSearchClient,
 		UsagesForSymbolArgs{}, "symbol", "Java", core.None[MappedIndex](),
 	)
-	require.NoError(t, searchErr)
+	require.NoError(t, err)
 	expectRanges(t, usages, refRange, refRange2, defRange)
 	expectDefinitionRanges(t, usages, defRange)
 }
@@ -57,12 +57,11 @@ func TestSearchBasedUsages_SyntacticMatchesGetRemovedFromSearchBasedResults(t *t
 	upload, lsifStore := setupUpload(commit, "", doc("path.java", ref("ref", syntacticRange)))
 	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, noopTranslator(commit), upload)
 
-	usages, searchErr := searchBasedUsagesImpl(
+	usages, err := searchBasedUsagesImpl(
 		context.Background(), observation.TestTraceLogger(log.NoOp()), mockSearchClient,
 		UsagesForSymbolArgs{}, "symbol", "Java", core.Some(fakeMappedIndex),
 	)
-
-	require.NoError(t, searchErr)
+	require.NoError(t, err)
 	expectRanges(t, usages, commentRange)
 }
 
@@ -95,7 +94,9 @@ func TestSyntacticUsages(t *testing.T) {
 			SymbolRange: initialRange,
 		},
 	)
-	require.NoError(t, err)
+	if err != nil {
+		t.Error(t, err)
+	}
 	// We expect syntactic usages to filter both the comment range that was included in the search result,
 	// but not in the index as well as the range referencing the local symbol.
 	expectRanges(t, syntacticUsages.Matches, initialRange, refRange, defRange)
@@ -120,7 +121,9 @@ func TestSyntacticUsages_DocumentNotInIndex(t *testing.T) {
 			SymbolRange: initialRange,
 		},
 	)
-	require.NoError(t, err)
+	if err != nil {
+		t.Error(t, err)
+	}
 	expectRanges(t, syntacticUsages.Matches)
 }
 
@@ -154,6 +157,8 @@ func TestSyntacticUsages_IndexCommitTranslated(t *testing.T) {
 			SymbolRange: initialRange,
 		},
 	)
-	require.NoError(t, err)
+	if err != nil {
+		t.Error(t, err)
+	}
 	expectRanges(t, syntacticUsages.Matches, refRange)
 }
