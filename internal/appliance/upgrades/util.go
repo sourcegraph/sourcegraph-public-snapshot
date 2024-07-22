@@ -69,19 +69,19 @@ func checkConnection(obsvCtx *observation.Context, name, dsn string) error {
 		return errors.Newf("invalid database name: %s", name)
 	}
 
-	var f func(*observation.Context, string, string) (*sql.DB, error)
+	var connect func(*observation.Context, string, string) (*sql.DB, error)
 	switch name {
 	case "frontend":
-		f = connections.RawNewFrontendDB
+		connect = connections.RawNewFrontendDB
 	case "codeintel":
-		f = connections.RawNewCodeIntelDB
+		connect = connections.RawNewCodeIntelDB
 	case "codeinsights":
-		f = connections.RawNewCodeInsightsDB
+		connect = connections.RawNewCodeInsightsDB
 	}
 
 	fmt.Printf("Checking connection to %s database...\n", name)
 
-	if db, err := f(obsvCtx, dsn, "appliance"); err != nil {
+	if db, err := connect(obsvCtx, dsn, "appliance"); err != nil {
 		return err
 	} else {
 		defer db.Close()
