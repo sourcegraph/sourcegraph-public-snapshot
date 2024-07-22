@@ -75,7 +75,7 @@
         >
             <div class="sidebar-navigation-header">
                 <button class="close-button" on:click={() => (sidebarNavigationOpen = false)}>
-                    <Icon icon={ILucideX} aria-label="Close sidebar navigation" />
+                    <Icon icon={ILucideX} />
                 </button>
 
                 <a href="/search" class="logo-link">

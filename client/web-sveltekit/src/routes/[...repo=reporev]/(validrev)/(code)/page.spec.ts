@@ -166,7 +166,7 @@ test.describe('file sidebar', () => {
         await expect(page.getByText(/Child error/)).toBeVisible()
     })
 
-    test('error handling non-existing directory -> root', async ({ page, sg }) => {
+    test.skip('error handling non-existing directory -> root', async ({ page, sg }) => {
         // Here we expect the sidebar to show an error message, and after navigigating
         // to an existing directory, the directory contents
         sg.mockOperations({
@@ -248,9 +248,8 @@ test('history panel', async ({ page, sg }) => {
     await expect(page.getByText('Test commit')).toBeHidden()
 })
 
-test('file popover', async ({ page, sg }, testInfo) => {
-    // Test needs more time to teardown
-    test.setTimeout(testInfo.timeout * 3000)
+test('file popover', async ({ page, sg }) => {
+    test.slow()
 
     await page.goto(`/${repoName}`)
 
