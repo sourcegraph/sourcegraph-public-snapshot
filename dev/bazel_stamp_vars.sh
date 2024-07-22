@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo STABLE_VERSION "$VERSION"
+echo STABLE_VERSION "7.1.3"
 echo VERSION_TIMESTAMP "$(date +%s)"
 echo VERSION_TIMESTAMP_RFC3339 "$(date --iso-8601=s)"
 echo ZOEKT_VERSION "$(grep sourcegraph/zoekt go.mod | awk '{ print $2 }')"
