@@ -81,7 +81,8 @@ func writeViolationError(w http.ResponseWriter, info []violationInfo) error {
 		baseUrl, _ = url.Parse("https://sourcegraph.com")
 	}
 
-	docsUrl := baseUrl.ResolveReference(&url.URL{Path: "/help/api/graphql#cost-limits"}).String()
+	docsUrl := baseUrl.ResolveReference(
+		&url.URL{Path: "/help/api/graphql", Fragment: "cost-limits"}).String()
 
 	for _, info := range info {
 		errors = append(errors, &gqlerrors.QueryError{
