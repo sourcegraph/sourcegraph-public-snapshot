@@ -7,12 +7,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/container"
@@ -25,12 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
-)
-
-const (
-	pgsqlSecretName          = "pgsql-auth"
-	codeInsightsDBSecretName = "codeinsights-db-auth"
-	codeIntelDBSecretName    = "codeintel-db-auth"
 )
 
 func (r *Reconciler) reconcileFrontend(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
@@ -116,23 +107,30 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 		{Name: "home-dir", MountPath: "/home/sourcegraph"},
 	}
 
-	dbConnSpec, err := r.getDBSecret(ctx, sg, pgsqlSecretName)
+	template := pod.NewPodTemplate("sourcegraph-frontend", cfg)
+	dbConnSpecs, err := r.getDBSecrets(ctx, sg)
 	if err != nil {
 		return err
 	}
+	dbConnHash, err := configHash(dbConnSpecs)
+	if err != nil {
+		return err
+	}
+	template.Template.ObjectMeta.Annotations["checksum/auth"] = dbConnHash
 
-	template := pod.NewPodTemplate("sourcegraph-frontend", cfg)
+	redisConnSpecs, err := r.getRedisSecrets(ctx, sg)
+	if err != nil {
+		return err
+	}
+	redisConnHash, err := configHash(redisConnSpecs)
+	if err != nil {
+		return err
+	}
+	template.Template.ObjectMeta.Annotations["checksum/redis"] = redisConnHash
+
 	template.Template.Spec.Containers = []corev1.Container{ctr}
 	template.Template.Spec.Volumes = []corev1.Volume{pod.NewVolumeEmptyDir("home-dir")}
 	template.Template.Spec.ServiceAccountName = "sourcegraph-frontend"
-
-	if dbConnSpec != nil {
-		dbConnHash, err := configHash(dbConnSpec)
-		if err != nil {
-			return err
-		}
-		template.Template.ObjectMeta.Annotations["checksum/auth"] = dbConnHash
-	}
 
 	if cfg.Migrator {
 		migratorImage := config.GetDefaultImage(sg, "migrator")
@@ -165,42 +163,15 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 
 	ifChanged := struct {
 		config.FrontendSpec
-		PG *config.DatabaseConnectionSpec `json:"pg,omitempty"`
+		DBConnSpecs
+		RedisConnSpecs
 	}{
-		FrontendSpec: cfg,
-		PG:           dbConnSpec,
+		FrontendSpec:   cfg,
+		DBConnSpecs:    dbConnSpecs,
+		RedisConnSpecs: redisConnSpecs,
 	}
 
 	return reconcileObject(ctx, r, ifChanged, &dep, &appsv1.Deployment{}, sg, owner)
-}
-
-func (r *Reconciler) getDBSecret(ctx context.Context, sg *config.Sourcegraph, secretName string) (*config.DatabaseConnectionSpec, error) {
-	var dbSecret corev1.Secret
-	dbSecretName := types.NamespacedName{Name: secretName, Namespace: sg.Namespace}
-	if err := r.Client.Get(ctx, dbSecretName, &dbSecret); err != nil {
-		if !kerrors.IsNotFound(err) {
-			return nil, errors.Wrapf(err, "getting DB secret %s", secretName)
-		}
-
-		// If we cannot find the secret, return nil but also no error. We can
-		// still serialize an ifChanged object in reconcileFrontendDeployment().
-		// We should do this rather than fail the reconcile loop here, because
-		// Kubernetes does not have inter-service dependencies, so it is
-		// idiomatic to finish the loop even if the desired global final state
-		// has not been reached. The next reconciliation after the secret exists
-		// will yield a different result, which will cause deployed pods to roll
-		// (since the spec.template.metadata.annotations changes).
-		log.FromContext(ctx).Info("could not find database secret", "secretName", secretName, "err", err)
-		return nil, nil
-	}
-
-	return &config.DatabaseConnectionSpec{
-		Host:     string(dbSecret.Data["host"]),
-		Port:     string(dbSecret.Data["port"]),
-		User:     string(dbSecret.Data["user"]),
-		Password: string(dbSecret.Data["password"]),
-		Database: string(dbSecret.Data["database"]),
-	}, nil
 }
 
 func (r *Reconciler) reconcileFrontendService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {

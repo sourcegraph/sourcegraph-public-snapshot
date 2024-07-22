@@ -106,6 +106,16 @@ func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *config
 	}
 
 	podTemplate := pod.NewPodTemplate(name, cfg)
+	redisConnSpecs, err := r.getRedisSecrets(ctx, sg)
+	if err != nil {
+		return err
+	}
+	redisConnHash, err := configHash(redisConnSpecs)
+	if err != nil {
+		return err
+	}
+	podTemplate.Template.ObjectMeta.Annotations["checksum/redis"] = redisConnHash
+
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr}
 	podTemplate.Template.Spec.ServiceAccountName = name
 	podTemplate.Template.Spec.Volumes = []corev1.Volume{
@@ -122,7 +132,14 @@ func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *config
 	sset.Spec.Template = podTemplate.Template
 	sset.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{pvc}
 
-	return reconcileObject(ctx, r, sg.Spec.Symbols, &sset, &appsv1.StatefulSet{}, sg, owner)
+	ifChanged := struct {
+		config.SymbolsSpec
+		RedisConnSpecs
+	}{
+		SymbolsSpec:    cfg,
+		RedisConnSpecs: redisConnSpecs,
+	}
+	return reconcileObject(ctx, r, ifChanged, &sset, &appsv1.StatefulSet{}, sg, owner)
 }
 
 func (r *Reconciler) reconcileSymbolsService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
