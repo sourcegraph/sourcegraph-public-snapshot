@@ -3143,8 +3143,6 @@ type SiteConfiguration struct {
 	AuthUserOrgMap map[string][]string `json:"auth.userOrgMap,omitempty"`
 	// AuthzEnforceForSiteAdmins description: When true, site admins will only be able to see private code they have access to via our authz system.
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
-	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
-	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
 	// BatchChangesAutoDeleteBranch description: Automatically delete branches created for Batch Changes changesets when the changeset is merged or closed, for supported code hosts. Overrides any setting on the repository on the code host itself.
 	BatchChangesAutoDeleteBranch bool `json:"batchChanges.autoDeleteBranch,omitempty"`
 	// BatchChangesChangesetsRetention description: How long changesets will be retained after they have been detached from a batch change.
@@ -3438,7 +3436,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "auth.unlockAccountLinkSigningKey")
 	delete(m, "auth.userOrgMap")
 	delete(m, "authz.enforceForSiteAdmins")
-	delete(m, "authz.refreshInterval")
 	delete(m, "batchChanges.autoDeleteBranch")
 	delete(m, "batchChanges.changesetsRetention")
 	delete(m, "batchChanges.disableWebhooksWarning")

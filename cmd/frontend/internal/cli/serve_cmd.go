@@ -28,7 +28,7 @@ import (
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -286,7 +286,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			ExternalServiceURL string `json:"external_service_url"`
 		}
 
-		providers := authz.GetProviders()
+		providers, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
 		infos := make([]providerInfo, len(providers))
 		for i, p := range providers {
 			_, id := extsvc.DecodeURN(p.URN())

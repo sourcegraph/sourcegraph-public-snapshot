@@ -59,7 +59,6 @@ go_test(
         "//internal/auth",
         "//internal/authz",
         "//internal/authz/permssync",
-        "//internal/authz/providers/github",
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbmocks",
