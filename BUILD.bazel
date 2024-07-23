@@ -254,6 +254,16 @@ gazelle(
     command = "update-repos",
 )
 
+gazelle(
+    name = "gazelle-update-linters",
+    args = [
+        "-from_file=dev/linters/go.work",
+        "-to_macro=linter_deps.bzl%linter_dependencies",
+        "-build_file_proto_mode=disable_global",
+    ],
+    command = "update-repos",
+)
+
 # Because the current implementation of rules_go uses the old protoc grpc compiler, we have to declare our own, and declare it manually in the build files.
 # See https://github.com/bazelbuild/rules_go/issues/3022
 
@@ -307,6 +317,7 @@ nogo(
         "//conditions:default": [
             "//dev/linters/bodyclose",
             "//dev/linters/depguard",
+            "//dev/linters/exhaustruct",
             "//dev/linters/forbidigo",
             "//dev/linters/gocheckcompilerdirectives",
             "//dev/linters/gocritic",
