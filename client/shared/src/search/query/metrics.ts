@@ -130,7 +130,7 @@ export const collectMetrics = (query: string): Metrics | undefined => {
                         if (!predicate) {
                             continue
                         }
-                        switch (predicate.path.join('.')) {
+                        switch (predicate.name) {
                             case 'contains.path': {
                                 count_repo_contains_path += 1
                                 break

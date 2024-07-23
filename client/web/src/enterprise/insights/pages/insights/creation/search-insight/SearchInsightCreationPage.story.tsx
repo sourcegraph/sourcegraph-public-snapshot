@@ -13,12 +13,7 @@ import { SearchInsightCreationPage as SearchInsightCreationPageComponent } from 
 const defaultStory: Meta = {
     title: 'web/insights/creation-ui/search/SearchInsightCreationPage',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-    parameters: {
-        chromatic: {
-            viewports: [576, 1440],
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default defaultStory

@@ -3,7 +3,7 @@ resources:
     kind: Deployment
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: d3eb623947fedba566dfc56adc4733ff5ef1b2887a5cb63d75dbc1df452b0b5c
+        appliance.sourcegraph.com/configHash: eca9597d0eccefd3eb40039ed5d5afaf1b81989733f82692b933206540242d93
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
@@ -38,6 +38,8 @@ resources:
       template:
         metadata:
           annotations:
+            checksum/auth: 64bb092df26e6c62383322ffa1cedee5083dbd8bfeba3e4a2f29492c1d8abfa4
+            checksum/redis: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
             kubectl.kubernetes.io/default-container: sourcegraph-frontend
           creationTimestamp: null
           labels:
@@ -334,7 +336,10 @@ resources:
           indexedSearch:
             disabled: true
 
-          openTelemetry:
+          openTelemetryCollector:
+            disabled: true
+
+          openTelemetryAgent:
             disabled: true
 
           pgsql:
@@ -466,6 +471,7 @@ resources:
     kind: Service
     metadata:
       annotations:
+        appliance.sourcegraph.com/adopted: "true"
         appliance.sourcegraph.com/configHash: d3eb623947fedba566dfc56adc4733ff5ef1b2887a5cb63d75dbc1df452b0b5c
         prometheus.io/port: "6060"
         sourcegraph.prometheus/scrape: "true"
@@ -548,6 +554,7 @@ resources:
     kind: Ingress
     metadata:
       annotations:
+        appliance.sourcegraph.com/adopted: "true"
         appliance.sourcegraph.com/configHash: d3eb623947fedba566dfc56adc4733ff5ef1b2887a5cb63d75dbc1df452b0b5c
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1

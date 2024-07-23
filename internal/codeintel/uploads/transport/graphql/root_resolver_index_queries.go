@@ -130,10 +130,10 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 		}
 	}
 
-	var indexes []uploadsshared.Index
-	totalIndexCount := 0
+	var autoIndexJobs []uploadsshared.AutoIndexJob
+	totalJobsCount := 0
 	if !skipIndexes {
-		if indexes, totalIndexCount, err = r.uploadSvc.GetIndexes(ctx, uploadsshared.GetIndexesOptions{
+		if autoIndexJobs, totalJobsCount, err = r.uploadSvc.GetAutoIndexJobs(ctx, uploadsshared.GetAutoIndexJobsOptions{
 			RepositoryID:  repositoryID,
 			States:        indexStates,
 			Term:          term,
@@ -148,20 +148,20 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	type pair struct {
 		upload *shared.Upload
-		index  *uploadsshared.Index
+		job    *uploadsshared.AutoIndexJob
 	}
 	pairs := make([]pair, 0, pageSize)
 	addUpload := func(upload shared.Upload) { pairs = append(pairs, pair{&upload, nil}) }
-	addIndex := func(index uploadsshared.Index) { pairs = append(pairs, pair{nil, &index}) }
+	addJob := func(job uploadsshared.AutoIndexJob) { pairs = append(pairs, pair{nil, &job}) }
 
 	uIdx := 0
 	iIdx := 0
-	for uIdx < len(uploads) && iIdx < len(indexes) && (uIdx+iIdx) < pageSize {
-		if uploads[uIdx].UploadedAt.After(indexes[iIdx].QueuedAt) {
+	for uIdx < len(uploads) && iIdx < len(autoIndexJobs) && (uIdx+iIdx) < pageSize {
+		if uploads[uIdx].UploadedAt.After(autoIndexJobs[iIdx].QueuedAt) {
 			addUpload(uploads[uIdx])
 			uIdx++
 		} else {
-			addIndex(indexes[iIdx])
+			addJob(autoIndexJobs[iIdx])
 			iIdx++
 		}
 	}
@@ -169,8 +169,8 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 		addUpload(uploads[uIdx])
 		uIdx++
 	}
-	for iIdx < len(indexes) && (uIdx+iIdx) < pageSize {
-		addIndex(indexes[iIdx])
+	for iIdx < len(autoIndexJobs) && (uIdx+iIdx) < pageSize {
+		addJob(autoIndexJobs[iIdx])
 		iIdx++
 	}
 
@@ -179,7 +179,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 		cursor += strconv.Itoa(newUploadOffset)
 	}
 	cursor += ":"
-	if newIndexOffset := indexOffset + iIdx; newIndexOffset < totalIndexCount {
+	if newIndexOffset := indexOffset + iIdx; newIndexOffset < totalJobsCount {
 		cursor += strconv.Itoa(newIndexOffset)
 	}
 	if cursor == ":" {
@@ -188,18 +188,18 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	// Create upload loader with data we already have, and pre-submit associated uploads from index records
 	uploadLoader := r.uploadLoaderFactory.CreateWithInitialData(uploads)
-	PresubmitAssociatedUploads(uploadLoader, indexes...)
+	PresubmitAssociatedUploads(uploadLoader, autoIndexJobs...)
 
-	// Create index loader with data we already have, and pre-submit associated indexes from upload records
-	indexLoader := r.indexLoaderFactory.CreateWithInitialData(indexes)
-	PresubmitAssociatedIndexes(indexLoader, uploads...)
+	// Create job loader with data we already have, and pre-submit associated indexes from upload records
+	autoIndexJobLoader := r.autoIndexJobLoaderFactory.CreateWithInitialData(autoIndexJobs)
+	PresubmitAssociatedAutoIndexJobs(autoIndexJobLoader, uploads...)
 
 	// No data to load for git data (yet)
 	locationResolver := r.locationResolverFactory.Create()
 
 	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(pairs))
 	for _, pair := range pairs {
-		resolver, err := r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolver, errTracer, pair.upload, pair.index)
+		resolver, err := r.preciseIndexResolverFactory.Create(ctx, uploadLoader, autoIndexJobLoader, locationResolver, errTracer, pair.upload, pair.job)
 		if err != nil {
 			return nil, err
 		}
@@ -207,7 +207,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 		resolvers = append(resolvers, resolver)
 	}
 
-	return resolverstubs.NewCursorWithTotalCountConnectionResolver(resolvers, cursor, int32(totalUploadCount+totalIndexCount)), nil
+	return resolverstubs.NewCursorWithTotalCountConnectionResolver(resolvers, cursor, int32(totalUploadCount+totalJobsCount)), nil
 }
 
 func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ resolverstubs.PreciseIndexResolver, err error) {
@@ -231,22 +231,22 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 		uploadLoader := r.uploadLoaderFactory.CreateWithInitialData([]shared.Upload{upload})
 
 		// Pre-submit associated index id for subsequent loading
-		indexLoader := r.indexLoaderFactory.Create()
-		PresubmitAssociatedIndexes(indexLoader, upload)
+		autoIndexJobLoader := r.autoIndexJobLoaderFactory.Create()
+		PresubmitAssociatedAutoIndexJobs(autoIndexJobLoader, upload)
 
 		// No data to load for git data (yet)
 		locationResolverFactory := r.locationResolverFactory.Create()
 
-		return r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolverFactory, errTracer, &upload, nil)
+		return r.preciseIndexResolverFactory.Create(ctx, uploadLoader, autoIndexJobLoader, locationResolverFactory, errTracer, &upload, nil)
 	}
 	if indexID != 0 {
-		index, ok, err := r.uploadSvc.GetIndexByID(ctx, indexID)
+		index, ok, err := r.uploadSvc.GetAutoIndexJobByID(ctx, indexID)
 		if err != nil || !ok {
 			return nil, err
 		}
 
-		// Create index loader with data we already have
-		indexLoader := r.indexLoaderFactory.CreateWithInitialData([]shared.Index{index})
+		// Create job loader with data we already have
+		autoIndexJobLoader := r.autoIndexJobLoaderFactory.CreateWithInitialData([]shared.AutoIndexJob{index})
 
 		// Pre-submit associated upload id for subsequent loading
 		uploadLoader := r.uploadLoaderFactory.Create()
@@ -255,7 +255,7 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 		// No data to load for git data (yet)
 		locationResolverFactory := r.locationResolverFactory.Create()
 
-		return r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolverFactory, errTracer, nil, &index)
+		return r.preciseIndexResolverFactory.Create(ctx, uploadLoader, autoIndexJobLoader, locationResolverFactory, errTracer, nil, &index)
 	}
 
 	return nil, errors.New("invalid identifier")

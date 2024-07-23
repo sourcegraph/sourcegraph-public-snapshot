@@ -15,32 +15,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-// indexStepsResolver resolves the steps of an index record.
+// autoIndexJobStepsResolver resolves the steps of an auto-indexing job.
 //
-// Index jobs are broken into three parts:
+// Jobs are broken into three parts:
 //   - pre-index steps; all but the last docker step
 //   - index step; the last docker step
 //   - upload step; the only src-cli step
 //
 // The setup and teardown steps match the executor setup and teardown.
-type indexStepsResolver struct {
+type autoIndexJobStepsResolver struct {
 	siteAdminChecker sharedresolvers.SiteAdminChecker
-	index            uploadsshared.Index
+	job              uploadsshared.AutoIndexJob
 }
 
-func NewIndexStepsResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, index uploadsshared.Index) resolverstubs.IndexStepsResolver {
-	return &indexStepsResolver{siteAdminChecker: siteAdminChecker, index: index}
+func NewAutoIndexJobStepsResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, job uploadsshared.AutoIndexJob) resolverstubs.AutoIndexJobStepsResolver {
+	return &autoIndexJobStepsResolver{siteAdminChecker: siteAdminChecker, job: job}
 }
 
-func (r *indexStepsResolver) Setup() []resolverstubs.ExecutionLogEntryResolver {
+func (r *autoIndexJobStepsResolver) Setup() []resolverstubs.ExecutionLogEntryResolver {
 	return r.executionLogEntryResolversWithPrefix(logKeyPrefixSetup)
 }
 
 var logKeyPrefixSetup = regexp.MustCompile("^setup\\.")
 
-func (r *indexStepsResolver) PreIndex() []resolverstubs.PreIndexStepResolver {
+func (r *autoIndexJobStepsResolver) PreIndex() []resolverstubs.PreIndexStepResolver {
 	var resolvers []resolverstubs.PreIndexStepResolver
-	for i, step := range r.index.DockerSteps {
+	for i, step := range r.job.DockerSteps {
 		logKeyPreIndex := regexp.MustCompile(fmt.Sprintf("step\\.(docker|kubernetes)\\.pre-index\\.%d", i))
 		if entry, ok := r.findExecutionLogEntry(logKeyPreIndex); ok {
 			resolvers = append(resolvers, newPreIndexStepResolver(r.siteAdminChecker, step, &entry))
@@ -56,24 +56,24 @@ func (r *indexStepsResolver) PreIndex() []resolverstubs.PreIndexStepResolver {
 	return resolvers
 }
 
-func (r *indexStepsResolver) Index() resolverstubs.IndexStepResolver {
+func (r *autoIndexJobStepsResolver) Index() resolverstubs.IndexStepResolver {
 	if entry, ok := r.findExecutionLogEntry(logKeyPrefixIndexer); ok {
-		return newIndexStepResolver(r.siteAdminChecker, r.index, &entry)
+		return newIndexStepResolver(r.siteAdminChecker, r.job, &entry)
 	}
 
 	// This is here for backwards compatibility for records that were created before
 	// named keys for steps existed.
-	logKeyRegex := regexp.MustCompile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.%d", len(r.index.DockerSteps)))
+	logKeyRegex := regexp.MustCompile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.%d", len(r.job.DockerSteps)))
 	if entry, ok := r.findExecutionLogEntry(logKeyRegex); ok {
-		return newIndexStepResolver(r.siteAdminChecker, r.index, &entry)
+		return newIndexStepResolver(r.siteAdminChecker, r.job, &entry)
 	}
 
-	return newIndexStepResolver(r.siteAdminChecker, r.index, nil)
+	return newIndexStepResolver(r.siteAdminChecker, r.job, nil)
 }
 
 var logKeyPrefixIndexer = regexp.MustCompile("^step\\.(docker|kubernetes)\\.indexer")
 
-func (r *indexStepsResolver) Upload() resolverstubs.ExecutionLogEntryResolver {
+func (r *autoIndexJobStepsResolver) Upload() resolverstubs.ExecutionLogEntryResolver {
 	if entry, ok := r.findExecutionLogEntry(logKeyPrefixUpload); ok {
 		return newExecutionLogEntryResolver(r.siteAdminChecker, entry)
 	}
@@ -92,14 +92,14 @@ var (
 	logKeyPrefixSrcFirstStep = regexp.MustCompile("^step\\.src\\.0")
 )
 
-func (r *indexStepsResolver) Teardown() []resolverstubs.ExecutionLogEntryResolver {
+func (r *autoIndexJobStepsResolver) Teardown() []resolverstubs.ExecutionLogEntryResolver {
 	return r.executionLogEntryResolversWithPrefix(logKeyPrefixTeardown)
 }
 
 var logKeyPrefixTeardown = regexp.MustCompile("^teardown\\.")
 
-func (r *indexStepsResolver) findExecutionLogEntry(key *regexp.Regexp) (executor.ExecutionLogEntry, bool) {
-	for _, entry := range r.index.ExecutionLogs {
+func (r *autoIndexJobStepsResolver) findExecutionLogEntry(key *regexp.Regexp) (executor.ExecutionLogEntry, bool) {
+	for _, entry := range r.job.ExecutionLogs {
 		if key.MatchString(entry.Key) {
 			return entry, true
 		}
@@ -108,9 +108,9 @@ func (r *indexStepsResolver) findExecutionLogEntry(key *regexp.Regexp) (executor
 	return executor.ExecutionLogEntry{}, false
 }
 
-func (r *indexStepsResolver) executionLogEntryResolversWithPrefix(prefix *regexp.Regexp) []resolverstubs.ExecutionLogEntryResolver {
+func (r *autoIndexJobStepsResolver) executionLogEntryResolversWithPrefix(prefix *regexp.Regexp) []resolverstubs.ExecutionLogEntryResolver {
 	var resolvers []resolverstubs.ExecutionLogEntryResolver
-	for _, entry := range r.index.ExecutionLogs {
+	for _, entry := range r.job.ExecutionLogs {
 		if prefix.MatchString(entry.Key) {
 			res := newExecutionLogEntryResolver(r.siteAdminChecker, entry)
 			resolvers = append(resolvers, res)
@@ -152,29 +152,31 @@ func (r *preIndexStepResolver) LogEntry() resolverstubs.ExecutionLogEntryResolve
 //
 //
 
+// indexStepResolver represents only the 'index' phase of an auto-indexing job.
+// See autoIndexJobStepsResolver for details.
 type indexStepResolver struct {
 	siteAdminChecker sharedresolvers.SiteAdminChecker
-	index            uploadsshared.Index
+	job              uploadsshared.AutoIndexJob
 	entry            *executor.ExecutionLogEntry
 }
 
-func newIndexStepResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, index uploadsshared.Index, entry *executor.ExecutionLogEntry) resolverstubs.IndexStepResolver {
+func newIndexStepResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, job uploadsshared.AutoIndexJob, entry *executor.ExecutionLogEntry) resolverstubs.IndexStepResolver {
 	return &indexStepResolver{
 		siteAdminChecker: siteAdminChecker,
-		index:            index,
+		job:              job,
 		entry:            entry,
 	}
 }
 
-func (r *indexStepResolver) Commands() []string    { return r.index.LocalSteps }
-func (r *indexStepResolver) IndexerArgs() []string { return r.index.IndexerArgs }
-func (r *indexStepResolver) Outfile() *string      { return pointers.NonZeroPtr(r.index.Outfile) }
+func (r *indexStepResolver) Commands() []string    { return r.job.LocalSteps }
+func (r *indexStepResolver) IndexerArgs() []string { return r.job.IndexerArgs }
+func (r *indexStepResolver) Outfile() *string      { return pointers.NonZeroPtr(r.job.Outfile) }
 
 func (r *indexStepResolver) RequestedEnvVars() *[]string {
-	if len(r.index.RequestedEnvVars) == 0 {
+	if len(r.job.RequestedEnvVars) == 0 {
 		return nil
 	}
-	return &r.index.RequestedEnvVars
+	return &r.job.RequestedEnvVars
 }
 
 func (r *indexStepResolver) LogEntry() resolverstubs.ExecutionLogEntryResolver {

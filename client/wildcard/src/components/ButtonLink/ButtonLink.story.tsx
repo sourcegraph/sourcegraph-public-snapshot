@@ -15,10 +15,7 @@ const Config: Meta = {
 
     parameters: {
         component: ButtonLink,
-        chromatic: {
-            enableDarkMode: true,
-            disableSnapshot: false,
-        },
+
         design: [
             {
                 type: 'figma',

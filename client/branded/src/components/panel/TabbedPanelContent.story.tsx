@@ -13,11 +13,7 @@ const decorator: Decorator = story => (
 const config: Meta = {
     title: 'branded/TabbedPanelContent',
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            viewports: [320, 576, 978, 1440],
-        },
-    },
+    parameters: {},
 }
 
 export default config

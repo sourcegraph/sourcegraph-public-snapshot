@@ -38,8 +38,8 @@ export const orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[] = [
                 telemetryRecorder={props.platformContext.telemetryRecorder}
             />
         ),
-        condition: ({ org: { viewerCanAdminister } }) =>
-            viewerCanAdminister && window.context?.codeSearchEnabledOnInstance,
+        condition: ({ batchChangesEnabled, org: { viewerCanAdminister } }) =>
+            batchChangesEnabled && viewerCanAdminister && window.context?.codeSearchEnabledOnInstance,
     },
 ]
 

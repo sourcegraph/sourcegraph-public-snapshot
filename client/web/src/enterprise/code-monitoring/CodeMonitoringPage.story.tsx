@@ -18,13 +18,7 @@ import { mockCodeMonitorNodes } from './testing/util'
 
 const config: Meta = {
     title: 'web/enterprise/code-monitoring/CodeMonitoringPage',
-    parameters: {
-        chromatic: {
-            // Delay screenshot taking, so <CodeMonitoringPage /> is ready to show content.
-            delay: 600,
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default config

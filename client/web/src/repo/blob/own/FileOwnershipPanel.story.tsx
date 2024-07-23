@@ -173,9 +173,7 @@ const mockResponse: MockedResponse<FetchOwnershipResult> = {
 
 const config: Meta = {
     title: 'web/repo/blob/own/FileOwnership',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

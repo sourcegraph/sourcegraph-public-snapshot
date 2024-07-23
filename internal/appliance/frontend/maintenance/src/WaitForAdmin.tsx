@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { Button, CircularProgress, Stack, Typography } from '@mui/material'
 
-import { changeStage } from './debugBar'
+import { changeStage } from './state'
 
-const TestAdminUIGoodMs = 1 * 1000
-const WaitBeforeLaunchMs = 3 * 1000
+const TestAdminUIGoodMs = 1000
+const WaitBeforeLaunchMs = 3000
 
 export const WaitForAdmin: React.FC = () => {
     const [waitingForBalancer, setWaitingForBalancer] = useState<boolean>(false)

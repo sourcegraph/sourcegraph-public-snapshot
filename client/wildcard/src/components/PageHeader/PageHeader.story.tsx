@@ -94,10 +94,6 @@ export const ComplexHeader: StoryFn = () => (
 ComplexHeader.storyName = 'Complex header'
 
 ComplexHeader.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
     design: {
         type: 'figma',
         name: 'Figma',

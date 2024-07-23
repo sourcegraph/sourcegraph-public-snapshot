@@ -197,7 +197,7 @@ const toSelectorHover = (token: MetaSelector): string => {
 
 const toPredicateHover = (token: MetaPredicate): string => {
     const parameters = token.value.parameters.slice(1, -1)
-    switch (token.value.path.join('.')) {
+    switch (token.value.name) {
         case 'contains.file':
         case 'has.file': {
             return '**Built-in predicate**. Search only inside repositories that satisfy the specified `path:` and `content:` filters. `path:` and `content:` filters should be regular expressions.'

@@ -29,12 +29,7 @@ const config: Meta = {
     title: 'web/batches/preview/BatchChangePreviewPage',
     decorators: [decorator],
 
-    parameters: {
-        chromatic: {
-            viewports: [320, 576, 978, 1440],
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
     argTypes: {
         supersedingBatchSpec: {
             control: { type: 'boolean' },

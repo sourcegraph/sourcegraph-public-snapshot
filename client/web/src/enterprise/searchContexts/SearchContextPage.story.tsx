@@ -18,9 +18,7 @@ const decorator: Decorator = story => <div className="p-3 container">{story()}</
 const config: Meta = {
     title: 'web/enterprise/searchContexts/SearchContextPage',
     decorators: [decorator],
-    parameters: {
-        chromatic: { viewports: [1200], disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

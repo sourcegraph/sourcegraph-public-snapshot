@@ -73,12 +73,12 @@ func (s *store) GetRanges(ctx context.Context, bundleID int, path core.UploadRel
 	}
 
 	var ranges []shared.CodeIntelligenceRange
-	for _, occurrence := range documentData.SCIPData.Occurrences {
+	for _, lookupOccurrence := range documentData.SCIPData.Occurrences {
 
-		r := shared.TranslateRange(scip.NewRangeUnchecked(occurrence.Range))
+		r := shared.TranslateRange(scip.NewRangeUnchecked(lookupOccurrence.Range))
 
 		if (startLine <= r.Start.Line && r.Start.Line < endLine) || (startLine <= r.End.Line && r.End.Line < endLine) {
-			data := extractOccurrenceData(documentData.SCIPData, occurrence)
+			data := extractOccurrenceData(documentData.SCIPData, lookupOccurrence)
 
 			ranges = append(ranges, shared.CodeIntelligenceRange{
 				Range:           r,

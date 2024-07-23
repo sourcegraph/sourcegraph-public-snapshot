@@ -507,9 +507,13 @@ func TestGetAndSaveUser(t *testing.T) {
 
 						// All telemetry should have the expected user (or lack
 						// of user) attached, and all code paths should generate
-						// at least 1 user event.
+						// at least 1 user event if a new user was created.
 						gotEvents := eventsStore.CollectStoredEvents()
-						assert.NotEmpty(t, gotEvents)
+						if c.expNewUserCreated {
+							assert.NotEmpty(t, gotEvents)
+						} else {
+							assert.Empty(t, gotEvents)
+						}
 						for _, ev := range gotEvents {
 							switch {
 							// We are expecting a specific user ID

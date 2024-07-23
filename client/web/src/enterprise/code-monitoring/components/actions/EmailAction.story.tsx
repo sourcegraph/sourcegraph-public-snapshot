@@ -11,9 +11,7 @@ import { EmailAction } from './EmailAction'
 
 const config: Meta = {
     title: 'web/enterprise/code-monitoring/actions/EmailAction',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

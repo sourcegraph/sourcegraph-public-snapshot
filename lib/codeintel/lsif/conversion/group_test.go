@@ -610,9 +610,9 @@ func TestGroupBundleData(t *testing.T) {
 			Scheme:     "scheme C",
 			Identifier: "ident C",
 			Locations: []precise.LocationData{
-				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
-				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+				{DocumentPath: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
+				{DocumentPath: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+				{DocumentPath: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
 			},
 		},
 		{
@@ -620,9 +620,9 @@ func TestGroupBundleData(t *testing.T) {
 			Scheme:     "scheme D",
 			Identifier: "ident D",
 			Locations: []precise.LocationData{
-				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
-				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+				{DocumentPath: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
+				{DocumentPath: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+				{DocumentPath: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
 			},
 		},
 	}
@@ -642,9 +642,9 @@ func TestGroupBundleData(t *testing.T) {
 			Scheme:     "scheme A",
 			Identifier: "ident A",
 			Locations: []precise.LocationData{
-				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-				{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
-				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+				{DocumentPath: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+				{DocumentPath: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
+				{DocumentPath: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
 			},
 		},
 		{
@@ -652,9 +652,9 @@ func TestGroupBundleData(t *testing.T) {
 			Scheme:     "scheme B",
 			Identifier: "ident B",
 			Locations: []precise.LocationData{
-				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-				{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
-				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+				{DocumentPath: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+				{DocumentPath: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
+				{DocumentPath: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
 			},
 		},
 	}
@@ -674,9 +674,9 @@ func TestGroupBundleData(t *testing.T) {
 			Scheme:     "scheme F",
 			Identifier: "ident F",
 			Locations: []precise.LocationData{
-				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
-				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+				{DocumentPath: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
+				{DocumentPath: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+				{DocumentPath: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
 			},
 		},
 	}
@@ -727,7 +727,7 @@ func sortMonikerLocations(monikerLocations []precise.MonikerLocations) {
 
 func sortLocations(locations []precise.LocationData) {
 	sort.Slice(locations, func(i, j int) bool {
-		if compareResult := strings.Compare(locations[i].URI, locations[j].URI); compareResult != 0 {
+		if compareResult := strings.Compare(locations[i].DocumentPath, locations[j].DocumentPath); compareResult != 0 {
 			return compareResult < 0
 		}
 

@@ -20,10 +20,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	objectmocks "github.com/sourcegraph/sourcegraph/internal/object/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
-	uploadstoremocks "github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -37,7 +37,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	repoStore := backend.NewRepos(logger, db, gitserver.NewMockClient())
 	mockDBStore := NewMockDBStore[uploads.UploadMetadata]()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockUploadStore := objectmocks.NewMockStorage()
 
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{

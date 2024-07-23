@@ -419,11 +419,11 @@ func TestSavedSearches_ListCount(t *testing.T) {
 	})
 
 	t.Run("affiliated with user", func(t *testing.T) {
-		testListCount(t, SavedSearchListArgs{AffiliatedUser: &user.ID}, nil, []*types.SavedSearch{fixture1, fixture2, fixture4})
+		testListCount(t, SavedSearchListArgs{AffiliatedUser: &user.ID}, nil, []*types.SavedSearch{fixture1, fixture2, fixture4, fixture5})
 	})
 
-	t.Run("affiliated with user and public", func(t *testing.T) {
-		testListCount(t, SavedSearchListArgs{AffiliatedUser: &user.ID, IncludeAllPublicAsAffiliated: true}, nil, []*types.SavedSearch{fixture1, fixture2, fixture4, fixture5})
+	t.Run("public only", func(t *testing.T) {
+		testListCount(t, SavedSearchListArgs{PublicOnly: true}, nil, []*types.SavedSearch{fixture5})
 	})
 
 	t.Run("hide drafts", func(t *testing.T) {

@@ -1376,6 +1376,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 2},
 			},
 			{
+				name:   `repo has meta`,
+				query:  `repo:has.meta(/[test]{4}key$/:/^testval$/)`,
+				counts: counts{Repo: 2},
+			},
+			{
 				name:   `repo has kvp and not nonexistent kvp`,
 				query:  `repo:has(testkey:testval) -repo:has(noexist:false)`,
 				counts: counts{Repo: 2},

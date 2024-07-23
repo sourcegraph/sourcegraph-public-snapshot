@@ -171,11 +171,11 @@ func (s *savedSearchStore) GetByID(ctx context.Context, id int32) (_ *types.Save
 }
 
 type SavedSearchListArgs struct {
-	Query                        string
-	AffiliatedUser               *int32
-	IncludeAllPublicAsAffiliated bool // treat all public saved searches as though they're affiliated with the current user
-	Owner                        *types.Namespace
-	HideDrafts                   bool
+	Query          string
+	AffiliatedUser *int32
+	PublicOnly     bool
+	Owner          *types.Namespace
+	HideDrafts     bool
 }
 
 type SavedSearchesOrderBy uint8
@@ -212,13 +212,14 @@ func (a SavedSearchListArgs) toSQL() (where []*sqlf.Query, err error) {
 		affiliatedConds := []*sqlf.Query{
 			sqlf.Sprintf("user_id=%v", *a.AffiliatedUser),
 			sqlf.Sprintf("org_id IN (SELECT org_members.org_id FROM org_members LEFT JOIN orgs ON orgs.id=org_members.org_id WHERE orgs.deleted_at IS NULL AND org_members.user_id=%v)", *a.AffiliatedUser),
-		}
-		if a.IncludeAllPublicAsAffiliated {
-			affiliatedConds = append(affiliatedConds, sqlf.Sprintf("NOT visibility_secret"))
+			sqlf.Sprintf("NOT visibility_secret"), // treat all public items as though they're affiliated with the current user
 		}
 		where = append(where,
 			sqlf.Sprintf("(%v)", sqlf.Join(affiliatedConds, ") OR (")),
 		)
+	}
+	if a.PublicOnly {
+		where = append(where, sqlf.Sprintf("NOT visibility_secret"))
 	}
 	if a.Owner != nil {
 		if a.Owner.User != nil && *a.Owner.User != 0 {
