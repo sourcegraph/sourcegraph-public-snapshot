@@ -7,11 +7,12 @@ import (
 )
 
 type CodyContextResolver interface {
-	GetCodyContext(ctx context.Context, args GetContextArgs) ([]ContextResultResolver, error) // GA Enterprise method
 	ChatIntent(ctx context.Context, args ChatIntentArgs) (IntentResolver, error)
 	ChatContext(ctx context.Context, args ChatContextArgs) (ChatContextResolver, error)
 	RankContext(ctx context.Context, args RankContextArgs) (RankContextResolver, error)
 	RecordContext(ctx context.Context, args RecordContextArgs) (*EmptyResponse, error)
+	// GetCodyContext is the existing Cody Enterprise context endpoint
+	GetCodyContext(ctx context.Context, args GetContextArgs) ([]ContextResultResolver, error)
 }
 
 type GetContextArgs struct {
