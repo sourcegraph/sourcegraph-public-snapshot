@@ -18,6 +18,7 @@ use scip::{
 use string_interner::{symbol::SymbolU32, StringInterner};
 use tree_sitter::Node;
 
+use crate::tree_sitter_ext::NodeExt;
 /// This module contains logic to understand the binding structure of
 /// a given source file. We emit information about references and
 /// definitions of _local_ bindings. A local binding is a binding that
@@ -29,8 +30,7 @@ use tree_sitter::Node;
 /// tree-sitter and a DSL built on top of its [query syntax].
 ///
 /// [query syntax]: https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax
-use crate::languages::LocalConfiguration;
-use crate::tree_sitter_ext::NodeExt;
+use crate::{languages::LocalConfiguration, SCIP_SYNTAX_SCHEME};
 
 // Missing features at this point
 // a) Namespacing
@@ -499,14 +499,6 @@ impl<'a> LocalResolver<'a> {
                 }
             } else if is_before(next_ref, next_scope) {
                 let reference = references_iter.next().unwrap();
-                // if reference.kind == Some(Visibility::Local)
-                //     && self
-                //         .non_local_references_at_offsets
-                //         .contains(&reference.node.start_byte())
-                // {
-                //     continue;
-                // }
-
                 writeln!(
                     w,
                     "{}ref {} {}-{}",
@@ -664,11 +656,6 @@ impl<'a> LocalResolver<'a> {
                         None => kind_property.and_then(ReferenceDescriptor::from_str),
                     };
 
-                    println!(
-                        "{:?}, {visibility:?}, {descriptor:?}, {kind_property:?}, {capture_name}",
-                        capture.node.utf8_text(source_bytes)
-                    );
-
                     references.push(RefCapture {
                         node: capture.node,
                         visibility,
@@ -824,7 +811,7 @@ impl<'a> LocalResolver<'a> {
         };
 
         let symbol = scip::symbol::format_symbol(scip::types::Symbol {
-            scheme: "scip-syntax".into(),
+            scheme: SCIP_SYNTAX_SCHEME.into(),
             package: None.into(),
             descriptors: vec![scip::types::Descriptor {
                 name: referenced_name,
@@ -870,14 +857,6 @@ impl<'a> LocalResolver<'a> {
                 match reference.kind {
                     Some(Visibility::Local) | None => {
                         let is_pure_local_reference = reference.kind == Some(Visibility::Local);
-
-                        // if is_pure_local_reference
-                        //     && self
-                        //         .non_local_references_at_offsets
-                        //         .contains(&reference.node.start_byte())
-                        // {
-                        //     continue;
-                        // }
 
                         if skip {
                             continue;

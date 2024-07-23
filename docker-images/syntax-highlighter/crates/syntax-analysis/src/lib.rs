@@ -13,6 +13,8 @@ pub mod snapshot;
 pub mod tree_sitter_ext;
 pub mod ts_scip;
 
+pub const SCIP_SYNTAX_SCHEME: &'static str = "scip-syntax";
+
 pub fn get_globals(parser: ParserId, source: &str) -> Result<(globals::Scope, usize)> {
     let config = languages::get_tag_configuration(parser)
         .ok_or_else(|| anyhow!("No tag configuration for language: {parser:?}"))?;
