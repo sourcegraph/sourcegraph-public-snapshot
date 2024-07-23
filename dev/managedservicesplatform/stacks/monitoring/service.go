@@ -191,6 +191,9 @@ func createExternalHealthcheckAlert(
 			Comparison: alertpolicy.ComparisonLT,
 		},
 		NotificationChannels: channels,
+
+		// uptimeCheck cannot be recreated without deleting this policy
+		DependsOn: []cdktf.ITerraformDependable{uptimeCheck},
 	})
 	if err != nil {
 		return nil, err

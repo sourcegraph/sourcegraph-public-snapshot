@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/aws/constructs-go/constructs/v10"
@@ -139,6 +141,11 @@ type Config struct {
 	// NotificationChannels to choose from for subscribing on this alert
 	NotificationChannels NotificationChannels
 
+	// DependsOn can be used to explicitly declare resources that this policy
+	// depends on, e.g. to force the policy's deletion before an in-place update
+	// of a parent resource.
+	DependsOn []cdktf.ITerraformDependable
+
 	// Only one of the following can be set.
 	ThresholdAggregation *ThresholdAggregation
 	MetricAbsence        *MetricAbsence
@@ -240,6 +247,8 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 			// Conditions
 			Combiner:   pointers.Ptr("OR"),
 			Conditions: []*monitoringalertpolicy.MonitoringAlertPolicyConditions{condition},
+
+			DependsOn: &config.DependsOn,
 		})
 
 	return &Output{

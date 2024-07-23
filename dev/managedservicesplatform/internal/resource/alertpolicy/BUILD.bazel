@@ -20,6 +20,7 @@ go_library(
         "//lib/errors",
         "//lib/pointers",
         "@com_github_aws_constructs_go_constructs_v10//:constructs",
+        "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//monitoringalertpolicy",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//monitoringnotificationchannel",
     ],
