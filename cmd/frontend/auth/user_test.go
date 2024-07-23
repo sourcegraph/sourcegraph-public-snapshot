@@ -43,7 +43,6 @@ func TestGetAndSaveUser(t *testing.T) {
 		expSafeErr        string
 		expErr            error
 		expNewUserCreated bool
-		expExtAcctSaved   bool
 
 		// expected side effects
 		expSavedExtAccts                 map[int32][]extsvc.AccountSpec
@@ -123,7 +122,6 @@ func TestGetAndSaveUser(t *testing.T) {
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 				expNewUserCreated: false,
-				expExtAcctSaved:   true,
 			},
 			{
 				description: "ext acct exists, username and email don't exist",
@@ -139,7 +137,6 @@ func TestGetAndSaveUser(t *testing.T) {
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 				expNewUserCreated: false,
-				expExtAcctSaved:   true,
 			},
 			{
 				description: "ext acct exists, email belongs to another user",
@@ -155,7 +152,6 @@ func TestGetAndSaveUser(t *testing.T) {
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 				expNewUserCreated: false,
-				expExtAcctSaved:   true,
 			},
 			{
 				description: "ext acct doesn't exist, user with username and email exists",
@@ -513,7 +509,7 @@ func TestGetAndSaveUser(t *testing.T) {
 						// of user) attached, and all code paths should generate
 						// at least 1 user event if a new user was created.
 						gotEvents := eventsStore.CollectStoredEvents()
-						if c.expNewUserCreated || c.expExtAcctSaved {
+						if c.expNewUserCreated {
 							assert.NotEmpty(t, gotEvents)
 						} else {
 							assert.Empty(t, gotEvents)
