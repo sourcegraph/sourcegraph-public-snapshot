@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -44,7 +45,16 @@ func TestFilterZoektResults(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
-	checker := srp.NewSimpleChecker(repoName, []string{"/**", "-/*_test.go"})
+	checker := srp.NewSimpleChecker(repoName, []authz.PathWithIP{
+		{
+			Path: "/**",
+			IP:   "*",
+		},
+		{
+			Path: "-/*_test.go",
+			IP:   "*",
+		},
+	})
 
 	results := []*result.SymbolMatch{
 		{

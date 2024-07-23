@@ -828,12 +828,22 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 			IncludeContains: []extsvc.RepoID{"//Engineering/"},
 			ExcludeContains: []extsvc.RepoID{"//Engineering/Security/"},
 
-			SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
+			SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissionsWithIPs{
 				"abc": {
-					Paths: []string{"/include1", "/include2", "-/exclude1", "-/exclude2"},
+					Paths: []authz.PathWithIP{
+						{Path: "/include1", IP: "1.1.1.1"},
+						{Path: "/include2", IP: "1.1.1.1"},
+						{Path: "-/exclude1", IP: "1.1.1.1"},
+						{Path: "-/exclude2", IP: "1.1.1.1"},
+					},
 				},
 				"def": {
-					Paths: []string{"/include1", "/include2", "-/exclude1", "-/exclude2"},
+					Paths: []authz.PathWithIP{
+						{Path: "/include1", IP: "1.1.1.1"},
+						{Path: "/include2", IP: "1.1.1.1"},
+						{Path: "-/exclude1", IP: "1.1.1.1"},
+						{Path: "-/exclude2", IP: "1.1.1.1"},
+					},
 				},
 			},
 		}, nil
@@ -852,7 +862,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mockrequire.CalledN(t, subRepoPerms.UpsertWithSpecFunc, 2)
+	mockrequire.CalledN(t, subRepoPerms.UpsertWithSpecWithIPsFunc, 2)
 }
 
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {

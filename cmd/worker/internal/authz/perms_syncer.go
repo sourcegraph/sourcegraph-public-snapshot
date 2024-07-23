@@ -305,7 +305,7 @@ func (s *permsSyncerImpl) syncUserPerms(ctx context.Context, userID int32, noPer
 	// Set sub-repository permissions.
 	srp := s.db.SubRepoPerms()
 	for spec, perm := range results.subRepoPerms {
-		if err := srp.UpsertWithSpec(ctx, user.ID, spec, *perm); err != nil {
+		if err := srp.UpsertWithSpecWithIPs(ctx, user.ID, spec, *perm); err != nil {
 			return result, providerStates, errors.Wrapf(err, "upserting sub repo perms %v for user %q (id: %d)", spec, user.Username, user.ID)
 		}
 	}
@@ -365,7 +365,7 @@ type fetchUserPermsViaExternalAccountsResults struct {
 	repoPerms map[int32][]int32
 	// A map from external repository spec to sub-repository permissions. This stores
 	// the permissions for sub-repositories of private repositories.
-	subRepoPerms map[api.ExternalRepoSpec]*authz.SubRepoPermissions
+	subRepoPerms map[api.ExternalRepoSpec]*authz.SubRepoPermissionsWithIPs
 
 	providerStates database.CodeHostStatusesSet
 }
@@ -466,7 +466,7 @@ func (s *permsSyncerImpl) fetchUserPermsViaExternalAccounts(ctx context.Context,
 		accts = append(accts, acct)
 	}
 
-	results.subRepoPerms = make(map[api.ExternalRepoSpec]*authz.SubRepoPermissions)
+	results.subRepoPerms = make(map[api.ExternalRepoSpec]*authz.SubRepoPermissionsWithIPs)
 	results.repoPerms = make(map[int32][]int32, len(accts))
 
 	for _, acct := range accts {
@@ -532,11 +532,16 @@ func (s *permsSyncerImpl) fetchUserPermsViaExternalAccounts(ctx context.Context,
 				extPerms = new(authz.ExternalUserPermissions)
 
 				// Load last synced sub-repo perms for this user and provider.
-				currentSubRepoPerms, err := s.db.SubRepoPerms().GetByUserAndService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
+				// Note:
+				// When fetching the xisting sub-repo perms, we can't afford to backfill any IP entries with "*".
+				// Since this data is later saved, these entries with NULL IPs will get saved
+				// as explicit wildcard entries in the database (which isn't the same and might result in information leakage).
+				// @ggilmore Thinks that we can't trade correctness for availability here, but I'm open to suggestions.
+				currentSubRepoPerms, err := s.db.SubRepoPerms().GetByUserAndServiceWithIPs(ctx, user.ID, provider.ServiceType(), provider.ServiceID(), false)
 				if err != nil {
 					return results, errors.Wrap(err, "fetching existing sub-repo permissions")
 				}
-				extPerms.SubRepoPermissions = make(map[extsvc.RepoID]*authz.SubRepoPermissions, len(currentSubRepoPerms))
+				extPerms.SubRepoPermissions = make(map[extsvc.RepoID]*authz.SubRepoPermissionsWithIPs, len(currentSubRepoPerms))
 				for k := range currentSubRepoPerms {
 					v := currentSubRepoPerms[k]
 					extPerms.SubRepoPermissions[extsvc.RepoID(k.ID)] = &v

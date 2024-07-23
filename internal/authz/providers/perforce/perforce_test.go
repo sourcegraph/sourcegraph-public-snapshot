@@ -325,47 +325,80 @@ read user alice * //Sourcegraph/Security/... 						 ## give access to alice agai
 
 	// Specific behaviour is tested in TestScanFullRepoPermissions
 	t.Run("SubRepoPermissions", func(t *testing.T) {
-		logger := logtest.Scoped(t)
-
-		gitserverClient := gitserver.NewStrictMockClient()
-		ps := []*p4types.Protect{
-			{Level: "read", EntityType: "user", EntityName: "alice", Host: "*", Match: "//Sourcegraph/Engineering/..."},
-			{Level: "read", EntityType: "user", EntityName: "alice", Host: "*", Match: "//Sourcegraph/Security/...", IsExclusion: true},
-		}
-		gitserverClient.PerforceProtectsForDepotFunc.SetDefaultReturn(ps, nil)
-		gitserverClient.PerforceProtectsForUserFunc.SetDefaultReturn(ps, nil)
-
-		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
-		p.depots = append(p.depots, "//Sourcegraph/")
-
-		got, err := p.FetchUserPerms(ctx,
-			&extsvc.Account{
-				AccountSpec: extsvc.AccountSpec{
-					ServiceType: extsvc.TypePerforce,
-					ServiceID:   "ssl:111.222.333.444:1666",
+		for _, test := range []struct {
+			name     string
+			input    []*p4types.Protect
+			expected *authz.ExternalUserPermissions
+		}{
+			{
+				name: "normal",
+				input: []*p4types.Protect{
+					{Level: "read", EntityType: "user", EntityName: "alice", Host: "*", Match: "//Sourcegraph/Engineering/..."},
+					{Level: "read", EntityType: "user", EntityName: "alice", Host: "*", Match: "//Sourcegraph/Security/...", IsExclusion: true},
 				},
-				AccountData: extsvc.AccountData{
-					Data: extsvc.NewUnencryptedData(accountData),
-				},
-			},
-			authz.FetchPermsOptions{},
-		)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if diff := cmp.Diff(&authz.ExternalUserPermissions{
-			Exacts: []extsvc.RepoID{"//Sourcegraph/"},
-			SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
-				"//Sourcegraph/": {
-					Paths: []string{
-						mustGlobPattern(t, "/Engineering/..."),
-						mustGlobPattern(t, "-/Security/..."),
+				expected: &authz.ExternalUserPermissions{
+					Exacts: []extsvc.RepoID{"//Sourcegraph/"},
+					SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissionsWithIPs{
+						"//Sourcegraph/": {
+							Paths: []authz.PathWithIP{
+								{Path: mustGlobPattern(t, "/Engineering/..."), IP: "*"},
+								{Path: mustGlobPattern(t, "-/Security/..."), IP: "*"},
+							},
+						},
 					},
 				},
 			},
-		}, got); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			{
+				name: "with ips",
+
+				input: []*p4types.Protect{
+					{Level: "read", EntityType: "user", EntityName: "alice", Host: "1.2.3.6", Match: "//Sourcegraph/Engineering/..."},
+					{Level: "read", EntityType: "user", EntityName: "alice", Host: "1.2.3.4", Match: "//Sourcegraph/Security/...", IsExclusion: true},
+				},
+				expected: &authz.ExternalUserPermissions{
+					Exacts: []extsvc.RepoID{"//Sourcegraph/"},
+					SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissionsWithIPs{
+						"//Sourcegraph/": {
+							Paths: []authz.PathWithIP{
+								{Path: mustGlobPattern(t, "/Engineering/..."), IP: "1.2.3.6"},
+								{Path: mustGlobPattern(t, "-/Security/..."), IP: "1.2.3.4"},
+							},
+						},
+					},
+				},
+			},
+		} {
+			t.Run(test.name, func(t *testing.T) {
+				logger := logtest.Scoped(t)
+
+				gitserverClient := gitserver.NewStrictMockClient()
+
+				gitserverClient.PerforceProtectsForDepotFunc.SetDefaultReturn(test.input, nil)
+				gitserverClient.PerforceProtectsForUserFunc.SetDefaultReturn(test.input, nil)
+
+				p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+				p.depots = append(p.depots, "//Sourcegraph/")
+
+				got, err := p.FetchUserPerms(ctx,
+					&extsvc.Account{
+						AccountSpec: extsvc.AccountSpec{
+							ServiceType: extsvc.TypePerforce,
+							ServiceID:   "ssl:111.222.333.444:1666",
+						},
+						AccountData: extsvc.AccountData{
+							Data: extsvc.NewUnencryptedData(accountData),
+						},
+					},
+					authz.FetchPermsOptions{},
+				)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(test.expected, got); diff != "" {
+					t.Fatalf("Mismatch (-want +got):\n%s", diff)
+				}
+			})
 		}
 	})
 }
