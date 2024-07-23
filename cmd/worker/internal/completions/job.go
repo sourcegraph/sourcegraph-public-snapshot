@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 
@@ -43,7 +44,7 @@ func (e tokenUsageJob) Routines(_ context.Context, observationCtx *observation.C
 
 func newTokenUsageJob(observationCtx *observation.Context, db database.DB) goroutine.BackgroundRoutine {
 	handler := goroutine.HandlerFunc(func(ctx context.Context) error {
-		return storeTokenUsageInDb(ctx, telemetryrecorder.New(db))
+		return recordTokenUsage(ctx, tokenusage.NewManager(), telemetryrecorder.New(db))
 	})
 
 	operation := observationCtx.Operation(observation.Op{

@@ -28,6 +28,7 @@ go_test(
     srcs = ["tokens_test.go"],
     embed = [":completions"],
     deps = [
+        "//internal/completions/tokenusage",
         "//internal/rcache",
         "//internal/telemetry",
         "//internal/telemetry/telemetrytest",

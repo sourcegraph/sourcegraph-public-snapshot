@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
@@ -17,6 +18,7 @@ func TestStoreTokenUsageInDB(t *testing.T) {
 	cache := rcache.NewWithTTL(kv, "LLMUsage", 1800)
 	cache.SetInt("LLMUsage:model1:feature1:stream:input", 10)
 	cache.SetInt("LLMUsage:model1:feature1:stream:output", 20)
+	manager := tokenusage.NewManagerWithCache(cache)
 
 	mockEventStore := telemetrytest.NewMockEventsStore()
 	var sentEvent []*v1.Event
@@ -24,15 +26,15 @@ func TestStoreTokenUsageInDB(t *testing.T) {
 		sentEvent = event
 		return nil
 	})
-
 	recorder := telemetry.NewEventRecorder(mockEventStore)
-	err := storeTokenUsageInDb(context.Background(), recorder)
+
+	err := recordTokenUsage(context.Background(), manager, recorder)
 	require.NoError(t, err)
 	require.Equal(t, len(sentEvent), 1)
 	require.Equal(t, sentEvent[0].Feature, "cody.llmTokenCounter")
-	require.Equal(t, sentEvent[0].Parameters.Metadata, map[string]float64{
+	require.Equal(t, map[string]float64{
 		"LLMUsage:model1:feature1:stream:input":  10,
 		"LLMUsage:model1:feature1:stream:output": 20,
 		"FinalFetchAndSync":                      0.0,
-	})
+	}, sentEvent[0].Parameters.Metadata)
 }

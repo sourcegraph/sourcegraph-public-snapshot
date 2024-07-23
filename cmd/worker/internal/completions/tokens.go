@@ -7,8 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 )
 
-func storeTokenUsageInDb(ctx context.Context, recorder *telemetry.EventRecorder) error {
-	tokenManager := tokenusage.NewManager()
+func recordTokenUsage(ctx context.Context, tokenManager *tokenusage.Manager, recorder *telemetry.EventRecorder) error {
 	tokenUsageData, err := tokenManager.FetchTokenUsageDataForAnalysis()
 	if err != nil {
 		return err
