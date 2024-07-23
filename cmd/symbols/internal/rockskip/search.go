@@ -356,11 +356,6 @@ func (s *Service) parseSymbols(ctx context.Context, path string, contents []byte
 		return nil, err
 	}
 
-	allSymbols, err := parser.Parse(path, contents)
-	if err != nil {
-		return nil, err
-	}
-
 	defer func() {
 		if err == nil {
 			if e := recover(); e != nil {
@@ -381,6 +376,11 @@ func (s *Service) parseSymbols(ctx context.Context, path string, contents []byte
 			s.symbolParserPool.Done(nil, parserType)
 		}
 	}()
+
+	allSymbols, err := parser.Parse(path, contents)
+	if err != nil {
+		return nil, err
+	}
 
 	return allSymbols, nil
 }
