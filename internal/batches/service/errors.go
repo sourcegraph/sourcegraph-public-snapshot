@@ -32,7 +32,7 @@ var VerifyCredentialTimeoutError = errors.New("verifying credential timed out")
 
 func NewErrVerifyCredentialTimeout() error {
 	return &ErrVerifyCredentialTimeout{
-		error: errors.New("verifying credential timed out"),
+		error: errors.New("Could not verify credentials within 10 seconds. Credentials have been saved, but might not be valid."),
 	}
 }
 
@@ -41,7 +41,7 @@ type ErrVerifyCredentialTimeout struct {
 }
 
 func (e ErrVerifyCredentialTimeout) Error() string {
-	return VerifyCredentialTimeoutError.Error()
+	return e.error.Error()
 }
 
 func (e ErrVerifyCredentialTimeout) Extensions() map[string]any {
