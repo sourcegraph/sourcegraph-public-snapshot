@@ -44,4 +44,4 @@
 (field_expression
  field: [(identifier)
          (function_call (identifier))] @occurrence.skip)
-(identifier) @reference.local
+((identifier) @reference (#set! "kind" "local.type"))

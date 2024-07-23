@@ -4,6 +4,7 @@ import java.lang.AutoCloseable;
 import java.util.*;
 import java.util.stream.*;
 
+@Deprecated
 public class Locals<Container> implements AutoCloseable {
 
 	final String chars;

@@ -122,6 +122,13 @@
   name: (identifier) @reference (#set! "kind" "global.method")
 )
 
+; @Autowired(1, MyClass.class)
+;  ^^^^^^^^^
+; class MyClass()
+(marker_annotation
+    name: (identifier) @reference (#set! "kind" "global.type")
+)
+
 ; MyType variable = ...
 ; ^^^^^^
 (local_variable_declaration

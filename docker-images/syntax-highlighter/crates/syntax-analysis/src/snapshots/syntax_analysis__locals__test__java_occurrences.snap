@@ -18,6 +18,8 @@ expression: dumped
 //            ^^^^ reference scip-syntax util.
 //                 ^^^^^^ reference scip-syntax stream#
   
+  @Deprecated
+// ^^^^^^^^^^ reference scip-syntax Deprecated#
   public class Locals<Container> implements AutoCloseable {
 //                    ^^^^^^^^^ definition local 1
 //                                          ^^^^^^^^^^^^^ reference scip-syntax AutoCloseable#
