@@ -14,18 +14,18 @@ expression: dumped
 //                  ^^^^^^ definition(Property) scip-ctags SomeNamespace/SomeTrait#$thing.
           private $secretFromTrait;
 //                ^^^^^^^^^^^^^^^^ definition(Property) scip-ctags SomeNamespace/SomeTrait#$secretFromTrait.
-
+  
           public function setLogger(SomeInterface $thing) {
 //                        ^^^^^^^^^ definition(Method) scip-ctags SomeNamespace/SomeTrait#setLogger().
               $this->thing = $thing;
           }
-
+  
           public function log($message, $level) {
 //                        ^^^ definition(Method) scip-ctags SomeNamespace/SomeTrait#log().
               $this->thing->log($message, $level);
           }
       }
-
+  
       interface SomeInterface {
 //              ^^^^^^^^^^^^^ definition(Interface) scip-ctags SomeNamespace/SomeInterface#
           const MAX_NUMBER_ITEMS = 1000;
@@ -35,7 +35,7 @@ expression: dumped
           public function log($message, $level);
 //                        ^^^ definition(Method) scip-ctags SomeNamespace/SomeInterface#log().
       }
-
+  
       class SomeClass implements SomeInterface {
 //          ^^^^^^^^^ definition(Class) scip-ctags SomeNamespace/SomeClass#
           const PI = 3.1415926;
@@ -51,17 +51,17 @@ expression: dumped
               echo "Log $message of level $level";
           }
       }
-
+  
       class Foo implements SomeInterface {
 //          ^^^ definition(Class) scip-ctags SomeNamespace/Foo#
           use SomeTrait;
       }
-
+  
       type Foo_alias = Foo;
 //         ^^^^^^^^^ definition(TypeAlias) scip-ctags SomeNamespace/Foo_alias#
       newtype Foo_new = Foo;
 //            ^^^^^^^ definition(TypeAlias) scip-ctags SomeNamespace/Foo_new#
-
+  
       // Top level function
       <<__EntryPoint>>
       function main() {
@@ -71,7 +71,7 @@ expression: dumped
           $foo->log('It works', 1);
       }
   }
-
+  
   namespace SomeNamespace\SubNamespace {
 //          ^^^^^^^^^^^^^^^^^^^^^^^^^^ definition(Namespace) scip-ctags `SomeNamespace\SubNamespace`/
       // Generic class and a constructor
@@ -81,17 +81,17 @@ expression: dumped
 //                       ^^^^^^ definition(Property) scip-ctags `SomeNamespace\SubNamespace`/Stack#$stack.
           private int $stackPtr;
 //                    ^^^^^^^^^ definition(Property) scip-ctags `SomeNamespace\SubNamespace`/Stack#$stackPtr.
-
+  
           public function __construct() {
 //                        ^^^^^^^^^^^ definition(Constructor) scip-ctags `SomeNamespace\SubNamespace`/Stack#__construct().
               $this->stackPtr = 0;
               $this->stack = vec[];
           }
-
+  
           public function __dispose(): void {}
 //                        ^^^^^^^^^ definition(Method) scip-ctags `SomeNamespace\SubNamespace`/Stack#__dispose().
       }
-
+  
       enum Colors: int {
 //         ^^^^^^ definition(Enum) scip-ctags `SomeNamespace\SubNamespace`/Colors#
           Red = 1;
@@ -103,7 +103,7 @@ expression: dumped
           Default = 4;
 //        ^^^^^^^ definition(EnumMember) scip-ctags `SomeNamespace\SubNamespace`/Colors#Default.
       }
-
+  
       enum class Random: mixed {
 //               ^^^^^^ definition(Enum) scip-ctags `SomeNamespace\SubNamespace`/Random#
           int X = 42;
@@ -112,7 +112,7 @@ expression: dumped
 //               ^ definition(EnumMember) scip-ctags `SomeNamespace\SubNamespace`/Random#S.
       }
   }
-
+  
   // Validate anonymous namespace
   namespace {
       const int another_const = 88;
