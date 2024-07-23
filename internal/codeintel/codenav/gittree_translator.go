@@ -361,7 +361,7 @@ func newCompactHunk(h *diff.Hunk) compactHunk {
 
 func (h *compactHunk) overlapsLine(line int32) bool {
 	// git diff hunks are 1-based, vs our 0-based scip ranges
-	return h.origStartLine <= line+1 && h.origStartLine+h.origLines > line+1
+	return h.origStartLine <= line+1 && line+1 < h.origStartLine+h.origLines
 }
 
 func (h *compactHunk) shiftLine(line int32) core.Option[int32] {
