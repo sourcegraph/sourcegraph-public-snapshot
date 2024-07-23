@@ -2,6 +2,8 @@ package subscriptionsservice
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"slices"
 	"testing"
 
@@ -52,166 +54,152 @@ func newTestHandlerV1() *testHandlerV1 {
 
 func TestHandlerV1_ListEnterpriseSubscriptions(t *testing.T) {
 	ctx := context.Background()
-	t.Run("more than one permission filter", func(t *testing.T) {
-		req := connect.NewRequest(&subscriptionsv1.ListEnterpriseSubscriptionsRequest{
-			Filters: []*subscriptionsv1.ListEnterpriseSubscriptionsFilter{
-				{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_Permission{
-					Permission: &subscriptionsv1.Permission{
-						Type:          subscriptionsv1.PermissionType_PERMISSION_TYPE_SUBSCRIPTION_CODY_ANALYTICS,
-						Relation:      subscriptionsv1.PermissionRelation_PERMISSION_RELATION_VIEW,
-						SamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
-					},
-				}},
-				{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_Permission{
-					Permission: &subscriptionsv1.Permission{
-						Type:          subscriptionsv1.PermissionType_PERMISSION_TYPE_SUBSCRIPTION_CODY_ANALYTICS,
-						Relation:      subscriptionsv1.PermissionRelation_PERMISSION_RELATION_VIEW,
-						SamsAccountId: "018d21f2-0b8d-756a-84f0-13b942a2bae5",
-					},
-				}},
+	const mockSubscriptionID = "80ca12e2-54b4-448c-a61a-390b1a9c1224"
+
+	for _, tc := range []struct {
+		name           string
+		list           *subscriptionsv1.ListEnterpriseSubscriptionsRequest
+		iamObjectsHook func(opts iam.ListObjectsOptions) ([]string, error)
+		wantError      autogold.Value
+		wantListOpts   autogold.Value
+	}{
+		{
+			name: "more than one permission filter",
+			list: &subscriptionsv1.ListEnterpriseSubscriptionsRequest{
+				Filters: []*subscriptionsv1.ListEnterpriseSubscriptionsFilter{
+					{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_Permission{
+						Permission: &subscriptionsv1.Permission{
+							Type:          subscriptionsv1.PermissionType_PERMISSION_TYPE_SUBSCRIPTION_CODY_ANALYTICS,
+							Relation:      subscriptionsv1.PermissionRelation_PERMISSION_RELATION_VIEW,
+							SamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
+						},
+					}},
+					{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_Permission{
+						Permission: &subscriptionsv1.Permission{
+							Type:          subscriptionsv1.PermissionType_PERMISSION_TYPE_SUBSCRIPTION_CODY_ANALYTICS,
+							Relation:      subscriptionsv1.PermissionRelation_PERMISSION_RELATION_VIEW,
+							SamsAccountId: "018d21f2-0b8d-756a-84f0-13b942a2bae5",
+						},
+					}},
+				},
 			},
-		})
-		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
-
-		h := newTestHandlerV1()
-		_, err := h.ListEnterpriseSubscriptions(ctx, req)
-		require.EqualError(t, err, `invalid_argument: invalid filter: "permission" can only be provided once`)
-	})
-
-	t.Run("only subscription ID filter", func(t *testing.T) {
-		req := connect.NewRequest(&subscriptionsv1.ListEnterpriseSubscriptionsRequest{
-			Filters: []*subscriptionsv1.ListEnterpriseSubscriptionsFilter{
-				{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_SubscriptionId{
-					SubscriptionId: "80ca12e2-54b4-448c-a61a-390b1a9c1224",
-				}},
+			wantError: autogold.Expect(`invalid_argument: invalid filter: "permission" can only be provided once`),
+		},
+		{
+			name: "only subscription ID filter",
+			list: &subscriptionsv1.ListEnterpriseSubscriptionsRequest{
+				Filters: []*subscriptionsv1.ListEnterpriseSubscriptionsFilter{
+					{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_SubscriptionId{
+						SubscriptionId: mockSubscriptionID,
+					}},
+				},
 			},
-		})
-		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
-
-		h := newTestHandlerV1()
-		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
-			require.Len(t, opts.IDs, 1)
-			assert.Equal(t, "80ca12e2-54b4-448c-a61a-390b1a9c1224", opts.IDs[0])
-			return []*subscriptions.Subscription{}, nil
-		})
-		_, err := h.ListEnterpriseSubscriptions(ctx, req)
-		require.NoError(t, err)
-		mockrequire.Called(t, h.mockStore.ListEnterpriseSubscriptionsFunc)
-	})
-
-	t.Run("only permission filter", func(t *testing.T) {
-		req := connect.NewRequest(&subscriptionsv1.ListEnterpriseSubscriptionsRequest{
-			Filters: []*subscriptionsv1.ListEnterpriseSubscriptionsFilter{
-				{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_Permission{
-					Permission: &subscriptionsv1.Permission{
-						Type:          subscriptionsv1.PermissionType_PERMISSION_TYPE_SUBSCRIPTION_CODY_ANALYTICS,
-						Relation:      subscriptionsv1.PermissionRelation_PERMISSION_RELATION_VIEW,
-						SamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
-					},
-				}},
+			wantListOpts: autogold.Expect(subscriptions.ListEnterpriseSubscriptionsOptions{IDs: []string{
+				"80ca12e2-54b4-448c-a61a-390b1a9c1224",
+			}}),
+		},
+		{
+			name: "only permission filter",
+			iamObjectsHook: func(_ iam.ListObjectsOptions) ([]string, error) {
+				return []string{"subscription_cody_analytics:" + mockSubscriptionID}, nil
 			},
-		})
-		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
-
-		h := newTestHandlerV1()
-		h.mockStore.IAMListObjectsFunc.SetDefaultReturn([]string{"subscription_cody_analytics:80ca12e2-54b4-448c-a61a-390b1a9c1224"}, nil)
-		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
-			require.Len(t, opts.IDs, 1)
-			assert.Equal(t, "80ca12e2-54b4-448c-a61a-390b1a9c1224", opts.IDs[0])
-			return []*subscriptions.Subscription{}, nil
-		})
-		_, err := h.ListEnterpriseSubscriptions(ctx, req)
-		require.NoError(t, err)
-		mockrequire.Called(t, h.mockStore.ListEnterpriseSubscriptionsFunc)
-	})
-
-	t.Run("both subscription ID and permission filter that DO NOT intersect", func(t *testing.T) {
-		req := connect.NewRequest(&subscriptionsv1.ListEnterpriseSubscriptionsRequest{
-			Filters: []*subscriptionsv1.ListEnterpriseSubscriptionsFilter{
-				{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_Permission{
-					Permission: &subscriptionsv1.Permission{
-						Type:          subscriptionsv1.PermissionType_PERMISSION_TYPE_SUBSCRIPTION_CODY_ANALYTICS,
-						Relation:      subscriptionsv1.PermissionRelation_PERMISSION_RELATION_VIEW,
-						SamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
-					},
-				}},
-				{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_SubscriptionId{
-					SubscriptionId: "80ca12e2-54b4-448c-a61a-390b1a9c1224",
-				}},
+			list: &subscriptionsv1.ListEnterpriseSubscriptionsRequest{
+				Filters: []*subscriptionsv1.ListEnterpriseSubscriptionsFilter{
+					{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_Permission{
+						Permission: &subscriptionsv1.Permission{
+							Type:          subscriptionsv1.PermissionType_PERMISSION_TYPE_SUBSCRIPTION_CODY_ANALYTICS,
+							Relation:      subscriptionsv1.PermissionRelation_PERMISSION_RELATION_VIEW,
+							SamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
+						},
+					}},
+				},
 			},
-		})
-		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
-
-		h := newTestHandlerV1()
-		h.mockStore.IAMListObjectsFunc.SetDefaultReturn([]string{"subscription_cody_analytics:a-different-subscription-id"}, nil)
-		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
-			require.Len(t, opts.IDs, 1)
-			assert.Equal(t, "a-different-subscription-id", opts.IDs[0])
-			return []*subscriptions.Subscription{}, nil
-		})
-		resp, err := h.ListEnterpriseSubscriptions(ctx, req)
-		require.NoError(t, err)
-		assert.Empty(t, resp.Msg.Subscriptions)
-	})
-
-	t.Run("both subscription ID and permission filter", func(t *testing.T) {
-		subscriptionID := "80ca12e2-54b4-448c-a61a-390b1a9c1224"
-		req := connect.NewRequest(&subscriptionsv1.ListEnterpriseSubscriptionsRequest{
-			Filters: []*subscriptionsv1.ListEnterpriseSubscriptionsFilter{
-				{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_Permission{
-					Permission: &subscriptionsv1.Permission{
-						Type:          subscriptionsv1.PermissionType_PERMISSION_TYPE_SUBSCRIPTION_CODY_ANALYTICS,
-						Relation:      subscriptionsv1.PermissionRelation_PERMISSION_RELATION_VIEW,
-						SamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
-					},
-				}},
-				{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_SubscriptionId{
-					SubscriptionId: subscriptionID,
-				}},
+			wantListOpts: autogold.Expect(subscriptions.ListEnterpriseSubscriptionsOptions{IDs: []string{
+				"80ca12e2-54b4-448c-a61a-390b1a9c1224",
+			}}),
+		},
+		{
+			name: "both subscription ID and permission filter that DO NOT intersect",
+			iamObjectsHook: func(_ iam.ListObjectsOptions) ([]string, error) {
+				return []string{
+					"subscription_cody_analytics:a-different-subscription-id",
+				}, nil
 			},
-		})
-		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
-
-		h := newTestHandlerV1()
-		h.mockStore.IAMListObjectsFunc.SetDefaultReturn([]string{"subscription_cody_analytics:" + subscriptionID}, nil)
-		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
-			require.Len(t, opts.IDs, 1)
-			assert.Equal(t, subscriptionID, opts.IDs[0])
-			return []*subscriptions.Subscription{{ID: opts.IDs[0]}}, nil
-		})
-		resp, err := h.ListEnterpriseSubscriptions(ctx, req)
-		require.NoError(t, err)
-		mockrequire.Called(t, h.mockStore.ListEnterpriseSubscriptionsFunc)
-		require.NotEmpty(t, resp.Msg.Subscriptions)
-		assert.Len(t, resp.Msg.Subscriptions, 1)
-		assert.Equal(t, subscriptionsv1.EnterpriseSubscriptionIDPrefix+subscriptionID, resp.Msg.Subscriptions[0].Id)
-	})
-
-	t.Run("permission filter with no results", func(t *testing.T) {
-		req := connect.NewRequest(&subscriptionsv1.ListEnterpriseSubscriptionsRequest{
-			Filters: []*subscriptionsv1.ListEnterpriseSubscriptionsFilter{
-				{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_Permission{
-					Permission: &subscriptionsv1.Permission{
-						Type:          subscriptionsv1.PermissionType_PERMISSION_TYPE_SUBSCRIPTION_CODY_ANALYTICS,
-						Relation:      subscriptionsv1.PermissionRelation_PERMISSION_RELATION_VIEW,
-						SamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
-					},
-				}},
-				{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_SubscriptionId{
-					SubscriptionId: "80ca12e2-54b4-448c-a61a-390b1a9c1224",
-				}},
+			list: &subscriptionsv1.ListEnterpriseSubscriptionsRequest{
+				Filters: []*subscriptionsv1.ListEnterpriseSubscriptionsFilter{
+					{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_Permission{
+						Permission: &subscriptionsv1.Permission{
+							Type:          subscriptionsv1.PermissionType_PERMISSION_TYPE_SUBSCRIPTION_CODY_ANALYTICS,
+							Relation:      subscriptionsv1.PermissionRelation_PERMISSION_RELATION_VIEW,
+							SamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
+						},
+					}},
+					{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_SubscriptionId{
+						SubscriptionId: mockSubscriptionID,
+					}},
+				},
 			},
+			// No error or list opts - the requested subscription ID and permissions
+			// do not intersect, so there is no result and we fast-return.
+		},
+		{
+			name: "both subscription ID and permission filter",
+			iamObjectsHook: func(_ iam.ListObjectsOptions) ([]string, error) {
+				return []string{"subscription_cody_analytics:" + mockSubscriptionID}, nil
+			},
+			list: &subscriptionsv1.ListEnterpriseSubscriptionsRequest{
+				Filters: []*subscriptionsv1.ListEnterpriseSubscriptionsFilter{
+					{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_Permission{
+						Permission: &subscriptionsv1.Permission{
+							Type:          subscriptionsv1.PermissionType_PERMISSION_TYPE_SUBSCRIPTION_CODY_ANALYTICS,
+							Relation:      subscriptionsv1.PermissionRelation_PERMISSION_RELATION_VIEW,
+							SamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
+						},
+					}},
+					{Filter: &subscriptionsv1.ListEnterpriseSubscriptionsFilter_SubscriptionId{
+						SubscriptionId: mockSubscriptionID,
+					}},
+				},
+			},
+			wantListOpts: autogold.Expect(subscriptions.ListEnterpriseSubscriptionsOptions{IDs: []string{
+				"80ca12e2-54b4-448c-a61a-390b1a9c1224",
+			}}),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			req := connect.NewRequest(tc.list)
+			req.Header().Add("Authorization", "Bearer foolmeifyoucan")
+
+			h := newTestHandlerV1()
+			h.mockStore.IAMListObjectsFunc.SetDefaultHook(func(_ context.Context, opts iam.ListObjectsOptions) ([]string, error) {
+				return tc.iamObjectsHook(opts)
+			})
+			h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
+				tc.wantListOpts.Equal(t, opts)
+				return []*subscriptions.Subscription{}, nil
+			})
+
+			if _, err := h.ListEnterpriseSubscriptions(ctx, req); tc.wantError != nil {
+				tc.wantError.Equal(t, fmt.Sprintf("%v", err.Error()))
+			} else {
+				assert.NoError(t, err)
+			}
+
+			if tc.wantListOpts != nil {
+				mockrequire.CalledOnce(t, h.mockStore.ListEnterpriseSubscriptionsFunc)
+			} else {
+				mockrequire.NotCalled(t, h.mockStore.ListEnterpriseSubscriptionsFunc)
+			}
+			if tc.iamObjectsHook != nil {
+				mockrequire.CalledOnce(t, h.mockStore.IAMListObjectsFunc)
+			} else {
+				mockrequire.NotCalled(t, h.mockStore.IAMListObjectsFunc)
+			}
 		})
-		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
+	}
 
-		h := newTestHandlerV1()
-		h.mockStore.IAMListObjectsFunc.SetDefaultReturn([]string{}, nil)
-		resp, err := h.ListEnterpriseSubscriptions(ctx, req)
-		require.NoError(t, err)
-		assert.Nil(t, resp.Msg.Subscriptions)
-	})
-
-	t.Run("no filters", func(t *testing.T) {
+	// This is a temporary behaviour that will be removed
+	t.Run("no filters also checks dotcom", func(t *testing.T) {
 		req := connect.NewRequest(&subscriptionsv1.ListEnterpriseSubscriptionsRequest{})
 		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
 
@@ -238,96 +226,103 @@ func TestHandlerV1_ListEnterpriseSubscriptions(t *testing.T) {
 
 func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 	ctx := context.Background()
-	t.Run("no update_mask", func(t *testing.T) {
-		req := connect.NewRequest(&subscriptionsv1.UpdateEnterpriseSubscriptionRequest{
-			Subscription: &subscriptionsv1.EnterpriseSubscription{
-				Id:             "80ca12e2-54b4-448c-a61a-390b1a9c1224",
-				InstanceDomain: "s1.sourcegraph.com",
-				DisplayName:    "My Test Subscription",
+	const mockSubscriptionID = "es_80ca12e2-54b4-448c-a61a-390b1a9c1224"
+
+	for _, tc := range []struct {
+		name           string
+		update         *subscriptionsv1.UpdateEnterpriseSubscriptionRequest
+		wantUpdateOpts autogold.Value
+	}{
+		{
+			name: "no update mask",
+			update: &subscriptionsv1.UpdateEnterpriseSubscriptionRequest{
+				Subscription: &subscriptionsv1.EnterpriseSubscription{
+					Id:             mockSubscriptionID,
+					InstanceDomain: "s1.sourcegraph.com",
+					DisplayName:    "My Test Subscription",
+				},
+				UpdateMask: nil,
 			},
-			UpdateMask: nil,
-		})
-		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
-
-		h := newTestHandlerV1()
-		h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultReturn([]*dotcomdb.SubscriptionAttributes{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
-		h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
-			assert.NotEmpty(t, opts.InstanceDomain)
-			assert.NotEmpty(t, opts.DisplayName)
-			assert.False(t, opts.ForceUpdate)
-			return &subscriptions.Subscription{}, nil
-		})
-		_, err := h.UpdateEnterpriseSubscription(ctx, req)
-		require.NoError(t, err)
-		mockrequire.Called(t, h.mockStore.UpsertEnterpriseSubscriptionFunc)
-	})
-
-	t.Run("specified update_mask", func(t *testing.T) {
-		req := connect.NewRequest(&subscriptionsv1.UpdateEnterpriseSubscriptionRequest{
-			Subscription: &subscriptionsv1.EnterpriseSubscription{
-				Id:             "80ca12e2-54b4-448c-a61a-390b1a9c1224",
-				InstanceDomain: "s1.sourcegraph.com",
-				DisplayName:    "My Test Subscription", // should not be included
+			// All non-zero values should be included in update
+			wantUpdateOpts: autogold.Expect(subscriptions.UpsertSubscriptionOptions{
+				InstanceDomain: &sql.NullString{
+					String: "s1.sourcegraph.com",
+					Valid:  true,
+				},
+				DisplayName: &sql.NullString{
+					String: "My Test Subscription",
+					Valid:  true,
+				},
+			}),
+		},
+		{
+			name: "specified field mask",
+			update: &subscriptionsv1.UpdateEnterpriseSubscriptionRequest{
+				Subscription: &subscriptionsv1.EnterpriseSubscription{
+					Id:             mockSubscriptionID,
+					InstanceDomain: "s1.sourcegraph.com",
+					// Should not be included, as only instance_domain is in
+					// the field mask.
+					DisplayName: "My Test Subscription",
+				},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"instance_domain"}},
 			},
-			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"instance_domain"}},
-		})
-		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
-
-		h := newTestHandlerV1()
-		h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultReturn([]*dotcomdb.SubscriptionAttributes{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
-		h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
-			assert.NotEmpty(t, opts.InstanceDomain)
-			assert.Empty(t, opts.DisplayName)
-			assert.False(t, opts.ForceUpdate)
-			return &subscriptions.Subscription{}, nil
-		})
-		_, err := h.UpdateEnterpriseSubscription(ctx, req)
-		require.NoError(t, err)
-		mockrequire.Called(t, h.mockStore.UpsertEnterpriseSubscriptionFunc)
-	})
-
-	t.Run("* update_mask", func(t *testing.T) {
-		req := connect.NewRequest(&subscriptionsv1.UpdateEnterpriseSubscriptionRequest{
-			Subscription: &subscriptionsv1.EnterpriseSubscription{
-				Id:             "80ca12e2-54b4-448c-a61a-390b1a9c1224",
-				InstanceDomain: "",
+			wantUpdateOpts: autogold.Expect(subscriptions.UpsertSubscriptionOptions{InstanceDomain: &sql.NullString{
+				String: "s1.sourcegraph.com",
+				Valid:  true,
+			}}),
+		},
+		{
+			name: "* update_mask",
+			update: &subscriptionsv1.UpdateEnterpriseSubscriptionRequest{
+				Subscription: &subscriptionsv1.EnterpriseSubscription{
+					Id: mockSubscriptionID,
+					// All update-able values are zero
+				},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"*"}},
 			},
-			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"*"}},
-		})
-		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
-
-		h := newTestHandlerV1()
-		h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultReturn([]*dotcomdb.SubscriptionAttributes{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
-		h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
-			assert.Empty(t, opts.InstanceDomain)
-			assert.True(t, opts.ForceUpdate)
-			return &subscriptions.Subscription{}, nil
-		})
-		_, err := h.UpdateEnterpriseSubscription(ctx, req)
-		require.NoError(t, err)
-		mockrequire.Called(t, h.mockStore.UpsertEnterpriseSubscriptionFunc)
-	})
-
-	t.Run("noop update", func(t *testing.T) {
-		req := connect.NewRequest(&subscriptionsv1.UpdateEnterpriseSubscriptionRequest{
-			Subscription: &subscriptionsv1.EnterpriseSubscription{
-				Id:             "80ca12e2-54b4-448c-a61a-390b1a9c1224",
-				InstanceDomain: "",
+			// All update-able values should be set to their defaults explicitly
+			wantUpdateOpts: autogold.Expect(subscriptions.UpsertSubscriptionOptions{
+				InstanceDomain: &sql.NullString{},
+				DisplayName:    &sql.NullString{},
+				ForceUpdate:    true,
+			}),
+		},
+		{
+			name: "no-op update",
+			update: &subscriptionsv1.UpdateEnterpriseSubscriptionRequest{
+				Subscription: &subscriptionsv1.EnterpriseSubscription{
+					Id: mockSubscriptionID,
+					// All update-able values are zero
+				},
+				UpdateMask: nil,
 			},
-		})
-		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
+			// Update should be empty
+			wantUpdateOpts: autogold.Expect(subscriptions.UpsertSubscriptionOptions{}),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			req := connect.NewRequest(tc.update)
+			req.Header().Add("Authorization", "Bearer foolmeifyoucan")
 
-		h := newTestHandlerV1()
-		h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultReturn([]*dotcomdb.SubscriptionAttributes{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
-		h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
-			assert.Empty(t, opts.InstanceDomain)
-			assert.False(t, opts.ForceUpdate)
-			return &subscriptions.Subscription{}, nil
+			h := newTestHandlerV1()
+			h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultReturn(
+				[]*dotcomdb.SubscriptionAttributes{
+					{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"},
+				}, nil)
+			h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
+				tc.wantUpdateOpts.Equal(t, opts)
+				return &subscriptions.Subscription{}, nil
+			})
+			_, err := h.UpdateEnterpriseSubscription(ctx, req)
+			require.NoError(t, err)
+			if tc.wantUpdateOpts != nil {
+				mockrequire.CalledOnce(t, h.mockStore.UpsertEnterpriseSubscriptionFunc)
+			} else {
+				mockrequire.NotCalled(t, h.mockStore.UpsertEnterpriseSubscriptionFunc)
+			}
 		})
-		_, err := h.UpdateEnterpriseSubscription(ctx, req)
-		require.NoError(t, err)
-		mockrequire.Called(t, h.mockStore.UpsertEnterpriseSubscriptionFunc)
-	})
+	}
 }
 
 func TestHandlerV1_UpdateEnterpriseSubscriptionMembership(t *testing.T) {
