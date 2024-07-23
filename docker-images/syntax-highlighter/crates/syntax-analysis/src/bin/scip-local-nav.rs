@@ -2,10 +2,7 @@ use std::{fs, path::Path};
 
 use clap::Parser;
 use scip::{types::Document, write_message_to_file};
-use syntax_analysis::{
-    languages::LocalConfiguration,
-    locals::{find_locals},
-};
+use syntax_analysis::{languages::LocalConfiguration, locals::find_locals};
 use tree_sitter_all_languages::ParserId;
 use walkdir::WalkDir;
 
