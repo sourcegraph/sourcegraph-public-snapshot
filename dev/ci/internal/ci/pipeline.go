@@ -275,12 +275,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.PromoteRelease:
 		ops = operations.NewSet(
 			checkSecurityApproval(c),
-			// wait,
-			// releasePromoteImages(c),
-			// wait,
-			// releaseTestOperation(c),
-			// wait,
-			// releaseFinalizeOperation(c),
+			wait,
+			releasePromoteImages(c),
+			wait,
+			releaseTestOperation(c),
+			wait,
+			releaseFinalizeOperation(c),
 		)
 	default:
 		// Executor VM image

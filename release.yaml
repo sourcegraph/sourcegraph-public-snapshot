@@ -236,6 +236,127 @@ promoteToPublic:
           fi
   finalize:
     steps:
-      - name: "Skipping all finalization steps"
+      - name: 'Promote on release registry'
         cmd: |
-          echo "Skipping all finalization steps"
+          echo "Promoting sourcegraph/sourcegraph {{version}} release on release registry"
+          body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '' "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}/promote")
+          exit_code=$?
+
+          if [ $exit_code != 0 ]; then
+            echo "❌ Failed to promote release on release registry, got:"
+            echo "--- raw body ---"
+            echo $body
+            echo "--- raw body ---"
+            exit $exit_code
+          else
+            echo "Release promoted, see:"
+            echo $body
+          fi
+      - name: 'git:tag'
+        cmd: |
+          set -eu
+
+          # we need to first fetch the branch because the repo in CI is in a detached state
+          git fetch origin '+refs/heads/{{git.branch}}:refs/heads/{{git.branch}}'
+          git checkout {{git.branch}}
+          git tag --force {{version}}
+          # only push a single tag
+          git push origin tag {{version}}
+
+          # Annotate build
+          cat << EOF | buildkite-agent annotate --style info
+          Promoted release is **publicly available** through a git tag at [\`{{version}}\`](https://github.com/sourcegraph/sourcegraph/tree/{{version}}).
+          Please note that some release artifacts will not be available until the tag's pipeline completes. You can follow this at https://buildkite.com/sourcegraph/sourcegraph/builds?branch={{version}}
+          EOF
+
+      - name: 'git:release:create'
+        cmd: |
+          tag="{{tag}}"
+          version="{{version}}"
+          changelog_version="${tag//./}"
+
+          current_month=$(date +"%m")
+          current_year=$(date +"%Y")
+
+          # Define an array of month names
+          months=("January" "February" "March" "April" "May" "June" "July" "August" "September" "October" "November" "December")
+
+          # Get the month name from the array
+          month_name="${months[$(($current_month))]}"
+
+          # Capitalize the first letter of the month name
+          month_name="$(tr '[:lower:]' '[:upper:]' <<< ${month_name:0:1})${month_name:1}"
+
+          read -d '\n' releasepost << EndOfText
+            Sourcegraph $tag is now available!
+
+            _Note: we've updated our versioning conventions. Please see our [releases](https://handbook.sourcegraph.com/departments/engineering/dev/process/releases/#sourcegraph-releases) page for more information or reach out at [help.sourcegraph.com](https://help.sourcegraph.com)._
+
+            - [Changelog](https://sourcegraph.com/docs/CHANGELOG#${changelog_version})
+            - [Update](https://sourcegraph.com/docs/admin/updates)
+            - [Release post](https://sourcegraph.com/blog/release/${month_name}-${current_year})
+          EndOfText
+
+          bazel run //dev/tools:gh -- release create ${version} --latest --verify-tag -t "Sourcegraph ${tag}" --notes "${releasepost}"
+
+      # tag is usually in the format `5.3.2`
+      # while version is usually the tag prepended with a v, `v5.3.2`
+      - name: 'Slack notification (#announce-engineering, #team-cloud-ops)'
+        cmd: |
+          echo "Posting slack notification for release"
+          tag="{{tag}}"
+          changelog_version="${tag//./}"
+          webhooks=("$ANNOUNCE_ENG_SLACK_WEBHOOK_URL" "$CLOUD_OPS_SLACK_WEBHOOK_URL")
+          for webhook in "${webhooks[@]}"
+          do
+            body=$(wget --content-on-error -O- --header="Content-Type: application/json" --post-data '{
+              "type": "mrkdwn",
+              "text": "*Sourcegraph {{tag}} has been published*\n\n• <https://sourcegraph.com/docs/CHANGELOG#${changelog_version} | Changelog>\n• <https://github.com/sourcegraph/sourcegraph/releases/tag/{{version}} | GitHub release>"
+            }' "$webhook")
+            exit_code=$?
+
+            if [ $exit_code != 0 ]; then
+              echo "❌ Unable to post message to slack, got:"
+              echo "--- raw body ---"
+              echo $body
+              echo "--- raw body ---"
+              exit $exit_code
+            else
+              echo "Posted to slack."
+            fi
+          done
+      - name: 'Generate and submit changelog pull request on sourcegraph/docs'
+        cmd: |
+          set -eu -o pipefail
+
+          # Cleanup after ourselves.
+          trap 'rm ./changelog 2>/dev/null || true' EXIT
+
+          # Find the asset id for the changelog binary on sourcegraph/devx-service latest release
+          asset_id=$(curl -L -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $DEVX_SERVICE_GH_TOKEN" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/sourcegraph/devx-service/releases/latest | jq '.assets[] | select(.name=="changelog") | .id')
+
+          # Download the binary
+          curl -L \
+            -H "Accept: application/octet-stream" \
+            -H "Authorization: Bearer $DEVX_SERVICE_GH_TOKEN"\
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -o changelog \
+            "https://api.github.com/repos/sourcegraph/devx-service/releases/assets/${asset_id}"
+
+          chmod +x changelog
+
+          pr_url=$(./changelog \
+            --github.token="$DEVX_SERVICE_GH_TOKEN" \
+            update-as-pr \
+            --github.repo="sourcegraph/sourcegraph" \
+            --output.repo="sourcegraph/docs" \
+            --output.repo.base="main" \
+            --output.changelog="docs/CHANGELOG.mdx" \
+            --output.changelog.marker='{/* CHANGELOG_START */}' \
+            --releaseregistry.token="$RELEASE_REGISTRY_TOKEN" \
+            --releaseregistry.name="sourcegraph" \
+            --releaseregistry.version={{version}})
+
+          cat << EOF | buildkite-agent annotate --style info
+          Succesfully submitted [changelog pull request for {{version}}]($pr_url)
+          EOF
