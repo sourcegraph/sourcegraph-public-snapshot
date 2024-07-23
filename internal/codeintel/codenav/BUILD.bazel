@@ -86,6 +86,7 @@ go_test(
         "//internal/api",
         "//internal/authz",
         "//internal/codeintel/codenav/internal/lsifstore",
+        "//internal/codeintel/codenav/internal/lsifstore/mocks",
         "//internal/codeintel/codenav/shared",
         "//internal/codeintel/core",
         "//internal/codeintel/uploads/shared",
@@ -118,8 +119,5 @@ go_mockgen(
         "//:mockgen.test.yaml",
         "//:mockgen.temp.yaml",
     ],
-    deps = [
-        ":codenav",
-        "//internal/codeintel/codenav/internal/lsifstore",
-    ],
+    deps = [":codenav"],
 )
