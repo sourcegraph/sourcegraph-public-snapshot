@@ -87,7 +87,10 @@
                     </li>
                     <li>
                         <a href="/{data.repoName}@{data.commit.oid}"
-                            >Browse files at <Badge variant="link">{data.commit.abbreviatedOID}</Badge></a
+                            >Browse files at
+                            <Badge variant="link">
+                                {data.commit.abbreviatedOID}
+                            </Badge></a
                         >
                     </li>
                     {#each data.commit.externalURLs as { url, serviceKind }}

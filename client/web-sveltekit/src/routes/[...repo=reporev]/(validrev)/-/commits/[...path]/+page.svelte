@@ -5,12 +5,11 @@
     import { navigating } from '$app/stores'
     import Commit from '$lib/Commit.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
     import { getHumanNameForCodeHost } from '$lib/repo/shared/codehost'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { Alert, Badge } from '$lib/wildcard'
-
-    import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
 
     import type { PageData, Snapshot } from './$types'
 
@@ -61,9 +60,13 @@
 
 <header>
     <h2>
-        Commit History
-        {#if data.path}
-            in <code>{data.path}</code>
+        {#if commits && commits[0].perforceChangelist !== null}
+            Changelist
+        {:else}
+            Commit History
+            {#if data.path}
+                in <code>{data.path}</code>
+            {/if}
         {/if}
     </h2>
     <div>
@@ -90,8 +93,17 @@
                         </div>
                         <ul class="actions">
                             <li>
+                                {#if commit.perforceChangelist}
+                                    Changelist ID:
+                                {/if}
                                 <Badge variant="link">
-                                    <a href={commit.canonicalURL} title="View commit">{commit.abbreviatedOID}</a>
+                                    {#if commit.perforceChangelist}
+                                        <a href={commit.perforceChangelist?.canonicalURL} title="View commit"
+                                            >{commit.perforceChangelist?.cid}</a
+                                        >
+                                    {:else}
+                                        <a href={commit.canonicalURL} title="View commit">{commit.abbreviatedOID}</a>
+                                    {/if}
                                 </Badge>
                             </li>
                             <li><a href="/{data.repoName}@{commit.oid}">Browse files</a></li>
