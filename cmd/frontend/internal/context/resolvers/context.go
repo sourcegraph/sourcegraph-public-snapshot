@@ -47,6 +47,16 @@ const (
 	StopReasonDone    = "DONE"
 )
 
+type retrieverFunc func(ctx context.Context, repo *types.Repo, query string, r *Resolver) ([]graphqlbackend.RetrieverContextItemResolver, []error, error)
+
+var (
+	retrievers = []retrieverFunc{
+		func(ctx context.Context, repo *types.Repo, query string, r *Resolver) ([]graphqlbackend.RetrieverContextItemResolver, []error, error) {
+			return r.fetchZoekt(ctx, query, repo)
+		},
+	}
+)
+
 type Resolver struct {
 	db                  database.DB
 	gitserverClient     gitserver.Client
@@ -67,29 +77,28 @@ func (r *Resolver) ChatContext(ctx context.Context, args graphqlbackend.ChatCont
 	if err != nil {
 		return nil, err
 	}
-	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
-		Repos: []types.RepoIDName{{ID: repo.ID, Name: repo.Name}},
-		Query: args.Query,
-	})
-	if err != nil {
-		return nil, err
-	}
 	res := &chatContextResponse{
 		stopReason: StopReasonDone,
 	}
 	var partialErrors []error
-	for _, fc := range fileChunks {
-		fcr, err := r.fileChunkToResolver(ctx, &fc)
+	// if all retrievers fail, we fail the whole request, otherwise we return successfully fetched items + partial error
+	var completeErrors []error
+	success := false
+	// TODO: make this and chunk resolution in `fetchZoekt` concurrent
+	for _, f := range retrievers {
+		items, pe, err := f(ctx, repo, args.Query, r)
 		if err != nil {
-			partialErrors = append(partialErrors, errors.Wrapf(err, "resolving file chunk %s", fc.Path))
+			completeErrors = append(completeErrors, err)
 			continue
 		}
-		blob, _ := fcr.ToFileChunkContext()
-		res.contextItems = append(res.contextItems, retrieverContextItem{
-			retriever: "zoekt",
-			item:      blob,
-		})
+		success = true
+		res.contextItems = append(res.contextItems, items...)
+		partialErrors = append(partialErrors, pe...)
 	}
+	if !success {
+		return nil, errors.Append(nil, completeErrors...)
+	}
+	partialErrors = append(partialErrors, completeErrors...)
 	if len(partialErrors) > 0 {
 		res.partialErrors = partialErrors
 		fields := []log.Field{log.Int("count", len(partialErrors)), log.String("interactionID", args.InteractionID)}
@@ -346,6 +355,31 @@ func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextAr
 		used = append(used, int32(r.Index))
 	}
 	return conf.CodyRerankerCohere, used, nil
+}
+
+func (r *Resolver) fetchZoekt(ctx context.Context, query string, repo *types.Repo) ([]graphqlbackend.RetrieverContextItemResolver, []error, error) {
+	var res []graphqlbackend.RetrieverContextItemResolver
+	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
+		Repos: []types.RepoIDName{{ID: repo.ID, Name: repo.Name}},
+		Query: query,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	var partialErrors []error
+	for _, fc := range fileChunks {
+		fcr, err := r.fileChunkToResolver(ctx, &fc)
+		if err != nil {
+			partialErrors = append(partialErrors, errors.Wrapf(err, "resolving file chunk %s", fc.Path))
+			continue
+		}
+		blob, _ := fcr.ToFileChunkContext()
+		res = append(res, retrieverContextItem{
+			retriever: "zoekt",
+			item:      blob,
+		})
+	}
+	return res, partialErrors, nil
 }
 
 // countLines finds the number of lines corresponding to the number of runes. We 'round down'
