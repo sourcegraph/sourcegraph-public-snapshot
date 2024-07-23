@@ -12,12 +12,12 @@ import (
 
 var ErrNoTags = errors.New("no tags found")
 
-// handleGitCommandExec There's a weird behavior that occurs where an error isn't accessible in the err variable
+// HandleGitCommandExec There's a weird behavior that occurs where an error isn't accessible in the err variable
 // from a *Cmd executing a git command after calling CombinedOutput().
 // This occurs due to how Git handles errors and how the exec package in Go interprets the command's output.
 // Git often writes error messages to stderr, but it might still exit with a status code of 0 (indicating success).
 // In this case, CombinedOutput() won't return an error, but the error message will be in the out variable.
-func handleGitCommandExec(cmd *exec.Cmd) ([]byte, error) {
+func HandleGitCommandExec(cmd *exec.Cmd) ([]byte, error) {
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -54,7 +54,7 @@ func determineDiffArgs(baseBranch, commit string) (string, error) {
 }
 
 func GetHEADChangedFiles() ([]string, error) {
-	output, err := handleGitCommandExec(exec.Command("git", "diff", "--name-only", "@^"))
+	output, err := HandleGitCommandExec(exec.Command("git", "diff", "--name-only", "@^"))
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func GetBranchChangedFiles(baseBranch, commit string) ([]string, error) {
 		return nil, err
 	}
 
-	output, err := handleGitCommandExec(exec.Command("git", "diff", "--name-only", diffArgs))
+	output, err := HandleGitCommandExec(exec.Command("git", "diff", "--name-only", diffArgs))
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func GetBranchChangedFiles(baseBranch, commit string) ([]string, error) {
 }
 
 func GetLatestTag() (string, error) {
-	output, err := handleGitCommandExec(exec.Command("git", "tag", "--list", "v*"))
+	output, err := HandleGitCommandExec(exec.Command("git", "tag", "--list", "v*"))
 	if err != nil {
 		return "", err
 	}
@@ -106,7 +106,7 @@ func HasIncludedCommit(commits ...string) (bool, error) {
 	found := false
 	var errs error
 	for _, mustIncludeCommit := range commits {
-		output, err := handleGitCommandExec(exec.Command("git", "merge-base", "--is-ancestor", mustIncludeCommit, "HEAD"))
+		output, err := HandleGitCommandExec(exec.Command("git", "merge-base", "--is-ancestor", mustIncludeCommit, "HEAD"))
 		if err == nil {
 			found = true
 			break

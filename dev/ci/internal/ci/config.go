@@ -97,7 +97,7 @@ func NewConfig(now time.Time) Config {
 			changedFiles, err = gitops.GetBranchChangedFiles(baseBranch, commit)
 		}
 	} else {
-		out, giterr := exec.Command("git", "rev-parse", "HEAD").Output()
+		out, giterr := gitops.HandleGitCommandExec(exec.Command("git", "rev-parse", "HEAD"))
 		if giterr != nil {
 			panic(giterr)
 		}
