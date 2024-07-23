@@ -75,7 +75,7 @@ internal:
           fi
       - name: 'Trigger Security scan'
         cmd: |
-          curl --location 'https://security-manager.sgdev.org/internal-release-scan?release={{tag}}' --request POST --header "Authorization: Bearer ${SCANNER_TOKEN}"
+          curl --location 'https://security-manager.sgdev.org/internal-release-scan?release={{tag}}' --request POST --header "Authorization: Bearer ${SECURITY_SCANNER_TOKEN}"
       - name: 'notifications'
         cmd: |
           set -eu
