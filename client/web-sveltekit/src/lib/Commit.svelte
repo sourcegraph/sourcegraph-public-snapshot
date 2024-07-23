@@ -24,6 +24,10 @@
         return committer
     }
 
+    function isPerforceDepot(commit: Commit): boolean {
+        return commit.perforceChangelist !== null
+    }
+
     $: expanded = alwaysExpanded
 
     $: author = commit.author
@@ -59,7 +63,12 @@
     </div>
     <div class="author">
         {#if !committerIsAuthor}authored by <strong>{author.person.name}</strong> and{/if}
-        committed by <strong>{committer.person.name}</strong>
+
+        {#if isPerforceDepot(commit)}
+            submitted by <strong>{committer.person.name}</strong>
+        {:else}
+            committed by <strong>{committer.person.name}</strong>
+        {/if}
         <Timestamp date={commitDate} />
     </div>
     {#if commit.body}
