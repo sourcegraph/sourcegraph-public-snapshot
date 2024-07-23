@@ -105,39 +105,52 @@ References are specified by labeling a capture as a `@reference`.
 ```
 
 If the type of symbol under reference can be inferred from syntactic information, you can 
-label it with a more specialised `@reference.<kind>` group, for example:
+add a `"kind"` attribute to refine the descriptor that will be produced:
 
 ```scm
 (method_invocation
-  name: (identifier) @reference.method
+  name: (identifier) @reference (#set! "kind" "method")
 )
 ```
 
 The kind will be resolved into a [descriptor suffix](https://github.com/sourcegraph/scip/blob/main/scip.proto#L211-L222)
 in case this reference is resolved to a non-local symbol. 
 
-As references can be either local or non-local, you can use the query DSL to guide and inform the resolution:
+As references can be either local or non-local, you can use the value of `"kind"` descriptor to guide 
+the resolution:
 
-1. `@reference` and `@reference.<kind>` - these references will first be resolved against definitions in current and parent scopes, and 
+1. `"<type>"` or absent - these references will first be resolved against definitions in current and parent scopes, and 
    if that resolution fails, a non-local reference will be produced instead.
 
-2. `@reference.global` and `@reference.global.<kind>` - these references will immediately emit a non-local reference, without attempting to 
+   Example:
+
+   ```scm
+   (package 
+     (identifier) @reference (#set! "kind" "namespace")
+   )
+   ```
+
+2. `"global.<type>"` - these references will immediately emit a non-local reference, without attempting to 
    do any resolution against local definitions.
 
    Example:
 
    ```scm
-   ; hello(...)
-   ; ^^^^^
-   ; As we don't support local methods yet, we unequivocally mark this reference
-   ; as global
    (method_invocation
-     name: (identifier) @reference.global.method
+     name: (identifier) @reference (#set! "kind" "global.namespace")
    )
    ```
 
-3. `@reference.local` - these references will be resolved against definitions in current and parent scopes. If that resolution fails,
+3. `"local"` - these references will be resolved against definitions in current and parent scopes. If that resolution fails,
    no reference will be emitted at all. 
+
+   Example:
+
+   ```scm
+   (method_invocation
+     name: (identifier) @reference (#set! "kind" "local")
+   )
+   ```
 
 When resolving a reference against local definitions, non-hoisted definitions are only resolved if they are defined _before_ the reference.
 
