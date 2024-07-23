@@ -230,17 +230,15 @@ func (t *newTranslator) readCachedHunks(
 	ctx context.Context, from api.CommitID, to api.CommitID, path core.RepoRelPath,
 ) (_ []compactHunk, err error) {
 	key := makeTypedKey(from, to, path)
-	t.cacheLock.RLock()
+	t.cacheLock.Lock()
 	hunksFunc, ok := t.hunkCache[key]
-	t.cacheLock.RUnlock()
 	if !ok {
-		t.cacheLock.Lock()
 		hunksFunc = sync.OnceValues(func() ([]compactHunk, error) {
 			return t.readHunks(ctx, from, to, path)
 		})
 		t.hunkCache[key] = hunksFunc
-		t.cacheLock.Unlock()
 	}
+	t.cacheLock.Unlock()
 	return hunksFunc()
 }
 
