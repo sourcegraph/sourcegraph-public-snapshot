@@ -76,7 +76,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "error",
-                    "message": "Invalid filter value, expected one of: diff, commit, symbol, repo, path, file.",
+                    "message": "Invalid filter value, expected one of: commit, diff, file, path, repo, symbol.",
                     "range": {
                       "start": 10,
                       "end": 15

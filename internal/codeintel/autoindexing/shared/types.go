@@ -10,6 +10,6 @@ type IndexConfiguration struct {
 }
 
 type InferenceResult struct {
-	IndexJobs       []config.IndexJob
+	IndexJobs       []config.AutoIndexJobSpec
 	InferenceOutput string
 }

@@ -6,14 +6,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/databasetest"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
+	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -32,13 +33,24 @@ func TestSubscriptionsStore(t *testing.T) {
 		{"Get", SubscriptionsStoreGet},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Helper()
 			databasetest.ClearTablesAfterTest(t, db, tables.All()...)
+
 			tc.test(t, ctx, subscriptions.NewStore(db))
 		})
 		if t.Failed() {
 			break
 		}
 	}
+}
+
+func assertHasMatch[T any](t *testing.T, values []T, match func(v T) bool) {
+	for _, v := range values {
+		if match(v) {
+			return
+		}
+	}
+	t.Errorf("values %+v does not contain match", values)
 }
 
 func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.Store) {
@@ -72,8 +84,12 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		ss, err := s.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{IDs: []string{s1.ID, s2.ID}})
 		require.NoError(t, err)
 		require.Len(t, ss, 2)
-		assert.Equal(t, s1.ID, ss[0].ID)
-		assert.Equal(t, s2.ID, ss[1].ID)
+		assertHasMatch(t, ss, func(v *subscriptions.SubscriptionWithConditions) bool {
+			return v.ID == s1.ID
+		})
+		assertHasMatch(t, ss, func(v *subscriptions.SubscriptionWithConditions) bool {
+			return v.ID == s2.ID
+		})
 
 		t.Run("no match", func(t *testing.T) {
 			ss, err = s.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{
@@ -90,8 +106,12 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		)
 		require.NoError(t, err)
 		require.Len(t, ss, 2)
-		assert.Equal(t, s1.ID, ss[0].ID)
-		assert.Equal(t, s2.ID, ss[1].ID)
+		assertHasMatch(t, ss, func(v *subscriptions.SubscriptionWithConditions) bool {
+			return v.ID == s1.ID
+		})
+		assertHasMatch(t, ss, func(v *subscriptions.SubscriptionWithConditions) bool {
+			return v.ID == s2.ID
+		})
 
 		t.Run("no match", func(t *testing.T) {
 			ss, err = s.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{
@@ -119,11 +139,19 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 	// Create initial test record. The currentSubscription should be reassigned
 	// throughout various test cases to represent the current state of the test
 	// record, as the subtests are run in sequence.
+	created := utctime.Now()
 	currentSubscription, err := s.Upsert(
 		ctx,
 		uuid.New().String(),
 		subscriptions.UpsertSubscriptionOptions{
 			InstanceDomain: pointers.Ptr(database.NewNullString("s1.sourcegraph.com")),
+			CreatedAt:      created,
+		},
+		// Represent the creation of this subscription
+		subscriptions.CreateSubscriptionConditionOptions{
+			Status:         subscriptionsv1.EnterpriseSubscriptionCondition_STATUS_CREATED,
+			Message:        t.Name(),
+			TransitionTime: created,
 		},
 	)
 	require.NoError(t, err)
@@ -136,6 +164,12 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 	assert.NotZero(t, got.CreatedAt)
 	assert.NotZero(t, got.UpdatedAt)
 	assert.Nil(t, got.ArchivedAt) // not archived yet
+
+	// The condition we requested should exist
+	require.Len(t, got.Conditions, 1)
+	assert.Equal(t, "STATUS_CREATED", got.Conditions[0].Status)
+	assert.Equal(t, t.Name(), *got.Conditions[0].Message)
+	assert.Equal(t, got.CreatedAt, got.Conditions[0].TransitionTime)
 
 	t.Run("noop", func(t *testing.T) {
 		t.Cleanup(func() { currentSubscription = got })
@@ -172,7 +206,7 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 	t.Run("update only created at", func(t *testing.T) {
 		t.Cleanup(func() { currentSubscription = got })
 
-		yesterday := time.Now().Add(-24 * time.Hour)
+		yesterday := utctime.FromTime(time.Now().Add(-24 * time.Hour))
 		got, err = s.Upsert(ctx, currentSubscription.ID, subscriptions.UpsertSubscriptionOptions{
 			CreatedAt: yesterday,
 		})
@@ -181,14 +215,13 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 			pointers.DerefZero(currentSubscription.InstanceDomain),
 			pointers.DerefZero(got.InstanceDomain))
 		assert.Equal(t, currentSubscription.DisplayName, got.DisplayName)
-		// Round times to allow for some precision drift in CI
-		assert.Equal(t, yesterday.Round(time.Second).UTC(), got.CreatedAt.GetTime().Round(time.Second))
+		assert.Equal(t, yesterday.AsTime(), got.CreatedAt.AsTime())
 	})
 
 	t.Run("update only archived at", func(t *testing.T) {
 		t.Cleanup(func() { currentSubscription = got })
 
-		yesterday := time.Now().Add(-24 * time.Hour)
+		yesterday := utctime.FromTime(time.Now().Add(-24 * time.Hour))
 		got, err = s.Upsert(ctx, currentSubscription.ID, subscriptions.UpsertSubscriptionOptions{
 			ArchivedAt: pointers.Ptr(yesterday),
 		})
@@ -196,8 +229,7 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 		assert.Equal(t, *currentSubscription.InstanceDomain, *got.InstanceDomain)
 		assert.Equal(t, *currentSubscription.DisplayName, *got.DisplayName)
 		assert.Equal(t, currentSubscription.CreatedAt, got.CreatedAt)
-		// Round times to allow for some precision drift in CI
-		assert.Equal(t, yesterday.Round(time.Second).UTC(), got.ArchivedAt.GetTime().Round(time.Second))
+		assert.Equal(t, yesterday.AsTime(), got.ArchivedAt.AsTime())
 	})
 
 	t.Run("force update to zero values", func(t *testing.T) {
@@ -209,9 +241,9 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 		require.NoError(t, err)
 		assert.Empty(t, got.InstanceDomain)
 		assert.Empty(t, got.DisplayName)
-		assert.Nil(t, got.ArchivedAt)
 
 		// Some fields cannot be updated in a force-update.
+		assert.Equal(t, currentSubscription.ArchivedAt, got.ArchivedAt)
 		assert.Equal(t, currentSubscription.ID, got.ID)
 		assert.Equal(t, currentSubscription.CreatedAt, got.CreatedAt)
 	})
@@ -230,7 +262,7 @@ func SubscriptionsStoreGet(t *testing.T, ctx context.Context, s *subscriptions.S
 
 	t.Run("not found", func(t *testing.T) {
 		_, err := s.Get(ctx, uuid.New().String())
-		assert.Equal(t, pgx.ErrNoRows, err)
+		assert.ErrorIs(t, err, subscriptions.ErrSubscriptionNotFound)
 	})
 
 	t.Run("found", func(t *testing.T) {

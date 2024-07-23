@@ -14,9 +14,7 @@ const config: Meta = {
     title: 'web/prompts/ListPage',
     component: ListPage,
     decorators: [story => <div className="container mt-5">{story()}</div>],
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

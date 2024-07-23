@@ -20,9 +20,9 @@ import (
 // GetBulkMonikerLocations returns the locations (within one of the given uploads) with an attached moniker
 // whose scheme+identifier matches one of the given monikers. This method also returns the size of the
 // complete result set to aid in pagination.
-func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
+func (s *store) GetBulkMonikerLocations(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("tableName", tableName),
+		attribute.String("usageKind", usageKind.String()),
 		attribute.Int("numUploadIDs", len(uploadIDs)),
 		attribute.IntSlice("uploadIDs", uploadIDs),
 		attribute.Int("numMonikers", len(monikers)),
@@ -45,7 +45,7 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 		bulkMonikerResultsQuery,
 		pq.Array(symbolNames),
 		pq.Array(uploadIDs),
-		sqlf.Sprintf(fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))),
+		sqlf.Sprintf(usageKind.RangesColumnName()),
 	)
 
 	locationData, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, query))
@@ -77,7 +77,7 @@ outer:
 
 			locations = append(locations, shared.Location{
 				UploadID: monikerLocations.UploadID,
-				Path:     core.NewUploadRelPathUnchecked(row.URI),
+				Path:     core.NewUploadRelPathUnchecked(row.DocumentPath),
 				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 			})
 
@@ -127,36 +127,38 @@ type extractedOccurrenceData struct {
 	hoverText       []string
 }
 
-func extractDefinitionRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
-	return extractOccurrenceData(document, occurrence).definitions
+func extractDefinitionRanges(document *scip.Document, lookup *scip.Occurrence) []scip.Range {
+	return extractOccurrenceData(document, lookup).definitions
 }
 
-func extractReferenceRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
-	return extractOccurrenceData(document, occurrence).references
+func extractReferenceRanges(document *scip.Document, lookup *scip.Occurrence) []scip.Range {
+	return extractOccurrenceData(document, lookup).references
 }
 
-func extractImplementationRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
-	return extractOccurrenceData(document, occurrence).implementations
+func extractImplementationRanges(document *scip.Document, lookup *scip.Occurrence) []scip.Range {
+	return extractOccurrenceData(document, lookup).implementations
 }
 
-func extractPrototypesRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
-	return extractOccurrenceData(document, occurrence).prototypes
+func extractPrototypesRanges(document *scip.Document, lookup *scip.Occurrence) []scip.Range {
+	return extractOccurrenceData(document, lookup).prototypes
 }
 
-func extractHoverData(document *scip.Document, occurrence *scip.Occurrence) []string {
-	return extractOccurrenceData(document, occurrence).hoverText
+func extractHoverData(document *scip.Document, lookup *scip.Occurrence) []string {
+	return extractOccurrenceData(document, lookup).hoverText
 }
 
-func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence) extractedOccurrenceData {
-	if occurrence.Symbol == "" {
+// extractOccurrenceData identifies occurrences inside document that are related to
+// lookupOccurrence in various ways (e.g. defs/refs/impls/supers etc.)
+func extractOccurrenceData(document *scip.Document, lookupOccurrence *scip.Occurrence) extractedOccurrenceData {
+	if lookupOccurrence.Symbol == "" {
 		return extractedOccurrenceData{
-			hoverText: occurrence.OverrideDocumentation,
+			hoverText: lookupOccurrence.OverrideDocumentation,
 		}
 	}
 
 	var (
 		hoverText               []string
-		definitionSymbol        = occurrence.Symbol
+		definitionSymbol        = lookupOccurrence.Symbol
 		referencesBySymbol      = collections.NewSet[string]()
 		implementationsBySymbol = collections.NewSet[string]()
 		prototypeBySymbol       = collections.NewSet[string]()
@@ -166,10 +168,10 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	// matches the given occurrence. This will give us additional symbol names that
 	// we should include in reference and implementation searches.
 
-	if symbol := scip.FindSymbol(document, occurrence.Symbol); symbol != nil {
-		hoverText = symbolHoverText(symbol)
+	if lookupSymbolInfo := scip.FindSymbol(document, lookupOccurrence.Symbol); lookupSymbolInfo != nil {
+		hoverText = symbolHoverText(lookupSymbolInfo)
 
-		for _, rel := range symbol.Relationships {
+		for _, rel := range lookupSymbolInfo.Relationships {
 			if rel.IsDefinition {
 				definitionSymbol = rel.Symbol
 			}
@@ -185,7 +187,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	for _, sym := range document.Symbols {
 		for _, rel := range sym.Relationships {
 			if rel.IsImplementation {
-				if rel.Symbol == occurrence.Symbol {
+				if rel.Symbol == lookupOccurrence.Symbol {
 					implementationsBySymbol.Add(sym.Symbol)
 				}
 			}
@@ -198,7 +200,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	prototypes := []scip.Range{}
 
 	// Include original symbol names for reference search below
-	referencesBySymbol.Add(occurrence.Symbol)
+	referencesBySymbol.Add(lookupOccurrence.Symbol)
 
 	// For each occurrence that references one of the definition, reference, or
 	// implementation symbol names, extract and aggregate their source positions.
@@ -228,8 +230,8 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	}
 
 	// Override symbol documentation with occurrence documentation, if it exists
-	if len(occurrence.OverrideDocumentation) != 0 {
-		hoverText = occurrence.OverrideDocumentation
+	if len(lookupOccurrence.OverrideDocumentation) != 0 {
+		hoverText = lookupOccurrence.OverrideDocumentation
 	}
 
 	return extractedOccurrenceData{
@@ -257,6 +259,14 @@ func symbolHoverText(symbol *scip.SymbolInformation) []string {
 	}
 	return symbol.Documentation
 }
+
+// TODO(id: doc-N-traversals): Internally, these four methods all compute the same
+// exact raw data, and then they throw away most of the data. For example, the definition
+// extraction logic will waste cycles by getting information about implementations.
+//
+// Additionally, AFAICT, each function will do a separate read of the document
+// from the database and unmarshal it. This means that for the ref panel,
+// we will unmarshal the same Protobuf document at least four times. :facepalm:
 
 func (s *store) ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
 	return s.extractLocationsFromPosition(ctx, extractDefinitionRanges, symbolExtractDefault, s.operations.getDefinitionLocations, locationKey)
@@ -312,8 +322,9 @@ func symbolExtractPrototype(document *scip.Document, symbolName string) (symbols
 	return symbols
 }
 
-//
-//
+// TODO(id: doc-N-traversals): Since this API is used in a limited number of ways,
+// take some basic 'strategy' enums and implement the logic for extraction here
+// so we can avoid multiple document traversals.
 
 func (s *store) extractLocationsFromPosition(
 	ctx context.Context,
@@ -366,9 +377,9 @@ func uniqueByRange(l shared.Location) [4]int {
 //
 //
 
-func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
+func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("tableName", tableName),
+		attribute.String("usageKind", usageKind.String()),
 		attribute.Int("numUploadIDs", len(uploadIDs)),
 		attribute.IntSlice("uploadIDs", uploadIDs),
 		attribute.Int("numMonikers", len(monikers)),
@@ -397,13 +408,12 @@ func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, tableName st
 		skipConds = append(skipConds, sqlf.Sprintf("(%s, %s)", -1, ""))
 	}
 
-	fieldName := fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))
 	query := sqlf.Sprintf(
 		minimalBulkMonikerResultsQuery,
 		pq.Array(symbolNames),
 		pq.Array(uploadIDs),
-		sqlf.Sprintf(fieldName),
-		sqlf.Sprintf(fieldName),
+		sqlf.Sprintf(usageKind.RangesColumnName()),
+		sqlf.Sprintf(usageKind.RangesColumnName()),
 		sqlf.Join(skipConds, ", "),
 	)
 
@@ -436,7 +446,7 @@ outer:
 
 			locations = append(locations, shared.Location{
 				UploadID: monikerLocations.UploadID,
-				Path:     core.NewUploadRelPathUnchecked(row.URI),
+				Path:     core.NewUploadRelPathUnchecked(row.DocumentPath),
 				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 			})
 

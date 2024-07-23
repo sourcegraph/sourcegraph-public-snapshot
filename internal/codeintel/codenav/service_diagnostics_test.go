@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	lsifstoremocks "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -25,7 +26,7 @@ var uploadRelPath = core.NewUploadRelPathUnchecked
 func TestDiagnostics(t *testing.T) {
 	// Set up mocks
 	mockRepoStore := defaultMockRepoStore()
-	mockLsifStore := NewMockLsifStore()
+	mockLsifStore := lsifstoremocks.NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 	mockSearchClient := client.NewMockSearchClient()
@@ -101,7 +102,7 @@ func TestDiagnostics(t *testing.T) {
 func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	// Set up mocks
 	mockRepoStore := defaultMockRepoStore()
-	mockLsifStore := NewMockLsifStore()
+	mockLsifStore := lsifstoremocks.NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 	mockSearchClient := client.NewMockSearchClient()

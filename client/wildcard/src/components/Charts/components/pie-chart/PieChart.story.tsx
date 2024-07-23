@@ -8,9 +8,7 @@ import { PieChart } from './PieChart'
 const StoryConfig: Meta = {
     title: 'wildcard/Charts',
     decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
-    parameters: {
-        chromatic: { disableSnapshots: false, enableDarkMode: true },
-    },
+    parameters: {},
 }
 
 export default StoryConfig

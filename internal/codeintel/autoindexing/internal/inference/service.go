@@ -45,7 +45,7 @@ type invocationContext struct {
 type invocationFunctionTable struct {
 	linearize    func(recognizer *luatypes.Recognizer) []*luatypes.Recognizer
 	callback     func(recognizer *luatypes.Recognizer) *baselua.LFunction
-	scanLuaValue func(value baselua.LValue) ([]config.IndexJob, error)
+	scanLuaValue func(value baselua.LValue) ([]config.AutoIndexJobSpec, error)
 }
 
 type LimitError struct {
@@ -88,7 +88,7 @@ func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit,
 	functionTable := invocationFunctionTable{
 		linearize: luatypes.LinearizeGenerator,
 		callback:  func(recognizer *luatypes.Recognizer) *baselua.LFunction { return recognizer.Generator() },
-		scanLuaValue: func(value baselua.LValue) ([]config.IndexJob, error) {
+		scanLuaValue: func(value baselua.LValue) ([]config.AutoIndexJobSpec, error) {
 			return util.MapSliceOrSingleton(value, luatypes.IndexJobFromTable)
 		},
 	}
@@ -115,7 +115,7 @@ func (s *Service) inferIndexJobs(
 	commit string,
 	overrideScript string,
 	invocationContextMethods invocationFunctionTable,
-) (_ []config.IndexJob, logs string, _ error) {
+) (_ []config.AutoIndexJobSpec, logs string, _ error) {
 	sandbox, err := s.createSandbox(ctx)
 	if err != nil {
 		return nil, "", err
@@ -227,7 +227,7 @@ func (s *Service) invokeRecognizers(
 	ctx context.Context,
 	invocationContext invocationContext,
 	recognizers []*luatypes.Recognizer,
-) (_ []config.IndexJob, err error) {
+) (_ []config.AutoIndexJobSpec, err error) {
 	ctx, _, endObservation := s.operations.invokeRecognizers.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -410,7 +410,7 @@ func (s *Service) invokeRecognizerChains(
 	recognizers []*luatypes.Recognizer,
 	paths []string,
 	contentsByPath map[string]string,
-) (jobs []config.IndexJob, _ error) {
+) (jobs []config.AutoIndexJobSpec, _ error) {
 	registrationAPI := &registrationAPI{}
 
 	// Invoke the recognizers and gather the resulting jobs or hints
@@ -456,7 +456,7 @@ func (s *Service) invokeRecognizerChainUntilResults(
 	registrationAPI *registrationAPI,
 	paths []string,
 	contentsByPath map[string]string,
-) ([]config.IndexJob, error) {
+) ([]config.AutoIndexJobSpec, error) {
 	for _, recognizer := range invocationContext.linearize(recognizer) {
 		if jobs, err := s.invokeLinearizedRecognizer(
 			ctx,
@@ -481,7 +481,7 @@ func (s *Service) invokeLinearizedRecognizer(
 	registrationAPI *registrationAPI,
 	paths []string,
 	contentsByPath map[string]string,
-) (_ []config.IndexJob, err error) {
+) (_ []config.AutoIndexJobSpec, err error) {
 	ctx, _, endObservation := s.operations.invokeLinearizedRecognizer.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

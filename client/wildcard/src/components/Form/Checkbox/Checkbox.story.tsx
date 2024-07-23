@@ -69,10 +69,3 @@ export const CheckboxExamples: StoryFn = () => (
         </Grid>
     </>
 )
-
-CheckboxExamples.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}

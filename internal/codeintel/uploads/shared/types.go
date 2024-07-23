@@ -6,11 +6,13 @@ import (
 	"strconv"
 	"time"
 
+	genslices "github.com/life4/genesis/slices"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -154,22 +156,23 @@ type UploadLog struct {
 	Operation         string
 }
 
-type IndexState UploadState
+type AutoIndexJobState UploadState
 
 const (
-	IndexStateQueued     = IndexState(StateQueued)
-	IndexStateProcessing = IndexState(StateProcessing)
-	IndexStateFailed     = IndexState(StateFailed)
-	IndexStateErrored    = IndexState(StateErrored)
-	IndexStateCompleted  = IndexState(StateCompleted)
+	JobStateQueued     = AutoIndexJobState(StateQueued)
+	JobStateProcessing = AutoIndexJobState(StateProcessing)
+	JobStateFailed     = AutoIndexJobState(StateFailed)
+	JobStateErrored    = AutoIndexJobState(StateErrored)
+	JobStateCompleted  = AutoIndexJobState(StateCompleted)
 )
 
-type Index struct {
+// AutoIndexJob represents an auto-indexing job as represented in lsif_indexes.
+type AutoIndexJob struct {
 	ID       int       `json:"id"`
 	Commit   string    `json:"commit"`
 	QueuedAt time.Time `json:"queuedAt"`
-	// TODO(id: state-refactoring) Use IndexState type here.
-	// IMPORTANT: IndexState must transitively wrap 'string' for back-compat
+	// TODO(id: state-refactoring) Use AutoIndexJobState type here.
+	// IMPORTANT: AutoIndexJobState must transitively wrap 'string' for back-compat
 	State              string                       `json:"state"`
 	FailureMessage     *string                      `json:"failureMessage"`
 	StartedAt          *time.Time                   `json:"startedAt"`
@@ -193,11 +196,34 @@ type Index struct {
 	EnqueuerUserID     int32                        `json:"enqueuerUserID"`
 }
 
-func (i Index) RecordID() int {
+func NewAutoIndexJob(job config.AutoIndexJobSpec, repositoryID api.RepoID, commit api.CommitID, state AutoIndexJobState) AutoIndexJob {
+	dockerSteps := genslices.Map(job.Steps, func(step config.DockerStep) DockerStep {
+		return DockerStep{
+			Root:     step.Root,
+			Image:    step.Image,
+			Commands: step.Commands,
+		}
+	})
+
+	return AutoIndexJob{
+		Commit:           string(commit),
+		RepositoryID:     int(repositoryID),
+		State:            string(state),
+		DockerSteps:      dockerSteps,
+		LocalSteps:       job.LocalSteps,
+		Root:             job.Root,
+		Indexer:          job.Indexer,
+		IndexerArgs:      job.IndexerArgs,
+		Outfile:          job.Outfile,
+		RequestedEnvVars: job.RequestedEnvVars,
+	}
+}
+
+func (i AutoIndexJob) RecordID() int {
 	return i.ID
 }
 
-func (i Index) RecordUID() string {
+func (i AutoIndexJob) RecordUID() string {
 	return strconv.Itoa(i.ID)
 }
 
@@ -299,7 +325,7 @@ type PackageReferenceScanner interface {
 	Close() error
 }
 
-type GetIndexesOptions struct {
+type GetAutoIndexJobsOptions struct {
 	RepositoryID  int
 	State         string
 	States        []string
@@ -310,7 +336,7 @@ type GetIndexesOptions struct {
 	Offset        int
 }
 
-type DeleteIndexesOptions struct {
+type DeleteAutoIndexJobsOptions struct {
 	States        []string
 	IndexerNames  []string
 	Term          string
@@ -318,7 +344,7 @@ type DeleteIndexesOptions struct {
 	WithoutUpload bool
 }
 
-type ReindexIndexesOptions struct {
+type SetRerunAutoIndexJobsOptions struct {
 	States        []string
 	IndexerNames  []string
 	Term          string
@@ -334,10 +360,10 @@ type ExportedUpload struct {
 	Root             string
 }
 
-type IndexesWithRepositoryNamespace struct {
+type GroupedAutoIndexJobs struct {
 	Root    string
 	Indexer string
-	Indexes []Index
+	Indexes []AutoIndexJob
 }
 
 type RepositoryWithCount struct {

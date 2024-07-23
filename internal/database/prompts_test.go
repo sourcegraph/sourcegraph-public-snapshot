@@ -298,8 +298,9 @@ func TestPrompts_ListCount(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
 
 	fixture1, err := db.Prompts().Create(ctx, &types.Prompt{
-		Name:  "fixture1",
-		Owner: types.NamespaceUser(user.ID),
+		Name:             "fixture1",
+		Owner:            types.NamespaceUser(user.ID),
+		VisibilitySecret: true,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -316,8 +317,9 @@ func TestPrompts_ListCount(t *testing.T) {
 	}
 
 	fixture2, err := db.Prompts().Create(ctx, &types.Prompt{
-		Name:  "fixture2",
-		Owner: types.NamespaceOrg(org1.ID),
+		Name:             "fixture2",
+		Owner:            types.NamespaceOrg(org1.ID),
+		VisibilitySecret: true,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -325,8 +327,9 @@ func TestPrompts_ListCount(t *testing.T) {
 	fixture2.NameWithOwner = "org1/fixture2"
 
 	fixture3, err := db.Prompts().Create(ctx, &types.Prompt{
-		Name:  "fixture3",
-		Owner: types.NamespaceOrg(org2.ID),
+		Name:             "fixture3",
+		Owner:            types.NamespaceOrg(org2.ID),
+		VisibilitySecret: true,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -338,14 +341,29 @@ func TestPrompts_ListCount(t *testing.T) {
 	}
 
 	fixture4, err := db.Prompts().Create(ctx, &types.Prompt{
-		Name:  "fixture4",
-		Draft: true,
-		Owner: types.NamespaceUser(user.ID),
+		Name:             "fixture4",
+		Draft:            true,
+		Owner:            types.NamespaceUser(user.ID),
+		VisibilitySecret: true,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	fixture4.NameWithOwner = "u/fixture4"
+
+	user2, err := db.Users().Create(ctx, NewUser{Username: "u2"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture5, err := db.Prompts().Create(ctx, &types.Prompt{
+		Name:             "fixture5",
+		Owner:            types.NamespaceUser(user2.ID),
+		VisibilitySecret: false,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture5.NameWithOwner = "u2/fixture5"
 
 	testListCount := func(t *testing.T, args PromptListArgs, pgArgs *PaginationArgs, want []*types.Prompt) {
 		t.Helper()
@@ -373,7 +391,7 @@ func TestPrompts_ListCount(t *testing.T) {
 	}
 
 	t.Run("list all", func(t *testing.T) {
-		testListCount(t, PromptListArgs{}, nil, []*types.Prompt{fixture1, fixture2, fixture3, fixture4})
+		testListCount(t, PromptListArgs{}, nil, []*types.Prompt{fixture1, fixture2, fixture3, fixture4, fixture5})
 	})
 
 	t.Run("query", func(t *testing.T) {
@@ -400,7 +418,11 @@ func TestPrompts_ListCount(t *testing.T) {
 	})
 
 	t.Run("affiliated with user", func(t *testing.T) {
-		testListCount(t, PromptListArgs{AffiliatedUser: &user.ID}, nil, []*types.Prompt{fixture1, fixture2, fixture4})
+		testListCount(t, PromptListArgs{AffiliatedUser: &user.ID}, nil, []*types.Prompt{fixture1, fixture2, fixture4, fixture5})
+	})
+
+	t.Run("public only", func(t *testing.T) {
+		testListCount(t, PromptListArgs{PublicOnly: true}, nil, []*types.Prompt{fixture5})
 	})
 
 	t.Run("hide drafts", func(t *testing.T) {
@@ -410,7 +432,7 @@ func TestPrompts_ListCount(t *testing.T) {
 
 	t.Run("order by", func(t *testing.T) {
 		orderBy, ascending := PromptsOrderByUpdatedAt.ToOptions()
-		testListCount(t, PromptListArgs{}, &PaginationArgs{OrderBy: orderBy, Ascending: ascending}, []*types.Prompt{fixture4, fixture3, fixture2, fixture1})
+		testListCount(t, PromptListArgs{}, &PaginationArgs{OrderBy: orderBy, Ascending: ascending}, []*types.Prompt{fixture5, fixture4, fixture3, fixture2, fixture1})
 	})
 }
 

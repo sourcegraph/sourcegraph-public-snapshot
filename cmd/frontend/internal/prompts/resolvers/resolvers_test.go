@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -9,12 +10,15 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestPrompts(t *testing.T) {
@@ -25,7 +29,7 @@ func TestPrompts(t *testing.T) {
 
 		ss := dbmocks.NewMockPromptStore()
 		ss.ListFunc.SetDefaultHook(func(_ context.Context, args database.PromptListArgs, paginationArgs *database.PaginationArgs) ([]*types.Prompt, error) {
-			return []*types.Prompt{{ID: userID, Name: "n", Owner: *args.Owner}}, nil
+			return []*types.Prompt{{ID: 1, Name: "n", Owner: *args.Owner}}, nil
 		})
 		ss.CountFunc.SetDefaultHook(func(_ context.Context, args database.PromptListArgs) (int, error) {
 			return 1, nil
@@ -54,7 +58,7 @@ func TestPrompts(t *testing.T) {
 
 		wantNodes := []graphqlbackend.PromptResolver{
 			&promptResolver{db, types.Prompt{
-				ID:    userID,
+				ID:    1,
 				Name:  "n",
 				Owner: types.NamespaceUser(userID),
 			}},
@@ -130,6 +134,70 @@ func TestPrompts(t *testing.T) {
 			t.Errorf("got %v+, want %v+", err, auth.ErrNotAnOrgMember)
 		}
 	})
+
+	t.Run("anonymous visitor", func(t *testing.T) {
+		userID := int32(1)
+		users := dbmocks.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, nil)
+
+		ss := dbmocks.NewMockPromptStore()
+		ss.ListFunc.SetDefaultReturn([]*types.Prompt{{ID: 1, Name: "n", Owner: types.NamespaceUser(userID), VisibilitySecret: false}}, nil)
+		ss.CountFunc.SetDefaultHook(func(_ context.Context, args database.PromptListArgs) (int, error) {
+			return 1, nil
+		})
+
+		db := dbmocks.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.PromptsFunc.SetDefaultReturn(ss)
+
+		args := graphqlbackend.PromptsArgs{
+			ViewerIsAffiliated:     pointers.Ptr(true),
+			OrderBy:                graphqlbackend.PromptsOrderByUpdatedAt,
+			ConnectionResolverArgs: dummyConnectionResolverArgs,
+		}
+		ctx := actor.WithActor(context.Background(), actor.FromAnonymousUser(""))
+		resolver, err := newTestResolver(t, db).Prompts(ctx, args)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if _, err := resolver.Nodes(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		mockrequire.CalledOnceWith(t, ss.ListFunc, mockrequire.Values(mockrequire.Skip,
+			database.PromptListArgs{
+				PublicOnly: true,
+				HideDrafts: true,
+			},
+		))
+	})
+
+	t.Run("forbid enumerating non-public results by non-site admin", func(t *testing.T) {
+		userID := int32(1)
+		users := dbmocks.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID}, nil)
+
+		ss := dbmocks.NewMockPromptStore()
+
+		db := dbmocks.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.PromptsFunc.SetDefaultReturn(ss)
+
+		args := graphqlbackend.PromptsArgs{
+			OrderBy:                graphqlbackend.PromptsOrderByUpdatedAt,
+			ConnectionResolverArgs: dummyConnectionResolverArgs,
+		}
+		ctx := actor.WithActor(context.Background(), actor.FromUser(userID))
+		resolver, err := newTestResolver(t, db).Prompts(ctx, args)
+		if want := auth.ErrMustBeSiteAdmin; !errors.Is(err, want) {
+			t.Fatalf("got %v+, want %v+", err, want)
+		}
+		if resolver != nil {
+			t.Fatal("want nil resolver")
+		}
+
+		mockrequire.NotCalled(t, ss.ListFunc)
+	})
 }
 
 func TestPromptByID(t *testing.T) {
@@ -202,7 +270,6 @@ func TestPromptByID(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: otherUserID})
 
 		_, err := newTestResolver(t, db).PromptByID(ctx, fixtureID)
-		t.Log(err)
 		if err == nil {
 			t.Fatal("expected an error")
 		}
@@ -666,5 +733,5 @@ func TestDeletePrompt(t *testing.T) {
 
 func newTestResolver(t *testing.T, db database.DB) *Resolver {
 	t.Helper()
-	return &Resolver{db: db}
+	return &Resolver{db: db, logger: logtest.Scoped(t)}
 }

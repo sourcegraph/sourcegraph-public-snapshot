@@ -18,6 +18,7 @@ go_library(
         "//cmd/worker/internal/codygateway",
         "//cmd/worker/internal/embeddings/repo",
         "//cmd/worker/internal/encryption",
+        "//cmd/worker/internal/eventlogs",
         "//cmd/worker/internal/executormultiqueue",
         "//cmd/worker/internal/executors",
         "//cmd/worker/internal/githubapps",

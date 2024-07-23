@@ -113,7 +113,7 @@ func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) 
 		return resolver, err
 	}
 
-	marshaled, err := config.MarshalJSON(config.IndexConfiguration{IndexJobs: result.IndexJobs})
+	marshaled, err := config.MarshalJSON(config.AutoIndexJobSpecList{JobSpecs: result.IndexJobs})
 	if err != nil {
 		return resolver, err
 	}

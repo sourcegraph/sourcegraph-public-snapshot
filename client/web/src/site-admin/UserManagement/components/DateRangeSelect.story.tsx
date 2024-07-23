@@ -29,13 +29,6 @@ export const Default: StoryFn = () => (
     </div>
 )
 
-Default.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: true,
-    },
-}
-
 export const WithNegation: StoryFn = () => (
     <div className="d-flex justify-content-around w-50">
         <DateRangeSelect
@@ -49,10 +42,3 @@ export const WithNegation: StoryFn = () => (
         />
     </div>
 )
-
-WithNegation.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: true,
-    },
-}

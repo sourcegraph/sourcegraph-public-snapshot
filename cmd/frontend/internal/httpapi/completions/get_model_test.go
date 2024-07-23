@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 
+	"github.com/sourcegraph/sourcegraph/internal/modelconfig/embedded"
 	modelconfigSDK "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 )
 
@@ -244,6 +245,55 @@ func TestCodyProModelAllowlists(t *testing.T) {
 			lmref := legacyModelRef(test.LegacyMRef)
 			got := isAllowedCodyProChatModel(lmref, test.IsPro)
 			assert.Equal(t, test.Want, got, "isAllowedCodyProChatModel(%q, %v)", lmref, test.IsPro)
+		}
+	})
+
+	// Confirm that all Sourcegraph-supplied LLM models resolve to the correct models.
+	t.Run("SourcegraphSuppliedModels", func(t *testing.T) {
+		staticConfig, err := embedded.GetCodyGatewayModelConfig()
+		require.NoError(t, err)
+
+		for _, sourcegraphSuppliedModel := range staticConfig.Models {
+			t.Run(string(sourcegraphSuppliedModel.ModelRef), func(t *testing.T) {
+				var supportsChat bool
+				for _, capability := range sourcegraphSuppliedModel.Capabilities {
+					if capability == modelconfigSDK.ModelCapabilityChat {
+						supportsChat = true
+						break
+					}
+				}
+				if !supportsChat {
+					t.Logf("NA. Skipping model %q as it does not support chat.", sourcegraphSuppliedModel.ModelRef)
+				}
+
+				legacyModelRef := toLegacyMRef(sourcegraphSuppliedModel.ModelRef)
+				got := isAllowedCodyProChatModel(legacyModelRef, true)
+				assert.True(t, got)
+			})
+		}
+	})
+
+	// Confirm that every Sourcegraph-supplied LLM model with a virtualized ID is
+	// found in our lookup.
+	t.Run("VirutalizedModels", func(t *testing.T) {
+		staticConfig, err := embedded.GetCodyGatewayModelConfig()
+		require.NoError(t, err)
+
+		for _, sourcegraphSuppliedModel := range staticConfig.Models {
+			t.Run(string(sourcegraphSuppliedModel.ModelRef), func(t *testing.T) {
+				modelID := string(sourcegraphSuppliedModel.ModelRef.ModelID())
+				modelName := sourcegraphSuppliedModel.ModelName
+
+				gotModelName, ok := virutalizedModelRefLookup[modelID]
+				if modelID == modelName {
+					// Not virtualized.
+					assert.False(t, ok)
+				} else {
+					// Is virtualized.
+					assert.True(t, ok)
+					assert.Equal(t, modelName, gotModelName)
+				}
+			})
 		}
 	})
 }

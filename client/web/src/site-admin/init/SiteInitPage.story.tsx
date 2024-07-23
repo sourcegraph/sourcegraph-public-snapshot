@@ -8,9 +8,7 @@ import { SiteInitPage } from './SiteInitPage'
 
 const config: Meta = {
     title: 'web/auth/SiteInitPage',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

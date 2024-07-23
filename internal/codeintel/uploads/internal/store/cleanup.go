@@ -337,10 +337,10 @@ delete_indexes AS (
 SELECT COUNT(*) FROM delete_indexes
 `
 
-// DeleteIndexesWithoutRepository deletes indexes associated with repositories that were deleted at least
+// DeleteAutoIndexJobsWithoutRepository deletes indexes associated with repositories that were deleted at least
 // DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
 // that were removed for that repository.
-func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (totalCount int, deletedCount int, err error) {
+func (s *store) DeleteAutoIndexJobsWithoutRepository(ctx context.Context, now time.Time) (totalCount int, deletedCount int, err error) {
 	ctx, trace, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

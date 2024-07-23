@@ -63,6 +63,7 @@ go_test(
     timeout = "short",
     srcs = [
         "gittree_translator_test.go",
+        "helpers_test.go",
         "mapped_index_test.go",
         "scip_utils_test.go",
         "service_closest_uploads_test.go",
@@ -85,6 +86,7 @@ go_test(
         "//internal/api",
         "//internal/authz",
         "//internal/codeintel/codenav/internal/lsifstore",
+        "//internal/codeintel/codenav/internal/lsifstore/mocks",
         "//internal/codeintel/codenav/shared",
         "//internal/codeintel/core",
         "//internal/codeintel/uploads/shared",
@@ -99,6 +101,7 @@ go_test(
         "//internal/search/streaming",
         "//internal/types",
         "//lib/codeintel/precise",
+        "//lib/errors",
         "@com_github_google_go_cmp//cmp",
         "@com_github_life4_genesis//slices",
         "@com_github_sourcegraph_go_diff//diff",
@@ -116,8 +119,5 @@ go_mockgen(
         "//:mockgen.test.yaml",
         "//:mockgen.temp.yaml",
     ],
-    deps = [
-        ":codenav",
-        "//internal/codeintel/codenav/internal/lsifstore",
-    ],
+    deps = [":codenav"],
 )

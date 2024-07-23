@@ -9,9 +9,7 @@ import { VsCodeSignUpPage, type VsCodeSignUpPageProps } from './VsCodeSignUpPage
 
 const config: Meta = {
     title: 'web/auth/VsCodeSignUpPage',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

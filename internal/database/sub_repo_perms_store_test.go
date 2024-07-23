@@ -682,7 +682,6 @@ func TestSubRepoPermsStore_GetByUserWithIPs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 
 	newStore := func(t *testing.T) (SubRepoPermsStore, DB) {
 		t.Helper()

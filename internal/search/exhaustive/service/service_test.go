@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
+	"github.com/sourcegraph/sourcegraph/internal/object/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
@@ -23,7 +23,7 @@ func Test_copyBlobs(t *testing.T) {
 		"c": bytes.NewReader([]byte("{\"Key\":\"d\"}\n{\"Key\":\"e\"}\n{\"Key\":\"f\"}\n")),
 	}
 
-	blobstore := mocks.NewMockStore()
+	blobstore := mocks.NewMockStorage()
 	blobstore.GetFunc.SetDefaultHook(func(ctx context.Context, key string) (io.ReadCloser, error) {
 		return io.NopCloser(blobs[key]), nil
 	})

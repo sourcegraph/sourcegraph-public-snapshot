@@ -95,12 +95,6 @@ export const DefaultOpen: StoryFn = () => (
 )
 
 DefaultOpen.storyName = 'Default Open (Pinned)'
-DefaultOpen.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}
 
 export const DisabledTrigger: StoryFn = () => (
     <Grid columnCount={1}>
