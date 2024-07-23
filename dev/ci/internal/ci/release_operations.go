@@ -14,7 +14,7 @@ import (
 // checkSecurityApproval checks whether the specified release has release approval from the Security Team.
 func checkSecurityApproval(c Config) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep("Check security approval",
+		pipeline.AddStep(":nodesecurity: Check security approval",
 			bk.Agent("queue", AspectWorkflows.QueueDefault),
 			bk.Env("VERSION", c.Version),
 			bk.AnnotatedCmd(
