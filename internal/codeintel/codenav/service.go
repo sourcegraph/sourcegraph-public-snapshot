@@ -89,7 +89,7 @@ func (s *Service) GetHover(ctx context.Context, args PositionalRequestArgs, requ
 		text, rn, exists, err := s.lsifstore.GetHover(
 			ctx,
 			adjustedUpload.Upload.ID,
-			adjustedUpload.TargetPathWithoutRoot,
+			adjustedUpload.TargetPathWithoutRoot(),
 			adjustedUpload.TargetPosition.Line,
 			adjustedUpload.TargetPosition.Character,
 		)
@@ -210,7 +210,7 @@ func (s *Service) getOrderedMonikers(ctx context.Context, visibleUploads []visib
 		rangeMonikers, err := s.lsifstore.GetMonikersByPosition(
 			ctx,
 			visibleUploads[i].Upload.ID,
-			visibleUploads[i].TargetPathWithoutRoot,
+			visibleUploads[i].TargetPathWithoutRoot(),
 			visibleUploads[i].TargetPosition.Line,
 			visibleUploads[i].TargetPosition.Character,
 		)
@@ -402,7 +402,7 @@ func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs
 		diagnostics, count, err := s.lsifstore.GetDiagnostics(
 			ctx,
 			visibleUploads[i].Upload.ID,
-			visibleUploads[i].TargetPathWithoutRoot,
+			visibleUploads[i].TargetPathWithoutRoot(),
 			args.Limit-len(diagnosticsAtUploads),
 			0,
 		)
@@ -527,8 +527,7 @@ func (s *Service) filterCachedUploadsContainingPath(ctx context.Context, trace o
 	}
 
 	return genslices.Map(filteredUploads, func(u uploadsshared.CompletedUpload) visibleUpload {
-		uploadRelPath := core.NewUploadRelPath(&u, path)
-		return visibleUpload{Upload: u, TargetPath: path, TargetPathWithoutRoot: uploadRelPath}
+		return visibleUpload{Upload: u, TargetPath: path}
 	})
 }
 
@@ -551,7 +550,7 @@ func (s *Service) GetRanges(ctx context.Context, args PositionalRequestArgs, req
 		ranges, err := s.lsifstore.GetRanges(
 			ctx,
 			uploadsWithPath[i].Upload.ID,
-			uploadsWithPath[i].TargetPathWithoutRoot,
+			uploadsWithPath[i].TargetPathWithoutRoot(),
 			startLine,
 			endLine,
 		)
@@ -625,7 +624,7 @@ func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, re
 		ranges, err := s.lsifstore.GetStencil(
 			ctx,
 			adjustedUploads[i].Upload.ID,
-			adjustedUploads[i].TargetPathWithoutRoot,
+			adjustedUploads[i].TargetPathWithoutRoot(),
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, "lsifStore.Stencil")
@@ -833,10 +832,9 @@ func (s *Service) getVisibleUpload(ctx context.Context, line, character int, upl
 	}
 
 	return visibleUpload{
-		Upload:                upload,
-		TargetPath:            r.Path,
-		TargetPosition:        targetPosition,
-		TargetPathWithoutRoot: core.NewUploadRelPath(upload, r.Path),
+		Upload:         upload,
+		TargetPath:     r.Path,
+		TargetPosition: targetPosition,
 	}, true, nil
 }
 
