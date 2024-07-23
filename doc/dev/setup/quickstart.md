@@ -5,7 +5,7 @@ This is the quickstart guide for [developing Sourcegraph](../index.md).
 > NOTE: If you run into any troubles, reach out on Slack:
 >
 > - [As an open source contributor](https://discord.com/servers/sourcegraph-969688426372825169)
-> - [As a Sourcegraph employee](https://sourcegraph.slack.com/archives/C01N83PS4TU)
+> - [As a Sourcegraph employee](https://app.slack.com/client/T02FSM7DL/C04MYFW01NV)
 >
 > You can also get help on our [developer experience discussion forum](https://github.com/sourcegraph/sourcegraph/discussions/categories/developer-experience).
 
@@ -25,7 +25,7 @@ To install `sg`, run the following in your terminal:
 curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh
 ```
 
-See the [`sg` documentation](../background-information/sg/index.md) for more information or ask in the `#dev-experience` Slack channel.
+See the [`sg` documentation](../background-information/sg/index.md) for more information or ask in the `#discuss-dev-infra` Slack channel.
 
 ## Ensure you have SSH setup for GitHub
 
