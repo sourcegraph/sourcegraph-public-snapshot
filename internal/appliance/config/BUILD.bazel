@@ -17,6 +17,7 @@ go_library(
         "prometheus/default.yml.gotmpl",
         "postgres/codeinsights.conf",
         "grafana/default.yml.gotmpl",
+        "otel/agent.yaml",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance/config",
     tags = [TAG_INFRA_RELEASE],
