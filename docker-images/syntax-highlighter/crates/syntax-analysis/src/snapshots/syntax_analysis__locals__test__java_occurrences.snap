@@ -3,8 +3,6 @@ source: crates/syntax-analysis/src/locals.rs
 expression: dumped
 ---
   package com.hello;
-//        ^^^ reference scip-syntax com.
-//            ^^^^^ reference scip-syntax hello.
   
   import java.lang.AutoCloseable;
 //       ^^^^^^^^^ reference scip-syntax `java.lang`/
@@ -68,7 +66,6 @@ expression: dumped
    }
   
    public record Person(String name, String address) {
-//               ^^^^^^ reference scip-syntax Person.
 //                      ^^^^^^ reference scip-syntax String#
 //                                   ^^^^^^ reference scip-syntax String#
    }
@@ -109,13 +106,7 @@ expression: dumped
    }
   
    enum Flags {
-//      ^^^^^ reference scip-syntax Flags.
     NODE_TEXT, FOR_HEADING_ID, NO_TRIM_REF_TEXT_START, NO_TRIM_REF_TEXT_END, ADD_SPACES_BETWEEN_NODES,;
-//  ^^^^^^^^^ reference scip-syntax NODE_TEXT.
-//             ^^^^^^^^^^^^^^ reference scip-syntax FOR_HEADING_ID.
-//                             ^^^^^^^^^^^^^^^^^^^^^^ reference scip-syntax NO_TRIM_REF_TEXT_START.
-//                                                     ^^^^^^^^^^^^^^^^^^^^ reference scip-syntax NO_TRIM_REF_TEXT_END.
-//                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^ reference scip-syntax ADD_SPACES_BETWEEN_NODES.
   
     final int bits;
   
