@@ -1,9 +1,9 @@
 package ci
 
 import (
+	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
+	"github.com/sourcegraph/sourcegraph/internal/execute"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -97,7 +98,7 @@ func NewConfig(now time.Time) Config {
 			changedFiles, err = gitops.GetBranchChangedFiles(baseBranch, commit)
 		}
 	} else {
-		out, giterr := exec.Command("git", "rev-parse", "HEAD").Output()
+		out, giterr := execute.Git(context.Background(), "rev-parse", "HEAD")
 		if giterr != nil {
 			panic(giterr)
 		}

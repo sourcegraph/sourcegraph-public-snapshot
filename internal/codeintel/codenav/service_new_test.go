@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	lsifstoremocks "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -22,7 +23,7 @@ func TestGetDefinitions(t *testing.T) {
 	t.Run("local", func(t *testing.T) {
 		// Set up mocks
 		mockRepoStore := defaultMockRepoStore()
-		mockLsifStore := NewMockLsifStore()
+		mockLsifStore := lsifstoremocks.NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
 		mockSearchClient := client.NewMockSearchClient()
@@ -85,7 +86,7 @@ func TestGetDefinitions(t *testing.T) {
 	t.Run("remote", func(t *testing.T) {
 		// Set up mocks
 		mockRepoStore := defaultMockRepoStore()
-		mockLsifStore := NewMockLsifStore()
+		mockLsifStore := lsifstoremocks.NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
 		mockSearchClient := client.NewMockSearchClient()
@@ -208,7 +209,7 @@ func TestGetReferences(t *testing.T) {
 	t.Run("local", func(t *testing.T) {
 		// Set up mocks
 		mockRepoStore := defaultMockRepoStore()
-		mockLsifStore := NewMockLsifStore()
+		mockLsifStore := lsifstoremocks.NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
 		mockSearchClient := client.NewMockSearchClient()
@@ -274,7 +275,7 @@ func TestGetReferences(t *testing.T) {
 	t.Run("remote", func(t *testing.T) {
 		// Set up mocks
 		mockRepoStore := defaultMockRepoStore()
-		mockLsifStore := NewMockLsifStore()
+		mockLsifStore := lsifstoremocks.NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
 		mockSearchClient := client.NewMockSearchClient()
@@ -456,7 +457,7 @@ func TestGetImplementations(t *testing.T) {
 	t.Run("local", func(t *testing.T) {
 		// Set up mocks
 		mockRepoStore := defaultMockRepoStore()
-		mockLsifStore := NewMockLsifStore()
+		mockLsifStore := lsifstoremocks.NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
 		mockSearchClient := client.NewMockSearchClient()

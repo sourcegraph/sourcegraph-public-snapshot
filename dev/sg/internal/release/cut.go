@@ -15,8 +15,8 @@ import (
 
 	"github.com/sourcegraph/run"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/execute"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
+	"github.com/sourcegraph/sourcegraph/internal/execute"
 )
 
 func cutReleaseBranch(cctx *cli.Context) error {

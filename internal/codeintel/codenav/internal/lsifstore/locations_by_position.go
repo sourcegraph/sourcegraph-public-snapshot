@@ -20,9 +20,9 @@ import (
 // GetBulkMonikerLocations returns the locations (within one of the given uploads) with an attached moniker
 // whose scheme+identifier matches one of the given monikers. This method also returns the size of the
 // complete result set to aid in pagination.
-func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
+func (s *store) GetBulkMonikerLocations(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("tableName", tableName),
+		attribute.String("usageKind", usageKind.String()),
 		attribute.Int("numUploadIDs", len(uploadIDs)),
 		attribute.IntSlice("uploadIDs", uploadIDs),
 		attribute.Int("numMonikers", len(monikers)),
@@ -45,7 +45,7 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 		bulkMonikerResultsQuery,
 		pq.Array(symbolNames),
 		pq.Array(uploadIDs),
-		sqlf.Sprintf(fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))),
+		sqlf.Sprintf(usageKind.RangesColumnName()),
 	)
 
 	locationData, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, query))
@@ -260,6 +260,14 @@ func symbolHoverText(symbol *scip.SymbolInformation) []string {
 	return symbol.Documentation
 }
 
+// TODO(id: doc-N-traversals): Internally, these four methods all compute the same
+// exact raw data, and then they throw away most of the data. For example, the definition
+// extraction logic will waste cycles by getting information about implementations.
+//
+// Additionally, AFAICT, each function will do a separate read of the document
+// from the database and unmarshal it. This means that for the ref panel,
+// we will unmarshal the same Protobuf document at least four times. :facepalm:
+
 func (s *store) ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
 	return s.extractLocationsFromPosition(ctx, extractDefinitionRanges, symbolExtractDefault, s.operations.getDefinitionLocations, locationKey)
 }
@@ -314,8 +322,9 @@ func symbolExtractPrototype(document *scip.Document, symbolName string) (symbols
 	return symbols
 }
 
-//
-//
+// TODO(id: doc-N-traversals): Since this API is used in a limited number of ways,
+// take some basic 'strategy' enums and implement the logic for extraction here
+// so we can avoid multiple document traversals.
 
 func (s *store) extractLocationsFromPosition(
 	ctx context.Context,
@@ -368,9 +377,9 @@ func uniqueByRange(l shared.Location) [4]int {
 //
 //
 
-func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
+func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("tableName", tableName),
+		attribute.String("usageKind", usageKind.String()),
 		attribute.Int("numUploadIDs", len(uploadIDs)),
 		attribute.IntSlice("uploadIDs", uploadIDs),
 		attribute.Int("numMonikers", len(monikers)),
@@ -399,13 +408,12 @@ func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, tableName st
 		skipConds = append(skipConds, sqlf.Sprintf("(%s, %s)", -1, ""))
 	}
 
-	fieldName := fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))
 	query := sqlf.Sprintf(
 		minimalBulkMonikerResultsQuery,
 		pq.Array(symbolNames),
 		pq.Array(uploadIDs),
-		sqlf.Sprintf(fieldName),
-		sqlf.Sprintf(fieldName),
+		sqlf.Sprintf(usageKind.RangesColumnName()),
+		sqlf.Sprintf(usageKind.RangesColumnName()),
 		sqlf.Join(skipConds, ", "),
 	)
 

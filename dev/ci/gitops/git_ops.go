@@ -1,10 +1,12 @@
 package gitops
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/execute"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -32,7 +34,7 @@ func determineDiffArgs(baseBranch, commit string) (string, error) {
 }
 
 func GetHEADChangedFiles() ([]string, error) {
-	output, err := exec.Command("git", "diff", "--name-only", "@^").CombinedOutput()
+	output, err := execute.Git(context.Background(), "diff", "--name-only", "@^")
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +48,7 @@ func GetBranchChangedFiles(baseBranch, commit string) ([]string, error) {
 		return nil, err
 	}
 
-	output, err := exec.Command("git", "diff", "--name-only", diffArgs).CombinedOutput()
+	output, err := execute.Git(context.Background(), "diff", "--name-only", diffArgs)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +57,7 @@ func GetBranchChangedFiles(baseBranch, commit string) ([]string, error) {
 }
 
 func GetLatestTag() (string, error) {
-	output, err := exec.Command("git", "tag", "--list", "v*").CombinedOutput()
+	output, err := execute.Git(context.Background(), "tag", "--list", "v*")
 	if err != nil {
 		return "", err
 	}
@@ -84,7 +86,7 @@ func HasIncludedCommit(commits ...string) (bool, error) {
 	found := false
 	var errs error
 	for _, mustIncludeCommit := range commits {
-		output, err := exec.Command("git", "merge-base", "--is-ancestor", mustIncludeCommit, "HEAD").CombinedOutput()
+		output, err := execute.Git(context.Background(), "merge-base", "--is-ancestor", mustIncludeCommit, "HEAD")
 		if err == nil {
 			found = true
 			break
