@@ -127,4 +127,6 @@ mod test {
     generate_tags_and_snapshot!(Tags, test_tags_perl_example, "example.pl");
 
     generate_tags_and_snapshot!(All, test_tags_magik, test_scip_magik, "globals.magik");
+
+    generate_tags_and_snapshot!(All, test_tags_hack, test_scip_hack, "globals.hack");
 }
