@@ -17,9 +17,9 @@ go_library(
     deps = [
         "//dev/sg/internal/bk",
         "//dev/sg/internal/category",
-        "//dev/sg/internal/execute",
         "//dev/sg/internal/repo",
         "//dev/sg/internal/std",
+        "//internal/execute",
         "//internal/jsonc",
         "//internal/releaseregistry",
         "//lib/errors",

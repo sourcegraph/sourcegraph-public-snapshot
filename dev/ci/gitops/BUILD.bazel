@@ -8,6 +8,7 @@ go_library(
     tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
+        "//internal/execute",
         "//internal/oobmigration",
         "//lib/errors",
     ],
