@@ -44,6 +44,18 @@ copy_to_directory(
 
 genrule(
     name = "dummy_web_manifest",
-    outs = ["integration/web.manifest.json"],
+    outs = ["web.manifest.json"],
     cmd = "echo '{}' > $@",
+    visibility = ["//visibility:public"],
+)
+
+# we copy a single file to the directory so that bazel considers this _direcotry_ as the out and not the single file in order
+# to preserve the directory
+copy_to_directory(
+    name = "copy_integration_manifest",
+    srcs = [
+        ":dummy_web_manifest",
+    ],
+    out = "integration",
+    visibility = ["//visibility:public"],
 )

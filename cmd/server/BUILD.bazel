@@ -66,6 +66,17 @@ pkg_tar(
 )
 
 pkg_tar(
+    name = "tar_frontend_integration",
+    srcs = [
+        "//client/web/dist:copy_integration_manifest",
+        "//cmd/frontend",
+    ],
+    remap_paths = {
+        "/frontend": "/usr/local/bin/frontend",
+    },
+)
+
+pkg_tar(
     name = "tar_monitoring_config",
     srcs = [
         "//dev/prometheus:prometheus_targets_linux",
@@ -166,6 +177,7 @@ oci_image(
         "GO111MODULES": "on",
         "LANG": "en_US.utf8",
         "LC_ALL": "en_US.utf8",
+        "SRC_ASSETS_DIR": "assets-dir",
         # "PGHOST": "/var/run/postgresql",
     },
     tars = [
@@ -231,12 +243,6 @@ pkg_tar(
 )
 
 #
-pkg_tar(
-    name = "no_client_bundle_frontend.tar",
-    srcs = ["//cmd/frontend:frontend_nobundle"],
-    remap_paths = {"/frontend_nobundle": "/usr/local/bin/frontend"},
-)
-
 oci_image(
     name = "no_client_bundle.image",
     base = ":base_image",
@@ -249,10 +255,12 @@ oci_image(
         "GO111MODULES": "on",
         "LANG": "en_US.utf8",
         "LC_ALL": "en_US.utf8",
+        "SRC_ASSETS_DIR": "integration",
         # "PGHOST": "/var/run/postgresql",
     },
     tars = [
-        ":no_client_bundle.tar",
+        ":tar_server",
+        ":tar_frontend_integration",
         ":static_config_tar",
         ":tar_postgres_exporter_config",
         ":tar_monitoring_config",
@@ -263,7 +271,6 @@ oci_image(
         ":tar_prom-wrapper",
         "//monitoring:generate_grafana_config_tar",
         "tar_image_test_scripts",
-        "no_client_bundle_frontend.tar",
     ] + dependencies_tars([
         "//cmd/precise-code-intel-worker",
         "//cmd/searcher",
