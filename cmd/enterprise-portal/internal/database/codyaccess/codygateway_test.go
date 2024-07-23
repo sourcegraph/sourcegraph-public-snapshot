@@ -36,8 +36,8 @@ func TestCodyGatewayStore(t *testing.T) {
 	for idx := range subscriptionIDs {
 		subscriptionID := uuid.NewString()
 		_, err := subscriptions.NewStore(db).Upsert(ctx, subscriptionID, subscriptions.UpsertSubscriptionOptions{
-			DisplayName:    pointers.Ptr(database.NewNullString(mockSubscriptionDisplayName(idx))),
-			InstanceDomain: pointers.Ptr(database.NewNullString(fmt.Sprintf("s%d.sourcegraph.com", idx))),
+			DisplayName:    database.NewNullString(mockSubscriptionDisplayName(idx)),
+			InstanceDomain: database.NewNullString(fmt.Sprintf("s%d.sourcegraph.com", idx)),
 		})
 		require.NoError(t, err)
 		subscriptionIDs[idx] = subscriptionID
@@ -119,8 +119,8 @@ func TestCodyGatewayStore(t *testing.T) {
 		t.Run("already archived", func(t *testing.T) {
 			subscriptionID := uuid.NewString()
 			_, err := subscriptions.NewStore(db).Upsert(ctx, subscriptionID, subscriptions.UpsertSubscriptionOptions{
-				DisplayName:    pointers.Ptr(database.NewNullString("Archived subscription")),
-				InstanceDomain: pointers.Ptr(database.NewNullString("archived.sourcegraph.com")),
+				DisplayName:    database.NewNullString("Archived subscription"),
+				InstanceDomain: database.NewNullString("archived.sourcegraph.com"),
 				ArchivedAt:     pointers.Ptr(utctime.Now()),
 			})
 			require.NoError(t, err)
@@ -134,8 +134,8 @@ func TestCodyGatewayStore(t *testing.T) {
 		t.Run("set then archive", func(t *testing.T) {
 			subscriptionID := uuid.NewString()
 			_, err := subscriptions.NewStore(db).Upsert(ctx, subscriptionID, subscriptions.UpsertSubscriptionOptions{
-				DisplayName:    pointers.Ptr(database.NewNullString("Soon-to-be-archived subscription")),
-				InstanceDomain: pointers.Ptr(database.NewNullString("not-yet-archived.sourcegraph.com")),
+				DisplayName:    database.NewNullString("Soon-to-be-archived subscription"),
+				InstanceDomain: database.NewNullString("not-yet-archived.sourcegraph.com"),
 			})
 			require.NoError(t, err)
 

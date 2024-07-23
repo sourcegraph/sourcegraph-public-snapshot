@@ -177,7 +177,7 @@ func (i *importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 						// suffixed to it.
 						name := fmt.Sprintf("%s %s",
 							parts[1], dotcomSub.CreatedAt.Format(time.DateOnly))
-						return pointers.Ptr(database.NewNullString(name))
+						return database.NewNullString(name)
 					}
 				}
 				return nil
