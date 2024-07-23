@@ -11,15 +11,13 @@ import (
 )
 
 type metrics struct {
-	searchRunning      prometheus.Gauge
-	searchFailed       prometheus.Counter
-	searchDuration     prometheus.Histogram
-	indexRunning       prometheus.Gauge
-	indexFailed        prometheus.Counter
-	indexDuration      prometheus.Histogram
-	queueAge           prometheus.Histogram
-	parseQueueSize     prometheus.Gauge
-	parseQueueTimeouts prometheus.Counter
+	searchRunning  prometheus.Gauge
+	searchFailed   prometheus.Counter
+	searchDuration prometheus.Histogram
+	indexRunning   prometheus.Gauge
+	indexFailed    prometheus.Counter
+	indexDuration  prometheus.Histogram
+	queueAge       prometheus.Histogram
 }
 
 func newMetrics(observationCtx *observation.Context, db *sql.DB) *metrics {
@@ -80,25 +78,9 @@ func newMetrics(observationCtx *observation.Context, db *sql.DB) *metrics {
 		return histogram
 	}
 
-	parseQueueSize := prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: ns,
-		Name:      "codeintel_symbols_parse_queue_size",
-		Help:      "The number of parse jobs enqueued.",
-	})
-	observationCtx.Registerer.MustRegister(parseQueueSize)
-
-	parseQueueTimeouts := prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: ns,
-		Name:      "codeintel_symbols_parse_queue_timeouts_total",
-		Help:      "The total number of parse jobs that timed out while enqueued.",
-	})
-	observationCtx.Registerer.MustRegister(parseQueueTimeouts)
-
 	return &metrics{
-		parseQueueSize:     parseQueueSize,
-		parseQueueTimeouts: parseQueueTimeouts,
-		searchRunning:      gauge("in_flight_search_requests", "Number of in-flight search requests"),
-		searchFailed:       counter("search_request_errors", "Number of search requests that returned an error"),
+		searchRunning: gauge("in_flight_search_requests", "Number of in-flight search requests"),
+		searchFailed:  counter("search_request_errors", "Number of search requests that returned an error"),
 		searchDuration: histogram(
 			"search_request_duration_seconds",
 			"Search request duration in seconds.",

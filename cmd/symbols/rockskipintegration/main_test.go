@@ -89,7 +89,7 @@ func TestRockskipIntegration(t *testing.T) {
 	parserFactory := func(source ctags_config.ParserType) (ctags.Parser, error) {
 		return symbolsParser.SpawnCtags(logger, ctagsConfig, source)
 	}
-	symbolParserPool, err := symbolsParser.NewParserPool(parserFactory, 1, symbolsParser.DefaultParserTypes)
+	symbolParserPool, err := symbolsParser.NewParserPool(observationCtx, "integration", parserFactory, 1, symbolsParser.DefaultParserTypes)
 	if err != nil {
 		logger.Fatal("failed to create symbol parser pool", log.Error(err))
 	}

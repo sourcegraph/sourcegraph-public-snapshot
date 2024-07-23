@@ -143,14 +143,15 @@ func (p *parser) handleParseRequest(
 	}})
 	defer endObservation(1, observation.Args{})
 
-	parserType, err := p.parserPool.GetParserType(ctx, parseRequest.Path, parseRequest.Data)
+	parser, parserType, err := p.parserPool.GetParser(ctx, parseRequest.Path, parseRequest.Data)
 
-	// If we get an error it means the file is of an unsupported language type
-	// so we bail out and don't try to get symbols
-	if err != nil {
+	// If we cannot determine type of ctags it means we don't support symbols for
+	// this file type so we bail out early
+	if parserType == ctags_config.UnknownCtags {
 		return nil
 	}
-	parser, err := p.parserFromPool(ctx, parserType)
+
+	// If its a supported language and we failed to get the parser, return the error
 	if err != nil {
 		return err
 	}
@@ -234,27 +235,6 @@ func (p *parser) handleParseRequest(
 	}
 
 	return nil
-}
-
-func (p *parser) parserFromPool(ctx context.Context, source ctags_config.ParserType) (ctags.Parser, error) {
-	if ctags_config.ParserIsNoop(source) {
-		return nil, errors.New("Should not pass Noop ParserType to this function")
-	}
-
-	p.operations.parseQueueSize.Inc()
-	defer p.operations.parseQueueSize.Dec()
-
-	parser, err := p.parserPool.Get(ctx, source)
-	if err != nil {
-		if err == context.DeadlineExceeded {
-			p.operations.parseQueueTimeouts.Inc()
-		}
-		if err != ctx.Err() {
-			err = errors.Wrap(err, "failed to create parser")
-		}
-	}
-
-	return parser, err
 }
 
 func shouldPersistEntry(e *ctags.Entry) bool {

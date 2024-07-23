@@ -136,7 +136,7 @@ func setupRockskip(observationCtx *observation.Context, config rockskipConfig, g
 	parserFactory := func(source ctags_config.ParserType) (ctags.Parser, error) {
 		return symbolparser.SpawnCtags(logger, config.Ctags, source)
 	}
-	symbolParserPool, err := symbolparser.NewParserPool(parserFactory, config.NumCtagsProcesses, parserTypesForDeployment())
+	symbolParserPool, err := symbolparser.NewParserPool(observationCtx, "src_rockskip_service", parserFactory, config.NumCtagsProcesses, parserTypesForDeployment())
 	if err != nil {
 		logger.Fatal("failed to create symbol parser pool", log.Error(err))
 	}

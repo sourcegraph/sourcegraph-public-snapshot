@@ -344,12 +344,16 @@ func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameter
 }
 
 func (s *Service) parseSymbols(ctx context.Context, path string, contents []byte) ([]*ctags.Entry, error) {
-	parser, parserType, err := s.getSymbolParser(ctx, path, contents)
-	if err != nil {
-		// If we get an error here it means the file is of an unsupported language type
-		// so we bail out and don't try to get symbols but we return nil for the error
-		// since we do not want to abort processing other files
+	parser, parserType, err := s.symbolParserPool.GetParser(ctx, path, contents)
+	// If we cannot determine type of ctags it means we don't support symbols for
+	// this file type so we bail out early
+	if parserType == ctags_config.UnknownCtags {
 		return nil, nil
+	}
+
+	// If its a supported language and we failed to get the parser, return the error
+	if err != nil {
+		return nil, err
 	}
 
 	allSymbols, err := parser.Parse(path, contents)
@@ -379,43 +383,6 @@ func (s *Service) parseSymbols(ctx context.Context, path string, contents []byte
 	}()
 
 	return allSymbols, nil
-}
-
-func (s *Service) getSymbolParser(ctx context.Context, path string, content []byte) (ctags.Parser, ctags_config.ParserType, error) {
-
-	parserType, err := s.symbolParserPool.GetParserType(ctx, path, content)
-
-	if err != nil {
-		return nil, parserType, err
-	}
-
-	parser, err := s.parserFromPool(ctx, parserType)
-	if err != nil {
-		return nil, parserType, err
-	}
-
-	return parser, parserType, nil
-}
-
-func (s *Service) parserFromPool(ctx context.Context, source ctags_config.ParserType) (ctags.Parser, error) {
-	if ctags_config.ParserIsNoop(source) {
-		return nil, errors.New("Should not pass Noop ParserType to this function")
-	}
-
-	s.metrics.parseQueueSize.Inc()
-	defer s.metrics.parseQueueSize.Dec()
-
-	parser, err := s.symbolParserPool.Get(ctx, source)
-	if err != nil {
-		if err == context.DeadlineExceeded {
-			s.metrics.parseQueueTimeouts.Inc()
-		}
-		if err != ctx.Err() {
-			err = errors.Wrap(err, "failed to create parser")
-		}
-	}
-
-	return parser, err
 }
 
 func logQuery(ctx context.Context, db database.DB, args search.SymbolsParameters, q *sqlf.Query, duration time.Duration, symbols int) error {

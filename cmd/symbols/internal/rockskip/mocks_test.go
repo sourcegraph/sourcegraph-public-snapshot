@@ -67,7 +67,7 @@ func mockService(t *testing.T, git *subprocessGit) (*sql.DB, *Service) {
 		return mockParser{parserType: parserType}, nil
 	}
 	conf.MockAndNotifyWatchers(&conf.Unified{})
-	symbolParserPool, err := symbolparser.NewParserPool(createParser, 1, symbolparser.DefaultParserTypes)
+	symbolParserPool, err := symbolparser.NewParserPool(observationCtx, "test", createParser, 1, symbolparser.DefaultParserTypes)
 	require.NoError(t, err)
 	service, err := NewService(observationCtx, db, git, repoFetcher, symbolParserPool, 1, 1, false, 1, 1, 1, false)
 	require.NoError(t, err)

@@ -66,7 +66,8 @@ func TestHandler(t *testing.T) {
 		}
 		return newMockParser(pathToEntries), nil
 	}
-	parserPool, err := parser.NewParserPool(parserFactory, 15, parser.DefaultParserTypes)
+	observationCtx := &observation.TestContext
+	parserPool, err := parser.NewParserPool(observationCtx, "test:", parserFactory, 15, parser.DefaultParserTypes)
 	if err != nil {
 		t.Fatal(err)
 	}
