@@ -3,15 +3,19 @@ source: crates/syntax-analysis/src/locals.rs
 expression: dumped
 ---
   package com.hello;
+//        ^^^ reference scip-syntax com.
+//            ^^^^^ reference scip-syntax hello.
   
   import java.lang.AutoCloseable;
 //       ^^^^^^^^^ reference scip-syntax `java.lang`/
+//            ^^^^ reference scip-syntax lang.
 //                 ^^^^^^^^^^^^^ reference scip-syntax AutoCloseable#
   import java.util.*;
 //       ^^^^ reference scip-syntax java/
 //            ^^^^ reference scip-syntax util#
   import java.util.stream.*;
 //       ^^^^^^^^^ reference scip-syntax `java.util`/
+//            ^^^^ reference scip-syntax util.
 //                 ^^^^^^ reference scip-syntax stream#
   
   public class Locals<Container> implements AutoCloseable {
@@ -22,6 +26,7 @@ expression: dumped
 //       ^^^^^^ reference scip-syntax String#
   
    public Locals(String chars) {
+//        ^^^^^^ reference scip-syntax Locals.
 //               ^^^^^^ reference scip-syntax String#
 //                      ^^^^^ definition local 2
     this.chars = chars;
@@ -61,6 +66,7 @@ expression: dumped
    }
   
    public record Person(String name, String address) {
+//               ^^^^^^ reference scip-syntax Person.
 //                      ^^^^^^ reference scip-syntax String#
 //                                   ^^^^^^ reference scip-syntax String#
    }
@@ -68,11 +74,11 @@ expression: dumped
    private class Binary<N extends Number> {
 //                      ^ definition local 7
 //                                ^^^^^^ reference scip-syntax Number#
-//                                ^^^^^^ reference scip-syntax Number#
     final N val;
 //        ^ reference local 7
   
     public Binary(N value) {
+//         ^^^^^^ reference scip-syntax Binary.
 //                ^ reference local 7
 //                  ^^^^^ definition local 8
      this.val = value;
@@ -86,6 +92,7 @@ expression: dumped
 //                           ^^^^^^ definition local 9
     if (person instanceof Person(String x, String y)) {
 //      ^^^^^^ reference local 9
+//                        ^^^^^^ reference scip-syntax Person.
 //                               ^^^^^^ reference scip-syntax String#
 //                                      ^ definition local 10
 //                                         ^^^^^^ reference scip-syntax String#
@@ -100,15 +107,23 @@ expression: dumped
    }
   
    enum Flags {
+//      ^^^^^ reference scip-syntax Flags.
     NODE_TEXT, FOR_HEADING_ID, NO_TRIM_REF_TEXT_START, NO_TRIM_REF_TEXT_END, ADD_SPACES_BETWEEN_NODES,;
+//  ^^^^^^^^^ reference scip-syntax NODE_TEXT.
+//             ^^^^^^^^^^^^^^ reference scip-syntax FOR_HEADING_ID.
+//                             ^^^^^^^^^^^^^^^^^^^^^^ reference scip-syntax NO_TRIM_REF_TEXT_START.
+//                                                     ^^^^^^^^^^^^^^^^^^^^ reference scip-syntax NO_TRIM_REF_TEXT_END.
+//                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^ reference scip-syntax ADD_SPACES_BETWEEN_NODES.
   
     final int bits;
   
     Flags() {
+//  ^^^^^ reference scip-syntax Flags.
      this(1);
     }
   
     Flags(int bits) {
+//  ^^^^^ reference scip-syntax Flags.
 //            ^^^^ definition local 12
      this.bits = bits;
 //        ^^^^ reference scip-syntax bits.
@@ -136,15 +151,16 @@ expression: dumped
    public <T extends Container> List<T> fromArrayToList(T[] a) {
 //         ^ definition local 14
 //                   ^^^^^^^^^ reference local 1
-//                   ^^^^^^^^^ reference local 1
 //                              ^^^^ reference scip-syntax List#
 //                                   ^ reference local 14
 //                                                      ^ reference local 14
 //                                                          ^ definition local 15
     return Arrays.stream(a).collect(Collectors.toList());
+//         ^^^^^^ reference scip-syntax Arrays.
 //                ^^^^^^ reference scip-syntax stream().
 //                       ^ reference local 15
 //                          ^^^^^^^ reference scip-syntax collect().
+//                                  ^^^^^^^^^^ reference scip-syntax Collectors.
 //                                             ^^^^^^ reference scip-syntax toList().
    }
   
@@ -189,6 +205,7 @@ expression: dumped
   
    public class Hello2 {
     public Hello2(int t) {
+//         ^^^^^^ reference scip-syntax Hello2.
 //                    ^ definition local 20
      var newT = t;
 //       ^^^^ definition local 21
