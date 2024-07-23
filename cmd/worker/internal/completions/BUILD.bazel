@@ -27,6 +27,7 @@ go_test(
     name = "completions_test",
     srcs = ["tokens_test.go"],
     embed = [":completions"],
+    tags = ["requires-network"],
     deps = [
         "//internal/completions/tokenusage",
         "//internal/rcache",
