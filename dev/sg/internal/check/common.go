@@ -192,7 +192,7 @@ func SourcegraphDatabase(getConfig func() (*sgconf.Config, error)) CheckFunc {
 		dsn := postgresdsn.New("", "", getEnv)
 
 		if err := pingPG(ctx, dsn); err != nil {
-			return errors.Wrapf(err, "failed to connect to Sourcegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/background-information/sg/vision.md#changing-database-configuration)", dsn)
+			return errors.Wrapf(err, "failed to connect to Sourcegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/background-information/sg/index.md#changing-database-configuration)", dsn)
 		}
 		return nil
 	}
