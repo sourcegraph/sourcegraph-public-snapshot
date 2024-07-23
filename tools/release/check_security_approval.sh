@@ -14,6 +14,11 @@ fi
 
 echo "Checking security approval for release ${VERSION}..."
 
+if [ ! -e "./annotations" ]; then
+  mkdir ./annotations
+fi
+echo -e "## Security Release Approval" >./annotations/security_approval.md
+
 curl --location "https://security-manager.sgdev.org/approve-release?release=${VERSION}" --header "Authorization: Bearer ${SECURITY_SCANNER_TOKEN}" --fail &&
-  "Release ${VERSION} has security approval" ||
-  echo "Release ${VERSION} does not have security approval - reach out to the Security Team to resolve."
+  echo "Release ${VERSION} has security approval." | tee -a ./annotations/security_approval.md ||
+  echo "Release ${VERSION} does not have security approval - reach out to the Security Team to resolve." | tee -a ./annotations/security_approval.md

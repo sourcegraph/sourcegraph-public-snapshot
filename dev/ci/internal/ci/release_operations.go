@@ -18,7 +18,7 @@ func checkSecurityApproval(c Config) operations.Operation {
 			bk.Agent("queue", AspectWorkflows.QueueDefault),
 			bk.Env("VERSION", c.Version),
 			bk.AnnotatedCmd(
-				fmt.Sprintf("./tools/release/check_security_approval.sh"),
+				"./tools/release/check_security_approval.sh",
 				bk.AnnotatedCmdOpts{
 					Annotations: &bk.AnnotationOpts{
 						Type:         bk.AnnotationTypeInfo,
