@@ -28,6 +28,7 @@ SECURITY_APPROVAL=$(
 if [ "$SECURITY_APPROVAL" -eq 0 ]; then
   echo "Release \`${VERSION}\` has security approval." | tee -a ./annotations/security_approval.md
 else
-  echo -e "Release ${VERSION} does **not** have security approval - reach out to the Security Team to resolve.\nRun \`@SecBot cve approve-release 5.5.1339\` in [#secbot-commands](https://sourcegraph.slack.com/archives/C07BQJDFCV8) to check the approval status." | tee -a ./annotations/security_approval.md
+  echo "Release ${VERSION} does **not** have security approval - reach out to the Security Team to resolve." | tee -a ./annotations/security_approval.md
+  echo "Run \`@SecBot cve approve-release 5.5.1339\` in [#secbot-commands](https://sourcegraph.slack.com/archives/C07BQJDFCV8) to check the approval status." | tee -a ./annotations/security_approval.md
   exit 1
 fi
