@@ -290,10 +290,7 @@ func precedingHunk(hunks []compactHunk, line int32) core.Option[compactHunk] {
 	return core.Some(hunks[precedingHunkIx])
 }
 
-func translateLine(
-	hunks []compactHunk,
-	line int32,
-) core.Option[int32] {
+func translateLine(hunks []compactHunk, line int32) core.Option[int32] {
 	hunk, ok := precedingHunk(hunks, line).Get()
 	if !ok {
 		return core.Some(line)
@@ -301,10 +298,7 @@ func translateLine(
 	return hunk.shiftLine(line)
 }
 
-func translatePosition(
-	hunks []compactHunk,
-	pos scip.Position,
-) core.Option[scip.Position] {
+func translatePosition(hunks []compactHunk, pos scip.Position) core.Option[scip.Position] {
 	hunk, ok := precedingHunk(hunks, pos.Line).Get()
 	if !ok {
 		return core.Some(pos)
@@ -312,10 +306,7 @@ func translatePosition(
 	return hunk.shiftPosition(pos)
 }
 
-func translateRange(
-	hunks []compactHunk,
-	range_ scip.Range,
-) core.Option[scip.Range] {
+func translateRange(hunks []compactHunk, range_ scip.Range) core.Option[scip.Range] {
 	// Fast path for single-line ranges
 	if range_.Start.Line == range_.End.Line {
 		newLine, ok := translateLine(hunks, range_.Start.Line).Get()
@@ -328,15 +319,12 @@ func translateRange(
 		})
 	}
 
-	start, ok := translatePosition(hunks, range_.Start).Get()
-	if !ok {
-		return core.None[scip.Range]()
+	if start, ok := translatePosition(hunks, range_.Start).Get(); ok {
+		if end, ok := translatePosition(hunks, range_.End).Get(); ok {
+			return core.Some(scip.Range{Start: start, End: end})
+		}
 	}
-	end, ok := translatePosition(hunks, range_.End).Get()
-	if !ok {
-		return core.None[scip.Range]()
-	}
-	return core.Some(scip.Range{Start: start, End: end})
+	return core.None[scip.Range]()
 }
 
 type compactHunk struct {
