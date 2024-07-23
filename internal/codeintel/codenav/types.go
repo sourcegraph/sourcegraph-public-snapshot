@@ -15,10 +15,13 @@ import (
 // visibleUpload pairs an upload visible from the current target commit with the
 // current target path and position matched to the data within the underlying index.
 type visibleUpload struct {
-	Upload                uploadsshared.CompletedUpload
-	TargetPath            core.RepoRelPath
-	TargetPosition        shared.Position
-	TargetPathWithoutRoot core.UploadRelPath
+	Upload         uploadsshared.CompletedUpload
+	TargetPath     core.RepoRelPath
+	TargetPosition shared.Position
+}
+
+func (vu visibleUpload) TargetPathWithoutRoot() core.UploadRelPath {
+	return core.NewUploadRelPath(vu.Upload, vu.TargetPath)
 }
 
 type qualifiedMonikerSet struct {
@@ -132,10 +135,9 @@ type Cursor struct {
 }
 
 type CursorVisibleUpload struct {
-	UploadID              int             `json:"id"`
-	TargetPath            string          `json:"path"`
-	TargetPathWithoutRoot string          `json:"path_no_root"` // TODO - can store these differently?
-	TargetPosition        shared.Position `json:"pos"`          // TODO - inline
+	UploadID       int             `json:"id"`
+	TargetPath     string          `json:"path"`
+	TargetPosition shared.Position `json:"pos"` // TODO - inline
 }
 
 var exhaustedCursor = Cursor{Phase: "done"}

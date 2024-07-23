@@ -92,13 +92,13 @@ export const Progress: React.FC<{
 
     useEffect(() => {
         const timer = setInterval(() => {
-            call('/api/operator/v1beta1/install/progress')
+            call('/api/v1/appliance/install/progress')
                 .then(result => result.json())
                 .then(result => {
-                    setVersion(result.version)
-                    setProgress(result.progress)
-                    setError(result.error)
-                    setTasks(result.tasks)
+                    setVersion(result.progress.version)
+                    setProgress(result.progress.progress)
+                    setError(result.progress.error)
+                    setTasks(result.progress.tasks)
                 })
                 .catch(err => setError(err.message))
         }, 1000)

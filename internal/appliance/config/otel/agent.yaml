@@ -1,0 +1,43 @@
+receivers:
+  otlp:
+    protocols:
+      grpc: # port 4317
+      http: # port 4318
+
+exporters:
+  otlp:
+    endpoint: "otel-collector:4317"
+    tls:
+      insecure: true
+    sending_queue:
+      num_consumers: 4
+      queue_size: 100
+    retry_on_failure:
+      enabled: true
+
+# TODO: allow configuring processors through values
+#processors:
+#  batch:
+#  memory_limiter:
+#    # 80% of maximum memory up to 2G
+#    limit_mib: 400
+#    # 25% of limit up to 2G
+#    spike_limit_mib: 100
+#    check_interval: 5s
+
+extensions:
+  health_check:
+    endpoint: ":13133"
+  zpages:
+    endpoint: "localhost:55679"
+
+service:
+  extensions:
+    - zpages
+    - health_check
+  pipelines:
+    traces:
+      receivers:
+        - otlp
+      exporters:
+        - otlp

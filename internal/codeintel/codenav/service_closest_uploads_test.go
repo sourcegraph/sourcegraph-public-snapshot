@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	lsifstoremocks "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
@@ -66,7 +67,7 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 	for _, testCase := range testCases {
 		// Set up mocks
 		mockRepoStore := defaultMockRepoStore()
-		mockLsifStore := NewMockLsifStore()
+		mockLsifStore := lsifstoremocks.NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
 		mockSearchClient := client.NewMockSearchClient()

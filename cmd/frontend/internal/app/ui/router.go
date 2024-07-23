@@ -138,7 +138,7 @@ func InitRouter(db database.DB) {
 		{pathPrefix: "/settings", name: routeSettings, title: "Settings", index: false},
 		{pathPrefix: "/site-admin", name: routeSiteAdmin, title: "Admin", index: false},
 		{pathPrefix: "/contexts", name: "contexts", title: "Search Contexts", index: false},
-		{pathPrefix: "/saved-searches", name: "saved-searches", title: "Saved Searches", index: false},
+		{pathPrefix: "/saved-searches", name: "saved-searches", title: "Saved searches", index: false},
 		{pathPrefix: "/prompts", name: "prompts", title: "Prompts", index: false},
 		{path: "/cody/manage", name: "cody", title: "Cody Manage", index: false},
 		{path: "/cody/subscription", name: "cody", title: "Cody Pricing", index: false},
@@ -148,6 +148,7 @@ func InitRouter(db database.DB) {
 		{path: "/password-reset", name: uirouter.RoutePasswordReset, title: "Reset password", index: false},
 		{path: "/survey", name: "survey", title: "Survey", index: false},
 		{path: "/survey/{score}", name: "survey-score", title: "Survey", index: false},
+		{path: "/post-sign-up", name: "post-sign-up", title: "Cody", index: false},
 	}
 
 	config := conf.Get()

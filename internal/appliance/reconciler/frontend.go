@@ -156,8 +156,8 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 	dep := deployment.NewDeployment("sourcegraph-frontend", sg.Namespace, sg.Spec.RequestedVersion)
 	dep.Spec.Replicas = &cfg.Replicas
 	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
-		MaxSurge:       pointers.Ptr(intstr.FromInt(2)),
-		MaxUnavailable: pointers.Ptr(intstr.FromInt(0)),
+		MaxSurge:       pointers.Ptr(intstr.FromInt32(2)),
+		MaxUnavailable: pointers.Ptr(intstr.FromInt32(0)),
 	}
 	dep.Spec.Template = template.Template
 
@@ -186,6 +186,7 @@ func (r *Reconciler) reconcileFrontendService(ctx context.Context, sg *config.So
 		"app": name,
 	}
 
+	config.MarkObjectForAdoption(&svc)
 	return reconcileObject(ctx, r, cfg, &svc, &corev1.Service{}, sg, owner)
 }
 
@@ -288,6 +289,7 @@ func (r *Reconciler) reconcileFrontendIngress(ctx context.Context, sg *config.So
 
 	ingress.Spec.IngressClassName = cfg.Ingress.IngressClassName
 
+	config.MarkObjectForAdoption(&ingress)
 	return reconcileObject(ctx, r, sg.Spec.Frontend, &ingress, &netv1.Ingress{}, sg, owner)
 }
 

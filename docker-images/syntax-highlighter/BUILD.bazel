@@ -14,6 +14,7 @@ rust_binary(
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
+    stamp = 0,
     tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
     deps = all_crate_deps(
@@ -70,6 +71,7 @@ rust_binary(
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
+    stamp = 0,
     tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
     deps = all_crate_deps(

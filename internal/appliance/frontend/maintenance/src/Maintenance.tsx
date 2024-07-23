@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react'
+import React, { Fragment, useEffect, useState } from 'react'
 
 import Unhealthy from '@mui/icons-material/CarCrashOutlined'
 import Healthy from '@mui/icons-material/ThumbUp'
@@ -6,10 +6,10 @@ import { Alert, Button, CircularProgress, Grid, Stack, Typography } from '@mui/m
 import classNames from 'classnames'
 
 import { call } from './api'
-import { maintenance } from './debugBar'
+import { maintenance } from './state'
 
-const MaintenanceStatusTimerMs = 1 * 1000
-const WaitToLaunchFixMs = 5 * 1000
+const MaintenanceStatusTimerMs = 1000
+const WaitToLaunchFixMs = 5000
 
 type Service = {
     name: string
@@ -59,7 +59,7 @@ export const Maintenance: React.FC = () => {
 
     useEffect(() => {
         const timer = setInterval(() => {
-            call('/api/operator/v1beta1/maintenance/status')
+            call('/api/v1/appliance/maintenance/status')
                 .then(response => response.json())
                 .then(setStatus)
         }, MaintenanceStatusTimerMs)
