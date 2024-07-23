@@ -24,9 +24,9 @@ func (s *Service) GetDefinitions(
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
 		s.operations.getDefinitions, // operation
-		"definitions",               // tableName
-		false,                       // includeReferencingIndexes
-		LocationExtractorFunc(s.lsifstore.ExtractDefinitionLocationsFromPosition),
+		shared.UsageKindDefinition,
+		false, // includeReferencingIndexes
+		LocationExtractorNamedFunc{shared.UsageKindDefinition, s.lsifstore.ExtractDefinitionLocationsFromPosition},
 	)
 }
 
@@ -39,9 +39,9 @@ func (s *Service) GetReferences(
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
 		s.operations.getReferences, // operation
-		"references",               // tableName
-		true,                       // includeReferencingIndexes
-		LocationExtractorFunc(s.lsifstore.ExtractReferenceLocationsFromPosition),
+		shared.UsageKindReference,
+		true, // includeReferencingIndexes
+		LocationExtractorNamedFunc{shared.UsageKindReference, s.lsifstore.ExtractReferenceLocationsFromPosition},
 	)
 }
 
@@ -54,9 +54,9 @@ func (s *Service) GetImplementations(
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
 		s.operations.getImplementations, // operation
-		"implementations",               // tableName
-		true,                            // includeReferencingIndexes
-		LocationExtractorFunc(s.lsifstore.ExtractImplementationLocationsFromPosition),
+		shared.UsageKindImplementation,
+		true, // includeReferencingIndexes
+		LocationExtractorNamedFunc{shared.UsageKindImplementation, s.lsifstore.ExtractImplementationLocationsFromPosition},
 	)
 }
 
@@ -69,9 +69,9 @@ func (s *Service) GetPrototypes(
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
 		s.operations.getPrototypes, // operation
-		"definitions",              // N.B.: we're looking for definitions of interfaces
-		false,                      // includeReferencingIndexes
-		LocationExtractorFunc(s.lsifstore.ExtractPrototypeLocationsFromPosition),
+		shared.UsageKindSuper,
+		false, // includeReferencingIndexes
+		LocationExtractorNamedFunc{shared.UsageKindSuper, s.lsifstore.ExtractPrototypeLocationsFromPosition},
 	)
 }
 
@@ -85,10 +85,13 @@ type LocationExtractor interface {
 	Extract(ctx context.Context, locationKey lsifstore.LocationKey) ([]shared.Location, []string, error)
 }
 
-type LocationExtractorFunc func(ctx context.Context, locationKey lsifstore.LocationKey) ([]shared.Location, []string, error)
+type LocationExtractorNamedFunc struct {
+	Kind shared.UsageKind
+	Func func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)
+}
 
-func (f LocationExtractorFunc) Extract(ctx context.Context, locationKey lsifstore.LocationKey) ([]shared.Location, []string, error) {
-	return f(ctx, locationKey)
+func (f LocationExtractorNamedFunc) Extract(ctx context.Context, locationKey lsifstore.LocationKey) ([]shared.Location, []string, error) {
+	return f.Func(ctx, locationKey)
 }
 
 func (s *Service) gatherLocations(
@@ -97,7 +100,7 @@ func (s *Service) gatherLocations(
 	requestState RequestState,
 	cursor Cursor,
 	operation *observation.Operation,
-	tableName string,
+	usageKind shared.UsageKind,
 	includeReferencingIndexes bool,
 	extractor LocationExtractor,
 ) (allLocations []shared.UploadLocation, _ Cursor, err error) {
@@ -161,7 +164,7 @@ outer:
 				trace,
 				args.RequestArgs,
 				requestState,
-				tableName,
+				usageKind,
 				includeReferencingIndexes,
 				cursor,
 				args.Limit-len(allLocations), // remaining space in the page
@@ -226,7 +229,7 @@ type gatherLocationsFunc func(
 	trace observation.TraceLogger,
 	args RequestArgs,
 	requestState RequestState,
-	tableName string,
+	usageKind shared.UsageKind,
 	includeReferencingIndexes bool,
 	cursor Cursor,
 	limit int,
@@ -241,7 +244,7 @@ func (s *Service) gatherLocalLocations(
 	trace observation.TraceLogger,
 	args RequestArgs,
 	requestState RequestState,
-	tableName string,
+	_ shared.UsageKind,
 	includeReferencingIndexes bool,
 	cursor Cursor,
 	limit int,
@@ -351,7 +354,7 @@ func (s *Service) gatherRemoteLocationsShim(
 	trace observation.TraceLogger,
 	args RequestArgs,
 	requestState RequestState,
-	tableName string,
+	usageKind shared.UsageKind,
 	includeReferencingIndexes bool,
 	cursor Cursor,
 	limit int,
@@ -364,7 +367,7 @@ func (s *Service) gatherRemoteLocationsShim(
 		args,
 		requestState,
 		cursor,
-		tableName,
+		usageKind,
 		includeReferencingIndexes,
 		limit,
 	)
@@ -376,7 +379,7 @@ func (s *Service) gatherRemoteLocations(
 	args RequestArgs,
 	requestState RequestState,
 	cursor Cursor,
-	tableName string,
+	usageKind shared.UsageKind,
 	includeReferencingIndexes bool,
 	limit int,
 ) ([]shared.UploadLocation, Cursor, error) {
@@ -426,7 +429,7 @@ func (s *Service) gatherRemoteLocations(
 	}
 	locations, totalCount, err := s.lsifstore.GetMinimalBulkMonikerLocations(
 		ctx,
-		tableName,
+		usageKind,
 		cursor.UploadIDs,
 		cursor.SkipPathsByUploadID,
 		monikerArgs,

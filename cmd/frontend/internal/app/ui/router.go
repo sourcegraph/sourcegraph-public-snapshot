@@ -148,6 +148,7 @@ func InitRouter(db database.DB) {
 		{path: "/password-reset", name: uirouter.RoutePasswordReset, title: "Reset password", index: false},
 		{path: "/survey", name: "survey", title: "Survey", index: false},
 		{path: "/survey/{score}", name: "survey-score", title: "Survey", index: false},
+		{path: "/post-sign-up", name: "post-sign-up", title: "Cody", index: false},
 	}
 
 	config := conf.Get()
