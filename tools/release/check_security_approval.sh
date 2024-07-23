@@ -19,6 +19,13 @@ if [ ! -e "./annotations" ]; then
 fi
 echo -e "## Security Release Approval" >./annotations/security_approval.md
 
-curl --location "https://security-manager.sgdev.org/approve-release?release=${VERSION}" --header "Authorization: Bearer ${SECURITY_SCANNER_TOKEN}" --fail &&
-  echo "Release ${VERSION} has security approval." | tee -a ./annotations/security_approval.md ||
+SECURITY_APPROVAL=$(
+  echo "Security approval HTTP status code:"
+  curl --location "https://security-manager.sgdev.org/approve-release?release=${VERSION}" --header "Authorization: Bearer ${SECURITY_SCANNER_TOKEN}" --fail --write-out "%{http_code}" --silent --output /dev/null
+)
+
+if [ "$SECURITY_APPROVAL" -eq 0 ]; then
+  echo "Release ${VERSION} has security approval." | tee -a ./annotations/security_approval.md
+else
   echo "Release ${VERSION} does not have security approval - reach out to the Security Team to resolve." | tee -a ./annotations/security_approval.md
+fi
