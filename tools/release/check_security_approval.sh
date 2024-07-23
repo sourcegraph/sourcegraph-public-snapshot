@@ -21,8 +21,7 @@ echo -e "## Security Release Approval" >./annotations/security_approval.md
 
 SECURITY_APPROVAL=$(
   curl --location "https://security-manager.sgdev.org/approve-release?release=${VERSION}" \
-    --header "Authorization: Bearer ${SECURITY_SCANNER_TOKEN}" --fail --write-out "%{http_code}" \
-    --silent --output /dev/null
+    --header "Authorization: Bearer ${SECURITY_SCANNER_TOKEN}" --fail
 )
 
 if [ "$SECURITY_APPROVAL" -eq 0 ]; then
