@@ -5,7 +5,7 @@ This is the quickstart guide for [developing Sourcegraph](../index.md).
 > NOTE: If you run into any troubles, reach out on Slack:
 >
 > - [As an open source contributor](https://discord.com/servers/sourcegraph-969688426372825169)
-> - [As a Sourcegraph employee](https://app.slack.com/client/T02FSM7DL/C04MYFW01NV)
+> - [As a Sourcegraph employee](https://sourcegraph.slack.com/archives/C04MYFW01NV)
 >
 > You can also get help on our [developer experience discussion forum](https://github.com/sourcegraph/sourcegraph/discussions/categories/developer-experience).
 
