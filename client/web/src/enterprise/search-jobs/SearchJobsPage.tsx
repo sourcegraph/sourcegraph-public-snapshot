@@ -186,9 +186,9 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
                 path={[{ icon: LayersSearchOutlineIcon, text: 'Search Jobs' }]}
                 description={
                     <>
-                        Manage Sourcegraph queries that have been run in the background.
-                        <br />
-                        <br />
+<Text>
+                        Manage Sourcegraph queries that have been run in the background.</Text>
+<Text>
                         Use search jobs if your goal is to obtain an exhaustive list of results from a large corpus.
                         Search jobs prioritize completeness over quick response times and results ranking.{' '}
                         <Link
@@ -197,7 +197,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
                             rel="noopener noreferrer"
                         >
                             Learn how to create a search job.
-                        </Link>{' '}
+                        </Link></Text>
                     </>
                 }
             />
