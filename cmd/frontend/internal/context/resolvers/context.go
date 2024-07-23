@@ -70,6 +70,9 @@ type Resolver struct {
 
 func (r *Resolver) ChatContext(ctx context.Context, args graphqlbackend.ChatContextArgs) (graphqlbackend.ChatContextResolver, error) {
 	err := r.contextApiEnabled(ctx)
+	if err != nil {
+		return nil, err
+	}
 	// Set a more aggressive timeout for this request so slow experimental retrievers won't block client
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
@@ -80,20 +83,33 @@ func (r *Resolver) ChatContext(ctx context.Context, args graphqlbackend.ChatCont
 	res := &chatContextResponse{
 		stopReason: StopReasonDone,
 	}
+
+	type retrieverResult struct {
+		items         []graphqlbackend.RetrieverContextItemResolver
+		partialErrors []error
+		error         error
+	}
+	retrieverResults := iter.Map(retrievers, func(f *retrieverFunc) retrieverResult {
+		i, pe, e := (*f)(ctx, repo, args.Query, r)
+		return retrieverResult{
+			items:         i,
+			partialErrors: pe,
+			error:         e,
+		}
+	})
 	var partialErrors []error
 	// if all retrievers fail, we fail the whole request, otherwise we return successfully fetched items + partial error
 	var completeErrors []error
 	success := false
-	iter.ForEach(retrievers, func(f *retrieverFunc) {
-		items, pe, err := (*f)(ctx, repo, args.Query, r)
-		if err != nil {
-			completeErrors = append(completeErrors, err)
-			return
+	for _, rr := range retrieverResults {
+		if rr.error != nil {
+			completeErrors = append(completeErrors, rr.error)
+			continue
 		}
 		success = true
-		res.contextItems = append(res.contextItems, items...)
-		partialErrors = append(partialErrors, pe...)
-	})
+		res.contextItems = append(res.contextItems, rr.items...)
+		partialErrors = append(partialErrors, rr.partialErrors...)
+	}
 	if !success {
 		return nil, errors.Append(nil, completeErrors...)
 	}
@@ -101,8 +117,8 @@ func (r *Resolver) ChatContext(ctx context.Context, args graphqlbackend.ChatCont
 	if len(partialErrors) > 0 {
 		res.partialErrors = partialErrors
 		fields := []log.Field{log.Int("count", len(partialErrors)), log.String("interactionID", args.InteractionID)}
-		for _, err := range partialErrors {
-			fields = append(fields, log.Error(err))
+		for _, pe := range partialErrors {
+			fields = append(fields, log.Error(pe))
 		}
 		r.logger.Warn("partial errors when fetching context", fields...)
 	}
