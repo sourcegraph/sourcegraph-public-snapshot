@@ -20,7 +20,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph/codegraphmocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -50,7 +51,7 @@ func TestHandle(t *testing.T) {
 	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
 	mockDBStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
-	mockLSIFStore := NewMockLSIFStore()
+	mockLSIFStore := codegraphmocks.NewMockDataStore()
 	mockUploadStore := objectmocks.NewMockStorage()
 	gitserverClient := gitserver.NewMockClient()
 
@@ -58,10 +59,10 @@ func TestHandle(t *testing.T) {
 	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s store.Store) error) error { return f(mockDBStore) })
 
 	// Set default transaction behavior
-	mockLSIFStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s lsifstore.Store) error) error { return f(mockLSIFStore) })
+	mockLSIFStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s codegraph.DataStore) error) error { return f(mockLSIFStore) })
 
 	// Track writes to symbols table
-	scipWriter := NewMockLSIFSCIPWriter()
+	scipWriter := codegraphmocks.NewMockSCIPWriter()
 	mockLSIFStore.NewPreciseSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
 
 	scipWriter.InsertDocumentFunc.SetDefaultHook(func(_ context.Context, _ string, _ *scip.Document) error {
@@ -96,11 +97,11 @@ func TestHandle(t *testing.T) {
 	})
 
 	svc := &handler{
-		store:           mockDBStore,
-		lsifStore:       mockLSIFStore,
-		gitserverClient: gitserverClient,
-		repoStore:       mockRepoStore,
-		workerStore:     mockWorkerStore,
+		store:              mockDBStore,
+		codeGraphDataStore: mockLSIFStore,
+		gitserverClient:    gitserverClient,
+		repoStore:          mockRepoStore,
+		workerStore:        mockWorkerStore,
 	}
 
 	requeued, err := svc.HandleRawUpload(context.Background(), logtest.Scoped(t), upload, mockUploadStore, observation.TestTraceLogger(logtest.Scoped(t)))
@@ -238,7 +239,7 @@ func TestHandle(t *testing.T) {
 			t.Fatalf("unexpected value for upload id. want=%d have=%d", 42, call.Arg1)
 		}
 
-		expectedMetadata := lsifstore.ProcessedMetadata{
+		expectedMetadata := codegraph.ProcessedMetadata{
 			TextDocumentEncoding: "UTF8",
 			ToolName:             "scip-typescript",
 			ToolVersion:          "0.3.3",
@@ -299,16 +300,16 @@ func TestHandleError(t *testing.T) {
 	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
 	mockDBStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
-	mockLSIFStore := NewMockLSIFStore()
+	mockLSIFStore := codegraphmocks.NewMockDataStore()
 	mockUploadStore := objectmocks.NewMockStorage()
 	gitserverClient := gitserver.NewMockClient()
 
 	// Set default transaction behavior
 	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s store.Store) error) error { return f(mockDBStore) })
-	mockLSIFStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s lsifstore.Store) error) error { return f(mockLSIFStore) })
+	mockLSIFStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s codegraph.DataStore) error) error { return f(mockLSIFStore) })
 
 	// Track writes to symbols table
-	scipWriter := NewMockLSIFSCIPWriter()
+	scipWriter := codegraphmocks.NewMockSCIPWriter()
 	mockLSIFStore.NewPreciseSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
 
 	// Give correlation package a valid input dump
@@ -330,8 +331,8 @@ func TestHandleError(t *testing.T) {
 	mockDBStore.SetRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))
 
 	svc := &handler{
-		store:     mockDBStore,
-		lsifStore: mockLSIFStore,
+		store:              mockDBStore,
+		codeGraphDataStore: mockLSIFStore,
 		// lsifstore:       mockLSIFStore,
 		gitserverClient: gitserverClient,
 		repoStore:       mockRepoStore,
