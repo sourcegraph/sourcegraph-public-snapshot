@@ -84,17 +84,16 @@ func (r *Resolver) ChatContext(ctx context.Context, args graphqlbackend.ChatCont
 	// if all retrievers fail, we fail the whole request, otherwise we return successfully fetched items + partial error
 	var completeErrors []error
 	success := false
-	// TODO: make this and chunk resolution in `fetchZoekt` concurrent
-	for _, f := range retrievers {
-		items, pe, err := f(ctx, repo, args.Query, r)
+	iter.ForEach(retrievers, func(f *retrieverFunc) {
+		items, pe, err := (*f)(ctx, repo, args.Query, r)
 		if err != nil {
 			completeErrors = append(completeErrors, err)
-			continue
+			return
 		}
 		success = true
 		res.contextItems = append(res.contextItems, items...)
 		partialErrors = append(partialErrors, pe...)
-	}
+	})
 	if !success {
 		return nil, errors.Append(nil, completeErrors...)
 	}
