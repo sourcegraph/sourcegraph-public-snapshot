@@ -1,21 +1,21 @@
 import { call } from './api'
 import { stage } from './Frame'
 
-export const maintenance = async ({healthy, onDone}: { healthy: boolean; onDone?: () => void }): Promise<void> => {
+export const maintenance = async ({ healthy, onDone }: { healthy: boolean; onDone?: () => void }): Promise<void> => {
     await call('/api/operator/v1beta1/fake/maintenance/healthy', {
         method: 'POST',
-        body: JSON.stringify({healthy: healthy}),
-    });
+        body: JSON.stringify({ healthy: healthy }),
+    })
     call('/v1/appliance/status', {
         method: 'POST',
-        body: JSON.stringify({stage: 'maintenance'}),
+        body: JSON.stringify({ stage: 'maintenance' }),
     }).then(() => {
         if (onDone !== undefined) {
-            onDone();
+            onDone()
         }
-    });
+    })
     if (onDone !== undefined) {
-        onDone();
+        onDone()
     }
 }
 

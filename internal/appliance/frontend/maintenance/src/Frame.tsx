@@ -1,14 +1,14 @@
-import React, {useEffect, useState} from 'react'
+import React, { useEffect, useState } from 'react'
 
-import {AppBar, Typography, useTheme} from '@mui/material'
-import {Outlet} from 'react-router-dom'
+import { AppBar, Typography, useTheme } from '@mui/material'
+import { Outlet } from 'react-router-dom'
 
 import logo from '../assets/sourcegraph.png'
 
-import {adminPassword, call} from './api'
-import {Login} from './Login'
-import {OperatorStatus} from './OperatorStatus'
-import {Info} from './Theme'
+import { adminPassword, call } from './api'
+import { Login } from './Login'
+import { OperatorStatus } from './OperatorStatus'
+import { Info } from './Theme'
 
 const FetchStateTimerMs = 1000
 const WaitToLoginAfterConnectMs = 1000
@@ -38,7 +38,7 @@ const fetchStatus = async (lastContext: OutletContext): Promise<OutletContext> =
                             onlineDate: lastContext.onlineDate ?? Date.now(),
                         })
                     } else {
-                        resolve({online: false, onlineDate: undefined})
+                        resolve({ online: false, onlineDate: undefined })
                     }
                     return
                 }
@@ -53,7 +53,7 @@ const fetchStatus = async (lastContext: OutletContext): Promise<OutletContext> =
                 })
             })
             .catch(() => {
-                resolve({online: false, onlineDate: undefined})
+                resolve({ online: false, onlineDate: undefined })
             })
     })
 
@@ -101,21 +101,21 @@ export const Frame: React.FC = () => {
         <div id="frame">
             <AppBar color="secondary">
                 <div className="product">
-                    <img id="logo" src={logo} alt={"Sourcegraph logo"}/>
+                    <img id="logo" src={logo} alt={'Sourcegraph logo'} />
                     <Typography className={`title-${theme.palette.mode}`} variant="h6">
                         Sourcegraph Appliance
                     </Typography>
                 </div>
-                <div className="spacer"/>
+                <div className="spacer" />
                 <Typography variant="subtitle2">{process.env.BUILD_NUMBER}</Typography>
-                <OperatorStatus context={context}/>
-                <Info/>
+                <OperatorStatus context={context} />
+                <Info />
             </AppBar>
             <div id="content">
                 {login && context.onlineDate && context.onlineDate < Date.now() - WaitToLoginAfterConnectMs ? (
-                    <Login onLogin={doLogin} failed={failedLogin}/>
+                    <Login onLogin={doLogin} failed={failedLogin} />
                 ) : (
-                    <Outlet context={context}/>
+                    <Outlet context={context} />
                 )}
             </div>
         </div>
