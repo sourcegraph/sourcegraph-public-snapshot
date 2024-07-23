@@ -1,7 +1,7 @@
 use std::{path::Path, time::Instant};
 
 use clap::Parser;
-use syntax_analysis::locals::{self, LocalResolutionOptions};
+use syntax_analysis::locals::{self};
 use tree_sitter_all_languages::ParserId;
 use walkdir::WalkDir;
 

@@ -6,7 +6,7 @@ use std::{
     slice::Iter,
 };
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use id_arena::{Arena, Id};
 use if_chain::if_chain;
 use itertools::Itertools;
