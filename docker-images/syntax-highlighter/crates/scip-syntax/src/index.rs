@@ -25,7 +25,9 @@ use syntax_analysis::{
 use tree_sitter;
 use tree_sitter_all_languages::ParserId;
 
-use crate::{evaluate::Evaluator, io::read_index_from_file, progress::create_spinner};
+use crate::{
+    evaluate::Evaluator, io::read_index_from_file, progress::create_spinner, SCIP_SYNTAX_SCHEME,
+};
 
 #[derive(Debug, Copy, Clone)]
 pub struct IndexOptions {
@@ -347,7 +349,7 @@ fn index_content(contents: &str, parser_id: ParserId, options: IndexOptions) -> 
             let tag_config = get_tag_configuration(parser_id)
                 .ok_or_else(|| anyhow!("No tag configuration for language: {parser_id:?}"))?;
             let (mut scope, hint) = globals::parse_tree(tag_config, &tree, contents)?;
-            scope.into_document(hint, vec![])
+            scope.into_document(hint, SCIP_SYNTAX_SCHEME, vec![])
         } else {
             Document::new()
         };

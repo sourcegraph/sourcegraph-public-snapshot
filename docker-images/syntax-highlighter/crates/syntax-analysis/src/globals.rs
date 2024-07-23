@@ -48,12 +48,23 @@ impl Scope {
         }
     }
 
-    pub fn into_document(&mut self, hint: usize, base_descriptors: Vec<Descriptor>) -> Document {
+    pub fn into_document(
+        &mut self,
+        hint: usize,
+        scheme: &str,
+        base_descriptors: Vec<Descriptor>,
+    ) -> Document {
         let mut descriptor_stack = base_descriptors;
 
         let mut occurrences = Vec::with_capacity(hint);
         let mut symbols = Vec::with_capacity(hint);
-        self.traverse(true, &mut occurrences, &mut descriptor_stack, &mut symbols);
+        self.traverse(
+            true,
+            scheme,
+            &mut occurrences,
+            &mut descriptor_stack,
+            &mut symbols,
+        );
 
         Document {
             occurrences,
@@ -65,6 +76,7 @@ impl Scope {
     fn traverse(
         &self,
         is_root: bool,
+        scheme: &str,
         occurrences: &mut Vec<Occurrence>,
         descriptor_stack: &mut Vec<Descriptor>,
         symbols: &mut Vec<SymbolInformation>,
@@ -73,7 +85,7 @@ impl Scope {
 
         if !is_root {
             let symbol = scip::symbol::format_symbol(scip::types::Symbol {
-                scheme: "scip-ctags".into(),
+                scheme: scheme.into(),
                 package: None.into(),
                 descriptors: descriptor_stack.clone(),
                 ..Default::default()
@@ -99,7 +111,7 @@ impl Scope {
             global_descriptors.extend(global.descriptors.clone());
 
             let symbol = scip::symbol::format_symbol(scip::types::Symbol {
-                scheme: "scip-ctags".into(),
+                scheme: scheme.into(),
                 package: None.into(),
                 descriptors: global_descriptors,
                 ..Default::default()
@@ -126,7 +138,7 @@ impl Scope {
 
         self.children
             .iter()
-            .for_each(|c| c.traverse(false, occurrences, descriptor_stack, symbols));
+            .for_each(|c| c.traverse(false, scheme, occurrences, descriptor_stack, symbols));
 
         self.descriptors.iter().for_each(|_| {
             descriptor_stack.pop();
@@ -321,7 +333,7 @@ pub mod test {
         let tree = parser.parse(source_code.as_bytes(), None).unwrap();
 
         let (mut scope, hint) = parse_tree(config, &tree, source_code).unwrap();
-        scope.into_document(hint, vec![])
+        scope.into_document(hint, "scip-ctags", vec![])
     }
 
     #[test]

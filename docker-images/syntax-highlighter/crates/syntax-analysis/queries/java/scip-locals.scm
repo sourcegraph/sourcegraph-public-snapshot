@@ -9,38 +9,6 @@
 (for_statement) @scope
 (block) @scope
 
-
-; NOTE: The definitions below are commented out
-; as they overlap with global symbol indexing
-; marking type declarations as locals causes
-; various confusions, for example around constructors
-;
-; They are kept here for reference and to avoid re-introducing them
-
-; (class_declaration
-;     name: (identifier) @definition.type
-; )
-
-; (interface_declaration
-;     name: (identifier) @definition.type
-; )
-
-; (enum_declaration
-;     name: (identifier) @definition.type
-; )
-
-; (record_declaration
-;     name: (identifier) @definition.type
-; )
-
-; (method_declaration
-;     name: (identifier) @definition.function
-; )
-
-; (enum_constant
-;   name: (identifier) @definition.term
-; )
-
 (enhanced_for_statement
     name: (identifier) @definition.term)
 
@@ -55,22 +23,6 @@
   ]
 )
 
-(record_declaration
- (formal_parameters
-  (formal_parameter
-   name: (identifier) @occurrence.skip)))
-
-(formal_parameter
-    name: (identifier) @definition.term
-)
-
-(method_declaration
-  name: (identifier) @occurrence.skip)
-
-(field_declaration
- (variable_declarator
-  name: (identifier) @occurrence.skip))
-
 (variable_declarator
     name: (identifier) @definition.term
 )
@@ -78,6 +30,34 @@
 (record_pattern_component
   (identifier) @definition.term
 )
+
+
+(formal_parameter
+    name: (identifier) @definition.term
+)
+
+; In Java grammar, declarations of type parameters are marked as type_parameter,
+; and call-site generic parameters are marked as type_arguments
+(type_parameter
+    (type_identifier) @definition.type
+)
+
+
+; SKIPPED DECLARATIONS
+; We mark the declarations as skipped occurrences
+; to avoid marking them as references
+
+(record_declaration
+ (formal_parameters
+  (formal_parameter
+   name: (identifier) @occurrence.skip)))
+
+(method_declaration
+  name: (identifier) @occurrence.skip)
+
+(field_declaration
+ (variable_declarator
+  name: (identifier) @occurrence.skip))
 
 (class_declaration
   name: (identifier) @occurrence.skip
@@ -87,16 +67,30 @@
   name: (identifier) @occurrence.skip
 )
 
-
-; In Java grammar, declarations of type parameters are marked as type_parameter,
-; and call-site generic parameters are marked as type_arguments
-(type_parameter
-    (type_identifier) @definition.type
+(enum_declaration
+  name: (identifier) @occurrence.skip
 )
+
+(enum_constant
+  name: (identifier) @occurrence.skip
+)
+
+(record_declaration
+  name: (identifier) @occurrence.skip
+)
+
+(package_declaration [
+          (scoped_identifier) @occurrence.skip
+          (identifier) @occurrence.skip
+      ]
+)
+
+(package_declaration
+    (scoped_identifier
+      name: (_) @occurrence.skip))
 
 ; REFERENCES
 
-(package_declaration (identifier) @occurrence.skip)
 
 ; import java.util.HashSet
 ;        ^^^^^^^^^ namespace
