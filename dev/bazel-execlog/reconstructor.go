@@ -69,7 +69,7 @@ func NewSpawnLogReconstructor(input io.Reader) *SpawnLogReconstructor {
 func (slr *SpawnLogReconstructor) GetSpawnExec() (*proto.SpawnExec, error) {
 	entry := &proto.ExecLogEntry{}
 	for {
-		err := protodelim.UnmarshalFrom(slr.input, entry)
+		err := protodelim.UnmarshalOptions{MaxSize: -1}.UnmarshalFrom(slr.input, entry)
 		if err == io.EOF {
 			return nil, io.EOF
 		}
