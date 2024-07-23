@@ -29,7 +29,7 @@ func (r *rootResolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID 
 			return nil, err
 		}
 	} else if indexID != 0 {
-		if _, err := r.uploadSvc.DeleteIndexByID(ctx, indexID); err != nil {
+		if _, err := r.uploadSvc.DeleteAutoIndexJobByID(ctx, indexID); err != nil {
 			return nil, err
 		}
 	}
@@ -88,7 +88,7 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 		}
 	}
 	if !skipIndexes {
-		if err := r.uploadSvc.DeleteIndexes(ctx, uploadsshared.DeleteIndexesOptions{
+		if err := r.uploadSvc.DeleteAutoIndexJobs(ctx, uploadsshared.DeleteAutoIndexJobsOptions{
 			RepositoryID:  repositoryID,
 			States:        indexStates,
 			IndexerNames:  indexerNames,
@@ -120,7 +120,7 @@ func (r *rootResolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID
 			return nil, err
 		}
 	} else if indexID != 0 {
-		if err := r.uploadSvc.ReindexIndexByID(ctx, indexID); err != nil {
+		if err := r.uploadSvc.SetRerunAutoIndexJobByID(ctx, indexID); err != nil {
 			return nil, err
 		}
 	}
@@ -179,7 +179,7 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 		}
 	}
 	if !skipIndexes {
-		if err := r.uploadSvc.ReindexIndexes(ctx, uploadsshared.ReindexIndexesOptions{
+		if err := r.uploadSvc.SetRerunAutoIndexJobs(ctx, uploadsshared.SetRerunAutoIndexJobsOptions{
 			States:        indexStates,
 			IndexerNames:  indexerNames,
 			Term:          term,

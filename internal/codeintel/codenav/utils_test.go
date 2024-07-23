@@ -15,11 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
-// Generates a fake scip.Range that is easy to tell from other ranges
-func scipRange(x int32) scip.Range {
-	return scip.NewRangeUnchecked([]int32{x, x, x})
-}
-
 func scipToResultPosition(p scip.Position) result.Location {
 	return result.Location{
 		Line:   int(p.Line),

@@ -307,6 +307,7 @@ nogo(
         "//conditions:default": [
             "//dev/linters/bodyclose",
             "//dev/linters/depguard",
+            "//dev/linters/exhaustruct",
             "//dev/linters/forbidigo",
             "//dev/linters/gocheckcompilerdirectives",
             "//dev/linters/gocritic",

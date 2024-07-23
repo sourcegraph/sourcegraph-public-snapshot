@@ -88,6 +88,10 @@ type IndexedSearchSpec struct {
 	Replicas int32 `json:"replicas,omitempty"`
 }
 
+type OtelAgentSpec struct {
+	StandardConfig
+}
+
 type OtelCollectorSpec struct {
 	StandardConfig
 }
@@ -228,7 +232,8 @@ type SourcegraphSpec struct {
 
 	Jaeger JaegerSpec `json:"jaeger,omitempty"`
 
-	OtelCollector OtelCollectorSpec `json:"openTelemetry,omitempty"`
+	OtelAgent     OtelAgentSpec     `json:"openTelemetryAgent,omitempty"`
+	OtelCollector OtelCollectorSpec `json:"openTelemetryCollector,omitempty"`
 
 	// PGSQL defines the desired state of the PostgreSQL database.
 	PGSQL PGSQLSpec `json:"pgsql,omitempty"`

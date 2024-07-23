@@ -12,7 +12,7 @@ type AvailableIndexer struct {
 	Indexer CodeIntelIndexer
 }
 
-func PopulateInferredAvailableIndexers(indexJobs []config.IndexJob, blocklist map[string]struct{}, inferredAvailableIndexers map[string]AvailableIndexer) map[string]AvailableIndexer {
+func PopulateInferredAvailableIndexers(indexJobs []config.AutoIndexJobSpec, blocklist map[string]struct{}, inferredAvailableIndexers map[string]AvailableIndexer) map[string]AvailableIndexer {
 	for _, job := range indexJobs {
 		indexer := job.GetIndexerName()
 		key := GetKeyForLookup(indexer, job.GetRoot())
