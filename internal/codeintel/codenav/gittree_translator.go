@@ -370,7 +370,11 @@ func (h *compactHunk) shiftLine(line int32) core.Option[int32] {
 	}
 	originalSpan := h.origStartLine + h.origLines
 	newSpan := h.newStartLine + h.newLines
-	return core.Some(line + newSpan - originalSpan)
+	if newLine := line + newSpan - originalSpan; newLine >= 0 {
+		return core.Some(newLine)
+	} else {
+		return core.None[int32]()
+	}
 }
 
 func (h *compactHunk) shiftPosition(position scip.Position) core.Option[scip.Position] {
