@@ -28,4 +28,5 @@ if [ "$SECURITY_APPROVAL" -eq 0 ]; then
   echo "Release ${VERSION} has security approval." | tee -a ./annotations/security_approval.md
 else
   echo "Release ${VERSION} does not have security approval - reach out to the Security Team to resolve." | tee -a ./annotations/security_approval.md
+  exit 1
 fi
