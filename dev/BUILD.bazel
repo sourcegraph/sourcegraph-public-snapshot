@@ -128,5 +128,6 @@ write_source_files(
         "//internal/releaseregistry/mocks:generate_mocks",
         "//internal/object/mocks:generate_mocks",
         "//internal/object:generate_mocks",
+        "//internal/codeintel/codenav/internal/lsifstore/mocks:generate_mocks",
     ],
 )

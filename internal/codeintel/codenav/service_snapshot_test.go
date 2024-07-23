@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
+	lsifstoremocks "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -25,7 +26,7 @@ type banana struct{}`
 func TestSnapshotForDocument(t *testing.T) {
 	// Set up mocks
 	mockRepoStore := defaultMockRepoStore()
-	mockLsifStore := NewMockLsifStore()
+	mockLsifStore := lsifstoremocks.NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 	mockGitserverClient.DiffFunc.SetDefaultReturn(gitserver.NewDiffFileIterator(io.NopCloser(strings.NewReader(""))), nil)
