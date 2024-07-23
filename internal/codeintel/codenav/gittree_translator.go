@@ -165,10 +165,6 @@ func makeKey(parts ...string) string {
 	return strings.Join(parts, ":")
 }
 
-func makeTypedKey(from api.CommitID, to api.CommitID, path core.RepoRelPath) string {
-	return makeKey(string(from), string(to), path.RawValue())
-}
-
 type CompactGitTreeTranslator interface {
 	// TranslatePosition returns None if the given position is on a line that was removed or modified
 	// between from and to
@@ -189,15 +185,21 @@ func NewCompactGitTreeTranslator(client gitserver.Client, repo sgtypes.Repo) Com
 	return &newTranslator{
 		client:    client,
 		repo:      repo,
-		hunkCache: make(map[string]func() ([]compactHunk, error)),
+		hunkCache: make(map[hunkCacheKey]func() ([]compactHunk, error)),
 	}
+}
+
+type hunkCacheKey struct {
+	from api.CommitID
+	to   api.CommitID
+	path core.RepoRelPath
 }
 
 type newTranslator struct {
 	client    gitserver.Client
 	repo      sgtypes.Repo
 	cacheLock sync.RWMutex
-	hunkCache map[string]func() ([]compactHunk, error)
+	hunkCache map[hunkCacheKey]func() ([]compactHunk, error)
 }
 
 func (t *newTranslator) TranslatePosition(
@@ -229,7 +231,7 @@ func (t *newTranslator) TranslateRange(
 func (t *newTranslator) readCachedHunks(
 	ctx context.Context, from api.CommitID, to api.CommitID, path core.RepoRelPath,
 ) (_ []compactHunk, err error) {
-	key := makeTypedKey(from, to, path)
+	key := hunkCacheKey{from, to, path}
 	t.cacheLock.Lock()
 	hunksFunc, ok := t.hunkCache[key]
 	if !ok {
