@@ -194,10 +194,9 @@ func (s *Service) getVisibleUploadsFromCursor(
 
 			// OK to use Unchecked functions at ~serialization boundary for simplicity.
 			visibleUploads = append(visibleUploads, visibleUpload{
-				Upload:                upload,
-				TargetPath:            core.NewRepoRelPathUnchecked(u.TargetPath),
-				TargetPosition:        u.TargetPosition,
-				TargetPathWithoutRoot: core.NewUploadRelPathUnchecked(u.TargetPathWithoutRoot),
+				Upload:         upload,
+				TargetPath:     core.NewRepoRelPathUnchecked(u.TargetPath),
+				TargetPosition: u.TargetPosition,
 			})
 		}
 
@@ -212,10 +211,9 @@ func (s *Service) getVisibleUploadsFromCursor(
 	cursorVisibleUpload := make([]CursorVisibleUpload, 0, len(visibleUploads))
 	for i := range visibleUploads {
 		cursorVisibleUpload = append(cursorVisibleUpload, CursorVisibleUpload{
-			UploadID:              visibleUploads[i].Upload.ID,
-			TargetPath:            visibleUploads[i].TargetPath.RawValue(),
-			TargetPosition:        visibleUploads[i].TargetPosition,
-			TargetPathWithoutRoot: visibleUploads[i].TargetPathWithoutRoot.RawValue(),
+			UploadID:       visibleUploads[i].Upload.ID,
+			TargetPath:     visibleUploads[i].TargetPath.RawValue(),
+			TargetPosition: visibleUploads[i].TargetPosition,
 		})
 	}
 
@@ -291,7 +289,7 @@ func (s *Service) gatherLocalLocations(
 			ctx,
 			lsifstore.LocationKey{
 				UploadID:  visibleUpload.Upload.ID,
-				Path:      visibleUpload.TargetPathWithoutRoot,
+				Path:      visibleUpload.TargetPathWithoutRoot(),
 				Line:      visibleUpload.TargetPosition.Line,
 				Character: visibleUpload.TargetPosition.Character,
 			},
@@ -330,7 +328,7 @@ func (s *Service) gatherLocalLocations(
 			// Stash paths with non-empty locations in the cursor so we can prevent
 			// local and "remote" searches from returning duplicate sets of of target
 			// ranges.
-			skipPathsByUploadID[visibleUpload.Upload.ID] = visibleUpload.TargetPathWithoutRoot.RawValue()
+			skipPathsByUploadID[visibleUpload.Upload.ID] = visibleUpload.TargetPathWithoutRoot().RawValue()
 		}
 
 		// stash relevant symbol names in cursor

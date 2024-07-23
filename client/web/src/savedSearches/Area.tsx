@@ -9,6 +9,7 @@ import { Button, Icon, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUserOnly } from '../auth/withAuthenticatedUser'
 import { NotFoundPage } from '../components/HeroPage'
+import { PageRoutes } from '../routes.constants'
 
 import { DetailPage } from './DetailPage'
 import { EditPage } from './EditPage'
@@ -31,7 +32,7 @@ export const Area: FunctionComponent<
                     title="Saved searches"
                     actions={
                         authenticatedUser && (
-                            <Button to="new" variant="primary" as={Link}>
+                            <Button to={`${PageRoutes.SavedSearches}/new`} variant="primary" as={Link}>
                                 <Icon aria-hidden={true} svgPath={mdiPlus} /> New saved search
                             </Button>
                         )
