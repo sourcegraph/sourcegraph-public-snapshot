@@ -343,6 +343,30 @@ func newCompactHunk(h *diff.Hunk) compactHunk {
 	// in the `git diff` output, to make it clear to the user that the line is not included in the
 	// displayed hunk.
 	// For our purposes we need the actual start line of the hunk though
+	//
+	// Examples:
+	//
+	// $ echo "line1\nline2\nline3\n" > test.txt && echo "line1\nline3\n" > test1.txt && git diff --no-index --no-prefix -U0 test.txt test1.txt
+	// diff --git test.txt test1.txt
+	// index be4bc321656..cc8972178a0 100644
+	// --- test.txt
+	// +++ test1.txt
+	// @@ -2 +1,0 @@ line1
+	// -line2
+	//
+	// origStartLine: 2, origLines: 1, newStartLine: 1, newLines: 0
+	// Would lead to `(1 + 0) - (2 + 1) = -2` even though the hunk only removes one line
+	//
+	// $ echo "line1\nline2\nline3\n" > test.txt && echo "line1\nline2\nlineNew\nline3\n" > test1.txt && git diff --no-index --no-prefix -U0 test.txt test1.txt
+	// diff --git test.txt test1.txt
+	// index be4bc321656..8298ca98d51 100644
+	// --- test.txt
+	// +++ test1.txt
+	// @@ -2,0 +3 @@ line2
+	// +lineNew
+	//
+	// origStartLine: 2, origLines: 0, newStartLine: 3, newLines: 1
+	// Would lead to `(3 + 1) - (2 + 0) = 2` even though the hunk only adds one line
 	origStartLine := h.OrigStartLine
 	if h.OrigLines == 0 {
 		origStartLine += 1
