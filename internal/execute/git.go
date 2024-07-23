@@ -10,6 +10,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type cmdErr struct {
+	err      error
+	exitCode int
+}
+
+func (g *cmdErr) Error() string {
+	return g.err.Error()
+}
+
+func (g *cmdErr) ExitCode() int {
+	return g.exitCode
+}
+
+func (g *cmdErr) Unwrap() error {
+	return g.err
+}
+
 // HandleGitCommandExec There's a weird behavior that occurs where an error isn't accessible in the err variable
 // from a *Cmd executing a git command after calling CombinedOutput().
 // This occurs due to how Git handles errors and how the exec package in Go interprets the command's output.
@@ -23,7 +40,15 @@ func handleGitCommandExec(cmd *exec.Cmd) ([]byte, error) {
 	if err := cmd.Run(); err != nil {
 		maybeErrMessage := strings.Trim(stderr.String(), "\n")
 		if strings.HasPrefix(maybeErrMessage, "fatal:") || strings.HasPrefix(maybeErrMessage, "error:") {
-			return nil, errors.New(maybeErrMessage)
+			exitCode := 1
+			var exitErr *exec.ExitError
+			if errors.As(err, &exitErr) {
+				exitCode = exitErr.ExitCode()
+			}
+			return nil, &cmdErr{
+				err:      errors.New(maybeErrMessage),
+				exitCode: exitCode,
+			}
 		}
 		return nil, err
 	}
