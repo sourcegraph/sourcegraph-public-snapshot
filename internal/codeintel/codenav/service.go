@@ -153,7 +153,7 @@ func (s *Service) GetHover(ctx context.Context, args PositionalRequestArgs, requ
 
 	// Perform the moniker search. This returns a set of locations defining one of the monikers
 	// attached to one of the source ranges.
-	locations, _, err := s.getBulkMonikerLocations(ctx, uploads, orderedMonikers, "definitions", DefinitionsLimit, 0)
+	locations, _, err := s.getBulkMonikerLocations(ctx, uploads, orderedMonikers, shared.UsageKindDefinition, DefinitionsLimit, 0)
 	if err != nil {
 		return "", shared.Range{}, false, err
 	}
@@ -357,7 +357,7 @@ func (s *Service) getUploadsByIDs(ctx context.Context, ids []int, requestState R
 
 // getBulkMonikerLocations returns the set of locations (within the given uploads) with an attached moniker
 // whose scheme+identifier matches any of the given monikers.
-func (s *Service) getBulkMonikerLocations(ctx context.Context, uploads []uploadsshared.CompletedUpload, orderedMonikers []precise.QualifiedMonikerData, tableName string, limit, offset int) ([]shared.Location, int, error) {
+func (s *Service) getBulkMonikerLocations(ctx context.Context, uploads []uploadsshared.CompletedUpload, orderedMonikers []precise.QualifiedMonikerData, usageKind shared.UsageKind, limit, offset int) ([]shared.Location, int, error) {
 	ids := make([]int, 0, len(uploads))
 	for i := range uploads {
 		ids = append(ids, uploads[i].ID)
@@ -368,7 +368,7 @@ func (s *Service) getBulkMonikerLocations(ctx context.Context, uploads []uploads
 		args = append(args, moniker.MonikerData)
 	}
 
-	locations, totalCount, err := s.lsifstore.GetBulkMonikerLocations(ctx, tableName, ids, args, limit, offset)
+	locations, totalCount, err := s.lsifstore.GetBulkMonikerLocations(ctx, usageKind, ids, args, limit, offset)
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "lsifStore.GetBulkMonikerLocations")
 	}

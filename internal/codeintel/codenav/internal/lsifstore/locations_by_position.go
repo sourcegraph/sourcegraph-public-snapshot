@@ -20,9 +20,9 @@ import (
 // GetBulkMonikerLocations returns the locations (within one of the given uploads) with an attached moniker
 // whose scheme+identifier matches one of the given monikers. This method also returns the size of the
 // complete result set to aid in pagination.
-func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
+func (s *store) GetBulkMonikerLocations(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("tableName", tableName),
+		attribute.String("usageKind", usageKind.String()),
 		attribute.Int("numUploadIDs", len(uploadIDs)),
 		attribute.IntSlice("uploadIDs", uploadIDs),
 		attribute.Int("numMonikers", len(monikers)),
@@ -45,7 +45,7 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 		bulkMonikerResultsQuery,
 		pq.Array(symbolNames),
 		pq.Array(uploadIDs),
-		sqlf.Sprintf(fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))),
+		sqlf.Sprintf(usageKind.RangesColumnName()),
 	)
 
 	locationData, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, query))
@@ -368,9 +368,9 @@ func uniqueByRange(l shared.Location) [4]int {
 //
 //
 
-func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
+func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("tableName", tableName),
+		attribute.String("usageKind", usageKind.String()),
 		attribute.Int("numUploadIDs", len(uploadIDs)),
 		attribute.IntSlice("uploadIDs", uploadIDs),
 		attribute.Int("numMonikers", len(monikers)),
@@ -399,13 +399,12 @@ func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, tableName st
 		skipConds = append(skipConds, sqlf.Sprintf("(%s, %s)", -1, ""))
 	}
 
-	fieldName := fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))
 	query := sqlf.Sprintf(
 		minimalBulkMonikerResultsQuery,
 		pq.Array(symbolNames),
 		pq.Array(uploadIDs),
-		sqlf.Sprintf(fieldName),
-		sqlf.Sprintf(fieldName),
+		sqlf.Sprintf(usageKind.RangesColumnName()),
+		sqlf.Sprintf(usageKind.RangesColumnName()),
 		sqlf.Join(skipConds, ", "),
 	)
 
