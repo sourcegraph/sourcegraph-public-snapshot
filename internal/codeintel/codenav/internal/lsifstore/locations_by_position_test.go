@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"github.com/stretchr/testify/require"
@@ -66,7 +67,7 @@ func TestExtractDefinitionLocationsFromPosition(t *testing.T) {
 					t.Errorf("unexpected locations (-want +got):\n%s", diff)
 				}
 
-				if diff := cmp.Diff(testCase.expectedSymbolNames, symbolNames); diff != "" {
+				if diff := cmp.Diff(testCase.expectedSymbolNames, symbolNames, cmpopts.EquateEmpty()); diff != "" {
 					t.Errorf("unexpected symbol names (-want +got):\n%s", diff)
 				}
 			}
@@ -109,7 +110,7 @@ func TestExtractReferenceLocationsFromPosition(t *testing.T) {
 					t.Errorf("unexpected locations (-want +got):\n%s", diff)
 				}
 
-				if diff := cmp.Diff(testCase.expectedSymbolNames, symbolNames); diff != "" {
+				if diff := cmp.Diff(testCase.expectedSymbolNames, symbolNames, cmpopts.EquateEmpty()); diff != "" {
 					t.Errorf("unexpected symbol names (-want +got):\n%s", diff)
 				}
 			}

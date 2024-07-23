@@ -3,6 +3,8 @@ package shared
 import (
 	"fmt"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
@@ -78,6 +80,31 @@ func (k UsageKind) String() string {
 	default:
 		panic(fmt.Sprintf("unhandled case for UsageKind: %d", int32(k)))
 	}
+}
+
+// UsageBuilder is a transient type representing some Usage
+// that will be constructed in the future, but it's not yet clear what
+// the Kind value ought to be for the Usage.
+type UsageBuilder struct {
+	Range  scip.Range
+	Symbol string
+	// SymbolRoles represents the 'role' of the underlying occurrence
+	// which was used to construct this UsageBuilder.
+	//
+	// TODO: Make this field private after removing extractLocationsFromPosition
+	SymbolRoles scip.SymbolRole
+}
+
+func (ub UsageBuilder) RangeKey() [4]int32 {
+	return [4]int32{ub.Range.Start.Line, ub.Range.Start.Character, ub.Range.End.Line, ub.Range.End.Character}
+}
+
+func (ub UsageBuilder) SymbolRoleKey() int32 {
+	return int32(ub.SymbolRoles)
+}
+
+func (ub UsageBuilder) SymbolAndRoleKey() string {
+	return fmt.Sprintf("%s:%x", ub.Symbol, ub.SymbolRoles)
 }
 
 // Diagnostic describes diagnostic information attached to a location within a
@@ -167,4 +194,55 @@ func (r Range) ToSCIPRange() scip.Range {
 		int32(r.Start.Line), int32(r.Start.Character),
 		int32(r.End.Line), int32(r.End.Character),
 	})
+}
+
+type Matcher struct {
+	exactSymbol string
+	start       scip.Position
+	end         scip.Position
+	hasEnd      bool
+}
+
+func NewStartPositionMatcher(start scip.Position) Matcher {
+	return Matcher{start: start, exactSymbol: "", end: scip.Position{}, hasEnd: false}
+}
+
+// NewSCIPBasedMatcher creates a matcher based on the given range_.
+//
+// range_ should correspond to a single occurrence, not any arbitrary range.
+// range_ must be well-formed.
+func NewSCIPBasedMatcher(range_ scip.Range, exactSymbol string) Matcher {
+	return Matcher{
+		exactSymbol: exactSymbol,
+		start:       range_.Start,
+		end:         range_.End,
+		hasEnd:      true,
+	}
+}
+
+func (m *Matcher) Attrs() []attribute.KeyValue {
+	var rangeStr string
+	if m.hasEnd {
+		rangeStr = fmt.Sprintf("[%d:%d, %d:%d)", m.start.Line, m.start.Character, m.end.Line, m.end.Character)
+	} else {
+		rangeStr = fmt.Sprintf("pos %d:%d", m.start.Line, m.start.Character)
+	}
+	return []attribute.KeyValue{
+		attribute.String("matcher.symbol", m.exactSymbol),
+		attribute.String("matcher.range", rangeStr),
+	}
+}
+
+func (m *Matcher) PositionBased() (scip.Position, bool) {
+	if m.hasEnd {
+		return scip.Position{}, false
+	}
+	return m.start, true
+}
+
+func (m *Matcher) SymbolBased() (string, scip.Range, bool) {
+	if m.hasEnd {
+		return m.exactSymbol, scip.Range{Start: m.start, End: m.end}, true
+	}
+	return "", scip.Range{}, false
 }
