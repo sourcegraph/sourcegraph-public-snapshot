@@ -35,13 +35,13 @@ func (e eventLogsJob) Routines(_ context.Context, observationCtx *observation.Co
 	}
 
 	return []goroutine.BackgroundRoutine{
-			NewEventLogsJob(observationCtx, db),
-			NewSecurityEventLogsJob(observationCtx, db),
+			newEventLogsJob(observationCtx, db),
+			newSecurityEventLogsJob(observationCtx, db),
 		},
 		nil
 }
 
-func NewEventLogsJob(observationCtx *observation.Context, db database.DB) goroutine.BackgroundRoutine {
+func newEventLogsJob(observationCtx *observation.Context, db database.DB) goroutine.BackgroundRoutine {
 	handler := goroutine.HandlerFunc(func(ctx context.Context) error {
 		return deleteOldEventLogsInPostgres(ctx, db)
 	})
@@ -65,7 +65,7 @@ func NewEventLogsJob(observationCtx *observation.Context, db database.DB) gorout
 	)
 }
 
-func NewSecurityEventLogsJob(observationCtx *observation.Context, db database.DB) goroutine.BackgroundRoutine {
+func newSecurityEventLogsJob(observationCtx *observation.Context, db database.DB) goroutine.BackgroundRoutine {
 	handler := goroutine.HandlerFunc(func(ctx context.Context) error {
 		return deleteOldSecurityEventLogsInPostgres(ctx, db)
 	})
