@@ -1,22 +1,11 @@
 import React, { useCallback, useState, type FC } from 'react'
 
 import classNames from 'classnames'
+import type { GraphQLError } from 'graphql'
 
 import { logger } from '@sourcegraph/common'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import {
-    Button,
-    Modal,
-    Link,
-    Code,
-    Label,
-    Text,
-    Input,
-    ErrorAlert,
-    Form,
-    Select,
-    renderError,
-} from '@sourcegraph/wildcard'
+import { Button, Modal, Link, Code, Label, Text, Input, ErrorAlert, Form, Select } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, GitHubAppKind, type UserAreaUserFields } from '../../../graphql-operations'
@@ -221,7 +210,7 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
                 {step === 'add-token' && (
                     <AddToken
                         step={step}
-                        error={error}
+                        error={error?.graphQLErrors[0]}
                         credential={credential}
                         onChangeCredential={onChangeCredential}
                         username={username}
@@ -279,7 +268,7 @@ const computeCredentialLabel = (
 
 interface AddTokenProps {
     step: Step
-    error: unknown
+    error: GraphQLError | undefined
     onSubmit: React.FormEventHandler<Element>
     requiresUsername: boolean
     credential: string
@@ -315,17 +304,12 @@ const AddToken: FC<AddTokenProps> = ({
     const patLabel = computeCredentialLabel(externalServiceKind, authStrategy)
     const isStrategyPAT = authStrategy === AuthenticationStrategy.PERSONAL_ACCESS_TOKEN
     const kind = user ? GitHubAppKind.USER_CREDENTIAL : GitHubAppKind.SITE_CREDENTIAL
-    const timedOut = renderError(error).includes('Timed out')
+    const timedOut = error?.extensions?.code === 'ErrVerifyCredentialTimeout'
 
     if (step === 'add-token') {
         return (
             <>
-                {error &&
-                    (timedOut ? (
-                        <ErrorAlert variant="warning" error={error} />
-                    ) : (
-                        <ErrorAlert variant="warning" error={error} />
-                    ))}
+                {error && (timedOut ? <ErrorAlert variant="warning" error={error} /> : <ErrorAlert error={error} />)}
                 {isStrategyPAT ? (
                     <Form onSubmit={onSubmit}>
                         {!timedOut && (

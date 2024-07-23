@@ -29,3 +29,21 @@ func (e ErrVerifyCredentialFailed) Extensions() map[string]any {
 }
 
 var VerifyCredentialTimeoutError = errors.New("verifying credential timed out")
+
+func NewErrVerifyCredentialTimeout() error {
+	return &ErrVerifyCredentialTimeout{
+		error: errors.New("verifying credential timed out"),
+	}
+}
+
+type ErrVerifyCredentialTimeout struct {
+	error
+}
+
+func (e ErrVerifyCredentialTimeout) Error() string {
+	return VerifyCredentialTimeoutError.Error()
+}
+
+func (e ErrVerifyCredentialTimeout) Extensions() map[string]any {
+	return map[string]any{"code": "ErrVerifyCredentialTimeout"}
+}
