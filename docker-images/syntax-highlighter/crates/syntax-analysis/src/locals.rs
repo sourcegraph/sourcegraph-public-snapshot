@@ -296,7 +296,6 @@ struct LocalResolver<'a> {
     // to not record any subsequent matches. This is used to filter
     // out non-local definitions and references.
     skip_occurrences_at_offsets: HashSet<usize>,
-    // non_local_references_at_offsets: HashSet<usize>,
     occurrences: Vec<Occurrence>,
 }
 
@@ -324,7 +323,6 @@ impl<'a> LocalResolver<'a> {
             definition_id_supply: 0,
             skip_references_at_offsets: HashSet::new(),
             skip_occurrences_at_offsets: HashSet::new(),
-            // non_local_references_at_offsets: HashSet::new(),
             occurrences: vec![],
         }
     }

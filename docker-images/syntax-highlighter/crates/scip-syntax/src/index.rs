@@ -21,13 +21,12 @@ use syntax_analysis::{
     globals,
     languages::{get_local_configuration, get_tag_configuration},
     locals::{self, LocalResolutionOptions},
+    SCIP_SYNTAX_SCHEME,
 };
 use tree_sitter;
 use tree_sitter_all_languages::ParserId;
 
-use crate::{
-    evaluate::Evaluator, io::read_index_from_file, progress::create_spinner, SCIP_SYNTAX_SCHEME,
-};
+use crate::{evaluate::Evaluator, io::read_index_from_file, progress::create_spinner};
 
 #[derive(Debug, Copy, Clone)]
 pub struct IndexOptions {
