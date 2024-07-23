@@ -118,7 +118,7 @@ func TestExtractReferenceLocationsFromPosition(t *testing.T) {
 }
 
 func TestGetMinimalBulkMonikerLocations(t *testing.T) {
-	tableName := "references"
+	usageKind := shared.UsageKindReference
 	uploadIDs := []int{testSCIPUploadID}
 	skipPaths := map[int]string{}
 	monikers := []precise.MonikerData{
@@ -134,7 +134,7 @@ func TestGetMinimalBulkMonikerLocations(t *testing.T) {
 
 	store := populateTestStore(t)
 
-	locations, totalCount, err := store.GetMinimalBulkMonikerLocations(context.Background(), tableName, uploadIDs, skipPaths, monikers, 100, 0)
+	locations, totalCount, err := store.GetMinimalBulkMonikerLocations(context.Background(), usageKind, uploadIDs, skipPaths, monikers, 100, 0)
 	if err != nil {
 		t.Fatalf("unexpected error querying bulk moniker locations: %s", err)
 	}
@@ -605,7 +605,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 }
 
 func TestGetBulkMonikerLocations(t *testing.T) {
-	tableName := "references"
+	usageKind := shared.UsageKindReference
 	uploadIDs := []int{testSCIPUploadID}
 	monikers := []precise.MonikerData{
 		{
@@ -620,7 +620,7 @@ func TestGetBulkMonikerLocations(t *testing.T) {
 
 	store := populateTestStore(t)
 
-	locations, totalCount, err := store.GetBulkMonikerLocations(context.Background(), tableName, uploadIDs, monikers, 100, 0)
+	locations, totalCount, err := store.GetBulkMonikerLocations(context.Background(), usageKind, uploadIDs, monikers, 100, 0)
 	if err != nil {
 		t.Fatalf("unexpected error querying bulk moniker locations: %s", err)
 	}
