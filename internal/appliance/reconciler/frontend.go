@@ -156,8 +156,8 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 	dep := deployment.NewDeployment("sourcegraph-frontend", sg.Namespace, sg.Spec.RequestedVersion)
 	dep.Spec.Replicas = &cfg.Replicas
 	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
-		MaxSurge:       pointers.Ptr(intstr.FromInt(2)),
-		MaxUnavailable: pointers.Ptr(intstr.FromInt(0)),
+		MaxSurge:       pointers.Ptr(intstr.FromInt32(2)),
+		MaxUnavailable: pointers.Ptr(intstr.FromInt32(0)),
 	}
 	dep.Spec.Template = template.Template
 
