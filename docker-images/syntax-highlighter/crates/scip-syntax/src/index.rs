@@ -358,7 +358,7 @@ fn index_content(contents: &str, parser_id: ParserId, options: IndexOptions) -> 
             let options = LocalResolutionOptions {
                 emit_global_references: options.analysis_features.global_references,
             };
-            let occurrences = locals::find_locals(config, &tree, contents, &options)?;
+            let occurrences = locals::find_locals(config, &tree, contents, options)?;
             document.occurrences.extend(occurrences)
         }
         Ok(document)

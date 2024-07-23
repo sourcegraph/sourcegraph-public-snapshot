@@ -260,7 +260,7 @@ impl TreeSitterLanguageName {
                 let locals_highlighting_options = LocalResolutionOptions {
                     emit_global_references: false,
                 };
-                let mut local_occs = crate::get_locals(parser, &code, &locals_highlighting_options)
+                let mut local_occs = crate::get_locals(parser, &code, locals_highlighting_options)
                     .unwrap_or_default();
 
                 // Get ranges in reverse order, because we're going to pop off the back of the list.

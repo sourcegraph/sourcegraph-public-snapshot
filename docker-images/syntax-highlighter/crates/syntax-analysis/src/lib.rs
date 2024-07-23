@@ -26,7 +26,7 @@ pub fn get_globals(parser: ParserId, source: &str) -> Result<(globals::Scope, us
 pub fn get_locals(
     parser: ParserId,
     source: &str,
-    options: &LocalResolutionOptions,
+    options: LocalResolutionOptions,
 ) -> Result<Vec<Occurrence>> {
     let config = languages::get_local_configuration(parser)
         .ok_or_else(|| anyhow!("No local configuration for language: {parser:?}"))?;
