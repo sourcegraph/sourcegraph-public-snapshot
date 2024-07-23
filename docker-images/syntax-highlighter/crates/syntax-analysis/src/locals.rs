@@ -631,12 +631,16 @@ impl<'a> LocalResolver<'a> {
                         .find(|p| p.key.as_ref() == "kind")
                         .and_then(|p| p.value.as_deref());
 
-                    let visibility = kind_property.and_then(Visibility::from_str);
-
-                    if !self.options.emit_global_references && visibility != Some(Visibility::Local)
-                    {
-                        continue;
-                    }
+                    // If global references are disabled, then we
+                    // 1. don't emit global captures at all
+                    // 2. convert ambiguous references into strict local ones
+                    let visibility = match kind_property.and_then(Visibility::from_str) {
+                        None if !self.options.emit_global_references => Some(Visibility::Local),
+                        Some(Visibility::Global) if !self.options.emit_global_references => {
+                            continue
+                        }
+                        other => other,
+                    };
 
                     if self.skip_occurrences_at_offsets.contains(&offset) {
                         continue;
