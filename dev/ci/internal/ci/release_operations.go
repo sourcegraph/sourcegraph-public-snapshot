@@ -11,6 +11,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/operations"
 )
 
+// checkSecurityApproval checks whether the specified release has release approval from the Security Team.
+func checkSecurityApproval(c Config) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep("Check security approval",
+			bk.Agent("queue", AspectWorkflows.QueueDefault),
+			bk.Env("VERSION", c.Version),
+			bk.AnnotatedCmd(
+				fmt.Sprintf("./tools/release/check_security_approval.sh"),
+				bk.AnnotatedCmdOpts{
+					Annotations: &bk.AnnotationOpts{
+						Type:         bk.AnnotationTypeInfo,
+						IncludeNames: false,
+					},
+				},
+			),
+		)
+	}
+}
+
 // releasePromoteImages runs a script that iterates through all defined images that we're producing that has been uploaded
 // on the internal registry with a given version and retags them to the public registry.
 func releasePromoteImages(c Config) operations.Operation {
