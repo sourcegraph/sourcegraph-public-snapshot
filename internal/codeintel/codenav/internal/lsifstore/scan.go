@@ -18,7 +18,6 @@ import (
 type qualifiedDocumentData struct {
 	UploadID int
 	Path     string
-	LSIFData *precise.DocumentData
 	SCIPData *scip.Document
 }
 
