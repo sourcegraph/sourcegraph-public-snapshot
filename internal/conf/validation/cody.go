@@ -33,6 +33,10 @@ func completionsConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
 		problems = append(problems, "'completions.enabled' has been superceded by 'cody.enabled', please migrate to the new configuration.")
 	}
 
+	if completionsConf.Provider == "azure-openai" && (completionsConf.AzureChatModel == "" || completionsConf.AzureCompletionModel == "") {
+		problems = append(problems, `when using azure-openai provider its mandatory to set both completions.azureChatModel and completions.azureCompletionModel for proper LLM Token usage`)
+	}
+
 	// Check for bedrock Provisioned Capacity ARNs which should instead be
 	// formatted like:
 	// "anthropic.claude-v2/arn:aws:bedrock:us-west-2:012345678901:provisioned-model/xxxxxxxx"
