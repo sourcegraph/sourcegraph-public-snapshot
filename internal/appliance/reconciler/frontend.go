@@ -182,12 +182,26 @@ func (r *Reconciler) reconcileFrontendService(ctx context.Context, sg *config.So
 	svc.Spec.Ports = []corev1.ServicePort{
 		{Name: "http", Port: 30080, TargetPort: intstr.FromString("http")},
 	}
+
+	selectorValue := "sourcegraph-appliance"
+	if owner.GetAnnotations()[config.AnnotationKeyStatus] == config.StatusRefresh.String() {
+		selectorValue = "sourcegraph-frontend"
+	}
+
 	svc.Spec.Selector = map[string]string{
-		"app": "sourcegraph-appliance",
+		"app": selectorValue,
+	}
+
+	ifChanged := struct {
+		config.FrontendSpec
+		SelectorValue string
+	}{
+		FrontendSpec:  cfg,
+		SelectorValue: selectorValue,
 	}
 
 	config.MarkObjectForAdoption(&svc)
-	return reconcileObject(ctx, r, cfg, &svc, &corev1.Service{}, sg, owner)
+	return reconcileObject(ctx, r, ifChanged, &svc, &corev1.Service{}, sg, owner)
 }
 
 func (r *Reconciler) reconcileFrontendServiceInternal(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {

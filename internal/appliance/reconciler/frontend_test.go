@@ -3,13 +3,15 @@ package reconciler
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/appliance/k8senvtest"
-	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/ingress"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
+	"github.com/sourcegraph/sourcegraph/internal/appliance/k8senvtest"
+	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/ingress"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func (suite *ApplianceTestSuite) TestDeployFrontend() {
@@ -161,4 +163,19 @@ func (suite *ApplianceTestSuite) TestFrontendDeploymentRollsWhenRedisSecretsChan
 			suite.makeGoldenAssertions(namespace, fmt.Sprintf("frontend/after-create-%s-secret", tc.secret))
 		})
 	}
+}
+
+func (suite *ApplianceTestSuite) TestFrontendPointsIngressFacingServiceToFrontendWhenInstallComplete() {
+	namespace := suite.createConfigMapAndAwaitReconciliation("frontend/default")
+
+	// Simulate the operator clicking the "I'm here" button after initial
+	// installation, and the appliance setting a post-install status.
+	cfgMap := suite.newConfigMap(namespace, "frontend/default")
+	cfgMap.GetAnnotations()[config.AnnotationKeyStatus] = config.StatusRefresh.String()
+	suite.awaitReconciliation(namespace, func() {
+		_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace).Update(suite.ctx, cfgMap, metav1.UpdateOptions{})
+		suite.Require().NoError(err)
+	})
+
+	suite.makeGoldenAssertions(namespace, "frontend/flips-service-postinstall")
 }

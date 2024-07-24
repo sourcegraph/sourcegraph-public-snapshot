@@ -3,7 +3,7 @@ resources:
     kind: Deployment
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: c0cbf7fe1f7e4042a42aefd275ab15334b25954c53cb531eaa11f65e28a5d8f7
+        appliance.sourcegraph.com/configHash: 8f6b44deb3ec355b4074331d35e5b9d4e87c47388f3a8325a3fc50619bddc76d
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
@@ -324,13 +324,7 @@ resources:
           codeIntel:
             disabled: true
 
-          frontend:
-            ingress:
-              host: example.com
-              annotations:
-                foo: bar
-              ingressClassName: an-ingress-class
-              tlsSecret: ingress-tls-secret
+          frontend: {}
 
           grafana:
             disabled: true
@@ -384,6 +378,7 @@ resources:
       annotations:
         appliance.sourcegraph.com/currentVersion: 5.3.9104
         appliance.sourcegraph.com/managed: "true"
+        appliance.sourcegraph.com/status: refresh
       creationTimestamp: "2024-04-19T00:00:00Z"
       name: sg
       namespace: NORMALIZED_FOR_TESTING
@@ -393,7 +388,7 @@ resources:
     kind: Role
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 7caff941f7756c1a8aa77fb1604c7c1d191868889bbe1ca514eac63a4c1aafc8
+        appliance.sourcegraph.com/configHash: b5dce290e22d1afb4c9102ac4c245490ab01dd3be13653de391536cfe0e323b0
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -430,7 +425,7 @@ resources:
     kind: RoleBinding
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 7caff941f7756c1a8aa77fb1604c7c1d191868889bbe1ca514eac63a4c1aafc8
+        appliance.sourcegraph.com/configHash: b5dce290e22d1afb4c9102ac4c245490ab01dd3be13653de391536cfe0e323b0
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -457,7 +452,7 @@ resources:
     kind: ServiceAccount
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 7caff941f7756c1a8aa77fb1604c7c1d191868889bbe1ca514eac63a4c1aafc8
+        appliance.sourcegraph.com/configHash: b5dce290e22d1afb4c9102ac4c245490ab01dd3be13653de391536cfe0e323b0
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -477,7 +472,7 @@ resources:
     metadata:
       annotations:
         appliance.sourcegraph.com/adopted: "true"
-        appliance.sourcegraph.com/configHash: bf9b9bcd5443ec2f028127b0c393826a69f21a06a071ff266594791c4aa25509
+        appliance.sourcegraph.com/configHash: 2765bffc047291af25f8d443f6e3f2a1d7ab86014766fec0c895ce5aa72e968d
         prometheus.io/port: "6060"
         sourcegraph.prometheus/scrape: "true"
       creationTimestamp: "2024-04-19T00:00:00Z"
@@ -510,7 +505,7 @@ resources:
           protocol: TCP
           targetPort: http
       selector:
-        app: sourcegraph-appliance
+        app: sourcegraph-frontend
       sessionAffinity: None
       type: ClusterIP
     status:
@@ -519,7 +514,7 @@ resources:
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 7caff941f7756c1a8aa77fb1604c7c1d191868889bbe1ca514eac63a4c1aafc8
+        appliance.sourcegraph.com/configHash: b5dce290e22d1afb4c9102ac4c245490ab01dd3be13653de391536cfe0e323b0
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         app: sourcegraph-frontend-internal
@@ -553,46 +548,5 @@ resources:
         app: sourcegraph-frontend
       sessionAffinity: None
       type: ClusterIP
-    status:
-      loadBalancer: {}
-  - apiVersion: networking.k8s.io/v1
-    kind: Ingress
-    metadata:
-      annotations:
-        appliance.sourcegraph.com/adopted: "true"
-        appliance.sourcegraph.com/configHash: f7d0ef6a7aa5f52fdd5bcf934843ccc4f023ec7eef42fa22a1a58ace16a2fa70
-        foo: bar
-      creationTimestamp: "2024-04-19T00:00:00Z"
-      generation: 1
-      labels:
-        deploy: sourcegraph
-      name: sourcegraph-frontend
-      namespace: NORMALIZED_FOR_TESTING
-      ownerReferences:
-        - apiVersion: v1
-          blockOwnerDeletion: true
-          controller: true
-          kind: ConfigMap
-          name: sg
-          uid: NORMALIZED_FOR_TESTING
-      resourceVersion: NORMALIZED_FOR_TESTING
-      uid: NORMALIZED_FOR_TESTING
-    spec:
-      ingressClassName: an-ingress-class
-      rules:
-        - host: example.com
-          http:
-            paths:
-              - backend:
-                  service:
-                    name: sourcegraph-frontend
-                    port:
-                      number: 30080
-                path: /
-                pathType: Prefix
-      tls:
-        - hosts:
-            - example.com
-          secretName: ingress-tls-secret
     status:
       loadBalancer: {}

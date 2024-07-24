@@ -16,6 +16,11 @@ const (
 	AnnotationKeyConfigHash          = "appliance.sourcegraph.com/configHash"
 	AnnotationKeyShouldTakeOwnership = "appliance.sourcegraph.com/adopted"
 
+	// TODO currently nothing sets this at the appliance level
+	// https://linear.app/sourcegraph/issue/REL-291/wait-for-admin-ui-integrates-with-backend
+	// should change that
+	AnnotationKeyStatus = "appliance.sourcegraph.com/status"
+
 	StatusUnknown         Status = "unknown"
 	StatusInstall         Status = "install"
 	StatusInstalling      Status = "installing"

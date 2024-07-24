@@ -375,7 +375,7 @@ resources:
     metadata:
       annotations:
         appliance.sourcegraph.com/adopted: "true"
-        appliance.sourcegraph.com/configHash: f6325ffd3262b0ff8bdb406ba80aabad2daea7ecc342353fabd7bbda7ea1f4a9
+        appliance.sourcegraph.com/configHash: 96f0353f57d27bbec173529fd2375d63aa66b058b13b698d09b8c23c272d039c
         prometheus.io/port: "6060"
         sourcegraph.prometheus/scrape: "true"
       creationTimestamp: "2024-04-19T00:00:00Z"
