@@ -109,6 +109,7 @@
                 commitID={data.base?.commitID || ''}
                 defaultBranch={data.defaultBranch}
                 placement="bottom-start"
+                isP4={data.resolvedRepository.externalRepository.serviceType === 'perforce'}
                 onSelect={revision => handleSelect(revision, data.head?.revision || '')}
                 getRepositoryBranches={data.getRepoBranches}
                 getRepositoryCommits={data.getRepoCommits}
@@ -125,6 +126,7 @@
                 commitID={data.head?.commitID || ''}
                 defaultBranch={data.defaultBranch}
                 placement="bottom-start"
+                isP4={data.resolvedRepository.externalRepository.serviceType === 'perforce'}
                 onSelect={revision => handleSelect(data.base?.revision || '', revision)}
                 getRepositoryBranches={data.getRepoBranches}
                 getRepositoryCommits={data.getRepoCommits}

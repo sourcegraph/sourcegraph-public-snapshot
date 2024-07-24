@@ -6,7 +6,7 @@
     import { page } from '$app/stores'
     import { sizeToFit } from '$lib/dom'
     import { registerHotkey } from '$lib/Hotkey'
-    import Icon from '$lib/Icon.svelte'
+    import Icon, { type IconComponent } from '$lib/Icon.svelte'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
     import { createScopeSuggestions } from '$lib/search/codemirror/suggestions'
     import SearchInput, { Style } from '$lib/search/input/SearchInput.svelte'
@@ -48,6 +48,12 @@
     export let data: LayoutData
 
     const menuOpen = writable(false)
+
+    /**
+     * These entries represent default items for navigating git repos.
+     * If the current project is a perforce depot, the entries will be adjusted
+     * to match perforce concepts in the $: tabs declaration below.
+     */
     const navEntries: MenuEntry[] = [
         { path: '', icon: ILucideCode, label: 'Code', visibility: 'user', preserveRevision: true },
         {
@@ -108,6 +114,7 @@
     $: navEntriesToShow = viewableNavEntries.slice(0, visibleNavEntryCount)
     $: overflowNavEntries = viewableNavEntries.slice(visibleNavEntryCount)
     $: allMenuEntries = [...overflowNavEntries, ...menuEntries]
+    $: isP4 = data.resolvedRepository.externalRepository.serviceType === 'perforce'
 
     function isCodePage(repoURL: string, pathname: string) {
         return (
@@ -118,17 +125,39 @@
     function isActive(href: string, url: URL): boolean {
         return href === data.repoURL ? isCodePage(data.repoURL, $page.url.pathname) : url.pathname.startsWith(href)
     }
-    $: tabs = navEntriesToShow.map(entry => ({
-        id: entry.label,
-        title: entry.label,
-        icon: entry.icon,
-        href: (entry.preserveRevision ? data.repoURL : data.repoURLWithoutRevision) + entry.path,
-    }))
+
+    interface TabbableMenuEntry {
+        id: string
+        title: string
+        icon: IconComponent | undefined
+        href: string
+    }
+
+    function convertToP4Tabs(entry: MenuEntry): TabbableMenuEntry {
+        if (isP4 && entry.label === 'Commits') {
+            return {
+                id: 'changelist',
+                title: 'Changelist',
+                icon: entry.icon,
+                href: (entry.preserveRevision ? data.repoURL : data.repoURLWithoutRevision) + entry.path,
+            }
+        }
+
+        return {
+            id: entry.label,
+            title: entry.label,
+            icon: entry.icon,
+            href: (entry.preserveRevision ? data.repoURL : data.repoURLWithoutRevision) + entry.path,
+        }
+    }
+
+    $: tabs = navEntriesToShow.map(entry => convertToP4Tabs(entry))
     $: selectedTab = tabs.findIndex(tab => isActive(tab.href, $page.url))
 
     $: ({ repoName, revision } = data)
     $: query = `repo:${repositoryInsertText({ repository: repoName })}${revision ? `@${revision}` : ''} `
     $: queryState = queryStateStore({ query }, $settings)
+
     function handleSearchSubmit(): void {
         TELEMETRY_RECORDER.recordEvent('search', 'submit', {
             metadata: { source: TELEMETRY_SEARCH_SOURCE_TYPE['repo'] },
