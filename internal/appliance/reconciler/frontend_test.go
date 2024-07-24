@@ -2,6 +2,7 @@ package reconciler
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/k8senvtest"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/ingress"
@@ -161,4 +162,79 @@ func (suite *ApplianceTestSuite) TestFrontendDeploymentRollsWhenRedisSecretsChan
 			suite.makeGoldenAssertions(namespace, fmt.Sprintf("frontend/after-create-%s-secret", tc.secret))
 		})
 	}
+}
+
+func (suite *ApplianceTestSuite) TestMergeK8sObjects() {
+	// Create a temporary JSON file
+	tempFile, err := os.CreateTemp("", "test-service-*.json")
+	suite.Require().NoError(err)
+	defer os.Remove(tempFile.Name())
+
+	// Define the JSON content
+	jsonContent := `{
+		"apiVersion": "v1",
+		"kind": "Service",
+		"metadata": {
+			"name": "test-service",
+			"labels": {
+				"newLabel": "newValue"
+			}
+		},
+		"spec": {
+			"ports": [
+				{
+					"port": 8080,
+					"targetPort": 8080
+				}
+			],
+			"selector": {
+				"app": "test"
+			}
+		}
+	}`
+
+	// Write JSON content to the temporary file
+	err = os.WriteFile(tempFile.Name(), []byte(jsonContent), 0644)
+	suite.Require().NoError(err)
+
+	// Create an existing Service object
+	existingService := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "existing-service",
+			Labels: map[string]string{
+				"existingLabel": "existingValue",
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Port:       80,
+					TargetPort: intstr.FromInt(80),
+				},
+			},
+		},
+	}
+
+	// Call the MergeK8sObjects function
+	mergedObj, err := MergeK8sObjects(tempFile.Name(), existingService)
+	suite.Require().NoError(err)
+
+	// Assert that the merged object is a Service
+	mergedService, ok := mergedObj.(*corev1.Service)
+	suite.Require().True(ok, "Merged object should be a *corev1.Service")
+
+	// Verify the merged results
+	suite.Assert().Equal("test-service", mergedService.Name)
+	suite.Assert().Equal(2, len(mergedService.Labels))
+	suite.Assert().Equal("existingValue", mergedService.Labels["existingLabel"])
+	suite.Assert().Equal("newValue", mergedService.Labels["newLabel"])
+	suite.Assert().Equal(2, len(mergedService.Spec.Ports))
+	suite.Assert().Equal(int32(80), mergedService.Spec.Ports[0].Port)
+	suite.Assert().Equal(int32(8080), mergedService.Spec.Ports[1].Port)
+	suite.Assert().Equal("test", mergedService.Spec.Selector["app"])
+
+	// Verify that the original object was not modified
+	suite.Assert().Equal("existing-service", existingService.Name)
+	suite.Assert().Equal(1, len(existingService.Labels))
+	suite.Assert().Equal(1, len(existingService.Spec.Ports))
 }

@@ -2,6 +2,7 @@ package reconciler
 
 import (
 	"context"
+	"encoding/json"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -10,6 +11,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"encoding/json"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/container"
@@ -22,6 +26,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 )
 
 func (r *Reconciler) reconcileFrontend(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
@@ -327,4 +335,46 @@ func dbAuthVars() []corev1.EnvVar {
 		container.NewEnvVarSecretKeyRef("CODEINSIGHTS_PGPORT", codeInsightsDBSecretName, "port"),
 		container.NewEnvVarSecretKeyRef("CODEINSIGHTS_PGUSER", codeInsightsDBSecretName, "user"),
 	}
+}
+
+// Read the Helm Values annotation
+// And return the unmarshalled object
+func getAnnotations(obj client.Object) string {
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
+	return annotations[config.AnnotationKeyHelmValues]
+}
+
+// MergeK8sObjects merges a JSON-serialized Kubernetes object from a file
+// with an existing Kubernetes object definition.
+func MergeK8sObjects(helmValues string, existingObj client.Object) (client.Object, error) {
+	// Convert existing object to unstructured
+	existingUnstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(existingObj)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert existing object to unstructured: %w", err)
+	}
+
+	// Create a new unstructured object for the JSON data
+	jsonUnstructured := &unstructured.Unstructured{}
+	err = json.Unmarshal([]byte(helmValues), jsonUnstructured)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JSON data: %w", err)
+	}
+
+	// Merge the objects using strategic merge patch
+	mergedUnstructured, err := strategicpatch.StrategicMergeMapPatch(existingUnstructured, jsonUnstructured.Object, existingObj)
+	if err != nil {
+		return nil, fmt.Errorf("failed to merge objects: %w", err)
+	}
+
+	// Convert the merged unstructured object back to the original type
+	mergedObj := existingObj.DeepCopyObject().(client.Object)
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(mergedUnstructured, mergedObj)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert merged object from unstructured: %w", err)
+	}
+
+	return mergedObj, nil
 }
