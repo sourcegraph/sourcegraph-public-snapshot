@@ -20,7 +20,7 @@ func NewRefreshAnalyticsCacheJob() job.Job {
 }
 
 func (e refreshAnalyticsCacheJob) Description() string {
-	return "deletes old event logs from postgres"
+	return "refreshes the admin analytics cache"
 }
 
 func (e refreshAnalyticsCacheJob) Config() []env.Config {

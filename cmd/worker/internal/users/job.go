@@ -20,7 +20,7 @@ func NewAggregatedUsersStatisticsJob() job.Job {
 }
 
 func (e aggregatedUsersStatisticsJob) Description() string {
-	return "deletes old event logs from postgres"
+	return "updates the aggregated user statistics table in the database"
 }
 
 func (e aggregatedUsersStatisticsJob) Config() []env.Config {
