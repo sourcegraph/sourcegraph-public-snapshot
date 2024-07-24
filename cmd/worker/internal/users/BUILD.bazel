@@ -25,6 +25,7 @@ go_test(
     name = "users_test",
     srcs = ["update_aggregated_stats_test.go"],
     embed = [":users"],
+    tags = ["requires-network"],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",
