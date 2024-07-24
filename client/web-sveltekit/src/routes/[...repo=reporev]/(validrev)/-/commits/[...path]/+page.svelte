@@ -76,6 +76,7 @@
             commitID={data.resolvedRevision.commitID}
             defaultBranch={data.defaultBranch}
             placement="bottom-start"
+            isP4={data.resolvedRepository.externalRepository.serviceType === 'perforce'}
             getRepositoryBranches={data.getRepoBranches}
             getRepositoryCommits={data.getRepoCommits}
             getRepositoryTags={data.getRepoTags}

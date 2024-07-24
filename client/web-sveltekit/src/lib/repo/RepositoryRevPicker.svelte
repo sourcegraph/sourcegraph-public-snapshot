@@ -28,6 +28,7 @@
 
 <script lang="ts">
     import type { Placement } from '@floating-ui/dom'
+    import type { ComponentProps } from 'svelte'
     import type { HTMLButtonAttributes } from 'svelte/elements'
 
     import { goto } from '$app/navigation'
@@ -44,7 +45,6 @@
 
     import Picker from './Picker.svelte'
     import RepositoryRevPickerItem from './RepositoryRevPickerItem.svelte'
-    import type { ComponentProps } from 'svelte'
 
     type $$Props = HTMLButtonAttributes & {
         repoURL: string
@@ -53,6 +53,7 @@
         defaultBranch: string
         display?: ComponentProps<ButtonGroup>['display']
         placement?: Placement
+        isP4: boolean
         onSelect?: (revision: string) => void
         getRepositoryTags: (query: string) => PromiseLike<RepositoryTags>
         getRepositoryCommits: (query: string) => PromiseLike<RepositoryCommits>
@@ -65,6 +66,8 @@
     export let defaultBranch: $$Props['defaultBranch']
     export let placement: $$Props['placement'] = 'right-start'
     export let display: $$Props['display'] = undefined
+    export let isP4: $$Props['isP4']
+
     /**
      * Optional handler for revision selection.
      * If not provided, the default handler will replace the revision in the current URL.
@@ -167,9 +170,9 @@
                     />
                 </Picker>
             </TabPanel>
-            <TabPanel title="Commits" shortcut={commitsHotkey}>
+            <TabPanel title={isP4 ? 'Changelist' : 'Commits'} shortcut={commitsHotkey}>
                 <Picker
-                    name="commits"
+                    name={isP4 ? 'changes' : 'commits'}
                     seeAllItemsURL={`${repoURL}/-/commits`}
                     getData={getRepositoryCommits}
                     toOption={commit => ({ value: commit.id, label: commit.oid })}
@@ -182,7 +185,11 @@
                     <RepositoryRevPickerItem label="" author={value.author}>
                         <svelte:fragment slot="title">
                             <Icon icon={ILucideGitCommitVertical} inline aria-hidden="true" />
-                            <Badge variant="link">{value.abbreviatedOID}</Badge>
+                            {#if value.perforceChangelist}
+                                <Badge variant="link">{value.perforceChangelist.cid}</Badge>
+                            {:else}
+                                <Badge variant="link">{value.abbreviatedOID}</Badge>
+                            {/if}
                             <span class="commit-subject">{value.subject}</span>
                         </svelte:fragment>
                     </RepositoryRevPickerItem>

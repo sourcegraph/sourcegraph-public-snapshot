@@ -179,6 +179,8 @@
         }
     }
 
+    $: isP4 = data.resolvedRepository.externalRepository.serviceType === 'perforce'
+
     onMount(() => {
         if ($isViewportMobile) {
             // Ensure that cody sidebar is closed on mobile
@@ -215,6 +217,7 @@
                     revision={data.revision}
                     commitID={data.resolvedRevision.commitID}
                     defaultBranch={data.defaultBranch}
+                    {isP4}
                     getRepositoryBranches={data.getRepoBranches}
                     getRepositoryCommits={data.getRepoCommits}
                     getRepositoryTags={data.getRepoTags}
