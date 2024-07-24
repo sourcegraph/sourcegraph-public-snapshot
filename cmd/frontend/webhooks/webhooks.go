@@ -60,7 +60,7 @@ func defaultHandlers() map[string]eventHandlers {
 	handleInstallation := func(ctx context.Context, db database.DB, _ extsvc.CodeHostBaseURL, event any) error {
 		e, ok := event.(*github.InstallationEvent)
 		if !ok {
-			return fmt.Errorf("expected *InstallationEvent, got %T", event)
+			return errors.New(fmt.Sprintf("expected *InstallationEvent, got %T", event))
 		}
 
 		//if true {
