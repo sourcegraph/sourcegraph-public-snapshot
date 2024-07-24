@@ -422,28 +422,30 @@ func searchBasedUsagesImpl(
 		language:   language,
 	}
 
-	var searchResults struct {
+	var matchResults struct {
 		candidateMatches orderedmap.OrderedMap[core.RepoRelPath, candidateFile]
-		matchErr         error
+		err              error
+	}
+	var symbolResults struct {
 		candidateSymbols symbolSearchResult
-		symbolErr        error
+		err              error
 	}
 	var wg conc.WaitGroup
 	wg.Go(func() {
-		searchResults.candidateMatches, searchResults.matchErr = findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
+		matchResults.candidateMatches, matchResults.err = findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
 	})
 	wg.Go(func() {
-		searchResults.candidateSymbols, searchResults.symbolErr = symbolSearch(ctx, trace, searchClient, searchCoords)
+		symbolResults.candidateSymbols, symbolResults.err = symbolSearch(ctx, trace, searchClient, searchCoords)
 	})
 	wg.Wait()
-	if searchResults.matchErr != nil {
-		return nil, searchResults.matchErr
+	if matchResults.err != nil {
+		return nil, matchResults.err
 	}
-	if searchResults.symbolErr != nil {
-		trace.Warn("Failed to run symbol search, will not mark any search-based usages as definitions", log.Error(searchResults.symbolErr))
+	if symbolResults.err != nil {
+		trace.Warn("Failed to run symbol search, will not mark any search-based usages as definitions", log.Error(symbolResults.err))
 	}
-	candidateMatches := searchResults.candidateMatches
-	candidateSymbols := searchResults.candidateSymbols
+	candidateMatches := matchResults.candidateMatches
+	candidateSymbols := symbolResults.candidateSymbols
 
 	tasks := make([]orderedmap.Pair[core.RepoRelPath, candidateFile], 0, candidateMatches.Len())
 	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
