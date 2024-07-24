@@ -55,7 +55,7 @@ func newEventLogsJob(observationCtx *observation.Context, db database.DB) gorout
 		),
 	})
 
-	return goroutine.NewPeriodicGoroutine(
+	return goroutine.NewPeriodicGoroutinePerTenant(
 		context.Background(),
 		handler,
 		goroutine.WithName("delete_old_event_logs"),
@@ -79,7 +79,7 @@ func newSecurityEventLogsJob(observationCtx *observation.Context, db database.DB
 		),
 	})
 
-	return goroutine.NewPeriodicGoroutine(
+	return goroutine.NewPeriodicGoroutinePerTenant(
 		context.Background(),
 		handler,
 		goroutine.WithName("delete_old_security_event_logs"),
