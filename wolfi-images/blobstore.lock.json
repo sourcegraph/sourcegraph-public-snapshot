@@ -850,25 +850,6 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1AbMOLCk6tZeAxTVVT18Hjuq9ICA=",
-        "control": {
-          "checksum": "sha1-AbMOLCk6tZeAxTVVT18Hjuq9ICA=",
-          "range": "bytes=706-1263"
-        },
-        "data": {
-          "checksum": "sha256-8hX1Coe+PgFhWcoKnU2gKloQIVpRYCCurkVuhkqEjSI=",
-          "range": "bytes=1264-203887"
-        },
-        "name": "fontconfig",
-        "signature": {
-          "checksum": "sha1-L+pYcv0XxYFNaL8CDwz7N4QdHjg=",
-          "range": "bytes=0-705"
-        },
-        "url": "https://packages.wolfi.dev/os/x86_64/fontconfig-2.15.0-r1.apk",
-        "version": "2.15.0-r1"
-      },
-      {
-        "architecture": "x86_64",
         "checksum": "Q1Y8qzLT9CwROUfB6S/+OCSabT9X0=",
         "control": {
           "checksum": "sha1-Y8qzLT9CwROUfB6S/+OCSabT9X0=",
@@ -1040,25 +1021,6 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1ntwd0U1+FDplQrJgf02kehE4jzA=",
-        "control": {
-          "checksum": "sha1-ntwd0U1+FDplQrJgf02kehE4jzA=",
-          "range": "bytes=661-1037"
-        },
-        "data": {
-          "checksum": "sha256-xW9D/0ZRSG6Q6ibItUSX/09Sf5z8dYPrmJaCaiv+/so=",
-          "range": "bytes=1038-619411"
-        },
-        "name": "openjdk-11",
-        "signature": {
-          "checksum": "sha1-GvP0A1icdBQ034IwFh2R0cB6ILw=",
-          "range": "bytes=0-660"
-        },
-        "url": "https://packages.wolfi.dev/os/x86_64/openjdk-11-11.0.20.4-r0.apk",
-        "version": "11.0.20.4-r0"
-      },
-      {
-        "architecture": "x86_64",
         "checksum": "Q1U4lQ/1tfu0YohyxOxbBErxbpaio=",
         "control": {
           "checksum": "sha1-U4lQ/1tfu0YohyxOxbBErxbpaio=",
@@ -1078,22 +1040,41 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1UmIT03dVv5Dghsv5v0ZCvsloxGI=",
+        "checksum": "Q1gihecR67KvYZn0Pk85WmxLYwtE0=",
         "control": {
-          "checksum": "sha1-UmIT03dVv5Dghsv5v0ZCvsloxGI=",
-          "range": "bytes=657-999"
+          "checksum": "sha1-gihecR67KvYZn0Pk85WmxLYwtE0=",
+          "range": "bytes=700-1053"
         },
         "data": {
-          "checksum": "sha256-uEPvYq1n0/JMDIciXRXjReRD27P/ShP19msWn7yZO64=",
-          "range": "bytes=1000-48363395"
+          "checksum": "sha256-+OBti1i0Yk/MjPofKdDYC5TkAJ+aPOeheDIYvozVKsc=",
+          "range": "bytes=1054-590045"
+        },
+        "name": "openjdk-11",
+        "signature": {
+          "checksum": "sha1-O45lVwmg94/QxlIKrwXyX+dcGWY=",
+          "range": "bytes=0-699"
+        },
+        "url": "https://packages.wolfi.dev/os/x86_64/openjdk-11-11.0.24-r0.apk",
+        "version": "11.0.24-r0"
+      },
+      {
+        "architecture": "x86_64",
+        "checksum": "Q1QNqE8jUgFWO1zrxzErRr2lAgnIA=",
+        "control": {
+          "checksum": "sha1-QNqE8jUgFWO1zrxzErRr2lAgnIA=",
+          "range": "bytes=661-993"
+        },
+        "data": {
+          "checksum": "sha256-P9lwloTDYWriwF9KhB4C+eoXjONtzXNM+v/TPb8n8sc=",
+          "range": "bytes=994-48363450"
         },
         "name": "s3proxy",
         "signature": {
-          "checksum": "sha1-8sB0XCL8VM9V50sHFyVk1cgwZ+Y=",
-          "range": "bytes=0-656"
+          "checksum": "sha1-LC8HymAKsNQOA23tzIJQqobn+9w=",
+          "range": "bytes=0-660"
         },
-        "url": "https://packages.sgdev.org/main/x86_64/s3proxy-2.0.0-r5.apk",
-        "version": "2.0.0-r5"
+        "url": "https://packages.sgdev.org/main/x86_64/s3proxy-2.0.0-r6.apk",
+        "version": "2.0.0-r6"
       },
       {
         "architecture": "x86_64",
