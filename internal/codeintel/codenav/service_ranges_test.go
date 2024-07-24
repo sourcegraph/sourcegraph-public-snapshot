@@ -22,18 +22,14 @@ import (
 )
 
 const rangesDiff = `
-diff --git a/changed.go b/changed.go
+diff --git sub3/changed.go sub3/changed.go
 index deadbeef1..deadbeef2 100644
---- a/changed.go
-+++ b/changed.go
-@@ -12,7 +12,7 @@ const imageProcWorkers = 1
- var imageProcSem = make(chan bool, imageProcWorkers)
- var random = "banana"
-
- func (i *imageResource) doWithImageConfig(conf images.ImageConfig, f func(src image.Image) (image.Image, error)) (resource.Image, error) {
+--- sub3/changed.go
++++ sub3/changed.go
+@@ -16,2 +16,2 @@ const imageProcWorkers = 1
 -       img, err := i.getSpec().imageCache.getOrCreate(i, conf, func() (*imageResource, image.Image, error) {
-+       return i.getSpec().imageCache.getOrCreate(i, conf, func() (*imageResource, image.Image, error) {
 -                imageProcSem <- true
++       return i.getSpec().imageCache.getOrCreate(i, conf, func() (*imageResource, image.Image, error) {
 +                defer func() {
 `
 
