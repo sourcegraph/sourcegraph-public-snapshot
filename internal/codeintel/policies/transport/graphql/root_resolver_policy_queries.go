@@ -22,7 +22,7 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 		attribute.String("repository", string(pointers.Deref(args.Repository, ""))),
 		attribute.String("query", pointers.Deref(args.Query, "")),
 		attribute.Bool("forDataRetention", pointers.Deref(args.ForDataRetention, false)),
-		attribute.Bool("forPreciseIndexing", pointers.Deref(args.ForPreciseIndexing, false)),
+		attribute.Bool("forIndexing", pointers.Deref(args.ForIndexing, false)),
 		attribute.Bool("protected", pointers.Deref(args.Protected, false)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
@@ -48,7 +48,7 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 	}
 	opts.Protected = args.Protected
 	opts.ForDataRetention = args.ForDataRetention
-	opts.ForPreciseIndexing = args.ForPreciseIndexing
+	opts.ForPreciseIndexing = args.ForIndexing
 	opts.ForEmbeddings = args.ForEmbeddings
 
 	configPolicies, totalCount, err := r.policySvc.GetConfigurationPolicies(ctx, opts)

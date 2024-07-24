@@ -25,13 +25,12 @@ type PoliciesServiceResolver interface {
 
 type CodeIntelligenceConfigurationPoliciesArgs struct {
 	PagedConnectionArgs
-	Repository           *graphql.ID
-	Query                *string
-	ForDataRetention     *bool
-	ForPreciseIndexing   *bool
-	ForSyntacticIndexing *bool
-	ForEmbeddings        *bool
-	Protected            *bool
+	Repository       *graphql.ID
+	Query            *string
+	ForDataRetention *bool
+	ForIndexing      *bool
+	ForEmbeddings    *bool
+	Protected        *bool
 }
 
 type CreateCodeIntelligenceConfigurationPolicyArgs struct {
@@ -48,8 +47,7 @@ type CodeIntelConfigurationPolicy struct {
 	RetentionEnabled          bool
 	RetentionDurationHours    *int32
 	RetainIntermediateCommits bool
-	PreciseIndexingEnabled    bool
-	SyntacticIndexingEnabled  bool
+	IndexingEnabled           bool
 	IndexCommitMaxAgeHours    *int32
 	IndexIntermediateCommits  bool
 	// EmbeddingsEnabled, if nil, should currently default to false.
@@ -93,8 +91,7 @@ type CodeIntelligenceConfigurationPolicyResolver interface {
 	RetentionEnabled() bool
 	RetentionDurationHours() *int32
 	RetainIntermediateCommits() bool
-	PreciseIndexingEnabled() bool
-	SyntacticIndexingEnabled() bool
+	IndexingEnabled() bool
 	IndexCommitMaxAgeHours() *int32
 	IndexIntermediateCommits() bool
 	EmbeddingsEnabled() bool
