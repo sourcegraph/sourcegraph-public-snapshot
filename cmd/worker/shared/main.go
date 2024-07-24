@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/completions"
 	repoembeddings "github.com/sourcegraph/sourcegraph/cmd/worker/internal/embeddings/repo"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/eventlogs"
@@ -106,6 +107,7 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 		"export-usage-telemetry":                telemetry.NewTelemetryJob(),
 		"telemetrygateway-exporter":             telemetrygatewayexporter.NewJob(),
 		"event-logs-janitor":                    eventlogs.NewEventLogsJanitorJob(),
+		"cody-llm-token-counter":                completions.NewTokenUsageJob(),
 
 		"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
 		"codeintel-autoindexing-summary-builder":      codeintel.NewAutoindexingSummaryBuilder(),

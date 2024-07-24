@@ -213,7 +213,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	goroutine.Go(func() { bg.UpdatePermissions(ctx, logger, db) })
 
 	// Recurring
-	goroutine.Go(func() { bg.ScheduleStoreTokenUsage(ctx, db) })
 	goroutine.Go(func() { updatecheck.Start(logger, db) })
 	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
 	goroutine.Go(func() { users.StartUpdateAggregatedUsersStatisticsTable(context.Background(), db) })
