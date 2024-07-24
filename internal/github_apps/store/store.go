@@ -148,10 +148,10 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 	}
 
 	query := sqlf.Sprintf(`INSERT INTO
-	    github_apps (app_id, name, domain, slug, base_url, app_url, client_id, client_secret, private_key, encryption_key_id, logo, kind)
-    	VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+	    github_apps (app_id, name, domain, slug, base_url, app_url, client_id, client_secret, private_key, encryption_key_id, logo, kind, creator_id)
+    	VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		RETURNING id`,
-		app.AppID, app.Name, domain, app.Slug, baseURL.String(), app.AppURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo, kind)
+		app.AppID, app.Name, domain, app.Slug, baseURL.String(), app.AppURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo, kind, app.CreatedByUserId)
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
 	return id, err
 }
@@ -181,7 +181,8 @@ func scanGitHubApp(s dbutil.Scanner) (*ghtypes.GitHubApp, error) {
 		&app.Kind,
 		&app.Logo,
 		&app.CreatedAt,
-		&app.UpdatedAt)
+		&app.UpdatedAt,
+		&app.CreatedByUserId)
 	return &app, err
 }
 
@@ -351,7 +352,8 @@ func (s *gitHubAppsStore) get(ctx context.Context, where *sqlf.Query) (*ghtypes.
 		kind,
 		logo,
 		created_at,
-		updated_at
+		updated_at,
+	    creator_id
 	FROM github_apps
 	WHERE %s`
 
