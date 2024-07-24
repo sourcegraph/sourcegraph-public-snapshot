@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -138,7 +139,7 @@ func setupRockskip(observationCtx *observation.Context, config rockskipConfig, g
 	}
 	symbolParserPool, err := symbolparser.NewParserPool(observationCtx, "src_rockskip_service", parserFactory, config.NumCtagsProcesses, parserTypesForDeployment())
 	if err != nil {
-		logger.Fatal("failed to create symbol parser pool", log.Error(err))
+		return nil, nil, errors.Wrap(err, "failed to create symbol parser pool")
 	}
 
 	server, err := rockskip.NewService(observationCtx, codeintelDB, gitserverClient, repositoryFetcher, symbolParserPool, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize, config.SearchLastIndexedCommit)

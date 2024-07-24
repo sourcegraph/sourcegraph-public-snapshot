@@ -343,17 +343,18 @@ func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameter
 	return symbols, nil
 }
 
-func (s *Service) parseSymbols(ctx context.Context, path string, contents []byte) ([]*ctags.Entry, error) {
+func (s *Service) parseSymbols(ctx context.Context, path string, contents []byte) (allSymbols []*ctags.Entry, err error) {
 	parser, parserType, err := s.symbolParserPool.GetParser(ctx, path, contents)
-	// If we cannot determine type of ctags it means we don't support symbols for
-	// this file type so we bail out early
-	if parserType == ctags_config.UnknownCtags {
-		return nil, nil
-	}
-
-	// If its a supported language and we failed to get the parser, return the error
+	// If the language has a parser but we cannot retrieve it, we get an error
 	if err != nil {
 		return nil, err
+	}
+
+	// If we cannot determine type of ctags it means we don't support symbols for
+	// this file type so we bail out early. This is not considered an error since
+	// many file types may not be supported
+	if ctags_config.ParserIsNoop(parserType) {
+		return nil, nil
 	}
 
 	defer func() {
@@ -377,7 +378,7 @@ func (s *Service) parseSymbols(ctx context.Context, path string, contents []byte
 		}
 	}()
 
-	allSymbols, err := parser.Parse(path, contents)
+	allSymbols, err = parser.Parse(path, contents)
 	if err != nil {
 		return nil, err
 	}

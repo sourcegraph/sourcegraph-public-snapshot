@@ -85,10 +85,9 @@ func NewParserPool(observationCtx *observation.Context, namespace string, newPar
 // This method blocks until a parser is available or the given context is canceled.
 func (p *ParserPool) GetParser(ctx context.Context, path string, content []byte) (ctags.Parser, ctags_config.ParserType, error) {
 
-	parserType, err := p.getParserType(path, content)
-
-	if err != nil {
-		return nil, parserType, err
+	parserType := p.getParserType(path, content)
+	if ctags_config.ParserIsNoop(parserType) {
+		return nil, parserType, nil
 	}
 
 	parser, err := p.parserFromPool(ctx, parserType)
@@ -114,10 +113,9 @@ func (p *ParserPool) parserFromPool(ctx context.Context, source ctags_config.Par
 
 	parser, err := p.get(ctx, source)
 	if err != nil {
-		if err == context.DeadlineExceeded {
+		if ctx.Err() == err {
 			p.metrics.parseQueueTimeouts.Inc()
-		}
-		if err != ctx.Err() {
+		} else {
 			err = errors.Wrap(err, "failed to create parser")
 		}
 	}
@@ -125,17 +123,14 @@ func (p *ParserPool) parserFromPool(ctx context.Context, source ctags_config.Par
 	return parser, err
 }
 
-func (p *ParserPool) getParserType(path string, contents []byte) (ctags_config.ParserType, error) {
+func (p *ParserPool) getParserType(path string, contents []byte) ctags_config.ParserType {
 	language, found := languages.GetMostLikelyLanguage(path, string(contents))
 	if !found {
-		return ctags_config.UnknownCtags, errors.New("Unable to find language for source file")
+		return ctags_config.UnknownCtags
 	}
 
-	source := GetParserType(language)
-	if ctags_config.ParserIsNoop(source) {
-		return ctags_config.UnknownCtags, errors.New("Invalid parser type")
-	}
-	return source, nil
+	parserType := GetParserType(language)
+	return parserType
 }
 
 func (p *ParserPool) get(ctx context.Context, source ctags_config.ParserType) (ctags.Parser, error) {

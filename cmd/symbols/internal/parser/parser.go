@@ -145,16 +145,18 @@ func (p *parser) handleParseRequest(
 
 	parser, parserType, err := p.parserPool.GetParser(ctx, parseRequest.Path, parseRequest.Data)
 
-	// If we cannot determine type of ctags it means we don't support symbols for
-	// this file type so we bail out early
-	if parserType == ctags_config.UnknownCtags {
-		return nil
-	}
-
-	// If its a supported language and we failed to get the parser, return the error
+	// If the language has a parser but we cannot retrieve it, we get an error
 	if err != nil {
 		return err
 	}
+
+	// If we cannot determine type of ctags it means we don't support symbols for
+	// this file type so we bail out early. This is not considered an error since
+	// many file types may not be supported
+	if ctags_config.ParserIsNoop(parserType) {
+		return nil
+	}
+
 	trace.AddEvent("parser", attribute.String("event", "acquired parser from pool"))
 
 	defer func() {
