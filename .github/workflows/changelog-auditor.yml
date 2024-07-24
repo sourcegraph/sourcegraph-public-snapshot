@@ -22,8 +22,15 @@ jobs:
         with: { go-version: '1.22' }
 
       - run: |
+          echo "checking..."
+          echo $GITHUB_EVENT_PATH
+          cat $GITHUB_EVENT_PATH
+        env:
+          GITHUB_EVENT_PATH: ${{ env.GITHUB_EVENT_PATH }}
+
+      - run: |
           go run ./cmd/changelog audit
         env:
           GITHUB_EVENT_PATH: ${{ env.GITHUB_EVENT_PATH }}
-          GITHUB_TOKEN: ${{ secrets.PR_AUDITOR_TOKEN }}
+          GH_TOKEN: ${{ secrets.PR_AUDITOR_TOKEN }}
           GITHUB_RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
