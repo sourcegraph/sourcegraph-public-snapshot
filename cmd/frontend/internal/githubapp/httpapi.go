@@ -413,66 +413,13 @@ func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request)
 
 	action := query.Get("setup_action")
 	if action == "install" {
+		// The actual installation is handled via an incoming webhook in cmd/frontend/webhooks/webhooks.go
 		ctx := r.Context()
 		app, err := srv.db.GitHubApps().GetByID(ctx, stateDetails.AppID)
 		if err != nil {
 			redirectURL := generateRedirectURL(stateDetails, &installationID, nil, errors.Newf("Unexpected error while fetching GitHub App from DB: %s", err.Error()))
 			http.Redirect(w, r, redirectURL, http.StatusFound)
 			return
-		}
-
-		auther, err := ghauth.NewGitHubAppAuthenticator(app.AppID, []byte(app.PrivateKey))
-		if err != nil {
-			redirectURL := generateRedirectURL(stateDetails, &installationID, nil, errors.Newf("Unexpected error while creating GitHubAppAuthenticator: %s", err.Error()))
-			http.Redirect(w, r, redirectURL, http.StatusFound)
-			return
-		}
-
-		baseURL, err := url.Parse(app.BaseURL)
-		if err != nil {
-			redirectURL := generateRedirectURL(stateDetails, &installationID, nil, errors.Newf("Unexpected error while parsing App base URL: %s", err.Error()))
-			http.Redirect(w, r, redirectURL, http.StatusFound)
-			return
-		}
-
-		apiURL, _ := github.APIRoot(baseURL)
-
-		logger := log.NoOp()
-		client := github.NewV3Client(logger, "", apiURL, auther, nil)
-
-		// The installation often takes a few seconds to become available after the
-		// app is first installed, so we sleep for a bit to give it time to load. The exact
-		// length of time to sleep was determined empirically.
-		time.Sleep(3 * time.Second)
-
-		remoteInstall, err := client.GetAppInstallation(ctx, int64(installationID))
-		if err != nil {
-			redirectURL := generateRedirectURL(stateDetails, &installationID, nil, errors.Newf("Unexpected error while fetching App installation details from GitHub: %s", err.Error()))
-			http.Redirect(w, r, redirectURL, http.StatusFound)
-			return
-		}
-
-		installInfo, err := srv.db.GitHubApps().Install(ctx, ghtypes.GitHubAppInstallation{
-			InstallationID:   installationID,
-			AppID:            app.ID,
-			URL:              remoteInstall.GetHTMLURL(),
-			AccountLogin:     remoteInstall.Account.GetLogin(),
-			AccountAvatarURL: remoteInstall.Account.GetAvatarURL(),
-			AccountURL:       remoteInstall.Account.GetHTMLURL(),
-			AccountType:      remoteInstall.Account.GetType(),
-		})
-		if err != nil {
-			redirectURL := generateRedirectURL(stateDetails, &installationID, &app.Name, errors.Newf("Unexpected error while creating GitHub App installation: %s", err.Error()))
-			http.Redirect(w, r, redirectURL, http.StatusFound)
-			return
-		}
-
-		if *kind == ghtypes.UserCredentialGitHubAppKind || *kind == ghtypes.SiteCredentialGitHubAppKind {
-			if err := handleCredentialCreation(r.Context(), srv.db, stateDetails, kind, app, installInfo.AccountLogin); err != nil {
-				redirectURL := generateRedirectURL(stateDetails, &installationID, &app.Name, err)
-				http.Redirect(w, r, redirectURL, http.StatusFound)
-				return
-			}
 		}
 
 		redirectURL := generateRedirectURL(stateDetails, &installationID, &app.Name, nil)
@@ -482,50 +429,6 @@ func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request)
 		http.Error(w, fmt.Sprintf("Bad request; unsupported setup action: %s", action), http.StatusBadRequest)
 		return
 	}
-}
-
-func handleCredentialCreation(ctx context.Context, db database.DB, stateDetails gitHubAppStateDetails, kind *ghtypes.GitHubAppKind, app *ghtypes.GitHubApp, owner string) error {
-	observationCtx := observation.NewContext(log.NoOp())
-	bstore := store.New(db, observationCtx, keyring.Default().BatchChangesCredentialKey)
-	svc := service.New(bstore)
-
-	// external service urls always end with a trailing slash. `url.JoinPath` ensures that's the case irrespective
-	// of whether the base URL ends with a trailing slash or not.
-	esu, err := url.JoinPath(stateDetails.BaseURL, "/")
-	if err != nil {
-		return errors.Newf("Unexpected error while creating external service url for github app: %s", err.Error())
-	}
-
-	if *kind == ghtypes.UserCredentialGitHubAppKind {
-		if _, err = svc.CreateBatchChangesUserCredential(
-			ctx,
-			sources.AuthenticationStrategyGitHubApp,
-			service.CreateBatchChangesUserCredentialArgs{
-				ExternalServiceURL:  esu,
-				ExternalServiceType: extsvc.VariantGitHub.AsType(),
-				GitHubAppKind:       *kind,
-				Username:            pointers.Ptr(owner),
-				GitHubAppID:         app.ID,
-				UserID:              stateDetails.UserID,
-			}); err != nil {
-			return errors.Wrapf(err, "Unexpected error while creating user credential for github app")
-		}
-	} else {
-		if _, err := svc.CreateBatchChangesSiteCredential(
-			ctx,
-			sources.AuthenticationStrategyGitHubApp,
-			service.CreateBatchChangesSiteCredentialArgs{
-				ExternalServiceURL:  esu,
-				ExternalServiceType: extsvc.VariantGitHub.AsType(),
-				GitHubAppKind:       *kind,
-				Username:            pointers.Ptr(owner),
-				GitHubAppID:         app.ID,
-			}); err != nil {
-			return errors.Wrapf(err, "Unexpected error while creating site credential for github app")
-		}
-	}
-
-	return nil
 }
 
 func generateRedirectURL(stateDetails gitHubAppStateDetails, installationID *int, appName *string, creationErr error) string {
