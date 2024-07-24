@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	genslices "github.com/life4/genesis/slices"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -423,16 +424,13 @@ func (s *Service) gatherRemoteLocations(
 	// Finally, query time!
 	// Fetch indexed ranges of the given symbols within the given uploads.
 
-	monikerArgs := make([]precise.MonikerData, 0, len(monikers))
-	for _, moniker := range monikers {
-		monikerArgs = append(monikerArgs, moniker.MonikerData)
-	}
-	locations, totalCount, err := s.lsifstore.GetMinimalBulkMonikerLocations(
+	globalSymbolNames := genslices.Map(monikers, func(m precise.QualifiedMonikerData) string { return m.Identifier })
+	locations, totalCount, err := s.lsifstore.GetMinimalBulkSymbolUsages(
 		ctx,
 		usageKind,
 		cursor.UploadIDs,
 		cursor.SkipPathsByUploadID,
-		monikerArgs,
+		globalSymbolNames,
 		limit,
 		cursor.RemoteLocationOffset,
 	)

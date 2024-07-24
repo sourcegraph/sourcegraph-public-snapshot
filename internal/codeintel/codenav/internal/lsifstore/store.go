@@ -31,8 +31,8 @@ type LsifStore interface {
 	GetPackageInformation(ctx context.Context, uploadID int, packageInformationID string) (precise.PackageInformationData, bool, error)
 
 	// Fetch locations by position
-	GetBulkMonikerLocations(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) ([]shared.Location, int, error)
-	GetMinimalBulkMonikerLocations(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error)
+	GetBulkSymbolUsages(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, lookupSymbols []string, limit, offset int) ([]shared.Location, int, error)
+	GetMinimalBulkSymbolUsages(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, skipPaths map[int]string, lookupSymbols []string, limit, offset int) (_ []shared.Location, totalCount int, err error)
 
 	// Metadata by position
 	GetHover(ctx context.Context, bundleID int, path core.UploadRelPath, line, character int) (string, shared.Range, bool, error)
