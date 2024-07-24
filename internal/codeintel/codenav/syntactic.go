@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	genslices "github.com/life4/genesis/slices"
+	"github.com/sourcegraph/conc"
 	conciter "github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
@@ -420,14 +421,30 @@ func searchBasedUsagesImpl(
 		identifier: symbolName,
 		language:   language,
 	}
-	candidateMatches, err := findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
-	if err != nil {
-		return nil, err
+
+	var searchResults struct {
+		candidateMatches orderedmap.OrderedMap[core.RepoRelPath, candidateFile]
+		matchErr         error
+		candidateSymbols symbolSearchResult
+		symbolErr        error
 	}
-	candidateSymbols, err := symbolSearch(ctx, trace, searchClient, searchCoords)
-	if err != nil {
-		trace.Warn("Failed to run symbol search, will not mark any search-based usages as definitions", log.Error(err))
+	var wg conc.WaitGroup
+	wg.Go(func() {
+		searchResults.candidateMatches, searchResults.matchErr = findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
+	})
+	wg.Go(func() {
+		searchResults.candidateSymbols, searchResults.symbolErr = symbolSearch(ctx, trace, searchClient, searchCoords)
+	})
+	wg.Wait()
+	if searchResults.matchErr != nil {
+		return nil, searchResults.matchErr
 	}
+	if searchResults.symbolErr != nil {
+		trace.Warn("Failed to run symbol search, will not mark any search-based usages as definitions", log.Error(searchResults.symbolErr))
+	}
+	candidateMatches := searchResults.candidateMatches
+	candidateSymbols := searchResults.candidateSymbols
+
 	tasks := make([]orderedmap.Pair[core.RepoRelPath, candidateFile], 0, candidateMatches.Len())
 	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
 		tasks = append(tasks, *pair)
