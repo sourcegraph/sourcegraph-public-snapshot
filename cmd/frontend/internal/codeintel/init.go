@@ -72,7 +72,7 @@ func Init(
 		preciseIndexResolverFactory,
 	)
 
-	codenavRootResolver, err := codenavgraphql.NewRootResolver(
+	codenavRootResolver := codenavgraphql.NewRootResolver(
 		scopedContext("codenav"),
 		codeIntelServices.CodenavService,
 		codeIntelServices.AutoIndexingService,
@@ -83,12 +83,8 @@ func Init(
 		autoIndexJobLoaderFactory,
 		preciseIndexResolverFactory,
 		locationResolverFactory,
-		ConfigInst.HunkCacheSize,
 		ConfigInst.MaximumIndexesPerMonikerSearch,
 	)
-	if err != nil {
-		return err
-	}
 
 	policyRootResolver := policiesgraphql.NewRootResolver(
 		scopedContext("policies"),
