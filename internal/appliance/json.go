@@ -138,10 +138,6 @@ func (a *Appliance) getMaintenanceStatusHandler() http.Handler {
 			Message string `json:"message"`
 		}
 
-		type Status struct {
-			Services []service `json:"services"`
-		}
-
 		services := []service{}
 		for _, name := range config.SourcegraphServicesToReconcile {
 			services = append(services, service{
@@ -151,11 +147,7 @@ func (a *Appliance) getMaintenanceStatusHandler() http.Handler {
 			})
 		}
 
-		status := Status{
-			Services: services,
-		}
-
-		if err := a.writeJSON(w, http.StatusOK, responseData{"status": status}, nil); err != nil {
+		if err := a.writeJSON(w, http.StatusOK, responseData{"services": services}, nil); err != nil {
 			a.serverErrorResponse(w, r, err)
 		}
 	})

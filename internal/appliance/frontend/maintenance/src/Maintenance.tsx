@@ -1,4 +1,5 @@
-import React, { Fragment, useEffect, useState } from 'react'
+import type React from 'react'
+import { Fragment, useEffect, useState } from 'react'
 
 import Unhealthy from '@mui/icons-material/CarCrashOutlined'
 import Healthy from '@mui/icons-material/ThumbUp'
@@ -17,8 +18,8 @@ type Service = {
     message: string
 }
 
-type Status = {
-    status: { services: Service[] }
+type ServiceStatuses = {
+    services: Service[]
 }
 
 const ShowServices: React.FC<{ services: Service[] }> = ({ services }) =>
@@ -54,14 +55,14 @@ const ShowServices: React.FC<{ services: Service[] }> = ({ services }) =>
     ) : null
 
 export const Maintenance: React.FC = () => {
-    const [status, setStatus] = useState<Status | undefined>()
+    const [serviceStatuses, setServiceStatuses] = useState<ServiceStatuses | undefined>()
     const [fixing, setFixing] = useState<boolean>(false)
 
     useEffect(() => {
         const timer = setInterval(() => {
-            call('/api/v1/appliance/maintenance/status')
+            call('/api/v1/appliance/maintenance/serviceStatuses')
                 .then(response => response.json())
-                .then(data => setStatus(data))
+                .then(serviceStatuses => setServiceStatuses(serviceStatuses))
         }, MaintenanceStatusTimerMs)
         return () => clearInterval(timer)
     }, [])
@@ -75,8 +76,8 @@ export const Maintenance: React.FC = () => {
         }
     }, [fixing])
 
-    const ready = status?.status.services.length !== undefined
-    const unhealthy = status?.status.services?.find((s: Service) => !s.healthy)
+    const ready = serviceStatuses?.services.length !== undefined
+    const unhealthy = serviceStatuses?.services?.find((s: Service) => !s.healthy)
 
     return (
         <div className="maintenance">
@@ -97,7 +98,7 @@ export const Maintenance: React.FC = () => {
             {ready ? (
                 <>
                     <Typography variant="h5">Service Status</Typography>
-                    <ShowServices services={status?.status.services ?? []} />
+                    <ShowServices services={serviceStatuses?.services ?? []} />
                 </>
             ) : null}
 
