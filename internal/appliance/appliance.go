@@ -25,7 +25,7 @@ type Appliance struct {
 
 	client                 client.Client
 	namespace              string
-	status                 Status
+	status                 config.Status
 	sourcegraph            *config.Sourcegraph
 	releaseRegistryClient  *releaseregistry.Client
 	latestSupportedVersion string
@@ -58,7 +58,7 @@ func NewAppliance(
 		releaseRegistryClient:  relregClient,
 		latestSupportedVersion: latestSupportedVersion,
 		namespace:              namespace,
-		status:                 StatusInstall,
+		status:                 config.StatusInstall,
 		sourcegraph:            &config.Sourcegraph{},
 		logger:                 logger,
 	}
@@ -138,7 +138,7 @@ func (a *Appliance) GetCurrentVersion(ctx context.Context) string {
 	return a.sourcegraph.Status.CurrentVersion
 }
 
-func (a *Appliance) GetCurrentStatus(ctx context.Context) Status {
+func (a *Appliance) GetCurrentStatus(ctx context.Context) config.Status {
 	return a.status
 }
 
