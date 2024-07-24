@@ -71,10 +71,13 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		return err
 	}
 
+	beginHealthCheckLoop := make(chan struct{})
+
 	if err = (&reconciler.Reconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("sourcegraph-appliance"),
+		Client:               mgr.GetClient(),
+		Scheme:               mgr.GetScheme(),
+		Recorder:             mgr.GetEventRecorderFor("sourcegraph-appliance"),
+		BeginHealthCheckLoop: beginHealthCheckLoop,
 	}).SetupWithManager(mgr); err != nil {
 		logger.Error("unable to create the appliance controller", log.Error(err))
 		return err
@@ -104,12 +107,6 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		DeploymentName: config.selfDeploymentName,
 		Namespace:      config.namespace,
 	}
-
-	// TODO: close this channel somewhere in the appliance, after waiting for
-	// admin, to allow the management loop to begin, which will flip the
-	// ingress-facing service to frontend.
-	// See https://linear.app/sourcegraph/issue/REL-291/wait-for-admin-ui-integrates-with-backend
-	beginHealthCheckLoop := make(chan struct{})
 
 	probe := &healthchecker.PodProbe{K8sClient: k8sClient}
 	healthChecker := &healthchecker.HealthChecker{

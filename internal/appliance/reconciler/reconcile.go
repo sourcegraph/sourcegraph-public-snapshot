@@ -25,8 +25,9 @@ var _ reconcile.Reconciler = &Reconciler{}
 
 type Reconciler struct {
 	client.Client
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Scheme               *runtime.Scheme
+	Recorder             record.EventRecorder
+	BeginHealthCheckLoop chan struct{}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -49,6 +50,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Perhaps this should be feature-flagged so that it is only emitted during
 	// tests, if it isn't useful elsewhere.
 	defer r.Recorder.Event(&applianceSpec, "Normal", "ReconcileFinished", "Reconcile finished.")
+
+	status := applianceSpec.GetAnnotations()[config.AnnotationKeyStatus]
+	if config.IsPostInstallStatus(config.Status(status)) {
+		close(r.BeginHealthCheckLoop)
+	}
 
 	// TODO place holder code until we get the configmap spec'd out and working'
 	data, ok := applianceSpec.Data["spec"]
