@@ -10,9 +10,5 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/ui/assets",
     visibility = ["//visibility:public"],
-    x_defs = select({
-        "//conditions:default": {},
-        "//:integration_testing_enabled": {"github.com/sourcegraph/sourcegraph/ui/assets/dist.assetsPath": "integration"},
-    }),
     deps = ["//lib/errors"],
 )
