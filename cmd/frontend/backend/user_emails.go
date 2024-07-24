@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -385,7 +384,7 @@ func (e *userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, c
 			Email:    email,
 			Change:   change,
 			Username: usr.Username,
-			Host:     globals.ExternalURL().Host,
+			Host:     conf.ExternalURLParsed().Host,
 		},
 	})
 }
@@ -432,7 +431,7 @@ func (e *userEmails) SendUserEmailOnAccessTokenChange(ctx context.Context, id in
 			Email:     email,
 			TokenName: tokenName,
 			Username:  usr.Username,
-			Host:      globals.ExternalURL().Host,
+			Host:      conf.ExternalURLParsed().Host,
 		},
 	})
 }
@@ -572,11 +571,11 @@ func SendUserEmailVerificationEmail(ctx context.Context, username, email, code s
 			Host     string
 		}{
 			Username: username,
-			URL: globals.ExternalURL().ResolveReference(&url.URL{
+			URL: conf.ExternalURLParsed().ResolveReference(&url.URL{
 				Path:     verifyEmailPath.Path,
 				RawQuery: q.Encode(),
 			}).String(),
-			Host: globals.ExternalURL().Host,
+			Host: conf.ExternalURLParsed().Host,
 		},
 	})
 }

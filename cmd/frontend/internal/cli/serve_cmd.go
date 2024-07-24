@@ -204,8 +204,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	globals.WatchExternalURL()
-
 	// Single shot
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.UpdatePermissions(ctx, logger, db) })
@@ -296,7 +294,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			infos[i] = providerInfo{
 				ServiceType:        p.ServiceType(),
 				ServiceID:          p.ServiceID(),
-				ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), relay.MarshalID("ExternalService", id)),
+				ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", conf.ExternalURLParsed(), relay.MarshalID("ExternalService", id)),
 			}
 		}
 
@@ -313,7 +311,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		// This is not a log entry and is usually disabled
 		println(fmt.Sprintf("\n\n%s\n\n", logoColor))
 	}
-	logger.Info(fmt.Sprintf("✱ Sourcegraph is ready at: %s", globals.ExternalURL()))
+	logger.Info(fmt.Sprintf("✱ Sourcegraph is ready at: %s", conf.ExternalURLParsed()))
 	ready()
 
 	return goroutine.MonitorBackgroundRoutines(context.Background(), routines...)

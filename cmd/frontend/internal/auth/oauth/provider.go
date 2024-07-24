@@ -14,8 +14,8 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -263,7 +263,7 @@ func canRedirect(redirect string) bool {
 		return false
 	}
 	// if we have a non-relative url, make sure it's the same host as the sourcegraph instance
-	if redirectURL.Host != "" && redirectURL.Host != globals.ExternalURL().Host {
+	if redirectURL.Host != "" && redirectURL.Host != conf.ExternalURLParsed().Host {
 		return false
 	}
 	// TODO: do we want to exclude any internal paths here?

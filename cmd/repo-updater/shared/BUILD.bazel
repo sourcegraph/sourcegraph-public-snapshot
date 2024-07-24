@@ -13,7 +13,6 @@ go_library(
     tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
     deps = [
-        "//cmd/frontend/globals",
         "//cmd/repo-updater/internal/gitserver",
         "//cmd/repo-updater/internal/purge",
         "//cmd/repo-updater/internal/repoupdater",
