@@ -11,6 +11,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,6 +21,7 @@ import (
 	sglogr "github.com/sourcegraph/log/logr"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance"
+	"github.com/sourcegraph/sourcegraph/internal/appliance/healthchecker"
 	"github.com/sourcegraph/sourcegraph/internal/appliance/reconciler"
 	"github.com/sourcegraph/sourcegraph/internal/appliance/selfupdate"
 	pb "github.com/sourcegraph/sourcegraph/internal/appliance/v1"
@@ -103,6 +105,23 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		Namespace:      config.namespace,
 	}
 
+	// TODO: close this channel somewhere in the appliance, after waiting for
+	// admin, to allow the management loop to begin, which will flip the
+	// ingress-facing service to frontend.
+	// See https://linear.app/sourcegraph/issue/REL-291/wait-for-admin-ui-integrates-with-backend
+	beginHealthCheckLoop := make(chan struct{})
+
+	probe := &healthchecker.PodProbe{K8sClient: k8sClient}
+	healthChecker := &healthchecker.HealthChecker{
+		Probe:     probe,
+		K8sClient: k8sClient,
+		Logger:    logger.Scoped("HealthChecker"),
+
+		ServiceName: types.NamespacedName{Name: "sourcegraph-frontend", Namespace: config.namespace},
+		Interval:    time.Minute,
+		Graceperiod: time.Minute,
+	}
+
 	g, ctx := errgroup.WithContext(ctx)
 	ctx = shutdownOnSignal(ctx)
 
@@ -126,6 +145,13 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		logger.Info("starting manager")
 		if err := mgr.Start(ctx); err != nil {
 			logger.Error("problem running manager", log.Error(err))
+			return err
+		}
+		return nil
+	})
+	g.Go(func() error {
+		if err := healthChecker.ManageIngressFacingService(ctx, beginHealthCheckLoop, "app=sourcegraph-frontend"); err != nil {
+			logger.Error("problem running HealthChecker", log.Error(err))
 			return err
 		}
 		return nil
