@@ -3,7 +3,6 @@ package lsifstore
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -13,36 +12,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // GetBulkMonikerLocations returns the locations (within one of the given uploads) with an attached moniker
 // whose scheme+identifier matches one of the given monikers. This method also returns the size of the
 // complete result set to aid in pagination.
-func (s *store) GetBulkMonikerLocations(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
+func (s *store) GetBulkSymbolUsages(
+	ctx context.Context,
+	usageKind shared.UsageKind,
+	uploadIDs []int,
+	lookupSymbols []string,
+	limit, offset int,
+) (_ []shared.Location, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("usageKind", usageKind.String()),
 		attribute.Int("numUploadIDs", len(uploadIDs)),
 		attribute.IntSlice("uploadIDs", uploadIDs),
-		attribute.Int("numMonikers", len(monikers)),
-		attribute.String("monikers", monikersToString(monikers)),
+		attribute.Int("numLookupSymbols", len(lookupSymbols)),
+		attribute.StringSlice("lookupSymbols", lookupSymbols),
 		attribute.Int("limit", limit),
 		attribute.Int("offset", offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if len(uploadIDs) == 0 || len(monikers) == 0 {
+	if len(uploadIDs) == 0 || len(lookupSymbols) == 0 {
 		return nil, 0, nil
-	}
-
-	symbolNames := make([]string, 0, len(monikers))
-	for _, arg := range monikers {
-		symbolNames = append(symbolNames, arg.Identifier)
 	}
 
 	query := sqlf.Sprintf(
 		bulkSymbolUsagesQuery,
-		pq.Array(symbolNames),
+		pq.Array(lookupSymbols),
 		pq.Array(uploadIDs),
 		sqlf.Sprintf(usageKind.RangesColumnName()),
 		sqlf.Sprintf(usageKind.RangesColumnName()),
@@ -240,15 +239,6 @@ func extractOccurrenceData(document *scip.Document, lookupOccurrence *scip.Occur
 	}
 }
 
-func monikersToString(vs []precise.MonikerData) string {
-	strs := make([]string, 0, len(vs))
-	for _, v := range vs {
-		strs = append(strs, fmt.Sprintf("%s:%s:%s", v.Kind, v.Scheme, v.Identifier))
-	}
-
-	return strings.Join(strs, ", ")
-}
-
 func symbolHoverText(symbol *scip.SymbolInformation) []string {
 	if sigdoc := symbol.SignatureDocumentation; sigdoc != nil && sigdoc.Text != "" && sigdoc.Language != "" {
 		signature := []string{fmt.Sprintf("```%s\n%s\n```", sigdoc.Language, sigdoc.Text)}
@@ -374,25 +364,27 @@ func uniqueByRange(l shared.Location) [4]int {
 //
 //
 
-func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
+func (s *store) GetMinimalBulkSymbolUsages(
+	ctx context.Context,
+	usageKind shared.UsageKind,
+	uploadIDs []int,
+	skipPaths map[int]string,
+	lookupSymbols []string,
+	limit, offset int,
+) (_ []shared.Location, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("usageKind", usageKind.String()),
 		attribute.Int("numUploadIDs", len(uploadIDs)),
 		attribute.IntSlice("uploadIDs", uploadIDs),
-		attribute.Int("numMonikers", len(monikers)),
-		attribute.String("monikers", monikersToString(monikers)),
+		attribute.Int("numLookupSymbols", len(lookupSymbols)),
+		attribute.StringSlice("lookupSymbols", lookupSymbols),
 		attribute.Int("limit", limit),
 		attribute.Int("offset", offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if len(uploadIDs) == 0 || len(monikers) == 0 {
+	if len(uploadIDs) == 0 || len(lookupSymbols) == 0 {
 		return nil, 0, nil
-	}
-
-	symbolNames := make([]string, 0, len(monikers))
-	for _, arg := range monikers {
-		symbolNames = append(symbolNames, arg.Identifier)
 	}
 
 	var skipConds []*sqlf.Query
@@ -407,7 +399,7 @@ func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, usageKind sh
 
 	query := sqlf.Sprintf(
 		minimalBulkSymbolUsagesQuery,
-		pq.Array(symbolNames),
+		pq.Array(lookupSymbols),
 		pq.Array(uploadIDs),
 		sqlf.Sprintf(usageKind.RangesColumnName()),
 		sqlf.Sprintf(usageKind.RangesColumnName()),

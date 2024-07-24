@@ -139,8 +139,8 @@ func TestHoverRemote(t *testing.T) {
 		{UploadID: 151, Path: uploadRelPath("b.go"), Range: testRange4},
 		{UploadID: 151, Path: uploadRelPath("c.go"), Range: testRange5},
 	}
-	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, 0, nil)
-	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)
+	mockLsifStore.GetBulkSymbolUsagesFunc.PushReturn(locations, 0, nil)
+	mockLsifStore.GetBulkSymbolUsagesFunc.PushReturn(locations, len(locations), nil)
 
 	mockGitserverClient.GetCommitFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID) (*gitdomain.Commit, error) {
 		return &gitdomain.Commit{ID: "sha"}, nil
