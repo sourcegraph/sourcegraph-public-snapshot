@@ -79,7 +79,8 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
     const setupError = new URLSearchParams(location.search).get('error')
     const gitHubAppKindFromUrl = new URLSearchParams(location.search).get('kind')
     const shouldShowError = !success && setupError && gitHubAppKind !== GitHubAppKind.COMMIT_SIGNING
-    const gitHubAppInstallationInProgress = success && gitHubAppKindFromUrl !== GitHubAppKind.COMMIT_SIGNING && (connection?.nodes.length ?? 0) === 0
+    const gitHubAppInstallationInProgress =
+        success && gitHubAppKindFromUrl !== GitHubAppKind.COMMIT_SIGNING && (connection?.nodes.length ?? 0) === 0
     return (
         <Container className="mb-3">
             <H3>Code host credentials</H3>
@@ -87,16 +88,18 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
                 {loading && !connection && <ConnectionLoading />}
-                {success && gitHubAppKindFromUrl !== GitHubAppKind.COMMIT_SIGNING && (
-                    gitHubAppInstallationInProgress ?
+                {success &&
+                    gitHubAppKindFromUrl !== GitHubAppKind.COMMIT_SIGNING &&
+                    (gitHubAppInstallationInProgress ? (
                         <DismissibleAlert
                             className="mb-3"
                             variant="info"
                             partialStorageKey={`batch-changes-github-app-integration-pending-${appName}`}
                         >
-                            GitHub App {appName?.length ? `"${appName}" ` : ''} is taking a few seconds to connect. Please refresh the page until the GitHub app appears.
+                            GitHub App {appName?.length ? `"${appName}" ` : ''} is taking a few seconds to connect.
+                            Please refresh the page until the GitHub app appears.
                         </DismissibleAlert>
-                        :
+                    ) : (
                         <DismissibleAlert
                             className="mb-3"
                             variant="success"
@@ -104,7 +107,7 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
                         >
                             GitHub App {appName?.length ? `"${appName}" ` : ''}successfully connected.
                         </DismissibleAlert>
-                )}
+                    ))}
                 {shouldShowError && <GitHubAppFailureAlert error={setupError} />}
                 <ConnectionList as="ul" className="list-group" aria-label="code host connections">
                     {connection?.nodes?.map(node => (

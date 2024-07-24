@@ -1,11 +1,11 @@
 import React from 'react'
 
-import {useLocation} from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
-import {Container, H3, Link, ProductStatusBadge, Text} from '@sourcegraph/wildcard'
+import { Container, H3, Link, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
 
-import {DismissibleAlert} from '../../../components/DismissibleAlert'
-import type {UseShowMorePaginationResult} from '../../../components/FilteredConnection/hooks/useShowMorePagination'
+import { DismissibleAlert } from '../../../components/DismissibleAlert'
+import type { UseShowMorePaginationResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -15,7 +15,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
-import {GitHubAppFailureAlert} from '../../../components/gitHubApps/GitHubAppFailureAlert'
+import { GitHubAppFailureAlert } from '../../../components/gitHubApps/GitHubAppFailureAlert'
 import {
     GitHubAppKind,
     type BatchChangesCodeHostFields,
@@ -24,11 +24,11 @@ import {
     type UserBatchChangesCodeHostsResult,
 } from '../../../graphql-operations'
 
-import {useGlobalBatchChangesCodeHostConnection, useUserBatchChangesCodeHostConnection} from './backend'
-import {CommitSigningIntegrationNode} from './CommitSigningIntegrationNode'
+import { useGlobalBatchChangesCodeHostConnection, useUserBatchChangesCodeHostConnection } from './backend'
+import { CommitSigningIntegrationNode } from './CommitSigningIntegrationNode'
 
 export const GlobalCommitSigningIntegrations: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
-    <CommitSigningIntegrations connectionResult={useGlobalBatchChangesCodeHostConnection()} readOnly={false}/>
+    <CommitSigningIntegrations connectionResult={useGlobalBatchChangesCodeHostConnection()} readOnly={false} />
 )
 
 interface UserCommitSigningIntegrationsProps {
@@ -37,8 +37,8 @@ interface UserCommitSigningIntegrationsProps {
 
 export const UserCommitSigningIntegrations: React.FunctionComponent<
     React.PropsWithChildren<UserCommitSigningIntegrationsProps>
-> = ({userID}) => (
-    <CommitSigningIntegrations connectionResult={useUserBatchChangesCodeHostConnection(userID)} readOnly={true}/>
+> = ({ userID }) => (
+    <CommitSigningIntegrations connectionResult={useUserBatchChangesCodeHostConnection(userID)} readOnly={true} />
 )
 
 interface CommitSigningIntegrationsProps {
@@ -51,8 +51,8 @@ interface CommitSigningIntegrationsProps {
 
 export const CommitSigningIntegrations: React.FunctionComponent<
     React.PropsWithChildren<CommitSigningIntegrationsProps>
-> = ({connectionResult, readOnly}) => {
-    const {loading, hasNextPage, fetchMore, connection, error, refetchAll} = connectionResult
+> = ({ connectionResult, readOnly }) => {
+    const { loading, hasNextPage, fetchMore, connection, error, refetchAll } = connectionResult
 
     const location = useLocation()
     const searchParams = new URLSearchParams(location.search)
@@ -62,12 +62,13 @@ export const CommitSigningIntegrations: React.FunctionComponent<
     const setupError = searchParams.get('error')
     const gitHubAppKind = searchParams.get('kind')
     const shouldShowError = !success && setupError && !readOnly && kind === GitHubAppKind.COMMIT_SIGNING
-    const gitHubAppInstallationInProgress = success && kind === GitHubAppKind.COMMIT_SIGNING && (connection?.nodes.length ?? 0) === 0
+    const gitHubAppInstallationInProgress =
+        success && kind === GitHubAppKind.COMMIT_SIGNING && (connection?.nodes.length ?? 0) === 0
     return (
         <Container>
             <H3>
                 Commit signing integrations
-                <ProductStatusBadge status="beta" className="ml-2"/>
+                <ProductStatusBadge status="beta" className="ml-2" />
             </H3>
             <Text>
                 Connect GitHub Apps to enable Batch Changes to sign commits for your changesets.{' '}
@@ -80,18 +81,21 @@ export const CommitSigningIntegrations: React.FunctionComponent<
                 )}
             </Text>
             <ConnectionContainer className="mb-3">
-                {error && <ConnectionError errors={[error.message]}/>}
-                {loading && !connection && <ConnectionLoading/>}
-                {success && !readOnly && gitHubAppKind === GitHubAppKind.COMMIT_SIGNING && (
-                    gitHubAppInstallationInProgress ?
+                {error && <ConnectionError errors={[error.message]} />}
+                {loading && !connection && <ConnectionLoading />}
+                {success &&
+                    !readOnly &&
+                    gitHubAppKind === GitHubAppKind.COMMIT_SIGNING &&
+                    (gitHubAppInstallationInProgress ? (
                         <DismissibleAlert
                             className="mb-3"
                             variant="info"
                             partialStorageKey={`batch-changes-commit-signing-integration-pending-${appName}`}
                         >
-                            GitHub App {appName?.length ? `"${appName}" ` : ''} is taking a few seconds to connect. Please refresh the page until the GitHub app appears.
+                            GitHub App {appName?.length ? `"${appName}" ` : ''} is taking a few seconds to connect.
+                            Please refresh the page until the GitHub app appears.
                         </DismissibleAlert>
-                        :
+                    ) : (
                         <DismissibleAlert
                             className="mb-3"
                             variant="success"
@@ -99,8 +103,8 @@ export const CommitSigningIntegrations: React.FunctionComponent<
                         >
                             GitHub App {appName?.length ? `"${appName}" ` : ''}successfully connected.
                         </DismissibleAlert>
-                )}
-                {shouldShowError && <GitHubAppFailureAlert error={setupError}/>}
+                    ))}
+                {shouldShowError && <GitHubAppFailureAlert error={setupError} />}
                 <ConnectionList as="ul" className="list-group" aria-label="commit signing integrations">
                     {connection?.nodes?.map(node =>
                         node.supportsCommitSigning ? (
@@ -123,7 +127,7 @@ export const CommitSigningIntegrations: React.FunctionComponent<
                             pluralNoun="code host commit signing integrations"
                             hasNextPage={hasNextPage}
                         />
-                        {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore}/>}
+                        {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                     </SummaryContainer>
                 )}
             </ConnectionContainer>
