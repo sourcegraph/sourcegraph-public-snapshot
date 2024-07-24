@@ -20,6 +20,8 @@ type configurationPolicyResolver struct {
 	errTracer           *observation.ErrCollector
 }
 
+var _ resolverstubs.CodeIntelligenceConfigurationPolicyResolver = &configurationPolicyResolver{}
+
 func NewConfigurationPolicyResolver(repoStore database.RepoStore, configurationPolicy shared.ConfigurationPolicy, errTracer *observation.ErrCollector) resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
 		repoStore:           repoStore,
@@ -93,8 +95,12 @@ func (r *configurationPolicyResolver) RetainIntermediateCommits() bool {
 	return r.configurationPolicy.RetainIntermediateCommits
 }
 
-func (r *configurationPolicyResolver) IndexingEnabled() bool {
+func (r *configurationPolicyResolver) PreciseIndexingEnabled() bool {
 	return r.configurationPolicy.IndexingEnabled
+}
+
+func (r *configurationPolicyResolver) SyntacticIndexingEnabled() bool {
+	return r.configurationPolicy.SyntacticIndexingEnabled
 }
 
 func (r *configurationPolicyResolver) IndexCommitMaxAgeHours() *int32 {

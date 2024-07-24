@@ -24,7 +24,7 @@ export const hasGlobalPolicyViolation = (policy: CodeIntelligenceConfigurationPo
 
     return (
         // User has enabled auto indexing for a policy
-        policy.indexingEnabled &&
+        policy.preciseIndexingEnabled &&
         // Policy isn't targeted at a specific repository
         !policy.repository &&
         // Policy does not have a targeted repository pattern.
