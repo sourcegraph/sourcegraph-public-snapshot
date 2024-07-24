@@ -25,16 +25,6 @@ pkg_tar(
     name = "tar_frontend",
     srcs = [
         ":frontend",
-        "//client/web/dist:copy_bundle",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-pkg_tar(
-    name = "tar_frontend_integration",
-    srcs = [
-        ":frontend",
-        "//client/web/dist:copy_integration_manifest",
     ],
     visibility = ["//visibility:public"],
 )
@@ -67,6 +57,7 @@ oci_image(
         # Needed so the "Upgrade readiness" page in the site-admin
         # can find locally the current schema.
         "//cmd/migrator:tar_current_schema_descriptions",
+        "//client/web/dist:tar_bundle",
     ],
     user = "sourcegraph",
 )
@@ -126,6 +117,7 @@ oci_image(
         # Needed so the "Upgrade readiness" page in the site-admin
         # can find locally the current schema.
         "//cmd/migrator:tar_current_schema_descriptions",
+        "//client/web/dist:tar_dummy_manifest",
     ],
     user = "sourcegraph",
 )

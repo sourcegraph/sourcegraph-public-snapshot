@@ -66,17 +66,6 @@ pkg_tar(
 )
 
 pkg_tar(
-    name = "tar_frontend_integration",
-    srcs = [
-        "//client/web/dist:copy_integration_manifest",
-        "//cmd/frontend",
-    ],
-    remap_paths = {
-        "/frontend": "/usr/local/bin/frontend",
-    },
-)
-
-pkg_tar(
     name = "tar_monitoring_config",
     srcs = [
         "//dev/prometheus:prometheus_targets_linux",
@@ -177,7 +166,7 @@ oci_image(
         "GO111MODULES": "on",
         "LANG": "en_US.utf8",
         "LC_ALL": "en_US.utf8",
-        "SRC_ASSETS_DIR": "assets-dir",
+        "SRC_ASSETS_DIR": "/assets-dist",
         # "PGHOST": "/var/run/postgresql",
     },
     tars = [
@@ -190,8 +179,9 @@ oci_image(
         ":tar_postgres_optimize",
         ":tar_postgres_reindex",
         ":tar_prom-wrapper",
+        ":tar_image_test_scripts",
+        "//client/web/dist:tar_bundle",
         "//monitoring:generate_grafana_config_tar",
-        "tar_image_test_scripts",
     ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
     workdir = "/",
 )
@@ -255,12 +245,11 @@ oci_image(
         "GO111MODULES": "on",
         "LANG": "en_US.utf8",
         "LC_ALL": "en_US.utf8",
-        "SRC_ASSETS_DIR": "integration",
+        "SRC_ASSETS_DIR": "/integration",
         # "PGHOST": "/var/run/postgresql",
     },
     tars = [
         ":tar_server",
-        ":tar_frontend_integration",
         ":static_config_tar",
         ":tar_postgres_exporter_config",
         ":tar_monitoring_config",
@@ -269,18 +258,10 @@ oci_image(
         ":tar_postgres_optimize",
         ":tar_postgres_reindex",
         ":tar_prom-wrapper",
-        "//monitoring:generate_grafana_config_tar",
         "tar_image_test_scripts",
-    ] + dependencies_tars([
-        "//cmd/precise-code-intel-worker",
-        "//cmd/searcher",
-        "//cmd/embeddings",
-        "//cmd/gitserver",
-        "//cmd/migrator",
-        "//cmd/repo-updater",
-        "//cmd/symbols",
-        "//cmd/worker",
-    ]) + dependencies_tars(ZOEKT_DEPS),
+        "//monitoring:generate_grafana_config_tar",
+        "//client/web/dist:tar_dummy_manifest",
+    ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
     workdir = "/",
 )
 
