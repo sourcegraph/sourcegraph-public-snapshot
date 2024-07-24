@@ -18,7 +18,7 @@ type Service = {
 }
 
 type Status = {
-    services: Service[]
+    status: { services: Service[] }
 }
 
 const ShowServices: React.FC<{ services: Service[] }> = ({ services }) =>
@@ -61,7 +61,7 @@ export const Maintenance: React.FC = () => {
         const timer = setInterval(() => {
             call('/api/v1/appliance/maintenance/status')
                 .then(response => response.json())
-                .then(setStatus)
+                .then(data => setStatus(data))
         }, MaintenanceStatusTimerMs)
         return () => clearInterval(timer)
     }, [])
@@ -75,8 +75,8 @@ export const Maintenance: React.FC = () => {
         }
     }, [fixing])
 
-    const ready = status?.services.length !== undefined
-    const unhealthy = status?.services?.find((s: Service) => !s.healthy)
+    const ready = status?.status.services.length !== undefined
+    const unhealthy = status?.status.services?.find((s: Service) => !s.healthy)
 
     return (
         <div className="maintenance">
@@ -97,7 +97,7 @@ export const Maintenance: React.FC = () => {
             {ready ? (
                 <>
                     <Typography variant="h5">Service Status</Typography>
-                    <ShowServices services={status?.services ?? []} />
+                    <ShowServices services={status?.status.services ?? []} />
                 </>
             ) : null}
 

@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -131,6 +132,32 @@ func (a *Appliance) getInstallProgressJSONHandler() http.Handler {
 func (a *Appliance) getMaintenanceStatusHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+		type service struct {
+			Name    string `json:"name"`
+			Healthy bool   `json:"healthy"`
+			Message string `json:"message"`
+		}
+
+		type Status struct {
+			Services []service `json:"services"`
+		}
+
+		services := []service{}
+		for _, name := range config.SourcegraphServicesToReconcile {
+			services = append(services, service{
+				Name:    name,
+				Healthy: true,
+				Message: "fake event",
+			})
+		}
+
+		status := Status{
+			Services: services,
+		}
+
+		if err := a.writeJSON(w, http.StatusOK, responseData{"status": status}, nil); err != nil {
+			a.serverErrorResponse(w, r, err)
+		}
 	})
 }
 
@@ -162,6 +189,6 @@ func (a *Appliance) postStatusJSONHandler() http.Handler {
 			a.serverErrorResponse(w, r, err)
 		}
 
-		a.status = StatusInstalling
+		a.status = StatusMaintenance
 	})
 }

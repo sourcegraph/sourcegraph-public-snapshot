@@ -18,6 +18,7 @@ const (
 	StatusUpgrading       Status = "upgrading"
 	StatusWaitingForAdmin Status = "wait-for-admin"
 	StatusRefresh         Status = "refresh"
+	StatusMaintenance     Status = "maintenance"
 )
 
 // Status is a point in the Appliance lifecycle that an Appliance can be in.

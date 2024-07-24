@@ -73,62 +73,52 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	sourcegraph.Status.CurrentVersion = applianceSpec.GetAnnotations()[config.AnnotationKeyCurrentVersion]
 
 	// Reconcile services here
-	if err := r.reconcileBlobstore(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile blobstore: %w", err)
-	}
-	if err := r.reconcileRepoUpdater(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile repo updater: %w", err)
-	}
-	if err := r.reconcileSymbols(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile symbols service: %w", err)
-	}
-	if err := r.reconcileGitServer(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile gitserver: %w", err)
-	}
-	if err := r.reconcileRedis(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile redis: %w", err)
-	}
-	if err := r.reconcilePGSQL(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile pgsql: %w", err)
-	}
-	if err := r.reconcileSyntect(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile syntect: %w", err)
-	}
-	if err := r.reconcilePreciseCodeIntel(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile precise code intel: %w", err)
-	}
-	if err := r.reconcileCodeInsights(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile code insights DB: %w", err)
-	}
-	if err := r.reconcileCodeIntel(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile code intel DB: %w", err)
-	}
-	if err := r.reconcilePrometheus(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile prometheus: %w", err)
-	}
-	if err := r.reconcileCadvisor(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile cadvisor: %w", err)
-	}
-	if err := r.reconcileWorker(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile worker: %w", err)
-	}
-	if err := r.reconcileFrontend(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile frontend: %w", err)
-	}
-	if err := r.reconcileSearcher(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile searcher: %w", err)
-	}
-	if err := r.reconcileIndexedSearcher(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile indexed-searcher: %w", err)
-	}
-	if err := r.reconcileGrafana(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile grafana: %w", err)
-	}
-	if err := r.reconcileJaeger(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile jaeger: %w", err)
-	}
-	if err := r.reconcileOtel(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile OpenTelemetry Collector: %w", err)
+	var reconcile func(ctx context.Context, sourcegraph *config.Sourcegraph, owner client.Object) error
+	for _, service := range config.SourcegraphServicesToReconcile {
+		switch service {
+		case "blobstore":
+			reconcile = r.reconcileBlobstore
+		case "repo-updater":
+			reconcile = r.reconcileRepoUpdater
+		case "symbols":
+			reconcile = r.reconcileSymbols
+		case "gitserver":
+			reconcile = r.reconcileGitServer
+		case "redis":
+			reconcile = r.reconcileRedis
+		case "pgsql":
+			reconcile = r.reconcilePGSQL
+		case "syntect":
+			reconcile = r.reconcileSyntect
+		case "precise-code-intel":
+			reconcile = r.reconcilePreciseCodeIntel
+		case "code-insights-db":
+			reconcile = r.reconcileCodeInsights
+		case "code-intel-db":
+			reconcile = r.reconcileCodeIntel
+		case "prometheus":
+			reconcile = r.reconcilePrometheus
+		case "cadvisor":
+			reconcile = r.reconcileCadvisor
+		case "worker":
+			reconcile = r.reconcileWorker
+		case "frontend":
+			reconcile = r.reconcileFrontend
+		case "searcher":
+			reconcile = r.reconcileSearcher
+		case "indexed-searcher":
+			reconcile = r.reconcileIndexedSearcher
+		case "grafana":
+			reconcile = r.reconcileGrafana
+		case "jaeger":
+			reconcile = r.reconcileJaeger
+		case "otel":
+			reconcile = r.reconcileOtel
+		}
+
+		if err := reconcile(ctx, &sourcegraph, &applianceSpec); err != nil {
+			return ctrl.Result{}, errors.Newf("failed to reconcile %s: %w", service, err)
+		}
 	}
 
 	// Set the current version annotation in case migration logic depends on it.
