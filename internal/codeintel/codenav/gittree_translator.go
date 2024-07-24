@@ -232,7 +232,7 @@ func (t *newTranslator) TranslateRange(
 func (t *newTranslator) readCachedHunks(
 	ctx context.Context, from api.CommitID, to api.CommitID, path core.RepoRelPath,
 ) (_ []compactHunk, err error) {
-	_ = t.fetchHunks(ctx, from, to, path)
+	_ = t.fetchHunksLazy(ctx, from, to, path)
 	t.cacheLock.RLock()
 	hunkFunc, ok := t.hunkCache[hunkCacheKey{from, to, path}]
 	t.cacheLock.RUnlock()
@@ -244,16 +244,15 @@ func (t *newTranslator) readCachedHunks(
 }
 
 func (t *newTranslator) Prefetch(ctx context.Context, from api.CommitID, to api.CommitID, paths []core.RepoRelPath) {
-	run := t.fetchHunks(ctx, from, to, paths...)
 	// Kick off the actual diff command in the background
-	go func() { run() }()
+	go t.fetchHunksLazy(ctx, from, to, paths...)()
 }
 
-// fetchHunks fetches the hunks for the given paths from the given commit range as a batch from gitserver and
+// fetchHunksLazy fetches the hunks for the given paths from the given commit range as a batch from gitserver and
 // populates the cache with its results.
 // It returns a function that can be called to kick off the actual diff command, otherwise the diff command
 // will be kicked off when the first path from paths is requested.
-func (t *newTranslator) fetchHunks(ctx context.Context, from api.CommitID, to api.CommitID, paths ...core.RepoRelPath) func() {
+func (t *newTranslator) fetchHunksLazy(ctx context.Context, from api.CommitID, to api.CommitID, paths ...core.RepoRelPath) func() {
 	t.cacheLock.Lock()
 	defer t.cacheLock.Unlock()
 	// Don't fetch diffs for paths we've already cached
@@ -272,7 +271,7 @@ func (t *newTranslator) fetchHunks(ctx context.Context, from api.CommitID, to ap
 		t.hunkCache[key] = sync.OnceValues(func() ([]compactHunk, error) {
 			hunksMap, err := onceHunksMap()
 			if err != nil {
-				return []compactHunk{}, nil
+				return []compactHunk{}, err
 			}
 			hunks, ok := hunksMap[path]
 			if !ok {
@@ -306,21 +305,21 @@ func (t *newTranslator) runDiff(
 			err = closeErr
 		}
 	}()
-	fds := make(map[core.RepoRelPath][]compactHunk)
+	fileDiffs := make(map[core.RepoRelPath][]compactHunk)
 	for {
-		fd, err := r.Next()
+		fileDiff, err := r.Next()
 		if err != nil {
 			if errors.Is(err, io.EOF) {
-				return fds, nil
+				return fileDiffs, nil
 			} else {
 				return nil, err
 			}
 		}
-		if fd.OrigName != fd.NewName {
+		if fileDiff.OrigName != fileDiff.NewName {
 			// We do not handle file renames
 			continue
 		}
-		fds[core.NewRepoRelPathUnchecked(fd.OrigName)] = genslices.Map(fd.Hunks, newCompactHunk)
+		fileDiffs[core.NewRepoRelPathUnchecked(fileDiff.OrigName)] = genslices.Map(fileDiff.Hunks, newCompactHunk)
 	}
 }
 
