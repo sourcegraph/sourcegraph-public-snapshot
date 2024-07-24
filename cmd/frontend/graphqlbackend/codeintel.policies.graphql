@@ -1,7 +1,8 @@
 extend type Query {
     """
-    Returns precise code intelligence configuration policies that control data retention
-    and (if enabled) auto-indexing behavior.
+    Returns code intelligence configuration policies for precise and
+    syntactic indexing that control data retention and (if enabled) precise
+    auto-indexing behavior.
     """
     codeIntelligenceConfigurationPolicies(
         """
@@ -26,7 +27,7 @@ extend type Query {
         If set to true, then only configuration policies with precise indexing enabled are returned.
         If set to false, then configuration policies with precise indexing enabled are filtered out.
         """
-        forIndexing: Boolean
+        forPreciseIndexing: Boolean
 
         """
         If set to true, then only configuration policies with syntactic indexing enabled are returned.
@@ -108,7 +109,7 @@ extend type Mutation {
         retentionEnabled: Boolean!
         retentionDurationHours: Int
         retainIntermediateCommits: Boolean!
-        indexingEnabled: Boolean!
+        preciseIndexingEnabled: Boolean!
         syntacticIndexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
@@ -134,7 +135,7 @@ extend type Mutation {
         retentionEnabled: Boolean!
         retentionDurationHours: Int
         retainIntermediateCommits: Boolean!
-        indexingEnabled: Boolean!
+        preciseIndexingEnabled: Boolean!
         syntacticIndexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
@@ -264,9 +265,9 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     retainIntermediateCommits: Boolean!
 
     """
-    Whether or not this configuration policy affects auto-indexing schedules.
+    Whether or not this configuration policy affects precise indexing schedules.
     """
-    indexingEnabled: Boolean!
+    preciseIndexingEnabled: Boolean!
 
     """
     Whether or not this configuration policy affects syntactic indexing schedules.

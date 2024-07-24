@@ -354,7 +354,7 @@ const NameSettingsSection: FunctionComponent<NameSettingsSectionProps> = ({ repo
                 required={true}
                 error={policy.name === '' ? 'Please supply a value' : undefined}
                 placeholder={`Custom ${!repo ? 'global ' : ''}${
-                    policy.indexingEnabled ? 'indexing ' : policy.retentionEnabled ? 'retention ' : ''
+                    policy.preciseIndexingEnabled ? 'indexing ' : policy.retentionEnabled ? 'retention ' : ''
                 }policy${repo ? ` for ${displayRepoName(repo.name)}` : ''}`}
             />
         </div>
@@ -614,7 +614,7 @@ const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({ policy, pr
                                 {tag.name}
                             </Badge>
 
-                            {policy.indexingEnabled &&
+                            {policy.preciseIndexingEnabled &&
                                 policy.indexCommitMaxAgeHours !== null &&
                                 (new Date().getTime() - new Date(tag.committedAt).getTime()) / MS_IN_HOURS >
                                     policy.indexCommitMaxAgeHours && (
@@ -707,14 +707,14 @@ const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({
                     <div className={styles.toggleContainer}>
                         <Toggle
                             id="indexing-enabled"
-                            value={policy.indexingEnabled}
+                            value={policy.preciseIndexingEnabled}
                             className={styles.toggle}
-                            onToggle={indexingEnabled => {
-                                if (indexingEnabled) {
-                                    updatePolicy({ indexingEnabled })
+                            onToggle={preciseIndexingEnabled => {
+                                if (preciseIndexingEnabled) {
+                                    updatePolicy({ preciseIndexingEnabled })
                                 } else {
                                     updatePolicy({
-                                        indexingEnabled,
+                                        preciseIndexingEnabled,
                                         indexIntermediateCommits: false,
                                         indexCommitMaxAgeHours: null,
                                     })
@@ -770,7 +770,7 @@ interface IndexSettingsProps {
 }
 
 const IndexSettings: FunctionComponent<IndexSettingsProps> = ({ policy, updatePolicy }) =>
-    policy.indexingEnabled && policy.type !== GitObjectType.GIT_COMMIT ? (
+    policy.preciseIndexingEnabled && policy.type !== GitObjectType.GIT_COMMIT ? (
         <div className="ml-3 mb-3">
             <div className="mt-2 mb-2">
                 <Checkbox
@@ -956,7 +956,7 @@ function comparePolicies(
         a.retentionEnabled === b.retentionEnabled,
         a.retentionDurationHours === b.retentionDurationHours,
         a.retainIntermediateCommits === b.retainIntermediateCommits,
-        a.indexingEnabled === b.indexingEnabled,
+        a.preciseIndexingEnabled === b.preciseIndexingEnabled,
         a.syntacticIndexingEnabled === b.syntacticIndexingEnabled,
         a.indexCommitMaxAgeHours === b.indexCommitMaxAgeHours,
         a.indexIntermediateCommits === b.indexIntermediateCommits,

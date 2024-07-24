@@ -95,7 +95,7 @@ func (r *configurationPolicyResolver) RetainIntermediateCommits() bool {
 	return r.configurationPolicy.RetainIntermediateCommits
 }
 
-func (r *configurationPolicyResolver) IndexingEnabled() bool {
+func (r *configurationPolicyResolver) PreciseIndexingEnabled() bool {
 	return r.configurationPolicy.IndexingEnabled
 }
 

@@ -28,7 +28,7 @@ type CodeIntelligenceConfigurationPoliciesArgs struct {
 	Repository           *graphql.ID
 	Query                *string
 	ForDataRetention     *bool
-	ForIndexing          *bool
+	ForPreciseIndexing   *bool
 	ForSyntacticIndexing *bool
 	ForEmbeddings        *bool
 	Protected            *bool
@@ -48,7 +48,7 @@ type CodeIntelConfigurationPolicy struct {
 	RetentionEnabled          bool
 	RetentionDurationHours    *int32
 	RetainIntermediateCommits bool
-	IndexingEnabled           bool
+	PreciseIndexingEnabled    bool
 	SyntacticIndexingEnabled  bool
 	IndexCommitMaxAgeHours    *int32
 	IndexIntermediateCommits  bool
@@ -93,7 +93,7 @@ type CodeIntelligenceConfigurationPolicyResolver interface {
 	RetentionEnabled() bool
 	RetentionDurationHours() *int32
 	RetainIntermediateCommits() bool
-	IndexingEnabled() bool
+	PreciseIndexingEnabled() bool
 	SyntacticIndexingEnabled() bool
 	IndexCommitMaxAgeHours() *int32
 	IndexIntermediateCommits() bool
