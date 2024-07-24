@@ -114,8 +114,6 @@ write_source_files(
         "//internal/search/symbol:generate_mocks",
         "//internal/telemetry/telemetrytest:generate_mocks",
         "//internal/uploadhandler:generate_mocks",
-        "//internal/uploadstore/mocks:generate_mocks",
-        "//internal/uploadstore:generate_mocks",
         "//internal/workerutil/dbworker/store/mocks:generate_mocks",
         "//internal/workerutil:generate_mocks",
         "//lib/background:generate_mocks",
@@ -128,5 +126,8 @@ write_source_files(
         "//dev/sg/internal/analytics:generate_mocks",
         "//cmd/symbols/internal/fetcher:generate_mocks",
         "//internal/releaseregistry/mocks:generate_mocks",
+        "//internal/object/mocks:generate_mocks",
+        "//internal/object:generate_mocks",
+        "//internal/codeintel/codenav/internal/lsifstore/mocks:generate_mocks",
     ],
 )

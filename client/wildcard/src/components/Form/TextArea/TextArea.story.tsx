@@ -15,10 +15,7 @@ const config: Meta = {
 
     parameters: {
         component: TextArea,
-        chromatic: {
-            enableDarkMode: true,
-            disableSnapshot: false,
-        },
+
         design: {
             type: 'figma',
             name: 'Figma',

@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -20,7 +19,7 @@ func (r *schemaResolver) SettingsSubject(ctx context.Context, args *struct{ ID g
 		return nil, err
 	}
 
-	return settingsSubjectForNode(ctx, n)
+	return settingsSubjectForNodeAndCheckAccess(ctx, n)
 }
 
 var errUnknownSettingsSubject = errors.New("unknown settings subject")
@@ -31,29 +30,46 @@ type settingsSubjectResolver struct {
 	site            *siteResolver
 	org             *OrgResolver
 	user            *UserResolver
+
+	// 🚨 SECURITY: Only the settingsSubjectForNodeAndCheckAccess function can set this. It is used
+	// to ensure that access checks have been run on this value, so that we don't leak settings to
+	// an unauthorized viewer by an accidental bypass of access checks. This struct type is
+	// naturally constructed all over the place (because many types of nodes have settings), and it
+	// was too easy to bypass the access check accidentally.
+	checkedAccess_DO_NOT_SET_THIS_MANUALLY_OR_YOU_WILL_LEAK_SECRETS bool
+}
+
+func (r *settingsSubjectResolver) assertCheckedAccess() {
+	if !r.checkedAccess_DO_NOT_SET_THIS_MANUALLY_OR_YOU_WILL_LEAK_SECRETS {
+		panic("settingsSubjectResolver.assertCheckedAccess: access checks have not been run on this value")
+	}
 }
 
 func resolverForSubject(ctx context.Context, logger log.Logger, db database.DB, subject api.SettingsSubject) (*settingsSubjectResolver, error) {
-	switch {
-	case subject.Default:
+	if subject.Default {
 		return &settingsSubjectResolver{defaultSettings: newDefaultSettingsResolver(db)}, nil
-	case subject.Site:
-		return &settingsSubjectResolver{site: NewSiteResolver(logger, db)}, nil
-	case subject.Org != nil:
-		org, err := OrgByIDInt32(ctx, db, *subject.Org)
-		if err != nil {
-			return nil, err
-		}
-		return &settingsSubjectResolver{org: org}, nil
-	case subject.User != nil:
-		user, err := UserByIDInt32(ctx, db, *subject.User)
-		if err != nil {
-			return nil, err
-		}
-		return &settingsSubjectResolver{user: user}, nil
-	default:
-		return nil, errors.New("subject must have exactly one field set")
 	}
+
+	var (
+		node Node
+		err  error
+	)
+	switch {
+	case subject.Site:
+		node = NewSiteResolver(logger, db)
+	case subject.Org != nil:
+		node, err = OrgByIDInt32(ctx, db, *subject.Org)
+	case subject.User != nil:
+		node, err = UserByIDInt32(ctx, db, *subject.User)
+	default:
+		panic("subject must have exactly one field set")
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Call settingsSubjectForNode to reuse the security checks implemented there.
+	return settingsSubjectForNodeAndCheckAccess(ctx, node)
 }
 
 func resolversForSubjects(ctx context.Context, logger log.Logger, db database.DB, subjects []api.SettingsSubject) (_ []*settingsSubjectResolver, err error) {
@@ -67,38 +83,45 @@ func resolversForSubjects(ctx context.Context, logger log.Logger, db database.DB
 	return res, nil
 }
 
-// settingsSubjectForNode fetches the settings subject for the given Node. If
-// the node is not a valid settings subject, an error is returned.
-func settingsSubjectForNode(ctx context.Context, n Node) (*settingsSubjectResolver, error) {
+// settingsSubjectForNodeAndCheckAccess fetches the settings subject for the given Node. If the node
+// is not a valid settings subject, an error is returned.
+//
+// 🚨 SECURITY: This function also ensures that the actor is permitted to view the node's settings.
+// It is the ONLY place that the
+// (settingsSubjectResolver).checkedAccess_DO_NOT_SET_THIS_MANUALLY_OR_YOU_WILL_LEAK_SECRETS field
+// can be set.
+func settingsSubjectForNodeAndCheckAccess(ctx context.Context, n Node) (*settingsSubjectResolver, error) {
+	var subject settingsSubjectResolver
+
 	switch s := n.(type) {
+	case *defaultSettingsResolver:
+		subject.defaultSettings = s
+
 	case *siteResolver:
-		return &settingsSubjectResolver{site: s}, nil
+		subject.site = s
 
 	case *UserResolver:
-		// 🚨 SECURITY: Only the authenticated user can view their settings on
-		// Sourcegraph.com.
-		if dotcom.SourcegraphDotComMode() {
-			if err := auth.CheckSameUser(ctx, s.user.ID); err != nil {
-				return nil, err
-			}
-		} else {
-			// 🚨 SECURITY: Only the user and site admins are allowed to view the user's settings.
-			if err := auth.CheckSiteAdminOrSameUser(ctx, s.db, s.user.ID); err != nil {
-				return nil, err
-			}
+		// 🚨 SECURITY: The user and site admins are allowed to view the user's settings otherwise.
+		if err := auth.CheckSiteAdminOrSameUser(ctx, s.db, s.user.ID); err != nil {
+			return nil, err
 		}
-		return &settingsSubjectResolver{user: s}, nil
+		subject.user = s
 
 	case *OrgResolver:
-		// 🚨 SECURITY: Check that the current user is a member of the org.
+		// 🚨 SECURITY: Only org members or site admins can view the org settings.
 		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, s.db, s.org.ID); err != nil {
 			return nil, err
 		}
-		return &settingsSubjectResolver{org: s}, nil
+		subject.org = s
 
 	default:
 		return nil, errUnknownSettingsSubject
 	}
+
+	// 🚨 SECURITY: This is the ONLY place that this field can be set.
+	subject.checkedAccess_DO_NOT_SET_THIS_MANUALLY_OR_YOU_WILL_LEAK_SECRETS = true
+
+	return &subject, nil
 }
 
 func (s *settingsSubjectResolver) ToDefaultSettings() (*defaultSettingsResolver, bool) {
@@ -115,6 +138,8 @@ func (s *settingsSubjectResolver) ToUser() (*UserResolver, bool) { return s.user
 
 func (s *settingsSubjectResolver) toSubject() api.SettingsSubject {
 	switch {
+	case s.defaultSettings != nil:
+		return api.SettingsSubject{Default: true}
 	case s.site != nil:
 		return api.SettingsSubject{Site: true}
 	case s.org != nil:
@@ -186,21 +211,21 @@ func (s *settingsSubjectResolver) ViewerCanAdminister(ctx context.Context) (bool
 	}
 }
 
-func (s *settingsSubjectResolver) SettingsCascade() (*settingsCascade, error) {
+func (s *settingsSubjectResolver) SettingsCascade(ctx context.Context) (*settingsCascade, error) {
 	switch {
 	case s.defaultSettings != nil:
-		return s.defaultSettings.SettingsCascade(), nil
+		return s.defaultSettings.SettingsCascade(ctx)
 	case s.site != nil:
-		return s.site.SettingsCascade(), nil
+		return s.site.SettingsCascade(ctx)
 	case s.org != nil:
-		return s.org.SettingsCascade(), nil
+		return s.org.SettingsCascade(ctx)
 	case s.user != nil:
-		return s.user.SettingsCascade(), nil
+		return s.user.SettingsCascade(ctx)
 	default:
 		return nil, errUnknownSettingsSubject
 	}
 }
 
-func (s *settingsSubjectResolver) ConfigurationCascade() (*settingsCascade, error) {
-	return s.SettingsCascade()
+func (s *settingsSubjectResolver) ConfigurationCascade(ctx context.Context) (*settingsCascade, error) {
+	return s.SettingsCascade(ctx)
 }

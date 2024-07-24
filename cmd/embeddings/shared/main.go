@@ -56,7 +56,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	repoEmbeddingJobsStore := repo.NewRepoEmbeddingJobsStore(db)
 
 	// Run setup
-	uploadStore, err := embeddings.NewEmbeddingsUploadStore(ctx, observationCtx, config.EmbeddingsUploadStoreConfig)
+	uploadStore, err := embeddings.NewObjectStorage(ctx, observationCtx, config.EmbeddingsUploadStoreConfig)
 	if err != nil {
 		return err
 	}

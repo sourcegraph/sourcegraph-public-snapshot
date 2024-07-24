@@ -27,7 +27,6 @@ const config: Meta = {
             type: 'figma',
             url: 'https://www.figma.com/file/Xc4M24VTQq8itU0Lgb1Wwm/RFC-159-Visual-Design?node-id=66%3A611',
         },
-        chromatic: { viewports: [769, 1200] },
     },
 }
 
@@ -52,8 +51,8 @@ const authUser: AuthenticatedUser = {
     siteAdmin: true,
     organizations: {
         nodes: [
-            { id: '0', settingsURL: '#', displayName: 'Acme Corp' },
-            { id: '1', settingsURL: '#', displayName: 'Beta Inc' },
+            { id: '0', settingsURL: '#' },
+            { id: '1', settingsURL: '#' },
         ] as AuthenticatedUser['organizations']['nodes'],
     },
     viewerCanAdminister: true,

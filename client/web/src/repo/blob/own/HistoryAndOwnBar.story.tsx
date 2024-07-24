@@ -14,6 +14,7 @@ window.context.experimentalFeatures = { perforceChangelistMapping: 'enabled' }
 
 const barData: FetchOwnersAndHistoryResult = {
     node: {
+        id: '1',
         sourceType: RepositoryType.GIT_REPOSITORY,
         commit: {
             blob: {
@@ -149,9 +150,7 @@ const mockLoaded: MockedResponse = {
 
 const config: Meta = {
     title: 'web/repo/blob/own/HistoryAndOwnBar',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

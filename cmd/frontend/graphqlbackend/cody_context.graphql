@@ -1,6 +1,6 @@
 extend type Query {
     """
-    EXPERIMENTAL: Get pieces of context related to the query from a set of repositories.
+    Get pieces of context related to the query from a set of repositories.
     """
     getCodyContext(
         """
@@ -88,8 +88,30 @@ extend type Query {
         """
         Context items that were not passed to the LLM.
         """
-        discardedContextItems: [InputContextItem!]!
+        ignoredContextItems: [InputContextItem!]!
     ): EmptyResponse
+
+    """
+    EXPERIMENTAL: Get pieces of context related to the query from a single repository.
+    """
+    chatContext(
+        """
+        A natural language query string.
+        """
+        query: String!
+        """
+        The repository to search.
+        """
+        repo: String!
+        """
+        Cody interaction ID - used to join requests for intent detection/context fetching/ranking.
+        """
+        interactionId: String!
+        """
+        The number of results to return.
+        """
+        resultsCount: Int
+    ): ChatContextResult!
 }
 
 """
@@ -187,7 +209,43 @@ type RankingResponse {
     """
     used: [Int!]!
     """
-    Indices of context items that were discarded by the ranker. Order is undefined.
+    Indices of context items that were ignored by the ranker. Order is undefined.
     """
-    discarded: [Int!]!
+    ignored: [Int!]!
+}
+
+"""
+EXPERIMENTAL: A response from Cody Chat context retrieval API.
+"""
+type ChatContextResult {
+    """
+    Context items fetched for this chat interaction.
+    """
+    contextItems: [RetrieverContextItem!]!
+    """
+    Partial errors that happened while fetching context items (but did not block the whole request).
+    """
+    partialErrors: [String!]!
+    """
+    Reason this request was stopped - either completed successfully (DONE), timeout (TIMEOUT) or in the future other reasons like context item budget exhausted.
+    """
+    stopReason: String!
+}
+
+"""
+EXPERIMENTAL: Representation of a context item returned by a retriever.
+"""
+type RetrieverContextItem {
+    """
+    Retriever that produced this item.
+    """
+    retriever: String!
+    """
+    Retriever-assigned score for this item <0.0,1.0>.
+    """
+    score: Float
+    """
+    Represents the content of the context item.
+    """
+    item: CodyContextResult!
 }

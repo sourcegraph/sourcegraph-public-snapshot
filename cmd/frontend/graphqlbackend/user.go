@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -375,32 +374,35 @@ func (r *UserResolver) UpdatedAt() *gqlutil.DateTime {
 	return &gqlutil.DateTime{Time: r.user.UpdatedAt}
 }
 
-func (r *UserResolver) settingsSubject() api.SettingsSubject {
-	return api.SettingsSubject{User: &r.user.ID}
-}
-
 func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
-	// settings, because they may contain secrets or other sensitive data.
-	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
+	// 🚨 SECURITY: Check that the viewer can access these settings.
+	subject, err := settingsSubjectForNodeAndCheckAccess(ctx, r)
+	if err != nil {
 		return nil, err
 	}
 
-	settings, err := r.db.Settings().GetLatest(ctx, r.settingsSubject())
+	settings, err := r.db.Settings().GetLatest(ctx, subject.toSubject())
 	if err != nil {
 		return nil, err
 	}
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{r.db, &settingsSubjectResolver{user: r}, settings, nil}, nil
+	return &settingsResolver{db: r.db, subject: subject, settings: settings}, nil
 }
 
-func (r *UserResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{user: r}}
+func (r *UserResolver) SettingsCascade(ctx context.Context) (*settingsCascade, error) {
+	// 🚨 SECURITY: Check that the viewer can access these settings.
+	subject, err := settingsSubjectForNodeAndCheckAccess(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	return &settingsCascade{db: r.db, subject: subject}, nil
 }
 
-func (r *UserResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
+func (r *UserResolver) ConfigurationCascade(ctx context.Context) (*settingsCascade, error) {
+	return r.SettingsCascade(ctx)
+}
 
 func (r *UserResolver) SiteAdmin() (bool, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to determine if the user is a site admin.
@@ -514,7 +516,7 @@ func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPla
 	}
 
 	// 🚨 SECURITY: Only the authenticated user can update their properties.
-	if err := auth.CheckSameUser(ctx, userID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
 		return nil, err
 	}
 

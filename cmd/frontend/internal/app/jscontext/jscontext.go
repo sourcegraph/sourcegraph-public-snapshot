@@ -74,7 +74,6 @@ type UserOrganization struct {
 	Typename    string     `json:"__typename"`
 	ID          graphql.ID `json:"id"`
 	Name        string     `json:"name"`
-	DisplayName *string    `json:"displayName"`
 	URL         string     `json:"url"`
 	SettingsURL *string    `json:"settingsURL"`
 }
@@ -611,7 +610,6 @@ func resolveUserOrganizations(ctx context.Context, user *graphqlbackend.UserReso
 			Typename:    "Org",
 			ID:          org.ID(),
 			Name:        org.Name(),
-			DisplayName: org.DisplayName(),
 			URL:         org.URL(),
 			SettingsURL: org.SettingsURL(),
 		})

@@ -128,7 +128,7 @@ func (r *Reconciler) reconcileIndexedSearchIndexerService(ctx context.Context, s
 		"prometheus.io/port":            "6072",
 		"sourcegraph.prometheus/scrape": "true",
 	})
-	svc.Spec.Ports = []corev1.ServicePort{{Port: 6072, TargetPort: intstr.FromInt(6072)}}
+	svc.Spec.Ports = []corev1.ServicePort{{Port: 6072, TargetPort: intstr.FromInt32(6072)}}
 	svc.Spec.Selector = map[string]string{
 		"app": "indexed-search",
 	}

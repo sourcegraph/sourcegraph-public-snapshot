@@ -86,6 +86,7 @@ export const fetchBlob = memoizeObservable(
                     $visibleIndexID: ID!
                 ) {
                     repository(name: $repoName) {
+                        id
                         commit(rev: $revision) {
                             __typename
                             ...GitCommitFieldsWithFileAndBlob

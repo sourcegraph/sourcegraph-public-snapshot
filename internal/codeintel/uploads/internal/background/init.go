@@ -16,8 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -29,7 +29,7 @@ func NewUploadProcessorJob(
 	repoStore processor.RepoStore,
 	gitserverClient gitserver.Client,
 	db database.DB,
-	uploadStore uploadstore.Store,
+	uploadStore object.Storage,
 	config *processor.Config,
 ) []goroutine.BackgroundRoutine {
 	metrics := processor.NewResetterMetrics(observationCtx)

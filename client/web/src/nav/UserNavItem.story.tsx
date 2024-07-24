@@ -17,10 +17,6 @@ const config: Meta = {
             type: 'figma',
             url: 'https://www.figma.com/file/HWLuLefEdev5KYtoEGHjFj/Sourcegraph-Components-Contractor?node-id=1346%3A0',
         },
-        chromatic: {
-            enableDarkMode: true,
-            viewports: [600],
-        },
     },
     argTypes: {
         isSourcegraphDotCom: {
@@ -48,7 +44,6 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
                 __typename: 'Org',
                 id: '0',
                 name: 'acme',
-                displayName: 'Acme Corp',
                 url: '/organizations/acme',
                 settingsURL: '/organizations/acme/settings',
             },
@@ -56,7 +51,6 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
                 __typename: 'Org',
                 id: '1',
                 name: 'beta',
-                displayName: 'Beta Inc',
                 url: '/organizations/beta',
                 settingsURL: '/organizations/beta/settings',
             },

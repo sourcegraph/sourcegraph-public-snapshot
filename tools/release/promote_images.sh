@@ -2,7 +2,7 @@
 
 set -eu
 
-if [ "$VERSION" = "" ]; then
+if [ -z "$VERSION" ]; then
   echo "❌ Need \$VERSION to be set to promote images"
   exit 1
 fi
@@ -18,6 +18,9 @@ fi
 IFS=' ' read -r -a PROMOTION_REGISTRIES <<< "$ADDITIONAL_PROD_REGISTRIES"
 PROMOTION_REGISTRIES=("$PUBLIC_REGISTRY" "${PROMOTION_REGISTRIES[@]}" )
 
+if [ ! -e "./annotations" ]; then
+    mkdir ./annotations
+fi
 echo -e "## Release: image promotions" > ./annotations/image_promotions.md
 echo -e "\n| Name | From | To |\n|---|---|---|" >> ./annotations/image_promotions.md
 for name in "${@:1}"; do

@@ -7,8 +7,8 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/execute"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/internal/execute"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )

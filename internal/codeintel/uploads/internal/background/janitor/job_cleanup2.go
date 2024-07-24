@@ -24,7 +24,7 @@ func NewUnknownRepositoryJanitor(
 		Interval:    config.Interval,
 		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
-			return store.DeleteIndexesWithoutRepository(ctx, time.Now())
+			return store.DeleteAutoIndexJobsWithoutRepository(ctx, time.Now())
 		},
 	})
 }

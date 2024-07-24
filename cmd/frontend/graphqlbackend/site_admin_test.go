@@ -307,7 +307,7 @@ func TestDeleteOrganization_OnPremise(t *testing.T) {
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
 	orgMembers := dbmocks.NewMockOrgMemberStore()
-	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
 
 	orgs := dbmocks.NewMockOrgStore()
 

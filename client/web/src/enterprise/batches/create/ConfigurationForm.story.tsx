@@ -15,21 +15,10 @@ const decorator: Decorator = story => <div className="p-3 container">{story()}</
 const config: Meta = {
     title: 'web/batches/create/ConfigurationForm',
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default config
-
-const MOCK_ORGANIZATION = {
-    __typename: 'Org',
-    name: 'acme-corp',
-    displayName: 'ACME Corporation',
-    id: 'acme-corp-id',
-}
 
 const buildMocks = (isLicensed = true, hasBatchChanges = true) =>
     new WildcardMockLink([
@@ -56,7 +45,7 @@ export const NewOrgBatchChange: StoryFn = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks()}>
-                <ConfigurationForm {...props} initialNamespaceID={MOCK_ORGANIZATION.id} />
+                <ConfigurationForm {...props} initialNamespaceID="acme-corp-id" />
             </MockedTestProvider>
         )}
     </WebStory>

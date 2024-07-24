@@ -27,7 +27,7 @@ type operations struct {
 	markRepoRevsAsProcessed                *observation.Operation
 	isQueued                               *observation.Operation
 	isQueuedRootIndexer                    *observation.Operation
-	insertIndexes                          *observation.Operation
+	insertAutoIndexJobs                    *observation.Operation
 	insertDependencyIndexingJob            *observation.Operation
 	queueRepoRev                           *observation.Operation
 
@@ -83,7 +83,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		markRepoRevsAsProcessed:                op("MarkRepoRevsAsProcessed"),
 		isQueued:                               op("IsQueued"),
 		isQueuedRootIndexer:                    op("IsQueuedRootIndexer"),
-		insertIndexes:                          op("InsertIndexes"),
+		insertAutoIndexJobs:                    op("InsertJobs"),
 		insertDependencyIndexingJob:            op("InsertDependencyIndexingJob"),
 		queueRepoRev:                           op("QueueRepoRev"),
 

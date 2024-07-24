@@ -22,7 +22,7 @@ export const namespaceAreaRoutes: readonly NamespaceAreaRoute[] = [
 const SavedSearchesRedirect: FunctionComponent<NamespaceProps> = ({ namespace }) => {
     const navigate = useNavigate()
     useEffect(() => {
-        navigate(urlToSavedSearchesList(namespace.id))
+        navigate(urlToSavedSearchesList(namespace.id), { replace: true })
     }, [navigate, namespace.id])
     return null
 }

@@ -13,12 +13,7 @@ const decorator: Decorator = story => <div className="p-3 container">{story()}</
 const config: Meta = {
     title: 'web/External services/AddExternalServicesPage',
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            // Delay screenshot taking, so Monaco has some time to get syntax highlighting prepared.
-            delay: 2000,
-        },
-    },
+    parameters: {},
 }
 
 export default config

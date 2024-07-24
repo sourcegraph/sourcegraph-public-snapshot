@@ -19,7 +19,10 @@ spec:
   indexedSearch:
     disabled: true
 
-  openTelemetry:
+  openTelemetryCollector:
+    disabled: true
+
+  openTelemetryAgent:
     disabled: true
 
   pgsql:

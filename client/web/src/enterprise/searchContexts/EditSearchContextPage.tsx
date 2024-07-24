@@ -9,13 +9,13 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import type {
     Scalars,
     SearchContextEditInput,
-    SearchContextRepositoryRevisionsInput,
     SearchContextFields,
+    SearchContextRepositoryRevisionsInput,
 } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
+import { Alert, LoadingSpinner, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
@@ -32,9 +32,7 @@ export interface EditSearchContextPageProps
     isSourcegraphDotCom: boolean
 }
 
-export const AuthenticatedEditSearchContextPage: React.FunctionComponent<
-    React.PropsWithChildren<EditSearchContextPageProps>
-> = props => {
+export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSearchContextPageProps> = props => {
     const LOADING = 'loading' as const
 
     const params = useParams()

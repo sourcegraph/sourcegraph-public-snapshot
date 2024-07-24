@@ -120,6 +120,7 @@ export const repoCodeIntelStatusQuery = gql`
 export const visibleIndexesQuery = gql`
     query VisibleIndexes($repository: String!, $commit: String!, $path: String!) {
         repository(name: $repository) {
+            id
             commit(rev: $commit) {
                 blob(path: $path) {
                     lsif {

@@ -21,9 +21,7 @@ import { RepositoryOwnEditPage } from './RepositoryOwnEditPage'
 
 const config: Meta = {
     title: 'web/enterprise/own/RepositoryOwnPage',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

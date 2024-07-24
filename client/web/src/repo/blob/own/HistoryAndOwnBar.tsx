@@ -8,7 +8,7 @@ import { logger, pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { type TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, Button, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import type { FetchOwnersAndHistoryResult, FetchOwnersAndHistoryVariables } from '../../../graphql-operations'

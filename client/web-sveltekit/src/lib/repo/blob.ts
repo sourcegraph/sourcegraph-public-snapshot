@@ -3,7 +3,7 @@ import { get } from 'svelte/store'
 
 import { goto as svelteGoto } from '$app/navigation'
 import { page } from '$app/stores'
-import { toPrettyBlobURL } from '$lib/shared'
+import { Occurrence, toPrettyBlobURL } from '$lib/shared'
 import {
     positionToOffset,
     type Definition,
@@ -89,11 +89,7 @@ export async function goToDefinition(
     }
 }
 
-export function openReferences(
-    view: EditorView,
-    documentInfo: DocumentInfo,
-    occurrence: Definition['occurrence']
-): void {
+export function openReferences(view: EditorView, documentInfo: DocumentInfo, occurrence: Occurrence): void {
     const url = toPrettyBlobURL({
         repoName: documentInfo.repoName,
         revision: documentInfo.revision,

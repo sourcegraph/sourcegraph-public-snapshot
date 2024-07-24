@@ -19,6 +19,7 @@ go_library(
         "//internal/gitserver",
         "//lib/codeintel/autoindex/config",
         "//lib/errors",
+        "@com_github_life4_genesis//slices",
         "@com_github_sourcegraph_log//:log",
     ],
 )

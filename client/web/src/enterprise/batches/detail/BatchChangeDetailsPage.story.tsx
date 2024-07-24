@@ -37,10 +37,6 @@ const config: Meta<Args> = {
     title: 'web/batches/details/BatchChangeDetailsPage',
     decorators: [decorator],
     parameters: {
-        chromatic: {
-            viewports: [320, 576, 978, 1440],
-            disableSnapshot: false,
-        },
         controls: {
             exclude: ['url', 'supersededBatchSpec'],
         },

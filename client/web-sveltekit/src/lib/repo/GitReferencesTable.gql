@@ -1,0 +1,27 @@
+fragment GitReferencesTable_Ref on GitRef {
+    id
+    url
+    displayName
+
+    target {
+        commit {
+            id
+            canonicalURL
+            abbreviatedOID
+            author {
+                date
+                person {
+                    ...Avatar_Person
+                }
+            }
+            behindAhead(revspec: $revspec) @include(if: $withBehindAhead) {
+                ahead
+                behind
+            }
+            externalURLs {
+                url
+                serviceKind
+            }
+        }
+    }
+}

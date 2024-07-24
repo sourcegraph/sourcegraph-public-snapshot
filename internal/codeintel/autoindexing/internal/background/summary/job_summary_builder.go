@@ -39,7 +39,7 @@ func NewSummaryBuilder(
 				if err != nil {
 					return err
 				}
-				recentIndexes, err := uploadSvc.GetRecentIndexesSummary(ctx, repositoryWithCount.RepositoryID)
+				recentIndexes, err := uploadSvc.GetRecentAutoIndexJobsSummary(ctx, repositoryWithCount.RepositoryID)
 				if err != nil {
 					return err
 				}

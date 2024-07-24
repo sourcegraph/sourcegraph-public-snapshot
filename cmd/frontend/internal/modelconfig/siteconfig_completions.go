@@ -160,8 +160,8 @@ func getProviderConfiguration(siteConfig *conftypes.CompletionsConfig) *types.Se
 			Endpoint:    siteConfig.Endpoint,
 		}
 
-		// For all the other types of providers you can define in the site configuration, we
-		// just use a generic config. Rather than creating one for Anthropic, Fireworks, Google, etc.
+		// For all the other types of providers you can define in the legacy "completions" site configuration,
+		// we just use a generic config. Rather than creating one for Anthropic, Fireworks, Google, etc.
 		// We'll add those when needed, when we expose the newer style configuration in the site-config.
 	default:
 		serverSideConfig.GenericProvider = &types.GenericProviderConfig{

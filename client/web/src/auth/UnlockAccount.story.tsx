@@ -9,9 +9,7 @@ import { UnlockAccountPage } from './UnlockAccount'
 
 const config: Meta = {
     title: 'web/auth/UnlockAccountPage',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

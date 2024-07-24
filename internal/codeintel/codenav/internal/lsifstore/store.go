@@ -24,15 +24,15 @@ type LsifStore interface {
 	// Whole-document data
 	GetStencil(ctx context.Context, bundleID int, path core.UploadRelPath) ([]shared.Range, error)
 	GetRanges(ctx context.Context, bundleID int, path core.UploadRelPath, startLine, endLine int) ([]shared.CodeIntelligenceRange, error)
-	SCIPDocument(ctx context.Context, uploadID int, path core.UploadRelPath) (_ *scip.Document, err error)
+	SCIPDocument(ctx context.Context, uploadID int, path core.UploadRelPath) (core.Option[*scip.Document], error)
 
 	// Fetch symbol names by position
 	GetMonikersByPosition(ctx context.Context, uploadID int, path core.UploadRelPath, line, character int) ([][]precise.MonikerData, error)
 	GetPackageInformation(ctx context.Context, uploadID int, packageInformationID string) (precise.PackageInformationData, bool, error)
 
 	// Fetch locations by position
-	GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) ([]shared.Location, int, error)
-	GetMinimalBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error)
+	GetBulkMonikerLocations(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) ([]shared.Location, int, error)
+	GetMinimalBulkMonikerLocations(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error)
 
 	// Metadata by position
 	GetHover(ctx context.Context, bundleID int, path core.UploadRelPath, line, character int) (string, shared.Range, bool, error)

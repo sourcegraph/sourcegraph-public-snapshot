@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	lsifstoremocks "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -22,7 +23,7 @@ import (
 func TestHover(t *testing.T) {
 	// Set up mocks
 	mockRepoStore := defaultMockRepoStore()
-	mockLsifStore := NewMockLsifStore()
+	mockLsifStore := lsifstoremocks.NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 	mockSearchClient := client.NewMockSearchClient()
@@ -79,7 +80,7 @@ func TestHover(t *testing.T) {
 func TestHoverRemote(t *testing.T) {
 	// Set up mocks
 	mockRepoStore := defaultMockRepoStore()
-	mockLsifStore := NewMockLsifStore()
+	mockLsifStore := lsifstoremocks.NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 	mockSearchClient := client.NewMockSearchClient()

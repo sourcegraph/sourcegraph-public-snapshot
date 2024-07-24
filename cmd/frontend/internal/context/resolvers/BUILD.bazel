@@ -11,6 +11,7 @@ go_library(
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/internal/cody",
         "//cmd/frontend/internal/codycontext",
+        "//internal/api",
         "//internal/conf",
         "//internal/database",
         "//internal/dotcom",

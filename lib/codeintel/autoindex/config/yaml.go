@@ -1,14 +1,15 @@
 package config
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"gopkg.in/yaml.v2"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func UnmarshalYAML(data []byte) (IndexConfiguration, error) {
-	configuration := IndexConfiguration{}
+func UnmarshalYAML(data []byte) (AutoIndexJobSpecList, error) {
+	configuration := AutoIndexJobSpecList{}
 	if err := yaml.Unmarshal(data, &configuration); err != nil {
-		return IndexConfiguration{}, errors.Errorf("invalid YAML: %v", err)
+		return AutoIndexJobSpecList{}, errors.Errorf("invalid YAML: %v", err)
 	}
 
 	return configuration, nil

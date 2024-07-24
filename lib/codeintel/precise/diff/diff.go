@@ -34,7 +34,7 @@ func Diff(old, new *precise.GroupedBundleDataMaps) string {
 		newResults := make(map[precise.LocationData]precise.QueryResult)
 		for _, rng := range oldDocument.Ranges {
 			loc := precise.LocationData{
-				URI:            path,
+				DocumentPath:   path,
 				StartLine:      rng.StartLine,
 				StartCharacter: rng.StartCharacter,
 				EndLine:        rng.EndLine,
@@ -45,7 +45,7 @@ func Diff(old, new *precise.GroupedBundleDataMaps) string {
 		}
 		for _, rng := range newDocument.Ranges {
 			location := precise.LocationData{
-				URI:            path,
+				DocumentPath:   path,
 				StartLine:      rng.StartLine,
 				StartCharacter: rng.StartCharacter,
 				EndLine:        rng.EndLine,
@@ -277,7 +277,7 @@ func diffMonikers(
 func locationString(location precise.LocationData) string {
 	return fmt.Sprintf(
 		"%v:(%v:%v)-(%v:%v)",
-		location.URI,
+		location.DocumentPath,
 		location.StartLine,
 		location.StartCharacter,
 		location.EndLine,

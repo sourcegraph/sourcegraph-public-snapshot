@@ -14,7 +14,7 @@ type rootResolver struct {
 	autoindexSvc                AutoIndexingService
 	siteAdminChecker            sharedresolvers.SiteAdminChecker
 	uploadLoaderFactory         graphql.UploadLoaderFactory
-	indexLoaderFactory          graphql.IndexLoaderFactory
+	autoIndexJobLoaderFactory   graphql.AutoIndexJobLoaderFactory
 	locationResolverFactory     *gitresolvers.CachedLocationResolverFactory
 	preciseIndexResolverFactory *graphql.PreciseIndexResolverFactory
 	operations                  *operations
@@ -25,7 +25,7 @@ func NewRootResolver(
 	autoindexSvc AutoIndexingService,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	uploadLoaderFactory graphql.UploadLoaderFactory,
-	indexLoaderFactory graphql.IndexLoaderFactory,
+	autoIndexJobLoaderFactory graphql.AutoIndexJobLoaderFactory,
 	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
 	preciseIndexResolverFactory *graphql.PreciseIndexResolverFactory,
 ) resolverstubs.AutoindexingServiceResolver {
@@ -33,7 +33,7 @@ func NewRootResolver(
 		autoindexSvc:                autoindexSvc,
 		siteAdminChecker:            siteAdminChecker,
 		uploadLoaderFactory:         uploadLoaderFactory,
-		indexLoaderFactory:          indexLoaderFactory,
+		autoIndexJobLoaderFactory:   autoIndexJobLoaderFactory,
 		locationResolverFactory:     locationResolverFactory,
 		preciseIndexResolverFactory: preciseIndexResolverFactory,
 		operations:                  newOperations(observationCtx),

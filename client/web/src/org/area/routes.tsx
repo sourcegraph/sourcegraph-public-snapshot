@@ -51,12 +51,12 @@ export const orgAreaRoutes: readonly OrgAreaRoute[] = [
     // Redirect from /organizations/:orgname -> /organizations/:orgname/settings/profile.
     {
         path: '',
-        render: () => <Navigate to="./settings/profile" />,
+        render: () => <Navigate to="./settings/profile" replace={true} />,
     },
     // Redirect from previous /organizations/:orgname/account -> /organizations/:orgname/settings/profile.
     {
         path: 'account',
-        render: () => <Navigate to="../settings/profile" />,
+        render: () => <Navigate to="../settings/profile" replace={true} />,
     },
 
     {

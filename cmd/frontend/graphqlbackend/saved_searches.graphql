@@ -21,6 +21,13 @@ extend type Mutation {
     Only users who can administer the saved search may transfer it.
     """
     transferSavedSearchOwnership(id: ID!, newOwner: ID!): SavedSearch!
+
+    """
+    Change the visibility state of a saved search.
+
+    Only users who can administer the saved search may change its visibility state.
+    """
+    changeSavedSearchVisibility(id: ID!, newVisibility: SavedSearchVisibility!): SavedSearch!
 }
 
 extend type Query {
@@ -39,10 +46,15 @@ extend type Query {
         owner: ID
 
         """
-        Filter to only saved searches owned by the viewer or one of viewer's organizations. If null
-        or false, no such filtering is performed.
+        Filter to only saved searches owned by the viewer or one of viewer's organizations. All
+        public saved searches are also included. If null or false, no such filtering is performed.
         """
         viewerIsAffiliated: Boolean
+
+        """
+        Whether to include draft saved searches.
+        """
+        includeDrafts: Boolean = true
 
         """
         The limit argument for forward pagination.
@@ -89,6 +101,16 @@ input SavedSearchInput {
     The search query.
     """
     query: String!
+
+    """
+    Whether the saved search is a draft.
+    """
+    draft: Boolean!
+
+    """
+    The visibility state for the saved search.
+    """
+    visibility: SavedSearchVisibility!
 }
 
 """
@@ -104,6 +126,27 @@ input SavedSearchUpdateInput {
     The search query.
     """
     query: String!
+
+    """
+    Whether the saved search is a draft.
+    """
+    draft: Boolean!
+}
+
+"""
+The visibility states for a saved search.
+"""
+enum SavedSearchVisibility {
+    """
+    The saved search is visible to all users on the instance.
+    """
+    PUBLIC
+
+    """
+    The saved search is visible only to the owner organization's members (if the owner is an organization)
+    or the owner user (if the owner is a user).
+    """
+    SECRET
 }
 
 """
@@ -154,14 +197,34 @@ type SavedSearch implements Node {
     query: String!
 
     """
+    Whether the saved search is a draft.
+    """
+    draft: Boolean!
+
+    """
     The owner of the saved search, either a user or organization.
     """
     owner: Namespace!
 
     """
+    The visibility state of the saved search.
+    """
+    visibility: SavedSearchVisibility!
+
+    """
+    The user who created the saved search.
+    """
+    createdBy: User
+
+    """
     When the saved search was created.
     """
     createdAt: DateTime!
+
+    """
+    The user who last updated the saved search.
+    """
+    updatedBy: User
 
     """
     When the saved search was last updated.
