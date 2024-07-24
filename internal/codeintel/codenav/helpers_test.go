@@ -178,6 +178,16 @@ func noopTranslator(targetCommit api.CommitID) GitTreeTranslator {
 type MatchLike interface {
 	GetRange() scip.Range
 	GetIsDefinition() bool
+	GetSurroundingContent() string
+}
+
+func expectContent[T MatchLike](t *testing.T, matches []T, range_ scip.Range, content string) {
+	t.Helper()
+	for _, match := range matches {
+		if match.GetRange().CompareStrict(range_) == 0 {
+			require.Equal(t, content, match.GetSurroundingContent())
+		}
+	}
 }
 
 func expectRanges[T MatchLike](t *testing.T, matches []T, ranges ...scip.Range) {

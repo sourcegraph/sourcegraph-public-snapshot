@@ -1087,9 +1087,10 @@ func (s *Service) getSyntacticUpload(ctx context.Context, trace observation.Trac
 }
 
 type SearchBasedMatch struct {
-	Path         core.RepoRelPath
-	Range        scip.Range
-	IsDefinition bool
+	Path               core.RepoRelPath
+	Range              scip.Range
+	SurroundingContent string
+	IsDefinition       bool
 }
 
 func (s SearchBasedMatch) GetRange() scip.Range {
@@ -1100,19 +1101,26 @@ func (s SearchBasedMatch) GetIsDefinition() bool {
 	return s.IsDefinition
 }
 
+func (s SearchBasedMatch) GetSurroundingContent() string {
+	return s.SurroundingContent
+}
+
 type SyntacticMatch struct {
-	Path         core.RepoRelPath
-	Range        scip.Range
-	IsDefinition bool
-	Symbol       string
+	Path               core.RepoRelPath
+	Range              scip.Range
+	SurroundingContent string
+	IsDefinition       bool
+	Symbol             string
 }
 
 func (s SyntacticMatch) GetRange() scip.Range {
 	return s.Range
 }
-
 func (s SyntacticMatch) GetIsDefinition() bool {
 	return s.IsDefinition
+}
+func (s SyntacticMatch) GetSurroundingContent() string {
+	return s.SurroundingContent
 }
 
 type SyntacticUsagesResult struct {

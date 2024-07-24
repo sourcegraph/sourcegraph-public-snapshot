@@ -620,9 +620,7 @@ type UsageResolver interface {
 	Provenance(context.Context) (CodeGraphDataProvenance, error)
 	DataSource() *string
 	UsageRange(context.Context) (UsageRangeResolver, error)
-	SurroundingContent(_ context.Context, args *struct {
-		*SurroundingLines `json:"surroundingLines"`
-	}) (string, error)
+	SurroundingContent(_ context.Context) string
 	UsageKind() SymbolUsageKind
 }
 
