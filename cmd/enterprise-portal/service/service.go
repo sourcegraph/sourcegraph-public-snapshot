@@ -106,6 +106,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		codyaccessservice.NewStoreV1(
 			codyaccessservice.StoreV1Options{
 				SAMSClient: samsClient,
+				DB:         dbHandle,
 				CodyGatewayEvents: newCodyGatewayEventsService(
 					logger.Scoped("codygatewayevents"),
 					config.CodyGatewayEvents),
