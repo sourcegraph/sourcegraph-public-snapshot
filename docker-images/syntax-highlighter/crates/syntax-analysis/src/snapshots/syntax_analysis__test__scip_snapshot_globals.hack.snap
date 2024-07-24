@@ -54,12 +54,14 @@ expression: dumped
   
       class Foo implements SomeInterface {
 //          ^^^ definition(Class) scip-ctags SomeNamespace/Foo#
+          const type T = string;
+//                   ^ definition(TypeAlias) scip-ctags SomeNamespace/Foo#T#
           use SomeTrait;
       }
   
       type Foo_alias = Foo;
 //         ^^^^^^^^^ definition(TypeAlias) scip-ctags SomeNamespace/Foo_alias#
-      newtype Foo_new = Foo;
+      newtype Foo_new = Foo::T;
 //            ^^^^^^^ definition(TypeAlias) scip-ctags SomeNamespace/Foo_new#
   
       // Top level function

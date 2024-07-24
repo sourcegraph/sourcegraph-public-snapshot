@@ -31,11 +31,12 @@ namespace SomeNamespace {
     }
 
     class Foo implements SomeInterface {
+        const type T = string;
         use SomeTrait;
     }
 
     type Foo_alias = Foo;
-    newtype Foo_new = Foo;
+    newtype Foo_new = Foo::T;
 
     // Top level function
     <<__EntryPoint>>

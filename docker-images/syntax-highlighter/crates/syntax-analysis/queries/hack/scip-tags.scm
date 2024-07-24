@@ -44,3 +44,5 @@
 (enumerator (identifier) @descriptor.term @kind.enummember)
 
 (alias_declaration (identifier) @descriptor.type @kind.typealias)
+
+(type_const_declaration name: (identifier) @descriptor.type @kind.typealias)
