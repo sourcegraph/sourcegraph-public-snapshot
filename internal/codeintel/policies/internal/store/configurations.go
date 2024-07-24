@@ -165,7 +165,6 @@ SELECT
 	p.retention_duration_hours,
 	p.retain_intermediate_commits,
 	p.indexing_enabled,
-	p.syntactic_indexing_enabled,
 	p.index_commit_max_age_hours,
 	p.index_intermediate_commits,
 	p.embeddings_enabled
@@ -208,7 +207,6 @@ SELECT
 	p.retention_duration_hours,
 	p.retain_intermediate_commits,
 	p.indexing_enabled,
-	p.syntactic_indexing_enabled,
 	p.index_commit_max_age_hours,
 	p.index_intermediate_commits,
 	p.embeddings_enabled
@@ -240,7 +238,6 @@ func (s *store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 		retentionDurationHours,
 		configurationPolicy.RetainIntermediateCommits,
 		configurationPolicy.IndexingEnabled,
-		configurationPolicy.SyntacticIndexingEnabled,
 		indexingCommitMaxAgeHours,
 		configurationPolicy.IndexIntermediateCommits,
 		configurationPolicy.EmbeddingEnabled,
@@ -263,11 +260,10 @@ INSERT INTO lsif_configuration_policies (
 	retention_duration_hours,
 	retain_intermediate_commits,
 	indexing_enabled,
-	syntactic_indexing_enabled,
 	index_commit_max_age_hours,
 	index_intermediate_commits,
 	embeddings_enabled
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
 	id,
 	repository_id,
@@ -280,7 +276,6 @@ RETURNING
 	retention_duration_hours,
 	retain_intermediate_commits,
 	indexing_enabled,
-	syntactic_indexing_enabled,
 	index_commit_max_age_hours,
 	index_intermediate_commits,
 	embeddings_enabled
@@ -329,7 +324,6 @@ func (s *store) UpdateConfigurationPolicy(ctx context.Context, policy shared.Con
 			retentionDuration,
 			policy.RetainIntermediateCommits,
 			policy.IndexingEnabled,
-			policy.SyntacticIndexingEnabled,
 			indexCommitMaxAge,
 			policy.IndexIntermediateCommits,
 			policy.EmbeddingEnabled,
@@ -351,7 +345,6 @@ SELECT
 	retention_duration_hours,
 	retain_intermediate_commits,
 	indexing_enabled,
-	syntactic_indexing_enabled,
 	index_commit_max_age_hours,
 	index_intermediate_commits,
 	embeddings_enabled
@@ -370,7 +363,6 @@ UPDATE lsif_configuration_policies SET
 	retention_duration_hours = %s,
 	retain_intermediate_commits = %s,
 	indexing_enabled = %s,
-	syntactic_indexing_enabled = %s,
 	index_commit_max_age_hours = %s,
 	index_intermediate_commits = %s,
 	embeddings_enabled = %s
@@ -439,7 +431,6 @@ func scanConfigurationPolicy(s dbutil.Scanner) (configurationPolicy shared.Confi
 		&retentionDurationHours,
 		&configurationPolicy.RetainIntermediateCommits,
 		&configurationPolicy.IndexingEnabled,
-		&configurationPolicy.SyntacticIndexingEnabled,
 		&indexCommitMaxAgeHours,
 		&configurationPolicy.IndexIntermediateCommits,
 		&configurationPolicy.EmbeddingEnabled,
