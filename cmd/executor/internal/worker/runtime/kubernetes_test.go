@@ -221,7 +221,6 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 					}
 					require.Greater(t, len(actualSpec.CommandSpecs), 0)
 
-					assert.Equal(t, expected.CommandSpecs[0].Image, actualSpec.CommandSpecs[0].Image)
 					assert.Equal(t, expected.ScriptPath, actualSpec.ScriptPath)
 					assert.Equal(t, expected.CommandSpecs[0], actualSpec.CommandSpecs[0])
 				}
