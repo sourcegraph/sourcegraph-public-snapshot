@@ -37,6 +37,7 @@ go_library(
         "//cmd/worker/internal/sourcegraphaccounts",
         "//cmd/worker/internal/telemetry",
         "//cmd/worker/internal/telemetrygatewayexporter",
+        "//cmd/worker/internal/users",
         "//cmd/worker/internal/webhooks",
         "//cmd/worker/internal/zoektrepos",
         "//cmd/worker/job",

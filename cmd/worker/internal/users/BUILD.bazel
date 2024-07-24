@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "users",
+    srcs = [
+        "job.go",
+        "update_aggregated_stats.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/users",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//internal/database",
+        "//internal/env",
+        "//internal/eventlogger",
+        "//internal/goroutine",
+        "//internal/metrics",
+        "//internal/observation",
+    ],
+)
+
+go_test(
+    name = "users_test",
+    srcs = ["update_aggregated_stats_test.go"],
+    embed = [":users"],
+    tags = ["requires-network"],
+    deps = [
+        "//internal/database",
+        "//internal/database/dbtest",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+    ],
+)
