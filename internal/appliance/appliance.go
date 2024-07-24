@@ -5,6 +5,7 @@ import (
 
 	"dario.cat/mergo"
 	"golang.org/x/crypto/bcrypt"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,7 +41,6 @@ type Appliance struct {
 const (
 	// Secret and key names
 	dataSecretName                   = "appliance-data"
-	dataSecretJWTSigningKeyKey       = "jwt-signing-key"
 	dataSecretEncryptedPasswordKey   = "encrypted-admin-password"
 	initialPasswordSecretName        = "appliance-password"
 	initialPasswordSecretPasswordKey = "password"
@@ -185,4 +185,21 @@ func (a *Appliance) reconcileConfigMap(ctx context.Context, configMap *corev1.Co
 	}
 
 	return a.client.Update(ctx, existingCfgMap)
+}
+
+// isSourcegraphFrontendReady is a "health check" that is used to be able to know when our backing sourcegraph
+// deployment is ready. This is a "quick and dirty" function and should be replaced with a more comprehensive
+// health check in the very near future.
+func (a *Appliance) isSourcegraphFrontendReady(ctx context.Context) (bool, error) {
+	frontendDeploymentName := types.NamespacedName{Name: "sourcegraph-frontend", Namespace: a.namespace}
+	frontendDeployment := &appsv1.Deployment{}
+	if err := a.client.Get(ctx, frontendDeploymentName, frontendDeployment); err != nil {
+		// If the frontend deployment is not found, we can assume it's not ready
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "fetching frontend deployment")
+	}
+
+	return IsObjectReady(frontendDeployment)
 }

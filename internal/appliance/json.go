@@ -123,6 +123,16 @@ func (a *Appliance) getInstallProgressJSONHandler() http.Handler {
 			Tasks:    currentTasks,
 		}
 
+		ok, err := a.isSourcegraphFrontendReady(r.Context())
+		if err != nil {
+			a.logger.Error("failed to get sourcegraph frontend status")
+			return
+		}
+
+		if ok {
+			a.status = StatusWaitingForAdmin
+		}
+
 		if err := a.writeJSON(w, http.StatusOK, responseData{"progress": installProgress}, nil); err != nil {
 			a.serverErrorResponse(w, r, err)
 		}
