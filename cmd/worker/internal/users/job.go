@@ -34,12 +34,12 @@ func (e aggregatedUsersStatisticsJob) Routines(_ context.Context, observationCtx
 	}
 
 	return []goroutine.BackgroundRoutine{
-			newEventLogsJob(observationCtx, db),
+			newAggregatedUsersStatisticsJob(observationCtx, db),
 		},
 		nil
 }
 
-func newEventLogsJob(observationCtx *observation.Context, db database.DB) goroutine.BackgroundRoutine {
+func newAggregatedUsersStatisticsJob(observationCtx *observation.Context, db database.DB) goroutine.BackgroundRoutine {
 	handler := goroutine.HandlerFunc(func(ctx context.Context) error {
 		ff, err := db.FeatureFlags().GetFeatureFlag(ctx, "user_management_cache_disabled")
 		if err == nil {
