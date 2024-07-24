@@ -129,8 +129,8 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                 ]}
                 description={
                     <>
-                        Rules that control{preciseIndexingEnabled && <> precise auto-indexing and</>} data retention behavior of code
-                        graph data.
+                        Rules that control{preciseIndexingEnabled && <> precise auto-indexing and</>} data retention
+                        behavior of code graph data.
                     </>
                 }
                 actions={authenticatedUser?.siteAdmin && <CreatePolicyButtons repo={repo} />}
