@@ -1,16 +1,17 @@
-package lsifstore
+package codegraph
 
 import (
 	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"sort"
+
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
-	"sort"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 

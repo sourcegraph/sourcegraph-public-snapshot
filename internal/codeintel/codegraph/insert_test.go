@@ -1,4 +1,4 @@
-package lsifstore
+package codegraph
 
 import (
 	"context"
@@ -114,7 +114,7 @@ func TestInsertDocumentWithSymbols(t *testing.T) {
 	ctx := context.Background()
 
 	var n uint32
-	if err := store.WithTransaction(ctx, func(tx Store) error {
+	if err := store.WithTransaction(ctx, func(tx DataStore) error {
 		scipWriter24, err := tx.NewPreciseSCIPWriter(ctx, 24)
 		if err != nil {
 			t.Fatalf("failed to write SCIP symbols: %s", err)

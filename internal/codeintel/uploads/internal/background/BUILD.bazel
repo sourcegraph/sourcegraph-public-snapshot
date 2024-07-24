@@ -7,12 +7,12 @@ go_library(
     tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/codeintel/codegraph",
         "//internal/codeintel/uploads/internal/background/backfiller",
         "//internal/codeintel/uploads/internal/background/commitgraph",
         "//internal/codeintel/uploads/internal/background/expirer",
         "//internal/codeintel/uploads/internal/background/janitor",
         "//internal/codeintel/uploads/internal/background/processor",
-        "//internal/codeintel/uploads/internal/lsifstore",
         "//internal/codeintel/uploads/internal/store",
         "//internal/database",
         "//internal/gitserver",

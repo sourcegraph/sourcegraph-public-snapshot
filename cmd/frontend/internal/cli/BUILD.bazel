@@ -81,7 +81,6 @@ go_library(
         "//internal/trace",
         "//internal/types",
         "//internal/updatecheck",
-        "//internal/users",
         "//internal/version",
         "//internal/version/upgradestore",
         "//lib/errors",

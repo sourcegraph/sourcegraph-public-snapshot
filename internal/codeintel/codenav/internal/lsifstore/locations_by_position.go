@@ -3,7 +3,6 @@ package lsifstore
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -11,74 +10,69 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // GetBulkMonikerLocations returns the locations (within one of the given uploads) with an attached moniker
 // whose scheme+identifier matches one of the given monikers. This method also returns the size of the
 // complete result set to aid in pagination.
-func (s *store) GetBulkMonikerLocations(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
+func (s *store) GetBulkSymbolUsages(
+	ctx context.Context,
+	usageKind shared.UsageKind,
+	uploadIDs []int,
+	lookupSymbols []string,
+	limit, offset int,
+) (_ []shared.Location, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("usageKind", usageKind.String()),
 		attribute.Int("numUploadIDs", len(uploadIDs)),
 		attribute.IntSlice("uploadIDs", uploadIDs),
-		attribute.Int("numMonikers", len(monikers)),
-		attribute.String("monikers", monikersToString(monikers)),
+		attribute.Int("numLookupSymbols", len(lookupSymbols)),
+		attribute.StringSlice("lookupSymbols", lookupSymbols),
 		attribute.Int("limit", limit),
 		attribute.Int("offset", offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if len(uploadIDs) == 0 || len(monikers) == 0 {
+	if len(uploadIDs) == 0 || len(lookupSymbols) == 0 {
 		return nil, 0, nil
 	}
 
-	symbolNames := make([]string, 0, len(monikers))
-	for _, arg := range monikers {
-		symbolNames = append(symbolNames, arg.Identifier)
-	}
-
 	query := sqlf.Sprintf(
-		bulkMonikerResultsQuery,
-		pq.Array(symbolNames),
+		bulkSymbolUsagesQuery,
+		pq.Array(lookupSymbols),
 		pq.Array(uploadIDs),
+		sqlf.Sprintf(usageKind.RangesColumnName()),
 		sqlf.Sprintf(usageKind.RangesColumnName()),
 	)
 
-	locationData, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, query))
+	locationData, err := s.scanUploadSymbolLoci(s.db.Query(ctx, query))
 	if err != nil {
 		return nil, 0, err
 	}
 
 	totalCount = 0
-	for _, monikerLocations := range locationData {
-		totalCount += len(monikerLocations.Locations)
+	for _, data := range locationData {
+		totalCount += len(data.Loci)
 	}
 	trace.AddEvent("TODO Domain Owner",
 		attribute.Int("numUploads", len(locationData)),
 		attribute.Int("totalCount", totalCount))
 
-	max := totalCount
-	if totalCount > limit {
-		max = limit
-	}
-
-	locations := make([]shared.Location, 0, max)
+	locations := make([]shared.Location, 0, min(totalCount, limit))
 outer:
-	for _, monikerLocations := range locationData {
-		for _, row := range monikerLocations.Locations {
+	for _, uploadSymbolLoci := range locationData {
+		for _, locus := range uploadSymbolLoci.Loci {
 			offset--
 			if offset >= 0 {
 				continue
 			}
 
 			locations = append(locations, shared.Location{
-				UploadID: monikerLocations.UploadID,
-				Path:     core.NewUploadRelPathUnchecked(row.DocumentPath),
-				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+				UploadID: uploadSymbolLoci.UploadID,
+				Path:     locus.Path,
+				Range:    shared.TranslateRange(locus.Range),
 			})
 
 			if len(locations) >= limit {
@@ -91,18 +85,20 @@ outer:
 	return locations, totalCount, nil
 }
 
-const bulkMonikerResultsQuery = `
+const bulkSymbolUsagesQuery = `
 WITH RECURSIVE
 ` + symbolIDsCTEs + `
 SELECT
 	ss.upload_id,
-	'scip',
 	msn.symbol_name,
 	%s,
 	document_path
-FROM matching_symbol_names msn
-JOIN codeintel_scip_symbols ss ON ss.upload_id = msn.upload_id AND ss.symbol_id = msn.id
-JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
+FROM codeintel_scip_symbols ss
+JOIN codeintel_scip_document_lookup dl
+     ON dl.id = ss.document_lookup_id
+JOIN matching_symbol_names msn
+     ON msn.upload_id = ss.upload_id AND msn.id = ss.symbol_id
+WHERE ss.%s IS NOT NULL
 ORDER BY ss.upload_id, msn.symbol_name
 `
 
@@ -243,15 +239,6 @@ func extractOccurrenceData(document *scip.Document, lookupOccurrence *scip.Occur
 	}
 }
 
-func monikersToString(vs []precise.MonikerData) string {
-	strs := make([]string, 0, len(vs))
-	for _, v := range vs {
-		strs = append(strs, fmt.Sprintf("%s:%s:%s", v.Kind, v.Scheme, v.Identifier))
-	}
-
-	return strings.Join(strs, ", ")
-}
-
 func symbolHoverText(symbol *scip.SymbolInformation) []string {
 	if sigdoc := symbol.SignatureDocumentation; sigdoc != nil && sigdoc.Text != "" && sigdoc.Language != "" {
 		signature := []string{fmt.Sprintf("```%s\n%s\n```", sigdoc.Language, sigdoc.Text)}
@@ -377,25 +364,27 @@ func uniqueByRange(l shared.Location) [4]int {
 //
 //
 
-func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
+func (s *store) GetMinimalBulkSymbolUsages(
+	ctx context.Context,
+	usageKind shared.UsageKind,
+	uploadIDs []int,
+	skipPaths map[int]string,
+	lookupSymbols []string,
+	limit, offset int,
+) (_ []shared.Location, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("usageKind", usageKind.String()),
 		attribute.Int("numUploadIDs", len(uploadIDs)),
 		attribute.IntSlice("uploadIDs", uploadIDs),
-		attribute.Int("numMonikers", len(monikers)),
-		attribute.String("monikers", monikersToString(monikers)),
+		attribute.Int("numLookupSymbols", len(lookupSymbols)),
+		attribute.StringSlice("lookupSymbols", lookupSymbols),
 		attribute.Int("limit", limit),
 		attribute.Int("offset", offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if len(uploadIDs) == 0 || len(monikers) == 0 {
+	if len(uploadIDs) == 0 || len(lookupSymbols) == 0 {
 		return nil, 0, nil
-	}
-
-	symbolNames := make([]string, 0, len(monikers))
-	for _, arg := range monikers {
-		symbolNames = append(symbolNames, arg.Identifier)
 	}
 
 	var skipConds []*sqlf.Query
@@ -409,45 +398,40 @@ func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, usageKind sh
 	}
 
 	query := sqlf.Sprintf(
-		minimalBulkMonikerResultsQuery,
-		pq.Array(symbolNames),
+		minimalBulkSymbolUsagesQuery,
+		pq.Array(lookupSymbols),
 		pq.Array(uploadIDs),
 		sqlf.Sprintf(usageKind.RangesColumnName()),
 		sqlf.Sprintf(usageKind.RangesColumnName()),
 		sqlf.Join(skipConds, ", "),
 	)
 
-	locationData, err := s.scanDeduplicatedQualifiedMonikerLocations(s.db.Query(ctx, query))
+	locationData, err := s.scanDeduplicatedUploadLoci(s.db.Query(ctx, query))
 	if err != nil {
 		return nil, 0, err
 	}
 
 	totalCount = 0
-	for _, monikerLocations := range locationData {
-		totalCount += len(monikerLocations.Locations)
+	for _, data := range locationData {
+		totalCount += len(data.Loci)
 	}
 	trace.AddEvent("TODO Domain Owner",
 		attribute.Int("numUploads", len(locationData)),
 		attribute.Int("totalCount", totalCount))
 
-	max := totalCount
-	if totalCount > limit {
-		max = limit
-	}
-
-	locations := make([]shared.Location, 0, max)
+	locations := make([]shared.Location, 0, min(totalCount, limit))
 outer:
-	for _, monikerLocations := range locationData {
-		for _, row := range monikerLocations.Locations {
+	for _, uploadLoci := range locationData {
+		for _, locus := range uploadLoci.Loci {
 			offset--
 			if offset >= 0 {
 				continue
 			}
 
 			locations = append(locations, shared.Location{
-				UploadID: monikerLocations.UploadID,
-				Path:     core.NewUploadRelPathUnchecked(row.DocumentPath),
-				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+				UploadID: uploadLoci.UploadID,
+				Path:     locus.Path,
+				Range:    shared.TranslateRange(locus.Range),
 			})
 
 			if len(locations) >= limit {
@@ -460,7 +444,7 @@ outer:
 	return locations, totalCount, nil
 }
 
-const minimalBulkMonikerResultsQuery = `
+const minimalBulkSymbolUsagesQuery = `
 WITH RECURSIVE
 ` + symbolIDsCTEs + `
 SELECT
@@ -468,8 +452,10 @@ SELECT
 	%s,
 	document_path
 FROM codeintel_scip_symbols ss
-JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
-JOIN matching_symbol_names msn ON msn.upload_id = ss.upload_id AND msn.id = ss.symbol_id
+JOIN codeintel_scip_document_lookup dl
+     ON dl.id = ss.document_lookup_id
+JOIN matching_symbol_names msn
+     ON msn.upload_id = ss.upload_id AND msn.id = ss.symbol_id
 WHERE
 	ss.%s IS NOT NULL AND
 	(ss.upload_id, dl.document_path) NOT IN (%s)

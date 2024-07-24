@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -55,7 +55,7 @@ func TestSearchBasedUsages_SyntacticMatchesGetRemovedFromSearchBasedResults(t *t
 	commit := api.CommitID("deadbeef")
 	mockSearchClient := FakeSearchClient().WithFile("path.java", commentRange, syntacticRange).Build()
 	upload, lsifStore := setupUpload(commit, "", doc("path.java", ref("ref", syntacticRange)))
-	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, noopTranslator(commit), upload)
+	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, noopTranslator(), upload, commit)
 
 	usages, err := searchBasedUsagesImpl(
 		context.Background(), observation.TestTraceLogger(log.NoOp()), mockSearchClient,
@@ -84,7 +84,7 @@ func TestSyntacticUsages(t *testing.T) {
 			local("lcl", localRange)),
 		doc("initial.java",
 			ref("initial", initialRange)))
-	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, noopTranslator(commit), upload)
+	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, noopTranslator(), upload, commit)
 
 	syntacticUsages, _, err := syntacticUsagesImpl(
 		context.Background(), observation.TestTraceLogger(log.NoOp()),
@@ -112,7 +112,7 @@ func TestSyntacticUsages_DocumentNotInIndex(t *testing.T) {
 	upload, lsifStore := setupUpload(commit, "",
 		doc("initial.java",
 			ref("initial", initialRange)))
-	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, noopTranslator(commit), upload)
+	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, noopTranslator(), upload, commit)
 	syntacticUsages, _, err := syntacticUsagesImpl(
 		context.Background(), observation.TestTraceLogger(log.NoOp()),
 		mockSearchClient, fakeMappedIndex, UsagesForSymbolArgs{
@@ -143,11 +143,12 @@ func TestSyntacticUsages_IndexCommitTranslated(t *testing.T) {
 			ref("ref", shiftSCIPRange(refRange, 2)),
 			ref("edited", shiftSCIPRange(editedRange, 2)),
 			ref("noMatch", noMatchRange)))
-	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, fakeTranslator(targetCommit, 2,
-		func(_ string, r shared.Range) bool {
+	// Ranges in the index are shifted by +2, so the translator needs to shift by -2 to match up with the search results.
+	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, fakeTranslator(upload.GetCommit(), targetCommit, -2,
+		func(_ core.RepoRelPath, r scip.Range) bool {
 			// When a line was edited in a diff we invalidate all occurrences on that line.
-			return r.ToSCIPRange().CompareStrict(editedRange) == 0
-		}), upload)
+			return r.CompareStrict(editedRange) == 0
+		}), upload, targetCommit)
 
 	syntacticUsages, _, err := syntacticUsagesImpl(
 		context.Background(), observation.TestTraceLogger(log.NoOp()),

@@ -17,6 +17,7 @@ go_library(
     tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/codeintel/codegraph",
         "//internal/codeintel/codenav/shared",
         "//internal/codeintel/core",
         "//internal/codeintel/shared",

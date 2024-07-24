@@ -270,7 +270,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
                     <ul className={styles.jobs}>
                         {connection.nodes.length === 0 && (
                             <SearchJobsZeroState
-                                searchTerm={searchTerm}
+                                searchTerm={debouncedSearchTerm}
                                 selectedUsers={selectedUsers}
                                 selectedStates={selectedStates}
                             />
