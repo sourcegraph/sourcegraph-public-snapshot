@@ -90,7 +90,7 @@ oci_push(
 # No client bundle targets
 
 oci_image(
-    name = "integration_bundle.image",
+    name = "no_client_bundle.image",
     base = "//wolfi-images/sourcegraph-base:base_image",
     cmd = ["serve"],
     entrypoint = [
@@ -113,7 +113,7 @@ oci_image(
         "SRC_ASSETS_DIR": "integration",
     },
     tars = [
-        ":tar_frontend_integration",
+        ":tar_frontend",
         # Needed so the "Upgrade readiness" page in the site-admin
         # can find locally the current schema.
         "//cmd/migrator:tar_current_schema_descriptions",
@@ -124,7 +124,7 @@ oci_image(
 
 oci_tarball(
     name = "no_client_bundle.image_tarball",
-    image = ":integration_bundle.image",
+    image = ":no_client_bundle.image",
     repo_tags = ["frontend:candidate"],
     visibility = ["//testing/tools/upgradetest:__pkg__"],
 )
