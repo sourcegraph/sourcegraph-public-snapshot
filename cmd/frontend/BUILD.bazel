@@ -50,7 +50,7 @@ oci_image(
         "CODEINTEL_PGPORT": "5432",
         "CODEINTEL_PGSSLMODE": "disable",
         "CODEINTEL_PGUSER": "sg",
-        "SRC_ASSETS_DIR": "assets-dir",
+        "SRC_ASSETS_DIR": "assets-dist",
     },
     tars = [
         ":tar_frontend",
@@ -110,6 +110,7 @@ oci_image(
         "CODEINTEL_PGPORT": "5432",
         "CODEINTEL_PGSSLMODE": "disable",
         "CODEINTEL_PGUSER": "sg",
+        # tar_dummy_manifest puts the manifest at /integration
         "SRC_ASSETS_DIR": "integration",
     },
     tars = [
