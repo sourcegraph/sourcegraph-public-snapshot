@@ -25,6 +25,7 @@ go_test(
     name = "adminanalytics_test",
     srcs = ["refresh_analytics_cache_test.go"],
     embed = [":adminanalytics"],
+    tags = ["requires-network"],
     deps = [
         "//internal/adminanalytics",
         "//internal/database",
