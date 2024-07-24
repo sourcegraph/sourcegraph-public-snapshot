@@ -17,17 +17,17 @@ type poolMetrics struct {
 	parseQueueTimeouts prometheus.Counter
 }
 
-func newPoolMetrics(observationCtx *observation.Context, namespace string) *poolMetrics {
+func newPoolMetrics(observationCtx *observation.Context, metricsNamespace string) *poolMetrics {
 
 	parseQueueSize := prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: namespace,
+		Namespace: metricsNamespace,
 		Name:      "codeintel_symbols_parse_queue_size",
 		Help:      "The number of parse jobs enqueued.",
 	})
 	observationCtx.Registerer.MustRegister(parseQueueSize)
 
 	parseQueueTimeouts := prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: namespace,
+		Namespace: metricsNamespace,
 		Name:      "codeintel_symbols_parse_queue_timeouts_total",
 		Help:      "The total number of parse jobs that timed out while enqueued.",
 	})
