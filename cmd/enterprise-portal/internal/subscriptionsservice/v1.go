@@ -193,7 +193,7 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 	for _, s := range subs {
 		respSubscriptions = append(
 			respSubscriptions,
-			convertSubscriptionToProto(s, dotcomSubscriptionsSet[s.ID]),
+			convertSubscriptionToProto(&s.Subscription, dotcomSubscriptionsSet[s.ID]),
 		)
 		delete(dotcomSubscriptionsSet, s.ID)
 	}
@@ -372,7 +372,7 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 		return nil, connectutil.InternalError(ctx, logger, err, "upsert subscription")
 	}
 
-	respSubscription := convertSubscriptionToProto(subscription, subscriptionAttrs[0])
+	respSubscription := convertSubscriptionToProto(&subscription.Subscription, subscriptionAttrs[0])
 	logger.Scoped("audit").Info("UpdateEnterpriseSubscription",
 		log.String("updatedSubscription", respSubscription.GetId()),
 	)

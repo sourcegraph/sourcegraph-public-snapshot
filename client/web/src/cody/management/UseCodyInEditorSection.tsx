@@ -231,7 +231,7 @@ const OTHER_CLIENTS: {
     },
     {
         name: 'Emacs',
-        url: 'https://github.com/sourcegraph/cody-emacs',
+        url: 'https://github.com/sourcegraph/emacs-cody',
         telemetryMetadataKey: 'emacs',
         releaseStage: 'Coming soon',
     },

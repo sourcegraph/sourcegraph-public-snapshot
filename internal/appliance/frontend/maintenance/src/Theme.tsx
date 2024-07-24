@@ -1,4 +1,4 @@
-import { PropsWithChildren, createContext, useContext, useMemo, useState } from 'react'
+import React, { PropsWithChildren, createContext, useContext, useMemo, useState } from 'react'
 
 import { DarkModeOutlined, LightModeOutlined } from '@mui/icons-material'
 import { CssBaseline, ThemeProvider as MuiThemeProvider, PaletteMode, Theme, createTheme } from '@mui/material'
@@ -15,7 +15,7 @@ export const Context = createContext<ThemeContextProps>({
     theme: createTheme(),
 })
 
-export const ThemeProvider: React.FC<PropsWithChildren> = ({ children }) => {
+export const ThemeProvider: React.FC<PropsWithChildren<any>> = ({ children }) => {
     const [mode, setMode] = useState<PaletteMode>((localStorage.getItem('theme') as PaletteMode) ?? 'light')
 
     const theme = useMemo(() => {

@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -38,9 +39,8 @@ type rootResolver struct {
 	siteAdminChecker               sharedresolvers.SiteAdminChecker
 	repoStore                      database.RepoStore
 	uploadLoaderFactory            uploadsgraphql.UploadLoaderFactory
-	indexLoaderFactory             uploadsgraphql.IndexLoaderFactory
+	autoIndexJobLoaderFactory      uploadsgraphql.AutoIndexJobLoaderFactory
 	locationResolverFactory        *gitresolvers.CachedLocationResolverFactory
-	hunkCache                      codenav.HunkCache
 	indexResolverFactory           *uploadsgraphql.PreciseIndexResolverFactory
 	maximumIndexesPerMonikerSearch int
 	operations                     *operations
@@ -54,17 +54,11 @@ func NewRootResolver(
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
 	uploadLoaderFactory uploadsgraphql.UploadLoaderFactory,
-	indexLoaderFactory uploadsgraphql.IndexLoaderFactory,
+	autoIndexJobLoaderFactory uploadsgraphql.AutoIndexJobLoaderFactory,
 	indexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
 	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
 	maxIndexSearch int,
-	hunkCacheSize int,
-) (resolverstubs.CodeNavServiceResolver, error) {
-	hunkCache, err := codenav.NewHunkCache(hunkCacheSize)
-	if err != nil {
-		return nil, err
-	}
-
+) resolverstubs.CodeNavServiceResolver {
 	return &rootResolver{
 		svc:                            svc,
 		autoindexingSvc:                autoindexingSvc,
@@ -72,13 +66,12 @@ func NewRootResolver(
 		siteAdminChecker:               siteAdminChecker,
 		repoStore:                      repoStore,
 		uploadLoaderFactory:            uploadLoaderFactory,
-		indexLoaderFactory:             indexLoaderFactory,
+		autoIndexJobLoaderFactory:      autoIndexJobLoaderFactory,
 		indexResolverFactory:           indexResolverFactory,
 		locationResolverFactory:        locationResolverFactory,
-		hunkCache:                      hunkCache,
 		maximumIndexesPerMonikerSearch: maxIndexSearch,
 		operations:                     newOperations(observationCtx),
-	}, nil
+	}
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for query resolution
@@ -87,6 +80,23 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 	ctx, _, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
+	reqState, err := r.makeRequestState(ctx, args.Repo, opts)
+	if err != nil || reqState == nil {
+		return
+	}
+
+	return newGitBlobLSIFDataResolver(
+		r.svc,
+		r.indexResolverFactory,
+		*reqState,
+		r.uploadLoaderFactory.Create(),
+		r.autoIndexJobLoaderFactory.Create(),
+		r.locationResolverFactory.Create(),
+		r.operations,
+	), nil
+}
+
+func (r *rootResolver) makeRequestState(ctx context.Context, repo *types.Repo, opts shared.UploadMatchingOptions) (*codenav.RequestState, error) {
 	uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, opts)
 	if err != nil || len(uploads) == 0 {
 		return nil, err
@@ -97,23 +107,12 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 		r.repoStore,
 		authz.DefaultSubRepoPermsChecker,
 		r.gitserverClient,
-		args.Repo,
-		args.Commit,
-		// OK to use Unchecked function based on contract of GraphQL API
-		core.NewRepoRelPathUnchecked(args.Path),
+		repo,
+		opts.Commit,
+		opts.Path,
 		r.maximumIndexesPerMonikerSearch,
-		r.hunkCache,
 	)
-
-	return newGitBlobLSIFDataResolver(
-		r.svc,
-		r.indexResolverFactory,
-		reqState,
-		r.uploadLoaderFactory.Create(),
-		r.indexLoaderFactory.Create(),
-		r.locationResolverFactory.Create(),
-		r.operations,
-	), nil
+	return &reqState, nil
 }
 
 func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.CodeGraphDataOpts) (_ *[]resolverstubs.CodeGraphDataResolver, err error) {
@@ -124,9 +123,7 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 		return nil, ErrNotEnabled
 	}
 
-	// TODO: The resolvers may be invoked in parallel. Is GitTreeTranslator
-	// concurrency-safe? It looks like
-	gitTreeTranslator := r.MakeGitTreeTranslator(opts.Repo, opts.Commit)
+	gitTreeTranslator := r.MakeGitTreeTranslator(opts.Repo)
 	makeResolvers := func(prov resolverstubs.CodeGraphDataProvenance) ([]resolverstubs.CodeGraphDataResolver, error) {
 		indexer := ""
 		if prov == resolverstubs.ProvenanceSyntactic {
@@ -197,7 +194,7 @@ func (r *rootResolver) CodeGraphDataByID(ctx context.Context, rawID graphql.ID) 
 		/*document*/ nil,
 		/*documentRetrievalError*/ nil,
 		r.svc,
-		r.MakeGitTreeTranslator(repo, id.Commit),
+		r.MakeGitTreeTranslator(repo),
 		id.UploadData,
 		&opts,
 		id.CodeGraphDataProvenance,
@@ -266,7 +263,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 		SymbolRange: args.Range,
 	}
 
-	gitTreeTranslator := r.MakeGitTreeTranslator(&args.Repo, args.CommitID)
+	gitTreeTranslator := r.MakeGitTreeTranslator(&args.Repo)
 
 	var previousSyntacticSearch core.Option[codenav.PreviousSyntacticSearch]
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
@@ -319,8 +316,8 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	return nil, errors.New("Not implemented yet")
 }
 
-func (r *rootResolver) MakeGitTreeTranslator(repo *sgtypes.Repo, baseCommit api.CommitID) codenav.GitTreeTranslator {
-	return codenav.NewGitTreeTranslator(r.gitserverClient, &codenav.TranslationBase{repo, baseCommit}, r.hunkCache)
+func (r *rootResolver) MakeGitTreeTranslator(repo *sgtypes.Repo) codenav.GitTreeTranslator {
+	return codenav.NewGitTreeTranslator(r.gitserverClient, *repo)
 }
 
 // gitBlobLSIFDataResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
@@ -332,7 +329,7 @@ type gitBlobLSIFDataResolver struct {
 	indexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory
 	requestState         codenav.RequestState
 	uploadLoader         uploadsgraphql.UploadLoader
-	indexLoader          uploadsgraphql.IndexLoader
+	autoIndexJobLoader   uploadsgraphql.AutoIndexJobLoader
 	locationResolver     *gitresolvers.CachedLocationResolver
 	operations           *operations
 }
@@ -345,14 +342,14 @@ func newGitBlobLSIFDataResolver(
 	indexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
 	requestState codenav.RequestState,
 	uploadLoader uploadsgraphql.UploadLoader,
-	indexLoader uploadsgraphql.IndexLoader,
+	autoIndexJobLoader uploadsgraphql.AutoIndexJobLoader,
 	locationResolver *gitresolvers.CachedLocationResolver,
 	operations *operations,
 ) resolverstubs.GitBlobLSIFDataResolver {
 	return &gitBlobLSIFDataResolver{
 		codeNavSvc:           codeNavSvc,
 		uploadLoader:         uploadLoader,
-		indexLoader:          indexLoader,
+		autoIndexJobLoader:   autoIndexJobLoader,
 		indexResolverFactory: indexResolverFactory,
 		requestState:         requestState,
 		locationResolver:     locationResolver,
@@ -383,7 +380,7 @@ func (r *gitBlobLSIFDataResolver) VisibleIndexes(ctx context.Context) (_ *[]reso
 		resolver, err := r.indexResolverFactory.Create(
 			ctx,
 			r.uploadLoader,
-			r.indexLoader,
+			r.autoIndexJobLoader,
 			r.locationResolver,
 			traceErrs,
 			&upload,
@@ -490,7 +487,7 @@ func (c *codeGraphDataResolver) tryRetrieveDocument(ctx context.Context) (*scip.
 	// from the database, we can avoid performing a JOIN between codeintel_scip_document_lookup
 	// and codeintel_scip_documents
 	c.retrievedDocument.Do(func() {
-		c.document, c.documentRetrievalError = c.svc.SCIPDocument(ctx, c.gitTreeTranslator, c.upload, c.opts.Path)
+		c.document, c.documentRetrievalError = c.svc.SCIPDocument(ctx, c.gitTreeTranslator, c.upload, c.opts.Commit, c.opts.Path)
 	})
 	return c.document, c.documentRetrievalError
 }

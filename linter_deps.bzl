@@ -175,3 +175,19 @@ def linter_dependencies():
         version = "v1.2.1",
         sum = "h1:AHcMYuw56NPjq/2y615IGg2kYkBdTvOaojYCBcRE7MA=",
     )
+
+    go_repository(
+        name = "com_github_gaijinentertainment_go_exhaustruct_v3",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/GaijinEntertainment/go-exhaustruct/v3",
+        version = "v3.3.0",
+        sum = "h1:/fTUt5vmbkAcMBt4YQiuC23cV0kEsN1MVMNqeOW43cU=",
+    )
+
+    go_repository(
+        name = "in_gopkg_yaml_v3",
+        build_file_proto_mode = "disable_global",
+        importpath = "gopkg.in/yaml.v3",
+        sum = "h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=",
+        version = "v3.0.1",
+    )

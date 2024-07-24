@@ -3,12 +3,13 @@ import type { FunctionComponent } from 'react'
 import { mdiPlus } from '@mdi/js'
 import { Route, Routes } from 'react-router-dom'
 
-import { type AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Icon, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUserOnly } from '../auth/withAuthenticatedUser'
 import { NotFoundPage } from '../components/HeroPage'
+import { PageRoutes } from '../routes.constants'
 
 import { DetailPage } from './DetailPage'
 import { EditPage } from './EditPage'
@@ -30,7 +31,7 @@ export const Area: FunctionComponent<
                     title="Prompt Library"
                     actions={
                         authenticatedUser && (
-                            <Button to="new" variant="primary" as={Link}>
+                            <Button to={`${PageRoutes.Prompts}/new`} variant="primary" as={Link}>
                                 <Icon aria-hidden={true} svgPath={mdiPlus} /> New prompt
                             </Button>
                         )

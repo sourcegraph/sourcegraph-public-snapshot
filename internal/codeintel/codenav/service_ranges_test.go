@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	lsifstoremocks "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -21,25 +22,21 @@ import (
 )
 
 const rangesDiff = `
-diff --git a/changed.go b/changed.go
+diff --git sub3/changed.go sub3/changed.go
 index deadbeef1..deadbeef2 100644
---- a/changed.go
-+++ b/changed.go
-@@ -12,7 +12,7 @@ const imageProcWorkers = 1
- var imageProcSem = make(chan bool, imageProcWorkers)
- var random = "banana"
-
- func (i *imageResource) doWithImageConfig(conf images.ImageConfig, f func(src image.Image) (image.Image, error)) (resource.Image, error) {
+--- sub3/changed.go
++++ sub3/changed.go
+@@ -16,2 +16,2 @@ const imageProcWorkers = 1
 -       img, err := i.getSpec().imageCache.getOrCreate(i, conf, func() (*imageResource, image.Image, error) {
-+       return i.getSpec().imageCache.getOrCreate(i, conf, func() (*imageResource, image.Image, error) {
 -                imageProcSem <- true
++       return i.getSpec().imageCache.getOrCreate(i, conf, func() (*imageResource, image.Image, error) {
 +                defer func() {
 `
 
 func TestRanges(t *testing.T) {
 	// Set up mocks
 	mockRepoStore := defaultMockRepoStore()
-	mockLsifStore := NewMockLsifStore()
+	mockLsifStore := lsifstoremocks.NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 	mockGitserverClient.DiffFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, opt gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
@@ -49,7 +46,6 @@ func TestRanges(t *testing.T) {
 		return gitserver.NewDiffFileIterator(io.NopCloser(bytes.NewReader([]byte{}))), nil
 	})
 	mockSearchClient := client.NewMockSearchClient()
-	hunkCache, _ := NewHunkCache(50)
 
 	mockLsifStore.FindDocumentIDsFunc.SetDefaultHook(findDocumentIDsFuncAllowAny())
 
@@ -59,7 +55,7 @@ func TestRanges(t *testing.T) {
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, hunkCache)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{})
 	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef1", Root: "sub1/", RepositoryID: 42},
 		{ID: 51, Commit: "deadbeef1", Root: "sub2/", RepositoryID: 42},

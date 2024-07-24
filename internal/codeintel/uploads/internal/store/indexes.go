@@ -16,9 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// GetIndexes returns a list of indexes and the total count of records matching the given conditions.
-func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []shared.Index, _ int, err error) {
-	ctx, trace, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// GetAutoIndexJobs returns a list of indexes and the total count of records matching the given conditions.
+func (s *store) GetAutoIndexJobs(ctx context.Context, opts shared.GetAutoIndexJobsOptions) (_ []shared.AutoIndexJob, _ int, err error) {
+	ctx, trace, endObservation := s.operations.getAutoIndexJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", opts.RepositoryID),
 		attribute.String("state", opts.State),
 		attribute.String("term", opts.Term),
@@ -53,7 +53,7 @@ func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (
 		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
 	}
 
-	var a []shared.Index
+	var a []shared.AutoIndexJob
 	var b int
 	err = s.withTransaction(ctx, func(tx *store) error {
 		authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, tx.db))
@@ -62,7 +62,7 @@ func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (
 		}
 		conds = append(conds, authzConds)
 
-		indexes, err := scanIndexes(tx.db.Query(ctx, sqlf.Sprintf(
+		indexes, err := scanJobs(tx.db.Query(ctx, sqlf.Sprintf(
 			getIndexesSelectQuery,
 			sqlf.Join(conds, " AND "),
 			opts.Limit,
@@ -71,7 +71,7 @@ func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (
 		if err != nil {
 			return err
 		}
-		trace.AddEvent("scanIndexesWithCount",
+		trace.AddEvent("scanJobsWithCount",
 			attribute.Int("numIndexes", len(indexes)))
 
 		totalCount, _, err := basestore.ScanFirstInt(tx.db.Query(ctx, sqlf.Sprintf(
@@ -81,7 +81,7 @@ func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (
 		if err != nil {
 			return err
 		}
-		trace.AddEvent("scanIndexesWithCount",
+		trace.AddEvent("scanJobsWithCount",
 			attribute.Int("totalCount", totalCount),
 		)
 
@@ -141,13 +141,13 @@ WHERE
 	%s
 `
 
-// scanIndexes scans a slice of indexes from the return value of `*Store.query`.
-var scanIndexes = basestore.NewSliceScanner(scanIndex)
+// scanJobs scans a slice of indexes from the return value of `*Store.query`.
+var scanJobs = basestore.NewSliceScanner(scanJob)
 
 // scanFirstIndex scans a slice of indexes from the return value of `*Store.query` and returns the first.
-var scanFirstIndex = basestore.NewFirstScanner(scanIndex)
+var scanFirstIndex = basestore.NewFirstScanner(scanJob)
 
-func scanIndex(s dbutil.Scanner) (index shared.Index, err error) {
+func scanJob(s dbutil.Scanner) (index shared.AutoIndexJob, err error) {
 	var executionLogs []executor.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,
@@ -183,16 +183,16 @@ func scanIndex(s dbutil.Scanner) (index shared.Index, err error) {
 	return index, nil
 }
 
-// GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
-func (s *store) GetIndexByID(ctx context.Context, id int) (_ shared.Index, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// GetAutoIndexJobByID returns an index by its identifier and boolean flag indicating its existence.
+func (s *store) GetAutoIndexJobByID(ctx context.Context, id int) (_ shared.AutoIndexJob, _ bool, err error) {
+	ctx, _, endObservation := s.operations.getAutoIndexJobByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 	if err != nil {
-		return shared.Index{}, false, err
+		return shared.AutoIndexJob{}, false, err
 	}
 
 	return scanFirstIndex(s.db.Query(ctx, sqlf.Sprintf(getIndexByIDQuery, id, authzConds)))
@@ -231,10 +231,10 @@ JOIN repo ON repo.id = u.repository_id
 WHERE repo.deleted_at IS NULL AND u.id = %s AND %s
 `
 
-// GetIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
+// GetAutoIndexJobsByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
 // have a corresponding element in the returned list.
-func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Index, err error) {
-	ctx, _, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+func (s *store) GetAutoIndexJobsByIDs(ctx context.Context, ids ...int) (_ []shared.AutoIndexJob, err error) {
+	ctx, _, endObservation := s.operations.getAutoIndexJobsByIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.IntSlice("ids", ids),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -253,7 +253,7 @@ func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Ind
 		queries = append(queries, sqlf.Sprintf("%d", id))
 	}
 
-	return scanIndexes(s.db.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
+	return scanJobs(s.db.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
 }
 
 const getIndexesByIDsQuery = `
@@ -290,9 +290,9 @@ WHERE repo.deleted_at IS NULL AND u.id IN (%s) AND %s
 ORDER BY u.id
 `
 
-// DeleteIndexByID deletes an index by its identifier.
-func (s *store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.deleteIndexByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// DeleteAutoIndexJobByID deletes an index by its identifier.
+func (s *store) DeleteAutoIndexJobByID(ctx context.Context, id int) (_ bool, err error) {
+	ctx, _, endObservation := s.operations.deleteAutoIndexJobByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -305,9 +305,9 @@ const deleteIndexByIDQuery = `
 DELETE FROM lsif_indexes WHERE id = %s RETURNING repository_id
 `
 
-// DeleteIndexes deletes indexes matching the given filter criteria.
-func (s *store) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error) {
-	ctx, _, endObservation := s.operations.deleteIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// DeleteAutoIndexJobs deletes indexes matching the given filter criteria.
+func (s *store) DeleteAutoIndexJobs(ctx context.Context, opts shared.DeleteAutoIndexJobsOptions) (err error) {
+	ctx, _, endObservation := s.operations.deleteAutoIndexJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", opts.RepositoryID),
 		attribute.StringSlice("states", opts.States),
 		attribute.String("term", opts.Term),
@@ -357,25 +357,25 @@ USING repo
 WHERE u.repository_id = repo.id AND %s
 `
 
-// ReindexIndexByID reindexes an index by its identifier.
-func (s *store) ReindexIndexByID(ctx context.Context, id int) (err error) {
-	ctx, _, endObservation := s.operations.reindexIndexByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// SetRerunAutoIndexJobByID reindexes an index by its identifier.
+func (s *store) SetRerunAutoIndexJobByID(ctx context.Context, id int) (err error) {
+	ctx, _, endObservation := s.operations.setRerunAutoIndexJobByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.db.Exec(ctx, sqlf.Sprintf(reindexIndexByIDQuery, id))
+	return s.db.Exec(ctx, sqlf.Sprintf(setRerunAutoIndexJobByIDQuery, id))
 }
 
-const reindexIndexByIDQuery = `
+const setRerunAutoIndexJobByIDQuery = `
 UPDATE lsif_indexes u
 SET should_reindex = true
 WHERE id = %s
 `
 
-// ReindexIndexes reindexes indexes matching the given filter criteria.
-func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error) {
-	ctx, _, endObservation := s.operations.reindexIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// SetRerunAutoIndexJobs reindexes indexes matching the given filter criteria.
+func (s *store) SetRerunAutoIndexJobs(ctx context.Context, opts shared.SetRerunAutoIndexJobsOptions) (err error) {
+	ctx, _, endObservation := s.operations.setRerunAutoIndexJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", opts.RepositoryID),
 		attribute.StringSlice("states", opts.States),
 		attribute.String("term", opts.Term),
@@ -415,11 +415,11 @@ func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOp
 		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_indexes_audit.reason", "direct reindex by filter criteria request")
 		defer unset(ctx)
 
-		return tx.db.Exec(ctx, sqlf.Sprintf(reindexIndexesQuery, sqlf.Join(conds, " AND ")))
+		return tx.db.Exec(ctx, sqlf.Sprintf(setRerunAutoIndexJobsByIDsQuery, sqlf.Join(conds, " AND ")))
 	})
 }
 
-const reindexIndexesQuery = `
+const setRerunAutoIndexJobsByIDsQuery = `
 WITH candidates AS (
     SELECT u.id
 	FROM lsif_indexes u

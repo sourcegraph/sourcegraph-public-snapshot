@@ -121,7 +121,7 @@ func TestCodyGatewayStore(t *testing.T) {
 			_, err := subscriptions.NewStore(db).Upsert(ctx, subscriptionID, subscriptions.UpsertSubscriptionOptions{
 				DisplayName:    pointers.Ptr(database.NewNullString("Archived subscription")),
 				InstanceDomain: pointers.Ptr(database.NewNullString("archived.sourcegraph.com")),
-				ArchivedAt:     pointers.Ptr(time.Now()),
+				ArchivedAt:     pointers.Ptr(utctime.Now()),
 			})
 			require.NoError(t, err)
 
@@ -145,7 +145,7 @@ func TestCodyGatewayStore(t *testing.T) {
 			require.NoError(t, err)
 
 			_, err = subscriptions.NewStore(db).Upsert(ctx, subscriptionID, subscriptions.UpsertSubscriptionOptions{
-				ArchivedAt: pointers.Ptr(time.Now()),
+				ArchivedAt: pointers.Ptr(utctime.Now()),
 			})
 			require.NoError(t, err)
 

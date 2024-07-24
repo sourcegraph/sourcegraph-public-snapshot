@@ -170,10 +170,18 @@
     - RepositoryServiceClient
 - filename: internal/codeintel/codenav/mocks_temp.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore
-      interfaces:
-        - LsifStore
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav
       interfaces:
         - UploadService
         - GitTreeTranslator
+- filename: internal/codeintel/codenav/internal/lsifstore/mocks/mocks_temp.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore
+      interfaces:
+        - LsifStore
+- filename: internal/codeintel/codegraph/codegraphmocks/mocks_temp.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph
+      interfaces:
+        - DataStore
+        - SCIPWriter

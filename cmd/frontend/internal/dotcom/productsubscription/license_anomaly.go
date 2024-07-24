@@ -26,6 +26,8 @@ const licenseAnomalyCheckKey = "license_anomaly_check"
 var licenseAnomalyCheckers uint32
 
 // StartCheckForAnomalousLicenseUsage checks for anomalous license usage.
+//
+// TODO(@bobheadxi): Migrate to Enterprise Portal https://linear.app/sourcegraph/issue/CORE-182
 func StartCheckForAnomalousLicenseUsage(logger log.Logger, db database.DB) {
 	if atomic.AddUint32(&licenseAnomalyCheckers, 1) != 1 {
 		panic("StartCheckForAnomalousLicenseUsage called more than once")

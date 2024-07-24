@@ -24,6 +24,12 @@ func NewManager() *Manager {
 	}
 }
 
+func NewManagerWithCache(cache *rcache.Cache) *Manager {
+	return &Manager{
+		cache: cache,
+	}
+}
+
 type Provider string
 
 const (

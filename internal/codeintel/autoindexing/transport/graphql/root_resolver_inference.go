@@ -54,7 +54,7 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 		return nil, err
 	}
 
-	jobResolvers, err := newDescriptionResolvers(r.siteAdminChecker, &config.IndexConfiguration{IndexJobs: result.IndexJobs})
+	jobResolvers, err := newDescriptionResolvers(r.siteAdminChecker, &config.AutoIndexJobSpecList{JobSpecs: result.IndexJobs})
 	if err != nil {
 		return nil, err
 	}
@@ -96,13 +96,13 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 		configuration = *args.Configuration
 	}
 
-	indexes, err := r.autoindexSvc.QueueIndexes(ctx, int(repositoryID), rev, configuration, true, true)
+	indexes, err := r.autoindexSvc.QueueAutoIndexJobs(ctx, int(repositoryID), rev, configuration, true, true)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create index loader with data we already have
-	indexLoader := r.indexLoaderFactory.CreateWithInitialData(indexes)
+	// Create job loader with data we already have
+	autoIndexJobLoader := r.autoIndexJobLoaderFactory.CreateWithInitialData(indexes)
 
 	// Pre-submit associated upload ids for subsequent loading
 	uploadLoader := r.uploadLoaderFactory.Create()
@@ -114,7 +114,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(indexes))
 	for _, index := range indexes {
 		index := index
-		resolver, err := r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolver, traceErrs, nil, &index)
+		resolver, err := r.preciseIndexResolverFactory.Create(ctx, uploadLoader, autoIndexJobLoader, locationResolver, traceErrs, nil, &index)
 		if err != nil {
 			return nil, err
 		}
@@ -146,13 +146,13 @@ func (r *inferAutoIndexJobsResultResolver) InferenceOutput() string {
 
 type autoIndexJobDescriptionResolver struct {
 	siteAdminChecker sharedresolvers.SiteAdminChecker
-	indexJob         config.IndexJob
+	indexJob         config.AutoIndexJobSpec
 	steps            []uploadsshared.DockerStep
 }
 
-func newDescriptionResolvers(siteAdminChecker sharedresolvers.SiteAdminChecker, indexConfiguration *config.IndexConfiguration) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
+func newDescriptionResolvers(siteAdminChecker sharedresolvers.SiteAdminChecker, indexConfiguration *config.AutoIndexJobSpecList) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
 	var resolvers []resolverstubs.AutoIndexJobDescriptionResolver
-	for _, indexJob := range indexConfiguration.IndexJobs {
+	for _, indexJob := range indexConfiguration.JobSpecs {
 		var steps []uploadsshared.DockerStep
 		for _, step := range indexJob.Steps {
 			steps = append(steps, uploadsshared.DockerStep{
@@ -184,8 +184,8 @@ func (r *autoIndexJobDescriptionResolver) ComparisonKey() string {
 	return comparisonKey(r.indexJob.Root, r.Indexer().Name())
 }
 
-func (r *autoIndexJobDescriptionResolver) Steps() resolverstubs.IndexStepsResolver {
-	return uploadsgraphql.NewIndexStepsResolver(r.siteAdminChecker, uploadsshared.Index{
+func (r *autoIndexJobDescriptionResolver) Steps() resolverstubs.AutoIndexJobStepsResolver {
+	return uploadsgraphql.NewAutoIndexJobStepsResolver(r.siteAdminChecker, uploadsshared.AutoIndexJob{
 		DockerSteps:      r.steps,
 		LocalSteps:       r.indexJob.LocalSteps,
 		Root:             r.indexJob.Root,

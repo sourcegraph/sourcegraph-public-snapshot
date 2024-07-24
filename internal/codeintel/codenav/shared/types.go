@@ -1,6 +1,8 @@
 package shared
 
 import (
+	"fmt"
+
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
@@ -13,6 +15,50 @@ type Location struct {
 	UploadID int
 	Path     core.UploadRelPath
 	Range    Range
+}
+
+// UsageKind is a more compact representation for SymbolUsageKind
+// in the GraphQL API
+type UsageKind int32
+
+const (
+	UsageKindDefinition UsageKind = iota
+	UsageKindReference
+	UsageKindImplementation
+	UsageKindSuper
+)
+
+// RangesColumnName represents the column name in the codeintel_scip_symbols table
+// that should be used when searching for a certain kind of usage.
+func (k UsageKind) RangesColumnName() string {
+	switch k {
+	case UsageKindDefinition:
+		return "definition_ranges"
+	case UsageKindReference:
+		return "reference_ranges"
+	case UsageKindImplementation:
+		return "implementation_ranges"
+	case UsageKindSuper:
+		return "definition_ranges"
+		// For supers, we're looking for definitions of interfaces/super-class methods.
+	default:
+		panic(fmt.Sprintf("unhandled case for UsageKind: %v", k))
+	}
+}
+
+func (k UsageKind) String() string {
+	switch k {
+	case UsageKindDefinition:
+		return "definition"
+	case UsageKindReference:
+		return "reference"
+	case UsageKindImplementation:
+		return "implementation"
+	case UsageKindSuper:
+		return "super"
+	default:
+		panic(fmt.Sprintf("unhandled case for UsageKind: %d", int32(k)))
+	}
 }
 
 // Diagnostic describes diagnostic information attached to a location within a
@@ -64,6 +110,20 @@ type Range struct {
 type Position struct {
 	Line      int
 	Character int
+}
+
+func (p Position) ToSCIPPosition() scip.Position {
+	return scip.Position{
+		Line:      int32(p.Line),
+		Character: int32(p.Character),
+	}
+}
+
+func TranslatePosition(r scip.Position) Position {
+	return Position{
+		Line:      int(r.Line),
+		Character: int(r.Character),
+	}
 }
 
 func NewRange(startLine, startCharacter, endLine, endCharacter int) Range {
