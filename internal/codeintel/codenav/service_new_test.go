@@ -137,7 +137,7 @@ func TestGetDefinitions(t *testing.T) {
 			{UploadID: 151, Path: uploadRelPath("b.go"), Range: testRange4},
 			{UploadID: 151, Path: uploadRelPath("c.go"), Range: testRange5},
 		}
-		mockLsifStore.GetMinimalBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)
+		mockLsifStore.GetMinimalBulkSymbolUsagesFunc.PushReturn(locations, len(locations), nil)
 
 		mockRequest := PositionalRequestArgs{
 			RequestArgs: RequestArgs{
@@ -185,18 +185,14 @@ func TestGetDefinitions(t *testing.T) {
 			}
 		}
 
-		if history := mockLsifStore.GetMinimalBulkMonikerLocationsFunc.History(); len(history) != 1 {
+		if history := mockLsifStore.GetMinimalBulkSymbolUsagesFunc.History(); len(history) != 1 {
 			t.Fatalf("unexpected call count for lsifstore.BulkMonikerResults. want=%d have=%d", 1, len(history))
 		} else {
 			if diff := cmp.Diff([]int{50, 51, 52, 53, 151, 152, 153}, history[0].Arg2); diff != "" {
 				t.Errorf("unexpected ids (-want +got):\n%s", diff)
 			}
-
-			expectedMonikers := []precise.MonikerData{
-				{Kind: "", Scheme: "tsc", Identifier: "tsc npm leftpad 0.1.0 padLeft."},
-				{Kind: "", Scheme: "tsc", Identifier: "tsc npm leftpad 0.2.0 pad-left."},
-			}
-			if diff := cmp.Diff(expectedMonikers, history[0].Arg4); diff != "" {
+			expectedSymbolNames := []string{"tsc npm leftpad 0.1.0 padLeft.", "tsc npm leftpad 0.2.0 pad-left."}
+			if diff := cmp.Diff(expectedSymbolNames, history[0].Arg4); diff != "" {
 				t.Errorf("unexpected ids (-want +got):\n%s", diff)
 			}
 		}
@@ -359,9 +355,9 @@ func TestGetReferences(t *testing.T) {
 			{UploadID: 53, Path: uploadRelPath("b.go"), Range: testRange4},
 			{UploadID: 53, Path: uploadRelPath("c.go"), Range: testRange5},
 		}
-		mockLsifStore.GetMinimalBulkMonikerLocationsFunc.PushReturn(monikerLocations[0:1], 1, nil) // defs
-		mockLsifStore.GetMinimalBulkMonikerLocationsFunc.PushReturn(monikerLocations[1:2], 1, nil) // refs batch 1
-		mockLsifStore.GetMinimalBulkMonikerLocationsFunc.PushReturn(monikerLocations[2:], 3, nil)  // refs batch 2
+		mockLsifStore.GetMinimalBulkSymbolUsagesFunc.PushReturn(monikerLocations[0:1], 1, nil) // defs
+		mockLsifStore.GetMinimalBulkSymbolUsagesFunc.PushReturn(monikerLocations[1:2], 1, nil) // refs batch 1
+		mockLsifStore.GetMinimalBulkSymbolUsagesFunc.PushReturn(monikerLocations[2:], 3, nil)  // refs batch 2
 
 		// uploads := []dbstore.CompletedUpload{
 		// 	{ID: 50, Commit: "deadbeef", Root: "sub1/"},
@@ -416,33 +412,33 @@ func TestGetReferences(t *testing.T) {
 			}
 		}
 
-		if history := mockLsifStore.GetMinimalBulkMonikerLocationsFunc.History(); len(history) != 3 {
+		if history := mockLsifStore.GetMinimalBulkSymbolUsagesFunc.History(); len(history) != 3 {
 			t.Fatalf("unexpected call count for lsifstore.BulkMonikerResults. want=%d have=%d", 3, len(history))
 		} else {
 			if diff := cmp.Diff([]int{50, 51, 52, 53, 151, 152, 153}, history[0].Arg2); diff != "" {
 				t.Errorf("unexpected ids (-want +got):\n%s", diff)
 			}
 
-			expectedMonikers := []precise.MonikerData{
-				monikers[0],
-				monikers[1],
-				monikers[2],
+			expectedSymbolNames := []string{
+				monikers[0].Identifier,
+				monikers[1].Identifier,
+				monikers[2].Identifier,
 			}
-			if diff := cmp.Diff(expectedMonikers, history[0].Arg4); diff != "" {
+			if diff := cmp.Diff(expectedSymbolNames, history[0].Arg4); diff != "" {
 				t.Errorf("unexpected monikers (-want +got):\n%s", diff)
 			}
 
 			if diff := cmp.Diff([]int{250, 251}, history[1].Arg2); diff != "" {
 				t.Errorf("unexpected ids (-want +got):\n%s", diff)
 			}
-			if diff := cmp.Diff(expectedMonikers, history[1].Arg4); diff != "" {
+			if diff := cmp.Diff(expectedSymbolNames, history[1].Arg4); diff != "" {
 				t.Errorf("unexpected monikers (-want +got):\n%s", diff)
 			}
 
 			if diff := cmp.Diff([]int{252, 253}, history[2].Arg2); diff != "" {
 				t.Errorf("unexpected ids (-want +got):\n%s", diff)
 			}
-			if diff := cmp.Diff(expectedMonikers, history[2].Arg4); diff != "" {
+			if diff := cmp.Diff(expectedSymbolNames, history[2].Arg4); diff != "" {
 				t.Errorf("unexpected monikers (-want +got):\n%s", diff)
 			}
 		}

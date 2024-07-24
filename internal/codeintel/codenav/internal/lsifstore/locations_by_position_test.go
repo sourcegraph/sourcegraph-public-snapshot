@@ -11,13 +11,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 const (
@@ -117,27 +117,19 @@ func TestExtractReferenceLocationsFromPosition(t *testing.T) {
 	}
 }
 
-func TestGetMinimalBulkMonikerLocations(t *testing.T) {
+func TestGetMinimalBulkSymbolUsages(t *testing.T) {
 	usageKind := shared.UsageKindReference
 	uploadIDs := []int{testSCIPUploadID}
 	skipPaths := map[int]string{}
-	monikers := []precise.MonikerData{
-		{
-			Scheme:     "gomod",
-			Identifier: "github.com/sourcegraph/lsif-go/protocol:DefinitionResult.Vertex",
-		},
-		{
-			Scheme:     "scip-typescript",
-			Identifier: "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray().",
-		},
+	lookupSymbols := []string{
+		"github.com/sourcegraph/lsif-go/protocol:DefinitionResult.Vertex",
+		"scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray().",
 	}
 
 	store := populateTestStore(t)
 
-	locations, totalCount, err := store.GetMinimalBulkMonikerLocations(context.Background(), usageKind, uploadIDs, skipPaths, monikers, 100, 0)
-	if err != nil {
-		t.Fatalf("unexpected error querying bulk moniker locations: %s", err)
-	}
+	locations, totalCount, err := store.GetMinimalBulkSymbolUsages(context.Background(), usageKind, uploadIDs, skipPaths, lookupSymbols, 100, 0)
+	require.NoError(t, err)
 	if expected := 9; totalCount != expected {
 		t.Fatalf("unexpected total count: want=%d have=%d\n", expected, totalCount)
 	}
@@ -604,26 +596,18 @@ func TestExtractOccurrenceData(t *testing.T) {
 	})
 }
 
-func TestGetBulkMonikerLocations(t *testing.T) {
+func TestGetBulkSymbolUsages(t *testing.T) {
 	usageKind := shared.UsageKindReference
 	uploadIDs := []int{testSCIPUploadID}
-	monikers := []precise.MonikerData{
-		{
-			Scheme:     "gomod",
-			Identifier: "github.com/sourcegraph/lsif-go/protocol:DefinitionResult.Vertex",
-		},
-		{
-			Scheme:     "scip-typescript",
-			Identifier: "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray().",
-		},
+	lookupSymbols := []string{
+		"github.com/sourcegraph/lsif-go/protocol:DefinitionResult.Vertex",
+		"scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray().",
 	}
 
 	store := populateTestStore(t)
 
-	locations, totalCount, err := store.GetBulkMonikerLocations(context.Background(), usageKind, uploadIDs, monikers, 100, 0)
-	if err != nil {
-		t.Fatalf("unexpected error querying bulk moniker locations: %s", err)
-	}
+	locations, totalCount, err := store.GetBulkSymbolUsages(context.Background(), usageKind, uploadIDs, lookupSymbols, 100, 0)
+	require.NoError(t, err)
 	if expected := 9; totalCount != expected {
 		t.Fatalf("unexpected total count: want=%d have=%d\n", expected, totalCount)
 	}
