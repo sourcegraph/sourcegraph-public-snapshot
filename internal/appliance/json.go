@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -162,6 +163,6 @@ func (a *Appliance) postStatusJSONHandler() http.Handler {
 			a.serverErrorResponse(w, r, err)
 		}
 
-		a.status = StatusInstalling
+		a.status = config.StatusInstalling
 	})
 }
