@@ -63,10 +63,6 @@ func defaultHandlers() map[string]eventHandlers {
 			return errors.New(fmt.Sprintf("expected *InstallationEvent, got %T", event))
 		}
 
-		//if true {
-		//	return nil
-		//}
-
 		baseURL, err := url.Parse(e.GetInstallation().GetHTMLURL())
 		if err != nil {
 			return err
