@@ -164,12 +164,12 @@ func (s *storeV1) GetCodyGatewayAccessByAccessToken(ctx context.Context, token s
 	// in 'cmd/frontend/internal/dotcom/productsubscription'.
 	if !strings.HasPrefix(token, productsubscription.AccessTokenPrefix) &&
 		!strings.HasPrefix(token, license.LicenseKeyBasedAccessTokenPrefix) {
-		return nil, errors.WithSafeDetails(codyaccess.ErrSubscriptionDoesNotExist, "invalid token with unknown prefix")
+		return nil, errors.WithSafeDetails(codyaccess.ErrSubscriptionNotFound, "invalid token with unknown prefix")
 	}
 	tokenSansPrefix := token[len(license.LicenseKeyBasedAccessTokenPrefix):]
 	decoded, err := hex.DecodeString(tokenSansPrefix)
 	if err != nil {
-		return nil, errors.WithSafeDetails(codyaccess.ErrSubscriptionDoesNotExist, "invalid token with unknown encoding")
+		return nil, errors.WithSafeDetails(codyaccess.ErrSubscriptionNotFound, "invalid token with unknown encoding")
 	}
 	// End copied code.
 

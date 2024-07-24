@@ -87,7 +87,7 @@ func (s *HandlerV1) GetCodyGatewayAccess(ctx context.Context, req *connect.Reque
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid query"))
 	}
 	if err != nil {
-		if errors.Is(err, dotcomdb.ErrCodyGatewayAccessNotFound) {
+		if errors.Is(err, codyaccess.ErrSubscriptionNotFound) {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
 		return nil, connectutil.InternalError(ctx, logger, err,

@@ -187,7 +187,7 @@ type CodyGatewayAccessWithSubscriptionDetails struct {
 	LicenseKeyHashes [][]byte
 }
 
-var ErrSubscriptionDoesNotExist = errors.New("subscription does not exist")
+var ErrSubscriptionNotFound = errors.New("subscription does not exist or is not valid for Cody Gateway access")
 
 type GetCodyGatewayAccessOptions struct {
 	SubscriptionID string
@@ -236,7 +236,7 @@ WHERE
 			// RIGHT JOIN in query ensures that if we find no result, it's
 			// because the subscription does not exist or is archived.
 			return nil, errors.WithSafeDetails(
-				errors.WithStack(ErrSubscriptionDoesNotExist),
+				errors.WithStack(ErrSubscriptionNotFound),
 				err.Error())
 		}
 		return nil, err
@@ -321,7 +321,7 @@ func (s *CodyGatewayStore) Upsert(ctx context.Context, subscriptionID string, op
 	if err := opts.Exec(ctx, s.db, subscriptionID); err != nil {
 		if pgxerrors.IsContraintError(err, "fk_enterprise_portal_cody_gateway_access_subscription") {
 			return nil, errors.WithSafeDetails(
-				errors.WithStack(ErrSubscriptionDoesNotExist),
+				errors.WithStack(ErrSubscriptionNotFound),
 				err.Error())
 		}
 		return nil, err

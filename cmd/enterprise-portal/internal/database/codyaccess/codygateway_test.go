@@ -128,7 +128,7 @@ func TestCodyGatewayStore(t *testing.T) {
 			_, err = codyaccess.NewCodyGatewayStore(db).Upsert(ctx, subscriptionID, codyaccess.UpsertCodyGatewayAccessOptions{
 				Enabled: pointers.Ptr(true),
 			})
-			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionDoesNotExist)
+			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionNotFound)
 		})
 
 		t.Run("set then archive", func(t *testing.T) {
@@ -152,7 +152,7 @@ func TestCodyGatewayStore(t *testing.T) {
 			_, err = codyaccess.NewCodyGatewayStore(db).Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
 				SubscriptionID: subscriptionID,
 			})
-			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionDoesNotExist)
+			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionNotFound)
 		})
 	})
 }
@@ -240,13 +240,13 @@ func CodyGatewayStoreListAndGet(t *testing.T, ctx context.Context, subscriptionI
 				SubscriptionID: uuid.NewString(),
 			})
 			assert.Error(t, err)
-			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionDoesNotExist)
+			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionNotFound)
 
 			_, err = s.Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
 				LicenseKeyHash: []byte(uuid.NewString()),
 			})
 			assert.Error(t, err)
-			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionDoesNotExist)
+			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionNotFound)
 		})
 	})
 }
@@ -291,7 +291,7 @@ func CodyGatewayStoreUpsert(t *testing.T, ctx context.Context, subscriptionIDs [
 		_, err = s.Upsert(ctx, subscriptionID, codyaccess.UpsertCodyGatewayAccessOptions{
 			Enabled: pointers.Ptr(false),
 		})
-		assert.ErrorIs(t, err, codyaccess.ErrSubscriptionDoesNotExist)
+		assert.ErrorIs(t, err, codyaccess.ErrSubscriptionNotFound)
 	})
 
 	t.Run("update only enabled", func(t *testing.T) {
