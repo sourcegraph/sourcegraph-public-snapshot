@@ -7,11 +7,13 @@ go_library(
         "cleanup.go",
         "data_store.go",
         "insert.go",
+        "locus.go",
         "observability.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/codeintel/core",
         "//internal/codeintel/shared",
         "//internal/codeintel/shared/ranges",
         "//internal/codeintel/shared/trie",
