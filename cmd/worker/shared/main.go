@@ -38,6 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/sourcegraphaccounts"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetrygatewayexporter"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/users"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/zoektrepos"
 	workerjob "github.com/sourcegraph/sourcegraph/cmd/worker/job"
@@ -108,6 +109,7 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 		"telemetrygateway-exporter":             telemetrygatewayexporter.NewJob(),
 		"event-logs-janitor":                    eventlogs.NewEventLogsJanitorJob(),
 		"cody-llm-token-counter":                completions.NewTokenUsageJob(),
+		"aggregated-users-statistics":           users.NewAggregatedUsersStatisticsJob(),
 
 		"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
 		"codeintel-autoindexing-summary-builder":      codeintel.NewAutoindexingSummaryBuilder(),
