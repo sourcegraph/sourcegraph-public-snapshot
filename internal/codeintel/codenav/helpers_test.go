@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	lsifstoremocks "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore/mocks"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -126,8 +125,8 @@ func shiftSCIPRange(r scip.Range, numLines int) scip.Range {
 	})
 }
 
-func shiftPos(pos shared.Position, numLines int) shared.Position {
-	return shared.Position{
+func shiftPos(pos scip.Position, numLines int32) scip.Position {
+	return scip.Position{
 		Line:      pos.Line + numLines,
 		Character: pos.Character,
 	}
@@ -136,43 +135,42 @@ func shiftPos(pos shared.Position, numLines int) shared.Position {
 // A GitTreeTranslator that returns positions and ranges shifted by numLines
 // and returns failed translations for path/range pairs if shouldFail returns true
 func fakeTranslator(
-	targetCommit api.CommitID,
+	from, to api.CommitID,
 	numLines int,
-	shouldFail func(string, shared.Range) bool,
+	shouldFail func(core.RepoRelPath, scip.Range) bool,
 ) GitTreeTranslator {
 	translator := NewMockGitTreeTranslator()
-	translator.GetSourceCommitFunc.SetDefaultReturn(targetCommit)
-	translator.GetTargetCommitPositionFromSourcePositionFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, pos shared.Position, reverse bool) (shared.Position, bool, error) {
+	translator.TranslatePositionFunc.SetDefaultHook(func(ctx context.Context, f, t api.CommitID, path core.RepoRelPath, pos scip.Position) (core.Option[scip.Position], error) {
 		numLines := numLines
-		if reverse {
+		if f == to && t == from {
 			numLines = -numLines
 		}
-		if shouldFail(path, shared.Range{Start: pos, End: pos}) {
-			return shared.Position{}, false, nil
+		if shouldFail(path, scip.Range{Start: pos, End: pos}) {
+			return core.None[scip.Position](), nil
 		}
-		return shiftPos(pos, numLines), true, nil
+		return core.Some(shiftPos(pos, int32(numLines))), nil
 	})
-	translator.GetTargetCommitRangeFromSourceRangeFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, rg shared.Range, reverse bool) (shared.Range, bool, error) {
+	translator.TranslateRangeFunc.SetDefaultHook(func(ctx context.Context, f, t api.CommitID, path core.RepoRelPath, range_ scip.Range) (core.Option[scip.Range], error) {
 		numLines := numLines
-		if reverse {
+		if f == to && t == from {
 			numLines = -numLines
 		}
-		if shouldFail(path, rg) {
-			return shared.Range{}, false, nil
+		if shouldFail(path, range_) {
+			return core.None[scip.Range](), nil
 		}
-		return shared.Range{Start: shiftPos(rg.Start, numLines), End: shiftPos(rg.End, numLines)}, true, nil
+		return core.Some(shiftSCIPRange(range_, numLines)), nil
 	})
 	return translator
 }
 
 // A GitTreeTranslator that returns all positions and ranges shifted by numLines.
-func shiftAllTranslator(targetCommit api.CommitID, numLines int) GitTreeTranslator {
-	return fakeTranslator(targetCommit, numLines, func(path string, rg shared.Range) bool { return false })
+func shiftAllTranslator(from, to api.CommitID, numLines int) GitTreeTranslator {
+	return fakeTranslator(from, to, numLines, func(path core.RepoRelPath, range_ scip.Range) bool { return false })
 }
 
 // A GitTreeTranslator that returns all positions and ranges unchanged
-func noopTranslator(targetCommit api.CommitID) GitTreeTranslator {
-	return shiftAllTranslator(targetCommit, 0)
+func noopTranslator() GitTreeTranslator {
+	return shiftAllTranslator("a", "b", 0)
 }
 
 type MatchLike interface {

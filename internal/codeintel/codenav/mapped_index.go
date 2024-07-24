@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 )
 
@@ -41,12 +40,13 @@ func NewMappedIndexFromTranslator(
 	lsifStore lsifstore.LsifStore,
 	gitTreeTranslator GitTreeTranslator,
 	upload core.UploadLike,
+	targetCommit api.CommitID,
 ) MappedIndex {
 	return mappedIndex{
 		lsifStore:         lsifStore,
 		gitTreeTranslator: gitTreeTranslator,
 		upload:            upload,
-		targetCommit:      gitTreeTranslator.GetSourceCommit(),
+		targetCommit:      targetCommit,
 	}
 }
 
@@ -118,17 +118,17 @@ func cloneOccurrence(occ *scip.Occurrence) *scip.Occurrence {
 func (d *mappedDocument) mapAllOccurrences(ctx context.Context) ([]*scip.Occurrence, error) {
 	newOccurrences := make([]*scip.Occurrence, 0)
 	for _, occ := range d.document.inner.Occurrences {
-		sharedRange := shared.TranslateRange(scip.NewRangeUnchecked(occ.Range))
-		mappedRange, ok, err := d.gitTreeTranslator.GetTargetCommitRangeFromSourceRange(ctx, string(d.indexCommit), d.path.RawValue(), sharedRange, true)
+		mappedRangeOpt, err := d.gitTreeTranslator.TranslateRange(
+			ctx, d.indexCommit, d.targetCommit, d.path, scip.NewRangeUnchecked(occ.Range),
+		)
 		if err != nil {
 			return nil, err
 		}
-		if !ok {
-			continue
+		if mappedRange, ok := mappedRangeOpt.Get(); ok {
+			newOccurrence := cloneOccurrence(occ)
+			newOccurrence.Range = mappedRange.SCIPRange()
+			newOccurrences = append(newOccurrences, newOccurrence)
 		}
-		newOccurrence := cloneOccurrence(occ)
-		newOccurrence.Range = mappedRange.ToSCIPRange().SCIPRange()
-		newOccurrences = append(newOccurrences, newOccurrence)
 	}
 	return newOccurrences, nil
 }
@@ -165,17 +165,16 @@ func (d *mappedDocument) GetOccurrencesAtRange(ctx context.Context, range_ scip.
 	}
 	d.document.lock.RUnlock()
 
-	mappedRg, ok, err := d.gitTreeTranslator.GetTargetCommitRangeFromSourceRange(
-		ctx, string(d.indexCommit), d.path.RawValue(), shared.TranslateRange(range_), false,
-	)
+	mappedRgOpt, err := d.gitTreeTranslator.TranslateRange(ctx, d.targetCommit, d.indexCommit, d.path, range_)
 	if err != nil {
 		return nil, err
 	}
+	mappedRg, ok := mappedRgOpt.Get()
 	if !ok {
 		// The range was changed/removed in the target commit, so return no occurrences
 		return nil, nil
 	}
-	pastMatchingOccurrences := FindOccurrencesWithEqualRange(occurrences, mappedRg.ToSCIPRange())
+	pastMatchingOccurrences := FindOccurrencesWithEqualRange(occurrences, mappedRg)
 	scipRange := range_.SCIPRange()
 	return genslices.Map(pastMatchingOccurrences, func(occ *scip.Occurrence) *scip.Occurrence {
 		newOccurrence := cloneOccurrence(occ)

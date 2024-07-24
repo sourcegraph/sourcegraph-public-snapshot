@@ -3,11 +3,12 @@ package lsifstore
 import (
 	"bytes"
 	"database/sql"
-	"fmt"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/ranges"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
@@ -18,7 +19,6 @@ import (
 type qualifiedDocumentData struct {
 	UploadID int
 	Path     string
-	LSIFData *precise.DocumentData
 	SCIPData *scip.Document
 }
 
@@ -91,15 +91,16 @@ type qualifiedMonikerLocations struct {
 	precise.MonikerLocations
 }
 
-func (s *store) scanQualifiedMonikerLocations(rows *sql.Rows, queryErr error) (_ []qualifiedMonikerLocations, err error) {
+// Post-condition: number of entries == number of unique (upload, symbol, document) triples.
+func (s *store) scanUploadSymbolLoci(rows *sql.Rows, queryErr error) (_ []codegraph.UploadSymbolLoci, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	var values []qualifiedMonikerLocations
+	var values []codegraph.UploadSymbolLoci
 	for rows.Next() {
-		record, err := s.scanSingleQualifiedMonikerLocationsObject(rows)
+		record, err := s.scanSingleUploadSymbolLoci(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -110,93 +111,90 @@ func (s *store) scanQualifiedMonikerLocations(rows *sql.Rows, queryErr error) (_
 	return values, nil
 }
 
-func (s *store) scanSingleQualifiedMonikerLocationsObject(rows *sql.Rows) (qualifiedMonikerLocations, error) {
+func (s *store) scanSingleUploadSymbolLoci(rows *sql.Rows) (codegraph.UploadSymbolLoci, error) {
+	var uploadID int
+	var symbol string
+	var customEncodedRanges []byte
 	var documentPath string
-	var scipPayload []byte
-	var record qualifiedMonikerLocations
-
-	if err := rows.Scan(&record.UploadID, &record.Scheme, &record.Identifier, &scipPayload, &documentPath); err != nil {
-		return qualifiedMonikerLocations{}, err
+	if err := rows.Scan(&uploadID, &symbol, &customEncodedRanges, &documentPath); err != nil {
+		return codegraph.UploadSymbolLoci{}, err
 	}
 
-	ranges, err := ranges.DecodeRanges(scipPayload)
+	ranges, err := ranges.DecodeRanges(customEncodedRanges)
 	if err != nil {
-		return qualifiedMonikerLocations{}, err
+		return codegraph.UploadSymbolLoci{}, err
 	}
 
-	locations := make([]precise.LocationData, 0, len(ranges))
+	locations := make([]codegraph.Locus, 0, len(ranges))
 	for _, r := range ranges {
-		locations = append(locations, precise.LocationData{
-			DocumentPath:   documentPath,
-			StartLine:      int(r.Start.Line),
-			StartCharacter: int(r.Start.Character),
-			EndLine:        int(r.End.Line),
-			EndCharacter:   int(r.End.Character),
+		locations = append(locations, codegraph.Locus{
+			Path:  core.NewUploadRelPathUnchecked(documentPath),
+			Range: scip.NewRangeUnchecked([]int32{r.Start.Line, r.Start.Character, r.End.Line, r.End.Character}),
 		})
 	}
 
-	record.Locations = locations
-	return record, nil
+	return codegraph.UploadSymbolLoci{
+		UploadID: uploadID,
+		Symbol:   symbol,
+		Loci:     locations,
+	}, nil
 }
 
 //
 //
 
-func (s *store) scanDeduplicatedQualifiedMonikerLocations(rows *sql.Rows, queryErr error) (_ []qualifiedMonikerLocations, err error) {
+// Post-condition: Returns one entry per upload.
+func (s *store) scanDeduplicatedUploadLoci(rows *sql.Rows, queryErr error) (_ []codegraph.UploadLoci, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	var values []qualifiedMonikerLocations
+	var values []codegraph.UploadLoci
 	for rows.Next() {
-		record, err := s.scanSingleMinimalQualifiedMonikerLocationsObject(rows)
+		record, err := s.scanSingleUploadLoci(rows)
 		if err != nil {
 			return nil, err
 		}
 
+		// TODO: Also use the ordering guarantees for document paths + range sorting
+		// on insertion to replace the Deduplicate with some simple checks here.
 		if n := len(values) - 1; n >= 0 && values[n].UploadID == record.UploadID {
-			values[n].Locations = append(values[n].Locations, record.Locations...)
+			values[n].Loci = append(values[n].Loci, record.Loci...)
 		} else {
 			values = append(values, record)
 		}
 	}
 	for i := range values {
-		values[i].Locations = collections.DeduplicateBy(values[i].Locations, locationDataKey)
+		values[i].Loci = collections.Deduplicate(values[i].Loci)
 	}
 
 	return values, nil
 }
 
-func (s *store) scanSingleMinimalQualifiedMonikerLocationsObject(rows *sql.Rows) (qualifiedMonikerLocations, error) {
+func (s *store) scanSingleUploadLoci(rows *sql.Rows) (codegraph.UploadLoci, error) {
+	var uploadID int
+	var customEncodedRanges []byte
 	var documentPath string
-	var scipPayload []byte
-	var record qualifiedMonikerLocations
-
-	if err := rows.Scan(&record.UploadID, &scipPayload, &documentPath); err != nil {
-		return qualifiedMonikerLocations{}, err
+	if err := rows.Scan(&uploadID, &customEncodedRanges, &documentPath); err != nil {
+		return codegraph.UploadLoci{}, err
 	}
 
-	ranges, err := ranges.DecodeRanges(scipPayload)
+	ranges, err := ranges.DecodeRanges(customEncodedRanges)
 	if err != nil {
-		return qualifiedMonikerLocations{}, err
+		return codegraph.UploadLoci{}, err
 	}
 
-	locations := make([]precise.LocationData, 0, len(ranges))
+	locations := make([]codegraph.Locus, 0, len(ranges))
 	for _, r := range ranges {
-		locations = append(locations, precise.LocationData{
-			DocumentPath:   documentPath,
-			StartLine:      int(r.Start.Line),
-			StartCharacter: int(r.Start.Character),
-			EndLine:        int(r.End.Line),
-			EndCharacter:   int(r.End.Character),
+		locations = append(locations, codegraph.Locus{
+			Path:  core.NewUploadRelPathUnchecked(documentPath),
+			Range: scip.NewRangeUnchecked([]int32{r.Start.Line, r.Start.Character, r.End.Line, r.End.Character}),
 		})
 	}
 
-	record.Locations = locations
-	return record, nil
-}
-
-func locationDataKey(v precise.LocationData) string {
-	return fmt.Sprintf("%s:%d:%d:%d:%d", v.DocumentPath, v.StartLine, v.StartCharacter, v.EndLine, v.EndCharacter)
+	return codegraph.UploadLoci{
+		UploadID: uploadID,
+		Loci:     locations,
+	}, nil
 }

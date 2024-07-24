@@ -181,6 +181,6 @@ func (a *Appliance) postStatusJSONHandler() http.Handler {
 			a.serverErrorResponse(w, r, err)
 		}
 
-		a.status = StatusMaintenance
+		a.status = config.StatusMaintenance
 	})
 }

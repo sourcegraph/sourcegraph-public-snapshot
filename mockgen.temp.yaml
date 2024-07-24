@@ -179,3 +179,9 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore
       interfaces:
         - LsifStore
+- filename: internal/codeintel/codegraph/codegraphmocks/mocks_temp.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph
+      interfaces:
+        - DataStore
+        - SCIPWriter

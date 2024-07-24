@@ -276,7 +276,7 @@ func NewMockCodeNavService() *MockCodeNavService {
 			},
 		},
 		SCIPDocumentFunc: &CodeNavServiceSCIPDocumentFunc{
-			defaultHook: func(context.Context, codenav.GitTreeTranslator, core.UploadLike, core.RepoRelPath) (r0 *scip.Document, r1 error) {
+			defaultHook: func(context.Context, codenav.GitTreeTranslator, core.UploadLike, api.CommitID, core.RepoRelPath) (r0 *scip.Document, r1 error) {
 				return
 			},
 		},
@@ -353,7 +353,7 @@ func NewStrictMockCodeNavService() *MockCodeNavService {
 			},
 		},
 		SCIPDocumentFunc: &CodeNavServiceSCIPDocumentFunc{
-			defaultHook: func(context.Context, codenav.GitTreeTranslator, core.UploadLike, core.RepoRelPath) (*scip.Document, error) {
+			defaultHook: func(context.Context, codenav.GitTreeTranslator, core.UploadLike, api.CommitID, core.RepoRelPath) (*scip.Document, error) {
 				panic("unexpected invocation of MockCodeNavService.SCIPDocument")
 			},
 		},
@@ -1479,24 +1479,24 @@ func (c CodeNavServiceGetStencilFuncCall) Results() []interface{} {
 // CodeNavServiceSCIPDocumentFunc describes the behavior when the
 // SCIPDocument method of the parent MockCodeNavService instance is invoked.
 type CodeNavServiceSCIPDocumentFunc struct {
-	defaultHook func(context.Context, codenav.GitTreeTranslator, core.UploadLike, core.RepoRelPath) (*scip.Document, error)
-	hooks       []func(context.Context, codenav.GitTreeTranslator, core.UploadLike, core.RepoRelPath) (*scip.Document, error)
+	defaultHook func(context.Context, codenav.GitTreeTranslator, core.UploadLike, api.CommitID, core.RepoRelPath) (*scip.Document, error)
+	hooks       []func(context.Context, codenav.GitTreeTranslator, core.UploadLike, api.CommitID, core.RepoRelPath) (*scip.Document, error)
 	history     []CodeNavServiceSCIPDocumentFuncCall
 	mutex       sync.Mutex
 }
 
 // SCIPDocument delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockCodeNavService) SCIPDocument(v0 context.Context, v1 codenav.GitTreeTranslator, v2 core.UploadLike, v3 core.RepoRelPath) (*scip.Document, error) {
-	r0, r1 := m.SCIPDocumentFunc.nextHook()(v0, v1, v2, v3)
-	m.SCIPDocumentFunc.appendCall(CodeNavServiceSCIPDocumentFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockCodeNavService) SCIPDocument(v0 context.Context, v1 codenav.GitTreeTranslator, v2 core.UploadLike, v3 api.CommitID, v4 core.RepoRelPath) (*scip.Document, error) {
+	r0, r1 := m.SCIPDocumentFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.SCIPDocumentFunc.appendCall(CodeNavServiceSCIPDocumentFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the SCIPDocument method
 // of the parent MockCodeNavService instance is invoked and the hook queue
 // is empty.
-func (f *CodeNavServiceSCIPDocumentFunc) SetDefaultHook(hook func(context.Context, codenav.GitTreeTranslator, core.UploadLike, core.RepoRelPath) (*scip.Document, error)) {
+func (f *CodeNavServiceSCIPDocumentFunc) SetDefaultHook(hook func(context.Context, codenav.GitTreeTranslator, core.UploadLike, api.CommitID, core.RepoRelPath) (*scip.Document, error)) {
 	f.defaultHook = hook
 }
 
@@ -1504,7 +1504,7 @@ func (f *CodeNavServiceSCIPDocumentFunc) SetDefaultHook(hook func(context.Contex
 // SCIPDocument method of the parent MockCodeNavService instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *CodeNavServiceSCIPDocumentFunc) PushHook(hook func(context.Context, codenav.GitTreeTranslator, core.UploadLike, core.RepoRelPath) (*scip.Document, error)) {
+func (f *CodeNavServiceSCIPDocumentFunc) PushHook(hook func(context.Context, codenav.GitTreeTranslator, core.UploadLike, api.CommitID, core.RepoRelPath) (*scip.Document, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1513,19 +1513,19 @@ func (f *CodeNavServiceSCIPDocumentFunc) PushHook(hook func(context.Context, cod
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *CodeNavServiceSCIPDocumentFunc) SetDefaultReturn(r0 *scip.Document, r1 error) {
-	f.SetDefaultHook(func(context.Context, codenav.GitTreeTranslator, core.UploadLike, core.RepoRelPath) (*scip.Document, error) {
+	f.SetDefaultHook(func(context.Context, codenav.GitTreeTranslator, core.UploadLike, api.CommitID, core.RepoRelPath) (*scip.Document, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *CodeNavServiceSCIPDocumentFunc) PushReturn(r0 *scip.Document, r1 error) {
-	f.PushHook(func(context.Context, codenav.GitTreeTranslator, core.UploadLike, core.RepoRelPath) (*scip.Document, error) {
+	f.PushHook(func(context.Context, codenav.GitTreeTranslator, core.UploadLike, api.CommitID, core.RepoRelPath) (*scip.Document, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeNavServiceSCIPDocumentFunc) nextHook() func(context.Context, codenav.GitTreeTranslator, core.UploadLike, core.RepoRelPath) (*scip.Document, error) {
+func (f *CodeNavServiceSCIPDocumentFunc) nextHook() func(context.Context, codenav.GitTreeTranslator, core.UploadLike, api.CommitID, core.RepoRelPath) (*scip.Document, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1569,7 +1569,10 @@ type CodeNavServiceSCIPDocumentFuncCall struct {
 	Arg2 core.UploadLike
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 core.RepoRelPath
+	Arg3 api.CommitID
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 core.RepoRelPath
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *scip.Document
@@ -1581,7 +1584,7 @@ type CodeNavServiceSCIPDocumentFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c CodeNavServiceSCIPDocumentFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this

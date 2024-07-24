@@ -31,7 +31,7 @@ func TestBuilder(t *testing.T) {
 
 				// WithIgnoreOnForceUpdate() does nothing because the we are not
 				// in a force-update.
-				Field(b, "col2", pointers.Ptr("value2"), WithIgnoreOnForceUpdate())
+				Field(b, "col2", pointers.Ptr("value2"), WithIgnoreZeroOnForceUpdate())
 
 				// WithColumnDefault() does nothing because the time is not zero
 				Field(b, "time", mockTime, WithColumnDefault())
@@ -70,7 +70,7 @@ time = EXCLUDED.time`),
 				Field(b, "time", mockTime)
 
 				// Do not set, it cannot be updated in a force-update.
-				Field(b, "should_be_ignored", "", WithIgnoreOnForceUpdate())
+				Field(b, "should_be_ignored", "", WithIgnoreZeroOnForceUpdate())
 			},
 			wantQuery: autogold.Expect(`
 INSERT INTO table
