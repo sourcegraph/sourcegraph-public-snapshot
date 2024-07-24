@@ -46,6 +46,7 @@ go_library(
         "//lib/codeintel/languages",
         "//lib/codeintel/precise",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_dgraph_io_ristretto//:ristretto",
         "@com_github_life4_genesis//slices",
         "@com_github_sourcegraph_conc//iter",
