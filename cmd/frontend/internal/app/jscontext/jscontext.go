@@ -45,9 +45,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// BillingPublishableKey is the publishable (non-secret) API key for the billing system, if any.
-var BillingPublishableKey string
-
 type authProviderInfo struct {
 	IsBuiltin         bool    `json:"isBuiltin"`
 	NoSignIn          bool    `json:"noSignIn"`
@@ -184,8 +181,6 @@ type JSContext struct {
 	DeployType        string                   `json:"deployType"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
-
-	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
 	AccessTokensAllow                 conf.AccessTokenAllow `json:"accessTokensAllow"`
 	AccessTokensAllowNoExpiration     bool                  `json:"accessTokensAllowNoExpiration"`
@@ -410,8 +405,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		DeployType:        deploy.Type(),
 
 		SourcegraphDotComMode: isDotComMode,
-
-		BillingPublishableKey: BillingPublishableKey,
 
 		// Experiments. We pass these through explicitly, so we can
 		// do the default behavior only in Go land.
