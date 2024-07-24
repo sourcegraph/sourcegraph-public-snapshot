@@ -110,6 +110,7 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 		"event-logs-janitor":                    eventlogs.NewEventLogsJanitorJob(),
 		"cody-llm-token-counter":                completions.NewTokenUsageJob(),
 		"aggregated-users-statistics":           users.NewAggregatedUsersStatisticsJob(),
+		"refresh-analytics-cache":               adminananlytics.NewRefreshAnalyticsCacheJob(),
 
 		"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
 		"codeintel-autoindexing-summary-builder":      codeintel.NewAutoindexingSummaryBuilder(),
