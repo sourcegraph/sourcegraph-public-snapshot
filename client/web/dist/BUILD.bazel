@@ -1,23 +1,5 @@
 load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
-
-# go_library(
-#     name = "dist",
-#     srcs = ["assets.go"],
-#     embedsrcs = select({
-#         "//conditions:default": [":copy_bundle"],
-#         "//:integration_testing_enabled": [":dummy_web_manifest"],
-#     }),  # keep
-#     importpath = "github.com/sourcegraph/sourcegraph/client/web/dist",
-#     visibility = ["//visibility:public"],
-#     x_defs = select({
-#         "//conditions:default": {},
-#         "//:integration_testing_enabled": {"github.com/sourcegraph/sourcegraph/client/web/dist.assetsSubdir": "integration"},
-#     }),
-#     deps = [
-#         "//lib/errors",
-#         "//ui/assets",
-#     ],
-# )
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 copy_to_directory(
     name = "copy_bundle",
@@ -49,13 +31,19 @@ genrule(
     visibility = ["//visibility:public"],
 )
 
-# we copy a single file to the directory so that bazel considers this _direcotry_ as the out and not the single file in order
-# to preserve the directory
-copy_to_directory(
-    name = "copy_integration_manifest",
+pkg_tar(
+    name = "tar_dummy_manifest",
     srcs = [
         ":dummy_web_manifest",
     ],
-    out = "integration",
+    package_dir = "integration",
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "tar_bundle",
+    srcs = [
+        ":copy_bundle",
+    ],
     visibility = ["//visibility:public"],
 )
