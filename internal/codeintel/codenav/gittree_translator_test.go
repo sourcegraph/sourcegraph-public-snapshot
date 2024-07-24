@@ -38,7 +38,7 @@ func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 	args := &mockTranslationBase
 
 	adjuster := NewGitTreeTranslator(client, args, nil)
-	posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", "foo/bar.go", posIn, false)
+	posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", "resources/image.go", posIn, false)
 
 	require.NoError(t, err)
 	require.Truef(t, ok, "expected translation to succeed")
@@ -54,7 +54,7 @@ func TestGetTargetCommitPositionFromSourcePositionEmptyDiff(t *testing.T) {
 	args := &mockTranslationBase
 
 	adjuster := NewGitTreeTranslator(client, args, nil)
-	posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", "foo/bar.go", posIn, false)
+	posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", "resources/image.go", posIn, false)
 
 	require.NoError(t, err)
 	require.Truef(t, ok, "expected translation to succeed")
@@ -69,7 +69,7 @@ func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 	args := &mockTranslationBase
 
 	adjuster := NewGitTreeTranslator(client, args, nil)
-	posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", "foo/bar.go", posIn, true)
+	posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", "resources/image.go", posIn, true)
 
 	require.NoError(t, err)
 	require.Truef(t, ok, "expected translation to succeed")
@@ -88,7 +88,7 @@ func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
 	args := &mockTranslationBase
 
 	adjuster := NewGitTreeTranslator(client, args, nil)
-	rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "foo/bar.go", rIn, false)
+	rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "resources/image.go", rIn, false)
 
 	require.NoError(t, err)
 	require.Truef(t, ok, "expected translation to succeed")
@@ -110,7 +110,7 @@ func TestGetTargetCommitRangeFromSourceRangeEmptyDiff(t *testing.T) {
 	args := &mockTranslationBase
 
 	adjuster := NewGitTreeTranslator(client, args, nil)
-	rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "foo/bar.go", rIn, false)
+	rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "resources/image.go", rIn, false)
 
 	require.NoError(t, err)
 	require.Truef(t, ok, "expected translation to succeed")
@@ -128,7 +128,7 @@ func TestGetTargetCommitRangeFromSourceRangeReverse(t *testing.T) {
 	args := &mockTranslationBase
 
 	adjuster := NewGitTreeTranslator(client, args, nil)
-	rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "foo/bar.go", rIn, true)
+	rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "resources/image.go", rIn, true)
 
 	require.NoError(t, err)
 	require.Truef(t, ok, "expected translation to succeed")

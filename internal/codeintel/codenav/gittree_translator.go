@@ -178,7 +178,8 @@ type CompactGitTreeTranslator interface {
 		ctx context.Context, from api.CommitID, to api.CommitID, path core.RepoRelPath, range_ scip.Range,
 	) (core.Option[scip.Range], error)
 
-	// TODO: Batch APIs/pre-fetching data from gitserver?
+	// Prefetch populates the cache with hunks for the given paths. It does not block
+	Prefetch(ctx context.Context, from api.CommitID, to api.CommitID, paths []core.RepoRelPath)
 }
 
 func NewCompactGitTreeTranslator(client gitserver.Client, repo sgtypes.Repo) CompactGitTreeTranslator {
@@ -231,26 +232,66 @@ func (t *newTranslator) TranslateRange(
 func (t *newTranslator) readCachedHunks(
 	ctx context.Context, from api.CommitID, to api.CommitID, path core.RepoRelPath,
 ) (_ []compactHunk, err error) {
-	key := hunkCacheKey{from, to, path}
-	t.cacheLock.Lock()
-	hunksFunc, ok := t.hunkCache[key]
+	_ = t.fetchHunksLazy(ctx, from, to, path)
+	t.cacheLock.RLock()
+	hunkFunc, ok := t.hunkCache[hunkCacheKey{from, to, path}]
+	t.cacheLock.RUnlock()
 	if !ok {
-		hunksFunc = sync.OnceValues(func() ([]compactHunk, error) {
-			return t.readHunks(ctx, from, to, path)
-		})
-		t.hunkCache[key] = hunksFunc
+		// This should not happen
+		return nil, errors.New("no cached hunks for this path")
 	}
-	t.cacheLock.Unlock()
-	return hunksFunc()
+	return hunkFunc()
 }
 
-func (t *newTranslator) readHunks(
-	ctx context.Context, from api.CommitID, to api.CommitID, path core.RepoRelPath,
-) (_ []compactHunk, err error) {
+func (t *newTranslator) Prefetch(ctx context.Context, from api.CommitID, to api.CommitID, paths []core.RepoRelPath) {
+	// Kick off the actual diff command in the background
+	go t.fetchHunksLazy(ctx, from, to, paths...)()
+}
+
+// fetchHunksLazy fetches the hunks for the given paths from the given commit range as a batch from gitserver and
+// populates the cache with its results.
+// It returns a function that can be called to kick off the actual diff command, otherwise the diff command
+// will be kicked off when the first path from paths is requested.
+func (t *newTranslator) fetchHunksLazy(ctx context.Context, from api.CommitID, to api.CommitID, paths ...core.RepoRelPath) func() {
+	t.cacheLock.Lock()
+	defer t.cacheLock.Unlock()
+	// Don't fetch diffs for paths we've already cached
+	paths = genslices.Filter(paths, func(path core.RepoRelPath) bool {
+		_, ok := t.hunkCache[hunkCacheKey{from, to, path}]
+		return !ok
+	})
+	if len(paths) == 0 {
+		return func() {}
+	}
+	onceHunksMap := sync.OnceValues(func() (map[core.RepoRelPath][]compactHunk, error) {
+		return t.runDiff(ctx, from, to, paths)
+	})
+	for _, path := range paths {
+		key := hunkCacheKey{from, to, path}
+		t.hunkCache[key] = sync.OnceValues(func() ([]compactHunk, error) {
+			hunksMap, err := onceHunksMap()
+			if err != nil {
+				return []compactHunk{}, err
+			}
+			hunks, ok := hunksMap[path]
+			if !ok {
+				return []compactHunk{}, nil
+			}
+			return hunks, nil
+		})
+	}
+	return func() {
+		_, _ = onceHunksMap()
+	}
+}
+
+func (t *newTranslator) runDiff(
+	ctx context.Context, from api.CommitID, to api.CommitID, paths []core.RepoRelPath,
+) (map[core.RepoRelPath][]compactHunk, error) {
 	r, err := t.client.Diff(ctx, t.repo.Name, gitserver.DiffOptions{
 		Base:             string(from),
 		Head:             string(to),
-		Paths:            []string{path.RawValue()},
+		Paths:            genslices.Map(paths, func(p core.RepoRelPath) string { return p.RawValue() }),
 		RangeType:        "..",
 		InterHunkContext: pointers.Ptr(0),
 		ContextLines:     pointers.Ptr(0),
@@ -264,15 +305,22 @@ func (t *newTranslator) readHunks(
 			err = closeErr
 		}
 	}()
-
-	fd, err := r.Next()
-	if err != nil {
-		if errors.Is(err, io.EOF) {
-			return nil, nil
+	fileDiffs := make(map[core.RepoRelPath][]compactHunk)
+	for {
+		fileDiff, err := r.Next()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return fileDiffs, nil
+			} else {
+				return nil, err
+			}
 		}
-		return nil, err
+		if fileDiff.OrigName != fileDiff.NewName {
+			// We do not handle file renames
+			continue
+		}
+		fileDiffs[core.NewRepoRelPathUnchecked(fileDiff.OrigName)] = genslices.Map(fileDiff.Hunks, newCompactHunk)
 	}
-	return genslices.Map(fd.Hunks, newCompactHunk), nil
 }
 
 func precedingHunk(hunks []compactHunk, line int32) core.Option[compactHunk] {
