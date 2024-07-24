@@ -49,7 +49,7 @@ type ParserPool struct {
 
 var DefaultParserTypes = []ctags_config.ParserType{ctags_config.UniversalCtags, ctags_config.ScipCtags}
 
-func NewParserPool(observationCtx *observation.Context, namespace string, newParser ParserFactory, numParserProcesses int, parserTypes []ctags_config.ParserType) (*ParserPool, error) {
+func NewParserPool(observationCtx *observation.Context, metricsNamespace string, newParser ParserFactory, numParserProcesses int, parserTypes []ctags_config.ParserType) (*ParserPool, error) {
 	pool := make(map[ctags_config.ParserType]chan ctags.Parser)
 
 	if len(parserTypes) == 0 {
@@ -69,7 +69,7 @@ func NewParserPool(observationCtx *observation.Context, namespace string, newPar
 	}
 
 	parserPool := &ParserPool{
-		metrics:   newPoolMetrics(observationCtx, namespace),
+		metrics:   newPoolMetrics(observationCtx, metricsNamespace),
 		newParser: newParser,
 		pool:      pool,
 	}
