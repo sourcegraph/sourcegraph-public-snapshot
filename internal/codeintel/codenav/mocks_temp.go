@@ -10,9 +10,10 @@ import (
 	"context"
 	"sync"
 
+	scip "github.com/sourcegraph/scip/bindings/go/scip"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
-	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	core "github.com/sourcegraph/sourcegraph/internal/codeintel/core"
+	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -21,17 +22,15 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/codeintel/codenav) used for
 // unit testing.
 type MockGitTreeTranslator struct {
-	// GetSourceCommitFunc is an instance of a mock function object
-	// controlling the behavior of the method GetSourceCommit.
-	GetSourceCommitFunc *GitTreeTranslatorGetSourceCommitFunc
-	// GetTargetCommitPositionFromSourcePositionFunc is an instance of a
-	// mock function object controlling the behavior of the method
-	// GetTargetCommitPositionFromSourcePosition.
-	GetTargetCommitPositionFromSourcePositionFunc *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc
-	// GetTargetCommitRangeFromSourceRangeFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// GetTargetCommitRangeFromSourceRange.
-	GetTargetCommitRangeFromSourceRangeFunc *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc
+	// PrefetchFunc is an instance of a mock function object controlling the
+	// behavior of the method Prefetch.
+	PrefetchFunc *GitTreeTranslatorPrefetchFunc
+	// TranslatePositionFunc is an instance of a mock function object
+	// controlling the behavior of the method TranslatePosition.
+	TranslatePositionFunc *GitTreeTranslatorTranslatePositionFunc
+	// TranslateRangeFunc is an instance of a mock function object
+	// controlling the behavior of the method TranslateRange.
+	TranslateRangeFunc *GitTreeTranslatorTranslateRangeFunc
 }
 
 // NewMockGitTreeTranslator creates a new mock of the GitTreeTranslator
@@ -39,18 +38,18 @@ type MockGitTreeTranslator struct {
 // overwritten.
 func NewMockGitTreeTranslator() *MockGitTreeTranslator {
 	return &MockGitTreeTranslator{
-		GetSourceCommitFunc: &GitTreeTranslatorGetSourceCommitFunc{
-			defaultHook: func() (r0 api.CommitID) {
+		PrefetchFunc: &GitTreeTranslatorPrefetchFunc{
+			defaultHook: func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath) {
 				return
 			},
 		},
-		GetTargetCommitPositionFromSourcePositionFunc: &GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc{
-			defaultHook: func(context.Context, string, string, shared.Position, bool) (r0 shared.Position, r1 bool, r2 error) {
+		TranslatePositionFunc: &GitTreeTranslatorTranslatePositionFunc{
+			defaultHook: func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Position) (r0 core.Option[scip.Position], r1 error) {
 				return
 			},
 		},
-		GetTargetCommitRangeFromSourceRangeFunc: &GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc{
-			defaultHook: func(context.Context, string, string, shared.Range, bool) (r0 shared.Range, r1 bool, r2 error) {
+		TranslateRangeFunc: &GitTreeTranslatorTranslateRangeFunc{
+			defaultHook: func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Range) (r0 core.Option[scip.Range], r1 error) {
 				return
 			},
 		},
@@ -62,19 +61,19 @@ func NewMockGitTreeTranslator() *MockGitTreeTranslator {
 // overwritten.
 func NewStrictMockGitTreeTranslator() *MockGitTreeTranslator {
 	return &MockGitTreeTranslator{
-		GetSourceCommitFunc: &GitTreeTranslatorGetSourceCommitFunc{
-			defaultHook: func() api.CommitID {
-				panic("unexpected invocation of MockGitTreeTranslator.GetSourceCommit")
+		PrefetchFunc: &GitTreeTranslatorPrefetchFunc{
+			defaultHook: func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath) {
+				panic("unexpected invocation of MockGitTreeTranslator.Prefetch")
 			},
 		},
-		GetTargetCommitPositionFromSourcePositionFunc: &GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc{
-			defaultHook: func(context.Context, string, string, shared.Position, bool) (shared.Position, bool, error) {
-				panic("unexpected invocation of MockGitTreeTranslator.GetTargetCommitPositionFromSourcePosition")
+		TranslatePositionFunc: &GitTreeTranslatorTranslatePositionFunc{
+			defaultHook: func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Position) (core.Option[scip.Position], error) {
+				panic("unexpected invocation of MockGitTreeTranslator.TranslatePosition")
 			},
 		},
-		GetTargetCommitRangeFromSourceRangeFunc: &GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc{
-			defaultHook: func(context.Context, string, string, shared.Range, bool) (shared.Range, bool, error) {
-				panic("unexpected invocation of MockGitTreeTranslator.GetTargetCommitRangeFromSourceRange")
+		TranslateRangeFunc: &GitTreeTranslatorTranslateRangeFunc{
+			defaultHook: func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Range) (core.Option[scip.Range], error) {
+				panic("unexpected invocation of MockGitTreeTranslator.TranslateRange")
 			},
 		},
 	}
@@ -85,49 +84,47 @@ func NewStrictMockGitTreeTranslator() *MockGitTreeTranslator {
 // implementation, unless overwritten.
 func NewMockGitTreeTranslatorFrom(i GitTreeTranslator) *MockGitTreeTranslator {
 	return &MockGitTreeTranslator{
-		GetSourceCommitFunc: &GitTreeTranslatorGetSourceCommitFunc{
-			defaultHook: i.GetSourceCommit,
+		PrefetchFunc: &GitTreeTranslatorPrefetchFunc{
+			defaultHook: i.Prefetch,
 		},
-		GetTargetCommitPositionFromSourcePositionFunc: &GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc{
-			defaultHook: i.GetTargetCommitPositionFromSourcePosition,
+		TranslatePositionFunc: &GitTreeTranslatorTranslatePositionFunc{
+			defaultHook: i.TranslatePosition,
 		},
-		GetTargetCommitRangeFromSourceRangeFunc: &GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc{
-			defaultHook: i.GetTargetCommitRangeFromSourceRange,
+		TranslateRangeFunc: &GitTreeTranslatorTranslateRangeFunc{
+			defaultHook: i.TranslateRange,
 		},
 	}
 }
 
-// GitTreeTranslatorGetSourceCommitFunc describes the behavior when the
-// GetSourceCommit method of the parent MockGitTreeTranslator instance is
-// invoked.
-type GitTreeTranslatorGetSourceCommitFunc struct {
-	defaultHook func() api.CommitID
-	hooks       []func() api.CommitID
-	history     []GitTreeTranslatorGetSourceCommitFuncCall
+// GitTreeTranslatorPrefetchFunc describes the behavior when the Prefetch
+// method of the parent MockGitTreeTranslator instance is invoked.
+type GitTreeTranslatorPrefetchFunc struct {
+	defaultHook func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath)
+	hooks       []func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath)
+	history     []GitTreeTranslatorPrefetchFuncCall
 	mutex       sync.Mutex
 }
 
-// GetSourceCommit delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockGitTreeTranslator) GetSourceCommit() api.CommitID {
-	r0 := m.GetSourceCommitFunc.nextHook()()
-	m.GetSourceCommitFunc.appendCall(GitTreeTranslatorGetSourceCommitFuncCall{r0})
-	return r0
+// Prefetch delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitTreeTranslator) Prefetch(v0 context.Context, v1 api.CommitID, v2 api.CommitID, v3 []core.RepoRelPath) {
+	m.PrefetchFunc.nextHook()(v0, v1, v2, v3)
+	m.PrefetchFunc.appendCall(GitTreeTranslatorPrefetchFuncCall{v0, v1, v2, v3})
+	return
 }
 
-// SetDefaultHook sets function that is called when the GetSourceCommit
-// method of the parent MockGitTreeTranslator instance is invoked and the
-// hook queue is empty.
-func (f *GitTreeTranslatorGetSourceCommitFunc) SetDefaultHook(hook func() api.CommitID) {
+// SetDefaultHook sets function that is called when the Prefetch method of
+// the parent MockGitTreeTranslator instance is invoked and the hook queue
+// is empty.
+func (f *GitTreeTranslatorPrefetchFunc) SetDefaultHook(hook func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetSourceCommit method of the parent MockGitTreeTranslator instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitTreeTranslatorGetSourceCommitFunc) PushHook(hook func() api.CommitID) {
+// Prefetch method of the parent MockGitTreeTranslator instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitTreeTranslatorPrefetchFunc) PushHook(hook func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -135,20 +132,20 @@ func (f *GitTreeTranslatorGetSourceCommitFunc) PushHook(hook func() api.CommitID
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitTreeTranslatorGetSourceCommitFunc) SetDefaultReturn(r0 api.CommitID) {
-	f.SetDefaultHook(func() api.CommitID {
-		return r0
+func (f *GitTreeTranslatorPrefetchFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath) {
+		return
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitTreeTranslatorGetSourceCommitFunc) PushReturn(r0 api.CommitID) {
-	f.PushHook(func() api.CommitID {
-		return r0
+func (f *GitTreeTranslatorPrefetchFunc) PushReturn() {
+	f.PushHook(func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath) {
+		return
 	})
 }
 
-func (f *GitTreeTranslatorGetSourceCommitFunc) nextHook() func() api.CommitID {
+func (f *GitTreeTranslatorPrefetchFunc) nextHook() func(context.Context, api.CommitID, api.CommitID, []core.RepoRelPath) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -161,76 +158,83 @@ func (f *GitTreeTranslatorGetSourceCommitFunc) nextHook() func() api.CommitID {
 	return hook
 }
 
-func (f *GitTreeTranslatorGetSourceCommitFunc) appendCall(r0 GitTreeTranslatorGetSourceCommitFuncCall) {
+func (f *GitTreeTranslatorPrefetchFunc) appendCall(r0 GitTreeTranslatorPrefetchFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitTreeTranslatorGetSourceCommitFuncCall
-// objects describing the invocations of this function.
-func (f *GitTreeTranslatorGetSourceCommitFunc) History() []GitTreeTranslatorGetSourceCommitFuncCall {
+// History returns a sequence of GitTreeTranslatorPrefetchFuncCall objects
+// describing the invocations of this function.
+func (f *GitTreeTranslatorPrefetchFunc) History() []GitTreeTranslatorPrefetchFuncCall {
 	f.mutex.Lock()
-	history := make([]GitTreeTranslatorGetSourceCommitFuncCall, len(f.history))
+	history := make([]GitTreeTranslatorPrefetchFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitTreeTranslatorGetSourceCommitFuncCall is an object that describes an
-// invocation of method GetSourceCommit on an instance of
-// MockGitTreeTranslator.
-type GitTreeTranslatorGetSourceCommitFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
+// GitTreeTranslatorPrefetchFuncCall is an object that describes an
+// invocation of method Prefetch on an instance of MockGitTreeTranslator.
+type GitTreeTranslatorPrefetchFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Result0 api.CommitID
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.CommitID
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.CommitID
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 []core.RepoRelPath
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitTreeTranslatorGetSourceCommitFuncCall) Args() []interface{} {
+func (c GitTreeTranslatorPrefetchFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitTreeTranslatorPrefetchFuncCall) Results() []interface{} {
 	return []interface{}{}
 }
 
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitTreeTranslatorGetSourceCommitFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc describes
-// the behavior when the GetTargetCommitPositionFromSourcePosition method of
-// the parent MockGitTreeTranslator instance is invoked.
-type GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc struct {
-	defaultHook func(context.Context, string, string, shared.Position, bool) (shared.Position, bool, error)
-	hooks       []func(context.Context, string, string, shared.Position, bool) (shared.Position, bool, error)
-	history     []GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFuncCall
+// GitTreeTranslatorTranslatePositionFunc describes the behavior when the
+// TranslatePosition method of the parent MockGitTreeTranslator instance is
+// invoked.
+type GitTreeTranslatorTranslatePositionFunc struct {
+	defaultHook func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Position) (core.Option[scip.Position], error)
+	hooks       []func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Position) (core.Option[scip.Position], error)
+	history     []GitTreeTranslatorTranslatePositionFuncCall
 	mutex       sync.Mutex
 }
 
-// GetTargetCommitPositionFromSourcePosition delegates to the next hook
-// function in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockGitTreeTranslator) GetTargetCommitPositionFromSourcePosition(v0 context.Context, v1 string, v2 string, v3 shared.Position, v4 bool) (shared.Position, bool, error) {
-	r0, r1, r2 := m.GetTargetCommitPositionFromSourcePositionFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.GetTargetCommitPositionFromSourcePositionFunc.appendCall(GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
-	return r0, r1, r2
+// TranslatePosition delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitTreeTranslator) TranslatePosition(v0 context.Context, v1 api.CommitID, v2 api.CommitID, v3 core.RepoRelPath, v4 scip.Position) (core.Option[scip.Position], error) {
+	r0, r1 := m.TranslatePositionFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.TranslatePositionFunc.appendCall(GitTreeTranslatorTranslatePositionFuncCall{v0, v1, v2, v3, v4, r0, r1})
+	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the
-// GetTargetCommitPositionFromSourcePosition method of the parent
-// MockGitTreeTranslator instance is invoked and the hook queue is empty.
-func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) SetDefaultHook(hook func(context.Context, string, string, shared.Position, bool) (shared.Position, bool, error)) {
+// SetDefaultHook sets function that is called when the TranslatePosition
+// method of the parent MockGitTreeTranslator instance is invoked and the
+// hook queue is empty.
+func (f *GitTreeTranslatorTranslatePositionFunc) SetDefaultHook(hook func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Position) (core.Option[scip.Position], error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetTargetCommitPositionFromSourcePosition method of the parent
-// MockGitTreeTranslator instance invokes the hook at the front of the queue
-// and discards it. After the queue is empty, the default hook function is
-// invoked for any future action.
-func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) PushHook(hook func(context.Context, string, string, shared.Position, bool) (shared.Position, bool, error)) {
+// TranslatePosition method of the parent MockGitTreeTranslator instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitTreeTranslatorTranslatePositionFunc) PushHook(hook func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Position) (core.Option[scip.Position], error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -238,20 +242,20 @@ func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) PushHoo
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) SetDefaultReturn(r0 shared.Position, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, string, shared.Position, bool) (shared.Position, bool, error) {
-		return r0, r1, r2
+func (f *GitTreeTranslatorTranslatePositionFunc) SetDefaultReturn(r0 core.Option[scip.Position], r1 error) {
+	f.SetDefaultHook(func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Position) (core.Option[scip.Position], error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) PushReturn(r0 shared.Position, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, string, string, shared.Position, bool) (shared.Position, bool, error) {
-		return r0, r1, r2
+func (f *GitTreeTranslatorTranslatePositionFunc) PushReturn(r0 core.Option[scip.Position], r1 error) {
+	f.PushHook(func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Position) (core.Option[scip.Position], error) {
+		return r0, r1
 	})
 }
 
-func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) nextHook() func(context.Context, string, string, shared.Position, bool) (shared.Position, bool, error) {
+func (f *GitTreeTranslatorTranslatePositionFunc) nextHook() func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Position) (core.Option[scip.Position], error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -264,99 +268,93 @@ func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) nextHoo
 	return hook
 }
 
-func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) appendCall(r0 GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFuncCall) {
+func (f *GitTreeTranslatorTranslatePositionFunc) appendCall(r0 GitTreeTranslatorTranslatePositionFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFuncCall
+// History returns a sequence of GitTreeTranslatorTranslatePositionFuncCall
 // objects describing the invocations of this function.
-func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) History() []GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFuncCall {
+func (f *GitTreeTranslatorTranslatePositionFunc) History() []GitTreeTranslatorTranslatePositionFuncCall {
 	f.mutex.Lock()
-	history := make([]GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFuncCall, len(f.history))
+	history := make([]GitTreeTranslatorTranslatePositionFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFuncCall is an
-// object that describes an invocation of method
-// GetTargetCommitPositionFromSourcePosition on an instance of
+// GitTreeTranslatorTranslatePositionFuncCall is an object that describes an
+// invocation of method TranslatePosition on an instance of
 // MockGitTreeTranslator.
-type GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFuncCall struct {
+type GitTreeTranslatorTranslatePositionFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 api.CommitID
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 api.CommitID
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 shared.Position
+	Arg3 core.RepoRelPath
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
-	Arg4 bool
+	Arg4 scip.Position
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 shared.Position
+	Result0 core.Option[scip.Position]
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 bool
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFuncCall) Args() []interface{} {
+func (c GitTreeTranslatorTranslatePositionFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
+func (c GitTreeTranslatorTranslatePositionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc describes the
-// behavior when the GetTargetCommitRangeFromSourceRange method of the
-// parent MockGitTreeTranslator instance is invoked.
-type GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc struct {
-	defaultHook func(context.Context, string, string, shared.Range, bool) (shared.Range, bool, error)
-	hooks       []func(context.Context, string, string, shared.Range, bool) (shared.Range, bool, error)
-	history     []GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall
+// GitTreeTranslatorTranslateRangeFunc describes the behavior when the
+// TranslateRange method of the parent MockGitTreeTranslator instance is
+// invoked.
+type GitTreeTranslatorTranslateRangeFunc struct {
+	defaultHook func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Range) (core.Option[scip.Range], error)
+	hooks       []func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Range) (core.Option[scip.Range], error)
+	history     []GitTreeTranslatorTranslateRangeFuncCall
 	mutex       sync.Mutex
 }
 
-// GetTargetCommitRangeFromSourceRange delegates to the next hook function
-// in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockGitTreeTranslator) GetTargetCommitRangeFromSourceRange(v0 context.Context, v1 string, v2 string, v3 shared.Range, v4 bool) (shared.Range, bool, error) {
-	r0, r1, r2 := m.GetTargetCommitRangeFromSourceRangeFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.GetTargetCommitRangeFromSourceRangeFunc.appendCall(GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
-	return r0, r1, r2
+// TranslateRange delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitTreeTranslator) TranslateRange(v0 context.Context, v1 api.CommitID, v2 api.CommitID, v3 core.RepoRelPath, v4 scip.Range) (core.Option[scip.Range], error) {
+	r0, r1 := m.TranslateRangeFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.TranslateRangeFunc.appendCall(GitTreeTranslatorTranslateRangeFuncCall{v0, v1, v2, v3, v4, r0, r1})
+	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the
-// GetTargetCommitRangeFromSourceRange method of the parent
-// MockGitTreeTranslator instance is invoked and the hook queue is empty.
-func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) SetDefaultHook(hook func(context.Context, string, string, shared.Range, bool) (shared.Range, bool, error)) {
+// SetDefaultHook sets function that is called when the TranslateRange
+// method of the parent MockGitTreeTranslator instance is invoked and the
+// hook queue is empty.
+func (f *GitTreeTranslatorTranslateRangeFunc) SetDefaultHook(hook func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Range) (core.Option[scip.Range], error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetTargetCommitRangeFromSourceRange method of the parent
-// MockGitTreeTranslator instance invokes the hook at the front of the queue
-// and discards it. After the queue is empty, the default hook function is
-// invoked for any future action.
-func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) PushHook(hook func(context.Context, string, string, shared.Range, bool) (shared.Range, bool, error)) {
+// TranslateRange method of the parent MockGitTreeTranslator instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitTreeTranslatorTranslateRangeFunc) PushHook(hook func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Range) (core.Option[scip.Range], error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -364,20 +362,20 @@ func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) PushHook(hook
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) SetDefaultReturn(r0 shared.Range, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, string, shared.Range, bool) (shared.Range, bool, error) {
-		return r0, r1, r2
+func (f *GitTreeTranslatorTranslateRangeFunc) SetDefaultReturn(r0 core.Option[scip.Range], r1 error) {
+	f.SetDefaultHook(func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Range) (core.Option[scip.Range], error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) PushReturn(r0 shared.Range, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, string, string, shared.Range, bool) (shared.Range, bool, error) {
-		return r0, r1, r2
+func (f *GitTreeTranslatorTranslateRangeFunc) PushReturn(r0 core.Option[scip.Range], r1 error) {
+	f.PushHook(func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Range) (core.Option[scip.Range], error) {
+		return r0, r1
 	})
 }
 
-func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) nextHook() func(context.Context, string, string, shared.Range, bool) (shared.Range, bool, error) {
+func (f *GitTreeTranslatorTranslateRangeFunc) nextHook() func(context.Context, api.CommitID, api.CommitID, core.RepoRelPath, scip.Range) (core.Option[scip.Range], error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -390,65 +388,60 @@ func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) nextHook() fu
 	return hook
 }
 
-func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) appendCall(r0 GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall) {
+func (f *GitTreeTranslatorTranslateRangeFunc) appendCall(r0 GitTreeTranslatorTranslateRangeFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall objects
-// describing the invocations of this function.
-func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) History() []GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall {
+// History returns a sequence of GitTreeTranslatorTranslateRangeFuncCall
+// objects describing the invocations of this function.
+func (f *GitTreeTranslatorTranslateRangeFunc) History() []GitTreeTranslatorTranslateRangeFuncCall {
 	f.mutex.Lock()
-	history := make([]GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall, len(f.history))
+	history := make([]GitTreeTranslatorTranslateRangeFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall is an object
-// that describes an invocation of method
-// GetTargetCommitRangeFromSourceRange on an instance of
+// GitTreeTranslatorTranslateRangeFuncCall is an object that describes an
+// invocation of method TranslateRange on an instance of
 // MockGitTreeTranslator.
-type GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall struct {
+type GitTreeTranslatorTranslateRangeFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 api.CommitID
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 api.CommitID
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 shared.Range
+	Arg3 core.RepoRelPath
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
-	Arg4 bool
+	Arg4 scip.Range
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 shared.Range
+	Result0 core.Option[scip.Range]
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 bool
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall) Args() []interface{} {
+func (c GitTreeTranslatorTranslateRangeFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
+func (c GitTreeTranslatorTranslateRangeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // MockUploadService is a mock implementation of the UploadService interface
@@ -477,12 +470,12 @@ type MockUploadService struct {
 func NewMockUploadService() *MockUploadService {
 	return &MockUploadService{
 		GetCompletedUploadsByIDsFunc: &UploadServiceGetCompletedUploadsByIDsFunc{
-			defaultHook: func(context.Context, []int) (r0 []shared1.CompletedUpload, r1 error) {
+			defaultHook: func(context.Context, []int) (r0 []shared.CompletedUpload, r1 error) {
 				return
 			},
 		},
 		GetCompletedUploadsWithDefinitionsForMonikersFunc: &UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc{
-			defaultHook: func(context.Context, []precise.QualifiedMonikerData) (r0 []shared1.CompletedUpload, r1 error) {
+			defaultHook: func(context.Context, []precise.QualifiedMonikerData) (r0 []shared.CompletedUpload, r1 error) {
 				return
 			},
 		},
@@ -492,7 +485,7 @@ func NewMockUploadService() *MockUploadService {
 			},
 		},
 		InferClosestUploadsFunc: &UploadServiceInferClosestUploadsFunc{
-			defaultHook: func(context.Context, shared1.UploadMatchingOptions) (r0 []shared1.CompletedUpload, r1 error) {
+			defaultHook: func(context.Context, shared.UploadMatchingOptions) (r0 []shared.CompletedUpload, r1 error) {
 				return
 			},
 		},
@@ -504,12 +497,12 @@ func NewMockUploadService() *MockUploadService {
 func NewStrictMockUploadService() *MockUploadService {
 	return &MockUploadService{
 		GetCompletedUploadsByIDsFunc: &UploadServiceGetCompletedUploadsByIDsFunc{
-			defaultHook: func(context.Context, []int) ([]shared1.CompletedUpload, error) {
+			defaultHook: func(context.Context, []int) ([]shared.CompletedUpload, error) {
 				panic("unexpected invocation of MockUploadService.GetCompletedUploadsByIDs")
 			},
 		},
 		GetCompletedUploadsWithDefinitionsForMonikersFunc: &UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc{
-			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error) {
+			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
 				panic("unexpected invocation of MockUploadService.GetCompletedUploadsWithDefinitionsForMonikers")
 			},
 		},
@@ -519,7 +512,7 @@ func NewStrictMockUploadService() *MockUploadService {
 			},
 		},
 		InferClosestUploadsFunc: &UploadServiceInferClosestUploadsFunc{
-			defaultHook: func(context.Context, shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error) {
+			defaultHook: func(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error) {
 				panic("unexpected invocation of MockUploadService.InferClosestUploads")
 			},
 		},
@@ -550,15 +543,15 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 // GetCompletedUploadsByIDs method of the parent MockUploadService instance
 // is invoked.
 type UploadServiceGetCompletedUploadsByIDsFunc struct {
-	defaultHook func(context.Context, []int) ([]shared1.CompletedUpload, error)
-	hooks       []func(context.Context, []int) ([]shared1.CompletedUpload, error)
+	defaultHook func(context.Context, []int) ([]shared.CompletedUpload, error)
+	hooks       []func(context.Context, []int) ([]shared.CompletedUpload, error)
 	history     []UploadServiceGetCompletedUploadsByIDsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetCompletedUploadsByIDs delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockUploadService) GetCompletedUploadsByIDs(v0 context.Context, v1 []int) ([]shared1.CompletedUpload, error) {
+func (m *MockUploadService) GetCompletedUploadsByIDs(v0 context.Context, v1 []int) ([]shared.CompletedUpload, error) {
 	r0, r1 := m.GetCompletedUploadsByIDsFunc.nextHook()(v0, v1)
 	m.GetCompletedUploadsByIDsFunc.appendCall(UploadServiceGetCompletedUploadsByIDsFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -567,7 +560,7 @@ func (m *MockUploadService) GetCompletedUploadsByIDs(v0 context.Context, v1 []in
 // SetDefaultHook sets function that is called when the
 // GetCompletedUploadsByIDs method of the parent MockUploadService instance
 // is invoked and the hook queue is empty.
-func (f *UploadServiceGetCompletedUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, []int) ([]shared1.CompletedUpload, error)) {
+func (f *UploadServiceGetCompletedUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, []int) ([]shared.CompletedUpload, error)) {
 	f.defaultHook = hook
 }
 
@@ -576,7 +569,7 @@ func (f *UploadServiceGetCompletedUploadsByIDsFunc) SetDefaultHook(hook func(con
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UploadServiceGetCompletedUploadsByIDsFunc) PushHook(hook func(context.Context, []int) ([]shared1.CompletedUpload, error)) {
+func (f *UploadServiceGetCompletedUploadsByIDsFunc) PushHook(hook func(context.Context, []int) ([]shared.CompletedUpload, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -584,20 +577,20 @@ func (f *UploadServiceGetCompletedUploadsByIDsFunc) PushHook(hook func(context.C
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadServiceGetCompletedUploadsByIDsFunc) SetDefaultReturn(r0 []shared1.CompletedUpload, r1 error) {
-	f.SetDefaultHook(func(context.Context, []int) ([]shared1.CompletedUpload, error) {
+func (f *UploadServiceGetCompletedUploadsByIDsFunc) SetDefaultReturn(r0 []shared.CompletedUpload, r1 error) {
+	f.SetDefaultHook(func(context.Context, []int) ([]shared.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceGetCompletedUploadsByIDsFunc) PushReturn(r0 []shared1.CompletedUpload, r1 error) {
-	f.PushHook(func(context.Context, []int) ([]shared1.CompletedUpload, error) {
+func (f *UploadServiceGetCompletedUploadsByIDsFunc) PushReturn(r0 []shared.CompletedUpload, r1 error) {
+	f.PushHook(func(context.Context, []int) ([]shared.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadServiceGetCompletedUploadsByIDsFunc) nextHook() func(context.Context, []int) ([]shared1.CompletedUpload, error) {
+func (f *UploadServiceGetCompletedUploadsByIDsFunc) nextHook() func(context.Context, []int) ([]shared.CompletedUpload, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -640,7 +633,7 @@ type UploadServiceGetCompletedUploadsByIDsFuncCall struct {
 	Arg1 []int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared1.CompletedUpload
+	Result0 []shared.CompletedUpload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -662,8 +655,8 @@ func (c UploadServiceGetCompletedUploadsByIDsFuncCall) Results() []interface{} {
 // the behavior when the GetCompletedUploadsWithDefinitionsForMonikers
 // method of the parent MockUploadService instance is invoked.
 type UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc struct {
-	defaultHook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error)
-	hooks       []func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error)
+	defaultHook func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error)
+	hooks       []func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error)
 	history     []UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFuncCall
 	mutex       sync.Mutex
 }
@@ -671,7 +664,7 @@ type UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc struct {
 // GetCompletedUploadsWithDefinitionsForMonikers delegates to the next hook
 // function in the queue and stores the parameter and result values of this
 // invocation.
-func (m *MockUploadService) GetCompletedUploadsWithDefinitionsForMonikers(v0 context.Context, v1 []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error) {
+func (m *MockUploadService) GetCompletedUploadsWithDefinitionsForMonikers(v0 context.Context, v1 []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
 	r0, r1 := m.GetCompletedUploadsWithDefinitionsForMonikersFunc.nextHook()(v0, v1)
 	m.GetCompletedUploadsWithDefinitionsForMonikersFunc.appendCall(UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -680,7 +673,7 @@ func (m *MockUploadService) GetCompletedUploadsWithDefinitionsForMonikers(v0 con
 // SetDefaultHook sets function that is called when the
 // GetCompletedUploadsWithDefinitionsForMonikers method of the parent
 // MockUploadService instance is invoked and the hook queue is empty.
-func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) SetDefaultHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error)) {
+func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) SetDefaultHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error)) {
 	f.defaultHook = hook
 }
 
@@ -689,7 +682,7 @@ func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) SetDefa
 // MockUploadService instance invokes the hook at the front of the queue and
 // discards it. After the queue is empty, the default hook function is
 // invoked for any future action.
-func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) PushHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error)) {
+func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) PushHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -697,20 +690,20 @@ func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) PushHoo
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) SetDefaultReturn(r0 []shared1.CompletedUpload, r1 error) {
-	f.SetDefaultHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error) {
+func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) SetDefaultReturn(r0 []shared.CompletedUpload, r1 error) {
+	f.SetDefaultHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) PushReturn(r0 []shared1.CompletedUpload, r1 error) {
-	f.PushHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error) {
+func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) PushReturn(r0 []shared.CompletedUpload, r1 error) {
+	f.PushHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) nextHook() func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error) {
+func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) nextHook() func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -754,7 +747,7 @@ type UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFuncCall struct {
 	Arg1 []precise.QualifiedMonikerData
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared1.CompletedUpload
+	Result0 []shared.CompletedUpload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -909,15 +902,15 @@ func (c UploadServiceGetUploadIDsWithReferencesFuncCall) Results() []interface{}
 // InferClosestUploads method of the parent MockUploadService instance is
 // invoked.
 type UploadServiceInferClosestUploadsFunc struct {
-	defaultHook func(context.Context, shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error)
-	hooks       []func(context.Context, shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error)
+	defaultHook func(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error)
+	hooks       []func(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error)
 	history     []UploadServiceInferClosestUploadsFuncCall
 	mutex       sync.Mutex
 }
 
 // InferClosestUploads delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockUploadService) InferClosestUploads(v0 context.Context, v1 shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error) {
+func (m *MockUploadService) InferClosestUploads(v0 context.Context, v1 shared.UploadMatchingOptions) ([]shared.CompletedUpload, error) {
 	r0, r1 := m.InferClosestUploadsFunc.nextHook()(v0, v1)
 	m.InferClosestUploadsFunc.appendCall(UploadServiceInferClosestUploadsFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -926,7 +919,7 @@ func (m *MockUploadService) InferClosestUploads(v0 context.Context, v1 shared1.U
 // SetDefaultHook sets function that is called when the InferClosestUploads
 // method of the parent MockUploadService instance is invoked and the hook
 // queue is empty.
-func (f *UploadServiceInferClosestUploadsFunc) SetDefaultHook(hook func(context.Context, shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error)) {
+func (f *UploadServiceInferClosestUploadsFunc) SetDefaultHook(hook func(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error)) {
 	f.defaultHook = hook
 }
 
@@ -935,7 +928,7 @@ func (f *UploadServiceInferClosestUploadsFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UploadServiceInferClosestUploadsFunc) PushHook(hook func(context.Context, shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error)) {
+func (f *UploadServiceInferClosestUploadsFunc) PushHook(hook func(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -943,20 +936,20 @@ func (f *UploadServiceInferClosestUploadsFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadServiceInferClosestUploadsFunc) SetDefaultReturn(r0 []shared1.CompletedUpload, r1 error) {
-	f.SetDefaultHook(func(context.Context, shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error) {
+func (f *UploadServiceInferClosestUploadsFunc) SetDefaultReturn(r0 []shared.CompletedUpload, r1 error) {
+	f.SetDefaultHook(func(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceInferClosestUploadsFunc) PushReturn(r0 []shared1.CompletedUpload, r1 error) {
-	f.PushHook(func(context.Context, shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error) {
+func (f *UploadServiceInferClosestUploadsFunc) PushReturn(r0 []shared.CompletedUpload, r1 error) {
+	f.PushHook(func(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadServiceInferClosestUploadsFunc) nextHook() func(context.Context, shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error) {
+func (f *UploadServiceInferClosestUploadsFunc) nextHook() func(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -995,10 +988,10 @@ type UploadServiceInferClosestUploadsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 shared1.UploadMatchingOptions
+	Arg1 shared.UploadMatchingOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared1.CompletedUpload
+	Result0 []shared.CompletedUpload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
