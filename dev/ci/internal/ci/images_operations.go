@@ -118,6 +118,8 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 		}
 	}
 
+	_, bazelRC := aspectBazelRC()
+
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(stepName,
 			append(opts,
@@ -129,6 +131,7 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 				bk.Env("DEV_REGISTRY", devRegistry),
 				bk.Env("PROD_REGISTRY", prodRegistry),
 				bk.Env("ADDITIONAL_PROD_REGISTRIES", additionalProdRegistry),
+				bk.Cmd(bazelStampedCmd(fmt.Sprintf(`build $$(bazel --bazelrc=%s --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc query 'kind("oci_push rule", //...)')`, bazelRC))),
 				bk.ArtifactPaths("build_event_log.bin"),
 				bk.AnnotatedCmd(
 					"./dev/ci/push_all.sh",
