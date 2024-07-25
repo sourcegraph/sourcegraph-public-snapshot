@@ -151,7 +151,7 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb sgdatabase.DB, info lice
 	{
 		// Create a different subscription and license that's not a dev tag,
 		// created at the same time, to ensure we don't use it
-		u, err := dotcomdb.Users().Create(ctx, database.NewUser{Username: "not-devlicense"})
+		u, err := dotcomdb.Users().Create(ctx, sgdatabase.NewUser{Username: "not-devlicense"})
 		require.NoError(t, err)
 		sub, err := subscriptionsdb.Create(ctx, u.ID, u.Username)
 		require.NoError(t, err)

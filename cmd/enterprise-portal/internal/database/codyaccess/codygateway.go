@@ -140,6 +140,8 @@ LEFT JOIN
         WHERE
             enterprise_portal_subscription_licenses.license_type = 'ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY'
             AND access.subscription_id = enterprise_portal_subscription_licenses.subscription_id
+			AND enterprise_portal_subscription_licenses.expire_at > NOW()  -- expires in future
+			AND enterprise_portal_subscription_licenses.revoked_at IS NULL -- not revoked
         -- Get most recently created license key as the "active license"
         ORDER BY enterprise_portal_subscription_licenses.created_at DESC
         LIMIT 1
