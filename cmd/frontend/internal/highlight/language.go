@@ -1,7 +1,6 @@
 package highlight
 
 import (
-	"github.com/sourcegraph/sourcegraph/schema"
 	"path/filepath"
 	"strings"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type EngineType int

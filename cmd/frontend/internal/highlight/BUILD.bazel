@@ -1,5 +1,5 @@
-load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "highlight",
@@ -10,9 +10,9 @@ go_library(
         "mocks.go",
         "syntect_language_map.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/highlight",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight",
     tags = [TAG_PLATFORM_GRAPH],
-    visibility = ["//:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/binary",
         "//internal/conf",
