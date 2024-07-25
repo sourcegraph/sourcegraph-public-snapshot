@@ -71,15 +71,19 @@ func (r *Resolver) RecordEvents(ctx context.Context, args *graphqlbackend.Record
 	if args == nil || len(args.Events) == 0 {
 		return nil, errors.New("no events provided")
 	}
-	gatewayEvents, err := newTelemetryGatewayEvents(ctx, time.Now(), telemetrygatewayv1.DefaultEventIDFunc, args.Events)
-	if err != nil {
-		// This is an important failure, make sure we surface it, as it could be
-		// an implementation error.
-		data, _ := json.Marshal(args.Events)
-		trace.Logger(ctx, r.logger).Error("failed to convert telemetry events to internal format",
-			log.Error(err),
-			log.String("eventData", string(data)))
-		return nil, errors.Wrap(err, "invalid events provided")
+	gatewayEvents := make([]*telemetrygatewayv1.Event, 0, len(args.Events))
+	for _, ev := range args.Events {
+		gatewayEvent, err := convertToTelemetryGatewayEvent(ctx, time.Now(), telemetrygatewayv1.DefaultEventIDFunc, ev)
+		if err != nil {
+			// This is an important failure, make sure we surface it, as it could be
+			// an implementation error.
+			data, _ := json.Marshal(args.Events)
+			trace.Logger(ctx, r.logger).Error("failed to convert telemetry events to internal format",
+				log.Error(err),
+				log.String("eventData", string(data)))
+			return nil, errors.Wrap(err, "invalid events provided")
+		}
+		gatewayEvents = append(gatewayEvents, gatewayEvent)
 	}
 	if err := r.telemetryStore.StoreEvents(ctx, gatewayEvents); err != nil {
 		// This is an important failure, make sure we surface it, as it could be
