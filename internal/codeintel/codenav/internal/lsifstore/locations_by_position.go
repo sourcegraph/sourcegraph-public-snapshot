@@ -342,6 +342,10 @@ outer:
 	return usages, totalCount, nil
 }
 
+// symbolUsagesQuery gets ALL usages of a bunch of symbols across the ENTIRE instance
+// (within the given set of uploadIDs). We need to do this because the ranges are
+// stored using a custom binary encoding which means we can't use LIMIT+OFFSET at
+// the level of locations.
 const symbolUsagesQuery = `
 WITH RECURSIVE
 ` + symbolIDsCTEs + `
@@ -350,6 +354,7 @@ SELECT
 	msn.symbol_name,
 	array_agg(%s ORDER BY document_path),
 	array_agg(document_path ORDER BY document_path)
+    -- ORDER BY ss.upload_id, msn.symbol_name, document_path to maintain determinism for pagination
 FROM codeintel_scip_symbols ss
 JOIN codeintel_scip_document_lookup dl
      ON dl.id = ss.document_lookup_id
