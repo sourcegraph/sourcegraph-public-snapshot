@@ -28,7 +28,6 @@ go_library(
         "//cmd/frontend/internal/app/ui",
         "//cmd/frontend/internal/auth/ipallowlist",
         "//cmd/frontend/internal/auth/session",
-        "//cmd/frontend/internal/auth/userpasswd",
         "//cmd/frontend/internal/authz",
         "//cmd/frontend/internal/bg",
         "//cmd/frontend/internal/cli/middleware",
