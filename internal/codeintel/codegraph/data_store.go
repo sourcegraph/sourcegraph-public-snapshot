@@ -1,4 +1,8 @@
-package lsifstore
+// Package codegraph encapsulates the main interfaces for interacting
+// with code graph data in the DB throughout its lifecycle --
+// ingestion, querying (TODO: Move LsifStore to this package)
+// and deletion.
+package codegraph
 
 import (
 	"context"
@@ -11,8 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type Store interface {
-	WithTransaction(ctx context.Context, f func(s Store) error) error
+// DataStore encapsulates insertion and deletion for code graph data in Postgres.
+type DataStore interface {
+	WithTransaction(ctx context.Context, f func(s DataStore) error) error
 
 	// Insert
 	InsertMetadata(ctx context.Context, uploadID int, meta ProcessedMetadata) error
@@ -38,7 +43,7 @@ type store struct {
 	operations *operations
 }
 
-func New(observationCtx *observation.Context, db codeintelshared.CodeIntelDB) Store {
+func New(observationCtx *observation.Context, db codeintelshared.CodeIntelDB) DataStore {
 	return newInternal(observationCtx, db)
 }
 
@@ -49,7 +54,7 @@ func newInternal(observationCtx *observation.Context, db codeintelshared.CodeInt
 	}
 }
 
-func (s *store) WithTransaction(ctx context.Context, f func(s Store) error) error {
+func (s *store) WithTransaction(ctx context.Context, f func(s DataStore) error) error {
 	return s.withTransaction(ctx, func(s *store) error { return f(s) })
 }
 

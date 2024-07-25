@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	genslices "github.com/life4/genesis/slices"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -423,26 +424,24 @@ func (s *Service) gatherRemoteLocations(
 	// Finally, query time!
 	// Fetch indexed ranges of the given symbols within the given uploads.
 
-	monikerArgs := make([]precise.MonikerData, 0, len(monikers))
-	for _, moniker := range monikers {
-		monikerArgs = append(monikerArgs, moniker.MonikerData)
-	}
-	locations, totalCount, err := s.lsifstore.GetMinimalBulkMonikerLocations(
-		ctx,
-		usageKind,
-		cursor.UploadIDs,
-		cursor.SkipPathsByUploadID,
-		monikerArgs,
-		limit,
-		cursor.RemoteLocationOffset,
-	)
+	globalSymbolNames := genslices.Map(monikers, func(m precise.QualifiedMonikerData) string { return m.Identifier })
+	usages, totalUsageCount, err := s.lsifstore.GetSymbolUsages(ctx, lsifstore.SymbolUsagesOptions{
+		UsageKind:           usageKind,
+		UploadIDs:           cursor.UploadIDs,
+		SkipPathsByUploadID: cursor.SkipPathsByUploadID,
+		LookupSymbols:       globalSymbolNames,
+		Limit:               limit,
+		Offset:              cursor.RemoteLocationOffset,
+	})
 	if err != nil {
 		return nil, Cursor{}, err
 	}
 
 	// adjust cursor offset for next page
-	cursor = cursor.BumpRemoteLocationOffset(len(locations), totalCount)
+	cursor = cursor.BumpRemoteUsageOffset(len(usages), totalUsageCount)
 
+	// OK to use slice de-duplication because of ordering guarantees of GetSymbolUsages
+	locations := genslices.Dedup(genslices.Map(usages, shared.Usage.ToLocation))
 	// Adjust locations back to target commit
 	adjustedLocations, err := s.getUploadLocations(ctx, args, requestState, locations, includeFallbackLocations)
 	if err != nil {

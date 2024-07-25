@@ -1,0 +1,49 @@
+#     ____ ___  ___  _    _ ____ _  _ ____ ____
+#     |__| |__] |__] |    | |__| |\ | |    |___
+#     |  | |    |    |___ | |  | | \| |___ |___
+#
+# _  _ ____ _ _  _ ___ ____ _  _ ____ _  _ ____ ____
+# |\/| |__| | |\ |  |  |___ |\ | |__| |\ | |    |___
+# |  | |  | | | \|  |  |___ | \| |  | | \| |___ |___
+#
+#      Sourcegraph Appliance Maintenance UI
+
+server {
+    listen       80;
+    listen  [::]:80;
+    server_name  localhost;
+    access_log   off;
+
+
+    location / {
+        # Hideous char-mask to avoid nested ifs, which casue warnings in various
+        # config linters. nginx doesn't support boolean operators as far as I
+        # can tell.
+        set $redirect_mask 0;
+        if ($request_uri !~ ^/maintenance) {
+            set $redirect_mask 1;
+        }
+        if ($request_uri !~ ^/api) {
+            set $redirect_mask 1$redirect_mask;
+        }
+        if ($request_uri !~ ^/assets) {
+            set $redirect_mask 1$redirect_mask;
+        }
+        if ($redirect_mask = 111) {
+            return 302 $scheme://$host:$server_port/maintenance;
+        }
+
+        root   /maintenance;
+        index  index.html index.htm;
+    }
+
+    location /api/ {
+        proxy_pass ${API_ENDPOINT}/api/;
+    }
+
+    error_page   404 /;
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /maintenance;
+    }
+}

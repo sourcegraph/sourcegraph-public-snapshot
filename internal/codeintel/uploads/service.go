@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -17,26 +17,26 @@ import (
 )
 
 type Service struct {
-	store           store.Store
-	repoStore       RepoStore
-	lsifstore       lsifstore.Store
-	gitserverClient gitserver.Client
-	operations      *operations
+	store              store.Store
+	repoStore          RepoStore
+	codeGraphDataStore codegraph.DataStore
+	gitserverClient    gitserver.Client
+	operations         *operations
 }
 
 func newService(
 	observationCtx *observation.Context,
 	store store.Store,
 	repoStore RepoStore,
-	lsifstore lsifstore.Store,
+	dataStore codegraph.DataStore,
 	gsc gitserver.Client,
 ) *Service {
 	return &Service{
-		store:           store,
-		repoStore:       repoStore,
-		lsifstore:       lsifstore,
-		gitserverClient: gsc,
-		operations:      newOperations(observationCtx),
+		store:              store,
+		repoStore:          repoStore,
+		codeGraphDataStore: dataStore,
+		gitserverClient:    gsc,
+		operations:         newOperations(observationCtx),
 	}
 }
 

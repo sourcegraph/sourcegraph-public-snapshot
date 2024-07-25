@@ -91,7 +91,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.30.6
 	github.com/aws/smithy-go v1.13.5
 	github.com/beevik/etree v1.3.0
-	github.com/buildkite/go-buildkite/v3 v3.0.1
+	github.com/buildkite/go-buildkite/v3 v3.11.0
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.1
@@ -99,7 +99,6 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/daviddengcn/go-colortext v1.0.0
 	github.com/derision-test/glock v1.0.0
-	github.com/dgraph-io/ristretto v0.1.1
 	github.com/distribution/distribution/v3 v3.0.0-20220128175647-b60926597a1b
 	github.com/dnaeon/go-vcr v1.2.0
 	github.com/docker/docker-credential-helpers v0.8.1
@@ -579,7 +578,6 @@ require (
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/go-toast/toast v0.0.0-20190211030409-01e6764cf0a4 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
-	github.com/golang/glog v1.2.1 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20240409012703-83162a5b38cd // indirect

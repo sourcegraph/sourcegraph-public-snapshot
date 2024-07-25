@@ -450,7 +450,7 @@ func makeTestResolver(t *testing.T) resolverstubs.CodeGraphDataResolver {
 	errUploadNotFound := errors.New("upload not found")
 	errDocumentNotFound := errors.New("document not found")
 	testUpload := uploadsshared.CompletedUpload{ID: 82}
-	codeNavSvc.SCIPDocumentFunc.SetDefaultHook(func(_ context.Context, _ codenav.GitTreeTranslator, upload core.UploadLike, path core.RepoRelPath) (*scip.Document, error) {
+	codeNavSvc.SCIPDocumentFunc.SetDefaultHook(func(_ context.Context, _ codenav.GitTreeTranslator, upload core.UploadLike, _ api.CommitID, path core.RepoRelPath) (*scip.Document, error) {
 		if upload.GetID() != testUpload.ID {
 			return nil, errUploadNotFound
 		}

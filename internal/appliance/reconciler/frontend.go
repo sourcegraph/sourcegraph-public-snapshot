@@ -183,7 +183,7 @@ func (r *Reconciler) reconcileFrontendService(ctx context.Context, sg *config.So
 		{Name: "http", Port: 30080, TargetPort: intstr.FromString("http")},
 	}
 	svc.Spec.Selector = map[string]string{
-		"app": name,
+		"app": "sourcegraph-appliance",
 	}
 
 	config.MarkObjectForAdoption(&svc)

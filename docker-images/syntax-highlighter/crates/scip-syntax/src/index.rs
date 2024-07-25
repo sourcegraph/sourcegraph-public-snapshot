@@ -14,14 +14,14 @@ use std::{
 
 use anyhow::{anyhow, Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
-use clap::ValueEnum;
 use path_clean;
 use rayon::{prelude::*, ThreadPoolBuilder};
 use scip::{types::Document, write_message_to_file};
 use syntax_analysis::{
     globals,
     languages::{get_local_configuration, get_tag_configuration},
-    locals,
+    locals::{self, LocalResolutionOptions},
+    SCIP_SYNTAX_SCHEME,
 };
 use tree_sitter;
 use tree_sitter_all_languages::ParserId;
@@ -30,29 +30,27 @@ use crate::{evaluate::Evaluator, io::read_index_from_file, progress::create_spin
 
 #[derive(Debug, Copy, Clone)]
 pub struct IndexOptions {
-    pub analysis_mode: AnalysisMode,
+    pub analysis_features: AnalysisFeatures,
     /// When true, fail on first encountered error
     /// Otherwise errors are logged but they don't
     /// interrupt the process
     pub fail_fast: bool,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
-pub enum AnalysisMode {
-    /// Only extract occurrences of local definitions
-    Locals,
-    /// Only extract globally-accessible symbols
-    Globals,
-    /// Locals + Globals, extract everything
-    Full,
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct AnalysisFeatures {
+    pub locals: bool,
+    pub global_references: bool,
+    pub global_definitions: bool,
 }
 
-impl AnalysisMode {
-    fn locals(self) -> bool {
-        self == AnalysisMode::Locals || self == AnalysisMode::Full
-    }
-    fn globals(self) -> bool {
-        self == AnalysisMode::Globals || self == AnalysisMode::Full
+impl Default for AnalysisFeatures {
+    fn default() -> Self {
+        AnalysisFeatures {
+            locals: true,
+            global_references: true,
+            global_definitions: true,
+        }
     }
 }
 
@@ -346,19 +344,22 @@ fn index_content(contents: &str, parser_id: ParserId, options: IndexOptions) -> 
             .parse(contents.as_bytes(), None)
             .ok_or(anyhow!("Failed to parse when indexing content"))?;
 
-        let mut document = if options.analysis_mode.globals() {
+        let mut document = if options.analysis_features.global_definitions {
             let tag_config = get_tag_configuration(parser_id)
                 .ok_or_else(|| anyhow!("No tag configuration for language: {parser_id:?}"))?;
             let (mut scope, hint) = globals::parse_tree(tag_config, &tree, contents)?;
-            scope.into_document(hint, vec![])
+            scope.into_document(hint, SCIP_SYNTAX_SCHEME, vec![])
         } else {
             Document::new()
         };
 
-        if options.analysis_mode.locals() {
+        if options.analysis_features.locals {
             let config = get_local_configuration(parser_id)
                 .ok_or_else(|| anyhow!("No local configuration for language: {parser_id:?}"))?;
-            let occurrences = locals::find_locals(config, &tree, contents)?;
+            let options = LocalResolutionOptions {
+                emit_global_references: options.analysis_features.global_references,
+            };
+            let occurrences = locals::find_locals(config, &tree, contents, options)?;
             document.occurrences.extend(occurrences)
         }
         Ok(document)
