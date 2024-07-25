@@ -14,6 +14,7 @@ type ConfigurationPolicy struct {
 	RetentionDuration         *time.Duration
 	RetainIntermediateCommits bool
 	IndexingEnabled           bool
+	SyntacticIndexingEnabled  bool
 	IndexCommitMaxAge         *time.Duration
 	IndexIntermediateCommits  bool
 	EmbeddingEnabled          bool

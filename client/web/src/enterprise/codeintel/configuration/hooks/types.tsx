@@ -13,7 +13,8 @@ export const nullPolicy = {
     retentionEnabled: false,
     retentionDurationHours: null,
     retainIntermediateCommits: false,
-    indexingEnabled: false,
+    preciseIndexingEnabled: false,
+    syntacticIndexingEnabled: false,
     indexCommitMaxAgeHours: null,
     indexIntermediateCommits: false,
     repository: null,
@@ -35,7 +36,8 @@ export const defaultCodeIntelligenceConfigurationPolicyFieldsFragment = gql`
         retentionEnabled
         retentionDurationHours
         retainIntermediateCommits
-        indexingEnabled
+        preciseIndexingEnabled
+        syntacticIndexingEnabled
         indexCommitMaxAgeHours
         indexIntermediateCommits
     }
