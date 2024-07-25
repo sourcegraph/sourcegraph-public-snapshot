@@ -26,7 +26,6 @@ type Appliance struct {
 
 	client                 client.Client
 	namespace              string
-	status                 config.Status
 	sourcegraph            *config.Sourcegraph
 	releaseRegistryClient  *releaseregistry.Client
 	latestSupportedVersion string

@@ -130,7 +130,7 @@ func (a *Appliance) getInstallProgressJSONHandler() http.Handler {
 		}
 
 		if ok {
-			a.status = StatusWaitingForAdmin
+			a.status = config.StatusWaitingForAdmin
 		}
 
 		if err := a.writeJSON(w, http.StatusOK, responseData{"progress": installProgress}, nil); err != nil {
@@ -173,6 +173,6 @@ func (a *Appliance) postStatusJSONHandler() http.Handler {
 			a.serverErrorResponse(w, r, err)
 		}
 
-		a.status = config.StatusInstalling
+		a.status = config.Status(input.State)
 	})
 }
