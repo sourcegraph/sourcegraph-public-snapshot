@@ -35,8 +35,8 @@ go_library(
         "//cmd/frontend/internal/auth/sourcegraphoperator",
         "//cmd/frontend/internal/auth/userpasswd",
         "//cmd/frontend/internal/cloneurls",
+        "//cmd/frontend/internal/oneclickexport",
         "//cmd/frontend/internal/routevar",
-        "//cmd/frontend/oneclickexport",
         "//internal/actor",
         "//internal/api",
         "//internal/auth",
@@ -88,7 +88,7 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/backend",
-        "//cmd/frontend/oneclickexport",
+        "//cmd/frontend/internal/oneclickexport",
         "//internal/actor",
         "//internal/api",
         "//internal/conf",
