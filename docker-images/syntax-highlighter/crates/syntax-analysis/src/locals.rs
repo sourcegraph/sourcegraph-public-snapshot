@@ -619,7 +619,7 @@ impl<'a> LocalResolver<'a> {
                         is_def_ref,
                         node: capture.node,
                     })
-                } else if capture_name.eq_ignore_ascii_case("reference") {
+                } else if capture_name.starts_with("reference") {
                     let offset = capture.node.start_byte();
 
                     if skip_references_at_offsets.contains(&offset) {
