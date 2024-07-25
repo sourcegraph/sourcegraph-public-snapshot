@@ -68,7 +68,7 @@ func (s *store) SCIPDocuments(ctx context.Context, uploadID int, paths []core.Up
 	}
 	docs, err := scanner(s.db.Query(ctx, sqlf.Sprintf(fetchSCIPDocumentsQuery, uploadID, sqlf.Join(searchPaths, ","))))
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	return docs, nil
 }
