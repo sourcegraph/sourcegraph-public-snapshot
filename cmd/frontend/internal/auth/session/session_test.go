@@ -81,7 +81,9 @@ func TestSetActorDeleteSession(t *testing.T) {
 	if session == nil {
 		t.Fatal("session was nil")
 	}
-	authedActor := actor.FromContext(authenticateByCookie(logger, db, authedReq, httptest.NewRecorder()))
+
+	actorCtx, _ := authenticateByCookie(logger, db, authedReq, httptest.NewRecorder())
+	authedActor := actor.FromContext(actorCtx)
 	if !reflect.DeepEqual(actr, authedActor) {
 		t.Fatalf("session was not created: %+v != %+v", authedActor, actr)
 	}
@@ -107,7 +109,9 @@ func TestSetActorDeleteSession(t *testing.T) {
 	for _, cookie := range authCookies {
 		authedReq3.AddCookie(cookie)
 	}
-	actor3 := actor.FromContext(authenticateByCookie(logger, db, authedReq3, httptest.NewRecorder()))
+
+	actorCtx, _ = authenticateByCookie(logger, db, authedReq3, httptest.NewRecorder())
+	actor3 := actor.FromContext(actorCtx)
 	if !reflect.DeepEqual(actor3, &actor.Actor{}) {
 		t.Fatalf("underlying session was not deleted: %+v != %+v", actor3, &actor.Actor{})
 	}
@@ -181,11 +185,13 @@ func TestSessionExpiry(t *testing.T) {
 		t.Fatal("expected exactly 1 authed cookie")
 	}
 
-	if gotActor := actor.FromContext(authenticateByCookie(logger, db, authedReq, httptest.NewRecorder())); !reflect.DeepEqual(gotActor, actr) {
+	actorCtx, _ := authenticateByCookie(logger, db, authedReq, httptest.NewRecorder())
+	if gotActor := actor.FromContext(actorCtx); !reflect.DeepEqual(gotActor, actr) {
 		t.Errorf("didn't find actor %v != %v", gotActor, actr)
 	}
 	time.Sleep(1100 * time.Millisecond)
-	if gotActor := actor.FromContext(authenticateByCookie(logger, db, authedReq, httptest.NewRecorder())); !reflect.DeepEqual(gotActor, &actor.Actor{}) {
+	actorCtx, _ = authenticateByCookie(logger, db, authedReq, httptest.NewRecorder())
+	if gotActor := actor.FromContext(actorCtx); !reflect.DeepEqual(gotActor, &actor.Actor{}) {
 		t.Errorf("session didn't expire, found actor %+v", gotActor)
 	}
 }
@@ -228,7 +234,8 @@ func TestManualSessionExpiry(t *testing.T) {
 		t.Fatal("expected exactly 1 authed cookie")
 	}
 
-	if gotActor := actor.FromContext(authenticateByCookie(logger, db, authedReq, httptest.NewRecorder())); reflect.DeepEqual(gotActor, actr) {
+	actorCtx, _ := authenticateByCookie(logger, db, authedReq, httptest.NewRecorder())
+	if gotActor := actor.FromContext(actorCtx); reflect.DeepEqual(gotActor, actr) {
 		t.Errorf("Actor should have been deleted, got %v", gotActor)
 	}
 }
@@ -399,7 +406,8 @@ func TestMismatchedUserCreationFails(t *testing.T) {
 	for _, cookie := range authCookies {
 		req.AddCookie(cookie)
 	}
-	actr = actor.FromContext(authenticateByCookie(logger, db, req, w))
+	actorCtx, _ := authenticateByCookie(logger, db, req, w)
+	actr = actor.FromContext(actorCtx)
 	if reflect.DeepEqual(actr, &actor.Actor{}) {
 		t.Fatal("session was not created")
 	}
@@ -416,7 +424,8 @@ func TestMismatchedUserCreationFails(t *testing.T) {
 	for _, cookie := range authCookies {
 		req.AddCookie(cookie)
 	}
-	actr = actor.FromContext(authenticateByCookie(logger, db, req, w))
+	actorCtx, _ = authenticateByCookie(logger, db, req, w)
+	actr = actor.FromContext(actorCtx)
 	if !reflect.DeepEqual(actr, &actor.Actor{}) {
 		t.Fatal("session was not deleted")
 	}
@@ -459,7 +468,8 @@ func TestOldUserSessionSucceeds(t *testing.T) {
 	for _, cookie := range authCookies {
 		req.AddCookie(cookie)
 	}
-	actr = actor.FromContext(authenticateByCookie(logger, db, req, w))
+	actorCtx, _ := authenticateByCookie(logger, db, req, w)
+	actr = actor.FromContext(actorCtx)
 	if reflect.DeepEqual(actr, &actor.Actor{}) {
 		t.Fatal("session was not created")
 	}
@@ -540,7 +550,8 @@ func TestExpiredLicenseOnlyAllowsAdmins(t *testing.T) {
 			}
 
 			httpRec := httptest.NewRecorder()
-			gotActor := actor.FromContext(authenticateByCookie(logger, db, authedReq, httpRec))
+			actorCtx, _ := authenticateByCookie(logger, db, authedReq, httpRec)
+			gotActor := actor.FromContext(actorCtx)
 
 			if tc.WantActor && !reflect.DeepEqual(gotActor, actr) {
 				t.Errorf("didn't find actor %v != %v", gotActor, actr)
