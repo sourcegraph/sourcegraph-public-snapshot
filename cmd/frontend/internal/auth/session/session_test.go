@@ -27,8 +27,7 @@ import (
 func TestSetActorDeleteSession(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	cleanup := ResetMockSessionStore(t)
-	defer cleanup()
+	ResetMockSessionStore(t)
 
 	userCreatedAt := time.Now()
 
@@ -75,7 +74,7 @@ func TestSetActorDeleteSession(t *testing.T) {
 	}
 
 	// Check that actor exists in the session
-	session, err := sessionStore.Get(authedReq, cookieName)
+	session, err := newSessionStore().Get(authedReq, cookieName)
 	if err != nil {
 		t.Fatalf("didn't find session: %v", err)
 	}
@@ -148,8 +147,7 @@ func checkCookieDeleted(t *testing.T, resp *http.Response) {
 func TestSessionExpiry(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	cleanup := ResetMockSessionStore(t)
-	defer cleanup()
+	ResetMockSessionStore(t)
 
 	userCreatedAt := time.Now()
 
@@ -195,8 +193,7 @@ func TestSessionExpiry(t *testing.T) {
 func TestManualSessionExpiry(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	cleanup := ResetMockSessionStore(t)
-	defer cleanup()
+	ResetMockSessionStore(t)
 
 	user := &types.User{ID: 123, InvalidatedSessionsAt: time.Now()}
 	users := dbmocks.NewStrictMockUserStore()
@@ -237,8 +234,7 @@ func TestManualSessionExpiry(t *testing.T) {
 }
 
 func TestCookieMiddleware(t *testing.T) {
-	cleanup := ResetMockSessionStore(t)
-	defer cleanup()
+	ResetMockSessionStore(t)
 
 	actors := []*actor.Actor{{UID: 123, FromSessionCookie: true}, {UID: 456}, {UID: 789}}
 	userCreatedAt := time.Now()
@@ -325,8 +321,7 @@ func sessionCookie(r *http.Request) string {
 
 func TestRecoverFromInvalidCookieValue(t *testing.T) {
 	logger := logtest.Scoped(t)
-	cleanup := ResetMockSessionStore(t)
-	defer cleanup()
+	ResetMockSessionStore(t)
 
 	// An actual cookie value that is an encoded JWT set by our old github.com/crewjam/saml-based
 	// SAML impl.
@@ -369,8 +364,7 @@ func TestRecoverFromInvalidCookieValue(t *testing.T) {
 func TestMismatchedUserCreationFails(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	cleanup := ResetMockSessionStore(t)
-	defer cleanup()
+	ResetMockSessionStore(t)
 
 	// The user's creation date is fixed in the database, which
 	// will be reflected in the session store after an authenticated
@@ -431,8 +425,7 @@ func TestMismatchedUserCreationFails(t *testing.T) {
 func TestOldUserSessionSucceeds(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	cleanup := ResetMockSessionStore(t)
-	defer cleanup()
+	ResetMockSessionStore(t)
 
 	// This user's session will _not_ have the UserCreatedAt value in the session
 	// store. When that situation occurs, we want to allow the session to continue
@@ -490,8 +483,7 @@ func TestExpiredLicenseOnlyAllowsAdmins(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	cleanup := ResetMockSessionStore(t)
-	defer cleanup()
+	ResetMockSessionStore(t)
 
 	userCreatedAt := time.Now()
 
@@ -569,8 +561,7 @@ func TestExpiredLicenseOnlyAllowsAdmins(t *testing.T) {
 }
 
 func TestSetActorFromUser(t *testing.T) {
-	cleanup := ResetMockSessionStore(t)
-	t.Cleanup(cleanup)
+	ResetMockSessionStore(t)
 
 	user := &types.User{
 		ID:        1,

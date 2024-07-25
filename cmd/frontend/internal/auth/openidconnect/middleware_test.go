@@ -122,8 +122,7 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 
 func TestMiddleware(t *testing.T) {
 	logger := logtest.Scoped(t)
-	cleanup := session.ResetMockSessionStore(t)
-	defer cleanup()
+	session.ResetMockSessionStore(t)
 	defer licensing.TestingSkipFeatureChecks()()
 
 	mockGetProviderValue = &Provider{
@@ -327,8 +326,7 @@ func TestMiddleware(t *testing.T) {
 
 func TestMiddleware_NoOpenRedirect(t *testing.T) {
 	logger := logtest.Scoped(t)
-	cleanup := session.ResetMockSessionStore(t)
-	defer cleanup()
+	session.ResetMockSessionStore(t)
 
 	defer licensing.TestingSkipFeatureChecks()()
 

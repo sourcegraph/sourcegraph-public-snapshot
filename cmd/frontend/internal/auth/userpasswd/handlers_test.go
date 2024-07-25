@@ -419,8 +419,7 @@ func TestHandleSignUp(t *testing.T) {
 		})
 		defer conf.Mock(nil)
 
-		cleanup := session.ResetMockSessionStore(t)
-		defer cleanup()
+		session.ResetMockSessionStore(t)
 
 		users := dbmocks.NewMockUserStore()
 		users.CreateFunc.SetDefaultHook(func(ctx context.Context, nu database.NewUser) (*types.User, error) {
@@ -507,8 +506,7 @@ func TestHandleSiteInit(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		cleanup := session.ResetMockSessionStore(t)
-		defer cleanup()
+		session.ResetMockSessionStore(t)
 
 		users := dbmocks.NewMockUserStore()
 		users.CreateFunc.SetDefaultHook(func(ctx context.Context, nu database.NewUser) (*types.User, error) {
