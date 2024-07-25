@@ -930,8 +930,8 @@ def go_dependencies():
         name = "com_github_buildkite_go_buildkite_v3",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/buildkite/go-buildkite/v3",
-        sum = "h1:5kX1fFDj3Co7cP6cqZKuW1VoCJz3u4cOx6wfdCeM4ZA=",
-        version = "v3.0.1",
+        sum = "h1:A43KDOuNczqrY8wqlsHNtPoYbgWXYC/slkB/2JYXr5E=",
+        version = "v3.11.0",
     )
     go_repository(
         name = "com_github_burntsushi_toml",

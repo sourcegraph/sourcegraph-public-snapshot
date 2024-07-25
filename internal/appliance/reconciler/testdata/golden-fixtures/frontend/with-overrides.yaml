@@ -408,7 +408,7 @@ resources:
           protocol: TCP
           targetPort: http
       selector:
-        app: sourcegraph-frontend
+        app: sourcegraph-appliance
       sessionAffinity: None
       type: ClusterIP
     status:

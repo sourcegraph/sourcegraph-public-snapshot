@@ -86,7 +86,7 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 
 	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
 	builds, _, err := bkc.Builds.ListByPipeline("sourcegraph", flags.Pipeline, &buildkite.BuildsListOptions{
-		Branch: flags.Branch,
+		Branch: []string{flags.Branch},
 		// Fix to high page size just in case, default is 30
 		// https://buildkite.com/docs/apis/rest-api#pagination
 		ListOptions: buildkite.ListOptions{PerPage: 99},

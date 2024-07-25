@@ -108,6 +108,7 @@ go_test(
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_scip//bindings/go/scip",
         "@com_github_stretchr_testify//require",
+        "@org_golang_x_exp//maps",
     ],
 )
 
