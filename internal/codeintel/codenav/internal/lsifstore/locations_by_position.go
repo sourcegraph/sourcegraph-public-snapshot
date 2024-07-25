@@ -311,7 +311,7 @@ func (s *store) GetSymbolUsages(ctx context.Context, opts SymbolUsagesOptions) (
 		totalCount += len(data.Loci)
 	}
 	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("numUploads", len(usageData)),
+		attribute.Int("numUniqueUploadIDSymbolPairs", len(usageData)),
 		attribute.Int("totalCount", totalCount))
 
 	usages := make([]shared.Usage, 0, min(totalCount, opts.Limit))
