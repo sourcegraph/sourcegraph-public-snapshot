@@ -6,20 +6,17 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 type Repos struct {
 	DB    database.DB
-	Cache redispool.KeyValue
+	Cache KeyValue
 }
 
 func (r *Repos) Summary(ctx context.Context) (*ReposSummary, error) {
 	cacheKey := "Repos:Summary"
-	if r.Cache != nil {
-		if summary, err := getItemFromCache[ReposSummary](r.Cache, cacheKey); err == nil {
-			return summary, nil
-		}
+	if summary, err := getItemFromCache[ReposSummary](r.Cache, cacheKey); err == nil {
+		return summary, nil
 	}
 
 	query := sqlf.Sprintf(`
@@ -38,11 +35,9 @@ func (r *Repos) Summary(ctx context.Context) (*ReposSummary, error) {
 
 	summary := &ReposSummary{data}
 
-	if r.Cache != nil {
-		err := setItemToCache(r.Cache, cacheKey, summary)
-		if err != nil {
-			return nil, err
-		}
+	err := setItemToCache(r.Cache, cacheKey, summary)
+	if err != nil {
+		return nil, err
 	}
 
 	return summary, nil

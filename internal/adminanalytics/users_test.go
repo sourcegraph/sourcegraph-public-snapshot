@@ -98,6 +98,7 @@ func TestUserActivityLastMonth(t *testing.T) {
 		DateRange: "LAST_MONTH",
 		Grouping:  "DAILY",
 		DB:        db,
+		Cache:     NoopCache{},
 	}
 
 	fetcher, err := store.Activity()
@@ -198,6 +199,7 @@ func TestUserFrequencyLastMonth(t *testing.T) {
 		DateRange: "LAST_MONTH",
 		Grouping:  "DAILY",
 		DB:        db,
+		Cache:     NoopCache{},
 	}
 
 	results, err := store.Frequencies(ctx)
@@ -288,6 +290,7 @@ func TestMonthlyActiveUsersLast3Month(t *testing.T) {
 		DateRange: "LAST_MONTH",
 		Grouping:  "DAILY",
 		DB:        db,
+		Cache:     NoopCache{},
 	}
 
 	results, err := store.MonthlyActiveUsers(ctx)

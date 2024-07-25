@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 type Notebooks struct {
@@ -12,7 +11,7 @@ type Notebooks struct {
 	DateRange string
 	Grouping  string
 	DB        database.DB
-	Cache     redispool.KeyValue
+	Cache     KeyValue
 }
 
 func (s *Notebooks) Creations() (*AnalyticsFetcher, error) {

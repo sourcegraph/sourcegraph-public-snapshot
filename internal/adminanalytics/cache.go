@@ -4,11 +4,31 @@ import (
 	"encoding/json"
 
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const scopeKey = "adminanalytics:"
 
-func getArrayFromCache[K interface{}](cache redispool.KeyValue, cacheKey string) ([]*K, error) {
+// KeyValue is the subset of redispool.KeyValue that we use in adminanalytics.
+type KeyValue interface {
+	Get(key string) redispool.Value
+	SetEx(key string, ttlSeconds int, val any) error
+}
+
+type NoopCache struct{}
+
+var err = errors.New("NoopCache cache miss")
+
+func (n NoopCache) Get(_ string) redispool.Value {
+	// Return an error to simulate a cache miss.
+	return redispool.NewValue(nil, err)
+}
+
+func (n NoopCache) SetEx(_ string, _ int, _ any) error {
+	return nil
+}
+
+func getArrayFromCache[K interface{}](cache KeyValue, cacheKey string) ([]*K, error) {
 	data, err := cache.Get(scopeKey + cacheKey).String()
 	if err != nil {
 		return nil, err
@@ -23,7 +43,7 @@ func getArrayFromCache[K interface{}](cache redispool.KeyValue, cacheKey string)
 	return nodes, nil
 }
 
-func getItemFromCache[T interface{}](cache redispool.KeyValue, cacheKey string) (*T, error) {
+func getItemFromCache[T interface{}](cache KeyValue, cacheKey string) (*T, error) {
 	data, err := cache.Get(scopeKey + cacheKey).String()
 	if err != nil {
 		return nil, err
@@ -38,7 +58,7 @@ func getItemFromCache[T interface{}](cache redispool.KeyValue, cacheKey string) 
 	return &summary, nil
 }
 
-func setDataToCache(cache redispool.KeyValue, key string, data string, expireSeconds int) error {
+func setDataToCache(cache KeyValue, key string, data string, expireSeconds int) error {
 	if expireSeconds == 0 {
 		expireSeconds = 24 * 60 * 60 // 1 day
 	}
@@ -46,7 +66,7 @@ func setDataToCache(cache redispool.KeyValue, key string, data string, expireSec
 	return cache.SetEx(scopeKey+key, expireSeconds, data)
 }
 
-func setArrayToCache[T interface{}](cache redispool.KeyValue, cacheKey string, nodes []*T) error {
+func setArrayToCache[T interface{}](cache KeyValue, cacheKey string, nodes []*T) error {
 	data, err := json.Marshal(nodes)
 	if err != nil {
 		return err
@@ -55,7 +75,7 @@ func setArrayToCache[T interface{}](cache redispool.KeyValue, cacheKey string, n
 	return setDataToCache(cache, cacheKey, string(data), 0)
 }
 
-func setItemToCache[T interface{}](cache redispool.KeyValue, cacheKey string, summary *T) error {
+func setItemToCache[T interface{}](cache KeyValue, cacheKey string, summary *T) error {
 	data, err := json.Marshal(summary)
 	if err != nil {
 		return err

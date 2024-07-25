@@ -7,7 +7,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 type Users struct {
@@ -15,7 +14,7 @@ type Users struct {
 	DateRange string
 	Grouping  string
 	DB        database.DB
-	Cache     redispool.KeyValue
+	Cache     KeyValue
 }
 
 func (u *Users) Activity() (*AnalyticsFetcher, error) {
@@ -77,10 +76,8 @@ const (
 
 func (u *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) {
 	cacheKey := fmt.Sprintf("Users:%s:%s", "Frequencies", u.DateRange)
-	if u.Cache != nil {
-		if nodes, err := getArrayFromCache[UsersFrequencyNode](u.Cache, cacheKey); err == nil {
-			return nodes, nil
-		}
+	if nodes, err := getArrayFromCache[UsersFrequencyNode](u.Cache, cacheKey); err == nil {
+		return nodes, nil
 	}
 
 	_, dateRangeCond, err := makeDateParameters(u.DateRange, u.Grouping, "event_logs.timestamp")
@@ -109,11 +106,9 @@ func (u *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) 
 		nodes = append(nodes, &UsersFrequencyNode{data})
 	}
 
-	if u.Cache != nil {
-		err = setArrayToCache(u.Cache, cacheKey, nodes)
-		if err != nil {
-			return nil, err
-		}
+	err = setArrayToCache(u.Cache, cacheKey, nodes)
+	if err != nil {
+		return nil, err
 	}
 
 	return nodes, nil
@@ -152,10 +147,8 @@ const (
 
 func (u *Users) MonthlyActiveUsers(ctx context.Context) ([]*MonthlyActiveUsersRow, error) {
 	cacheKey := fmt.Sprintf("Users:%s", "MAU")
-	if u.Cache != nil {
-		if nodes, err := getArrayFromCache[MonthlyActiveUsersRow](u.Cache, cacheKey); err == nil {
-			return nodes, nil
-		}
+	if nodes, err := getArrayFromCache[MonthlyActiveUsersRow](u.Cache, cacheKey); err == nil {
+		return nodes, nil
 	}
 
 	from, to := getTimestamps(2) // go back 2 months
@@ -179,11 +172,9 @@ func (u *Users) MonthlyActiveUsers(ctx context.Context) ([]*MonthlyActiveUsersRo
 		nodes = append(nodes, &MonthlyActiveUsersRow{data})
 	}
 
-	if u.Cache != nil {
-		err = setArrayToCache(u.Cache, cacheKey, nodes)
-		if err != nil {
-			return nil, err
-		}
+	err = setArrayToCache(u.Cache, cacheKey, nodes)
+	if err != nil {
+		return nil, err
 	}
 
 	return nodes, nil

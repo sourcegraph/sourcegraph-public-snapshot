@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 type CodeIntelByLanguage struct {
@@ -19,13 +18,11 @@ func (s *CodeIntelByLanguage) Language() string  { return s.Language_ }
 func (s *CodeIntelByLanguage) Precision() string { return s.Precision_ }
 func (s *CodeIntelByLanguage) Count() float64    { return s.Count_ }
 
-func GetCodeIntelByLanguage(ctx context.Context, db database.DB, cache redispool.KeyValue, dateRange string) ([]*CodeIntelByLanguage, error) {
+func GetCodeIntelByLanguage(ctx context.Context, db database.DB, cache KeyValue, dateRange string) ([]*CodeIntelByLanguage, error) {
 	cacheKey := fmt.Sprintf(`CodeIntelByLanguage:%s`, dateRange)
 
-	if cache != nil {
-		if nodes, err := getArrayFromCache[CodeIntelByLanguage](cache, cacheKey); err == nil {
-			return nodes, nil
-		}
+	if nodes, err := getArrayFromCache[CodeIntelByLanguage](cache, cacheKey); err == nil {
+		return nodes, nil
 	}
 
 	now := time.Now()
@@ -70,11 +67,9 @@ func GetCodeIntelByLanguage(ctx context.Context, db database.DB, cache redispool
 		items = append(items, &item)
 	}
 
-	if cache != nil {
-		err = setArrayToCache(cache, cacheKey, items)
-		if err != nil {
-			return nil, err
-		}
+	err = setArrayToCache(cache, cacheKey, items)
+	if err != nil {
+		return nil, err
 	}
 
 	return items, nil

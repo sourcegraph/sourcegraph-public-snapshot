@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 var dateRanges = []string{adminanalytics.LastThreeMonths, adminanalytics.LastMonth, adminanalytics.LastWeek}
@@ -15,7 +14,7 @@ type cacheAll interface {
 	CacheAll(ctx context.Context) error
 }
 
-func refreshAnalyticsCache(ctx context.Context, cache redispool.KeyValue, db database.DB) error {
+func refreshAnalyticsCache(ctx context.Context, cache adminanalytics.KeyValue, db database.DB) error {
 	for _, dateRange := range dateRanges {
 		for _, groupBy := range groupBys {
 			stores := []cacheAll{

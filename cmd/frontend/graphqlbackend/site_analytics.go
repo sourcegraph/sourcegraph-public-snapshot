@@ -11,9 +11,8 @@ import (
 )
 
 type siteAnalyticsResolver struct {
-	db database.DB
-	// Cache is optional. If nil, caching is disabled.
-	cache redispool.KeyValue
+	db    database.DB
+	cache adminanalytics.KeyValue
 }
 
 /* Analytics root resolver */
@@ -22,9 +21,11 @@ func (r *siteResolver) Analytics(ctx context.Context) (*siteAnalyticsResolver, e
 		return nil, err
 	}
 
-	var cache redispool.KeyValue
+	var cache adminanalytics.KeyValue
 	if useCache := !featureflag.FromContext(ctx).GetBoolOr("admin-analytics-cache-disabled", false); useCache {
 		cache = redispool.Store
+	} else {
+		cache = adminanalytics.NoopCache{}
 	}
 
 	return &siteAnalyticsResolver{r.db, cache}, nil

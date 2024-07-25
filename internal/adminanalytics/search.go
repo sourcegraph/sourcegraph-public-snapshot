@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 type Search struct {
@@ -12,7 +11,7 @@ type Search struct {
 	DateRange string
 	Grouping  string
 	DB        database.DB
-	Cache     redispool.KeyValue
+	Cache     KeyValue
 }
 
 func (s *Search) Searches() (*AnalyticsFetcher, error) {
@@ -45,6 +44,7 @@ func (s *Search) ResultClicks() (*AnalyticsFetcher, error) {
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Search:ResultClicked",
+		cache:        NoopCache{},
 	}, nil
 }
 
