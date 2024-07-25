@@ -11,6 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/boj/redistore"
+	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -25,17 +28,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
-
-	"github.com/boj/redistore"
-	"github.com/gorilla/sessions"
 )
 
 const SignOutCookie = "sg-signout"
 
 var (
-	sessionStore     sessions.Store
 	sessionCookieKey = env.Get("SRC_SESSION_COOKIE_KEY", "", "secret key used for securing the session cookies")
 )
 
@@ -52,11 +49,6 @@ type sessionInfo struct {
 	LastActive    time.Time     `json:"lastActive"`
 	ExpiryPeriod  time.Duration `json:"expiryPeriod"`
 	UserCreatedAt time.Time     `json:"userCreatedAt"`
-}
-
-// SetSessionStore sets the backing store used for storing sessions on the server. It should be called exactly once.
-func SetSessionStore(s sessions.Store) {
-	sessionStore = s
 }
 
 // sessionsStore wraps another sessions.Store to dynamically set the values
@@ -90,25 +82,36 @@ func (st *sessionsStore) setSecureOptions(s *sessions.Session) {
 	}
 }
 
-// NewRedisStore creates a new session store backed by Redis.
-func NewRedisStore(secureCookie func() bool) sessions.Store {
-	var store sessions.Store
-	var options *sessions.Options
+var mockSessionStore sessions.Store
 
-	pool := redispool.Store.Pool()
-	rstore, err := redistore.NewRediStoreWithPool(pool, []byte(sessionCookieKey))
-	if err != nil {
-		waitForRedis(rstore)
+// newSessionStore creates a new session store backed by Redis.
+func newSessionStore() sessions.Store {
+	if mockSessionStore != nil {
+		return mockSessionStore
 	}
-	store = rstore
-	options = rstore.Options
 
-	options.Path = "/"
-	options.HttpOnly = true
+	rstore := &redistore.RediStore{
+		Pool:   redispool.Store.Pool(),
+		Codecs: securecookie.CodecsFromPairs([]byte(sessionCookieKey)),
+		Options: &sessions.Options{
+			Path:     "/",
+			HttpOnly: true,
+			MaxAge:   86400 * 30, // 30 days, default of the library
+		},
+		DefaultMaxAge: 60 * 20, // 20 minutes seems like a reasonable default
+	}
+	rstore.SetMaxLength(4096)
+	rstore.SetSerializer(redistore.GobSerializer{})
+	rstore.SetKeyPrefix("session_")
 
-	setSessionSecureOptions(options, secureCookie())
+	secureCookie := func() bool {
+		return conf.ExternalURLParsed().Scheme == "https"
+	}
+
+	setSessionSecureOptions(rstore.Options, secureCookie())
+
 	return &sessionsStore{
-		Store:  store,
+		Store:  rstore,
 		secure: secureCookie,
 	}
 }
@@ -133,60 +136,13 @@ func setSessionSecureOptions(opts *sessions.Options, secure bool) {
 	opts.Secure = secure
 }
 
-// Ping attempts to contact Redis and returns a non-nil error upon failure. It is intended to be
-// used by health checks.
-func Ping() error {
-	if sessionStore == nil {
-		return errors.New("redis session store is not available")
-	}
-	rstore, ok := sessionStore.(*redistore.RediStore)
-	if !ok {
-		// Only try to ping Redis session stores. If we add other types of session stores, add ways
-		// to ping them here.
-		return nil
-	}
-	return ping(rstore)
-}
-
-func ping(s *redistore.RediStore) error {
-	conn := s.Pool.Get()
-	defer conn.Close()
-	data, err := conn.Do("PING")
-	if err != nil {
-		return err
-	}
-	if data != "PONG" {
-		return errors.New("no pong received")
-	}
-	return nil
-}
-
-// waitForRedis waits up to a certain timeout for Redis to become reachable, to reduce the
-// likelihood of the HTTP handlers starting to serve requests while Redis (and therefore session
-// data) is still unavailable. After the timeout has elapsed, if Redis is still unreachable, it
-// continues anyway (because that's probably better than the site not coming up at all).
-func waitForRedis(s *redistore.RediStore) {
-	const timeout = 5 * time.Second
-	deadline := time.Now().Add(timeout)
-	var err error
-	for {
-		time.Sleep(150 * time.Millisecond)
-		err = ping(s)
-		if err == nil {
-			return
-		}
-		if time.Now().After(deadline) {
-			log15.Warn("Redis (used for session store) failed to become reachable. Will continue trying to establish connection in background.", "timeout", timeout, "error", err)
-			return
-		}
-	}
-}
-
 // SetData sets the session data at the key. The session data is a map of keys to values. If no
 // session exists, a new session is created.
 //
 // The value is JSON-encoded before being stored.
 func SetData(w http.ResponseWriter, r *http.Request, key string, value any) error {
+	sessionStore := newSessionStore()
+
 	session, err := sessionStore.Get(r, cookieName)
 	if err != nil {
 		return errors.WithMessage(err, "getting session")
@@ -207,6 +163,8 @@ func SetData(w http.ResponseWriter, r *http.Request, key string, value any) erro
 //
 // The value is JSON-decoded from the raw bytes stored by the call to SetData.
 func GetData(r *http.Request, key string, value any) error {
+	sessionStore := newSessionStore()
+
 	session, err := sessionStore.Get(r, cookieName)
 	if err != nil {
 		return errors.WithMessage(err, "getting session")
@@ -297,6 +255,8 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 	if !hasSessionCookie(r) {
 		return nil // nothing to do
 	}
+
+	sessionStore := newSessionStore()
 
 	session, err := sessionStore.Get(r, cookieName)
 	session.Options.MaxAge = -1 // expire immediately
