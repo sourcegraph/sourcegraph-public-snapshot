@@ -110,8 +110,6 @@ message EnterpriseSubscription {
   message SalesforceMetadata {
     // The Salesforce subscription ID associated with this Enterprise subscription.
     string subscription_id = 1;
-    // The Salesforce opportunity ID associated with this Enterprise subscription.
-    string opportunity_id = 2;
   }
   // Salesforce details associated with this subscription.
   SalesforceMetadata salesforce = 5;
@@ -120,7 +118,7 @@ message EnterpriseSubscription {
 // EnterpriseSubscriptionLicenseKey is the classic offline Sourcegraph license
 // key, and corresponds to ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY.
 message EnterpriseSubscriptionLicenseKey {
-  // Information embedded into the license key.
+  // Read-only information embedded into ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY.
   message Info {
     // The tags that indicate which features are activated by this license.
     repeated string tags = 1;
@@ -129,9 +127,12 @@ message EnterpriseSubscriptionLicenseKey {
     // The expiration date of this product license. In license data, this is
     // called 'expires_at', expressed as the number of seconds since the epoch.
     google.protobuf.Timestamp expire_time = 3;
-    // The Salesforce subscription ID associated with this product license.
+    // The Salesforce subscription ID associated with this license's parent
+    // Enterprise Subscription.
     string salesforce_subscription_id = 4;
-    // The Salesforce opportunity ID associated with this product license.
+    // The Salesforce opportunity ID associated with this product license's
+    // creation. Opportunities in Salesforce generally lead to the creation of a
+    // new license key.
     string salesforce_opportunity_id = 5;
   }
 
@@ -139,13 +140,10 @@ message EnterpriseSubscriptionLicenseKey {
   // whenever a major change is made to the shape of Info to indicate what
   // fields can be expected from the information embedded in the license key.
   uint32 info_version = 1;
-  // Information embedded into the license key.
+  // Read-only information embedded into ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY.
   Info info = 2;
-  // The license key.
+  // The signed license key.
   string license_key = 3;
-  // UUID of the known instance using this license key, self-reported from
-  // online license checks and pings. Also known as 'site ID'.
-  string instance_id = 4;
 }
 
 message EnterpriseSubscriptionLicenseCondition {
@@ -298,11 +296,13 @@ message CreateEnterpriseSubscriptionLicenseRequest {
   // - license
   //
   // `license` supports the following types. At least one must be provided:
+  //
   // - license.key, which requires:
   //   - license.key.info_version
   //   - license.key.info.tags
   //   - license.key.info.user_count
   //   - license.key.info.expire_time
+  //   - license.key.info.salesforce_opportunity_id
   EnterpriseSubscriptionLicense license = 1;
 }
 
@@ -357,7 +357,6 @@ message CreateEnterpriseSubscriptionRequest {
   // Optional attributes:
   // - instance_domain
   // - salesforce.subscription_id
-  // - salesforce.opportunity_id
   EnterpriseSubscription subscription = 1;
 }
 
