@@ -59,8 +59,8 @@ spec:
 #            - name: EXECUTOR_KEEP_WORKSPACES
 #              value: "true"
             # Check executor-batches.Role.yml to ensure the correct rules are enabled.
-#            - name: KUBERNETES_SINGLE_JOB_POD
-#              value: "true"
+           - name: KUBERNETES_SINGLE_JOB_POD
+             value: "true"
             # Check executor-batches.Role.yml to ensure the correct rules are enabled.
 #            - name: KUBERNETES_JOB_VOLUME_TYPE
 #              value: "pvc"
