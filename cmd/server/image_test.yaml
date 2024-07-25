@@ -112,6 +112,9 @@ fileExistenceTests:
   shouldExist: true
   uid: 0
   gid: 0
+- name: '/assets-dist/web.manifest.json'
+  path: '/assets-dist/web.manifest.json'
+  shouldExist: true
 
 metadataTest:
   envVars:
@@ -119,3 +122,5 @@ metadataTest:
       value: 'on'
     - key: LANG
       value: 'en_US.utf8'
+    - key: SRC_ASSETS_DIR
+      value: "/assets-dist"
