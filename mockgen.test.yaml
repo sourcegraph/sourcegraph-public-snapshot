@@ -220,10 +220,6 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads
       interfaces:
         - RepoStore
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore
-      interfaces:
-        - Store
-      prefix: LSIF
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads
       interfaces:
         - PolicyService
@@ -239,11 +235,6 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
       interfaces:
         - Store
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore
-      interfaces:
-        - Store
-        - SCIPWriter
-      prefix: LSIF
     - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
       interfaces:
         - Store
@@ -257,11 +248,6 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
       interfaces:
         - Store
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore
-      interfaces:
-        - Store
-        - SCIPWriter
-      prefix: LSIF
     - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
       interfaces:
         - Store

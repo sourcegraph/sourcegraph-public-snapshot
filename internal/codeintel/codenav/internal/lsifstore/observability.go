@@ -54,7 +54,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getImplementationLocations: op("GetImplementationLocations"),
 		getPrototypesLocations:     op("GetPrototypesLocations"),
 		getReferenceLocations:      op("GetReferenceLocations"),
-		getBulkMonikerLocations:    op("GetBulkMonikerLocations"),
+		getBulkMonikerLocations:    op("GetBulkSymbolUsages"),
 		getHover:                   op("GetHover"),
 		getDiagnostics:             op("GetDiagnostics"),
 		scipDocument:               op("SCIPDocument"),

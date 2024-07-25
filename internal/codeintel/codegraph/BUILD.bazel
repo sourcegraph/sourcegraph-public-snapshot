@@ -2,17 +2,18 @@ load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "lsifstore",
+    name = "codegraph",
     srcs = [
         "cleanup.go",
+        "data_store.go",
         "insert.go",
+        "locus.go",
         "observability.go",
-        "store.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore",
-    tags = [TAG_PLATFORM_GRAPH],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/codeintel/core",
         "//internal/codeintel/shared",
         "//internal/codeintel/shared/ranges",
         "//internal/codeintel/shared/trie",
@@ -35,19 +36,14 @@ go_library(
 )
 
 go_test(
-    name = "lsifstore_test",
-    timeout = "moderate",
+    name = "codegraph_test",
     srcs = [
         "cleanup_test.go",
         "insert_test.go",
     ],
     data = glob(["testdata/**"]),
-    embed = [":lsifstore"],
-    tags = [
-        TAG_PLATFORM_GRAPH,
-        # Test requires localhost database
-        "requires-network",
-    ],
+    embed = [":codegraph"],
+    tags = ["requires-network"],
     deps = [
         "//internal/codeintel/shared",
         "//internal/database/basestore",

@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "completions",
+    srcs = [
+        "job.go",
+        "tokens.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/completions",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//internal/completions/tokenusage",
+        "//internal/database",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/telemetry",
+        "//internal/telemetry/telemetryrecorder",
+    ],
+)
+
+go_test(
+    name = "completions_test",
+    srcs = ["tokens_test.go"],
+    embed = [":completions"],
+    tags = ["requires-network"],
+    deps = [
+        "//internal/completions/tokenusage",
+        "//internal/rcache",
+        "//internal/telemetry",
+        "//internal/telemetry/telemetrytest",
+        "//lib/telemetrygateway/v1:telemetrygateway",
+        "@com_github_stretchr_testify//require",
+    ],
+)

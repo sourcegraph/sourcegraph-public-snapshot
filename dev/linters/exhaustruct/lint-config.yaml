@@ -7,6 +7,8 @@
 # If this list is empty, all structs are tested.
 # Default: []
 include_types:
+- '.+Locus$'
+- '.+Loci$'
 - '.+UploadMatchingOptions'
 
 # Same as above, but for exclusion.

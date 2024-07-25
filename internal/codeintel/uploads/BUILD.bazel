@@ -17,6 +17,7 @@ go_library(
     deps = [
         "//cmd/frontend/backend",
         "//internal/api",
+        "//internal/codeintel/codegraph",
         "//internal/codeintel/shared",
         "//internal/codeintel/uploads/internal/background",
         "//internal/codeintel/uploads/internal/background/backfiller",
@@ -25,7 +26,6 @@ go_library(
         "//internal/codeintel/uploads/internal/background/janitor",
         "//internal/codeintel/uploads/internal/background/processor",
         "//internal/codeintel/uploads/internal/commitgraph",
-        "//internal/codeintel/uploads/internal/lsifstore",
         "//internal/codeintel/uploads/internal/store",
         "//internal/codeintel/uploads/shared",
         "//internal/database",
@@ -53,7 +53,6 @@ go_test(
         "//internal/codeintel/core",
         "//internal/codeintel/policies/shared",
         "//internal/codeintel/uploads/internal/commitgraph",
-        "//internal/codeintel/uploads/internal/lsifstore",
         "//internal/codeintel/uploads/internal/store",
         "//internal/codeintel/uploads/shared",
         "//internal/database/basestore",
@@ -78,7 +77,6 @@ go_mockgen(
     ],
     deps = [
         ":uploads",
-        "//internal/codeintel/uploads/internal/lsifstore",
         "//internal/codeintel/uploads/internal/store",
         "//internal/workerutil/dbworker/store",
     ],
