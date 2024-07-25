@@ -6,9 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
-var (
-	scopeKey = "adminanalytics:"
-)
+const scopeKey = "adminanalytics:"
 
 func getArrayFromCache[K interface{}](cache redispool.KeyValue, cacheKey string) ([]*K, error) {
 	data, err := cache.Get(scopeKey + cacheKey).String()
