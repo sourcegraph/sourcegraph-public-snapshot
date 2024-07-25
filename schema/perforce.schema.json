@@ -67,10 +67,9 @@
       "type": "object",
       "description": "Configuration for the experimental p4-fusion client",
       "additionalProperties": false,
-      "required": ["enabled"],
       "properties": {
         "enabled": {
-          "description": "Enable the p4-fusion client for cloning and fetching repos",
+          "description": "DEPRECATED. p4-fusion is enabled by default.",
           "type": "boolean",
           "default": false
         },
