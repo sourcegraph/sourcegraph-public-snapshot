@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -59,13 +59,13 @@ type documentOneShotIterator struct {
 	indexReader  gzipReadSeeker
 }
 
-var _ lsifstore.SCIPDocumentVisitor = &documentOneShotIterator{}
+var _ codegraph.SCIPDocumentVisitor = &documentOneShotIterator{}
 
 func (it *documentOneShotIterator) VisitAllDocuments(
 	ctx context.Context,
 	logger log.Logger,
-	p *lsifstore.ProcessedPackageData,
-	doIt func(lsifstore.ProcessedSCIPDocument) error,
+	p *codegraph.ProcessedPackageData,
+	doIt func(codegraph.ProcessedSCIPDocument) error,
 ) error {
 	repeatedDocumentsByPath := make(map[string][]*scip.Document, 1)
 	packageSet := map[precise.Package]bool{}
@@ -180,18 +180,18 @@ func prepareSCIPDataStream(
 	indexReader gzipReadSeeker,
 	root string,
 	getChildren pathexistence.GetChildrenFunc,
-) (lsifstore.SCIPDataStream, error) {
+) (codegraph.SCIPDataStream, error) {
 	indexSummary, err := aggregateExternalSymbolsAndPaths(&indexReader)
 	if err != nil {
-		return lsifstore.SCIPDataStream{}, err
+		return codegraph.SCIPDataStream{}, err
 	}
 
 	ignorePaths, err := ignorePaths(ctx, indexSummary.relativePaths, root, getChildren)
 	if err != nil {
-		return lsifstore.SCIPDataStream{}, err
+		return codegraph.SCIPDataStream{}, err
 	}
 
-	metadata := lsifstore.ProcessedMetadata{
+	metadata := codegraph.ProcessedMetadata{
 		TextDocumentEncoding: indexSummary.metadata.TextDocumentEncoding.String(),
 		ToolName:             indexSummary.metadata.ToolInfo.Name,
 		ToolVersion:          indexSummary.metadata.ToolInfo.Version,
@@ -199,7 +199,7 @@ func prepareSCIPDataStream(
 		ProtocolVersion:      int(indexSummary.metadata.Version),
 	}
 
-	return lsifstore.SCIPDataStream{
+	return codegraph.SCIPDataStream{
 		Metadata:         metadata,
 		DocumentIterator: &documentOneShotIterator{ignorePaths, indexSummary, indexReader},
 	}, nil
@@ -237,12 +237,12 @@ func ignorePaths(ctx context.Context, documentRelativePaths []string, root strin
 }
 
 // processDocument canonicalizes and serializes the given document for persistence.
-func processDocument(document *scip.Document, externalSymbolsByName map[string]*scip.SymbolInformation) lsifstore.ProcessedSCIPDocument {
+func processDocument(document *scip.Document, externalSymbolsByName map[string]*scip.SymbolInformation) codegraph.ProcessedSCIPDocument {
 	// Stash path here as canonicalization removes it
 	path := document.RelativePath
 	canonicalizeDocument(document, externalSymbolsByName)
 
-	return lsifstore.ProcessedSCIPDocument{
+	return codegraph.ProcessedSCIPDocument{
 		Path:     path,
 		Document: document,
 	}
@@ -355,17 +355,17 @@ func packageFromSymbol(symbolName string) (precise.Package, bool) {
 func writeSCIPDocuments(
 	ctx context.Context,
 	logger log.Logger,
-	lsifStore lsifstore.Store,
+	codeGraphDataStore codegraph.DataStore,
 	upload shared.Upload,
-	scipDataStream lsifstore.SCIPDataStream,
+	scipDataStream codegraph.SCIPDataStream,
 	trace observation.TraceLogger,
-) (pkgData lsifstore.ProcessedPackageData, err error) {
-	return pkgData, lsifStore.WithTransaction(ctx, func(tx lsifstore.Store) error {
+) (pkgData codegraph.ProcessedPackageData, err error) {
+	return pkgData, codeGraphDataStore.WithTransaction(ctx, func(tx codegraph.DataStore) error {
 		if err := tx.InsertMetadata(ctx, upload.ID, scipDataStream.Metadata); err != nil {
 			return err
 		}
 
-		var scipWriter lsifstore.SCIPWriter
+		var scipWriter codegraph.SCIPWriter
 
 		if upload.Indexer == shared.SyntacticIndexer {
 			scipWriter, err = tx.NewSyntacticSCIPWriter(upload.ID)
@@ -377,7 +377,7 @@ func writeSCIPDocuments(
 		}
 
 		var numDocuments uint32
-		processDoc := func(document lsifstore.ProcessedSCIPDocument) error {
+		processDoc := func(document codegraph.ProcessedSCIPDocument) error {
 			numDocuments += 1
 			if err := scipWriter.InsertDocument(ctx, document.Path, document.Document); err != nil {
 				return err

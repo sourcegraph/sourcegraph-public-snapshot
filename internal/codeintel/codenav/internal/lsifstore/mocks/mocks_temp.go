@@ -41,19 +41,19 @@ type MockLsifStore struct {
 	// FindDocumentIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method FindDocumentIDs.
 	FindDocumentIDsFunc *LsifStoreFindDocumentIDsFunc
-	// GetBulkMonikerLocationsFunc is an instance of a mock function object
-	// controlling the behavior of the method GetBulkMonikerLocations.
-	GetBulkMonikerLocationsFunc *LsifStoreGetBulkMonikerLocationsFunc
+	// GetBulkSymbolUsagesFunc is an instance of a mock function object
+	// controlling the behavior of the method GetBulkSymbolUsages.
+	GetBulkSymbolUsagesFunc *LsifStoreGetBulkSymbolUsagesFunc
 	// GetDiagnosticsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDiagnostics.
 	GetDiagnosticsFunc *LsifStoreGetDiagnosticsFunc
 	// GetHoverFunc is an instance of a mock function object controlling the
 	// behavior of the method GetHover.
 	GetHoverFunc *LsifStoreGetHoverFunc
-	// GetMinimalBulkMonikerLocationsFunc is an instance of a mock function
+	// GetMinimalBulkSymbolUsagesFunc is an instance of a mock function
 	// object controlling the behavior of the method
-	// GetMinimalBulkMonikerLocations.
-	GetMinimalBulkMonikerLocationsFunc *LsifStoreGetMinimalBulkMonikerLocationsFunc
+	// GetMinimalBulkSymbolUsages.
+	GetMinimalBulkSymbolUsagesFunc *LsifStoreGetMinimalBulkSymbolUsagesFunc
 	// GetMonikersByPositionFunc is an instance of a mock function object
 	// controlling the behavior of the method GetMonikersByPosition.
 	GetMonikersByPositionFunc *LsifStoreGetMonikersByPositionFunc
@@ -69,6 +69,9 @@ type MockLsifStore struct {
 	// SCIPDocumentFunc is an instance of a mock function object controlling
 	// the behavior of the method SCIPDocument.
 	SCIPDocumentFunc *LsifStoreSCIPDocumentFunc
+	// SCIPDocumentsFunc is an instance of a mock function object
+	// controlling the behavior of the method SCIPDocuments.
+	SCIPDocumentsFunc *LsifStoreSCIPDocumentsFunc
 }
 
 // NewMockLsifStore creates a new mock of the LsifStore interface. All
@@ -100,8 +103,8 @@ func NewMockLsifStore() *MockLsifStore {
 				return
 			},
 		},
-		GetBulkMonikerLocationsFunc: &LsifStoreGetBulkMonikerLocationsFunc{
-			defaultHook: func(context.Context, shared.UsageKind, []int, []precise.MonikerData, int, int) (r0 []shared.Location, r1 int, r2 error) {
+		GetBulkSymbolUsagesFunc: &LsifStoreGetBulkSymbolUsagesFunc{
+			defaultHook: func(context.Context, shared.UsageKind, []int, []string, int, int) (r0 []shared.Location, r1 int, r2 error) {
 				return
 			},
 		},
@@ -115,8 +118,8 @@ func NewMockLsifStore() *MockLsifStore {
 				return
 			},
 		},
-		GetMinimalBulkMonikerLocationsFunc: &LsifStoreGetMinimalBulkMonikerLocationsFunc{
-			defaultHook: func(context.Context, shared.UsageKind, []int, map[int]string, []precise.MonikerData, int, int) (r0 []shared.Location, r1 int, r2 error) {
+		GetMinimalBulkSymbolUsagesFunc: &LsifStoreGetMinimalBulkSymbolUsagesFunc{
+			defaultHook: func(context.Context, shared.UsageKind, []int, map[int]string, []string, int, int) (r0 []shared.Location, r1 int, r2 error) {
 				return
 			},
 		},
@@ -142,6 +145,11 @@ func NewMockLsifStore() *MockLsifStore {
 		},
 		SCIPDocumentFunc: &LsifStoreSCIPDocumentFunc{
 			defaultHook: func(context.Context, int, core.UploadRelPath) (r0 core.Option[*scip.Document], r1 error) {
+				return
+			},
+		},
+		SCIPDocumentsFunc: &LsifStoreSCIPDocumentsFunc{
+			defaultHook: func(context.Context, int, []core.UploadRelPath) (r0 map[core.UploadRelPath]*scip.Document, r1 error) {
 				return
 			},
 		},
@@ -177,9 +185,9 @@ func NewStrictMockLsifStore() *MockLsifStore {
 				panic("unexpected invocation of MockLsifStore.FindDocumentIDs")
 			},
 		},
-		GetBulkMonikerLocationsFunc: &LsifStoreGetBulkMonikerLocationsFunc{
-			defaultHook: func(context.Context, shared.UsageKind, []int, []precise.MonikerData, int, int) ([]shared.Location, int, error) {
-				panic("unexpected invocation of MockLsifStore.GetBulkMonikerLocations")
+		GetBulkSymbolUsagesFunc: &LsifStoreGetBulkSymbolUsagesFunc{
+			defaultHook: func(context.Context, shared.UsageKind, []int, []string, int, int) ([]shared.Location, int, error) {
+				panic("unexpected invocation of MockLsifStore.GetBulkSymbolUsages")
 			},
 		},
 		GetDiagnosticsFunc: &LsifStoreGetDiagnosticsFunc{
@@ -192,9 +200,9 @@ func NewStrictMockLsifStore() *MockLsifStore {
 				panic("unexpected invocation of MockLsifStore.GetHover")
 			},
 		},
-		GetMinimalBulkMonikerLocationsFunc: &LsifStoreGetMinimalBulkMonikerLocationsFunc{
-			defaultHook: func(context.Context, shared.UsageKind, []int, map[int]string, []precise.MonikerData, int, int) ([]shared.Location, int, error) {
-				panic("unexpected invocation of MockLsifStore.GetMinimalBulkMonikerLocations")
+		GetMinimalBulkSymbolUsagesFunc: &LsifStoreGetMinimalBulkSymbolUsagesFunc{
+			defaultHook: func(context.Context, shared.UsageKind, []int, map[int]string, []string, int, int) ([]shared.Location, int, error) {
+				panic("unexpected invocation of MockLsifStore.GetMinimalBulkSymbolUsages")
 			},
 		},
 		GetMonikersByPositionFunc: &LsifStoreGetMonikersByPositionFunc{
@@ -222,6 +230,11 @@ func NewStrictMockLsifStore() *MockLsifStore {
 				panic("unexpected invocation of MockLsifStore.SCIPDocument")
 			},
 		},
+		SCIPDocumentsFunc: &LsifStoreSCIPDocumentsFunc{
+			defaultHook: func(context.Context, int, []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error) {
+				panic("unexpected invocation of MockLsifStore.SCIPDocuments")
+			},
+		},
 	}
 }
 
@@ -244,8 +257,8 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		FindDocumentIDsFunc: &LsifStoreFindDocumentIDsFunc{
 			defaultHook: i.FindDocumentIDs,
 		},
-		GetBulkMonikerLocationsFunc: &LsifStoreGetBulkMonikerLocationsFunc{
-			defaultHook: i.GetBulkMonikerLocations,
+		GetBulkSymbolUsagesFunc: &LsifStoreGetBulkSymbolUsagesFunc{
+			defaultHook: i.GetBulkSymbolUsages,
 		},
 		GetDiagnosticsFunc: &LsifStoreGetDiagnosticsFunc{
 			defaultHook: i.GetDiagnostics,
@@ -253,8 +266,8 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		GetHoverFunc: &LsifStoreGetHoverFunc{
 			defaultHook: i.GetHover,
 		},
-		GetMinimalBulkMonikerLocationsFunc: &LsifStoreGetMinimalBulkMonikerLocationsFunc{
-			defaultHook: i.GetMinimalBulkMonikerLocations,
+		GetMinimalBulkSymbolUsagesFunc: &LsifStoreGetMinimalBulkSymbolUsagesFunc{
+			defaultHook: i.GetMinimalBulkSymbolUsages,
 		},
 		GetMonikersByPositionFunc: &LsifStoreGetMonikersByPositionFunc{
 			defaultHook: i.GetMonikersByPosition,
@@ -270,6 +283,9 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		},
 		SCIPDocumentFunc: &LsifStoreSCIPDocumentFunc{
 			defaultHook: i.SCIPDocument,
+		},
+		SCIPDocumentsFunc: &LsifStoreSCIPDocumentsFunc{
+			defaultHook: i.SCIPDocuments,
 		},
 	}
 }
@@ -847,37 +863,36 @@ func (c LsifStoreFindDocumentIDsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// LsifStoreGetBulkMonikerLocationsFunc describes the behavior when the
-// GetBulkMonikerLocations method of the parent MockLsifStore instance is
+// LsifStoreGetBulkSymbolUsagesFunc describes the behavior when the
+// GetBulkSymbolUsages method of the parent MockLsifStore instance is
 // invoked.
-type LsifStoreGetBulkMonikerLocationsFunc struct {
-	defaultHook func(context.Context, shared.UsageKind, []int, []precise.MonikerData, int, int) ([]shared.Location, int, error)
-	hooks       []func(context.Context, shared.UsageKind, []int, []precise.MonikerData, int, int) ([]shared.Location, int, error)
-	history     []LsifStoreGetBulkMonikerLocationsFuncCall
+type LsifStoreGetBulkSymbolUsagesFunc struct {
+	defaultHook func(context.Context, shared.UsageKind, []int, []string, int, int) ([]shared.Location, int, error)
+	hooks       []func(context.Context, shared.UsageKind, []int, []string, int, int) ([]shared.Location, int, error)
+	history     []LsifStoreGetBulkSymbolUsagesFuncCall
 	mutex       sync.Mutex
 }
 
-// GetBulkMonikerLocations delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockLsifStore) GetBulkMonikerLocations(v0 context.Context, v1 shared.UsageKind, v2 []int, v3 []precise.MonikerData, v4 int, v5 int) ([]shared.Location, int, error) {
-	r0, r1, r2 := m.GetBulkMonikerLocationsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.GetBulkMonikerLocationsFunc.appendCall(LsifStoreGetBulkMonikerLocationsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
+// GetBulkSymbolUsages delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockLsifStore) GetBulkSymbolUsages(v0 context.Context, v1 shared.UsageKind, v2 []int, v3 []string, v4 int, v5 int) ([]shared.Location, int, error) {
+	r0, r1, r2 := m.GetBulkSymbolUsagesFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.GetBulkSymbolUsagesFunc.appendCall(LsifStoreGetBulkSymbolUsagesFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
 	return r0, r1, r2
 }
 
-// SetDefaultHook sets function that is called when the
-// GetBulkMonikerLocations method of the parent MockLsifStore instance is
-// invoked and the hook queue is empty.
-func (f *LsifStoreGetBulkMonikerLocationsFunc) SetDefaultHook(hook func(context.Context, shared.UsageKind, []int, []precise.MonikerData, int, int) ([]shared.Location, int, error)) {
+// SetDefaultHook sets function that is called when the GetBulkSymbolUsages
+// method of the parent MockLsifStore instance is invoked and the hook queue
+// is empty.
+func (f *LsifStoreGetBulkSymbolUsagesFunc) SetDefaultHook(hook func(context.Context, shared.UsageKind, []int, []string, int, int) ([]shared.Location, int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetBulkMonikerLocations method of the parent MockLsifStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *LsifStoreGetBulkMonikerLocationsFunc) PushHook(hook func(context.Context, shared.UsageKind, []int, []precise.MonikerData, int, int) ([]shared.Location, int, error)) {
+// GetBulkSymbolUsages method of the parent MockLsifStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *LsifStoreGetBulkSymbolUsagesFunc) PushHook(hook func(context.Context, shared.UsageKind, []int, []string, int, int) ([]shared.Location, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -885,20 +900,20 @@ func (f *LsifStoreGetBulkMonikerLocationsFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LsifStoreGetBulkMonikerLocationsFunc) SetDefaultReturn(r0 []shared.Location, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, shared.UsageKind, []int, []precise.MonikerData, int, int) ([]shared.Location, int, error) {
+func (f *LsifStoreGetBulkSymbolUsagesFunc) SetDefaultReturn(r0 []shared.Location, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared.UsageKind, []int, []string, int, int) ([]shared.Location, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreGetBulkMonikerLocationsFunc) PushReturn(r0 []shared.Location, r1 int, r2 error) {
-	f.PushHook(func(context.Context, shared.UsageKind, []int, []precise.MonikerData, int, int) ([]shared.Location, int, error) {
+func (f *LsifStoreGetBulkSymbolUsagesFunc) PushReturn(r0 []shared.Location, r1 int, r2 error) {
+	f.PushHook(func(context.Context, shared.UsageKind, []int, []string, int, int) ([]shared.Location, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *LsifStoreGetBulkMonikerLocationsFunc) nextHook() func(context.Context, shared.UsageKind, []int, []precise.MonikerData, int, int) ([]shared.Location, int, error) {
+func (f *LsifStoreGetBulkSymbolUsagesFunc) nextHook() func(context.Context, shared.UsageKind, []int, []string, int, int) ([]shared.Location, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -911,27 +926,26 @@ func (f *LsifStoreGetBulkMonikerLocationsFunc) nextHook() func(context.Context, 
 	return hook
 }
 
-func (f *LsifStoreGetBulkMonikerLocationsFunc) appendCall(r0 LsifStoreGetBulkMonikerLocationsFuncCall) {
+func (f *LsifStoreGetBulkSymbolUsagesFunc) appendCall(r0 LsifStoreGetBulkSymbolUsagesFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of LsifStoreGetBulkMonikerLocationsFuncCall
+// History returns a sequence of LsifStoreGetBulkSymbolUsagesFuncCall
 // objects describing the invocations of this function.
-func (f *LsifStoreGetBulkMonikerLocationsFunc) History() []LsifStoreGetBulkMonikerLocationsFuncCall {
+func (f *LsifStoreGetBulkSymbolUsagesFunc) History() []LsifStoreGetBulkSymbolUsagesFuncCall {
 	f.mutex.Lock()
-	history := make([]LsifStoreGetBulkMonikerLocationsFuncCall, len(f.history))
+	history := make([]LsifStoreGetBulkSymbolUsagesFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// LsifStoreGetBulkMonikerLocationsFuncCall is an object that describes an
-// invocation of method GetBulkMonikerLocations on an instance of
-// MockLsifStore.
-type LsifStoreGetBulkMonikerLocationsFuncCall struct {
+// LsifStoreGetBulkSymbolUsagesFuncCall is an object that describes an
+// invocation of method GetBulkSymbolUsages on an instance of MockLsifStore.
+type LsifStoreGetBulkSymbolUsagesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -943,7 +957,7 @@ type LsifStoreGetBulkMonikerLocationsFuncCall struct {
 	Arg2 []int
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 []precise.MonikerData
+	Arg3 []string
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
 	Arg4 int
@@ -963,13 +977,13 @@ type LsifStoreGetBulkMonikerLocationsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c LsifStoreGetBulkMonikerLocationsFuncCall) Args() []interface{} {
+func (c LsifStoreGetBulkSymbolUsagesFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c LsifStoreGetBulkMonikerLocationsFuncCall) Results() []interface{} {
+func (c LsifStoreGetBulkSymbolUsagesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
@@ -1215,37 +1229,37 @@ func (c LsifStoreGetHoverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
 }
 
-// LsifStoreGetMinimalBulkMonikerLocationsFunc describes the behavior when
-// the GetMinimalBulkMonikerLocations method of the parent MockLsifStore
-// instance is invoked.
-type LsifStoreGetMinimalBulkMonikerLocationsFunc struct {
-	defaultHook func(context.Context, shared.UsageKind, []int, map[int]string, []precise.MonikerData, int, int) ([]shared.Location, int, error)
-	hooks       []func(context.Context, shared.UsageKind, []int, map[int]string, []precise.MonikerData, int, int) ([]shared.Location, int, error)
-	history     []LsifStoreGetMinimalBulkMonikerLocationsFuncCall
+// LsifStoreGetMinimalBulkSymbolUsagesFunc describes the behavior when the
+// GetMinimalBulkSymbolUsages method of the parent MockLsifStore instance is
+// invoked.
+type LsifStoreGetMinimalBulkSymbolUsagesFunc struct {
+	defaultHook func(context.Context, shared.UsageKind, []int, map[int]string, []string, int, int) ([]shared.Location, int, error)
+	hooks       []func(context.Context, shared.UsageKind, []int, map[int]string, []string, int, int) ([]shared.Location, int, error)
+	history     []LsifStoreGetMinimalBulkSymbolUsagesFuncCall
 	mutex       sync.Mutex
 }
 
-// GetMinimalBulkMonikerLocations delegates to the next hook function in the
+// GetMinimalBulkSymbolUsages delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockLsifStore) GetMinimalBulkMonikerLocations(v0 context.Context, v1 shared.UsageKind, v2 []int, v3 map[int]string, v4 []precise.MonikerData, v5 int, v6 int) ([]shared.Location, int, error) {
-	r0, r1, r2 := m.GetMinimalBulkMonikerLocationsFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
-	m.GetMinimalBulkMonikerLocationsFunc.appendCall(LsifStoreGetMinimalBulkMonikerLocationsFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1, r2})
+func (m *MockLsifStore) GetMinimalBulkSymbolUsages(v0 context.Context, v1 shared.UsageKind, v2 []int, v3 map[int]string, v4 []string, v5 int, v6 int) ([]shared.Location, int, error) {
+	r0, r1, r2 := m.GetMinimalBulkSymbolUsagesFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
+	m.GetMinimalBulkSymbolUsagesFunc.appendCall(LsifStoreGetMinimalBulkSymbolUsagesFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
-// GetMinimalBulkMonikerLocations method of the parent MockLsifStore
-// instance is invoked and the hook queue is empty.
-func (f *LsifStoreGetMinimalBulkMonikerLocationsFunc) SetDefaultHook(hook func(context.Context, shared.UsageKind, []int, map[int]string, []precise.MonikerData, int, int) ([]shared.Location, int, error)) {
+// GetMinimalBulkSymbolUsages method of the parent MockLsifStore instance is
+// invoked and the hook queue is empty.
+func (f *LsifStoreGetMinimalBulkSymbolUsagesFunc) SetDefaultHook(hook func(context.Context, shared.UsageKind, []int, map[int]string, []string, int, int) ([]shared.Location, int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetMinimalBulkMonikerLocations method of the parent MockLsifStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *LsifStoreGetMinimalBulkMonikerLocationsFunc) PushHook(hook func(context.Context, shared.UsageKind, []int, map[int]string, []precise.MonikerData, int, int) ([]shared.Location, int, error)) {
+// GetMinimalBulkSymbolUsages method of the parent MockLsifStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *LsifStoreGetMinimalBulkSymbolUsagesFunc) PushHook(hook func(context.Context, shared.UsageKind, []int, map[int]string, []string, int, int) ([]shared.Location, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1253,20 +1267,20 @@ func (f *LsifStoreGetMinimalBulkMonikerLocationsFunc) PushHook(hook func(context
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LsifStoreGetMinimalBulkMonikerLocationsFunc) SetDefaultReturn(r0 []shared.Location, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, shared.UsageKind, []int, map[int]string, []precise.MonikerData, int, int) ([]shared.Location, int, error) {
+func (f *LsifStoreGetMinimalBulkSymbolUsagesFunc) SetDefaultReturn(r0 []shared.Location, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared.UsageKind, []int, map[int]string, []string, int, int) ([]shared.Location, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreGetMinimalBulkMonikerLocationsFunc) PushReturn(r0 []shared.Location, r1 int, r2 error) {
-	f.PushHook(func(context.Context, shared.UsageKind, []int, map[int]string, []precise.MonikerData, int, int) ([]shared.Location, int, error) {
+func (f *LsifStoreGetMinimalBulkSymbolUsagesFunc) PushReturn(r0 []shared.Location, r1 int, r2 error) {
+	f.PushHook(func(context.Context, shared.UsageKind, []int, map[int]string, []string, int, int) ([]shared.Location, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *LsifStoreGetMinimalBulkMonikerLocationsFunc) nextHook() func(context.Context, shared.UsageKind, []int, map[int]string, []precise.MonikerData, int, int) ([]shared.Location, int, error) {
+func (f *LsifStoreGetMinimalBulkSymbolUsagesFunc) nextHook() func(context.Context, shared.UsageKind, []int, map[int]string, []string, int, int) ([]shared.Location, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1279,28 +1293,27 @@ func (f *LsifStoreGetMinimalBulkMonikerLocationsFunc) nextHook() func(context.Co
 	return hook
 }
 
-func (f *LsifStoreGetMinimalBulkMonikerLocationsFunc) appendCall(r0 LsifStoreGetMinimalBulkMonikerLocationsFuncCall) {
+func (f *LsifStoreGetMinimalBulkSymbolUsagesFunc) appendCall(r0 LsifStoreGetMinimalBulkSymbolUsagesFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// LsifStoreGetMinimalBulkMonikerLocationsFuncCall objects describing the
-// invocations of this function.
-func (f *LsifStoreGetMinimalBulkMonikerLocationsFunc) History() []LsifStoreGetMinimalBulkMonikerLocationsFuncCall {
+// History returns a sequence of LsifStoreGetMinimalBulkSymbolUsagesFuncCall
+// objects describing the invocations of this function.
+func (f *LsifStoreGetMinimalBulkSymbolUsagesFunc) History() []LsifStoreGetMinimalBulkSymbolUsagesFuncCall {
 	f.mutex.Lock()
-	history := make([]LsifStoreGetMinimalBulkMonikerLocationsFuncCall, len(f.history))
+	history := make([]LsifStoreGetMinimalBulkSymbolUsagesFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// LsifStoreGetMinimalBulkMonikerLocationsFuncCall is an object that
-// describes an invocation of method GetMinimalBulkMonikerLocations on an
-// instance of MockLsifStore.
-type LsifStoreGetMinimalBulkMonikerLocationsFuncCall struct {
+// LsifStoreGetMinimalBulkSymbolUsagesFuncCall is an object that describes
+// an invocation of method GetMinimalBulkSymbolUsages on an instance of
+// MockLsifStore.
+type LsifStoreGetMinimalBulkSymbolUsagesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1315,7 +1328,7 @@ type LsifStoreGetMinimalBulkMonikerLocationsFuncCall struct {
 	Arg3 map[int]string
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
-	Arg4 []precise.MonikerData
+	Arg4 []string
 	// Arg5 is the value of the 6th argument passed to this method
 	// invocation.
 	Arg5 int
@@ -1335,13 +1348,13 @@ type LsifStoreGetMinimalBulkMonikerLocationsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c LsifStoreGetMinimalBulkMonikerLocationsFuncCall) Args() []interface{} {
+func (c LsifStoreGetMinimalBulkSymbolUsagesFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c LsifStoreGetMinimalBulkMonikerLocationsFuncCall) Results() []interface{} {
+func (c LsifStoreGetMinimalBulkSymbolUsagesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
@@ -1914,5 +1927,116 @@ func (c LsifStoreSCIPDocumentFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c LsifStoreSCIPDocumentFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// LsifStoreSCIPDocumentsFunc describes the behavior when the SCIPDocuments
+// method of the parent MockLsifStore instance is invoked.
+type LsifStoreSCIPDocumentsFunc struct {
+	defaultHook func(context.Context, int, []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error)
+	hooks       []func(context.Context, int, []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error)
+	history     []LsifStoreSCIPDocumentsFuncCall
+	mutex       sync.Mutex
+}
+
+// SCIPDocuments delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockLsifStore) SCIPDocuments(v0 context.Context, v1 int, v2 []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error) {
+	r0, r1 := m.SCIPDocumentsFunc.nextHook()(v0, v1, v2)
+	m.SCIPDocumentsFunc.appendCall(LsifStoreSCIPDocumentsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the SCIPDocuments method
+// of the parent MockLsifStore instance is invoked and the hook queue is
+// empty.
+func (f *LsifStoreSCIPDocumentsFunc) SetDefaultHook(hook func(context.Context, int, []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SCIPDocuments method of the parent MockLsifStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *LsifStoreSCIPDocumentsFunc) PushHook(hook func(context.Context, int, []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LsifStoreSCIPDocumentsFunc) SetDefaultReturn(r0 map[core.UploadRelPath]*scip.Document, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LsifStoreSCIPDocumentsFunc) PushReturn(r0 map[core.UploadRelPath]*scip.Document, r1 error) {
+	f.PushHook(func(context.Context, int, []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error) {
+		return r0, r1
+	})
+}
+
+func (f *LsifStoreSCIPDocumentsFunc) nextHook() func(context.Context, int, []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LsifStoreSCIPDocumentsFunc) appendCall(r0 LsifStoreSCIPDocumentsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LsifStoreSCIPDocumentsFuncCall objects
+// describing the invocations of this function.
+func (f *LsifStoreSCIPDocumentsFunc) History() []LsifStoreSCIPDocumentsFuncCall {
+	f.mutex.Lock()
+	history := make([]LsifStoreSCIPDocumentsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LsifStoreSCIPDocumentsFuncCall is an object that describes an invocation
+// of method SCIPDocuments on an instance of MockLsifStore.
+type LsifStoreSCIPDocumentsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []core.UploadRelPath
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[core.UploadRelPath]*scip.Document
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LsifStoreSCIPDocumentsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LsifStoreSCIPDocumentsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }

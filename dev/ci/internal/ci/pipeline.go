@@ -274,6 +274,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		)
 	case runtype.PromoteRelease:
 		ops = operations.NewSet(
+			checkSecurityApproval(c),
+			wait,
 			releasePromoteImages(c),
 			wait,
 			releaseTestOperation(c),

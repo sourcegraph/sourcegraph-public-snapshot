@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -27,7 +26,6 @@ func TestHover(t *testing.T) {
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 	mockSearchClient := client.NewMockSearchClient()
-	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
 	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
@@ -35,7 +33,7 @@ func TestHover(t *testing.T) {
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, hunkCache)
+	mockRequestState.GitTreeTranslator = noopTranslator()
 	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
@@ -84,7 +82,6 @@ func TestHoverRemote(t *testing.T) {
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 	mockSearchClient := client.NewMockSearchClient()
-	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
 	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
@@ -92,7 +89,7 @@ func TestHoverRemote(t *testing.T) {
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, hunkCache)
+	mockRequestState.GitTreeTranslator = noopTranslator()
 	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef"},
 	}
@@ -142,8 +139,8 @@ func TestHoverRemote(t *testing.T) {
 		{UploadID: 151, Path: uploadRelPath("b.go"), Range: testRange4},
 		{UploadID: 151, Path: uploadRelPath("c.go"), Range: testRange5},
 	}
-	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, 0, nil)
-	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)
+	mockLsifStore.GetBulkSymbolUsagesFunc.PushReturn(locations, 0, nil)
+	mockLsifStore.GetBulkSymbolUsagesFunc.PushReturn(locations, len(locations), nil)
 
 	mockGitserverClient.GetCommitFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID) (*gitdomain.Commit, error) {
 		return &gitdomain.Commit{ID: "sha"}, nil

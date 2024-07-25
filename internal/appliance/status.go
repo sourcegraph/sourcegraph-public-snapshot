@@ -10,23 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const (
-	StatusUnknown         Status = "unknown"
-	StatusInstall         Status = "install"
-	StatusInstalling      Status = "installing"
-	StatusIdle            Status = "idle"
-	StatusUpgrading       Status = "upgrading"
-	StatusWaitingForAdmin Status = "wait-for-admin"
-	StatusRefresh         Status = "refresh"
-)
-
-// Status is a point in the Appliance lifecycle that an Appliance can be in.
-type Status string
-
-func (s Status) String() string {
-	return string(s)
-}
-
 // Task is a task that some states may have to complete to exit.
 type Task struct {
 	Title       string    `json:"title"`

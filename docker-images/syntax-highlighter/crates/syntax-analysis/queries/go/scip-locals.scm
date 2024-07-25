@@ -58,6 +58,6 @@
    left: (expression_list
            (identifier) @definition.var)))
 
-(identifier) @reference
-(type_identifier) @reference
-(field_identifier) @reference
+((identifier) @reference (#set! "kind" "local"))
+((type_identifier) @reference (#set! "kind" "local"))
+((field_identifier) @reference (#set! "kind" "local"))
