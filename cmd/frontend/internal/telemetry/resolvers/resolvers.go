@@ -88,16 +88,16 @@ func (r *Resolver) RecordEvents(ctx context.Context, args *graphqlbackend.Record
 			if knownAction, ok := knownBadEvents[ev.Feature]; ok && knownAction == ev.Action {
 				// We already know this event is a problem - just error out
 				// without logging
-				return nil, errors.Wrap(err, "invalid events provided")
+				return nil, errors.Wrap(err, "known invalid event provided")
 			}
 
 			// This is an important failure, make sure we surface it, as it could be
 			// an implementation error.
 			data, _ := json.Marshal(args.Events)
-			trace.Logger(ctx, r.logger).Error("failed to convert telemetry events to internal format",
+			trace.Logger(ctx, r.logger).Error("failed to convert telemetry event to internal format",
 				log.Error(err),
 				log.String("eventData", string(data)))
-			return nil, errors.Wrap(err, "invalid events provided")
+			return nil, errors.Wrap(err, "invalid event provided")
 		}
 		gatewayEvents = append(gatewayEvents, gatewayEvent)
 	}
