@@ -27,6 +27,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// SU_CHUNK_SIZE is the batch size for SCIP documents and git diffs we load at a time.
+var SU_CHUNK_SIZE = 20
+
 type candidateMatch struct {
 	range_             scip.Range
 	surroundindContent string
@@ -399,21 +402,33 @@ func syntacticUsagesImpl(
 		}
 	}
 
-	results := conciter.Map(candidateMatches, func(file *candidateFile) []SyntacticMatch {
-		// We're assuming the index we found earlier contains the relevant SCIP document
-		// see NOTE(id: single-syntactic-upload)
-		documentOpt, err := mappedIndex.GetDocument(ctx, file.path)
+	tasks, _ := genslices.ChunkEvery(candidateMatches, SU_CHUNK_SIZE)
+	results, err := conciter.MapErr(tasks, func(files *[]candidateFile) ([]SyntacticMatch, error) {
+		paths := genslices.Map(*files, func(f candidateFile) core.RepoRelPath {
+			return f.path
+		})
+		documents, err := mappedIndex.GetDocuments(ctx, paths)
 		if err != nil {
-			// TODO: Track metrics about how often this happens (GRAPH-693)
-			return []SyntacticMatch{}
+			return []SyntacticMatch{}, err
 		}
-		document, isSome := documentOpt.Get()
-		if !isSome {
-			return []SyntacticMatch{}
+		results := [][]SyntacticMatch{}
+		for _, file := range *files {
+			document, ok := documents[file.path]
+			if !ok {
+				continue
+			}
+			syntacticMatches, _ := findSyntacticMatchesForCandidateFile(ctx, trace, document, file)
+			results = append(results, syntacticMatches)
 		}
-		syntacticMatches, _ := findSyntacticMatchesForCandidateFile(ctx, trace, document, *file)
-		return syntacticMatches
+		return slices.Concat(results...), nil
 	})
+	if err != nil {
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+			Code:            SU_Fatal,
+			UnderlyingError: err,
+		}
+	}
+
 	return SyntacticUsagesResult{Matches: slices.Concat(results...)}, PreviousSyntacticSearch{
 		MappedIndex: mappedIndex,
 		SymbolName:  symbolName,
@@ -464,25 +479,36 @@ func searchBasedUsagesImpl(
 	candidateMatches := matchResults.candidateMatches
 	candidateSymbols := symbolResults.candidateSymbols
 
-	results := conciter.Map(candidateMatches, func(file *candidateFile) []SearchBasedMatch {
-		if index, ok := syntacticIndex.Get(); ok {
-			documentOpt, err := index.GetDocument(ctx, file.path)
-			if document, isSome := documentOpt.Get(); err == nil && isSome {
-				_, searchBasedMatches := findSyntacticMatchesForCandidateFile(ctx, trace, document, *file)
-				return searchBasedMatches
-			}
-			trace.Info("findSyntacticMatches failed, skipping filtering search-based results", log.Error(err))
-		}
-		matches := []SearchBasedMatch{}
-		for _, match := range file.matches {
-			matches = append(matches, SearchBasedMatch{
-				Path:               file.path,
-				Range:              match.range_,
-				SurroundingContent: match.surroundindContent,
-				IsDefinition:       candidateSymbols.Contains(file.path, match.range_),
+	tasks, _ := genslices.ChunkEvery(candidateMatches, SU_CHUNK_SIZE)
+	results := conciter.Map(tasks, func(files *[]candidateFile) []SearchBasedMatch {
+		documents := map[core.RepoRelPath]MappedDocument{}
+		if mappedIndex, ok := syntacticIndex.Get(); ok {
+			paths := genslices.Map(*files, func(f candidateFile) core.RepoRelPath {
+				return f.path
 			})
+			documentsMap, err := mappedIndex.GetDocuments(ctx, paths)
+			if err == nil {
+				documents = documentsMap
+			}
 		}
-		return matches
+		results := [][]SearchBasedMatch{}
+		for _, file := range *files {
+			var searchBasedMatches []SearchBasedMatch
+			if document, ok := documents[file.path]; ok {
+				_, searchBasedMatches = findSyntacticMatchesForCandidateFile(ctx, trace, document, file)
+			} else {
+				for _, match := range file.matches {
+					searchBasedMatches = append(searchBasedMatches, SearchBasedMatch{
+						Path:               file.path,
+						Range:              match.range_,
+						SurroundingContent: match.surroundindContent,
+						IsDefinition:       candidateSymbols.Contains(file.path, match.range_),
+					})
+				}
+			}
+			results = append(results, searchBasedMatches)
+		}
+		return slices.Concat(results...)
 	})
 	return slices.Concat(results...), nil
 }
