@@ -352,9 +352,9 @@ WITH RECURSIVE
 SELECT
 	ss.upload_id,
 	msn.symbol_name,
-	array_agg(%s ORDER BY document_path),
-	array_agg(document_path ORDER BY document_path)
-    -- ORDER BY ss.upload_id, msn.symbol_name, document_path to maintain determinism for pagination
+	array_agg(%s ORDER BY dl.document_path),
+	array_agg(document_path ORDER BY dl.document_path)
+    -- ORDER BY ss.upload_id, msn.symbol_name, dl.document_path to maintain determinism for pagination
 FROM codeintel_scip_symbols ss
 JOIN codeintel_scip_document_lookup dl
      ON dl.id = ss.document_lookup_id
