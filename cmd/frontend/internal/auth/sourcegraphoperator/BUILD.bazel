@@ -13,9 +13,9 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
-        "//cmd/frontend/external/session",
         "//cmd/frontend/internal/auth/openidconnect",
         "//cmd/frontend/internal/auth/providers",
+        "//cmd/frontend/internal/auth/session",
         "//internal/actor",
         "//internal/auth",
         "//internal/cloud",
@@ -47,9 +47,9 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/auth",
-        "//cmd/frontend/external/session",
         "//cmd/frontend/internal/auth/openidconnect",
         "//cmd/frontend/internal/auth/providers",
+        "//cmd/frontend/internal/auth/session",
         "//internal/actor",
         "//internal/auth",
         "//internal/cloud",
