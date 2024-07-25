@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
-	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -243,8 +242,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	if internalAPI != nil {
 		routines = append(routines, internalAPI)
 	}
-
-	oce.GlobalExporter = oce.NewDataExporter(db, logger)
 
 	debugserverEndpoints.GlobalRateLimiterState = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		info, err := ratelimit.GetGlobalLimiterState(r.Context())

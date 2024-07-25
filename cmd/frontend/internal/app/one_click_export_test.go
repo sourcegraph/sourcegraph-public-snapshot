@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -32,11 +33,6 @@ func TestOneClickExportHandler(t *testing.T) {
 	})
 
 	t.Run("admins can download the archive", func(t *testing.T) {
-		oce.GlobalExporter = oce.NewDataExporter(db, logger)
-		t.Cleanup(func() {
-			oce.GlobalExporter = nil
-		})
-
 		request := oce.ExportRequest{
 			IncludeSiteConfig:     true,
 			IncludeCodeHostConfig: true,
