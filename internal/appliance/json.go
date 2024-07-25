@@ -2,6 +2,7 @@ package appliance
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -101,7 +102,7 @@ func (a *Appliance) getStatusJSONHandler() http.Handler {
 			Data:   "",
 		}
 
-		if err := a.writeJSON(w, http.StatusOK, responseData{"status": data}, nil); err != nil {
+		if err := a.writeJSON(w, http.StatusOK, responseData{"status": data}, http.Header{}); err != nil {
 			a.serverErrorResponse(w, r, err)
 		}
 	})
@@ -123,7 +124,7 @@ func (a *Appliance) getInstallProgressJSONHandler() http.Handler {
 			Tasks:    currentTasks,
 		}
 
-		if err := a.writeJSON(w, http.StatusOK, responseData{"progress": installProgress}, nil); err != nil {
+		if err := a.writeJSON(w, http.StatusOK, responseData{"progress": installProgress}, http.Header{}); err != nil {
 			a.serverErrorResponse(w, r, err)
 		}
 	})
@@ -146,8 +147,8 @@ func (a *Appliance) getMaintenanceStatusHandler() http.Handler {
 				Message: "fake event",
 			})
 		}
-
-		if err := a.writeJSON(w, http.StatusOK, responseData{"services": services}, nil); err != nil {
+		fmt.Println(services)
+		if err := a.writeJSON(w, http.StatusOK, responseData{"services": services}, http.Header{}); err != nil {
 			a.serverErrorResponse(w, r, err)
 		}
 	})
