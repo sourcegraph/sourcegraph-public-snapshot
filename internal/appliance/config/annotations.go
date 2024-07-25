@@ -26,6 +26,7 @@ const (
 	StatusUpgrading       Status = "upgrading"
 	StatusWaitingForAdmin Status = "wait-for-admin"
 	StatusRefresh         Status = "refresh"
+	StatusMaintenance     Status = "maintenance"
 )
 
 // TODO think about this
