@@ -205,10 +205,23 @@ func (r *Reconciler) reconcileFrontendService(ctx context.Context, sg *config.So
 		return err
 	}
 
-	//Otherwise we found an object and only want to craft changes
-	// Turns out frontend doesn't have any service spec, we just use defaults
-	config.MarkObjectForAdoption(existingObj)
-	return reconcileObject(ctx, r, sg.Spec.Frontend, existingObj, &corev1.Service{}, sg, owner)
+	// If we found an object, we only want to change configmap-specified things,
+	// and certain defaults such as the prometheus port.
+	svcChanges := &corev1.Service{}
+	svcChanges.SetAnnotations(map[string]string{
+		"prometheus.io/port":            "6060",
+		"sourcegraph.prometheus/scrape": "true",
+	})
+	config.MarkObjectForAdoption(svcChanges)
+	newObj, err := MergeK8sObjects(existingObj, svcChanges)
+	if err != nil {
+		return errors.Wrap(err, "merging objects")
+	}
+	newSvc, ok := newObj.(*corev1.Service)
+	if !ok {
+		return errors.Wrap(err, "asserting type")
+	}
+	return reconcileObject(ctx, r, sg.Spec.Frontend, newSvc, &corev1.Service{}, sg, owner)
 }
 
 func (r *Reconciler) reconcileFrontendServiceInternal(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
@@ -333,16 +346,14 @@ func (r *Reconciler) reconcileFrontendIngress(ctx context.Context, sg *config.So
 		}}
 	}
 	cfgIngress.Spec.IngressClassName = cfg.Ingress.IngressClassName
-	config.MarkObjectForAdoption(existingObj)
+	config.MarkObjectForAdoption(&cfgIngress)
 	newObj, err := MergeK8sObjects(existingObj, &cfgIngress)
 	if err != nil {
-		logger.Error(err, "Unexpected err merging objects")
-		return err
+		return errors.Wrap(err, "merging objects")
 	}
 	newObjAsIngress, ok := newObj.(*netv1.Ingress)
 	if !ok {
-		logger.Error(errors.Newf("Could not cast as Ingress"), "Unexpected error converting unstructured object to Ingress")
-		return nil
+		return errors.Wrap(err, "asserting type")
 	}
 	return reconcileObject(ctx, r, sg.Spec.Frontend, newObjAsIngress, &netv1.Ingress{}, sg, owner)
 }

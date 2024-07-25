@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"maps"
 
-	"github.com/sourcegraph/sourcegraph/internal/appliance/k8senvtest"
-	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/ingress"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
@@ -14,6 +11,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/sourcegraph/sourcegraph/internal/appliance/k8senvtest"
+	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/ingress"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func (suite *ApplianceTestSuite) TestDeployFrontend() {
@@ -42,6 +43,9 @@ func (suite *ApplianceTestSuite) TestAdoptsHelmProvisionedFrontendResources() {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "sourcegraph-frontend",
 			Namespace: namespace.Name,
+			Labels: map[string]string{
+				"app": "sourcegraph-frontend",
+			},
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:    []corev1.ServicePort{{Name: "http", Port: 30080, TargetPort: intstr.FromString("http")}},
@@ -305,6 +309,34 @@ func (suite *ApplianceTestSuite) TestMergeK8sObjects() {
 				},
 			},
 			expectError: false,
+		},
+		{
+			name: "merges annotations",
+			existingObj: &MockObject{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"present_and_unchanged": "old1",
+						"present_and_changed":   "old2",
+					},
+				},
+			},
+			newObject: &MockObject{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"present_and_changed": "new2",
+						"new":                 "new3",
+					},
+				},
+			},
+			expected: &MockObject{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"present_and_unchanged": "old1",
+						"present_and_changed":   "new2",
+						"new":                   "new3",
+					},
+				},
+			},
 		},
 	}
 
