@@ -14,8 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"fmt"
-
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/container"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/deployment"
@@ -391,25 +389,25 @@ func MergeK8sObjects(existingObj client.Object, newObject client.Object) (client
 	// Convert existing object to unstructured
 	existingUnstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(existingObj)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert existing object to unstructured: %w", err)
+		return nil, errors.Newf("failed to convert existing object to unstructured: %w", err)
 	}
 
 	newUnstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(newObject)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert new object to unstructured: %w", err)
+		return nil, errors.Newf("failed to convert new object to unstructured: %w", err)
 	}
 
 	// Merge the objects using strategic merge patch
 	mergedUnstructured, err := strategicpatch.StrategicMergeMapPatch(existingUnstructured, newUnstructured, existingObj)
 	if err != nil {
-		return nil, fmt.Errorf("failed to merge objects: %w", err)
+		return nil, errors.Newf("failed to merge objects: %w", err)
 	}
 
 	// Convert the merged unstructured object back to the original type
 	mergedObj := existingObj.DeepCopyObject().(client.Object)
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(mergedUnstructured, mergedObj)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert merged object from unstructured: %w", err)
+		return nil, errors.Newf("failed to convert merged object from unstructured: %w", err)
 	}
 
 	return mergedObj, nil
