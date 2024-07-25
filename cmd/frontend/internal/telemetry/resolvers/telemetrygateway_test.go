@@ -233,7 +233,6 @@ func TestConvertToTelemetryGatewayEvent(t *testing.T) {
 				func() string { return tc.name },
 				tc.event)
 			require.NoError(t, err)
-			require.Len(t, got, 1)
 
 			protodata, err := protojson.Marshal(got)
 			require.NoError(t, err)
