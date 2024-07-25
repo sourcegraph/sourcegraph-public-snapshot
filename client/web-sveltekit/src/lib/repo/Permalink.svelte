@@ -43,6 +43,8 @@
 
 <style lang="scss">
     a {
+        --icon-color: var(--icon-color);
+
         display: flex;
         align-items: center;
         justify-content: center;

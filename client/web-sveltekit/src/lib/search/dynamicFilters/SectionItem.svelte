@@ -32,7 +32,7 @@
 
 <style lang="scss">
     a {
-        --icon-color: currentColor;
+        --icon-color: var(--text-body);
 
         display: flex;
         width: 100%;
@@ -70,6 +70,7 @@
             --file-icon-color: currentColor;
 
             background-color: var(--primary);
+            --icon-color: var(--light-text);
             color: var(--light-text);
 
             .label {

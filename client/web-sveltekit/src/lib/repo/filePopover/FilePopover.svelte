@@ -157,7 +157,7 @@
                     justify-content: flex-start;
                     align-items: center;
                     gap: 0.25rem;
-                    font-size: var(--font-size-tiny);
+                    font-size: var(--font-size-xs);
                 }
             }
         }

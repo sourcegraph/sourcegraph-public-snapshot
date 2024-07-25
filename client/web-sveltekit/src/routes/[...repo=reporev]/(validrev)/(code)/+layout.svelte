@@ -471,6 +471,7 @@
     :global([data-panel-id='bottom-actions-panel']) {
         min-height: 2.5625rem; // 41px which is bottom panel compact size
         box-shadow: var(--bottom-panel-shadow);
+        background-color: var(--color-bg-1);
     }
 
     :global([data-panel-id='right-sidebar-panel']) {

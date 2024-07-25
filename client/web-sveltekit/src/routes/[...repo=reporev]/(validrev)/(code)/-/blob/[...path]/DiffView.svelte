@@ -68,6 +68,7 @@
         overflow: hidden;
 
         padding: 0.5rem 1rem;
+        --icon-color: var(--link-color);
         color: var(--text-muted);
         background-color: var(--code-bg);
         box-shadow: var(--file-header-shadow);

@@ -232,7 +232,7 @@
 {#if $inputs.activeOccurrence === undefined}
     <div class="no-selection">
         <Icon icon={ISgSymbols} />
-        <p>Select a symbol in the code panel to view references.</p>
+        <p>Select a symbol in the code panel to view references</p>
     </div>
 {:else}
     <PanelGroup id="references">
@@ -403,7 +403,7 @@
         width: 100%;
 
         color: var(--text-muted);
-        font-weight: 500;
+        font-weight: 400;
     }
 
     .no-results {
@@ -412,7 +412,6 @@
         justify-content: center;
         height: 100%;
         width: 100%;
-        color: var(--text-muted);
         font-weight: 500;
     }
 

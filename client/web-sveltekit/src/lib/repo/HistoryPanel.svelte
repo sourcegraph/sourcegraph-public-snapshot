@@ -120,6 +120,7 @@
         max-width: 100%;
         display: grid;
         grid-template-columns: [revision] auto [subject] 3fr [author] 1fr [timestamp] auto [actions] auto;
+        color: var(--text-body);
     }
 
     tbody,
@@ -133,7 +134,7 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        padding: 0.25rem 0.5rem;
+        padding: 0.5rem;
 
         :global([data-avatar]) {
             vertical-align: middle;
@@ -159,10 +160,12 @@
 
     .actions {
         grid-area: actions;
+        display: flex;
+        gap: 1rem;
+        padding: 0.5rem 1rem;
     }
 
     tr {
-        --icon-color: var(--header-icon-color);
         border-bottom: 1px solid var(--border-color);
 
         &.selected {

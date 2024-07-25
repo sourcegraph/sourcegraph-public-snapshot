@@ -62,7 +62,7 @@
 
 <style lang="scss">
     .tabs-header {
-        --icon-color: var(--header-icon-color);
+        --icon-color: var(--icon-color);
 
         display: flex;
         align-items: stretch;
@@ -76,7 +76,7 @@
         align-items: center;
         min-height: 2rem;
         padding: 0.25rem 0.75rem;
-        color: var(--text-muted);
+        color: var(--text-body);
         display: inline-flex;
         flex-flow: row nowrap;
         justify-content: center;

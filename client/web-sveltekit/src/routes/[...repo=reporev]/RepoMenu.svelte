@@ -87,7 +87,7 @@
         white-space: nowrap;
 
         h2 {
-            font-size: var(--font-size-large);
+            font-size: var(--font-size-base);
             font-weight: 500;
             margin: 0;
 
