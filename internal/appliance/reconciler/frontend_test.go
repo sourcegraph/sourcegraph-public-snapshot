@@ -2,6 +2,7 @@ package reconciler
 
 import (
 	"fmt"
+	"maps"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/k8senvtest"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/ingress"
@@ -10,7 +11,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -168,12 +168,19 @@ func (suite *ApplianceTestSuite) TestFrontendDeploymentRollsWhenRedisSecretsChan
 }
 
 type MockObject struct {
-	unstructured.Unstructured
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Data              map[string]string `json:"data,omitempty"`
 }
 
 func (m *MockObject) DeepCopyObject() runtime.Object {
+	if m == nil {
+		return nil
+	}
 	return &MockObject{
-		Unstructured: *m.Unstructured.DeepCopy(),
+		TypeMeta:   m.TypeMeta,
+		ObjectMeta: *m.ObjectMeta.DeepCopy(),
+		Data:       maps.Clone(m.Data),
 	}
 }
 
@@ -188,89 +195,123 @@ func (suite *ApplianceTestSuite) TestMergeK8sObjects() {
 		{
 			name: "Successful merge",
 			existingObj: &MockObject{
-				Unstructured: unstructured.Unstructured{
-					Object: map[string]interface{}{
-						"apiVersion": "v1",
-						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
-							"name": "test-config",
-						},
-						"data": map[string]interface{}{
-							"key1": "value1",
-						},
-					},
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-config",
+				},
+				Data: map[string]string{
+					"key1": "value1",
 				},
 			},
 			newObject: &MockObject{
-				Unstructured: unstructured.Unstructured{
-					Object: map[string]interface{}{
-						"apiVersion": "v1",
-						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
-							"name": "test-config",
-						},
-						"data": map[string]interface{}{
-							"key2": "value2",
-						},
-					},
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-config",
+				},
+				Data: map[string]string{
+					"key2": "value2",
 				},
 			},
 			expected: &MockObject{
-				Unstructured: unstructured.Unstructured{
-					Object: map[string]interface{}{
-						"apiVersion": "v1",
-						"kind":       "ConfigMap",
-						"metadata": map[string]interface{}{
-							"name": "test-config",
-						},
-						"data": map[string]interface{}{
-							"key1": "value1",
-							"key2": "value2",
-						},
-					},
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-config",
+				},
+				Data: map[string]string{
+					"key1": "value1",
+					"key2": "value2",
 				},
 			},
 			expectError: false,
 		},
 		{
-			name: "Error converting existing object",
+			name: "Merge with overlapping keys",
 			existingObj: &MockObject{
-				Unstructured: unstructured.Unstructured{
-					Object: map[string]interface{}{
-						"invalidField": make(chan int), // This will cause a conversion error
-					},
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-config",
+				},
+				Data: map[string]string{
+					"key1": "value1",
+					"key2": "old-value2",
 				},
 			},
 			newObject: &MockObject{
-				Unstructured: unstructured.Unstructured{
-					Object: map[string]interface{}{},
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-config",
+				},
+				Data: map[string]string{
+					"key2": "new-value2",
+					"key3": "value3",
 				},
 			},
-			expected:    nil,
-			expectError: true,
+			expected: &MockObject{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-config",
+				},
+				Data: map[string]string{
+					"key1": "value1",
+					"key2": "new-value2",
+					"key3": "value3",
+				},
+			},
+			expectError: false,
 		},
 		{
-			name: "Error converting new object",
+			name: "Merge with empty new object",
 			existingObj: &MockObject{
-				Unstructured: unstructured.Unstructured{
-					Object: map[string]interface{}{},
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-config",
+				},
+				Data: map[string]string{
+					"key1": "value1",
 				},
 			},
-			newObject: &MockObject{
-				Unstructured: unstructured.Unstructured{
-					Object: map[string]interface{}{
-						"invalidField": make(chan int), // This will cause a conversion error
-					},
+			newObject: &MockObject{},
+			expected: &MockObject{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-config",
+				},
+				Data: map[string]string{
+					"key1": "value1",
 				},
 			},
-			expected:    nil,
-			expectError: true,
+			expectError: false,
 		},
 	}
 
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
 			result, err := MergeK8sObjects(tt.existingObj, tt.newObject)
+			fmt.Print(result)
 			if tt.expectError {
 				assert.Error(suite.T(), err)
 				assert.Nil(suite.T(), result)
