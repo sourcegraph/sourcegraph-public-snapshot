@@ -254,7 +254,7 @@ func (s *HandlerV1) UpdateCodyGatewayAccess(ctx context.Context, req *connect.Re
 
 	updated, err := s.store.UpsertCodyGatewayAccess(ctx, subscriptionID, opts)
 	if err != nil {
-		if errors.Is(err, codyaccess.ErrSubscriptionDoesNotExist) {
+		if errors.Is(err, codyaccess.ErrSubscriptionNotFound) {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
 		return nil, connectutil.InternalError(ctx, logger, err, "failed to update Cody Gateway access")
