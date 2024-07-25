@@ -193,5 +193,8 @@ func (s *storeV1) ListCodyGatewayAccesses(ctx context.Context) ([]*codyaccess.Co
 }
 
 func (s *storeV1) UpsertCodyGatewayAccess(ctx context.Context, subscriptionID string, opts codyaccess.UpsertCodyGatewayAccessOptions) (*codyaccess.CodyGatewayAccessWithSubscriptionDetails, error) {
-	return s.CodyAccess.CodyGateway().Upsert(ctx, subscriptionID, opts)
+	return s.CodyAccess.CodyGateway().Upsert(
+		ctx,
+		strings.TrimPrefix(subscriptionID, subscriptionsv1.EnterpriseSubscriptionIDPrefix),
+		opts)
 }
