@@ -107,7 +107,14 @@
                                     {/if}
                                 </Badge>
                             </li>
-                            <li><a href="/{data.repoName}@{commit.oid}">Browse files</a></li>
+
+                            <li
+                                ><a
+                                    href={commit.perforceChangelist
+                                        ? `/${data.repoName}@${commit.perforceChangelist.cid}`
+                                        : `/${data.repoName}@${commit.oid}`}>Browse files</a
+                                ></li
+                            >
                             {#each commit.externalURLs as { url, serviceKind }}
                                 <li>
                                     <a href={url}>

@@ -60,6 +60,9 @@
 
         repositoryContext.set({})
     })
+
+    $: isPerforce = data.resolvedRepository.externalRepository.serviceType === 'perforce'
+    $: changelistId = data.commit.perforceChangelist?.cid
 </script>
 
 <svelte:head>
@@ -73,26 +76,39 @@
                 <div class="info"><Commit commit={data.commit} alwaysExpanded={!$isViewportMobile} /></div>
                 <ul class="actions">
                     <li>
-                        <span>Commit:</span>
-                        <Badge variant="secondary"><code>{data.commit.abbreviatedOID}</code></Badge>&nbsp;<CopyButton
-                            value={data.commit.abbreviatedOID}
-                        />
+                        <span>{isPerforce ? 'Changelist ID:' : 'Commit:'}</span>
+                        <Badge variant="secondary"
+                            ><code>{isPerforce ? changelistId : data.commit.abbreviatedOID}</code></Badge
+                        >&nbsp;<CopyButton value={data.commit.abbreviatedOID} />
                     </li>
-                    <li>
-                        <span>{pluralize('Parent', data.commit.parents.length)}:</span>
-                        {#each data.commit.parents as parent}
-                            <Badge variant="link"><a href={parent.canonicalURL}>{parent.abbreviatedOID}</a></Badge
-                            >&nbsp;<CopyButton value={parent.abbreviatedOID} />{' '}
-                        {/each}
-                    </li>
-                    <li>
-                        <a href="/{data.repoName}@{data.commit.oid}"
-                            >Browse files at
-                            <Badge variant="link">
-                                {data.commit.abbreviatedOID}
-                            </Badge></a
-                        >
-                    </li>
+                    {#if !isPerforce}
+                        <li>
+                            <span>{pluralize('Parent', data.commit.parents.length)}:</span>
+                            {#each data.commit.parents as parent}
+                                <Badge variant="link"><a href={parent.canonicalURL}>{parent.abbreviatedOID}</a></Badge
+                                >&nbsp;<CopyButton value={parent.abbreviatedOID} />{' '}
+                            {/each}
+                        </li>
+                    {/if}
+                    {#if isPerforce}
+                        <li>
+                            <a href="/{data.repoName}@{data.commit.perforceChangelist?.cid}"
+                                >Browse files at
+                                <Badge variant="link">
+                                    {data.commit.perforceChangelist?.cid}
+                                </Badge></a
+                            >
+                        </li>
+                    {:else}
+                        <li>
+                            <a href="/{data.repoName}@{data.commit.oid}"
+                                >Browse files at
+                                <Badge variant="link">
+                                    {data.commit.abbreviatedOID}
+                                </Badge></a
+                            >
+                        </li>
+                    {/if}
                     {#each data.commit.externalURLs as { url, serviceKind }}
                         <li>
                             <a href={url}>
