@@ -50,7 +50,13 @@ export class OccurrenceIndex extends Array<Occurrence> {
             previousEndline = current.range.end.line
         }
 
-        super(...nonOverlappingOccurrences(occurrences))
+        // CAUTION: Do not "optimize" this to super(...nonOverlappingOccurrences(occurrences))
+        // as Chrome will push all elements to a stack, and potentially trigger a stack overflow.
+        // Similar bug in Nodejs: https://github.com/nodejs/node/issues/16870
+        super()
+        for (const occ of nonOverlappingOccurrences(occurrences)) {
+            this.push(occ)
+        }
         this.lineIndex = lineIndex
     }
 
