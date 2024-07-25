@@ -48,8 +48,8 @@ type CodeIntelConfigurationPolicy struct {
 	RetentionEnabled          bool
 	RetentionDurationHours    *int32
 	RetainIntermediateCommits bool
-	PreciseIndexingEnabled    bool
-	SyntacticIndexingEnabled  bool
+	IndexingEnabled           bool
+	SyntacticIndexingEnabled  *bool
 	IndexCommitMaxAgeHours    *int32
 	IndexIntermediateCommits  bool
 	// EmbeddingsEnabled, if nil, should currently default to false.
@@ -93,8 +93,8 @@ type CodeIntelligenceConfigurationPolicyResolver interface {
 	RetentionEnabled() bool
 	RetentionDurationHours() *int32
 	RetainIntermediateCommits() bool
-	PreciseIndexingEnabled() bool
-	SyntacticIndexingEnabled() bool
+	IndexingEnabled() bool
+	SyntacticIndexingEnabled() *bool
 	IndexCommitMaxAgeHours() *int32
 	IndexIntermediateCommits() bool
 	EmbeddingsEnabled() bool

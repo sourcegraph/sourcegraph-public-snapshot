@@ -13,7 +13,7 @@ type ConfigurationPolicy struct {
 	RetentionEnabled          bool
 	RetentionDuration         *time.Duration
 	RetainIntermediateCommits bool
-	IndexingEnabled           bool
+	PreciseIndexingEnabled    bool
 	SyntacticIndexingEnabled  bool
 	IndexCommitMaxAge         *time.Duration
 	IndexIntermediateCommits  bool
