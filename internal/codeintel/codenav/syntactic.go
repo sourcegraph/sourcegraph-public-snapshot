@@ -316,26 +316,12 @@ func symbolAtRange(
 func findSyntacticMatchesForCandidateFile(
 	ctx context.Context,
 	trace observation.TraceLogger,
-	mappedIndex MappedIndex,
-	filePath core.RepoRelPath,
+	document MappedDocument,
 	candidateFile candidateFile,
-) ([]SyntacticMatch, []SearchBasedMatch, *SyntacticUsagesError) {
-	documentOpt, docErr := mappedIndex.GetDocument(ctx, filePath)
-	if docErr != nil {
-		return nil, nil, &SyntacticUsagesError{
-			Code:            SU_Fatal,
-			UnderlyingError: docErr,
-		}
-	}
-	document, isSome := documentOpt.Get()
-	if !isSome {
-		return nil, nil, &SyntacticUsagesError{
-			Code: SU_NoSyntacticIndex,
-		}
-	}
+) ([]SyntacticMatch, []SearchBasedMatch) {
+	filePath := candidateFile.path
 	syntacticMatches := []SyntacticMatch{}
 	searchBasedMatches := []SearchBasedMatch{}
-
 	failedTranslationCount := 0
 	for _, candidateMatch := range candidateFile.matches {
 		foundSyntacticMatch := false
@@ -368,7 +354,7 @@ func findSyntacticMatchesForCandidateFile(
 	if failedTranslationCount != 0 {
 		trace.Info("findSyntacticMatchesForCandidateFile", log.Int("failedTranslationCount", failedTranslationCount))
 	}
-	return syntacticMatches, searchBasedMatches, nil
+	return syntacticMatches, searchBasedMatches
 }
 
 func syntacticUsagesImpl(
@@ -416,12 +402,16 @@ func syntacticUsagesImpl(
 	results := conciter.Map(candidateMatches, func(file *candidateFile) []SyntacticMatch {
 		// We're assuming the index we found earlier contains the relevant SCIP document
 		// see NOTE(id: single-syntactic-upload)
-		syntacticMatches, _, err := findSyntacticMatchesForCandidateFile(ctx, trace, mappedIndex, file.path, *file)
+		documentOpt, err := mappedIndex.GetDocument(ctx, file.path)
 		if err != nil {
-			// TODO: Errors that are not "no index found in the DB" should be reported
 			// TODO: Track metrics about how often this happens (GRAPH-693)
 			return []SyntacticMatch{}
 		}
+		document, isSome := documentOpt.Get()
+		if !isSome {
+			return []SyntacticMatch{}
+		}
+		syntacticMatches, _ := findSyntacticMatchesForCandidateFile(ctx, trace, document, *file)
 		return syntacticMatches
 	})
 	return SyntacticUsagesResult{Matches: slices.Concat(results...)}, PreviousSyntacticSearch{
@@ -476,12 +466,12 @@ func searchBasedUsagesImpl(
 
 	results := conciter.Map(candidateMatches, func(file *candidateFile) []SearchBasedMatch {
 		if index, ok := syntacticIndex.Get(); ok {
-			_, searchBasedMatches, err := findSyntacticMatchesForCandidateFile(ctx, trace, index, file.path, *file)
-			if err == nil {
+			documentOpt, err := index.GetDocument(ctx, file.path)
+			if document, isSome := documentOpt.Get(); err == nil && isSome {
+				_, searchBasedMatches := findSyntacticMatchesForCandidateFile(ctx, trace, document, *file)
 				return searchBasedMatches
-			} else {
-				trace.Info("findSyntacticMatches failed, skipping filtering search-based results", log.Error(err))
 			}
+			trace.Info("findSyntacticMatches failed, skipping filtering search-based results", log.Error(err))
 		}
 		matches := []SearchBasedMatch{}
 		for _, match := range file.matches {
