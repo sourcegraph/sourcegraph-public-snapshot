@@ -24,6 +24,10 @@ server {
         proxy_pass ${API_ENDPOINT}/api/;
     }
 
+    location ~ ^/.+ {
+        return 301 $scheme://$host/maintaince;
+    }
+
     error_page   404 /;
     error_page   500 502 503 504  /50x.html;
     location = /50x.html {
