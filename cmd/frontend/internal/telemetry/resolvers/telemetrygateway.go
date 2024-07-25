@@ -79,14 +79,14 @@ func convertToTelemetryGatewayEvent(
 			var err error
 			privateMetadata, err = structpb.NewStruct(v)
 			if err != nil {
-				return nil, errors.Wrapf(err, "error converting privateMetadata to protobuf struct for event %d", i)
+				return nil, errors.Wrapf(err, "error converting privateMetadata to protobuf struct for event")
 			}
 
 		// Otherwise, nest the value within a proto struct
 		default:
 			protoValue, err := structpb.NewValue(v)
 			if err != nil {
-				return nil, errors.Wrapf(err, "error converting privateMetadata to protobuf value for event %d", i)
+				return nil, errors.Wrapf(err, "error converting privateMetadata to protobuf value for event")
 			}
 			privateMetadata = &structpb.Struct{
 				Fields: map[string]*structpb.Value{"value": protoValue},

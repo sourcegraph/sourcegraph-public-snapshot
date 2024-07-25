@@ -67,14 +67,30 @@ func (r *Resolver) ExportedEvents(ctx context.Context, args *graphqlbackend.Expo
 	}, nil
 }
 
+// knownBadEvents collects 'feature':'action' combinations that produce invalid
+// events we already know about and/or have already shipped fixes for, and silences
+// error logs for them.
+var knownBadEvents = map[string]string{
+	// Noisy one fixed in https://github.com/sourcegraph/cody/pull/4077
+	// VSCode 1.18+
+	"cody.completion": "persistence:present",
+}
+
 func (r *Resolver) RecordEvents(ctx context.Context, args *graphqlbackend.RecordEventsArgs) (*graphqlbackend.EmptyResponse, error) {
 	if args == nil || len(args.Events) == 0 {
 		return nil, errors.New("no events provided")
 	}
+
 	gatewayEvents := make([]*telemetrygatewayv1.Event, 0, len(args.Events))
 	for _, ev := range args.Events {
 		gatewayEvent, err := convertToTelemetryGatewayEvent(ctx, time.Now(), telemetrygatewayv1.DefaultEventIDFunc, ev)
 		if err != nil {
+			if knownAction, ok := knownBadEvents[ev.Feature]; ok && knownAction == ev.Action {
+				// We already know this event is a problem - just error out
+				// without logging
+				return nil, errors.Wrap(err, "invalid events provided")
+			}
+
 			// This is an important failure, make sure we surface it, as it could be
 			// an implementation error.
 			data, _ := json.Marshal(args.Events)
@@ -85,6 +101,7 @@ func (r *Resolver) RecordEvents(ctx context.Context, args *graphqlbackend.Record
 		}
 		gatewayEvents = append(gatewayEvents, gatewayEvent)
 	}
+
 	if err := r.telemetryStore.StoreEvents(ctx, gatewayEvents); err != nil {
 		// This is an important failure, make sure we surface it, as it could be
 		// an implementation error.
