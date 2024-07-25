@@ -1,78 +1,103 @@
 import React, { useCallback, useState } from 'react'
 
+import { Duration } from '@bufbuild/protobuf'
+
 import { logger } from '@sourcegraph/common'
-import { useMutation } from '@sourcegraph/http-client'
 import { Button, Modal, Input, H3, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
-import type {
-    CodyGatewayRateLimitFields,
-    Scalars,
-    UpdateCodyGatewayConfigResult,
-    UpdateCodyGatewayConfigVariables,
-} from '../../../../graphql-operations'
 
-import { UPDATE_CODY_GATEWAY_CONFIG } from './backend'
+import { type EnterprisePortalEnvironment, useUpdateCodyGatewayAccess } from './enterpriseportal'
+import type { CodyGatewayRateLimit } from './enterpriseportalgen/codyaccess_pb'
 import { numberFormatter, prettyInterval } from './utils'
 
 export interface CodyGatewayRateLimitModalProps {
+    enterprisePortalEnvironment: EnterprisePortalEnvironment
     onCancel: () => void
     afterSave: () => void
-    productSubscriptionID: Scalars['ID']
-    current: CodyGatewayRateLimitFields | null
+    productSubscriptionUUID: string
+    current: CodyGatewayRateLimit | undefined
     mode: 'chat' | 'code' | 'embeddings'
 }
 
 export const CodyGatewayRateLimitModal: React.FunctionComponent<
     React.PropsWithChildren<CodyGatewayRateLimitModalProps>
-> = ({ onCancel, afterSave, productSubscriptionID, current, mode }) => {
+> = ({ onCancel, afterSave, productSubscriptionUUID, current, mode, enterprisePortalEnvironment }) => {
     const labelId = 'codyGatewayRateLimit'
 
     const [limit, setLimit] = useState<number>(Number(current?.limit) ?? 100)
     const onChangeLimit = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        setLimit(parseInt(event.target.value, 10))
+        setLimit(parseInt(event.target.value || '0', 10))
     }, [])
 
-    const [limitInterval, setLimitInterval] = useState<number>(current?.intervalSeconds ?? 60 * 60)
+    const [limitInterval, setLimitInterval] = useState<Duration>(
+        current?.intervalDuration ?? new Duration({ seconds: BigInt(60 * 60) })
+    )
     const onChangeLimitInterval = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        setLimitInterval(parseInt(event.target.value, 10))
+        setLimitInterval(new Duration({ seconds: BigInt(parseInt(event.target.value || '0', 10)) }))
     }, [])
 
-    const [updateCodyGatewayConfig, { loading, error }] = useMutation<
-        UpdateCodyGatewayConfigResult,
-        UpdateCodyGatewayConfigVariables
-    >(UPDATE_CODY_GATEWAY_CONFIG)
+    const {
+        error,
+        isPending: loading,
+        mutateAsync: updateCodyGatewayAccess,
+    } = useUpdateCodyGatewayAccess(enterprisePortalEnvironment)
 
     const onSubmit = useCallback<React.FormEventHandler>(
         async event => {
             event.preventDefault()
 
             try {
-                await updateCodyGatewayConfig({
-                    variables: {
-                        productSubscriptionID,
-                        access: {
-                            ...(mode === 'chat'
-                                ? {
-                                      chatCompletionsRateLimit: String(limit),
-                                      chatCompletionsRateLimitIntervalSeconds: limitInterval,
-                                  }
-                                : {}),
+                // Explicitly indicate what should be updated - optional, but
+                // just to be clear/safe.
+                const paths: string[] = []
+                switch (mode) {
+                    case 'chat': {
+                        paths.push('chat_completions_rate_limit.limit', 'chat_completions_rate_limit.interval_duration')
+                        break
+                    }
+                    case 'code': {
+                        paths.push('code_completions_rate_limit.limit', 'code_completions_rate_limit.interval_duration')
+                        break
+                    }
+                    case 'embeddings': {
+                        paths.push('embeddings_rate_limit.limit', 'embeddings_rate_limit.interval_duration')
+                        break
+                    }
+                }
+                await updateCodyGatewayAccess({
+                    updateMask: { paths },
+                    access: {
+                        subscriptionId: productSubscriptionUUID,
+                        /**
+                         * All non-zero fields are included in the update
+                         */
+                        ...(mode === 'chat'
+                            ? {
+                                  chatCompletionsRateLimit: {
+                                      limit: BigInt(limit),
+                                      intervalDuration: limitInterval,
+                                  },
+                              }
+                            : {}),
 
-                            ...(mode === 'code'
-                                ? {
-                                      codeCompletionsRateLimit: String(limit),
-                                      codeCompletionsRateLimitIntervalSeconds: limitInterval,
-                                  }
-                                : {}),
+                        ...(mode === 'code'
+                            ? {
+                                  codeCompletionsRateLimit: {
+                                      limit: BigInt(limit),
+                                      intervalDuration: limitInterval,
+                                  },
+                              }
+                            : {}),
 
-                            ...(mode === 'embeddings'
-                                ? {
-                                      embeddingsRateLimit: String(limit),
-                                      embeddingsRateLimitIntervalSeconds: limitInterval,
-                                  }
-                                : {}),
-                        },
+                        ...(mode === 'embeddings'
+                            ? {
+                                  embeddingsRateLimit: {
+                                      limit: BigInt(limit),
+                                      intervalDuration: limitInterval,
+                                  },
+                              }
+                            : {}),
                     },
                 })
 
@@ -82,7 +107,7 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                 logger.error(error)
             }
         },
-        [updateCodyGatewayConfig, productSubscriptionID, limit, limitInterval, afterSave, mode]
+        [updateCodyGatewayAccess, productSubscriptionUUID, limit, limitInterval, afterSave, mode]
     )
 
     return (
@@ -133,12 +158,13 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                         min={1}
                         label="Rate limit interval"
                         description="The interval is defined in seconds. See below for a pretty-printed version."
-                        value={limitInterval}
+                        value={Number(limitInterval.seconds)}
                         onChange={onChangeLimitInterval}
                         message={
                             <>
-                                {numberFormatter.format(BigInt(limit))} {mode === 'embeddings' ? 'tokens' : 'requests'}{' '}
-                                per {prettyInterval(limitInterval)}
+                                {numberFormatter.format(BigInt(limit || 0))}{' '}
+                                {mode === 'embeddings' ? 'tokens' : 'requests'} per{' '}
+                                {prettyInterval(Number(limitInterval.seconds))}
                             </>
                         }
                     />
@@ -149,7 +175,7 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                     </Button>
                     <LoaderButton
                         type="submit"
-                        disabled={loading || limit <= 0 || limitInterval <= 0}
+                        disabled={loading || limit <= 0 || Number(limitInterval.seconds) <= 0}
                         variant="primary"
                         loading={loading}
                         alwaysShowLabel={true}

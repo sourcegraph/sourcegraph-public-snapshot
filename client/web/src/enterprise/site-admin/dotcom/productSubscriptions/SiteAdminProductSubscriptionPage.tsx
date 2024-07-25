@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { mdiPlus } from '@mdi/js'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -36,19 +37,23 @@ import {
     useProductSubscriptionLicensesConnection,
 } from './backend'
 import { CodyServicesSection } from './CodyServicesSection'
-import type { EnterprisePortalEnvironment } from './enterpriseportal'
+import { queryClient, type EnterprisePortalEnvironment } from './enterpriseportal'
 import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
-import { accessTokenPath, enterprisePortalID, errorForPath } from './utils'
+import { enterprisePortalID } from './utils'
 
 interface Props extends TelemetryV2Props {}
+
+export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (
+    <QueryClientProvider client={queryClient}>
+        <Page {...props} />
+    </QueryClientProvider>
+)
 
 /**
  * Displays a product subscription in the site admin area.
  */
-export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    telemetryRecorder,
-}) => {
+const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemetryRecorder }) => {
     const navigate = useNavigate()
     const { subscriptionUUID = '' } = useParams<{ subscriptionUUID: string }>()
     useEffect(() => telemetryRecorder.recordEvent('admin.productSubscription', 'view'), [telemetryRecorder])
@@ -110,14 +115,8 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
         return <LoadingSpinner />
     }
 
-    // If there's an error, and the entire request failed loading, simply render an error page.
-    // Otherwise, we want to get more specific with error handling.
-    if (
-        error &&
-        (error.networkError ||
-            error.clientErrors.length > 0 ||
-            !(error.graphQLErrors.length === 1 && errorForPath(error, accessTokenPath)))
-    ) {
+    // If there's an error, simply render an error page.
+    if (error) {
         return <ErrorAlert className="my-2" error={error} />
     }
 
@@ -215,12 +214,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                 <CodyServicesSection
                     enterprisePortalEnvironment={enterprisePortalEnvironment}
                     viewerCanAdminister={true}
-                    currentSourcegraphAccessToken={productSubscription.currentSourcegraphAccessToken}
-                    accessTokenError={errorForPath(error, accessTokenPath)}
-                    codyGatewayAccess={productSubscription.codyGatewayAccess}
-                    productSubscriptionID={productSubscription.id}
                     productSubscriptionUUID={subscriptionUUID}
-                    refetchSubscription={refetch}
                     telemetryRecorder={telemetryRecorder}
                 />
 

@@ -45,28 +45,6 @@ const siteAdminProductSubscriptionFragment = gql`
     }
 `
 
-export const CODY_GATEWAY_ACCESS_FIELDS_FRAGMENT = gql`
-    fragment CodyGatewayAccessFields on CodyGatewayAccess {
-        enabled
-        codeCompletionsRateLimit {
-            ...CodyGatewayRateLimitFields
-        }
-        chatCompletionsRateLimit {
-            ...CodyGatewayRateLimitFields
-        }
-        embeddingsRateLimit {
-            ...CodyGatewayRateLimitFields
-        }
-    }
-
-    fragment CodyGatewayRateLimitFields on CodyGatewayRateLimit {
-        allowedModels
-        source
-        limit
-        intervalSeconds
-    }
-`
-
 export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
     query DotComProductSubscription($uuid: String!) {
         dotcom {
@@ -114,33 +92,18 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
                     createdAt
                 }
                 currentSourcegraphAccessToken
-                codyGatewayAccess {
-                    ...CodyGatewayAccessFields
-                }
                 createdAt
                 isArchived
                 url
             }
         }
     }
-
-    ${CODY_GATEWAY_ACCESS_FIELDS_FRAGMENT}
 `
 
 export const ARCHIVE_PRODUCT_SUBSCRIPTION = gql`
     mutation ArchiveProductSubscription($id: ID!) {
         dotcom {
             archiveProductSubscription(id: $id) {
-                alwaysNil
-            }
-        }
-    }
-`
-
-export const UPDATE_CODY_GATEWAY_CONFIG = gql`
-    mutation UpdateCodyGatewayConfig($productSubscriptionID: ID!, $access: UpdateCodyGatewayAccessInput!) {
-        dotcom {
-            updateProductSubscription(id: $productSubscriptionID, update: { codyGatewayAccess: $access }) {
                 alwaysNil
             }
         }

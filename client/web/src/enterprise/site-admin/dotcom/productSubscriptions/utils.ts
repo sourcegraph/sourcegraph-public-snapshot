@@ -39,8 +39,6 @@ export function errorForPath(error: ApolloError | undefined, path: (string | num
     return error?.graphQLErrors.find(error => isEqual(error.path, path))
 }
 
-export const accessTokenPath = ['dotcom', 'productSubscription', 'currentSourcegraphAccessToken']
-
 export const numberFormatter = new Intl.NumberFormat()
 
 /**
