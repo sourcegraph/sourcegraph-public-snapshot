@@ -6,6 +6,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 type Extensions struct {
@@ -13,7 +14,7 @@ type Extensions struct {
 	DateRange string
 	Grouping  string
 	DB        database.DB
-	Cache     bool
+	Cache     redispool.KeyValue
 }
 
 func (e *Extensions) Jetbrains() (*AnalyticsFetcher, error) {

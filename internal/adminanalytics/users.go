@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 type Users struct {
@@ -14,23 +15,23 @@ type Users struct {
 	DateRange string
 	Grouping  string
 	DB        database.DB
-	Cache     bool
+	Cache     redispool.KeyValue
 }
 
-func (s *Users) Activity() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{})
+func (u *Users) Activity() (*AnalyticsFetcher, error) {
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(u.DateRange, u.Grouping, []string{})
 	if err != nil {
 		return nil, err
 	}
 
 	return &AnalyticsFetcher{
-		db:           s.DB,
-		dateRange:    s.DateRange,
-		grouping:     s.Grouping,
+		db:           u.DB,
+		dateRange:    u.DateRange,
+		grouping:     u.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Users:Activity",
-		cache:        s.Cache,
+		cache:        u.Cache,
 	}, nil
 }
 
@@ -74,22 +75,22 @@ const (
 	`
 )
 
-func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) {
-	cacheKey := fmt.Sprintf("Users:%s:%s", "Frequencies", f.DateRange)
-	if f.Cache {
-		if nodes, err := getArrayFromCache[UsersFrequencyNode](cacheKey); err == nil {
+func (u *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) {
+	cacheKey := fmt.Sprintf("Users:%s:%s", "Frequencies", u.DateRange)
+	if u.Cache != nil {
+		if nodes, err := getArrayFromCache[UsersFrequencyNode](u.Cache, cacheKey); err == nil {
 			return nodes, nil
 		}
 	}
 
-	_, dateRangeCond, err := makeDateParameters(f.DateRange, f.Grouping, "event_logs.timestamp")
+	_, dateRangeCond, err := makeDateParameters(u.DateRange, u.Grouping, "event_logs.timestamp")
 	if err != nil {
 		return nil, err
 	}
 
 	query := sqlf.Sprintf(frequencyQuery, dateRangeCond, sqlf.Join(getDefaultConds(), ") AND ("))
 
-	rows, err := f.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	rows, err := u.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 
 	if err != nil {
 		return nil, err
@@ -108,8 +109,11 @@ func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) 
 		nodes = append(nodes, &UsersFrequencyNode{data})
 	}
 
-	if err := setArrayToCache(cacheKey, nodes); err != nil {
-		return nil, err
+	if u.Cache != nil {
+		err = setArrayToCache(u.Cache, cacheKey, nodes)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return nodes, nil
@@ -146,10 +150,10 @@ const (
 	`
 )
 
-func (f *Users) MonthlyActiveUsers(ctx context.Context) ([]*MonthlyActiveUsersRow, error) {
+func (u *Users) MonthlyActiveUsers(ctx context.Context) ([]*MonthlyActiveUsersRow, error) {
 	cacheKey := fmt.Sprintf("Users:%s", "MAU")
-	if f.Cache {
-		if nodes, err := getArrayFromCache[MonthlyActiveUsersRow](cacheKey); err == nil {
+	if u.Cache != nil {
+		if nodes, err := getArrayFromCache[MonthlyActiveUsersRow](u.Cache, cacheKey); err == nil {
 			return nodes, nil
 		}
 	}
@@ -158,7 +162,7 @@ func (f *Users) MonthlyActiveUsers(ctx context.Context) ([]*MonthlyActiveUsersRo
 
 	query := sqlf.Sprintf(mauQuery, from, to, sqlf.Join(getDefaultConds(), ") AND ("))
 
-	rows, err := f.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	rows, err := u.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -175,8 +179,11 @@ func (f *Users) MonthlyActiveUsers(ctx context.Context) ([]*MonthlyActiveUsersRo
 		nodes = append(nodes, &MonthlyActiveUsersRow{data})
 	}
 
-	if err := setArrayToCache(cacheKey, nodes); err != nil {
-		return nil, err
+	if u.Cache != nil {
+		err = setArrayToCache(u.Cache, cacheKey, nodes)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return nodes, nil

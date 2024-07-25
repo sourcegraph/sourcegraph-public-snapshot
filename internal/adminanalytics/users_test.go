@@ -21,10 +21,6 @@ type EventLogRow struct {
 	Time        time.Time
 }
 
-func init() {
-	cacheDisabledInTest = true
-}
-
 func createEventLogs(db database.DB, rows []EventLogRow) error {
 	for _, args := range rows {
 		_, err := db.ExecContext(context.Background(), `
@@ -102,7 +98,6 @@ func TestUserActivityLastMonth(t *testing.T) {
 		DateRange: "LAST_MONTH",
 		Grouping:  "DAILY",
 		DB:        db,
-		Cache:     false,
 	}
 
 	fetcher, err := store.Activity()
@@ -203,7 +198,6 @@ func TestUserFrequencyLastMonth(t *testing.T) {
 		DateRange: "LAST_MONTH",
 		Grouping:  "DAILY",
 		DB:        db,
-		Cache:     false,
 	}
 
 	results, err := store.Frequencies(ctx)
@@ -294,7 +288,6 @@ func TestMonthlyActiveUsersLast3Month(t *testing.T) {
 		DateRange: "LAST_MONTH",
 		Grouping:  "DAILY",
 		DB:        db,
-		Cache:     false,
 	}
 
 	results, err := store.MonthlyActiveUsers(ctx)

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 type CodeInsights struct {
@@ -11,7 +12,7 @@ type CodeInsights struct {
 	DateRange string
 	Grouping  string
 	DB        database.DB
-	Cache     bool
+	Cache     redispool.KeyValue
 }
 
 // Insights:Hovers

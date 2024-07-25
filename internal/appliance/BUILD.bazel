@@ -51,6 +51,7 @@ go_test(
         "status_test.go",
         "versions_test.go",
     ],
+    data = glob(["testdata/**"]),
     embed = [":appliance"],
     deps = [
         "@com_github_google_go_cmp//cmp",

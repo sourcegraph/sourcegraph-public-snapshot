@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 type AnalyticsFetcher struct {
@@ -17,7 +18,7 @@ type AnalyticsFetcher struct {
 	grouping     string
 	nodesQuery   *sqlf.Query
 	summaryQuery *sqlf.Query
-	cache        bool
+	cache        redispool.KeyValue
 }
 
 type AnalyticsNodeData struct {
@@ -42,8 +43,8 @@ func (n *AnalyticsNode) RegisteredUsers() float64 { return n.Data.RegisteredUser
 func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) {
 	cacheKey := fmt.Sprintf(`%s:%s:%s:%s`, f.group, f.dateRange, f.grouping, "nodes")
 
-	if f.cache {
-		if nodes, err := getArrayFromCache[AnalyticsNode](cacheKey); err == nil {
+	if f.cache != nil {
+		if nodes, err := getArrayFromCache[AnalyticsNode](f.cache, cacheKey); err == nil {
 			return nodes, nil
 		}
 	}
@@ -106,8 +107,11 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 		allNodes = append(allNodes, node)
 	}
 
-	if err := setArrayToCache(cacheKey, allNodes); err != nil {
-		return nil, err
+	if f.cache != nil {
+		err = setArrayToCache(f.cache, cacheKey, allNodes)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return allNodes, nil
@@ -137,8 +141,8 @@ func (s *AnalyticsSummary) TotalRegisteredUsers() float64 { return s.Data.TotalR
 
 func (f *AnalyticsFetcher) Summary(ctx context.Context) (*AnalyticsSummary, error) {
 	cacheKey := fmt.Sprintf(`%s:%s:%s:%s`, f.group, f.dateRange, f.grouping, "summary")
-	if f.cache {
-		if summary, err := getItemFromCache[AnalyticsSummary](cacheKey); err == nil {
+	if f.cache != nil {
+		if summary, err := getItemFromCache[AnalyticsSummary](f.cache, cacheKey); err == nil {
 			return summary, nil
 		}
 	}
@@ -151,8 +155,11 @@ func (f *AnalyticsFetcher) Summary(ctx context.Context) (*AnalyticsSummary, erro
 
 	summary := &AnalyticsSummary{data}
 
-	if err := setItemToCache(cacheKey, summary); err != nil {
-		return nil, err
+	if f.cache != nil {
+		err := setItemToCache(f.cache, cacheKey, summary)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return summary, nil

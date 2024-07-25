@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,11 +26,11 @@ func (s *CodeIntelTopRepositories) Kind() string      { return s.Kind_ }
 func (s *CodeIntelTopRepositories) Precision() string { return s.Precision_ }
 func (s *CodeIntelTopRepositories) HasPrecise() bool  { return s.HasPrecise_ }
 
-func GetCodeIntelTopRepositories(ctx context.Context, db database.DB, cache bool, dateRange string) ([]*CodeIntelTopRepositories, error) {
+func GetCodeIntelTopRepositories(ctx context.Context, db database.DB, cache redispool.KeyValue, dateRange string) ([]*CodeIntelTopRepositories, error) {
 	cacheKey := fmt.Sprintf(`CodeIntelTopRepositories:%s`, dateRange)
 
-	if cache {
-		if nodes, err := getArrayFromCache[CodeIntelTopRepositories](cacheKey); err == nil {
+	if cache != nil {
+		if nodes, err := getArrayFromCache[CodeIntelTopRepositories](cache, cacheKey); err == nil {
 			return nodes, nil
 		}
 	}
@@ -112,8 +113,11 @@ func GetCodeIntelTopRepositories(ctx context.Context, db database.DB, cache bool
 		items = append(items, &item)
 	}
 
-	if err := setArrayToCache(cacheKey, items); err != nil {
-		return nil, err
+	if cache != nil {
+		err = setArrayToCache(cache, cacheKey, items)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return items, nil

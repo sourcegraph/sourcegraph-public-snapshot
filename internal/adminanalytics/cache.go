@@ -7,20 +7,11 @@ import (
 )
 
 var (
-	MockStore           redispool.KeyValue
-	scopeKey            = "adminanalytics:"
-	cacheDisabledInTest = false
+	scopeKey = "adminanalytics:"
 )
 
-func store() redispool.KeyValue {
-	if MockStore != nil {
-		return MockStore
-	}
-	return redispool.Store
-}
-
-func getArrayFromCache[K interface{}](cacheKey string) ([]*K, error) {
-	data, err := store().Get(scopeKey + cacheKey).String()
+func getArrayFromCache[K interface{}](cache redispool.KeyValue, cacheKey string) ([]*K, error) {
+	data, err := cache.Get(scopeKey + cacheKey).String()
 	if err != nil {
 		return nil, err
 	}
@@ -34,8 +25,8 @@ func getArrayFromCache[K interface{}](cacheKey string) ([]*K, error) {
 	return nodes, nil
 }
 
-func getItemFromCache[T interface{}](cacheKey string) (*T, error) {
-	data, err := store().Get(scopeKey + cacheKey).String()
+func getItemFromCache[T interface{}](cache redispool.KeyValue, cacheKey string) (*T, error) {
+	data, err := cache.Get(scopeKey + cacheKey).String()
 	if err != nil {
 		return nil, err
 	}
@@ -49,32 +40,28 @@ func getItemFromCache[T interface{}](cacheKey string) (*T, error) {
 	return &summary, nil
 }
 
-func setDataToCache(key string, data string, expireSeconds int) error {
-	if cacheDisabledInTest {
-		return nil
-	}
-
+func setDataToCache(cache redispool.KeyValue, key string, data string, expireSeconds int) error {
 	if expireSeconds == 0 {
 		expireSeconds = 24 * 60 * 60 // 1 day
 	}
 
-	return store().SetEx(scopeKey+key, expireSeconds, data)
+	return cache.SetEx(scopeKey+key, expireSeconds, data)
 }
 
-func setArrayToCache[T interface{}](cacheKey string, nodes []*T) error {
+func setArrayToCache[T interface{}](cache redispool.KeyValue, cacheKey string, nodes []*T) error {
 	data, err := json.Marshal(nodes)
 	if err != nil {
 		return err
 	}
 
-	return setDataToCache(cacheKey, string(data), 0)
+	return setDataToCache(cache, cacheKey, string(data), 0)
 }
 
-func setItemToCache[T interface{}](cacheKey string, summary *T) error {
+func setItemToCache[T interface{}](cache redispool.KeyValue, cacheKey string, summary *T) error {
 	data, err := json.Marshal(summary)
 	if err != nil {
 		return err
 	}
 
-	return setDataToCache(cacheKey, string(data), 0)
+	return setDataToCache(cache, cacheKey, string(data), 0)
 }

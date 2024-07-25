@@ -6,6 +6,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 type CodeIntel struct {
@@ -13,7 +14,7 @@ type CodeIntel struct {
 	DateRange string
 	Grouping  string
 	DB        database.DB
-	Cache     bool
+	Cache     redispool.KeyValue
 }
 
 func (s *CodeIntel) ReferenceClicks() (*AnalyticsFetcher, error) {
