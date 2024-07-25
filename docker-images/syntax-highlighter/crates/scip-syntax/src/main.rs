@@ -2,7 +2,7 @@ use std::{num::NonZeroUsize, process};
 
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::{Parser, Subcommand};
-use scip_syntax::index::{index_command, AnalysisMode, IndexMode, IndexOptions, TarMode};
+use scip_syntax::index::{index_command, AnalysisFeatures, IndexMode, IndexOptions, TarMode};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -10,6 +10,16 @@ use scip_syntax::index::{index_command, AnalysisMode, IndexMode, IndexOptions, T
 struct Cli {
     #[command(subcommand)]
     command: Commands,
+}
+
+#[derive(Parser, Clone, Debug)]
+struct AnalysisFeaturesOptions {
+    #[arg(long, default_value_t = false)]
+    no_global_references: bool,
+    #[arg(long, default_value_t = false)]
+    no_locals: bool,
+    #[arg(long, default_value_t = false)]
+    no_global_definitions: bool,
 }
 
 #[derive(Parser, Clone, Debug)]
@@ -22,9 +32,9 @@ struct IndexCommandOptions {
     #[arg(short, long, default_value = "./index.scip")]
     out: String,
 
-    /// Analysis mode
-    #[arg(short, long, default_value = "full")]
-    mode: AnalysisMode,
+    /// Analysis features
+    #[command(flatten)]
+    analysis: AnalysisFeaturesOptions,
 
     /// Fail on first error
     #[arg(long, default_value_t = false)]
@@ -210,7 +220,11 @@ fn run_index_command(options: IndexCommandOptions, mode: IndexMode) -> anyhow::R
         options.evaluate.map(Utf8PathBuf::from),
         options.jobs,
         IndexOptions {
-            analysis_mode: options.mode,
+            analysis_features: AnalysisFeatures {
+                locals: !options.analysis.no_locals,
+                global_references: !options.analysis.no_global_references,
+                global_definitions: !options.analysis.no_global_definitions,
+            },
             fail_fast: options.fail_fast,
         },
     )
