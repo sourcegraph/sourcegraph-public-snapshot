@@ -234,7 +234,7 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Equal(t, -1, cfg.KubernetesSecurityContextRunAsUser)
 	assert.Equal(t, -1, cfg.KubernetesSecurityContextRunAsGroup)
 	assert.Equal(t, 1000, cfg.KubernetesSecurityContextFSGroup)
-	assert.False(t, cfg.KubernetesSingleJobPod)
+	assert.True(t, cfg.KubernetesSingleJobPod)
 	assert.Equal(t, "emptyDir", cfg.KubernetesJobVolumeType)
 	assert.Equal(t, "5Gi", cfg.KubernetesJobVolumeSize)
 	assert.Empty(t, cfg.KubernetesAdditionalJobVolumes)
