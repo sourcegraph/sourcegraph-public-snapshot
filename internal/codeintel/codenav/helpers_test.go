@@ -109,6 +109,24 @@ func setupUpload(commit api.CommitID, root string, documents ...fakeDocument) (u
 		return core.None[*scip.Document](), nil
 	})
 
+	lsifStore.SCIPDocumentsFunc.SetDefaultHook(func(ctx context.Context, uploadId int, paths []core.UploadRelPath) (map[core.UploadRelPath]*scip.Document, error) {
+		if id != uploadId {
+			return nil, errors.New("unknown upload id")
+		}
+		results := make(map[core.UploadRelPath]*scip.Document)
+		for _, path := range paths {
+			for _, document := range documents {
+				if document.path.Equal(path) {
+					results[path] = &scip.Document{
+						RelativePath: document.path.RawValue(),
+						Occurrences:  document.Occurrences(),
+					}
+				}
+			}
+		}
+		return results, nil
+	})
+
 	return uploadsshared.CompletedUpload{
 		ID:     id,
 		Commit: string(commit),
@@ -176,6 +194,16 @@ func noopTranslator() GitTreeTranslator {
 type MatchLike interface {
 	GetRange() scip.Range
 	GetIsDefinition() bool
+	GetSurroundingContent() string
+}
+
+func expectContent[T MatchLike](t *testing.T, matches []T, range_ scip.Range, content string) {
+	t.Helper()
+	for _, match := range matches {
+		if match.GetRange().CompareStrict(range_) == 0 {
+			require.Equal(t, content, match.GetSurroundingContent())
+		}
+	}
 }
 
 func expectRanges[T MatchLike](t *testing.T, matches []T, ranges ...scip.Range) {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
@@ -76,6 +77,30 @@ func TestMappedIndex_GetDocumentWithTranslation(t *testing.T) {
 	allOccurrences, err := mappedDocument.GetOccurrences(ctx)
 	require.NoError(t, err)
 	require.Len(t, allOccurrences, 3)
+}
+
+func TestMappedIndex_GetDocuments(t *testing.T) {
+	targetCommit, upload, lsifStore := setupSimpleUpload()
+	pathA := core.NewRepoRelPathUnchecked("indexRoot/a.go")
+	pathB := core.NewRepoRelPathUnchecked("indexRoot/b.go")
+	pathUnknown := core.NewRepoRelPathUnchecked("indexRoot/unknown.go")
+	diffPrefetchWasCalled := false
+	translator := NewMockGitTreeTranslator()
+	translator.PrefetchFunc.PushHook(func(_ context.Context, _, _ api.CommitID, paths []core.RepoRelPath) {
+		// NOTE(id: mapped-index-over-fetching-diffs) pathUnknown shows up here even though
+		// it does not have a document in the index.
+		require.ElementsMatch(t, []core.RepoRelPath{pathA, pathB, pathUnknown}, paths)
+		diffPrefetchWasCalled = true
+	})
+
+	mappedIndex := NewMappedIndexFromTranslator(lsifStore, translator, upload, targetCommit)
+	documents, err := mappedIndex.GetDocuments(context.Background(), []core.RepoRelPath{
+		pathA, pathB, pathUnknown,
+	})
+
+	require.NoError(t, err)
+	require.ElementsMatch(t, []core.RepoRelPath{pathA, pathB}, maps.Keys(documents))
+	require.True(t, diffPrefetchWasCalled)
 }
 
 // This test is here to check MappedDocument 's internals, by getting all occurrences first,

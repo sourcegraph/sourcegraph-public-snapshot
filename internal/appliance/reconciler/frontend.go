@@ -183,7 +183,6 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 func (r *Reconciler) reconcileFrontendService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	name := "sourcegraph-frontend"
 	cfg := sg.Spec.Frontend
-
 	logger := log.FromContext(ctx).WithValues("kind", "from ingress creation")
 	namespacedName := types.NamespacedName{Namespace: sg.Namespace, Name: name}
 	existingObj := &corev1.Service{}
@@ -195,7 +194,7 @@ func (r *Reconciler) reconcileFrontendService(ctx context.Context, sg *config.So
 				{Name: "http", Port: 30080, TargetPort: intstr.FromString("http")},
 			}
 			svc.Spec.Selector = map[string]string{
-				"app": name,
+				"app": "sourcegraph-appliance",
 			}
 
 			config.MarkObjectForAdoption(&svc)

@@ -99,7 +99,7 @@ func NewClient(ctx context.Context, out *std.Output) (*Client, error) {
 // If no builds are found, an error will be returned.
 func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, branch string) (*buildkite.Build, error) {
 	builds, _, err := c.bk.Builds.ListByPipeline(BuildkiteOrg, pipeline, &buildkite.BuildsListOptions{
-		Branch: branch,
+		Branch: []string{branch},
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "404 Not Found") {

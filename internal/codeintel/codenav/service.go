@@ -154,20 +154,27 @@ func (s *Service) GetHover(ctx context.Context, args PositionalRequestArgs, requ
 	ids := genslices.Map(uploads, func(u uploadsshared.CompletedUpload) int { return u.ID })
 	lookupSymbols := genslices.Map(orderedMonikers, func(m precise.QualifiedMonikerData) string { return m.Identifier })
 
-	locations, _, err := s.lsifstore.GetBulkSymbolUsages(ctx, shared.UsageKindDefinition, ids, lookupSymbols, DefinitionsLimit, 0)
+	usages, _, err := s.lsifstore.GetSymbolUsages(ctx, lsifstore.SymbolUsagesOptions{
+		UsageKind:           shared.UsageKindDefinition,
+		UploadIDs:           ids,
+		LookupSymbols:       lookupSymbols,
+		SkipPathsByUploadID: nil,
+		Limit:               DefinitionsLimit,
+		Offset:              0,
+	})
 	if err != nil {
-		return "", shared.Range{}, false, errors.Wrap(err, "lsifstore.GetBulkSymbolUsages")
+		return "", shared.Range{}, false, errors.Wrap(err, "lsifstore.GetSymbolUsages")
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(usages)))
 
-	for i := range locations {
+	for _, usage := range usages {
 		// Fetch hover text attached to a definition in the defining index
 		text, _, exists, err := s.lsifstore.GetHover(
 			ctx,
-			locations[i].UploadID,
-			locations[i].Path,
-			locations[i].Range.Start.Line,
-			locations[i].Range.Start.Character,
+			usage.UploadID,
+			usage.Path,
+			usage.Range.Start.Line,
+			usage.Range.Start.Character,
 		)
 		if err != nil {
 			return "", shared.Range{}, false, errors.Wrap(err, "lsifStore.Hover")
@@ -1056,9 +1063,10 @@ func (s *Service) getSyntacticUpload(ctx context.Context, trace observation.Trac
 }
 
 type SearchBasedMatch struct {
-	Path         core.RepoRelPath
-	Range        scip.Range
-	IsDefinition bool
+	Path               core.RepoRelPath
+	Range              scip.Range
+	SurroundingContent string
+	IsDefinition       bool
 }
 
 func (s SearchBasedMatch) GetRange() scip.Range {
@@ -1069,19 +1077,26 @@ func (s SearchBasedMatch) GetIsDefinition() bool {
 	return s.IsDefinition
 }
 
+func (s SearchBasedMatch) GetSurroundingContent() string {
+	return s.SurroundingContent
+}
+
 type SyntacticMatch struct {
-	Path         core.RepoRelPath
-	Range        scip.Range
-	IsDefinition bool
-	Symbol       string
+	Path               core.RepoRelPath
+	Range              scip.Range
+	SurroundingContent string
+	IsDefinition       bool
+	Symbol             string
 }
 
 func (s SyntacticMatch) GetRange() scip.Range {
 	return s.Range
 }
-
 func (s SyntacticMatch) GetIsDefinition() bool {
 	return s.IsDefinition
+}
+func (s SyntacticMatch) GetSurroundingContent() string {
+	return s.SurroundingContent
 }
 
 type SyntacticUsagesResult struct {
