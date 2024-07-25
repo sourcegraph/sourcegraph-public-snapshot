@@ -33,6 +33,7 @@ type candidateMatch struct {
 }
 
 type candidateFile struct {
+	path                core.RepoRelPath
 	matches             []candidateMatch // Guaranteed to be sorted by range
 	didSearchEntireFile bool             // Or did we hit the search count limit?
 }
@@ -60,16 +61,16 @@ func findCandidateOccurrencesViaSearch(
 	trace observation.TraceLogger,
 	client searchclient.SearchClient,
 	args searchArgs,
-) (orderedmap.OrderedMap[core.RepoRelPath, candidateFile], error) {
+) ([]candidateFile, error) {
 	if args.identifier == "" {
-		return *orderedmap.New[core.RepoRelPath, candidateFile](), nil
+		return []candidateFile{}, nil
 	}
 	resultMap := *orderedmap.New[core.RepoRelPath, candidateFile]()
 	// TODO: countLimit should be dependent on the number of requested usages, with a configured global limit
 	// For now we're matching the current web app with 500
 	searchResults, err := executeQuery(ctx, client, trace, args, "file", 500, 0)
 	if err != nil {
-		return resultMap, err
+		return []candidateFile{}, err
 	}
 
 	nonFileMatches := 0
@@ -109,8 +110,10 @@ func findCandidateOccurrencesViaSearch(
 			return s1.range_.CompareStrict(s2.range_)
 		})
 		// OK to use Unchecked method here as search API only returns repo-root relative paths
-		_, alreadyPresent := resultMap.Set(core.NewRepoRelPathUnchecked(path), candidateFile{
+		relPath := core.NewRepoRelPathUnchecked(path)
+		_, alreadyPresent := resultMap.Set(relPath, candidateFile{
 			matches:             matches,
+			path:                relPath,
 			didSearchEntireFile: !fileMatch.LimitHit,
 		})
 		if alreadyPresent {
@@ -129,7 +132,11 @@ func findCandidateOccurrencesViaSearch(
 		trace.Warn("Saw mismatched file paths between chunk matches in the same FileMatch. Report this to the search-platform")
 	}
 
-	return resultMap, nil
+	results := make([]candidateFile, 0, resultMap.Len())
+	for pair := resultMap.Oldest(); pair != nil; pair = pair.Next() {
+		results = append(results, pair.Value)
+	}
+	return results, nil
 }
 
 type symbolData struct {
@@ -406,14 +413,10 @@ func syntacticUsagesImpl(
 		}
 	}
 
-	tasks := make([]orderedmap.Pair[core.RepoRelPath, candidateFile], 0, candidateMatches.Len())
-	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
-		tasks = append(tasks, *pair)
-	}
-	results := conciter.Map(tasks, func(pair *orderedmap.Pair[core.RepoRelPath, candidateFile]) []SyntacticMatch {
+	results := conciter.Map(candidateMatches, func(file *candidateFile) []SyntacticMatch {
 		// We're assuming the index we found earlier contains the relevant SCIP document
 		// see NOTE(id: single-syntactic-upload)
-		syntacticMatches, _, err := findSyntacticMatchesForCandidateFile(ctx, trace, mappedIndex, (*pair).Key, (*pair).Value)
+		syntacticMatches, _, err := findSyntacticMatchesForCandidateFile(ctx, trace, mappedIndex, file.path, *file)
 		if err != nil {
 			// TODO: Errors that are not "no index found in the DB" should be reported
 			// TODO: Track metrics about how often this happens (GRAPH-693)
@@ -447,7 +450,7 @@ func searchBasedUsagesImpl(
 	}
 
 	var matchResults struct {
-		candidateMatches orderedmap.OrderedMap[core.RepoRelPath, candidateFile]
+		candidateMatches []candidateFile
 		err              error
 	}
 	var symbolResults struct {
@@ -471,14 +474,9 @@ func searchBasedUsagesImpl(
 	candidateMatches := matchResults.candidateMatches
 	candidateSymbols := symbolResults.candidateSymbols
 
-	tasks := make([]orderedmap.Pair[core.RepoRelPath, candidateFile], 0, candidateMatches.Len())
-	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
-		tasks = append(tasks, *pair)
-	}
-
-	results := conciter.Map(tasks, func(pair *orderedmap.Pair[core.RepoRelPath, candidateFile]) []SearchBasedMatch {
+	results := conciter.Map(candidateMatches, func(file *candidateFile) []SearchBasedMatch {
 		if index, ok := syntacticIndex.Get(); ok {
-			_, searchBasedMatches, err := findSyntacticMatchesForCandidateFile(ctx, trace, index, pair.Key, pair.Value)
+			_, searchBasedMatches, err := findSyntacticMatchesForCandidateFile(ctx, trace, index, file.path, *file)
 			if err == nil {
 				return searchBasedMatches
 			} else {
@@ -486,12 +484,12 @@ func searchBasedUsagesImpl(
 			}
 		}
 		matches := []SearchBasedMatch{}
-		for _, match := range pair.Value.matches {
+		for _, match := range file.matches {
 			matches = append(matches, SearchBasedMatch{
-				Path:               pair.Key,
+				Path:               file.path,
 				Range:              match.range_,
 				SurroundingContent: match.surroundindContent,
-				IsDefinition:       candidateSymbols.Contains(pair.Key, match.range_),
+				IsDefinition:       candidateSymbols.Contains(file.path, match.range_),
 			})
 		}
 		return matches
