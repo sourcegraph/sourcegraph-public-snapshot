@@ -9,7 +9,9 @@ import (
 // DefaultAssetPath is the default path where assets should be loaded from. It is primarily used when
 // * AssetPath is empty
 // * env var SRC_ASSETS_DIR is empty
-const DefaultAssetPath = "dist"
+//
+// This is the default value where assets are created when you run //client/web/dist:copy_bundle
+const DefaultAssetPath = "assets-dist"
 
 // AssetsPath is absolute path where assets should be loaded from.
 // * During init if it's value is empty the value of the environment variable `SRC_ASSETS_DIR` is used
