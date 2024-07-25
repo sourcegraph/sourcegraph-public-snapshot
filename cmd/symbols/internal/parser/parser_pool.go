@@ -113,12 +113,15 @@ func (p *ParserPool) parserFromPool(ctx context.Context, source ctags_config.Par
 
 	parser, err := p.get(ctx, source)
 	if err != nil {
-		if ctx.Err() == err {
+		if ctx.Err() == context.DeadlineExceeded {
 			p.metrics.parseQueueTimeouts.Inc()
-		} else {
-			err = errors.Wrap(err, "failed to create parser")
 		}
-	}
+        // ignore err if context has expired since err is likely due to that
+        if ctx.Err() != nil {
+            return nil, ctx.Err()
+        }
+        return nil, errors.Wrap(err, "failed to create parser")
+    }        
 
 	return parser, err
 }
