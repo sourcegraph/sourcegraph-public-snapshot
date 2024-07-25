@@ -38,7 +38,7 @@ const emptyPolicy: CodeIntelligenceConfigurationPolicyFields = {
     retentionEnabled: false,
     retentionDurationHours: null,
     retainIntermediateCommits: false,
-    preciseIndexingEnabled: false,
+    indexingEnabled: false,
     syntacticIndexingEnabled: false,
     indexCommitMaxAgeHours: null,
     indexIntermediateCommits: false,

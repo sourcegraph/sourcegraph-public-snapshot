@@ -109,8 +109,8 @@ extend type Mutation {
         retentionEnabled: Boolean!
         retentionDurationHours: Int
         retainIntermediateCommits: Boolean!
-        preciseIndexingEnabled: Boolean!
-        syntacticIndexingEnabled: Boolean!
+        indexingEnabled: Boolean!
+        syntacticIndexingEnabled: Boolean
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
 
@@ -135,8 +135,8 @@ extend type Mutation {
         retentionEnabled: Boolean!
         retentionDurationHours: Int
         retainIntermediateCommits: Boolean!
-        preciseIndexingEnabled: Boolean!
-        syntacticIndexingEnabled: Boolean!
+        indexingEnabled: Boolean!
+        syntacticIndexingEnabled: Boolean
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
 
@@ -267,12 +267,12 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     """
     Whether or not this configuration policy affects precise indexing schedules.
     """
-    preciseIndexingEnabled: Boolean!
+    indexingEnabled: Boolean!
 
     """
     Whether or not this configuration policy affects syntactic indexing schedules.
     """
-    syntacticIndexingEnabled: Boolean!
+    syntacticIndexingEnabled: Boolean
 
     """
     The max age of commits indexed by this configuration policy.

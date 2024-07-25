@@ -14,7 +14,7 @@ const CREATE_POLICY_CONFIGURATION = gql`
         $retentionEnabled: Boolean!
         $retentionDurationHours: Int
         $retainIntermediateCommits: Boolean!
-        $preciseIndexingEnabled: Boolean!
+        $indexingEnabled: Boolean!
         $syntacticIndexingEnabled: Boolean!
         $indexCommitMaxAgeHours: Int
         $indexIntermediateCommits: Boolean!
@@ -28,7 +28,7 @@ const CREATE_POLICY_CONFIGURATION = gql`
             retentionEnabled: $retentionEnabled
             retentionDurationHours: $retentionDurationHours
             retainIntermediateCommits: $retainIntermediateCommits
-            preciseIndexingEnabled: $preciseIndexingEnabled
+            indexingEnabled: $indexingEnabled
             syntacticIndexingEnabled: $syntacticIndexingEnabled
             indexCommitMaxAgeHours: $indexCommitMaxAgeHours
             indexIntermediateCommits: $indexIntermediateCommits
@@ -48,7 +48,7 @@ const UPDATE_POLICY_CONFIGURATION = gql`
         $retentionEnabled: Boolean!
         $retentionDurationHours: Int
         $retainIntermediateCommits: Boolean!
-        $preciseIndexingEnabled: Boolean!
+        $indexingEnabled: Boolean!
         $syntacticIndexingEnabled: Boolean!
         $indexCommitMaxAgeHours: Int
         $indexIntermediateCommits: Boolean!
@@ -62,7 +62,7 @@ const UPDATE_POLICY_CONFIGURATION = gql`
             retentionEnabled: $retentionEnabled
             retentionDurationHours: $retentionDurationHours
             retainIntermediateCommits: $retainIntermediateCommits
-            preciseIndexingEnabled: $preciseIndexingEnabled
+            indexingEnabled: $indexingEnabled
             syntacticIndexingEnabled: $syntacticIndexingEnabled
             indexCommitMaxAgeHours: $indexCommitMaxAgeHours
             indexIntermediateCommits: $indexIntermediateCommits
