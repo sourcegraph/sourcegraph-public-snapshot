@@ -26,6 +26,7 @@ type Appliance struct {
 
 	client                 client.Client
 	namespace              string
+	status                 config.Status
 	sourcegraph            *config.Sourcegraph
 	releaseRegistryClient  *releaseregistry.Client
 	latestSupportedVersion string
@@ -162,6 +163,7 @@ func (a *Appliance) reconcileConfigMap(ctx context.Context, configMap *corev1.Co
 			existingCfgMap.Annotations = map[string]string{
 				// required annotation for our controller filter.
 				config.AnnotationKeyManaged: "true",
+				config.AnnotationKeyStatus:  string(config.StatusUnknown),
 				config.AnnotationConditions: "",
 			}
 
@@ -201,4 +203,33 @@ func (a *Appliance) isSourcegraphFrontendReady(ctx context.Context) (bool, error
 	}
 
 	return IsObjectReady(frontendDeployment)
+}
+
+func (a *Appliance) getStatus(ctx context.Context) (config.Status, error) {
+	configMapName := types.NamespacedName{Name: config.ConfigmapName, Namespace: a.namespace}
+	configMap := &corev1.ConfigMap{}
+	if err := a.client.Get(ctx, configMapName, configMap); err != nil {
+		if apierrors.IsNotFound(err) {
+			return config.StatusUnknown, nil
+		}
+		return config.StatusUnknown, err
+	}
+
+	return config.Status(configMap.ObjectMeta.Annotations[config.AnnotationKeyStatus]), nil
+}
+
+func (a *Appliance) setStatus(ctx context.Context, status config.Status) error {
+	configMapName := types.NamespacedName{Name: config.ConfigmapName, Namespace: a.namespace}
+	configMap := &corev1.ConfigMap{}
+	if err := a.client.Get(ctx, configMapName, configMap); err != nil {
+		return err
+	}
+
+	configMap.Annotations[config.AnnotationKeyStatus] = string(status)
+	err := a.client.Update(ctx, configMap)
+	if err != nil {
+		return errors.Wrap(err, "failed set status")
+	}
+
+	return nil
 }

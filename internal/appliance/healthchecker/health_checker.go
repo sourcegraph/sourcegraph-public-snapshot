@@ -8,6 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,7 +26,7 @@ type HealthChecker struct {
 	Graceperiod time.Duration
 }
 
-// Waits for the begin channel to close, then periodically monitors the frontend
+// ManageIngressFacingService waits for the `begin` channel to close, then periodically monitors the frontend
 // service (the ingress-facing service). When there is at least one ready
 // frontend pod, it ensures that the service points at the frontend pods. When
 // there are no ready pods, it ensures that the service points to the appliance,
