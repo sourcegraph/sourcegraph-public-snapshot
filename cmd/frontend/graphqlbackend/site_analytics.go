@@ -11,7 +11,8 @@ import (
 )
 
 type siteAnalyticsResolver struct {
-	db    database.DB
+	db database.DB
+	// Cache is optional. If nil, caching is disabled.
 	cache redispool.KeyValue
 }
 
