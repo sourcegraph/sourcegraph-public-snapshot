@@ -2,8 +2,10 @@ package lsifstore
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
@@ -30,9 +32,8 @@ type LsifStore interface {
 	GetMonikersByPosition(ctx context.Context, uploadID int, path core.UploadRelPath, line, character int) ([][]precise.MonikerData, error)
 	GetPackageInformation(ctx context.Context, uploadID int, packageInformationID string) (precise.PackageInformationData, bool, error)
 
-	// Fetch locations by position
-	GetBulkSymbolUsages(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, lookupSymbols []string, limit, offset int) ([]shared.Location, int, error)
-	GetMinimalBulkSymbolUsages(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, skipPaths map[int]string, lookupSymbols []string, limit, offset int) (_ []shared.Location, totalCount int, err error)
+	// Fetch usages by position
+	GetSymbolUsages(ctx context.Context, options SymbolUsagesOptions) (_ []shared.Usage, totalCount int, err error)
 
 	// Metadata by position
 	GetHover(ctx context.Context, bundleID int, path core.UploadRelPath, line, character int) (string, shared.Range, bool, error)
@@ -43,6 +44,29 @@ type LsifStore interface {
 	ExtractReferenceLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
 	ExtractImplementationLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
 	ExtractPrototypeLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
+}
+
+type SymbolUsagesOptions struct {
+	shared.UsageKind
+	UploadIDs           []int
+	SkipPathsByUploadID map[int]string
+	LookupSymbols       []string
+	Limit               int
+	Offset              int
+}
+
+func (opts SymbolUsagesOptions) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.String("usageKind", opts.UsageKind.String()),
+		attribute.Int("numUploadIDs", len(opts.UploadIDs)),
+		attribute.IntSlice("uploadIDs", opts.UploadIDs),
+		attribute.Int("numSkipPathsByID", len(opts.SkipPathsByUploadID)),
+		attribute.String("skipPathsByID", fmt.Sprintf("%v", opts.SkipPathsByUploadID)),
+		attribute.Int("numLookupSymbols", len(opts.LookupSymbols)),
+		attribute.StringSlice("lookupSymbols", opts.LookupSymbols),
+		attribute.Int("limit", opts.Limit),
+		attribute.Int("offset", opts.Offset),
+	}
 }
 
 type LocationKey struct {

@@ -165,7 +165,7 @@ func (c Cursor) BumpRemoteUploadOffset(n, totalCount int) Cursor {
 	return c
 }
 
-func (c Cursor) BumpRemoteLocationOffset(n, totalCount int) Cursor {
+func (c Cursor) BumpRemoteUsageOffset(n, totalCount int) Cursor {
 	c.RemoteLocationOffset += n
 	if c.RemoteLocationOffset >= totalCount {
 		// We've consumed the locations for this set of uploads. Reset this slice value in the

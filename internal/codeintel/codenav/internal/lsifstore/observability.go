@@ -17,7 +17,7 @@ type operations struct {
 	getImplementationLocations *observation.Operation
 	getPrototypesLocations     *observation.Operation
 	getReferenceLocations      *observation.Operation
-	getBulkMonikerLocations    *observation.Operation
+	getSymbolUsages            *observation.Operation
 	getHover                   *observation.Operation
 	getDiagnostics             *observation.Operation
 	scipDocument               *observation.Operation
@@ -54,7 +54,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getImplementationLocations: op("GetImplementationLocations"),
 		getPrototypesLocations:     op("GetPrototypesLocations"),
 		getReferenceLocations:      op("GetReferenceLocations"),
-		getBulkMonikerLocations:    op("GetBulkSymbolUsages"),
+		getSymbolUsages:            op("GetBulkSymbolUsages"),
 		getHover:                   op("GetHover"),
 		getDiagnostics:             op("GetDiagnostics"),
 		scipDocument:               op("SCIPDocument"),
