@@ -11,10 +11,12 @@ export const Install: React.FC = () => {
     useEffect(() => {
         const fetchVersions = async () => {
             try {
-                const response = await fetch('https://releaseregistry.sourcegraph.com/v1/get/releases/sourcegraph', {
+                const response = await fetch('http://127.0.0.1:8081/v1/releases/sourcegraph', {
                     headers: {
-                        Authorization: `Bearer ${process.env.RELEASEREGISTRY_TOKEN}`,
+                        Authorization: `Bearer token`,
+                        'Content-Type': 'application/json',
                     },
+                    mode: 'cors',
                 })
                 const data = await response.json()
                 setVersion(data)
