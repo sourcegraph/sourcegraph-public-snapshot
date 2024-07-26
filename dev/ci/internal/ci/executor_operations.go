@@ -47,7 +47,7 @@ func bazelPublishExecutorVM(c Config, alwaysRebuild bool) operations.Operation {
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease, runtype.InternalRelease))),
 		}
 
-		cmd := bazelStampedCmd("run //cmd/executor/vm-image:ami.push")
+		cmd := bazelStampedCmd("--announce_rc run //cmd/executor/vm-image:ami.push")
 
 		if !alwaysRebuild {
 			stepOpts = append(stepOpts,
