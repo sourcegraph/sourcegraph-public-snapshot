@@ -1,7 +1,7 @@
 import React, { useCallback, useState, type FC } from 'react'
 
+import type { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
-import type { GraphQLError } from 'graphql'
 
 import { logger } from '@sourcegraph/common'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
@@ -210,7 +210,7 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
                 {step === 'add-token' && (
                     <AddToken
                         step={step}
-                        error={error?.graphQLErrors[0]}
+                        error={error}
                         credential={credential}
                         onChangeCredential={onChangeCredential}
                         username={username}
@@ -268,7 +268,7 @@ const computeCredentialLabel = (
 
 interface AddTokenProps {
     step: Step
-    error: GraphQLError | undefined
+    error: ApolloError | undefined
     onSubmit: React.FormEventHandler<Element>
     requiresUsername: boolean
     credential: string
@@ -304,7 +304,7 @@ const AddToken: FC<AddTokenProps> = ({
     const patLabel = computeCredentialLabel(externalServiceKind, authStrategy)
     const isStrategyPAT = authStrategy === AuthenticationStrategy.PERSONAL_ACCESS_TOKEN
     const kind = user ? GitHubAppKind.USER_CREDENTIAL : GitHubAppKind.SITE_CREDENTIAL
-    const timedOut = error?.extensions?.code === 'ErrVerifyCredentialTimeout'
+    const timedOut = error?.graphQLErrors[0]?.extensions?.code === 'ErrVerifyCredentialTimeout'
 
     if (step === 'add-token') {
         return (
