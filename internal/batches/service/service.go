@@ -2045,14 +2045,17 @@ func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args g
 	if ctx.Err() == context.DeadlineExceeded {
 		return a, VerifyCredentialTimeoutError
 	}
-	// Validate the newly created authenticator.
-	if err := s.ValidateAuthenticator(ctx, a, args.authenticationStrategy, ValidateAuthenticatorArgs{
-		ExternalServiceID:   args.externalServiceURL,
-		ExternalServiceType: args.externalServiceType,
-		Username:            args.username,
-		GitHubAppKind:       args.gitHubAppKind,
-	}); err != nil {
-		return nil, &ErrVerifyCredentialFailed{SourceErr: err}
+	// Validate the newly created authenticator, if it is a personal access token (i.e. not a GitHub app).
+	// We can assume that the information we get from the GitHub auth flow is correct.
+	if args.githubAppID == 0 {
+		if err := s.ValidateAuthenticator(ctx, a, args.authenticationStrategy, ValidateAuthenticatorArgs{
+			ExternalServiceID:   args.externalServiceURL,
+			ExternalServiceType: args.externalServiceType,
+			Username:            args.username,
+			GitHubAppKind:       args.gitHubAppKind,
+		}); err != nil {
+			return nil, &ErrVerifyCredentialFailed{SourceErr: err}
+		}
 	}
 	return a, nil
 }

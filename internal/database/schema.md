@@ -1893,6 +1893,7 @@ Foreign-key constraints:
  webhook_id        | integer                  |           |          | 
  domain            | text                     |           | not null | 'repos'::text
  kind              | github_app_kind          |           | not null | 'REPO_SYNC'::github_app_kind
+ creator_id        | bigint                   |           | not null | 0
 Indexes:
     "github_apps_pkey" PRIMARY KEY, btree (id)
     "github_apps_app_id_slug_base_url_unique" UNIQUE, btree (app_id, slug, base_url)
