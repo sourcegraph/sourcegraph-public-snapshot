@@ -368,7 +368,16 @@ func TestStore_AggregateStatus(t *testing.T) {
 				searchJob: types.JobStateCompleted,
 				repoJobs:  []types.JobState{types.JobStateQueued},
 			},
-			want: types.JobStateQueued,
+			want: types.JobStateProcessing,
+		},
+		{
+			name: "no job is processing, some are completed, some are queued",
+			c: stateCascade{
+				searchJob:   types.JobStateCompleted,
+				repoJobs:    []types.JobState{types.JobStateCompleted},
+				repoRevJobs: []types.JobState{types.JobStateCompleted, types.JobStateQueued},
+			},
+			want: types.JobStateProcessing,
 		},
 		{
 			name: "search job is queued, but no other job has been created yet",
@@ -380,7 +389,7 @@ func TestStore_AggregateStatus(t *testing.T) {
 	}
 
 	for i, tt := range tc {
-		t.Run("", func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			userID, err := createUser(bs, fmt.Sprintf("user_%d", i))
 			require.NoError(t, err)
 
