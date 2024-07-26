@@ -154,6 +154,12 @@ func (b *Build) GetMessage() string {
 	return pointers.DerefZero(b.Message)
 }
 
+func (b *Build) AppendSteps(steps map[string]*Step) {
+	for name, step := range steps {
+		b.Steps[name] = step
+	}
+}
+
 // Pipeline wraps a buildkite.Pipeline and provides convenience functions to access values of the wrapped pipeline in a safe maner
 type Pipeline struct {
 	buildkite.Pipeline `json:"pipeline"`
@@ -262,6 +268,28 @@ func (s *Store) Add(event *Event) {
 		s.logger.Debug("build finished", log.Int("buildNumber", event.GetBuildNumber()),
 			log.Int("totalSteps", len(build.Steps)),
 			log.String("status", build.GetState()))
+
+		// If the build was triggered from another build, we need to update the "trigger-er" with the jobs
+		// from the triggered build. This is so that any failures from the triggered build are reported as
+		// failures in the triggerer.
+		// We do this because we do not rely on the state of the build to determine if a build is "successful" or not.
+		// We instead depend on the state of the jobs associated with said build.
+		if event.Build.TriggeredFrom != nil {
+			parentBuild, ok := s.builds[*event.Build.TriggeredFrom.BuildNumber]
+			if ok {
+				parentBuild.Lock()
+				parentBuild.AppendSteps(build.Steps)
+				parentBuild.Unlock()
+			} else {
+				// If the triggered build doesn't exist, we'll just leave log a message
+				s.logger.Warn(
+					"build triggered from non-existent build",
+					log.Int("buildNumber", event.GetBuildNumber()),
+					log.String("pipeline", *event.Build.TriggeredFrom.BuildPipelineSlug),
+					log.Int("triggeredFrom", *event.Build.TriggeredFrom.BuildNumber),
+				)
+			}
+		}
 
 		// Track consecutive failures by pipeline + branch
 		// We update the global count of consecutiveFailures then we set the count on the individual build

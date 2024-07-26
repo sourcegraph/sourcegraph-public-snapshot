@@ -243,7 +243,7 @@ export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNod
         <div className={classNames(styles.name, 'd-flex flex-column')}>
             <PolicyDescription policy={policy} preciseIndexingEnabled={preciseIndexingEnabled} />
             <RepositoryAndGitObjectDescription policy={policy} />
-            {policy.preciseIndexingEnabled && preciseIndexingEnabled && <AutoIndexingDescription policy={policy} />}
+            {policy.indexingEnabled && preciseIndexingEnabled && <AutoIndexingDescription policy={policy} />}
             {policy.retentionEnabled && <RetentionDescription policy={policy} />}
         </div>
 
@@ -312,7 +312,7 @@ const PolicyDescription: FunctionComponent<PolicyDescriptionProps> = ({
             </Text>
         </Link>
 
-        {!policy.retentionEnabled && !(preciseIndexingEnabled && policy.preciseIndexingEnabled) && (
+        {!policy.retentionEnabled && !(preciseIndexingEnabled && policy.indexingEnabled) && (
             <Tooltip content="This policy has no enabled behaviors.">
                 <Icon
                     svgPath={mdiCircleOffOutline}

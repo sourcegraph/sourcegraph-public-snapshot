@@ -48,8 +48,8 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		RetentionEnabled:          args.RetentionEnabled,
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
 		RetainIntermediateCommits: args.RetainIntermediateCommits,
-		IndexingEnabled:           args.PreciseIndexingEnabled,
-		SyntacticIndexingEnabled:  args.SyntacticIndexingEnabled,
+		PreciseIndexingEnabled:    args.IndexingEnabled,
+		SyntacticIndexingEnabled:  *args.SyntacticIndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
 		EmbeddingEnabled:          args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,
@@ -91,8 +91,8 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		RetentionEnabled:          args.RetentionEnabled,
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
 		RetainIntermediateCommits: args.RetainIntermediateCommits,
-		IndexingEnabled:           args.PreciseIndexingEnabled,
-		SyntacticIndexingEnabled:  args.SyntacticIndexingEnabled,
+		PreciseIndexingEnabled:    args.IndexingEnabled,
+		SyntacticIndexingEnabled:  *args.SyntacticIndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
 		EmbeddingEnabled:          args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,
@@ -151,12 +151,12 @@ func validateConfigurationPolicy(policy resolverstubs.CodeIntelConfigurationPoli
 	if policy.RetentionEnabled && policy.RetentionDurationHours != nil && (*policy.RetentionDurationHours < 0 || *policy.RetentionDurationHours > maxDurationHours) {
 		return errors.Errorf("illegal retention duration '%d'", *policy.RetentionDurationHours)
 	}
-	if policy.PreciseIndexingEnabled && policy.IndexCommitMaxAgeHours != nil && (*policy.IndexCommitMaxAgeHours < 0 || *policy.IndexCommitMaxAgeHours > maxDurationHours) {
+	if policy.IndexingEnabled && policy.IndexCommitMaxAgeHours != nil && (*policy.IndexCommitMaxAgeHours < 0 || *policy.IndexCommitMaxAgeHours > maxDurationHours) {
 		return errors.Errorf("illegal index commit max age '%d'", *policy.IndexCommitMaxAgeHours)
 	}
 
 	if policy.EmbeddingsEnabled != nil && *policy.EmbeddingsEnabled {
-		if policy.RetentionEnabled || policy.PreciseIndexingEnabled || policy.SyntacticIndexingEnabled {
+		if policy.RetentionEnabled || policy.IndexingEnabled || *policy.SyntacticIndexingEnabled {
 			return errors.Errorf("configuration policies can apply to indexing (precise or syntactic) or embeddings, but not both")
 		}
 

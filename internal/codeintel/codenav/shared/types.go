@@ -17,6 +17,25 @@ type Location struct {
 	Range    Range
 }
 
+// Usage represents a def/ref/impl/super of some range/symbol that
+// was queried for using 'usagesForSymbol' or similar.
+type Usage struct {
+	UploadID int
+	// Path is the path of this usage wrt the
+	// root of the scip.Index this usage was found in.
+	Path  core.UploadRelPath
+	Range Range
+	// Symbol is the SCIP symbol at the _usage site_, which may not
+	// be equal to the symbol at the _lookup site_. For the various
+	// cases, see codeintel.codenav.graphql as well as extractOccurrenceData.
+	Symbol string
+	Kind   UsageKind
+}
+
+func (u Usage) ToLocation() Location {
+	return Location{UploadID: u.UploadID, Path: u.Path, Range: u.Range}
+}
+
 // UsageKind is a more compact representation for SymbolUsageKind
 // in the GraphQL API
 type UsageKind int32

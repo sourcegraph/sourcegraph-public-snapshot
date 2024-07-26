@@ -95,12 +95,15 @@ func (r *configurationPolicyResolver) RetainIntermediateCommits() bool {
 	return r.configurationPolicy.RetainIntermediateCommits
 }
 
-func (r *configurationPolicyResolver) PreciseIndexingEnabled() bool {
-	return r.configurationPolicy.IndexingEnabled
+// NOTE: the names differ to preserve the backwards compatibility -
+// the field has to remain named indexingEnabled in generated
+// GraphQL API
+func (r *configurationPolicyResolver) IndexingEnabled() bool {
+	return r.configurationPolicy.PreciseIndexingEnabled
 }
 
-func (r *configurationPolicyResolver) SyntacticIndexingEnabled() bool {
-	return r.configurationPolicy.SyntacticIndexingEnabled
+func (r *configurationPolicyResolver) SyntacticIndexingEnabled() *bool {
+	return &r.configurationPolicy.SyntacticIndexingEnabled
 }
 
 func (r *configurationPolicyResolver) IndexCommitMaxAgeHours() *int32 {

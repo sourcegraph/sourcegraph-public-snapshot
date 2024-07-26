@@ -128,13 +128,13 @@ func TestParseGoogleTokenUsage(t *testing.T) {
 			name:    "no prefix",
 			input:   `{"usageMetadata": {"promptTokenCount": 10, "candidatesTokenCount": 20}}`,
 			want:    nil,
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name:    "empty input",
 			input:   ``,
 			want:    nil,
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "multiple lines with one valid",

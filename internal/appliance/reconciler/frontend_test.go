@@ -2,14 +2,19 @@ package reconciler
 
 import (
 	"fmt"
+	"maps"
+
+	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
+	netv1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/k8senvtest"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/ingress"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	corev1 "k8s.io/api/core/v1"
-	netv1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func (suite *ApplianceTestSuite) TestDeployFrontend() {
@@ -38,6 +43,9 @@ func (suite *ApplianceTestSuite) TestAdoptsHelmProvisionedFrontendResources() {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "sourcegraph-frontend",
 			Namespace: namespace.Name,
+			Labels: map[string]string{
+				"app": "sourcegraph-frontend",
+			},
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:    []corev1.ServicePort{{Name: "http", Port: 30080, TargetPort: intstr.FromString("http")}},
@@ -159,6 +167,190 @@ func (suite *ApplianceTestSuite) TestFrontendDeploymentRollsWhenRedisSecretsChan
 			})
 
 			suite.makeGoldenAssertions(namespace, fmt.Sprintf("frontend/after-create-%s-secret", tc.secret))
+		})
+	}
+}
+
+type MockObject struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Data              map[string]string `json:"data,omitempty"`
+}
+
+func (m *MockObject) DeepCopyObject() runtime.Object {
+	if m == nil {
+		return nil
+	}
+	return &MockObject{
+		TypeMeta:   m.TypeMeta,
+		ObjectMeta: *m.ObjectMeta.DeepCopy(),
+		Data:       maps.Clone(m.Data),
+	}
+}
+
+func (suite *ApplianceTestSuite) TestMergeK8sObjects() {
+	tests := []struct {
+		name        string
+		existingObj client.Object
+		newObject   client.Object
+		expected    client.Object
+		expectError bool
+	}{
+		{
+			name: "Successful merge",
+			existingObj: &MockObject{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-config",
+				},
+				Data: map[string]string{
+					"key1": "value1",
+				},
+			},
+			newObject: &MockObject{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-config",
+				},
+				Data: map[string]string{
+					"key2": "value2",
+				},
+			},
+			expected: &MockObject{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-config",
+				},
+				Data: map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "Merge with overlapping keys",
+			existingObj: &MockObject{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-config",
+				},
+				Data: map[string]string{
+					"key1": "value1",
+					"key2": "old-value2",
+				},
+			},
+			newObject: &MockObject{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-config",
+				},
+				Data: map[string]string{
+					"key2": "new-value2",
+					"key3": "value3",
+				},
+			},
+			expected: &MockObject{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-config",
+				},
+				Data: map[string]string{
+					"key1": "value1",
+					"key2": "new-value2",
+					"key3": "value3",
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "Merge with empty new object",
+			existingObj: &MockObject{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-config",
+				},
+				Data: map[string]string{
+					"key1": "value1",
+				},
+			},
+			newObject: &MockObject{},
+			expected: &MockObject{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-config",
+				},
+				Data: map[string]string{
+					"key1": "value1",
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "merges annotations",
+			existingObj: &MockObject{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"present_and_unchanged": "old1",
+						"present_and_changed":   "old2",
+					},
+				},
+			},
+			newObject: &MockObject{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"present_and_changed": "new2",
+						"new":                 "new3",
+					},
+				},
+			},
+			expected: &MockObject{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"present_and_unchanged": "old1",
+						"present_and_changed":   "new2",
+						"new":                   "new3",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			result, err := MergeK8sObjects(tt.existingObj, tt.newObject)
+			fmt.Print(result)
+			if tt.expectError {
+				assert.Error(suite.T(), err)
+				assert.Nil(suite.T(), result)
+			} else {
+				assert.NoError(suite.T(), err)
+				assert.Equal(suite.T(), tt.expected, result)
+			}
 		})
 	}
 }
