@@ -7,9 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/printer"
@@ -105,7 +103,7 @@ func outputJobTree(
 		UserSettings:        settings,
 		PatternType:         searchType,
 		Protocol:            search.Streaming,
-		Features:            client.ToFeatures(featureflag.FromContext(ctx), logger),
+		Features:            search.FeaturesFromContext(ctx),
 		OnSourcegraphDotCom: dotcom.SourcegraphDotComMode(),
 	}
 	j, err := jobutil.NewPlanJob(inputs, plan)
