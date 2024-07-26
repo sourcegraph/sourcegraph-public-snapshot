@@ -59,12 +59,12 @@
     />
     <Tooltip tooltip="{caseSensitive ? 'Disable' : 'Enable'} case sensitivity">
         <button class:enabled={caseSensitive} on:click={() => setCaseSensitive(!caseSensitive)}>
-            <Icon icon={ILucideCaseSensitive} inline aria-hidden />
+            <Icon icon={IMdiFormatLetterCase} inline aria-hidden />
         </button>
     </Tooltip>
     <Tooltip tooltip="{regexp ? 'Disable' : 'Enable'} regular expression">
         <button class:enabled={regexp} on:click={() => setRegexp(!regexp)}>
-            <Icon icon={ILucideRegex} inline aria-hidden />
+            <Icon icon={IMdiRegex} inline aria-hidden />
         </button>
     </Tooltip>
 </span>
