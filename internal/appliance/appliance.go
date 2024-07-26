@@ -153,14 +153,15 @@ func (a *Appliance) reconcileConfigMap(ctx context.Context, configMap *corev1.Co
 				return errors.Wrap(err, "failed to marshal configmap yaml")
 			}
 
-			existingCfgMap.Name = config.ConfigmapName
-			existingCfgMap.Namespace = a.namespace
+			cfgMap := &corev1.ConfigMap{}
+			cfgMap.Name = config.ConfigmapName
+			cfgMap.Namespace = a.namespace
 
-			existingCfgMap.Labels = map[string]string{
+			cfgMap.Labels = map[string]string{
 				"deploy": "sourcegraph",
 			}
 
-			existingCfgMap.Annotations = map[string]string{
+			cfgMap.Annotations = map[string]string{
 				// required annotation for our controller filter.
 				config.AnnotationKeyManaged: "true",
 				config.AnnotationKeyStatus:  string(config.StatusUnknown),
@@ -168,13 +169,13 @@ func (a *Appliance) reconcileConfigMap(ctx context.Context, configMap *corev1.Co
 			}
 
 			if configMap.ObjectMeta.Annotations != nil {
-				existingCfgMap.ObjectMeta.Annotations = configMap.ObjectMeta.Annotations
+				cfgMap.ObjectMeta.Annotations = configMap.ObjectMeta.Annotations
 			}
 
-			existingCfgMap.Immutable = pointers.Ptr(false)
-			existingCfgMap.Data = map[string]string{"spec": string(spec)}
+			cfgMap.Immutable = pointers.Ptr(false)
+			cfgMap.Data = map[string]string{"spec": string(spec)}
 
-			return a.client.Create(ctx, existingCfgMap)
+			return a.client.Create(ctx, cfgMap)
 		}
 
 		return errors.Wrap(err, "getting configmap")
