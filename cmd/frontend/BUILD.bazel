@@ -11,7 +11,7 @@ go_library(
     deps = [
         "//cmd/frontend/shared",
         "//internal/sanitycheck",
-        "//ui/assets/dist",
+        "//ui/assets",
     ],
 )
 
