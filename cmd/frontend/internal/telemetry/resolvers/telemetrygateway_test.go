@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
-func TestNewTelemetryGatewayEvents(t *testing.T) {
+func TestConvertToTelemetryGatewayEvent(t *testing.T) {
 	staticTime, err := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
 	require.NoError(t, err)
 
@@ -228,16 +228,13 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := newTelemetryGatewayEvents(tc.ctx,
+			got, err := convertToTelemetryGatewayEvent(tc.ctx,
 				staticTime,
 				func() string { return tc.name },
-				[]graphqlbackend.TelemetryEventInput{
-					tc.event,
-				})
+				tc.event)
 			require.NoError(t, err)
-			require.Len(t, got, 1)
 
-			protodata, err := protojson.Marshal(got[0])
+			protodata, err := protojson.Marshal(got)
 			require.NoError(t, err)
 
 			// Protojson output isn't stable by injecting randomized whitespace,

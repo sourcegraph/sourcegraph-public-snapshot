@@ -13,7 +13,7 @@ type BatchChanges struct {
 	DateRange string
 	Grouping  string
 	DB        database.DB
-	Cache     bool
+	Cache     KeyValue
 }
 
 var changesetsCreatedNodesQuery = `

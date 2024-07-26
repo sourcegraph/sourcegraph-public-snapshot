@@ -25,6 +25,7 @@ const (
 	StatusUpgrading       Status = "upgrading"
 	StatusWaitingForAdmin Status = "wait-for-admin"
 	StatusRefresh         Status = "refresh"
+	StatusMaintenance     Status = "maintenance"
 )
 
 func IsPostInstallStatus(status Status) bool {
