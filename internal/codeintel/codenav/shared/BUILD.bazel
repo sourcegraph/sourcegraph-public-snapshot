@@ -11,5 +11,6 @@ go_library(
         "//internal/codeintel/uploads/shared",
         "//lib/codeintel/precise",
         "@com_github_sourcegraph_scip//bindings/go/scip",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )

@@ -9,6 +9,7 @@ go_library(
         "insert.go",
         "locus.go",
         "observability.go",
+        "scip_utils.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph",
     visibility = ["//:__subpackages__"],
@@ -40,6 +41,7 @@ go_test(
     srcs = [
         "cleanup_test.go",
         "insert_test.go",
+        "scip_utils_test.go",
     ],
     data = glob(["testdata/**"]),
     embed = [":codegraph"],
