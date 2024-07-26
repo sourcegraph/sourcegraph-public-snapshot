@@ -99,7 +99,8 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
                             partialStorageKey={`batch-changes-github-app-integration-pending-${appName}`}
                         >
                             GitHub App {appName?.length ? `"${appName}" ` : ''} is taking a few seconds to connect.
-                            <br/><b>Please refresh the page until the GitHub app appears.</b>
+                            <br />
+                            <b>Please refresh the page until the GitHub app appears.</b>
                         </DismissibleAlert>
                     ) : (
                         <DismissibleAlert
