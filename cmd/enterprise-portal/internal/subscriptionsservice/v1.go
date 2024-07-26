@@ -74,8 +74,13 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 
 	// Validate and process filters.
 	filters := req.Msg.GetFilters()
-	isArchived := false
-	subscriptionIDs := make(collections.Set[string], len(filters))
+	var (
+		isArchived                *bool
+		subscriptionIDs           = make(collections.Set[string], len(filters))
+		displayNameSubstring      string
+		salesforceSubscriptionIDs []string
+		instanceDomains           []string
+	)
 	var iamListObjectOptions *iam.ListObjectsOptions
 	for _, filter := range filters {
 		switch f := filter.GetFilter().(type) {
@@ -89,7 +94,7 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 			subscriptionIDs.Add(
 				strings.TrimPrefix(f.SubscriptionId, subscriptionsv1.EnterpriseSubscriptionIDPrefix))
 		case *subscriptionsv1.ListEnterpriseSubscriptionsFilter_IsArchived:
-			isArchived = f.IsArchived
+			isArchived = &f.IsArchived
 		case *subscriptionsv1.ListEnterpriseSubscriptionsFilter_Permission:
 			if f.Permission == nil {
 				return nil, connect.NewError(
@@ -130,6 +135,39 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 					errors.Wrap(err, `invalid filter: "permission" provided but invalid`),
 				)
 			}
+		case *subscriptionsv1.ListEnterpriseSubscriptionsFilter_DisplayName:
+			if displayNameSubstring != "" {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.Wrapf(err, `invalid filter: "display_name" provided more than once`),
+				)
+			}
+			const minLength = 3
+			if len(f.DisplayName) < minLength {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.Wrapf(err, `invalid filter: "display_name" must be longer than %d characters`, minLength),
+				)
+			}
+			displayNameSubstring = f.DisplayName
+		case *subscriptionsv1.ListEnterpriseSubscriptionsFilter_Salesforce:
+			if f.Salesforce.SubscriptionId == "" {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.Wrap(err, `invalid filter: "salesforce.subscription_id" is empty`),
+				)
+			}
+			salesforceSubscriptionIDs = append(salesforceSubscriptionIDs,
+				f.Salesforce.SubscriptionId)
+		case *subscriptionsv1.ListEnterpriseSubscriptionsFilter_InstanceDomain:
+			domain, err := subscriptionsv1.NormalizeInstanceDomain(f.InstanceDomain)
+			if err != nil {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.Wrap(err, `invalid filter: "domain" provided but invalid`),
+				)
+			}
+			instanceDomains = append(instanceDomains, domain)
 		}
 	}
 
@@ -165,9 +203,13 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 	subs, err := s.store.ListEnterpriseSubscriptions(
 		ctx,
 		subscriptions.ListEnterpriseSubscriptionsOptions{
-			IDs:        subscriptionIDs.Values(),
-			IsArchived: isArchived,
-			PageSize:   int(req.Msg.GetPageSize()),
+			IDs:                       subscriptionIDs.Values(),
+			IsArchived:                isArchived,
+			InstanceDomains:           instanceDomains,
+			DisplayNameSubstring:      displayNameSubstring,
+			SalesforceSubscriptionIDs: salesforceSubscriptionIDs,
+
+			PageSize: int(req.Msg.GetPageSize()),
 		},
 	)
 	if err != nil {
@@ -264,15 +306,31 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 				)
 			}
 			opts.SubscriptionID = f.SubscriptionId
+
+		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_SalesforceOpportunityId:
+			if f.SalesforceOpportunityId == "" {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.New(`invalid filter: "salesforce_opportunity_id" provided but is empty`),
+				)
+			}
+			opts.SalesforceOpportunityID = f.SalesforceOpportunityId
 		}
 	}
 
-	if opts.LicenseType != subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY &&
-		opts.LicenseKeySubstring != "" {
-		return nil, connect.NewError(
-			connect.CodeInvalidArgument,
-			errors.New(`invalid filters: "license_type" must be 'ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY' to use the "license_key_substring" filter`),
-		)
+	if opts.LicenseType != subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY {
+		if opts.LicenseKeySubstring != "" {
+			return nil, connect.NewError(
+				connect.CodeInvalidArgument,
+				errors.New(`invalid filters: "license_type" must be 'ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY' to use the "license_key_substring" filter`),
+			)
+		}
+		if opts.SalesforceOpportunityID != "" {
+			return nil, connect.NewError(
+				connect.CodeInvalidArgument,
+				errors.New(`invalid filters: "license_type" must be 'ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY' to use the "salesforce_opportunity_id" filter`),
+			)
+		}
 	}
 
 	licenses, err := s.store.ListEnterpriseSubscriptionLicenses(ctx, opts)

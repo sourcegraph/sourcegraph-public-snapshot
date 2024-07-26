@@ -95,6 +95,11 @@ message EnterpriseSubscriptionCondition {
   string message = 3;
 }
 
+message EnterpriseSubscriptionSalesforceMetadata {
+  // The Salesforce subscription ID associated with this Enterprise subscription.
+  string subscription_id = 1;
+}
+
 // EnterpriseSubscription represents a Sourcegraph Enterprise subscription.
 message EnterpriseSubscription {
   // ID is the external, prefixed UUID-format identifier for this subscription
@@ -107,12 +112,8 @@ message EnterpriseSubscription {
   // The instance domain associated with this subscription, e.g. "acme.sourcegraphcloud.com".
   string instance_domain = 4;
 
-  message SalesforceMetadata {
-    // The Salesforce subscription ID associated with this Enterprise subscription.
-    string subscription_id = 1;
-  }
   // Salesforce details associated with this subscription.
-  SalesforceMetadata salesforce = 5;
+  EnterpriseSubscriptionSalesforceMetadata salesforce = 5;
 }
 
 // EnterpriseSubscriptionLicenseKey is the classic offline Sourcegraph license
@@ -208,12 +209,20 @@ enum EnterpriseSubscriptionLicenseType {
 
 message ListEnterpriseSubscriptionsFilter {
   oneof filter {
-    // Return only product subscriptions has the given subscription ID.
+    // Filter by exact match on the Enterprise Subscription ID.
     string subscription_id = 1;
     // Return only product subscriptions with the given archival status.
     bool is_archived = 2;
     // Return only product subscriptions that satisfies the given permission.
     Permission permission = 3;
+    // Filter by partial match on display name. The query must be at least 3
+    // characters long.
+    string display_name = 4;
+    // Filter by exact match on Salesforce metadata.
+    EnterpriseSubscriptionSalesforceMetadata salesforce = 5;
+    // Filter by partial match on instance domain. The query must be a valid
+    // domain.
+    string instance_domain = 6;
   }
 }
 
@@ -252,9 +261,15 @@ message ListEnterpriseSubscriptionLicensesFilter {
     EnterpriseSubscriptionLicenseType type = 2;
     // Return only licenses that are active.
     bool is_revoked = 3;
-    // Return only product subscriptions whose license key contains this
-    // substring.
+    // Return only licenses where the signed license key contains this substring.
+    // Query must be at least 3 characters.
+    //
+    // MUST be used in conjunction with the type = 'ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY'
+    // filter.
     string license_key_substring = 4;
+    // Return only licenses associated with this Salesforce opportunity ID.
+    // MUST be used in conjunction with the 'type' filter.
+    string salesforce_opportunity_id = 5;
   }
 }
 

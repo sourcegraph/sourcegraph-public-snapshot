@@ -68,9 +68,9 @@ func convertSubscriptionToProto(subscription *subscriptions.SubscriptionWithCond
 		}
 	}
 
-	var sf *subscriptionsv1.EnterpriseSubscription_SalesforceMetadata
+	var sf *subscriptionsv1.EnterpriseSubscriptionSalesforceMetadata
 	if subscription.SalesforceSubscriptionID != nil {
-		sf = &subscriptionsv1.EnterpriseSubscription_SalesforceMetadata{
+		sf = &subscriptionsv1.EnterpriseSubscriptionSalesforceMetadata{
 			SubscriptionId: pointers.DerefZero(subscription.SalesforceSubscriptionID),
 		}
 	}
