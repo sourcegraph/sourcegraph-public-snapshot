@@ -170,17 +170,12 @@ func (i *importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 					if len(parts) != 2 {
 						continue
 					}
-					if parts[0] == "customer" {
-						// Collision rates are high, and it's tricky to check -
-						// for now, do the simple thing by auto-importing the
-						// display name with the subscription's creation date
-						// suffixed to it.
-						name := fmt.Sprintf("%s %s",
-							parts[1], dotcomSub.CreatedAt.Format(time.DateOnly))
-						return database.NewNullString(name)
+					if parts[0] == "customer" && len(parts[1]) > 0 {
+						return database.NewNullString(fmt.Sprintf("%s - %s",
+							parts[1], dotcomSub.GenerateDisplayName()))
 					}
 				}
-				return nil
+				return database.NewNullString(dotcomSub.GenerateDisplayName())
 			}(),
 			CreatedAt: utctime.FromTime(dotcomSub.CreatedAt),
 			ArchivedAt: func() *utctime.Time {
