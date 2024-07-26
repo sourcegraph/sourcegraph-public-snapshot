@@ -1301,8 +1301,8 @@ type FileFilters struct {
 
 // FusionClient description: Configuration for the experimental p4-fusion client
 type FusionClient struct {
-	// Enabled description: Enable the p4-fusion client for cloning and fetching repos
-	Enabled bool `json:"enabled"`
+	// Enabled description: DEPRECATED. p4-fusion is always enabled.
+	Enabled bool `json:"enabled,omitempty"`
 	// FsyncEnable description:  Enable fsync() while writing objects to disk to ensure they get written to permanent storage immediately instead of being cached. This is to mitigate data loss in events of hardware failure.
 	FsyncEnable bool `json:"fsyncEnable,omitempty"`
 	// IncludeBinaries description: Whether to include binary files
