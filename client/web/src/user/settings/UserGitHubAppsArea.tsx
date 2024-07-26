@@ -15,7 +15,6 @@ import {
     type SiteExternalServiceConfigResult,
     type SiteExternalServiceConfigVariables,
 } from '../../graphql-operations'
-
 import { SITE_EXTERNAL_SERVICE_CONFIG } from '../../site-admin/backend'
 
 const CreateGitHubAppPage = lazyComponent(

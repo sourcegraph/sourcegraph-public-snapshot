@@ -31,7 +31,7 @@ import {
     GitHubAppDomain,
     type GitHubAppByIDResult,
     type GitHubAppByIDVariables,
-    GitHubAppKind
+    GitHubAppKind,
 } from '../../graphql-operations'
 import { ExternalServiceNode } from '../externalServices/ExternalServiceNode'
 import { ConnectionList, ConnectionSummary, SummaryContainer } from '../FilteredConnection/ui'
@@ -88,7 +88,9 @@ export const GitHubAppPage: FC<Props> = ({
 
     const onAddInstallation = async (app: NonNullable<GitHubAppByIDResult['gitHubApp']>): Promise<void> => {
         try {
-            const req = await fetch(`/githubapp/state?id=${app?.id}&domain=${app?.domain}&kind=${GitHubAppKind.USER_CREDENTIAL}`)
+            const req = await fetch(
+                `/githubapp/state?id=${app?.id}&domain=${app?.domain}&kind=${GitHubAppKind.USER_CREDENTIAL}`
+            )
             const state = await req.text()
             const trailingSlash = app.appURL.endsWith('/') ? '' : '/'
             window.location.assign(`${app.appURL}${trailingSlash}installations/new?state=${state}`)
