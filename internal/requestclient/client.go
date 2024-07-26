@@ -23,9 +23,18 @@ type Client struct {
 	// Note: This header can be spoofed and relies on trusted clients/proxies.
 	// For sourcegraph.com we use cloudflare headers to avoid spoofing.
 	ForwardedFor string
-	// UserAgent is value of the User-Agent header:
+	// UserAgent is current value of the User-Agent header:
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
 	UserAgent string
+	// ForwardedForUserAgent is first known value of the User-Agent header
+	// from the original request:
+	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
+	//
+	// It may be equal to UserAgent if no previous ForwardedForUserAgent was
+	// provided.
+	//
+	// Note: This header can be spoofed, and should only be used for reference.
+	ForwardedForUserAgent string
 
 	// wafIPCountryCode is a ISO 3166-1 alpha-2 country code for the
 	// request client as provided by a WAF (typically Cloudlfare) behind which
@@ -69,6 +78,7 @@ func (c *Client) LogFields() []log.Field {
 		log.String("requestClient.ip", c.IP),
 		log.String("requestClient.forwardedFor", c.ForwardedFor),
 		log.String("requestClient.userAgent", c.UserAgent),
+		log.String("requestClient.forwardedForUserAgent", c.ForwardedForUserAgent),
 		ccField,
 	}
 }
