@@ -130,14 +130,14 @@ func TestGetDefinitions(t *testing.T) {
 		}
 		mockLsifStore.ExtractDefinitionLocationsFromPositionFunc.PushReturn(nil, symbolNames, nil)
 
-		locations := []shared.Location{
+		usages := []shared.Usage{
 			{UploadID: 151, Path: uploadRelPath("a.go"), Range: testRange1},
 			{UploadID: 151, Path: uploadRelPath("b.go"), Range: testRange2},
 			{UploadID: 151, Path: uploadRelPath("a.go"), Range: testRange3},
 			{UploadID: 151, Path: uploadRelPath("b.go"), Range: testRange4},
 			{UploadID: 151, Path: uploadRelPath("c.go"), Range: testRange5},
 		}
-		mockLsifStore.GetMinimalBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)
+		mockLsifStore.GetSymbolUsagesFunc.PushReturn(usages, len(usages), nil)
 
 		mockRequest := PositionalRequestArgs{
 			RequestArgs: RequestArgs{
@@ -185,18 +185,15 @@ func TestGetDefinitions(t *testing.T) {
 			}
 		}
 
-		if history := mockLsifStore.GetMinimalBulkMonikerLocationsFunc.History(); len(history) != 1 {
+		if history := mockLsifStore.GetSymbolUsagesFunc.History(); len(history) != 1 {
 			t.Fatalf("unexpected call count for lsifstore.BulkMonikerResults. want=%d have=%d", 1, len(history))
 		} else {
-			if diff := cmp.Diff([]int{50, 51, 52, 53, 151, 152, 153}, history[0].Arg2); diff != "" {
+			options := history[0].Arg1
+			if diff := cmp.Diff([]int{50, 51, 52, 53, 151, 152, 153}, options.UploadIDs); diff != "" {
 				t.Errorf("unexpected ids (-want +got):\n%s", diff)
 			}
-
-			expectedMonikers := []precise.MonikerData{
-				{Kind: "", Scheme: "tsc", Identifier: "tsc npm leftpad 0.1.0 padLeft."},
-				{Kind: "", Scheme: "tsc", Identifier: "tsc npm leftpad 0.2.0 pad-left."},
-			}
-			if diff := cmp.Diff(expectedMonikers, history[0].Arg4); diff != "" {
+			expectedSymbolNames := []string{"tsc npm leftpad 0.1.0 padLeft.", "tsc npm leftpad 0.2.0 pad-left."}
+			if diff := cmp.Diff(expectedSymbolNames, options.LookupSymbols); diff != "" {
 				t.Errorf("unexpected ids (-want +got):\n%s", diff)
 			}
 		}
@@ -321,22 +318,15 @@ func TestGetReferences(t *testing.T) {
 			return &gitdomain.Commit{ID: ci}, nil
 		})
 
-		monikers := []precise.MonikerData{
+		symbols := []precise.MonikerData{
 			{Scheme: "tsc", Identifier: "tsc npm leftpad 0.1.0 padLeft."},
 			{Scheme: "tsc", Identifier: "tsc npm leftpad 0.2.0 pad_left."},
 			{Scheme: "tsc", Identifier: "tsc npm leftpad 0.3.0 pad-left."},
 		}
-		// mockLsifStore.GetMonikersByPositionFunc.PushReturn([][]precise.MonikerData{{monikers[0]}}, nil)
-		// mockLsifStore.GetMonikersByPositionFunc.PushReturn([][]precise.MonikerData{{monikers[1]}}, nil)
-		// mockLsifStore.GetMonikersByPositionFunc.PushReturn([][]precise.MonikerData{{monikers[2]}}, nil)
-		// mockLsifStore.GetMonikersByPositionFunc.PushReturn([][]precise.MonikerData{{monikers[3]}}, nil)
 
 		packageInformation1 := precise.PackageInformationData{Manager: "npm", Name: "leftpad", Version: "0.1.0"}
 		packageInformation2 := precise.PackageInformationData{Manager: "npm", Name: "leftpad", Version: "0.2.0"}
 		packageInformation3 := precise.PackageInformationData{Manager: "npm", Name: "leftpad", Version: "0.3.0"}
-		// mockLsifStore.GetPackageInformationFunc.PushReturn(packageInformation1, true, nil)
-		// mockLsifStore.GetPackageInformationFunc.PushReturn(packageInformation2, true, nil)
-		// mockLsifStore.GetPackageInformationFunc.PushReturn(packageInformation3, true, nil)
 
 		locations := []shared.Location{
 			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange1},
@@ -352,24 +342,16 @@ func TestGetReferences(t *testing.T) {
 		}
 		mockLsifStore.ExtractReferenceLocationsFromPositionFunc.PushReturn(locations, symbolNames, nil)
 
-		monikerLocations := []shared.Location{
+		returnedUsages := []shared.Usage{
 			{UploadID: 53, Path: uploadRelPath("a.go"), Range: testRange1},
 			{UploadID: 53, Path: uploadRelPath("b.go"), Range: testRange2},
 			{UploadID: 53, Path: uploadRelPath("a.go"), Range: testRange3},
 			{UploadID: 53, Path: uploadRelPath("b.go"), Range: testRange4},
 			{UploadID: 53, Path: uploadRelPath("c.go"), Range: testRange5},
 		}
-		mockLsifStore.GetMinimalBulkMonikerLocationsFunc.PushReturn(monikerLocations[0:1], 1, nil) // defs
-		mockLsifStore.GetMinimalBulkMonikerLocationsFunc.PushReturn(monikerLocations[1:2], 1, nil) // refs batch 1
-		mockLsifStore.GetMinimalBulkMonikerLocationsFunc.PushReturn(monikerLocations[2:], 3, nil)  // refs batch 2
-
-		// uploads := []dbstore.CompletedUpload{
-		// 	{ID: 50, Commit: "deadbeef", Root: "sub1/"},
-		// 	{ID: 51, Commit: "deadbeef", Root: "sub2/"},
-		// 	{ID: 52, Commit: "deadbeef", Root: "sub3/"},
-		// 	{ID: 53, Commit: "deadbeef", Root: "sub4/"},
-		// }
-		// resolver.SetUploadsDataLoader(uploads)
+		mockLsifStore.GetSymbolUsagesFunc.PushReturn(returnedUsages[0:1], 1, nil) // defs
+		mockLsifStore.GetSymbolUsagesFunc.PushReturn(returnedUsages[1:2], 1, nil) // refs batch 1
+		mockLsifStore.GetSymbolUsagesFunc.PushReturn(returnedUsages[2:], 3, nil)  // refs batch 2
 
 		mockCursor := Cursor{}
 		mockRequest := PositionalRequestArgs{
@@ -407,43 +389,43 @@ func TestGetReferences(t *testing.T) {
 			t.Fatalf("unexpected call count for dbstore.DefinitionDump. want=%d have=%d", 1, len(history))
 		} else {
 			expectedMonikers := []precise.QualifiedMonikerData{
-				{MonikerData: monikers[0], PackageInformationData: packageInformation1},
-				{MonikerData: monikers[1], PackageInformationData: packageInformation2},
-				{MonikerData: monikers[2], PackageInformationData: packageInformation3},
+				{MonikerData: symbols[0], PackageInformationData: packageInformation1},
+				{MonikerData: symbols[1], PackageInformationData: packageInformation2},
+				{MonikerData: symbols[2], PackageInformationData: packageInformation3},
 			}
 			if diff := cmp.Diff(expectedMonikers, history[0].Arg1); diff != "" {
 				t.Errorf("unexpected monikers (-want +got):\n%s", diff)
 			}
 		}
 
-		if history := mockLsifStore.GetMinimalBulkMonikerLocationsFunc.History(); len(history) != 3 {
+		if history := mockLsifStore.GetSymbolUsagesFunc.History(); len(history) != 3 {
 			t.Fatalf("unexpected call count for lsifstore.BulkMonikerResults. want=%d have=%d", 3, len(history))
 		} else {
-			if diff := cmp.Diff([]int{50, 51, 52, 53, 151, 152, 153}, history[0].Arg2); diff != "" {
+			if diff := cmp.Diff([]int{50, 51, 52, 53, 151, 152, 153}, history[0].Arg1.UploadIDs); diff != "" {
 				t.Errorf("unexpected ids (-want +got):\n%s", diff)
 			}
 
-			expectedMonikers := []precise.MonikerData{
-				monikers[0],
-				monikers[1],
-				monikers[2],
+			expectedSymbolNames := []string{
+				symbols[0].Identifier,
+				symbols[1].Identifier,
+				symbols[2].Identifier,
 			}
-			if diff := cmp.Diff(expectedMonikers, history[0].Arg4); diff != "" {
-				t.Errorf("unexpected monikers (-want +got):\n%s", diff)
-			}
-
-			if diff := cmp.Diff([]int{250, 251}, history[1].Arg2); diff != "" {
-				t.Errorf("unexpected ids (-want +got):\n%s", diff)
-			}
-			if diff := cmp.Diff(expectedMonikers, history[1].Arg4); diff != "" {
-				t.Errorf("unexpected monikers (-want +got):\n%s", diff)
+			if diff := cmp.Diff(expectedSymbolNames, history[0].Arg1.LookupSymbols); diff != "" {
+				t.Errorf("unexpected symbols (-want +got):\n%s", diff)
 			}
 
-			if diff := cmp.Diff([]int{252, 253}, history[2].Arg2); diff != "" {
+			if diff := cmp.Diff([]int{250, 251}, history[1].Arg1.UploadIDs); diff != "" {
 				t.Errorf("unexpected ids (-want +got):\n%s", diff)
 			}
-			if diff := cmp.Diff(expectedMonikers, history[2].Arg4); diff != "" {
-				t.Errorf("unexpected monikers (-want +got):\n%s", diff)
+			if diff := cmp.Diff(expectedSymbolNames, history[1].Arg1.LookupSymbols); diff != "" {
+				t.Errorf("unexpected symbols (-want +got):\n%s", diff)
+			}
+
+			if diff := cmp.Diff([]int{252, 253}, history[2].Arg1.UploadIDs); diff != "" {
+				t.Errorf("unexpected ids (-want +got):\n%s", diff)
+			}
+			if diff := cmp.Diff(expectedSymbolNames, history[2].Arg1.LookupSymbols); diff != "" {
+				t.Errorf("unexpected symbols (-want +got):\n%s", diff)
 			}
 		}
 	})

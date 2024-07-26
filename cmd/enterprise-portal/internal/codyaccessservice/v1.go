@@ -169,6 +169,8 @@ func (s *handlerV1) GetCodyGatewayUsage(ctx context.Context, req *connect.Reques
 		if err != nil {
 			if errors.Is(err, errStoreUnimplemented) {
 				return nil, connect.NewError(connect.CodeUnimplemented, err)
+			} else if errors.IsContextCanceled(err) {
+				return nil, connect.NewError(connect.CodeAborted, err)
 			}
 			return nil, connectutil.InternalError(ctx, logger, err, "failed to get Cody Gateway usage")
 		}

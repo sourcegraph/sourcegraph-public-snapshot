@@ -1,5 +1,12 @@
 package config
 
+// Status is a point in the Appliance lifecycle that an Appliance can be in.
+type Status string
+
+func (s Status) String() string {
+	return string(s)
+}
+
 const (
 	ConfigmapName = "sourcegraph-appliance"
 
@@ -8,4 +15,21 @@ const (
 	AnnotationKeyCurrentVersion      = "appliance.sourcegraph.com/currentVersion"
 	AnnotationKeyConfigHash          = "appliance.sourcegraph.com/configHash"
 	AnnotationKeyShouldTakeOwnership = "appliance.sourcegraph.com/adopted"
+
+	// TODO set status on configmap to communicate it across reboots
+	AnnotationKeyStatus = "appliance.sourcegraph.com/status"
+
+	StatusUnknown         Status = "unknown"
+	StatusInstall         Status = "install"
+	StatusInstalling      Status = "installing"
+	StatusIdle            Status = "idle"
+	StatusUpgrading       Status = "upgrading"
+	StatusWaitingForAdmin Status = "wait-for-admin"
+	StatusRefresh         Status = "refresh"
+	StatusMaintenance     Status = "maintenance"
 )
+
+// TODO think about this
+func IsPostInstallStatus(status Status) bool {
+	return status == StatusRefresh
+}

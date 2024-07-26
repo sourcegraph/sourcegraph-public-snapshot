@@ -168,5 +168,6 @@ func parseGoogleTokenUsage(r io.Reader, logger log.Logger) (promptTokens int, co
 		return res.UsageMetadata.PromptTokenCount, res.UsageMetadata.CompletionTokenCount, nil
 	}
 
-	return -1, -1, errors.New("no Google response found")
+	logger.Warn("no Google response found", log.Error(err))
+	return -1, -1, nil
 }

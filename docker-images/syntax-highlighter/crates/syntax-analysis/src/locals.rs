@@ -13,11 +13,12 @@ use itertools::Itertools;
 use protobuf::Enum;
 use scip::{
     symbol::format_symbol,
-    types::{Occurrence, Symbol},
+    types::{descriptor, Occurrence, Symbol},
 };
 use string_interner::{symbol::SymbolU32, StringInterner};
 use tree_sitter::Node;
 
+use crate::tree_sitter_ext::NodeExt;
 /// This module contains logic to understand the binding structure of
 /// a given source file. We emit information about references and
 /// definitions of _local_ bindings. A local binding is a binding that
@@ -29,8 +30,7 @@ use tree_sitter::Node;
 /// tree-sitter and a DSL built on top of its [query syntax].
 ///
 /// [query syntax]: https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax
-use crate::languages::LocalConfiguration;
-use crate::tree_sitter_ext::NodeExt;
+use crate::{languages::LocalConfiguration, SCIP_SYNTAX_SCHEME};
 
 // Missing features at this point
 // a) Namespacing
@@ -46,12 +46,58 @@ use crate::tree_sitter_ext::NodeExt;
 /// prevent infinite loops
 const MAX_SCOPE_DEPTH: i32 = 10000;
 
+#[derive(Clone, Debug, Copy, PartialEq)]
+enum ReferenceDescriptor {
+    Method,
+    Type,
+    Term,
+    Namespace,
+}
+
+impl ReferenceDescriptor {
+    fn from_str(str: &str) -> Option<ReferenceDescriptor> {
+        match str {
+            "method" => Some(ReferenceDescriptor::Method),
+            "type" => Some(ReferenceDescriptor::Type),
+            "term" => Some(ReferenceDescriptor::Term),
+            "namespace" => Some(ReferenceDescriptor::Namespace),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Copy, PartialEq)]
+enum Visibility {
+    /// Pure local reference can only be resolved to a definition
+    /// within the locals scope tree, and if definition is not found,
+    /// then no reference is emitted at all
+    Local,
+
+    /// Pure global reference bypasses the local scope resolution,
+    /// and a global reference is immediately emitted (with symbol being just
+    /// the node's text content)
+    Global,
+}
+
+impl Visibility {
+    fn from_str(str: &str) -> Option<Visibility> {
+        if str.starts_with("global") {
+            Some(Visibility::Global)
+        } else if str.starts_with("local") {
+            Some(Visibility::Local)
+        } else {
+            None
+        }
+    }
+}
+
 pub fn find_locals(
     config: &LocalConfiguration,
     tree: &tree_sitter::Tree,
     source: &str,
+    options: LocalResolutionOptions,
 ) -> Result<Vec<Occurrence>> {
-    let resolver = LocalResolver::new(source);
+    let resolver = LocalResolver::new(source, options);
     resolver.process(config, tree, None)
 }
 
@@ -66,6 +112,8 @@ struct Definition<'a> {
 struct Reference<'a> {
     node: Node<'a>,
     name: Name,
+    kind: Option<Visibility>,
+    descriptor: Option<ReferenceDescriptor>,
     /// When dealing with def_refs there are references that we've
     /// already resolved to their definitions. Because we don't want
     /// to duplicate that work we store the definition's id here.
@@ -187,6 +235,8 @@ struct DefCapture<'a> {
 #[derive(Debug)]
 struct RefCapture<'a> {
     node: Node<'a>,
+    visibility: Option<Visibility>,
+    descriptor: Option<ReferenceDescriptor>,
 }
 
 /// Created by LocalResolver::ancestors()
@@ -218,8 +268,22 @@ enum DefRef {
     NewDefinition(DefId),
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct LocalResolutionOptions {
+    pub emit_global_references: bool,
+}
+
+impl Default for LocalResolutionOptions {
+    fn default() -> Self {
+        LocalResolutionOptions {
+            emit_global_references: true,
+        }
+    }
+}
+
 #[derive(Debug)]
 struct LocalResolver<'a> {
+    options: LocalResolutionOptions,
     arena: Arena<Scope<'a>>,
     interner: StringInterner,
 
@@ -250,8 +314,9 @@ impl<'a> IndexMut<ScopeId<'a>> for LocalResolver<'a> {
 }
 
 impl<'a> LocalResolver<'a> {
-    fn new(source: &'a str) -> Self {
+    fn new(source: &'a str, options: LocalResolutionOptions) -> Self {
         LocalResolver {
+            options,
             arena: Arena::new(),
             interner: StringInterner::default(),
             source_bytes: source.as_bytes(),
@@ -355,6 +420,8 @@ impl<'a> LocalResolver<'a> {
                     name,
                     node,
                     resolves_to: Some(definition_id),
+                    kind: None,
+                    descriptor: None,
                 })
             }
         };
@@ -471,6 +538,8 @@ impl<'a> LocalResolver<'a> {
                 node: ref_capture.node,
                 name,
                 resolves_to: None,
+                kind: ref_capture.visibility,
+                descriptor: ref_capture.descriptor,
             };
             self.add_reference(scope, reference)
         }
@@ -517,6 +586,7 @@ impl<'a> LocalResolver<'a> {
         let mut scopes: Vec<ScopeCapture> = vec![];
         let mut definitions: Vec<DefCapture> = vec![];
         let mut references: Vec<RefCapture<'a>> = vec![];
+        let mut skip_references_at_offsets: HashSet<usize> = HashSet::new();
 
         for match_ in cursor.matches(&config.query, tree.root_node(), source_bytes) {
             let properties = config.query.property_settings(match_.pattern_index);
@@ -551,10 +621,48 @@ impl<'a> LocalResolver<'a> {
                     })
                 } else if capture_name.starts_with("reference") {
                     let offset = capture.node.start_byte();
+
+                    if skip_references_at_offsets.contains(&offset) {
+                        continue;
+                    }
+
+                    let kind_property = properties
+                        .iter()
+                        .find(|p| p.key.as_ref() == "kind")
+                        .and_then(|p| p.value.as_deref());
+
+                    // If global references are disabled, then we
+                    // 1. don't emit global captures at all
+                    // 2. convert ambiguous references into strict local ones
+                    let visibility = match kind_property.and_then(Visibility::from_str) {
+                        None if !self.options.emit_global_references => Some(Visibility::Local),
+                        Some(Visibility::Global) if !self.options.emit_global_references => {
+                            continue
+                        }
+                        other => other,
+                    };
+
                     if self.skip_occurrences_at_offsets.contains(&offset) {
                         continue;
                     }
-                    references.push(RefCapture { node: capture.node })
+
+                    skip_references_at_offsets.insert(offset);
+
+                    let descriptor = match visibility {
+                        Some(Visibility::Global) => kind_property
+                            .and_then(|p| p.strip_prefix("global."))
+                            .and_then(ReferenceDescriptor::from_str),
+                        Some(Visibility::Local) => kind_property
+                            .and_then(|p| p.strip_prefix("local."))
+                            .and_then(ReferenceDescriptor::from_str),
+                        None => kind_property.and_then(ReferenceDescriptor::from_str),
+                    };
+
+                    references.push(RefCapture {
+                        node: capture.node,
+                        visibility,
+                        descriptor,
+                    });
                 } else if capture_name == "occurrence.skip" {
                     let offset = capture.node.start_byte();
                     self.skip_occurrences_at_offsets.insert(offset);
@@ -693,32 +801,86 @@ impl<'a> LocalResolver<'a> {
         }
     }
 
+    fn make_global_reference(&self, reference: &Reference) -> scip::types::Occurrence {
+        let referenced_name = self.interner.resolve(reference.name).unwrap().to_string();
+
+        let suffix = match reference.descriptor {
+            Some(ReferenceDescriptor::Type) => descriptor::Suffix::Type,
+            Some(ReferenceDescriptor::Method) => descriptor::Suffix::Method,
+            Some(ReferenceDescriptor::Term) => descriptor::Suffix::Term,
+            Some(ReferenceDescriptor::Namespace) => descriptor::Suffix::Namespace,
+            None => descriptor::Suffix::Term,
+        };
+
+        let symbol = scip::symbol::format_symbol(scip::types::Symbol {
+            scheme: SCIP_SYNTAX_SCHEME.into(),
+            package: None.into(),
+            descriptors: vec![scip::types::Descriptor {
+                name: referenced_name,
+                suffix: suffix.into(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        });
+
+        scip::types::Occurrence {
+            range: reference.node.scip_range(),
+            symbol,
+            ..Default::default()
+        }
+    }
+
+    fn make_local_reference(
+        &self,
+        reference: &Reference,
+        def_id: DefId,
+    ) -> scip::types::Occurrence {
+        scip::types::Occurrence {
+            range: reference.node.scip_range(),
+            symbol: format_symbol(def_id.as_local_symbol()),
+            ..Default::default()
+        }
+    }
+
     fn resolve_references(&mut self) {
         let mut ref_occurrences = vec![];
 
         for (scope_ref, scope) in self.arena.iter() {
             for reference in scope.references.iter() {
-                let def_id = if let Some(resolved) = reference.resolves_to {
-                    resolved
-                } else if self
-                    .skip_references_at_offsets
-                    .contains(&reference.node.start_byte())
-                {
-                    // See the comment on LocalResolver.definition_start_bytes
+                if let Some(def_id) = reference.resolves_to {
+                    ref_occurrences.push(self.make_local_reference(reference, def_id));
                     continue;
-                } else if let Some(def) =
-                    self.find_def(scope_ref, reference.name, reference.node.start_byte())
-                {
-                    def.id
-                } else {
-                    continue;
-                };
+                }
 
-                ref_occurrences.push(scip::types::Occurrence {
-                    range: reference.node.scip_range(),
-                    symbol: format_symbol(def_id.as_local_symbol()),
-                    ..Default::default()
-                });
+                let skip = self
+                    .skip_references_at_offsets
+                    .contains(&reference.node.start_byte());
+
+                match reference.kind {
+                    Some(Visibility::Local) | None => {
+                        let is_pure_local_reference = reference.kind == Some(Visibility::Local);
+
+                        if skip {
+                            continue;
+                        }
+
+                        if let Some(def) =
+                            self.find_def(scope_ref, reference.name, reference.node.start_byte())
+                        {
+                            ref_occurrences.push(self.make_local_reference(reference, def.id));
+                            continue;
+                        }
+
+                        if !is_pure_local_reference {
+                            ref_occurrences.push(self.make_global_reference(reference))
+                        }
+                    }
+                    Some(Visibility::Global) => {
+                        if !skip {
+                            ref_occurrences.push(self.make_global_reference(reference))
+                        }
+                    }
+                }
             }
         }
 
@@ -778,8 +940,7 @@ mod test {
         let source_bytes = source_code.as_bytes();
         let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
-
-        let resolver = LocalResolver::new(source_code);
+        let resolver = LocalResolver::new(source_code, LocalResolutionOptions::default());
         let mut tree_output = String::new();
         let occ = resolver.process(config, &tree, Some(&mut tree_output));
 
@@ -833,7 +994,7 @@ mod test {
         let source_code = include_str!("../testdata/locals.java");
         let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
-        insta::assert_snapshot!("java_occurrences", dumped);
         insta::assert_snapshot!("java_scopes", scope_tree);
+        insta::assert_snapshot!("java_occurrences", dumped);
     }
 }

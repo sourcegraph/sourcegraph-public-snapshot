@@ -13,7 +13,6 @@ go_library(
         "mocks_temp.go",
         "observability.go",
         "request_state.go",
-        "scip_utils.go",
         "service.go",
         "service_new.go",
         "syntactic.go",
@@ -27,6 +26,7 @@ go_library(
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
+        "//internal/codeintel/codegraph",
         "//internal/codeintel/codenav/internal/lsifstore",
         "//internal/codeintel/codenav/shared",
         "//internal/codeintel/core",
@@ -66,7 +66,6 @@ go_test(
         "gittree_translator_test.go",
         "helpers_test.go",
         "mapped_index_test.go",
-        "scip_utils_test.go",
         "service_closest_uploads_test.go",
         "service_diagnostics_test.go",
         "service_hover_test.go",
@@ -108,6 +107,7 @@ go_test(
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_scip//bindings/go/scip",
         "@com_github_stretchr_testify//require",
+        "@org_golang_x_exp//maps",
     ],
 )
 

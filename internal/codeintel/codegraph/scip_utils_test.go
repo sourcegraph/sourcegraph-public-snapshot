@@ -1,4 +1,4 @@
-package codenav
+package codegraph
 
 import (
 	"testing"

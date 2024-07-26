@@ -29,16 +29,16 @@ func (u *usageConnectionResolver) PageInfo() resolverstubs.PageInfo {
 }
 
 type usageResolver struct {
-	symbol      *symbolInformationResolver
-	provenance  resolverstubs.CodeGraphDataProvenance
-	kind        resolverstubs.SymbolUsageKind
-	linesGetter LinesGetter
-	usageRange  *usageRangeResolver
+	symbol             *symbolInformationResolver
+	provenance         resolverstubs.CodeGraphDataProvenance
+	kind               resolverstubs.SymbolUsageKind
+	surroundingContent string
+	usageRange         *usageRangeResolver
 }
 
 var _ resolverstubs.UsageResolver = &usageResolver{}
 
-func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Repo, revision api.CommitID, linesGetter LinesGetter) resolverstubs.UsageResolver {
+func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Repo, revision api.CommitID) resolverstubs.UsageResolver {
 	var kind resolverstubs.SymbolUsageKind
 	if usage.IsDefinition {
 		kind = resolverstubs.UsageKindDefinition
@@ -49,9 +49,9 @@ func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Re
 		symbol: &symbolInformationResolver{
 			name: usage.Symbol,
 		},
-		provenance:  resolverstubs.ProvenanceSyntactic,
-		kind:        kind,
-		linesGetter: linesGetter,
+		provenance:         resolverstubs.ProvenanceSyntactic,
+		kind:               kind,
+		surroundingContent: usage.SurroundingContent,
 		usageRange: &usageRangeResolver{
 			repository: repository,
 			revision:   revision,
@@ -60,7 +60,7 @@ func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Re
 		},
 	}
 }
-func NewSearchBasedUsageResolver(usage codenav.SearchBasedMatch, repository types.Repo, revision api.CommitID, linesGetter LinesGetter) resolverstubs.UsageResolver {
+func NewSearchBasedUsageResolver(usage codenav.SearchBasedMatch, repository types.Repo, revision api.CommitID) resolverstubs.UsageResolver {
 	var kind resolverstubs.SymbolUsageKind
 	if usage.IsDefinition {
 		kind = resolverstubs.UsageKindDefinition
@@ -68,10 +68,10 @@ func NewSearchBasedUsageResolver(usage codenav.SearchBasedMatch, repository type
 		kind = resolverstubs.UsageKindReference
 	}
 	return &usageResolver{
-		symbol:      nil,
-		provenance:  resolverstubs.ProvenanceSearchBased,
-		kind:        kind,
-		linesGetter: linesGetter,
+		symbol:             nil,
+		provenance:         resolverstubs.ProvenanceSearchBased,
+		kind:               kind,
+		surroundingContent: usage.SurroundingContent,
 		usageRange: &usageRangeResolver{
 			repository: repository,
 			revision:   revision,
@@ -103,21 +103,8 @@ func (u *usageResolver) UsageRange(ctx context.Context) (resolverstubs.UsageRang
 	return u.usageRange, nil
 }
 
-func (u *usageResolver) SurroundingContent(ctx context.Context, args *struct {
-	*resolverstubs.SurroundingLines `json:"surroundingLines"`
-}) (string, error) {
-	lines, err := u.linesGetter.Get(
-		ctx,
-		u.usageRange.repository.Name,
-		u.usageRange.revision,
-		u.usageRange.path.RawValue(),
-		int(u.usageRange.range_.Start.Line-*args.LinesBefore),
-		int(u.usageRange.range_.End.Line+*args.LinesAfter+1),
-	)
-	if err != nil {
-		return "", err
-	}
-	return string(lines), nil
+func (u *usageResolver) SurroundingContent(ctx context.Context) string {
+	return u.surroundingContent
 }
 
 func (u *usageResolver) UsageKind() resolverstubs.SymbolUsageKind {

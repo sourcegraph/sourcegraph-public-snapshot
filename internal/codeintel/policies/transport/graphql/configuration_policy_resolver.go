@@ -20,6 +20,8 @@ type configurationPolicyResolver struct {
 	errTracer           *observation.ErrCollector
 }
 
+var _ resolverstubs.CodeIntelligenceConfigurationPolicyResolver = &configurationPolicyResolver{}
+
 func NewConfigurationPolicyResolver(repoStore database.RepoStore, configurationPolicy shared.ConfigurationPolicy, errTracer *observation.ErrCollector) resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
 		repoStore:           repoStore,
@@ -93,8 +95,15 @@ func (r *configurationPolicyResolver) RetainIntermediateCommits() bool {
 	return r.configurationPolicy.RetainIntermediateCommits
 }
 
+// NOTE: the names differ to preserve the backwards compatibility -
+// the field has to remain named indexingEnabled in generated
+// GraphQL API
 func (r *configurationPolicyResolver) IndexingEnabled() bool {
-	return r.configurationPolicy.IndexingEnabled
+	return r.configurationPolicy.PreciseIndexingEnabled
+}
+
+func (r *configurationPolicyResolver) SyntacticIndexingEnabled() *bool {
+	return &r.configurationPolicy.SyntacticIndexingEnabled
 }
 
 func (r *configurationPolicyResolver) IndexCommitMaxAgeHours() *int32 {

@@ -16,9 +16,10 @@ import (
 func TestSearchBasedUsages_ResultWithoutSymbols(t *testing.T) {
 	refRange := testRange(1)
 	refRange2 := testRange(2)
+	refRangeLineContent := "refRangeContent"
 
 	mockSearchClient := FakeSearchClient().
-		WithFile("path.java", refRange, refRange2).
+		WithFile("path.java", ChunkMatchWithLine(refRange, refRangeLineContent), ChunkMatch(refRange2)).
 		Build()
 
 	usages, err := searchBasedUsagesImpl(
@@ -27,6 +28,7 @@ func TestSearchBasedUsages_ResultWithoutSymbols(t *testing.T) {
 	)
 	require.NoError(t, err)
 	expectRanges(t, usages, refRange, refRange2)
+	expectContent(t, usages, refRange, refRangeLineContent)
 }
 
 func TestSearchBasedUsages_ResultWithSymbol(t *testing.T) {
@@ -35,7 +37,7 @@ func TestSearchBasedUsages_ResultWithSymbol(t *testing.T) {
 	refRange2 := testRange(3)
 
 	mockSearchClient := FakeSearchClient().
-		WithFile("path.java", refRange, refRange2, defRange).
+		WithFile("path.java", ChunkMatches(refRange, refRange2, defRange)...).
 		WithSymbols("path.java", defRange).
 		Build()
 
@@ -53,7 +55,9 @@ func TestSearchBasedUsages_SyntacticMatchesGetRemovedFromSearchBasedResults(t *t
 	syntacticRange := testRange(2)
 
 	commit := api.CommitID("deadbeef")
-	mockSearchClient := FakeSearchClient().WithFile("path.java", commentRange, syntacticRange).Build()
+	mockSearchClient := FakeSearchClient().
+		WithFile("path.java", ChunkMatches(commentRange, syntacticRange)...).
+		Build()
 	upload, lsifStore := setupUpload(commit, "", doc("path.java", ref("ref", syntacticRange)))
 	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, noopTranslator(), upload, commit)
 
@@ -71,11 +75,12 @@ func TestSyntacticUsages(t *testing.T) {
 	defRange := testRange(2)
 	commentRange := testRange(3)
 	localRange := testRange(4)
+	lineContent := "initialRangeContent"
 	commit := api.CommitID("deadbeef")
 
 	mockSearchClient := FakeSearchClient().
-		WithFile("path.java", refRange, defRange, commentRange, localRange).
-		WithFile("initial.java", initialRange).
+		WithFile("path.java", ChunkMatches(refRange, defRange, commentRange, localRange)...).
+		WithFile("initial.java", ChunkMatchWithLine(initialRange, lineContent)).
 		Build()
 	upload, lsifStore := setupUpload(commit, "",
 		doc("path.java",
@@ -101,6 +106,7 @@ func TestSyntacticUsages(t *testing.T) {
 	// but not in the index as well as the range referencing the local symbol.
 	expectRanges(t, syntacticUsages.Matches, initialRange, refRange, defRange)
 	expectDefinitionRanges(t, syntacticUsages.Matches, defRange)
+	expectContent(t, syntacticUsages.Matches, initialRange, lineContent)
 }
 
 func TestSyntacticUsages_DocumentNotInIndex(t *testing.T) {
@@ -108,7 +114,7 @@ func TestSyntacticUsages_DocumentNotInIndex(t *testing.T) {
 	refRange := testRange(2)
 	commit := api.CommitID("deadbeef")
 
-	mockSearchClient := FakeSearchClient().WithFile("not-in-index.java", refRange).Build()
+	mockSearchClient := FakeSearchClient().WithFile("not-in-index.java", ChunkMatch(refRange)).Build()
 	upload, lsifStore := setupUpload(commit, "",
 		doc("initial.java",
 			ref("initial", initialRange)))
@@ -135,7 +141,9 @@ func TestSyntacticUsages_IndexCommitTranslated(t *testing.T) {
 	indexCommit := api.CommitID("deadbeef")
 	targetCommit := api.CommitID("beefdead")
 
-	mockSearchClient := FakeSearchClient().WithFile("path.java", refRange, editedRange, noMatchRange).Build()
+	mockSearchClient := FakeSearchClient().
+		WithFile("path.java", ChunkMatches(refRange, editedRange, noMatchRange)...).
+		Build()
 	upload, lsifStore := setupUpload(indexCommit, "",
 		doc("initial.java",
 			ref("initial", shiftSCIPRange(initialRange, 2))),

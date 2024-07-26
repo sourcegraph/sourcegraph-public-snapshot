@@ -151,22 +151,30 @@ func (s *Service) GetHover(ctx context.Context, args PositionalRequestArgs, requ
 		attribute.Int("numDefinitionUploads", len(uploads)),
 		attribute.String("definitionUploads", uploadIDsToString(uploads)))
 
-	// Perform the moniker search. This returns a set of locations defining one of the monikers
-	// attached to one of the source ranges.
-	locations, _, err := s.getBulkMonikerLocations(ctx, uploads, orderedMonikers, shared.UsageKindDefinition, DefinitionsLimit, 0)
-	if err != nil {
-		return "", shared.Range{}, false, err
-	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
+	ids := genslices.Map(uploads, func(u uploadsshared.CompletedUpload) int { return u.ID })
+	lookupSymbols := genslices.Map(orderedMonikers, func(m precise.QualifiedMonikerData) string { return m.Identifier })
 
-	for i := range locations {
+	usages, _, err := s.lsifstore.GetSymbolUsages(ctx, lsifstore.SymbolUsagesOptions{
+		UsageKind:           shared.UsageKindDefinition,
+		UploadIDs:           ids,
+		LookupSymbols:       lookupSymbols,
+		SkipPathsByUploadID: nil,
+		Limit:               DefinitionsLimit,
+		Offset:              0,
+	})
+	if err != nil {
+		return "", shared.Range{}, false, errors.Wrap(err, "lsifstore.GetSymbolUsages")
+	}
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(usages)))
+
+	for _, usage := range usages {
 		// Fetch hover text attached to a definition in the defining index
 		text, _, exists, err := s.lsifstore.GetHover(
 			ctx,
-			locations[i].UploadID,
-			locations[i].Path,
-			locations[i].Range.Start.Line,
-			locations[i].Range.Start.Character,
+			usage.UploadID,
+			usage.Path,
+			usage.Range.Start.Line,
+			usage.Range.Start.Character,
 		)
 		if err != nil {
 			return "", shared.Range{}, false, errors.Wrap(err, "lsifStore.Hover")
@@ -354,27 +362,6 @@ func (s *Service) getUploadsByIDs(ctx context.Context, ids []int, requestState R
 	allUploads := append(existingUploads, uploadsWithResolvableCommits...)
 
 	return allUploads, nil
-}
-
-// getBulkMonikerLocations returns the set of locations (within the given uploads) with an attached moniker
-// whose scheme+identifier matches any of the given monikers.
-func (s *Service) getBulkMonikerLocations(ctx context.Context, uploads []uploadsshared.CompletedUpload, orderedMonikers []precise.QualifiedMonikerData, usageKind shared.UsageKind, limit, offset int) ([]shared.Location, int, error) {
-	ids := make([]int, 0, len(uploads))
-	for i := range uploads {
-		ids = append(ids, uploads[i].ID)
-	}
-
-	args := make([]precise.MonikerData, 0, len(orderedMonikers))
-	for _, moniker := range orderedMonikers {
-		args = append(args, moniker.MonikerData)
-	}
-
-	locations, totalCount, err := s.lsifstore.GetBulkMonikerLocations(ctx, usageKind, ids, args, limit, offset)
-	if err != nil {
-		return nil, 0, errors.Wrap(err, "lsifStore.GetBulkMonikerLocations")
-	}
-
-	return locations, totalCount, nil
 }
 
 // DefinitionsLimit is maximum the number of locations returned from Definitions.
@@ -1076,9 +1063,10 @@ func (s *Service) getSyntacticUpload(ctx context.Context, trace observation.Trac
 }
 
 type SearchBasedMatch struct {
-	Path         core.RepoRelPath
-	Range        scip.Range
-	IsDefinition bool
+	Path               core.RepoRelPath
+	Range              scip.Range
+	SurroundingContent string
+	IsDefinition       bool
 }
 
 func (s SearchBasedMatch) GetRange() scip.Range {
@@ -1089,19 +1077,26 @@ func (s SearchBasedMatch) GetIsDefinition() bool {
 	return s.IsDefinition
 }
 
+func (s SearchBasedMatch) GetSurroundingContent() string {
+	return s.SurroundingContent
+}
+
 type SyntacticMatch struct {
-	Path         core.RepoRelPath
-	Range        scip.Range
-	IsDefinition bool
-	Symbol       string
+	Path               core.RepoRelPath
+	Range              scip.Range
+	SurroundingContent string
+	IsDefinition       bool
+	Symbol             string
 }
 
 func (s SyntacticMatch) GetRange() scip.Range {
 	return s.Range
 }
-
 func (s SyntacticMatch) GetIsDefinition() bool {
 	return s.IsDefinition
+}
+func (s SyntacticMatch) GetSurroundingContent() string {
+	return s.SurroundingContent
 }
 
 type SyntacticUsagesResult struct {
