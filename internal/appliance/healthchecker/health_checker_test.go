@@ -85,11 +85,11 @@ func TestManageIngressFacingService(t *testing.T) {
 		{Name: "http", Port: 30080, TargetPort: intstr.FromString("http")},
 	}
 	svc.Spec.Selector = map[string]string{
-		"app": "sourcegraph-appliance",
+		"app": "sourcegraph-appliance-frontend",
 	}
 	err = k8sClient.Create(ctx, &svc)
 	require.NoError(t, err)
-	runHealthCheckAndAssertSelector(t, checker, serviceName, "sourcegraph-appliance")
+	runHealthCheckAndAssertSelector(t, checker, serviceName, "sourcegraph-appliance-frontend")
 
 	// Simulate some frontend pods existing but with no readiness conditions.
 	pod1 := mkPod("pod1", ns.GetName())
@@ -98,7 +98,7 @@ func TestManageIngressFacingService(t *testing.T) {
 	pod2 := mkPod("pod2", ns.GetName())
 	err = k8sClient.Create(ctx, pod2)
 	require.NoError(t, err)
-	runHealthCheckAndAssertSelector(t, checker, serviceName, "sourcegraph-appliance")
+	runHealthCheckAndAssertSelector(t, checker, serviceName, "sourcegraph-appliance-frontend")
 
 	// Simulate one pod becoming ready to receive traffic
 	pod1.Status.Conditions = []corev1.PodCondition{
@@ -131,7 +131,7 @@ func TestManageIngressFacingService(t *testing.T) {
 	}
 	err = k8sClient.Status().Update(ctx, pod1)
 	require.NoError(t, err)
-	runHealthCheckAndAssertSelector(t, checker, serviceName, "sourcegraph-appliance")
+	runHealthCheckAndAssertSelector(t, checker, serviceName, "sourcegraph-appliance-frontend")
 }
 
 func runHealthCheckAndAssertSelector(t *testing.T, checker *HealthChecker, serviceName types.NamespacedName, expectedSelectorValue string) {
