@@ -23,6 +23,44 @@ query CommitPage_CommitQuery($repoName: String!, $revspec: String!) {
     }
 }
 
+query CommitPage_Changelist($repoId: ID!, $changelistId: String!) {
+    node(id: $repoId) {
+        __typename
+        ... on Repository {
+            sourceType
+            changelist(cid: $changelistId) {
+                __typename
+                ...PerforceChangelistFields
+            }
+        }
+    }
+}
+
+fragment PerforceChangelistFields on PerforceChangelist {
+    cid
+    canonicalURL
+    commit {
+        id
+        oid
+        perforceChangelist {
+            cid
+            canonicalURL
+        }
+        parents {
+            id
+            oid
+            abbreviatedOID
+            canonicalURL
+        }
+        externalURLs {
+            url
+            serviceKind
+        }
+        ...Commit
+        __typename
+    }
+}
+
 query CommitPage_DiffQuery($repoName: String!, $base: String, $head: String, $first: Int, $after: String) {
     repository(name: $repoName) {
         id

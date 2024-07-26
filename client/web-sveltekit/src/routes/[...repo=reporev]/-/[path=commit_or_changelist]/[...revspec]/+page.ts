@@ -4,21 +4,28 @@ import { IncrementalRestoreStrategy, getGraphQLClient, infinityQuery } from '$li
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
-import { CommitPage_CommitQuery, CommitPage_DiffQuery } from './page.gql'
+import { CommitPage_CommitQuery, CommitPage_DiffQuery, CommitPage_Changelist } from './page.gql'
 
 const PAGE_SIZE = 20
 
-export const load: PageLoad = async ({ params }) => {
+export const load: PageLoad = async ({ parent, params }) => {
     const client = getGraphQLClient()
     const { repoName } = parseRepoRevision(params.repo)
+    const { resolvedRepository } = await parent()
 
-    const result = await client.query(CommitPage_CommitQuery, { repoName, revspec: params.revspec })
+    const isPerforce = resolvedRepository.externalRepository.serviceType === 'perforce'
+
+    const result = isPerforce
+        ? await client.query(CommitPage_Changelist,{ repoId: resolvedRepository.id, changelistId: params.revspec })
+        : await client.query(CommitPage_CommitQuery, { repoName, revspec: params.revspec })
 
     if (result.error) {
         error(500, `Unable to load commit data: ${result.error}`)
     }
 
-    const commit = result.data?.repository?.commit
+    const commit = ('node' in (result?.data))
+        ? result.data?.node?.changelist.commit
+        : result.data?.repository?.commit
 
     if (!commit) {
         error(404, 'Commit not found')

@@ -27,6 +27,7 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
 
     // An empty revision means we are at the default branch
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
+    console.log('revision', params.repo, revision)
     const resolvedRepository = await resolveRepoRevision({
         client,
         repoName,
