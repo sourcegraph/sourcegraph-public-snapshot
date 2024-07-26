@@ -3,8 +3,6 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -61,7 +59,7 @@ func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *args) (stri
 	case ParseTree:
 		return outputParseTree(searchType, args)
 	case JobTree:
-		return outputJobTree(ctx, searchType, args, r.db, r.logger)
+		return outputJobTree(ctx, searchType, args, r.db)
 	}
 	return "", nil
 }
@@ -87,7 +85,6 @@ func outputJobTree(
 	searchType query.SearchType,
 	args *args,
 	db database.DB,
-	logger log.Logger,
 ) (string, error) {
 	plan, err := query.Pipeline(query.Init(args.Query, searchType))
 	if err != nil {
