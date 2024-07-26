@@ -219,14 +219,37 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 	// Validate filters
 	filters := req.Msg.GetFilters()
 	for _, filter := range filters {
-		// TODO: Implement additional filtering as needed
 		switch f := filter.GetFilter().(type) {
 		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_Type:
-			return nil, connect.NewError(connect.CodeUnimplemented,
-				errors.New("filtering by type is not implemented"))
+			if f.Type == 0 {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.New(`invalid filter: "type" is not valid`),
+				)
+			}
+			if opts.LicenseType != 0 {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.New(`invalid filter: "type" provided more than once`),
+				)
+			}
+			opts.LicenseType = f.Type
+
 		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_LicenseKeySubstring:
-			return nil, connect.NewError(connect.CodeUnimplemented,
-				errors.New("filtering by license key substring is not implemented"))
+			if f.LicenseKeySubstring == "" {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.New(`invalid filter: "license_key_substring" is provided but is empty`),
+				)
+			}
+			if opts.LicenseKeySubstring != "" {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.New(`invalid filter: "license_key_substring"" provided multiple times`),
+				)
+			}
+			opts.LicenseKeySubstring = f.LicenseKeySubstring
+
 		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_SubscriptionId:
 			if f.SubscriptionId == "" {
 				return nil, connect.NewError(
@@ -242,6 +265,14 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 			}
 			opts.SubscriptionID = f.SubscriptionId
 		}
+	}
+
+	if opts.LicenseType != subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY &&
+		opts.LicenseKeySubstring != "" {
+		return nil, connect.NewError(
+			connect.CodeInvalidArgument,
+			errors.New(`invalid filters: "license_type" must be 'ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY' to use the "license_key_substring" filter`),
+		)
 	}
 
 	licenses, err := s.store.ListEnterpriseSubscriptionLicenses(ctx, opts)

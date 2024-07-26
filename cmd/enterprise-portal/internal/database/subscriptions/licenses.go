@@ -132,7 +132,9 @@ func NewLicensesStore(db *pgxpool.Pool) *LicensesStore {
 }
 
 type ListLicensesOpts struct {
-	SubscriptionID string
+	SubscriptionID      string
+	LicenseType         subscriptionsv1.EnterpriseSubscriptionLicenseType
+	LicenseKeySubstring string
 	// PageSize is the maximum number of licenses to return.
 	PageSize int
 }
@@ -143,6 +145,16 @@ func (opts ListLicensesOpts) toQueryConditions() (where, limitClause string, _ p
 	if opts.SubscriptionID != "" {
 		whereConds = append(whereConds, "subscription_id = @subscriptionID")
 		namedArgs["subscriptionID"] = opts.SubscriptionID
+	}
+	if opts.LicenseType > 0 {
+		whereConds = append(whereConds,
+			"license_type = @licenseType")
+		namedArgs["licenseType"] = opts.LicenseType.String()
+	}
+	if opts.LicenseKeySubstring != "" {
+		whereConds = append(whereConds,
+			"license_data->>'SignedKey' LIKE  '%' || @licenseKeySubstring || '%'")
+		namedArgs["licenseKeySubstring"] = opts.LicenseKeySubstring
 	}
 	where = strings.Join(whereConds, " AND ")
 
