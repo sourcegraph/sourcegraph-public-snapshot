@@ -25,7 +25,7 @@ func bazelBuildExecutorVM(c Config, alwaysRebuild bool) operations.Operation {
 
 		cmd := bazelStampedCmd("--announce_rc run //cmd/executor/vm-image:ami.build")
 
-		if false {
+		if alwaysRebuild {
 			stepOpts = append(stepOpts,
 				// Soft-fail with code 222 if nothing has changed
 				bk.SoftFail(222),
