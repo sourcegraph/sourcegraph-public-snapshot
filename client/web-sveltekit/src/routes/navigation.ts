@@ -53,11 +53,11 @@ export function getMainNavigationEntries(mode: Mode): (NavigationMenu | Navigati
             const entry = toEntry(definition, mode)
             return 'children' in definition
                 ? {
-                      ...entry,
-                      children: definition.children
-                          .filter(child => matchesMode(child, mode))
-                          .map(child => toEntry(child, mode)),
-                  }
+                    ...entry,
+                    children: definition.children
+                        .filter(child => matchesMode(child, mode))
+                        .map(child => toEntry(child, mode)),
+                }
                 : entry
         })
 }
@@ -67,6 +67,56 @@ const navigationEntries: (NavigationMenuDefinition | NavigationEntryDefinition)[
         label: 'Code Search',
         icon: ILucideSearch,
         href: '/search',
+        mode: Mode.ENTERPRISE,
+    },
+    {
+        label: 'Code Search',
+        icon: ILucideSearch,
+        href: '/search',
+        mode: Mode.DOTCOM,
+    },
+    {
+        label: 'Cody',
+        icon: ISgCody,
+        href: '/cody',
+        mode: Mode.DOTCOM | Mode.UNAUTHENTICATED,
+    },
+    {
+        label: 'Cody',
+        icon: ISgCody,
+        href: '/cody/chat',
+        mode: Mode.DOTCOM | Mode.AUTHENTICATED,
+    },
+    {
+        label: 'Cody',
+        icon: ISgCody,
+        href: [
+            [Mode.CODY_USER_ENABLED, '/cody/chat'],
+            [Mode.CODY_INSTANCE_ENABLED, '/cody/dashboard'],
+        ],
+        mode: Mode.ENTERPRISE | Mode.CODY_INSTANCE_ENABLED,
+    },
+    {
+        label: 'Batch Changes',
+        icon: ISgBatchChanges,
+        href: '/batch-changes',
+        mode: Mode.BATCH_CHANGES_ENABLED,
+    },
+    {
+        label: 'Insights',
+        icon: ILucideBarChartBig,
+        href: '/insights',
+        mode: Mode.CODE_INSIGHTS_ENABLED,
+    },
+    {
+        label: 'About Sourcegraph',
+        href: '/',
+        mode: Mode.DOTCOM,
+    },
+    {
+        label: 'Tools',
+        icon: IMdiTools,
+        href: '/',
         children: [
             {
                 label: 'Search Home',
@@ -94,72 +144,5 @@ const navigationEntries: (NavigationMenuDefinition | NavigationEntryDefinition)[
                 status: Status.BETA,
             },
         ],
-        mode: Mode.ENTERPRISE,
-    },
-    {
-        label: 'Code Search',
-        icon: ILucideSearch,
-        href: '/search',
-        mode: Mode.DOTCOM,
-    },
-    {
-        label: 'Cody',
-        icon: ISgCody,
-        href: '/cody',
-        mode: Mode.DOTCOM | Mode.UNAUTHENTICATED,
-    },
-    {
-        label: 'Cody',
-        icon: ISgCody,
-        href: '/cody/chat',
-        children: [
-            {
-                label: 'Web Chat',
-                href: '/cody/chat',
-            },
-            {
-                label: 'Dashboard',
-                href: '/cody/manage',
-            },
-        ],
-        mode: Mode.DOTCOM | Mode.AUTHENTICATED,
-    },
-    {
-        label: 'Cody',
-        icon: ISgCody,
-        href: [
-            [Mode.CODY_USER_ENABLED, '/cody/chat'],
-            [Mode.CODY_INSTANCE_ENABLED, '/cody/dashboard'],
-        ],
-        children: [
-            {
-                label: 'Web Chat',
-                href: '/cody/chat',
-                mode: Mode.CODY_USER_ENABLED,
-            },
-            {
-                label: 'Dashboard',
-                href: '/cody/dashboard',
-                mode: Mode.CODY_USER_ENABLED,
-            },
-        ],
-        mode: Mode.ENTERPRISE | Mode.CODY_INSTANCE_ENABLED,
-    },
-    {
-        label: 'Batch Changes',
-        icon: ISgBatchChanges,
-        href: '/batch-changes',
-        mode: Mode.BATCH_CHANGES_ENABLED,
-    },
-    {
-        label: 'Insights',
-        icon: ILucideBarChartBig,
-        href: '/insights',
-        mode: Mode.CODE_INSIGHTS_ENABLED,
-    },
-    {
-        label: 'About Sourcegraph',
-        href: '/',
-        mode: Mode.DOTCOM,
     },
 ]
