@@ -7,10 +7,10 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -129,18 +129,16 @@ func (key *FindUsagesKey) IdentifyMatchingOccurrences(allOccurrences []*scip.Occ
 		panic(fmt.Sprintf("Unhandled case of locationKey.Matcher: %+v", key.Matcher))
 	}
 	strategy = RangeBasedMatchStrategy
-	idxRange := collections.BinarySearchRangeFunc(allOccurrences, range_, func(occ *scip.Occurrence, r scip.Range) int {
-		return scip.NewRangeUnchecked(occ.Range).Compare(range_)
-	})
-	if idxRange.IsEmpty() {
+	sameRangeOccs := codegraph.FindOccurrencesWithEqualRange(allOccurrences, range_)
+	if len(sameRangeOccs) == 0 {
 		return
 	}
 	if symbolToMatch == "" {
-		out = allOccurrences[idxRange.Start:idxRange.End]
+		out = sameRangeOccs
 		return
 	}
 	strategy = RangeAndSymbolBasedMatchStrategy
-	for _, occ := range allOccurrences[idxRange.Start:idxRange.End] {
+	for _, occ := range sameRangeOccs {
 		if occ.Symbol == symbolToMatch {
 			out = append(out, occ)
 		}

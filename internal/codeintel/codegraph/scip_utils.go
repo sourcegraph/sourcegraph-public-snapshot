@@ -1,4 +1,4 @@
-package codenav
+package codegraph
 
 import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
