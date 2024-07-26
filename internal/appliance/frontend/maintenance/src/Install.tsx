@@ -11,10 +11,16 @@ export const Install: React.FC = () => {
     useEffect(() => {
         const fetchVersions = async () => {
             try {
-                const response = await fetch('https://releaseregistry.sourcegraph.com/v1/get/releases/sourcegraph')
+                const response = await fetch('https://releaseregistry.sourcegraph.com/v1/get/releases/sourcegraph', {
+                    headers: {
+                        Authorization: `Bearer ${process.env.RELEASEREGISTRY_TOKEN}`,
+                    },
+                })
                 const data = await response.json()
                 setVersion(data)
                 if (data.length > 0) {
+                    const publicVersions = data.filter(item => item.public).map(item => item.version)
+                    setVersion(publicVersions)
                     setSelectedVersion(data[0]) // Set the first version as default
                 }
             } catch (error) {
