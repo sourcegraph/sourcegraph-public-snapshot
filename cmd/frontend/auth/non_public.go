@@ -1,16 +1,20 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/gorilla/mux"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/gqlauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // RequireAuthMiddleware is a middleware that requires authentication for all HTTP requests, except
@@ -20,39 +24,49 @@ import (
 // own auth flow before the request reaches here.
 //
 // 🚨 SECURITY: Any change to this function could introduce security exploits.
-var RequireAuthMiddleware = &Middleware{
-	API: func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// If an anonymous user tries to access an API endpoint that requires authentication,
-			// prevent access.
-			if !actor.FromContext(r.Context()).IsAuthenticated() && !AllowAnonymousRequest(r) {
-				// Report HTTP 401 Unauthorized for API requests.
-				code := anonymousStatusCode(r, http.StatusUnauthorized)
-				http.Error(w, "Private mode requires authentication.", code)
-				return
-			}
+func RequireAuthMiddleware(db database.DB) *Middleware {
+	return &Middleware{
+		API: func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// If an anonymous user tries to access an API endpoint that requires authentication,
+				// prevent access.
+				currentActor := actor.FromContext(r.Context())
+				if !currentActor.IsAuthenticated() && !AllowAnonymousRequest(r) {
+					// Report HTTP 401 Unauthorized for API requests.
+					code := anonymousStatusCode(r, http.StatusUnauthorized)
+					http.Error(w, "Private mode requires authentication.", code)
+					return
+				}
 
-			// The client is authenticated, or the request is accessible to anonymous clients.
-			next.ServeHTTP(w, r)
-		})
-	},
-	App: func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// If an anonymous user tries to access an app endpoint that requires authentication,
-			// prevent access and redirect them to the login page.
-			if !actor.FromContext(r.Context()).IsAuthenticated() && !AllowAnonymousRequest(r) {
-				// Redirect 302 Found for web page requests.
-				code := anonymousStatusCode(r, http.StatusFound)
-				q := url.Values{}
-				q.Set("returnTo", r.URL.String())
-				http.Redirect(w, r, "/sign-in?"+q.Encode(), code)
-				return
-			}
+				role := gqlauth.UserGraphQLRole
+				if err := auth.CheckCurrentActorIsSiteAdmin(currentActor, db); err == nil {
+					role = gqlauth.SiteAdminGraphQLRole
+				}
 
-			// The client is authenticated, or the request is accessible to anonymous clients.
-			next.ServeHTTP(w, r)
-		})
-	},
+				r = r.WithContext(context.WithValue(r.Context(), gqlauth.GraphQLRoleKey, role))
+
+				// The client is authenticated, or the request is accessible to anonymous clients.
+				next.ServeHTTP(w, r)
+			})
+		},
+		App: func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// If an anonymous user tries to access an app endpoint that requires authentication,
+				// prevent access and redirect them to the login page.
+				if !actor.FromContext(r.Context()).IsAuthenticated() && !AllowAnonymousRequest(r) {
+					// Redirect 302 Found for web page requests.
+					code := anonymousStatusCode(r, http.StatusFound)
+					q := url.Values{}
+					q.Set("returnTo", r.URL.String())
+					http.Redirect(w, r, "/sign-in?"+q.Encode(), code)
+					return
+				}
+
+				// The client is authenticated, or the request is accessible to anonymous clients.
+				next.ServeHTTP(w, r)
+			})
+		},
+	}
 }
 
 var (

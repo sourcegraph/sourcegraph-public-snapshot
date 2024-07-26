@@ -76,7 +76,7 @@ extend type Query {
     the value stored in the environment variable or the default shipped scripts,
     only the value set via UI/GraphQL.
     """
-    codeIntelligenceInferenceScript: String!
+    codeIntelligenceInferenceScript: String! @hasRole(role: SITE_ADMIN)
 
     """
     Return (but do not enqueue) descriptions of auto indexing jobs at the current revision.
@@ -172,12 +172,12 @@ extend type Mutation {
     Updates the previously set/overrides the default global auto-indexing job inference Lua script
     with a new override.
     """
-    updateCodeIntelligenceInferenceScript(script: String!): EmptyResponse
+    updateCodeIntelligenceInferenceScript(script: String!): EmptyResponse @hasRole(role: SITE_ADMIN)
 
     """
     Updates the indexing configuration associated with a repository.
     """
-    updateRepositoryIndexConfiguration(repository: ID!, configuration: String!): EmptyResponse
+    updateRepositoryIndexConfiguration(repository: ID!, configuration: String!): EmptyResponse @hasRole(role: SITE_ADMIN)
 }
 
 extend type Repository {

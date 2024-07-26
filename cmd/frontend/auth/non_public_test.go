@@ -166,9 +166,10 @@ func TestNewUserRequiredAuthzMiddleware(t *testing.T) {
 			allowed := false
 			setAllowedHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { allowed = true })
 
+			mockDB := dbmocks.NewMockDB()
 			handler := http.NewServeMux()
-			handler.Handle("/.api/", auth.RequireAuthMiddleware.API(setAllowedHandler))
-			handler.Handle("/", auth.RequireAuthMiddleware.App(setAllowedHandler))
+			handler.Handle("/.api/", auth.RequireAuthMiddleware(mockDB).API(setAllowedHandler))
+			handler.Handle("/", auth.RequireAuthMiddleware(mockDB).App(setAllowedHandler))
 			handler.ServeHTTP(rec, tst.req)
 
 			if allowed != tst.allowed {

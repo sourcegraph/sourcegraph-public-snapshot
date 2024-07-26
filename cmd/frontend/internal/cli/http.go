@@ -52,7 +52,7 @@ func newExternalHTTPHandler(
 
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
-	authMiddlewares := auth.AuthMiddleware()
+	authMiddlewares := auth.AuthMiddleware(db)
 
 	// HTTP API handler, the call order of middleware is LIFO.
 	apiHandler, err := httpapi.NewHandler(db, schema, rateLimitWatcher, handlers)

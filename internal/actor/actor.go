@@ -106,6 +106,11 @@ type userFetcher interface {
 // types.User using the fetcher, which is likely a *database.UserStore.
 func (a *Actor) User(ctx context.Context, fetcher userFetcher) (*types.User, error) {
 	a.userOnce.Do(func() {
+		if fetcher == nil { // This can happen in test code.
+			a.user = nil
+			a.userErr = errors.New("userFetcher is nil, so cannot fetch users")
+			return
+		}
 		a.user, a.userErr = fetcher.GetByID(ctx, a.UID)
 	})
 	if a.user != nil && a.user.ID != a.UID {

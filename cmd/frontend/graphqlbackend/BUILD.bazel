@@ -239,6 +239,7 @@ go_library(
         "//cmd/frontend/envvar",
         "//cmd/frontend/external/session",
         "//cmd/frontend/globals",
+        "//cmd/frontend/gqlauth",
         "//cmd/frontend/graphqlbackend/externallink",
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//cmd/frontend/hubspot",

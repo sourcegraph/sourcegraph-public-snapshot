@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
@@ -30,9 +31,9 @@ func RegisterMiddlewares(m ...*Middleware) {
 
 // AuthMiddleware returns the authentication middleware that combines all authentication middlewares
 // that have been registered.
-func AuthMiddleware() *Middleware {
+func AuthMiddleware(db database.DB) *Middleware {
 	m := make([]*Middleware, 0, 1+len(extraAuthMiddlewares))
-	m = append(m, RequireAuthMiddleware)
+	m = append(m, RequireAuthMiddleware(db))
 	m = append(m, extraAuthMiddlewares...)
 	return composeMiddleware(m...)
 }

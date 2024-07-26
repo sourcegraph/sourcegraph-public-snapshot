@@ -4,6 +4,20 @@ schema {
 }
 
 """
+GraphQLRole is the role for checking API access.
+
+As of July 26 2024, not all fields which require site admin access
+have been marked with @hasRole(role: SITE_ADMIN), but we want
+to eventually migrate all fields.
+"""
+enum GraphQLRole {
+    USER
+    SITE_ADMIN
+}
+
+directive @hasRole(role: GraphQLRole!) on FIELD_DEFINITION
+
+"""
 This type is not returned by any resolver, but serves to document what an error
 response will look like.
 """

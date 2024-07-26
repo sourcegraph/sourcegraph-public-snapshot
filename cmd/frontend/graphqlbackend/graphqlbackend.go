@@ -22,6 +22,7 @@ import (
 	oteltracer "go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/gqlauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -657,6 +658,7 @@ func NewSchema(
 		graphql.Tracer(newRequestTracer(log.Scoped("GraphQL"), db)),
 		graphql.UseStringDescriptions(),
 		graphql.MaxDepth(conf.RateLimits().GraphQLMaxDepth),
+		graphql.Directives(&gqlauth.HasRoleDirective{}),
 	}
 	opts = append(opts, graphqlOpts...)
 	return graphql.ParseSchema(
