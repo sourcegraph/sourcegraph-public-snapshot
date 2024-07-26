@@ -72,7 +72,7 @@ func (h *HealthChecker) maybeFlipServiceOnce(ctx context.Context, labelSelector 
 		time.Sleep(h.Graceperiod)
 		if err := h.Probe.CheckPods(ctx, labelSelector); err != nil {
 			h.Logger.Error("found unhealthy state, setting service selector to appliance", log.Error(err))
-			return h.setServiceSelector(ctx, "sourcegraph-appliance")
+			return h.setServiceSelector(ctx, "sourcegraph-appliance-frontend")
 		}
 	}
 
