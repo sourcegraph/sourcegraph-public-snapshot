@@ -351,10 +351,12 @@ const SearchJob: FC<SearchJobProps> = props => {
             </span>
 
             <span className={styles.jobQuery}>
-                {job.state !== SearchJobState.COMPLETED && (
+                {job.state !== SearchJobState.COMPLETED ? (
                     <Text className="m-0 text-muted">
-                        {repoStats.completed} out of {repoStats.total} tasks
+                        {repoStats.completed} out of {repoStats.total} tasks completed
                     </Text>
+                ) : (
+                    <Text className="m-0 text-muted">{repoStats.completed} tasks completed</Text>
                 )}
 
                 <SyntaxHighlightedSearchQueryCodeMirror query={job.query} patternType={detectPatternType(job.query)} />
