@@ -109,7 +109,7 @@ extend type Mutation {
         retentionEnabled: Boolean!
         retentionDurationHours: Int
         retainIntermediateCommits: Boolean!
-        indexingEnabled: Boolean!
+        preciseIndexingEnabled: Boolean!
         syntacticIndexingEnabled: Boolean
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
