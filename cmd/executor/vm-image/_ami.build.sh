@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -exu
 
 # --- begin runfiles.bash initialization v3 ---
 # Copy-pasted from the Bazel Bash runfiles library v3.
