@@ -2,6 +2,7 @@ package reconciler
 
 import (
 	"context"
+	"sync"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -24,6 +25,7 @@ import (
 var _ reconcile.Reconciler = &Reconciler{}
 
 type Reconciler struct {
+	sync.Mutex
 	client.Client
 	Scheme               *runtime.Scheme
 	Recorder             record.EventRecorder
@@ -31,6 +33,9 @@ type Reconciler struct {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	r.Mutex.Lock()
+	defer r.Mutex.Unlock()
+
 	reqLog := log.FromContext(ctx)
 	reqLog.Info("reconciling sourcegraph appliance")
 
@@ -52,8 +57,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	defer r.Recorder.Event(&applianceSpec, "Normal", "ReconcileFinished", "Reconcile finished.")
 
 	status := applianceSpec.GetAnnotations()[config.AnnotationKeyStatus]
-	if config.IsPostInstallStatus(config.Status(status)) {
+	if r.BeginHealthCheckLoop != nil && config.IsPostInstallStatus(config.Status(status)) {
 		close(r.BeginHealthCheckLoop)
+		r.BeginHealthCheckLoop = nil
 	}
 
 	// TODO place holder code until we get the configmap spec'd out and working'
