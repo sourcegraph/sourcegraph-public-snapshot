@@ -33,6 +33,7 @@ go_test(
     name = "adminanalytics_test",
     timeout = "short",
     srcs = [
+        "cache_test.go",
         "users_test.go",
         "utils_test.go",
     ],

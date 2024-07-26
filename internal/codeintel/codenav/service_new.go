@@ -425,22 +425,23 @@ func (s *Service) gatherRemoteLocations(
 	// Fetch indexed ranges of the given symbols within the given uploads.
 
 	globalSymbolNames := genslices.Map(monikers, func(m precise.QualifiedMonikerData) string { return m.Identifier })
-	locations, totalCount, err := s.lsifstore.GetMinimalBulkSymbolUsages(
-		ctx,
-		usageKind,
-		cursor.UploadIDs,
-		cursor.SkipPathsByUploadID,
-		globalSymbolNames,
-		limit,
-		cursor.RemoteLocationOffset,
-	)
+	usages, totalUsageCount, err := s.lsifstore.GetSymbolUsages(ctx, lsifstore.SymbolUsagesOptions{
+		UsageKind:           usageKind,
+		UploadIDs:           cursor.UploadIDs,
+		SkipPathsByUploadID: cursor.SkipPathsByUploadID,
+		LookupSymbols:       globalSymbolNames,
+		Limit:               limit,
+		Offset:              cursor.RemoteLocationOffset,
+	})
 	if err != nil {
 		return nil, Cursor{}, err
 	}
 
 	// adjust cursor offset for next page
-	cursor = cursor.BumpRemoteLocationOffset(len(locations), totalCount)
+	cursor = cursor.BumpRemoteUsageOffset(len(usages), totalUsageCount)
 
+	// OK to use slice de-duplication because of ordering guarantees of GetSymbolUsages
+	locations := genslices.Dedup(genslices.Map(usages, shared.Usage.ToLocation))
 	// Adjust locations back to target commit
 	adjustedLocations, err := s.getUploadLocations(ctx, args, requestState, locations, includeFallbackLocations)
 	if err != nil {

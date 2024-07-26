@@ -1,0 +1,14 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "nginx is runnable"
+    command: "nginx"
+    args:
+      - -v
+
+  - name: "not running as root"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    excludedOutput: ["^0"]
+    exitCode: 0

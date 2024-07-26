@@ -1358,6 +1358,12 @@ type GerritConnection struct {
 	Password string `json:"password"`
 	// Projects description: An array of project strings specifying which Gerrit projects to mirror on Sourcegraph. If empty, all projects will be mirrored.
 	Projects []string `json:"projects,omitempty"`
+	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Gerrit repository. In the pattern, the variable "{host}" is replaced with the Gerrit host (such as gerrit.example.com), and "{name}" is replaced with the Gerrit repository's name (such as "myrepo").
+	//
+	// For example, if your Gerrit URL is https://gerrit.example.com and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of "{host}/{name}" would mean that a Gerrit repository at https://gerrit.example.com/myrepo is available on Sourcegraph at https://src.example.com/gerrit.example.com/myrepo.
+	//
+	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
+	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 	// Url description: URL of a Gerrit instance, such as https://gerrit.example.com.
 	Url string `json:"url"`
 	// Username description: A username for authentication with the Gerrit code host.

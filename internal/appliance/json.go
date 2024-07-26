@@ -2,6 +2,7 @@ package appliance
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -101,7 +102,7 @@ func (a *Appliance) getStatusJSONHandler() http.Handler {
 			Data:   "",
 		}
 
-		if err := a.writeJSON(w, http.StatusOK, responseData{"status": data}, nil); err != nil {
+		if err := a.writeJSON(w, http.StatusOK, responseData{"status": data}, http.Header{}); err != nil {
 			a.serverErrorResponse(w, r, err)
 		}
 	})
@@ -123,7 +124,7 @@ func (a *Appliance) getInstallProgressJSONHandler() http.Handler {
 			Tasks:    currentTasks,
 		}
 
-		if err := a.writeJSON(w, http.StatusOK, responseData{"progress": installProgress}, nil); err != nil {
+		if err := a.writeJSON(w, http.StatusOK, responseData{"progress": installProgress}, http.Header{}); err != nil {
 			a.serverErrorResponse(w, r, err)
 		}
 	})
@@ -132,6 +133,24 @@ func (a *Appliance) getInstallProgressJSONHandler() http.Handler {
 func (a *Appliance) getMaintenanceStatusHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+		type service struct {
+			Name    string `json:"name"`
+			Healthy bool   `json:"healthy"`
+			Message string `json:"message"`
+		}
+
+		services := []service{}
+		for _, name := range config.SourcegraphServicesToReconcile {
+			services = append(services, service{
+				Name:    name,
+				Healthy: true,
+				Message: "fake event",
+			})
+		}
+		fmt.Println(services)
+		if err := a.writeJSON(w, http.StatusOK, responseData{"services": services}, http.Header{}); err != nil {
+			a.serverErrorResponse(w, r, err)
+		}
 	})
 }
 

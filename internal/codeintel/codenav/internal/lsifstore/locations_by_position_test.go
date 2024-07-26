@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"github.com/stretchr/testify/require"
@@ -66,7 +67,7 @@ func TestExtractDefinitionLocationsFromPosition(t *testing.T) {
 					t.Errorf("unexpected locations (-want +got):\n%s", diff)
 				}
 
-				if diff := cmp.Diff(testCase.expectedSymbolNames, symbolNames); diff != "" {
+				if diff := cmp.Diff(testCase.expectedSymbolNames, symbolNames, cmpopts.EquateEmpty()); diff != "" {
 					t.Errorf("unexpected symbol names (-want +got):\n%s", diff)
 				}
 			}
@@ -109,7 +110,7 @@ func TestExtractReferenceLocationsFromPosition(t *testing.T) {
 					t.Errorf("unexpected locations (-want +got):\n%s", diff)
 				}
 
-				if diff := cmp.Diff(testCase.expectedSymbolNames, symbolNames); diff != "" {
+				if diff := cmp.Diff(testCase.expectedSymbolNames, symbolNames, cmpopts.EquateEmpty()); diff != "" {
 					t.Errorf("unexpected symbol names (-want +got):\n%s", diff)
 				}
 			}
@@ -117,7 +118,7 @@ func TestExtractReferenceLocationsFromPosition(t *testing.T) {
 	}
 }
 
-func TestGetMinimalBulkSymbolUsages(t *testing.T) {
+func TestGetSymbolUsages(t *testing.T) {
 	usageKind := shared.UsageKindReference
 	uploadIDs := []int{testSCIPUploadID}
 	skipPaths := map[int]string{}
@@ -128,25 +129,38 @@ func TestGetMinimalBulkSymbolUsages(t *testing.T) {
 
 	store := populateTestStore(t)
 
-	locations, totalCount, err := store.GetMinimalBulkSymbolUsages(context.Background(), usageKind, uploadIDs, skipPaths, lookupSymbols, 100, 0)
+	usages, totalCount, err := store.GetSymbolUsages(context.Background(), SymbolUsagesOptions{
+		UsageKind:           usageKind,
+		UploadIDs:           uploadIDs,
+		SkipPathsByUploadID: skipPaths,
+		LookupSymbols:       lookupSymbols,
+		Limit:               100,
+		Offset:              0,
+	})
 	require.NoError(t, err)
 	if expected := 9; totalCount != expected {
 		t.Fatalf("unexpected total count: want=%d have=%d\n", expected, totalCount)
 	}
 
-	expectedLocations := []shared.Location{
-		// SCIP results
-		{UploadID: testSCIPUploadID, Path: p("template/src/providers.ts"), Range: shared.NewRange(10, 9, 10, 16)},
-		{UploadID: testSCIPUploadID, Path: p("template/src/providers.ts"), Range: shared.NewRange(186, 43, 186, 50)},
-		{UploadID: testSCIPUploadID, Path: p("template/src/providers.ts"), Range: shared.NewRange(296, 34, 296, 41)},
-		{UploadID: testSCIPUploadID, Path: p("template/src/providers.ts"), Range: shared.NewRange(324, 38, 324, 45)},
-		{UploadID: testSCIPUploadID, Path: p("template/src/providers.ts"), Range: shared.NewRange(384, 30, 384, 37)},
-		{UploadID: testSCIPUploadID, Path: p("template/src/providers.ts"), Range: shared.NewRange(415, 8, 415, 15)},
-		{UploadID: testSCIPUploadID, Path: p("template/src/providers.ts"), Range: shared.NewRange(420, 27, 420, 34)},
-		{UploadID: testSCIPUploadID, Path: p("template/src/search/providers.ts"), Range: shared.NewRange(9, 9, 9, 16)},
-		{UploadID: testSCIPUploadID, Path: p("template/src/search/providers.ts"), Range: shared.NewRange(225, 20, 225, 27)},
+	expectedUsages := []shared.Usage{
+		{Path: p("template/src/providers.ts"), Range: shared.NewRange(10, 9, 10, 16)},
+		{Path: p("template/src/providers.ts"), Range: shared.NewRange(186, 43, 186, 50)},
+		{Path: p("template/src/providers.ts"), Range: shared.NewRange(296, 34, 296, 41)},
+		{Path: p("template/src/providers.ts"), Range: shared.NewRange(324, 38, 324, 45)},
+		{Path: p("template/src/providers.ts"), Range: shared.NewRange(384, 30, 384, 37)},
+		{Path: p("template/src/providers.ts"), Range: shared.NewRange(415, 8, 415, 15)},
+		{Path: p("template/src/providers.ts"), Range: shared.NewRange(420, 27, 420, 34)},
+		{Path: p("template/src/search/providers.ts"), Range: shared.NewRange(9, 9, 9, 16)},
+		{Path: p("template/src/search/providers.ts"), Range: shared.NewRange(225, 20, 225, 27)},
 	}
-	if diff := cmp.Diff(expectedLocations, locations); diff != "" {
+	for i := range expectedUsages {
+		usage := &expectedUsages[i]
+		usage.UploadID = testSCIPUploadID
+		usage.Symbol = "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray()."
+		usage.Kind = shared.UsageKindReference
+	}
+
+	if diff := cmp.Diff(expectedUsages, usages); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
 	}
 }
@@ -594,37 +608,4 @@ func TestExtractOccurrenceData(t *testing.T) {
 			}
 		}
 	})
-}
-
-func TestGetBulkSymbolUsages(t *testing.T) {
-	usageKind := shared.UsageKindReference
-	uploadIDs := []int{testSCIPUploadID}
-	lookupSymbols := []string{
-		"github.com/sourcegraph/lsif-go/protocol:DefinitionResult.Vertex",
-		"scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray().",
-	}
-
-	store := populateTestStore(t)
-
-	locations, totalCount, err := store.GetBulkSymbolUsages(context.Background(), usageKind, uploadIDs, lookupSymbols, 100, 0)
-	require.NoError(t, err)
-	if expected := 9; totalCount != expected {
-		t.Fatalf("unexpected total count: want=%d have=%d\n", expected, totalCount)
-	}
-
-	expectedLocations := []shared.Location{
-		// SCIP results
-		{UploadID: testSCIPUploadID, Path: p("template/src/providers.ts"), Range: shared.NewRange(10, 9, 10, 16)},
-		{UploadID: testSCIPUploadID, Path: p("template/src/providers.ts"), Range: shared.NewRange(186, 43, 186, 50)},
-		{UploadID: testSCIPUploadID, Path: p("template/src/providers.ts"), Range: shared.NewRange(296, 34, 296, 41)},
-		{UploadID: testSCIPUploadID, Path: p("template/src/providers.ts"), Range: shared.NewRange(324, 38, 324, 45)},
-		{UploadID: testSCIPUploadID, Path: p("template/src/providers.ts"), Range: shared.NewRange(384, 30, 384, 37)},
-		{UploadID: testSCIPUploadID, Path: p("template/src/providers.ts"), Range: shared.NewRange(415, 8, 415, 15)},
-		{UploadID: testSCIPUploadID, Path: p("template/src/providers.ts"), Range: shared.NewRange(420, 27, 420, 34)},
-		{UploadID: testSCIPUploadID, Path: p("template/src/search/providers.ts"), Range: shared.NewRange(9, 9, 9, 16)},
-		{UploadID: testSCIPUploadID, Path: p("template/src/search/providers.ts"), Range: shared.NewRange(225, 20, 225, 27)},
-	}
-	if diff := cmp.Diff(expectedLocations, locations); diff != "" {
-		t.Errorf("unexpected locations (-want +got):\n%s", diff)
-	}
 }
