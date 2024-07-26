@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
@@ -75,6 +76,74 @@ type LocationKey struct {
 	Path      core.UploadRelPath
 	Line      int
 	Character int
+}
+
+// FindUsagesKey represents a specific scip.Document in the database,
+// along with a matching object to identify usages for a symbol
+// in that Document.
+type FindUsagesKey struct {
+	// UploadID is the upload to locate the Document.
+	UploadID int
+	// Path is the exact path within the upload, which may be different
+	// from the path from the root of the repository, if the index
+	// itself was generated for a subdirectory.
+	Path core.UploadRelPath
+	// Matcher describes how to find usages within a specific Document.
+	Matcher shared.Matcher
+}
+
+type MatchStrategy string
+
+const (
+	// SinglePositionBasedMatchStrategy represents the legacy mode of finding matching
+	// occurrences which intersect with a given source position
+	SinglePositionBasedMatchStrategy MatchStrategy = "single-position based"
+	// RangeBasedMatchStrategy represents exact matching based on purely source range.
+	// In the general case, this may lead to multiple different semantic occurrences
+	// being found at the same range.
+	RangeBasedMatchStrategy = "range based"
+	// RangeAndSymbolBasedMatchStrategy represents the combination of RangeBasedMatchStrategy
+	// with exact matching based on symbol name. Generally, this should return
+	// at most one occurrence, but exceptions are possible if indexer output
+	// is sub-optimal and the associated occurrences cannot be merged.
+	RangeAndSymbolBasedMatchStrategy = "range and symbol based"
+)
+
+// IdentifyMatchingOccurrences will generally give a small list of occurrences
+// since there are usually not a large number of precise occurrences at the
+// same location. Known exceptions to this:
+//   - C++ macros, where scip-clang currently emits all defs/refs at the macro name range.
+//   - Ruby attr_accessor etc., where scip-ruby can emit defs for getters and setters at the same range.
+//     (i.e. special-cased AST rewriting in Sorbet, instead of a general macro facility)
+//
+// The returned 'strategy' represents the algorithm used for matching.
+func (key *FindUsagesKey) IdentifyMatchingOccurrences(allOccurrences []*scip.Occurrence) (out []*scip.Occurrence, strategy MatchStrategy) {
+	if startPos, ok := key.Matcher.PositionBased(); ok {
+		// Preserve back-compat with older APIs providing just a single position.
+		strategy = SinglePositionBasedMatchStrategy
+		out = scip.FindOccurrences(allOccurrences, startPos.Line, startPos.Character)
+		return
+	}
+	symbolToMatch, range_, ok := key.Matcher.SymbolBased()
+	if !ok {
+		panic(fmt.Sprintf("Unhandled case of locationKey.Matcher: %+v", key.Matcher))
+	}
+	strategy = RangeBasedMatchStrategy
+	sameRangeOccs := codegraph.FindOccurrencesWithEqualRange(allOccurrences, range_)
+	if len(sameRangeOccs) == 0 {
+		return
+	}
+	if symbolToMatch == "" {
+		out = sameRangeOccs
+		return
+	}
+	strategy = RangeAndSymbolBasedMatchStrategy
+	for _, occ := range sameRangeOccs {
+		if occ.Symbol == symbolToMatch {
+			out = append(out, occ)
+		}
+	}
+	return
 }
 
 type store struct {

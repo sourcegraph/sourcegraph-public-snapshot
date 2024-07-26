@@ -371,7 +371,6 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 	}
 
 	err = tx.UpsertBatchChange(ctx, batchChange)
-
 	if err != nil {
 		return nil, err
 	}
@@ -1862,6 +1861,7 @@ func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, as sourc
 		return nil, ErrDuplicateCredential{}
 	}
 
+	timedOut := false
 	a, err := s.generateAuthenticatorForCredential(ctx, generateAuthenticatorForCredentialArgs{
 		externalServiceType:    args.ExternalServiceType,
 		externalServiceURL:     args.ExternalServiceURL,
@@ -1872,12 +1872,19 @@ func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, as sourc
 		githubAppID:            args.GitHubAppID,
 		githubAppStore:         s.store.GitHubAppsStore(),
 	})
-	if err != nil {
+	if err == VerifyCredentialTimeoutError {
+		timedOut = true
+	}
+	if err != nil && err != VerifyCredentialTimeoutError {
 		return nil, err
 	}
 	cred, err := s.store.UserCredentials().Create(ctx, userCredentialScope, a)
 	if err != nil {
 		return nil, err
+	}
+
+	if timedOut {
+		return nil, NewErrVerifyCredentialTimeout()
 	}
 
 	return cred, nil
@@ -1915,6 +1922,7 @@ func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, as sourc
 		return nil, ErrDuplicateCredential{}
 	}
 
+	timedOut := false
 	a, err := s.generateAuthenticatorForCredential(ctx, generateAuthenticatorForCredentialArgs{
 		externalServiceType:    args.ExternalServiceType,
 		externalServiceURL:     args.ExternalServiceURL,
@@ -1925,7 +1933,10 @@ func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, as sourc
 		authenticationStrategy: as,
 		githubAppStore:         s.store.GitHubAppsStore(),
 	})
-	if err != nil {
+	if err == VerifyCredentialTimeoutError {
+		timedOut = true
+	}
+	if err != nil && err != VerifyCredentialTimeoutError {
 		return nil, err
 	}
 	cred := &btypes.SiteCredential{
@@ -1935,6 +1946,10 @@ func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, as sourc
 	}
 	if err := s.store.CreateSiteCredential(ctx, cred, a); err != nil {
 		return nil, err
+	}
+
+	if timedOut {
+		return nil, NewErrVerifyCredentialTimeout()
 	}
 
 	return cred, nil
@@ -1951,6 +1966,10 @@ type generateAuthenticatorForCredentialArgs struct {
 	githubAppStore         ghstore.GitHubAppsStore
 }
 
+// generateAuthenticatorForCredential generates an authenticator for the
+// given credential.
+// If the credential cannot be verified within 10 seconds,
+// it returns VerifyCredentialTimeoutError.
 func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args generateAuthenticatorForCredentialArgs) (extsvcauth.Authenticator, error) {
 	var a extsvcauth.Authenticator
 	keypair, err := encryption.GenerateRSAKey()
@@ -1958,18 +1977,21 @@ func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args g
 		return nil, err
 	}
 
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	if args.authenticationStrategy == sources.AuthenticationStrategyGitHubApp {
 		auther, err := ghauth.CreateAuthenticatorForCredential(ctx, args.githubAppID, ghauth.CreateAuthenticatorForCredentialOpts{
 			GitHubAppStore: args.githubAppStore,
 		})
-		if err != nil {
+		if err != nil && ctx.Err() != context.DeadlineExceeded {
 			return nil, err
 		}
 		a = auther
 	} else if args.externalServiceType == extsvc.TypeBitbucketServer {
 		// We need to fetch the username for the token, as just an OAuth token isn't enough for some reason.
 		username, err := s.FetchUsernameForBitbucketServerToken(ctx, args.externalServiceURL, args.externalServiceType, args.credential)
-		if err != nil {
+		if err != nil && ctx.Err() != context.DeadlineExceeded {
 			if bitbucketserver.IsUnauthorized(err) {
 				return nil, &ErrVerifyCredentialFailed{SourceErr: err}
 			}
@@ -2018,6 +2040,11 @@ func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args g
 		}
 	}
 
+	// If the context timed out, we return the authenticator that we created,
+	// but the user needs to be told it couldn't be verified.
+	if ctx.Err() == context.DeadlineExceeded {
+		return a, VerifyCredentialTimeoutError
+	}
 	// Validate the newly created authenticator, if it is a personal access token (i.e. not a GitHub app).
 	// We can assume that the information we get from the GitHub auth flow is correct.
 	if args.githubAppID == 0 {
