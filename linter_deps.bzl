@@ -170,6 +170,14 @@ def linter_dependencies():
     )
 
     go_repository(
+        name = "org_uber_go_nilaway",
+        build_file_proto_mode = "disable_global",
+        importpath = "go.uber.org/nilaway",
+        version = "v0.0.0-20240719152558-28b542b82e69",
+         sum = "h1:Rl3O+20PUrtU8b/vRFop4tTzAVfjvpBPHq5xXw0m784=",
+    )
+
+    go_repository(
         name = "com_4d63_gocheckcompilerdirectives",
         importpath = "4d63.com/gocheckcompilerdirectives",
         version = "v1.2.1",
