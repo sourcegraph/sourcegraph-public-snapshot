@@ -105,7 +105,7 @@ func (p *ParserPool) Done(parser ctags.Parser, source ctags_config.ParserType) {
 
 func (p *ParserPool) parserFromPool(ctx context.Context, source ctags_config.ParserType) (ctags.Parser, error) {
 	if ctags_config.ParserIsNoop(source) {
-		return nil, errors.New("Should not pass Noop ParserType to this function")
+		return nil, errors.New("Should not pass Noop ParserType to parserFromPool")
 	}
 
 	p.metrics.parseQueueSize.Inc()
