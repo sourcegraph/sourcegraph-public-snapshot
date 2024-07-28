@@ -12,7 +12,6 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
-        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/auth",
         "//internal/database",
         "//internal/errcode",
@@ -40,12 +39,12 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/graphqlbackend",
-        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/actor",
         "//internal/auth",
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",
+        "//internal/gqlutil",
         "//internal/types",
         "//lib/errors",
         "//lib/pointers",

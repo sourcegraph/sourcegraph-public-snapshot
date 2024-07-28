@@ -3,11 +3,11 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
-func (r *UserResolver) AffiliatedNamespaces(ctx context.Context) (graphqlutil.SliceConnectionResolver[*NamespaceResolver], error) {
+func (r *UserResolver) AffiliatedNamespaces(ctx context.Context) (gqlutil.SliceConnectionResolver[*NamespaceResolver], error) {
 	// Start with the user's own account (which is a namespace they are always affiliated with).
 	namespaces := []*NamespaceResolver{
 		{Namespace: r},
@@ -30,6 +30,6 @@ func (r *UserResolver) AffiliatedNamespaces(ctx context.Context) (graphqlutil.Sl
 	return newNamespaceConnection(namespaces), nil
 }
 
-func (visitorResolver) AffiliatedNamespaces(context.Context) (graphqlutil.SliceConnectionResolver[*NamespaceResolver], error) {
+func (visitorResolver) AffiliatedNamespaces(context.Context) (gqlutil.SliceConnectionResolver[*NamespaceResolver], error) {
 	return newNamespaceConnection(nil), nil
 }

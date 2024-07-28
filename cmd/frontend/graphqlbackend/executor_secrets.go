@@ -9,11 +9,11 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -203,7 +203,7 @@ type ExecutorSecretsListArgs struct {
 func (o ExecutorSecretsListArgs) LimitOffset() (*database.LimitOffset, error) {
 	limit := &database.LimitOffset{Limit: int(o.First)}
 	if o.After != nil {
-		offset, err := graphqlutil.DecodeIntCursor(o.After)
+		offset, err := gqlutil.DecodeIntCursor(o.After)
 		if err != nil {
 			return nil, err
 		}

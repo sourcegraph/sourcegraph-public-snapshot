@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -354,12 +353,12 @@ func (n *notebookConnectionResolver) TotalCount(ctx context.Context) int32 {
 	return n.totalCount
 }
 
-func (n *notebookConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
+func (n *notebookConnectionResolver) PageInfo(ctx context.Context) *gqlutil.PageInfo {
 	if len(n.notebooks) == 0 || !n.hasNextPage {
-		return graphqlutil.HasNextPage(false)
+		return gqlutil.HasNextPage(false)
 	}
 	// The after value (offset) for the next page is computed from the current after value + the number of retrieved notebooks
-	return graphqlutil.NextPageCursor(marshalNotebookCursor(n.afterCursor + int64(len(n.notebooks))))
+	return gqlutil.NextPageCursor(marshalNotebookCursor(n.afterCursor + int64(len(n.notebooks))))
 }
 
 type notebookResolver struct {

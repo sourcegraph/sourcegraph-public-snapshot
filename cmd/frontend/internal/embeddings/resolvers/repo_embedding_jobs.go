@@ -9,7 +9,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	repobg "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
@@ -24,19 +23,19 @@ func NewRepoEmbeddingJobsResolver(
 	gitserverClient gitserver.Client,
 	repoEmbeddingJobsStore repobg.RepoEmbeddingJobsStore,
 	args graphqlbackend.ListRepoEmbeddingJobsArgs,
-) (*graphqlutil.ConnectionResolver[graphqlbackend.RepoEmbeddingJobResolver], error) {
+) (*gqlutil.ConnectionResolver[graphqlbackend.RepoEmbeddingJobResolver], error) {
 	store := &repoEmbeddingJobsConnectionStore{
 		db:              db,
 		gitserverClient: gitserverClient,
 		store:           repoEmbeddingJobsStore,
 		args:            args,
 	}
-	opts := &graphqlutil.ConnectionResolverOptions{
+	opts := &gqlutil.ConnectionResolverOptions{
 		OrderBy: database.OrderBy{
 			{Field: "repo_embedding_jobs.id"},
 		},
 	}
-	return graphqlutil.NewConnectionResolver[graphqlbackend.RepoEmbeddingJobResolver](store, &args.ConnectionResolverArgs, opts)
+	return gqlutil.NewConnectionResolver[graphqlbackend.RepoEmbeddingJobResolver](store, &args.ConnectionResolverArgs, opts)
 }
 
 type repoEmbeddingJobsConnectionStore struct {

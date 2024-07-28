@@ -11,13 +11,13 @@ import (
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/markdown"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -270,7 +270,7 @@ func (args *OccurrencesArgs) Normalize(maxPageSize int32) *OccurrencesArgs {
 
 type SCIPOccurrenceConnectionResolver interface {
 	ConnectionResolver[SCIPOccurrenceResolver]
-	PageInfo(ctx context.Context) (*graphqlutil.ConnectionPageInfo[SCIPOccurrenceResolver], error)
+	PageInfo(ctx context.Context) (*gqlutil.ConnectionPageInfo[SCIPOccurrenceResolver], error)
 }
 
 type SCIPOccurrenceResolver interface {
