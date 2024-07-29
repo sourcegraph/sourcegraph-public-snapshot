@@ -13,7 +13,7 @@ import (
 )
 
 type Probe interface {
-	CheckPods(ctx context.Context, labelSelector string) error
+	CheckPods(ctx context.Context, labelSelector, namespace string) error
 }
 
 type HealthChecker struct {
@@ -31,7 +31,7 @@ type HealthChecker struct {
 // frontend pod, it ensures that the service points at the frontend pods. When
 // there are no ready pods, it ensures that the service points to the appliance,
 // so that the admin can log in and view maintenance status.
-func (h *HealthChecker) ManageIngressFacingService(ctx context.Context, begin <-chan struct{}, labelSelector string) error {
+func (h *HealthChecker) ManageIngressFacingService(ctx context.Context, begin <-chan struct{}, labelSelector, namespace string) error {
 	h.Logger.Info("waiting for signal to begin managing ingress-facing service for the appliance")
 	select {
 	case <-begin:
@@ -48,13 +48,13 @@ func (h *HealthChecker) ManageIngressFacingService(ctx context.Context, begin <-
 	defer ticker.Stop()
 
 	// Do one iteration without having to wait for the first tick
-	if err := h.maybeFlipServiceOnce(ctx, labelSelector); err != nil {
+	if err := h.maybeFlipServiceOnce(ctx, labelSelector, namespace); err != nil {
 		return err
 	}
 	for {
 		select {
 		case <-ticker.C:
-			if err := h.maybeFlipServiceOnce(ctx, labelSelector); err != nil {
+			if err := h.maybeFlipServiceOnce(ctx, labelSelector, namespace); err != nil {
 				return err
 			}
 
@@ -65,12 +65,12 @@ func (h *HealthChecker) ManageIngressFacingService(ctx context.Context, begin <-
 	}
 }
 
-func (h *HealthChecker) maybeFlipServiceOnce(ctx context.Context, labelSelector string) error {
+func (h *HealthChecker) maybeFlipServiceOnce(ctx context.Context, labelSelector, namespace string) error {
 	h.Logger.Info("checking deployment health")
-	if err := h.Probe.CheckPods(ctx, labelSelector); err != nil {
+	if err := h.Probe.CheckPods(ctx, labelSelector, namespace); err != nil {
 		h.Logger.Error("found unhealthy state, waiting for the grace period", log.Error(err), log.String("gracePeriod", h.Graceperiod.String()))
 		time.Sleep(h.Graceperiod)
-		if err := h.Probe.CheckPods(ctx, labelSelector); err != nil {
+		if err := h.Probe.CheckPods(ctx, labelSelector, namespace); err != nil {
 			h.Logger.Error("found unhealthy state, setting service selector to appliance", log.Error(err))
 			return h.setServiceSelector(ctx, "sourcegraph-appliance-frontend")
 		}

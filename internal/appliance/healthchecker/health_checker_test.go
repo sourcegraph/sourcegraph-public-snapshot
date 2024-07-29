@@ -89,7 +89,7 @@ func TestManageIngressFacingService(t *testing.T) {
 	}
 	err = k8sClient.Create(ctx, &svc)
 	require.NoError(t, err)
-	runHealthCheckAndAssertSelector(t, checker, serviceName, "sourcegraph-appliance-frontend")
+	runHealthCheckAndAssertSelector(t, checker, serviceName, ns.GetName(), "sourcegraph-appliance-frontend")
 
 	// Simulate some frontend pods existing but with no readiness conditions.
 	pod1 := mkPod("pod1", ns.GetName())
@@ -98,7 +98,7 @@ func TestManageIngressFacingService(t *testing.T) {
 	pod2 := mkPod("pod2", ns.GetName())
 	err = k8sClient.Create(ctx, pod2)
 	require.NoError(t, err)
-	runHealthCheckAndAssertSelector(t, checker, serviceName, "sourcegraph-appliance-frontend")
+	runHealthCheckAndAssertSelector(t, checker, serviceName, ns.GetName(), "sourcegraph-appliance-frontend")
 
 	// Simulate one pod becoming ready to receive traffic
 	pod1.Status.Conditions = []corev1.PodCondition{
@@ -117,10 +117,10 @@ func TestManageIngressFacingService(t *testing.T) {
 	}
 	err = k8sClient.Status().Update(ctx, pod2)
 	require.NoError(t, err)
-	runHealthCheckAndAssertSelector(t, checker, serviceName, "sourcegraph-frontend")
+	runHealthCheckAndAssertSelector(t, checker, serviceName, ns.GetName(), "sourcegraph-frontend")
 
 	// test idempotency of the monitor
-	runHealthCheckAndAssertSelector(t, checker, serviceName, "sourcegraph-frontend")
+	runHealthCheckAndAssertSelector(t, checker, serviceName, ns.GetName(), "sourcegraph-frontend")
 
 	// Simulate pods becoming unready
 	pod1.Status.Conditions = []corev1.PodCondition{
@@ -131,11 +131,11 @@ func TestManageIngressFacingService(t *testing.T) {
 	}
 	err = k8sClient.Status().Update(ctx, pod1)
 	require.NoError(t, err)
-	runHealthCheckAndAssertSelector(t, checker, serviceName, "sourcegraph-appliance-frontend")
+	runHealthCheckAndAssertSelector(t, checker, serviceName, ns.GetName(), "sourcegraph-appliance-frontend")
 }
 
-func runHealthCheckAndAssertSelector(t *testing.T, checker *HealthChecker, serviceName types.NamespacedName, expectedSelectorValue string) {
-	err := checker.maybeFlipServiceOnce(ctx, "app=sourcegraph-frontend")
+func runHealthCheckAndAssertSelector(t *testing.T, checker *HealthChecker, serviceName types.NamespacedName, namespace, expectedSelectorValue string) {
+	err := checker.maybeFlipServiceOnce(ctx, "app=sourcegraph-frontend", namespace)
 	require.NoError(t, err)
 
 	var svc corev1.Service
