@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'vitest'
 
-import { BatchChangesCodeHostFields, ExternalServiceKind } from '../../../graphql-operations'
+import { type BatchChangesCodeHostFields, ExternalServiceKind } from '../../../graphql-operations'
 
 import { credentialForGitHubAppExists } from './github-apps-filter'
 
 describe('credentialForGitHubAppExists', () => {
     describe('when connections are undefined', () => {
         test('it should yield false', () => {
-            const result = credentialForGitHubAppExists(null, undefined)
+            const result = credentialForGitHubAppExists(null, false, undefined)
             expect(result).toBe(false)
         })
     })
@@ -15,7 +15,7 @@ describe('credentialForGitHubAppExists', () => {
     describe('when there are no connections', () => {
         test('it should yield false', () => {
             const connections: BatchChangesCodeHostFields[] = []
-            const result = credentialForGitHubAppExists(null, connections)
+            const result = credentialForGitHubAppExists(null, false, connections)
             expect(result).toBe(false)
         })
     })
@@ -30,7 +30,7 @@ describe('credentialForGitHubAppExists', () => {
                         externalServiceURL: 'https://gitlab.com',
                         requiresSSH: false,
                         requiresUsername: true,
-                        supportsCommitSigning: true,
+                        supportsCommitSigning: false,
                         // The credential for gitlab technically can't have a github app, but we include this
                         // here so the test doesn't become a false positive.
                         credential: {
@@ -49,7 +49,7 @@ describe('credentialForGitHubAppExists', () => {
                         commitSigningConfiguration: null,
                     },
                 ]
-                const result = credentialForGitHubAppExists(appName, connections)
+                const result = credentialForGitHubAppExists(appName, false, connections)
                 expect(result).toBe(false)
             })
         })
@@ -67,7 +67,7 @@ describe('credentialForGitHubAppExists', () => {
                         commitSigningConfiguration: null,
                     },
                 ]
-                const result = credentialForGitHubAppExists(null, connections)
+                const result = credentialForGitHubAppExists(null, false, connections)
                 expect(result).toBe(false)
             })
         })
@@ -85,40 +85,68 @@ describe('credentialForGitHubAppExists', () => {
                         commitSigningConfiguration: null,
                     },
                 ]
-                const result = credentialForGitHubAppExists('test', connections)
+                const result = credentialForGitHubAppExists('test', false, connections)
                 expect(result).toBe(false)
             })
         })
 
         describe('with a credential', () => {
             describe('with a matching app name', () => {
-                test('it should yield true', () => {
-                    const appName = 'test'
-                    const connections: BatchChangesCodeHostFields[] = [
-                        {
-                            externalServiceKind: ExternalServiceKind.GITHUB,
-                            externalServiceURL: 'https://github.com',
-                            requiresSSH: false,
-                            requiresUsername: true,
-                            supportsCommitSigning: true,
-                            credential: {
-                                id: '1',
-                                sshPublicKey: null,
-                                isSiteCredential: false,
-                                gitHubApp: {
+                describe('without commit signing', () => {
+                    test('it should yield true', () => {
+                        const appName = 'test'
+                        const connections: BatchChangesCodeHostFields[] = [
+                            {
+                                externalServiceKind: ExternalServiceKind.GITHUB,
+                                externalServiceURL: 'https://github.com',
+                                requiresSSH: false,
+                                requiresUsername: true,
+                                supportsCommitSigning: false,
+                                credential: {
                                     id: '1',
-                                    appID: 1,
-                                    name: appName,
-                                    appURL: 'https://github.com',
-                                    baseURL: 'https://github.com',
-                                    logo: 'https://github.com',
+                                    sshPublicKey: null,
+                                    isSiteCredential: false,
+                                    gitHubApp: {
+                                        id: '1',
+                                        appID: 1,
+                                        name: appName,
+                                        appURL: 'https://github.com',
+                                        baseURL: 'https://github.com',
+                                        logo: 'https://github.com',
+                                    },
+                                },
+                                commitSigningConfiguration: null,
+                            },
+                        ]
+                        const result = credentialForGitHubAppExists(appName, false, connections)
+                        expect(result).toBe(true)
+                    })
+                })
+
+                describe('with commit signing', () => {
+                    test('it should yield true', () => {
+                        const appName = 'test'
+                        const connections: BatchChangesCodeHostFields[] = [
+                            {
+                                externalServiceKind: ExternalServiceKind.GITHUB,
+                                externalServiceURL: 'https://github.com',
+                                requiresSSH: false,
+                                requiresUsername: true,
+                                supportsCommitSigning: true,
+                                credential: null,
+                                commitSigningConfiguration: {
+                                    id: 'R2l0SHViQXBwOjExMg==',
+                                    appID: 956330,
+                                    name: 'asdjfl Commit Signing',
+                                    appURL: 'https://github.com/apps/asdjfl-commit-signing',
+                                    baseURL: 'https://github.com/',
+                                    logo: 'https://github.com/identicons/app/app/asdjfl-commit-signing',
                                 },
                             },
-                            commitSigningConfiguration: null,
-                        },
-                    ]
-                    const result = credentialForGitHubAppExists(appName, connections)
-                    expect(result).toBe(true)
+                        ]
+                        const result = credentialForGitHubAppExists(appName, true, connections)
+                        expect(result).toBe(true)
+                    })
                 })
             })
 
@@ -147,7 +175,7 @@ describe('credentialForGitHubAppExists', () => {
                             commitSigningConfiguration: null,
                         },
                     ]
-                    const result = credentialForGitHubAppExists('differentAppName', connections)
+                    const result = credentialForGitHubAppExists('differentAppName', false, connections)
                     expect(result).toBe(false)
                 })
             })

@@ -81,7 +81,7 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
     const gitHubAppKindFromUrl = new URLSearchParams(location.search).get('kind')
     const shouldShowError = !success && setupError && gitHubAppKind !== GitHubAppKind.COMMIT_SIGNING
     const gitHubAppInstallationInProgress =
-        success && !!appName && !credentialForGitHubAppExists(appName, connection?.nodes)
+        success && !!appName && !credentialForGitHubAppExists(appName, false, connection?.nodes)
     return (
         <Container className="mb-3">
             <H3>Code host credentials</H3>
