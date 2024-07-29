@@ -21,10 +21,9 @@ describe('credentialForGitHubAppExists', () => {
     })
 
     describe('when there is a connection for the targeted host', () => {
-
         describe('but it is not a github app', () => {
             test('it should yield false', () => {
-                const appName = 'test';
+                const appName = 'test'
                 const connections: BatchChangesCodeHostFields[] = [
                     {
                         externalServiceKind: ExternalServiceKind.GITLAB,

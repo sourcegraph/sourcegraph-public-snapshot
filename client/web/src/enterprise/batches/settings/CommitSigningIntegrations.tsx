@@ -63,7 +63,8 @@ export const CommitSigningIntegrations: React.FunctionComponent<
     const setupError = searchParams.get('error')
     const gitHubAppKind = searchParams.get('kind')
     const shouldShowError = !success && setupError && !readOnly && kind === GitHubAppKind.COMMIT_SIGNING
-    const gitHubAppInstallationInProgress = success && !!appName && !credentialForGitHubAppExists(appName, connection?.nodes)
+    const gitHubAppInstallationInProgress =
+        success && !!appName && !credentialForGitHubAppExists(appName, connection?.nodes)
     return (
         <Container>
             <H3>
