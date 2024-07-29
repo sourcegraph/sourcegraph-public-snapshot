@@ -9,11 +9,11 @@ expression: dumped
       trait SomeTrait {
 //          ^^^^^^^^^ definition(Trait) scip-ctags SomeNamespace/SomeTrait#
           public $logLevel;
-//               ^^^^^^^^^ definition(Property) scip-ctags SomeNamespace/SomeTrait#$logLevel.
+//               ^^^^^^^^^ definition(Property) scip-ctags SomeNamespace/SomeTrait#logLevel.
           protected $thing;
-//                  ^^^^^^ definition(Property) scip-ctags SomeNamespace/SomeTrait#$thing.
+//                  ^^^^^^ definition(Property) scip-ctags SomeNamespace/SomeTrait#thing.
           private $secretFromTrait;
-//                ^^^^^^^^^^^^^^^^ definition(Property) scip-ctags SomeNamespace/SomeTrait#$secretFromTrait.
+//                ^^^^^^^^^^^^^^^^ definition(Property) scip-ctags SomeNamespace/SomeTrait#secretFromTrait.
   
           public function setLogger(SomeInterface $thing) {
 //                        ^^^^^^^^^ definition(Method) scip-ctags SomeNamespace/SomeTrait#setLogger().
@@ -31,7 +31,7 @@ expression: dumped
           const MAX_NUMBER_ITEMS = 1000;
 //              ^^^^^^^^^^^^^^^^ definition(Constant) scip-ctags SomeNamespace/SomeInterface#MAX_NUMBER_ITEMS.
           protected int $secretFromInterface = 0;
-//                      ^^^^^^^^^^^^^^^^^^^^ definition(Property) scip-ctags SomeNamespace/SomeInterface#$secretFromInterface.
+//                      ^^^^^^^^^^^^^^^^^^^^ definition(Property) scip-ctags SomeNamespace/SomeInterface#secretFromInterface.
           public function log($message, $level);
 //                        ^^^ definition(Method) scip-ctags SomeNamespace/SomeInterface#log().
       }
@@ -41,11 +41,11 @@ expression: dumped
           const PI = 3.1415926;
 //              ^^ definition(Constant) scip-ctags SomeNamespace/SomeClass#PI.
           private static int $secretFromClass = 0;
-//                           ^^^^^^^^^^^^^^^^ definition(Property) scip-ctags SomeNamespace/SomeClass#$secretFromClass.
+//                           ^^^^^^^^^^^^^^^^ definition(Property) scip-ctags SomeNamespace/SomeClass#secretFromClass.
           public static int $hello = 11;
-//                          ^^^^^^ definition(Property) scip-ctags SomeNamespace/SomeClass#$hello.
+//                          ^^^^^^ definition(Property) scip-ctags SomeNamespace/SomeClass#hello.
           public int $age = 39;
-//                   ^^^^ definition(Property) scip-ctags SomeNamespace/SomeClass#$age.
+//                   ^^^^ definition(Property) scip-ctags SomeNamespace/SomeClass#age.
           public function log($message, $level) {
 //                        ^^^ definition(Method) scip-ctags SomeNamespace/SomeClass#log().
               echo "Log $message of level $level";
@@ -80,9 +80,9 @@ expression: dumped
       class Stack<T> {
 //          ^^^^^ definition(Class) scip-ctags `SomeNamespace\SubNamespace`/Stack#
           private vec<T> $stack;
-//                       ^^^^^^ definition(Property) scip-ctags `SomeNamespace\SubNamespace`/Stack#$stack.
+//                       ^^^^^^ definition(Property) scip-ctags `SomeNamespace\SubNamespace`/Stack#stack.
           private int $stackPtr;
-//                    ^^^^^^^^^ definition(Property) scip-ctags `SomeNamespace\SubNamespace`/Stack#$stackPtr.
+//                    ^^^^^^^^^ definition(Property) scip-ctags `SomeNamespace\SubNamespace`/Stack#stackPtr.
   
           public function __construct() {
 //                        ^^^^^^^^^^^ definition(Constructor) scip-ctags `SomeNamespace\SubNamespace`/Stack#__construct().

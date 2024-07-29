@@ -1,3 +1,6 @@
+; Mark method/function parameters as local
+(parameters (parameter)) @local
+
 (namespace_declaration
     name:  (qualified_identifier (identifier)) @descriptor.namespace @kind.namespace) @scope
 
@@ -28,7 +31,8 @@
   body: (_) @local)
 
 (property_declaration
-    (property_declarator name: (variable) @descriptor.term @kind.property))
+    (property_declarator name: (variable) @descriptor.term @kind.property)
+    (#transform! "[$]?(.*)" "$1"))
 
 (const_declaration
     (const_declarator name: (identifier) @descriptor.term @kind.constant))
