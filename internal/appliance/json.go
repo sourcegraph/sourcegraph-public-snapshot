@@ -8,8 +8,10 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -124,6 +126,16 @@ func (a *Appliance) getInstallProgressJSONHandler() http.Handler {
 			Tasks:    currentTasks,
 		}
 
+		ok, err := a.isSourcegraphFrontendReady(r.Context())
+		if err != nil {
+			a.logger.Error("failed to get sourcegraph frontend status")
+			return
+		}
+
+		if ok {
+			a.status = config.StatusWaitingForAdmin
+		}
+
 		if err := a.writeJSON(w, http.StatusOK, responseData{"progress": installProgress}, http.Header{}); err != nil {
 			a.serverErrorResponse(w, r, err)
 		}
@@ -166,7 +178,17 @@ func (a *Appliance) postStatusJSONHandler() http.Handler {
 			return
 		}
 
+		newStatus := config.Status(input.State)
+		a.logger.Info("state transition", log.String("state", string(newStatus)))
 		a.sourcegraph.Spec.RequestedVersion = input.Data
+		if err := a.setStatus(r.Context(), newStatus); err != nil {
+			if kerrors.IsNotFound(err) {
+				a.logger.Info("no configmap found, will not set status")
+			} else {
+				a.serverErrorResponse(w, r, err)
+				return
+			}
+		}
 
 		//TODO(jdpleiness) check form for value if this should be set or not
 		a.sourcegraph.SetLocalDevMode()
@@ -182,6 +204,6 @@ func (a *Appliance) postStatusJSONHandler() http.Handler {
 			a.serverErrorResponse(w, r, err)
 		}
 
-		a.status = config.StatusInstalling
+		a.status = newStatus
 	})
 }

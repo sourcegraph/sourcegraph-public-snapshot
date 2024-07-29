@@ -21,29 +21,14 @@ type Task struct {
 	LastUpdate  time.Time `json:"lastUpdate"`
 }
 
-// TODO this needs to be created on install init and statefully stored somewhere
 func installTasks() []Task {
 	return []Task{
-		{
-			Title:       "Warming up",
-			Description: "Setting up basic resources",
-			Started:     true,
-			Finished:    false,
-			Weight:      1,
-		},
 		{
 			Title:       "Setup",
 			Description: "Setting up Sourcegraph Search",
 			Started:     false,
 			Finished:    false,
 			Weight:      25,
-		},
-		{
-			Title:       "Start",
-			Description: "Start Sourcegraph",
-			Started:     false,
-			Finished:    false,
-			Weight:      1,
 		},
 	}
 }
