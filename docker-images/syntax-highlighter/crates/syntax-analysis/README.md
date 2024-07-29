@@ -27,7 +27,7 @@ func my_func(x int) {
 fn main() {
   let config = languages::get_local_configuration(ParserId::Go).unwrap();
   let tree = config.get_parser().parse(SOURCE, None).unwrap();
-  let occurrences = locals::parse_tree(config, &tree, SOURCE);
+  let occurrences = locals::find_locals(config, &tree, SOURCE, locals::LocalResolutionOptions::default());
   let mut document = Document::new();
   document.occurrences = occurrences;
   print!("{:#?}", document);

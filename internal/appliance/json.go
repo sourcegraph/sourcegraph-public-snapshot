@@ -2,13 +2,17 @@ package appliance
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -100,7 +104,7 @@ func (a *Appliance) getStatusJSONHandler() http.Handler {
 			Data:   "",
 		}
 
-		if err := a.writeJSON(w, http.StatusOK, responseData{"status": data}, nil); err != nil {
+		if err := a.writeJSON(w, http.StatusOK, responseData{"status": data}, http.Header{}); err != nil {
 			a.serverErrorResponse(w, r, err)
 		}
 	})
@@ -122,7 +126,17 @@ func (a *Appliance) getInstallProgressJSONHandler() http.Handler {
 			Tasks:    currentTasks,
 		}
 
-		if err := a.writeJSON(w, http.StatusOK, responseData{"progress": installProgress}, nil); err != nil {
+		ok, err := a.isSourcegraphFrontendReady(r.Context())
+		if err != nil {
+			a.logger.Error("failed to get sourcegraph frontend status")
+			return
+		}
+
+		if ok {
+			a.status = config.StatusWaitingForAdmin
+		}
+
+		if err := a.writeJSON(w, http.StatusOK, responseData{"progress": installProgress}, http.Header{}); err != nil {
 			a.serverErrorResponse(w, r, err)
 		}
 	})
@@ -131,6 +145,24 @@ func (a *Appliance) getInstallProgressJSONHandler() http.Handler {
 func (a *Appliance) getMaintenanceStatusHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+		type service struct {
+			Name    string `json:"name"`
+			Healthy bool   `json:"healthy"`
+			Message string `json:"message"`
+		}
+
+		services := []service{}
+		for _, name := range config.SourcegraphServicesToReconcile {
+			services = append(services, service{
+				Name:    name,
+				Healthy: true,
+				Message: "fake event",
+			})
+		}
+		fmt.Println(services)
+		if err := a.writeJSON(w, http.StatusOK, responseData{"services": services}, http.Header{}); err != nil {
+			a.serverErrorResponse(w, r, err)
+		}
 	})
 }
 
@@ -146,7 +178,17 @@ func (a *Appliance) postStatusJSONHandler() http.Handler {
 			return
 		}
 
+		newStatus := config.Status(input.State)
+		a.logger.Info("state transition", log.String("state", string(newStatus)))
 		a.sourcegraph.Spec.RequestedVersion = input.Data
+		if err := a.setStatus(r.Context(), newStatus); err != nil {
+			if kerrors.IsNotFound(err) {
+				a.logger.Info("no configmap found, will not set status")
+			} else {
+				a.serverErrorResponse(w, r, err)
+				return
+			}
+		}
 
 		//TODO(jdpleiness) check form for value if this should be set or not
 		a.sourcegraph.SetLocalDevMode()
@@ -162,6 +204,6 @@ func (a *Appliance) postStatusJSONHandler() http.Handler {
 			a.serverErrorResponse(w, r, err)
 		}
 
-		a.status = StatusInstalling
+		a.status = newStatus
 	})
 }

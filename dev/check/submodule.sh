@@ -13,6 +13,6 @@ if test -f ".gitmodules"; then
   echo "- https://github.com/buildkite/agent/issues/1053#issuecomment-989784531"
   echo "- https://github.com/sourcegraph/sourcegraph/issues/33384"
   echo ""
-  echo "If you'd like to change this, please discuss in #dev-experience first."
+  echo "If you'd like to change this, please discuss in #discuss-dev-infra first."
   exit 1
 fi

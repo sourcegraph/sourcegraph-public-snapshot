@@ -143,4 +143,27 @@ func TestGerritSource_ListRepos(t *testing.T) {
 
 		assert.Empty(t, repos)
 	})
+
+	t.Run("repositoryPathPattern", func(t *testing.T) {
+		cf, save := NewClientFactory(t, t.Name())
+		defer save(t)
+
+		svc := typestest.MakeExternalService(t, extsvc.VariantGerrit, &schema.GerritConnection{
+			Url:                   "https://gerrit.sgdev.org",
+			Username:              os.Getenv("GERRIT_USERNAME"),
+			Password:              os.Getenv("GERRIT_PASSWORD"),
+			RepositoryPathPattern: "prefix/{name}",
+		})
+
+		ctx := context.Background()
+		src, err := NewGerritSource(ctx, svc, cf)
+		require.NoError(t, err)
+
+		src.perPage = 25
+
+		repos, err := ListAll(ctx, src)
+		require.NoError(t, err)
+
+		testutil.AssertGolden(t, "testdata/sources/GERRIT/"+t.Name(), Update(t.Name()), repos)
+	})
 }

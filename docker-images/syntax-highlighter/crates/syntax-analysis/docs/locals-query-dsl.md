@@ -104,8 +104,44 @@ References are specified by labeling a capture as a `@reference`.
 (variable_expression (identifier) @reference)
 ```
 
-They will be resolved against definitions in the current scope and parent scopes.
-Non-hoisted definitions are only resolved if they are defined _before_ the reference.
+If the type of symbol under reference can be inferred from syntactic information, you can
+add a `"kind"` attribute to refine the descriptor that will be produced:
+
+```scm
+(method_invocation
+  name: (identifier) @reference (#set! "kind" "method")
+)
+```
+
+The kind will be resolved into a [descriptor suffix](https://github.com/sourcegraph/scip/blob/main/scip.proto#L211-L222)
+in case this reference is resolved to a non-local symbol.
+
+As references can be either local or non-local, you can use the value of `"kind"` descriptor to guide
+the resolution:
+
+1. `"<type>"` or absent - these references will first be resolved against definitions in current and parent scopes, and
+   if that resolution fails, a non-local reference will be produced instead.
+
+   Example:
+
+   ```scm
+   (package
+     (identifier) @reference (#set! "kind" "namespace")
+   )
+   ```
+
+2. `"global.<type>"` - these references will immediately emit a non-local reference, without attempting to
+   do any resolution against local definitions.
+
+   Example:
+
+   ```scm
+   (method_invocation
+     name: (identifier) @reference (#set! "kind" "global.namespace")
+   )
+   ```
+
+When resolving a reference against local definitions, non-hoisted definitions are only resolved if they are defined _before_ the reference.
 
 ## Skipping definitions & references
 

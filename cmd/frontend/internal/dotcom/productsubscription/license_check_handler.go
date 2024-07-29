@@ -128,9 +128,22 @@ func getCustomerNameFromLicense(ctx context.Context, logger log.Logger, db datab
 //
 // This handler receives requests from customer instances to check for license
 // validity.
-func NewLicenseCheckHandler(db database.DB) http.Handler {
+//
+// TODO(@bobheadxi): Migrate to Enterprise Portal https://linear.app/sourcegraph/issue/CORE-227
+func NewLicenseCheckHandler(db database.DB, enabled bool) http.Handler {
 	baseLogger := log.Scoped("LicenseCheckHandler")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !enabled {
+			// If disabled, always indicate that the license check was
+			// successful.
+			replyWithJSON(w, http.StatusOK, licensing.LicenseCheckResponse{
+				Data: &licensing.LicenseCheckResponseData{
+					IsValid: true,
+				},
+			})
+			return
+		}
+
 		ctx := r.Context()
 
 		token, err := authz.ParseBearerHeader(r.Header.Get("Authorization"))

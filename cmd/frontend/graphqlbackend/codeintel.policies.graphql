@@ -1,7 +1,8 @@
 extend type Query {
     """
-    Returns precise code intelligence configuration policies that control data retention
-    and (if enabled) auto-indexing behavior.
+    Returns code intelligence configuration policies for precise and
+    syntactic indexing that control data retention and (if enabled) precise
+    auto-indexing behavior.
     """
     codeIntelligenceConfigurationPolicies(
         """
@@ -23,10 +24,16 @@ extend type Query {
         forDataRetention: Boolean
 
         """
-        If set to true, then only configuration policies with indexing enabled are returned.
-        If set to false, then configuration policies with indexing enabled are filtered out.
+        If set to true, then only configuration policies with precise indexing enabled are returned.
+        If set to false, then configuration policies with precise indexing enabled are filtered out.
         """
-        forIndexing: Boolean
+        forPreciseIndexing: Boolean
+
+        """
+        If set to true, then only configuration policies with syntactic indexing enabled are returned.
+        If set to false, then configuration policies with syntactic indexing enabled are filtered out.
+        """
+        forSyntacticIndexing: Boolean
 
         """
         If set to true, then only configuration policies with embeddings enabled are returned.
@@ -103,6 +110,7 @@ extend type Mutation {
         retentionDurationHours: Int
         retainIntermediateCommits: Boolean!
         indexingEnabled: Boolean!
+        syntacticIndexingEnabled: Boolean
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
 
@@ -128,6 +136,7 @@ extend type Mutation {
         retentionDurationHours: Int
         retainIntermediateCommits: Boolean!
         indexingEnabled: Boolean!
+        syntacticIndexingEnabled: Boolean
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
 
@@ -256,9 +265,14 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     retainIntermediateCommits: Boolean!
 
     """
-    Whether or not this configuration policy affects auto-indexing schedules.
+    Whether or not this configuration policy affects precise indexing schedules.
     """
     indexingEnabled: Boolean!
+
+    """
+    Whether or not this configuration policy affects syntactic indexing schedules.
+    """
+    syntacticIndexingEnabled: Boolean
 
     """
     The max age of commits indexed by this configuration policy.

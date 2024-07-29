@@ -1,31 +1,13 @@
-package bg
+package completions
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 )
 
-func ScheduleStoreTokenUsage(ctx context.Context, db database.DB) {
-	for {
-		err := storeTokenUsageinDb(ctx, db)
-		if err != nil {
-			fmt.Printf("Error storing token usage: %v\n", err)
-		}
-
-		// Wait for 5 minutes before the next execution
-		time.Sleep(5 * time.Minute)
-	}
-}
-
-func storeTokenUsageinDb(ctx context.Context, db database.DB) error {
-	recorder := telemetryrecorder.New(db)
-	tokenManager := tokenusage.NewManager()
+func recordTokenUsage(ctx context.Context, tokenManager *tokenusage.Manager, recorder *telemetry.EventRecorder) error {
 	tokenUsageData, err := tokenManager.FetchTokenUsageDataForAnalysis()
 	if err != nil {
 		return err

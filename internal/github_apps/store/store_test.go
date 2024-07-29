@@ -114,16 +114,17 @@ func TestUpdateGitHubApp(t *testing.T) {
 	ctx := context.Background()
 
 	app := &ghtypes.GitHubApp{
-		AppID:        123,
-		Name:         "Test App",
-		Domain:       "repos",
-		Slug:         "test-app",
-		BaseURL:      "https://example.com/",
-		AppURL:       "https://example.com/apps/testapp",
-		ClientID:     "abc123",
-		ClientSecret: "secret",
-		PrivateKey:   "private-key",
-		Kind:         ghtypes.RepoSyncGitHubAppKind,
+		AppID:           123,
+		Name:            "Test App",
+		Domain:          "repos",
+		Slug:            "test-app",
+		BaseURL:         "https://example.com/",
+		AppURL:          "https://example.com/apps/testapp",
+		ClientID:        "abc123",
+		ClientSecret:    "secret",
+		PrivateKey:      "private-key",
+		Kind:            ghtypes.RepoSyncGitHubAppKind,
+		CreatedByUserId: 1,
 	}
 
 	id, err := store.Create(ctx, app)
@@ -133,16 +134,17 @@ func TestUpdateGitHubApp(t *testing.T) {
 	require.NoError(t, err)
 
 	updated := &ghtypes.GitHubApp{
-		AppID:        234,
-		Name:         "Updated Name",
-		Domain:       "repos",
-		Slug:         "updated-slug",
-		BaseURL:      "https://updated-example.com/",
-		AppURL:       "https://updated-example.com/apps/updated-app",
-		ClientID:     "def456",
-		ClientSecret: "updated-secret",
-		PrivateKey:   "updated-private-key",
-		Kind:         ghtypes.RepoSyncGitHubAppKind,
+		AppID:           234,
+		Name:            "Updated Name",
+		Domain:          "repos",
+		Slug:            "updated-slug",
+		BaseURL:         "https://updated-example.com/",
+		AppURL:          "https://updated-example.com/apps/updated-app",
+		ClientID:        "def456",
+		ClientSecret:    "updated-secret",
+		PrivateKey:      "updated-private-key",
+		Kind:            ghtypes.RepoSyncGitHubAppKind,
+		CreatedByUserId: 2,
 	}
 
 	fetched, err := store.Update(ctx, 1, updated)
@@ -159,6 +161,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 	require.Equal(t, updated.ClientSecret, fetched.ClientSecret)
 	require.Equal(t, updated.PrivateKey, fetched.PrivateKey)
 	require.Equal(t, updated.Logo, fetched.Logo)
+	require.Equal(t, updated.CreatedByUserId, fetched.CreatedByUserId)
 
 	// updating non-existent should result in error
 	_, err = store.Update(ctx, 42, updated)
@@ -441,17 +444,18 @@ func TestListGitHubApp(t *testing.T) {
 	}
 
 	batchesApp := &ghtypes.GitHubApp{
-		AppID:        5678,
-		Name:         "Test App 2",
-		Domain:       types.BatchesGitHubAppDomain,
-		Slug:         "test-app-2",
-		BaseURL:      "https://enterprise.github.com/",
-		AppURL:       "https://enterprise.github.com/apps/testapp",
-		ClientID:     "abc123",
-		ClientSecret: "secret",
-		PrivateKey:   "private-key",
-		Logo:         "logo.png",
-		Kind:         ghtypes.RepoSyncGitHubAppKind,
+		AppID:           5678,
+		Name:            "Test App 2",
+		Domain:          types.BatchesGitHubAppDomain,
+		Slug:            "test-app-2",
+		BaseURL:         "https://enterprise.github.com/",
+		AppURL:          "https://enterprise.github.com/apps/testapp",
+		ClientID:        "abc123",
+		ClientSecret:    "secret",
+		PrivateKey:      "private-key",
+		Logo:            "logo.png",
+		Kind:            ghtypes.RepoSyncGitHubAppKind,
+		CreatedByUserId: 1,
 	}
 
 	_, err := store.Create(ctx, repoApp)
@@ -478,6 +482,7 @@ func TestListGitHubApp(t *testing.T) {
 			require.Equal(t, app.Logo, curr.Logo)
 			require.NotZero(t, curr.CreatedAt)
 			require.NotZero(t, curr.UpdatedAt)
+			require.Equal(t, app.CreatedByUserId, curr.CreatedByUserId)
 		}
 	})
 
@@ -499,6 +504,7 @@ func TestListGitHubApp(t *testing.T) {
 		require.Equal(t, curr.Logo, repoApp.Logo)
 		require.NotZero(t, curr.CreatedAt)
 		require.NotZero(t, curr.UpdatedAt)
+		require.Equal(t, curr.CreatedByUserId, repoApp.CreatedByUserId)
 	})
 }
 
@@ -868,16 +874,17 @@ func TestTrailingSlashesInBaseURL(t *testing.T) {
 	ctx := context.Background()
 
 	app := &ghtypes.GitHubApp{
-		AppID:        1234,
-		Name:         "Test App 1",
-		Domain:       "repos",
-		Slug:         "test-app-1",
-		BaseURL:      "https://github.com",
-		ClientID:     "abc123",
-		ClientSecret: "secret",
-		PrivateKey:   "private-key",
-		Logo:         "logo.png",
-		Kind:         ghtypes.RepoSyncGitHubAppKind,
+		AppID:           1234,
+		Name:            "Test App 1",
+		Domain:          "repos",
+		Slug:            "test-app-1",
+		BaseURL:         "https://github.com",
+		ClientID:        "abc123",
+		ClientSecret:    "secret",
+		PrivateKey:      "private-key",
+		Logo:            "logo.png",
+		Kind:            ghtypes.RepoSyncGitHubAppKind,
+		CreatedByUserId: 1,
 	}
 
 	id, err := store.Create(ctx, app)

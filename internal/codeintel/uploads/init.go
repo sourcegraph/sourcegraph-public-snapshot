@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/backfiller"
@@ -11,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/expirer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/janitor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/processor"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	uploadsstore "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -67,7 +67,7 @@ func NewUploadProcessorJob(
 	return background.NewUploadProcessorJob(
 		scopedContext("processor", observationCtx),
 		uploadSvc.store,
-		uploadSvc.lsifstore,
+		uploadSvc.codeGraphDataStore,
 		uploadSvc.repoStore,
 		uploadSvc.gitserverClient,
 		db,
@@ -96,7 +96,7 @@ func NewJanitor(
 	return background.NewJanitor(
 		scopedContext("janitor", observationCtx),
 		uploadSvc.store,
-		uploadSvc.lsifstore,
+		uploadSvc.codeGraphDataStore,
 		gitserverClient,
 		JanitorConfigInst,
 	)
