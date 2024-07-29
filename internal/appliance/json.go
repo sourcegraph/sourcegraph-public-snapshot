@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -180,6 +181,8 @@ func (a *Appliance) postStatusJSONHandler() http.Handler {
 
 		newStatus := config.Status(input.State)
 		a.logger.Info("state transition", log.String("state", string(newStatus)))
+		// trim v if v exists
+		input.Data = strings.TrimPrefix(input.Data, "v")
 		a.sourcegraph.Spec.RequestedVersion = input.Data
 		if err := a.setStatus(r.Context(), newStatus); err != nil {
 			if kerrors.IsNotFound(err) {
