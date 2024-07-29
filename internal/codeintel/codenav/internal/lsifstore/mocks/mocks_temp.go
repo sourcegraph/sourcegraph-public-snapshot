@@ -75,22 +75,22 @@ type MockLsifStore struct {
 func NewMockLsifStore() *MockLsifStore {
 	return &MockLsifStore{
 		ExtractDefinitionLocationsFromPositionFunc: &LsifStoreExtractDefinitionLocationsFromPositionFunc{
-			defaultHook: func(context.Context, lsifstore.LocationKey) (r0 []shared.Location, r1 []string, r2 error) {
+			defaultHook: func(context.Context, lsifstore.FindUsagesKey) (r0 []shared.UsageBuilder, r1 []string, r2 error) {
 				return
 			},
 		},
 		ExtractImplementationLocationsFromPositionFunc: &LsifStoreExtractImplementationLocationsFromPositionFunc{
-			defaultHook: func(context.Context, lsifstore.LocationKey) (r0 []shared.Location, r1 []string, r2 error) {
+			defaultHook: func(context.Context, lsifstore.FindUsagesKey) (r0 []shared.UsageBuilder, r1 []string, r2 error) {
 				return
 			},
 		},
 		ExtractPrototypeLocationsFromPositionFunc: &LsifStoreExtractPrototypeLocationsFromPositionFunc{
-			defaultHook: func(context.Context, lsifstore.LocationKey) (r0 []shared.Location, r1 []string, r2 error) {
+			defaultHook: func(context.Context, lsifstore.FindUsagesKey) (r0 []shared.UsageBuilder, r1 []string, r2 error) {
 				return
 			},
 		},
 		ExtractReferenceLocationsFromPositionFunc: &LsifStoreExtractReferenceLocationsFromPositionFunc{
-			defaultHook: func(context.Context, lsifstore.LocationKey) (r0 []shared.Location, r1 []string, r2 error) {
+			defaultHook: func(context.Context, lsifstore.FindUsagesKey) (r0 []shared.UsageBuilder, r1 []string, r2 error) {
 				return
 			},
 		},
@@ -152,22 +152,22 @@ func NewMockLsifStore() *MockLsifStore {
 func NewStrictMockLsifStore() *MockLsifStore {
 	return &MockLsifStore{
 		ExtractDefinitionLocationsFromPositionFunc: &LsifStoreExtractDefinitionLocationsFromPositionFunc{
-			defaultHook: func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error) {
+			defaultHook: func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 				panic("unexpected invocation of MockLsifStore.ExtractDefinitionLocationsFromPosition")
 			},
 		},
 		ExtractImplementationLocationsFromPositionFunc: &LsifStoreExtractImplementationLocationsFromPositionFunc{
-			defaultHook: func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error) {
+			defaultHook: func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 				panic("unexpected invocation of MockLsifStore.ExtractImplementationLocationsFromPosition")
 			},
 		},
 		ExtractPrototypeLocationsFromPositionFunc: &LsifStoreExtractPrototypeLocationsFromPositionFunc{
-			defaultHook: func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error) {
+			defaultHook: func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 				panic("unexpected invocation of MockLsifStore.ExtractPrototypeLocationsFromPosition")
 			},
 		},
 		ExtractReferenceLocationsFromPositionFunc: &LsifStoreExtractReferenceLocationsFromPositionFunc{
-			defaultHook: func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error) {
+			defaultHook: func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 				panic("unexpected invocation of MockLsifStore.ExtractReferenceLocationsFromPosition")
 			},
 		},
@@ -277,8 +277,8 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 // behavior when the ExtractDefinitionLocationsFromPosition method of the
 // parent MockLsifStore instance is invoked.
 type LsifStoreExtractDefinitionLocationsFromPositionFunc struct {
-	defaultHook func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)
-	hooks       []func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)
+	defaultHook func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)
+	hooks       []func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)
 	history     []LsifStoreExtractDefinitionLocationsFromPositionFuncCall
 	mutex       sync.Mutex
 }
@@ -286,7 +286,7 @@ type LsifStoreExtractDefinitionLocationsFromPositionFunc struct {
 // ExtractDefinitionLocationsFromPosition delegates to the next hook
 // function in the queue and stores the parameter and result values of this
 // invocation.
-func (m *MockLsifStore) ExtractDefinitionLocationsFromPosition(v0 context.Context, v1 lsifstore.LocationKey) ([]shared.Location, []string, error) {
+func (m *MockLsifStore) ExtractDefinitionLocationsFromPosition(v0 context.Context, v1 lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 	r0, r1, r2 := m.ExtractDefinitionLocationsFromPositionFunc.nextHook()(v0, v1)
 	m.ExtractDefinitionLocationsFromPositionFunc.appendCall(LsifStoreExtractDefinitionLocationsFromPositionFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -295,7 +295,7 @@ func (m *MockLsifStore) ExtractDefinitionLocationsFromPosition(v0 context.Contex
 // SetDefaultHook sets function that is called when the
 // ExtractDefinitionLocationsFromPosition method of the parent MockLsifStore
 // instance is invoked and the hook queue is empty.
-func (f *LsifStoreExtractDefinitionLocationsFromPositionFunc) SetDefaultHook(hook func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)) {
+func (f *LsifStoreExtractDefinitionLocationsFromPositionFunc) SetDefaultHook(hook func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)) {
 	f.defaultHook = hook
 }
 
@@ -304,7 +304,7 @@ func (f *LsifStoreExtractDefinitionLocationsFromPositionFunc) SetDefaultHook(hoo
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *LsifStoreExtractDefinitionLocationsFromPositionFunc) PushHook(hook func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)) {
+func (f *LsifStoreExtractDefinitionLocationsFromPositionFunc) PushHook(hook func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -312,20 +312,20 @@ func (f *LsifStoreExtractDefinitionLocationsFromPositionFunc) PushHook(hook func
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LsifStoreExtractDefinitionLocationsFromPositionFunc) SetDefaultReturn(r0 []shared.Location, r1 []string, r2 error) {
-	f.SetDefaultHook(func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error) {
+func (f *LsifStoreExtractDefinitionLocationsFromPositionFunc) SetDefaultReturn(r0 []shared.UsageBuilder, r1 []string, r2 error) {
+	f.SetDefaultHook(func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreExtractDefinitionLocationsFromPositionFunc) PushReturn(r0 []shared.Location, r1 []string, r2 error) {
-	f.PushHook(func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error) {
+func (f *LsifStoreExtractDefinitionLocationsFromPositionFunc) PushReturn(r0 []shared.UsageBuilder, r1 []string, r2 error) {
+	f.PushHook(func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *LsifStoreExtractDefinitionLocationsFromPositionFunc) nextHook() func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error) {
+func (f *LsifStoreExtractDefinitionLocationsFromPositionFunc) nextHook() func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -365,10 +365,10 @@ type LsifStoreExtractDefinitionLocationsFromPositionFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 lsifstore.LocationKey
+	Arg1 lsifstore.FindUsagesKey
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.Location
+	Result0 []shared.UsageBuilder
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 []string
@@ -393,8 +393,8 @@ func (c LsifStoreExtractDefinitionLocationsFromPositionFuncCall) Results() []int
 // behavior when the ExtractImplementationLocationsFromPosition method of
 // the parent MockLsifStore instance is invoked.
 type LsifStoreExtractImplementationLocationsFromPositionFunc struct {
-	defaultHook func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)
-	hooks       []func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)
+	defaultHook func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)
+	hooks       []func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)
 	history     []LsifStoreExtractImplementationLocationsFromPositionFuncCall
 	mutex       sync.Mutex
 }
@@ -402,7 +402,7 @@ type LsifStoreExtractImplementationLocationsFromPositionFunc struct {
 // ExtractImplementationLocationsFromPosition delegates to the next hook
 // function in the queue and stores the parameter and result values of this
 // invocation.
-func (m *MockLsifStore) ExtractImplementationLocationsFromPosition(v0 context.Context, v1 lsifstore.LocationKey) ([]shared.Location, []string, error) {
+func (m *MockLsifStore) ExtractImplementationLocationsFromPosition(v0 context.Context, v1 lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 	r0, r1, r2 := m.ExtractImplementationLocationsFromPositionFunc.nextHook()(v0, v1)
 	m.ExtractImplementationLocationsFromPositionFunc.appendCall(LsifStoreExtractImplementationLocationsFromPositionFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -411,7 +411,7 @@ func (m *MockLsifStore) ExtractImplementationLocationsFromPosition(v0 context.Co
 // SetDefaultHook sets function that is called when the
 // ExtractImplementationLocationsFromPosition method of the parent
 // MockLsifStore instance is invoked and the hook queue is empty.
-func (f *LsifStoreExtractImplementationLocationsFromPositionFunc) SetDefaultHook(hook func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)) {
+func (f *LsifStoreExtractImplementationLocationsFromPositionFunc) SetDefaultHook(hook func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)) {
 	f.defaultHook = hook
 }
 
@@ -420,7 +420,7 @@ func (f *LsifStoreExtractImplementationLocationsFromPositionFunc) SetDefaultHook
 // MockLsifStore instance invokes the hook at the front of the queue and
 // discards it. After the queue is empty, the default hook function is
 // invoked for any future action.
-func (f *LsifStoreExtractImplementationLocationsFromPositionFunc) PushHook(hook func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)) {
+func (f *LsifStoreExtractImplementationLocationsFromPositionFunc) PushHook(hook func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -428,20 +428,20 @@ func (f *LsifStoreExtractImplementationLocationsFromPositionFunc) PushHook(hook 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LsifStoreExtractImplementationLocationsFromPositionFunc) SetDefaultReturn(r0 []shared.Location, r1 []string, r2 error) {
-	f.SetDefaultHook(func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error) {
+func (f *LsifStoreExtractImplementationLocationsFromPositionFunc) SetDefaultReturn(r0 []shared.UsageBuilder, r1 []string, r2 error) {
+	f.SetDefaultHook(func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreExtractImplementationLocationsFromPositionFunc) PushReturn(r0 []shared.Location, r1 []string, r2 error) {
-	f.PushHook(func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error) {
+func (f *LsifStoreExtractImplementationLocationsFromPositionFunc) PushReturn(r0 []shared.UsageBuilder, r1 []string, r2 error) {
+	f.PushHook(func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *LsifStoreExtractImplementationLocationsFromPositionFunc) nextHook() func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error) {
+func (f *LsifStoreExtractImplementationLocationsFromPositionFunc) nextHook() func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -482,10 +482,10 @@ type LsifStoreExtractImplementationLocationsFromPositionFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 lsifstore.LocationKey
+	Arg1 lsifstore.FindUsagesKey
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.Location
+	Result0 []shared.UsageBuilder
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 []string
@@ -510,8 +510,8 @@ func (c LsifStoreExtractImplementationLocationsFromPositionFuncCall) Results() [
 // when the ExtractPrototypeLocationsFromPosition method of the parent
 // MockLsifStore instance is invoked.
 type LsifStoreExtractPrototypeLocationsFromPositionFunc struct {
-	defaultHook func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)
-	hooks       []func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)
+	defaultHook func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)
+	hooks       []func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)
 	history     []LsifStoreExtractPrototypeLocationsFromPositionFuncCall
 	mutex       sync.Mutex
 }
@@ -519,7 +519,7 @@ type LsifStoreExtractPrototypeLocationsFromPositionFunc struct {
 // ExtractPrototypeLocationsFromPosition delegates to the next hook function
 // in the queue and stores the parameter and result values of this
 // invocation.
-func (m *MockLsifStore) ExtractPrototypeLocationsFromPosition(v0 context.Context, v1 lsifstore.LocationKey) ([]shared.Location, []string, error) {
+func (m *MockLsifStore) ExtractPrototypeLocationsFromPosition(v0 context.Context, v1 lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 	r0, r1, r2 := m.ExtractPrototypeLocationsFromPositionFunc.nextHook()(v0, v1)
 	m.ExtractPrototypeLocationsFromPositionFunc.appendCall(LsifStoreExtractPrototypeLocationsFromPositionFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -528,7 +528,7 @@ func (m *MockLsifStore) ExtractPrototypeLocationsFromPosition(v0 context.Context
 // SetDefaultHook sets function that is called when the
 // ExtractPrototypeLocationsFromPosition method of the parent MockLsifStore
 // instance is invoked and the hook queue is empty.
-func (f *LsifStoreExtractPrototypeLocationsFromPositionFunc) SetDefaultHook(hook func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)) {
+func (f *LsifStoreExtractPrototypeLocationsFromPositionFunc) SetDefaultHook(hook func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)) {
 	f.defaultHook = hook
 }
 
@@ -537,7 +537,7 @@ func (f *LsifStoreExtractPrototypeLocationsFromPositionFunc) SetDefaultHook(hook
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *LsifStoreExtractPrototypeLocationsFromPositionFunc) PushHook(hook func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)) {
+func (f *LsifStoreExtractPrototypeLocationsFromPositionFunc) PushHook(hook func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -545,20 +545,20 @@ func (f *LsifStoreExtractPrototypeLocationsFromPositionFunc) PushHook(hook func(
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LsifStoreExtractPrototypeLocationsFromPositionFunc) SetDefaultReturn(r0 []shared.Location, r1 []string, r2 error) {
-	f.SetDefaultHook(func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error) {
+func (f *LsifStoreExtractPrototypeLocationsFromPositionFunc) SetDefaultReturn(r0 []shared.UsageBuilder, r1 []string, r2 error) {
+	f.SetDefaultHook(func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreExtractPrototypeLocationsFromPositionFunc) PushReturn(r0 []shared.Location, r1 []string, r2 error) {
-	f.PushHook(func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error) {
+func (f *LsifStoreExtractPrototypeLocationsFromPositionFunc) PushReturn(r0 []shared.UsageBuilder, r1 []string, r2 error) {
+	f.PushHook(func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *LsifStoreExtractPrototypeLocationsFromPositionFunc) nextHook() func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error) {
+func (f *LsifStoreExtractPrototypeLocationsFromPositionFunc) nextHook() func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -598,10 +598,10 @@ type LsifStoreExtractPrototypeLocationsFromPositionFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 lsifstore.LocationKey
+	Arg1 lsifstore.FindUsagesKey
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.Location
+	Result0 []shared.UsageBuilder
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 []string
@@ -626,8 +626,8 @@ func (c LsifStoreExtractPrototypeLocationsFromPositionFuncCall) Results() []inte
 // when the ExtractReferenceLocationsFromPosition method of the parent
 // MockLsifStore instance is invoked.
 type LsifStoreExtractReferenceLocationsFromPositionFunc struct {
-	defaultHook func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)
-	hooks       []func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)
+	defaultHook func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)
+	hooks       []func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)
 	history     []LsifStoreExtractReferenceLocationsFromPositionFuncCall
 	mutex       sync.Mutex
 }
@@ -635,7 +635,7 @@ type LsifStoreExtractReferenceLocationsFromPositionFunc struct {
 // ExtractReferenceLocationsFromPosition delegates to the next hook function
 // in the queue and stores the parameter and result values of this
 // invocation.
-func (m *MockLsifStore) ExtractReferenceLocationsFromPosition(v0 context.Context, v1 lsifstore.LocationKey) ([]shared.Location, []string, error) {
+func (m *MockLsifStore) ExtractReferenceLocationsFromPosition(v0 context.Context, v1 lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 	r0, r1, r2 := m.ExtractReferenceLocationsFromPositionFunc.nextHook()(v0, v1)
 	m.ExtractReferenceLocationsFromPositionFunc.appendCall(LsifStoreExtractReferenceLocationsFromPositionFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -644,7 +644,7 @@ func (m *MockLsifStore) ExtractReferenceLocationsFromPosition(v0 context.Context
 // SetDefaultHook sets function that is called when the
 // ExtractReferenceLocationsFromPosition method of the parent MockLsifStore
 // instance is invoked and the hook queue is empty.
-func (f *LsifStoreExtractReferenceLocationsFromPositionFunc) SetDefaultHook(hook func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)) {
+func (f *LsifStoreExtractReferenceLocationsFromPositionFunc) SetDefaultHook(hook func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)) {
 	f.defaultHook = hook
 }
 
@@ -653,7 +653,7 @@ func (f *LsifStoreExtractReferenceLocationsFromPositionFunc) SetDefaultHook(hook
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *LsifStoreExtractReferenceLocationsFromPositionFunc) PushHook(hook func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error)) {
+func (f *LsifStoreExtractReferenceLocationsFromPositionFunc) PushHook(hook func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -661,20 +661,20 @@ func (f *LsifStoreExtractReferenceLocationsFromPositionFunc) PushHook(hook func(
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LsifStoreExtractReferenceLocationsFromPositionFunc) SetDefaultReturn(r0 []shared.Location, r1 []string, r2 error) {
-	f.SetDefaultHook(func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error) {
+func (f *LsifStoreExtractReferenceLocationsFromPositionFunc) SetDefaultReturn(r0 []shared.UsageBuilder, r1 []string, r2 error) {
+	f.SetDefaultHook(func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreExtractReferenceLocationsFromPositionFunc) PushReturn(r0 []shared.Location, r1 []string, r2 error) {
-	f.PushHook(func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error) {
+func (f *LsifStoreExtractReferenceLocationsFromPositionFunc) PushReturn(r0 []shared.UsageBuilder, r1 []string, r2 error) {
+	f.PushHook(func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *LsifStoreExtractReferenceLocationsFromPositionFunc) nextHook() func(context.Context, lsifstore.LocationKey) ([]shared.Location, []string, error) {
+func (f *LsifStoreExtractReferenceLocationsFromPositionFunc) nextHook() func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -714,10 +714,10 @@ type LsifStoreExtractReferenceLocationsFromPositionFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 lsifstore.LocationKey
+	Arg1 lsifstore.FindUsagesKey
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.Location
+	Result0 []shared.UsageBuilder
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 []string

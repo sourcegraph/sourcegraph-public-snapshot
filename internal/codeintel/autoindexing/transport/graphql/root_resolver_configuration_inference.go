@@ -10,6 +10,10 @@ import (
 )
 
 func (r *rootResolver) CodeIntelligenceInferenceScript(ctx context.Context) (script string, err error) {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return "", err
+	}
+
 	ctx, _, endObservation := r.operations.codeIntelligenceInferenceScript.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -17,6 +21,10 @@ func (r *rootResolver) CodeIntelligenceInferenceScript(ctx context.Context) (scr
 }
 
 func (r *rootResolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *resolverstubs.UpdateCodeIntelligenceInferenceScriptArgs) (_ *resolverstubs.EmptyResponse, err error) {
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
 	ctx, _, endObservation := r.operations.updateCodeIntelligenceInferenceScript.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("script", args.Script),
 	}})

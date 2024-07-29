@@ -14,13 +14,13 @@ type PodProbe struct {
 	K8sClient client.Client
 }
 
-func (p *PodProbe) CheckPods(ctx context.Context, labelSelector string) error {
+func (p *PodProbe) CheckPods(ctx context.Context, labelSelector, namespace string) error {
 	var pods corev1.PodList
 	selector, err := labels.Parse(labelSelector)
 	if err != nil {
 		return errors.Wrap(err, "parsing label selector")
 	}
-	if err := p.K8sClient.List(ctx, &pods, &client.ListOptions{LabelSelector: selector}); err != nil {
+	if err := p.K8sClient.List(ctx, &pods, &client.ListOptions{LabelSelector: selector, Namespace: namespace}); err != nil {
 		return errors.Wrap(err, "listing pods")
 	}
 	for _, pod := range pods.Items {

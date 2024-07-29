@@ -1,0 +1,376 @@
+[
+  {
+   "ID": 0,
+   "Name": "prefix/a/gabe/repo",
+   "URI": "gerrit.sgdev.org/a/gabe/repo",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "a%2Fgabe%2Frepo",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/a/a/gabe/repo"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "a%2Fgabe%2Frepo",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null,
+    "http_url_to_repo": "https://gerrit.sgdev.org/a/a/gabe/repo",
+    "ssh_url_to_repo": "ssh://gerrit-ssh.sgdev.org:29418/a/gabe/repo"
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "prefix/batch-changes-test-repo",
+   "URI": "gerrit.sgdev.org/batch-changes-test-repo",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "batch-changes-test-repo",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/a/batch-changes-test-repo"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "batch-changes-test-repo",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null,
+    "http_url_to_repo": "https://gerrit.sgdev.org/a/batch-changes-test-repo",
+    "ssh_url_to_repo": "ssh://gerrit-ssh.sgdev.org:29418/batch-changes-test-repo"
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "prefix/beatrix",
+   "URI": "gerrit.sgdev.org/beatrix",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "beatrix",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/a/beatrix"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "beatrix",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null,
+    "http_url_to_repo": "https://gerrit.sgdev.org/a/beatrix",
+    "ssh_url_to_repo": "ssh://gerrit-ssh.sgdev.org:29418/beatrix"
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "prefix/cbart-test",
+   "URI": "gerrit.sgdev.org/cbart-test",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "cbart-test",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/a/cbart-test"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "cbart-test",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null,
+    "http_url_to_repo": "https://gerrit.sgdev.org/a/cbart-test",
+    "ssh_url_to_repo": "ssh://gerrit-ssh.sgdev.org:29418/cbart-test"
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "prefix/gabe",
+   "URI": "gerrit.sgdev.org/gabe",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "gabe",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/a/gabe"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "gabe",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null,
+    "http_url_to_repo": "https://gerrit.sgdev.org/a/gabe",
+    "ssh_url_to_repo": "ssh://gerrit-ssh.sgdev.org:29418/gabe"
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "prefix/gabe/test",
+   "URI": "gerrit.sgdev.org/gabe/test",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "gabe%2Ftest",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/a/gabe/test"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "gabe%2Ftest",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null,
+    "http_url_to_repo": "https://gerrit.sgdev.org/a/gabe/test",
+    "ssh_url_to_repo": "ssh://gerrit-ssh.sgdev.org:29418/gabe/test"
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "prefix/idan-temp",
+   "URI": "gerrit.sgdev.org/idan-temp",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "idan-temp",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/a/idan-temp"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "idan-temp",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null,
+    "http_url_to_repo": "https://gerrit.sgdev.org/a/idan-temp",
+    "ssh_url_to_repo": "ssh://gerrit-ssh.sgdev.org:29418/idan-temp"
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "prefix/k8s-gerrit",
+   "URI": "gerrit.sgdev.org/k8s-gerrit",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "k8s-gerrit",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/a/k8s-gerrit"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "k8s-gerrit",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null,
+    "http_url_to_repo": "https://gerrit.sgdev.org/a/k8s-gerrit",
+    "ssh_url_to_repo": "ssh://gerrit-ssh.sgdev.org:29418/k8s-gerrit"
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "prefix/sourcegraph",
+   "URI": "gerrit.sgdev.org/sourcegraph",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "sourcegraph",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/a/sourcegraph"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "sourcegraph",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null,
+    "http_url_to_repo": "https://gerrit.sgdev.org/a/sourcegraph",
+    "ssh_url_to_repo": "ssh://gerrit-ssh.sgdev.org:29418/sourcegraph"
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "prefix/sourcegraph/create",
+   "URI": "gerrit.sgdev.org/sourcegraph/create",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "sourcegraph%2Fcreate",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/a/sourcegraph/create"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "sourcegraph%2Fcreate",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null,
+    "http_url_to_repo": "https://gerrit.sgdev.org/a/sourcegraph/create",
+    "ssh_url_to_repo": "ssh://gerrit-ssh.sgdev.org:29418/sourcegraph/create"
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "prefix/src-cli",
+   "URI": "gerrit.sgdev.org/src-cli",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "src-cli",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit.sgdev.org/a/src-cli"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "src-cli",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null,
+    "http_url_to_repo": "https://gerrit.sgdev.org/a/src-cli",
+    "ssh_url_to_repo": "ssh://gerrit-ssh.sgdev.org:29418/src-cli"
+   }
+  }
+ ]
