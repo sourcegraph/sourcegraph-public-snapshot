@@ -27,8 +27,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// SU_CHUNK_SIZE is the batch size for SCIP documents and git diffs we load at a time.
-var SU_CHUNK_SIZE = 20
+// SYNTACTIC_USAGES_DOCUMENTS_CHUNK_SIZE is the batch size for SCIP documents and git diffs we load at a time.
+//
+// I collected traces for various sizes (on my local machine) and 20 gave me "nice looking" ones.
+// In general I expect 100 documents to be on the "higher end" of the number of documents to retrieve
+// for a single syntactic usage search and 5 concurrent queries and git requests seems like a reasonable
+// trade-off for concurrency vs load.
+const SYNTACTIC_USAGES_DOCUMENTS_CHUNK_SIZE = 20
 
 type candidateMatch struct {
 	range_             scip.Range
@@ -402,7 +407,7 @@ func syntacticUsagesImpl(
 		}
 	}
 
-	tasks, _ := genslices.ChunkEvery(candidateMatches, SU_CHUNK_SIZE)
+	tasks, _ := genslices.ChunkEvery(candidateMatches, SYNTACTIC_USAGES_DOCUMENTS_CHUNK_SIZE)
 	results, err := conciter.MapErr(tasks, func(files *[]candidateFile) ([]SyntacticMatch, error) {
 		paths := genslices.Map(*files, func(f candidateFile) core.RepoRelPath {
 			return f.path
@@ -477,7 +482,7 @@ func searchBasedUsagesImpl(
 	candidateMatches := matchResults.candidateMatches
 	candidateSymbols := symbolResults.candidateSymbols
 
-	tasks, _ := genslices.ChunkEvery(candidateMatches, SU_CHUNK_SIZE)
+	tasks, _ := genslices.ChunkEvery(candidateMatches, SYNTACTIC_USAGES_DOCUMENTS_CHUNK_SIZE)
 	results := conciter.Map(tasks, func(files *[]candidateFile) []SearchBasedMatch {
 		documents := map[core.RepoRelPath]MappedDocument{}
 		if mappedIndex, ok := syntacticIndex.Get(); ok {
