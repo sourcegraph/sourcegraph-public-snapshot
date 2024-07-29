@@ -829,16 +829,14 @@ impl<'a> LocalResolver<'a> {
                 if self.skip_references_at_offsets.contains(&offset) {
                     continue;
                 }
-                if_chain! {
-                    if reference.visibility == Visibility::Local;
-                    if let Some(def) = self.find_def(scope_ref, reference.name, offset);
-                    then {
+                if reference.visibility == Visibility::Local {
+                    if let Some(def) = self.find_def(scope_ref, reference.name, offset) {
                         ref_occurrences.push(self.make_local_reference(reference, def.id));
-                    } else {
-                        if self.options.emit_global_references {
-                            ref_occurrences.push(self.make_global_reference(reference))
-                        }
+                        continue;
                     }
+                }
+                if self.options.emit_global_references {
+                    ref_occurrences.push(self.make_global_reference(reference))
                 }
             }
         }
