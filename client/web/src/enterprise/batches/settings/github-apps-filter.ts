@@ -4,6 +4,7 @@ import { BatchChangesCodeHostFields, ExternalServiceKind } from '../../../graphq
 // via SRCH-798. Once that issues is closed, this function can maybe be dropped.
 export function credentialForGitHubAppExists(
     appName: string | null,
+    supportsCommitSigning: boolean = false,
     nodes: BatchChangesCodeHostFields[] | undefined
 ): boolean {
     if (!appName) {
@@ -14,9 +15,10 @@ export function credentialForGitHubAppExists(
         return false
     }
 
-    return (
-        nodes.filter(
-            n => n.externalServiceKind === ExternalServiceKind.GITHUB && n.credential?.gitHubApp?.name === appName
-        ).length > 0
+    return nodes.some(
+        n =>
+            n.supportsCommitSigning === supportsCommitSigning &&
+            n.externalServiceKind === ExternalServiceKind.GITHUB &&
+            n.credential?.gitHubApp?.name === appName
     )
 }
