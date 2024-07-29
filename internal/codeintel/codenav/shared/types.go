@@ -1,8 +1,11 @@
 package shared
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 
+	genslices "github.com/life4/genesis/slices"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
@@ -42,11 +45,14 @@ func (u Usage) ToLocation() Location {
 // in the GraphQL API
 type UsageKind int32
 
+// The values start from 1 to reduce confusion when iterating
+// on mock tests, where accidental 0 initialization might
+// otherwise be interpreted as a valid value.
 const (
-	UsageKindDefinition UsageKind = iota
-	UsageKindReference
-	UsageKindImplementation
-	UsageKindSuper
+	UsageKindDefinition     UsageKind = 1
+	UsageKindReference      UsageKind = 2
+	UsageKindImplementation UsageKind = 3
+	UsageKindSuper          UsageKind = 4
 )
 
 // RangesColumnName represents the column name in the codeintel_scip_symbols table
@@ -90,9 +96,29 @@ type UsageBuilder struct {
 	Symbol string
 	// SymbolRoles represents the 'role' of the underlying occurrence
 	// which was used to construct this UsageBuilder.
-	//
-	// TODO: Make this field private after removing extractLocationsFromPosition
-	SymbolRoles scip.SymbolRole
+	symbolRoles scip.SymbolRole
+}
+
+func (ub UsageBuilder) Equal(other UsageBuilder) bool {
+	return ub.Range.Compare(other.Range) == 0 && ub.Symbol == other.Symbol && ub.symbolRoles == other.symbolRoles
+}
+
+func NewUsageBuilder(occ *scip.Occurrence) UsageBuilder {
+	return UsageBuilder{scip.NewRangeUnchecked(occ.Range), occ.Symbol, scip.SymbolRole(occ.SymbolRoles)}
+}
+
+func BuildUsages(builders []UsageBuilder, uploadID int, path core.UploadRelPath, kind UsageKind) []Usage {
+	return genslices.Map(builders, func(b UsageBuilder) Usage { return b.build(uploadID, path, kind) })
+}
+
+func (ub UsageBuilder) build(uploadID int, path core.UploadRelPath, kind UsageKind) Usage {
+	return Usage{
+		UploadID: uploadID,
+		Path:     path,
+		Range:    TranslateRange(ub.Range),
+		Symbol:   ub.Symbol,
+		Kind:     kind,
+	}
 }
 
 func (ub UsageBuilder) RangeKey() [4]int32 {
@@ -100,11 +126,11 @@ func (ub UsageBuilder) RangeKey() [4]int32 {
 }
 
 func (ub UsageBuilder) SymbolRoleKey() int32 {
-	return int32(ub.SymbolRoles)
+	return int32(ub.symbolRoles)
 }
 
 func (ub UsageBuilder) SymbolAndRoleKey() string {
-	return fmt.Sprintf("%s:%x", ub.Symbol, ub.SymbolRoles)
+	return fmt.Sprintf("%s:%x", ub.Symbol, ub.symbolRoles)
 }
 
 // Diagnostic describes diagnostic information attached to a location within a
@@ -126,9 +152,9 @@ func AdjustDiagnostic(d Diagnostic[core.UploadRelPath], upload shared.CompletedU
 // CodeIntelligenceRange pairs a range with its definitions, references, implementations, and hover text.
 type CodeIntelligenceRange struct {
 	Range           Range
-	Definitions     []Location
-	References      []Location
-	Implementations []Location
+	Definitions     []Usage
+	References      []Usage
+	Implementations []Usage
 	HoverText       string
 }
 
@@ -139,6 +165,48 @@ type UploadLocation struct {
 	Path         core.RepoRelPath
 	TargetCommit string
 	TargetRange  Range
+}
+
+// UploadUsage is a path and usage from within a particular upload. The target commit
+// denotes the target commit for which the location was set (the originally requested commit).
+type UploadUsage struct {
+	Upload       shared.CompletedUpload
+	Path         core.RepoRelPath
+	TargetCommit string
+	TargetRange  Range
+	// SCIP-encoded symbol for a range.
+	// Q: When can this be empty?
+	Symbol string
+	Kind   UsageKind
+}
+
+func (u UploadUsage) ToLocation() UploadLocation {
+	return UploadLocation{u.Upload, u.Path, u.TargetCommit, u.TargetRange}
+}
+
+func SortAndDedupLocations(locs []UploadLocation) []UploadLocation {
+	slices.SortStableFunc(locs, func(loc1 UploadLocation, loc2 UploadLocation) int {
+		if c := cmp.Compare(loc1.Upload.RepositoryName, loc2.Upload.RepositoryName); c != 0 {
+			return c
+		}
+		if c := cmp.Compare(loc1.Path.RawValue(), loc2.Path.RawValue()); c != 0 {
+			return c
+		}
+		// This order is reversed as we want to prefer newer uploads over older ones
+		// for same (repo, path), see Filter below
+		if c := cmp.Compare(loc2.Upload.ID, loc1.Upload.ID); c != 0 {
+			return c
+		}
+		return loc1.TargetRange.ToSCIPRange().CompareStrict(loc2.TargetRange.ToSCIPRange())
+	})
+	prev := UploadLocation{}
+	return genslices.Filter(locs, func(loc UploadLocation) bool {
+		if loc.Upload.RepositoryName == prev.Upload.RepositoryName && loc.Path.Equal(prev.Path) {
+			return false
+		}
+		prev = loc
+		return true
+	})
 }
 
 type SnapshotData struct {

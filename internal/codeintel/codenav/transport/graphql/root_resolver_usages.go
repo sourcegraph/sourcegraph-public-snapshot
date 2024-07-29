@@ -60,6 +60,7 @@ func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Re
 		},
 	}
 }
+
 func NewSearchBasedUsageResolver(usage codenav.SearchBasedMatch, repository types.Repo, revision api.CommitID) resolverstubs.UsageResolver {
 	var kind resolverstubs.SymbolUsageKind
 	if usage.IsDefinition {
