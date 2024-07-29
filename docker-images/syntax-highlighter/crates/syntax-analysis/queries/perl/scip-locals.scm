@@ -8,8 +8,8 @@
 (variable_declaration "my" (_) @definition.term)
 (for_statement my_var: (_) @definition.term)
 
-((scalar) @reference (#set! "kind" "local"))
-((array) @reference (#set! "kind" "local"))
-((arraylen) @reference (#set! "kind" "local"))
-((hash) @reference (#set! "kind" "local"))
-((glob) @reference (#set! "kind" "local"))
+(scalar) @reference
+(array) @reference
+(arraylen) @reference
+(hash) @reference
+(glob) @reference

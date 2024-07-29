@@ -105,7 +105,6 @@
     name: (_) @reference (#set! "kind" "global.type")
   ))
 
-(field_access object: (identifier) @reference)
 (field_access field: (identifier) @reference (#set! "kind" "global.term"))
 
 ; hello(...)
@@ -127,17 +126,8 @@
 ; ^^^^^^
 (local_variable_declaration
   type: (type_identifier) @occurrence.skip
-    (#eq? @reference "var")
+    (#eq? @occurrence.skip "var")
 )
-
-; class Binary<N extends Number> {...
-;                        ^^^^^^
-(type_bound
-  ((type_identifier)* @reference (#set! "kind" "type"))
-)
-
-
-
 
 ; Person::getName
 ; ^^^^^^  ^^^^^^^
@@ -146,4 +136,4 @@
 ; type references are generally global
 ((type_identifier) @reference (#set! "kind" "type"))
 ; all other references we assume to be local only
-(identifier) @reference (#set! "kind" "local")
+(identifier) @reference
