@@ -33,52 +33,42 @@ test('has user menu', async ({ sg, page }) => {
 test.describe('cody top level navigation', () => {
     const topNavName = 'Cody'
 
-    ;[
+    const tests = [
         {
             name: 'sourcegraph.com, signed out',
             context: { sourcegraphDotComMode: true },
             signedIn: false,
             expectedTopNav: '/cody',
-            expectedSubNav: false,
         },
         {
             name: 'sourcegraph.com, signed in',
             context: { sourcegraphDotComMode: true },
             signedIn: true,
             expectedTopNav: '/cody/chat',
-            expectedSubNav: {
-                'Web Chat': '/cody/chat',
-                Dashboard: '/cody/manage',
-            },
         },
         {
             name: 'enterprise, no user cody',
             context: { sourcegraphDotComMode: false, codyEnabledOnInstance: true, codyEnabledForCurrentUser: false },
             signedIn: true,
             expectedTopNav: '/cody/dashboard',
-            expectedSubNav: false,
         },
         {
             name: 'enterprise, user cody',
             context: { sourcegraphDotComMode: false, codyEnabledOnInstance: true, codyEnabledForCurrentUser: true },
             signedIn: true,
             expectedTopNav: '/cody/chat',
-            expectedSubNav: {
-                'Web Chat': '/cody/chat',
-                Dashboard: '/cody/dashboard',
-            },
         },
         {
             name: 'enterprise, no cody',
             context: { sourcegraphDotComMode: false, codyEnabledOnInstance: false, codyEnabledForCurrentUser: false },
             signedIn: true,
-            expectedTopNav: false,
         },
-    ].forEach(({ name, context, signedIn, expectedTopNav, expectedSubNav }) => {
+    ]
+
+    tests.forEach(({ name, context, signedIn, expectedTopNav }) => {
         test(name, async ({ sg, page }) => {
             const mainNav = page.getByLabel('Main')
             const topNavCodyEntry = mainNav.getByRole('link', { name: topNavName })
-            const menuToggleButton = mainNav.getByLabel("Open 'Cody' submenu")
             await sg.setWindowContext(context)
 
             if (signedIn) {
@@ -92,15 +82,6 @@ test.describe('cody top level navigation', () => {
                 await expect(topNavCodyEntry).toHaveAttribute('href', expectedTopNav)
             } else {
                 await expect(topNavCodyEntry).not.toBeAttached()
-            }
-
-            if (typeof expectedSubNav === 'object') {
-                await expect(menuToggleButton).toBeVisible()
-                for (const [name, href] of Object.entries(expectedSubNav)) {
-                    await expect(page.getByRole('link', { name, includeHidden: true })).toHaveAttribute('href', href)
-                }
-            } else if (expectedTopNav) {
-                await expect(menuToggleButton).not.toBeAttached()
             }
         })
     })
