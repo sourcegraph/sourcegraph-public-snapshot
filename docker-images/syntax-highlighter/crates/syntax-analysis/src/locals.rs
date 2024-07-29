@@ -21,10 +21,10 @@ use tree_sitter::Node;
 use crate::tree_sitter_ext::NodeExt;
 /// This module contains logic to understand the binding structure of
 /// a given source file. We emit information about references and
-/// definitions of _local_ bindings. A local binding is a binding that
-/// cannot be accessed from another file. It is important to never
-/// mark a non-local as local, because that would mean we'd prevent
-/// search-based lookup from finding references to that binding.
+/// definitions of _local_ bindings as well as references to non-locals.
+/// A local binding is a binding that cannot be accessed from another file.
+/// It is important to never mark a non-local as local, because that would mean
+/// we'd prevent search-based lookup from finding references to that binding.
 ///
 /// We implement this in a language-agnostic way by relying on
 /// tree-sitter and a DSL built on top of its [query syntax].
@@ -72,9 +72,8 @@ enum Visibility {
     /// and if none is found a global reference is emitted
     Local,
 
-    /// Pure global reference bypasses the local scope resolution,
-    /// and a global reference is immediately emitted (with symbol being just
-    /// the node's text content)
+    /// Global references bypass the local scope resolution, and always emit a
+    /// a global reference, with the symbol being the node's text content.
     Global,
 }
 
