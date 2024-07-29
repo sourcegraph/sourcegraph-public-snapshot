@@ -6,8 +6,10 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -142,4 +144,35 @@ func WithActor(ctx context.Context, a *Actor) context.Context {
 // or removal of sensitive data.
 func WithInternalActor(ctx context.Context) context.Context {
 	return context.WithValue(ctx, actorKey, Internal())
+}
+
+type requestClientAgent int
+
+const (
+	requestClientAgentUnknown             requestClientAgent = 0
+	requestClientAgentWeb                 requestClientAgent = 1
+	requestClientAgentCodyEditorExtension requestClientAgent = 2
+	requestClientAgentCLI                 requestClientAgent = 3
+	requestClientAgentOtherInternal       requestClientAgent = 4
+)
+
+func (a *Actor) RequestClientAgent(ctx context.Context) requestClientAgent {
+	if a.FromSessionCookie {
+		return requestClientAgentWeb
+	}
+
+	c := requestclient.FromContext(ctx)
+	if c == nil {
+		return requestClientAgentUnknown
+	}
+	agent := c.UserAgent
+	if strings.Contains(agent, "editor-extension") {
+		return requestClientAgentCodyEditorExtension
+	} else if strings.Contains(agent, "sourcegraph-cli") {
+		return requestClientAgentCLI
+	} else if strings.Contains(agent, "sourcegraph-bot") {
+		return requestClientAgentOtherInternal
+	}
+
+	return requestClientAgentUnknown
 }
