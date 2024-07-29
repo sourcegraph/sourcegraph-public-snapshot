@@ -1,26 +1,22 @@
 <script lang="ts">
     import Icon from '$lib/Icon.svelte'
+    import { getButtonClassName } from '$lib/wildcard/Button'
     import Button from '$lib/wildcard/Button.svelte'
 
     export let open: boolean
     export let handleDismiss: () => void
-
-    let root: HTMLDialogElement
-    $: if (open) {
-        root?.showModal()
-    } else {
-        root?.close()
-    }
 </script>
 
-<dialog bind:this={root}>
+<dialog open>
     <div class="content">
         <div class="logo"><Icon icon={ISgMark} /></div>
-        <h1><span>You've activated a better, faster experience</span> ⚡</h1>
-        <p class="subtitle">
-            Get ready for a new Code Search experience: rewritten from the ground-up for performance to empower your
-            workflow.
-        </p>
+        <div class="message">
+            <h1><span>You've activated a better, faster experience</span> ⚡</h1>
+            <p class="subtitle">
+                Get ready for a new Code Search experience: rewritten from the ground-up for performance to empower your
+                workflow.
+            </p>
+        </div>
         <div class="features">
             <div>
                 <Icon icon={ILucideFileDiff} />
@@ -39,20 +35,23 @@
             </div>
         </div>
         <div class="cta">
-            <Button on:click={handleDismiss}>Awesome. I’m ready to use it!</Button>
-            <a href="TODO">Read release notes</a>
+            <div>
+                <form method="dialog">
+                    <button class={getButtonClassName({ variant: 'secondary' })}>Awesome. I’m ready to use it!</button>
+                </form>
+                <a href="TODO">Read release notes</a>
+            </div>
+            <p> You can opt out at any time by using the toggle at the top of the screen.</p>
         </div>
-        <p class="footer"> You can opt out at any time by using the toggle at the top of the screen.</p>
     </div>
 </dialog>
 
 <style lang="scss">
     dialog {
         width: 80vw;
-        height: 80vh;
         border-radius: 0.75rem;
         border: 1px solid var(--border-color);
-        padding: 0;
+        padding: 2rem;
         overflow: hidden;
         background-color: var(--color-bg-1);
 
@@ -83,7 +82,7 @@
         }
 
         display: flex;
-        gap: 1rem;
+        gap: 1.5rem;
         flex-direction: column;
 
         .logo {
@@ -93,22 +92,24 @@
             --icon-size: 32px;
         }
 
-        h1 {
-            margin: 0;
-            grid-row: 2;
-            grid-column: 1 / -1;
-            text-wrap: balance;
+        .message {
+            h1 {
+                grid-row: 2;
+                grid-column: 1 / -1;
+                text-wrap: balance;
 
-            span {
-                background: linear-gradient(90deg, #00cbec 0%, #a112ff 48.53%, #ff5543 97.06%);
-                color: transparent;
-                background-clip: text;
+                span {
+                    background: linear-gradient(90deg, #00cbec 0%, #a112ff 48.53%, #ff5543 97.06%);
+                    color: transparent;
+                    background-clip: text;
+                }
             }
         }
 
         .subtitle {
             grid-row: 3;
             grid-column: 1 / -1;
+            margin: 0;
             font-size: var(--font-size-large);
             font-weight: 500;
             color: var(--color-text-subtle);
@@ -118,7 +119,7 @@
             display: grid;
             max-width: 800px;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 0.5rem 0.75rem;
+            gap: 1rem 0.75rem;
 
             > div {
                 display: grid;
@@ -149,17 +150,21 @@
         }
 
         .cta {
-            grid-column: 1 / -1;
             display: flex;
             gap: 1rem;
-            align-items: center;
-        }
-
-        .footer {
-            grid-column: 1 / -1;
-            color: var(--text-muted);
-            font-size: var(--font-size-small);
-            font-weight: 400;
+            flex-direction: column;
+            div {
+                grid-column: 1 / -1;
+                display: flex;
+                gap: 1rem;
+                align-items: center;
+            }
+            p {
+                grid-column: 1 / -1;
+                color: var(--text-muted);
+                font-size: var(--font-size-small);
+                font-weight: 400;
+            }
         }
     }
 </style>
