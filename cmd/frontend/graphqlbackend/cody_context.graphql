@@ -155,6 +155,14 @@ type ChatIntentResponse {
     Confidence score as assigned by the intent detection model
     """
     score: Float!
+    """
+    Confidence score assigned by the "code search" intent detection model (the higher the score, the more likely it is that the query is about code search).
+    """
+    searchScore: Float!
+    """
+    Confidence score assigned by the "edit" intent detection model (the higher the score, the more likely it is that the query is about an edit command).
+    """
+    editScore: Float!
 }
 """
 EXPERIMENTAL: Representation of a context item used as API param (doesn't have to support full metadata available on the client).
