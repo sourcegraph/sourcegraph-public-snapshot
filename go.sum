@@ -2307,8 +2307,8 @@ github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240702160611-15589d6
 github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240702160611-15589d6d8eac/go.mod h1:0bD4781hPFlS2tTcoUERY8aSu/UTA6YQV7Iv2TJvtm8=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20240620084526-5ac92b1a7d4a h1:9g+6UUpAfhShhYCSPvU8YUTOexLPk45TV/dNEU6qZLw=
-github.com/sourcegraph/zoekt v0.0.0-20240620084526-5ac92b1a7d4a/go.mod h1:bFy43xoeqXhM4vJhIn+w+ehjF/H4iuB/js4cP717jg0=
+github.com/sourcegraph/zoekt v0.0.0-20240726160108-12ce07a298ae h1:BgWqO8nRHrBmm4fh8Xl4+u+qS7WbvLS8SbGW9r3llsE=
+github.com/sourcegraph/zoekt v0.0.0-20240726160108-12ce07a298ae/go.mod h1:bFy43xoeqXhM4vJhIn+w+ehjF/H4iuB/js4cP717jg0=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v0.0.0-20170901052352-ee1bd8ee15a1/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=

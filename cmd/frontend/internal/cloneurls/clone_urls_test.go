@@ -17,12 +17,20 @@ func TestReposourceCloneURLToRepoName(t *testing.T) {
 
 	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultReturn(
-		[]*types.ExternalService{{
-			ID:          1,
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "GITHUB #1",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`),
-		}},
+		[]*types.ExternalService{
+			{
+				ID:          1,
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "GITHUB #1",
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`),
+			},
+			{
+				ID:          2,
+				Kind:        extsvc.KindGerrit,
+				DisplayName: "GERRIT #1",
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gerrit.example.com"}`),
+			},
+		},
 		nil,
 	)
 
@@ -53,6 +61,11 @@ func TestReposourceCloneURLToRepoName(t *testing.T) {
 			name:         "relatively-pathed submodule",
 			cloneURL:     "../../a/b/c.git",
 			wantRepoName: api.RepoName("github.example.com/a/b/c"),
+		},
+		{
+			name:         "gerrit",
+			cloneURL:     "https://gerrit.example.com/a/repo.git",
+			wantRepoName: api.RepoName("gerrit.example.com/repo"),
 		},
 	}
 	for _, test := range tests {

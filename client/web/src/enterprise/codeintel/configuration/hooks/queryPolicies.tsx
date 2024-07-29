@@ -23,7 +23,7 @@ export const POLICIES_CONFIGURATION = gql`
         $repository: ID
         $query: String
         $forDataRetention: Boolean
-        $forIndexing: Boolean
+        $forPreciseIndexing: Boolean
         $first: Int
         $after: String
         $protected: Boolean
@@ -32,7 +32,7 @@ export const POLICIES_CONFIGURATION = gql`
             repository: $repository
             query: $query
             forDataRetention: $forDataRetention
-            forIndexing: $forIndexing
+            forPreciseIndexing: $forPreciseIndexing
             first: $first
             after: $after
             protected: $protected
@@ -57,7 +57,7 @@ export const queryPolicies = (
         first,
         query,
         forDataRetention,
-        forIndexing,
+        forPreciseIndexing,
         after,
         protected: varProtected,
     }: Partial<CodeIntelligenceConfigurationPoliciesVariables>,
@@ -67,7 +67,7 @@ export const queryPolicies = (
         repository: repository ?? null,
         query: query ?? null,
         forDataRetention: forDataRetention ?? null,
-        forIndexing: forIndexing ?? null,
+        forPreciseIndexing: forPreciseIndexing ?? null,
         first: first ?? null,
         after: after ?? null,
         protected: varProtected ?? null,
