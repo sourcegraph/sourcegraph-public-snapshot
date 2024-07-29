@@ -26,6 +26,7 @@ import {
 
 import { useGlobalBatchChangesCodeHostConnection, useUserBatchChangesCodeHostConnection } from './backend'
 import { CodeHostConnectionNode } from './CodeHostConnectionNode'
+import { noCredentialForGitHubAppExists } from './github-apps-filter'
 
 export interface GlobalCodeHostConnectionsProps {
     headerLine: JSX.Element
@@ -79,12 +80,7 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
     const setupError = new URLSearchParams(location.search).get('error')
     const gitHubAppKindFromUrl = new URLSearchParams(location.search).get('kind')
     const shouldShowError = !success && setupError && gitHubAppKind !== GitHubAppKind.COMMIT_SIGNING
-    const gitHubAppInstallationInProgress =
-        success &&
-        gitHubAppKindFromUrl !== GitHubAppKind.COMMIT_SIGNING &&
-        (connection?.nodes.filter(
-            n => n.credential && n.credential.isSiteCredential === (gitHubAppKind === GitHubAppKind.SITE_CREDENTIAL)
-        ).length ?? 0) === 0
+    const gitHubAppInstallationInProgress = success && noCredentialForGitHubAppExists(appName, connection?.nodes)
     return (
         <Container className="mb-3">
             <H3>Code host credentials</H3>

@@ -26,6 +26,7 @@ import {
 
 import { useGlobalBatchChangesCodeHostConnection, useUserBatchChangesCodeHostConnection } from './backend'
 import { CommitSigningIntegrationNode } from './CommitSigningIntegrationNode'
+import { noCredentialForGitHubAppExists } from './github-apps-filter'
 
 export const GlobalCommitSigningIntegrations: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <CommitSigningIntegrations connectionResult={useGlobalBatchChangesCodeHostConnection()} readOnly={false} />
@@ -62,10 +63,7 @@ export const CommitSigningIntegrations: React.FunctionComponent<
     const setupError = searchParams.get('error')
     const gitHubAppKind = searchParams.get('kind')
     const shouldShowError = !success && setupError && !readOnly && kind === GitHubAppKind.COMMIT_SIGNING
-    const gitHubAppInstallationInProgress =
-        success &&
-        kind === GitHubAppKind.COMMIT_SIGNING &&
-        (connection?.nodes.filter(n => n.commitSigningConfiguration).length ?? 0) === 0
+    const gitHubAppInstallationInProgress = success && noCredentialForGitHubAppExists(appName, connection?.nodes)
     return (
         <Container>
             <H3>
