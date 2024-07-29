@@ -172,7 +172,7 @@
             </TabPanel>
             <TabPanel title={isP4 ? 'Changelist' : 'Commits'} shortcut={commitsHotkey}>
                 <Picker
-                    name={isP4 ? 'changes' : 'commits'}
+                    name={isP4 ? 'changelists' : 'commits'}
                     seeAllItemsURL={`${repoURL}/-/commits`}
                     getData={getRepositoryCommits}
                     toOption={commit => ({ value: commit.id, label: commit.oid })}
