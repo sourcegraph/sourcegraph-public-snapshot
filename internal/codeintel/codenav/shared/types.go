@@ -45,6 +45,9 @@ func (u Usage) ToLocation() Location {
 // in the GraphQL API
 type UsageKind int32
 
+// The values start from 1 to reduce confusion when iterating
+// on mock tests, where accidental 0 initialization might
+// otherwise be interpreted as a valid value.
 const (
 	UsageKindDefinition     UsageKind = 1
 	UsageKindReference      UsageKind = 2
