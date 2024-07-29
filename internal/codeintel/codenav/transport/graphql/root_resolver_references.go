@@ -8,7 +8,11 @@ import (
 	"strings"
 	"time"
 
+	genslices "github.com/life4/genesis/slices"
+	"github.com/sourcegraph/scip/bindings/go/scip"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -28,18 +32,15 @@ func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolver
 		return nil, err
 	}
 
-	requestArgs := codenav.PositionalRequestArgs{
-		RequestArgs: codenav.RequestArgs{
-			RepositoryID: r.requestState.RepositoryID,
-			Commit:       r.requestState.Commit,
-			Limit:        limit,
-			RawCursor:    rawCursor,
-		},
-		Path:      r.requestState.Path,
-		Line:      int(args.Line),
-		Character: int(args.Character),
+	requestArgs := codenav.OccurrenceRequestArgs{
+		RepositoryID: r.requestState.RepositoryID,
+		Commit:       r.requestState.Commit,
+		Path:         r.requestState.Path,
+		Limit:        limit,
+		RawCursor:    rawCursor,
+		Matcher:      shared.NewStartPositionMatcher(scip.Position{Line: args.Line, Character: args.Character}),
 	}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.references, time.Second, getObservationArgs(requestArgs))
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.references, time.Second, getObservationArgs(&requestArgs))
 	defer endObservation()
 
 	// Decode cursor given from previous response or create a new one with default values.
@@ -71,7 +72,8 @@ func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolver
 		refs = filtered
 	}
 
-	return newLocationConnectionResolver(refs, pointers.NonZeroPtr(nextCursor), r.locationResolver), nil
+	refLocs := genslices.Map(refs, shared.UploadUsage.ToLocation)
+	return newLocationConnectionResolver(refLocs, pointers.NonZeroPtr(nextCursor), r.locationResolver), nil
 }
 
 //

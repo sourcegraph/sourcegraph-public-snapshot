@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	lsifstoremocks "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore/mocks"
@@ -18,6 +19,10 @@ import (
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
+
+func posMatcher(line int, char int) shared.Matcher {
+	return shared.NewStartPositionMatcher(scip.Position{Line: int32(line), Character: int32(char)})
+}
 
 func TestGetDefinitions(t *testing.T) {
 	t.Run("local", func(t *testing.T) {
@@ -36,15 +41,12 @@ func TestGetDefinitions(t *testing.T) {
 		mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 
 		mockRequestState.GitTreeTranslator = noopTranslator()
-		mockRequest := PositionalRequestArgs{
-			RequestArgs: RequestArgs{
-				RepositoryID: 51,
-				Commit:       mockCommit,
-				Limit:        50,
-			},
-			Path:      mockPath,
-			Line:      10,
-			Character: 20,
+		mockRequest := OccurrenceRequestArgs{
+			RepositoryID: 51,
+			Commit:       mockCommit,
+			Limit:        50,
+			Path:         mockPath,
+			Matcher:      posMatcher(10, 20),
 		}
 		mockCommit := string(mockCommit)
 
@@ -56,12 +58,17 @@ func TestGetDefinitions(t *testing.T) {
 		}
 		mockRequestState.SetUploadsDataLoader(uploads)
 
-		locations := []shared.Location{
-			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange1},
-			{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange2},
-			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange3},
-			{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange4},
-			{UploadID: 51, Path: uploadRelPath("c.go"), Range: testRange5},
+		locations := []shared.UsageBuilder{
+			{ //UploadID: 51, Path: uploadRelPath("a.go"),
+				Range: testRange1.ToSCIPRange()},
+			{ //UploadID: 51, Path: uploadRelPath("b.go"),
+				Range: testRange2.ToSCIPRange()},
+			{ //UploadID: 51, Path: uploadRelPath("a.go"),
+				Range: testRange3.ToSCIPRange()},
+			{ //UploadID: 51, Path: uploadRelPath("b.go"),
+				Range: testRange4.ToSCIPRange()},
+			{ //UploadID: 51, Path: uploadRelPath("c.go"),
+				Range: testRange5.ToSCIPRange()},
 		}
 		mockLsifStore.ExtractDefinitionLocationsFromPositionFunc.PushReturn(locations, nil, nil)
 
@@ -69,7 +76,7 @@ func TestGetDefinitions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error querying definitions: %s", err)
 		}
-		expectedLocations := []shared.UploadLocation{
+		expectedLocations := []shared.UploadUsage{
 			{Upload: uploads[1], Path: repoRelPath("sub2/a.go"), TargetCommit: mockCommit, TargetRange: testRange1},
 			{Upload: uploads[1], Path: repoRelPath("sub2/b.go"), TargetCommit: mockCommit, TargetRange: testRange2},
 			{Upload: uploads[1], Path: repoRelPath("sub2/a.go"), TargetCommit: mockCommit, TargetRange: testRange3},
@@ -139,15 +146,12 @@ func TestGetDefinitions(t *testing.T) {
 		}
 		mockLsifStore.GetSymbolUsagesFunc.PushReturn(usages, len(usages), nil)
 
-		mockRequest := PositionalRequestArgs{
-			RequestArgs: RequestArgs{
-				RepositoryID: 42,
-				Commit:       mockCommit,
-				Limit:        50,
-			},
-			Path:      mockPath,
-			Line:      10,
-			Character: 20,
+		mockRequest := OccurrenceRequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        50,
+			Path:         mockPath,
+			Matcher:      posMatcher(10, 20),
 		}
 		remoteUploads := uploads2
 		adjustedLocations, _, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState, Cursor{})
@@ -227,27 +231,29 @@ func TestGetReferences(t *testing.T) {
 		// Empty result set (prevents nil pointer as scanner is always non-nil)
 		mockUploadSvc.GetUploadIDsWithReferencesFunc.PushReturn([]int{}, 0, 0, nil)
 
-		locations := []shared.Location{
-			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange1},
-			{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange2},
-			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange3},
-			{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange4},
-			{UploadID: 51, Path: uploadRelPath("c.go"), Range: testRange5},
+		locations := []shared.UsageBuilder{
+			{ //UploadID: 51, Path: uploadRelPath("a.go"),
+				Range: testRange1.ToSCIPRange()},
+			{ //UploadID: 51, Path: uploadRelPath("b.go"),
+				Range: testRange2.ToSCIPRange()},
+			{ //UploadID: 51, Path: uploadRelPath("a.go"),
+				Range: testRange3.ToSCIPRange()},
+			{ //UploadID: 51, Path: uploadRelPath("b.go"),
+				Range: testRange4.ToSCIPRange()},
+			{ //UploadID: 51, Path: uploadRelPath("c.go"),
+				Range: testRange5.ToSCIPRange()},
 		}
 		mockLsifStore.ExtractReferenceLocationsFromPositionFunc.PushReturn(locations[:1], nil, nil)
 		mockLsifStore.ExtractReferenceLocationsFromPositionFunc.PushReturn(locations[1:4], nil, nil)
 		mockLsifStore.ExtractReferenceLocationsFromPositionFunc.PushReturn(locations[4:], nil, nil)
 
 		mockCursor := Cursor{}
-		mockRequest := PositionalRequestArgs{
-			RequestArgs: RequestArgs{
-				RepositoryID: 42,
-				Commit:       mockCommit,
-				Limit:        50,
-			},
-			Path:      mockPath,
-			Line:      10,
-			Character: 20,
+		mockRequest := OccurrenceRequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        50,
+			Path:         mockPath,
+			Matcher:      posMatcher(10, 20),
 		}
 		adjustedLocations, _, err := svc.GetReferences(context.Background(), mockRequest, mockRequestState, mockCursor)
 		if err != nil {
@@ -328,12 +334,17 @@ func TestGetReferences(t *testing.T) {
 		packageInformation2 := precise.PackageInformationData{Manager: "npm", Name: "leftpad", Version: "0.2.0"}
 		packageInformation3 := precise.PackageInformationData{Manager: "npm", Name: "leftpad", Version: "0.3.0"}
 
-		locations := []shared.Location{
-			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange1},
-			{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange2},
-			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange3},
-			{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange4},
-			{UploadID: 51, Path: uploadRelPath("c.go"), Range: testRange5},
+		locations := []shared.UsageBuilder{
+			{ //UploadID: 51, Path: uploadRelPath("a.go"),
+				Range: testRange1.ToSCIPRange()},
+			{ //UploadID: 51, Path: uploadRelPath("b.go"),
+				Range: testRange2.ToSCIPRange()},
+			{ //UploadID: 51, Path: uploadRelPath("a.go"),
+				Range: testRange3.ToSCIPRange()},
+			{ //UploadID: 51, Path: uploadRelPath("b.go"),
+				Range: testRange4.ToSCIPRange()},
+			{ //UploadID: 51, Path: uploadRelPath("c.go"),
+				Range: testRange5.ToSCIPRange()},
 		}
 		symbolNames := []string{
 			"tsc npm leftpad 0.1.0 padLeft.",
@@ -354,15 +365,12 @@ func TestGetReferences(t *testing.T) {
 		mockLsifStore.GetSymbolUsagesFunc.PushReturn(returnedUsages[2:], 3, nil)  // refs batch 2
 
 		mockCursor := Cursor{}
-		mockRequest := PositionalRequestArgs{
-			RequestArgs: RequestArgs{
-				RepositoryID: 42,
-				Commit:       mockCommit,
-				Limit:        50,
-			},
-			Path:      mockPath,
-			Line:      10,
-			Character: 20,
+		mockRequest := OccurrenceRequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        50,
+			Path:         mockPath,
+			Matcher:      posMatcher(10, 20),
 		}
 		adjustedLocations, _, err := svc.GetReferences(context.Background(), mockRequest, mockRequestState, mockCursor)
 		if err != nil {
@@ -451,12 +459,17 @@ func TestGetImplementations(t *testing.T) {
 		// Empty result set (prevents nil pointer as scanner is always non-nil)
 		mockUploadSvc.GetUploadIDsWithReferencesFunc.PushReturn([]int{}, 0, 0, nil)
 
-		locations := []shared.Location{
-			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange1},
-			{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange2},
-			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange3},
-			{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange4},
-			{UploadID: 51, Path: uploadRelPath("c.go"), Range: testRange5},
+		locations := []shared.UsageBuilder{
+			{ //UploadID: 51, Path: uploadRelPath("a.go"),
+				Range: testRange1.ToSCIPRange()},
+			{ //UploadID: 51, Path: uploadRelPath("b.go"),
+				Range: testRange2.ToSCIPRange()},
+			{ //UploadID: 51, Path: uploadRelPath("a.go"),
+				Range: testRange3.ToSCIPRange()},
+			{ //UploadID: 51, Path: uploadRelPath("b.go"),
+				Range: testRange4.ToSCIPRange()},
+			{ //UploadID: 51, Path: uploadRelPath("c.go"),
+				Range: testRange5.ToSCIPRange()},
 		}
 		mockLsifStore.ExtractImplementationLocationsFromPositionFunc.PushReturn(locations, nil, nil)
 
@@ -468,15 +481,12 @@ func TestGetImplementations(t *testing.T) {
 		}
 		mockRequestState.SetUploadsDataLoader(uploads)
 		mockCursor := Cursor{}
-		mockRequest := PositionalRequestArgs{
-			RequestArgs: RequestArgs{
-				RepositoryID: 51,
-				Commit:       "deadbeef",
-				Limit:        50,
-			},
-			Path:      mockPath,
-			Line:      10,
-			Character: 20,
+		mockRequest := OccurrenceRequestArgs{
+			RepositoryID: 51,
+			Commit:       "deadbeef",
+			Limit:        50,
+			Path:         mockPath,
+			Matcher:      posMatcher(10, 20),
 		}
 		adjustedLocations, _, err := svc.GetImplementations(context.Background(), mockRequest, mockRequestState, mockCursor)
 		if err != nil {

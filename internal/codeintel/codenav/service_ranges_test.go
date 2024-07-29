@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -64,23 +65,23 @@ func TestRanges(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	testLocation1 := shared.Location{UploadID: 50, Path: uploadRelPath("a.go"), Range: testRange1}
-	testLocation2 := shared.Location{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange2}
-	testLocation3 := shared.Location{UploadID: 51, Path: uploadRelPath("c.go"), Range: testRange1}
-	testLocation4 := shared.Location{UploadID: 51, Path: uploadRelPath("d.go"), Range: testRange2}
-	testLocation5 := shared.Location{UploadID: 51, Path: uploadRelPath("e.go"), Range: testRange1}
-	testLocation6 := shared.Location{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange2}
-	testLocation7 := shared.Location{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange3}
-	testLocation8 := shared.Location{UploadID: 52, Path: uploadRelPath("a.go"), Range: testRange4}
-	testLocation9 := shared.Location{UploadID: 52, Path: uploadRelPath("changed.go"), Range: testRange6}
+	testLocation1 := shared.Usage{UploadID: 50, Path: uploadRelPath("a.go"), Range: testRange1}
+	testLocation2 := shared.Usage{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange2}
+	testLocation3 := shared.Usage{UploadID: 51, Path: uploadRelPath("c.go"), Range: testRange1}
+	testLocation4 := shared.Usage{UploadID: 51, Path: uploadRelPath("d.go"), Range: testRange2}
+	testLocation5 := shared.Usage{UploadID: 51, Path: uploadRelPath("e.go"), Range: testRange1}
+	testLocation6 := shared.Usage{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange2}
+	testLocation7 := shared.Usage{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange3}
+	testLocation8 := shared.Usage{UploadID: 52, Path: uploadRelPath("a.go"), Range: testRange4}
+	testLocation9 := shared.Usage{UploadID: 52, Path: uploadRelPath("changed.go"), Range: testRange6}
 
 	ranges := []shared.CodeIntelligenceRange{
-		{Range: testRange1, HoverText: "text1", Definitions: nil, References: []shared.Location{testLocation1}, Implementations: []shared.Location{}},
-		{Range: testRange2, HoverText: "text2", Definitions: []shared.Location{testLocation2}, References: []shared.Location{testLocation3}, Implementations: []shared.Location{}},
-		{Range: testRange3, HoverText: "text3", Definitions: []shared.Location{testLocation4}, References: []shared.Location{testLocation5}, Implementations: []shared.Location{}},
-		{Range: testRange4, HoverText: "text4", Definitions: []shared.Location{testLocation6}, References: []shared.Location{testLocation7}, Implementations: []shared.Location{}},
-		{Range: testRange5, HoverText: "text5", Definitions: []shared.Location{testLocation8}, References: nil, Implementations: []shared.Location{}},
-		{Range: testRange6, HoverText: "text6", Definitions: []shared.Location{testLocation9}, References: nil, Implementations: []shared.Location{}},
+		{Range: testRange1, HoverText: "text1", Definitions: nil, References: []shared.Usage{testLocation1}, Implementations: []shared.Usage{}},
+		{Range: testRange2, HoverText: "text2", Definitions: []shared.Usage{testLocation2}, References: []shared.Usage{testLocation3}, Implementations: []shared.Usage{}},
+		{Range: testRange3, HoverText: "text3", Definitions: []shared.Usage{testLocation4}, References: []shared.Usage{testLocation5}, Implementations: []shared.Usage{}},
+		{Range: testRange4, HoverText: "text4", Definitions: []shared.Usage{testLocation6}, References: []shared.Usage{testLocation7}, Implementations: []shared.Usage{}},
+		{Range: testRange5, HoverText: "text5", Definitions: []shared.Usage{testLocation8}, References: nil, Implementations: []shared.Usage{}},
+		{Range: testRange6, HoverText: "text6", Definitions: []shared.Usage{testLocation9}, References: nil, Implementations: []shared.Usage{}},
 	}
 
 	mockLsifStore.GetRangesFunc.PushReturn(ranges[0:1], nil)
@@ -120,7 +121,7 @@ func TestRanges(t *testing.T) {
 		// no definition expected, as the line has been changed and we filter those out from range requests
 		{Range: testRange6, HoverText: "text6", Definitions: []shared.UploadLocation{}, References: []shared.UploadLocation{}, Implementations: []shared.UploadLocation{}},
 	}
-	if diff := cmp.Diff(expectedRanges, adjustedRanges, cmp.Comparer(core.RepoRelPath.Equal)); diff != "" {
+	if diff := cmp.Diff(expectedRanges, adjustedRanges, cmp.Comparer(core.RepoRelPath.Equal), cmpopts.EquateEmpty()); diff != "" {
 		t.Errorf("unexpected ranges (-want +got):\n%s", diff)
 	}
 }

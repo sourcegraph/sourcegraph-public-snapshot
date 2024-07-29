@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/types"
+
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
@@ -25,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -318,6 +319,76 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 func (r *rootResolver) MakeGitTreeTranslator(repo *sgtypes.Repo) codenav.GitTreeTranslator {
 	return codenav.NewGitTreeTranslator(r.gitserverClient, *repo)
 }
+
+//// Pre-condition: 'args' must've been normalized before
+//func (r *rootResolver) getPreciseUsages(ctx context.Context, svc CodeNavService, args *resolverstubs.UsagesForSymbolResolvedArgs) ([]usageResolver, error) {
+//	remainingCount := int(args.RemainingCount)
+//	cursor := args.Cursor.PreciseCursor
+//
+//	usagesCursor := args.Cursor
+//	requestState, err := r.makeRequestState(ctx, &args.Repo, shared.UploadMatchingOptions{
+//		RepositoryID:       args.Repo.ID,
+//		Commit:             args.CommitID,
+//		Path:               args.Path,
+//		RootToPathMatching: shared.RootMustEnclosePath,
+//	})
+//	if err != nil || requestState == nil {
+//		return nil, err
+//	}
+//
+//	symbol := ""
+//	if args.Symbol != nil {
+//		if args.Symbol.EqualsSymbol.Scheme == shared.SyntacticIndexer {
+//			return nil, nil
+//		}
+//		symbol = args.Symbol.EqualsName
+//	}
+//
+//	usages := []shared2.UploadUsage{}
+//	var nextCursor codenav.Cursor
+//	var nextUsages []shared2.UploadUsage
+//	for {
+//		requestArgs := codenav.OccurrenceRequestArgs{
+//			RepositoryID: args.Repo.ID,
+//			Commit:       args.CommitID,
+//			Limit:        remainingCount,
+//			RawCursor:    encodeTraversalCursor(cursor),
+//			Path:         args.Path,
+//			Matcher:      shared2.NewSCIPBasedMatcher(args.Range, symbol),
+//		}
+//
+//		switch usagesCursor.PreciseCursorType {
+//		case resolverstubs.DefinitionsCursor:
+//			nextUsages, nextCursor, err = svc.GetDefinitions(ctx, requestArgs, *requestState, args.Cursor.PreciseCursor)
+//		case resolverstubs.ImplementationsCursor:
+//			nextUsages, nextCursor, err = svc.GetImplementations(ctx, requestArgs, *requestState, args.Cursor.PreciseCursor)
+//		case resolverstubs.PrototypesCursor:
+//			nextUsages, nextCursor, err = svc.GetPrototypes(ctx, requestArgs, *requestState, args.Cursor.PreciseCursor)
+//		case resolverstubs.ReferencesCursor:
+//			nextUsages, nextCursor, err = svc.GetReferences(ctx, requestArgs, *requestState, args.Cursor.PreciseCursor)
+//		}
+//
+//		if err != nil {
+//			return nil, err
+//		}
+//		usages = append(usages, nextUsages...)
+//		if nextCursor.Phase == "done" {
+//			switch usagesCursor.PreciseCursorType {
+//			case resolverstubs.DefinitionsCursor:
+//				usagesCursor.PreciseCursorType = resolverstubs.ImplementationsCursor
+//			case resolverstubs.ImplementationsCursor:
+//				usagesCursor.PreciseCursorType = resolverstubs.PrototypesCursor
+//			case resolverstubs.PrototypesCursor:
+//				usagesCursor.PreciseCursorType = resolverstubs.ReferencesCursor
+//			case resolverstubs.ReferencesCursor:
+//				break
+//			}
+//		}
+//	}
+//
+//	return genslices.Map(usages, func(usage shared2.UploadUsage) usageResolver {
+//	}), err
+//}
 
 // gitBlobLSIFDataResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
 // resolver concerns itself with GraphQL/API-specific behaviors (auth, validation, marshaling, etc.).
