@@ -82,7 +82,10 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
     const gitHubAppInstallationInProgress =
         success &&
         gitHubAppKindFromUrl !== GitHubAppKind.COMMIT_SIGNING &&
-        (connection?.nodes.filter(n => n.credential).length ?? 0) === 0
+        (connection?.nodes
+            .filter(n => n.credential)
+            .filter(n => n.credential?.isSiteCredential === (gitHubAppKind === GitHubAppKind.SITE_CREDENTIAL)).length ??
+            0) === 0
     return (
         <Container className="mb-3">
             <H3>Code host credentials</H3>
@@ -98,9 +101,11 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
                             variant="info"
                             partialStorageKey={`batch-changes-github-app-integration-pending-${appName}`}
                         >
-                            GitHub App {appName?.length ? `"${appName}" ` : ''} is taking a few seconds to connect.
-                            <br />
-                            <b>Please refresh the page until the GitHub app appears.</b>
+                            <span>
+                                GitHub App {appName?.length ? `"${appName}" ` : ''} is taking a few seconds to connect.
+                                <br />
+                                <b>Please refresh the page until the GitHub app appears.</b>
+                            </span>
                         </DismissibleAlert>
                     ) : (
                         <DismissibleAlert

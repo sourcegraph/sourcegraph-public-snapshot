@@ -94,8 +94,11 @@ export const CommitSigningIntegrations: React.FunctionComponent<
                             variant="info"
                             partialStorageKey={`batch-changes-commit-signing-integration-pending-${appName}`}
                         >
-                            GitHub App {appName?.length ? `"${appName}" ` : ''} is taking a few seconds to connect.
-                            Please refresh the page until the GitHub app appears.
+                            <span>
+                                GitHub App {appName?.length ? `"${appName}" ` : ''} is taking a few seconds to connect.
+                                <br />
+                                <b>Please refresh the page until the GitHub app appears.</b>
+                            </span>
                         </DismissibleAlert>
                     ) : (
                         <DismissibleAlert
