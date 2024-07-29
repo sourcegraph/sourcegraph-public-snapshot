@@ -216,7 +216,6 @@ playwright_test_bin.playwright_test(
         "BAZEL": "1",
         "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/test_build/_sk/",
     },
-    flaky = True,
 )
 
 TESTS = glob([
