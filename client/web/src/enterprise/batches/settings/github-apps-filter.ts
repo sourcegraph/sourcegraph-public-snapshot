@@ -17,8 +17,7 @@ export function credentialForGitHubAppExists(
 
     return nodes.some(
         n =>
-            n.supportsCommitSigning === supportsCommitSigning &&
             n.externalServiceKind === ExternalServiceKind.GITHUB &&
-            n.credential?.gitHubApp?.name === appName
+            (supportsCommitSigning ? n.commitSigningConfiguration : n.credential?.gitHubApp?.name === appName)
     )
 }
