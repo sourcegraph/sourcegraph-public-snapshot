@@ -120,6 +120,8 @@ type UpstreamRequest interface {
 // being cancelled as DeadlineExceeded.
 const maxRequestDuration = 1 * time.Minute
 
+var modelAvailabilityTracker = newModelsLoadTracker()
+
 type UpstreamHandlerConfig struct {
 	// defaultRetryAfterSeconds sets the retry-after policy on upstream rate
 	// limit events in case a retry-after is not provided by the upstream
@@ -413,7 +415,17 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			}
 		}()
 
+		if !modelAvailabilityTracker.isModelAvailable(gatewayModel) {
+			fmt.Println("MODEL IS NOT AVAILABLE", gatewayModel)
+			response.JSONError(logger, w, http.StatusServiceUnavailable,
+				errors.Newf("model %s is currently unavailable", gatewayModel))
+			return
+		}
+
+		fmt.Println("REQUEST TO UPSTREAM")
+
 		resp, err := httpClient.Do(upstreamRequest)
+		modelAvailabilityTracker.record(gatewayModel, resp, err)
 
 		if err != nil {
 			// Ignore reporting errors where client disconnected
@@ -469,7 +481,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 
 		// This handles upstream 429 responses as well, since they get
 		// resolved to http.StatusServiceUnavailable.
-		if resolvedStatusCode == http.StatusServiceUnavailable {
+		if resolvedStatusCode == http.StatusServiceUnavailable && modelAvailabilityTracker.isModelAvailable(gatewayModel) {
 			// Propagate retry-after in case it is handle-able by the client,
 			// or write our default. 503 errors can have retry-after as well.
 			if upstreamRetryAfter := resp.Header.Get("retry-after"); upstreamRetryAfter != "" {
