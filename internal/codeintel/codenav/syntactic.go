@@ -413,12 +413,10 @@ func syntacticUsagesImpl(
 		}
 		results := [][]SyntacticMatch{}
 		for _, file := range *files {
-			document, ok := documents[file.path]
-			if !ok {
-				continue
+			if document, ok := documents[file.path]; ok {
+				syntacticMatches, _ := findSyntacticMatchesForCandidateFile(ctx, trace, document, file)
+				results = append(results, syntacticMatches)
 			}
-			syntacticMatches, _ := findSyntacticMatchesForCandidateFile(ctx, trace, document, file)
-			results = append(results, syntacticMatches)
 		}
 		return slices.Concat(results...), nil
 	})
