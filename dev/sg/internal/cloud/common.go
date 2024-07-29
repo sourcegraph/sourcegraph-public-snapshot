@@ -23,13 +23,8 @@ const (
 	FAQLink    = "https://www.notion.so/sourcegraph/How-to-deploy-my-branch-on-an-ephemeral-Cloud-instance-dac45846ca2a4e018c802aba37cf6465?pvs=4#20cb92ae27464891a9d03650b4d67cee"
 )
 
-func withFAQMarkdown(original string) string {
-	return fmt.Sprintf("%s\n[FAQ](%s)", original, FAQLink)
-}
-
 func withFAQ(original string) string {
-	return fmt.Sprintf("%s\nFAQ - %s", original, FAQLink)
-
+	return fmt.Sprintf("%s\n[FAQ](%s)", original, FAQLink)
 }
 
 func sanitizeInstanceName(name string) string {
