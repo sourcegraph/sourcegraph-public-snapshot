@@ -59,7 +59,7 @@ type CompletionsClient interface {
 // client used by the Azure SDK. This should only be set by unit tests.
 var MockAzureAPIClientTransport httpcli.Doer
 
-func GetAPIClient(endpoint, accessToken string, supportHTTP bool) (CompletionsClient, error) {
+func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
 	apiClient.mu.RLock()
 	if apiClient.client != nil && apiClient.endpoint == endpoint && apiClient.accessToken == accessToken {
 		apiClient.mu.RUnlock()
@@ -101,6 +101,7 @@ func GetAPIClient(endpoint, accessToken string, supportHTTP bool) (CompletionsCl
 		if err != nil {
 			return nil, err
 		}
+		apiClient.endpoint = endpoint
 		if strings.HasPrefix(endpoint, "http://") {
 			apiClient.client, err = azopenai.NewClient(endpoint, nil, clientOpts)
 		} else {
