@@ -194,7 +194,7 @@ func SortAndDedupLocations(locs []UploadLocation) []UploadLocation {
 		if c := cmp.Compare(loc2.Upload.ID, loc1.Upload.ID); c != 0 {
 			return c
 		}
-		return loc1.TargetRange.ToSCIPRange().Compare(loc2.TargetRange.ToSCIPRange())
+		return loc1.TargetRange.ToSCIPRange().CompareStrict(loc2.TargetRange.ToSCIPRange())
 	})
 	prev := UploadLocation{}
 	return genslices.Filter(locs, func(loc UploadLocation) bool {
