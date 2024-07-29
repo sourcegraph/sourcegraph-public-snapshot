@@ -44,10 +44,9 @@ func convertSourcegraphModelConfig(v *schema.SourcegraphModelConfig) *types.Sour
 		return nil
 	}
 	return &types.SourcegraphModelConfig{
-		Endpoint:        v.Endpoint,
-		AccessToken:     v.AccessToken,
-		PollingInterval: v.PollingInterval,
-		ModelFilters:    convertModelFilters(v.ModelFilters),
+		Endpoint:     v.Endpoint,
+		AccessToken:  v.AccessToken,
+		ModelFilters: convertModelFilters(v.ModelFilters),
 	}
 }
 
