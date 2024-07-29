@@ -17,7 +17,13 @@ go_library(
 
 go_test(
     name = "types_test",
-    srcs = ["refs_test.go"],
+    srcs = [
+        "configuration_test.go",
+        "refs_test.go",
+    ],
     embed = [":types"],
-    deps = ["@com_github_stretchr_testify//assert"],
+    deps = [
+        "@com_github_go_enry_go_enry_v2//regex",
+        "@com_github_stretchr_testify//assert",
+    ],
 )

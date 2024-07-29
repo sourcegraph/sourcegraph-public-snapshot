@@ -8,6 +8,8 @@ type ClientSideProviderConfig struct {
 	// We currently do not have any known client-side provider configuration.
 	// But later, if anything needs to be provided to Cody clients at the
 	// provider-level it will go here.
+	// Client-side provider configuration is sent to clients, and so should
+	// not contain any sensitive information.
 }
 
 // ========================================================
@@ -109,6 +111,8 @@ type ServerSideProviderConfig struct {
 	OpenAICompatible    *OpenAICompatibleProviderConfig `json:"openAICompatible,omitempty"`
 	GenericProvider     *GenericProviderConfig          `json:"genericProvider,omitempty"`
 	SourcegraphProvider *SourcegraphProviderConfig      `json:"sourcegraphProvider,omitempty"`
+	// Canary token that is checked for to ensure sensitive server-side configuration has been redacted
+	ServerSideDataRedactionCanaryToken string `json:"serverSideDataRedactionCanaryToken"`
 }
 
 // ========================================================
