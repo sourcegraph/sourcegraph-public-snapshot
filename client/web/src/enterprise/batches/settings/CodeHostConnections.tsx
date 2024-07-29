@@ -26,6 +26,7 @@ import {
 
 import { useGlobalBatchChangesCodeHostConnection, useUserBatchChangesCodeHostConnection } from './backend'
 import { CodeHostConnectionNode } from './CodeHostConnectionNode'
+import { credentialForGitHubAppExists } from './github-apps-filter'
 
 export interface GlobalCodeHostConnectionsProps {
     headerLine: JSX.Element
@@ -80,9 +81,7 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
     const gitHubAppKindFromUrl = new URLSearchParams(location.search).get('kind')
     const shouldShowError = !success && setupError && gitHubAppKind !== GitHubAppKind.COMMIT_SIGNING
     const gitHubAppInstallationInProgress =
-        success &&
-        gitHubAppKindFromUrl !== GitHubAppKind.COMMIT_SIGNING &&
-        (connection?.nodes.filter(n => n.credential).length ?? 0) === 0
+        success && !!appName && !credentialForGitHubAppExists(appName, connection?.nodes)
     return (
         <Container className="mb-3">
             <H3>Code host credentials</H3>
@@ -98,9 +97,11 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
                             variant="info"
                             partialStorageKey={`batch-changes-github-app-integration-pending-${appName}`}
                         >
-                            GitHub App {appName?.length ? `"${appName}" ` : ''} is taking a few seconds to connect.
-                            <br />
-                            <b>Please refresh the page until the GitHub app appears.</b>
+                            <span>
+                                GitHub App {appName?.length ? `"${appName}" ` : ''} is taking a few seconds to connect.
+                                <br />
+                                <b>Please refresh the page until the GitHub app appears.</b>
+                            </span>
                         </DismissibleAlert>
                     ) : (
                         <DismissibleAlert

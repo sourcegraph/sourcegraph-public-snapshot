@@ -26,6 +26,7 @@ import {
 
 import { useGlobalBatchChangesCodeHostConnection, useUserBatchChangesCodeHostConnection } from './backend'
 import { CommitSigningIntegrationNode } from './CommitSigningIntegrationNode'
+import { credentialForGitHubAppExists } from './github-apps-filter'
 
 export const GlobalCommitSigningIntegrations: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <CommitSigningIntegrations connectionResult={useGlobalBatchChangesCodeHostConnection()} readOnly={false} />
@@ -63,9 +64,7 @@ export const CommitSigningIntegrations: React.FunctionComponent<
     const gitHubAppKind = searchParams.get('kind')
     const shouldShowError = !success && setupError && !readOnly && kind === GitHubAppKind.COMMIT_SIGNING
     const gitHubAppInstallationInProgress =
-        success &&
-        kind === GitHubAppKind.COMMIT_SIGNING &&
-        (connection?.nodes.filter(n => n.commitSigningConfiguration).length ?? 0) === 0
+        success && !!appName && !credentialForGitHubAppExists(appName, connection?.nodes)
     return (
         <Container>
             <H3>
@@ -94,8 +93,11 @@ export const CommitSigningIntegrations: React.FunctionComponent<
                             variant="info"
                             partialStorageKey={`batch-changes-commit-signing-integration-pending-${appName}`}
                         >
-                            GitHub App {appName?.length ? `"${appName}" ` : ''} is taking a few seconds to connect.
-                            Please refresh the page until the GitHub app appears.
+                            <span>
+                                GitHub App {appName?.length ? `"${appName}" ` : ''} is taking a few seconds to connect.
+                                <br />
+                                <b>Please refresh the page until the GitHub app appears.</b>
+                            </span>
                         </DismissibleAlert>
                     ) : (
                         <DismissibleAlert
