@@ -83,8 +83,7 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
         success &&
         gitHubAppKindFromUrl !== GitHubAppKind.COMMIT_SIGNING &&
         (connection?.nodes
-            .filter(n => n.credential)
-            .filter(n => n.credential?.isSiteCredential === (gitHubAppKind === GitHubAppKind.SITE_CREDENTIAL)).length ??
+            .filter(n => n.credential && n.credential.isSiteCredential === (gitHubAppKind === GitHubAppKind.SITE_CREDENTIAL)).length ??
             0) === 0
     return (
         <Container className="mb-3">
