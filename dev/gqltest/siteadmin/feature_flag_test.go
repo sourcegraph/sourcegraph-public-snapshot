@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/dev/gqltest"
 )
 
 func TestFeatureFlags(t *testing.T) {
@@ -76,7 +78,7 @@ func TestFeatureFlags(t *testing.T) {
 			}
 		}
 		params := map[string]any{"name": name, "value": value, "rollout": rolloutBasisPoints}
-		err := client.GraphQL("", m, params, &res)
+		err := gqltest.Client.GraphQL("", m, params, &res)
 		return res.Data.CreateFeatureFlag, err
 	}
 
@@ -98,7 +100,7 @@ func TestFeatureFlags(t *testing.T) {
 			}
 		}
 		params := map[string]any{"name": name, "value": value, "rollout": rolloutBasisPoints}
-		err := client.GraphQL("", m, params, &res)
+		err := gqltest.Client.GraphQL("", m, params, &res)
 		return res.Data.UpdateFeatureFlag, err
 	}
 
@@ -111,7 +113,7 @@ func TestFeatureFlags(t *testing.T) {
 			}
 		}`
 		params := map[string]any{"name": name}
-		return client.GraphQL("", m, params, nil)
+		return gqltest.Client.GraphQL("", m, params, nil)
 	}
 
 	listFeatureFlags := func() ([]featureFlagResult, error) {
@@ -127,7 +129,7 @@ func TestFeatureFlags(t *testing.T) {
 				FeatureFlags []featureFlagResult
 			}
 		}
-		err := client.GraphQL("", m, nil, &res)
+		err := gqltest.Client.GraphQL("", m, nil, &res)
 		return res.Data.FeatureFlags, err
 	}
 
@@ -263,7 +265,7 @@ func TestFeatureFlags(t *testing.T) {
 			}
 		}
 		params := map[string]any{"namespace": namespace, "flagName": flagName, "value": value}
-		err := client.GraphQL("", m, params, &res)
+		err := gqltest.Client.GraphQL("", m, params, &res)
 		return res.Data.CreateFeatureFlagOverride, err
 	}
 
@@ -284,7 +286,7 @@ func TestFeatureFlags(t *testing.T) {
 			}
 		}
 		params := map[string]any{"id": id, "value": value}
-		err := client.GraphQL("", m, params, &res)
+		err := gqltest.Client.GraphQL("", m, params, &res)
 		return res.Data.UpdateFeatureFlagOverride, err
 	}
 
@@ -299,19 +301,19 @@ func TestFeatureFlags(t *testing.T) {
 		}`
 
 		params := map[string]any{"id": id}
-		return client.GraphQL("", m, params, nil)
+		return gqltest.Client.GraphQL("", m, params, nil)
 	}
 
 	t.Run("Overrides", func(t *testing.T) {
-		orgID, err := client.CreateOrganization("testoverrides", "test")
+		orgID, err := gqltest.Client.CreateOrganization("testoverrides", "test")
 		require.NoError(t, err)
 		t.Cleanup(func() {
-			client.DeleteOrganization(orgID)
+			gqltest.Client.DeleteOrganization(orgID)
 		})
 
-		userID, err := client.CreateUser("testuseroverrides", "test@override.com")
+		userID, err := gqltest.Client.CreateUser("testuseroverrides", "test@override.com")
 		require.NoError(t, err)
-		removeTestUserAfterTest(t, userID)
+		gqltest.RemoveTestUserAfterTest(t, userID)
 
 		boolTrue := true
 		flag, err := createFeatureFlag("test_override", &boolTrue, nil)

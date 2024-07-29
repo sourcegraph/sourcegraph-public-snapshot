@@ -10,8 +10,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/dev/gqltest"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const (
@@ -23,7 +23,7 @@ const (
 
 func TestSubRepoPermissionsPerforce(t *testing.T) {
 	checkPerforceEnvironment(t)
-	enableSubRepoPermissions(t)
+	gqltest.EnableSubRepoPermissions(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot)
 	t.Cleanup(cleanup)
 	userClient, repoName, err := createTestUserAndWaitForRepo(t)
@@ -83,7 +83,7 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 
 func TestSubRepoPermissionsSymbols(t *testing.T) {
 	checkPerforceEnvironment(t)
-	enableSubRepoPermissions(t)
+	gqltest.EnableSubRepoPermissions(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot)
 	t.Cleanup(cleanup)
 	userClient, repoName, err := createTestUserAndWaitForRepo(t)
@@ -91,7 +91,7 @@ func TestSubRepoPermissionsSymbols(t *testing.T) {
 		t.Fatalf("Failed to create user and wait for repo: %v", err)
 	}
 
-	err = client.WaitForRepoToBeIndexed(perforceRepoName)
+	err = gqltest.Client.WaitForRepoToBeIndexed(perforceRepoName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,8 +120,8 @@ func TestSubRepoPermissionsSymbols(t *testing.T) {
 
 func TestSubRepoPermissionsSearch(t *testing.T) {
 	checkPerforceEnvironment(t)
-	enableSubRepoPermissions(t)
-	enableStructuralSearch(t)
+	gqltest.EnableSubRepoPermissions(t)
+	gqltest.EnableStructuralSearch(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot)
 	t.Cleanup(cleanup)
 	userClient, _, err := createTestUserAndWaitForRepo(t)
@@ -130,7 +130,7 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	}
 
 	t.Log("Wait for repo to be indexed")
-	err = client.WaitForRepoToBeIndexed(perforceRepoName)
+	err = gqltest.Client.WaitForRepoToBeIndexed(perforceRepoName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -246,7 +246,7 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	}
 
 	t.Run("commit search admin", func(t *testing.T) {
-		results, err := client.SearchCommits(`repo:^perforce/test-perms$ type:commit`)
+		results, err := gqltest.Client.SearchCommits(`repo:^perforce/test-perms$ type:commit`)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -304,7 +304,7 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	}
 
 	t.Run("archive repo", func(t *testing.T) {
-		url := fmt.Sprintf("%s/%s/-/raw/", *baseURL, perforceRepoName)
+		url := fmt.Sprintf("%s/%s/-/raw/", *gqltest.BaseURL, perforceRepoName)
 		response, err := userClient.GetWithHeaders(url, map[string][]string{"Accept": {"application/zip"}})
 		if err != nil {
 			t.Fatal(err)
@@ -338,14 +338,14 @@ func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string, er
 	// Alice doesn't have access to Security directory. (there is a .sh file)
 	alicePassword := "alicessupersecurepassword"
 	t.Log("Creating Alice")
-	userClient, err := gqltestutil.NewClient(*baseURL)
+	userClient, err := gqltestutil.NewClient(*gqltest.BaseURL)
 	require.NoError(t, err)
 	require.NoError(t, userClient.SignUp(aliceEmail, aliceUsername, alicePassword))
 
 	aliceID := userClient.AuthenticatedUserID()
-	removeTestUserAfterTest(t, aliceID)
+	gqltest.RemoveTestUserAfterTest(t, aliceID)
 
-	if err := client.SetUserEmailVerified(aliceID, aliceEmail, true); err != nil {
+	if err := gqltest.Client.SetUserEmailVerified(aliceID, aliceEmail, true); err != nil {
 		t.Fatal(err)
 	}
 
@@ -363,7 +363,7 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 	t.Helper()
 
 	t.Log("Schedule permissions sync")
-	err := client.ScheduleUserPermissionsSync(userID)
+	err := gqltest.Client.ScheduleUserPermissionsSync(userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -372,7 +372,7 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 	// Wait up to 30 seconds for the user to have permissions synced
 	// from the code host at least once.
 	err = gqltestutil.Retry(30*time.Second, func() error {
-		userPermsInfo, err := client.UserPermissionsInfo(userName)
+		userPermsInfo, err := gqltest.Client.UserPermissionsInfo(userName)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -384,7 +384,7 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 	// Try a second time if the first attempt failed.
 	if err != nil {
 		t.Log("First permissions sync failed. Trying a second time")
-		err = client.ScheduleUserPermissionsSync(userID)
+		err = gqltest.Client.ScheduleUserPermissionsSync(userID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -392,7 +392,7 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 		// Wait up to 30 seconds for the user to have permissions synced
 		// from the code host at least once.
 		err = gqltestutil.Retry(30*time.Second, func() error {
-			userPermsInfo, err := client.UserPermissionsInfo(userName)
+			userPermsInfo, err := gqltest.Client.UserPermissionsInfo(userName)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -404,42 +404,5 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 		if err != nil {
 			t.Fatal("Waiting for user permissions to be synced:", err)
 		}
-	}
-}
-
-func enableSubRepoPermissions(t *testing.T) {
-	t.Helper()
-	t.Log("Enabling sub-repo permissions")
-
-	reset, err := client.ModifySiteConfiguration(func(siteConfig *schema.SiteConfiguration) {
-		if siteConfig.ExperimentalFeatures == nil {
-			siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{}
-		}
-		siteConfig.ExperimentalFeatures.Perforce = "enabled"
-		siteConfig.ExperimentalFeatures.SubRepoPermissions = &schema.SubRepoPermissions{Enabled: true}
-	})
-	require.NoError(t, err)
-	if reset != nil {
-		t.Cleanup(func() {
-			require.NoError(t, reset())
-		})
-	}
-}
-
-func enableStructuralSearch(t *testing.T) {
-	t.Helper()
-	t.Log("Enabling structural search")
-
-	reset, err := client.ModifySiteConfiguration(func(siteConfig *schema.SiteConfiguration) {
-		if siteConfig.ExperimentalFeatures == nil {
-			siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{}
-		}
-		siteConfig.ExperimentalFeatures.StructuralSearch = "enabled"
-	})
-	require.NoError(t, err)
-	if reset != nil {
-		t.Cleanup(func() {
-			require.NoError(t, reset())
-		})
 	}
 }

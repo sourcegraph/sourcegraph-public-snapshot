@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/dev/gqltest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -25,17 +26,17 @@ func testComputeClient(t *testing.T, client computeClient) {
 }
 
 func TestCompute(t *testing.T) {
-	if len(*githubToken) == 0 {
+	if len(*gqltest.GithubToken) == 0 {
 		t.Skip("Environment variable GITHUB_TOKEN is not set")
 	}
 
 	// Set up external service
-	_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	_, err := gqltest.Client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "gqltest-github-search",
-		Config: mustMarshalJSONString(&schema.GitHubConnection{
+		Config: gqltest.MustMarshalJSONString(&schema.GitHubConnection{
 			Url:   "https://ghe.sgdev.org/",
-			Token: *githubToken,
+			Token: *gqltest.GithubToken,
 			Repos: []string{
 				"sgtest/java-langserver",
 				"sgtest/jsonrpc2",
@@ -50,7 +51,7 @@ func TestCompute(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = client.WaitForReposToBeCloned(
+	err = gqltest.Client.WaitForReposToBeCloned(
 		"github.com/sgtest/java-langserver",
 		"github.com/sgtest/jsonrpc2",
 		"github.com/sgtest/go-diff",
@@ -61,14 +62,14 @@ func TestCompute(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = client.WaitForReposToBeIndexed(
+	err = gqltest.Client.WaitForReposToBeIndexed(
 		"github.com/sgtest/java-langserver",
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	streamClient := &gqltestutil.ComputeStreamClient{Client: client}
+	streamClient := &gqltestutil.ComputeStreamClient{Client: gqltest.Client}
 	t.Run("stream", func(t *testing.T) {
 		testComputeClient(t, streamClient)
 	})

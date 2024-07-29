@@ -1,0 +1,17 @@
+load("//dev:go_defs.bzl", "go_test")
+
+go_test(
+    name = "bitbucket_test",
+    srcs = [
+        "bitbucket_projects_perms_sync_test.go",
+        "setup_test.go",
+    ],
+    deps = [
+        "//dev/gqltest",
+        "//internal/extsvc",
+        "//internal/gqltestutil",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

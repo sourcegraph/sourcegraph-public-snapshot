@@ -8,12 +8,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/dev/gqltest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 
 func TestExternalService(t *testing.T) {
-	if len(*githubToken) == 0 {
+	if len(*gqltest.GithubToken) == 0 {
 		t.Skip("Environment variable GITHUB_TOKEN is not set")
 	}
 
@@ -21,17 +22,17 @@ func TestExternalService(t *testing.T) {
 		const repo = "sgtest/go-diff" // Tiny repo, fast to clone
 		const slug = "github.com/" + repo
 		// Set up external service
-		esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+		esID, err := gqltest.Client.AddExternalService(gqltestutil.AddExternalServiceInput{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "gqltest-github-repoPathPattern",
-			Config: mustMarshalJSONString(struct {
+			Config: gqltest.MustMarshalJSONString(struct {
 				URL                   string   `json:"url"`
 				Token                 string   `json:"token"`
 				Repos                 []string `json:"repos"`
 				RepositoryPathPattern string   `json:"repositoryPathPattern"`
 			}{
 				URL:                   "https://ghe.sgdev.org/",
-				Token:                 *githubToken,
+				Token:                 *gqltest.GithubToken,
 				Repos:                 []string{repo},
 				RepositoryPathPattern: "github.com/{nameWithOwner}",
 			}),
@@ -41,22 +42,22 @@ func TestExternalService(t *testing.T) {
 		if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 			t.Fatal(err)
 		}
-		removeExternalServiceAfterTest(t, esID)
+		gqltest.RemoveExternalServiceAfterTest(t, esID)
 
-		err = client.WaitForReposToBeCloned(slug)
+		err = gqltest.Client.WaitForReposToBeCloned(slug)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// The request URL should be redirected to the new path
-		origURL := *baseURL + "/" + slug
-		resp, err := client.Get(origURL)
+		origURL := *gqltest.BaseURL + "/" + slug
+		resp, err := gqltest.Client.Get(origURL)
 		if err != nil {
 			t.Fatal(err)
 		}
 		defer func() { _ = resp.Body.Close() }()
 
-		wantURL := *baseURL + "/" + slug // <baseURL>/github.com/sgtest/go-diff
+		wantURL := *gqltest.BaseURL + "/" + slug // <baseURL>/github.com/sgtest/go-diff
 		if diff := cmp.Diff(wantURL, resp.Request.URL.String()); diff != "" {
 			t.Fatalf("URL mismatch (-want +got):\n%s", diff)
 		}
@@ -64,16 +65,16 @@ func TestExternalService(t *testing.T) {
 }
 
 func TestExternalService_AWSCodeCommit(t *testing.T) {
-	if len(*awsAccessKeyID) == 0 || len(*awsSecretAccessKey) == 0 ||
-		len(*awsCodeCommitUsername) == 0 || len(*awsCodeCommitPassword) == 0 {
+	if len(*gqltest.AwsAccessKeyID) == 0 || len(*gqltest.AwsSecretAccessKey) == 0 ||
+		len(*gqltest.AwsCodeCommitUsername) == 0 || len(*gqltest.AwsCodeCommitPassword) == 0 {
 		t.Skip("Environment variable AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_CODE_COMMIT_USERNAME or AWS_CODE_COMMIT_PASSWORD is not set")
 	}
 
 	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	esID, err := gqltest.Client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindAWSCodeCommit,
 		DisplayName: "gqltest-aws-code-commit",
-		Config: mustMarshalJSONString(struct {
+		Config: gqltest.MustMarshalJSONString(struct {
 			Region                string            `json:"region"`
 			AccessKeyID           string            `json:"accessKeyID"`
 			SecretAccessKey       string            `json:"secretAccessKey"`
@@ -81,12 +82,12 @@ func TestExternalService_AWSCodeCommit(t *testing.T) {
 			GitCredentials        map[string]string `json:"gitCredentials"`
 		}{
 			Region:                "us-west-1",
-			AccessKeyID:           *awsAccessKeyID,
-			SecretAccessKey:       *awsSecretAccessKey,
+			AccessKeyID:           *gqltest.AwsAccessKeyID,
+			SecretAccessKey:       *gqltest.AwsSecretAccessKey,
 			RepositoryPathPattern: "aws/{name}",
 			GitCredentials: map[string]string{
-				"username": *awsCodeCommitUsername,
-				"password": *awsCodeCommitPassword,
+				"username": *gqltest.AwsCodeCommitUsername,
+				"password": *gqltest.AwsCodeCommitPassword,
 			},
 		}),
 	})
@@ -95,15 +96,15 @@ func TestExternalService_AWSCodeCommit(t *testing.T) {
 	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
-	removeExternalServiceAfterTest(t, esID)
+	gqltest.RemoveExternalServiceAfterTest(t, esID)
 
 	const repoName = "aws/test"
-	err = client.WaitForReposToBeCloned(repoName)
+	err = gqltest.Client.WaitForReposToBeCloned(repoName)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	blob, err := client.GitBlob(repoName, "master", "README")
+	blob, err := gqltest.Client.GitBlob(repoName, "master", "README")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,24 +116,24 @@ func TestExternalService_AWSCodeCommit(t *testing.T) {
 }
 
 func TestExternalService_BitbucketServer(t *testing.T) {
-	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsername) == 0 {
+	if len(*gqltest.BbsURL) == 0 || len(*gqltest.BbsToken) == 0 || len(*gqltest.BbsUsername) == 0 {
 		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
 	}
 
 	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	esID, err := gqltest.Client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "gqltest-bitbucket-server",
-		Config: mustMarshalJSONString(struct {
+		Config: gqltest.MustMarshalJSONString(struct {
 			URL                   string   `json:"url"`
 			Token                 string   `json:"token"`
 			Username              string   `json:"username"`
 			Repos                 []string `json:"repos"`
 			RepositoryPathPattern string   `json:"repositoryPathPattern"`
 		}{
-			URL:                   *bbsURL,
-			Token:                 *bbsToken,
-			Username:              *bbsUsername,
+			URL:                   *gqltest.BbsURL,
+			Token:                 *gqltest.BbsToken,
+			Username:              *gqltest.BbsUsername,
 			Repos:                 []string{"SOURCEGRAPH/jsonrpc2"},
 			RepositoryPathPattern: "bbs/{projectKey}/{repositorySlug}",
 		}),
@@ -142,15 +143,15 @@ func TestExternalService_BitbucketServer(t *testing.T) {
 	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
-	removeExternalServiceAfterTest(t, esID)
+	gqltest.RemoveExternalServiceAfterTest(t, esID)
 
 	const repoName = "bbs/SOURCEGRAPH/jsonrpc2"
-	err = client.WaitForReposToBeCloned(repoName)
+	err = gqltest.Client.WaitForReposToBeCloned(repoName)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	blob, err := client.GitBlob(repoName, "master", ".travis.yml")
+	blob, err := gqltest.Client.GitBlob(repoName, "master", ".travis.yml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,12 +186,12 @@ func TestExternalService_Perforce(t *testing.T) {
 			cleanup := createPerforceExternalService(t, tc.depot)
 			t.Cleanup(cleanup)
 
-			err := client.WaitForReposToBeCloned(repoName)
+			err := gqltest.Client.WaitForReposToBeCloned(repoName)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			blob, err := client.GitBlob(repoName, tc.headBranch, tc.blobPath)
+			blob, err := gqltest.Client.GitBlob(repoName, tc.headBranch, tc.blobPath)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -201,7 +202,7 @@ func TestExternalService_Perforce(t *testing.T) {
 }
 
 func checkPerforceEnvironment(t *testing.T) {
-	if len(*perforcePort) == 0 || len(*perforceUser) == 0 || len(*perforcePassword) == 0 {
+	if len(*gqltest.PerforcePort) == 0 || len(*gqltest.PerforceUser) == 0 || len(*gqltest.PerforcePassword) == 0 {
 		t.Skip("Environment variables PERFORCE_PORT, PERFORCE_USER or PERFORCE_PASSWORD are not set")
 	}
 }
@@ -222,10 +223,10 @@ func createPerforceExternalService(t *testing.T, depot string) func() {
 
 	t.Log("Creating external service")
 	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	esID, err := gqltest.Client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindPerforce,
 		DisplayName: "gqltest-perforce-server",
-		Config: mustMarshalJSONString(struct {
+		Config: gqltest.MustMarshalJSONString(struct {
 			P4Port                string        `json:"p4.port"`
 			P4User                string        `json:"p4.user"`
 			P4Password            string        `json:"p4.passwd"`
@@ -234,9 +235,9 @@ func createPerforceExternalService(t *testing.T, depot string) func() {
 			FusionClient          FusionClient  `json:"fusionClient"`
 			Authorization         Authorization `json:"authorization"`
 		}{
-			P4Port:                *perforcePort,
-			P4User:                *perforceUser,
-			P4Password:            *perforcePassword,
+			P4Port:                *gqltest.PerforcePort,
+			P4User:                *gqltest.PerforceUser,
+			P4Password:            *gqltest.PerforcePassword,
 			Depots:                []string{"//" + depot + "/"},
 			RepositoryPathPattern: "perforce/{depot}",
 			FusionClient: FusionClient{
@@ -256,35 +257,35 @@ func createPerforceExternalService(t *testing.T, depot string) func() {
 
 	return func() {
 		t.Log("Cleaning up external service")
-		if err := client.DeleteRepoFromDiskByName("perforce/" + depot); err != nil {
+		if err := gqltest.Client.DeleteRepoFromDiskByName("perforce/" + depot); err != nil {
 			t.Fatalf("removing depot from disk: %v", err)
 		}
 
-		if err := client.DeleteExternalService(esID, false); err != nil {
+		if err := gqltest.Client.DeleteExternalService(esID, false); err != nil {
 			t.Fatalf("removing external service: %v", err)
 		}
 	}
 }
 
 func TestExternalService_AsyncDeletion(t *testing.T) {
-	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsername) == 0 {
+	if len(*gqltest.BbsURL) == 0 || len(*gqltest.BbsToken) == 0 || len(*gqltest.BbsUsername) == 0 {
 		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
 	}
 
 	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	esID, err := gqltest.Client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "gqltest-bitbucket-server",
-		Config: mustMarshalJSONString(struct {
+		Config: gqltest.MustMarshalJSONString(struct {
 			URL                   string   `json:"url"`
 			Token                 string   `json:"token"`
 			Username              string   `json:"username"`
 			Repos                 []string `json:"repos"`
 			RepositoryPathPattern string   `json:"repositoryPathPattern"`
 		}{
-			URL:                   *bbsURL,
-			Token:                 *bbsToken,
-			Username:              *bbsUsername,
+			URL:                   *gqltest.BbsURL,
+			Token:                 *gqltest.BbsToken,
+			Username:              *gqltest.BbsUsername,
 			Repos:                 []string{"SOURCEGRAPH/jsonrpc2"},
 			RepositoryPathPattern: "bbs/{projectKey}/{repositorySlug}",
 		}),
@@ -295,7 +296,7 @@ func TestExternalService_AsyncDeletion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = client.DeleteExternalService(esID, true)
+	err = gqltest.Client.DeleteExternalService(esID, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -305,7 +306,7 @@ func TestExternalService_AsyncDeletion(t *testing.T) {
 	// might be blocked on the first sync of the external service still
 	// running. It cancels that syncs and waits for it to finish.
 	err = gqltestutil.Retry(30*time.Second, func() error {
-		err = client.CheckExternalService(esID)
+		err = gqltest.Client.CheckExternalService(esID)
 		if err == nil {
 			return gqltestutil.ErrContinueRetry
 		}
@@ -317,14 +318,4 @@ func TestExternalService_AsyncDeletion(t *testing.T) {
 	if !strings.Contains(err.Error(), "external service not found") {
 		t.Fatalf("Not found error should be returned, got: %s", err.Error())
 	}
-}
-
-func removeExternalServiceAfterTest(t *testing.T, esID string) {
-	t.Helper()
-	t.Cleanup(func() {
-		err := client.DeleteExternalService(esID, false)
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
 }

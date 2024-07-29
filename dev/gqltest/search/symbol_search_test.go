@@ -6,23 +6,24 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/dev/gqltest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSymbolSearch(t *testing.T) {
-	if len(*githubToken) == 0 {
+	if len(*gqltest.GithubToken) == 0 {
 		t.Skip("Environment variable GITHUB_TOKEN is not set")
 	}
 
 	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	esID, err := gqltest.Client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "gqltest-github-search",
-		Config: mustMarshalJSONString(&schema.GitHubConnection{
+		Config: gqltest.MustMarshalJSONString(&schema.GitHubConnection{
 			Url:   "https://ghe.sgdev.org/",
-			Token: *githubToken,
+			Token: *gqltest.GithubToken,
 			Repos: []string{
 				"sgtest/java-langserver",
 				"sgtest/go-diff",
@@ -32,9 +33,9 @@ func TestSymbolSearch(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	removeExternalServiceAfterTest(t, esID)
+	gqltest.RemoveExternalServiceAfterTest(t, esID)
 
-	err = client.WaitForReposToBeIndexed(
+	err = gqltest.Client.WaitForReposToBeIndexed(
 		"github.com/sgtest/java-langserver",
 		"github.com/sgtest/go-diff",
 	)
@@ -81,7 +82,7 @@ func TestSymbolSearch(t *testing.T) {
 
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			results, err := client.SearchFiles(test.query)
+			results, err := gqltest.Client.SearchFiles(test.query)
 			require.NoError(t, err)
 			require.Nil(t, results.Alert)
 

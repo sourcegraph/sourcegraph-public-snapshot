@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/dev/gqltest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -13,7 +14,7 @@ func TestModeAvailability(t *testing.T) {
 	t.Parallel()
 
 	t.Run("invalid query returns unavailable", func(t *testing.T) {
-		availabilities, err := client.ModeAvailability("fork:insights test", "literal")
+		availabilities, err := gqltest.Client.ModeAvailability("fork:insights test", "literal")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -29,7 +30,7 @@ func TestModeAvailability(t *testing.T) {
 
 	t.Run("returns repo path capture group", func(t *testing.T) {
 		query := `(\w)\s\*testing.T`
-		availabilities, err := client.ModeAvailability(query, "regexp")
+		availabilities, err := gqltest.Client.ModeAvailability(query, "regexp")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -54,7 +55,7 @@ func TestModeAvailability(t *testing.T) {
 
 	t.Run("returns repo author", func(t *testing.T) {
 		query := "type:commit insights"
-		availabilities, err := client.ModeAvailability(query, "literal")
+		availabilities, err := gqltest.Client.ModeAvailability(query, "literal")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -79,16 +80,16 @@ func TestModeAvailability(t *testing.T) {
 }
 
 func TestAggregations(t *testing.T) {
-	if len(*githubToken) == 0 {
+	if len(*gqltest.GithubToken) == 0 {
 		t.Skip("Environment variable GITHUB_TOKEN is not set")
 	}
 
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	esID, err := gqltest.Client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "gqltest-aggregation-search",
-		Config: mustMarshalJSONString(&schema.GitHubConnection{
+		Config: gqltest.MustMarshalJSONString(&schema.GitHubConnection{
 			Url:   "https://ghe.sgdev.org/",
-			Token: *githubToken,
+			Token: *gqltest.GithubToken,
 			Repos: []string{
 				"sgtest/go-diff",
 			},
@@ -98,16 +99,16 @@ func TestAggregations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	removeExternalServiceAfterTest(t, esID)
+	gqltest.RemoveExternalServiceAfterTest(t, esID)
 
-	err = client.WaitForReposToBeCloned(
+	err = gqltest.Client.WaitForReposToBeCloned(
 		"github.com/sgtest/go-diff",
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = client.WaitForReposToBeIndexed(
+	err = gqltest.Client.WaitForReposToBeIndexed(
 		"github.com/sgtest/go-diff",
 	)
 	if err != nil {
@@ -119,7 +120,7 @@ func TestAggregations(t *testing.T) {
 			Query:       `(\w+) query`,
 			PatternType: "regexp",
 		}
-		resp, err := client.Aggregations(args)
+		resp, err := gqltest.Client.Aggregations(args)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -138,7 +139,7 @@ func TestAggregations(t *testing.T) {
 			PatternType: "literal",
 			Mode:        &mode,
 		}
-		resp, err := client.Aggregations(args)
+		resp, err := gqltest.Client.Aggregations(args)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -158,7 +159,7 @@ func TestAggregations(t *testing.T) {
 		var err error
 		// We'll retry with timeout max twice.
 		err = gqltestutil.Retry(2*time.Minute, func() error {
-			resp, err = client.Aggregations(args)
+			resp, err = gqltest.Client.Aggregations(args)
 			if err != nil {
 				t.Fatal(err)
 			}

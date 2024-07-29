@@ -12,23 +12,24 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/dev/gqltest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearch(t *testing.T) {
-	if len(*githubToken) == 0 {
+	if len(*gqltest.GithubToken) == 0 {
 		t.Skip("Environment variable GITHUB_TOKEN is not set")
 	}
 
 	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	esID, err := gqltest.Client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "gqltest-github-search",
-		Config: mustMarshalJSONString(&schema.GitHubConnection{
+		Config: gqltest.MustMarshalJSONString(&schema.GitHubConnection{
 			Url:   "https://ghe.sgdev.org/",
-			Token: *githubToken,
+			Token: *gqltest.GithubToken,
 			Repos: []string{
 				"sgtest/java-langserver",
 				"sgtest/jsonrpc2",
@@ -45,9 +46,9 @@ func TestSearch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	removeExternalServiceAfterTest(t, esID)
+	gqltest.RemoveExternalServiceAfterTest(t, esID)
 
-	err = client.WaitForReposToBeCloned(
+	err = gqltest.Client.WaitForReposToBeCloned(
 		"github.com/sgtest/java-langserver",
 		"github.com/sgtest/jsonrpc2",
 		"github.com/sgtest/go-diff",
@@ -61,25 +62,25 @@ func TestSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = client.WaitForReposToBeIndexed(
+	err = gqltest.Client.WaitForReposToBeIndexed(
 		"github.com/sgtest/java-langserver",
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	addKVPs(t, client)
+	addKVPs(t, gqltest.Client)
 
 	t.Run("search contexts", func(t *testing.T) {
-		testSearchContextsCRUD(t, client)
-		testListingSearchContexts(t, client)
+		testSearchContextsCRUD(t, gqltest.Client)
+		testListingSearchContexts(t, gqltest.Client)
 	})
 
 	t.Run("graphql", func(t *testing.T) {
-		testSearchClient(t, client)
+		testSearchClient(t, gqltest.Client)
 	})
 
-	streamClient := &gqltestutil.SearchStreamClient{Client: client}
+	streamClient := &gqltestutil.SearchStreamClient{Client: gqltest.Client}
 	t.Run("stream", func(t *testing.T) {
 		testSearchClient(t, streamClient)
 	})
@@ -750,7 +751,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("structural search", func(t *testing.T) {
-		enableStructuralSearch(t)
+		gqltest.EnableStructuralSearch(t)
 
 		tests := []struct {
 			name       string
@@ -1575,7 +1576,7 @@ func testSearchOther(t *testing.T) {
 			// This is a substring that appears in the sgtest/go-diff repository.
 			// It is OK if it starts to appear in other repositories, the test just
 			// checks that it is found in at least 1 Go file.
-			result, err := client.SearchStats("Incomplete-Lines")
+			result, err := gqltest.Client.SearchStats("Incomplete-Lines")
 			if err != nil {
 				t.Fatal(err)
 			}

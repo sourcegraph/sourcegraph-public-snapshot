@@ -6,23 +6,24 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/dev/gqltest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestRepository(t *testing.T) {
-	if len(*githubToken) == 0 {
+	if len(*gqltest.GithubToken) == 0 {
 		t.Skip("Environment variable GITHUB_TOKEN is not set")
 	}
 
 	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	esID, err := gqltest.Client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "gqltest-github-repository",
-		Config: mustMarshalJSONString(&schema.GitHubConnection{
+		Config: gqltest.MustMarshalJSONString(&schema.GitHubConnection{
 			Url:   "https://ghe.sgdev.org/",
-			Token: *githubToken,
+			Token: *gqltest.GithubToken,
 			Repos: []string{
 				"sgtest/go-diff",
 			},
@@ -32,9 +33,9 @@ func TestRepository(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	removeExternalServiceAfterTest(t, esID)
+	gqltest.RemoveExternalServiceAfterTest(t, esID)
 
-	err = client.WaitForReposToBeCloned(
+	err = gqltest.Client.WaitForReposToBeCloned(
 		"github.com/sgtest/go-diff",
 	)
 	if err != nil {
@@ -42,7 +43,7 @@ func TestRepository(t *testing.T) {
 	}
 
 	t.Run("external code host links", func(t *testing.T) {
-		got, err := client.FileExternalLinks(
+		got, err := gqltest.Client.FileExternalLinks(
 			"github.com/sgtest/go-diff",
 			"3f415a150aec0685cb81b73cc201e762e075006d",
 			"diff/parse.go",
@@ -65,22 +66,22 @@ func TestRepository(t *testing.T) {
 }
 
 func TestRepository_NameWithSpace(t *testing.T) {
-	if *azureDevOpsUsername == "" || *azureDevOpsToken == "" {
+	if *gqltest.AzureDevOpsUsername == "" || *gqltest.AzureDevOpsToken == "" {
 		t.Skip("Environment variable AZURE_DEVOPS_USERNAME or AZURE_DEVOPS_TOKEN is not set")
 	}
 
 	t.Skip("Test Repo is gone from Azure Devops and only admins can create repos. SQS is on vacation and he's the only admin. We don't know how this repo got deleted.")
 
 	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	esID, err := gqltest.Client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindOther,
 		DisplayName: "gqltest-azure-devops-repository",
-		Config: mustMarshalJSONString(struct {
+		Config: gqltest.MustMarshalJSONString(struct {
 			URL                   string   `json:"url"`
 			Repos                 []string `json:"repos"`
 			RepositoryPathPattern string   `json:"repositoryPathPattern"`
 		}{
-			URL: fmt.Sprintf("https://%s:%s@sourcegraph.visualstudio.com/sourcegraph/_git/", *azureDevOpsUsername, *azureDevOpsToken),
+			URL: fmt.Sprintf("https://%s:%s@sourcegraph.visualstudio.com/sourcegraph/_git/", *gqltest.AzureDevOpsUsername, *gqltest.AzureDevOpsToken),
 			Repos: []string{
 				"Test Repo",
 			},
@@ -90,16 +91,16 @@ func TestRepository_NameWithSpace(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	removeExternalServiceAfterTest(t, esID)
+	gqltest.RemoveExternalServiceAfterTest(t, esID)
 
-	err = client.WaitForReposToBeCloned(
+	err = gqltest.Client.WaitForReposToBeCloned(
 		"sourcegraph.visualstudio.com/Test Repo",
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := client.Repository("sourcegraph.visualstudio.com/Test Repo")
+	got, err := gqltest.Client.Repository("sourcegraph.visualstudio.com/Test Repo")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,0 +1,14 @@
+load("//dev:go_defs.bzl", "go_test")
+
+go_test(
+    name = "access_token_test",
+    srcs = [
+        "access_token_test.go",
+        "setup_test.go",
+    ],
+    deps = [
+        "//dev/gqltest",
+        "//lib/errors",
+        "//lib/pointers",
+    ],
+)

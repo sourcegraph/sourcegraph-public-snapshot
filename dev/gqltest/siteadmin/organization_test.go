@@ -8,37 +8,38 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/dev/gqltest"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestOrganization(t *testing.T) {
 	const testOrgName = "gqltest-org"
-	orgID, err := client.CreateOrganization(testOrgName, testOrgName)
+	orgID, err := gqltest.Client.CreateOrganization(testOrgName, testOrgName)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
-		err := client.DeleteOrganization(orgID)
+		err := gqltest.Client.DeleteOrganization(orgID)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}()
 
 	t.Run("settings cascade", func(t *testing.T) {
-		err := client.OverwriteSettings(orgID, `{"quicklinks":[{"name":"Test quicklink","url":"http://test-quicklink.local"}]}`)
+		err := gqltest.Client.OverwriteSettings(orgID, `{"quicklinks":[{"name":"Test quicklink","url":"http://test-quicklink.local"}]}`)
 		if err != nil {
 			t.Fatal(err)
 		}
 		defer func() {
-			err := client.OverwriteSettings(orgID, `{}`)
+			err := gqltest.Client.OverwriteSettings(orgID, `{}`)
 			if err != nil {
 				t.Fatal(err)
 			}
 		}()
 
 		{
-			contents, err := client.ViewerSettings()
+			contents, err := gqltest.Client.ViewerSettings()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -66,16 +67,16 @@ func TestOrganization(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		removeTestUserAfterTest(t, testUserID)
+		gqltest.RemoveTestUserAfterTest(t, testUserID)
 		// Remove authenticate user (gqltest-admin) from organization (gqltest-org) should
 		// no longer get cascaded settings from this organization.
-		err = client.RemoveUserFromOrganization(client.AuthenticatedUserID(), orgID)
+		err = gqltest.Client.RemoveUserFromOrganization(gqltest.Client.AuthenticatedUserID(), orgID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		{
-			contents, err := client.ViewerSettings()
+			contents, err := gqltest.Client.ViewerSettings()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -99,13 +100,13 @@ func TestOrganization(t *testing.T) {
 		// Create a test user (gqltest-org-user-1) without settings "auth.userOrgMap",
 		// the user should not be added to the organization (gqltest-org) automatically.
 		const testUsername1 = "gqltest-org-user-1"
-		testUserID1, err := client.CreateUser(testUsername1, testUsername1+"@sourcegraph.com")
+		testUserID1, err := gqltest.Client.CreateUser(testUsername1, testUsername1+"@sourcegraph.com")
 		if err != nil {
 			t.Fatal(err)
 		}
-		removeTestUserAfterTest(t, testUserID1)
+		gqltest.RemoveTestUserAfterTest(t, testUserID1)
 
-		orgs, err := client.UserOrganizations(testUsername1)
+		orgs, err := gqltest.Client.UserOrganizations(testUsername1)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -116,7 +117,7 @@ func TestOrganization(t *testing.T) {
 
 		// Update site configuration to set "auth.userOrgMap" which makes the new user join
 		// the organization (gqltest-org) automatically.
-		reset, err := client.ModifySiteConfiguration(func(siteConfig *schema.SiteConfiguration) {
+		reset, err := gqltest.Client.ModifySiteConfiguration(func(siteConfig *schema.SiteConfiguration) {
 			siteConfig.AuthUserOrgMap = map[string][]string{"*": {testOrgName}}
 		})
 		require.NoError(t, err)
@@ -132,13 +133,13 @@ func TestOrganization(t *testing.T) {
 			// Create another test user (gqltest-org-user-2) and the user should be added to
 			// the organization (gqltest-org) automatically.
 			const testUsername2 = "gqltest-org-user-2"
-			testUserID2, err := client.CreateUser(testUsername2, testUsername2+"@sourcegraph.com")
+			testUserID2, err := gqltest.Client.CreateUser(testUsername2, testUsername2+"@sourcegraph.com")
 			if err != nil {
 				t.Fatal(err)
 			}
-			removeTestUserAfterTest(t, testUserID2)
+			gqltest.RemoveTestUserAfterTest(t, testUserID2)
 
-			orgs, err = client.UserOrganizations(testUsername2)
+			orgs, err = gqltest.Client.UserOrganizations(testUsername2)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -158,11 +159,11 @@ func TestOrganization(t *testing.T) {
 
 func createOrganizationUser(orgID string) (string, error) {
 	const tmpUserName = "gqltest-org-user-tmp"
-	tmpUserID, err := client.CreateUser(tmpUserName, tmpUserName+"@sourcegraph.com")
+	tmpUserID, err := gqltest.Client.CreateUser(tmpUserName, tmpUserName+"@sourcegraph.com")
 	if err != nil {
 		return tmpUserID, err
 	}
 
-	err = client.AddUserToOrganization(orgID, tmpUserName)
+	err = gqltest.Client.AddUserToOrganization(orgID, tmpUserName)
 	return tmpUserID, err
 }

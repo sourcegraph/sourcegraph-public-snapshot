@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/dev/gqltest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -20,7 +21,7 @@ const (
 )
 
 func TestBitbucketProjectsPermsSync_SetUnrestrictedPermissions(t *testing.T) {
-	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsername) == 0 {
+	if len(*gqltest.BbsURL) == 0 || len(*gqltest.BbsToken) == 0 || len(*gqltest.BbsUsername) == 0 {
 		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
 	}
 
@@ -30,11 +31,11 @@ func TestBitbucketProjectsPermsSync_SetUnrestrictedPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	removeExternalServiceAfterTest(t, esID)
+	gqltest.RemoveExternalServiceAfterTest(t, esID)
 
 	// Triggering the sync job
 	unrestricted := true
-	err = client.SetRepositoryPermissionsForBitbucketProject(gqltestutil.BitbucketProjectPermsSyncArgs{
+	err = gqltest.Client.SetRepositoryPermissionsForBitbucketProject(gqltestutil.BitbucketProjectPermsSyncArgs{
 		ProjectKey:      projectKey,
 		CodeHost:        esID,
 		UserPermissions: make([]types.UserPermission, 0),
@@ -63,7 +64,7 @@ func TestBitbucketProjectsPermsSync_SetUnrestrictedPermissions(t *testing.T) {
 }
 
 func TestBitbucketProjectsPermsSync_FromRestrictedToUnrestrictedPermissions(t *testing.T) {
-	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsername) == 0 {
+	if len(*gqltest.BbsURL) == 0 || len(*gqltest.BbsToken) == 0 || len(*gqltest.BbsUsername) == 0 {
 		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
 	}
 
@@ -73,11 +74,11 @@ func TestBitbucketProjectsPermsSync_FromRestrictedToUnrestrictedPermissions(t *t
 		t.Fatal(err)
 	}
 
-	removeExternalServiceAfterTest(t, esID)
+	gqltest.RemoveExternalServiceAfterTest(t, esID)
 
 	// Triggering the sync job to set permissions for existing user
 	unrestricted := false
-	err = client.SetRepositoryPermissionsForBitbucketProject(gqltestutil.BitbucketProjectPermsSyncArgs{
+	err = gqltest.Client.SetRepositoryPermissionsForBitbucketProject(gqltestutil.BitbucketProjectPermsSyncArgs{
 		ProjectKey:      projectKey,
 		CodeHost:        esID,
 		UserPermissions: []types.UserPermission{{BindID: "gqltest@sourcegraph.com", Permission: "READ"}},
@@ -101,7 +102,7 @@ func TestBitbucketProjectsPermsSync_FromRestrictedToUnrestrictedPermissions(t *t
 
 	// Triggering the sync job to set unrestricted permissions
 	unrestricted = true
-	err = client.SetRepositoryPermissionsForBitbucketProject(gqltestutil.BitbucketProjectPermsSyncArgs{
+	err = gqltest.Client.SetRepositoryPermissionsForBitbucketProject(gqltestutil.BitbucketProjectPermsSyncArgs{
 		ProjectKey:      projectKey,
 		CodeHost:        esID,
 		UserPermissions: make([]types.UserPermission, 0),
@@ -125,7 +126,7 @@ func TestBitbucketProjectsPermsSync_FromRestrictedToUnrestrictedPermissions(t *t
 }
 
 func TestBitbucketProjectsPermsSync_SetPendingPermissions_NonExistentUsersOnly(t *testing.T) {
-	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsername) == 0 {
+	if len(*gqltest.BbsURL) == 0 || len(*gqltest.BbsToken) == 0 || len(*gqltest.BbsUsername) == 0 {
 		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
 	}
 
@@ -135,11 +136,11 @@ func TestBitbucketProjectsPermsSync_SetPendingPermissions_NonExistentUsersOnly(t
 		t.Fatal(err)
 	}
 
-	removeExternalServiceAfterTest(t, esID)
+	gqltest.RemoveExternalServiceAfterTest(t, esID)
 
 	// Triggering the sync job
 	unrestricted := false
-	err = client.SetRepositoryPermissionsForBitbucketProject(gqltestutil.BitbucketProjectPermsSyncArgs{
+	err = gqltest.Client.SetRepositoryPermissionsForBitbucketProject(gqltestutil.BitbucketProjectPermsSyncArgs{
 		ProjectKey: projectKey,
 		CodeHost:   esID,
 		UserPermissions: []types.UserPermission{
@@ -169,7 +170,7 @@ func TestBitbucketProjectsPermsSync_SetPendingPermissions_NonExistentUsersOnly(t
 	}
 
 	// Perform the checks
-	pendingPerms, err := client.UsersWithPendingPermissions()
+	pendingPerms, err := gqltest.Client.UsersWithPendingPermissions()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +191,7 @@ func TestBitbucketProjectsPermsSync_SetPendingPermissions_NonExistentUsersOnly(t
 }
 
 func TestBitbucketProjectsPermsSync_SetPendingPermissions_ExistentAndNonExistentUsers(t *testing.T) {
-	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsername) == 0 {
+	if len(*gqltest.BbsURL) == 0 || len(*gqltest.BbsToken) == 0 || len(*gqltest.BbsUsername) == 0 {
 		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
 	}
 
@@ -200,11 +201,11 @@ func TestBitbucketProjectsPermsSync_SetPendingPermissions_ExistentAndNonExistent
 		t.Fatal(err)
 	}
 
-	removeExternalServiceAfterTest(t, esID)
+	gqltest.RemoveExternalServiceAfterTest(t, esID)
 
 	// Triggering the sync job
 	unrestricted := false
-	err = client.SetRepositoryPermissionsForBitbucketProject(gqltestutil.BitbucketProjectPermsSyncArgs{
+	err = gqltest.Client.SetRepositoryPermissionsForBitbucketProject(gqltestutil.BitbucketProjectPermsSyncArgs{
 		ProjectKey: projectKey,
 		CodeHost:   esID,
 		UserPermissions: []types.UserPermission{
@@ -235,7 +236,7 @@ func TestBitbucketProjectsPermsSync_SetPendingPermissions_ExistentAndNonExistent
 
 	// Perform the checks
 	// First we check pending permissions
-	pendingPerms, err := client.UsersWithPendingPermissions()
+	pendingPerms, err := gqltest.Client.UsersWithPendingPermissions()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,23 +251,23 @@ func TestBitbucketProjectsPermsSync_SetPendingPermissions_ExistentAndNonExistent
 	}
 
 	// Then we check existing user permissions
-	permissionsInfo, err := client.UserPermissions(*username)
+	permissionsInfo, err := gqltest.Client.UserPermissions(*gqltest.Username)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if len(permissionsInfo) == 0 {
-		t.Fatalf("User '%s' has no expected permissions", *username)
+		t.Fatalf("User '%s' has no expected permissions", *gqltest.Username)
 	}
 
 	if permissionsInfo[0] != "READ" {
-		t.Fatalf("READ permission hasn't been set for user '%s'", *username)
+		t.Fatalf("READ permission hasn't been set for user '%s'", *gqltest.Username)
 	}
 }
 
 func waitForSyncJobToFinish() error {
 	return gqltestutil.Retry(30*time.Second, func() error {
-		status, failureMessage, err := client.GetLastBitbucketProjectPermissionJob(projectKey)
+		status, failureMessage, err := gqltest.Client.GetLastBitbucketProjectPermissionJob(projectKey)
 		if err != nil || status == "" {
 			return errors.New("Error during getting the status of a Bitbucket Permissions job")
 		}
@@ -287,19 +288,19 @@ func setUpExternalService(t *testing.T) (esID string, err error) {
 	// Set up external service.
 	// It is configured to clone only "SOURCEGRAPH/jsonrpc2" repo, but this project
 	// also has another repo "empty-repo-1"
-	esID, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	esID, err = gqltest.Client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "gqltest-bitbucket-server",
-		Config: mustMarshalJSONString(struct {
+		Config: gqltest.MustMarshalJSONString(struct {
 			URL                   string   `json:"url"`
 			Token                 string   `json:"token"`
 			Username              string   `json:"username"`
 			Repos                 []string `json:"repos"`
 			RepositoryPathPattern string   `json:"repositoryPathPattern"`
 		}{
-			URL:                   *bbsURL,
-			Token:                 *bbsToken,
-			Username:              *bbsUsername,
+			URL:                   *gqltest.BbsURL,
+			Token:                 *gqltest.BbsToken,
+			Username:              *gqltest.BbsUsername,
 			Repos:                 []string{"SOURCEGRAPH/jsonrpc2", "SOURCEGRAPH/empty-repo-1"},
 			RepositoryPathPattern: "bbs/{projectKey}/{repositorySlug}",
 		}),
@@ -311,7 +312,7 @@ func setUpExternalService(t *testing.T) (esID string, err error) {
 		return "", err
 	}
 
-	err = client.WaitForReposToBeCloned(clonedRepoName1)
+	err = gqltest.Client.WaitForReposToBeCloned(clonedRepoName1)
 	if err != nil {
 		return "", err
 	}
@@ -319,7 +320,7 @@ func setUpExternalService(t *testing.T) (esID string, err error) {
 }
 
 func checkRepoPermissions(repoName string, wantUnrestricted bool) error {
-	permissionsInfo, err := client.RepositoryPermissionsInfo(repoName)
+	permissionsInfo, err := gqltest.Client.RepositoryPermissionsInfo(repoName)
 	if err != nil {
 		return err
 	}

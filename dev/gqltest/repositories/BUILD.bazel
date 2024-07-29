@@ -1,0 +1,20 @@
+load("//dev:go_defs.bzl", "go_test")
+
+go_test(
+    name = "repositories_test",
+    srcs = [
+        "external_service_test.go",
+        "repository_test.go",
+        "setup_test.go",
+        "sub_repo_permissions_test.go",
+    ],
+    deps = [
+        "//dev/gqltest",
+        "//internal/extsvc",
+        "//internal/gqltestutil",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

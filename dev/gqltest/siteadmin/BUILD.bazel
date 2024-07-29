@@ -1,0 +1,19 @@
+load("//dev:go_defs.bzl", "go_test")
+
+go_test(
+    name = "siteadmin_test",
+    srcs = [
+        "feature_flag_test.go",
+        "organization_test.go",
+        "setup_test.go",
+        "site_config_test.go",
+    ],
+    deps = [
+        "//dev/gqltest",
+        "//internal/gqltestutil",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_json_iterator_go//:go",
+        "@com_github_stretchr_testify//require",
+    ],
+)
