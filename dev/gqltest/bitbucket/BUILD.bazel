@@ -6,6 +6,10 @@ go_test(
         "bitbucket_projects_perms_sync_test.go",
         "setup_test.go",
     ],
+    visibility = [
+        "//testing:__pkg__",
+        "//testing:__subpackages__",
+    ],
     deps = [
         "//dev/gqltest",
         "//internal/extsvc",

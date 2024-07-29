@@ -160,7 +160,6 @@ func RemoveExternalServiceAfterTest(t *testing.T, esID string) {
 	})
 }
 
-
 func EnableSubRepoPermissions(t *testing.T) {
 	t.Helper()
 	t.Log("Enabling sub-repo permissions")

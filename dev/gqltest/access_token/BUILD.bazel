@@ -6,6 +6,10 @@ go_test(
         "access_token_test.go",
         "setup_test.go",
     ],
+    visibility = [
+        "//testing:__pkg__",
+        "//testing:__subpackages__",
+    ],
     deps = [
         "//dev/gqltest",
         "//lib/errors",

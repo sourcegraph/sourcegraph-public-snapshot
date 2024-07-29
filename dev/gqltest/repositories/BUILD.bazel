@@ -8,6 +8,10 @@ go_test(
         "setup_test.go",
         "sub_repo_permissions_test.go",
     ],
+    visibility = [
+        "//testing:__pkg__",
+        "//testing:__subpackages__",
+    ],
     deps = [
         "//dev/gqltest",
         "//internal/extsvc",
