@@ -12,12 +12,12 @@ export const enum Mode {
 }
 
 interface NavigationEntryDefinition extends Omit<NavigationEntry, 'href'> {
-    href: string | [Mode, string][]
+    href: string | [Mode, string][] | null
     mode?: Mode
 }
 
 interface NavigationMenuDefinition extends Omit<NavigationMenu, 'children' | 'href'> {
-    href: string | [Mode, string][]
+    href: string | [Mode, string][] | null
     children: NavigationEntryDefinition[]
     mode?: Mode
 }
@@ -34,6 +34,10 @@ function toEntry(entry: NavigationEntryDefinition, mode: Mode): NavigationEntry 
 }
 
 function matchHref(href: NavigationEntryDefinition['href'], mode: Mode): string {
+    if (!href) {
+        return ''
+    }
+
     if (typeof href === 'string') {
         return href
     }
@@ -53,11 +57,11 @@ export function getMainNavigationEntries(mode: Mode): (NavigationMenu | Navigati
             const entry = toEntry(definition, mode)
             return 'children' in definition
                 ? {
-                    ...entry,
-                    children: definition.children
-                        .filter(child => matchesMode(child, mode))
-                        .map(child => toEntry(child, mode)),
-                }
+                      ...entry,
+                      children: definition.children
+                          .filter(child => matchesMode(child, mode))
+                          .map(child => toEntry(child, mode)),
+                  }
                 : entry
         })
 }
@@ -116,8 +120,7 @@ const navigationEntries: (NavigationMenuDefinition | NavigationEntryDefinition)[
     {
         label: 'Tools',
         icon: IMdiTools,
-        // @TODO(jhh) Make 'href' nullable
-        href: '/does-not-exist',
+        href: null,
         children: [
             {
                 label: 'Saved Searches',
