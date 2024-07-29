@@ -22,7 +22,6 @@ const decorator: Decorator = story => (
 const config: Meta = {
     title: 'branded/search-ui/input/SearchContextMenu',
     parameters: {
-        chromatic: { viewports: [500], disableSnapshot: false },
         design: {
             type: 'figma',
             url: 'https://www.figma.com/file/4Fy9rURbfF2bsl4BvYunUO/RFC-261-Search-Contexts?node-id=581%3A4754',

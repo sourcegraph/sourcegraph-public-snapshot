@@ -210,7 +210,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     <MenuHeader className={styles.dropdownHeader}>Your organizations</MenuHeader>
                                     {organizations.slice(0, MAX_VISIBLE_ORGS).map(org => (
                                         <MenuLink as={Link} key={org.id} to={org.settingsURL || org.url}>
-                                            {org.displayName || org.name}
+                                            {org.name}
                                         </MenuLink>
                                     ))}
                                     {organizations.length > MAX_VISIBLE_ORGS && (

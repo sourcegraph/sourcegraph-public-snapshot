@@ -1055,3 +1055,11 @@ func (s EnvironmentLocationsSpec) Validate() []error {
 
 	return errs
 }
+
+// ShouldEnableOpsgenie returns env.alerting.opsgenie or falls back to isProduction is the former is nil
+func (s *EnvironmentAlertingSpec) ShouldEnableOpsgenie(isProduction bool) bool {
+	if s == nil || s.Opsgenie == nil {
+		return isProduction
+	}
+	return *s.Opsgenie
+}

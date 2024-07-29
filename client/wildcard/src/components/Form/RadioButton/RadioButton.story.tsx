@@ -91,10 +91,3 @@ export const RadioExamples: StoryFn = () => (
         </Grid>
     </>
 )
-
-RadioExamples.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}

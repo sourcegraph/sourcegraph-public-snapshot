@@ -37,7 +37,6 @@ env:
   REPO_UPDATER_URL: http://127.0.0.1:3182
   REDIS_ENDPOINT: 127.0.0.1:6379
   SYMBOLS_URL: http://localhost:3184
-  EMBEDDINGS_URL: http://localhost:9991
   SRC_SYNTECT_SERVER: http://localhost:9238
   SRC_FRONTEND_INTERNAL: localhost:3090
   GRAFANA_SERVER_URL: http://localhost:3370
@@ -90,7 +89,7 @@ env:
   # Default `NODE_ENV` to `development`
   NODE_ENV: development
 
-  # Required for codeintel uploadstore
+  # Required for codeintel object storage
   PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:9000
   PRECISE_CODE_INTEL_UPLOAD_BACKEND: blobstore
 
@@ -1123,6 +1122,122 @@ commands:
       - lib
       - schema
 
+  sourcegraph-accounts-server:
+    description: |
+      Run SAMS from a clone of https://github.com/sourcegraph/sourcegraph-accounts
+      expected to be configured in '../sourcegraph-accounts'
+    install: |
+      if [ -d "../sourcegraph-accounts" ]; then
+        echo "../sourcegraph-accounts must be a clone of https://github.com/sourcegraph/sourcegraph-accounts"
+      fi
+      cd ../sourcegraph-accounts
+
+      createdb -h $PGHOST -p $PGPORT -U $PGUSER --encoding=UTF8 --template=template0 accounts || true
+      asdf install
+      go build -v -o ./.bin/accounts-server ./cmd/accounts-server
+    checkBinary: ../sourcegraph-accounts/.bin/accounts-server
+    cmd: |
+      export PGDSN="postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/{{ .Database }}?sslmode=$PGSSLMODE"
+      cd ../sourcegraph-accounts
+      ./.bin/accounts-server
+    watch:
+      - ../sourcegraph-accounts/go.mod
+      - ../sourcegraph-accounts/cmd/accounts-server
+      - ../sourcegraph-accounts/backend
+      - ../sourcegraph-accounts/internal
+    externalSecrets:
+      GITHUB_CLIENT_ID:
+        project: sourcegraph-local-dev
+        name: SAMS_LOCAL_DEV_GITHUB_CLIENT_ID
+      GITHUB_CLIENT_SECRET:
+        project: sourcegraph-local-dev
+        name: SAMS_LOCAL_DEV_GITHUB_CLIENT_SECRET
+      GITLAB_CLIENT_ID:
+        project: sourcegraph-local-dev
+        name: SAMS_LOCAL_DEV_GITLAB_CLIENT_ID
+      GITLAB_CLIENT_SECRET:
+        project: sourcegraph-local-dev
+        name: SAMS_LOCAL_DEV_GITLAB_CLIENT_SECRET
+      GOOGLE_CLIENT_ID:
+        project: sourcegraph-local-dev
+        name: SAMS_LOCAL_DEV_GOOGLE_CLIENT_ID
+      GOOGLE_CLIENT_SECRET:
+        project: sourcegraph-local-dev
+        name: SAMS_LOCAL_DEV_GOOGLE_CLIENT_SECRET
+    env:
+      OTEL_SDK_DISABLED: true
+      # TODO: Port conflicts with embeddings, but all our pre-made credentials
+      # use this port as the redirect URL, so we just stick to it for now.
+      PORT: 9991
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      REDIS_ENDPOINT: 'redis://@127.0.0.1:6379' # Use
+      MANAGEMENT_SECRET: sekret # For authentication when using admin APIs to register new SAMS clients.
+      GITHUB_REDIRECT_URI: "http://localhost:$PORT/auth/github/callback"
+      GITLAB_REDIRECT_URI: http://localhost:$PORT/auth/gitlab/callback
+      GOOGLE_REDIRECT_URI: http://localhost:$PORT/auth/google/callback
+      IDENTITY_PROVIDER_INSECURE_DEBUG: true
+      IDENTITY_PROVIDER_OIDC_GLOBAL_SECRET: "some-cool-secret-that-is-32bytes"
+      # $ ssh-keygen -t rsa -m PEM -b 2048 -f temp.pem
+      IDENTITY_PROVIDER_OIDC_JWK_PRIVATE_KEY: |
+        -----BEGIN RSA PRIVATE KEY-----
+        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
+        -----END RSA PRIVATE KEY-----
+
+  sourcegraph-accounts-web:
+    description: |
+      Run SAMS from a clone of https://github.com/sourcegraph/sourcegraph-accounts
+      expected to be configured in '../sourcegraph-accounts'
+    install: |
+      if [ -d "../sourcegraph-accounts" ]; then
+        echo "../sourcegraph-accounts must be a clone of https://github.com/sourcegraph/sourcegraph-accounts"
+      fi
+      cd ../sourcegraph-accounts
+
+      asdf install
+      pnpm install
+    cmd: |
+      cd ../sourcegraph-accounts/web
+      pnpm run dev
+    watch:
+      - ../sourcegraph-accounts/pnpm-lock.yaml
+
 bazelCommands:
   blobstore:
     target: //cmd/blobstore
@@ -1151,7 +1266,7 @@ bazelCommands:
       QUIET: 'true'
   frontend:
     description: Enterprise frontend
-    target: //cmd/frontend
+    target: //cmd/frontend:frontend_nobundle
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
       # If EXTSVC_CONFIG_FILE is *unset*, set a default.
@@ -1885,6 +2000,15 @@ commandsets:
       - redis
     bazelCommands:
       - cody-gateway
+
+  sourcegraph-accounts:
+    checks:
+      - redis
+      - postgres
+      - git
+    commands:
+      - sourcegraph-accounts-server
+      - sourcegraph-accounts-web
 
 tests:
   # These can be run with `sg test [name]`

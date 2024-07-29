@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -30,7 +31,7 @@ func (r *gitBlobLSIFDataResolver) Diagnostics(ctx context.Context, args *resolve
 		},
 		Path: r.requestState.Path,
 	}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.diagnostics, time.Second, getObservationArgs(requestArgs))
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.diagnostics, time.Second, observation.Args{Attrs: requestArgs.Attrs()})
 	defer endObservation()
 
 	diagnostics, totalCount, err := r.codeNavSvc.GetDiagnostics(ctx, requestArgs, r.requestState)

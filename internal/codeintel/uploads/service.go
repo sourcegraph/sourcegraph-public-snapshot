@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -17,26 +17,26 @@ import (
 )
 
 type Service struct {
-	store           store.Store
-	repoStore       RepoStore
-	lsifstore       lsifstore.Store
-	gitserverClient gitserver.Client
-	operations      *operations
+	store              store.Store
+	repoStore          RepoStore
+	codeGraphDataStore codegraph.DataStore
+	gitserverClient    gitserver.Client
+	operations         *operations
 }
 
 func newService(
 	observationCtx *observation.Context,
 	store store.Store,
 	repoStore RepoStore,
-	lsifstore lsifstore.Store,
+	dataStore codegraph.DataStore,
 	gsc gitserver.Client,
 ) *Service {
 	return &Service{
-		store:           store,
-		repoStore:       repoStore,
-		lsifstore:       lsifstore,
-		gitserverClient: gsc,
-		operations:      newOperations(observationCtx),
+		store:              store,
+		repoStore:          repoStore,
+		codeGraphDataStore: dataStore,
+		gitserverClient:    gsc,
+		operations:         newOperations(observationCtx),
 	}
 }
 
@@ -200,36 +200,36 @@ func (s *Service) ReindexUploadByID(ctx context.Context, id int) error {
 	return s.store.ReindexUploadByID(ctx, id)
 }
 
-func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]uploadsshared.Index, int, error) {
-	return s.store.GetIndexes(ctx, opts)
+func (s *Service) GetAutoIndexJobs(ctx context.Context, opts shared.GetAutoIndexJobsOptions) ([]uploadsshared.AutoIndexJob, int, error) {
+	return s.store.GetAutoIndexJobs(ctx, opts)
 }
 
-func (s *Service) GetIndexByID(ctx context.Context, id int) (uploadsshared.Index, bool, error) {
-	return s.store.GetIndexByID(ctx, id)
+func (s *Service) GetAutoIndexJobByID(ctx context.Context, id int) (uploadsshared.AutoIndexJob, bool, error) {
+	return s.store.GetAutoIndexJobByID(ctx, id)
 }
 
-func (s *Service) GetIndexesByIDs(ctx context.Context, ids ...int) ([]uploadsshared.Index, error) {
-	return s.store.GetIndexesByIDs(ctx, ids...)
+func (s *Service) GetAutoIndexJobsByIDs(ctx context.Context, ids ...int) ([]uploadsshared.AutoIndexJob, error) {
+	return s.store.GetAutoIndexJobsByIDs(ctx, ids...)
 }
 
-func (s *Service) DeleteIndexByID(ctx context.Context, id int) (bool, error) {
-	return s.store.DeleteIndexByID(ctx, id)
+func (s *Service) DeleteAutoIndexJobByID(ctx context.Context, id int) (bool, error) {
+	return s.store.DeleteAutoIndexJobByID(ctx, id)
 }
 
-func (s *Service) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) error {
-	return s.store.DeleteIndexes(ctx, opts)
+func (s *Service) DeleteAutoIndexJobs(ctx context.Context, opts shared.DeleteAutoIndexJobsOptions) error {
+	return s.store.DeleteAutoIndexJobs(ctx, opts)
 }
 
-func (s *Service) ReindexIndexByID(ctx context.Context, id int) error {
-	return s.store.ReindexIndexByID(ctx, id)
+func (s *Service) SetRerunAutoIndexJobByID(ctx context.Context, id int) error {
+	return s.store.SetRerunAutoIndexJobByID(ctx, id)
 }
 
-func (s *Service) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) error {
-	return s.store.ReindexIndexes(ctx, opts)
+func (s *Service) SetRerunAutoIndexJobs(ctx context.Context, opts shared.SetRerunAutoIndexJobsOptions) error {
+	return s.store.SetRerunAutoIndexJobs(ctx, opts)
 }
 
-func (s *Service) GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadsshared.IndexesWithRepositoryNamespace, error) {
-	return s.store.GetRecentIndexesSummary(ctx, repositoryID)
+func (s *Service) GetRecentAutoIndexJobsSummary(ctx context.Context, repositoryID int) ([]uploadsshared.GroupedAutoIndexJobs, error) {
+	return s.store.GetRecentAutoIndexJobsSummary(ctx, repositoryID)
 }
 
 func (s *Service) NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error) {

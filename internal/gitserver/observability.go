@@ -46,6 +46,7 @@ type operations struct {
 	getDefaultBranch         *observation.Operation
 	diff                     *observation.Operation
 	changedFiles             *observation.Operation
+	mergeBaseOctopus         *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -127,6 +128,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getDefaultBranch:         op("GetDefaultBranch"),
 		diff:                     op("Diff"),
 		changedFiles:             op("ChangedFiles"),
+		mergeBaseOctopus:         op("MergeBaseOctopus"),
 	}
 }
 

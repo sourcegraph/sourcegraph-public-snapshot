@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io"
 	"slices"
+	"strings"
 
 	genslices "github.com/life4/genesis/slices"
+	"github.com/sourcegraph/conc"
+	conciter "github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
@@ -24,9 +27,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// SYNTACTIC_USAGES_DOCUMENTS_CHUNK_SIZE is the batch size for SCIP documents and git diffs we load at a time.
+//
+// I collected traces for various sizes (on my local machine) and 20 gave me "nice looking" ones.
+// In general I expect 100 documents to be on the "higher end" of the number of documents to retrieve
+// for a single syntactic usage search and 5 concurrent queries and git requests seems like a reasonable
+// trade-off for concurrency vs load.
+const SYNTACTIC_USAGES_DOCUMENTS_CHUNK_SIZE = 20
+
+type candidateMatch struct {
+	range_             scip.Range
+	surroundindContent string
+}
+
 type candidateFile struct {
-	matches             []scip.Range // Guaranteed to be sorted
-	didSearchEntireFile bool         // Or did we hit the search count limit?
+	path                core.RepoRelPath
+	matches             []candidateMatch // Guaranteed to be sorted by range
+	didSearchEntireFile bool             // Or did we hit the search count limit?
 }
 
 type searchArgs struct {
@@ -36,6 +53,15 @@ type searchArgs struct {
 	language   string
 }
 
+func lineForRange(match result.ChunkMatch, range_ result.Range) string {
+	lines := strings.Split(match.Content, "\n")
+	index := range_.Start.Line - match.ContentStart.Line
+	if len(lines) <= index {
+		return ""
+	}
+	return lines[index]
+}
+
 // findCandidateOccurrencesViaSearch calls out to Searcher/Zoekt to find candidate occurrences of the given symbol.
 // It returns a map of file paths to candidate ranges.
 func findCandidateOccurrencesViaSearch(
@@ -43,16 +69,16 @@ func findCandidateOccurrencesViaSearch(
 	trace observation.TraceLogger,
 	client searchclient.SearchClient,
 	args searchArgs,
-) (orderedmap.OrderedMap[core.RepoRelPath, candidateFile], error) {
+) ([]candidateFile, error) {
 	if args.identifier == "" {
-		return *orderedmap.New[core.RepoRelPath, candidateFile](), nil
+		return []candidateFile{}, nil
 	}
 	resultMap := *orderedmap.New[core.RepoRelPath, candidateFile]()
 	// TODO: countLimit should be dependent on the number of requested usages, with a configured global limit
 	// For now we're matching the current web app with 500
 	searchResults, err := executeQuery(ctx, client, trace, args, "file", 500, 0)
 	if err != nil {
-		return resultMap, err
+		return []candidateFile{}, err
 	}
 
 	nonFileMatches := 0
@@ -66,7 +92,7 @@ func findCandidateOccurrencesViaSearch(
 			continue
 		}
 		path := fileMatch.Path
-		matches := []scip.Range{}
+		matches := []candidateMatch{}
 		for _, chunkMatch := range fileMatch.ChunkMatches {
 			for _, matchRange := range chunkMatch.Ranges {
 				if path != streamResult.Key().Path {
@@ -82,12 +108,20 @@ func findCandidateOccurrencesViaSearch(
 					continue
 				}
 				matchCount += 1
-				matches = append(matches, scipRange)
+				matches = append(matches, candidateMatch{
+					range_:             scipRange,
+					surroundindContent: lineForRange(chunkMatch, matchRange),
+				})
 			}
 		}
+		slices.SortStableFunc(matches, func(s1, s2 candidateMatch) int {
+			return s1.range_.CompareStrict(s2.range_)
+		})
 		// OK to use Unchecked method here as search API only returns repo-root relative paths
-		_, alreadyPresent := resultMap.Set(core.NewRepoRelPathUnchecked(path), candidateFile{
-			matches:             scip.SortRanges(matches),
+		relPath := core.NewRepoRelPathUnchecked(path)
+		_, alreadyPresent := resultMap.Set(relPath, candidateFile{
+			matches:             matches,
+			path:                relPath,
 			didSearchEntireFile: !fileMatch.LimitHit,
 		})
 		if alreadyPresent {
@@ -106,7 +140,11 @@ func findCandidateOccurrencesViaSearch(
 		trace.Warn("Saw mismatched file paths between chunk matches in the same FileMatch. Report this to the search-platform")
 	}
 
-	return resultMap, nil
+	results := make([]candidateFile, 0, resultMap.Len())
+	for pair := resultMap.Oldest(); pair != nil; pair = pair.Next() {
+		results = append(results, pair.Value)
+	}
+	return results, nil
 }
 
 type symbolData struct {
@@ -249,4 +287,231 @@ func scipFromResultRange(resultRange result.Range) (scip.Range, error) {
 		int32(resultRange.End.Line),
 		int32(resultRange.End.Column),
 	})
+}
+
+// symbolAtRange tries to look up the symbols at the given coordinates
+// in a syntactic upload. If this function returns an error you should most likely
+// log and handle it instead of rethrowing, as this could fail for a myriad of reasons
+// (some broken invariant internally, network issue etc.)
+// If this function doesn't error, the returned slice is guaranteed to be non-empty
+func symbolAtRange(
+	ctx context.Context,
+	mappedIndex MappedIndex,
+	args UsagesForSymbolArgs,
+) (*scip.Symbol, error) {
+	docOpt, err := mappedIndex.GetDocument(ctx, args.Path)
+	if err != nil {
+		return nil, err
+	}
+	doc, isSome := docOpt.Get()
+	if !isSome {
+		return nil, errors.New("no document found")
+	}
+	occs, err := doc.GetOccurrencesAtRange(ctx, args.SymbolRange)
+	if err != nil {
+		return nil, err
+	}
+	if len(occs) == 0 {
+		return nil, errors.New("no occurrences found")
+	}
+	sym, err := scip.ParseSymbol(occs[0].Symbol)
+	if err != nil {
+		return nil, err
+	}
+	return sym, nil
+}
+
+func findSyntacticMatchesForCandidateFile(
+	ctx context.Context,
+	trace observation.TraceLogger,
+	document MappedDocument,
+	candidateFile candidateFile,
+) ([]SyntacticMatch, []SearchBasedMatch) {
+	filePath := candidateFile.path
+	syntacticMatches := []SyntacticMatch{}
+	searchBasedMatches := []SearchBasedMatch{}
+	failedTranslationCount := 0
+	for _, candidateMatch := range candidateFile.matches {
+		foundSyntacticMatch := false
+		occurrences, occErr := document.GetOccurrencesAtRange(ctx, candidateMatch.range_)
+		if occErr != nil {
+			failedTranslationCount += 1
+			continue
+		}
+		for _, occ := range occurrences {
+			if !scip.IsLocalSymbol(occ.Symbol) {
+				foundSyntacticMatch = true
+				syntacticMatches = append(syntacticMatches, SyntacticMatch{
+					Path:               filePath,
+					Range:              candidateMatch.range_,
+					SurroundingContent: candidateMatch.surroundindContent,
+					Symbol:             occ.Symbol,
+					IsDefinition:       scip.SymbolRole_Definition.Matches(occ),
+				})
+			}
+		}
+		if !foundSyntacticMatch {
+			searchBasedMatches = append(searchBasedMatches, SearchBasedMatch{
+				Path:               filePath,
+				Range:              candidateMatch.range_,
+				SurroundingContent: candidateMatch.surroundindContent,
+				IsDefinition:       false,
+			})
+		}
+	}
+	if failedTranslationCount != 0 {
+		trace.Info("findSyntacticMatchesForCandidateFile", log.Int("failedTranslationCount", failedTranslationCount))
+	}
+	return syntacticMatches, searchBasedMatches
+}
+
+func syntacticUsagesImpl(
+	ctx context.Context,
+	trace observation.TraceLogger,
+	searchClient searchclient.SearchClient,
+	mappedIndex MappedIndex,
+	args UsagesForSymbolArgs,
+) (SyntacticUsagesResult, PreviousSyntacticSearch, *SyntacticUsagesError) {
+	searchSymbol, symErr := symbolAtRange(ctx, mappedIndex, args)
+	if symErr != nil {
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+			Code:            SU_NoSymbolAtRequestedRange,
+			UnderlyingError: symErr,
+		}
+	}
+	language, langErr := languageFromFilepath(trace, args.Path)
+	if langErr != nil {
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+			Code:            SU_FailedToSearch,
+			UnderlyingError: langErr,
+		}
+	}
+	symbolName, ok := nameFromGlobalSymbol(searchSymbol)
+	if !ok {
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+			Code:            SU_FailedToSearch,
+			UnderlyingError: errors.New("can't find syntactic occurrences for locals via search"),
+		}
+	}
+	searchCoords := searchArgs{
+		repo:       args.Repo.Name,
+		commit:     args.Commit,
+		identifier: symbolName,
+		language:   language,
+	}
+	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
+	if searchErr != nil {
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+			Code:            SU_FailedToSearch,
+			UnderlyingError: searchErr,
+		}
+	}
+
+	tasks, _ := genslices.ChunkEvery(candidateMatches, SYNTACTIC_USAGES_DOCUMENTS_CHUNK_SIZE)
+	results, err := conciter.MapErr(tasks, func(files *[]candidateFile) ([]SyntacticMatch, error) {
+		paths := genslices.Map(*files, func(f candidateFile) core.RepoRelPath {
+			return f.path
+		})
+		documents, err := mappedIndex.GetDocuments(ctx, paths)
+		if err != nil {
+			return []SyntacticMatch{}, err
+		}
+		results := [][]SyntacticMatch{}
+		for _, file := range *files {
+			if document, ok := documents[file.path]; ok {
+				syntacticMatches, _ := findSyntacticMatchesForCandidateFile(ctx, trace, document, file)
+				results = append(results, syntacticMatches)
+			}
+		}
+		return slices.Concat(results...), nil
+	})
+	if err != nil {
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+			Code:            SU_Fatal,
+			UnderlyingError: err,
+		}
+	}
+
+	return SyntacticUsagesResult{Matches: slices.Concat(results...)}, PreviousSyntacticSearch{
+		MappedIndex: mappedIndex,
+		SymbolName:  symbolName,
+		Language:    language,
+	}, nil
+}
+
+// searchBasedUsagesImpl is extracted from SearchBasedUsages to allow
+// testing of the core logic, by only mocking the search client.
+func searchBasedUsagesImpl(
+	ctx context.Context,
+	trace observation.TraceLogger,
+	searchClient searchclient.SearchClient,
+	args UsagesForSymbolArgs,
+	symbolName string,
+	language string,
+	syntacticIndex core.Option[MappedIndex],
+) (matches []SearchBasedMatch, err error) {
+	searchCoords := searchArgs{
+		repo:       args.Repo.Name,
+		commit:     args.Commit,
+		identifier: symbolName,
+		language:   language,
+	}
+
+	var matchResults struct {
+		candidateMatches []candidateFile
+		err              error
+	}
+	var symbolResults struct {
+		candidateSymbols symbolSearchResult
+		err              error
+	}
+	var wg conc.WaitGroup
+	wg.Go(func() {
+		matchResults.candidateMatches, matchResults.err = findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
+	})
+	wg.Go(func() {
+		symbolResults.candidateSymbols, symbolResults.err = symbolSearch(ctx, trace, searchClient, searchCoords)
+	})
+	wg.Wait()
+	if matchResults.err != nil {
+		return nil, matchResults.err
+	}
+	if symbolResults.err != nil {
+		trace.Warn("Failed to run symbol search, will not mark any search-based usages as definitions", log.Error(symbolResults.err))
+	}
+	candidateMatches := matchResults.candidateMatches
+	candidateSymbols := symbolResults.candidateSymbols
+
+	tasks, _ := genslices.ChunkEvery(candidateMatches, SYNTACTIC_USAGES_DOCUMENTS_CHUNK_SIZE)
+	results := conciter.Map(tasks, func(files *[]candidateFile) []SearchBasedMatch {
+		documents := map[core.RepoRelPath]MappedDocument{}
+		if mappedIndex, ok := syntacticIndex.Get(); ok {
+			paths := genslices.Map(*files, func(f candidateFile) core.RepoRelPath {
+				return f.path
+			})
+			documentsMap, err := mappedIndex.GetDocuments(ctx, paths)
+			if err == nil {
+				documents = documentsMap
+			}
+		}
+		results := [][]SearchBasedMatch{}
+		for _, file := range *files {
+			var searchBasedMatches []SearchBasedMatch
+			if document, ok := documents[file.path]; ok {
+				_, searchBasedMatches = findSyntacticMatchesForCandidateFile(ctx, trace, document, file)
+			} else {
+				for _, match := range file.matches {
+					searchBasedMatches = append(searchBasedMatches, SearchBasedMatch{
+						Path:               file.path,
+						Range:              match.range_,
+						SurroundingContent: match.surroundindContent,
+						IsDefinition:       candidateSymbols.Contains(file.path, match.range_),
+					})
+				}
+			}
+			results = append(results, searchBasedMatches)
+		}
+		return slices.Concat(results...)
+	})
+	return slices.Concat(results...), nil
 }

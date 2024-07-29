@@ -204,8 +204,8 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 	var errs []error
 	for _, pkgs := range repoToPackages {
 		for _, pkg := range pkgs {
-			if err := h.indexEnqueuer.QueueIndexesForPackage(ctx, pkg); err != nil {
-				errs = append(errs, errors.Wrap(err, "enqueuer.QueueIndexesForPackage"))
+			if err := h.indexEnqueuer.QueueAutoIndexJobsForPackage(ctx, pkg); err != nil {
+				errs = append(errs, errors.Wrap(err, "enqueuer.QueueAutoIndexJobsForPackage"))
 			}
 		}
 	}

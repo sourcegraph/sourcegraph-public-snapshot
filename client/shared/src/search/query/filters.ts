@@ -322,32 +322,33 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.type]: {
         description: 'Limit results to diffs, commits, file paths, symbols and other entities.',
-        discreteValues: () => [
-            {
-                label: 'diff',
-                description: 'Search for file changes',
-            },
-            {
-                label: 'commit',
-                description: 'Search in commit messages',
-            },
-            {
-                label: 'symbol',
-                description: 'Search for symbol names',
-            },
-            {
-                label: 'repo',
-                description: 'Search for repositories',
-            },
-            {
-                label: 'path',
-                description: 'Search for file/directory names',
-            },
-            {
-                label: 'file',
-                description: 'Search for file content',
-            },
-        ],
+        discreteValues: () =>
+            [
+                {
+                    label: 'diff',
+                    description: 'Search for file changes',
+                },
+                {
+                    label: 'commit',
+                    description: 'Search in commit messages',
+                },
+                {
+                    label: 'symbol',
+                    description: 'Search for symbol names',
+                },
+                {
+                    label: 'repo',
+                    description: 'Search for repositories',
+                },
+                {
+                    label: 'path',
+                    description: 'Search for file/directory names',
+                },
+                {
+                    label: 'file',
+                    description: 'Search for file content',
+                },
+            ].sort((a, b) => a.label.localeCompare(b.label)),
     },
     [FilterType.visibility]: {
         discreteValues: () => ['any', 'private', 'public'].map(value => ({ label: value })),

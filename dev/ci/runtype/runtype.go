@@ -22,15 +22,14 @@ const (
 	WolfiBaseRebuild  // wolfi base image build
 
 	// Release branches
+	InternalRelease // Internal release
+	PromoteRelease  // Public release
 
 	TaggedRelease      // semver-tagged release
 	ReleaseBranch      // release branch build
 	PatchReleaseBranch // patch release branch build
 	BextReleaseBranch  // browser extension release build
 	VsceReleaseBranch  // vs code extension release build
-
-	InternalRelease // Internal release
-	PromoteRelease  // Public release
 
 	// Main branches
 
@@ -141,7 +140,7 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		}
 	case PatchReleaseBranch:
 		return &RunTypeMatcher{
-			Branch:       `^[0-9]+\.[0-9]+\.[0-9]+$`,
+			Branch:       `^[0-9]+\.[0-9]+\.(?:x|[0-9]+)$`,
 			BranchRegexp: true,
 		}
 	case BextReleaseBranch:

@@ -15,11 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
-// Generates a fake scip.Range that is easy to tell from other ranges
-func scipRange(x int32) scip.Range {
-	return scip.NewRangeUnchecked([]int32{x, x, x})
-}
-
 func scipToResultPosition(p scip.Position) result.Location {
 	return result.Location{
 		Line:   int(p.Line),
@@ -56,12 +51,29 @@ func FakeSearchClient() FakeSearchBuilder {
 	}
 }
 
-func (b FakeSearchBuilder) WithFile(file string, ranges ...scip.Range) FakeSearchBuilder {
+func ChunkMatchWithLine(range_ scip.Range, line string) result.ChunkMatch {
+	return result.ChunkMatch{
+		Ranges:  []result.Range{scipToResultRange(range_)},
+		Content: line,
+		ContentStart: result.Location{
+			Line:   int(range_.Start.Line),
+			Column: 0,
+		},
+	}
+}
+
+func ChunkMatch(range_ scip.Range) result.ChunkMatch {
+	return ChunkMatchWithLine(range_, "chonky")
+}
+
+func ChunkMatches(ranges ...scip.Range) []result.ChunkMatch {
+	return genslices.Map(ranges, ChunkMatch)
+}
+
+func (b FakeSearchBuilder) WithFile(file string, matches ...result.ChunkMatch) FakeSearchBuilder {
 	b.fileMatches = append(b.fileMatches, &result.FileMatch{
-		File: result.File{Path: file},
-		ChunkMatches: result.ChunkMatches{{
-			Ranges: genslices.Map(ranges, scipToResultRange),
-		}},
+		File:         result.File{Path: file},
+		ChunkMatches: matches,
 	})
 	return b
 }

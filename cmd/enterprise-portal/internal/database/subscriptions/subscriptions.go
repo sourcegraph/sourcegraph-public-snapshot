@@ -63,6 +63,11 @@ type Subscription struct {
 	SalesforceOpportunityID *string
 }
 
+type SubscriptionWithConditions struct {
+	Subscription
+	Conditions []SubscriptionCondition
+}
+
 // subscriptionTableColumns must match scanSubscription() values.
 func subscriptionTableColumns() []string {
 	return []string{
@@ -74,12 +79,14 @@ func subscriptionTableColumns() []string {
 		"archived_at",
 		"salesforce_subscription_id",
 		"salesforce_opportunity_id",
+
+		subscriptionConditionJSONBAgg(),
 	}
 }
 
 // scanSubscription matches subscriptionTableColumns() values.
-func scanSubscription(row pgx.Row) (*Subscription, error) {
-	var s Subscription
+func scanSubscription(row pgx.Row) (*SubscriptionWithConditions, error) {
+	var s SubscriptionWithConditions
 	err := row.Scan(
 		&s.ID,
 		&s.InstanceDomain,
@@ -89,6 +96,7 @@ func scanSubscription(row pgx.Row) (*Subscription, error) {
 		&s.ArchivedAt,
 		&s.SalesforceSubscriptionID,
 		&s.SalesforceOpportunityID,
+		&s.Conditions,
 	)
 	if err != nil {
 		return nil, err
@@ -146,13 +154,21 @@ func (opts ListEnterpriseSubscriptionsOptions) toQueryConditions() (where, limit
 }
 
 // List returns a list of subscriptions based on the given options.
-func (s *Store) List(ctx context.Context, opts ListEnterpriseSubscriptionsOptions) ([]*Subscription, error) {
+func (s *Store) List(ctx context.Context, opts ListEnterpriseSubscriptionsOptions) ([]*SubscriptionWithConditions, error) {
 	where, limit, namedArgs := opts.toQueryConditions()
 	query := fmt.Sprintf(`
 SELECT
 	%s
 FROM enterprise_portal_subscriptions
-WHERE %s
+LEFT JOIN
+    enterprise_portal_subscription_conditions subscription_condition
+    ON subscription_condition.subscription_id = id
+WHERE
+	%s
+GROUP BY
+    id
+ORDER BY
+	created_at DESC -- TODO: parameterize order-by
 %s`,
 		strings.Join(subscriptionTableColumns(), ", "),
 		where, limit,
@@ -163,13 +179,16 @@ WHERE %s
 	}
 	defer rows.Close()
 
-	var subscriptions []*Subscription
+	var subscriptions []*SubscriptionWithConditions
 	for rows.Next() {
 		sub, err := scanSubscription(rows)
 		if err != nil {
 			return nil, errors.Wrap(err, "scan row")
 		}
 		subscriptions = append(subscriptions, sub)
+	}
+	if errors.Is(rows.Err(), pgx.ErrNoRows) {
+		return subscriptions, nil
 	}
 	return subscriptions, rows.Err()
 }
@@ -178,8 +197,8 @@ type UpsertSubscriptionOptions struct {
 	InstanceDomain *sql.NullString
 	DisplayName    *sql.NullString
 
-	CreatedAt  time.Time
-	ArchivedAt *time.Time
+	CreatedAt  utctime.Time
+	ArchivedAt *utctime.Time
 
 	SalesforceSubscriptionID *string
 	SalesforceOpportunityID  *string
@@ -191,7 +210,7 @@ type UpsertSubscriptionOptions struct {
 
 // toQuery returns the query based on the options. It returns an empty query if
 // nothing to update.
-func (opts UpsertSubscriptionOptions) Exec(ctx context.Context, db *pgxpool.Pool, id string) error {
+func (opts UpsertSubscriptionOptions) apply(ctx context.Context, db upsert.Execer, id string) error {
 	b := upsert.New("enterprise_portal_subscriptions", "id", opts.ForceUpdate)
 	upsert.Field(b, "id", id)
 	upsert.Field(b, "instance_domain", opts.InstanceDomain)
@@ -199,36 +218,90 @@ func (opts UpsertSubscriptionOptions) Exec(ctx context.Context, db *pgxpool.Pool
 
 	upsert.Field(b, "created_at", opts.CreatedAt,
 		upsert.WithColumnDefault(),
-		upsert.WithIgnoreOnForceUpdate())
+		// Can only be set explicitly (creation)
+		upsert.WithIgnoreZeroOnForceUpdate())
 	upsert.Field(b, "updated_at", time.Now()) // always updated now
-	upsert.Field(b, "archived_at", opts.ArchivedAt)
+	upsert.Field(b, "archived_at", opts.ArchivedAt,
+		// Can only be set explicitly (archival)
+		upsert.WithIgnoreZeroOnForceUpdate())
+
 	upsert.Field(b, "salesforce_subscription_id", opts.SalesforceSubscriptionID)
 	upsert.Field(b, "salesforce_opportunity_id", opts.SalesforceOpportunityID)
 	return b.Exec(ctx, db)
 }
 
-// Upsert upserts a subscription record based on the given options.
-func (s *Store) Upsert(ctx context.Context, subscriptionID string, opts UpsertSubscriptionOptions) (*Subscription, error) {
-	if err := opts.Exec(ctx, s.db, subscriptionID); err != nil {
-		return nil, errors.Wrap(err, "exec")
+// Upsert upserts a subscription record based on the given options. If the
+// operation has additional application meaning, conditions can be provided
+// for insert as well.
+func (s *Store) Upsert(
+	ctx context.Context,
+	subscriptionID string,
+	opts UpsertSubscriptionOptions,
+	conditions ...CreateSubscriptionConditionOptions,
+) (*SubscriptionWithConditions, error) {
+	if len(conditions) == 0 {
+		// No conditions to add, do a simple update
+		if err := opts.apply(ctx, s.db, subscriptionID); err != nil {
+			return nil, err
+		}
+
+		return s.Get(ctx, subscriptionID)
 	}
+
+	// Do update and conditions insert in same transaction
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "begin transaction")
+	}
+	defer func() {
+		if rollbackErr := tx.Rollback(context.Background()); rollbackErr != nil {
+			err = errors.Append(err, errors.Wrap(err, "rollback"))
+		}
+	}()
+
+	if err := opts.apply(ctx, tx, subscriptionID); err != nil {
+		return nil, errors.Wrap(err, "upsert")
+	}
+	for _, condition := range conditions {
+		err := newSubscriptionConditionsStore(tx).
+			createSubscriptionCondition(ctx, subscriptionID, condition)
+		if err != nil {
+			return nil, errors.Wrapf(err, "set condition %q", condition.Status.String())
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, errors.Wrap(err, "commit upsert and conditions")
+	}
+
 	return s.Get(ctx, subscriptionID)
 }
 
+var ErrSubscriptionNotFound = errors.New("subscription not found")
+
 // Get returns a subscription record with the given subscription ID. It returns
-// pgx.ErrNoRows if no such subscription exists.
-func (s *Store) Get(ctx context.Context, subscriptionID string) (*Subscription, error) {
-	query := fmt.Sprintf(`SELECT
-		%s
-	FROM
-		enterprise_portal_subscriptions
-	WHERE
-		id = @id`,
+// ErrSubscriptionNotFound if no such subscription exists.
+func (s *Store) Get(ctx context.Context, subscriptionID string) (*SubscriptionWithConditions, error) {
+	query := fmt.Sprintf(`
+SELECT
+	%s
+FROM
+	enterprise_portal_subscriptions
+LEFT JOIN
+    enterprise_portal_subscription_conditions subscription_condition
+    ON subscription_condition.subscription_id = id
+WHERE
+	id = @id
+GROUP BY
+    id`,
 		strings.Join(subscriptionTableColumns(), ", "))
 	namedArgs := pgx.NamedArgs{"id": subscriptionID}
 
 	sub, err := scanSubscription(s.db.QueryRow(ctx, query, namedArgs))
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.WithStack(ErrSubscriptionNotFound)
+		}
 		return nil, err
 	}
 	return sub, nil

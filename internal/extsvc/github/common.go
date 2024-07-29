@@ -1811,6 +1811,19 @@ type Repository struct {
 	DiskUsageKibibytes int `json:"DiskUsage,omitempty"`
 }
 
+// PublicRepository is a reduced set of fields from a GitHub repository
+// that corresponds with the fields returned from the "List public repositories"
+// GitHub API endpoint: https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-public-repositories
+type PublicRepository struct {
+	ID            string // ID of repository (GitHub GraphQL ID, not GitHub database ID)
+	DatabaseID    int64  // The integer database id
+	NameWithOwner string // Full name of repository ("owner/name")
+	Description   string // Description of repository
+	URL           string // The web URL of this repository ("https://github.com/foo/bar")
+	IsPrivate     bool   // Whether the repository is private
+	IsFork        bool   // Whether the repository is a fork of another repository
+}
+
 func (r *Repository) SizeBytes() bytesize.Bytes {
 	return bytesize.Bytes(r.DiskUsageKibibytes) * bytesize.KiB
 }
@@ -1861,6 +1874,19 @@ type restRepository struct {
 	DiskUsageKibibytes int `json:"size"`
 }
 
+// restPublicRepository is a reduced set of fields from a GitHub repository
+// that corresponds with the fields returned from the "List public repositories"
+// GitHub API endpoint: https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-public-repositories
+type restPublicRepository struct {
+	ID          string `json:"node_id"` // GraphQL ID
+	DatabaseID  int64  `json:"id"`
+	FullName    string `json:"full_name"` // same as nameWithOwner
+	Description string `json:"description"`
+	HTMLURL     string `json:"html_url"` // web URL
+	Private     bool   `json:"private"`
+	Fork        bool   `json:"fork"`
+}
+
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
 func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (*Repository, error) {
 	// If no token, we must use the older REST API, not the GraphQL API. See
@@ -1902,6 +1928,22 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		RepositoryTopics:   RepositoryTopics{topics},
 		Visibility:         Visibility(restRepo.Visibility),
 		DiskUsageKibibytes: restRepo.DiskUsageKibibytes,
+	}
+
+	return &repo
+}
+
+// convertRestPublicRepo converts public repo information returned by the rest API
+// to a standard format.
+func convertRestPublicRepo(restPublicRepo restPublicRepository) *PublicRepository {
+	repo := PublicRepository{
+		ID:            restPublicRepo.ID,
+		DatabaseID:    restPublicRepo.DatabaseID,
+		NameWithOwner: restPublicRepo.FullName,
+		Description:   restPublicRepo.Description,
+		URL:           restPublicRepo.HTMLURL,
+		IsPrivate:     restPublicRepo.Private,
+		IsFork:        restPublicRepo.Fork,
 	}
 
 	return &repo

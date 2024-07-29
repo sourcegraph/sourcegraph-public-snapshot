@@ -1,3 +1,4 @@
+import type React from 'react'
 import { Fragment, useEffect, useState } from 'react'
 
 import Unhealthy from '@mui/icons-material/CarCrashOutlined'
@@ -6,10 +7,10 @@ import { Alert, Button, CircularProgress, Grid, Stack, Typography } from '@mui/m
 import classNames from 'classnames'
 
 import { call } from './api'
-import { maintenance } from './debugBar'
+import { maintenance } from './state'
 
-const MaintenanceStatusTimerMs = 1 * 1000
-const WaitToLaunchFixMs = 5 * 1000
+const MaintenanceStatusTimerMs = 1000
+const WaitToLaunchFixMs = 5000
 
 type Service = {
     name: string
@@ -17,7 +18,7 @@ type Service = {
     message: string
 }
 
-type Status = {
+type ServiceStatuses = {
     services: Service[]
 }
 
@@ -54,14 +55,14 @@ const ShowServices: React.FC<{ services: Service[] }> = ({ services }) =>
     ) : null
 
 export const Maintenance: React.FC = () => {
-    const [status, setStatus] = useState<Status | undefined>()
+    const [serviceStatuses, setServiceStatuses] = useState<ServiceStatuses | undefined>()
     const [fixing, setFixing] = useState<boolean>(false)
 
     useEffect(() => {
         const timer = setInterval(() => {
-            call('/api/operator/v1beta1/maintenance/status')
+            call('/api/v1/appliance/maintenance/serviceStatuses')
                 .then(response => response.json())
-                .then(setStatus)
+                .then(serviceStatuses => setServiceStatuses(serviceStatuses))
         }, MaintenanceStatusTimerMs)
         return () => clearInterval(timer)
     }, [])
@@ -75,8 +76,8 @@ export const Maintenance: React.FC = () => {
         }
     }, [fixing])
 
-    const ready = status?.services.length !== undefined
-    const unhealthy = status?.services?.find((s: Service) => !s.healthy)
+    const ready = serviceStatuses?.services.length !== undefined
+    const unhealthy = serviceStatuses?.services?.find((s: Service) => !s.healthy)
 
     return (
         <div className="maintenance">
@@ -97,7 +98,7 @@ export const Maintenance: React.FC = () => {
             {ready ? (
                 <>
                     <Typography variant="h5">Service Status</Typography>
-                    <ShowServices services={status?.services ?? []} />
+                    <ShowServices services={serviceStatuses?.services ?? []} />
                 </>
             ) : null}
 

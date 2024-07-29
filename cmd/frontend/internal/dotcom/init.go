@@ -13,7 +13,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+)
+
+var (
+	enableOnlineLicenseChecks = env.MustGetBool("DOTCOM_ENABLE_ONLINE_LICENSE_CHECKS", true,
+		"If false, online license checks from instances always return successfully.")
 )
 
 // dotcomRootResolver implements the GraphQL types DotcomMutation and DotcomQuery.
@@ -60,7 +66,7 @@ func Init(
 			},
 		}
 		enterpriseServices.NewDotcomLicenseCheckHandler = func() http.Handler {
-			return productsubscription.NewLicenseCheckHandler(db)
+			return productsubscription.NewLicenseCheckHandler(db, enableOnlineLicenseChecks)
 		}
 	}
 	return nil

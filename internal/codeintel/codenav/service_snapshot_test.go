@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
+	lsifstoremocks "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore/mocks"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -24,7 +26,7 @@ type banana struct{}`
 func TestSnapshotForDocument(t *testing.T) {
 	// Set up mocks
 	mockRepoStore := defaultMockRepoStore()
-	mockLsifStore := NewMockLsifStore()
+	mockLsifStore := lsifstoremocks.NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 	mockGitserverClient.DiffFunc.SetDefaultReturn(gitserver.NewDiffFileIterator(io.NopCloser(strings.NewReader(""))), nil)
@@ -36,7 +38,7 @@ func TestSnapshotForDocument(t *testing.T) {
 	mockUploadSvc.GetCompletedUploadsByIDsFunc.SetDefaultReturn([]shared.CompletedUpload{{}}, nil)
 	mockRepoStore.GetFunc.SetDefaultReturn(&types.Repo{}, nil)
 	mockGitserverClient.NewFileReaderFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte(sampleFile1))), nil)
-	mockLsifStore.SCIPDocumentFunc.SetDefaultReturn(&scip.Document{
+	mockLsifStore.SCIPDocumentFunc.SetDefaultReturn(core.Some(&scip.Document{
 		RelativePath: "burger.go",
 		Occurrences: []*scip.Occurrence{{
 			Range:       []int32{2, 4, 9},
@@ -50,7 +52,7 @@ func TestSnapshotForDocument(t *testing.T) {
 				IsImplementation: true,
 			}},
 		}},
-	}, nil)
+	}), nil)
 
 	data, err := svc.SnapshotForDocument(context.Background(), 0, "deadbeef", repoRelPath("burger.go"), 0)
 	if err != nil {

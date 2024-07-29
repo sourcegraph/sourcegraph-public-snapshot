@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "exhaustruct",
+    srcs = ["exhaustruct.go"],
+    embedsrcs = ["lint-config.yaml"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/linters/exhaustruct",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/linters/nolint",
+        "@com_github_gaijinentertainment_go_exhaustruct_v3//analyzer:go_default_library",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+        "@org_golang_x_tools//go/analysis",
+    ],
+)

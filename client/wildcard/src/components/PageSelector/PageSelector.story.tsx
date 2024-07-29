@@ -49,13 +49,6 @@ export const AllPageSelectors: StoryFn = () => (
     </>
 )
 
-AllPageSelectors.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}
-
 const Short = () => {
     const [page, setPage] = useState(1)
     return <PageSelector currentPage={page} onPageChange={setPage} totalPages={5} />

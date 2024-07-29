@@ -7,10 +7,12 @@ import (
 )
 
 type CodyContextResolver interface {
-	GetCodyContext(ctx context.Context, args GetContextArgs) ([]ContextResultResolver, error)
 	ChatIntent(ctx context.Context, args ChatIntentArgs) (IntentResolver, error)
+	ChatContext(ctx context.Context, args ChatContextArgs) (ChatContextResolver, error)
 	RankContext(ctx context.Context, args RankContextArgs) (RankContextResolver, error)
 	RecordContext(ctx context.Context, args RecordContextArgs) (*EmptyResponse, error)
+	// GetCodyContext is the existing Cody Enterprise context endpoint
+	GetCodyContext(ctx context.Context, args GetContextArgs) ([]ContextResultResolver, error)
 }
 
 type GetContextArgs struct {
@@ -18,46 +20,6 @@ type GetContextArgs struct {
 	Query            string
 	CodeResultsCount int32
 	TextResultsCount int32
-}
-
-type ChatIntentArgs struct {
-	Query         string
-	InteractionID string
-}
-
-type RankContextArgs struct {
-	Query                     string
-	ContextItems              []InputContextItem
-	RankOptions               *RankOptions
-	TargetModel               *string
-	TargetContextWindowTokens *int32
-	Intent                    *string
-	Command                   *string
-	InteractionID             string
-}
-
-type RecordContextArgs struct {
-	InteractionID         string
-	UsedContextItems      []InputContextItem
-	DiscardedContextItems []InputContextItem
-}
-
-type InputContextItem struct {
-	Content   string
-	Retriever string
-	Score     *float64
-	FileName  *string
-	StartLine *int32
-	EndLine   *int32
-}
-
-type RankOptions struct {
-	Ranker string
-}
-
-type IntentResolver interface {
-	Intent() string
-	Score() float64
 }
 
 type ContextResultResolver interface {
@@ -93,8 +55,67 @@ func (f *FileChunkContextResolver) ChunkContent(ctx context.Context) (string, er
 	})
 }
 
+type ChatIntentArgs struct {
+	Query         string
+	InteractionID string
+}
+
+type ChatContextArgs struct {
+	Query         string
+	InteractionID string
+	Repo          string
+	ResultsCount  *int32
+}
+
+type RankContextArgs struct {
+	Query                     string
+	ContextItems              []InputContextItem
+	RankOptions               *RankOptions
+	TargetModel               *string
+	TargetContextWindowTokens *int32
+	Intent                    *string
+	Command                   *string
+	InteractionID             string
+}
+
+type RecordContextArgs struct {
+	InteractionID       string
+	UsedContextItems    []InputContextItem
+	IgnoredContextItems []InputContextItem
+}
+
+type InputContextItem struct {
+	Content   string
+	Retriever string
+	Score     *float64
+	FileName  *string
+	StartLine *int32
+	EndLine   *int32
+}
+
+type RankOptions struct {
+	Ranker string
+}
+
+type IntentResolver interface {
+	Intent() string
+	Score() float64
+}
+
 type RankContextResolver interface {
 	Ranker() string
 	Used() []int32
-	Discarded() []int32
+	Ignored() []int32
+}
+
+type ChatContextResolver interface {
+	ContextItems() []RetrieverContextItemResolver
+	PartialErrors() []string
+	StopReason() string
+}
+
+type RetrieverContextItemResolver interface {
+	Item() ContextResultResolver
+	Score() *float64
+	Retriever() string
 }

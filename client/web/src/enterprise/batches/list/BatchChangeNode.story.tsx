@@ -1,13 +1,10 @@
-import type { Meta, Decorator, StoryFn, StoryObj } from '@storybook/react'
+import type { Decorator, Meta, StoryFn, StoryObj } from '@storybook/react'
 import classNames from 'classnames'
-import { subDays } from 'date-fns'
-
-import { isChromatic } from '@sourcegraph/wildcard/src/stories'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangeNode } from './BatchChangeNode'
-import { nodes, now } from './testData'
+import { nodes } from './testData'
 
 import styles from './BatchChangeListPage.module.scss'
 
@@ -43,7 +40,6 @@ const Template: StoryFn /* <{ node: ListBatchChange }>*/ = ({ node, ...args }) =
                 {...props}
                 node={node}
                 displayNamespace={args.displayNamespace}
-                now={isChromatic() ? () => subDays(now, 5) : undefined}
                 isExecutionEnabled={false}
             />
         )}

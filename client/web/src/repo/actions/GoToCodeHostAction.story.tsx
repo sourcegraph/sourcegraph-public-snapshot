@@ -43,7 +43,6 @@ export const GitHub: StoryFn = () => (
 
 GitHub.storyName = 'GitHub'
 
-// Disable Chromatic for the non-GitHub popovers since they are mostly the same
 export const GitLab: StoryFn = () => (
     <WebStory>
         {() => {
@@ -65,11 +64,6 @@ export const GitLab: StoryFn = () => (
 )
 
 GitLab.storyName = 'GitLab'
-GitLab.parameters = {
-    chromatic: {
-        disable: true,
-    },
-}
 
 export const Phabricator: StoryFn = () => (
     <WebStory>
@@ -90,12 +84,6 @@ export const Phabricator: StoryFn = () => (
         }}
     </WebStory>
 )
-
-Phabricator.parameters = {
-    chromatic: {
-        disable: true,
-    },
-}
 
 export const BitbucketServer: StoryFn = () => (
     <WebStory>
@@ -118,9 +106,3 @@ export const BitbucketServer: StoryFn = () => (
 )
 
 BitbucketServer.storyName = 'Bitbucket server'
-
-BitbucketServer.parameters = {
-    chromatic: {
-        disable: true,
-    },
-}

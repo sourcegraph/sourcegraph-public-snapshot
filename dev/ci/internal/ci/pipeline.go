@@ -134,7 +134,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// types such as main.
 		ops.Merge(CoreTestOperations(buildOptions, c.Diff, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
-			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CreateBundleSizeDiff:      true,
 		}))
 
@@ -275,6 +274,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		)
 	case runtype.PromoteRelease:
 		ops = operations.NewSet(
+			checkSecurityApproval(c),
+			wait,
 			releasePromoteImages(c),
 			wait,
 			releaseTestOperation(c),
@@ -306,7 +307,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Core tests
 		ops.Merge(CoreTestOperations(buildOptions, changed.All, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
-			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun, runtype.DockerImages, runtype.CloudEphemeral),
 			IsMainBranch:              true,
 		}))

@@ -55,7 +55,7 @@ func TestTransformRecord(t *testing.T) {
 		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			index := uploadsshared.Index{
+			index := uploadsshared.AutoIndexJob{
 				ID:             42,
 				Commit:         "deadbeef",
 				RepositoryName: "linux",
@@ -151,7 +151,7 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	db.ExecutorSecretsFunc.SetDefaultReturn(dbmocks.NewMockExecutorSecretStore())
 
-	index := uploadsshared.Index{
+	index := uploadsshared.AutoIndexJob{
 		ID:             42,
 		Commit:         "deadbeef",
 		RepositoryName: "linux",
@@ -281,7 +281,7 @@ func TestTransformRecordWithSecrets(t *testing.T) {
 		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			index := uploadsshared.Index{
+			index := uploadsshared.AutoIndexJob{
 				ID:             42,
 				Commit:         "deadbeef",
 				RepositoryName: "linux",
@@ -392,7 +392,7 @@ func TestTransformRecordDockerAuthConfig(t *testing.T) {
 	}, 0, nil)
 	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(dbmocks.NewMockExecutorSecretAccessLogStore())
 
-	job, err := transformRecord(context.Background(), db, uploadsshared.Index{ID: 42}, handler.ResourceMetadata{}, "hunter2")
+	job, err := transformRecord(context.Background(), db, uploadsshared.AutoIndexJob{ID: 42}, handler.ResourceMetadata{}, "hunter2")
 	if err != nil {
 		t.Fatal(err)
 	}

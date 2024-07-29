@@ -10,9 +10,7 @@ import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
 
 const config: Meta = {
     title: 'web/enterprise/code-monitoring/CreateCodeMonitorPage',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

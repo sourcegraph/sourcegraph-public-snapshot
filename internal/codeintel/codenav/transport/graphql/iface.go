@@ -14,10 +14,10 @@ import (
 
 type CodeNavService interface {
 	GetHover(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState) (_ string, _ shared.Range, _ bool, err error)
-	GetReferences(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState, cursor codenav.Cursor) (_ []shared.UploadLocation, nextCursor codenav.Cursor, err error)
-	GetImplementations(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState, cursor codenav.Cursor) (_ []shared.UploadLocation, nextCursor codenav.Cursor, err error)
-	GetPrototypes(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState, cursor codenav.Cursor) (_ []shared.UploadLocation, nextCursor codenav.Cursor, err error)
-	GetDefinitions(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState, cursor codenav.Cursor) (_ []shared.UploadLocation, nextCursor codenav.Cursor, err error)
+	GetReferences(ctx context.Context, args codenav.OccurrenceRequestArgs, requestState codenav.RequestState, cursor codenav.Cursor) (_ []shared.UploadUsage, nextCursor codenav.Cursor, err error)
+	GetImplementations(ctx context.Context, args codenav.OccurrenceRequestArgs, requestState codenav.RequestState, cursor codenav.Cursor) (_ []shared.UploadUsage, nextCursor codenav.Cursor, err error)
+	GetPrototypes(ctx context.Context, args codenav.OccurrenceRequestArgs, requestState codenav.RequestState, cursor codenav.Cursor) (_ []shared.UploadUsage, nextCursor codenav.Cursor, err error)
+	GetDefinitions(ctx context.Context, args codenav.OccurrenceRequestArgs, requestState codenav.RequestState, cursor codenav.Cursor) (_ []shared.UploadUsage, nextCursor codenav.Cursor, err error)
 	GetDiagnostics(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState) (diagnosticsAtUploads []codenav.DiagnosticAtUpload, _ int, err error)
 	GetRanges(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState, startLine, endLine int) (adjustedRanges []codenav.AdjustedCodeIntelligenceRange, err error)
 	GetStencil(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState) (adjustedRanges []shared.Range, err error)
@@ -26,7 +26,7 @@ type CodeNavService interface {
 	GetClosestCompletedUploadsForBlob(context.Context, uploadsshared.UploadMatchingOptions) (_ []uploadsshared.CompletedUpload, err error)
 	VisibleUploadsForPath(ctx context.Context, requestState codenav.RequestState) ([]uploadsshared.CompletedUpload, error)
 	SnapshotForDocument(ctx context.Context, repositoryID api.RepoID, commit api.CommitID, path core.RepoRelPath, uploadID int) (data []shared.SnapshotData, err error)
-	SCIPDocument(context.Context, codenav.GitTreeTranslator, core.UploadLike, core.RepoRelPath) (*scip.Document, error)
+	SCIPDocument(_ context.Context, _ codenav.GitTreeTranslator, _ core.UploadLike, targetCommit api.CommitID, _ core.RepoRelPath) (*scip.Document, error)
 	SyntacticUsages(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError)
 	SearchBasedUsages(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs, core.Option[codenav.PreviousSyntacticSearch]) ([]codenav.SearchBasedMatch, error)
 }

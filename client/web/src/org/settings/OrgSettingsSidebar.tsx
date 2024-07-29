@@ -19,7 +19,6 @@ import styles from './OrgSettingsSidebar.module.scss'
 export interface OrgSettingsSidebarItemConditionContext extends BatchChangesProps {
     org: OrgAreaOrganizationFields
     authenticatedUser: AuthenticatedUser
-    isSourcegraphDotCom: boolean
 }
 
 type OrgSettingsSidebarItem = NavItemDescriptor<OrgSettingsSidebarItemConditionContext> & {
@@ -30,7 +29,6 @@ export type OrgSettingsSidebarItems = readonly OrgSettingsSidebarItem[]
 
 export interface OrgSettingsSidebarProps extends OrgSettingsAreaRouteContext, BatchChangesProps {
     items: OrgSettingsSidebarItems
-    isSourcegraphDotCom: boolean
     className?: string
 }
 
@@ -53,7 +51,6 @@ export const OrgSettingsSidebar: React.FunctionComponent<React.PropsWithChildren
         batchChangesWebhookLogsEnabled: props.batchChangesWebhookLogsEnabled,
         org,
         authenticatedUser,
-        isSourcegraphDotCom: props.isSourcegraphDotCom,
     }
 
     return (

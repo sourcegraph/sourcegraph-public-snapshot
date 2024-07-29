@@ -10,20 +10,20 @@ import (
 
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/schema"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	cohere "github.com/cohere-ai/cohere-go/v2"
 	"github.com/cohere-ai/cohere-go/v2/client"
@@ -42,6 +42,21 @@ func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient
 	}
 }
 
+const (
+	StopReasonTimeout = "TIMEOUT"
+	StopReasonDone    = "DONE"
+)
+
+type retrieverFunc func(ctx context.Context, repo *types.Repo, query string, r *Resolver) ([]graphqlbackend.RetrieverContextItemResolver, []error, error)
+
+var (
+	retrievers = []retrieverFunc{
+		func(ctx context.Context, repo *types.Repo, query string, r *Resolver) ([]graphqlbackend.RetrieverContextItemResolver, []error, error) {
+			return r.fetchZoekt(ctx, query, repo)
+		},
+	}
+)
+
 type Resolver struct {
 	db                  database.DB
 	gitserverClient     gitserver.Client
@@ -53,24 +68,84 @@ type Resolver struct {
 	cohereConfig        *schema.CodyRerankerCohere
 }
 
+func (r *Resolver) ChatContext(ctx context.Context, args graphqlbackend.ChatContextArgs) (graphqlbackend.ChatContextResolver, error) {
+	err := r.contextApiEnabled(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// Set a more aggressive timeout for this request so slow experimental retrievers won't block client
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	repo, err := r.db.Repos().GetByName(ctx, api.RepoName(args.Repo))
+	if err != nil {
+		return nil, err
+	}
+	res := &chatContextResponse{
+		stopReason: StopReasonDone,
+	}
+
+	type retrieverResult struct {
+		items         []graphqlbackend.RetrieverContextItemResolver
+		partialErrors []error
+		error         error
+	}
+	retrieverResults := iter.Map(retrievers, func(f *retrieverFunc) retrieverResult {
+		i, pe, e := (*f)(ctx, repo, args.Query, r)
+		return retrieverResult{
+			items:         i,
+			partialErrors: pe,
+			error:         e,
+		}
+	})
+	var partialErrors []error
+	// if all retrievers fail, we fail the whole request, otherwise we return successfully fetched items + partial error
+	var completeErrors []error
+	success := false
+	for _, rr := range retrieverResults {
+		if rr.error != nil {
+			completeErrors = append(completeErrors, rr.error)
+			continue
+		}
+		success = true
+		res.contextItems = append(res.contextItems, rr.items...)
+		partialErrors = append(partialErrors, rr.partialErrors...)
+	}
+	if !success {
+		return nil, errors.Append(nil, completeErrors...)
+	}
+	partialErrors = append(partialErrors, completeErrors...)
+	if len(partialErrors) > 0 {
+		res.partialErrors = partialErrors
+		fields := []log.Field{log.Int("count", len(partialErrors)), log.String("interactionID", args.InteractionID)}
+		for _, pe := range partialErrors {
+			fields = append(fields, log.Error(pe))
+		}
+		r.logger.Warn("partial errors when fetching context", fields...)
+	}
+	if errors.Is(context.Cause(ctx), context.DeadlineExceeded) {
+		res.stopReason = StopReasonTimeout
+	}
+	return res, nil
+}
+
 func (r *Resolver) RecordContext(ctx context.Context, args graphqlbackend.RecordContextArgs) (*graphqlbackend.EmptyResponse, error) {
 	err := r.contextApiEnabled(ctx)
 	if err != nil {
 		return nil, err
 	}
-	retrieverUsed, retrieverDiscarded := map[string]int{}, map[string]int{}
+	retrieverUsed, retrieverIgnored := map[string]int{}, map[string]int{}
 	for _, item := range args.UsedContextItems {
 		retrieverUsed[item.Retriever]++
 	}
-	for _, item := range args.DiscardedContextItems {
-		retrieverDiscarded[item.Retriever]++
+	for _, item := range args.IgnoredContextItems {
+		retrieverIgnored[item.Retriever]++
 	}
-	fields := []log.Field{log.String("interactionID", args.InteractionID), log.Int("includedItemCount", len(args.UsedContextItems)), log.Int("excludedItemCount", len(args.DiscardedContextItems))}
+	fields := []log.Field{log.String("interactionID", args.InteractionID), log.Int("usedItemCount", len(args.UsedContextItems)), log.Int("ignoredItemCount", len(args.IgnoredContextItems))}
 	for r, cnt := range retrieverUsed {
 		fields = append(fields, log.Int(r+"-used", cnt))
 	}
-	for r, cnt := range retrieverDiscarded {
-		fields = append(fields, log.Int(r+"-discarded", cnt))
+	for r, cnt := range retrieverIgnored {
+		fields = append(fields, log.Int(r+"-ignored", cnt))
 	}
 	r.logger.Info("recording context", fields...)
 	return nil, nil
@@ -297,6 +372,31 @@ func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextAr
 	return conf.CodyRerankerCohere, used, nil
 }
 
+func (r *Resolver) fetchZoekt(ctx context.Context, query string, repo *types.Repo) ([]graphqlbackend.RetrieverContextItemResolver, []error, error) {
+	var res []graphqlbackend.RetrieverContextItemResolver
+	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
+		Repos: []types.RepoIDName{{ID: repo.ID, Name: repo.Name}},
+		Query: query,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	var partialErrors []error
+	for _, fc := range fileChunks {
+		fcr, err := r.fileChunkToResolver(ctx, &fc)
+		if err != nil {
+			partialErrors = append(partialErrors, errors.Wrapf(err, "resolving file chunk %s", fc.Path))
+			continue
+		}
+		blob, _ := fcr.ToFileChunkContext()
+		res = append(res, retrieverContextItem{
+			retriever: "zoekt",
+			item:      blob,
+		})
+	}
+	return res, partialErrors, nil
+}
+
 // countLines finds the number of lines corresponding to the number of runes. We 'round down'
 // to ensure that we don't return more characters than our budget.
 func countLines(content string, numRunes int) int {
@@ -315,9 +415,9 @@ func countLines(content string, numRunes int) int {
 }
 
 type rankContextResponse struct {
-	ranker    string
-	used      []int32
-	discarded []int32
+	ranker  string
+	used    []int32
+	ignored []int32
 }
 
 func (r rankContextResponse) Ranker() string {
@@ -328,8 +428,46 @@ func (r rankContextResponse) Used() []int32 {
 	return r.used
 }
 
-func (r rankContextResponse) Discarded() []int32 {
-	return r.discarded
+func (r rankContextResponse) Ignored() []int32 {
+	return r.ignored
 }
 
-var _ graphqlbackend.RankContextResolver = &rankContextResponse{}
+type chatContextResponse struct {
+	contextItems  []graphqlbackend.RetrieverContextItemResolver
+	partialErrors []error
+	stopReason    string
+}
+
+func (c chatContextResponse) ContextItems() []graphqlbackend.RetrieverContextItemResolver {
+	return c.contextItems
+}
+
+func (c chatContextResponse) PartialErrors() []string {
+	return iter.Map(c.partialErrors, func(err *error) string {
+		return (*err).Error()
+	})
+}
+
+func (c chatContextResponse) StopReason() string {
+	return c.stopReason
+}
+
+type retrieverContextItem struct {
+	item      graphqlbackend.ContextResultResolver
+	score     *float64
+	retriever string
+}
+
+func (r retrieverContextItem) Item() graphqlbackend.ContextResultResolver {
+	return r.item
+}
+
+func (r retrieverContextItem) Score() *float64 {
+	return r.score
+}
+
+func (r retrieverContextItem) Retriever() string {
+	return r.retriever
+}
+
+var _ graphqlbackend.RetrieverContextItemResolver = retrieverContextItem{}

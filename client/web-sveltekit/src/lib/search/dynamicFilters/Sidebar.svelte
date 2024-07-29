@@ -109,6 +109,7 @@
 </script>
 
 <script lang="ts">
+    import { groupBy } from 'lodash'
     import { onMount, type ComponentProps } from 'svelte'
 
     import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
@@ -162,10 +163,10 @@
     }
 
     let groupedSelectedFilters: Partial<Record<SectionKind, SelectedFilter[]>>
-    $: groupedSelectedFilters = Object.groupBy(selectedFilters, ({ kind }) => kind)
+    $: groupedSelectedFilters = groupBy(selectedFilters, ({ kind }) => kind)
 
     let groupedStreamFilters: Partial<Record<SectionKind, StreamFilter[]>>
-    $: groupedStreamFilters = Object.groupBy(streamFilters, ({ kind }) => kind)
+    $: groupedStreamFilters = groupBy(streamFilters, ({ kind }) => kind)
 
     // Then we merge the groups together. Different sources provide different
     // information (see mergeFilterSources for details). After we've merged, add

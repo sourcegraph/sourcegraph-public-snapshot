@@ -104,8 +104,8 @@ func (r *Reconciler) reconcilePreciseCodeIntelDeployment(ctx context.Context, sg
 	dep := deployment.NewDeployment(name, sg.Namespace, sg.Spec.RequestedVersion)
 	dep.Spec.Replicas = pointers.Ptr(cfg.Replicas)
 	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
-		MaxSurge:       pointers.Ptr(intstr.FromInt(1)),
-		MaxUnavailable: pointers.Ptr(intstr.FromInt(1)),
+		MaxSurge:       pointers.Ptr(intstr.FromInt32(1)),
+		MaxUnavailable: pointers.Ptr(intstr.FromInt32(1)),
 	}
 	dep.Spec.Template = podTemplate.Template
 

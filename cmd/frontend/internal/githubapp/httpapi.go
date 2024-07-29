@@ -1,7 +1,6 @@
 package githubapp
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
@@ -17,27 +16,19 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	authcheck "github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/batches/service"
-	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 const cacheTTLSeconds = 60 * 60 // 1 hour
@@ -311,7 +302,7 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	app, err := createGitHubApp(u, *domain, httpcli.UncachedExternalClient, *kind)
+	app, err := createGitHubApp(u, *domain, httpcli.UncachedExternalClient, *kind, stateDetails.UserID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Unexpected error while converting github app: %s", err.Error()), http.StatusInternalServerError)
 		return
@@ -422,66 +413,13 @@ func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request)
 
 	action := query.Get("setup_action")
 	if action == "install" {
+		// The actual installation is handled via an incoming webhook in cmd/frontend/webhooks/webhooks.go
 		ctx := r.Context()
 		app, err := srv.db.GitHubApps().GetByID(ctx, stateDetails.AppID)
 		if err != nil {
 			redirectURL := generateRedirectURL(stateDetails, &installationID, nil, errors.Newf("Unexpected error while fetching GitHub App from DB: %s", err.Error()))
 			http.Redirect(w, r, redirectURL, http.StatusFound)
 			return
-		}
-
-		auther, err := ghauth.NewGitHubAppAuthenticator(app.AppID, []byte(app.PrivateKey))
-		if err != nil {
-			redirectURL := generateRedirectURL(stateDetails, &installationID, nil, errors.Newf("Unexpected error while creating GitHubAppAuthenticator: %s", err.Error()))
-			http.Redirect(w, r, redirectURL, http.StatusFound)
-			return
-		}
-
-		baseURL, err := url.Parse(app.BaseURL)
-		if err != nil {
-			redirectURL := generateRedirectURL(stateDetails, &installationID, nil, errors.Newf("Unexpected error while parsing App base URL: %s", err.Error()))
-			http.Redirect(w, r, redirectURL, http.StatusFound)
-			return
-		}
-
-		apiURL, _ := github.APIRoot(baseURL)
-
-		logger := log.NoOp()
-		client := github.NewV3Client(logger, "", apiURL, auther, nil)
-
-		// The installation often takes a few seconds to become available after the
-		// app is first installed, so we sleep for a bit to give it time to load. The exact
-		// length of time to sleep was determined empirically.
-		time.Sleep(3 * time.Second)
-
-		remoteInstall, err := client.GetAppInstallation(ctx, int64(installationID))
-		if err != nil {
-			redirectURL := generateRedirectURL(stateDetails, &installationID, nil, errors.Newf("Unexpected error while fetching App installation details from GitHub: %s", err.Error()))
-			http.Redirect(w, r, redirectURL, http.StatusFound)
-			return
-		}
-
-		installInfo, err := srv.db.GitHubApps().Install(ctx, ghtypes.GitHubAppInstallation{
-			InstallationID:   installationID,
-			AppID:            app.ID,
-			URL:              remoteInstall.GetHTMLURL(),
-			AccountLogin:     remoteInstall.Account.GetLogin(),
-			AccountAvatarURL: remoteInstall.Account.GetAvatarURL(),
-			AccountURL:       remoteInstall.Account.GetHTMLURL(),
-			AccountType:      remoteInstall.Account.GetType(),
-		})
-		if err != nil {
-			redirectURL := generateRedirectURL(stateDetails, &installationID, &app.Name, errors.Newf("Unexpected error while creating GitHub App installation: %s", err.Error()))
-			http.Redirect(w, r, redirectURL, http.StatusFound)
-			return
-		}
-
-		if *kind == ghtypes.UserCredentialGitHubAppKind || *kind == ghtypes.SiteCredentialGitHubAppKind {
-			if err := handleCredentialCreation(r.Context(), srv.db, stateDetails, kind, app, installInfo.AccountLogin); err != nil {
-				redirectURL := generateRedirectURL(stateDetails, &installationID, &app.Name, err)
-				http.Redirect(w, r, redirectURL, http.StatusFound)
-				return
-			}
 		}
 
 		redirectURL := generateRedirectURL(stateDetails, &installationID, &app.Name, nil)
@@ -491,50 +429,6 @@ func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request)
 		http.Error(w, fmt.Sprintf("Bad request; unsupported setup action: %s", action), http.StatusBadRequest)
 		return
 	}
-}
-
-func handleCredentialCreation(ctx context.Context, db database.DB, stateDetails gitHubAppStateDetails, kind *ghtypes.GitHubAppKind, app *ghtypes.GitHubApp, owner string) error {
-	observationCtx := observation.NewContext(log.NoOp())
-	bstore := store.New(db, observationCtx, keyring.Default().BatchChangesCredentialKey)
-	svc := service.New(bstore)
-
-	// external service urls always end with a trailing slash. `url.JoinPath` ensures that's the case irrespective
-	// of whether the base URL ends with a trailing slash or not.
-	esu, err := url.JoinPath(stateDetails.BaseURL, "/")
-	if err != nil {
-		return errors.Newf("Unexpected error while creating external service url for github app: %s", err.Error())
-	}
-
-	if *kind == ghtypes.UserCredentialGitHubAppKind {
-		if _, err = svc.CreateBatchChangesUserCredential(
-			ctx,
-			sources.AuthenticationStrategyGitHubApp,
-			service.CreateBatchChangesUserCredentialArgs{
-				ExternalServiceURL:  esu,
-				ExternalServiceType: extsvc.VariantGitHub.AsType(),
-				GitHubAppKind:       *kind,
-				Username:            pointers.Ptr(owner),
-				GitHubAppID:         app.ID,
-				UserID:              stateDetails.UserID,
-			}); err != nil {
-			return errors.Wrapf(err, "Unexpected error while creating user credential for github app")
-		}
-	} else {
-		if _, err := svc.CreateBatchChangesSiteCredential(
-			ctx,
-			sources.AuthenticationStrategyGitHubApp,
-			service.CreateBatchChangesSiteCredentialArgs{
-				ExternalServiceURL:  esu,
-				ExternalServiceType: extsvc.VariantGitHub.AsType(),
-				GitHubAppKind:       *kind,
-				Username:            pointers.Ptr(owner),
-				GitHubAppID:         app.ID,
-			}); err != nil {
-			return errors.Wrapf(err, "Unexpected error while creating site credential for github app")
-		}
-	}
-
-	return nil
 }
 
 func generateRedirectURL(stateDetails gitHubAppStateDetails, installationID *int, appName *string, creationErr error) string {
@@ -597,7 +491,7 @@ func generateRedirectURL(stateDetails gitHubAppStateDetails, installationID *int
 
 var MockCreateGitHubApp func(conversionURL string, domain types.GitHubAppDomain) (*ghtypes.GitHubApp, error)
 
-func createGitHubApp(conversionURL string, domain types.GitHubAppDomain, httpClient *http.Client, kind ghtypes.GitHubAppKind) (*ghtypes.GitHubApp, error) {
+func createGitHubApp(conversionURL string, domain types.GitHubAppDomain, httpClient *http.Client, kind ghtypes.GitHubAppKind, userID int32) (*ghtypes.GitHubApp, error) {
 	if MockCreateGitHubApp != nil {
 		return MockCreateGitHubApp(conversionURL, domain)
 	}
@@ -627,17 +521,18 @@ func createGitHubApp(conversionURL string, domain types.GitHubAppDomain, httpCli
 	}
 
 	return &ghtypes.GitHubApp{
-		AppID:         response.AppID,
-		Name:          response.Name,
-		Slug:          response.Slug,
-		ClientID:      response.ClientID,
-		ClientSecret:  response.ClientSecret,
-		WebhookSecret: response.WebhookSecret,
-		PrivateKey:    response.PEM,
-		BaseURL:       htmlURL.Scheme + "://" + htmlURL.Host,
-		AppURL:        htmlURL.String(),
-		Domain:        domain,
-		Kind:          kind,
-		Logo:          fmt.Sprintf("%s://%s/identicons/app/app/%s", htmlURL.Scheme, htmlURL.Host, response.Slug),
+		AppID:           response.AppID,
+		Name:            response.Name,
+		Slug:            response.Slug,
+		ClientID:        response.ClientID,
+		ClientSecret:    response.ClientSecret,
+		WebhookSecret:   response.WebhookSecret,
+		PrivateKey:      response.PEM,
+		BaseURL:         htmlURL.Scheme + "://" + htmlURL.Host,
+		AppURL:          htmlURL.String(),
+		Domain:          domain,
+		Kind:            kind,
+		Logo:            fmt.Sprintf("%s://%s/identicons/app/app/%s", htmlURL.Scheme, htmlURL.Host, response.Slug),
+		CreatedByUserId: int(userID),
 	}, nil
 }

@@ -69,7 +69,7 @@ export const Duration: React.FunctionComponent<React.PropsWithChildren<DurationP
 
     return (
         <div
-            className={classNames('chromatic-ignore', { [styles.stableWidth]: stableWidth }, className)}
+            className={classNames({ [styles.stableWidth]: stableWidth }, className)}
             {...props}
             role={end === undefined ? 'timer' : undefined}
         >

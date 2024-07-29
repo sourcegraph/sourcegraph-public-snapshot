@@ -514,10 +514,10 @@ func (op *RepoOptions) Attributes() []attribute.KeyValue {
 		for i, arg := range op.HasKVPs {
 			nondefault := []attribute.KeyValue{}
 			if arg.Key != "" {
-				nondefault = append(nondefault, attribute.String("key", arg.Key))
+				nondefault = append(nondefault, attribute.String("key", string(arg.Key)))
 			}
 			if arg.Value != nil {
-				nondefault = append(nondefault, attribute.String("value", *arg.Value))
+				nondefault = append(nondefault, attribute.String("value", string(*arg.Value)))
 			}
 			if arg.Negated {
 				nondefault = append(nondefault, attribute.Bool("negated", arg.Negated))

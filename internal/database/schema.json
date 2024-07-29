@@ -1142,6 +1142,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "prompts_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "registry_extension_releases_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
@@ -13975,6 +13984,19 @@
           "Comment": ""
         },
         {
+          "Name": "creator_id",
+          "Index": 17,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "domain",
           "Index": 15,
           "TypeName": "text",
@@ -23056,6 +23078,266 @@
       "Triggers": []
     },
     {
+      "Name": "prompts",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 10,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "created_by",
+          "Index": 9,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "definition_text",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "description",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "draft",
+          "Index": 5,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('prompts_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "name",
+          "Index": 2,
+          "TypeName": "citext",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "owner_org_id",
+          "Index": 8,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "owner_user_id",
+          "Index": 7,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 12,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_by",
+          "Index": 11,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "visibility_secret",
+          "Index": 6,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "true",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "prompts_name_is_unique_in_owner_org",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX prompts_name_is_unique_in_owner_org ON prompts USING btree (owner_org_id, name) WHERE owner_org_id IS NOT NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "prompts_name_is_unique_in_owner_user",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX prompts_name_is_unique_in_owner_user ON prompts USING btree (owner_user_id, name) WHERE owner_user_id IS NOT NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "prompts_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX prompts_pkey ON prompts USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "prompts_created_by_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
+          "Name": "prompts_definition_text_max_length",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (char_length(definition_text) \u003c= (1024 * 100))"
+        },
+        {
+          "Name": "prompts_description_max_length",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (char_length(description) \u003c= (1024 * 50))"
+        },
+        {
+          "Name": "prompts_has_valid_owner",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (owner_user_id IS NOT NULL AND owner_org_id IS NULL OR owner_org_id IS NOT NULL AND owner_user_id IS NULL)"
+        },
+        {
+          "Name": "prompts_name_max_length",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (char_length(name::text) \u003c= 255)"
+        },
+        {
+          "Name": "prompts_name_valid_chars",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)"
+        },
+        {
+          "Name": "prompts_owner_org_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "orgs",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (owner_org_id) REFERENCES orgs(id) ON DELETE CASCADE"
+        },
+        {
+          "Name": "prompts_owner_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE"
+        },
+        {
+          "Name": "prompts_updated_by_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "query_runner_state",
       "Comment": "",
       "Columns": [
@@ -24640,6 +24922,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX repo_kvps_pkey ON repo_kvps USING btree (repo_id, key) INCLUDE (value)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (repo_id, key) INCLUDE (value)"
+        },
+        {
+          "Name": "repo_kvps_trgm_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX repo_kvps_trgm_idx ON repo_kvps USING gin (key gin_trgm_ops, value gin_trgm_ops)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -25230,11 +25522,37 @@
           "Comment": ""
         },
         {
+          "Name": "created_by",
+          "Index": 11,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "description",
           "Index": 2,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "draft",
+          "Index": 13,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -25334,11 +25652,37 @@
           "Comment": ""
         },
         {
+          "Name": "updated_by",
+          "Index": 12,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "user_id",
           "Index": 8,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "visibility_secret",
+          "Index": 14,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "true",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -25361,6 +25705,13 @@
       ],
       "Constraints": [
         {
+          "Name": "saved_searches_created_by_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
           "Name": "saved_searches_notifications_disabled",
           "ConstraintType": "c",
           "RefTableName": "",
@@ -25373,6 +25724,13 @@
           "RefTableName": "orgs",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (org_id) REFERENCES orgs(id)"
+        },
+        {
+          "Name": "saved_searches_updated_by_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL"
         },
         {
           "Name": "saved_searches_user_id_fkey",
@@ -26150,6 +26508,19 @@
       "Comment": "Responsible for storing permissions at a finer granularity than repo",
       "Columns": [
         {
+          "Name": "ips",
+          "Index": 8,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "IP addresses corresponding to each path. IP in slot 0 in the array corresponds to path the in slot 0 of the path array, etc. NULL if not yet migrated, empty array for no IP restrictions."
+        },
+        {
           "Name": "paths",
           "Index": 7,
           "TypeName": "text[]",
@@ -26238,6 +26609,13 @@
         }
       ],
       "Constraints": [
+        {
+          "Name": "ips_paths_length_check",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (ips IS NULL OR array_length(ips, 1) = array_length(paths, 1) AND NOT (''::text = ANY (ips)))"
+        },
         {
           "Name": "sub_repo_permissions_repo_id_fk",
           "ConstraintType": "f",
@@ -29949,6 +30327,10 @@
     {
       "Name": "own_background_jobs_config_aware",
       "Definition": " SELECT obj.id,\n    obj.state,\n    obj.failure_message,\n    obj.queued_at,\n    obj.started_at,\n    obj.finished_at,\n    obj.process_after,\n    obj.num_resets,\n    obj.num_failures,\n    obj.last_heartbeat_at,\n    obj.execution_logs,\n    obj.worker_hostname,\n    obj.cancel,\n    obj.repo_id,\n    obj.job_type,\n    osc.name AS config_name\n   FROM (own_background_jobs obj\n     JOIN own_signal_configurations osc ON ((obj.job_type = osc.id)))\n  WHERE (osc.enabled IS TRUE);"
+    },
+    {
+      "Name": "prompts_view",
+      "Definition": " SELECT prompts.id,\n    prompts.name,\n    prompts.description,\n    prompts.definition_text,\n    prompts.draft,\n    prompts.visibility_secret,\n    prompts.owner_user_id,\n    prompts.owner_org_id,\n    prompts.created_by,\n    prompts.created_at,\n    prompts.updated_by,\n    prompts.updated_at,\n    (((COALESCE(users.username, orgs.name))::text || '/'::text) || (prompts.name)::text) AS name_with_owner\n   FROM ((prompts\n     LEFT JOIN users ON ((users.id = prompts.owner_user_id)))\n     LEFT JOIN orgs ON ((orgs.id = prompts.owner_org_id)));"
     },
     {
       "Name": "reconciler_changesets",

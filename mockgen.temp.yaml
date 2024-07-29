@@ -79,6 +79,7 @@
     - WebhookStore
     - ZoektReposStore
     - TelemetryEventsExportQueueStore
+    - PromptStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:
@@ -95,10 +96,10 @@
   path: github.com/sourcegraph/sourcegraph/internal/search/job
   interfaces:
     - Job
-- filename: internal/uploadstore/mocks/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/internal/uploadstore
+- filename: internal/object/mocks/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/object
   interfaces:
-    - Store
+    - Storage
 - filename: internal/workerutil/dbworker/store/mocks/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
   interfaces:
@@ -169,10 +170,18 @@
     - RepositoryServiceClient
 - filename: internal/codeintel/codenav/mocks_temp.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore
-      interfaces:
-        - LsifStore
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav
       interfaces:
         - UploadService
         - GitTreeTranslator
+- filename: internal/codeintel/codenav/internal/lsifstore/mocks/mocks_temp.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore
+      interfaces:
+        - LsifStore
+- filename: internal/codeintel/codegraph/codegraphmocks/mocks_temp.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph
+      interfaces:
+        - DataStore
+        - SCIPWriter

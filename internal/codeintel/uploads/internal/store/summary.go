@@ -187,26 +187,26 @@ const sanitizedIndexerExpression = `
 )
 `
 
-// GetRecentIndexesSummary returns the set of "interesting" indexes for the repository with the given identifier.
+// GetRecentAutoIndexJobsSummary returns the set of "interesting" indexes for the repository with the given identifier.
 // The return value is a list of indexes grouped by root and indexer. In each group, the set of indexes should
 // include the set of unprocessed records as well as the latest finished record. These values allow users to
 // quickly determine if a particular root/indexer pair os up-to-date or having issues processing.
-func (s *store) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []uploadsshared.IndexesWithRepositoryNamespace, err error) {
-	ctx, logger, endObservation := s.operations.getRecentIndexesSummary.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+func (s *store) GetRecentAutoIndexJobsSummary(ctx context.Context, repositoryID int) (summaries []uploadsshared.GroupedAutoIndexJobs, err error) {
+	ctx, logger, endObservation := s.operations.getRecentAutoIndexJobsSummary.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	indexes, err := scanIndexes(s.db.Query(ctx, sqlf.Sprintf(recentIndexesSummaryQuery, repositoryID, repositoryID)))
+	indexes, err := scanJobs(s.db.Query(ctx, sqlf.Sprintf(recentIndexesSummaryQuery, repositoryID, repositoryID)))
 	if err != nil {
 		return nil, err
 	}
-	logger.AddEvent("scanIndexes", attribute.Int("numIndexes", len(indexes)))
+	logger.AddEvent("scanJobs", attribute.Int("numIndexes", len(indexes)))
 
-	groupedIndexes := make([]uploadsshared.IndexesWithRepositoryNamespace, 1, len(indexes)+1)
+	groupedIndexes := make([]uploadsshared.GroupedAutoIndexJobs, 1, len(indexes)+1)
 	for _, index := range indexes {
 		if last := groupedIndexes[len(groupedIndexes)-1]; last.Root != index.Root || last.Indexer != index.Indexer {
-			groupedIndexes = append(groupedIndexes, uploadsshared.IndexesWithRepositoryNamespace{
+			groupedIndexes = append(groupedIndexes, uploadsshared.GroupedAutoIndexJobs{
 				Root:    index.Root,
 				Indexer: index.Indexer,
 			})

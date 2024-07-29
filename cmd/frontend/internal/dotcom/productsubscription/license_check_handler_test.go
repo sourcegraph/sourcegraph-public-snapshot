@@ -207,7 +207,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 				req = req.WithContext(featureflag.WithFlags(req.Context(), featureflag.NewMemoryStore(flags, flags, flags)))
 			}
 
-			handler := NewLicenseCheckHandler(db)
+			handler := NewLicenseCheckHandler(db, true)
 			handler.ServeHTTP(res, req)
 
 			require.Equal(t, test.wantStatus, res.Code)

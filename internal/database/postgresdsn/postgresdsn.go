@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// New parses Sourcegraph database service environment variables to construct a Postgres DSN
 func New(prefix, currentUser string, getenv func(string) string) string {
 	if prefix == "frontend" {
 		prefix = ""

@@ -16,9 +16,9 @@ import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import batchSpecSchemaJSON from '../../../../../../../../schema/batch_spec.schema.json'
 import { requestGraphQL } from '../../../../../backend/graphql'
 import type {
-    Scalars,
     BatchSpecExecutionAvailableSecretKeysResult,
     BatchSpecExecutionAvailableSecretKeysVariables,
+    Scalars,
 } from '../../../../../graphql-operations'
 
 import { BATCH_SPEC_EXECUTION_AVAILABLE_SECRET_KEYS } from './backend'
@@ -125,7 +125,7 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <MonacoEditor
-                className={classNames('chromatic-ignore', styles.editor, this.props.className)}
+                className={classNames(styles.editor, this.props.className)}
                 language="yaml"
                 height="auto"
                 isLightTheme={this.props.isLightTheme}
@@ -196,7 +196,7 @@ function setDiagnosticsOptions(editor: typeof monaco, batchChangeName: string, a
     const schema = cloneDeep(batchSpecSchemaJSON)
 
     // Temporarily remove the mount field from the schema, so it does not show up in the auto-suggestion.
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
     // @ts-ignore
     delete schema.properties.steps.items.properties.mount
 

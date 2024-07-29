@@ -93,7 +93,6 @@ const (
 	SecurityEventNameOrgCreated        SecurityEventName = "OrganizationCreated"
 	SecurityEventNameOrgUpdated        SecurityEventName = "OrganizationUpdated"
 	SecurityEventNameOrgSettingsViewed SecurityEventName = "OrganizationSettingsViewed"
-	SecurityEventNameDotComOrgViewed   SecurityEventName = "DotComOrganizationViewed"
 
 	SecurityEventNameOutboundReqViewed SecurityEventName = "OutboundRequestViewed"
 

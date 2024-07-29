@@ -362,4 +362,9 @@ func (r *errorTranslatingCommitLogClient) Recv() (*proto.CommitLogResponse, erro
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 
+func (r *errorTranslatingClient) MergeBaseOctopus(ctx context.Context, in *proto.MergeBaseOctopusRequest, opts ...grpc.CallOption) (*proto.MergeBaseOctopusResponse, error) {
+	res, err := r.base.MergeBaseOctopus(ctx, in, opts...)
+	return res, convertGRPCErrorToGitDomainError(err)
+}
+
 var _ proto.GitserverServiceClient = &errorTranslatingClient{}

@@ -12,9 +12,7 @@ import { TeamListPage } from './TeamListPage'
 
 const config: Meta = {
     title: 'web/teams/TeamListPage',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 export default config
 

@@ -15,11 +15,7 @@ const decorator: Decorator = story => <div className="p-3 container">{story()}</
 const config: Meta = {
     title: 'web/enterprise/code-monitoring/CodeMonitoringLogs',
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 const mockedResponse: MockedResponse[] = [

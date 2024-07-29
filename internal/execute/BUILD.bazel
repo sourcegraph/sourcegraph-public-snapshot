@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "execute",
+    srcs = ["git.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/execute",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/errors"],
+)
+
+go_test(
+    name = "execute_test",
+    srcs = ["git_test.go"],
+    embed = [":execute"],
+    deps = ["@com_github_stretchr_testify//require"],
+)

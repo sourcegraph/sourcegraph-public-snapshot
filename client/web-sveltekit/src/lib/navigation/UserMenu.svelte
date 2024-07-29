@@ -15,6 +15,8 @@
 
     const open = writable(false)
     $: organizations = user.organizations.nodes
+    $: ownEnabled = window.context.ownEnabled
+    $: isDotCom = window.context.sourcegraphDotComMode
 </script>
 
 <DropdownMenu
@@ -30,7 +32,10 @@
     <MenuSeparator />
     <MenuLink href={user.settingsURL}>Settings</MenuLink>
     <MenuLink href="/users/{user.username}/searches">Saved searches</MenuLink>
-    <MenuLink href="/teams">Teams</MenuLink>
+    <!--  TODO add a check for dotcom and for whether own is enabled -->
+    {#if ownEnabled && !isDotCom}
+        <MenuLink href="/teams">Teams</MenuLink>
+    {/if}
     <MenuSeparator />
     <Submenu>
         <svelte:fragment slot="trigger">Theme</svelte:fragment>
@@ -41,7 +46,7 @@
         <h6>Your organizations</h6>
         {#each organizations.slice(0, MAX_VISIBLE_ORGS) as org}
             <MenuLink href={org.settingsURL || org.url}>
-                {org.displayName || org.name}
+                {org.name}
             </MenuLink>
         {/each}
         {#if organizations.length > MAX_VISIBLE_ORGS}

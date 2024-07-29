@@ -57,6 +57,8 @@ func NewTestDB(t testing.TB, system, suite string, tables ...schema.Tabler) *pgx
 		},
 	)
 	require.NoError(t, err)
+	// Initialize extensions.
+	require.NoError(t, db.Exec(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`).Error)
 	for _, table := range tables {
 		err = db.AutoMigrate(table)
 		require.NoError(t, err)

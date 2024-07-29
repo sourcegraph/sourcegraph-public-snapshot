@@ -8,6 +8,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -113,7 +114,7 @@ func (s *syntacticIndexingJobStoreImpl) InsertIndexingJobs(ctx context.Context, 
 		for _, id := range insertedJobIds {
 			jobLookupQueries = append(jobLookupQueries, sqlf.Sprintf("%d", id))
 		}
-		indexingJobs, err = scanIndexes(tx.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(jobLookupQueries, ", "), authzConds)))
+		indexingJobs, err = scanJobs(tx.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(jobLookupQueries, ", "), authzConds)))
 		return err
 	})
 
@@ -173,7 +174,7 @@ WHERE u.id IN (%s) and %s
 ORDER BY u.id
 `
 
-func scanIndex(s dbutil.Scanner) (index SyntacticIndexingJob, err error) {
+func scanJob(s dbutil.Scanner) (index SyntacticIndexingJob, err error) {
 	if err := s.Scan(
 		&index.ID,
 		&index.Commit,
@@ -196,4 +197,4 @@ func scanIndex(s dbutil.Scanner) (index SyntacticIndexingJob, err error) {
 	return index, nil
 }
 
-var scanIndexes = basestore.NewSliceScanner(scanIndex)
+var scanJobs = basestore.NewSliceScanner(scanJob)

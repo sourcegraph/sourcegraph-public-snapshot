@@ -32,7 +32,7 @@ type preciseIndexResolver struct {
 	locationResolver *gitresolvers.CachedLocationResolver
 	traceErrs        *observation.ErrCollector
 	upload           *shared.Upload
-	index            *uploadsshared.Index
+	index            *uploadsshared.AutoIndexJob
 }
 
 func newPreciseIndexResolver(
@@ -41,13 +41,13 @@ func newPreciseIndexResolver(
 	policySvc PolicyService,
 	gitserverClient gitserver.Client,
 	uploadLoader UploadLoader,
-	indexLoader IndexLoader,
+	autoIndexJobLoader AutoIndexJobLoader,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
 	locationResolver *gitresolvers.CachedLocationResolver,
 	traceErrs *observation.ErrCollector,
 	upload *shared.Upload,
-	index *uploadsshared.Index,
+	index *uploadsshared.AutoIndexJob,
 ) (resolverstubs.PreciseIndexResolver, error) {
 	if index != nil && index.AssociatedUploadID != nil && upload == nil {
 		v, ok, err := uploadLoader.GetByID(ctx, *index.AssociatedUploadID)
@@ -61,7 +61,7 @@ func newPreciseIndexResolver(
 
 	if upload != nil {
 		if upload.AssociatedIndexID != nil {
-			v, ok, err := indexLoader.GetByID(ctx, *upload.AssociatedIndexID)
+			v, ok, err := autoIndexJobLoader.GetByID(ctx, *upload.AssociatedIndexID)
 			if err != nil {
 				return nil, err
 			}
@@ -157,9 +157,9 @@ func (r *preciseIndexResolver) ProcessingFinishedAt() *gqlutil.DateTime {
 	return nil
 }
 
-func (r *preciseIndexResolver) Steps() resolverstubs.IndexStepsResolver {
+func (r *preciseIndexResolver) Steps() resolverstubs.AutoIndexJobStepsResolver {
 	if r.index != nil {
-		return NewIndexStepsResolver(r.siteAdminChecker, *r.index)
+		return NewAutoIndexJobStepsResolver(r.siteAdminChecker, *r.index)
 	}
 
 	return nil
@@ -276,19 +276,19 @@ func (r *preciseIndexResolver) State() string {
 		}
 	}
 
-	switch shared.IndexState(strings.ToLower(r.index.State)) {
-	case shared.IndexStateQueued:
+	switch shared.AutoIndexJobState(strings.ToLower(r.index.State)) {
+	case shared.JobStateQueued:
 		return "QUEUED_FOR_INDEXING"
 
-	case shared.IndexStateProcessing:
+	case shared.JobStateProcessing:
 		return "INDEXING"
 
-	case shared.IndexStateFailed:
+	case shared.JobStateFailed:
 		fallthrough
-	case shared.IndexStateErrored:
+	case shared.JobStateErrored:
 		return "INDEXING_ERRORED"
 
-	case shared.IndexStateCompleted:
+	case shared.JobStateCompleted:
 		// Should not actually occur in practice (where did upload go?)
 		return "INDEXING_COMPLETED"
 

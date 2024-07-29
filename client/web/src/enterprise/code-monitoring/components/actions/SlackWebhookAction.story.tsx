@@ -11,9 +11,7 @@ import { SlackWebhookAction } from './SlackWebhookAction'
 
 const config: Meta = {
     title: 'web/enterprise/code-monitoring/actions/SlackWebhookAction',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 
 export default config

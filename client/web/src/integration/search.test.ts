@@ -2,7 +2,11 @@ import expect from 'expect'
 import { afterEach, beforeEach, describe, test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
-import { SymbolKind, type SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import {
+    SavedSearchVisibility,
+    SymbolKind,
+    type SharedGraphQlOperations,
+} from '@sourcegraph/shared/src/graphql-operations'
 import {
     commitHighlightResult,
     commitSearchStreamEvents,
@@ -614,8 +618,22 @@ describe('Search', () => {
                                 description: 'Demo',
                                 id: 'U2F2ZWRTZWFyY2g6NQ==',
                                 owner: { __typename: 'User', id: 'user123', namespaceName: 'test' },
+                                createdBy: {
+                                    __typename: 'User',
+                                    id: 'a',
+                                    username: 'alice',
+                                    url: '',
+                                },
                                 createdAt: '2020-04-21T10:10:10Z',
+                                updatedBy: {
+                                    __typename: 'User',
+                                    id: 'a',
+                                    username: 'alice',
+                                    url: '',
+                                },
                                 updatedAt: '2020-04-21T10:10:10Z',
+                                draft: false,
+                                visibility: SavedSearchVisibility.PUBLIC,
                                 query: 'context:global Batch Change patternType:literal',
                                 url: '/saved-searches/U2F2ZWRTZWFyY2g6NQ==',
                                 viewerCanAdminister: true,

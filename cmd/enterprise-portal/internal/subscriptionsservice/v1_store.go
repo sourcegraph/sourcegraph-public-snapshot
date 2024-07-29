@@ -19,10 +19,10 @@ import (
 type StoreV1 interface {
 	// UpsertEnterpriseSubscription upserts a enterprise subscription record based
 	// on the given options.
-	UpsertEnterpriseSubscription(ctx context.Context, subscriptionID string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error)
+	UpsertEnterpriseSubscription(ctx context.Context, subscriptionID string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.SubscriptionWithConditions, error)
 	// ListEnterpriseSubscriptions returns a list of enterprise subscriptions based
 	// on the given options.
-	ListEnterpriseSubscriptions(ctx context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error)
+	ListEnterpriseSubscriptions(ctx context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error)
 
 	// ListDotcomEnterpriseSubscriptionLicenses returns a list of enterprise
 	// subscription license attributes with the given filters. It silently ignores
@@ -82,11 +82,11 @@ func NewStoreV1(opts NewStoreV1Options) StoreV1 {
 	}
 }
 
-func (s *storeV1) UpsertEnterpriseSubscription(ctx context.Context, subscriptionID string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
+func (s *storeV1) UpsertEnterpriseSubscription(ctx context.Context, subscriptionID string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.SubscriptionWithConditions, error) {
 	return s.db.Subscriptions().Upsert(ctx, subscriptionID, opts)
 }
 
-func (s *storeV1) ListEnterpriseSubscriptions(ctx context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
+func (s *storeV1) ListEnterpriseSubscriptions(ctx context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.SubscriptionWithConditions, error) {
 	return s.db.Subscriptions().List(ctx, opts)
 }
 
