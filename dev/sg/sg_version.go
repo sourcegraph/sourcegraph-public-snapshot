@@ -49,6 +49,10 @@ var (
 )
 
 func versionExec(c *cli.Context) error {
+	// Write on stderr to ensure we can use the output in scripts without having to trim
+	// the output from the contextual infos.
+	outErr := std.NewOutput(os.Stderr, verbose)
+	outErr.WriteNoticef("Showing the current version of the sg CLI, if you're looking for deployed Sourcegraph instances version, please use `sg live` instead.")
 	if verbose {
 		std.Out.Writef("Version: %s\nBuild commit: %s",
 			c.App.Version, BuildCommit)
