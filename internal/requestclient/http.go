@@ -15,6 +15,9 @@ const (
 	// De-facto standard for identifying original IP address of a client:
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
 	headerKeyForwardedFor = "X-Forwarded-For"
+	// headerKeyForwardedForUserAgent propagates the first headerKeyUserAgent
+	// seen.
+	headerKeyForwardedForUserAgent = "X-Forwarded-For-User-Agent"
 	// Standard for identifyying the application, operating system, vendor,
 	// and/or version of the requesting user agent.
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
@@ -39,9 +42,14 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	client := FromContext(req.Context())
 	if client != nil {
+		forwardedForUserAgent := client.ForwardedForUserAgent
+		if forwardedForUserAgent == "" {
+			forwardedForUserAgent = client.UserAgent
+		}
 		req = req.Clone(req.Context()) // RoundTripper should not modify original request
 		req.Header.Set(headerKeyClientIP, client.IP)
 		req.Header.Set(headerKeyForwardedFor, client.ForwardedFor)
+		req.Header.Set(headerKeyForwardedForUserAgent, forwardedForUserAgent)
 	}
 
 	return t.RoundTripper.RoundTrip(req)
@@ -106,10 +114,16 @@ func httpMiddleware(next http.Handler, external bool) http.Handler {
 			}
 		}
 
+		currentUserAgent := req.Header.Get(headerKeyUserAgent)
+		forwardedForUserAgent := currentUserAgent
+		if agent := req.Header.Get(headerKeyForwardedForUserAgent); agent != "" {
+			forwardedForUserAgent = agent
+		}
 		ctxWithClient := WithClient(req.Context(), &Client{
-			IP:           strings.Split(req.RemoteAddr, ":")[0],
-			ForwardedFor: req.Header.Get(headerKeyForwardedFor),
-			UserAgent:    req.Header.Get(headerKeyUserAgent),
+			IP:                    strings.Split(req.RemoteAddr, ":")[0],
+			ForwardedFor:          req.Header.Get(headerKeyForwardedFor),
+			UserAgent:             currentUserAgent,
+			ForwardedForUserAgent: forwardedForUserAgent,
 
 			wafIPCountryCode: wafIPCountryCode,
 		})
