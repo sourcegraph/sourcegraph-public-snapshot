@@ -23,10 +23,10 @@ import (
 )
 
 const rangesDiff = `
-diff --git sub3/changed.go sub3/changed.go
+diff --git sub1/changed.go sub1/changed.go
 index deadbeef1..deadbeef2 100644
---- sub3/changed.go
-+++ sub3/changed.go
+--- sub1/changed.go
++++ sub1/changed.go
 @@ -16,2 +16,2 @@ const imageProcWorkers = 1
 -       img, err := i.getSpec().imageCache.getOrCreate(i, conf, func() (*imageResource, image.Image, error) {
 -                imageProcSem <- true
@@ -41,7 +41,7 @@ func TestRanges(t *testing.T) {
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 	mockGitserverClient.DiffFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, opt gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
-		if len(opt.Paths) > 0 && opt.Paths[0] == "sub3/changed.go" {
+		if len(opt.Paths) > 0 && opt.Paths[0] == "sub1/changed.go" {
 			return gitserver.NewDiffFileIterator(io.NopCloser(strings.NewReader(rangesDiff))), nil
 		}
 		return gitserver.NewDiffFileIterator(io.NopCloser(bytes.NewReader([]byte{}))), nil
@@ -59,17 +59,18 @@ func TestRanges(t *testing.T) {
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{})
 	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef1", Root: "sub1/", RepositoryID: 42},
-		{ID: 51, Commit: "deadbeef1", Root: "sub2/", RepositoryID: 42},
-		{ID: 52, Commit: "deadbeef2", Root: "sub3/", RepositoryID: 42},
-		{ID: 53, Commit: "deadbeef1", Root: "sub4/", RepositoryID: 42},
+		{ID: 51, Commit: "deadbeef1", Root: "sub1/", RepositoryID: 42},
+		{ID: 52, Commit: "deadbeef2", Root: "sub1/", RepositoryID: 42},
+		{ID: 53, Commit: "deadbeef1", Root: "sub1/", RepositoryID: 42},
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
+	lookupPath := core.NewRepoRelPathUnchecked("sub1/a.go")
 	testLocation1 := shared.Usage{UploadID: 50, Path: uploadRelPath("a.go"), Range: testRange1}
-	testLocation2 := shared.Usage{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange2}
-	testLocation3 := shared.Usage{UploadID: 51, Path: uploadRelPath("c.go"), Range: testRange1}
-	testLocation4 := shared.Usage{UploadID: 51, Path: uploadRelPath("d.go"), Range: testRange2}
-	testLocation5 := shared.Usage{UploadID: 51, Path: uploadRelPath("e.go"), Range: testRange1}
+	testLocation2 := shared.Usage{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange2}
+	testLocation3 := shared.Usage{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange1}
+	testLocation4 := shared.Usage{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange2}
+	testLocation5 := shared.Usage{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange1}
 	testLocation6 := shared.Usage{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange2}
 	testLocation7 := shared.Usage{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange3}
 	testLocation8 := shared.Usage{UploadID: 52, Path: uploadRelPath("a.go"), Range: testRange4}
@@ -94,7 +95,7 @@ func TestRanges(t *testing.T) {
 			Commit:       mockCommit,
 			Limit:        50,
 		},
-		Path:      mockPath,
+		Path:      lookupPath,
 		Line:      10,
 		Character: 20,
 	}
@@ -104,13 +105,13 @@ func TestRanges(t *testing.T) {
 	}
 
 	adjustedLocation1 := shared.UploadLocation{Upload: uploads[0], Path: repoRelPath("sub1/a.go"), TargetCommit: "deadbeef", TargetRange: testRange1}
-	adjustedLocation2 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub2/b.go"), TargetCommit: "deadbeef", TargetRange: testRange2}
-	adjustedLocation3 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub2/c.go"), TargetCommit: "deadbeef", TargetRange: testRange1}
-	adjustedLocation4 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub2/d.go"), TargetCommit: "deadbeef", TargetRange: testRange2}
-	adjustedLocation5 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub2/e.go"), TargetCommit: "deadbeef", TargetRange: testRange1}
-	adjustedLocation6 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub2/a.go"), TargetCommit: "deadbeef", TargetRange: testRange2}
-	adjustedLocation7 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub2/a.go"), TargetCommit: "deadbeef", TargetRange: testRange3}
-	adjustedLocation8 := shared.UploadLocation{Upload: uploads[2], Path: repoRelPath("sub3/a.go"), TargetCommit: "deadbeef", TargetRange: testRange4}
+	adjustedLocation2 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub1/a.go"), TargetCommit: "deadbeef", TargetRange: testRange2}
+	adjustedLocation3 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub1/a.go"), TargetCommit: "deadbeef", TargetRange: testRange1}
+	adjustedLocation4 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub1/a.go"), TargetCommit: "deadbeef", TargetRange: testRange2}
+	adjustedLocation5 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub1/a.go"), TargetCommit: "deadbeef", TargetRange: testRange1}
+	adjustedLocation6 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub1/a.go"), TargetCommit: "deadbeef", TargetRange: testRange2}
+	adjustedLocation7 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub1/a.go"), TargetCommit: "deadbeef", TargetRange: testRange3}
+	adjustedLocation8 := shared.UploadLocation{Upload: uploads[2], Path: repoRelPath("sub1/a.go"), TargetCommit: "deadbeef", TargetRange: testRange4}
 
 	expectedRanges := []AdjustedCodeIntelligenceRange{
 		{Range: testRange1, HoverText: "text1", Definitions: []shared.UploadLocation{}, References: []shared.UploadLocation{adjustedLocation1}, Implementations: []shared.UploadLocation{}},

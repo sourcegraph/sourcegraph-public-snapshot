@@ -17,6 +17,9 @@ import (
 
 // visibleUpload pairs an upload visible from the current target commit with the
 // current target path and a matcher to the data within the underlying index.
+//
+// Pre-condition: TargetPath must be a sub-path of Upload.Root
+// TODO: Make the fields private and have this go through a New* function.
 type visibleUpload struct {
 	Upload        uploadsshared.CompletedUpload
 	TargetPath    core.RepoRelPath

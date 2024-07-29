@@ -597,13 +597,15 @@ func (s *Service) getCodeIntelligenceRange(
 		return AdjustedCodeIntelligenceRange{}, false, err
 	}
 
-	_, _, _ = definitions, references, implementations
+	transformDedup := func(uu []shared.UploadUsage) []shared.UploadLocation {
+		return shared.SortAndDedupLocations(genslices.Map(uu, shared.UploadUsage.ToLocation))
+	}
 
 	return AdjustedCodeIntelligenceRange{
 		Range:           adjustedRange,
-		Definitions:     nil, // TODO: Do slice conversion
-		References:      nil,
-		Implementations: nil,
+		Definitions:     transformDedup(definitions),
+		References:      transformDedup(references),
+		Implementations: transformDedup(implementations),
 		HoverText:       rn.HoverText,
 	}, true, nil
 }
