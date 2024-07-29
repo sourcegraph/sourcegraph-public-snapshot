@@ -116,11 +116,12 @@ const navigationEntries: (NavigationMenuDefinition | NavigationEntryDefinition)[
     {
         label: 'Tools',
         icon: IMdiTools,
-        href: '/',
+        // @TODO(jhh) Make 'href' nullable
+        href: '/does-not-exist',
         children: [
             {
-                label: 'Search Home',
-                href: '/search',
+                label: 'Saved Searches',
+                href: '/saved-searches',
             },
             {
                 label: 'Contexts',
@@ -144,5 +145,6 @@ const navigationEntries: (NavigationMenuDefinition | NavigationEntryDefinition)[
                 status: Status.BETA,
             },
         ],
+        mode: Mode.ENTERPRISE,
     },
 ]
