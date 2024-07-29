@@ -22,6 +22,7 @@
     import { isRouteEnabled } from '$lib/navigation'
 
     import type { LayoutData } from './$types'
+    import ActivationOverlay from './ActivationOverlay.svelte'
 
     export let data: LayoutData
 
@@ -87,6 +88,11 @@
               }
           }
         : undefined
+
+    $: activationOverlayDismissed = $temporarySettingsStorage.get('webNext.welcomeOverlay.dismissed')
+    function onDismissActivationOverlay() {
+        $temporarySettingsStorage.set('webNext.welcomeOverlay.dismissed', true)
+    }
 </script>
 
 <svelte:head>
@@ -104,6 +110,8 @@
 <main>
     <slot />
 </main>
+
+<ActivationOverlay open={!$activationOverlayDismissed} handleDismiss={onDismissActivationOverlay} />
 
 <FuzzyFinderContainer />
 
