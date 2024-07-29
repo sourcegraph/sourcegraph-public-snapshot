@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -65,6 +66,7 @@ type UpdateScheduler struct {
 type configuredRepo struct {
 	ID   api.RepoID
 	Name api.RepoName
+	Ctx  context.Context
 }
 
 // notifyChanBuffer controls the buffer size of notification channels.
@@ -105,47 +107,51 @@ func (s *UpdateScheduler) Start() {
 
 	s.logger.Info("hydrating update scheduler")
 
-	// Hydrate the scheduler with the initial set of repos.
-	// This is done to preset the intervals from the database state, so that
-	// repos that haven't changed in a while don't need to be refetched once
-	// after a restart until we restore the previous schedule.
-	var nextCursor int
-	errors := 0
-	for {
-		var (
-			rs  []types.RepoGitserverStatus
-			err error
-		)
-		rs, nextCursor, err = s.db.GitserverRepos().IterateRepoGitserverStatus(ctx, database.IterateRepoGitserverStatusOptions{
-			NextCursor: nextCursor,
-			BatchSize:  1000,
-		})
-		if err != nil {
-			errors++
-			s.logger.Error("failed to iterate gitserver repos", log.Error(err), log.Int("errors", errors))
-			if errors > 5 {
-				s.logger.Error("too many errors, stopping initial hydration of update queue, the queue will build up lazily")
-				return
+	_ = tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+		// Hydrate the scheduler with the initial set of repos.
+		// This is done to preset the intervals from the database state, so that
+		// repos that haven't changed in a while don't need to be refetched once
+		// after a restart until we restore the previous schedule.
+		var nextCursor int
+		errors := 0
+		for {
+			var (
+				rs  []types.RepoGitserverStatus
+				err error
+			)
+			rs, nextCursor, err = s.db.GitserverRepos().IterateRepoGitserverStatus(ctx, database.IterateRepoGitserverStatusOptions{
+				NextCursor: nextCursor,
+				BatchSize:  1000,
+			})
+			if err != nil {
+				errors++
+				s.logger.Error("failed to iterate gitserver repos", log.Error(err), log.Int("errors", errors))
+				if errors > 5 {
+					s.logger.Error("too many errors, stopping initial hydration of update queue, the queue will build up lazily")
+					return nil
+				}
+				time.Sleep(time.Second)
+				continue
 			}
-			time.Sleep(time.Second)
-			continue
-		}
-		for _, r := range rs {
-			cr := configuredRepo{
-				ID:   r.ID,
-				Name: r.Name,
+			for _, r := range rs {
+				cr := configuredRepo{
+					ID:   r.ID,
+					Name: r.Name,
+					Ctx:  ctx,
+				}
+				if !s.schedule.upsert(cr) {
+					interval := initialInterval(r)
+					s.schedule.updateInterval(cr, interval)
+				}
 			}
-			if !s.schedule.upsert(cr) {
-				interval := initialInterval(r)
-				s.schedule.updateInterval(cr, interval)
+			if nextCursor == 0 {
+				break
 			}
-		}
-		if nextCursor == 0 {
-			break
-		}
 
-		s.logger.Info("hydrated update scheduler")
-	}
+			s.logger.Info("hydrated update scheduler")
+		}
+		return nil
+	})
 
 	go s.runUpdateLoop(ctx)
 	go s.runScheduleLoop(ctx)
@@ -239,7 +245,7 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 		}
 
 		for {
-			ctx, cancel, err := limiter.Acquire(ctx)
+			_, cancel, err := limiter.Acquire(ctx)
 			if err != nil {
 				// context is canceled; shutdown
 				return
@@ -254,6 +260,8 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 			subLogger := s.logger.Scoped("RunUpdateLoop")
 
 			go func() {
+				ctx := tenant.Background(repo.Ctx)
+
 				defer cancel()
 				defer s.updateQueue.remove(repo, true)
 
@@ -355,28 +363,28 @@ var configuredLimiter = func() *limiter.MutableLimiter {
 //	             the scheduler and do not enqueue.
 func (s *UpdateScheduler) UpdateFromDiff(diff types.RepoSyncDiff) {
 	for _, r := range diff.Deleted {
-		s.remove(r)
+		s.remove(diff.Ctx, r)
 	}
 
 	for _, r := range diff.Added {
-		s.upsert(r, true)
+		s.upsert(diff.Ctx, r, true)
 	}
 	for _, r := range diff.Modified {
 		// Modified repos only need to be updated immediately if their name changed,
 		// otherwise we just make sure they're part of the scheduler, but don't
 		// trigger a repo update.
-		s.upsert(r.Repo, r.Modified&types.RepoModifiedName == types.RepoModifiedName)
+		s.upsert(diff.Ctx, r.Repo, r.Modified&types.RepoModifiedName == types.RepoModifiedName)
 	}
 
 	known := len(diff.Added) + len(diff.Modified)
 	for _, r := range diff.Unmodified {
 		if r.IsDeleted() {
-			s.remove(r)
+			s.remove(diff.Ctx, r)
 			continue
 		}
 
 		known++
-		s.upsert(r, false)
+		s.upsert(diff.Ctx, r, false)
 	}
 }
 
@@ -385,13 +393,8 @@ func (s *UpdateScheduler) UpdateFromDiff(diff types.RepoSyncDiff) {
 //
 // This method should be called periodically with the list of all repositories
 // managed by the scheduler that are not cloned on gitserver.
-func (s *UpdateScheduler) PrioritiseUncloned(repos []types.MinimalRepo) {
-	s.schedule.prioritiseUncloned(repos)
-}
-
-// EnsureScheduled ensures that all repos in repos exist in the scheduler.
-func (s *UpdateScheduler) EnsureScheduled(repos []types.MinimalRepo) {
-	s.schedule.insertNew(repos)
+func (s *UpdateScheduler) PrioritiseUncloned(ctx context.Context, repos []types.MinimalRepo) {
+	s.schedule.prioritiseUncloned(ctx, repos)
 }
 
 // ListRepoIDs lists the ids of all repos managed by the scheduler
@@ -411,8 +414,8 @@ func (s *UpdateScheduler) ListRepoIDs() []api.RepoID {
 //
 // If enqueue is true then r is also enqueued to the update queue for a git
 // fetch/clone soon.
-func (s *UpdateScheduler) upsert(r *types.Repo, enqueue bool) {
-	repo := configuredRepoFromRepo(r)
+func (s *UpdateScheduler) upsert(ctx context.Context, r *types.Repo, enqueue bool) {
+	repo := configuredRepoFromRepo(ctx, r)
 	logger := s.logger.With(log.String("repo", string(r.Name)))
 
 	updated := s.schedule.upsert(repo)
@@ -425,8 +428,8 @@ func (s *UpdateScheduler) upsert(r *types.Repo, enqueue bool) {
 	logger.Debug("scheduler.updateQueue.enqueued", log.Bool("updated", updated))
 }
 
-func (s *UpdateScheduler) remove(r *types.Repo) {
-	repo := configuredRepoFromRepo(r)
+func (s *UpdateScheduler) remove(ctx context.Context, r *types.Repo) {
+	repo := configuredRepoFromRepo(ctx, r)
 	logger := s.logger.With(log.String("repo", string(r.Name)))
 
 	if s.schedule.remove(repo) {
@@ -438,10 +441,11 @@ func (s *UpdateScheduler) remove(r *types.Repo) {
 	}
 }
 
-func configuredRepoFromRepo(r *types.Repo) configuredRepo {
+func configuredRepoFromRepo(ctx context.Context, r *types.Repo) configuredRepo {
 	repo := configuredRepo{
 		ID:   r.ID,
 		Name: r.Name,
+		Ctx:  ctx,
 	}
 
 	return repo
@@ -449,10 +453,11 @@ func configuredRepoFromRepo(r *types.Repo) configuredRepo {
 
 // UpdateOnce causes a single update of the given repository.
 // It neither adds nor removes the repo from the schedule.
-func (s *UpdateScheduler) UpdateOnce(id api.RepoID, name api.RepoName) {
+func (s *UpdateScheduler) UpdateOnce(ctx context.Context, id api.RepoID, name api.RepoName) {
 	repo := configuredRepo{
 		ID:   id,
 		Name: name,
+		Ctx:  ctx,
 	}
 	schedManualFetch.Inc()
 	s.updateQueue.enqueue(repo, priorityHigh)

@@ -41,7 +41,7 @@ func logSiteFindRefsOccurred() error {
 
 // HasSearchOccurred indicates whether a search has ever occurred on this instance.
 func HasSearchOccurred(ctx context.Context) (bool, error) {
-	s, err := store.WithContext(ctx).Get(keyPrefix + fSearchOccurred).Bool()
+	s, err := store.Get(keyPrefix + fSearchOccurred).Bool()
 	if err != nil && err != redis.ErrNil {
 		return s, err
 	}
@@ -50,7 +50,7 @@ func HasSearchOccurred(ctx context.Context) (bool, error) {
 
 // HasFindRefsOccurred indicates whether a find-refs has ever occurred on this instance.
 func HasFindRefsOccurred(ctx context.Context) (bool, error) {
-	r, err := store.WithContext(ctx).Get(keyPrefix + fFindRefsOccurred).Bool()
+	r, err := store.Get(keyPrefix + fFindRefsOccurred).Bool()
 	if err != nil && err != redis.ErrNil {
 		return r, err
 	}

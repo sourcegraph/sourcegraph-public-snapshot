@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "store",
+    srcs = ["store.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/tenantmanager/internal/store",
+    visibility = ["//cmd/tenantmanager:__subpackages__"],
+    deps = [
+        "//internal/database/basestore",
+        "//internal/database/dbutil",
+        "//internal/tenant",
+        "@com_github_gosimple_slug//:slug",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+    ],
+)

@@ -165,6 +165,7 @@ func NewInserterWithReturn(
 	tableName string,
 	maxNumParameters int,
 	columnNames []string,
+	// TODO: NEEDS fixing.
 	onConflictClause string,
 	returningColumnNames []string,
 	returningScanner ReturningScanner,

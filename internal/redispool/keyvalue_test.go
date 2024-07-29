@@ -1,6 +1,7 @@
 package redispool_test
 
 import (
+	"context"
 	"os"
 	"reflect"
 	"strings"
@@ -389,7 +390,7 @@ func redisKeyValueForTest(t *testing.T) redispool.KeyValue {
 		}
 	}
 
-	if err := redispool.DeleteAllKeysWithPrefix(c, prefix); err != nil {
+	if err := redispool.DeleteAllKeysWithPrefix(context.Background(), c, prefix); err != nil {
 		t.Logf("Could not clear test prefix name=%q prefix=%q error=%v", t.Name(), prefix, err)
 	}
 

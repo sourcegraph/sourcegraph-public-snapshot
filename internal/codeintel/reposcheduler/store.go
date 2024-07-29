@@ -197,7 +197,7 @@ repositories AS (
 )
 INSERT INTO %s (repository_id, last_index_scan_at)
 SELECT DISTINCT r.id, %%s::timestamp FROM repositories r
-ON CONFLICT (repository_id) DO UPDATE
+ON CONFLICT (repository_id, tenant_id) DO UPDATE
 SET last_index_scan_at = %%s
 RETURNING repository_id
 `, layout.policyEnablementFieldName,

@@ -12,7 +12,7 @@ import (
 )
 
 func newRetentionEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(
+	return goroutine.NewPeriodicGoroutinePerTenant(
 		ctx,
 		goroutine.HandlerFunc(
 			func(ctx context.Context) error {

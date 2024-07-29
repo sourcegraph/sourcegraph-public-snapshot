@@ -85,7 +85,7 @@ func (s *subRepoPermsStore) Upsert(ctx context.Context, userID int32, repoID api
 	q := sqlf.Sprintf(`
 INSERT INTO sub_repo_permissions (user_id, repo_id, paths, version, updated_at, ips)
 VALUES (%s, %s, %s, %s, now(), NULL)
-ON CONFLICT (user_id, repo_id, version)
+ON CONFLICT (user_id, repo_id, version, tenant_id)
 DO UPDATE
 SET
   user_id = EXCLUDED.user_ID,
@@ -136,7 +136,7 @@ FROM repo
 WHERE external_service_id = %s
   AND external_service_type = %s
   AND external_id = %s
-ON CONFLICT (user_id, repo_id, version)
+ON CONFLICT (repo_id, user_id, version, tenant_id)
 DO UPDATE
 SET
   user_id = EXCLUDED.user_ID,

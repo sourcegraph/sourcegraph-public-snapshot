@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "reconciler",
+    srcs = ["reconciler.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/tenantmanager/internal/reconciler",
+    visibility = ["//cmd/tenantmanager:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/database",
+        "//internal/goroutine",
+    ],
+)

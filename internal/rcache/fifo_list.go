@@ -110,7 +110,7 @@ func (l *FIFOList) Slice(ctx context.Context, from, to int) ([][]byte, error) {
 	}
 
 	key := l.globalPrefixKey()
-	bs, err := l.kv().WithContext(ctx).LRange(key, from, to).ByteSlices()
+	bs, err := l.kv().LRange(key, from, to).ByteSlices()
 	if err != nil {
 		// Return ctx error if it expired
 		if ctx.Err() != nil {

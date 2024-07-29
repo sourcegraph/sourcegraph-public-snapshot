@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 var _ goroutine.Handler = &handler{}
@@ -34,15 +35,17 @@ func (h *handler) Handle(ctx context.Context) (err error) {
 		defaultGitQuota = int32(*siteCfg.GitMaxCodehostRequestsPerSecond)
 	}
 
-	gitRL := h.newRateLimiterFunc(ratelimit.GitRPSLimiterBucketName)
-	if err := gitRL.SetTokenBucketConfig(ctx, defaultGitQuota, time.Second); err != nil {
-		return err
-	}
+	return tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+		gitRL := h.newRateLimiterFunc(ratelimit.GitRPSLimiterBucketName)
+		if err := gitRL.SetTokenBucketConfig(ctx, defaultGitQuota, time.Second); err != nil {
+			return err
+		}
 
-	svcs, err := h.externalServiceStore.List(ctx, database.ExternalServicesListOptions{})
-	if err != nil {
-		return err
-	}
+		svcs, err := h.externalServiceStore.List(ctx, database.ExternalServicesListOptions{})
+		if err != nil {
+			return err
+		}
 
-	return syncServices(ctx, svcs, h.newRateLimiterFunc)
+		return syncServices(ctx, svcs, h.newRateLimiterFunc)
+	})
 }

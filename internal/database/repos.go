@@ -1511,7 +1511,7 @@ insert_sources AS (
     clone_url
   FROM sources_list
   JOIN external_services es ON (es.id = external_service_id)
-  ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_unique
+  ON CONFLICT (repo_id, external_service_id, tenant_id)
   DO
     UPDATE SET clone_url = EXCLUDED.clone_url
     WHERE external_service_repos.clone_url != EXCLUDED.clone_url

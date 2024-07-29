@@ -30,7 +30,7 @@ func NewCleaner(ctx context.Context, observationCtx *observation.Context, worker
 	})
 
 	// We look for jobs to clean up every hour.
-	return goroutine.NewPeriodicGoroutine(
+	return goroutine.NewPeriodicGoroutinePerTenant(
 		ctx,
 		goroutine.HandlerFunc(
 			func(ctx context.Context) error {

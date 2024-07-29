@@ -81,8 +81,7 @@ func addRepos(t *testing.T, ctx context.Context, store *basestore.Store, accessi
 	err = store.Exec(ctx, sqlf.Sprintf(`
 	INSERT INTO user_permissions AS p (user_id, permission, object_type, updated_at, synced_at, object_ids_ints, migrated)
 	VALUES %s
-	ON CONFLICT ON CONSTRAINT
-  		user_permissions_perm_object_unique
+	ON CONFLICT (user_id, permission, object_type, tenant_id)
 	DO UPDATE SET
 		object_ids_ints = p.object_ids_ints || excluded.object_ids_ints`,
 		sqlf.Join(userPerms, ",")))
@@ -95,8 +94,7 @@ func addPermissions(t *testing.T, ctx context.Context, store *basestore.Store, u
 	err := store.Exec(ctx, sqlf.Sprintf(`
 	INSERT INTO user_permissions AS p (user_id, permission, object_type, updated_at, synced_at, object_ids_ints, migrated)
 	VALUES (%s::integer, 'read', 'repos', NOW(), NOW(), %s, FALSE)
-	ON CONFLICT ON CONSTRAINT
-  		user_permissions_perm_object_unique
+	ON CONFLICT (user_id, permission, object_type, tenant_id)
 	DO UPDATE SET
 		object_ids_ints = p.object_ids_ints || excluded.object_ids_ints`,
 		userID, pq.Array(repoIDs)))

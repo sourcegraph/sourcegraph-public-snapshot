@@ -17,7 +17,7 @@ import (
 
 // KeyPrefix is the prefix that will be used to initialise the redis database with.
 // All keys stored will have this prefix.
-const KeyPrefix = "recording-cmd"
+const KeyPrefix = "recording-cmd:"
 
 // RecordedCommand stores a command record in Redis.
 type RecordedCommand struct {

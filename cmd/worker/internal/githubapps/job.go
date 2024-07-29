@@ -37,7 +37,7 @@ func (gh *githubAppsInstallationJob) Routines(ctx context.Context, observationCt
 
 	logger := log.Scoped("github_apps_installation")
 	return []goroutine.BackgroundRoutine{
-		goroutine.NewPeriodicGoroutine(
+		goroutine.NewPeriodicGoroutinePerTenant(
 			context.Background(),
 			worker.NewGitHubInstallationWorker(db, logger),
 			goroutine.WithName("github_apps.installation_backfill"),

@@ -191,7 +191,7 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 		},
 	})
 	//lint:ignore SA1019 existing usage of deprecated functionality. TODO: Use only the new V2 event instead.
-	if err = usagestats.LogBackendEvent(db, usr.ID, deviceid.FromContext(ctx), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+	if err = usagestats.LogBackendEvent(ctx, db, usr.ID, deviceid.FromContext(ctx), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 		logger.Warn("Failed to log event SignUpSucceeded", log.Error(err))
 	}
 }
@@ -282,7 +282,7 @@ func unsafeSignUp(
 		logger.Error("Error in user signup.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
 		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
 		//lint:ignore SA1019 existing usage of deprecated functionality.
-		if err = usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil); err != nil {
+		if err = usagestats.LogBackendEvent(ctx, db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil); err != nil {
 			logger.Warn("Failed to log event SignUpFailed", log.Error(err))
 		}
 		return errors.New(message), statusCode, nil
@@ -515,7 +515,7 @@ func recordSignInSecurityEvent(r *http.Request, db database.DB, user *types.User
 	// Legacy event - TODO: Remove in 5.3, alongside the teestore.WithoutV1
 	// context.
 	//lint:ignore SA1019 existing usage of deprecated functionality.
-	_ = usagestats.LogBackendEvent(db, user.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil)
+	_ = usagestats.LogBackendEvent(r.Context(), db, user.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil)
 }
 
 func checkAccountLockout(store LockoutStore, user *types.User, event *database.SecurityEventName) {

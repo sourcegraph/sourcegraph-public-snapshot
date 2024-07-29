@@ -768,7 +768,7 @@ INSERT INTO external_services (
   last_updater_id
 )
 VALUES %s
-ON CONFLICT(id) DO UPDATE
+ON CONFLICT ON CONSTRAINT external_services_pkey DO UPDATE
 SET
   kind               = UPPER(excluded.kind),
   display_name       = excluded.display_name,

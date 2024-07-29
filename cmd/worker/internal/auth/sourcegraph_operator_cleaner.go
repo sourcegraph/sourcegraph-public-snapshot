@@ -50,7 +50,7 @@ func (j *sourcegraphOperatorCleaner) Routines(_ context.Context, observationCtx 
 	}
 
 	return []goroutine.BackgroundRoutine{
-		goroutine.NewPeriodicGoroutine(
+		goroutine.NewPeriodicGoroutinePerTenant(
 			context.Background(),
 			&sourcegraphOperatorCleanHandler{
 				db:                db,

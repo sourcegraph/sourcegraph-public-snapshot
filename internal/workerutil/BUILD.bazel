@@ -19,6 +19,7 @@ go_library(
         "//internal/hostname",
         "//internal/metrics",
         "//internal/observation",
+        "//internal/tenant",
         "//internal/trace",
         "//internal/trace/policy",
         "//lib/errors",

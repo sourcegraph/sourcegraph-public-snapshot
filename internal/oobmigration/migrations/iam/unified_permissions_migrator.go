@@ -128,7 +128,7 @@ ins AS (
 	AND ua.service_id = r.external_service_id
 	-- It might be that some of the rows are already there because of repo-centric permission sync
 	-- In that case do nothing
-	ON CONFLICT (user_id, user_external_account_id, repo_id) DO NOTHING
+	ON CONFLICT (user_id, user_external_account_id, repo_id, tenant_id) DO NOTHING
 )
 -- Mark the user_permissions rows as migrated
 UPDATE user_permissions

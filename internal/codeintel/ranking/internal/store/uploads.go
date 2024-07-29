@@ -55,7 +55,7 @@ WITH candidates AS (
 inserted AS (
 	INSERT INTO codeintel_ranking_exports (graph_key, upload_id, upload_key)
 	SELECT %s, upload_id, upload_key FROM candidates
-	ON CONFLICT (graph_key, upload_id) DO NOTHING
+	ON CONFLICT (graph_key, upload_id, tenant_id) DO NOTHING
 	RETURNING id, upload_id
 )
 SELECT

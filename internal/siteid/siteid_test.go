@@ -1,6 +1,7 @@
 package siteid
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"testing"
@@ -30,7 +31,7 @@ func TestGet(t *testing.T) {
 				err = errors.Errorf("panic: %v", e)
 			}
 		}()
-		return Get(db), nil
+		return Get(context.Background(), db), nil
 	}
 
 	t.Run("from DB", func(t *testing.T) {

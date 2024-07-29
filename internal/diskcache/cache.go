@@ -11,17 +11,20 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	internaltrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Store is an on-disk cache, with items cached via calls to Open.
+// TODO: Diskcache should be tenant aware.
 type Store interface {
 	// Open will open a file from the local cache with key. If missing, fetcher
 	// will fill the cache first. Open also performs single-flighting for fetcher.
@@ -145,7 +148,10 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 		return nil, errors.New("diskcache.store.Dir must be set")
 	}
 
-	path := s.path(key)
+	path, err := s.path(ctx, key)
+	if err != nil {
+		return nil, err
+	}
 	trace.AddEvent("TODO Domain Owner", attribute.String("key", fmt.Sprint(key)), attribute.String("path", path))
 
 	err = os.MkdirAll(filepath.Dir(path), os.ModePerm)
@@ -198,9 +204,13 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 }
 
 // path returns the path for key.
-func (s *store) path(key []string) string {
-	encoded := append([]string{s.dir}, EncodeKeyComponents(key)...)
-	return filepath.Join(encoded...) + ".zip"
+func (s *store) path(ctx context.Context, key []string) (string, error) {
+	tnt := tenant.FromContext(ctx)
+	if tnt.ID() == 0 {
+		return "", errors.New("no tenant set on context")
+	}
+	encoded := append([]string{s.dir, "tenants", strconv.Itoa(tnt.ID())}, EncodeKeyComponents(key)...)
+	return filepath.Join(encoded...) + ".zip", nil
 }
 
 // EncodeKeyComponents uses a sha256 hash of the key since we want to use it for the disk name.

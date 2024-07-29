@@ -664,7 +664,7 @@ func (s *searchContextsStore) SetUserDefaultSearchContextID(ctx context.Context,
 	q := sqlf.Sprintf(
 		`INSERT INTO search_context_default (user_id, search_context_id)
 		VALUES (%d, %d)
-		ON CONFLICT (user_id) DO
+		ON CONFLICT ON CONSTRAINT search_context_default_pkey DO
 		UPDATE SET search_context_id=EXCLUDED.search_context_id`,
 		userID,
 		searchContextID)

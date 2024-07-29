@@ -1,14 +1,16 @@
 package internal
 
 import (
+	"context"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func repoCloneProgress(fs gitserverfs.FS, locker RepositoryLocker, repo api.RepoName) (*protocol.RepoCloneProgress, error) {
-	cloned, err := fs.RepoCloned(repo)
+func repoCloneProgress(ctx context.Context, fs gitserverfs.FS, locker RepositoryLocker, repo api.RepoName) (*protocol.RepoCloneProgress, error) {
+	cloned, err := fs.RepoCloned(ctx, repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "determine clone status")
 	}
@@ -16,7 +18,7 @@ func repoCloneProgress(fs gitserverfs.FS, locker RepositoryLocker, repo api.Repo
 	resp := protocol.RepoCloneProgress{
 		Cloned: cloned,
 	}
-	cloneProgress, locked := locker.Status(repo)
+	cloneProgress, locked := locker.Status(ctx, repo)
 	if isAlwaysCloningTest(repo) {
 		resp.CloneInProgress = true
 		resp.CloneProgress = "This will never finish cloning"

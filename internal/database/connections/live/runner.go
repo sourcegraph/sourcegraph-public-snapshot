@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -52,7 +53,7 @@ func RunnerFromDSNsWithSchemas(out *output.Output, logger log.Logger, dsns map[s
 				pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %s succeeded", schema.Name))
 			}
 
-			return initStore(ctx, newStore, db, schema)
+			return initStore(tenant.InsecureGlobalContext(ctx), newStore, db, schema)
 		}
 	}
 	storeFactoryMap := map[string]runner.StoreFactory{
@@ -83,7 +84,7 @@ func runnerFromDB(logger log.Logger, newStore StoreFactory, db *sql.DB, schemas 
 		schema := schema
 
 		storeFactoryMap[schema.Name] = func(ctx context.Context) (runner.Store, error) {
-			return initStore(ctx, newStore, db, schema)
+			return initStore(tenant.InsecureGlobalContext(ctx), newStore, db, schema)
 		}
 	}
 

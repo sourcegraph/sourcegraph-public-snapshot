@@ -34,12 +34,12 @@ func P4GroupMembers(ctx context.Context, fs gitserverfs.FS, args P4GroupMembersA
 
 	options = append(options, WithArguments("-Mj", "-ztag", "group", "-o", args.Group))
 
-	p4home, err := fs.P4HomeDir()
+	p4home, err := fs.P4HomeDir(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create p4home dir")
 	}
 
-	scratchDir, err := fs.TempDir("p4-group-")
+	scratchDir, err := fs.TempDir(ctx, "p4-group-")
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 group'")
 	}

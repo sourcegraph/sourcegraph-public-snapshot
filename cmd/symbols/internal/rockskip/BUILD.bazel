@@ -29,6 +29,7 @@ go_library(
         "//internal/search",
         "//internal/search/query",
         "//internal/search/result",
+        "//internal/tenant",
         "//lib/errors",
         "@com_github_amit7itz_goset//:goset",
         "@com_github_dustin_go_humanize//:go-humanize",

@@ -238,7 +238,7 @@ func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.P
 // gitPushDependencyTag is responsible for cleaning up temporary directories
 // created in the process.
 func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dep reposource.VersionedPackage) error {
-	workDir, err := s.fs.TempDir(s.Type())
+	workDir, err := s.fs.TempDir(ctx, s.Type())
 	if err != nil {
 		return err
 	}

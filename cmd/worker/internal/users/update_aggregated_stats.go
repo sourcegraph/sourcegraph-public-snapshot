@@ -28,7 +28,7 @@ var (
 				user_id
 		) AS events
 		INNER JOIN users ON users.id = events.user_id
-	ON CONFLICT (user_id) DO UPDATE
+	ON CONFLICT ON CONSTRAINT aggregated_user_statistics_pkey DO UPDATE
 		SET
 			user_last_active_at = EXCLUDED.user_last_active_at,
 			user_events_count = EXCLUDED.user_events_count,

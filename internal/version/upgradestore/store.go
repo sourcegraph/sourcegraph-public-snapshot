@@ -115,7 +115,7 @@ SELECT version FROM versions WHERE service = %s
 
 const updateServiceVersionSelectUpsertQuery = `
 INSERT INTO versions (service, version, updated_at)
-VALUES (%s, %s, %s) ON CONFLICT (service) DO
+VALUES (%s, %s, %s) ON CONFLICT ON CONSTRAINT versions_pkey DO
 UPDATE SET (version, updated_at) = (excluded.version, excluded.updated_at)
 WHERE versions.version = %s
 `

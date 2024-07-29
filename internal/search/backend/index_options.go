@@ -62,6 +62,8 @@ type ZoektIndexOptions struct {
 	LanguageMap map[string]ctags_config.ParserType
 
 	ShardConcurrency int32 `json:",omitempty"`
+
+	TenantID int `json:",omitempty"`
 }
 
 func (o *ZoektIndexOptions) FromProto(p *proto.ZoektIndexOptions) {
@@ -75,6 +77,7 @@ func (o *ZoektIndexOptions) FromProto(p *proto.ZoektIndexOptions) {
 	o.Priority = p.GetPriority()
 	o.DocumentRanksVersion = p.GetDocumentRanksVersion()
 	o.Error = p.GetError()
+	o.TenantID = int(p.GetTenantId())
 
 	branches := make([]zoekt.RepositoryBranch, 0, len(p.GetBranches()))
 	for _, b := range p.GetBranches() {
@@ -122,6 +125,7 @@ func (o *ZoektIndexOptions) ToProto() *proto.ZoektIndexOptions {
 		Error:                o.Error,
 		LanguageMap:          languageMap,
 		ShardConcurrency:     o.ShardConcurrency,
+		TenantId:             int64(o.TenantID),
 	}
 }
 

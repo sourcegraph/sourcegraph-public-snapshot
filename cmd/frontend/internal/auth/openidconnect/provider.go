@@ -120,7 +120,7 @@ func (p *Provider) CachedInfo() *providers.Info {
 }
 
 // oauth2Config constructs and returns an *oauth2.Config from the provider.
-func (p *Provider) oauth2Config() *oauth2.Config {
+func (p *Provider) oauth2Config(ctx context.Context) *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     p.config.ClientID,
 		ClientSecret: p.config.ClientSecret,
@@ -128,7 +128,7 @@ func (p *Provider) oauth2Config() *oauth2.Config {
 		// It would be nice if this was "/.auth/openidconnect/callback" not "/.auth/callback", but
 		// many instances have the "/.auth/callback" value hardcoded in their external auth
 		// provider, so we can't change it easily
-		RedirectURL: globals.ExternalURL().
+		RedirectURL: globals.ExternalURL(ctx).
 			ResolveReference(&url.URL{Path: p.callbackUrl}).
 			String(),
 

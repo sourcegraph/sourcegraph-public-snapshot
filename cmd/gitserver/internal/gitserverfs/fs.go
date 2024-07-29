@@ -1,9 +1,12 @@
 package gitserverfs
 
 import (
+	"context"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -19,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -26,34 +30,34 @@ type FS interface {
 	// Initialize creates all the necessary directory structures used by gitserverfs.
 	Initialize() error
 	DirSize(string) (int64, error)
-	RepoDir(api.RepoName) common.GitDir
-	ResolveRepoName(common.GitDir) api.RepoName
-	TempDir(prefix string) (string, error)
-	IgnorePath(string) bool
-	P4HomeDir() (string, error)
-	RepoCloned(api.RepoName) (bool, error)
-	RemoveRepo(api.RepoName) error
-	ForEachRepo(func(api.RepoName, common.GitDir) (done bool)) error
+	RepoDir(context.Context, api.RepoName) common.GitDir
+	ResolveRepoName(context.Context, common.GitDir) api.RepoName
+	TempDir(ctx context.Context, prefix string) (string, error)
+	IgnorePath(context.Context, string) bool
+	P4HomeDir(context.Context) (string, error)
+	RepoCloned(context.Context, api.RepoName) (bool, error)
+	RemoveRepo(context.Context, api.RepoName) error
+	ForEachRepo(context.Context, func(api.RepoName, common.GitDir) (done bool)) error
 	DiskUsage() (diskusage.DiskUsage, error)
-	CanonicalPath(common.GitDir) string
+	CanonicalPath(context.Context, common.GitDir) string
 }
 
-func New(observationCtx *observation.Context, reposDir string) FS {
+func New(observationCtx *observation.Context, reposDirRoot string) FS {
 	return &realGitserverFS{
 		logger:         observationCtx.Logger.Scoped("gitserverfs"),
 		observationCtx: observationCtx,
-		reposDir:       reposDir,
+		reposDirRoot:   reposDirRoot,
 	}
 }
 
 type realGitserverFS struct {
-	reposDir       string
+	reposDirRoot   string
 	observationCtx *observation.Context
 	logger         log.Logger
 }
 
 func (r *realGitserverFS) Initialize() error {
-	err := initGitserverFileSystem(r.logger, r.reposDir)
+	err := initGitserverFileSystem(r.logger, r.reposDirRoot)
 	if err != nil {
 		return err
 	}
@@ -68,46 +72,55 @@ func (r *realGitserverFS) DirSize(dir string) (int64, error) {
 	return dirSize(dir)
 }
 
-func (r *realGitserverFS) RepoDir(name api.RepoName) common.GitDir {
+func (r *realGitserverFS) reposDir(ctx context.Context) string {
+	tnt := tenant.FromContext(ctx)
+	if tnt.ID() == 0 {
+		// TODO: this should fail.
+		return path.Join(r.reposDirRoot, "tenants", "illegal")
+	}
+	return path.Join(r.reposDirRoot, "tenants", strconv.Itoa(tnt.ID()))
+}
+
+func (r *realGitserverFS) RepoDir(ctx context.Context, name api.RepoName) common.GitDir {
 	// We need to use api.UndeletedRepoName(repo) for the name, as this is a name
 	// transformation done on the database side that gitserver cannot know about.
-	dir := repoDirFromName(r.reposDir, api.UndeletedRepoName(name))
+	dir := repoDirFromName(r.reposDir(ctx), api.UndeletedRepoName(name))
 	// dir is expected to be cleaned, ie. it doesn't allow `..`.
-	if !strings.HasPrefix(dir.Path(), r.reposDir) {
+	if !strings.HasPrefix(dir.Path(), r.reposDir(ctx)) {
 		panic("dir is outside of repos dir")
 	}
 	return dir
 }
 
-func (r *realGitserverFS) ResolveRepoName(dir common.GitDir) api.RepoName {
-	return repoNameFromDir(r.reposDir, dir)
+func (r *realGitserverFS) ResolveRepoName(ctx context.Context, dir common.GitDir) api.RepoName {
+	return repoNameFromDir(r.reposDir(ctx), dir)
 }
 
-func (r *realGitserverFS) TempDir(prefix string) (string, error) {
-	return tempDir(r.reposDir, prefix)
+func (r *realGitserverFS) TempDir(ctx context.Context, prefix string) (string, error) {
+	return tempDir(r.reposDir(ctx), prefix)
 }
 
-func (r *realGitserverFS) IgnorePath(path string) bool {
-	return ignorePath(r.reposDir, path)
+func (r *realGitserverFS) IgnorePath(ctx context.Context, path string) bool {
+	return ignorePath(r.reposDir(ctx), path)
 }
 
-func (r *realGitserverFS) P4HomeDir() (string, error) {
-	return makeP4HomeDir(r.reposDir)
+func (r *realGitserverFS) P4HomeDir(ctx context.Context) (string, error) {
+	return makeP4HomeDir(r.reposDir(ctx))
 }
 
-func (r *realGitserverFS) RepoCloned(name api.RepoName) (bool, error) {
-	return repoCloned(r.RepoDir(name))
+func (r *realGitserverFS) RepoCloned(ctx context.Context, name api.RepoName) (bool, error) {
+	return repoCloned(r.RepoDir(ctx, name))
 }
 
-func (r *realGitserverFS) RemoveRepo(name api.RepoName) error {
-	return removeRepoDirectory(r.logger, r.reposDir, r.RepoDir(name))
+func (r *realGitserverFS) RemoveRepo(ctx context.Context, name api.RepoName) error {
+	return removeRepoDirectory(r.logger, r.reposDir(ctx), r.RepoDir(ctx, name))
 }
 
 // iterateGitDirs walks over the reposDir on disk and calls walkFn for each of the
 // git directories found on disk.
-func (r *realGitserverFS) ForEachRepo(visit func(api.RepoName, common.GitDir) bool) error {
-	return BestEffortWalk(r.reposDir, func(dir string, fi fs.DirEntry) error {
-		if ignorePath(r.reposDir, dir) {
+func (r *realGitserverFS) ForEachRepo(ctx context.Context, visit func(api.RepoName, common.GitDir) bool) error {
+	return BestEffortWalk(r.reposDir(ctx), func(dir string, fi fs.DirEntry) error {
+		if ignorePath(r.reposDir(ctx), dir) {
 			if fi.IsDir() {
 				return filepath.SkipDir
 			}
@@ -122,7 +135,7 @@ func (r *realGitserverFS) ForEachRepo(visit func(api.RepoName, common.GitDir) bo
 		// We are sure this is a GIT_DIR after the above check
 		gitDir := common.GitDir(dir)
 
-		if done := visit(r.ResolveRepoName(gitDir), gitDir); done {
+		if done := visit(r.ResolveRepoName(ctx, gitDir), gitDir); done {
 			return filepath.SkipAll
 		}
 
@@ -131,12 +144,12 @@ func (r *realGitserverFS) ForEachRepo(visit func(api.RepoName, common.GitDir) bo
 }
 
 func (r *realGitserverFS) DiskUsage() (diskusage.DiskUsage, error) {
-	return du.New(r.reposDir)
+	return du.New(r.reposDirRoot)
 }
 
-func (r *realGitserverFS) CanonicalPath(dir common.GitDir) string {
+func (r *realGitserverFS) CanonicalPath(ctx context.Context, dir common.GitDir) string {
 	d := string(dir)
-	return strings.TrimPrefix(d, r.reposDir)
+	return strings.TrimPrefix(d, r.reposDir(ctx))
 }
 
 var realGitserverFSMetricsRegisterer sync.Once
@@ -145,10 +158,10 @@ func (r *realGitserverFS) registerMetrics() {
 	realGitserverFSMetricsRegisterer.Do(func() {
 		// report the size of the repos dir
 		opts := mountinfo.CollectorOpts{Namespace: "gitserver"}
-		m := mountinfo.NewCollector(r.logger, opts, map[string]string{"reposDir": r.reposDir})
+		m := mountinfo.NewCollector(r.logger, opts, map[string]string{"reposDir": r.reposDirRoot})
 		r.observationCtx.Registerer.MustRegister(m)
 
-		metrics.MustRegisterDiskMonitor(r.reposDir)
+		metrics.MustRegisterDiskMonitor(r.reposDirRoot)
 
 		// TODO: Start removal of these.
 		// TODO(keegan) these are older names for the above disk metric. Keeping
@@ -158,7 +171,7 @@ func (r *realGitserverFS) registerMetrics() {
 			Name: "src_gitserver_disk_space_available",
 			Help: "Amount of free space disk space on the repos mount.",
 		}, func() float64 {
-			usage, err := du.New(r.reposDir)
+			usage, err := du.New(r.reposDirRoot)
 			if err != nil {
 				r.logger.Error("error getting disk usage info", log.Error(err))
 				return 0
@@ -171,7 +184,7 @@ func (r *realGitserverFS) registerMetrics() {
 			Name: "src_gitserver_disk_space_total",
 			Help: "Amount of total disk space in the repos directory.",
 		}, func() float64 {
-			usage, err := du.New(r.reposDir)
+			usage, err := du.New(r.reposDirRoot)
 			if err != nil {
 				r.logger.Error("error getting disk usage info", log.Error(err))
 				return 0

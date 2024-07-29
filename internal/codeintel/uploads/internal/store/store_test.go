@@ -259,7 +259,7 @@ func insertRepo(t testing.TB, db database.DB, id int, name string, private bool)
 		deletedAt = sqlf.Sprintf("%s", time.Unix(1587396557, 0).UTC())
 	}
 	insertRepoQuery := sqlf.Sprintf(
-		`INSERT INTO repo (id, name, deleted_at, private) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO NOTHING`,
+		`INSERT INTO repo (id, name, deleted_at, private) VALUES (%s, %s, %s, %s) ON CONFLICT ON CONSTRAINT repo_pkey DO NOTHING`,
 		id,
 		name,
 		deletedAt,

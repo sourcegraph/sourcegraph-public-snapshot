@@ -123,7 +123,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 		OtherUseCase:    args.Input.OtherUseCase,
 		Better:          args.Input.Better,
 		IsAuthenticated: actor.IsAuthenticated(),
-		SiteID:          siteid.Get(r.db),
+		SiteID:          siteid.Get(ctx, r.db),
 	}); err != nil {
 		// Log an error, but don't return one if the only failure was in submitting survey results to HubSpot.
 		log15.Error("Unable to submit survey results to Sourcegraph remote", "error", err)
@@ -159,7 +159,7 @@ func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *stru
 		Feedback:    args.Input.Feedback,
 		CurrentPath: args.Input.CurrentPath,
 		IsTest:      env.InsecureDev,
-		SiteID:      siteid.Get(r.db),
+		SiteID:      siteid.Get(ctx, r.db),
 	}
 
 	// We include the username and email address of the user (if signed in). For signed-in users,

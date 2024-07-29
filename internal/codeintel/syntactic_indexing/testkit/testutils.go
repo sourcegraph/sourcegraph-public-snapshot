@@ -7,10 +7,11 @@ import (
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/stretchr/testify/require"
 )
 
 func InsertRepo(t testing.TB, db database.DB, id api.RepoID, name string) {
@@ -23,7 +24,7 @@ func InsertRepo(t testing.TB, db database.DB, id api.RepoID, name string) {
 		deletedAt = sqlf.Sprintf("%s", "2024-02-08 15:06:50.973329+00")
 	}
 	insertRepoQuery := sqlf.Sprintf(
-		`INSERT INTO repo (id, name, deleted_at, private) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO NOTHING`,
+		`INSERT INTO repo (id, name, deleted_at, private) VALUES (%s, %s, %s, %s) ON CONFLICT ON CONSTRAINT repo_pkey DO NOTHING`,
 		id,
 		name,
 		deletedAt,

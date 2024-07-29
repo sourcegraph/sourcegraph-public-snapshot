@@ -65,6 +65,7 @@ go_library(
         "//internal/search/searchcontexts",
         "//internal/search/streaming/http",
         "//internal/src-cli",
+        "//internal/tenant",
         "//internal/trace",
         "//internal/types",
         "//internal/updatecheck",

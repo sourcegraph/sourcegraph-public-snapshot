@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -168,40 +169,41 @@ func overrideGlobalSettings(ctx context.Context, logger log.Logger, db database.
 		return nil
 	}
 	settings := db.Settings()
-	update := func(ctx context.Context) (bool, error) {
+	update := func(ctx context.Context) error {
 		globalSettingsBytes, err := os.ReadFile(path)
 		if err != nil {
-			return false, errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
+			return errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
 		}
-		currentSettings, err := settings.GetLatest(ctx, api.SettingsSubject{Site: true})
-		if err != nil {
-			return false, errors.Wrap(err, "could not fetch current settings")
-		}
-		// Only overwrite the settings if the current settings differ, don't exist, or were
-		// created by a human user to prevent creating unnecessary rows in the DB.
-		globalSettings := string(globalSettingsBytes)
-		if currentSettings == nil || currentSettings.AuthorUserID != nil || currentSettings.Contents != globalSettings {
-			var lastID *int32 = nil
-			if currentSettings != nil {
-				lastID = &currentSettings.ID
-			}
-			_, err = settings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
+		return tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+			currentSettings, err := settings.GetLatest(ctx, api.SettingsSubject{Site: true})
 			if err != nil {
-				return false, errors.Wrap(err, "writing global setting override to database")
+				return errors.Wrap(err, "could not fetch current settings")
 			}
-			return true, nil
-		}
-		return false, nil
+			// Only overwrite the settings if the current settings differ, don't exist, or were
+			// created by a human user to prevent creating unnecessary rows in the DB.
+			globalSettings := string(globalSettingsBytes)
+			if currentSettings == nil || currentSettings.AuthorUserID != nil || currentSettings.Contents != globalSettings {
+				var lastID *int32 = nil
+				if currentSettings != nil {
+					lastID = &currentSettings.ID
+				}
+				_, err = settings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
+				if err != nil {
+					return errors.Wrap(err, "writing global setting override to database")
+				}
+				return nil
+			}
+			return nil
+		})
 	}
-	updated, err := update(ctx)
+	err := update(ctx)
 	if err != nil {
 		return err
 	}
-	if !updated {
-		logger.Info("Global settings is already up to date, skipping writing a new entry")
-	}
 
-	go watchUpdate(ctx, logger, update, path)
+	go watchUpdate(ctx, logger, func(ctx context.Context) (bool, error) {
+		return true, update(ctx)
+	}, path)
 
 	return nil
 }
@@ -238,118 +240,122 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 			logger.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
 		}
 
-		existing, err := extsvcs.List(ctx, database.ExternalServicesListOptions{})
-		if err != nil {
-			return false, errors.Wrap(err, "ExternalServices.List")
-		}
+		var updated bool
+		return updated, tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+			existing, err := extsvcs.List(ctx, database.ExternalServicesListOptions{})
+			if err != nil {
+				return errors.Wrap(err, "ExternalServices.List")
+			}
 
-		// Perform delta update for external services. We don't want to just delete all
-		// external services and re-add all of them, because that would cause
-		// repo-updater to need to update repositories and reassociate them with external
-		// services each time the frontend restarts.
-		//
-		// Start out by assuming we will remove all and re-add all.
-		var (
-			toAdd    = make(map[*types.ExternalService]bool)
-			toRemove = make(map[*types.ExternalService]bool)
-			toUpdate = make(map[int64]*types.ExternalService)
-		)
-		for _, existing := range existing {
-			toRemove[existing] = true
-		}
-		for key, cfgs := range rawConfigs {
-			for i, cfg := range cfgs {
-				marshaledCfg, err := json.MarshalIndent(cfg, "", "  ")
+			// Perform delta update for external services. We don't want to just delete all
+			// external services and re-add all of them, because that would cause
+			// repo-updater to need to update repositories and reassociate them with external
+			// services each time the frontend restarts.
+			//
+			// Start out by assuming we will remove all and re-add all.
+			var (
+				toAdd    = make(map[*types.ExternalService]bool)
+				toRemove = make(map[*types.ExternalService]bool)
+				toUpdate = make(map[int64]*types.ExternalService)
+			)
+			for _, existing := range existing {
+				toRemove[existing] = true
+			}
+			for key, cfgs := range rawConfigs {
+				for i, cfg := range cfgs {
+					marshaledCfg, err := json.MarshalIndent(cfg, "", "  ")
+					if err != nil {
+						return errors.Wrapf(err, "marshaling extsvc config ([%v][%v])", key, i)
+					}
+
+					toAdd[&types.ExternalService{
+						Kind:        key,
+						DisplayName: fmt.Sprintf("%s #%d", key, i+1),
+						Config:      extsvc.NewUnencryptedConfig(string(marshaledCfg)),
+					}] = true
+				}
+			}
+			// Now eliminate operations from toAdd/toRemove where the config
+			// file and DB describe an equivalent external service.
+			isEquiv := func(a, b *types.ExternalService) (bool, error) {
+				aConfig, err := a.Config.Decrypt(ctx)
 				if err != nil {
-					return false, errors.Wrapf(err, "marshaling extsvc config ([%v][%v])", key, i)
-				}
-
-				toAdd[&types.ExternalService{
-					Kind:        key,
-					DisplayName: fmt.Sprintf("%s #%d", key, i+1),
-					Config:      extsvc.NewUnencryptedConfig(string(marshaledCfg)),
-				}] = true
-			}
-		}
-		// Now eliminate operations from toAdd/toRemove where the config
-		// file and DB describe an equivalent external service.
-		isEquiv := func(a, b *types.ExternalService) (bool, error) {
-			aConfig, err := a.Config.Decrypt(ctx)
-			if err != nil {
-				return false, err
-			}
-
-			bConfig, err := b.Config.Decrypt(ctx)
-			if err != nil {
-				return false, err
-			}
-
-			return a.Kind == b.Kind && a.DisplayName == b.DisplayName && aConfig == bConfig, nil
-		}
-		shouldUpdate := func(a, b *types.ExternalService) (bool, error) {
-			aConfig, err := a.Config.Decrypt(ctx)
-			if err != nil {
-				return false, err
-			}
-
-			bConfig, err := b.Config.Decrypt(ctx)
-			if err != nil {
-				return false, err
-			}
-
-			return a.Kind == b.Kind && a.DisplayName == b.DisplayName && aConfig != bConfig, nil
-		}
-		for a := range toAdd {
-			for b := range toRemove {
-				if ok, err := isEquiv(a, b); err != nil {
 					return false, err
-				} else if ok {
-					// Nothing changed
-					delete(toAdd, a)
-					delete(toRemove, b)
-					continue
 				}
 
-				if ok, err := shouldUpdate(a, b); err != nil {
+				bConfig, err := b.Config.Decrypt(ctx)
+				if err != nil {
 					return false, err
-				} else if ok {
-					delete(toAdd, a)
-					delete(toRemove, b)
-					toUpdate[b.ID] = a
+				}
+
+				return a.Kind == b.Kind && a.DisplayName == b.DisplayName && aConfig == bConfig, nil
+			}
+			shouldUpdate := func(a, b *types.ExternalService) (bool, error) {
+				aConfig, err := a.Config.Decrypt(ctx)
+				if err != nil {
+					return false, err
+				}
+
+				bConfig, err := b.Config.Decrypt(ctx)
+				if err != nil {
+					return false, err
+				}
+
+				return a.Kind == b.Kind && a.DisplayName == b.DisplayName && aConfig != bConfig, nil
+			}
+			for a := range toAdd {
+				for b := range toRemove {
+					if ok, err := isEquiv(a, b); err != nil {
+						return err
+					} else if ok {
+						// Nothing changed
+						delete(toAdd, a)
+						delete(toRemove, b)
+						continue
+					}
+
+					if ok, err := shouldUpdate(a, b); err != nil {
+						return err
+					} else if ok {
+						delete(toAdd, a)
+						delete(toRemove, b)
+						toUpdate[b.ID] = a
+					}
 				}
 			}
-		}
 
-		// Apply the delta update.
-		for extSvc := range toRemove {
-			logger.Debug("Deleting external service", log.Int64("id", extSvc.ID), log.String("displayName", extSvc.DisplayName))
-			err := extsvcs.Delete(ctx, extSvc.ID)
-			if err != nil {
-				return false, errors.Wrap(err, "ExternalServices.Delete")
+			// Apply the delta update.
+			for extSvc := range toRemove {
+				logger.Debug("Deleting external service", log.Int64("id", extSvc.ID), log.String("displayName", extSvc.DisplayName))
+				err := extsvcs.Delete(ctx, extSvc.ID)
+				if err != nil {
+					return errors.Wrap(err, "ExternalServices.Delete")
+				}
 			}
-		}
-		for extSvc := range toAdd {
-			logger.Debug("Adding external service", log.String("displayName", extSvc.DisplayName))
-			if err := extsvcs.Create(ctx, confGet, extSvc); err != nil {
-				return false, errors.Wrap(err, "ExternalServices.Create")
+			for extSvc := range toAdd {
+				logger.Debug("Adding external service", log.String("displayName", extSvc.DisplayName))
+				if err := extsvcs.Create(ctx, confGet, extSvc); err != nil {
+					return errors.Wrap(err, "ExternalServices.Create")
+				}
 			}
-		}
 
-		ps := confGet().AuthProviders
-		for id, extSvc := range toUpdate {
-			logger.Debug("Updating external service", log.Int64("id", id), log.String("displayName", extSvc.DisplayName))
+			ps := confGet().AuthProviders
+			for id, extSvc := range toUpdate {
+				logger.Debug("Updating external service", log.Int64("id", id), log.String("displayName", extSvc.DisplayName))
 
-			rawConfig, err := extSvc.Config.Decrypt(ctx)
-			if err != nil {
-				return false, err
-			}
-			update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &rawConfig}
+				rawConfig, err := extSvc.Config.Decrypt(ctx)
+				if err != nil {
+					return err
+				}
+				update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &rawConfig}
 
-			if err := extsvcs.Update(ctx, ps, id, update); err != nil {
-				return false, errors.Wrap(err, "ExternalServices.Update")
+				if err := extsvcs.Update(ctx, ps, id, update); err != nil {
+					return errors.Wrap(err, "ExternalServices.Update")
+				}
 			}
-		}
-		return true, nil
+			updated = true
+			return nil
+		})
 	}
 	updated, err := update(ctx)
 	if err != nil {
@@ -453,7 +459,7 @@ type configurationSource struct {
 }
 
 func (c *configurationSource) Read(ctx context.Context) (conftypes.RawUnified, error) {
-	site, err := c.db.Conf().SiteGetLatest(ctx)
+	site, err := c.db.Conf().SiteGetLatest(tenant.InsecureGlobalContext(ctx))
 	if err != nil {
 		return conftypes.RawUnified{}, errors.Wrap(err, "ConfStore.SiteGetLatest")
 	}
@@ -470,14 +476,14 @@ func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnif
 }
 
 func (c *configurationSource) WriteWithOverride(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID int32, isOverride bool) error {
-	site, err := c.db.Conf().SiteGetLatest(ctx)
+	site, err := c.db.Conf().SiteGetLatest(tenant.InsecureGlobalContext(ctx))
 	if err != nil {
 		return errors.Wrap(err, "ConfStore.SiteGetLatest")
 	}
 	if site.ID != lastID {
 		return errors.New("site config has been modified by another request, write not allowed")
 	}
-	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, authorUserID, input.Site, isOverride)
+	_, err = c.db.Conf().SiteCreateIfUpToDate(tenant.InsecureGlobalContext(ctx), &site.ID, authorUserID, input.Site, isOverride)
 	if err != nil {
 		log.Error(errors.Wrap(err, "SiteConfig creation failed"))
 		return errors.Wrap(err, "ConfStore.SiteCreateIfUpToDate")

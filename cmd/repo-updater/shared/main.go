@@ -324,7 +324,7 @@ func watchSyncer(
 // newUnclonedReposManager creates a background routine that will periodically list
 // the uncloned repositories on gitserver and update the scheduler with the list.
 func newUnclonedReposManager(ctx context.Context, logger log.Logger, sched *scheduler.UpdateScheduler, store repos.Store) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(
+	return goroutine.NewPeriodicGoroutinePerTenant(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			// Don't modify the scheduler if we're not performing auto updates.
@@ -339,7 +339,7 @@ func newUnclonedReposManager(ctx context.Context, logger log.Logger, sched *sche
 				return errors.Wrap(err, "failed to fetch list of uncloned repositories")
 			}
 
-			sched.PrioritiseUncloned(uncloned)
+			sched.PrioritiseUncloned(ctx, uncloned)
 
 			return nil
 		}),

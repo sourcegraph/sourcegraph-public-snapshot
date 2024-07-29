@@ -323,7 +323,7 @@ func redisPoolForTest(t *testing.T, prefix string) *redis.Pool {
 		_ = c.Close()
 	})
 
-	if err := redispool.DeleteAllKeysWithPrefix(c, prefix); err != nil {
+	if err := redispool.DeleteAllKeysWithPrefix(context.Background(), c, prefix); err != nil {
 		t.Logf("Could not clear test prefix name=%q prefix=%q error=%v", t.Name(), prefix, err)
 	}
 

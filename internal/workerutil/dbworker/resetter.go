@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -23,13 +24,14 @@ import (
 // state for more than a few seconds are very likely to be stuck after the worker processing
 // them has crashed.
 type Resetter[T workerutil.Record] struct {
-	store    store.Store[T]
-	options  ResetterOptions
-	clock    glock.Clock
-	ctx      context.Context // root context passed to the database
-	cancel   func()          // cancels the root context
-	finished chan struct{}   // signals that Start has finished
-	logger   log.Logger
+	store      store.Store[T]
+	options    ResetterOptions
+	clock      glock.Clock
+	ctx        context.Context // root context passed to the database
+	cancel     func()          // cancels the root context
+	finished   chan struct{}   // signals that Start has finished
+	logger     log.Logger
+	nextTenant chan context.Context
 }
 
 type ResetterOptions struct {
@@ -107,26 +109,34 @@ func (r *Resetter[T]) Start() {
 
 loop:
 	for {
-		resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err := r.store.ResetStalled(r.ctx)
-		if err != nil {
-			if r.ctx.Err() != nil && errors.Is(err, r.ctx.Err()) {
-				// If the error is due to the loop being shut down, just break
-				break loop
+		endAfterIteration := false
+		_ = tenant.ForEachTenant(r.ctx, func(ctx context.Context) error {
+			resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err := r.store.ResetStalled(ctx)
+			if err != nil {
+				if ctx.Err() != nil && errors.Is(err, ctx.Err()) {
+					// If the error is due to the loop being shut down, just break
+					endAfterIteration = true
+					return err
+				}
+
+				r.options.Metrics.Errors.Inc()
+				r.logger.Error("Failed to reset stalled records", log.String("name", r.options.Name), log.Error(err))
 			}
 
-			r.options.Metrics.Errors.Inc()
-			r.logger.Error("Failed to reset stalled records", log.String("name", r.options.Name), log.Error(err))
-		}
+			for id, lastHeartbeatAge := range resetLastHeartbeatsByIDs {
+				r.logger.Warn("Reset stalled record back to 'queued' state", log.String("name", r.options.Name), log.Int("id", id), log.Duration("timeSinceLastHeartbeat", lastHeartbeatAge))
+			}
+			for id, lastHeartbeatAge := range failedLastHeartbeatsByIDs {
+				r.logger.Warn("Reset stalled record to 'failed' state", log.String("name", r.options.Name), log.Int("id", id), log.Duration("timeSinceLastHeartbeat", lastHeartbeatAge))
+			}
 
-		for id, lastHeartbeatAge := range resetLastHeartbeatsByIDs {
-			r.logger.Warn("Reset stalled record back to 'queued' state", log.String("name", r.options.Name), log.Int("id", id), log.Duration("timeSinceLastHeartbeat", lastHeartbeatAge))
+			r.options.Metrics.RecordResets.Add(float64(len(resetLastHeartbeatsByIDs)))
+			r.options.Metrics.RecordResetFailures.Add(float64(len(failedLastHeartbeatsByIDs)))
+			return nil
+		})
+		if endAfterIteration {
+			break loop
 		}
-		for id, lastHeartbeatAge := range failedLastHeartbeatsByIDs {
-			r.logger.Warn("Reset stalled record to 'failed' state", log.String("name", r.options.Name), log.Int("id", id), log.Duration("timeSinceLastHeartbeat", lastHeartbeatAge))
-		}
-
-		r.options.Metrics.RecordResets.Add(float64(len(resetLastHeartbeatsByIDs)))
-		r.options.Metrics.RecordResetFailures.Add(float64(len(failedLastHeartbeatsByIDs)))
 
 		select {
 		case <-r.clock.After(r.options.Interval):

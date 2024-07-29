@@ -120,7 +120,7 @@ func newResetterMetrics(observationCtx *observation.Context) dbworker.ResetterMe
 }
 
 func newJobCleanerRoutine(ctx context.Context, db database.DB, interval time.Duration) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(
+	return goroutine.NewPeriodicGoroutinePerTenant(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			err := db.ExternalServices().CleanupSyncJobs(ctx, database.ExternalServicesCleanupSyncJobsOptions{

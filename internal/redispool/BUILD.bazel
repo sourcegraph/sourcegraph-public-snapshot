@@ -17,6 +17,7 @@ go_library(
         "//internal/env",
         "//internal/lazyregexp",
         "//internal/sysreq",
+        "//internal/tenant",
         "//lib/errors",
         "@com_github_gomodule_redigo//redis",
     ],

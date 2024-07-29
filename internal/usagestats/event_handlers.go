@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -69,7 +70,7 @@ type Event struct {
 //
 // Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
 // Learn more: https://docs-legacy.sourcegraph.com/dev/background-information/telemetry
-func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, evaluatedFlagSet featureflag.EvaluatedFlagSet, cohortID *string) error {
+func LogBackendEvent(ctx context.Context, db database.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, evaluatedFlagSet featureflag.EvaluatedFlagSet, cohortID *string) error {
 	insertID, _ := uuid.NewRandom()
 	insertIDFinal := insertID.String()
 	eventID := int32(rand.Int())
@@ -80,10 +81,10 @@ func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, a
 	}
 
 	hashedLicenseKey := conf.HashedCurrentLicenseKeyForAnalytics()
-	connectedSiteID := siteid.Get(db)
+	connectedSiteID := siteid.Get(ctx, db)
 
 	//lint:ignore SA1019 existing usage of deprecated functionality.
-	return LogEvent(context.Background(), db, Event{
+	return LogEvent(tenant.Background(ctx), db, Event{
 		EventName:        eventName,
 		UserID:           userID,
 		UserCookieID:     "backend", // Use a non-empty string here to avoid the event_logs table's user existence constraint causing issues

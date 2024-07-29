@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package tenantmanager.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/sourcegraph/sourcegraph/cmd/tenantmanager/shared/v1";
+
+// TenantManagerService exposes operations to be performed by
+// repo-updater. These methods are not meant to be used by other services, and
+// should be considered an implementation detail of gitserver.
+service TenantManagerService {
+  rpc CreateTenant(CreateTenantRequest) returns (CreateTenantResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+  rpc DeleteTenant(DeleteTenantRequest) returns (DeleteTenantResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+  // ListTenants returns a list of all tenants known to this instance.
+  rpc ListTenants(ListTenantsRequest) returns (ListTenantsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message CreateTenantRequest {
+  // name is the name of the tenant.
+  string name = 1;
+}
+
+message Tenant {
+  // id is the unique identifier of the tenant.
+  int64 id = 1;
+  // name is the name of the tenant.
+  string name = 2;
+  // created_at is the time the tenant was created.
+  google.protobuf.Timestamp created_at = 3;
+  // updated_at is the time the tenant was last updated.
+  google.protobuf.Timestamp updated_at = 4;
+}
+
+message CreateTenantResponse {
+  Tenant tenant = 1;
+}
+
+message DeleteTenantRequest {
+  // id is the unique identifier of the tenant.
+  int64 id = 1;
+  // name is the name of the tenant.
+  string name = 2;
+}
+
+message DeleteTenantResponse {
+}
+
+message ListTenantsRequest {
+  // page_size is the maximum number of tenants to return in a single response.
+  // Must be > 0 and should be chosen so that the maximum gRPC message size is not
+  // exceeded.
+  uint32 page_size = 1;
+  // page_token is a token that can be used to request the next page of tenants.
+  string page_token = 2;
+}
+
+message ListTenantsResponse {
+  repeated Tenant tenants = 1;
+  // next_page_token is the token to use to request the next page of tenants.
+  // Pass it to page_token in ListTenantsRequest to get the next page.
+  // If this is empty, there are no more tenants to return.
+  string next_page_token = 2;
+}

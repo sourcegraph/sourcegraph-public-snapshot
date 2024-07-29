@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 type handler struct {
@@ -22,11 +23,9 @@ func (h *handler) Handle(ctx context.Context) error {
 	retention := calculateRetention(conf.Get())
 	log15.Debug("purging webhook logs", "retention", retention)
 
-	if err := h.store.DeleteStale(ctx, retention); err != nil {
-		return err
-	}
-
-	return nil
+	return tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+		return h.store.DeleteStale(ctx, retention)
+	})
 }
 
 func (h *handler) HandleError(err error) {

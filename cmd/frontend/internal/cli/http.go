@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/session"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -74,6 +75,7 @@ func newExternalHTTPHandler(
 	if dotcom.SourcegraphDotComMode() {
 		apiHandler = deviceid.Middleware(apiHandler)
 	}
+	apiHandler = tenant.ExternalTenantFromHostnameMiddleware(apiHandler)
 
 	// 🚨 SECURITY: This handler implements its own token auth inside enterprise
 	executorProxyHandler := newExecutorProxyHandler()
@@ -93,6 +95,8 @@ func newExternalHTTPHandler(
 	if dotcom.SourcegraphDotComMode() {
 		appHandler = deviceid.Middleware(appHandler)
 	}
+	appHandler = tenant.ExternalTenantFromHostnameMiddleware(appHandler)
+
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", secureHeadersMiddleware(apiHandler, crossOriginPolicyAPI))
@@ -161,11 +165,14 @@ func newInternalHTTPHandler(
 	)
 
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
-		actor.HTTPMiddleware(
+		tenant.InternalHTTPMiddleware(
 			logger,
-			featureflag.Middleware(
-				db.FeatureFlags(),
-				internalRouter,
+			actor.HTTPMiddleware(
+				logger,
+				featureflag.Middleware(
+					db.FeatureFlags(),
+					internalRouter,
+				),
 			),
 		),
 	))

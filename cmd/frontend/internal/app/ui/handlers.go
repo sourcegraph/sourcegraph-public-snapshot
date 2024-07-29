@@ -39,6 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
@@ -278,7 +279,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		common.Rev = mux.Vars(r)["Rev"]
 		// Update gitserver contents for a repo whenever it is visited.
 		go func() {
-			ctx := context.Background()
+			ctx := tenant.Background(r.Context())
 			_, err = repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, common.Repo.Name)
 			if err != nil {
 				logger.Error("EnqueueRepoUpdate", log.Error(err))

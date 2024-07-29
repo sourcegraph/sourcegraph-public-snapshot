@@ -322,7 +322,7 @@ func updateLastAccessedAt(ctx context.Context, db dbutil.DB, repo string) (id in
 	err = db.QueryRowContext(ctx, `
 			INSERT INTO rockskip_repos (repo, last_accessed_at)
 			VALUES ($1, now())
-			ON CONFLICT (repo)
+			ON CONFLICT (repo, tenant_id)
 			DO UPDATE SET last_accessed_at = now()
 			RETURNING id
 		`, repo).Scan(&id)

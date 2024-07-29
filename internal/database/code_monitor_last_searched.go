@@ -27,7 +27,7 @@ func (s *codeMonitorStore) UpsertLastSearched(ctx context.Context, monitorID int
 	rawQuery := `
 	INSERT INTO cm_last_searched (monitor_id, repo_id, commit_oids)
 	VALUES (%s, %s, %s)
-	ON CONFLICT (monitor_id, repo_id) DO UPDATE
+	ON CONFLICT ON CONSTRAINT cm_last_searched_pkey DO UPDATE
 	SET commit_oids = %s
 	`
 

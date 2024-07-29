@@ -13,6 +13,7 @@ go_library(
         "//internal/github_apps/auth",
         "//internal/github_apps/types",
         "//internal/goroutine",
+        "//internal/tenant",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
     ],

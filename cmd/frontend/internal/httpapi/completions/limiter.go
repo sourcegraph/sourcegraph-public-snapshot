@@ -78,11 +78,9 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 		key = anonymousKey(ip, r.scope)
 	}
 
-	rstore := r.rstore.WithContext(ctx)
-
 	// Check the current usage. If
 	// no record exists, redis will return 0 and ErrNil.
-	currentUsage, err := rstore.Get(key).Int()
+	currentUsage, err := r.rstore.Get(key).Int()
 	if err != nil && err != redis.ErrNil {
 		return errors.Wrap(err, "failed to read rate limit counter")
 	}
@@ -92,7 +90,7 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 	// like the limit and the time by when they should retry.
 	if currentUsage >= limit {
 		// Read TTL to compute the RetryAfter time.
-		ttl, err := rstore.TTL(key)
+		ttl, err := r.rstore.TTL(key)
 		if err != nil {
 			return errors.Wrap(err, "failed to get TTL for rate limit counter")
 		}
@@ -125,7 +123,7 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 	// just one token. This seems fine. Note: this isn't an issue on subsequent requests in the
 	// same time block since the TTL would have been set.
 
-	if _, err := rstore.Incr(key); err != nil {
+	if _, err := r.rstore.Incr(key); err != nil {
 		return errors.Wrap(err, "failed to increment rate limit counter")
 	}
 
@@ -133,12 +131,12 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 	// it will set the expiry of the key to one day.
 	// If it did exist before, it should have an expiry set already, so the TTL >= 0
 	// makes sure that we don't overwrite it and restart the 1h bucket.
-	ttl, err := rstore.TTL(key)
+	ttl, err := r.rstore.TTL(key)
 	if err != nil {
 		return errors.Wrap(err, "failed to get TTL for rate limit counter")
 	}
 	if ttl < 0 {
-		if err := rstore.Expire(key, int(24*time.Hour/time.Second)); err != nil {
+		if err := r.rstore.Expire(key, int(24*time.Hour/time.Second)); err != nil {
 			return errors.Wrap(err, "failed to set expiry for rate limit counter")
 		}
 	}

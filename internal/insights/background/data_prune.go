@@ -20,7 +20,7 @@ func NewInsightsDataPrunerJob(ctx context.Context, postgres database.DB, insight
 	interval := time.Minute * 60
 	logger := log.Scoped("InsightsDataPrunerJob")
 
-	return goroutine.NewPeriodicGoroutine(
+	return goroutine.NewPeriodicGoroutinePerTenant(
 		ctx,
 		goroutine.HandlerFunc(func(ctx context.Context) (err error) {
 			return performPurge(ctx, postgres, insightsdb, logger, time.Now().Add(interval))

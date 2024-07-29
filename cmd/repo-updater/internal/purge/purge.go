@@ -41,7 +41,7 @@ func NewRepositoryPurgeWorker(ctx context.Context, logger log.Logger, db databas
 
 	var timeToNextPurge time.Duration
 
-	return goroutine.NewPeriodicGoroutine(
+	return goroutine.NewPeriodicGoroutinePerTenant(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			purgeConfig := conf.SiteConfig().RepoPurgeWorker

@@ -38,7 +38,7 @@ func (j *updater) Routines(_ context.Context, observationCtx *observation.Contex
 	}
 
 	return []goroutine.BackgroundRoutine{
-		goroutine.NewPeriodicGoroutine(
+		goroutine.NewPeriodicGoroutinePerTenant(
 			context.Background(),
 			&handler{
 				db:     db,

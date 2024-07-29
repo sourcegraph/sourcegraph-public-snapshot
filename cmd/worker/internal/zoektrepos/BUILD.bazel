@@ -14,6 +14,7 @@ go_library(
         "//internal/goroutine",
         "//internal/observation",
         "//internal/search",
+        "//internal/tenant",
         "@com_github_sourcegraph_log//:log",
     ],
 )

@@ -68,7 +68,7 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 		w.WriteHeader(http.StatusCreated)
 		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
 		//lint:ignore SA1019 existing usage of deprecated functionality.
-		if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "CreateAccessRequestSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+		if err = usagestats.LogBackendEvent(r.Context(), db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "CreateAccessRequestSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 			logger.Warn("Failed to log event CreateAccessRequestSucceeded", log.Error(err))
 		}
 		return
@@ -88,7 +88,7 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 
 	// TODO: Use EventRecorder from internal/telemetryrecorder instead.
 	//lint:ignore SA1019 existing usage of deprecated functionality.
-	if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "AccessRequestFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+	if err = usagestats.LogBackendEvent(r.Context(), db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "AccessRequestFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 		logger.Warn("Failed to log event AccessRequestFailed", log.Error(err))
 	}
 }

@@ -14,7 +14,7 @@ type expirer struct {
 }
 
 func NewExpirer(ctx context.Context, store Storage, prefix string, maxAge time.Duration, interval time.Duration) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(
+	return goroutine.NewPeriodicGoroutinePerTenant(
 		ctx,
 		&expirer{
 			store:  store,

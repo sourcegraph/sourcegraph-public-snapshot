@@ -42,7 +42,7 @@ var uploadPackArgs = []string{
 type Handler struct {
 	// Dir is a funcion which takes a repository name and returns an absolute
 	// path to the GIT_DIR for it.
-	Dir func(string) string
+	Dir func(context.Context, string) string
 
 	// ErrorHook is called if we fail to run the git command. The main use of
 	// this is to inject logging. For example in src-cli we don't use
@@ -83,7 +83,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	dir := s.Dir(repo)
+	dir := s.Dir(r.Context(), repo)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		http.Error(w, "repository not found", http.StatusNotFound)
 		return

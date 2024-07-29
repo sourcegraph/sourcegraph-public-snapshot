@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -85,8 +86,13 @@ func (p *permissionSyncJobScheduler) Routines(_ context.Context, observationCtx 
 					}
 
 					start := time.Now()
-					count, err := scheduleJobs(ctx, db, logger, p.backoff)
-					m.Observe(time.Since(start).Seconds(), float64(count), &err)
+					var totalCount int
+					err := tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+						count, err := scheduleJobs(ctx, db, logger, p.backoff)
+						totalCount += count
+						return err
+					})
+					m.Observe(time.Since(start).Seconds(), float64(totalCount), &err)
 					return err
 				},
 			),

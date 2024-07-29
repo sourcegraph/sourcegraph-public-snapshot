@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -72,8 +73,13 @@ func (p *permissionSyncJobCleaner) Routines(_ context.Context, observationCtx *o
 			goroutine.HandlerFunc(
 				func(ctx context.Context) error {
 					start := time.Now()
-					cleanedJobs, err := cleanJobs(ctx, db)
-					m.Observe(time.Since(start).Seconds(), float64(cleanedJobs), &err)
+					var totalCleanedJobs int64
+					err := tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+						cleanedJobs, err := cleanJobs(ctx, db)
+						totalCleanedJobs += cleanedJobs
+						return err
+					})
+					m.Observe(time.Since(start).Seconds(), float64(totalCleanedJobs), &err)
 					return err
 				},
 			),

@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -107,7 +108,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 
 	var success bool
 	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		ctx, cancel := context.WithTimeout(tenant.InsecureGlobalContext(context.Background()), time.Second*5)
 		defer cancel()
 		if err := upgradestore.SetUpgradeStatus(ctx, success); err != nil {
 			obsvCtx.Logger.Error("failed to set auto-upgrade status", log.Error(err))
@@ -187,7 +188,7 @@ func runMigration(
 	}
 
 	return multiversion.RunMigration(
-		ctx,
+		tenant.InsecureGlobalContext(ctx),
 		db,
 		runnerFactory,
 		plan,
@@ -297,7 +298,7 @@ const heartbeatInterval = time.Second * 10
 func heartbeatLoop(logger log.Logger, db database.DB) (func(), error) {
 	upgradestore := upgradestore.New(db)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(tenant.InsecureGlobalContext(context.Background()), time.Second*5)
 	defer cancel()
 	if err := upgradestore.Heartbeat(ctx); err != nil {
 		return nil, errors.Wrap(err, "error executing autoupgrade heartbeat")
@@ -312,7 +313,7 @@ func heartbeatLoop(logger log.Logger, db database.DB) (func(), error) {
 				return
 			case <-ticker.C:
 				func() {
-					ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+					ctx, cancel := context.WithTimeout(tenant.InsecureGlobalContext(context.Background()), time.Second*5)
 					defer cancel()
 					if err := upgradestore.Heartbeat(ctx); err != nil {
 						logger.Error("error executing autoupgrade heartbeat", log.Error(err))

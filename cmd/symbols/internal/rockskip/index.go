@@ -384,6 +384,7 @@ type indexRequest struct {
 	repoCommit
 	dateAddedToQueue time.Time
 	done             chan struct{}
+	ctx              context.Context
 }
 
 type pathSymbol struct {

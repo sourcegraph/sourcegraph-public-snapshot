@@ -271,7 +271,7 @@ INSERT INTO out_of_band_migrations
 	deprecated_version_minor
 )
 VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s)
-ON CONFLICT (id) DO UPDATE SET
+ON CONFLICT (id, tenant_id) DO UPDATE SET
 	team = %s,
 	component = %s,
 	description = %s,
@@ -334,7 +334,7 @@ INSERT INTO out_of_band_migrations
 	deprecated
 )
 VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s)
-ON CONFLICT (id) DO UPDATE SET
+ON CONFLICT (id, tenant_id) DO UPDATE SET
 	team = %s,
 	component = %s,
 	description = %s,

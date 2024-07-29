@@ -131,7 +131,7 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, _ co
 		args = append(args, depot+"@all", tmpPath)
 		cmd = exec.CommandContext(ctx, "git", args...)
 	}
-	cmd.Env, err = s.p4CommandEnv(tmpPath, p4port, p4user, p4passwd)
+	cmd.Env, err = s.p4CommandEnv(ctx, tmpPath, p4port, p4user, p4passwd)
 	if err != nil {
 		return errors.Wrap(err, "failed to build p4 command env")
 	}
@@ -244,7 +244,7 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, 
 		args := append([]string{"p4", "sync"}, s.p4CommandOptions()...)
 		cmd = wrexec.CommandContext(ctx, nil, "git", args...)
 	}
-	cmd.Env, err = s.p4CommandEnv(string(dir), p4port, p4user, p4passwd)
+	cmd.Env, err = s.p4CommandEnv(ctx, string(dir), p4port, p4user, p4passwd)
 	if err != nil {
 		return errors.Wrap(err, "failed to build p4 command env")
 	}
@@ -260,7 +260,7 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, 
 	}
 
 	if !s.fusionConfig.Enabled {
-		p4home, err := s.fs.P4HomeDir()
+		p4home, err := s.fs.P4HomeDir(ctx)
 		if err != nil {
 			return errors.Wrap(err, "failed to create p4home")
 		}
@@ -301,7 +301,7 @@ func (s *perforceDepotSyncer) p4CommandOptions() []string {
 	return flags
 }
 
-func (s *perforceDepotSyncer) p4CommandEnv(cmdCWD, p4port, p4user, p4passwd string) ([]string, error) {
+func (s *perforceDepotSyncer) p4CommandEnv(ctx context.Context, cmdCWD, p4port, p4user, p4passwd string) ([]string, error) {
 	env := append(
 		os.Environ(),
 		"P4PORT="+p4port,
@@ -314,7 +314,7 @@ func (s *perforceDepotSyncer) p4CommandEnv(cmdCWD, p4port, p4user, p4passwd stri
 		env = append(env, "P4CLIENT="+s.p4Client)
 	}
 
-	p4home, err := s.fs.P4HomeDir()
+	p4home, err := s.fs.P4HomeDir(ctx)
 	if err != nil {
 		return nil, err
 	}

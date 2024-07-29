@@ -19,6 +19,7 @@ go_library(
     deps = [
         "//internal/conf",
         "//internal/redispool",
+        "//internal/tenant",
         "//internal/timeutil",
         "//lib/errors",
         "@com_github_gomodule_redigo//redis",

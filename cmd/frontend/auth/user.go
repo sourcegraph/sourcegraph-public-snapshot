@@ -303,7 +303,7 @@ func GetAndSaveUser(
 		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, acct.AccountSpec.ServiceType))
 		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
 		//lint:ignore SA1019 existing usage of deprecated functionality.
-		if logErr := usagestats.LogBackendEvent(db, sgactor.FromContext(telemetryCtx).UID, deviceid.FromContext(telemetryCtx), legacyEventName, serviceTypeArg, serviceTypeArg, featureflag.GetEvaluatedFlagSet(ctx), nil); logErr != nil {
+		if logErr := usagestats.LogBackendEvent(ctx, db, sgactor.FromContext(telemetryCtx).UID, deviceid.FromContext(telemetryCtx), legacyEventName, serviceTypeArg, serviceTypeArg, featureflag.GetEvaluatedFlagSet(ctx), nil); logErr != nil {
 			logger.Error(
 				"failed to log event",
 				sglog.String("eventName", legacyEventName),

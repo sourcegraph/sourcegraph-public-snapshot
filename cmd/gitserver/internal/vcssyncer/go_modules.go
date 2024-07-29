@@ -76,7 +76,7 @@ func (s *goModulesSyncer) Download(ctx context.Context, dir string, dep reposour
 	}
 	defer zip.Close()
 
-	tmpdir, err := s.fs.TempDir("gomod-zips")
+	tmpdir, err := s.fs.TempDir(ctx, "gomod-zips")
 	if err != nil {
 		return errors.Wrap(err, "create temp dir")
 	}

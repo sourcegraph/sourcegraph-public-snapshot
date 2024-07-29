@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -197,7 +198,7 @@ var (
 // 10. Git prune
 // 11. Set sizes of repos
 func cleanupRepos(
-	ctx context.Context,
+	outerCtx context.Context,
 	logger log.Logger,
 	db database.DB,
 	fs gitserverfs.FS,
@@ -245,7 +246,7 @@ func cleanupRepos(
 		}
 	}()
 
-	maybeDeleteWrongShardRepos := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+	maybeDeleteWrongShardRepos := func(ctx context.Context, backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		// Record the number of repos that should not belong on this instance.
 		addr := gitServerAddrs.AddrForRepo(ctx, repoName)
 
@@ -274,7 +275,7 @@ func cleanupRepos(
 			log.String("target-shard", addr),
 			log.String("current-shard", shardID),
 		)
-		if err := fs.RemoveRepo(repoName); err != nil {
+		if err := fs.RemoveRepo(ctx, repoName); err != nil {
 			return true, err
 		}
 
@@ -284,7 +285,7 @@ func cleanupRepos(
 		return true, nil
 	}
 
-	collectSize := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+	collectSize := func(ctx context.Context, backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		last, err := getLastSizeCalculation(dir)
 		if err != nil {
 			return false, err
@@ -304,7 +305,7 @@ func cleanupRepos(
 		return false, setLastSizeCalculation(dir, time.Now())
 	}
 
-	maybeRemoveCorrupt := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, _ error) {
+	maybeRemoveCorrupt := func(ctx context.Context, backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, _ error) {
 		corrupt, shouldLog, reason, err := checkRepoDirCorrupt(rcf, repoName, dir)
 		if !corrupt || err != nil {
 			return false, err
@@ -319,7 +320,7 @@ func cleanupRepos(
 
 		logger.Warn("removing corrupt repo", log.String("repo", string(dir)), log.String("reason", reason))
 
-		if err := fs.RemoveRepo(repoName); err != nil {
+		if err := fs.RemoveRepo(ctx, repoName); err != nil {
 			return true, err
 		}
 
@@ -333,7 +334,7 @@ func cleanupRepos(
 		return true, nil
 	}
 
-	maybeRemoveNonExisting := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (bool, error) {
+	maybeRemoveNonExisting := func(ctx context.Context, backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (bool, error) {
 		if !removeNonExistingRepos {
 			return false, nil
 		}
@@ -354,22 +355,22 @@ func cleanupRepos(
 		// TODO: For soft-deleted, it might be nice to attempt to update the clone status,
 		// but that can only work when we can map a repo on disk back to a repo in DB
 		// when the name has been modified to have the DELETED- prefix.
-		err = fs.RemoveRepo(repoName)
+		err = fs.RemoveRepo(ctx, repoName)
 		if err == nil {
 			nonExistingReposRemoved.Inc()
 		}
 		return true, err
 	}
 
-	ensureGitAttributes := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+	ensureGitAttributes := func(ctx context.Context, backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		return false, git.SetGitAttributes(dir)
 	}
 
-	ensureAutoGC := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+	ensureAutoGC := func(ctx context.Context, backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		return false, gitSetAutoGC(ctx, backend.Config())
 	}
 
-	maybeReclone := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+	maybeReclone := func(ctx context.Context, backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		var reason string
 
 		gcFailedTimes, err := getGCFailCounter(dir)
@@ -416,7 +417,7 @@ func cleanupRepos(
 		// was newly added to Sourcegraph.
 		// This will make the repo inaccessible for a bit, but we consider the
 		// repo completely broken at this stage anways.
-		if err := fs.RemoveRepo(repoName); err != nil {
+		if err := fs.RemoveRepo(ctx, repoName); err != nil {
 			return true, errors.Wrap(err, "failed to remove repo")
 		}
 		// Set as not_cloned in the database.
@@ -429,7 +430,7 @@ func cleanupRepos(
 		return true, nil
 	}
 
-	removeStaleLocks := func(backend git.GitBackend, repoName api.RepoName, gitDir common.GitDir) (done bool, err error) {
+	removeStaleLocks := func(ctx context.Context, backend git.GitBackend, repoName api.RepoName, gitDir common.GitDir) (done bool, err error) {
 		// if removing a lock fails, we still want to try the other locks.
 		var multi error
 
@@ -500,21 +501,21 @@ func cleanupRepos(
 		return false, multi
 	}
 
-	performGC := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+	performGC := func(ctx context.Context, backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		return false, gitGC(logger, rcf, repoName, dir)
 	}
 
-	performSGMaintenance := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+	performSGMaintenance := func(ctx context.Context, backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		return false, sgMaintenance(logger, dir)
 	}
 
-	performGitPrune := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+	performGitPrune := func(ctx context.Context, backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		return false, pruneIfNeeded(rcf, repoName, dir, looseObjectsLimit)
 	}
 
 	type cleanupFn struct {
 		Name string
-		Do   func(git.GitBackend, api.RepoName, common.GitDir) (bool, error)
+		Do   func(context.Context, git.GitBackend, api.RepoName, common.GitDir) (bool, error)
 	}
 	cleanups := []cleanupFn{
 		// First, check if we should even be having this repo on disk anymore,
@@ -572,50 +573,53 @@ func cleanupRepos(
 
 	reposCleaned := 0
 
-	err := fs.ForEachRepo(func(repo api.RepoName, gitDir common.GitDir) (done bool) {
-		backend := gitBackendSource(gitDir, repo)
-		for _, cfn := range cleanups {
-			// Check if context has been canceled, if so skip the rest of the repos.
-			select {
-			case <-ctx.Done():
-				logger.Warn("aborting janitor run", log.Error(ctx.Err()))
-				return true
-			default:
+	_ = tenant.ForEachTenant(outerCtx, func(ctx context.Context) error {
+		err := fs.ForEachRepo(ctx, func(repo api.RepoName, gitDir common.GitDir) (done bool) {
+			backend := gitBackendSource(gitDir, repo)
+			for _, cfn := range cleanups {
+				// Check if context has been canceled, if so skip the rest of the repos.
+				select {
+				case <-ctx.Done():
+					logger.Warn("aborting janitor run", log.Error(ctx.Err()))
+					return true
+				default:
+				}
+
+				start := time.Now()
+				done, err := cfn.Do(ctx, backend, repo, gitDir)
+				if err != nil {
+					logger.Error("error running cleanup command",
+						log.String("name", cfn.Name),
+						log.String("repo", string(gitDir)),
+						log.Error(err))
+				}
+				jobTimer.WithLabelValues(strconv.FormatBool(err == nil), cfn.Name).Observe(time.Since(start).Seconds())
+				if done {
+					break
+				}
 			}
 
-			start := time.Now()
-			done, err := cfn.Do(backend, repo, gitDir)
-			if err != nil {
-				logger.Error("error running cleanup command",
-					log.String("name", cfn.Name),
-					log.String("repo", string(gitDir)),
-					log.Error(err))
+			reposCleaned++
+
+			// Every 1000 repos, log a progress message.
+			if reposCleaned%1000 == 0 {
+				logger.Info("Janitor progress", log.Int("repos_cleaned", reposCleaned))
 			}
-			jobTimer.WithLabelValues(strconv.FormatBool(err == nil), cfn.Name).Observe(time.Since(start).Seconds())
-			if done {
-				break
-			}
-		}
 
-		reposCleaned++
-
-		// Every 1000 repos, log a progress message.
-		if reposCleaned%1000 == 0 {
-			logger.Info("Janitor progress", log.Int("repos_cleaned", reposCleaned))
-		}
-
-		return false
-	})
-	if err != nil {
-		logger.Error("error iterating over repositories", log.Error(err))
-	}
-
-	if len(repoToSize) > 0 {
-		_, err := db.GitserverRepos().UpdateRepoSizes(ctx, logger, shardID, repoToSize)
+			return false
+		})
 		if err != nil {
-			logger.Error("setting repo sizes", log.Error(err))
+			logger.Error("error iterating over repositories", log.Error(err))
 		}
-	}
+
+		if len(repoToSize) > 0 {
+			_, err := db.GitserverRepos().UpdateRepoSizes(ctx, logger, shardID, repoToSize)
+			if err != nil {
+				logger.Error("setting repo sizes", log.Error(err))
+			}
+		}
+		return nil
+	})
 
 	logger.Info("Janitor run finished", log.String("duration", time.Since(start).String()))
 }

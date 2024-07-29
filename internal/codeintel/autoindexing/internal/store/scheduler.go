@@ -102,7 +102,7 @@ repositories AS (
 )
 INSERT INTO lsif_last_index_scan (repository_id, last_index_scan_at)
 SELECT DISTINCT r.id, %s::timestamp FROM repositories r
-ON CONFLICT (repository_id) DO UPDATE
+ON CONFLICT ON CONSTRAINT lsif_last_index_scan_pkey DO UPDATE
 SET last_index_scan_at = %s
 RETURNING repository_id
 `

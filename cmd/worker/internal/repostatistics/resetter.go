@@ -42,7 +42,7 @@ func (j *resetter) Routines(_ context.Context, observationCtx *observation.Conte
 	}
 
 	return []goroutine.BackgroundRoutine{
-		goroutine.NewPeriodicGoroutine(
+		goroutine.NewPeriodicGoroutinePerTenant(
 			context.Background(),
 			&resetterHandler{
 				store:  db.RepoStatistics(),

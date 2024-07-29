@@ -17,11 +17,13 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -93,7 +95,9 @@ func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ 
 		return nil, err
 	} else if !present {
 		// Try to send an index request.
-		done, err := s.emitIndexRequest(repoCommit{repo: repo, commit: commitHash})
+		// We should use an internal actor when doing cross service calls.
+		indexCtx := actor.WithInternalActor(tenant.Background(ctx))
+		done, err := s.emitIndexRequest(indexCtx, repoCommit{repo: repo, commit: commitHash})
 		if err != nil {
 			return nil, err
 		}
@@ -178,7 +182,7 @@ func mkIsMatch(args search.SymbolsParameters) (func(string) bool, error) {
 	}
 }
 
-func (s *Service) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
+func (s *Service) emitIndexRequest(ctx context.Context, rc repoCommit) (chan struct{}, error) {
 	key := fmt.Sprintf("%s@%s", rc.repo, rc.commit)
 
 	s.repoCommitToDoneMu.Lock()
@@ -205,7 +209,9 @@ func (s *Service) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 			commit: rc.commit,
 		},
 		dateAddedToQueue: time.Now(),
-		done:             done}
+		done:             done,
+		ctx:              ctx,
+	}
 
 	// Route the index request to the indexer associated with the repo.
 	ix := int(fnv1.HashString32(rc.repo)) % len(s.indexRequestQueues)

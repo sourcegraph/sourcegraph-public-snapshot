@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -62,7 +63,7 @@ func connect(observationCtx *observation.Context, dsn, appName, dbName string, s
 }
 
 func validateSchema(observationCtx *observation.Context, db *sql.DB, schema *schemas.Schema, validateOnly bool) error {
-	ctx := context.Background()
+	ctx := tenant.InsecureGlobalContext(context.Background())
 	storeFactory := newStoreFactory(observationCtx)
 	migrationRunner := runnerFromDB(observationCtx.Logger, storeFactory, db, schema)
 

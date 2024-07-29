@@ -83,7 +83,12 @@ func (s *gcsStore) List(ctx context.Context, prefix string) (_ *sgiterator.Itera
 	}})
 	defer endObservation(1, observation.Args{})
 
-	query := storage.Query{Prefix: prefix}
+	p, err := tenantKey(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	query := storage.Query{Prefix: p + prefix}
 
 	// Performance optimization
 	query.SetAttrSelection([]string{"Name"})
@@ -116,7 +121,12 @@ func (s *gcsStore) Get(ctx context.Context, key string) (_ io.ReadCloser, err er
 	}})
 	done := func() { endObservation(1, observation.Args{}) }
 
-	rc, err := s.client.Bucket(s.bucket).Object(key).NewRangeReader(ctx, 0, -1)
+	p, err := tenantKey(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rc, err := s.client.Bucket(s.bucket).Object(p+key).NewRangeReader(ctx, 0, -1)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get object")
 	}
@@ -133,7 +143,12 @@ func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (_ int64
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	writer := s.client.Bucket(s.bucket).Object(key).NewWriter(ctx)
+	p, err := tenantKey(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	writer := s.client.Bucket(s.bucket).Object(p + key).NewWriter(ctx)
 	defer func() {
 		if closeErr := writer.Close(); closeErr != nil {
 			err = errors.Append(err, errors.Wrap(closeErr, "failed to close writer"))
@@ -168,9 +183,14 @@ func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...s
 		}
 	}()
 
+	p, err := tenantKey(ctx)
+	if err != nil {
+		return 0, err
+	}
+
 	var handles []gcsObjectHandle
 	for _, source := range sources {
-		handles = append(handles, bucket.Object(source))
+		handles = append(handles, bucket.Object(p+source))
 	}
 
 	attrs, err := bucket.Object(destination).ComposerFrom(handles...).Run(ctx)
@@ -187,7 +207,12 @@ func (s *gcsStore) Delete(ctx context.Context, key string) (err error) {
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return errors.Wrap(s.client.Bucket(s.bucket).Object(key).Delete(ctx), "failed to delete object")
+	p, err := tenantKey(ctx)
+	if err != nil {
+		return err
+	}
+
+	return errors.Wrap(s.client.Bucket(s.bucket).Object(p+key).Delete(ctx), "failed to delete object")
 }
 
 func (s *gcsStore) ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) (err error) {
@@ -197,8 +222,13 @@ func (s *gcsStore) ExpireObjects(ctx context.Context, prefix string, maxAge time
 	}})
 	defer endObservation(1, observation.Args{})
 
+	p, err := tenantKey(ctx)
+	if err != nil {
+		return err
+	}
+
 	bucket := s.client.Bucket(s.bucket)
-	it := bucket.Objects(ctx, &storage.Query{Prefix: prefix})
+	it := bucket.Objects(ctx, &storage.Query{Prefix: p + prefix})
 	for {
 		objAttrs, err := it.Next()
 		if err != nil && err != iterator.Done {

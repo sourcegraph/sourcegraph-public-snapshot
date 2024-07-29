@@ -449,7 +449,7 @@ func (s *gitserverRepoStore) SetLastOutput(ctx context.Context, name api.RepoNam
 	err := s.Exec(ctx, sqlf.Sprintf(`
 INSERT INTO gitserver_repos_sync_output(repo_id, last_output)
 SELECT id, %s FROM repo WHERE name = %s
-ON CONFLICT(repo_id)
+ON CONFLICT ON CONSTRAINT gitserver_repos_sync_output_pkey
 DO UPDATE SET last_output = EXCLUDED.last_output, updated_at = NOW()
 `, ns, name))
 	if err != nil {

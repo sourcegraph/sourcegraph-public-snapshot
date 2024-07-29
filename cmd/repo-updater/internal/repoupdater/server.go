@@ -17,12 +17,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Scheduler interface {
-	UpdateOnce(id api.RepoID, name api.RepoName)
+	UpdateOnce(ctx context.Context, id api.RepoID, name api.RepoName)
 	ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 }
 
@@ -71,7 +72,7 @@ func (s *Server) EnqueueRepoUpdate(ctx context.Context, req *proto.EnqueueRepoUp
 
 	repo := rs[0]
 
-	s.Scheduler.UpdateOnce(repo.ID, repo.Name)
+	s.Scheduler.UpdateOnce(tenant.Background(ctx), repo.ID, repo.Name)
 
 	return &proto.EnqueueRepoUpdateResponse{
 		Id:   int32(repo.ID),
@@ -107,7 +108,7 @@ func (s *Server) RecloneRepository(ctx context.Context, req *proto.RecloneReposi
 	}
 
 	// Enqueue a reclone through scheduler.
-	s.Scheduler.UpdateOnce(repo.ID, repo.Name)
+	s.Scheduler.UpdateOnce(tenant.Background(ctx), repo.ID, repo.Name)
 
 	return &proto.RecloneRepositoryResponse{}, nil
 }

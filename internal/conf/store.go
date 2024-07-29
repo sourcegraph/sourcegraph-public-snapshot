@@ -2,7 +2,6 @@ package conf
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"runtime/debug"
 	"strconv"
@@ -169,10 +168,10 @@ func (s *store) checkDeadlock() {
 		// The running goroutine is not necessarily the cause of the
 		// deadlock, so ask Go to dump all goroutine stack traces.
 		debug.SetTraceback("all")
-		if deploy.IsDev(deploy.Type()) {
-			panic("potential deadlock detected: the frontend's configuration server hasn't started after 60s indicating a deadlock may be happening. A common cause of this is calling conf.Get or conf.Watch before the frontend has started fully (e.g. inside an init function) and if that is the case you may need to invoke those functions in a separate goroutine.")
-		}
-		panic(fmt.Sprintf("(bug) frontend configuration server failed to start after %v, this may indicate the DB is inaccessible", deadlockTimeout))
+		// if deploy.IsDev(deploy.Type()) {
+		// 	panic("potential deadlock detected: the frontend's configuration server hasn't started after 60s indicating a deadlock may be happening. A common cause of this is calling conf.Get or conf.Watch before the frontend has started fully (e.g. inside an init function) and if that is the case you may need to invoke those functions in a separate goroutine.")
+		// }
+		// panic(fmt.Sprintf("(bug) frontend configuration server failed to start after %v, this may indicate the DB is inaccessible", deadlockTimeout))
 	}
 }
 

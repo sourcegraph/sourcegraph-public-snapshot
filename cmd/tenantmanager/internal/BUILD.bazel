@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "internal",
+    srcs = [
+        "grpcservice.go",
+        "grpcservicelogger.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/tenantmanager/internal",
+    visibility = ["//cmd/tenantmanager:__subpackages__"],
+    deps = [
+        "//cmd/tenantmanager/internal/store",
+        "//cmd/tenantmanager/shared/v1:tenantmanager",
+        "//internal/grpc/grpcutil",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)
+
+go_test(
+    name = "internal_test",
+    srcs = ["grpcservice_test.go"],
+    embed = [":internal"],
+    deps = [
+        "//internal/api",
+        "//internal/database/dbmocks",
+        "//internal/gitserver/v1:gitserver",
+        "//internal/grpc",
+        "//internal/grpc/defaults",
+        "@com_github_derision_test_go_mockgen_v2//testutil/assert",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//codes",
+    ],
+)

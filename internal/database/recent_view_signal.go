@@ -89,7 +89,7 @@ func (r repoPathAndName) ToID() string {
 const insertRecentViewSignalFmtstr = `
 	INSERT INTO own_aggregate_recent_view(viewer_id, viewed_file_path_id, views_count)
 	VALUES(%s, %s, %s)
-	ON CONFLICT(viewer_id, viewed_file_path_id) DO UPDATE
+	ON CONFLICT (viewed_file_path_id, viewer_id, tenant_id) DO UPDATE
 	SET views_count = EXCLUDED.views_count + own_aggregate_recent_view.views_count
 `
 
@@ -101,7 +101,7 @@ func (s *recentViewSignalStore) Insert(ctx context.Context, userID int32, repoPa
 const bulkInsertRecentViewSignalsFmtstr = `
 	INSERT INTO own_aggregate_recent_view(viewer_id, viewed_file_path_id, views_count)
 	VALUES %s
-	ON CONFLICT(viewer_id, viewed_file_path_id) DO UPDATE
+	ON CONFLICT (viewed_file_path_id, viewer_id, tenant_id) DO UPDATE
 	SET views_count = EXCLUDED.views_count + own_aggregate_recent_view.views_count
 `
 

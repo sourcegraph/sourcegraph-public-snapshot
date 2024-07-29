@@ -523,7 +523,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	logFuncWarn := scopedLog.Warn
 
 	r := &pingRequest{
-		ClientSiteID:                  siteid.Get(db),
+		ClientSiteID:                  siteid.Get(ctx, db),
 		DeployType:                    deploy.Type(),
 		ClientVersionString:           version.Version(),
 		LicenseKey:                    conf.Get().LicenseKey,

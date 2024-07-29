@@ -109,7 +109,7 @@ inserted AS (
 		GROUP BY cr.repository_id, cr.path
 	) temp
 	GROUP BY temp.repository_id
-	ON CONFLICT (graph_key, repository_id) DO UPDATE SET
+	ON CONFLICT (graph_key, repository_id, tenant_id) DO UPDATE SET
 		payload = (
 			SELECT jsonb_object_agg(key, sum) FROM (
 				SELECT key, SUM(value::int) AS sum

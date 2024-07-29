@@ -95,11 +95,12 @@ func (s *s3Store) List(ctx context.Context, prefix string) (_ *iterator.Iterator
 		Bucket: aws.String(s.bucket),
 	}
 
-	// This may be unnecessary, but we're being extra careful because we don't know
-	// how s3 handles a pointer to an empty string.
-	if prefix != "" {
-		listObjectsV2Input.Prefix = aws.String(prefix)
+	p, err := tenantKey(ctx)
+	if err != nil {
+		return nil, err
 	}
+
+	listObjectsV2Input.Prefix = aws.String(p + prefix)
 
 	// We wrap the client's paginator and just return the keys.
 	paginator := s.client.NewListObjectsV2Paginator(&listObjectsV2Input)
@@ -175,9 +176,14 @@ func (s *s3Store) readObjectInto(ctx context.Context, w io.Writer, key string, b
 		bytesRange = aws.String(fmt.Sprintf("bytes=%d", byteOffset))
 	}
 
+	p, err := tenantKey(ctx)
+	if err != nil {
+		return 0, err
+	}
+
 	resp, err := s.client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucket),
-		Key:    aws.String(key),
+		Key:    aws.String(p + key),
 		Range:  bytesRange,
 	})
 	if err != nil {
@@ -214,9 +220,14 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 	}})
 	defer endObservation(1, observation.Args{})
 
+	p, err := tenantKey(ctx)
+	if err != nil {
+		return 0, err
+	}
+
 	multipartUpload, err := s.client.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{
 		Bucket: aws.String(s.bucket),
-		Key:    aws.String(destination),
+		Key:    aws.String(p + destination),
 	})
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to create multipart upload")
@@ -251,7 +262,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 			Key:        multipartUpload.Key,
 			UploadId:   multipartUpload.UploadId,
 			PartNumber: int32(partNumber),
-			CopySource: aws.String(fmt.Sprintf("%s/%s", s.bucket, source)),
+			CopySource: aws.String(fmt.Sprintf("%s/%s", s.bucket, p+source)),
 		})
 		if err != nil {
 			return errors.Wrap(err, "failed to upload part")
@@ -302,9 +313,14 @@ func (s *s3Store) Delete(ctx context.Context, key string) (err error) {
 	}})
 	defer endObservation(1, observation.Args{})
 
+	p, err := tenantKey(ctx)
+	if err != nil {
+		return err
+	}
+
 	_, err = s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(s.bucket),
-		Key:    aws.String(key),
+		Key:    aws.String(p + key),
 	})
 
 	return errors.Wrap(err, "failed to delete object")
@@ -316,6 +332,11 @@ func (s *s3Store) ExpireObjects(ctx context.Context, prefix string, maxAge time.
 		attribute.Stringer("maxAge", maxAge),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	p, err := tenantKey(ctx)
+	if err != nil {
+		return err
+	}
 
 	var toDelete []s3types.ObjectIdentifier
 	flush := func() {
@@ -335,7 +356,7 @@ func (s *s3Store) ExpireObjects(ctx context.Context, prefix string, maxAge time.
 	}
 	paginator := s.client.NewListObjectsV2Paginator(&s3.ListObjectsV2Input{
 		Bucket: aws.String(s.bucket),
-		Prefix: aws.String(prefix),
+		Prefix: aws.String(p + prefix),
 	})
 	for paginator.HasMorePages() {
 		page, err := paginator.NextPage(ctx)
@@ -374,10 +395,15 @@ func (s *s3Store) create(ctx context.Context) error {
 }
 
 func (s *s3Store) deleteSources(ctx context.Context, bucket string, sources []string) error {
+	p, err := tenantKey(ctx)
+	if err != nil {
+		return err
+	}
+
 	return forEachString(sources, func(index int, source string) error {
 		if _, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 			Bucket: aws.String(bucket),
-			Key:    aws.String(source),
+			Key:    aws.String(p + source),
 		}); err != nil {
 			return errors.Wrap(err, "failed to delete source object")
 		}

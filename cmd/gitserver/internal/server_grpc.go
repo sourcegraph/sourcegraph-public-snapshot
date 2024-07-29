@@ -98,7 +98,7 @@ func (gs *grpcServer) CreateCommitFromPatchBinary(s proto.GitserverService_Creat
 	}
 
 	repoName := api.RepoName(metadata.GetRepo())
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(s.Context(), repoName); err != nil {
 		return err
 	}
 
@@ -168,9 +168,9 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 	)
 
 	repoName := api.RepoName(req.GetRepo())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return err
 	}
 
@@ -228,9 +228,9 @@ func (gs *grpcServer) GetObject(ctx context.Context, req *proto.GetObjectRequest
 	}
 
 	repoName := api.RepoName(req.GetRepo())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 
@@ -293,7 +293,7 @@ func (gs *grpcServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 
 	repoName := api.RepoName(req.GetRepo())
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ss.Context(), repoName); err != nil {
 		return err
 	}
 
@@ -306,7 +306,7 @@ func (gs *grpcServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 	tr, ctx := trace.New(ss.Context(), "search")
 	defer tr.End()
 
-	limitHit, err := searchWithObservability(ctx, gs.logger, gs.fs.RepoDir(args.Repo), tr, args, onMatch)
+	limitHit, err := searchWithObservability(ctx, gs.logger, gs.fs.RepoDir(ss.Context(), args.Repo), tr, args, onMatch)
 	if err != nil {
 		return err
 	}
@@ -318,14 +318,14 @@ func (gs *grpcServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 	})
 }
 
-func (gs *grpcServer) RepoCloneProgress(_ context.Context, req *proto.RepoCloneProgressRequest) (*proto.RepoCloneProgressResponse, error) {
+func (gs *grpcServer) RepoCloneProgress(ctx context.Context, req *proto.RepoCloneProgressRequest) (*proto.RepoCloneProgressResponse, error) {
 	if req.GetRepoName() == "" {
 		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
 
-	progress, err := repoCloneProgress(gs.fs, gs.locker, repoName)
+	progress, err := repoCloneProgress(ctx, gs.fs, gs.locker, repoName)
 	if err != nil {
 		return nil, err
 	}
@@ -656,9 +656,9 @@ func (gs *grpcServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 
@@ -704,9 +704,9 @@ func (gs *grpcServer) MergeBaseOctopus(ctx context.Context, req *proto.MergeBase
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 
@@ -751,9 +751,9 @@ func (gs *grpcServer) GetCommit(ctx context.Context, req *proto.GetCommitRequest
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 
@@ -810,9 +810,9 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return err
 	}
 
@@ -888,9 +888,9 @@ func (gs *grpcServer) DefaultBranch(ctx context.Context, req *proto.DefaultBranc
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 
@@ -948,9 +948,9 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return err
 	}
 
@@ -1005,9 +1005,9 @@ func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRev
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 
@@ -1062,9 +1062,9 @@ func (gs *grpcServer) RevAtTime(ctx context.Context, req *proto.RevAtTimeRequest
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 
@@ -1103,9 +1103,9 @@ func (gs *grpcServer) ListRefs(req *proto.ListRefsRequest, ss proto.GitserverSer
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ss.Context(), repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ss.Context(), repoName); err != nil {
 		return err
 	}
 
@@ -1202,9 +1202,9 @@ func (gs *grpcServer) RawDiff(req *proto.RawDiffRequest, ss proto.GitserverServi
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return err
 	}
 
@@ -1275,9 +1275,9 @@ func (gs *grpcServer) ContributorCounts(ctx context.Context, req *proto.Contribu
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 
@@ -1324,9 +1324,9 @@ func (gs *grpcServer) FirstEverCommit(ctx context.Context, request *proto.FirstE
 	}
 
 	repoName := api.RepoName(request.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 
@@ -1386,9 +1386,9 @@ func (gs *grpcServer) BehindAhead(ctx context.Context, req *proto.BehindAheadReq
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 
@@ -1433,9 +1433,9 @@ func (gs *grpcServer) ChangedFiles(req *proto.ChangedFilesRequest, ss proto.Gits
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return err
 	}
 
@@ -1514,9 +1514,9 @@ func (gs *grpcServer) Stat(ctx context.Context, req *proto.StatRequest) (*proto.
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 
@@ -1581,9 +1581,9 @@ func (gs *grpcServer) ReadDir(req *proto.ReadDirRequest, ss proto.GitserverServi
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return err
 	}
 
@@ -1698,9 +1698,9 @@ func (gs *grpcServer) CommitLog(req *proto.CommitLogRequest, ss proto.GitserverS
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return err
 	}
 
@@ -1797,8 +1797,8 @@ func (gs *grpcServer) CommitLog(req *proto.CommitLogRequest, ss proto.GitserverS
 // On Sourcegraph.com, not all repos are managed by the scheduler. We thus
 // need to enqueue a manual update of a repo that is visited but not cloned to
 // ensure it is cloned and managed.
-func (gs *grpcServer) checkRepoExists(repo api.RepoName) error {
-	cloned, err := gs.fs.RepoCloned(repo)
+func (gs *grpcServer) checkRepoExists(ctx context.Context, repo api.RepoName) error {
+	cloned, err := gs.fs.RepoCloned(ctx, repo)
 	if err != nil {
 		return status.New(codes.Internal, errors.Wrap(err, "failed to check if repo is cloned").Error()).Err()
 	}
@@ -1807,7 +1807,7 @@ func (gs *grpcServer) checkRepoExists(repo api.RepoName) error {
 		return nil
 	}
 
-	cloneProgress, locked := gs.locker.Status(repo)
+	cloneProgress, locked := gs.locker.Status(ctx, repo)
 
 	// We checked above that the repo is not cloned. So if the repo is currently
 	// locked, it must be a clone in progress.

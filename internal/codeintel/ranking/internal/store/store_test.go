@@ -132,7 +132,7 @@ func insertRepo(t testing.TB, db database.DB, id int, name string) {
 	}
 
 	query := sqlf.Sprintf(
-		`INSERT INTO repo (id, name, deleted_at) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING`,
+		`INSERT INTO repo (id, name, deleted_at) VALUES (%s, %s, %s) ON CONFLICT ON CONSTRAINT repo_pkey DO NOTHING`,
 		id,
 		name,
 		deletedAt,

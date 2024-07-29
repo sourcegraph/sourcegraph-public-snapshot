@@ -227,6 +227,6 @@ func setDocumentRanks(ctx context.Context, db *basestore.Store, repoName api.Rep
 const setDocumentRanksQuery = `
 INSERT INTO codeintel_path_ranks AS pr (graph_key, repository_id, payload)
 VALUES (%s, (SELECT id FROM repo WHERE name = %s), %s)
-ON CONFLICT (graph_key, repository_id) DO
+ON CONFLICT (graph_key, repository_id, tenant_id) DO
 UPDATE SET payload = EXCLUDED.payload
 `

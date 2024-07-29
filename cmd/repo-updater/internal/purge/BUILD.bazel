@@ -13,6 +13,7 @@ go_library(
         "//internal/database",
         "//internal/goroutine",
         "//internal/ratelimit",
+        "//internal/tenant",
         "//lib/errors",
         "//schema",
         "@com_github_prometheus_client_golang//prometheus",

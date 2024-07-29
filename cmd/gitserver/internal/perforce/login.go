@@ -76,12 +76,12 @@ func P4UserIsSuperUser(ctx context.Context, fs gitserverfs.FS, args P4UserIsSupe
 	// Validate the user has "super" access with "-u" option, see https://www.perforce.com/perforce/r12.1/manuals/cmdref/protects.html
 	options = append(options, WithArguments("protects", "-u", args.P4User))
 
-	p4home, err := fs.P4HomeDir()
+	p4home, err := fs.P4HomeDir(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to create p4home dir")
 	}
 
-	scratchDir, err := fs.TempDir("p4-protects-")
+	scratchDir, err := fs.TempDir(ctx, "p4-protects-")
 	if err != nil {
 		return errors.Wrap(err, "could not create temp dir to invoke 'p4 protects'")
 	}
@@ -127,12 +127,12 @@ func P4Trust(ctx context.Context, fs gitserverfs.FS, args P4TrustArguments) erro
 
 	options = append(options, WithArguments("trust", "-y", "-f"))
 
-	p4home, err := fs.P4HomeDir()
+	p4home, err := fs.P4HomeDir(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to create p4home dir")
 	}
 
-	scratchDir, err := fs.TempDir("p4-trust-")
+	scratchDir, err := fs.TempDir(ctx, "p4-trust-")
 	if err != nil {
 		return errors.Wrap(err, "could not create temp dir to invoke 'p4 trust'")
 	}
@@ -181,12 +181,12 @@ func P4Test(ctx context.Context, fs gitserverfs.FS, args P4TestArguments) error 
 		// so it seems like the perfect alternative to `p4 ping`.
 		options = append(options, WithArguments("login", "-s"))
 
-		p4home, err := fs.P4HomeDir()
+		p4home, err := fs.P4HomeDir(ctx)
 		if err != nil {
 			return errors.Wrap(err, "failed to create p4home dir")
 		}
 
-		scratchDir, err := fs.TempDir("p4-login-")
+		scratchDir, err := fs.TempDir(ctx, "p4-login-")
 		if err != nil {
 			return errors.Wrap(err, "could not create temp dir to invoke 'p4 login'")
 		}
