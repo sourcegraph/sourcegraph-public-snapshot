@@ -38,35 +38,6 @@ type usageResolver struct {
 
 var _ resolverstubs.UsageResolver = &usageResolver{}
 
-//func NewPreciseUsageResolver(usage shared.UploadUsage) resolverstubs.UsageResolver {
-//	return &usageResolver{
-//		symbol:             nil,
-//		provenance:         resolverstubs.ProvenancePrecise,
-//		kind:               convertKind(usage.Kind),
-//		surroundingContent: "",
-//		usageRange: usageRangeResolver{
-//			repository: usage.Upload.RepositoryID,
-//			range_:     usage.TargetRange.ToSCIPRange(),
-//			revision:   api.CommitID(usage.TargetCommit),
-//			path:       usage.Path,
-//		},
-//	}
-//}
-//
-//func convertKind(kind shared.UsageKind) resolverstubs.SymbolUsageKind {
-//	switch kind {
-//	case shared.UsageKindDefinition:
-//		return resolverstubs.UsageKindDefinition
-//	case shared.UsageKindImplementation:
-//		return resolverstubs.UsageKindImplementation
-//	case shared.UsageKindSuper:
-//		return resolverstubs.UsageKindSuper
-//	case shared.UsageKindReference:
-//		return resolverstubs.UsageKindReference
-//	}
-//	panic(fmt.Sprintf("unhandled kind of shared.UsageKind: %q", kind.String()))
-//}
-
 func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Repo, revision api.CommitID) resolverstubs.UsageResolver {
 	var kind resolverstubs.SymbolUsageKind
 	if usage.IsDefinition {

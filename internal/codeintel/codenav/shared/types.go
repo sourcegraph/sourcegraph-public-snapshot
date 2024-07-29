@@ -89,8 +89,10 @@ func (k UsageKind) String() string {
 // that will be constructed in the future, but it's not yet clear what
 // the Kind value ought to be for the Usage.
 type UsageBuilder struct {
-	Range       scip.Range
-	Symbol      string
+	Range  scip.Range
+	Symbol string
+	// SymbolRoles represents the 'role' of the underlying occurrence
+	// which was used to construct this UsageBuilder.
 	symbolRoles scip.SymbolRole
 }
 
