@@ -147,7 +147,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		return nil
 	})
 	g.Go(func() error {
-		if err := healthChecker.ManageIngressFacingService(ctx, beginHealthCheckLoop, "app=sourcegraph-frontend"); err != nil {
+		if err := healthChecker.ManageIngressFacingService(ctx, beginHealthCheckLoop, "app=sourcegraph-frontend", config.namespace); err != nil {
 			logger.Error("problem running HealthChecker", log.Error(err))
 			return err
 		}
