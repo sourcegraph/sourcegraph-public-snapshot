@@ -704,9 +704,9 @@ func (gs *grpcServer) MergeBaseOctopus(ctx context.Context, req *proto.MergeBase
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gs.fs.RepoDir(repoName)
+	repoDir := gs.fs.RepoDir(ctx, repoName)
 
-	if err := gs.checkRepoExists(repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 

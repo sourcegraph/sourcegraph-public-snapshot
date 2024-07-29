@@ -240,118 +240,122 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 			logger.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
 		}
 
-		existing, err := extsvcs.List(ctx, database.ExternalServicesListOptions{})
-		if err != nil {
-			return false, errors.Wrap(err, "ExternalServices.List")
-		}
+		var updated bool
+		return updated, tenant.ForEachTenant(ctx, func(ctx context.Context) error {
+			existing, err := extsvcs.List(ctx, database.ExternalServicesListOptions{})
+			if err != nil {
+				return errors.Wrap(err, "ExternalServices.List")
+			}
 
-		// Perform delta update for external services. We don't want to just delete all
-		// external services and re-add all of them, because that would cause
-		// repo-updater to need to update repositories and reassociate them with external
-		// services each time the frontend restarts.
-		//
-		// Start out by assuming we will remove all and re-add all.
-		var (
-			toAdd    = make(map[*types.ExternalService]bool)
-			toRemove = make(map[*types.ExternalService]bool)
-			toUpdate = make(map[int64]*types.ExternalService)
-		)
-		for _, existing := range existing {
-			toRemove[existing] = true
-		}
-		for key, cfgs := range rawConfigs {
-			for i, cfg := range cfgs {
-				marshaledCfg, err := json.MarshalIndent(cfg, "", "  ")
+			// Perform delta update for external services. We don't want to just delete all
+			// external services and re-add all of them, because that would cause
+			// repo-updater to need to update repositories and reassociate them with external
+			// services each time the frontend restarts.
+			//
+			// Start out by assuming we will remove all and re-add all.
+			var (
+				toAdd    = make(map[*types.ExternalService]bool)
+				toRemove = make(map[*types.ExternalService]bool)
+				toUpdate = make(map[int64]*types.ExternalService)
+			)
+			for _, existing := range existing {
+				toRemove[existing] = true
+			}
+			for key, cfgs := range rawConfigs {
+				for i, cfg := range cfgs {
+					marshaledCfg, err := json.MarshalIndent(cfg, "", "  ")
+					if err != nil {
+						return errors.Wrapf(err, "marshaling extsvc config ([%v][%v])", key, i)
+					}
+
+					toAdd[&types.ExternalService{
+						Kind:        key,
+						DisplayName: fmt.Sprintf("%s #%d", key, i+1),
+						Config:      extsvc.NewUnencryptedConfig(string(marshaledCfg)),
+					}] = true
+				}
+			}
+			// Now eliminate operations from toAdd/toRemove where the config
+			// file and DB describe an equivalent external service.
+			isEquiv := func(a, b *types.ExternalService) (bool, error) {
+				aConfig, err := a.Config.Decrypt(ctx)
 				if err != nil {
-					return false, errors.Wrapf(err, "marshaling extsvc config ([%v][%v])", key, i)
-				}
-
-				toAdd[&types.ExternalService{
-					Kind:        key,
-					DisplayName: fmt.Sprintf("%s #%d", key, i+1),
-					Config:      extsvc.NewUnencryptedConfig(string(marshaledCfg)),
-				}] = true
-			}
-		}
-		// Now eliminate operations from toAdd/toRemove where the config
-		// file and DB describe an equivalent external service.
-		isEquiv := func(a, b *types.ExternalService) (bool, error) {
-			aConfig, err := a.Config.Decrypt(ctx)
-			if err != nil {
-				return false, err
-			}
-
-			bConfig, err := b.Config.Decrypt(ctx)
-			if err != nil {
-				return false, err
-			}
-
-			return a.Kind == b.Kind && a.DisplayName == b.DisplayName && aConfig == bConfig, nil
-		}
-		shouldUpdate := func(a, b *types.ExternalService) (bool, error) {
-			aConfig, err := a.Config.Decrypt(ctx)
-			if err != nil {
-				return false, err
-			}
-
-			bConfig, err := b.Config.Decrypt(ctx)
-			if err != nil {
-				return false, err
-			}
-
-			return a.Kind == b.Kind && a.DisplayName == b.DisplayName && aConfig != bConfig, nil
-		}
-		for a := range toAdd {
-			for b := range toRemove {
-				if ok, err := isEquiv(a, b); err != nil {
 					return false, err
-				} else if ok {
-					// Nothing changed
-					delete(toAdd, a)
-					delete(toRemove, b)
-					continue
 				}
 
-				if ok, err := shouldUpdate(a, b); err != nil {
+				bConfig, err := b.Config.Decrypt(ctx)
+				if err != nil {
 					return false, err
-				} else if ok {
-					delete(toAdd, a)
-					delete(toRemove, b)
-					toUpdate[b.ID] = a
+				}
+
+				return a.Kind == b.Kind && a.DisplayName == b.DisplayName && aConfig == bConfig, nil
+			}
+			shouldUpdate := func(a, b *types.ExternalService) (bool, error) {
+				aConfig, err := a.Config.Decrypt(ctx)
+				if err != nil {
+					return false, err
+				}
+
+				bConfig, err := b.Config.Decrypt(ctx)
+				if err != nil {
+					return false, err
+				}
+
+				return a.Kind == b.Kind && a.DisplayName == b.DisplayName && aConfig != bConfig, nil
+			}
+			for a := range toAdd {
+				for b := range toRemove {
+					if ok, err := isEquiv(a, b); err != nil {
+						return err
+					} else if ok {
+						// Nothing changed
+						delete(toAdd, a)
+						delete(toRemove, b)
+						continue
+					}
+
+					if ok, err := shouldUpdate(a, b); err != nil {
+						return err
+					} else if ok {
+						delete(toAdd, a)
+						delete(toRemove, b)
+						toUpdate[b.ID] = a
+					}
 				}
 			}
-		}
 
-		// Apply the delta update.
-		for extSvc := range toRemove {
-			logger.Debug("Deleting external service", log.Int64("id", extSvc.ID), log.String("displayName", extSvc.DisplayName))
-			err := extsvcs.Delete(ctx, extSvc.ID)
-			if err != nil {
-				return false, errors.Wrap(err, "ExternalServices.Delete")
+			// Apply the delta update.
+			for extSvc := range toRemove {
+				logger.Debug("Deleting external service", log.Int64("id", extSvc.ID), log.String("displayName", extSvc.DisplayName))
+				err := extsvcs.Delete(ctx, extSvc.ID)
+				if err != nil {
+					return errors.Wrap(err, "ExternalServices.Delete")
+				}
 			}
-		}
-		for extSvc := range toAdd {
-			logger.Debug("Adding external service", log.String("displayName", extSvc.DisplayName))
-			if err := extsvcs.Create(ctx, confGet, extSvc); err != nil {
-				return false, errors.Wrap(err, "ExternalServices.Create")
+			for extSvc := range toAdd {
+				logger.Debug("Adding external service", log.String("displayName", extSvc.DisplayName))
+				if err := extsvcs.Create(ctx, confGet, extSvc); err != nil {
+					return errors.Wrap(err, "ExternalServices.Create")
+				}
 			}
-		}
 
-		ps := confGet().AuthProviders
-		for id, extSvc := range toUpdate {
-			logger.Debug("Updating external service", log.Int64("id", id), log.String("displayName", extSvc.DisplayName))
+			ps := confGet().AuthProviders
+			for id, extSvc := range toUpdate {
+				logger.Debug("Updating external service", log.Int64("id", id), log.String("displayName", extSvc.DisplayName))
 
-			rawConfig, err := extSvc.Config.Decrypt(ctx)
-			if err != nil {
-				return false, err
-			}
-			update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &rawConfig}
+				rawConfig, err := extSvc.Config.Decrypt(ctx)
+				if err != nil {
+					return err
+				}
+				update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &rawConfig}
 
-			if err := extsvcs.Update(ctx, ps, id, update); err != nil {
-				return false, errors.Wrap(err, "ExternalServices.Update")
+				if err := extsvcs.Update(ctx, ps, id, update); err != nil {
+					return errors.Wrap(err, "ExternalServices.Update")
+				}
 			}
-		}
-		return true, nil
+			updated = true
+			return nil
+		})
 	}
 	updated, err := update(ctx)
 	if err != nil {

@@ -441,7 +441,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, lock Reposito
 			s.logger.Error("failed to check if repo is cloned", log.Error(err))
 		} else if err := s.db.GitserverRepos().SetCloneStatus(
 			// Use a background context to ensure we still update the DB even if we time out
-			context.Background(),
+			tenant.Background(ctx),
 			repo,
 			cloneStatus(cloned, false),
 			s.hostname,

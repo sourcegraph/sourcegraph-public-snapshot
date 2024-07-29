@@ -137,9 +137,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	highlight.Init()
 
 	// override site config first
+	logger.Info("Overriding site configuration")
 	if err := overrideSiteConfig(tenant.InsecureGlobalContext(ctx), logger, db); err != nil {
 		return errors.Wrap(err, "failed to apply site config overrides")
 	}
+	logger.Info("Site configuration overrides complete")
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(newConfigurationSource(logger, db))
 	conf.MustValidateDefaults()
 
@@ -148,16 +150,19 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return errors.Wrap(err, "failed to initialize encryption keyring")
 	}
 
+	logger.Info("Overriding global settings")
 	if err := overrideGlobalSettings(ctx, logger, db); err != nil {
 		return errors.Wrap(err, "failed to override global settings")
 	}
+	logger.Info("Global settings overrides complete")
 
 	// now the keyring is configured it's safe to override the rest of the config
 	// and that config can access the keyring
-	// TODO: Make tenant aware or drop
-	// if err := overrideExtSvcConfig(ctx, logger, db); err != nil {
-	// 	return errors.Wrap(err, "failed to override external service config")
-	// }
+	logger.Info("Overriding external service configuration")
+	if err := overrideExtSvcConfig(ctx, logger, db); err != nil {
+		return errors.Wrap(err, "failed to override external service config")
+	}
+	logger.Info("External service configuration overrides complete")
 
 	// Run enterprise setup hook
 	enterpriseServices := enterpriseSetupHook(db, conf.DefaultClient())

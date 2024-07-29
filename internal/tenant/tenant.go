@@ -64,4 +64,12 @@ func ForEachTenant(ctx context.Context, cb func(context.Context) error) (errs er
 }
 
 // TODO: Read from DB.
-var tenants = []int{1, 2}
+var tenants = generateList(10_000)
+
+func generateList(n int) []int {
+	l := make([]int, 0, n)
+	for i := 1; i <= n; i++ {
+		l = append(l, i)
+	}
+	return l
+}

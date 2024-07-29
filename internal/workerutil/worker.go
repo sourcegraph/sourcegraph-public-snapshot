@@ -168,7 +168,7 @@ func (w *Worker[T]) Start() {
 			var knownIDs []string
 			var canceledIDs []string
 			err := tenant.ForEachTenant(w.rootCtx, func(ctx context.Context) error {
-				tenantKnownIDs, tenantCanceledIDs, err := w.store.Heartbeat(w.rootCtx, ids)
+				tenantKnownIDs, tenantCanceledIDs, err := w.store.Heartbeat(ctx, ids)
 				if err != nil {
 					w.options.Metrics.logger.Error("Failed to refresh heartbeats",
 						log.Strings("ids", ids),

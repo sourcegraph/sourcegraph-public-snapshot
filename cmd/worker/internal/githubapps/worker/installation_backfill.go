@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -30,37 +29,35 @@ type githubAppInstallationWorker struct {
 }
 
 func (g *githubAppInstallationWorker) Handle(ctx context.Context) error {
-	return tenant.ForEachTenant(ctx, func(ctx context.Context) error {
-		store := g.db.GitHubApps()
-		apps, err := store.List(ctx, nil)
+	store := g.db.GitHubApps()
+	apps, err := store.List(ctx, nil)
+	if err != nil {
+		g.logger.Error("Fetching GitHub Apps", log.Error(err))
+		return errors.Wrap(err, "Fetching GitHub Apps")
+	}
+
+	var errs errors.MultiError
+	for _, app := range apps {
+		if app == nil || app.AppID == 0 {
+			continue
+		}
+
+		g.logger.Info("GitHub App Installation backfill job", log.String("appName", app.Name), log.Int("id", app.ID))
+
+		client, err := newGithubClient(app, g.logger)
 		if err != nil {
-			g.logger.Error("Fetching GitHub Apps", log.Error(err))
-			return errors.Wrap(err, "Fetching GitHub Apps")
+			g.logger.Error("Creating GitHub client", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+			errs = errors.Append(errs, err)
+			continue
 		}
 
-		var errs errors.MultiError
-		for _, app := range apps {
-			if app == nil || app.AppID == 0 {
-				continue
-			}
-
-			g.logger.Info("GitHub App Installation backfill job", log.String("appName", app.Name), log.Int("id", app.ID))
-
-			client, err := newGithubClient(app, g.logger)
-			if err != nil {
-				g.logger.Error("Creating GitHub client", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
-				errs = errors.Append(errs, err)
-				continue
-			}
-
-			sErrs := store.SyncInstallations(ctx, *app, g.logger, client)
-			if sErrs != nil && len(sErrs.Errors()) > 0 {
-				errs = errors.Append(errs, sErrs.Errors()...)
-			}
+		sErrs := store.SyncInstallations(ctx, *app, g.logger, client)
+		if sErrs != nil && len(sErrs.Errors()) > 0 {
+			errs = errors.Append(errs, sErrs.Errors()...)
 		}
+	}
 
-		return errs
-	})
+	return errs
 }
 
 var MockGitHubClient func(app *ghtypes.GitHubApp, logger log.Logger) (ghtypes.GitHubAppClient, error)
