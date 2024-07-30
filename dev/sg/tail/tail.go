@@ -7,12 +7,13 @@ import (
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/urfave/cli/v2"
 )
 
 var Command = &cli.Command{
 	Name:  "tail",
-	Usage: "Listens for 'sg start' log events and streams them with a nice UI.",
+	Usage: "Listens for 'sg start' log events and streams them with a nice UI",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "only-name",
@@ -20,6 +21,7 @@ var Command = &cli.Command{
 			Value: "",
 		},
 	},
+	Category: category.Dev,
 	Action: func(cctx *cli.Context) error {
 		l, err := net.Listen("unix", "/tmp/sg.sock")
 		if err != nil {

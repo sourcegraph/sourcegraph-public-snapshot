@@ -317,7 +317,7 @@ func evalPrompt(value string) (tea.Cmd, error) {
 		}, nil
 	case "grep":
 		if len(parts[1:]) < 1 {
-			return nil, errors.Newf("drop requires at least one arguments")
+			return nil, errors.Newf("grep requires at least one arguments")
 		}
 		return func() tea.Msg {
 			return commandMsg{
