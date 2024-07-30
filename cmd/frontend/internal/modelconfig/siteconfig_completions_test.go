@@ -403,10 +403,6 @@ func TestConvertCompletionsConfig(t *testing.T) {
 		compConfig := loadCompletionsConfig(schema.Completions{
 			Provider:        "sourcegraph",
 			CompletionModel: "fireworks/starcoder",
-
-			ChatModelMaxTokens:       1_000,
-			CompletionModelMaxTokens: 2_000,
-			FastChatModelMaxTokens:   3_000,
 		})
 		require.NotNil(t, compConfig)
 
