@@ -117,7 +117,9 @@ func (i *importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 
 	tr.SetAttributes(attribute.Int("licenses", len(dotcomLicenses)))
 	if len(dotcomLicenses) == 0 {
-		// We don't care about this subscription
+		// We don't care about this subscription, since it has no licenses -
+		// skip over it during the migration
+		tr.SetAttributes(attribute.Bool("no_licenses", true))
 		return nil
 	}
 
