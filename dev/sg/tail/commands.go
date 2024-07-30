@@ -17,7 +17,7 @@ func (c *commandMsg) toPred() activityPred {
 					return nil
 				}
 			case "level":
-				if strings.ToLower(a.level) == strings.ToLower(c.args[1]) {
+				if strings.EqualFold(a.level, c.args[1]) {
 					return nil
 				}
 			}
@@ -31,7 +31,7 @@ func (c *commandMsg) toPred() activityPred {
 					return nil
 				}
 			case "level":
-				if strings.ToLower(a.level) != strings.ToLower(c.args[1]) {
+				if strings.EqualFold(a.level, c.args[1]) {
 					return nil
 				}
 			}

@@ -1,11 +1,11 @@
 package tail
 
 import (
-	"regexp"
 	"strings"
 	"unicode"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/grafana/regexp"
 )
 
 type activityMsg struct {

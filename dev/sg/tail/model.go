@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var backlogSize = 100 * 1024
@@ -296,7 +297,7 @@ func evalPrompt(value string) (tea.Cmd, error) {
 	switch cmd := parts[0]; cmd {
 	case "drop":
 		if len(parts[1:]) < 2 {
-			return nil, fmt.Errorf("drop requires at least two arguments")
+			return nil, errors.Newf("drop requires at least two arguments")
 		}
 		return func() tea.Msg {
 			return commandMsg{
@@ -306,7 +307,7 @@ func evalPrompt(value string) (tea.Cmd, error) {
 		}, nil
 	case "only":
 		if len(parts[1:]) < 2 {
-			return nil, fmt.Errorf("only requires at least two arguments")
+			return nil, errors.Newf("only requires at least two arguments")
 		}
 		return func() tea.Msg {
 			return commandMsg{
@@ -316,7 +317,7 @@ func evalPrompt(value string) (tea.Cmd, error) {
 		}, nil
 	case "grep":
 		if len(parts[1:]) < 1 {
-			return nil, fmt.Errorf("drop requires at least one arguments")
+			return nil, errors.Newf("drop requires at least one arguments")
 		}
 		return func() tea.Msg {
 			return commandMsg{
@@ -343,7 +344,7 @@ func evalPrompt(value string) (tea.Cmd, error) {
 			}
 		}, nil
 	default:
-		return nil, fmt.Errorf("unknown command: %s, press h or ? to get inline help", cmd)
+		return nil, errors.Newf("unknown command: %s, press h or ? to get inline help", cmd)
 	}
 }
 
