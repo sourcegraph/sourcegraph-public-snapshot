@@ -22,7 +22,7 @@ var keys = keyMap{
 	Help:  key.NewBinding(key.WithKeys("?", "h"), key.WithHelp("?/h", "toggle help")),
 
 	Prompt:     key.NewBinding(key.WithKeys(":"), key.WithHelp(":", "show command prompt (available commands: drop, only, grep, reset, tabnew tabclose)")),
-	PromptSend: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "if prompt is active, execute command prompt")),
+	PromptSend: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "if prompt is active, execute command prompt,  otherwise resume follow")),
 	Search:     key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "search prompt")),
 
 	Pause:      key.NewBinding(key.WithKeys("p"), key.WithHelp("p", "toggle pause/following mode")),

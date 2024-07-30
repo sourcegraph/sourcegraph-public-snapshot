@@ -297,7 +297,7 @@ func evalPrompt(value string) (tea.Cmd, error) {
 	switch cmd := parts[0]; cmd {
 	case "drop":
 		if len(parts[1:]) < 2 {
-			return nil, errors.Newf("drop requires at least two arguments")
+			return nil, errors.Newf("drop requires at least two arguments (ex: ':drop name gitserver')")
 		}
 		return func() tea.Msg {
 			return commandMsg{
@@ -307,7 +307,7 @@ func evalPrompt(value string) (tea.Cmd, error) {
 		}, nil
 	case "only":
 		if len(parts[1:]) < 2 {
-			return nil, errors.Newf("only requires at least two arguments")
+			return nil, errors.Newf("only requires at least two arguments (ex: ':only name gitserver')")
 		}
 		return func() tea.Msg {
 			return commandMsg{
