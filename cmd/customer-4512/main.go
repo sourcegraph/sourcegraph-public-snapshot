@@ -197,7 +197,7 @@ func main() {
 	ps.initializeAzureEndpoint()
 	go ps.updateAccessToken()
 	http.HandleFunc("/", ps.handleProxy)
-	logger.Info("HTTPS Proxy server is running on port 8443")
+	logger.Info("HTTP Proxy server is running on port 8080")
 	if err := http.ListenAndServe(":8443", nil); err != nil {
 		logger.Fatal("Failed to start HTTP server: %v", log.Error(err))
 	}
