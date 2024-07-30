@@ -10,6 +10,7 @@ go_library(
         "flagging.go",
         "google.go",
         "google_types.go",
+        "modelsloadtracker.go",
         "openai.go",
         "upstream.go",
     ],
