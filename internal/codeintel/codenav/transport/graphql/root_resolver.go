@@ -281,7 +281,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 		} else {
 			for _, result := range syntacticResult.Matches {
-				usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo, args.CommitID))
+				usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo.Name, args.CommitID))
 			}
 			numSyntacticResults = len(syntacticResult.Matches)
 			remainingCount = remainingCount - numSyntacticResults
@@ -301,7 +301,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 		} else {
 			for _, result := range results {
-				usageResolvers = append(usageResolvers, NewSearchBasedUsageResolver(result, args.Repo, args.CommitID))
+				usageResolvers = append(usageResolvers, NewSearchBasedUsageResolver(result, args.Repo.Name, args.CommitID))
 			}
 		}
 	}

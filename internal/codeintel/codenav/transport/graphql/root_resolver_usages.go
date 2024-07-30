@@ -38,7 +38,7 @@ type usageResolver struct {
 
 var _ resolverstubs.UsageResolver = &usageResolver{}
 
-func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Repo, revision api.CommitID) resolverstubs.UsageResolver {
+func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repoName api.RepoName, revision api.CommitID) resolverstubs.UsageResolver {
 	var kind resolverstubs.SymbolUsageKind
 	if usage.IsDefinition {
 		kind = resolverstubs.UsageKindDefinition
@@ -53,15 +53,15 @@ func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Re
 		kind:               kind,
 		surroundingContent: usage.SurroundingContent,
 		usageRange: &usageRangeResolver{
-			repository: repository,
-			revision:   revision,
-			path:       usage.Path,
-			range_:     usage.Range,
+			repoName: repoName,
+			revision: revision,
+			path:     usage.Path,
+			range_:   usage.Range,
 		},
 	}
 }
 
-func NewSearchBasedUsageResolver(usage codenav.SearchBasedMatch, repository types.Repo, revision api.CommitID) resolverstubs.UsageResolver {
+func NewSearchBasedUsageResolver(usage codenav.SearchBasedMatch, repoName api.RepoName, revision api.CommitID) resolverstubs.UsageResolver {
 	var kind resolverstubs.SymbolUsageKind
 	if usage.IsDefinition {
 		kind = resolverstubs.UsageKindDefinition
@@ -74,10 +74,10 @@ func NewSearchBasedUsageResolver(usage codenav.SearchBasedMatch, repository type
 		kind:               kind,
 		surroundingContent: usage.SurroundingContent,
 		usageRange: &usageRangeResolver{
-			repository: repository,
-			revision:   revision,
-			path:       usage.Path,
-			range_:     usage.Range,
+			repoName: repoName,
+			revision: revision,
+			path:     usage.Path,
+			range_:   usage.Range,
 		},
 	}
 }
@@ -128,16 +128,16 @@ func (s *symbolInformationResolver) Documentation() (*[]string, error) {
 }
 
 type usageRangeResolver struct {
-	repository types.Repo
-	revision   api.CommitID
-	path       core.RepoRelPath
-	range_     scip.Range
+	repoName api.RepoName
+	revision api.CommitID
+	path     core.RepoRelPath
+	range_   scip.Range
 }
 
 var _ resolverstubs.UsageRangeResolver = &usageRangeResolver{}
 
 func (u *usageRangeResolver) Repository() string {
-	return string(u.repository.Name)
+	return string(u.repoName)
 }
 
 func (u *usageRangeResolver) Revision() string {
