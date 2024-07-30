@@ -136,8 +136,8 @@
     function convertToP4Tabs(entry: MenuEntry): TabbableMenuEntry {
         if (isP4 && entry.label === 'Commits') {
             return {
-                id: 'changelist',
-                title: 'Changelist',
+                id: 'changelists',
+                title: 'Changelists',
                 icon: entry.icon,
                 href: (entry.preserveRevision ? data.repoURL : data.repoURLWithoutRevision) + entry.path,
             }

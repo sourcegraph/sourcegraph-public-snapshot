@@ -170,7 +170,7 @@
                     />
                 </Picker>
             </TabPanel>
-            <TabPanel title={isP4 ? 'Changelist' : 'Commits'} shortcut={commitsHotkey}>
+            <TabPanel title={isP4 ? 'Changelists' : 'Commits'} shortcut={commitsHotkey}>
                 <Picker
                     name={isP4 ? 'changelists' : 'commits'}
                     seeAllItemsURL={`${repoURL}/-/commits`}

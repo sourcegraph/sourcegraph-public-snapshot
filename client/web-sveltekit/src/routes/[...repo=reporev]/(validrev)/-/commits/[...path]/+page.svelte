@@ -61,7 +61,7 @@
 <header>
     <h2>
         {#if commits && commits[0].perforceChangelist !== null}
-            Changelist
+            Changelists
         {:else}
             Commit History
             {#if data.path}
@@ -111,7 +111,7 @@
                             <li
                                 ><a
                                     href={commit.perforceChangelist
-                                        ? `/${data.repoName}@${commit.perforceChangelist.cid}`
+                                        ? `/${data.repoName}@changelist/${commit.perforceChangelist.cid}`
                                         : `/${data.repoName}@${commit.oid}`}>Browse files</a
                                 ></li
                             >

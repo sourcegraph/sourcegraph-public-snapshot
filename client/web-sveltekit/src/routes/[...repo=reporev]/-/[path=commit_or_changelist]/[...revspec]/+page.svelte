@@ -92,7 +92,7 @@
                     {/if}
                     {#if isPerforce}
                         <li>
-                            <a href="/{data.repoName}@{data.commit.perforceChangelist?.cid}"
+                            <a href="{`/${data.repoName}@changelist/${data.commit.perforceChangelist?.cid}`}}"
                                 >Browse files at
                                 <Badge variant="link">
                                     {data.commit.perforceChangelist?.cid}
