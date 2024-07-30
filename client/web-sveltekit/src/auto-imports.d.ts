@@ -62,6 +62,7 @@ declare global {
   const ILucideGitCompareArrows: typeof import('~icons/lucide/git-compare-arrows')['default']
   const ILucideGitFork: typeof import('~icons/lucide/git-fork')['default']
   const ILucideGitMerge: typeof import('~icons/lucide/git-merge')['default']
+  const ILucideHelp: typeof import('~icons/lucide/help')['default']
   const ILucideHistory: typeof import('~icons/lucide/history')['default']
   const ILucideHome: typeof import('~icons/lucide/home')['default']
   const ILucideInfo: typeof import('~icons/lucide/info')['default']

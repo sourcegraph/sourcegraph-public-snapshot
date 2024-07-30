@@ -1,10 +1,11 @@
 import { FC } from 'react'
 
 import { useApolloClient } from '@apollo/client'
+import { mdiHelpCircleOutline } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { Text, H3, Popover, PopoverTrigger, PopoverContent, Badge } from '@sourcegraph/wildcard'
+import { Text, H3, Popover, PopoverTrigger, PopoverContent, Badge, Icon } from '@sourcegraph/wildcard'
 
 import { enableSvelteAndReload, canEnableSvelteKit } from './util'
 
@@ -19,22 +20,23 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
     }
 
     return (
-        <div className={styles.container}>
-            <Toggle
-                value={false}
-                onToggle={() => enableSvelteAndReload(client, userID)}
-                title="Go to experimental web app"
-                className={styles.toggle}
-            />
-            <Popover>
-                <PopoverTrigger className={styles.badge}>
-                    <Badge variant="warning">Try the new experience</Badge>
-                </PopoverTrigger>
-                <PopoverContent className={styles.popover}>
-                    <H3>Sourcegraph is getting a refresh!</H3>
-                    <Text>Try it out early with the toggle above.</Text>
-                </PopoverContent>
-            </Popover>
-        </div>
+        <Popover>
+            <PopoverTrigger className={styles.badge}>
+                <div className={styles.container}>
+                    <Icon svgPath={mdiHelpCircleOutline} />
+                    <Text>New, faster UX</Text>
+                    <Toggle
+                        value={false}
+                        onToggle={() => enableSvelteAndReload(client, userID)}
+                        title="Go to experimental web app"
+                        className={styles.toggle}
+                    />
+                </div>
+            </PopoverTrigger>
+            <PopoverContent className={styles.popover}>
+                <H3>Sourcegraph is getting a refresh!</H3>
+                <Text>Try it out early with the toggle above.</Text>
+            </PopoverContent>
+        </Popover>
     )
 }

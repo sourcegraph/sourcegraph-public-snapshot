@@ -21,7 +21,6 @@
     import SourcegraphLogo from '$lib/SourcegraphLogo.svelte'
     import { isViewportMediumDown } from '$lib/stores'
     import { Button } from '$lib/wildcard'
-    import Badge from '$lib/wildcard/Badge.svelte'
     import Toggle from '$lib/wildcard/Toggle.svelte'
 
     import { GlobalNavigation_User } from './GlobalNavigation.gql'
@@ -122,31 +121,23 @@
 
     <div class="global-portal" bind:this={$extensionElement} />
 
-    <div class="web-next-notice">
-        {#if handleOptOut}
-            <Toggle on={true} on:click={() => handleOptOut && handleOptOut()} />
-        {/if}
-        <Popover let:toggle let:registerTrigger>
-            <button class="web-next-badge" use:registerTrigger on:click={() => toggle()}>
-                <Badge variant="warning">Experimental</Badge>
-            </button>
-            <div slot="content" class="web-next-content">
-                <h3>Experimental web app</h3>
-                <p>
-                    You are using an experimental version of the Sourcegraph web app. This version is under active
-                    development and may contain bugs or incomplete features.
-                </p>
-                <p>
-                    If you encounter any issues, please report them in our <a href="https://community.sourcegraph.com/"
-                        >community forums</a
-                    >.
-                </p>
-                {#if handleOptOut}
-                    <p>You can opt out of the new experience with the toggle above.</p>
-                {/if}
-            </div>
-        </Popover>
-    </div>
+    <Popover let:registerTrigger showOnHover placement="bottom-end">
+        <div class="web-next-notice" use:registerTrigger>
+            <Icon icon={ILucideCircleHelp} inline />
+            <span>New, faster UX</span>
+            {#if handleOptOut}
+                <Toggle on={true} on:click={() => handleOptOut && handleOptOut()} />
+            {/if}
+        </div>
+        <div slot="content" class="web-next-content">
+            <h3>What’s this "New, faster UX"?</h3>
+            <p>
+                We've been busy at work on a new Code Search experience, built from the ground up for performance, which
+                now available in beta.
+            </p>
+            <p>Simply activate the toggle to get it.</p>
+        </div>
+    </Popover>
     <div>
         {#if authenticatedUser}
             <UserMenu user={authenticatedUser} />
@@ -413,31 +404,19 @@
         }
     }
 
-    // Opt out experiment badge and tooltip styles
-    .opt-out {
-        all: unset;
-        cursor: pointer;
-        color: var(--link-color);
-        text-decoration: underline;
-    }
-
     .web-next-notice {
         display: flex;
+        cursor: pointer;
         align-items: center;
         gap: 0.5rem;
-    }
-
-    .web-next-badge {
-        all: unset;
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-        margin-left: auto;
+        font-size: var(--font-size-small);
+        font-weight: 500;
+        padding: 1rem;
     }
 
     .web-next-content {
-        padding: 1rem;
-        width: 20rem;
+        padding: 1rem 1.25rem;
+        width: 25rem;
 
         p:last-child {
             margin-bottom: 0;

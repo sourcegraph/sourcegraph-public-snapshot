@@ -1,13 +1,13 @@
 <script lang="ts" context="module">
     import { Story } from '@storybook/addon-svelte-csf'
 
-    import ActivationOverlay from './ActivationOverlay.svelte'
+    import WelcomeOverlay from './WelcomeOverlay.svelte'
 
     export const meta = {
-        component: ActivationOverlay,
+        component: WelcomeOverlay,
     }
 </script>
 
 <Story name="Default">
-    <ActivationOverlay onDismiss={() => {}} />
+    <WelcomeOverlay handleDismiss={() => {}} show />
 </Story>

@@ -22,7 +22,7 @@
     import { isRouteEnabled } from '$lib/navigation'
 
     import type { LayoutData } from './$types'
-    import ActivationOverlay from './ActivationOverlay.svelte'
+    import WelcomeOverlay from './WelcomeOverlay.svelte'
 
     export let data: LayoutData
 
@@ -89,8 +89,9 @@
           }
         : undefined
 
-    $: activationOverlayDismissed = $temporarySettingsStorage.get('webNext.welcomeOverlay.dismissed')
-    function onDismissActivationOverlay() {
+    $: webNextActivated = $temporarySettingsStorage.get('webNext.activated', false)
+    $: welcomeOverlayDismissed = $temporarySettingsStorage.get('webNext.welcomeOverlay.dismissed', false)
+    function handleDismissWelcomeOverlay() {
         $temporarySettingsStorage.set('webNext.welcomeOverlay.dismissed', true)
     }
 </script>
@@ -111,7 +112,7 @@
     <slot />
 </main>
 
-<ActivationOverlay open={!$activationOverlayDismissed} handleDismiss={onDismissActivationOverlay} />
+<WelcomeOverlay show={$webNextActivated && !$welcomeOverlayDismissed} handleDismiss={handleDismissWelcomeOverlay} />
 
 <FuzzyFinderContainer />
 

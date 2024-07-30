@@ -97,6 +97,7 @@ export interface TemporarySettingsSchema {
     /** OpenCodeGraph */
     'openCodeGraph.annotations.visible': boolean
     'webNext.welcomeOverlay.dismissed': boolean
+    'webNext.activated': boolean
 }
 
 /**
@@ -163,6 +164,7 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
     'cody.onboarding.completed': null,
     'openCodeGraph.annotations.visible': null,
     'webNext.welcomeOverlay.dismissed': null,
+    'webNext.activated': null,
 }
 
 export const TEMPORARY_SETTINGS_KEYS = Object.keys(TEMPORARY_SETTINGS) as readonly (keyof TemporarySettings)[]

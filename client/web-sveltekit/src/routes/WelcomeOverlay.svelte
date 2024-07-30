@@ -1,15 +1,26 @@
 <script lang="ts">
     import Icon from '$lib/Icon.svelte'
-    import { getButtonClassName } from '$lib/wildcard/Button'
+    import { isLightTheme } from '$lib/theme'
     import Button from '$lib/wildcard/Button.svelte'
+    import ProductStatusBadge from '$lib/wildcard/ProductStatusBadge.svelte'
 
-    export let open: boolean
+    import WelcomeOverlayScreenshotDark from './WelcomeOverlayScreenshotDark.svelte'
+    import WelcomeOverlayScreenshotLight from './WelcomeOverlayScreenshotLight.svelte'
+
+    export let show: boolean
     export let handleDismiss: () => void
+
+    let root: HTMLDialogElement
+    $: if (show) {
+        root?.showModal()
+    } else {
+        root?.close()
+    }
 </script>
 
-<dialog open>
+<dialog bind:this={root}>
     <div class="content">
-        <div class="logo"><Icon icon={ISgMark} /></div>
+        <div class="logo"><Icon icon={ISgMark} /><ProductStatusBadge status="beta" /></div>
         <div class="message">
             <h1><span>You've activated a better, faster experience</span> ⚡</h1>
             <p class="subtitle">
@@ -30,20 +41,24 @@
             </div>
             <div>
                 <Icon icon={ILucideScanSearch} />
+                <!-- TODO: add keyboard shortcut here -->
                 <h5>Reworked fuzzy finder</h5>
                 <p>Find files and symbols quickly and easily with our whole new fuzzy finder.</p>
             </div>
         </div>
         <div class="cta">
             <div>
-                <form method="dialog">
-                    <button class={getButtonClassName({ variant: 'secondary' })}>Awesome. I’m ready to use it!</button>
-                </form>
+                <Button variant="secondary" on:click={() => handleDismiss()}>Awesome. I’m ready to use it!</Button>
                 <a href="TODO">Read release notes</a>
             </div>
             <p> You can opt out at any time by using the toggle at the top of the screen.</p>
         </div>
     </div>
+    {#if $isLightTheme}
+        <WelcomeOverlayScreenshotLight />
+    {:else}
+        <WelcomeOverlayScreenshotDark />
+    {/if}
 </dialog>
 
 <style lang="scss">
@@ -58,8 +73,10 @@
         box-shadow: var(--fuzzy-finder-shadow);
 
         &::backdrop {
-            background: var(--fuzzy-finder-backdrop);
+            filter: blur(4px);
         }
+
+        container-type: inline-size;
 
         @media (--mobile) {
             border-radius: 0;
@@ -69,6 +86,16 @@
             height: 100vh;
             max-height: 100vh;
             max-width: 100vw;
+        }
+
+        > :global(svg) {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            filter: drop-shadow(0px 25px 50px var(--color-shadow-25, rgba(15, 17, 26, 0.25)));
+            @container (width < 975px) {
+                display: none;
+            }
         }
     }
 
@@ -81,23 +108,26 @@
             --color-text-subtle: #a6b6d9;
         }
 
+        width: calc(100% - 350px);
+        @container (width < 975px) {
+            width: 100%;
+        }
+
         display: flex;
-        gap: 1.5rem;
+        gap: 1rem;
         flex-direction: column;
 
         .logo {
-            grid-row: 1;
-            grid-column: 1 / -1;
             --icon-color: initial;
             --icon-size: 32px;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
         }
 
         .message {
             h1 {
-                grid-row: 2;
-                grid-column: 1 / -1;
                 text-wrap: balance;
-
                 span {
                     background: linear-gradient(90deg, #00cbec 0%, #a112ff 48.53%, #ff5543 97.06%);
                     color: transparent;
@@ -107,8 +137,6 @@
         }
 
         .subtitle {
-            grid-row: 3;
-            grid-column: 1 / -1;
             margin: 0;
             font-size: var(--font-size-large);
             font-weight: 500;
@@ -117,9 +145,10 @@
 
         .features {
             display: grid;
-            max-width: 800px;
+            max-width: 700px;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 1rem 0.75rem;
+            padding: 1rem 0;
 
             > div {
                 display: grid;
