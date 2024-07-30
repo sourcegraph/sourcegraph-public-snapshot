@@ -5,7 +5,7 @@ import { mdiHelpCircleOutline } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { Text, H3, Popover, PopoverTrigger, PopoverContent, Badge, Icon } from '@sourcegraph/wildcard'
+import { Text, H3, Popover, PopoverTrigger, PopoverContent, Icon } from '@sourcegraph/wildcard'
 
 import { enableSvelteAndReload, canEnableSvelteKit } from './util'
 
@@ -28,14 +28,18 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
                     <Toggle
                         value={false}
                         onToggle={() => enableSvelteAndReload(client, userID)}
-                        title="Go to experimental web app"
+                        title="Enable new, faster UX"
                         className={styles.toggle}
                     />
                 </div>
             </PopoverTrigger>
-            <PopoverContent className={styles.popover}>
-                <H3>Sourcegraph is getting a refresh!</H3>
-                <Text>Try it out early with the toggle above.</Text>
+            <PopoverContent className={styles.popover} position="bottomEnd">
+                <H3>What’s this "New, faster UX"?</H3>
+                <Text>
+                    We've been busy at work on a new Code Search experience, built from the ground up for performance,
+                    which now available in beta.
+                </Text>
+                <Text>Simply activate the toggle to get it.</Text>
             </PopoverContent>
         </Popover>
     )

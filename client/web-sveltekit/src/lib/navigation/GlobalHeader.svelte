@@ -13,6 +13,7 @@
 </script>
 
 <script lang="ts">
+    import { goto } from '$app/navigation'
     import { page } from '$app/stores'
     import { onClickOutside } from '$lib/dom'
     import Icon from '$lib/Icon.svelte'
@@ -21,8 +22,10 @@
     import SourcegraphLogo from '$lib/SourcegraphLogo.svelte'
     import { isViewportMediumDown } from '$lib/stores'
     import { Button } from '$lib/wildcard'
-    import Toggle from '$lib/wildcard/Toggle.svelte'
+    import { getButtonClassName } from '$lib/wildcard/Button'
+    import ProductStatusBadge from '$lib/wildcard/ProductStatusBadge.svelte'
 
+    import FeedbackDialog from './FeedbackDialog.svelte'
     import { GlobalNavigation_User } from './GlobalNavigation.gql'
     import { type NavigationEntry, type NavigationMenu, isNavigationMenu, isCurrent } from './mainNavigation'
     import UserMenu from './UserMenu.svelte'
@@ -121,23 +124,22 @@
 
     <div class="global-portal" bind:this={$extensionElement} />
 
-    <Popover let:registerTrigger showOnHover placement="bottom-end">
-        <div class="web-next-notice" use:registerTrigger>
-            <Icon icon={ILucideCircleHelp} inline />
-            <span>New, faster UX</span>
-            {#if handleOptOut}
-                <Toggle on={true} on:click={() => handleOptOut && handleOptOut()} />
-            {/if}
-        </div>
-        <div slot="content" class="web-next-content">
-            <h3>What’s this "New, faster UX"?</h3>
-            <p>
-                We've been busy at work on a new Code Search experience, built from the ground up for performance, which
-                now available in beta.
-            </p>
-            <p>Simply activate the toggle to get it.</p>
-        </div>
-    </Popover>
+    <div class="web-next-notice">
+        <ProductStatusBadge status="beta" />
+        <a class={getButtonClassName({ variant: 'secondary', size: 'sm' })} href="https://community.sourcegraph.com/">
+            Feedback
+        </a>
+        <Popover let:registerTrigger let:toggle placement="bottom-end">
+            <button
+                use:registerTrigger
+                class={getButtonClassName({ variant: 'secondary', size: 'sm' })}
+                on:click={() => toggle()}
+            >
+                <Icon icon={ILucideEllipsis} inline />
+            </button>
+            <FeedbackDialog slot="content" {handleOptOut} />
+        </Popover>
+    </div>
     <div>
         {#if authenticatedUser}
             <UserMenu user={authenticatedUser} />
@@ -412,15 +414,6 @@
         font-size: var(--font-size-small);
         font-weight: 500;
         padding: 1rem;
-    }
-
-    .web-next-content {
-        padding: 1rem 1.25rem;
-        width: 25rem;
-
-        p:last-child {
-            margin-bottom: 0;
-        }
     }
 
     // Custom menu with sidebar navigation controls styles

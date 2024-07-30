@@ -89,7 +89,7 @@
           }
         : undefined
 
-    $: webNextActivated = $temporarySettingsStorage.get('webNext.activated', false)
+    $: webNextActivated = $temporarySettingsStorage.get('webNext.toggled.on', false)
     $: welcomeOverlayDismissed = $temporarySettingsStorage.get('webNext.welcomeOverlay.dismissed', false)
     function handleDismissWelcomeOverlay() {
         $temporarySettingsStorage.set('webNext.welcomeOverlay.dismissed', true)
@@ -112,7 +112,10 @@
     <slot />
 </main>
 
-<WelcomeOverlay show={$webNextActivated && !$welcomeOverlayDismissed} handleDismiss={handleDismissWelcomeOverlay} />
+<WelcomeOverlay
+    show={($webNextActivated && !$welcomeOverlayDismissed) ?? false}
+    handleDismiss={handleDismissWelcomeOverlay}
+/>
 
 <FuzzyFinderContainer />
 
