@@ -5,13 +5,15 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
-	"golang.org/x/exp/rand"
 	"testing"
+
+	"golang.org/x/exp/rand"
 
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -23,7 +25,7 @@ import (
 
 func malformedAfterCursorGenerator() *rapid.Generator[*string] {
 	return rapid.Custom(func(t *rapid.T) *string {
-		val := UsagesCursor{}
+		val := codenav.UsagesCursor{}
 		val.PreciseCursorType = "nonsense"
 		bytes, err := json.Marshal(val)
 		require.NoError(t, err)
@@ -40,13 +42,13 @@ func malformedAfterCursorGenerator() *rapid.Generator[*string] {
 
 func wellFormedAfterCursorGenerator() *rapid.Generator[*string] {
 	cursorTypeGen := rapid.OneOf(
-		rapid.Just(DefinitionsCursor),
-		rapid.Just(ReferencesCursor),
-		rapid.Just(ImplementationsCursor),
-		rapid.Just(PrototypesCursor),
+		rapid.Just(codenav.CursorTypeDefinitions),
+		rapid.Just(codenav.CursorTypeReferences),
+		rapid.Just(codenav.CursorTypeImplementations),
+		rapid.Just(codenav.CursorTypePrototypes),
 	)
 	return rapid.Custom(func(t *rapid.T) *string {
-		val := UsagesCursor{}
+		val := codenav.UsagesCursor{}
 		val.PreciseCursorType = cursorTypeGen.Draw(t, "cursortype")
 		bytes, err := json.Marshal(val)
 		require.NoError(t, err)
