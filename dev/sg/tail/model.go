@@ -2,9 +2,7 @@ package tail
 
 import (
 	"fmt"
-	"log"
 	"net"
-	"os"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -12,7 +10,6 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/urfave/cli/v2"
 )
 
 var backlogSize = 100 * 1024
@@ -348,7 +345,6 @@ func evalPrompt(value string) (tea.Cmd, error) {
 	default:
 		return nil, fmt.Errorf("unknown command: %s, press h or ? to get inline help", cmd)
 	}
-	return nil, nil
 }
 
 func (m model) promptView() string {
@@ -356,60 +352,6 @@ func (m model) promptView() string {
 		return m.promptInput.View()
 	}
 	return ""
-}
-
-func main() {
-	app := &cli.App{
-		Name:  "sgtail",
-		Usage: "Listens for 'sg start' activity and streams it with a nice UI.",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "only-name",
-				Usage: "--only-name [service_name] Starts with a new tab that display only logs from service named [service_name]",
-				Value: "",
-			},
-		},
-		Action: func(cctx *cli.Context) error {
-			l, err := net.Listen("unix", "/tmp/sg.sock")
-			if err != nil {
-				panic(err)
-			}
-			defer func() {
-				_ = os.Remove("/tmp/sg.sock")
-			}()
-
-			m := model{
-				ch: make(chan string, 10),
-				l:  l,
-				tabs: []*tab{
-					{title: "all", preds: []activityPred{}},
-				},
-				promptInput: textinput.New(),
-			}
-
-			if cctx.String("only-name") != "" {
-				onlyCmd := commandMsg{
-					name: "only",
-					args: []string{"name", cctx.String("only-name")},
-				}
-				m.tabs = append(m.tabs, &tab{title: "^" + cctx.String("only-name"), preds: []activityPred{onlyCmd.toPred()}})
-				m.tabIndex = len(m.tabs) - 1
-			}
-
-			p := tea.NewProgram(
-				m,
-				tea.WithAltScreen(),
-				tea.WithMouseCellMotion(),
-			)
-
-			_, err = p.Run()
-			return err
-		},
-	}
-
-	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
-	}
 }
 
 func max(a, b int) int {
