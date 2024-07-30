@@ -82,10 +82,9 @@
     $: currentUserID = data.user?.id
     $: handleOptOut = currentUserID
         ? async (): Promise<void> => {
-              if (currentUserID) {
-                  await data.disableSvelteFeatureFlags(currentUserID)
-                  window.location.reload()
-              }
+              $temporarySettingsStorage.set('webNext.toggled.off', true)
+              await data.disableSvelteFeatureFlags(currentUserID)
+              window.location.reload()
           }
         : undefined
 

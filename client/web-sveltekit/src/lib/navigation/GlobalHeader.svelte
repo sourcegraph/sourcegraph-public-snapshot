@@ -13,7 +13,6 @@
 </script>
 
 <script lang="ts">
-    import { goto } from '$app/navigation'
     import { page } from '$app/stores'
     import { onClickOutside } from '$lib/dom'
     import Icon from '$lib/Icon.svelte'
@@ -408,12 +407,11 @@
 
     .web-next-notice {
         display: flex;
-        cursor: pointer;
         align-items: center;
         gap: 0.5rem;
         font-size: var(--font-size-small);
         font-weight: 500;
-        padding: 1rem;
+        margin-right: 1rem;
     }
 
     // Custom menu with sidebar navigation controls styles

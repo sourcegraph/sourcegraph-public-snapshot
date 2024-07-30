@@ -17,10 +17,35 @@
 }
 
 .popover {
-    padding: 1rem;
-    width: 20rem;
+    width: 380px;
 
-    p:last-child {
-        margin-bottom: 0;
+    p {
+        margin: 0;
     }
+
+    a {
+        width: 100%;
+    }
+
+    h3 {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.section {
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    & + .section {
+        border-top: 1px solid var(--border-color);
+    }
+}
+
+.small {
+    text-align: center;
+    font-size: var(--font-size-small);
+    color: var(--text-muted);
 }

@@ -13,7 +13,7 @@
         {/if}
     </div>
     <div class="section">
-        <p>Got feedback for us on the beta? We’d love to hear from you.</p>
+        <p>Got feedback for us on the beta? We'd love to hear from you.</p>
         <a class={getButtonClassName({ variant: 'secondary' })} href="https://community.sourcegraph.com/">
             Leave feedback
         </a>
