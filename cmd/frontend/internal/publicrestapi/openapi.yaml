@@ -1188,6 +1188,29 @@ components:
         - type
         - text
 
+    ChatCompletionRequestMessage:
+      oneOf:
+        - $ref: '#/components/schemas/ChatCompletionRequestSystemMessage'
+        - $ref: '#/components/schemas/ChatCompletionRequestUserMessage'
+
+    ChatCompletionRequestSystemMessage:
+      type: object
+      title: System message
+      properties:
+        content:
+          description: The contents of the system message.
+          type: string
+        role:
+          type: string
+          enum: ['system']
+          description: The role of the messages author, in this case `system`.
+        name:
+          type: string
+          description: An optional name for the participant. Provides the model information to differentiate between participants of the same role.
+      required:
+        - content
+        - role
+
     ChatCompletionRequestUserMessage:
       type: object
       title: User message
@@ -1277,7 +1300,7 @@ components:
           type: array
           minItems: 1
           items:
-            $ref: '#/components/schemas/ChatCompletionRequestUserMessage'
+            $ref: '#/components/schemas/ChatCompletionRequestMessage'
         model:
           description: ID of the model to use. See the [model endpoint compatibility](/docs/models/model-endpoint-compatibility) table for details on which models work with the Chat API.
           example: 'gpt-4-turbo'
