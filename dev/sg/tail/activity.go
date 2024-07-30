@@ -42,10 +42,8 @@ func parseActivity(s string) activityMsg {
 		if unicode.IsDigit(c) {
 			// Ignore the TS for now
 			rest = tsRe.ReplaceAllString(rest, "")
-			break
-		} else {
-			break
 		}
+		break
 	}
 	matches := levelAndContentRe.FindStringSubmatch(rest)
 	if len(matches) == 2 {

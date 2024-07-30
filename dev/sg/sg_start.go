@@ -87,7 +87,7 @@ sg start --commands frontend gitserver
 			},
 			&cli.BoolFlag{
 				Name:  "tail",
-				Usage: "Connects to running sg tail instance",
+				Usage: "Connects to a running sg tail instance",
 			},
 			&cli.BoolFlag{
 				Name:  "profile",
