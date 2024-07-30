@@ -208,9 +208,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) Init() tea.Cmd {
 	return tea.Batch(
+		showUsage(),
 		listenUnixSocket(m.l, m.ch),
 		waitForActivity(m.ch),
 	)
+}
+
+func showUsage() tea.Cmd {
+	return func() tea.Msg {
+		return activityMsg{
+			name:  "README",
+			ts:    "",
+			level: "debug",
+			data:  "👉 You can now run `sg start --tail (...)` to see log messages displayed here. Press h for inline help.",
+		}
+	}
 }
 
 func (m model) View() string {
