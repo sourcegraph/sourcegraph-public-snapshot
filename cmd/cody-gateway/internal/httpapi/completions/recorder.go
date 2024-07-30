@@ -75,12 +75,8 @@ func (mlt *modelsLoadTracker) record(gatewayModel string, resp *http.Response, r
 
 	// Zero out the list of errors for the model, resetting the circuit breaker.
 	if r == nil {
-		// mlt.circuitBreakerByModel[gatewayModel] = nil
-		// return
-		r = &record{
-			reason:    "success",
-			timestamp: time.Now(),
-		}
+		mlt.circuitBreakerByModel[gatewayModel] = nil
+		return
 	}
 
 	mcb := mlt.circuitBreakerByModel[gatewayModel]
