@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -239,6 +240,7 @@ func TestDeleteConfigurationPolicyByID(t *testing.T) {
 
 func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 	logger := logtest.Scoped(t)
+	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
@@ -260,7 +262,7 @@ func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 		IndexIntermediateCommits:  true,
 	}
 
-	hydratedConfigurationPolicy, err := store.CreateConfigurationPolicy(context.Background(), configurationPolicy)
+	hydratedConfigurationPolicy, err := store.CreateConfigurationPolicy(ctx, configurationPolicy)
 	if err != nil {
 		t.Fatalf("unexpected error creating configuration policy: %s", err)
 	}
@@ -270,15 +272,15 @@ func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 	}
 
 	// Mark configuration policy as protected (no other way to do so outside of migrations)
-	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_configuration_policies SET protected = true"); err != nil {
+	if _, err := db.ExecContext(ctx, "UPDATE lsif_configuration_policies SET protected = true"); err != nil {
 		t.Fatalf("unexpected error marking configuration policy as protected: %s", err)
 	}
 
-	if err := store.DeleteConfigurationPolicyByID(context.Background(), hydratedConfigurationPolicy.ID); err == nil {
+	if err := store.DeleteConfigurationPolicyByID(ctx, hydratedConfigurationPolicy.ID); err == nil {
 		t.Fatalf("expected error deleting configuration policy: %s", err)
 	}
 
-	_, ok, err := store.GetConfigurationPolicyByID(context.Background(), hydratedConfigurationPolicy.ID)
+	_, ok, err := store.GetConfigurationPolicyByID(ctx, hydratedConfigurationPolicy.ID)
 	if err != nil {
 		t.Fatalf("unexpected error fetching configuration policy: %s", err)
 	}

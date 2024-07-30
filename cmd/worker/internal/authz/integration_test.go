@@ -215,8 +215,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				DB:             testDB,
 			})
 
-			authz.SetProviders(false, []authz.Provider{provider})
-			defer authz.SetProviders(true, nil)
+			authz.SetProviders([]authz.Provider{provider})
+			defer authz.SetProviders(nil)
 
 			assertGitHubRepoPermissions(t, ctx, repo.ID, user.ID, uri.String(), syncer, permsStore, []int32{1})
 		})
@@ -232,8 +232,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				DB:             testDB,
 			})
 
-			authz.SetProviders(false, []authz.Provider{provider})
-			defer authz.SetProviders(true, nil)
+			authz.SetProviders([]authz.Provider{provider})
+			defer authz.SetProviders(nil)
 
 			assertGitHubRepoPermissions(t, ctx, repo.ID, user.ID, uri.String(), syncer, permsStore, []int32{1})
 		})
@@ -254,8 +254,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				DB:             testDB,
 			})
 
-			authz.SetProviders(false, []authz.Provider{provider})
-			defer authz.SetProviders(true, nil)
+			authz.SetProviders([]authz.Provider{provider})
+			defer authz.SetProviders(nil)
 
 			assertGitHubUserPermissions(t, ctx, user.ID, uri.String(), syncer, permsStore, []int32{1})
 		})
@@ -271,8 +271,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				DB:             testDB,
 			})
 
-			authz.SetProviders(false, []authz.Provider{provider})
-			defer authz.SetProviders(true, nil)
+			authz.SetProviders([]authz.Provider{provider})
+			defer authz.SetProviders(nil)
 
 			assertGitHubUserPermissions(t, ctx, user.ID, uri.String(), syncer, permsStore, []int32{1})
 		})
@@ -361,8 +361,8 @@ func TestIntegration_GitHubInternalRepositories(t *testing.T) {
 		DB:             testDB,
 	})
 
-	authz.SetProviders(false, []authz.Provider{provider})
-	defer authz.SetProviders(true, nil)
+	authz.SetProviders([]authz.Provider{provider})
+	defer authz.SetProviders(nil)
 
 	repo := types.Repo{
 		Name:    "ghe.sgdev.org/sourcegraph/sourcegraph_internal_repo",
@@ -505,8 +505,8 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 			SyncInternalRepoPermissions: true,
 		})
 
-		authz.SetProviders(false, []authz.Provider{provider})
-		defer authz.SetProviders(true, nil)
+		authz.SetProviders([]authz.Provider{provider})
+		defer authz.SetProviders(nil)
 		for _, repo := range testRepos {
 			err = reposStore.RepoStore().Create(ctx, &repo)
 			require.NoError(t, err)

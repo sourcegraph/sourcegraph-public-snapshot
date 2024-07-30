@@ -23,8 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/scheduler"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -121,7 +119,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	go globals.WatchExternalURL()
-	go watchAuthzProviders(ctx, db)
 	go watchSyncer(ctx, logger, syncer, updateScheduler, server.ChangesetSyncRegistry)
 
 	routines := []goroutine.BackgroundRoutine{
@@ -347,22 +344,6 @@ func newUnclonedReposManager(ctx context.Context, logger log.Logger, sched *sche
 		goroutine.WithDescription("periodically lists uncloned repos and schedules them as high priority in the repo updater update queue"),
 		goroutine.WithInterval(30*time.Second),
 	)
-}
-
-// TODO: This might clash with what osscmd.Main does.
-// watchAuthzProviders updates authz providers if config changes.
-func watchAuthzProviders(ctx context.Context, db database.DB) {
-	go func() {
-		t := time.NewTicker(providers.RefreshInterval(conf.Get()))
-		for range t.C {
-			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(
-				ctx,
-				conf.Get(),
-				db,
-			)
-			authz.SetProviders(allowAccessByDefault, authzProviders)
-		}
-	}()
 }
 
 func mustRegisterMetrics(logger log.Logger, db dbutil.DB) {
