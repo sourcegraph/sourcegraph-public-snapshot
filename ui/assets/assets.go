@@ -81,8 +81,7 @@ func UseAssetsProviderForPath(path string) {
 	Provider = DirProvider{dir: path, assets: http.Dir(path)}
 }
 
-// DirProvider is the development variant of the UseDevAssetsProvider
-// which expects assets to be generated on the fly by an external web builder process.
+// DirProvider implements the AssetsProvider interface and loads assets from a directory
 type DirProvider struct {
 	dir    string
 	assets http.FileSystem

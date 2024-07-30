@@ -40,4 +40,4 @@ metadataTest:
       value: .+
       isRegex: true
     - key: SRC_ASSETS_DIR
-      value: "assets-dist"
+      value: "/assets-dist"
