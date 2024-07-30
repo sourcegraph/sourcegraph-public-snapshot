@@ -123,7 +123,7 @@ func (r *Resolver) ChatContext(ctx context.Context, args graphqlbackend.ChatCont
 		}
 		r.logger.Warn("partial errors when fetching context", fields...)
 	}
-	if errors.Is(context.Cause(ctx), context.DeadlineExceeded) {
+	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 		res.stopReason = StopReasonTimeout
 	}
 	return res, nil
@@ -225,18 +225,11 @@ func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatInten
 	if err != nil {
 		return nil, err
 	}
-	var mainResponse, searchResponse, editResponse *intentApiResponse
-	p := pool.New().WithMaxGoroutines(3).WithContext(ctx)
+	var mainResponse, editResponse *intentApiResponse
+	p := pool.New().WithMaxGoroutines(2).WithContext(ctx)
 	p.Go(func(ctx context.Context) error {
 		mainResponse, err = r.sendIntentRequest(ctx, *backend.Default, buf)
 		return err
-	})
-	p.Go(func(ctx context.Context) error {
-		if backend.Search != nil {
-			searchResponse, err = r.sendIntentRequest(ctx, *backend.Search, buf)
-			return err
-		}
-		return nil
 	})
 	p.Go(func(ctx context.Context) error {
 		if backend.Edit != nil {
@@ -262,10 +255,7 @@ func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatInten
 	if err != nil {
 		return nil, err
 	}
-	res := chatIntentResponse{intent: mainResponse.Intent, score: mainResponse.Score}
-	if searchResponse != nil {
-		res.searchScore = searchResponse.Score
-	}
+	res := chatIntentResponse{intent: mainResponse.Intent, score: mainResponse.Score, searchScore: mainResponse.SearchScore}
 	if editResponse != nil {
 		res.editScore = editResponse.Score
 	}
@@ -321,8 +311,9 @@ type intentApiRequest struct {
 }
 
 type intentApiResponse struct {
-	Intent string  `json:"intent"`
-	Score  float64 `json:"score"`
+	Intent      string  `json:"intent"`
+	Score       float64 `json:"score"`
+	SearchScore float64 `json:"combined_search_score"`
 }
 
 type chatIntentResponse struct {
