@@ -145,6 +145,9 @@ importers:
       '@sentry/browser':
         specifier: ^7.8.1
         version: 7.8.1
+      '@sourcegraph/cody-web':
+        specifier: ^0.3.0
+        version: 0.3.0
       '@sourcegraph/extension-api-classes':
         specifier: ^1.1.0
         version: 1.1.0(sourcegraph@client+extension-api)
@@ -217,9 +220,6 @@ importers:
       classnames:
         specifier: ^2.2.6
         version: 2.3.2
-      cody-web-experimental:
-        specifier: ^0.2.7
-        version: 0.2.7
       comlink:
         specifier: ^4.3.0
         version: 4.3.0
@@ -6031,7 +6031,7 @@ packages:
     dependencies:
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 20.8.0
+      '@types/node': 20.11.19
       jest-mock: 29.7.0
     dev: false
 
@@ -6041,7 +6041,7 @@ packages:
     dependencies:
       '@jest/types': 29.6.3
       '@sinonjs/fake-timers': 10.3.0
-      '@types/node': 20.8.0
+      '@types/node': 20.11.19
       jest-message-util: 29.7.0
       jest-mock: 29.7.0
       jest-util: 29.7.0
@@ -6080,7 +6080,7 @@ packages:
     dependencies:
       '@types/istanbul-lib-coverage': 2.0.6
       '@types/istanbul-reports': 3.0.4
-      '@types/node': 20.8.0
+      '@types/node': 20.11.19
       '@types/yargs': 15.0.19
       chalk: 4.1.2
     dev: false
@@ -6103,7 +6103,7 @@ packages:
       '@jest/schemas': 29.6.3
       '@types/istanbul-lib-coverage': 2.0.6
       '@types/istanbul-reports': 3.0.4
-      '@types/node': 20.8.0
+      '@types/node': 20.11.19
       '@types/yargs': 17.0.23
       chalk: 4.1.2
 
@@ -9720,6 +9720,10 @@ packages:
     resolution: {integrity: sha512-Uf7wMo5Fu3+g03gl2jvU2qHMaDp0p9RK9U2ucmy6VxWaavxALCC8iy47JL5GdgR5qG3ekEd5mAQV0dIIfoKELA==}
     dev: true
 
+  /@sourcegraph/cody-web@0.3.0:
+    resolution: {integrity: sha512-Dh29FumKyuSIA437iT/0JAiD+xGdcKLqy2/4+99aqJRGns8/crGamGpY6M4ZvmkCZCEgtElslPsAxZ+L5yJRtg==}
+    dev: false
+
   /@sourcegraph/eslint-config@0.37.1(@testing-library/dom@8.13.0)(eslint@8.57.0)(typescript@5.4.2):
     resolution: {integrity: sha512-3G0d3OUgifaADfd27Bdk/kSpECj21BfQ6srbYMY/HVWOv/N8AVuFWNwUMT4Y4slt026RXO5XcwoZhfnaskr5hQ==}
     dependencies:
@@ -10331,7 +10335,7 @@ packages:
       '@storybook/preview-api': 7.6.17
       '@storybook/theming': 7.6.17(react-dom@18.1.0)(react@18.1.0)
       '@storybook/types': 7.6.17
-      '@types/lodash': 4.14.167
+      '@types/lodash': 4.17.0
       color-convert: 2.0.1
       dequal: 2.0.3
       lodash: 4.17.21
@@ -12208,7 +12212,7 @@ packages:
   /@types/graceful-fs@4.1.5:
     resolution: {integrity: sha512-anKkLmZZ+xm4p8JWBf4hElkM4XR+EZeA2M9BAkkTldmcyDY4mbdIJnRghDJH3Ov5ooY7/UAoENtmdMSkaAd7Cw==}
     dependencies:
-      '@types/node': 20.8.0
+      '@types/node': 20.11.19
     dev: true
 
   /@types/har-format@1.2.4:
@@ -14983,7 +14987,7 @@ packages:
     engines: {node: '>=12.13.0'}
     hasBin: true
     dependencies:
-      '@types/node': 20.8.0
+      '@types/node': 20.11.19
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -15018,7 +15022,7 @@ packages:
   /chromium-edge-launcher@1.0.0:
     resolution: {integrity: sha512-pgtgjNKZ7i5U++1g1PWv75umkHvhVTDOQIZ+sjeUX9483S7Y6MUvO0lrd7ShGlQlFHMN4SwKTCq/X8hWrbv2KA==}
     dependencies:
-      '@types/node': 20.8.0
+      '@types/node': 20.11.19
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -15224,10 +15228,6 @@ packages:
 
   /cody-web-experimental@0.2.4:
     resolution: {integrity: sha512-92MNNTlZTndHN+kNUa4ojrZMIxgl78o+wswOhdzmIQm/FJFi977rnuQPSg/bV5jm8S3y3pdwUM7SUTqCKlwSHw==}
-    dev: false
-
-  /cody-web-experimental@0.2.7:
-    resolution: {integrity: sha512-OI2nW/3CKqSajDyl3Sojlb4bX4fJcwIY2TQ3k0Sw1CSGyNxbqkxCA37dlhBLPMEq3ByC9trX68ppNJEi2ZFuWg==}
     dev: false
 
   /color-convert@1.9.3:
@@ -16748,7 +16748,7 @@ packages:
       base64id: 2.0.0
       cookie: 0.4.2
       cors: 2.8.5
-      debug: 4.3.4
+      debug: 4.3.5
       engine.io-parser: 5.2.2
       ws: 8.11.0
     transitivePeerDependencies:
@@ -20163,7 +20163,7 @@ packages:
       '@jest/environment': 29.7.0
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 20.8.0
+      '@types/node': 20.11.19
       jest-mock: 29.7.0
       jest-util: 29.7.0
     dev: false
@@ -20184,7 +20184,7 @@ packages:
     dependencies:
       '@jest/types': 29.6.3
       '@types/graceful-fs': 4.1.5
-      '@types/node': 20.8.0
+      '@types/node': 20.11.19
       anymatch: 3.1.3
       fb-watchman: 2.0.2
       graceful-fs: 4.2.11
@@ -20242,7 +20242,7 @@ packages:
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 20.8.0
+      '@types/node': 20.11.19
       jest-util: 29.7.0
     dev: false
 
@@ -20256,7 +20256,7 @@ packages:
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 20.8.0
+      '@types/node': 20.11.19
       chalk: 4.1.2
       ci-info: 3.9.0
       graceful-fs: 4.2.11
@@ -20287,7 +20287,7 @@ packages:
     resolution: {integrity: sha512-eIz2msL/EzL9UFTFFx7jBTkeZfku0yUAyZZZmJ93H2TYEiroIx2PQjEXcwYtYl8zXCxb+PAmA2hLIt/6ZEkPHw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
-      '@types/node': 20.8.0
+      '@types/node': 20.11.19
       jest-util: 29.7.0
       merge-stream: 2.0.0
       supports-color: 8.1.1
@@ -21149,7 +21149,7 @@ packages:
     engines: {node: '>=8.0'}
     dependencies:
       date-format: 4.0.14
-      debug: 4.3.4
+      debug: 4.3.5
       flatted: 3.3.1
       rfdc: 1.3.0
       streamroller: 3.1.5
@@ -25674,7 +25674,7 @@ packages:
   /socket.io-adapter@2.5.4:
     resolution: {integrity: sha512-wDNHGXGewWAjQPt3pyeYBtpWSq9cLE5UW1ZUPL/2eGK9jtse/FpXib7epSTsz0Q0m+6sg6Y4KtcFTlah1bdOVg==}
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.5
       ws: 8.11.0
     transitivePeerDependencies:
       - bufferutil
@@ -25686,7 +25686,7 @@ packages:
     engines: {node: '>=10.0.0'}
     dependencies:
       '@socket.io/component-emitter': 3.1.2
-      debug: 4.3.4
+      debug: 4.3.5
     dev: true
 
   /socket.io@4.7.5:
@@ -25696,7 +25696,7 @@ packages:
       accepts: 1.3.8
       base64id: 2.0.0
       cors: 2.8.5
-      debug: 4.3.4
+      debug: 4.3.5
       engine.io: 6.5.4
       socket.io-adapter: 2.5.4
       socket.io-parser: 4.2.4
@@ -25988,7 +25988,7 @@ packages:
     engines: {node: '>=8.0'}
     dependencies:
       date-format: 4.0.14
-      debug: 4.3.4
+      debug: 4.3.5
       fs-extra: 8.1.0
     dev: true
 
