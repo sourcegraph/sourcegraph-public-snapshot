@@ -7,10 +7,16 @@
 
 <div class="root">
     <div class="section header">
-        <h4>New, faster UX (Beta)</h4>
+        <h4 class="m0">New, faster UX (Beta)</h4>
         {#if handleOptOut}
             <Toggle on={true} on:click={() => handleOptOut()} />
         {/if}
+    </div>
+    <div class="section">
+        <p class="m0">
+            You're currently on the new, faster Code Search user experience. It's in beta, and is our effort to rebuild
+            the tool from the ground up for performance.
+        </p>
     </div>
     <div class="section">
         <p>Got feedback for us on the beta? We'd love to hear from you.</p>
@@ -32,12 +38,13 @@
             }
         }
 
+        .m0 {
+            margin: 0;
+        }
+
         .header {
             display: flex;
             justify-content: space-between;
-            h4 {
-                margin: 0;
-            }
         }
 
         a {

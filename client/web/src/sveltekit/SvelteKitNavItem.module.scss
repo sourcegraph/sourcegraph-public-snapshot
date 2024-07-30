@@ -2,6 +2,7 @@
     display: flex;
     gap: 0.5rem;
     align-items: center;
+    font-size: 0.875rem;
 
     p {
         margin: 0;
@@ -48,4 +49,8 @@
     text-align: center;
     font-size: var(--font-size-small);
     color: var(--text-muted);
+}
+
+.help-icon {
+    color: var(--icon-color);
 }

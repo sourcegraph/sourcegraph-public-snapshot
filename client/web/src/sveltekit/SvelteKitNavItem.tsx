@@ -46,7 +46,7 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
         <Popover {...popoverProps}>
             <PopoverTrigger className={styles.badge}>
                 <div className={styles.container}>
-                    <Icon svgPath={mdiHelpCircleOutline} aria-hidden />
+                    <Icon className={styles.helpIcon} svgPath={mdiHelpCircleOutline} aria-hidden />
                     <Text>New, faster UX</Text>
                     <Toggle
                         value={false}
