@@ -6,7 +6,7 @@ import { useLocation } from 'react-router-dom'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { Text, H3, Popover, PopoverTrigger, PopoverContent, Icon, Button, Link } from '@sourcegraph/wildcard'
+import { Text, H3, Popover, PopoverTrigger, PopoverContent, Icon, Button } from '@sourcegraph/wildcard'
 
 import { enableSvelteAndReload, canEnableSvelteKit } from './util'
 
@@ -23,12 +23,10 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
         return null
     }
 
-    let departureRef = useRef(null)
+    let departureRef = useRef<HTMLDivElement | null>(null)
 
-    const handleClickOutside = event => {
-        console.log('handling')
-        console.log(departureRef.current)
-        if (departureRef.current && !departureRef.current.contains(event.target)) {
+    function handleClickOutside(event: MouseEvent) {
+        if (departureRef.current && !departureRef.current.contains(event.target as Node)) {
             console.log('dismissing')
             setDepartureDismissed(true)
         }
@@ -42,12 +40,13 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
     }, [])
 
     const showDeparture = toggledOff && !departureDismissed
+    const popoverProps = showDeparture ? { isOpen: true, onOpenChange: () => {} } : {}
 
     return (
-        <Popover isOpen={showDeparture ? true : undefined}>
+        <Popover {...popoverProps}>
             <PopoverTrigger className={styles.badge}>
                 <div className={styles.container}>
-                    <Icon svgPath={mdiHelpCircleOutline} />
+                    <Icon svgPath={mdiHelpCircleOutline} aria-hidden />
                     <Text>New, faster UX</Text>
                     <Toggle
                         value={false}
@@ -67,7 +66,7 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
                             <H3>
                                 <span>Switched out of the new experience?</span>
                                 <Button variant="icon" onClick={() => setDepartureDismissed(true)}>
-                                    <Icon svgPath={mdiClose} inline />
+                                    <Icon svgPath={mdiClose} inline aria-label="close" />
                                 </Button>
                             </H3>
                             <Text>
