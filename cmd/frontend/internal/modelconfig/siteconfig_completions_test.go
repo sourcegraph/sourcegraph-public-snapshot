@@ -398,4 +398,35 @@ func TestConvertCompletionsConfig(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("Starcoder", func(t *testing.T) {
+		compConfig := loadCompletionsConfig(schema.Completions{
+			Provider:        "sourcegraph",
+			CompletionModel: "fireworks/starcoder",
+
+			ChatModelMaxTokens:       1_000,
+			CompletionModelMaxTokens: 2_000,
+			FastChatModelMaxTokens:   3_000,
+		})
+		require.NotNil(t, compConfig)
+
+		siteModelConfig, err := convertCompletionsConfig(compConfig)
+		require.NoError(t, err)
+
+		// DefaultModels. Claude is used for chat, but the code completions were explicitly set
+		// to StarCoder.
+		require.NotNil(t, siteModelConfig.DefaultModels)
+		assert.EqualValues(t, "anthropic::unknown::claude-3-sonnet-20240229", siteModelConfig.DefaultModels.Chat)
+		assert.EqualValues(t, "fireworks::unknown::starcoder", siteModelConfig.DefaultModels.CodeCompletion)
+		assert.EqualValues(t, "anthropic::unknown::claude-3-haiku-20240307", siteModelConfig.DefaultModels.FastChat)
+
+		// We set the modle's name to just "starcoder" because that's all the information we have
+		// available. But on the Cody Gateway side, it is virtualized. And will actually use a
+		// "real" model name like "starcoder2-7b" when resolving the request.
+		//
+		// See `pickStarCoderModel` in the Cody Gateway code.
+		scModel := siteModelConfig.ModelOverrides[2]
+		assert.EqualValues(t, "fireworks::unknown::starcoder", scModel.ModelRef)
+		assert.EqualValues(t, "starcoder", scModel.ModelName)
+	})
 }
