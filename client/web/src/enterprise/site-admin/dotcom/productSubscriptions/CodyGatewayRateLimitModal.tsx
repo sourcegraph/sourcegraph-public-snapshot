@@ -25,16 +25,17 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
 > = ({ onCancel, afterSave, productSubscriptionUUID, current, mode, enterprisePortalEnvironment }) => {
     const labelId = 'codyGatewayRateLimit'
 
-    const [limit, setLimit] = useState<number>(Number(current?.limit) ?? 100)
+    const [limit, setLimit] = useState<bigint>(current?.limit ?? BigInt(100))
     const onChangeLimit = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        setLimit(parseInt(event.target.value || '0', 10))
+        setLimit(BigInt(parseInt(event.target.value || '0', 10)))
     }, [])
 
-    const [limitInterval, setLimitInterval] = useState<Duration>(
-        current?.intervalDuration ?? new Duration({ seconds: BigInt(60 * 60) })
-    )
+    /**
+     * Interval is tracked in seconds in state.
+     */
+    const [limitInterval, setLimitInterval] = useState<bigint>(current?.intervalDuration?.seconds ?? BigInt(60 * 60))
     const onChangeLimitInterval = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        setLimitInterval(new Duration({ seconds: BigInt(parseInt(event.target.value || '0', 10)) }))
+        setLimitInterval(BigInt(parseInt(event.target.value || '0', 10)))
     }, [])
 
     const {
@@ -65,6 +66,10 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                         break
                     }
                 }
+                const rateLimit = {
+                    limit,
+                    intervalDuration: new Duration({ seconds: limitInterval }),
+                }
                 await updateCodyGatewayAccess({
                     updateMask: { paths },
                     access: {
@@ -74,28 +79,19 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                          */
                         ...(mode === 'chat'
                             ? {
-                                  chatCompletionsRateLimit: {
-                                      limit: BigInt(limit),
-                                      intervalDuration: limitInterval,
-                                  },
+                                  chatCompletionsRateLimit: rateLimit,
                               }
                             : {}),
 
                         ...(mode === 'code'
                             ? {
-                                  codeCompletionsRateLimit: {
-                                      limit: BigInt(limit),
-                                      intervalDuration: limitInterval,
-                                  },
+                                  codeCompletionsRateLimit: rateLimit,
                               }
                             : {}),
 
                         ...(mode === 'embeddings'
                             ? {
-                                  embeddingsRateLimit: {
-                                      limit: BigInt(limit),
-                                      intervalDuration: limitInterval,
-                                  },
+                                  embeddingsRateLimit: rateLimit,
                               }
                             : {}),
                     },
@@ -141,7 +137,7 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                         spellCheck="false"
                         type="number"
                         min={1}
-                        value={limit}
+                        value={Number(limit)}
                         onChange={onChangeLimit}
                         label={mode === 'embeddings' ? 'Number of tokens embedded' : 'Number of requests'}
                     />
@@ -158,13 +154,13 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                         min={1}
                         label="Rate limit interval"
                         description="The interval is defined in seconds. See below for a pretty-printed version."
-                        value={Number(limitInterval.seconds)}
+                        value={Number(limitInterval)}
                         onChange={onChangeLimitInterval}
                         message={
                             <>
                                 {numberFormatter.format(BigInt(limit || 0))}{' '}
                                 {mode === 'embeddings' ? 'tokens' : 'requests'} per{' '}
-                                {prettyInterval(Number(limitInterval.seconds))}
+                                {prettyInterval(Number(limitInterval))}
                             </>
                         }
                     />
@@ -175,7 +171,7 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                     </Button>
                     <LoaderButton
                         type="submit"
-                        disabled={loading || limit <= 0 || Number(limitInterval.seconds) <= 0}
+                        disabled={loading || limit <= 0 || limitInterval <= 0}
                         variant="primary"
                         loading={loading}
                         alwaysShowLabel={true}
