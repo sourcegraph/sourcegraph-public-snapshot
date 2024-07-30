@@ -139,14 +139,14 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 			if displayNameSubstring != "" {
 				return nil, connect.NewError(
 					connect.CodeInvalidArgument,
-					errors.Wrapf(err, `invalid filter: "display_name" provided more than once`),
+					errors.Newf(`invalid filter: "display_name" provided more than once`),
 				)
 			}
 			const minLength = 3
 			if len(f.DisplayName) < minLength {
 				return nil, connect.NewError(
 					connect.CodeInvalidArgument,
-					errors.Wrapf(err, `invalid filter: "display_name" must be longer than %d characters`, minLength),
+					errors.Newf(`invalid filter: "display_name" must be longer than %d characters`, minLength),
 				)
 			}
 			displayNameSubstring = f.DisplayName
@@ -154,7 +154,7 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 			if f.Salesforce.SubscriptionId == "" {
 				return nil, connect.NewError(
 					connect.CodeInvalidArgument,
-					errors.Wrap(err, `invalid filter: "salesforce.subscription_id" is empty`),
+					errors.Newf(`invalid filter: "salesforce.subscription_id" is empty`),
 				)
 			}
 			salesforceSubscriptionIDs = append(salesforceSubscriptionIDs,
@@ -278,10 +278,11 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 			opts.LicenseType = f.Type
 
 		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_LicenseKeySubstring:
-			if f.LicenseKeySubstring == "" {
+			const minLength = 3
+			if len(f.LicenseKeySubstring) < minLength {
 				return nil, connect.NewError(
 					connect.CodeInvalidArgument,
-					errors.New(`invalid filter: "license_key_substring" is provided but is empty`),
+					errors.Newf(`invalid filter: "license_key_substring" must be longer than %d characters`, minLength),
 				)
 			}
 			if opts.LicenseKeySubstring != "" {
