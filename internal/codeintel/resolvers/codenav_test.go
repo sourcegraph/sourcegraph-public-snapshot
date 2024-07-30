@@ -7,9 +7,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"golang.org/x/exp/rand"
-
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/rand"
 	"pgregory.net/rapid"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
