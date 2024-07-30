@@ -32,7 +32,7 @@
 
 (property_declaration
     (property_declarator name: (variable) @descriptor.term @kind.property)
-    (#transform! "[$]?(.*)" "$1"))
+    (#transform! "[$](.*)" "$1"))
 
 (const_declaration
     (const_declarator name: (identifier) @descriptor.term @kind.constant))
