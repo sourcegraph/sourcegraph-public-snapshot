@@ -42,10 +42,6 @@ use crate::{languages::LocalConfiguration, SCIP_SYNTAX_SCHEME};
 // namespace matches definitions in any namespace and
 // `@definition` matches any `@reference.namespace`
 
-/// The maximum number of parent scopes we traverse before giving up to
-/// prevent infinite loops
-const MAX_SCOPE_DEPTH: i32 = 10000;
-
 #[derive(Clone, Debug, Copy, PartialEq)]
 enum ReferenceDescriptor {
     Method,
@@ -83,7 +79,7 @@ pub fn find_locals(
     source: &str,
     options: LocalResolutionOptions,
 ) -> Result<Vec<Occurrence>> {
-    let resolver = LocalResolver::new(source, options);
+    let resolver = LocalResolver::new(source, tree.root_node(), options);
     resolver.process(config, tree, None)
 }
 
@@ -225,24 +221,35 @@ struct RefCapture<'a> {
     descriptor: Option<ReferenceDescriptor>,
 }
 
+/// The maximum number of parent scopes we traverse before giving up to
+/// prevent infinite loops
+const MAX_SCOPE_DEPTH: i32 = 10000;
+
 /// Created by LocalResolver::ancestors()
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct Ancestors<'arena, 'a> {
+    fuel: i32,
     /// A reference to LocalResolver's arena, which holds all scopes
     /// for the entire tree
     arena: &'arena Arena<Scope<'a>>,
-    current_scope: ScopeId<'a>,
+    next_scope: Option<ScopeId<'a>>,
 }
 
 impl<'arena, 'a> Iterator for Ancestors<'arena, 'a> {
     type Item = ScopeId<'a>;
     fn next(&mut self) -> Option<ScopeId<'a>> {
-        let scope = self.arena.get(self.current_scope).unwrap();
-        match scope.parent {
+        match self.next_scope {
             None => None,
-            Some(parent) => {
-                self.current_scope = parent;
-                Some(parent)
+            Some(current_scope) => {
+                self.fuel -= 1;
+                if self.fuel < 0 {
+                    eprintln!(
+                        "Detected a likely infinite loop in syntax_analysis::locals::LocalResolver"
+                    );
+                    return None;
+                }
+                self.next_scope = self.arena.get(current_scope).unwrap().parent;
+                Some(current_scope)
             }
         }
     }
@@ -275,6 +282,7 @@ struct LocalResolver<'a> {
 
     source_bytes: &'a [u8],
     definition_id_supply: u32,
+    top_scope: ScopeId<'a>,
     // This is a hack to not record references that overlap with
     // definitions.
     skip_references_at_offsets: HashSet<usize>,
@@ -300,13 +308,22 @@ impl<'a> IndexMut<ScopeId<'a>> for LocalResolver<'a> {
 }
 
 impl<'a> LocalResolver<'a> {
-    fn new(source: &'a str, options: LocalResolutionOptions) -> Self {
+    fn new(source: &'a str, root: Node<'a>, options: LocalResolutionOptions) -> Self {
+        let mut arena = Arena::new();
+        let mut interner = StringInterner::default();
+        let top_scope = arena.alloc(Scope::new(
+            interner.get_or_intern_static("global"),
+            root,
+            None,
+        ));
+
         LocalResolver {
             options,
-            arena: Arena::new(),
-            interner: StringInterner::default(),
+            arena,
+            interner,
             source_bytes: source.as_bytes(),
             definition_id_supply: 0,
+            top_scope,
             skip_references_at_offsets: HashSet::new(),
             skip_occurrences_at_offsets: HashSet::new(),
             occurrences: vec![],
@@ -351,16 +368,12 @@ impl<'a> LocalResolver<'a> {
 
         let is_new_definition = match hoist {
             Some(hoist_scope) => {
-                let mut target_scope = scope_id;
                 // If we don't find any matching scope we hoist all
                 // the way to the top_scope
-                for ancestor in self.ancestors(scope_id) {
-                    target_scope = ancestor;
-                    if self[ancestor].kind == hoist_scope {
-                        break;
-                    }
-                }
-
+                let target_scope = self
+                    .ancestors(scope_id)
+                    .find(|scope| self[*scope].kind == hoist_scope)
+                    .unwrap_or(self.top_scope);
                 // Remove me once let-chains are stabilized
                 // (https://github.com/rust-lang/rust/issues/53667)
                 if_chain! {
@@ -415,8 +428,17 @@ impl<'a> LocalResolver<'a> {
 
     fn ancestors(&self, scope_id: ScopeId<'a>) -> Ancestors<'_, 'a> {
         Ancestors {
+            fuel: MAX_SCOPE_DEPTH,
             arena: &self.arena,
-            current_scope: scope_id,
+            next_scope: self[scope_id].parent,
+        }
+    }
+
+    fn ancestors_with_self(&self, scope_id: ScopeId<'a>) -> Ancestors<'_, 'a> {
+        Ancestors {
+            fuel: MAX_SCOPE_DEPTH,
+            arena: &self.arena,
+            next_scope: Some(scope_id),
         }
     }
 
@@ -656,7 +678,7 @@ impl<'a> LocalResolver<'a> {
     /// Build a tree of scopes for pre-order traversal by sorting scopes, definitions
     /// and references. Definitions and references are added or hoisted to the
     /// closest enclosing scope as appropriate.
-    fn build_tree(&mut self, top_scope: ScopeId<'a>, captures: Captures<'a>) -> Result<()> {
+    fn build_tree(&mut self, captures: Captures<'a>) -> Result<()> {
         let Captures {
             mut scopes,
             mut definitions,
@@ -669,30 +691,29 @@ impl<'a> LocalResolver<'a> {
         let mut definitions_iter = definitions.iter();
         let mut references_iter = references.iter();
 
-        let mut current_scope = top_scope;
+        let mut current_scope = self.top_scope;
         for ScopeCapture {
             kind: scope_kind,
             node: scope_node,
         } in scopes
         {
-            let new_scope_end = scope_node.end_byte();
-            while new_scope_end > self.end_byte(current_scope) {
-                // Add all remaining definitions before end of current
-                // scope before traversing to parent
-                let scope_end_byte = self.end_byte(current_scope);
-                self.add_defs_while(current_scope, &mut definitions_iter, |def_capture| {
+            // Close all scopes that end before the new scope
+            let new_scope_end = scope_node.start_byte();
+            let scopes_to_close: Vec<_> = self
+                .ancestors_with_self(current_scope)
+                .take_while(|scope| new_scope_end > self.end_byte(*scope))
+                .collect();
+            for scope in scopes_to_close {
+                let scope_end_byte = self.end_byte(scope);
+                self.add_defs_while(scope, &mut definitions_iter, |def_capture| {
                     def_capture.node.start_byte() < scope_end_byte
                 })?;
-                self.add_refs_while(current_scope, &mut references_iter, |ref_capture| {
+                self.add_refs_while(scope, &mut references_iter, |ref_capture| {
                     ref_capture.node.start_byte() < scope_end_byte
                 })?;
-
-                if let Some(parent_scope) = self[current_scope].parent {
-                    current_scope = parent_scope
-                } else {
-                    break;
-                }
+                current_scope = self[scope].parent.unwrap_or(current_scope);
             }
+
             // Before adding the new scope we first attach all
             // definitions and references that belong to the current
             // scope
@@ -713,31 +734,17 @@ impl<'a> LocalResolver<'a> {
             current_scope = new_scope
         }
 
-        // We need to climb back to the top level scope and add
-        // all remaining definitions
-        let mut fuel = MAX_SCOPE_DEPTH;
-        loop {
-            fuel -= 1;
-            if fuel <= 0 {
-                eprintln!("Detected a likely infinite loop in syntax_analysis::locals::LocalResolver::build_tree");
-                break;
-            }
-            let scope_end_byte = self.end_byte(current_scope);
-            self.add_defs_while(current_scope, &mut definitions_iter, |def_capture| {
+        // We need to climb back to the top level scope and add all remaining definitions
+        let scopes_to_toplevel: Vec<_> = self.ancestors_with_self(current_scope).collect();
+        for scope in scopes_to_toplevel {
+            let scope_end_byte = self.end_byte(scope);
+            self.add_defs_while(scope, &mut definitions_iter, |def_capture| {
                 def_capture.node.start_byte() < scope_end_byte
             })?;
-            self.add_refs_while(current_scope, &mut references_iter, |ref_capture| {
+            self.add_refs_while(scope, &mut references_iter, |ref_capture| {
                 ref_capture.node.start_byte() < scope_end_byte
             })?;
-
-            if let Some(parent) = self[current_scope].parent {
-                current_scope = parent
-            } else {
-                // We've made it to the top level scope
-                break;
-            }
         }
-
         debug_assert!(
             definitions_iter.next().is_none(),
             "Should've entered all definitions into the tree"
@@ -756,23 +763,8 @@ impl<'a> LocalResolver<'a> {
         name: Name,
         start_byte: usize,
     ) -> Option<&Definition<'a>> {
-        let mut current_scope = scope;
-        let mut fuel = MAX_SCOPE_DEPTH;
-        loop {
-            fuel -= 1;
-            if fuel <= 0 {
-                eprintln!("Detected a likely infinite loop in syntax_analysis::locals::LocalResolver::find_def");
-                return None;
-            }
-            let scope = &self[current_scope];
-            if let Some(def) = scope.find_def(name, start_byte) {
-                return Some(def);
-            } else if let Some(parent_scope) = scope.parent {
-                current_scope = parent_scope
-            } else {
-                return None;
-            }
-        }
+        self.ancestors_with_self(scope)
+            .find_map(|scope| self[scope].find_def(name, start_byte))
     }
 
     fn make_global_reference(&self, reference: &Reference) -> scip::types::Occurrence {
@@ -855,19 +847,14 @@ impl<'a> LocalResolver<'a> {
         let captures = self.collect_captures(config, tree, self.source_bytes);
 
         // Next we build a tree structure of scopes and definitions
-        let top_scope = self.arena.alloc(Scope::new(
-            self.interner.get_or_intern_static("global"),
-            tree.root_node(),
-            None,
-        ));
-        self.build_tree(top_scope, captures)?;
+        self.build_tree(captures)?;
         match test_writer {
             None => {}
-            Some(w) => self.print_scope(w, top_scope, 0),
+            Some(w) => self.print_scope(w, self.top_scope, 0),
         }
+
         // Finally we resolve all references against that tree structure
         self.resolve_references();
-
         Ok(self.occurrences)
     }
 }
@@ -905,6 +892,7 @@ mod test {
         let tree = parser.parse(source_bytes, None).unwrap();
         let resolver = LocalResolver::new(
             source_code,
+            tree.root_node(),
             LocalResolutionOptions {
                 emit_global_references,
             },
