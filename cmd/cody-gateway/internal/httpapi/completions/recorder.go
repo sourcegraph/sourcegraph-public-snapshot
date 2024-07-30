@@ -3,32 +3,52 @@ package completions
 import (
 	"context"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// modelAvailabilityCheckWindow defines the time window for assessing model availability.
-// If a model accumulates too many errors within this duration, it's considered unavailable.
-const modelAvailabilityCheckWindow = 5 * time.Minute
-
-// errorThresholdForUnavailability is the maximum number of error records
-// allowed within the modelAvailabilityCheckWindow before a model is
-// considered unavailable.
-const errorThresholdForUnavailability = 10
-
+// modelsLoadTracker tracks the error records of models and determines their availability
+// based on a specified failure threshold and timeout period. It uses a circuit breaker
+// pattern to temporarily mark models as unavailable if they exceed the allowed number
+// of errors within the defined time window.
 type modelsLoadTracker struct {
-	records map[string][]*record
+	mu sync.RWMutex
+
+	// failureThreshold represents the maximum number of error records
+	// allowed within the timeout before a model is considered unavailable.
+	failureThreshold int
+
+	// timeout defines the time window for assessing model availability.
+	// If a model accumulates the number of errors equal to failureThreshold
+	// within this duration, it's considered unavailable.
+	timeout time.Duration
+
+	circuitBreakerByModel map[string]*modelCircuitBreaker
 }
 
+// modelCircuitBreaker keeps track of error records for a specific model,
+// implementing a circular buffer to efficiently manage error history.
+type modelCircuitBreaker struct {
+	headIndex int
+	records   []*record
+}
+
+// record represents an individual error occurrence with details about the reason for the error
+// and the timestamp when it happened. This information is used to assess the model's availability.
 type record struct {
 	reason    string
 	timestamp time.Time
 }
 
-func newModelsLoadTracker() *modelsLoadTracker {
+// newModelsLoadTracker initializes and returns a modelsLoadTracker with the specified
+// failure threshold and timeout period for assessing model availability.
+func newModelsLoadTracker(failureThreshold int, timeout time.Duration) *modelsLoadTracker {
 	return &modelsLoadTracker{
-		records: map[string][]*record{},
+		failureThreshold:      failureThreshold,
+		timeout:               timeout,
+		circuitBreakerByModel: map[string]*modelCircuitBreaker{},
 	}
 }
 
@@ -37,14 +57,12 @@ func newModelsLoadTracker() *modelsLoadTracker {
 // If neither of these conditions are met, it resets the error records for the given model.
 func (mlt *modelsLoadTracker) record(gatewayModel string, resp *http.Response, reqErr error) {
 	var r *record
-
 	if errors.Is(reqErr, context.DeadlineExceeded) {
 		r = &record{
 			reason:    "timeout",
 			timestamp: time.Now(),
 		}
 	}
-
 	if resp.StatusCode == http.StatusTooManyRequests {
 		r = &record{
 			reason:    "rate limit exceeded",
@@ -52,40 +70,50 @@ func (mlt *modelsLoadTracker) record(gatewayModel string, resp *http.Response, r
 		}
 	}
 
+	mlt.mu.Lock()
+	defer mlt.mu.Unlock()
+
+	// Zero out the list of errors for the model, resetting the circuit breaker.
 	if r == nil {
-		mlt.records[gatewayModel] = nil
-		return
-		// r = &record{
-		// 	reason:    "success",
-		// 	timestamp: time.Now(),
-		// }
+		// mlt.circuitBreakerByModel[gatewayModel] = nil
+		// return
+		r = &record{
+			reason:    "success",
+			timestamp: time.Now(),
+		}
 	}
 
-	records := mlt.records[gatewayModel]
-	records = append([]*record{r}, records...)
-	if len(records) > errorThresholdForUnavailability {
-		records = records[:errorThresholdForUnavailability]
+	mcb := mlt.circuitBreakerByModel[gatewayModel]
+	if mcb == nil {
+		mcb = &modelCircuitBreaker{
+			headIndex: 0,
+			records:   make([]*record, mlt.failureThreshold),
+		}
 	}
 
-	mlt.records[gatewayModel] = records
+	mcb.records[mcb.headIndex] = r
+	mcb.headIndex++
+	if mcb.headIndex >= mlt.failureThreshold {
+		mcb.headIndex = 0
+	}
+
+	mlt.circuitBreakerByModel[gatewayModel] = mcb
 }
 
-// isModelAvailable checks if a model is available based on recent request failures.
-// It returns false if the last errorThresholdForUnavailability requests to the
-// specified model within modelAvailabilityCheckWindow failed. Otherwise, it returns true.
+// isModelAvailable checks if a model is available based on the number of failures within the specified timeout period.
+// Returns false if there is at least one failure within the timeout period. Otherwise, returns true.
 func (mlt *modelsLoadTracker) isModelAvailable(gatewayModel string) bool {
-	var count int
-	now := time.Now()
+	mcb := mlt.circuitBreakerByModel[gatewayModel]
+	if mcb == nil {
+		return true
+	}
 
-	for _, r := range mlt.records[gatewayModel] {
-		if now.Sub(r.timestamp) > modelAvailabilityCheckWindow {
-			continue
-		}
-		count++
-		if count >= errorThresholdForUnavailability {
-			return false
+	now := time.Now()
+	for _, r := range mcb.records {
+		if r == nil || now.Sub(r.timestamp) > mlt.timeout {
+			return true
 		}
 	}
 
-	return true
+	return false
 }
