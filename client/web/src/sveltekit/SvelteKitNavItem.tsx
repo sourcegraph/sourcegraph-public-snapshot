@@ -1,4 +1,4 @@
-import { FC, useRef, useEffect } from 'react'
+import { FC, useRef, useEffect, useCallback } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiHelpCircleOutline, mdiClose } from '@mdi/js'
@@ -19,25 +19,27 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
     const [departureDismissed, setDepartureDismissed] = useTemporarySetting('webNext.departureMessage.dismissed', false)
     const [_toggledOn, setToggledOn] = useTemporarySetting('webNext.toggled.on', false)
 
-    if (!userID || !canEnableSvelteKit(location.pathname)) {
-        return null
-    }
+    const departureRef = useRef<HTMLDivElement | null>(null)
 
-    let departureRef = useRef<HTMLDivElement | null>(null)
-
-    function handleClickOutside(event: MouseEvent) {
-        if (departureRef.current && !departureRef.current.contains(event.target as Node)) {
-            console.log('dismissing')
-            setDepartureDismissed(true)
-        }
-    }
+    const handleClickOutside = useCallback(
+        (event: MouseEvent) => {
+            if (departureRef.current && !departureRef.current.contains(event.target as Node)) {
+                setDepartureDismissed(true)
+            }
+        },
+        [departureRef, setDepartureDismissed]
+    )
 
     useEffect(() => {
         document.addEventListener('click', handleClickOutside)
         return () => {
             document.removeEventListener('click', handleClickOutside)
         }
-    }, [])
+    }, [handleClickOutside])
+
+    if (!userID || !canEnableSvelteKit(location.pathname)) {
+        return null
+    }
 
     const showDeparture = toggledOff && !departureDismissed
     const popoverProps = showDeparture ? { isOpen: true, onOpenChange: () => {} } : {}
@@ -46,7 +48,7 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
         <Popover {...popoverProps}>
             <PopoverTrigger className={styles.badge}>
                 <div className={styles.container}>
-                    <Icon className={styles.helpIcon} svgPath={mdiHelpCircleOutline} aria-hidden />
+                    <Icon className={styles.helpIcon} svgPath={mdiHelpCircleOutline} aria-hidden={true} />
                     <Text>New, faster UX</Text>
                     <Toggle
                         value={false}
@@ -66,7 +68,7 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
                             <H3>
                                 <span>Switched out of the new experience?</span>
                                 <Button variant="icon" onClick={() => setDepartureDismissed(true)}>
-                                    <Icon svgPath={mdiClose} inline aria-label="close" />
+                                    <Icon svgPath={mdiClose} inline={true} aria-label="close" />
                                 </Button>
                             </H3>
                             <Text>
