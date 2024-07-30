@@ -4,6 +4,7 @@ import (
 	"net"
 	"os"
 
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/urfave/cli/v2"
@@ -35,6 +36,7 @@ var Command = &cli.Command{
 				{title: "all", preds: []activityPred{}},
 			},
 			promptInput: textinput.New(),
+			help:        help.New(),
 		}
 
 		if cctx.String("only-name") != "" {

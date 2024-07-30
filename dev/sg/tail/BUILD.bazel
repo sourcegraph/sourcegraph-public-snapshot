@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "activity.go",
         "commands.go",
+        "help.go",
         "model.go",
         "socket.go",
         "styles.go",
@@ -14,6 +15,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/tail",
     visibility = ["//visibility:public"],
     deps = [
+        "@com_github_charmbracelet_bubbles//help",
+        "@com_github_charmbracelet_bubbles//key",
         "@com_github_charmbracelet_bubbles//textinput",
         "@com_github_charmbracelet_bubbles//viewport",
         "@com_github_charmbracelet_bubbletea//:bubbletea",

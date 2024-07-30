@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -30,6 +31,8 @@ type model struct {
 	ready bool
 	// pause stores the following or paused state of the viewport.
 	pause bool
+	// showHelp is set to true when the help view should be shown.
+	showHelp bool
 	// tabs are a list of predicates to apply to the pager's content, allowing
 	// to filter activities.
 	tabs []*tab
@@ -40,6 +43,8 @@ type model struct {
 	// search stores the search query used to highlight activities.
 	search string
 
+	// help is the TODO
+	help help.Model
 	// viewport is the model implementing the pager.
 	viewport viewport.Model
 	// promptInput is the model implementing the prompt (: or /)
@@ -130,13 +135,27 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.statusMsg = ""
 			switch k := msg.String(); k {
-			case "ctrl+c", "q":
+			case "q":
+				// User might try q to quit help, and if it quitted the entire program
+				// that would be frustrating.
+				if m.showHelp {
+					m.showHelp = false
+				} else {
+					return m, tea.Quit
+				}
+			case "ctrl+c":
+				// But if you ctrl-c, it's assumed that the intent is to really quit,
+				// so here we do that regardless if the inline help is shown or not.
 				return m, tea.Quit
 			case "esc":
 				if m.search != "" {
 					m.search = ""
 					m.refreshContent()
 				}
+			case "?":
+				m.showHelp = !m.showHelp
+			case "h":
+				m.showHelp = !m.showHelp
 			case "p":
 				m.pause = !m.pause
 			case "up", "down":
@@ -176,6 +195,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		cmds = append(cmds, waitForActivity(m.ch))
 	case tea.WindowSizeMsg:
+		m.help.Width = msg.Width
+		m.help.ShowAll = true
+
 		headerHeight := lipgloss.Height(m.headerView())
 		footerHeight := lipgloss.Height(m.footerView())
 		statusHeight := lipgloss.Height(m.promptView())
@@ -219,7 +241,7 @@ func showUsage() tea.Cmd {
 		return activityMsg{
 			name:  "README",
 			ts:    "",
-			level: "debug",
+			level: "HELP",
 			data:  "👉 You can now run `sg start --tail (...)` to see log messages displayed here. Press h for inline help.",
 		}
 	}
@@ -230,11 +252,17 @@ func (m model) View() string {
 		return "\n  Initializing..."
 	}
 
+	helpView := m.help.View(keys)
+
 	var promptView string
 	if m.statusMsg != "" {
 		promptView = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render(m.statusMsg)
 	} else {
 		promptView = m.promptView()
+	}
+
+	if m.showHelp {
+		return helpView
 	}
 
 	return fmt.Sprintf("%s\n%s\n%s\n%s", m.headerView(), m.viewport.View(), m.footerView(), promptView)
@@ -317,7 +345,8 @@ func evalPrompt(value string) (tea.Cmd, error) {
 				name: "tabclose",
 			}
 		}, nil
-
+	default:
+		return nil, fmt.Errorf("unknown command: %s, press h or ? to get inline help", cmd)
 	}
 	return nil, nil
 }

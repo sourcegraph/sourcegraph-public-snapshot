@@ -17,7 +17,7 @@ var (
 	infoStyle = func() lipgloss.Style {
 		b := lipgloss.HiddenBorder()
 		b.Left = "┤"
-		return titleStyle.Copy().BorderStyle(b)
+		return titleStyle.BorderStyle(b)
 	}()
 	activeTabStyle   = lipgloss.NewStyle().Background(lipgloss.Color("7")).Foreground(lipgloss.Color("0")).Padding(0, 1, 0)
 	inactiveTabStyle = lipgloss.NewStyle().Background(lipgloss.Color("0")).Foreground(lipgloss.Color("7")).Padding(0, 1, 0)
@@ -45,6 +45,9 @@ func levelToColor(level string) lipgloss.Color {
 		return lipgloss.Color("8") // gray
 	case "EROR":
 		return lipgloss.Color("9") // red
+	case "HELP":
+		// special case for usage message at the beginning, this isn't a real log level.
+		return lipgloss.Color("6") // green
 	default:
 		return lipgloss.Color("0") // black
 	}
