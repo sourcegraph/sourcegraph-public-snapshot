@@ -121,7 +121,7 @@ type UpstreamRequest interface {
 const maxRequestDuration = 1 * time.Minute
 
 // modelAvaialbilityTracker acts as an in-memory store of recent requests broken down
-// by LLM model. We use it to block requests to LLMs that are returning 429s/500s
+// by LLM model. We use it to block requests to LLMs that are timing out or returning 429s
 // as a way of improving the stability on our end. (And not sending traffic to unhealthy LLMs.)
 var modelAvailabilityTracker = newModelsLoadTracker(10, 5*time.Minute)
 
