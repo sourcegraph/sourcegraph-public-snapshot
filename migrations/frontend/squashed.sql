@@ -2453,7 +2453,8 @@ CREATE TABLE exhaustive_search_jobs (
     cancel boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    queued_at timestamp with time zone DEFAULT now()
+    queued_at timestamp with time zone DEFAULT now(),
+    is_aggregated boolean DEFAULT false NOT NULL
 );
 
 CREATE SEQUENCE exhaustive_search_jobs_id_seq
