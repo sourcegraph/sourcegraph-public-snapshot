@@ -244,24 +244,6 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, 
 		return errors.Wrapf(err, "failed to update")
 	}
 
-	p4home, err := s.fs.P4HomeDir()
-	if err != nil {
-		return errors.Wrap(err, "failed to create p4home")
-	}
-
-	// Force update "master" to "refs/remotes/p4/master" where changes are synced into
-	cmd = wrexec.CommandContext(ctx, nil, "git", "branch", "-f", "master", "refs/remotes/p4/master")
-	cmd.Cmd.Env = append(os.Environ(),
-		"P4PORT="+p4port,
-		"P4USER="+p4user,
-		"P4PASSWD="+p4passwd,
-		"HOME="+p4home,
-	)
-	dir.Set(cmd.Cmd)
-	if output, err := cmd.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "failed to force update branch with output %q", string(output))
-	}
-
 	// The update was successful, after a git fetch it is expected that a repos
 	// FETCH_HEAD has either been updated, or that HEAD has been touched, even
 	// if no changes were fetched.
