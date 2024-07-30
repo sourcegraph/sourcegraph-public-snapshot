@@ -135,6 +135,13 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: maintenanceGroupUpdatesItemLabel,
             to: '/site-admin/updates',
+            condition: ({ applianceManaged }) => !applianceManaged,
+        },
+        {
+            label: maintenanceGroupUpdatesItemLabel,
+            // TODO: change this to point the appliance service
+            to: 'http://localhost:8889/',
+            condition: ({ applianceManaged }) => applianceManaged,
         },
         {
             label: 'Documentation',
