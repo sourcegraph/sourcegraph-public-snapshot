@@ -1,0 +1,18 @@
+recordings:
+- hash: a3e581aeefd641c43ddddbe08577c48113436f3817a7697a23b5e8ea8c586dda
+  request:
+    recording_date: "2024-08-06T21:33:27+02:00"
+    url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=openai-rest-api&client-version=6.0.0
+    method: POST
+    headers:
+    - key: Content-Type
+      value: application/json
+    - key: Authorization
+      value: token REDACTED_51c20f884ac371e6e12fe635336ac83af942ddc816c96d99dd3e49b3f8dfeb26
+    body: ""
+  response:
+    status_code: 200
+    body: '{"completion":"yes","stopReason":"end_turn"}'
+    headers:
+    - key: Content-Type
+      value: text/plain; charset=utf-8

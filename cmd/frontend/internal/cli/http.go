@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/publicrestapi"
+
 	"github.com/NYTimes/gziphandler"
 	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
@@ -75,6 +77,8 @@ func newExternalHTTPHandler(
 		apiHandler = deviceid.Middleware(apiHandler)
 	}
 
+	publicrestHandler := publicrestapi.NewHandler(apiHandler)
+
 	// 🚨 SECURITY: This handler implements its own token auth inside enterprise
 	executorProxyHandler := newExecutorProxyHandler()
 
@@ -96,6 +100,7 @@ func newExternalHTTPHandler(
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", secureHeadersMiddleware(apiHandler, crossOriginPolicyAPI))
+	sm.Handle("/api/", secureHeadersMiddleware(publicrestHandler, crossOriginPolicyAPI))
 	sm.Handle("/.executors/", secureHeadersMiddleware(executorProxyHandler, crossOriginPolicyNever))
 	sm.Handle("/", secureHeadersMiddleware(appHandler, crossOriginPolicyNever))
 	const urlPathPrefix = "/.assets"
