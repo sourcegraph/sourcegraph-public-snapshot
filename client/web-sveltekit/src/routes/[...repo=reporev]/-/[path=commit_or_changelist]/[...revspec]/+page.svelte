@@ -93,12 +93,9 @@
                     {#if isPerforce}
                         <li>
                             <a href="{`/${data.repoName}@changelist/${data.commit.perforceChangelist?.cid}`}}"
-                                >Browse files at
-                                <Badge variant="link">
-                                    {data.commit.perforceChangelist?.cid}
-                                </Badge></a
-                            >
-                        </li>
+                                >Browse files
+                            </a></li
+                        >
                     {:else}
                         <li>
                             <a href="/{data.repoName}@{data.commit.oid}"

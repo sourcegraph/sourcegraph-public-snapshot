@@ -124,33 +124,35 @@
 
     <div slot="content" class="content" let:toggle>
         <Tabs>
-            <TabPanel title="Branches" shortcut={branchesHotkey}>
-                <Picker
-                    name="branches"
-                    seeAllItemsURL={`${repoURL}/-/branches`}
-                    getData={getRepositoryBranches}
-                    toOption={branch => ({ value: branch.id, label: branch.displayName })}
-                    onSelect={branch => {
-                        toggle(false)
-                        onSelect(branch.abbrevName)
-                    }}
-                    let:value
-                >
-                    <RepositoryRevPickerItem
-                        icon={ILucideGitBranch}
-                        label={value.displayName}
-                        author={value.target.commit?.author}
+            {#if !isP4}
+                <TabPanel title="Branches" shortcut={branchesHotkey}>
+                    <Picker
+                        name="branches"
+                        seeAllItemsURL={`${repoURL}/-/branches`}
+                        getData={getRepositoryBranches}
+                        toOption={branch => ({ value: branch.id, label: branch.displayName })}
+                        onSelect={branch => {
+                            toggle(false)
+                            onSelect(branch.abbrevName)
+                        }}
+                        let:value
                     >
-                        <svelte:fragment slot="title">
-                            <Icon icon={ILucideGitBranch} inline aria-hidden="true" />
-                            <Badge variant="link">{value.displayName}</Badge>
-                            {#if value.displayName === defaultBranch}
-                                <Badge variant="secondary" small>DEFAULT</Badge>
-                            {/if}
-                        </svelte:fragment>
-                    </RepositoryRevPickerItem>
-                </Picker>
-            </TabPanel>
+                        <RepositoryRevPickerItem
+                            icon={ILucideGitBranch}
+                            label={value.displayName}
+                            author={value.target.commit?.author}
+                        >
+                            <svelte:fragment slot="title">
+                                <Icon icon={ILucideGitBranch} inline aria-hidden="true" />
+                                <Badge variant="link">{value.displayName}</Badge>
+                                {#if value.displayName === defaultBranch}
+                                    <Badge variant="secondary" small>DEFAULT</Badge>
+                                {/if}
+                            </svelte:fragment>
+                        </RepositoryRevPickerItem>
+                    </Picker>
+                </TabPanel>
+            {/if}
             <TabPanel title="Tags" shortcut={tagsHotkey}>
                 <Picker
                     name="tags"
