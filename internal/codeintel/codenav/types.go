@@ -388,6 +388,14 @@ type UsagesCursor struct {
 	PreciseCursor     Cursor `json:"pc"`
 }
 
+func (c UsagesCursor) Encode() string {
+	return encodeViaJSON(c)
+}
+
+func DecodeUsagesCursor(rawEncoded string) (UsagesCursor, error) {
+	return decodeViaJSON[UsagesCursor](rawEncoded)
+}
+
 func encodeViaJSON[T any](t T) string {
 	bytes, _ := json.Marshal(t)
 	return base64.RawURLEncoding.EncodeToString(bytes)
