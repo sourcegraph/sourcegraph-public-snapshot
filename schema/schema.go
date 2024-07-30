@@ -2588,6 +2588,24 @@ type Selector struct {
 	// Use `**/` before the glob to match in any parent directory. Use `/**` after the glob to match any files under a directory. Leading slashes are stripped from the path before being matched against the glob.
 	Path string `json:"path,omitempty"`
 }
+type SelfHostedModel struct {
+	// ApiVersion description: API version
+	ApiVersion string `json:"apiVersion,omitempty"`
+	// Model description: Which default model configuration to use. Sourcegraph provides default model configuration for select models. Arbitrary models can be configured in 'modelOverrides'
+	Model    string                   `json:"model,omitempty"`
+	Override *SelfHostedModelOverride `json:"override,omitempty"`
+	// Provider description: provider ID
+	Provider string `json:"provider"`
+}
+
+// SelfHostedModelOverride description: Properties to override in the default model configuration
+type SelfHostedModelOverride struct {
+	ClientSideConfig *ClientSideModelConfigOpenAICompatible `json:"clientSideConfig,omitempty"`
+	ContextWindow    *ContextWindow                         `json:"contextWindow,omitempty"`
+	// DisplayName description: Display name
+	DisplayName      string                                 `json:"displayName,omitempty"`
+	ServerSideConfig *ServerSideModelConfigOpenAICompatible `json:"serverSideConfig,omitempty"`
+}
 
 // Sentry description: Configuration for Sentry
 type Sentry struct {
@@ -3579,8 +3597,12 @@ type SiteModelConfiguration struct {
 	// Specifying the same model both here and in 'modelOverrides' is not allowed.
 	ModelOverridesRecommendedSettings []string `json:"modelOverridesRecommendedSettings,omitempty"`
 	// ProviderOverrides description: Configures model providers. Here you can override how Cody connects to model providers and e.g. bring your own API keys or self-hosted models.
-	ProviderOverrides []*ProviderOverride     `json:"providerOverrides,omitempty"`
-	Sourcegraph       *SourcegraphModelConfig `json:"sourcegraph,omitempty"`
+	ProviderOverrides []*ProviderOverride `json:"providerOverrides,omitempty"`
+	// SelfHostedModels description: Add models to the list of models Cody is aware of, but let Sourcegraph provide default configuration for the model. Only available for select models, generic models can be configured in 'modelOverrides'.
+	//
+	// Specifying the same model both here and in 'modelOverrides' is not allowed.
+	SelfHostedModels []*SelfHostedModel      `json:"selfHostedModels,omitempty"`
+	Sourcegraph      *SourcegraphModelConfig `json:"sourcegraph,omitempty"`
 }
 
 // SourcegraphModelConfig description: If null, Cody will not use Sourcegraph's servers for model discovery.
