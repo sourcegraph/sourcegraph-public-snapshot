@@ -84,13 +84,9 @@ func gitRm(t *testing.T, repoDir string, state map[string][]string, filename str
 }
 
 func gitAdd(t *testing.T, repoDir string, state map[string][]string, filename string, contents string) {
-	gitAddWithSpecificParser(t, repoDir, state, filename, contents, ctags_config.UniversalCtags)
-}
-
-func gitAddWithSpecificParser(t *testing.T, repoDir string, state map[string][]string, filename string, contents string, parserType ctags_config.ParserType) {
 	require.NoError(t, os.WriteFile(path.Join(repoDir, filename), []byte(contents), 0644), "os.WriteFile")
 	gitRun(t, repoDir, "add", filename)
-	symbols, err := mockParser{parserType}.Parse(filename, []byte(contents))
+	symbols, err := mockParser{ctags_config.UniversalCtags}.Parse(filename, []byte(contents))
 	require.NoError(t, err)
 	state[filename] = []string{}
 	for _, symbol := range symbols {

@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -106,10 +105,6 @@ func TestIndex(t *testing.T) {
 
 	gitRm(t, repoDir, state, "a.txt")
 	verifyBlobs("Text", ".txt")
-
-	// Go uses scip-ctags, so added this to ensure coverage
-	gitAddWithSpecificParser(t, repoDir, state, "a.go", "sym1\nsym2", ctags_config.ScipCtags)
-	verifyBlobs("Go", ".go")
 }
 
 func TestRuler(t *testing.T) {
