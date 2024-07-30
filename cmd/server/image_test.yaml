@@ -122,5 +122,3 @@ metadataTest:
       value: 'on'
     - key: LANG
       value: 'en_US.utf8'
-    - key: SRC_ASSETS_DIR
-      value: "/assets-dist"

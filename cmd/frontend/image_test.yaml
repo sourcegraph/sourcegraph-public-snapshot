@@ -39,5 +39,3 @@ metadataTest:
     - key: PGHOST
       value: .+
       isRegex: true
-    - key: SRC_ASSETS_DIR
-      value: "/assets-dist"
