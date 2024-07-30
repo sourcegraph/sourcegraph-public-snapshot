@@ -13,19 +13,19 @@ import (
 
 // DefaultAssetPath is the default path where assets should be loaded from. It is primarily used when
 //
-// * AssetPath is empty
+// * assetPath is empty
 // * env var SRC_ASSETS_DIR is empty
 //
 // This is the default value where assets are created when you run //client/web/dist:copy_bundle
 const DefaultAssetPath = "/assets-dist"
 
-// AssetsPath is absolute path where assets should be loaded from.
+// assetsPath is absolute path where assets should be loaded from.
 // * During init if it's value is empty the value of the environment variable `SRC_ASSETS_DIR` is used
 // * If the environment variable is ALSO empty, value of the constant `DefaultAssetPath` is used
 var assetsPath = ""
 
 func Init() {
-	// If AssetsPath is empty try:
+	// If assetsPath is empty try:
 	// * Getting the env var value of `SRC_ASSETS_DIR`
 	// * Settle for DefaultAssetPath
 	if assetsPath == "" {
