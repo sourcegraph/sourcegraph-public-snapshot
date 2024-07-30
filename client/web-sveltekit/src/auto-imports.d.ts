@@ -90,6 +90,7 @@ declare global {
   const ILucideX: typeof import('~icons/lucide/x')['default']
   const IMdiFormatLetterCase: typeof import('~icons/mdi/format-letter-case')['default']
   const IMdiRegex: typeof import('~icons/mdi/regex')['default']
+  const IMdiTools: typeof import('~icons/mdi/tools')['default']
   const IPhFileJpgLight: typeof import('~icons/ph/file-jpg-light')['default']
   const IPhFilePngLight: typeof import('~icons/ph/file-png-light')['default']
   const IPhGifFill: typeof import('~icons/ph/gif-fill')['default']

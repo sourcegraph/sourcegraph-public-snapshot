@@ -123,7 +123,7 @@ func TestReferences(t *testing.T) {
 
 	offset := int32(25)
 	mockRefCursor := codenav.Cursor{Phase: "local"}
-	encodedCursor := encodeTraversalCursor(mockRefCursor)
+	encodedCursor := mockRefCursor.Encode()
 	mockCursor := base64.StdEncoding.EncodeToString([]byte(encodedCursor))
 
 	args := &resolverstubs.LSIFPagedQueryPositionArgs{
@@ -459,7 +459,7 @@ func makeTestResolver(t *testing.T) resolverstubs.CodeGraphDataResolver {
 	return newCodeGraphDataResolver(
 		codeNavSvc, gitTreeTranslator, testUpload,
 		&resolverstubs.CodeGraphDataOpts{Repo: &sgtypes.Repo{}, Path: repoRelPath("locals.repro")},
-		resolverstubs.ProvenancePrecise, newOperations(&observation.TestContext))
+		codenav.ProvenancePrecise, newOperations(&observation.TestContext))
 }
 
 func TestOccurrences_BadArgs(t *testing.T) {

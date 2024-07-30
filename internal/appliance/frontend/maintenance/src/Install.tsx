@@ -21,7 +21,10 @@ export const Install: React.FC = () => {
                 const data = await response.json()
                 setVersions(data)
                 if (data.length > 0) {
-                    const publicVersions = data.filter(item => item.public).map(item => item.version)
+                    const publicVersions = data
+                        .filter(item => item.public)
+                        .filter(item => !item.is_development)
+                        .map(item => item.version)
                     setVersions(publicVersions)
                     setSelectedVersion(publicVersions[0]) // Set the first version as default
                 }
