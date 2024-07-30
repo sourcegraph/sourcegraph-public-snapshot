@@ -229,7 +229,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) Init() tea.Cmd {
 	return tea.Batch(
 		showUsage(),
-		listenUnixSocket(m.l, m.ch),
+		acceptFromListener(m.l, m.ch),
 		waitForActivity(m.ch),
 	)
 }

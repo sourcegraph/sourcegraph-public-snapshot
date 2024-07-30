@@ -9,7 +9,7 @@ import (
 	"github.com/grafana/regexp"
 )
 
-func listenUnixSocket(l net.Listener, ch chan string) tea.Cmd {
+func acceptFromListener(l net.Listener, ch chan string) tea.Cmd {
 	return func() tea.Msg {
 		for {
 			fd, err := l.Accept()
