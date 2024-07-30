@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -48,7 +49,14 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	relregClient := releaseregistry.NewClient(config.relregEndpoint)
 
-	app, err := appliance.NewAppliance(k8sClient, relregClient, config.applianceVersion, config.namespace, logger)
+	noResourceRestrictions := false
+	noResourceRestrictions, err = strconv.ParseBool(config.noResourceRestrictions)
+	if err != nil {
+		logger.Error("parsing APPLIANCE_NO_RESOURCE_RESTRICTIONS as bool", log.Error(err))
+		return err
+	}
+
+	app, err := appliance.NewAppliance(k8sClient, relregClient, config.applianceVersion, config.namespace, noResourceRestrictions, logger)
 	if err != nil {
 		logger.Error("failed to create appliance", log.Error(err))
 		return err
