@@ -26,4 +26,4 @@
 ```
 
 `sg` is the CLI tool that Sourcegraph developers can use to develop Sourcegraph.
-Learn more about it [here](https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/background-information/sg/index.md).
+Learn more about it [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/doc/dev/background-information/sg/index.md).

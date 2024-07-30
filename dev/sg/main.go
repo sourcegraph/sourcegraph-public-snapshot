@@ -93,7 +93,7 @@ const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/n
 // sg is the main sg CLI application.
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
-	Description: "Learn more: https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/background-information/sg/index.md",
+	Description: "Learn more: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/doc/dev/background-information/sg/index.md",
 	Version:     ReleaseName, // use friendly name as version
 	Compiled:    time.Now(),
 	Flags: []cli.Flag{
