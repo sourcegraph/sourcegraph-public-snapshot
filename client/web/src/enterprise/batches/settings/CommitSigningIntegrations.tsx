@@ -62,6 +62,10 @@ export const CommitSigningIntegrations: React.FunctionComponent<
     const setupError = searchParams.get('error')
     const gitHubAppKind = searchParams.get('kind')
     const shouldShowError = !success && setupError && !readOnly && kind === GitHubAppKind.COMMIT_SIGNING
+    const gitHubAppInstallationInProgress =
+        success &&
+        kind === GitHubAppKind.COMMIT_SIGNING &&
+        (connection?.nodes.filter(n => n.commitSigningConfiguration).length ?? 0) === 0
     return (
         <Container>
             <H3>
@@ -81,15 +85,27 @@ export const CommitSigningIntegrations: React.FunctionComponent<
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
                 {loading && !connection && <ConnectionLoading />}
-                {success && !readOnly && gitHubAppKind === GitHubAppKind.COMMIT_SIGNING && (
-                    <DismissibleAlert
-                        className="mb-3"
-                        variant="success"
-                        partialStorageKey={`batch-changes-commit-signing-integration-success-${appName}`}
-                    >
-                        GitHub App {appName?.length ? `"${appName}" ` : ''}successfully connected.
-                    </DismissibleAlert>
-                )}
+                {success &&
+                    !readOnly &&
+                    gitHubAppKind === GitHubAppKind.COMMIT_SIGNING &&
+                    (gitHubAppInstallationInProgress ? (
+                        <DismissibleAlert
+                            className="mb-3"
+                            variant="info"
+                            partialStorageKey={`batch-changes-commit-signing-integration-pending-${appName}`}
+                        >
+                            GitHub App {appName?.length ? `"${appName}" ` : ''} is taking a few seconds to connect.
+                            Please refresh the page until the GitHub app appears.
+                        </DismissibleAlert>
+                    ) : (
+                        <DismissibleAlert
+                            className="mb-3"
+                            variant="success"
+                            partialStorageKey={`batch-changes-commit-signing-integration-success-${appName}`}
+                        >
+                            GitHub App {appName?.length ? `"${appName}" ` : ''}successfully connected.
+                        </DismissibleAlert>
+                    ))}
                 {shouldShowError && <GitHubAppFailureAlert error={setupError} />}
                 <ConnectionList as="ul" className="list-group" aria-label="commit signing integrations">
                     {connection?.nodes?.map(node =>

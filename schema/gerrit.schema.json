@@ -62,6 +62,11 @@
       },
       "examples": [[{ "name": "docs" }, { "name": "php/php-src" }]]
     },
+    "repositoryPathPattern": {
+      "description": "The pattern used to generate the corresponding Sourcegraph repository name for a Gerrit repository. In the pattern, the variable \"{host}\" is replaced with the Gerrit host (such as gerrit.example.com), and \"{name}\" is replaced with the Gerrit repository's name (such as \"myrepo\").\n\nFor example, if your Gerrit URL is https://gerrit.example.com and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of \"{host}/{name}\" would mean that a Gerrit repository at https://gerrit.example.com/myrepo is available on Sourcegraph at https://src.example.com/gerrit.example.com/myrepo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
+      "type": "string",
+      "default": "{host}/{name}"
+    },
     "authorization": {
       "title": "GerritAuthorization",
       "description": "If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://sourcegraph.com/docs/admin/config/site_config#auth-providers) `auth.providers` field, of type \"gerrit\" with the same `url` field as specified in this `GerritConnection`.",

@@ -48,7 +48,8 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		RetentionEnabled:          args.RetentionEnabled,
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
 		RetainIntermediateCommits: args.RetainIntermediateCommits,
-		IndexingEnabled:           args.IndexingEnabled,
+		PreciseIndexingEnabled:    args.IndexingEnabled,
+		SyntacticIndexingEnabled:  *args.SyntacticIndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
 		EmbeddingEnabled:          args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,
@@ -90,7 +91,8 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		RetentionEnabled:          args.RetentionEnabled,
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
 		RetainIntermediateCommits: args.RetainIntermediateCommits,
-		IndexingEnabled:           args.IndexingEnabled,
+		PreciseIndexingEnabled:    args.IndexingEnabled,
+		SyntacticIndexingEnabled:  *args.SyntacticIndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
 		EmbeddingEnabled:          args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,
@@ -125,11 +127,6 @@ func (r *rootResolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Con
 	return resolverstubs.Empty, nil
 }
 
-//
-//
-//
-//
-
 const maxDurationHours = 87600 // 10 years
 
 func validateConfigurationPolicy(policy resolverstubs.CodeIntelConfigurationPolicy) error {
@@ -159,8 +156,8 @@ func validateConfigurationPolicy(policy resolverstubs.CodeIntelConfigurationPoli
 	}
 
 	if policy.EmbeddingsEnabled != nil && *policy.EmbeddingsEnabled {
-		if policy.RetentionEnabled || policy.IndexingEnabled {
-			return errors.Errorf("configuration policies can apply to SCIP indexes or embeddings, but not both")
+		if policy.RetentionEnabled || policy.IndexingEnabled || *policy.SyntacticIndexingEnabled {
+			return errors.Errorf("configuration policies can apply to indexing (precise or syntactic) or embeddings, but not both")
 		}
 
 		if shared.GitObjectType(policy.Type) != shared.GitObjectTypeCommit {

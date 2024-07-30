@@ -22,15 +22,14 @@ const (
 	WolfiBaseRebuild  // wolfi base image build
 
 	// Release branches
+	InternalRelease // Internal release
+	PromoteRelease  // Public release
 
 	TaggedRelease      // semver-tagged release
 	ReleaseBranch      // release branch build
 	PatchReleaseBranch // patch release branch build
 	BextReleaseBranch  // browser extension release build
 	VsceReleaseBranch  // vs code extension release build
-
-	InternalRelease // Internal release
-	PromoteRelease  // Public release
 
 	// Main branches
 

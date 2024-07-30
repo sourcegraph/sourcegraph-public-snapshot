@@ -1,5 +1,5 @@
 query SnippetAttribution($snippet: String!) {
-    snippetAttribution(snippet: $snippet, first: 5) {
+    snippetAttribution(snippet: $snippet, first: 4) {
         totalCount
         limitHit
         nodes {

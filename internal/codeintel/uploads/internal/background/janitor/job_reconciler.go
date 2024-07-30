@@ -3,8 +3,8 @@ package janitor
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/background"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -12,7 +12,7 @@ import (
 
 func NewFrontendDBReconciler(
 	store store.Store,
-	lsifstore lsifstore.Store,
+	dataStore codegraph.DataStore,
 	config *Config,
 	observationCtx *observation.Context,
 ) goroutine.BackgroundRoutine {
@@ -20,7 +20,7 @@ func NewFrontendDBReconciler(
 		"codeintel.uploads.reconciler.scip-metadata",
 		"Counts SCIP metadata records for which there is no data in the codeintel-db schema.",
 		&storeWrapper{store},
-		&lsifStoreWrapper{lsifstore},
+		&codeGraphDataStoreWrapper{dataStore},
 		config,
 		observationCtx,
 	)
@@ -28,14 +28,14 @@ func NewFrontendDBReconciler(
 
 func NewCodeIntelDBReconciler(
 	store store.Store,
-	lsifstore lsifstore.Store,
+	dataStore codegraph.DataStore,
 	config *Config,
 	observationCtx *observation.Context,
 ) goroutine.BackgroundRoutine {
 	return newReconciler(
 		"codeintel.uploads.reconciler.scip-data",
 		"Removes SCIP data records for which there is no known associated metadata in the frontend schema.",
-		&lsifStoreWrapper{lsifstore},
+		&codeGraphDataStoreWrapper{dataStore},
 		&storeWrapper{store},
 		config,
 		observationCtx,
@@ -133,18 +133,18 @@ func (s *storeWrapper) FilterExists(ctx context.Context, candidateIDs []int) ([]
 	return ids, nil
 }
 
-type lsifStoreWrapper struct {
-	lsifstore lsifstore.Store
+type codeGraphDataStoreWrapper struct {
+	impl codegraph.DataStore
 }
 
-func (s *lsifStoreWrapper) Candidates(ctx context.Context, batchSize int) ([]int, error) {
-	return s.lsifstore.ReconcileCandidates(ctx, batchSize)
+func (s *codeGraphDataStoreWrapper) Candidates(ctx context.Context, batchSize int) ([]int, error) {
+	return s.impl.ReconcileCandidates(ctx, batchSize)
 }
 
-func (s *lsifStoreWrapper) Prune(ctx context.Context, ids []int) error {
-	return s.lsifstore.DeleteLsifDataByUploadIds(ctx, ids...)
+func (s *codeGraphDataStoreWrapper) Prune(ctx context.Context, ids []int) error {
+	return s.impl.DeleteLsifDataByUploadIds(ctx, ids...)
 }
 
-func (s *lsifStoreWrapper) FilterExists(ctx context.Context, candidateIDs []int) ([]int, error) {
-	return s.lsifstore.IDsWithMeta(ctx, candidateIDs)
+func (s *codeGraphDataStoreWrapper) FilterExists(ctx context.Context, candidateIDs []int) ([]int, error) {
+	return s.impl.IDsWithMeta(ctx, candidateIDs)
 }

@@ -6,12 +6,12 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/backfiller"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/expirer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/janitor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/processor"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	uploadsstore "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -25,7 +25,7 @@ import (
 func NewUploadProcessorJob(
 	observationCtx *observation.Context,
 	store uploadsstore.Store,
-	lsifstore lsifstore.Store,
+	dataStore codegraph.DataStore,
 	repoStore processor.RepoStore,
 	gitserverClient gitserver.Client,
 	db database.DB,
@@ -41,7 +41,7 @@ func NewUploadProcessorJob(
 		processor.NewUploadProcessorWorker(
 			observationCtx,
 			store,
-			lsifstore,
+			dataStore,
 			gitserverClient,
 			repoStore,
 			uploadsProcessorStore,
@@ -69,7 +69,7 @@ func NewCommittedAtBackfillerJob(
 func NewJanitor(
 	observationCtx *observation.Context,
 	store uploadsstore.Store,
-	lsifstore lsifstore.Store,
+	dataStore codegraph.DataStore,
 	gitserverClient gitserver.Client,
 	config *janitor.Config,
 ) []goroutine.BackgroundRoutine {
@@ -79,15 +79,15 @@ func NewJanitor(
 		"AbandonedUploadJanitor":             janitor.NewAbandonedUploadJanitor(store, config, observationCtx),
 		"ExpiredUploadJanitor":               janitor.NewExpiredUploadJanitor(store, config, observationCtx),
 		"ExpiredUploadTraversalJanitor":      janitor.NewExpiredUploadTraversalJanitor(store, config, observationCtx),
-		"HardDeleter":                        janitor.NewHardDeleter(store, lsifstore, config, observationCtx),
+		"HardDeleter":                        janitor.NewHardDeleter(store, dataStore, config, observationCtx),
 		"AuditLogJanitor":                    janitor.NewAuditLogJanitor(store, config, observationCtx),
-		"SCIPExpirationTask":                 janitor.NewSCIPExpirationTask(lsifstore, config, observationCtx),
-		"AbandonedSchemaVersionsRecordsTask": janitor.NewAbandonedSchemaVersionsRecordsTask(lsifstore, config, observationCtx),
+		"SCIPExpirationTask":                 janitor.NewSCIPExpirationTask(dataStore, config, observationCtx),
+		"AbandonedSchemaVersionsRecordsTask": janitor.NewAbandonedSchemaVersionsRecordsTask(dataStore, config, observationCtx),
 		"UnknownRepositoryJanitor":           janitor.NewUnknownRepositoryJanitor(store, config, observationCtx),
 		"UnknownCommitJanitor2":              janitor.NewUnknownCommitJanitor2(store, gitserverClient, config, observationCtx),
 		"ExpiredRecordJanitor":               janitor.NewExpiredRecordJanitor(store, config, observationCtx),
-		"FrontendDBReconciler":               janitor.NewFrontendDBReconciler(store, lsifstore, config, observationCtx),
-		"CodeIntelDBReconciler":              janitor.NewCodeIntelDBReconciler(store, lsifstore, config, observationCtx),
+		"FrontendDBReconciler":               janitor.NewFrontendDBReconciler(store, dataStore, config, observationCtx),
+		"CodeIntelDBReconciler":              janitor.NewCodeIntelDBReconciler(store, dataStore, config, observationCtx),
 	}
 
 	disabledJobs := map[string]struct{}{}

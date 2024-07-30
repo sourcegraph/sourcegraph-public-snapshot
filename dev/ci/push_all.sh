@@ -57,14 +57,20 @@ function create_push_command() {
   fi
 
   for registry in "${registries[@]}"; do
-    cmd="bazel \
-      ${bazelrc[*]} \
-      run \
-      $target \
-      --stamp \
-      --workspace_status_command=./dev/bazel_stamp_vars.sh"
+    # This biblical bash string replaces running `bazel run` on each oci_push target, to avoid the (temporary) bazel server lock
+    # that is unnecessary for us due to building all the targets beforehand, allowing the maximum possible concurrency. It is similar
+    # to the script that is emitted by `bazel run --run_script=out.sh <target>`, but without the need to wait for the server to be unlocked
+    # in the same way as just running `bazel run`.
+    # It makes the following assumptions:
+    # - the executable script for the oci_push target is named push_<target name>.sh
+    # - the target is built and exists in the bazel bindir (we do this with a bazel build below)
+    # - runfiles are always adajcent to the executable script
 
-    echo "$cmd -- $tags_args --repository ${registry}/${repository} && $(echo_append_annotation "$repository" "$registry" "${tags_args[@]}")"
+    # echo to /dev/null is for the final output in Buildkite
+    echo "echo $target >/dev/null && \
+      pushd $(realpath bazel-bin)$(echo "${target}.sh.runfiles/__main__" | sed 's/:/\/push_/') && \
+      $(realpath bazel-bin)$(echo "${target}.sh" | sed 's/:/\/push_/') $tags_args --repository ${registry}/${repository} && \
+      popd && $(echo_append_annotation "$repository" "$registry" "${tags_args[@]}")"
   done
 }
 
@@ -170,6 +176,13 @@ honeyvent=$(bazel "${bazelrc[@]}" build //dev/tools:honeyvent 2>/dev/null && baz
 
 images=$(bazel "${bazelrc[@]}" query 'kind("oci_push rule", //...)')
 
+echo "--- :bazel: Building all oci_push targets"
+
+# shellcheck disable=SC2086
+bazel "${bazelrc[@]}" build --stamp --workspace_status_command=./dev/bazel_stamp_vars.sh ${images}
+
+echo "--- :bash: Generating jobfile - started"
+
 job_file=$(mktemp)
 # shellcheck disable=SC2064
 trap "rm -rf $job_file" EXIT
@@ -186,14 +199,14 @@ for target in ${images[@]}; do
   fi
 done
 
-echo "--- :bash: Generated jobfile"
+echo "--- :bash: Generating jobfile - done"
 cat "$job_file"
 
 echo "--- :bazel::docker: Pushing images..."
 log_file=$(mktemp)
 # shellcheck disable=SC2064
 trap "rm -rf $log_file" EXIT
-parallel --jobs=16 --line-buffer --joblog "$log_file" -v <"$job_file"
+parallel --jobs=8 --line-buffer --joblog "$log_file" -v <"$job_file"
 
 # Pretty print the output from gnu parallel
 while read -r line; do

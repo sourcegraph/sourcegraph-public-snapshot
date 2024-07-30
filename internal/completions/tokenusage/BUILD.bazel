@@ -9,6 +9,7 @@ go_library(
     visibility = [
         "//cmd/cody-gateway:__subpackages__",
         "//cmd/frontend/internal/bg:__pkg__",
+        "//cmd/worker/internal/completions:__pkg__",
         "//internal/completions/client:__pkg__",
         "//internal/completions/client/anthropic:__pkg__",
         "//internal/completions/client/awsbedrock:__pkg__",
