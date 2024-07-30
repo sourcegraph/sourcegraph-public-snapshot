@@ -158,20 +158,16 @@ impl<'a> Scope<'a> {
         if let Some(def) = self.hoisted_definitions.get(&name) {
             return Some(def);
         };
-
-        for definition in self.definitions.iter() {
-            // For non-hoisted definitions we're only looking for
-            // definitions that lexically precede the reference
-            if definition.node.start_byte() > start_byte {
-                break;
-            }
-
-            if definition.name == name {
-                return Some(definition);
-            }
-        }
-
-        None
+        // For non-hoisted definitions we're only looking for definitions that lexically
+        // precede the reference
+        let mut preceding_defs = match self
+            .definitions
+            .binary_search_by_key(&start_byte, |def| def.node.start_byte())
+        {
+            Ok(ix) => self.definitions[..=ix].iter(),
+            Err(ix) => self.definitions[..ix].iter(),
+        };
+        preceding_defs.find(|definition| definition.name == name)
     }
 }
 
