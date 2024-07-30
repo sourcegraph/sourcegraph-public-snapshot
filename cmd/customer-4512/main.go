@@ -198,7 +198,7 @@ func main() {
 	go ps.updateAccessToken()
 	http.HandleFunc("/", ps.handleProxy)
 	logger.Info("HTTP Proxy server is running on port 8080")
-	if err := http.ListenAndServe(":8443", nil); err != nil {
+	if err := http.ListenAndServe(":8080", nil); err != nil {
 		logger.Fatal("Failed to start HTTP server: %v", log.Error(err))
 	}
 }
