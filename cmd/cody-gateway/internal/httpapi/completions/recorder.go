@@ -74,14 +74,15 @@ func (mlt *modelsLoadTracker) record(gatewayModel string, resp *http.Response, r
 // It returns false if the last errorThresholdForUnavailability requests to the
 // specified model within modelAvailabilityCheckWindow failed. Otherwise, it returns true.
 func (mlt *modelsLoadTracker) isModelAvailable(gatewayModel string) bool {
-	count := 0
+	var count int
 	now := time.Now()
 
 	for _, r := range mlt.records[gatewayModel] {
 		if now.Sub(r.timestamp) > modelAvailabilityCheckWindow {
 			continue
 		}
-		if count++; count >= errorThresholdForUnavailability {
+		count++
+		if count >= errorThresholdForUnavailability {
 			return false
 		}
 	}
