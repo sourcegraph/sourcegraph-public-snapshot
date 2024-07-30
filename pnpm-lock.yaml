@@ -1575,6 +1575,9 @@ importers:
       '@sourcegraph/client-api':
         specifier: workspace:*
         version: link:../client-api
+      '@sourcegraph/cody-web':
+        specifier: ^0.3.0
+        version: 0.3.0
       '@sourcegraph/common':
         specifier: workspace:*
         version: link:../common
@@ -1593,9 +1596,6 @@ importers:
       '@urql/core':
         specifier: ^4.2.3
         version: 4.2.3(graphql@15.4.0)
-      cody-web-experimental:
-        specifier: ^0.2.4
-        version: 0.2.4
       copy-to-clipboard:
         specifier: ^3.3.1
         version: 3.3.1
@@ -15224,10 +15224,6 @@ packages:
 
   /codemirror@5.65.9:
     resolution: {integrity: sha512-19Jox5sAKpusTDgqgKB5dawPpQcY+ipQK7xoEI+MVucEF9qqFaXpeqY1KaoyGBso/wHQoDa4HMMxMjdsS3Zzzw==}
-    dev: false
-
-  /cody-web-experimental@0.2.4:
-    resolution: {integrity: sha512-92MNNTlZTndHN+kNUa4ojrZMIxgl78o+wswOhdzmIQm/FJFi977rnuQPSg/bV5jm8S3y3pdwUM7SUTqCKlwSHw==}
     dev: false
 
   /color-convert@1.9.3:
