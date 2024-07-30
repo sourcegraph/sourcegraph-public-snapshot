@@ -193,7 +193,8 @@ func (m CursorMatcher) ToShared() shared.Matcher {
 func NewCursorMatcher(matcher shared.Matcher) CursorMatcher {
 	if sym, range_, ok := matcher.SymbolBased(); ok {
 		return CursorMatcher{
-			ExactSymbol: sym,
+			// OK to use "" here as lookups based on "" are not allowed
+			ExactSymbol: sym.UnwrapOr(""),
 			Start:       shared.TranslatePosition(range_.Start),
 			End:         shared.TranslatePosition(range_.End),
 			HasEnd:      true,

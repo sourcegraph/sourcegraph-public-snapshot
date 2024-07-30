@@ -275,7 +275,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			requestState, ok := optRequestState.Get()
 			if !ok {
 				if args.Symbol != nil && args.Symbol.EqualsProvenance == codenav.ProvenancePrecise {
-					trace.Warn("expected precise matches for symbol but didn't find any matching blobs",
+					trace.Warn("expected precise matches for symbol but didn't find any matching uploads",
 						log.String("symbol", args.Symbol.EqualsName))
 				}
 				return
@@ -287,7 +287,6 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 			if len(preciseUsages) > remainingCount {
 				trace.Warn("number of precise usages exceeded limit", log.Int("limit", remainingCount), log.Int("numPreciseUsages", len(preciseUsages)))
-				preciseUsages = preciseUsages[:remainingCount]
 			}
 			var multiErr errors.MultiError
 			cachedLocResolver := r.locationResolverFactory.Create()
@@ -303,8 +302,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 				trace.Warn("errors when constructing precise resolvers", log.Error(multiErr))
 			}
 			trace.AddEvent("PreciseUsages", attribute.Int("count", numPreciseResults))
-			// Invariant: numPreciseResults <= len(preciseUsages) <= remainingCount
-			remainingCount -= numPreciseResults
+			remainingCount -= min(remainingCount, numPreciseResults)
 			nextCursor = nextPreciseCursor // write to captured value
 		}()
 	}

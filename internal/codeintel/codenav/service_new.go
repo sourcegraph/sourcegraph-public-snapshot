@@ -594,7 +594,7 @@ func pageSlice[T any](s []T, limit, offset int) []T {
 }
 
 func (s *Service) PreciseUsages(ctx context.Context, requestState RequestState, args UsagesForSymbolResolvedArgs) (returnUsages []shared.UploadUsage, _ core.Option[UsagesCursor], err error) {
-	ctx, trace, endObservation := s.operations.syntacticUsages.With(ctx, nil, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, trace, endObservation := s.operations.preciseUsages.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoId", int(args.Repo.ID)),
 		attribute.String("commit", string(args.CommitID)),
 		attribute.String("path", args.Path.RawValue()),
@@ -643,19 +643,17 @@ func (s *Service) PreciseUsages(ctx context.Context, requestState RequestState, 
 			return nil, noCursor, err
 		}
 
-		returnUsages = append(returnUsages, nextUsages...)
 		if len(nextUsages) > remainingCount {
-			remainingCount = 0
-			trace.Warn("number of returned usages exceeded limit",
-				log.Int("numReturnedUsages", len(nextUsages)),
+			trace.Warn("sub-operation returned usages that exceeded limit",
+				log.Int("numNextUsages", len(nextUsages)),
 				log.Int("limit", remainingCount),
 				log.String("cursorType", string(currentCursor.PreciseCursorType)))
-		} else {
-			remainingCount -= len(nextUsages)
 		}
+		returnUsages = append(returnUsages, nextUsages...)
+		remainingCount -= min(remainingCount, len(nextUsages))
 
 		if len(nextUsages) == 0 && currentCursor.PreciseCursor.Phase != "done" {
-			trace.Warn("nextUsages == 0 should imply nextCursor.Phase == \"done\"",
+			trace.Warn("len(nextUsages) == 0 should imply nextCursor.Phase == \"done\"",
 				log.String("cursorType", string(currentCursor.PreciseCursorType)),
 				log.String("cursor.Phase", currentCursor.PreciseCursor.Phase))
 		}
