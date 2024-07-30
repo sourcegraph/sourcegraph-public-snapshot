@@ -4,20 +4,26 @@
 // seeking to provide access to assets, regardless of their type (dev, oss
 // or enterprise).
 
-// You must also import the embedded assets:
+// Before using assets you have to call the package Init function, which sets up the global Provider
+// with the path to the assets, which by default is /assets-dist
 //
-//	import _ "github.com/sourcegraph/sourcegraph/client/web/dist"
+// import "github.com/sourcegraph/sourcegraph/ui/assets"
+//
+//	func main() {
+//		assets.Init()
+//	}
 //
 // And to support working with dev assets, with the web builder process handling them for you, you can use:
 //
 //	 func main() {
+//		assets.Init()
 //		if os.Getenv("WEB_BUILDER_DEV_SERVER") == "1" {
 //			assets.UseDevAssetsProvider()
 //		}
 //		// ...
 //	 }
 //
-// If this step isn't done, the default assets provider implementation, FailingAssetsProvider will ensure
+// If `assets.Init()` isn't called, the default assets provider implementation, FailingAssetsProvider will ensure
 // the binary panics when launched and will explicitly tell you about the problem.
 //
 // This enables to express which bundle type is needed at compile time, expressed through package dependency,

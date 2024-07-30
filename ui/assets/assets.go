@@ -2,43 +2,22 @@ package assets
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// DefaultAssetPath is the default path where assets should be loaded from. It is primarily used when
-//
-// * assetPath is empty
-// * env var SRC_ASSETS_DIR is empty
-//
-// This is the default value where assets are created when you run //client/web/dist:copy_bundle
+// DefaultAssetPath is the default path where assets should be loaded from
+// See //client/web/dist:copy_bundle where assets are copied to this directory
 const DefaultAssetPath = "/assets-dist"
 
-// assetsPath is absolute path where assets should be loaded from.
-// * During init if it's value is empty the value of the environment variable `SRC_ASSETS_DIR` is used
-// * If the environment variable is ALSO empty, value of the constant `DefaultAssetPath` is used
-var assetsPath = ""
+// DevAssetsPath is the path to the assets directory when we're in development mode
+const DevAssetsPath = "client/web/dist"
 
 func Init() {
-	// If assetsPath is empty try:
-	// * Getting the env var value of `SRC_ASSETS_DIR`
-	// * Settle for DefaultAssetPath
-	if assetsPath == "" {
-		path := os.Getenv("SRC_ASSETS_DIR")
-		if path == "" {
-			path = DefaultAssetPath
-		}
-		if !strings.HasPrefix(path, "/") {
-			panic(fmt.Sprintf("SRC_ASSETS_DIR %q is not an absolute path", path))
-		}
-		assetsPath = path
-	}
-	UseAssetsProviderForPath(assetsPath)
+	UseAssetsProviderForPath(DefaultAssetPath)
 }
 
 // AssetsProvider abstracts accessing assets and the web build manifest.
@@ -73,7 +52,7 @@ func (p FailingAssetsProvider) Assets() http.FileSystem {
 // which expects assets to be generated on the fly by an external web builder process.
 func UseDevAssetsProvider() {
 	// When we're using the dev asset provider we expect to be in the monorepo, therefore we use a relative path
-	UseAssetsProviderForPath("client/web/dist")
+	UseAssetsProviderForPath(DevAssetsPath)
 }
 
 // UseAssetsProviderForPath sets the global Provider to a DirProvider using the given path
