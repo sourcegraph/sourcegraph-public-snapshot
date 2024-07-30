@@ -41,7 +41,7 @@ type model struct {
 	// search stores the search query used to highlight activities.
 	search string
 
-	// help is the TODO
+	// help model, holding the various keybindings for inline help.
 	help help.Model
 	// viewport is the model implementing the pager.
 	viewport viewport.Model
