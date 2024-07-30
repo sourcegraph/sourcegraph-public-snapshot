@@ -218,7 +218,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
 
                     <hr className="my-3" />
                 </>
-                <Collapsible titleAtStart={true} title={<H4>Cody Gateway access token</H4>}>
+                <Collapsible titleAtStart={true} title={<H4>Cody Gateway access token</H4>} defaultExpanded={false}>
                     <Text className="mb-2">
                         Access tokens are automatically generated from each instance's configured license key. The only
                         action required for Cody Gateway access is to configure a valid, current license key on the
