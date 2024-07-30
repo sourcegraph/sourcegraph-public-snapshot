@@ -30,6 +30,7 @@ type Appliance struct {
 	sourcegraph            *config.Sourcegraph
 	releaseRegistryClient  *releaseregistry.Client
 	latestSupportedVersion string
+	noResourceRestrictions bool
 	logger                 log.Logger
 
 	// Embed the UnimplementedApplianceServiceServer structs to ensure forwards compatibility (if the service is
@@ -51,6 +52,7 @@ func NewAppliance(
 	relregClient *releaseregistry.Client,
 	latestSupportedVersion string,
 	namespace string,
+	noResourceRestrictions bool,
 	logger log.Logger,
 ) (*Appliance, error) {
 	app := &Appliance{
@@ -59,6 +61,7 @@ func NewAppliance(
 		latestSupportedVersion: latestSupportedVersion,
 		namespace:              namespace,
 		status:                 config.StatusInstall,
+		noResourceRestrictions: noResourceRestrictions,
 		sourcegraph:            &config.Sourcegraph{},
 		logger:                 logger,
 	}

@@ -179,7 +179,7 @@ images=$(bazel "${bazelrc[@]}" query 'kind("oci_push rule", //...)')
 echo "--- :bazel: Building all oci_push targets"
 
 # shellcheck disable=SC2086
-bazel "${bazelrc[@]}" build --stamp --workspace_status_command=./dev/bazel_stamp_vars.sh ${images}
+bazel "${bazelrc[@]}" build --experimental_execution_log_compact_file=execution_log.zstd --stamp --workspace_status_command=./dev/bazel_stamp_vars.sh ${images}
 
 echo "--- :bash: Generating jobfile - started"
 
