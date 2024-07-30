@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
@@ -32,7 +33,8 @@ type GerritSource struct {
 	// by this source. This takes precedence over allowedProjects.
 	disallowedProjects map[string]struct{}
 	// If true, the connection is configured to use SSH instead of HTTPS.
-	ssh bool
+	ssh                   bool
+	repositoryPathPattern string
 }
 
 // NewGerritSource returns a new GerritSource from the given external service.
@@ -79,14 +81,15 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 	}
 
 	return &GerritSource{
-		svc:                svc,
-		cli:                cli,
-		allowedProjects:    allowedProjects,
-		disallowedProjects: disallowedProjects,
-		serviceID:          extsvc.NormalizeBaseURL(cli.GetURL()).String(),
-		perPage:            100,
-		private:            c.Authorization != nil,
-		ssh:                c.GitURLType == "ssh",
+		svc:                   svc,
+		cli:                   cli,
+		allowedProjects:       allowedProjects,
+		disallowedProjects:    disallowedProjects,
+		serviceID:             extsvc.NormalizeBaseURL(cli.GetURL()).String(),
+		perPage:               100,
+		private:               c.Authorization != nil,
+		ssh:                   c.GitURLType == "ssh",
+		repositoryPathPattern: c.RepositoryPathPattern,
 	}, nil
 }
 
@@ -173,10 +176,17 @@ func (s *GerritSource) makeRepo(p *gerrit.Project, instanceHTTPURL *url.URL, ssh
 		cloneURL = p.SSHURLToRepo
 	}
 
-	name := path.Join(u.Host, decodedName)
 	return &types.Repo{
-		Name:        api.RepoName(name),
-		URI:         name,
+		Name: reposource.GerritRepoName(
+			s.repositoryPathPattern,
+			u.Host,
+			decodedName,
+		),
+		URI: string(reposource.GerritRepoName(
+			"",
+			u.Host,
+			decodedName,
+		)),
 		Description: p.Description,
 		Fork:        p.Parent != "",
 		ExternalRepo: api.ExternalRepoSpec{

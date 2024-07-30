@@ -1,7 +1,8 @@
 <script lang="ts">
+    import type { HTMLAnchorAttributes } from 'svelte/elements'
+
     import Icon from '$lib/Icon.svelte'
     import { Badge } from '$lib/wildcard'
-    import type { HTMLAnchorAttributes } from 'svelte/elements'
 
     import { type NavigationEntry, Status } from './mainNavigation'
 

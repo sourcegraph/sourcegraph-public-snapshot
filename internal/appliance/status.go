@@ -10,23 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const (
-	StatusUnknown         Status = "unknown"
-	StatusInstall         Status = "install"
-	StatusInstalling      Status = "installing"
-	StatusIdle            Status = "idle"
-	StatusUpgrading       Status = "upgrading"
-	StatusWaitingForAdmin Status = "wait-for-admin"
-	StatusRefresh         Status = "refresh"
-)
-
-// Status is a point in the Appliance lifecycle that an Appliance can be in.
-type Status string
-
-func (s Status) String() string {
-	return string(s)
-}
-
 // Task is a task that some states may have to complete to exit.
 type Task struct {
 	Title       string    `json:"title"`
@@ -38,29 +21,14 @@ type Task struct {
 	LastUpdate  time.Time `json:"lastUpdate"`
 }
 
-// TODO this needs to be created on install init and statefully stored somewhere
 func installTasks() []Task {
 	return []Task{
-		{
-			Title:       "Warming up",
-			Description: "Setting up basic resources",
-			Started:     true,
-			Finished:    false,
-			Weight:      1,
-		},
 		{
 			Title:       "Setup",
 			Description: "Setting up Sourcegraph Search",
 			Started:     false,
 			Finished:    false,
 			Weight:      25,
-		},
-		{
-			Title:       "Start",
-			Description: "Start Sourcegraph",
-			Started:     false,
-			Finished:    false,
-			Weight:      1,
 		},
 	}
 }

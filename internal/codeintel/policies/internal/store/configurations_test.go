@@ -209,7 +209,8 @@ func TestDeleteConfigurationPolicyByID(t *testing.T) {
 		RetentionEnabled:          false,
 		RetentionDuration:         &d1,
 		RetainIntermediateCommits: true,
-		IndexingEnabled:           false,
+		PreciseIndexingEnabled:    false,
+		SyntacticIndexingEnabled:  false,
 		IndexCommitMaxAge:         &d2,
 		IndexIntermediateCommits:  true,
 	}
@@ -253,7 +254,8 @@ func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 		RetentionEnabled:          false,
 		RetentionDuration:         &d1,
 		RetainIntermediateCommits: true,
-		IndexingEnabled:           false,
+		PreciseIndexingEnabled:    false,
+		SyntacticIndexingEnabled:  false,
 		IndexCommitMaxAge:         &d2,
 		IndexIntermediateCommits:  true,
 	}

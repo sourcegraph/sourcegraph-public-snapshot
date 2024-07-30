@@ -13,7 +13,7 @@ type Extensions struct {
 	DateRange string
 	Grouping  string
 	DB        database.DB
-	Cache     bool
+	Cache     KeyValue
 }
 
 func (e *Extensions) Jetbrains() (*AnalyticsFetcher, error) {
@@ -34,6 +34,7 @@ func (e *Extensions) Jetbrains() (*AnalyticsFetcher, error) {
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Extensions:Jetbrains",
+		cache:        NoopCache{},
 	}, nil
 }
 

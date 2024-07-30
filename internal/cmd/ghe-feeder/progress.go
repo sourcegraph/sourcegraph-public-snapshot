@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"sync"
 
-	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -19,8 +18,6 @@ type feederDB struct {
 	path string
 	// the opened DB
 	db *sql.DB
-	// logger for this feeder DB
-	logger log15.Logger
 }
 
 // newFeederDB creates or opens the DB, creating the two tables if necessary
@@ -48,9 +45,8 @@ func newFeederDB(path string) (*feederDB, error) {
 	}
 
 	return &feederDB{
-		path:   path,
-		db:     db,
-		logger: log15.New("source", "feederDB"),
+		path: path,
+		db:   db,
 	}, nil
 }
 

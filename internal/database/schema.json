@@ -13984,6 +13984,19 @@
           "Comment": ""
         },
         {
+          "Name": "creator_id",
+          "Index": 17,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "domain",
           "Index": 15,
           "TypeName": "text",

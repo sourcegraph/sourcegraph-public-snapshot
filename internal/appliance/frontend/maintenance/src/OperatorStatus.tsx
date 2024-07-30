@@ -34,7 +34,7 @@ export const OperatorStatus: React.FC<ContextProps> = ({ context }) => {
 
     switch (context.stage) {
         case 'refresh':
-            document.location = '/?cacheBust=' + Date.now()
+            document.location.reload()
             break
     }
 
