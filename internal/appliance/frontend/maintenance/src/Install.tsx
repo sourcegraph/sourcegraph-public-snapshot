@@ -5,7 +5,7 @@ import { Button, FormControl, InputLabel, MenuItem, Paper, Select, Stack, Typogr
 import { changeStage } from './state'
 
 export const Install: React.FC = () => {
-    const [version, setVersion] = useState<string[]>([])
+    const [versions, setVersions] = useState<string[]>([])
     const [selectedVersion, setSelectedVersion] = useState<string>('')
 
     useEffect(() => {
@@ -19,11 +19,11 @@ export const Install: React.FC = () => {
                     mode: 'cors',
                 })
                 const data = await response.json()
-                setVersion(data)
+                setVersions(data)
                 if (data.length > 0) {
                     const publicVersions = data.filter(item => item.public).map(item => item.version)
-                    setVersion(publicVersions)
-                    setSelectedVersion(data[0]) // Set the first version as default
+                    setVersions(publicVersions)
+                    setSelectedVersion(publicVersions[0]) // Set the first version as default
                 }
             } catch (error) {
                 console.error('Failed to fetch versions:', error)
@@ -50,7 +50,7 @@ export const Install: React.FC = () => {
                             onChange={e => setSelectedVersion(e.target.value)}
                             sx={{ width: 200 }}
                         >
-                            {version.map(version => (
+                            {versions.map(version => (
                                 <MenuItem key={version} value={version}>
                                     {version}
                                 </MenuItem>
