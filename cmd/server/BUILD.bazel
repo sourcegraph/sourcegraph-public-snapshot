@@ -165,7 +165,6 @@ oci_image(
         "GO111MODULES": "on",
         "LANG": "en_US.utf8",
         "LC_ALL": "en_US.utf8",
-        "SRC_ASSETS_DIR": "/assets-dist",
         # "PGHOST": "/var/run/postgresql",
     },
     tars = [
@@ -226,7 +225,6 @@ oci_image(
         "GO111MODULES": "on",
         "LANG": "en_US.utf8",
         "LC_ALL": "en_US.utf8",
-        "SRC_ASSETS_DIR": "/assets-dist",
         # "PGHOST": "/var/run/postgresql",
     },
     tars = [

@@ -50,7 +50,6 @@ oci_image(
         "CODEINTEL_PGPORT": "5432",
         "CODEINTEL_PGSSLMODE": "disable",
         "CODEINTEL_PGUSER": "sg",
-        "SRC_ASSETS_DIR": "/assets-dist",
     },
     tars = [
         ":tar_frontend",
@@ -110,7 +109,6 @@ oci_image(
         "CODEINTEL_PGPORT": "5432",
         "CODEINTEL_PGSSLMODE": "disable",
         "CODEINTEL_PGUSER": "sg",
-        "SRC_ASSETS_DIR": "/assets-dist",
     },
     tars = [
         ":tar_frontend",
