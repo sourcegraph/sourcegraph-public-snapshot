@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "publicrestapi",
+    srcs = [
+        "httpapi.go",
+        "openai_handlers.go",
+        "openai_models.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/publicrestapi",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/internal/httpapi",
+        "//internal/env",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_gorilla_mux//:mux",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "publicrestapi_test",
+    srcs = [
+        "openai_handlers_test.go",
+        "openai_models_test.go",
+    ],
+    embed = [":publicrestapi"],
+    deps = [
+        "//cmd/frontend/enterprise",
+        "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/internal/httpapi",
+        "//cmd/frontend/internal/httpapi/completions",
+        "//cmd/frontend/internal/modelconfig",
+        "//internal/actor",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/httpcli",
+        "//internal/license",
+        "//internal/licensing",
+        "//internal/rcache",
+        "//internal/txemail",
+        "//schema",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_throttled_throttled_v2//store/memstore",
+    ],
+)
