@@ -279,13 +279,6 @@ struct LocalResolver<'a> {
     source_bytes: &'a [u8],
     definition_id_supply: u32,
     top_scope: ScopeId<'a>,
-    // This is a hack to not record references that overlap with
-    // definitions.
-    skip_references_at_offsets: HashSet<usize>,
-    // When marking captures as @occurrence.skip we record them here,
-    // to not record any subsequent matches. This is used to filter
-    // out non-local definitions and references.
-    skip_occurrences_at_offsets: HashSet<usize>,
     occurrences: Vec<Occurrence>,
 }
 
@@ -320,8 +313,6 @@ impl<'a> LocalResolver<'a> {
             source_bytes: source.as_bytes(),
             definition_id_supply: 0,
             top_scope,
-            skip_references_at_offsets: HashSet::new(),
-            skip_occurrences_at_offsets: HashSet::new(),
             occurrences: vec![],
         }
     }
@@ -346,8 +337,6 @@ impl<'a> LocalResolver<'a> {
         hoist: Option<Name>,
         is_def_ref: bool,
     ) {
-        self.skip_references_at_offsets.insert(node.start_byte());
-
         // We delay creation of this definition behind a closure, so
         // that we don't generate fresh definition_id's for def_ref's
         // that turn out to be references rather than definitions
@@ -591,11 +580,13 @@ impl<'a> LocalResolver<'a> {
         let mut definitions: Vec<DefCapture> = vec![];
         let mut references: Vec<RefCapture<'a>> = vec![];
 
+        let mut skip_occurrences_at_offsets: HashSet<usize> = HashSet::new();
+
         for match_ in cursor.matches(&config.query, tree.root_node(), source_bytes) {
             let properties = config.query.property_settings(match_.pattern_index);
             for capture in match_.captures {
                 let offset = capture.node.start_byte();
-                if self.skip_occurrences_at_offsets.contains(&offset) {
+                if skip_occurrences_at_offsets.contains(&offset) {
                     continue;
                 }
 
@@ -630,6 +621,12 @@ impl<'a> LocalResolver<'a> {
                             continue;
                         }
                     }
+                    // Skip references at locations we've already recorded a definition
+                    if let Some(last) = definitions.last() {
+                        if last.node.start_byte() == offset {
+                            continue;
+                        }
+                    }
 
                     let kind_property = properties
                         .iter()
@@ -657,7 +654,7 @@ impl<'a> LocalResolver<'a> {
                     });
                 } else if capture_name == "occurrence.skip" {
                     let offset = capture.node.start_byte();
-                    self.skip_occurrences_at_offsets.insert(offset);
+                    skip_occurrences_at_offsets.insert(offset);
                 } else {
                     debug_assert!(false, "Discarded capture: {capture_name}")
                 }
@@ -814,9 +811,6 @@ impl<'a> LocalResolver<'a> {
                     continue;
                 }
                 let offset = reference.node.start_byte();
-                if self.skip_references_at_offsets.contains(&offset) {
-                    continue;
-                }
                 if reference.visibility == Visibility::Local {
                     if let Some(def) = self.find_def(scope_ref, reference.name, offset) {
                         ref_occurrences.push(self.make_local_reference(reference, def.id));
