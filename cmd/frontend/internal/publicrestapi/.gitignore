@@ -1,0 +1,7 @@
+# Run the following command to generate OpenAPI bindings for Go:
+#
+#     openapi-generator-go generate models --spec openapi.yaml --output openapi_generated
+#
+# We gitignore this directory because we don't actually use the generated code, it's only
+# helpful as a starting point for copy-paste.
+openapi_generated/

@@ -325,6 +325,9 @@ func NewHandler(
 		http.Error(w, "no route", http.StatusNotFound)
 	})
 
+	// Pub /api
+	m.Path("/api/openai/v1").Methods("POST").Handler(handlers.NewCodeCompletionsHandler())
+
 	return m, nil
 }
 
