@@ -73,7 +73,7 @@
         box-shadow: var(--fuzzy-finder-shadow);
 
         &::backdrop {
-            filter: blur(4px);
+            backdrop-filter: blur(2px);
         }
 
         container-type: inline-size;
@@ -92,7 +92,7 @@
             position: absolute;
             right: 0;
             bottom: 0;
-            filter: drop-shadow(0px 25px 50px var(--color-shadow-25, rgba(15, 17, 26, 0.25)));
+            filter: drop-shadow(0px 25px 50px rgba(15, 17, 26, 0.25));
             @container (width < 975px) {
                 display: none;
             }
