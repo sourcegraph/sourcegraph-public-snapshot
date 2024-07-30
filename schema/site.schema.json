@@ -3223,15 +3223,17 @@
     },
     "SelfHostedModel": {
       "type": "object",
-      "examples": [{
-        "provider": "mistral",
-        "model": "mixtral-8x7b-instruct",
-        "override": {
-          "serverSideConfig": {
-            "apiModel": "mixtral-8x7b-instruct"
+      "examples": [
+        {
+          "provider": "mistral",
+          "model": "mixtral-8x7b-instruct",
+          "override": {
+            "serverSideConfig": {
+              "apiModel": "mixtral-8x7b-instruct"
+            }
           }
         }
-      }],
+      ],
       "required": ["provider"],
       "properties": {
         "provider": {
