@@ -40,6 +40,7 @@ func TestHandler(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	cache := diskcache.NewStore(tmpDir, "symbols", diskcache.WithBackgroundTimeout(20*time.Minute))
+	// This ensures the ctags config is initialized properly
 	conf.MockAndNotifyWatchers(&conf.Unified{})
 	parserFactory := func(source ctags_config.ParserType) (ctags.Parser, error) {
 		var pathToEntries map[string][]*ctags.Entry

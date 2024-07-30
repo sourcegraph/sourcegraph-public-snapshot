@@ -66,6 +66,8 @@ func mockService(t *testing.T, git *subprocessGit) (*sql.DB, *Service) {
 	createParser := func(parserType ctags_config.ParserType) (ctags.Parser, error) {
 		return mockParser{parserType: parserType}, nil
 	}
+
+	// This ensures the ctags config is initialized properly
 	conf.MockAndNotifyWatchers(&conf.Unified{})
 	symbolParserPool, err := symbolparser.NewParserPool(observationCtx, "test", createParser, 1, symbolparser.DefaultParserTypes)
 	require.NoError(t, err)
