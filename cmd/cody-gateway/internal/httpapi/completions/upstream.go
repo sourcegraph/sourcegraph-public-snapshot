@@ -419,7 +419,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		}()
 
 		if !modelAvailabilityTracker.isModelAvailable(gatewayModel) {
-			response.JSONError(logger, w, http.StatusTooManyRequests,
+			response.JSONError(logger, w, http.StatusServiceUnavailable,
 				errors.Newf("model %s is currently unavailable", gatewayModel))
 			return
 		}
