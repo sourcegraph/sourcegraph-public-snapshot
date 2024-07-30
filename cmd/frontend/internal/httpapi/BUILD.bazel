@@ -37,7 +37,7 @@ go_library(
         "//cmd/frontend/internal/routevar",
         "//cmd/frontend/internal/search",
         "//cmd/frontend/internal/ssc",
-        "//cmd/frontend/webhooks",
+        "//cmd/frontend/internal/webhooks",
         "//internal/actor",
         "//internal/api",
         "//internal/api/internalapi/v1:internalapi",

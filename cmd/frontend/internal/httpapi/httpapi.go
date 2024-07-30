@@ -29,7 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/ssc"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	confProto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 	"github.com/sourcegraph/sourcegraph/internal/conf"

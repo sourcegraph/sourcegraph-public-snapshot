@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"

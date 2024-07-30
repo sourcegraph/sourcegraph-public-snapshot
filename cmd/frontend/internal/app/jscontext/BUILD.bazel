@@ -16,7 +16,7 @@ go_library(
         "//cmd/frontend/internal/auth/providers",
         "//cmd/frontend/internal/auth/userpasswd",
         "//cmd/frontend/internal/cody",
-        "//cmd/frontend/webhooks",
+        "//cmd/frontend/internal/webhooks",
         "//internal/actor",
         "//internal/authz",
         "//internal/authz/providers",
