@@ -27,7 +27,7 @@ func ResetPasswordURL(ctx context.Context, db database.DB, logger log.Logger, us
 		// verifies the primary email address.
 		ru, err := userpasswd.HandleSetPasswordEmail(ctx, db, user.ID, user.Username, email, emailVerified)
 		if err != nil {
-			msg := "failed to send set password email"
+			msg := "failed to send set password email andre testing and breaking things"
 			logger.Error(msg, log.Error(err))
 			return nil, errors.Wrap(err, msg)
 		}
