@@ -940,7 +940,7 @@ func TestUpdateWebhook(t *testing.T) {
 
 func createGqlSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
-	gqlSchema, err := graphqlbackend.NewSchemaWithWebhooksResolver(db, NewWebhooksResolver(db))
+	gqlSchema, err := graphqlbackend.NewSchemaWithWebhooksResolver(db, nil, NewWebhooksResolver(db))
 	if err != nil {
 		t.Fatal(err)
 	}

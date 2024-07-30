@@ -21,7 +21,6 @@ go_library(
         "//cmd/frontend/auth",
         "//cmd/frontend/enterprise",
         "//cmd/frontend/envvar",
-        "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/internal/app",
         "//cmd/frontend/internal/app/assetsutil",

@@ -81,7 +81,7 @@ func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
 		db.ReposFunc.SetDefaultReturn(rstore)
 		rstore.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 123}, nil)
 
-		err := serveRaw(logger, db, gitserver.NewTestClient(t))(w, req)
+		err := serveRaw(logger, db, gitserver.NewTestClient(t), nil)(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -104,7 +104,7 @@ func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
 		db.ReposFunc.SetDefaultReturn(rstore)
 		rstore.GetByNameFunc.SetDefaultReturn(nil, &database.RepoNotFoundErr{ID: 123})
 
-		err := serveRaw(logger, db, gitserver.NewTestClient(t))(w, req)
+		err := serveRaw(logger, db, gitserver.NewTestClient(t), nil)(w, req)
 		if err == nil {
 			t.Fatal("Want error but got nil")
 		}
@@ -144,7 +144,7 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 		client := gitserver.NewMockClient()
 		client.ArchiveReaderFunc.SetDefaultReturn(io.NopCloser(strings.NewReader(mockGitServerResponse)), nil)
 
-		err := serveRaw(logger, db, client)(w, req)
+		err := serveRaw(logger, db, client, nil)(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -186,7 +186,7 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		client := gitserver.NewMockClient()
 		client.ArchiveReaderFunc.SetDefaultReturn(io.NopCloser(strings.NewReader(mockGitServerResponse)), nil)
-		err := serveRaw(logger, db, client)(w, req)
+		err := serveRaw(logger, db, client, nil)(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -263,7 +263,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		db := dbmocks.NewMockDB()
-		err := serveRaw(logger, db, gsClient)(w, req)
+		err := serveRaw(logger, db, gsClient, nil)(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -293,7 +293,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		db := dbmocks.NewMockDB()
-		err := serveRaw(logger, db, gsClient)(w, req)
+		err := serveRaw(logger, db, gsClient, nil)(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -326,7 +326,7 @@ c.go`
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(logger, dbmocks.NewMockDB(), gitserverClient)(w, req)
+		err := serveRaw(logger, dbmocks.NewMockDB(), gitserverClient, nil)(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -359,7 +359,7 @@ c.go`
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw?format=exe", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(logger, dbmocks.NewMockDB(), gitserverClient)(w, req)
+		err := serveRaw(logger, dbmocks.NewMockDB(), gitserverClient, nil)(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -399,7 +399,7 @@ func Test_serveRawRepoCloning(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	// Former implementation would sleep awaiting repository to be available.
 	// Await request to be served with a timeout by racing done channel with time.After.
-	err := serveRaw(logger, db, gsClient)(w, req)
+	err := serveRaw(logger, db, gsClient, nil)(w, req)
 	if err != nil {
 		t.Fatalf("Failed to invoke serveRaw: %v", err)
 	}

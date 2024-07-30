@@ -39,7 +39,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 		db := database.NewDB(logger, dbtest.NewDB(t))
 		act := actor.Actor{UID: 1}
 		ctx := actor.WithActor(context.Background(), &act)
-		sr := newSchemaResolver(db, gitserver.NewTestClient(t))
+		sr := newSchemaResolver(db, gitserver.NewTestClient(t), nil)
 
 		spec := extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitHub,
@@ -159,7 +159,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				ctx = actor.WithActor(ctx, &act)
 			}
 
-			sr := newSchemaResolver(db, gitserver.NewTestClient(t))
+			sr := newSchemaResolver(db, gitserver.NewTestClient(t), nil)
 
 			args := struct {
 				ServiceType    string
