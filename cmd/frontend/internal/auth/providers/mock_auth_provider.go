@@ -40,10 +40,6 @@ func (m MockAuthProvider) CachedInfo() *Info {
 	}
 }
 
-func (m MockAuthProvider) Refresh(_ context.Context) error {
-	panic("should not be called")
-}
-
 func (m MockAuthProvider) ExternalAccountInfo(_ context.Context, _ extsvc.Account) (*extsvc.PublicAccountData, error) {
 	return m.MockPublicAccountData, nil
 }

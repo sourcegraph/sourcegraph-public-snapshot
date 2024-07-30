@@ -59,13 +59,13 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 		case "/login": // Endpoint that starts the Authentication Request Code Flow.
-			p, safeErrMsg, err := openidconnect.GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), GetOIDCProvider)
+			p, oidcClient, safeErrMsg, err := openidconnect.GetProviderAndClient(r.Context(), r.URL.Query().Get("pc"), GetOIDCProvider)
 			if err != nil {
 				logger.Error("failed to get provider", log.Error(err))
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
 				return
 			}
-			openidconnect.RedirectToAuthRequest(w, r, p, r.URL.Query().Get("redirect"))
+			openidconnect.RedirectToAuthRequest(w, r, p, oidcClient, r.URL.Query().Get("redirect"))
 			return
 
 		case "/callback": // Endpoint for the OIDC Authorization Response, see http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
