@@ -1,6 +1,8 @@
 load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
+ASSETS_DIR = "assets-dist"
+
 copy_to_directory(
     name = "copy_bundle",
     srcs = [
@@ -10,7 +12,7 @@ copy_to_directory(
         "//client/web-sveltekit",
         "//client/web/dist/img",
     ],
-    out = "assets-dist",
+    out = ASSETS_DIR,
     replace_prefixes = {
         "client/web/bundle": "",
         "client/web-sveltekit/build": "",
@@ -36,7 +38,8 @@ pkg_tar(
     srcs = [
         ":dummy_web_manifest",
     ],
-    package_dir = "integration",
+    mode = "0655",
+    package_dir = ASSETS_DIR,
     visibility = ["//visibility:public"],
 )
 
@@ -45,5 +48,6 @@ pkg_tar(
     srcs = [
         ":copy_bundle",
     ],
+    mode = "0655",
     visibility = ["//visibility:public"],
 )

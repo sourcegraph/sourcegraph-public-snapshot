@@ -34,7 +34,7 @@ func Init() {
 			path = DefaultAssetPath
 		}
 		if !strings.HasPrefix(path, "/") {
-			panic(fmt.Sprintf("SRC_ASSETS_DIR %q is not a absolute path", path))
+			panic(fmt.Sprintf("SRC_ASSETS_DIR %q is not an absolute path", path))
 		}
 		assetsPath = path
 	}
@@ -73,10 +73,10 @@ func (p FailingAssetsProvider) Assets() http.FileSystem {
 // which expects assets to be generated on the fly by an external web builder process.
 func UseDevAssetsProvider() {
 	// When we're using the dev asset provider we expect to be in the monorepo, therefore we use a relative path
-	devAssetsDir := "client/web/dist"
-	Provider = DirProvider{dir: devAssetsDir, assets: http.Dir(devAssetsDir)}
+	UseAssetsProviderForPath("client/web/dist")
 }
 
+// UseAssetsProviderForPath sets the global Provider to a DirProvider using the given path
 func UseAssetsProviderForPath(path string) {
 	Provider = DirProvider{dir: path, assets: http.Dir(path)}
 }
@@ -109,7 +109,7 @@ func loadWebBuildManifest(rootDir string) (m *WebBuildManifest, err error) {
 
 	manifestContent, err := os.ReadFile(filepath.Join(rootDir, "web.manifest.json"))
 	if err != nil {
-		return nil, errors.Wrap(err, "loading web build manifest file from disk")
+		return nil, errors.Wrapf(err, "failed loading web build manifest file from disk at %q", rootDir)
 	}
 	if err := json.Unmarshal(manifestContent, &m); err != nil {
 		return nil, errors.Wrap(err, "parsing manifest json")
