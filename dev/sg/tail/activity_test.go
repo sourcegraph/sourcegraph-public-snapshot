@@ -9,21 +9,18 @@ func TestActivityParse(t *testing.T) {
 	tests := []struct {
 		raw         string
 		wantName    string
-		wantTS      string
 		wantLevel   string
 		wantMessage string
 	}{
 		{
 			raw:         `otel-collector: 2023-11-19T09:50:38.408Z        info    service/telemetry.go:104        Serving Prometheus metrics      {"address": ":8888", "level": "Basic"}`,
 			wantName:    "otel-collector",
-			wantTS:      "2023-11-19T09:50:38.408Z",
 			wantLevel:   "INFO",
 			wantMessage: `service/telemetry.go:104        Serving Prometheus metrics      {"address": ":8888", "level": "Basic"}`,
 		},
 		{
 			raw:         `searcher: 2023/11/19 15:36:46 tmpfriend: Removing /tmp/.searcher.tmp/tmpfriend-87880-3133534317`,
 			wantName:    `searcher`,
-			wantTS:      `2023/11/19 15:36:46`,
 			wantLevel:   ``,
 			wantMessage: `tmpfriend: Removing /tmp/.searcher.tmp/tmpfriend-87880-3133534317`,
 		},
@@ -41,9 +38,6 @@ func TestActivityParse(t *testing.T) {
 			if a.name != tt.wantName {
 				t.Errorf("got name %q, want %q", a.name, tt.wantName)
 			}
-			// if a.ts != tt.wantTS {
-			// 	t.Errorf("got ts %q, want %q", a.ts, tt.wantTS)
-			// }
 			if a.level != tt.wantLevel {
 				t.Errorf("got level %q, want %q", a.level, tt.wantLevel)
 			}
