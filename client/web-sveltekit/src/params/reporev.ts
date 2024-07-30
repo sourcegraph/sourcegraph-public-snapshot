@@ -1,7 +1,7 @@
 import type { ParamMatcher } from '@sveltejs/kit'
 
 // These are top level paths that are Sourcegraph pages, not repositories.
-// By explicitly excluding then we force SvelteKit to _not_ match them, which
+// By explicitly excluding them we force SvelteKit to _not_ match them, which
 // will cause SvelteKit to fetch the page from the server, which will then
 // load the React version.
 // Note that any routes in the `routes/` directory will be handled by the
@@ -10,6 +10,7 @@ import type { ParamMatcher } from '@sveltejs/kit'
 const topLevelPaths = [
     'insights',
     'search-jobs',
+    'saved-searches',
     'setup',
     'batch-changes',
     'code-monitoring',
