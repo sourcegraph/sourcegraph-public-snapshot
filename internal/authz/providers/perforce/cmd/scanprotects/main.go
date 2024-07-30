@@ -54,8 +54,8 @@ func run(logger log.Logger, depot string, input io.Reader, ignoreRulesWithHost b
 	}
 	for depot, subRepo := range perms.SubRepoPermissions {
 		logger.Debug("Sub repo permissions", log.String("depot", string(depot)))
-		for _, path := range subRepo.Paths {
-			logger.Debug("Include rule", log.String("rule", path))
+		for _, p := range subRepo.Paths {
+			logger.Debug("Include rule", log.Object("rule", log.String("path", p.Path), log.String("ip", p.IP)))
 		}
 	}
 }

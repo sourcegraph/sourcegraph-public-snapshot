@@ -1,13 +1,14 @@
 import type { FC } from 'react'
 
-import { CodyWebHistory, CodyWebChatProvider } from 'cody-web-experimental'
 import { Navigate } from 'react-router-dom'
 
+import { CodyWebHistory, CodyWebChatProvider } from '@sourcegraph/cody-web'
 import { ButtonLink, PageHeader, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { PageRoutes } from '../../../routes.constants'
+import { getTelemetrySourceClient } from '../../../telemetry'
 import { CodyProRoutes } from '../../codyProRoutes'
 import { CodyColorIcon } from '../CodyPageIcon'
 
@@ -35,6 +36,7 @@ export const NewCodyChatPage: FC<NewCodyChatPageProps> = props => {
                     accessToken=""
                     serverEndpoint={window.location.origin}
                     customHeaders={window.context.xhrHeaders}
+                    telemetryClientName={getTelemetrySourceClient()}
                 >
                     <CodyWebHistory>
                         {history => (

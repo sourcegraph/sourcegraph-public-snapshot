@@ -873,7 +873,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	bstore := store.New(db, observation.TestContextTB(t), et.TestKey{})
@@ -916,7 +916,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 
 func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	bstore := store.New(db, observation.TestContextTB(t), et.TestKey{})
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
@@ -1178,7 +1178,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			})
 
 			_, err := executePlan(
-				actor.WithActor(ctx, actor.FromUser(tt.user.ID)),
+				actor.WithInternalActor(ctx),
 				logtest.Scoped(t),
 				gitserverClient,
 				sourcer,

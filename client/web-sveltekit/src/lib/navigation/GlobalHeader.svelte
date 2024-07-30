@@ -94,7 +94,7 @@
                                     {#if entry.icon}
                                         <Icon icon={entry.icon} aria-hidden="true" inline />&nbsp;
                                     {/if}
-                                    {entry.label}
+                                    {entry.label}&nbsp;
                                     <Icon icon={ILucideChevronDown} inline aria-hidden />
                                 </Button>
                             </span>

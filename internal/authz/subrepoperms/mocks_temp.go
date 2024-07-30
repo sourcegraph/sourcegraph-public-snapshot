@@ -19,9 +19,9 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms) used for
 // unit testing.
 type MockSubRepoPermissionsGetter struct {
-	// GetByUserFunc is an instance of a mock function object controlling
-	// the behavior of the method GetByUser.
-	GetByUserFunc *SubRepoPermissionsGetterGetByUserFunc
+	// GetByUserWithIPsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetByUserWithIPs.
+	GetByUserWithIPsFunc *SubRepoPermissionsGetterGetByUserWithIPsFunc
 	// RepoIDSupportedFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoIDSupported.
 	RepoIDSupportedFunc *SubRepoPermissionsGetterRepoIDSupportedFunc
@@ -35,8 +35,8 @@ type MockSubRepoPermissionsGetter struct {
 // all results, unless overwritten.
 func NewMockSubRepoPermissionsGetter() *MockSubRepoPermissionsGetter {
 	return &MockSubRepoPermissionsGetter{
-		GetByUserFunc: &SubRepoPermissionsGetterGetByUserFunc{
-			defaultHook: func(context.Context, int32) (r0 map[api.RepoName]authz.SubRepoPermissions, r1 error) {
+		GetByUserWithIPsFunc: &SubRepoPermissionsGetterGetByUserWithIPsFunc{
+			defaultHook: func(context.Context, int32, bool) (r0 map[api.RepoName]authz.SubRepoPermissionsWithIPs, r1 error) {
 				return
 			},
 		},
@@ -58,9 +58,9 @@ func NewMockSubRepoPermissionsGetter() *MockSubRepoPermissionsGetter {
 // unless overwritten.
 func NewStrictMockSubRepoPermissionsGetter() *MockSubRepoPermissionsGetter {
 	return &MockSubRepoPermissionsGetter{
-		GetByUserFunc: &SubRepoPermissionsGetterGetByUserFunc{
-			defaultHook: func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
-				panic("unexpected invocation of MockSubRepoPermissionsGetter.GetByUser")
+		GetByUserWithIPsFunc: &SubRepoPermissionsGetterGetByUserWithIPsFunc{
+			defaultHook: func(context.Context, int32, bool) (map[api.RepoName]authz.SubRepoPermissionsWithIPs, error) {
+				panic("unexpected invocation of MockSubRepoPermissionsGetter.GetByUserWithIPs")
 			},
 		},
 		RepoIDSupportedFunc: &SubRepoPermissionsGetterRepoIDSupportedFunc{
@@ -81,8 +81,8 @@ func NewStrictMockSubRepoPermissionsGetter() *MockSubRepoPermissionsGetter {
 // implementation, unless overwritten.
 func NewMockSubRepoPermissionsGetterFrom(i SubRepoPermissionsGetter) *MockSubRepoPermissionsGetter {
 	return &MockSubRepoPermissionsGetter{
-		GetByUserFunc: &SubRepoPermissionsGetterGetByUserFunc{
-			defaultHook: i.GetByUser,
+		GetByUserWithIPsFunc: &SubRepoPermissionsGetterGetByUserWithIPsFunc{
+			defaultHook: i.GetByUserWithIPs,
 		},
 		RepoIDSupportedFunc: &SubRepoPermissionsGetterRepoIDSupportedFunc{
 			defaultHook: i.RepoIDSupported,
@@ -93,37 +93,37 @@ func NewMockSubRepoPermissionsGetterFrom(i SubRepoPermissionsGetter) *MockSubRep
 	}
 }
 
-// SubRepoPermissionsGetterGetByUserFunc describes the behavior when the
-// GetByUser method of the parent MockSubRepoPermissionsGetter instance is
-// invoked.
-type SubRepoPermissionsGetterGetByUserFunc struct {
-	defaultHook func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error)
-	hooks       []func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error)
-	history     []SubRepoPermissionsGetterGetByUserFuncCall
+// SubRepoPermissionsGetterGetByUserWithIPsFunc describes the behavior when
+// the GetByUserWithIPs method of the parent MockSubRepoPermissionsGetter
+// instance is invoked.
+type SubRepoPermissionsGetterGetByUserWithIPsFunc struct {
+	defaultHook func(context.Context, int32, bool) (map[api.RepoName]authz.SubRepoPermissionsWithIPs, error)
+	hooks       []func(context.Context, int32, bool) (map[api.RepoName]authz.SubRepoPermissionsWithIPs, error)
+	history     []SubRepoPermissionsGetterGetByUserWithIPsFuncCall
 	mutex       sync.Mutex
 }
 
-// GetByUser delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockSubRepoPermissionsGetter) GetByUser(v0 context.Context, v1 int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
-	r0, r1 := m.GetByUserFunc.nextHook()(v0, v1)
-	m.GetByUserFunc.appendCall(SubRepoPermissionsGetterGetByUserFuncCall{v0, v1, r0, r1})
+// GetByUserWithIPs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSubRepoPermissionsGetter) GetByUserWithIPs(v0 context.Context, v1 int32, v2 bool) (map[api.RepoName]authz.SubRepoPermissionsWithIPs, error) {
+	r0, r1 := m.GetByUserWithIPsFunc.nextHook()(v0, v1, v2)
+	m.GetByUserWithIPsFunc.appendCall(SubRepoPermissionsGetterGetByUserWithIPsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the GetByUser method of
-// the parent MockSubRepoPermissionsGetter instance is invoked and the hook
-// queue is empty.
-func (f *SubRepoPermissionsGetterGetByUserFunc) SetDefaultHook(hook func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error)) {
+// SetDefaultHook sets function that is called when the GetByUserWithIPs
+// method of the parent MockSubRepoPermissionsGetter instance is invoked and
+// the hook queue is empty.
+func (f *SubRepoPermissionsGetterGetByUserWithIPsFunc) SetDefaultHook(hook func(context.Context, int32, bool) (map[api.RepoName]authz.SubRepoPermissionsWithIPs, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetByUser method of the parent MockSubRepoPermissionsGetter instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *SubRepoPermissionsGetterGetByUserFunc) PushHook(hook func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error)) {
+// GetByUserWithIPs method of the parent MockSubRepoPermissionsGetter
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *SubRepoPermissionsGetterGetByUserWithIPsFunc) PushHook(hook func(context.Context, int32, bool) (map[api.RepoName]authz.SubRepoPermissionsWithIPs, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -131,20 +131,20 @@ func (f *SubRepoPermissionsGetterGetByUserFunc) PushHook(hook func(context.Conte
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *SubRepoPermissionsGetterGetByUserFunc) SetDefaultReturn(r0 map[api.RepoName]authz.SubRepoPermissions, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
+func (f *SubRepoPermissionsGetterGetByUserWithIPsFunc) SetDefaultReturn(r0 map[api.RepoName]authz.SubRepoPermissionsWithIPs, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, bool) (map[api.RepoName]authz.SubRepoPermissionsWithIPs, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *SubRepoPermissionsGetterGetByUserFunc) PushReturn(r0 map[api.RepoName]authz.SubRepoPermissions, r1 error) {
-	f.PushHook(func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
+func (f *SubRepoPermissionsGetterGetByUserWithIPsFunc) PushReturn(r0 map[api.RepoName]authz.SubRepoPermissionsWithIPs, r1 error) {
+	f.PushHook(func(context.Context, int32, bool) (map[api.RepoName]authz.SubRepoPermissionsWithIPs, error) {
 		return r0, r1
 	})
 }
 
-func (f *SubRepoPermissionsGetterGetByUserFunc) nextHook() func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
+func (f *SubRepoPermissionsGetterGetByUserWithIPsFunc) nextHook() func(context.Context, int32, bool) (map[api.RepoName]authz.SubRepoPermissionsWithIPs, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -157,36 +157,40 @@ func (f *SubRepoPermissionsGetterGetByUserFunc) nextHook() func(context.Context,
 	return hook
 }
 
-func (f *SubRepoPermissionsGetterGetByUserFunc) appendCall(r0 SubRepoPermissionsGetterGetByUserFuncCall) {
+func (f *SubRepoPermissionsGetterGetByUserWithIPsFunc) appendCall(r0 SubRepoPermissionsGetterGetByUserWithIPsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of SubRepoPermissionsGetterGetByUserFuncCall
-// objects describing the invocations of this function.
-func (f *SubRepoPermissionsGetterGetByUserFunc) History() []SubRepoPermissionsGetterGetByUserFuncCall {
+// History returns a sequence of
+// SubRepoPermissionsGetterGetByUserWithIPsFuncCall objects describing the
+// invocations of this function.
+func (f *SubRepoPermissionsGetterGetByUserWithIPsFunc) History() []SubRepoPermissionsGetterGetByUserWithIPsFuncCall {
 	f.mutex.Lock()
-	history := make([]SubRepoPermissionsGetterGetByUserFuncCall, len(f.history))
+	history := make([]SubRepoPermissionsGetterGetByUserWithIPsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// SubRepoPermissionsGetterGetByUserFuncCall is an object that describes an
-// invocation of method GetByUser on an instance of
+// SubRepoPermissionsGetterGetByUserWithIPsFuncCall is an object that
+// describes an invocation of method GetByUserWithIPs on an instance of
 // MockSubRepoPermissionsGetter.
-type SubRepoPermissionsGetterGetByUserFuncCall struct {
+type SubRepoPermissionsGetterGetByUserWithIPsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 map[api.RepoName]authz.SubRepoPermissions
+	Result0 map[api.RepoName]authz.SubRepoPermissionsWithIPs
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -194,13 +198,13 @@ type SubRepoPermissionsGetterGetByUserFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c SubRepoPermissionsGetterGetByUserFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+func (c SubRepoPermissionsGetterGetByUserWithIPsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c SubRepoPermissionsGetterGetByUserFuncCall) Results() []interface{} {
+func (c SubRepoPermissionsGetterGetByUserWithIPsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

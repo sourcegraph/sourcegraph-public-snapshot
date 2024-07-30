@@ -26,7 +26,7 @@
     <div class="header">
         <h3 id={headingID}>
             <Icon icon={ISgCody} /> Cody
-            <Badge variant="warning">Experimental</Badge>
+            <Badge variant="info">Beta</Badge>
         </h3>
         <Tooltip tooltip="Close Cody chat">
             <Button

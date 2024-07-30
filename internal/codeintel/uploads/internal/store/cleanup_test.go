@@ -11,6 +11,7 @@ import (
 	logger "github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -67,7 +68,7 @@ func TestDeleteUploadsStuckUploading(t *testing.T) {
 		shared.Upload{ID: 5, Commit: makeCommit(1115), UploadedAt: t5, State: "uploading"}, // old
 	)
 
-	_, count, err := store.DeleteUploadsStuckUploading(context.Background(), t1.Add(time.Minute*3))
+	_, count, err := store.DeleteUploadsStuckUploading(actor.WithInternalActor(context.Background()), t1.Add(time.Minute*3))
 	if err != nil {
 		t.Fatalf("unexpected error deleting uploads stuck uploading: %s", err)
 	}
@@ -75,7 +76,7 @@ func TestDeleteUploadsStuckUploading(t *testing.T) {
 		t.Errorf("unexpected count. want=%d have=%d", 2, count)
 	}
 
-	uploads, totalCount, err := store.GetUploads(context.Background(), shared.GetUploadsOptions{Limit: 5})
+	uploads, totalCount, err := store.GetUploads(actor.WithInternalActor(context.Background()), shared.GetUploadsOptions{Limit: 5})
 	if err != nil {
 		t.Fatalf("unexpected error getting uploads: %s", err)
 	}
@@ -121,12 +122,12 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 	for repositoryID, deletedAt := range deletions {
 		query := sqlf.Sprintf(`UPDATE repo SET deleted_at=%s WHERE id=%s`, deletedAt, repositoryID)
 
-		if _, err := db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.QueryContext(actor.WithInternalActor(context.Background()), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("Failed to update repository: %s", err)
 		}
 	}
 
-	_, count, err := store.DeleteUploadsWithoutRepository(context.Background(), t1)
+	_, count, err := store.DeleteUploadsWithoutRepository(actor.WithInternalActor(context.Background()), t1)
 	if err != nil {
 		t.Fatalf("unexpected error deleting uploads: %s", err)
 	}
@@ -163,7 +164,7 @@ func TestDeleteOldAuditLogs(t *testing.T) {
 	store := New(observation.TestContextTB(t), db)
 
 	// Sanity check for syntax only
-	if _, _, err := store.DeleteOldAuditLogs(context.Background(), time.Second, time.Now()); err != nil {
+	if _, _, err := store.DeleteOldAuditLogs(actor.WithInternalActor(context.Background()), time.Second, time.Now()); err != nil {
 		t.Fatalf("unexpected error deleting old audit logs: %s", err)
 	}
 }
@@ -452,29 +453,29 @@ func TestGetQueuedUploadRank(t *testing.T) {
 		shared.Upload{ID: 7, UploadedAt: t1, State: "queued", ProcessAfter: &t7},
 	)
 
-	if upload, _, _ := store.GetUploadByID(context.Background(), 1); upload.Rank == nil || *upload.Rank != 1 {
+	if upload, _, _ := store.GetUploadByID(actor.WithInternalActor(context.Background()), 1); upload.Rank == nil || *upload.Rank != 1 {
 		t.Errorf("unexpected rank. want=%d have=%s", 1, printableRank{upload.Rank})
 	}
-	if upload, _, _ := store.GetUploadByID(context.Background(), 2); upload.Rank == nil || *upload.Rank != 6 {
+	if upload, _, _ := store.GetUploadByID(actor.WithInternalActor(context.Background()), 2); upload.Rank == nil || *upload.Rank != 6 {
 		t.Errorf("unexpected rank. want=%d have=%s", 5, printableRank{upload.Rank})
 	}
-	if upload, _, _ := store.GetUploadByID(context.Background(), 3); upload.Rank == nil || *upload.Rank != 3 {
+	if upload, _, _ := store.GetUploadByID(actor.WithInternalActor(context.Background()), 3); upload.Rank == nil || *upload.Rank != 3 {
 		t.Errorf("unexpected rank. want=%d have=%s", 3, printableRank{upload.Rank})
 	}
-	if upload, _, _ := store.GetUploadByID(context.Background(), 4); upload.Rank == nil || *upload.Rank != 2 {
+	if upload, _, _ := store.GetUploadByID(actor.WithInternalActor(context.Background()), 4); upload.Rank == nil || *upload.Rank != 2 {
 		t.Errorf("unexpected rank. want=%d have=%s", 2, printableRank{upload.Rank})
 	}
-	if upload, _, _ := store.GetUploadByID(context.Background(), 5); upload.Rank == nil || *upload.Rank != 4 {
+	if upload, _, _ := store.GetUploadByID(actor.WithInternalActor(context.Background()), 5); upload.Rank == nil || *upload.Rank != 4 {
 		t.Errorf("unexpected rank. want=%d have=%s", 4, printableRank{upload.Rank})
 	}
 
 	// Only considers queued uploads to determine rank
-	if upload, _, _ := store.GetUploadByID(context.Background(), 6); upload.Rank != nil {
+	if upload, _, _ := store.GetUploadByID(actor.WithInternalActor(context.Background()), 6); upload.Rank != nil {
 		t.Errorf("unexpected rank. want=%s have=%s", "nil", printableRank{upload.Rank})
 	}
 
 	// Process after takes priority over upload time
-	if upload, _, _ := store.GetUploadByID(context.Background(), 7); upload.Rank == nil || *upload.Rank != 5 {
+	if upload, _, _ := store.GetUploadByID(actor.WithInternalActor(context.Background()), 7); upload.Rank == nil || *upload.Rank != 5 {
 		t.Errorf("unexpected rank. want=%d have=%s", 4, printableRank{upload.Rank})
 	}
 }

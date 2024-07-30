@@ -12,11 +12,13 @@ import (
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -79,7 +81,7 @@ func (p *permissionSyncJobScheduler) Routines(_ context.Context, observationCtx 
 			context.Background(),
 			goroutine.HandlerFunc(
 				func(ctx context.Context) error {
-					if providers.PermissionSyncingDisabled(conf.Get()) {
+					if permissionSyncingDisabled(conf.Get()) {
 						logger.Debug("scheduler disabled due to permission syncing disabled")
 						return nil
 					}
@@ -288,4 +290,16 @@ func oldestRepoPermissionsBatchSize() int {
 		batchSize = *c
 	}
 	return batchSize
+}
+
+// permissionSyncingDisabled returns true if the background permissions syncing is not enabled.
+// It is not enabled if:
+//   - There are no code host connections with authorization or enforcePermissions enabled
+//   - Not purchased with the current license
+//   - `disableAutoCodeHostSyncs` site setting is set to true
+func permissionSyncingDisabled(cfg conftypes.UnifiedQuerier) bool {
+	p := authz.GetProviders()
+	return len(p) == 0 ||
+		licensing.Check(licensing.FeatureACLs) != nil ||
+		cfg.SiteConfig().DisableAutoCodeHostSyncs
 }

@@ -1757,8 +1757,12 @@ type ImportChangesets struct {
 type IntentDetectionAPI struct {
 	// Default description: Default URL for intent detection API
 	Default *BackendAPIConfig `json:"default,omitempty"`
+	// Edit description: Default URL for intent detection API
+	Edit *BackendAPIConfig `json:"edit,omitempty"`
 	// Extra description: Array of additional intent detection API configs
 	Extra []*BackendAPIConfig `json:"extra,omitempty"`
+	// Search description: Default URL for intent detection API
+	Search *BackendAPIConfig `json:"search,omitempty"`
 }
 
 // JVMPackagesConnection description: Configuration for a connection to a JVM packages repository.

@@ -193,8 +193,9 @@ func (a *Appliance) postStatusJSONHandler() http.Handler {
 			}
 		}
 
-		//TODO(jdpleiness) check form for value if this should be set or not
-		a.sourcegraph.SetLocalDevMode()
+		if a.noResourceRestrictions {
+			a.sourcegraph.SetLocalDevMode()
+		}
 
 		cfgMap := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
