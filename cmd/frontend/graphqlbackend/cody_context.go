@@ -100,6 +100,8 @@ type RankOptions struct {
 type IntentResolver interface {
 	Intent() string
 	Score() float64
+	SearchScore() float64
+	EditScore() float64
 }
 
 type RankContextResolver interface {

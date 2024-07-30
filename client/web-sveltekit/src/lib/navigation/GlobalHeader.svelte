@@ -85,13 +85,16 @@
                     <li class:open on:mouseenter={() => openMenu(entry.label)} on:mouseleave={closeMenu}>
                         {#if isNavigationMenu(entry)}
                             <span>
-                                <MainNavigationLink {entry} />
                                 <Button
                                     variant="icon"
                                     on:click={() => (openedMenu = open ? '' : entry.label)}
                                     aria-label="{open ? 'Close' : 'Open'} '{entry.label}' submenu"
                                     aria-expanded={open}
                                 >
+                                    {#if entry.icon}
+                                        <Icon icon={entry.icon} aria-hidden="true" inline />&nbsp;
+                                    {/if}
+                                    {entry.label}
                                     <Icon icon={ILucideChevronDown} inline aria-hidden />
                                 </Button>
                             </span>

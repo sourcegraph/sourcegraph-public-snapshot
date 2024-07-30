@@ -647,6 +647,14 @@
                   "description": "Default URL for intent detection API",
                   "$ref": "#/definitions/BackendAPIConfig"
                 },
+                "search": {
+                  "description": "Default URL for intent detection API",
+                  "$ref": "#/definitions/BackendAPIConfig"
+                },
+                "edit": {
+                  "description": "Default URL for intent detection API",
+                  "$ref": "#/definitions/BackendAPIConfig"
+                },
                 "extra": {
                   "description": "Array of additional intent detection API configs",
                   "type": "array",
@@ -3210,12 +3218,9 @@
       "!go": {
         "pointer": true
       },
-      "default": {
-        "pollingInterval": "6h"
-      },
       "properties": {
         "endpoint": {
-          "description": "The Cody gateway URL to use for making LLM requests and discovering new LLM models. If null, the production URL for Cody gateway will be used.",
+          "description": "The Cody gateway URL to use for making LLM requests. If null, the production URL for Cody gateway will be used.",
           "type": "string",
           "!go": {
             "pointer": true
@@ -3229,14 +3234,6 @@
             "pointer": true
           },
           "default": null
-        },
-        "pollingInterval": {
-          "description": "The frequency at which Cody will poll Sourcegraph's servers for an updated list of models. e.g. '6h', '1d', or 'never'",
-          "type": "string",
-          "!go": {
-            "pointer": true
-          },
-          "default": "6h"
         },
         "modelFilters": {
           "$ref": "#/definitions/ModelFilters"
@@ -3717,19 +3714,25 @@
           "examples": ["<|endoftext|>", "<EOT>"]
         },
         "contextSizeHintTotalCharacters": {
-          "!go": { "pointer": true },
+          "!go": {
+            "pointer": true
+          },
           "default": null,
           "type": "integer",
           "description": "A hint the client should use when producing context to send to the LLM.\nThe maximum length of all context (prefix + suffix + snippets), in characters."
         },
         "contextSizeHintPrefixCharacters": {
-          "!go": { "pointer": true },
+          "!go": {
+            "pointer": true
+          },
           "default": null,
           "type": "integer",
           "description": "A hint the client should use when producing context to send to the LLM.\nThe maximum length of the document prefix (text before the cursor) to include, in characters."
         },
         "contextSizeHintSuffixCharacters": {
-          "!go": { "pointer": true },
+          "!go": {
+            "pointer": true
+          },
           "default": null,
           "type": "integer",
           "description": "A hint the client should use when producing context to send to the LLM.\nThe maximum length of the document suffix (text after the cursor) to include, in characters."
@@ -3750,19 +3753,45 @@
           "type": "integer",
           "description": "How long the client should wait for autocomplete results to come back (milliseconds), before giving up and not displaying an autocomplete result at all.\n\nThis applies on multi-line completions, which are based on intent-detection when e.g. a code block is being completed, e.g. 'func parseURL(url string) {<completion>'\n\nNote: similar to hidden Cody client config option 'cody.autocomplete.advanced.timeout.multiline' If user has configured that, it will be respected instead of this."
         },
-        "chatTopK": { "type": "number" },
-        "chatTopP": { "type": "number" },
-        "chatTemperature": { "type": "number" },
-        "chatMaxTokens": { "type": "integer" },
-        "autoCompleteTopK": { "type": "number" },
-        "autoCompleteTopP": { "type": "number" },
-        "autoCompleteTemperature": { "type": "number" },
-        "autoCompleteSinglelineMaxTokens": { "type": "integer" },
-        "autoCompleteMultilineMaxTokens": { "type": "integer" },
-        "editTopK": { "type": "number" },
-        "editTopP": { "type": "number" },
-        "editTemperature": { "type": "number" },
-        "editMaxTokens": { "type": "integer" }
+        "chatTopK": {
+          "type": "number"
+        },
+        "chatTopP": {
+          "type": "number"
+        },
+        "chatTemperature": {
+          "type": "number"
+        },
+        "chatMaxTokens": {
+          "type": "integer"
+        },
+        "autoCompleteTopK": {
+          "type": "number"
+        },
+        "autoCompleteTopP": {
+          "type": "number"
+        },
+        "autoCompleteTemperature": {
+          "type": "number"
+        },
+        "autoCompleteSinglelineMaxTokens": {
+          "type": "integer"
+        },
+        "autoCompleteMultilineMaxTokens": {
+          "type": "integer"
+        },
+        "editTopK": {
+          "type": "number"
+        },
+        "editTopP": {
+          "type": "number"
+        },
+        "editTemperature": {
+          "type": "number"
+        },
+        "editMaxTokens": {
+          "type": "integer"
+        }
       }
     },
     "ServerSideModelConfig": {

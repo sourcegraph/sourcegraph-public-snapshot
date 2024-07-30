@@ -97,12 +97,9 @@ func TestDefinitions(t *testing.T) {
 	if len(mockCodeNavService.GetDefinitionsFunc.History()) != 1 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetDefinitionsFunc.History()))
 	}
-	if val := mockCodeNavService.GetDefinitionsFunc.History()[0].Arg1; val.Line != 10 {
-		t.Fatalf("unexpected line. want=%v have=%v", 10, val)
-	}
-	if val := mockCodeNavService.GetDefinitionsFunc.History()[0].Arg1; val.Character != 15 {
-		t.Fatalf("unexpected character. want=%d have=%v", 15, val)
-	}
+	pos, ok := mockCodeNavService.GetDefinitionsFunc.History()[0].Arg1.Matcher.PositionBased()
+	require.True(t, ok)
+	require.True(t, pos.Compare(scip.Position{Line: 10, Character: 15}) == 0)
 }
 
 func TestReferences(t *testing.T) {
@@ -126,7 +123,7 @@ func TestReferences(t *testing.T) {
 
 	offset := int32(25)
 	mockRefCursor := codenav.Cursor{Phase: "local"}
-	encodedCursor := encodeTraversalCursor(mockRefCursor)
+	encodedCursor := mockRefCursor.Encode()
 	mockCursor := base64.StdEncoding.EncodeToString([]byte(encodedCursor))
 
 	args := &resolverstubs.LSIFPagedQueryPositionArgs{
@@ -144,12 +141,9 @@ func TestReferences(t *testing.T) {
 	if len(mockCodeNavService.GetReferencesFunc.History()) != 1 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetReferencesFunc.History()))
 	}
-	if val := mockCodeNavService.GetReferencesFunc.History()[0].Arg1; val.Line != 10 {
-		t.Fatalf("unexpected line. want=%v have=%v", 10, val)
-	}
-	if val := mockCodeNavService.GetReferencesFunc.History()[0].Arg1; val.Character != 15 {
-		t.Fatalf("unexpected character. want=%v have=%v", 15, val)
-	}
+	pos, ok := mockCodeNavService.GetReferencesFunc.History()[0].Arg1.Matcher.PositionBased()
+	require.True(t, ok)
+	require.True(t, pos.Compare(scip.Position{Line: 10, Character: 15}) == 0)
 	if val := mockCodeNavService.GetReferencesFunc.History()[0].Arg1; val.Limit != 25 {
 		t.Fatalf("unexpected character. want=%v have=%v", 25, val)
 	}
@@ -465,7 +459,7 @@ func makeTestResolver(t *testing.T) resolverstubs.CodeGraphDataResolver {
 	return newCodeGraphDataResolver(
 		codeNavSvc, gitTreeTranslator, testUpload,
 		&resolverstubs.CodeGraphDataOpts{Repo: &sgtypes.Repo{}, Path: repoRelPath("locals.repro")},
-		resolverstubs.ProvenancePrecise, newOperations(&observation.TestContext))
+		codenav.ProvenancePrecise, newOperations(&observation.TestContext))
 }
 
 func TestOccurrences_BadArgs(t *testing.T) {

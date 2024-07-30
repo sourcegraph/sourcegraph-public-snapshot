@@ -42,10 +42,10 @@ type LsifStore interface {
 	GetDiagnostics(ctx context.Context, bundleID int, prefix core.UploadRelPath, limit, offset int) ([]shared.Diagnostic[core.UploadRelPath], int, error)
 
 	// Extraction methods
-	ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
-	ExtractReferenceLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
-	ExtractImplementationLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
-	ExtractPrototypeLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
+	ExtractDefinitionLocationsFromPosition(context.Context, FindUsagesKey) ([]shared.UsageBuilder, []string, error)
+	ExtractReferenceLocationsFromPosition(context.Context, FindUsagesKey) ([]shared.UsageBuilder, []string, error)
+	ExtractImplementationLocationsFromPosition(context.Context, FindUsagesKey) ([]shared.UsageBuilder, []string, error)
+	ExtractPrototypeLocationsFromPosition(context.Context, FindUsagesKey) ([]shared.UsageBuilder, []string, error)
 }
 
 type SymbolUsagesOptions struct {

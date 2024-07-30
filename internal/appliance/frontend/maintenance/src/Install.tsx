@@ -1,14 +1,43 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import { Button, FormControl, InputLabel, MenuItem, Paper, Select, Stack, Typography } from '@mui/material'
 
 import { changeStage } from './state'
 
 export const Install: React.FC = () => {
-    const [version, setVersion] = useState<string>('5.5.0')
+    const [version, setVersion] = useState<string[]>([])
+    const [selectedVersion, setSelectedVersion] = useState<string>('')
+
+    useEffect(() => {
+        const fetchVersions = async () => {
+            try {
+                const response = await fetch('https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph', {
+                    headers: {
+                        Authorization: `Bearer token`,
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors',
+                })
+                const data = await response.json()
+                setVersion(data)
+                if (data.length > 0) {
+                    const publicVersions = data
+                        .filter(item => item.public)
+                        .filter(item => !item.is_development)
+                        .map(item => item.version)
+                    setVersion(publicVersions)
+                    setSelectedVersion(data[0]) // Set the first version as default
+                }
+            } catch (error) {
+                console.error('Failed to fetch versions:', error)
+            }
+        }
+
+        fetchVersions()
+    }, [])
 
     const install = () => {
-        changeStage({ action: 'installing', data: version })
+        changeStage({ action: 'installing', data: selectedVersion })
     }
 
     return (
@@ -19,12 +48,16 @@ export const Install: React.FC = () => {
                     <FormControl sx={{ minWidth: 200 }}>
                         <InputLabel id="demo-simple-select-label">Version</InputLabel>
                         <Select
-                            value={version}
-                            label="Age"
-                            onChange={e => setVersion(e.target.value)}
+                            value={selectedVersion}
+                            label="Version"
+                            onChange={e => setSelectedVersion(e.target.value)}
                             sx={{ width: 200 }}
                         >
-                            <MenuItem value={'5.5.0'}>5.5.0</MenuItem>
+                            {version.map(version => (
+                                <MenuItem key={version} value={version}>
+                                    {version}
+                                </MenuItem>
+                            ))}
                         </Select>
                     </FormControl>
                     <div className="message">

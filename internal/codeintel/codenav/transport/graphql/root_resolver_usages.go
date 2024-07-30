@@ -30,7 +30,7 @@ func (u *usageConnectionResolver) PageInfo() resolverstubs.PageInfo {
 
 type usageResolver struct {
 	symbol             *symbolInformationResolver
-	provenance         resolverstubs.CodeGraphDataProvenance
+	provenance         codenav.CodeGraphDataProvenance
 	kind               resolverstubs.SymbolUsageKind
 	surroundingContent string
 	usageRange         *usageRangeResolver
@@ -49,7 +49,7 @@ func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Re
 		symbol: &symbolInformationResolver{
 			name: usage.Symbol,
 		},
-		provenance:         resolverstubs.ProvenanceSyntactic,
+		provenance:         codenav.ProvenanceSyntactic,
 		kind:               kind,
 		surroundingContent: usage.SurroundingContent,
 		usageRange: &usageRangeResolver{
@@ -60,6 +60,7 @@ func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Re
 		},
 	}
 }
+
 func NewSearchBasedUsageResolver(usage codenav.SearchBasedMatch, repository types.Repo, revision api.CommitID) resolverstubs.UsageResolver {
 	var kind resolverstubs.SymbolUsageKind
 	if usage.IsDefinition {
@@ -69,7 +70,7 @@ func NewSearchBasedUsageResolver(usage codenav.SearchBasedMatch, repository type
 	}
 	return &usageResolver{
 		symbol:             nil,
-		provenance:         resolverstubs.ProvenanceSearchBased,
+		provenance:         codenav.ProvenanceSearchBased,
 		kind:               kind,
 		surroundingContent: usage.SurroundingContent,
 		usageRange: &usageRangeResolver{
@@ -89,7 +90,7 @@ func (u *usageResolver) Symbol(ctx context.Context) (resolverstubs.SymbolInforma
 	return u.symbol, nil
 }
 
-func (u *usageResolver) Provenance(ctx context.Context) (resolverstubs.CodeGraphDataProvenance, error) {
+func (u *usageResolver) Provenance(ctx context.Context) (codenav.CodeGraphDataProvenance, error) {
 	return u.provenance, nil
 }
 

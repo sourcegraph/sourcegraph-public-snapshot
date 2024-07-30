@@ -1757,8 +1757,12 @@ type ImportChangesets struct {
 type IntentDetectionAPI struct {
 	// Default description: Default URL for intent detection API
 	Default *BackendAPIConfig `json:"default,omitempty"`
+	// Edit description: Default URL for intent detection API
+	Edit *BackendAPIConfig `json:"edit,omitempty"`
 	// Extra description: Array of additional intent detection API configs
 	Extra []*BackendAPIConfig `json:"extra,omitempty"`
+	// Search description: Default URL for intent detection API
+	Search *BackendAPIConfig `json:"search,omitempty"`
 }
 
 // JVMPackagesConnection description: Configuration for a connection to a JVM packages repository.
@@ -3583,11 +3587,9 @@ type SiteModelConfiguration struct {
 type SourcegraphModelConfig struct {
 	// AccessToken description: The Cody gateway access token to use. If null, an access token will be automatically generated based on the product license.
 	AccessToken *string `json:"accessToken,omitempty"`
-	// Endpoint description: The Cody gateway URL to use for making LLM requests and discovering new LLM models. If null, the production URL for Cody gateway will be used.
+	// Endpoint description: The Cody gateway URL to use for making LLM requests. If null, the production URL for Cody gateway will be used.
 	Endpoint     *string       `json:"endpoint,omitempty"`
 	ModelFilters *ModelFilters `json:"modelFilters,omitempty"`
-	// PollingInterval description: The frequency at which Cody will poll Sourcegraph's servers for an updated list of models. e.g. '6h', '1d', or 'never'
-	PollingInterval *string `json:"pollingInterval,omitempty"`
 }
 
 // SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.

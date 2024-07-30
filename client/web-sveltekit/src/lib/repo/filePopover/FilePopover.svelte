@@ -50,12 +50,14 @@
 </script>
 
 <div class="root">
-    <div class="path section">
-        <DisplayPath
-            path={dirName}
-            pathHref={pathHrefFactory({ repoName, revision, fullPath: dirName, fullPathType: 'tree' })}
-        />
-    </div>
+    {#if dirName.length > 0}
+        <div class="section">
+            <DisplayPath
+                path={dirName}
+                pathHref={pathHrefFactory({ repoName, revision, fullPath: dirName, fullPathType: 'tree' })}
+            />
+        </div>
+    {/if}
 
     <div class="lang-and-file section">
         {#if entry.__typename === 'GitBlob'}

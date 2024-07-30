@@ -104,7 +104,7 @@ References are specified by labeling a capture as a `@reference`.
 (variable_expression (identifier) @reference)
 ```
 
-If the type of symbol under reference can be inferred from syntactic information, you can 
+If the type of symbol under reference can be inferred from syntactic information, you can
 add a `"kind"` attribute to refine the descriptor that will be produced:
 
 ```scm
@@ -114,23 +114,23 @@ add a `"kind"` attribute to refine the descriptor that will be produced:
 ```
 
 The kind will be resolved into a [descriptor suffix](https://github.com/sourcegraph/scip/blob/main/scip.proto#L211-L222)
-in case this reference is resolved to a non-local symbol. 
+in case this reference is resolved to a non-local symbol.
 
-As references can be either local or non-local, you can use the value of `"kind"` descriptor to guide 
+As references can be either local or non-local, you can use the value of `"kind"` descriptor to guide
 the resolution:
 
-1. `"<type>"` or absent - these references will first be resolved against definitions in current and parent scopes, and 
+1. `"<type>"` or absent - these references will first be resolved against definitions in current and parent scopes, and
    if that resolution fails, a non-local reference will be produced instead.
 
    Example:
 
    ```scm
-   (package 
+   (package
      (identifier) @reference (#set! "kind" "namespace")
    )
    ```
 
-2. `"global.<type>"` - these references will immediately emit a non-local reference, without attempting to 
+2. `"global.<type>"` - these references will immediately emit a non-local reference, without attempting to
    do any resolution against local definitions.
 
    Example:
@@ -138,17 +138,6 @@ the resolution:
    ```scm
    (method_invocation
      name: (identifier) @reference (#set! "kind" "global.namespace")
-   )
-   ```
-
-3. `"local"` - these references will be resolved against definitions in current and parent scopes. If that resolution fails,
-   no reference will be emitted at all. 
-
-   Example:
-
-   ```scm
-   (method_invocation
-     name: (identifier) @reference (#set! "kind" "local")
    )
    ```
 

@@ -6,7 +6,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	genslices "github.com/life4/genesis/slices"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -29,26 +28,26 @@ LIMIT 1
 `
 
 type extractedOccurrenceData struct {
-	definitions     []scip.Range
-	references      []scip.Range
-	implementations []scip.Range
-	prototypes      []scip.Range
+	definitions     []shared.UsageBuilder
+	references      []shared.UsageBuilder
+	implementations []shared.UsageBuilder
+	prototypes      []shared.UsageBuilder
 	hoverText       []string
 }
 
-func extractDefinitionRanges(document *scip.Document, lookup *scip.Occurrence) []scip.Range {
+func extractDefinitionRanges(document *scip.Document, lookup *scip.Occurrence) []shared.UsageBuilder {
 	return extractOccurrenceData(document, lookup).definitions
 }
 
-func extractReferenceRanges(document *scip.Document, lookup *scip.Occurrence) []scip.Range {
+func extractReferenceRanges(document *scip.Document, lookup *scip.Occurrence) []shared.UsageBuilder {
 	return extractOccurrenceData(document, lookup).references
 }
 
-func extractImplementationRanges(document *scip.Document, lookup *scip.Occurrence) []scip.Range {
+func extractImplementationRanges(document *scip.Document, lookup *scip.Occurrence) []shared.UsageBuilder {
 	return extractOccurrenceData(document, lookup).implementations
 }
 
-func extractPrototypesRanges(document *scip.Document, lookup *scip.Occurrence) []scip.Range {
+func extractPrototypesRanges(document *scip.Document, lookup *scip.Occurrence) []shared.UsageBuilder {
 	return extractOccurrenceData(document, lookup).prototypes
 }
 
@@ -103,10 +102,10 @@ func extractOccurrenceData(document *scip.Document, lookupOccurrence *scip.Occur
 		}
 	}
 
-	definitions := []scip.Range{}
-	references := []scip.Range{}
-	implementations := []scip.Range{}
-	prototypes := []scip.Range{}
+	definitions := []shared.UsageBuilder{}
+	references := []shared.UsageBuilder{}
+	implementations := []shared.UsageBuilder{}
+	prototypes := []shared.UsageBuilder{}
 
 	// Include original symbol names for reference search below
 	referencesBySymbol.Add(lookupOccurrence.Symbol)
@@ -119,22 +118,22 @@ func extractOccurrenceData(document *scip.Document, lookupOccurrence *scip.Occur
 
 		// This occurrence defines this symbol
 		if definitionSymbol == occ.Symbol && isDefinition {
-			definitions = append(definitions, scip.NewRangeUnchecked(occ.Range))
+			definitions = append(definitions, shared.NewUsageBuilder(occ))
 		}
 
 		// This occurrence references this symbol (or a sibling of it)
 		if !isDefinition && referencesBySymbol.Has(occ.Symbol) {
-			references = append(references, scip.NewRangeUnchecked(occ.Range))
+			references = append(references, shared.NewUsageBuilder(occ))
 		}
 
 		// This occurrence is a definition of a symbol with an implementation relationship
 		if isDefinition && implementationsBySymbol.Has(occ.Symbol) && definitionSymbol != occ.Symbol {
-			implementations = append(implementations, scip.NewRangeUnchecked(occ.Range))
+			implementations = append(implementations, shared.NewUsageBuilder(occ))
 		}
 
 		// This occurrence is a definition of a symbol with a prototype relationship
 		if isDefinition && prototypeBySymbol.Has(occ.Symbol) {
-			prototypes = append(prototypes, scip.NewRangeUnchecked(occ.Range))
+			prototypes = append(prototypes, shared.NewUsageBuilder(occ))
 		}
 	}
 
@@ -168,20 +167,20 @@ func symbolHoverText(symbol *scip.SymbolInformation) []string {
 // from the database and unmarshal it. This means that for the ref panel,
 // we will unmarshal the same Protobuf document at least four times. :facepalm:
 
-func (s *store) ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractDefinitionRanges, symbolExtractDefault, s.operations.getDefinitionLocations, locationKey)
+func (s *store) ExtractDefinitionLocationsFromPosition(ctx context.Context, key FindUsagesKey) (_ []shared.UsageBuilder, _ []string, err error) {
+	return s.extractRelatedUsagesAndSymbolNames(ctx, key, s.operations.getDefinitionLocations, extractDefinitionRanges, symbolExtractDefault)
 }
 
-func (s *store) ExtractReferenceLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractReferenceRanges, symbolExtractDefault, s.operations.getReferenceLocations, locationKey)
+func (s *store) ExtractReferenceLocationsFromPosition(ctx context.Context, key FindUsagesKey) (_ []shared.UsageBuilder, _ []string, err error) {
+	return s.extractRelatedUsagesAndSymbolNames(ctx, key, s.operations.getReferenceLocations, extractReferenceRanges, symbolExtractDefault)
 }
 
-func (s *store) ExtractImplementationLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractImplementationRanges, symbolExtractImplementations, s.operations.getImplementationLocations, locationKey)
+func (s *store) ExtractImplementationLocationsFromPosition(ctx context.Context, key FindUsagesKey) (_ []shared.UsageBuilder, _ []string, err error) {
+	return s.extractRelatedUsagesAndSymbolNames(ctx, key, s.operations.getImplementationLocations, extractImplementationRanges, symbolExtractImplementations)
 }
 
-func (s *store) ExtractPrototypeLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractPrototypesRanges, symbolExtractPrototype, s.operations.getPrototypesLocations, locationKey)
+func (s *store) ExtractPrototypeLocationsFromPosition(ctx context.Context, key FindUsagesKey) (_ []shared.UsageBuilder, _ []string, err error) {
+	return s.extractRelatedUsagesAndSymbolNames(ctx, key, s.operations.getPrototypesLocations, extractPrototypesRanges, symbolExtractPrototype)
 }
 
 func symbolExtractDefault(document *scip.Document, symbolName string) (symbols []string) {
@@ -220,35 +219,6 @@ func symbolExtractPrototype(document *scip.Document, symbolName string) (symbols
 	}
 
 	return symbols
-}
-
-func (s *store) extractLocationsFromPosition(
-	ctx context.Context,
-	extractLocations func(document *scip.Document, occurrence *scip.Occurrence) []scip.Range,
-	extractRelatedSymbolNames func(document *scip.Document, symbolName string) []string,
-	operation *observation.Operation,
-	key LocationKey,
-) (_ []shared.Location, _ []string, err error) {
-	matcher := shared.NewStartPositionMatcher(scip.Position{Line: int32(key.Line), Character: int32(key.Character)})
-	findUsagesKey := FindUsagesKey{UploadID: key.UploadID, Path: key.Path, Matcher: matcher}
-	extractUsages := func(document *scip.Document, occurrence *scip.Occurrence) []shared.UsageBuilder {
-		return genslices.Map(extractLocations(document, occurrence), func(range_ scip.Range) shared.UsageBuilder {
-			return shared.UsageBuilder{
-				Range:       range_,
-				Symbol:      "",
-				SymbolRoles: scip.SymbolRole_UnspecifiedSymbolRole,
-				// We will discard Symbol and SymbolRoles below, so use zero values here for simplicity.
-			}
-		})
-	}
-	usageBuilders, relatedSymbols, err := s.extractRelatedUsagesAndSymbolNames(ctx, findUsagesKey, operation, extractUsages, extractRelatedSymbolNames)
-	return genslices.Map(usageBuilders, func(ub shared.UsageBuilder) shared.Location {
-		return shared.Location{
-			UploadID: key.UploadID,
-			Path:     key.Path,
-			Range:    shared.TranslateRange(ub.Range),
-		}
-	}), relatedSymbols, err
 }
 
 // extractRelatedUsagesAndSymbolNames uses findUsagesKey to identify a

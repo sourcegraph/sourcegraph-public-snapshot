@@ -161,7 +161,10 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 	q.Filetype = languages.NormalizeLanguage(q.Filetype)
 
 	tr, ctx := trace.New(ctx, "gosyntect.Highlight",
-		attribute.String("filepath", q.Filepath))
+		attribute.String("filepath", q.Filepath),
+		attribute.String("language", q.Filetype),
+		attribute.String("engine", q.Engine),
+	)
 	defer tr.EndWithErr(&err)
 
 	if isTreesitterBased(q.Engine) && !IsTreesitterSupported(q.Filetype) {
