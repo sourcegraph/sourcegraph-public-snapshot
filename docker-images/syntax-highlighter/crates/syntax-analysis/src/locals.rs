@@ -126,7 +126,7 @@ impl DefId {
 struct Scope<'a> {
     /// For a query that captures a "@scope.function" this will
     /// contain the string "function"
-    kind: String,
+    kind: Name,
     node: Node<'a>,
     // TODO: (perf) we could also remember how many definitions
     // precede us in the parent, for efficient slicing when searching
@@ -145,7 +145,7 @@ struct Scope<'a> {
 }
 
 impl<'a> Scope<'a> {
-    fn new(kind: String, node: Node<'a>, parent: Option<ScopeId<'a>>) -> Self {
+    fn new(kind: Name, node: Node<'a>, parent: Option<ScopeId<'a>>) -> Self {
         Scope {
             kind,
             node,
@@ -213,7 +213,7 @@ struct ScopeCapture<'a> {
 
 #[derive(Debug)]
 struct DefCapture<'a> {
-    hoist: Option<String>,
+    hoist: Option<Name>,
     is_def_ref: bool,
     node: Node<'a>,
 }
@@ -330,7 +330,7 @@ impl<'a> LocalResolver<'a> {
         scope_id: ScopeId<'a>,
         name: Name,
         node: Node<'a>,
-        hoist: &Option<String>,
+        hoist: Option<Name>,
         is_def_ref: bool,
     ) {
         self.skip_references_at_offsets.insert(node.start_byte());
@@ -356,7 +356,7 @@ impl<'a> LocalResolver<'a> {
                 // the way to the top_scope
                 for ancestor in self.ancestors(scope_id) {
                     target_scope = ancestor;
-                    if self[ancestor].kind == *hoist_scope {
+                    if self[ancestor].kind == hoist_scope {
                         break;
                     }
                 }
@@ -426,7 +426,7 @@ impl<'a> LocalResolver<'a> {
             w,
             "{}scope {} {}-{}",
             str::repeat(" ", depth),
-            scope.kind,
+            self.interner.resolve(scope.kind).unwrap(),
             scope.node.start_position(),
             scope.node.end_position()
         )
@@ -553,7 +553,7 @@ impl<'a> LocalResolver<'a> {
                 scope,
                 name,
                 def_capture.node,
-                &def_capture.hoist,
+                def_capture.hoist,
                 def_capture.is_def_ref,
             )
         }
@@ -595,7 +595,7 @@ impl<'a> LocalResolver<'a> {
                     let mut hoist = None;
                     if let Some(prop) = properties.iter().find(|p| p.key.as_ref() == "hoist") {
                         if let Some(hoist_target) = prop.value.as_ref() {
-                            hoist = Some(hoist_target.to_string());
+                            hoist = Some(self.interner.get_or_intern(hoist_target));
                         } else {
                             debug_assert!(false, "hoist _must_ be targeting a scope level");
                         }
@@ -705,7 +705,7 @@ impl<'a> LocalResolver<'a> {
             })?;
 
             let new_scope = self.arena.alloc(Scope::new(
-                scope_kind.to_string(),
+                self.interner.get_or_intern(scope_kind),
                 scope_node,
                 Some(current_scope),
             ));
@@ -855,9 +855,11 @@ impl<'a> LocalResolver<'a> {
         let captures = self.collect_captures(config, tree, self.source_bytes);
 
         // Next we build a tree structure of scopes and definitions
-        let top_scope = self
-            .arena
-            .alloc(Scope::new("global".to_string(), tree.root_node(), None));
+        let top_scope = self.arena.alloc(Scope::new(
+            self.interner.get_or_intern_static("global"),
+            tree.root_node(),
+            None,
+        ));
         self.build_tree(top_scope, captures)?;
         match test_writer {
             None => {}
