@@ -2,8 +2,6 @@ package graphql
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -48,7 +46,7 @@ func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolver
 	// is used to resolve each page. This cursor will be modified in-place to become the
 	// cursor used to fetch the subsequent page of results in this result set.
 	var nextCursor string
-	cursor, err := decodeTraversalCursor(requestArgs.RawCursor)
+	cursor, err := codenav.DecodeCursor(requestArgs.RawCursor)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", rawCursor))
 	}
@@ -59,7 +57,7 @@ func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolver
 	}
 
 	if refCursor.Phase != "done" {
-		nextCursor = encodeTraversalCursor(refCursor)
+		nextCursor = refCursor.Encode()
 	}
 
 	if args.Filter != nil && *args.Filter != "" {
@@ -74,27 +72,4 @@ func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolver
 
 	refLocs := genslices.Map(refs, shared.UploadUsage.ToLocation)
 	return newLocationConnectionResolver(refLocs, pointers.NonZeroPtr(nextCursor), r.locationResolver), nil
-}
-
-//
-//
-
-func decodeTraversalCursor(rawEncoded string) (codenav.Cursor, error) {
-	if rawEncoded == "" {
-		return codenav.Cursor{}, nil
-	}
-
-	raw, err := base64.RawURLEncoding.DecodeString(rawEncoded)
-	if err != nil {
-		return codenav.Cursor{}, err
-	}
-
-	var cursor codenav.Cursor
-	err = json.Unmarshal(raw, &cursor)
-	return cursor, err
-}
-
-func encodeTraversalCursor(cursor codenav.Cursor) string {
-	rawEncoded, _ := json.Marshal(cursor)
-	return base64.RawURLEncoding.EncodeToString(rawEncoded)
 }
