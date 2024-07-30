@@ -72,7 +72,17 @@ func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
 	}
 	var err error
 	if accessToken != "" {
-		credential := azcore.NewKeyCredential(accessToken)
+		var credential *azcore.KeyCredential
+		// Note: HTTP connection can be useful if customers need to run e.g. an auth proxy
+		// between Sourcegraph and their Azure OpenAI endpoint.
+		// The Azure client will prohibit sending HTTP requests if the request would contain
+		// credentials, so we remove credentials if the admin's intention is to send HTTP
+		// and not HTTPS.
+		if strings.HasPrefix(endpoint, "http://") {
+			credential = nil
+		} else {
+			credential = azcore.NewKeyCredential(accessToken)
+		}
 		apiClient.client, err = azopenai.NewClientWithKeyCredential(endpoint, credential, clientOpts)
 	} else {
 		var opts *azidentity.DefaultAzureCredentialOptions
@@ -80,13 +90,16 @@ func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
 		if err != nil {
 			return nil, err
 		}
-		credential, credErr := azidentity.NewDefaultAzureCredential(opts)
-		if credErr != nil {
-			return nil, credErr
-		}
 		apiClient.endpoint = endpoint
-
-		apiClient.client, err = azopenai.NewClient(endpoint, credential, clientOpts)
+		if strings.HasPrefix(endpoint, "http://") {
+			apiClient.client, err = azopenai.NewClient(endpoint, nil, clientOpts)
+		} else {
+			credential, credErr := azidentity.NewDefaultAzureCredential(opts)
+			if credErr != nil {
+				return nil, credErr
+			}
+			apiClient.client, err = azopenai.NewClient(endpoint, credential, clientOpts)
+		}
 	}
 	return apiClient.client, err
 
