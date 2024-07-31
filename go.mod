@@ -176,7 +176,7 @@ require (
 	github.com/sergi/go-diff v1.3.1
 	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0
 	github.com/slack-go/slack v0.10.1
-	github.com/smacker/go-tree-sitter v0.0.0-20240625050157-a31a98a7c0f6
+	github.com/smacker/go-tree-sitter v0.0.0-20231219031718-233c2f923ac7
 	github.com/sourcegraph/go-ctags v0.0.0-20240424152308-4faeee4849da
 	github.com/sourcegraph/go-diff v0.6.2-0.20221123165719-f8cd299c40f3
 	github.com/sourcegraph/go-jsonschema v0.0.0-20221230021921-34aaf28fc4ac

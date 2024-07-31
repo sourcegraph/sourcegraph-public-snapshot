@@ -20,8 +20,6 @@ import (
 	"github.com/smacker/go-tree-sitter/ruby"
 	"github.com/smacker/go-tree-sitter/rust"
 	"github.com/smacker/go-tree-sitter/scala"
-	"github.com/smacker/go-tree-sitter/sql"
-	"github.com/smacker/go-tree-sitter/swift"
 	"github.com/smacker/go-tree-sitter/typescript/tsx"
 	"github.com/smacker/go-tree-sitter/typescript/typescript"
 
@@ -185,12 +183,8 @@ func detectLanguage(filename string) *sitter.Language {
 		return rust.GetLanguage()
 	case ".php":
 		return php.GetLanguage()
-	case ".swift":
-		return swift.GetLanguage()
 	case ".sh":
 		return bash.GetLanguage()
-	case ".sql":
-		return sql.GetLanguage()
 	default:
 		return nil
 	}
