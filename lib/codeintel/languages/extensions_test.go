@@ -177,7 +177,6 @@ func TestExtensionsConsistency2(t *testing.T) {
 // so when we upgrade to a matching go-enry version, we can remove special
 // cases for Pkl.
 func TestUnsupportedByEnry(t *testing.T) {
-
 	for lang := range unsupportedByEnryNameToExtensionMap {
 		enry_extensions, found := enrydata.ExtensionsByLanguage[lang]
 		if found {
@@ -205,5 +204,4 @@ func validateLanguageAgainstGoEnry(t *testing.T, name string, enry_extensions []
 	slices.Sort(sg_extensions)
 
 	require.NotEqualf(t, enry_extensions, sg_extensions, "looks like language %q is supported by enry with the same extensions; remove it from %q", lang, name)
-
 }
