@@ -49,7 +49,11 @@
         {/if}
     </div>
     <div class="title">
-        <a class="subject" href={commit.canonicalURL}>{commit.subject}</a>
+        <a
+            class="subject"
+            href={isPerforceDepot(commit) ? commit.perforceChangelist?.canonicalURL : commit.canonicalURL}
+            >{commit.subject}</a
+        >
         {#if !alwaysExpanded && commit.body && !$isViewportMobile}
             <Button
                 variant="secondary"

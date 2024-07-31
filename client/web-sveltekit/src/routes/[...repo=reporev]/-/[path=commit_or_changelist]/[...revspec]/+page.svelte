@@ -89,14 +89,6 @@
                                 >&nbsp;<CopyButton value={parent.abbreviatedOID} />{' '}
                             {/each}
                         </li>
-                    {/if}
-                    {#if isPerforceDepot}
-                        <li>
-                            <a href="{`/${data.repoName}@changelist/${data.commit.perforceChangelist?.cid}`}}"
-                                >Browse files
-                            </a></li
-                        >
-                    {:else}
                         <li>
                             <a href="/{data.repoName}@{data.commit.oid}"
                                 >Browse files at
@@ -104,6 +96,12 @@
                                     {data.commit.abbreviatedOID}
                                 </Badge></a
                             >
+                        </li>
+                    {:else}
+                        <li>
+                            <a href={`/${data.repoName}@changelist/${data.commit.perforceChangelist?.cid}`}
+                                >Browse files
+                            </a>
                         </li>
                     {/if}
                     {#each data.commit.externalURLs as { url, serviceKind }}

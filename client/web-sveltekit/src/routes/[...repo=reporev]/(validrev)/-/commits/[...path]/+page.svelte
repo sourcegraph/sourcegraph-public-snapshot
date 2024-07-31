@@ -99,7 +99,7 @@
                                 {/if}
                                 <Badge variant="link">
                                     {#if commit.perforceChangelist}
-                                        <a href={commit.perforceChangelist?.canonicalURL} title="View commit"
+                                        <a href={commit.perforceChangelist?.canonicalURL} title="View changelist"
                                             >{commit.perforceChangelist?.cid}</a
                                         >
                                     {:else}
@@ -108,13 +108,13 @@
                                 </Badge>
                             </li>
 
-                            <li
-                                ><a
+                            <li>
+                                <a
                                     href={commit.perforceChangelist
                                         ? `/${data.repoName}@changelist/${commit.perforceChangelist.cid}`
                                         : `/${data.repoName}@${commit.oid}`}>Browse files</a
-                                ></li
-                            >
+                                >
+                            </li>
                             {#each commit.externalURLs as { url, serviceKind }}
                                 <li>
                                     <a href={url}>
