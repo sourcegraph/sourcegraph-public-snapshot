@@ -40,7 +40,7 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 	}
 
 	// Tools using the old API will not pass syntactic indexing flag
-	// so we default to false.
+	// so we default to false while the feature is still in experimental mode.
 	var syntacticIndexingEnabled bool
 	if args.SyntacticIndexingEnabled == nil {
 		syntacticIndexingEnabled = false

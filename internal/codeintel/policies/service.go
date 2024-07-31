@@ -59,17 +59,17 @@ func (s *Service) CreateConfigurationPolicy(ctx context.Context, configurationPo
 		return policy, err
 	}
 
-	if err := s.UpdateReposMatchingPolicyPatterns(ctx, policy); err != nil {
+	if err := s.UpdateReposMatchingPolicyPatterns(ctx, policy.RepositoryPatterns, policy.ID); err != nil {
 		return policy, err
 	}
 
 	return policy, nil
 }
 
-func (s *Service) UpdateReposMatchingPolicyPatterns(ctx context.Context, policy policiesshared.ConfigurationPolicy) error {
+func (s *Service) UpdateReposMatchingPolicyPatterns(ctx context.Context, policyPatterns *[]string, policyID int) error {
 	var patterns []string
-	if policy.RepositoryPatterns != nil {
-		patterns = *policy.RepositoryPatterns
+	if policyPatterns != nil {
+		patterns = *policyPatterns
 	}
 
 	if len(patterns) == 0 {
@@ -81,14 +81,14 @@ func (s *Service) UpdateReposMatchingPolicyPatterns(ctx context.Context, policy 
 		repositoryMatchLimit = &val
 	}
 
-	if err := s.store.UpdateReposMatchingPatterns(ctx, patterns, policy.ID, repositoryMatchLimit); err != nil {
+	if err := s.store.UpdateReposMatchingPatterns(ctx, patterns, policyID, repositoryMatchLimit); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *Service) UpdateConfigurationPolicy(ctx context.Context, policy policiesshared.ConfigurationPolicy) (err error) {
+func (s *Service) UpdateConfigurationPolicy(ctx context.Context, policy policiesshared.ConfigurationPolicyPatch) (err error) {
 	ctx, _, endObservation := s.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -96,7 +96,7 @@ func (s *Service) UpdateConfigurationPolicy(ctx context.Context, policy policies
 		return err
 	}
 
-	return s.UpdateReposMatchingPolicyPatterns(ctx, policy)
+	return s.UpdateReposMatchingPolicyPatterns(ctx, policy.RepositoryPatterns, policy.ID)
 }
 
 func (s *Service) DeleteConfigurationPolicyByID(ctx context.Context, id int) error {
