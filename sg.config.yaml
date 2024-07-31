@@ -1512,7 +1512,6 @@ commandsets:
       - dev-private
     bazelCommands:
       - blobstore
-      - docsite
       - frontend
       - worker
       - repo-updater
@@ -1547,8 +1546,6 @@ commandsets:
       - searcher
       - caddy
       - symbols
-      # TODO https://github.com/sourcegraph/devx-support/issues/537
-      # - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1642,7 +1639,6 @@ commandsets:
       - codeintel-executor
     commands:
       - web
-      - docsite
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1687,7 +1683,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1718,7 +1713,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1749,7 +1743,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1782,7 +1775,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1816,7 +1808,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1865,7 +1856,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1892,7 +1882,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
