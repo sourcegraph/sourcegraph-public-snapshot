@@ -39,6 +39,15 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		repositoryID = &id
 	}
 
+	// Tools using the old API will not pass syntactic indexing flag
+	// so we default to false.
+	var syntacticIndexingEnabled bool
+	if args.SyntacticIndexingEnabled == nil {
+		syntacticIndexingEnabled = false
+	} else {
+		syntacticIndexingEnabled = *args.SyntacticIndexingEnabled
+	}
+
 	opts := shared.ConfigurationPolicy{
 		RepositoryID:              repositoryID,
 		Name:                      args.Name,
@@ -49,7 +58,7 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
 		RetainIntermediateCommits: args.RetainIntermediateCommits,
 		PreciseIndexingEnabled:    args.IndexingEnabled,
-		SyntacticIndexingEnabled:  *args.SyntacticIndexingEnabled,
+		SyntacticIndexingEnabled:  syntacticIndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
 		EmbeddingEnabled:          args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,
@@ -82,7 +91,7 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		return nil, err
 	}
 
-	opts := shared.ConfigurationPolicy{
+	opts := shared.ConfigurationPolicyPatch{
 		ID:                        id,
 		Name:                      args.Name,
 		RepositoryPatterns:        args.RepositoryPatterns,
@@ -92,7 +101,7 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
 		RetainIntermediateCommits: args.RetainIntermediateCommits,
 		PreciseIndexingEnabled:    args.IndexingEnabled,
-		SyntacticIndexingEnabled:  *args.SyntacticIndexingEnabled,
+		SyntacticIndexingEnabled:  args.SyntacticIndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
 		EmbeddingEnabled:          args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,

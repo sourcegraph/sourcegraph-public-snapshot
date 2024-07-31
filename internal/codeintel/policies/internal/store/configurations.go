@@ -292,22 +292,22 @@ var (
 	errIllegalConfigurationPolicyDelete = errors.New("protected configuration policies cannot be deleted")
 )
 
-func (s *store) UpdateConfigurationPolicy(ctx context.Context, policy shared.ConfigurationPolicy) (err error) {
+func (s *store) UpdateConfigurationPolicy(ctx context.Context, policyPatch shared.ConfigurationPolicyPatch) (err error) {
 	ctx, _, endObservation := s.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("id", policy.ID),
+		attribute.Int("id", policyPatch.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	retentionDuration := optionalNumHours(policy.RetentionDuration)
-	indexCommitMaxAge := optionalNumHours(policy.IndexCommitMaxAge)
-	repositoryPatterns := optionalArray(policy.RepositoryPatterns)
+	retentionDuration := optionalNumHours(policyPatch.RetentionDuration)
+	indexCommitMaxAge := optionalNumHours(policyPatch.IndexCommitMaxAge)
+	repositoryPatterns := optionalArray(policyPatch.RepositoryPatterns)
 
 	return s.db.WithTransact(ctx, func(tx *basestore.Store) error {
 		// First, pull current policy to see if it's protected, and if so whether or not the
 		// fields that must remain stable (names, types, patterns, and retention enabled) have
 		// the same current and target values.
 
-		currentPolicy, ok, err := scanFirstConfigurationPolicy(tx.Query(ctx, sqlf.Sprintf(updateConfigurationPolicySelectQuery, policy.ID)))
+		currentPolicy, ok, err := scanFirstConfigurationPolicy(tx.Query(ctx, sqlf.Sprintf(updateConfigurationPolicySelectQuery, policyPatch.ID)))
 		if err != nil {
 			return err
 		}
@@ -315,25 +315,25 @@ func (s *store) UpdateConfigurationPolicy(ctx context.Context, policy shared.Con
 			return errUnknownConfigurationPolicy
 		}
 		if currentPolicy.Protected {
-			if policy.Name != currentPolicy.Name || policy.Type != currentPolicy.Type || policy.Pattern != currentPolicy.Pattern || policy.RetentionEnabled != currentPolicy.RetentionEnabled || policy.RetainIntermediateCommits != currentPolicy.RetainIntermediateCommits {
+			if policyPatch.Name != currentPolicy.Name || policyPatch.Type != currentPolicy.Type || policyPatch.Pattern != currentPolicy.Pattern || policyPatch.RetentionEnabled != currentPolicy.RetentionEnabled || policyPatch.RetainIntermediateCommits != currentPolicy.RetainIntermediateCommits {
 				return errIllegalConfigurationPolicyUpdate
 			}
 		}
 
 		return tx.Exec(ctx, sqlf.Sprintf(updateConfigurationPolicyQuery,
-			policy.Name,
+			policyPatch.Name,
 			repositoryPatterns,
-			policy.Type,
-			policy.Pattern,
-			policy.RetentionEnabled,
+			policyPatch.Type,
+			policyPatch.Pattern,
+			policyPatch.RetentionEnabled,
 			retentionDuration,
-			policy.RetainIntermediateCommits,
-			policy.PreciseIndexingEnabled,
-			policy.SyntacticIndexingEnabled,
+			policyPatch.RetainIntermediateCommits,
+			policyPatch.PreciseIndexingEnabled,
+			policyPatch.SyntacticIndexingEnabled,
 			indexCommitMaxAge,
-			policy.IndexIntermediateCommits,
-			policy.EmbeddingEnabled,
-			policy.ID,
+			policyPatch.IndexIntermediateCommits,
+			policyPatch.EmbeddingEnabled,
+			policyPatch.ID,
 		))
 	})
 }
@@ -361,7 +361,7 @@ FOR UPDATE
 `
 
 const updateConfigurationPolicyQuery = `
-UPDATE lsif_configuration_policies SET
+UPDATE lsif_configuration_policies p SET
 	name = %s,
 	repository_patterns = %s,
 	type = %s,
@@ -370,7 +370,7 @@ UPDATE lsif_configuration_policies SET
 	retention_duration_hours = %s,
 	retain_intermediate_commits = %s,
 	indexing_enabled = %s,
-	syntactic_indexing_enabled = %s,
+	syntactic_indexing_enabled = COALESCE(%s, p.syntactic_indexing_enabled),
 	index_commit_max_age_hours = %s,
 	index_intermediate_commits = %s,
 	embeddings_enabled = %s
