@@ -221,7 +221,9 @@ type RankingResponse {
     """
     ignored: [RankedItem!]!
 }
-
+"""
+EXPERIMENTAL: Re-ranker output item.
+"""
 type RankedItem {
     """
     Index of the context item in the input list.
