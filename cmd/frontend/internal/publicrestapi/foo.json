@@ -1,0 +1,19 @@
+{
+        "model": "gpt-4o-mini-2024-07-18",
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Respond with \"yes\" and nothing else"
+                    }
+                ]
+            }
+        ],
+        "temperature": 1,
+        "max_tokens": 256,
+        "top_p": 1,
+        "frequency_penalty": 0,
+        "presence_penalty": 0
+    }
