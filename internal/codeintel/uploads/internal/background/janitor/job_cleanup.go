@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/background"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -156,7 +156,7 @@ func NewExpiredUploadTraversalJanitor(
 
 func NewHardDeleter(
 	store store.Store,
-	lsifStore lsifstore.Store,
+	codeGraphDataStore codegraph.DataStore,
 	config *Config,
 	observationCtx *observation.Context,
 ) goroutine.BackgroundRoutine {
@@ -188,7 +188,7 @@ func NewHardDeleter(
 				}
 
 				ids := uploadIDs(uploads)
-				if err := lsifStore.DeleteLsifDataByUploadIds(ctx, ids...); err != nil {
+				if err := codeGraphDataStore.DeleteLsifDataByUploadIds(ctx, ids...); err != nil {
 					return 0, 0, err
 				}
 
@@ -242,7 +242,7 @@ func NewAuditLogJanitor(
 //
 
 func NewSCIPExpirationTask(
-	lsifStore lsifstore.Store,
+	dataStore codegraph.DataStore,
 	config *Config,
 	observationCtx *observation.Context,
 ) goroutine.BackgroundRoutine {
@@ -254,13 +254,13 @@ func NewSCIPExpirationTask(
 		Interval:    config.Interval,
 		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
-			return lsifStore.DeleteUnreferencedDocuments(ctx, config.UnreferencedDocumentBatchSize, config.UnreferencedDocumentMaxAge, time.Now())
+			return dataStore.DeleteUnreferencedDocuments(ctx, config.UnreferencedDocumentBatchSize, config.UnreferencedDocumentMaxAge, time.Now())
 		},
 	})
 }
 
 func NewAbandonedSchemaVersionsRecordsTask(
-	lsifStore lsifstore.Store,
+	dataStore codegraph.DataStore,
 	config *Config,
 	observationCtx *observation.Context,
 ) goroutine.BackgroundRoutine {
@@ -272,7 +272,7 @@ func NewAbandonedSchemaVersionsRecordsTask(
 		Interval:    config.AbandonedSchemaVersionsInterval,
 		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
-			numDeleted, err := lsifStore.DeleteAbandonedSchemaVersionsRecords(ctx)
+			numDeleted, err := dataStore.DeleteAbandonedSchemaVersionsRecords(ctx)
 			return numDeleted, numDeleted, err
 		},
 	})

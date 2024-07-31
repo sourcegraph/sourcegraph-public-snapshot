@@ -215,7 +215,7 @@ func (t *InstallationAuthenticator) Refresh(ctx context.Context, cli httpcli.Doe
 	}
 
 	if resp.StatusCode != http.StatusCreated {
-		return errors.Newf("failed to refresh: %d", resp.StatusCode)
+		return errors.Newf("failed to refresh the access token: %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 

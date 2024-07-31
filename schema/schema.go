@@ -1358,6 +1358,12 @@ type GerritConnection struct {
 	Password string `json:"password"`
 	// Projects description: An array of project strings specifying which Gerrit projects to mirror on Sourcegraph. If empty, all projects will be mirrored.
 	Projects []string `json:"projects,omitempty"`
+	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Gerrit repository. In the pattern, the variable "{host}" is replaced with the Gerrit host (such as gerrit.example.com), and "{name}" is replaced with the Gerrit repository's name (such as "myrepo").
+	//
+	// For example, if your Gerrit URL is https://gerrit.example.com and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of "{host}/{name}" would mean that a Gerrit repository at https://gerrit.example.com/myrepo is available on Sourcegraph at https://src.example.com/gerrit.example.com/myrepo.
+	//
+	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
+	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 	// Url description: URL of a Gerrit instance, such as https://gerrit.example.com.
 	Url string `json:"url"`
 	// Username description: A username for authentication with the Gerrit code host.
@@ -1751,8 +1757,12 @@ type ImportChangesets struct {
 type IntentDetectionAPI struct {
 	// Default description: Default URL for intent detection API
 	Default *BackendAPIConfig `json:"default,omitempty"`
+	// Edit description: Default URL for intent detection API
+	Edit *BackendAPIConfig `json:"edit,omitempty"`
 	// Extra description: Array of additional intent detection API configs
 	Extra []*BackendAPIConfig `json:"extra,omitempty"`
+	// Search description: Default URL for intent detection API
+	Search *BackendAPIConfig `json:"search,omitempty"`
 }
 
 // JVMPackagesConnection description: Configuration for a connection to a JVM packages repository.
@@ -3577,11 +3587,9 @@ type SiteModelConfiguration struct {
 type SourcegraphModelConfig struct {
 	// AccessToken description: The Cody gateway access token to use. If null, an access token will be automatically generated based on the product license.
 	AccessToken *string `json:"accessToken,omitempty"`
-	// Endpoint description: The Cody gateway URL to use for making LLM requests and discovering new LLM models. If null, the production URL for Cody gateway will be used.
+	// Endpoint description: The Cody gateway URL to use for making LLM requests. If null, the production URL for Cody gateway will be used.
 	Endpoint     *string       `json:"endpoint,omitempty"`
 	ModelFilters *ModelFilters `json:"modelFilters,omitempty"`
-	// PollingInterval description: The frequency at which Cody will poll Sourcegraph's servers for an updated list of models. e.g. '6h', '1d', or 'never'
-	PollingInterval *string `json:"pollingInterval,omitempty"`
 }
 
 // SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.

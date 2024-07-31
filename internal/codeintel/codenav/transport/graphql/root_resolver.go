@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/types"
+
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
@@ -25,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -41,7 +42,6 @@ type rootResolver struct {
 	uploadLoaderFactory            uploadsgraphql.UploadLoaderFactory
 	autoIndexJobLoaderFactory      uploadsgraphql.AutoIndexJobLoaderFactory
 	locationResolverFactory        *gitresolvers.CachedLocationResolverFactory
-	hunkCache                      codenav.HunkCache
 	indexResolverFactory           *uploadsgraphql.PreciseIndexResolverFactory
 	maximumIndexesPerMonikerSearch int
 	operations                     *operations
@@ -59,13 +59,7 @@ func NewRootResolver(
 	indexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
 	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
 	maxIndexSearch int,
-	hunkCacheSize int,
-) (resolverstubs.CodeNavServiceResolver, error) {
-	hunkCache, err := codenav.NewHunkCache(hunkCacheSize)
-	if err != nil {
-		return nil, err
-	}
-
+) resolverstubs.CodeNavServiceResolver {
 	return &rootResolver{
 		svc:                            svc,
 		autoindexingSvc:                autoindexingSvc,
@@ -76,10 +70,9 @@ func NewRootResolver(
 		autoIndexJobLoaderFactory:      autoIndexJobLoaderFactory,
 		indexResolverFactory:           indexResolverFactory,
 		locationResolverFactory:        locationResolverFactory,
-		hunkCache:                      hunkCache,
 		maximumIndexesPerMonikerSearch: maxIndexSearch,
 		operations:                     newOperations(observationCtx),
-	}, nil
+	}
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for query resolution
@@ -119,7 +112,6 @@ func (r *rootResolver) makeRequestState(ctx context.Context, repo *types.Repo, o
 		opts.Commit,
 		opts.Path,
 		r.maximumIndexesPerMonikerSearch,
-		r.hunkCache,
 	)
 	return &reqState, nil
 }
@@ -132,12 +124,10 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 		return nil, ErrNotEnabled
 	}
 
-	// TODO: The resolvers may be invoked in parallel. Is GitTreeTranslator
-	// concurrency-safe? It looks like
-	gitTreeTranslator := r.MakeGitTreeTranslator(opts.Repo, opts.Commit)
-	makeResolvers := func(prov resolverstubs.CodeGraphDataProvenance) ([]resolverstubs.CodeGraphDataResolver, error) {
+	gitTreeTranslator := r.MakeGitTreeTranslator(opts.Repo)
+	makeResolvers := func(prov codenav.CodeGraphDataProvenance) ([]resolverstubs.CodeGraphDataResolver, error) {
 		indexer := ""
-		if prov == resolverstubs.ProvenanceSyntactic {
+		if prov == codenav.ProvenanceSyntactic {
 			indexer = shared.SyntacticIndexer
 		}
 		uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, shared.UploadMatchingOptions{
@@ -161,14 +151,14 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 
 	provs := opts.Args.ProvenancesForSCIPData()
 	if provs.Precise {
-		preciseResolvers, err := makeResolvers(resolverstubs.ProvenancePrecise)
+		preciseResolvers, err := makeResolvers(codenav.ProvenancePrecise)
 		if len(preciseResolvers) != 0 || err != nil {
 			return &preciseResolvers, err
 		}
 	}
 
 	if provs.Syntactic {
-		syntacticResolvers, err := makeResolvers(resolverstubs.ProvenanceSyntactic)
+		syntacticResolvers, err := makeResolvers(codenav.ProvenanceSyntactic)
 		if len(syntacticResolvers) != 0 || err != nil {
 			return &syntacticResolvers, err
 		}
@@ -205,7 +195,7 @@ func (r *rootResolver) CodeGraphDataByID(ctx context.Context, rawID graphql.ID) 
 		/*document*/ nil,
 		/*documentRetrievalError*/ nil,
 		r.svc,
-		r.MakeGitTreeTranslator(repo, id.Commit),
+		r.MakeGitTreeTranslator(repo),
 		id.UploadData,
 		&opts,
 		id.CodeGraphDataProvenance,
@@ -259,7 +249,6 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	}
 	remainingCount := int(args.RemainingCount)
 	provsForSCIPData := args.Symbol.ProvenancesForSCIPData()
-	linesGetter := newCachedLinesGetter(r.gitserverClient, 5*1024*1024 /* 5MB */)
 	usageResolvers := []resolverstubs.UsageResolver{}
 
 	if provsForSCIPData.Precise {
@@ -274,7 +263,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 		SymbolRange: args.Range,
 	}
 
-	gitTreeTranslator := r.MakeGitTreeTranslator(&args.Repo, args.CommitID)
+	gitTreeTranslator := r.MakeGitTreeTranslator(&args.Repo)
 
 	var previousSyntacticSearch core.Option[codenav.PreviousSyntacticSearch]
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
@@ -292,7 +281,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 		} else {
 			for _, result := range syntacticResult.Matches {
-				usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo, args.CommitID, linesGetter))
+				usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo, args.CommitID))
 			}
 			numSyntacticResults = len(syntacticResult.Matches)
 			remainingCount = remainingCount - numSyntacticResults
@@ -312,7 +301,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 		} else {
 			for _, result := range results {
-				usageResolvers = append(usageResolvers, NewSearchBasedUsageResolver(result, args.Repo, args.CommitID, linesGetter))
+				usageResolvers = append(usageResolvers, NewSearchBasedUsageResolver(result, args.Repo, args.CommitID))
 			}
 		}
 	}
@@ -327,8 +316,8 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	return nil, errors.New("Not implemented yet")
 }
 
-func (r *rootResolver) MakeGitTreeTranslator(repo *sgtypes.Repo, baseCommit api.CommitID) codenav.GitTreeTranslator {
-	return codenav.NewGitTreeTranslator(r.gitserverClient, &codenav.TranslationBase{repo, baseCommit}, r.hunkCache)
+func (r *rootResolver) MakeGitTreeTranslator(repo *sgtypes.Repo) codenav.GitTreeTranslator {
+	return codenav.NewGitTreeTranslator(r.gitserverClient, *repo)
 }
 
 // gitBlobLSIFDataResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
@@ -417,7 +406,7 @@ type codeGraphDataResolver struct {
 	gitTreeTranslator codenav.GitTreeTranslator
 	upload            UploadData
 	opts              *resolverstubs.CodeGraphDataOpts
-	provenance        resolverstubs.CodeGraphDataProvenance
+	provenance        codenav.CodeGraphDataProvenance
 
 	// O11y
 	operations *operations
@@ -464,7 +453,7 @@ func newCodeGraphDataResolver(
 	gitTreeTranslator codenav.GitTreeTranslator,
 	upload shared.CompletedUpload,
 	opts *resolverstubs.CodeGraphDataOpts,
-	provenance resolverstubs.CodeGraphDataProvenance,
+	provenance codenav.CodeGraphDataProvenance,
 	operations *operations,
 ) resolverstubs.CodeGraphDataResolver {
 	return &codeGraphDataResolver{
@@ -490,7 +479,7 @@ type CodeGraphDataID struct {
 	api.RepoID
 	Commit api.CommitID
 	Path   string
-	resolverstubs.CodeGraphDataProvenance
+	codenav.CodeGraphDataProvenance
 }
 
 func (c *codeGraphDataResolver) tryRetrieveDocument(ctx context.Context) (*scip.Document, error) {
@@ -498,7 +487,7 @@ func (c *codeGraphDataResolver) tryRetrieveDocument(ctx context.Context) (*scip.
 	// from the database, we can avoid performing a JOIN between codeintel_scip_document_lookup
 	// and codeintel_scip_documents
 	c.retrievedDocument.Do(func() {
-		c.document, c.documentRetrievalError = c.svc.SCIPDocument(ctx, c.gitTreeTranslator, c.upload, c.opts.Path)
+		c.document, c.documentRetrievalError = c.svc.SCIPDocument(ctx, c.gitTreeTranslator, c.upload, c.opts.Commit, c.opts.Path)
 	})
 	return c.document, c.documentRetrievalError
 }
@@ -515,7 +504,7 @@ func (c *codeGraphDataResolver) ID() graphql.ID {
 	return relay.MarshalID(resolverstubs.CodeGraphDataIDKind, dataID)
 }
 
-func (c *codeGraphDataResolver) Provenance(_ context.Context) (resolverstubs.CodeGraphDataProvenance, error) {
+func (c *codeGraphDataResolver) Provenance(_ context.Context) (codenav.CodeGraphDataProvenance, error) {
 	return c.provenance, nil
 }
 

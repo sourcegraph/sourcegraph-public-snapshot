@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/dev/sg/sams"
+	"github.com/sourcegraph/sourcegraph/dev/sg/tail"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -318,6 +319,7 @@ var sg = &cli.App{
 		srcCommand,
 		srcInstanceCommand,
 		imagesCommand,
+		tail.Command,
 
 		// Company
 		teammateCommand,

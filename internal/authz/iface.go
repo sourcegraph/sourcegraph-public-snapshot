@@ -109,7 +109,7 @@ type ExternalUserPermissions struct {
 	// SubRepoPermissions denotes sub-repository content access control rules where
 	// relevant. If no corresponding entry for an Exacts repo exists in SubRepoPermissions,
 	// it can be safely assumed that access to the entire repo is available.
-	SubRepoPermissions map[extsvc.RepoID]*SubRepoPermissions
+	SubRepoPermissions map[extsvc.RepoID]*SubRepoPermissionsWithIPs
 }
 
 // FetchPermsOptions declares options when performing permissions sync.

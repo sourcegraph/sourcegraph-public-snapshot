@@ -115,7 +115,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 					pipeline.AddStep(":bazel::desktop_computer: bazel "+bzlCmd,
 						bk.Key("bazel-do"),
 						bk.Agent("queue", AspectWorkflows.QueueDefault),
-						bk.Cmd(bazelCmd(bzlCmd)),
+						bk.Cmd(bazelCmd(bzlCmd+" --profile=/tmp/bazel-do-profile.gz")),
+						bk.ArtifactPaths("/tmp/bazel-do-profile.gz"),
 					)
 				})
 				break
@@ -274,6 +275,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		)
 	case runtype.PromoteRelease:
 		ops = operations.NewSet(
+			checkSecurityApproval(c),
+			wait,
 			releasePromoteImages(c),
 			wait,
 			releaseTestOperation(c),

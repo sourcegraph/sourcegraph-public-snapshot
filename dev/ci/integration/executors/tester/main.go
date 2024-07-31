@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	batchesstore "github.com/sourcegraph/sourcegraph/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -343,9 +342,6 @@ var expectedState = gqltestutil.BatchSpecDeep{
 }
 
 func initDB(logger log.Logger) (database.DB, error) {
-	// This call to SetProviders is here so that calls to GetProviders don't block.
-	authz.SetProviders(true, []authz.Provider{})
-
 	obsCtx := observation.TestContext
 	obsCtx.Logger = logger
 	sqlDB, err := connections.RawNewFrontendDB(&obsCtx, "postgres://sg@127.0.0.1:5433/sg", "")

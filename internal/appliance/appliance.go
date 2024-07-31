@@ -5,6 +5,7 @@ import (
 
 	"dario.cat/mergo"
 	"golang.org/x/crypto/bcrypt"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -25,10 +26,11 @@ type Appliance struct {
 
 	client                 client.Client
 	namespace              string
-	status                 Status
+	status                 config.Status
 	sourcegraph            *config.Sourcegraph
 	releaseRegistryClient  *releaseregistry.Client
 	latestSupportedVersion string
+	noResourceRestrictions bool
 	logger                 log.Logger
 
 	// Embed the UnimplementedApplianceServiceServer structs to ensure forwards compatibility (if the service is
@@ -40,7 +42,6 @@ type Appliance struct {
 const (
 	// Secret and key names
 	dataSecretName                   = "appliance-data"
-	dataSecretJWTSigningKeyKey       = "jwt-signing-key"
 	dataSecretEncryptedPasswordKey   = "encrypted-admin-password"
 	initialPasswordSecretName        = "appliance-password"
 	initialPasswordSecretPasswordKey = "password"
@@ -51,6 +52,7 @@ func NewAppliance(
 	relregClient *releaseregistry.Client,
 	latestSupportedVersion string,
 	namespace string,
+	noResourceRestrictions bool,
 	logger log.Logger,
 ) (*Appliance, error) {
 	app := &Appliance{
@@ -58,7 +60,8 @@ func NewAppliance(
 		releaseRegistryClient:  relregClient,
 		latestSupportedVersion: latestSupportedVersion,
 		namespace:              namespace,
-		status:                 StatusInstall,
+		status:                 config.StatusInstall,
+		noResourceRestrictions: noResourceRestrictions,
 		sourcegraph:            &config.Sourcegraph{},
 		logger:                 logger,
 	}
@@ -138,7 +141,7 @@ func (a *Appliance) GetCurrentVersion(ctx context.Context) string {
 	return a.sourcegraph.Status.CurrentVersion
 }
 
-func (a *Appliance) GetCurrentStatus(ctx context.Context) Status {
+func (a *Appliance) GetCurrentStatus(ctx context.Context) config.Status {
 	return a.status
 }
 
@@ -153,27 +156,29 @@ func (a *Appliance) reconcileConfigMap(ctx context.Context, configMap *corev1.Co
 				return errors.Wrap(err, "failed to marshal configmap yaml")
 			}
 
-			existingCfgMap.Name = config.ConfigmapName
-			existingCfgMap.Namespace = a.namespace
+			cfgMap := &corev1.ConfigMap{}
+			cfgMap.Name = config.ConfigmapName
+			cfgMap.Namespace = a.namespace
 
-			existingCfgMap.Labels = map[string]string{
+			cfgMap.Labels = map[string]string{
 				"deploy": "sourcegraph",
 			}
 
-			existingCfgMap.Annotations = map[string]string{
+			cfgMap.Annotations = map[string]string{
 				// required annotation for our controller filter.
 				config.AnnotationKeyManaged: "true",
+				config.AnnotationKeyStatus:  string(config.StatusUnknown),
 				config.AnnotationConditions: "",
 			}
 
 			if configMap.ObjectMeta.Annotations != nil {
-				existingCfgMap.ObjectMeta.Annotations = configMap.ObjectMeta.Annotations
+				cfgMap.ObjectMeta.Annotations = configMap.ObjectMeta.Annotations
 			}
 
-			existingCfgMap.Immutable = pointers.Ptr(false)
-			existingCfgMap.Data = map[string]string{"spec": string(spec)}
+			cfgMap.Immutable = pointers.Ptr(false)
+			cfgMap.Data = map[string]string{"spec": string(spec)}
 
-			return a.client.Create(ctx, existingCfgMap)
+			return a.client.Create(ctx, cfgMap)
 		}
 
 		return errors.Wrap(err, "getting configmap")
@@ -185,4 +190,50 @@ func (a *Appliance) reconcileConfigMap(ctx context.Context, configMap *corev1.Co
 	}
 
 	return a.client.Update(ctx, existingCfgMap)
+}
+
+// isSourcegraphFrontendReady is a "health check" that is used to be able to know when our backing sourcegraph
+// deployment is ready. This is a "quick and dirty" function and should be replaced with a more comprehensive
+// health check in the very near future.
+func (a *Appliance) isSourcegraphFrontendReady(ctx context.Context) (bool, error) {
+	frontendDeploymentName := types.NamespacedName{Name: "sourcegraph-frontend", Namespace: a.namespace}
+	frontendDeployment := &appsv1.Deployment{}
+	if err := a.client.Get(ctx, frontendDeploymentName, frontendDeployment); err != nil {
+		// If the frontend deployment is not found, we can assume it's not ready
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "fetching frontend deployment")
+	}
+
+	return IsObjectReady(frontendDeployment)
+}
+
+func (a *Appliance) getStatus(ctx context.Context) (config.Status, error) {
+	configMapName := types.NamespacedName{Name: config.ConfigmapName, Namespace: a.namespace}
+	configMap := &corev1.ConfigMap{}
+	if err := a.client.Get(ctx, configMapName, configMap); err != nil {
+		if apierrors.IsNotFound(err) {
+			return config.StatusUnknown, nil
+		}
+		return config.StatusUnknown, err
+	}
+
+	return config.Status(configMap.ObjectMeta.Annotations[config.AnnotationKeyStatus]), nil
+}
+
+func (a *Appliance) setStatus(ctx context.Context, status config.Status) error {
+	configMapName := types.NamespacedName{Name: config.ConfigmapName, Namespace: a.namespace}
+	configMap := &corev1.ConfigMap{}
+	if err := a.client.Get(ctx, configMapName, configMap); err != nil {
+		return err
+	}
+
+	configMap.Annotations[config.AnnotationKeyStatus] = string(status)
+	err := a.client.Update(ctx, configMap)
+	if err != nil {
+		return errors.Wrap(err, "failed set status")
+	}
+
+	return nil
 }

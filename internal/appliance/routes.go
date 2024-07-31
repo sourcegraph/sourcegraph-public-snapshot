@@ -18,7 +18,7 @@ func (a *Appliance) Routes() *mux.Router {
 	r.Handle("/api/v1/appliance/status", a.getStatusJSONHandler()).Methods("GET")
 	r.Handle("/api/v1/appliance/status", a.postStatusJSONHandler()).Methods("POST")
 	r.Handle("/api/v1/appliance/install/progress", a.getInstallProgressJSONHandler()).Methods("GET")
-	r.Handle("/api/v1/appliance/maintenance/status", a.getMaintenanceStatusHandler()).Methods("GET")
+	r.Handle("/api/v1/appliance/maintenance/serviceStatuses", a.getMaintenanceStatusHandler()).Methods("GET")
 
 	return r
 }

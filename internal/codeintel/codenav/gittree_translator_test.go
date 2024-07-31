@@ -14,14 +14,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var mockTranslationBase = TranslationBase{
-	Repo:   &sgtypes.Repo{ID: 50},
-	Commit: "deadbeef1",
+var mockRepo sgtypes.Repo = sgtypes.Repo{ID: 50}
+
+func rp(path string) core.RepoRelPath {
+	return core.NewRepoRelPathUnchecked(path)
 }
 
 func diffMock(diff string) gitserver.Client {
@@ -34,15 +35,15 @@ func diffMock(diff string) gitserver.Client {
 
 func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 	client := diffMock(hugoDiff)
-	posIn := shared.Position{Line: 302, Character: 15}
-	args := &mockTranslationBase
+	posIn := scip.Position{Line: 302, Character: 15}
 
-	adjuster := NewGitTreeTranslator(client, args, nil)
-	posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", "foo/bar.go", posIn, false)
+	adjuster := NewGitTreeTranslator(client, mockRepo)
+	posOutOpt, err := adjuster.TranslatePosition(context.Background(), "deadbeef1", "deadbeef2", rp("resources/image.go"), posIn)
 
 	require.NoError(t, err)
+	posOut, ok := posOutOpt.Get()
 	require.Truef(t, ok, "expected translation to succeed")
-	expectedPos := shared.Position{Line: 294, Character: 15}
+	expectedPos := scip.Position{Line: 294, Character: 15}
 	if diff := cmp.Diff(expectedPos, posOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
 	}
@@ -50,13 +51,13 @@ func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 
 func TestGetTargetCommitPositionFromSourcePositionEmptyDiff(t *testing.T) {
 	client := diffMock("")
-	posIn := shared.Position{Line: 10, Character: 15}
-	args := &mockTranslationBase
+	posIn := scip.Position{Line: 10, Character: 15}
 
-	adjuster := NewGitTreeTranslator(client, args, nil)
-	posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", "foo/bar.go", posIn, false)
+	adjuster := NewGitTreeTranslator(client, mockRepo)
+	posOutOpt, err := adjuster.TranslatePosition(context.Background(), "deadbeef1", "deadbeef2", rp("resources/image.go"), posIn)
 
 	require.NoError(t, err)
+	posOut, ok := posOutOpt.Get()
 	require.Truef(t, ok, "expected translation to succeed")
 	if diff := cmp.Diff(posOut, posIn); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
@@ -65,15 +66,15 @@ func TestGetTargetCommitPositionFromSourcePositionEmptyDiff(t *testing.T) {
 
 func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 	client := diffMock(hugoDiff)
-	posIn := shared.Position{Line: 302, Character: 15}
-	args := &mockTranslationBase
+	posIn := scip.Position{Line: 302, Character: 15}
 
-	adjuster := NewGitTreeTranslator(client, args, nil)
-	posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", "foo/bar.go", posIn, true)
+	adjuster := NewGitTreeTranslator(client, mockRepo)
+	posOutOpt, err := adjuster.TranslatePosition(context.Background(), "deadbeef2", "deadbeef1", rp("resources/image.go"), posIn)
 
 	require.NoError(t, err)
+	posOut, ok := posOutOpt.Get()
 	require.Truef(t, ok, "expected translation to succeed")
-	expectedPos := shared.Position{Line: 294, Character: 15}
+	expectedPos := scip.Position{Line: 294, Character: 15}
 	if diff := cmp.Diff(expectedPos, posOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
 	}
@@ -81,20 +82,20 @@ func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 
 func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
 	client := diffMock(hugoDiff)
-	rIn := shared.Range{
-		Start: shared.Position{Line: 302, Character: 15},
-		End:   shared.Position{Line: 305, Character: 20},
+	rIn := scip.Range{
+		Start: scip.Position{Line: 302, Character: 15},
+		End:   scip.Position{Line: 305, Character: 20},
 	}
-	args := &mockTranslationBase
 
-	adjuster := NewGitTreeTranslator(client, args, nil)
-	rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "foo/bar.go", rIn, false)
+	adjuster := NewGitTreeTranslator(client, mockRepo)
+	rOutOpt, err := adjuster.TranslateRange(context.Background(), "deadbeef1", "deadbeef2", rp("resources/image.go"), rIn)
 
 	require.NoError(t, err)
+	rOut, ok := rOutOpt.Get()
 	require.Truef(t, ok, "expected translation to succeed")
-	expectedRange := shared.Range{
-		Start: shared.Position{Line: 294, Character: 15},
-		End:   shared.Position{Line: 297, Character: 20},
+	expectedRange := scip.Range{
+		Start: scip.Position{Line: 294, Character: 15},
+		End:   scip.Position{Line: 297, Character: 20},
 	}
 	if diff := cmp.Diff(expectedRange, rOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
@@ -103,16 +104,16 @@ func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
 
 func TestGetTargetCommitRangeFromSourceRangeEmptyDiff(t *testing.T) {
 	client := diffMock("")
-	rIn := shared.Range{
-		Start: shared.Position{Line: 302, Character: 15},
-		End:   shared.Position{Line: 305, Character: 20},
+	rIn := scip.Range{
+		Start: scip.Position{Line: 302, Character: 15},
+		End:   scip.Position{Line: 305, Character: 20},
 	}
-	args := &mockTranslationBase
 
-	adjuster := NewGitTreeTranslator(client, args, nil)
-	rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "foo/bar.go", rIn, false)
+	adjuster := NewGitTreeTranslator(client, mockRepo)
+	rOutOpt, err := adjuster.TranslateRange(context.Background(), "deadbeef1", "deadbeef2", rp("resources/image.go"), rIn)
 
 	require.NoError(t, err)
+	rOut, ok := rOutOpt.Get()
 	require.Truef(t, ok, "expected translation to succeed")
 	if diff := cmp.Diff(rOut, rIn); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
@@ -121,20 +122,20 @@ func TestGetTargetCommitRangeFromSourceRangeEmptyDiff(t *testing.T) {
 
 func TestGetTargetCommitRangeFromSourceRangeReverse(t *testing.T) {
 	client := diffMock(hugoDiff)
-	rIn := shared.Range{
-		Start: shared.Position{Line: 302, Character: 15},
-		End:   shared.Position{Line: 305, Character: 20},
+	rIn := scip.Range{
+		Start: scip.Position{Line: 302, Character: 15},
+		End:   scip.Position{Line: 305, Character: 20},
 	}
-	args := &mockTranslationBase
 
-	adjuster := NewGitTreeTranslator(client, args, nil)
-	rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "foo/bar.go", rIn, true)
+	adjuster := NewGitTreeTranslator(client, mockRepo)
+	rOutOpt, err := adjuster.TranslateRange(context.Background(), "deadbeef2", "deadbeef1", rp("resources/image.go"), rIn)
 
 	require.NoError(t, err)
+	rOut, ok := rOutOpt.Get()
 	require.Truef(t, ok, "expected translation to succeed")
-	expectedRange := shared.Range{
-		Start: shared.Position{Line: 294, Character: 15},
-		End:   shared.Position{Line: 297, Character: 20},
+	expectedRange := scip.Range{
+		Start: scip.Position{Line: 294, Character: 15},
+		End:   scip.Position{Line: 297, Character: 20},
 	}
 	if diff := cmp.Diff(expectedRange, rOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)

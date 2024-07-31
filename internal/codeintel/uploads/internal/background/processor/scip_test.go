@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -56,9 +56,9 @@ func implCorrelateSCIP(t *testing.T, testIndexPath string, indexSizeLimit int64)
 	if err != nil {
 		t.Fatalf("unexpected error processing SCIP: %s", err)
 	}
-	var documents []lsifstore.ProcessedSCIPDocument
-	packageData := lsifstore.ProcessedPackageData{}
-	err = scipDataStream.DocumentIterator.VisitAllDocuments(ctx, log.NoOp(), &packageData, func(d lsifstore.ProcessedSCIPDocument) error {
+	var documents []codegraph.ProcessedSCIPDocument
+	packageData := codegraph.ProcessedPackageData{}
+	err = scipDataStream.DocumentIterator.VisitAllDocuments(ctx, log.NoOp(), &packageData, func(d codegraph.ProcessedSCIPDocument) error {
 		documents = append(documents, d)
 		return nil
 	})
@@ -71,7 +71,7 @@ func implCorrelateSCIP(t *testing.T, testIndexPath string, indexSizeLimit int64)
 	}
 
 	// Check metadata values
-	expectedMetadata := lsifstore.ProcessedMetadata{
+	expectedMetadata := codegraph.ProcessedMetadata{
 		TextDocumentEncoding: "UTF8",
 		ToolName:             "scip-typescript",
 		ToolVersion:          "0.3.3",
@@ -86,7 +86,7 @@ func implCorrelateSCIP(t *testing.T, testIndexPath string, indexSizeLimit int64)
 	if len(documents) != 11 {
 		t.Fatalf("unexpected number of documents. want=%d have=%d", 11, len(documents))
 	} else {
-		documentMap := map[string]lsifstore.ProcessedSCIPDocument{}
+		documentMap := map[string]codegraph.ProcessedSCIPDocument{}
 		for _, document := range documents {
 			documentMap[document.Path] = document
 		}

@@ -21,7 +21,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -39,7 +39,7 @@ import (
 func NewUploadProcessorWorker(
 	observationCtx *observation.Context,
 	store store.Store,
-	lsifStore lsifstore.Store,
+	codeGraphDataStore codegraph.DataStore,
 	gitserverClient gitserver.Client,
 	repoStore RepoStore,
 	workerStore dbworkerstore.Store[uploadsshared.Upload],
@@ -51,7 +51,7 @@ func NewUploadProcessorWorker(
 	handler := NewUploadProcessorHandler(
 		observationCtx,
 		store,
-		lsifStore,
+		codeGraphDataStore,
 		gitserverClient,
 		repoStore,
 		workerStore,
@@ -73,16 +73,16 @@ func NewUploadProcessorWorker(
 }
 
 type handler struct {
-	store           store.Store
-	lsifStore       lsifstore.Store
-	gitserverClient gitserver.Client
-	repoStore       RepoStore
-	workerStore     dbworkerstore.Store[uploadsshared.Upload]
-	uploadStore     object.Storage
-	handleOp        *observation.Operation
-	budgetRemaining int64
-	enableBudget    bool
-	uploadSizeGauge prometheus.Gauge
+	store              store.Store
+	codeGraphDataStore codegraph.DataStore
+	gitserverClient    gitserver.Client
+	repoStore          RepoStore
+	workerStore        dbworkerstore.Store[uploadsshared.Upload]
+	uploadStore        object.Storage
+	handleOp           *observation.Operation
+	budgetRemaining    int64
+	enableBudget       bool
+	uploadSizeGauge    prometheus.Gauge
 }
 
 var (
@@ -94,7 +94,7 @@ var (
 func NewUploadProcessorHandler(
 	observationCtx *observation.Context,
 	store store.Store,
-	lsifStore lsifstore.Store,
+	dataStore codegraph.DataStore,
 	gitserverClient gitserver.Client,
 	repoStore RepoStore,
 	workerStore dbworkerstore.Store[uploadsshared.Upload],
@@ -104,16 +104,16 @@ func NewUploadProcessorHandler(
 	operations := newWorkerOperations(observationCtx)
 
 	return &handler{
-		store:           store,
-		lsifStore:       lsifStore,
-		gitserverClient: gitserverClient,
-		repoStore:       repoStore,
-		workerStore:     workerStore,
-		uploadStore:     uploadStore,
-		handleOp:        operations.uploadProcessor,
-		budgetRemaining: budgetMax,
-		enableBudget:    budgetMax > 0,
-		uploadSizeGauge: operations.uploadSizeGauge,
+		store:              store,
+		codeGraphDataStore: dataStore,
+		gitserverClient:    gitserverClient,
+		repoStore:          repoStore,
+		workerStore:        workerStore,
+		uploadStore:        uploadStore,
+		handleOp:           operations.uploadProcessor,
+		budgetRemaining:    budgetMax,
+		enableBudget:       budgetMax > 0,
+		uploadSizeGauge:    operations.uploadSizeGauge,
 	}
 }
 
@@ -297,7 +297,7 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 
 		// Note: this is writing to a different database than the block below, so we need to use a
 		// different transaction context (managed by the writeData function).
-		pkgData, err := writeSCIPDocuments(ctx, logger, h.lsifStore, upload, scipDataStream, trace)
+		pkgData, err := writeSCIPDocuments(ctx, logger, h.codeGraphDataStore, upload, scipDataStream, trace)
 		if err != nil {
 			if isUniqueConstraintViolation(err) {
 				// If this is a unique constraint violation, then we've previously processed this same

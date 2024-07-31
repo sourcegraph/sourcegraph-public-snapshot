@@ -2915,7 +2915,7 @@ func TestRepoStore_Metadata(t *testing.T) {
 		},
 	}
 
-	md, err := r.Metadata(ctx, 1, 2)
+	md, err := r.Metadata(actor.WithInternalActor(ctx), 1, 2)
 	require.NoError(t, err)
 	require.ElementsMatch(t, expected, md)
 }

@@ -17,7 +17,7 @@ func init() {
 }
 
 func validateAuthzProviders(cfg conftypes.SiteConfigQuerier, db database.DB) (problems conf.Problems) {
-	_, providers, seriousProblems, warnings, _ := providers.ProvidersFromConfig(context.Background(), cfg, db)
+	providers, seriousProblems, warnings, _ := providers.ProvidersFromConfig(context.Background(), cfg, db)
 	problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
 
 	// Validating the connection may make a cross service call, so we should use an

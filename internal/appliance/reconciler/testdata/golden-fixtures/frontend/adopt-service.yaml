@@ -478,8 +478,6 @@ resources:
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         app: sourcegraph-frontend
-        app.kubernetes.io/component: sourcegraph-frontend
-        deploy: sourcegraph
       name: sourcegraph-frontend
       namespace: NORMALIZED_FOR_TESTING
       ownerReferences:
@@ -505,7 +503,7 @@ resources:
           protocol: TCP
           targetPort: http
       selector:
-        app: sourcegraph-frontend
+        app: sourcegraph-appliance
       sessionAffinity: None
       type: ClusterIP
     status:
@@ -557,7 +555,7 @@ resources:
         appliance.sourcegraph.com/adopted: "true"
         appliance.sourcegraph.com/configHash: d3eb623947fedba566dfc56adc4733ff5ef1b2887a5cb63d75dbc1df452b0b5c
       creationTimestamp: "2024-04-19T00:00:00Z"
-      generation: 2
+      generation: 1
       labels:
         deploy: sourcegraph
       name: sourcegraph-frontend
@@ -572,14 +570,16 @@ resources:
       resourceVersion: NORMALIZED_FOR_TESTING
       uid: NORMALIZED_FOR_TESTING
     spec:
+      ingressClassName: nginx
       rules:
-        - http:
+        - host: an-existing-hostname.com
+          http:
             paths:
               - backend:
                   service:
                     name: sourcegraph-frontend
                     port:
-                      number: 30080
+                      number: 30081
                 path: /
                 pathType: Prefix
     status:

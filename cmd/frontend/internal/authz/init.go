@@ -69,10 +69,9 @@ func Init(
 			return nil
 		}
 
-		_, _, _, _, invalidConnections := providers.ProvidersFromConfig(ctx, conf.Get(), db)
+		_, _, _, invalidConnections := providers.ProvidersFromConfig(ctx, conf.Get(), db)
 
-		// We currently support three types of authz providers: GitHub, GitLab and Bitbucket Server.
-		authzTypes := make(map[string]struct{}, 3)
+		authzTypes := map[string]struct{}{}
 		for _, conn := range invalidConnections {
 			authzTypes[conn] = struct{}{}
 		}
@@ -133,10 +132,9 @@ func Init(
 	})
 
 	go func() {
-		t := time.NewTicker(5 * time.Second)
-		for range t.C {
-			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
-			authz.SetProviders(allowAccessByDefault, authzProviders)
+		for range time.NewTicker(providers.RefreshInterval(conf.Get())).C {
+			authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
+			authz.SetProviders(authzProviders)
 		}
 	}()
 

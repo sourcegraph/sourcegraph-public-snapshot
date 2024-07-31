@@ -210,7 +210,6 @@ func (c *client) reqPage(ctx context.Context, url string, results any) (*PageTok
 		PageToken: &next,
 		Values:    results,
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -247,8 +246,9 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (code in
 	// If we still don't succeed after waiting a total of 5 min, we give up.
 	var resp *http.Response
 	sleepTime := 10 * time.Second
+	logger := log.Scoped("bitbucketcloud.Client")
 	for {
-		resp, err = oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth)
+		resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.Auth)
 		if resp != nil {
 			code = resp.StatusCode
 		}

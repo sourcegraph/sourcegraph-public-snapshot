@@ -45,12 +45,22 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 	})
 	defer conf.Mock(nil)
 	srpGetter := dbmocks.NewMockSubRepoPermsStore()
-	testSubRepoPerms := map[api.RepoName]authz.SubRepoPermissions{
+	testSubRepoPermsWithIP := map[api.RepoName]authz.SubRepoPermissionsWithIPs{
 		repo: {
-			Paths: []string{"/**", "-/app/**"},
+			Paths: []authz.PathWithIP{
+				{
+					Path: "/**",
+					IP:   "*",
+				},
+				{
+					Path: "-/app/**",
+					IP:   "*",
+				},
+			},
 		},
 	}
-	srpGetter.GetByUserFunc.SetDefaultReturn(testSubRepoPerms, nil)
+
+	srpGetter.GetByUserWithIPsFunc.SetDefaultReturn(testSubRepoPermsWithIP, nil)
 	checker := srp.NewSubRepoPermsClient(srpGetter)
 
 	source := gitserver.NewTestClientSource(t, GitserverAddresses)

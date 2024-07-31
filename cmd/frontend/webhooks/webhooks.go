@@ -3,7 +3,16 @@ package webhooks
 import (
 	"context"
 	"fmt"
+	"github.com/google/go-github/v55/github"
+	"github.com/sourcegraph/sourcegraph/internal/batches/service"
+	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
+	"github.com/sourcegraph/sourcegraph/internal/batches/store"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"net/http"
+	"net/url"
 	"sync"
 
 	"github.com/google/uuid"
@@ -48,14 +57,97 @@ func defaultHandlers() map[string]eventHandlers {
 	handlePing := func(_ context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, event any) error {
 		return nil
 	}
+	handleInstallation := func(ctx context.Context, db database.DB, _ extsvc.CodeHostBaseURL, event any) error {
+		e, ok := event.(*github.InstallationEvent)
+		if !ok {
+			return errors.New(fmt.Sprintf("expected *InstallationEvent, got %T", event))
+		}
+
+		baseURL, err := url.Parse(e.GetInstallation().GetHTMLURL())
+		if err != nil {
+			return err
+		}
+
+		app, err := db.GitHubApps().GetByAppID(ctx, int(e.GetInstallation().GetAppID()), fmt.Sprintf("%s://%s/", baseURL.Scheme, baseURL.Host))
+		if err != nil {
+			return err
+		}
+
+		installInfo, err := db.GitHubApps().Install(ctx, ghtypes.GitHubAppInstallation{
+			InstallationID:   int(e.GetInstallation().GetID()),
+			AppID:            app.ID,
+			URL:              e.GetInstallation().GetHTMLURL(),
+			AccountLogin:     e.GetInstallation().GetAccount().GetLogin(),
+			AccountAvatarURL: e.GetInstallation().GetAccount().GetAvatarURL(),
+			AccountURL:       e.GetInstallation().GetAccount().GetHTMLURL(),
+			AccountType:      e.GetInstallation().GetAccount().GetType(),
+		})
+
+		if err != nil {
+			return err
+		}
+
+		if app.Kind == ghtypes.UserCredentialGitHubAppKind || app.Kind == ghtypes.SiteCredentialGitHubAppKind {
+			if err := handleCredentialCreation(ctx, db, app, installInfo.AccountLogin); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
 	return map[string]eventHandlers{
 		extsvc.KindGitHub: map[string][]Handler{
-			pingEventType: {handlePing},
+			pingEventType:  {handlePing},
+			"installation": {handleInstallation},
 		},
 		extsvc.KindBitbucketServer: map[string][]Handler{
 			pingEventType: {handlePing},
 		},
 	}
+}
+
+func handleCredentialCreation(ctx context.Context, db database.DB, app *ghtypes.GitHubApp, owner string) error {
+	observationCtx := observation.NewContext(log.NoOp())
+	bstore := store.New(db, observationCtx, keyring.Default().BatchChangesCredentialKey)
+	svc := service.New(bstore)
+
+	// external service urls always end with a trailing slash. `url.JoinPath` ensures that's the case irrespective
+	// of whether the base URL ends with a trailing slash or not.
+	esu, err := url.JoinPath(app.BaseURL, "/")
+	if err != nil {
+		return errors.Newf("Unexpected error while creating external service url for github app: %s", err.Error())
+	}
+
+	if app.Kind == ghtypes.UserCredentialGitHubAppKind {
+		if _, err = svc.CreateBatchChangesUserCredential(
+			ctx,
+			sources.AuthenticationStrategyGitHubApp,
+			service.CreateBatchChangesUserCredentialArgs{
+				ExternalServiceURL:  esu,
+				ExternalServiceType: extsvc.VariantGitHub.AsType(),
+				GitHubAppKind:       app.Kind,
+				Username:            pointers.Ptr(owner),
+				GitHubAppID:         app.ID,
+				UserID:              int32(app.CreatedByUserId),
+			}); err != nil {
+			return errors.Wrapf(err, "Unexpected error while creating user credential for github app")
+		}
+	} else {
+		if _, err := svc.CreateBatchChangesSiteCredential(
+			ctx,
+			sources.AuthenticationStrategyGitHubApp,
+			service.CreateBatchChangesSiteCredentialArgs{
+				ExternalServiceURL:  esu,
+				ExternalServiceType: extsvc.VariantGitHub.AsType(),
+				GitHubAppKind:       app.Kind,
+				Username:            pointers.Ptr(owner),
+				GitHubAppID:         app.ID,
+			}); err != nil {
+			return errors.Wrapf(err, "Unexpected error while creating site credential for github app")
+		}
+	}
+
+	return nil
 }
 
 // Register associates a given event type(s) with the specified handler.
