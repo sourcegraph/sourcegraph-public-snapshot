@@ -1,5 +1,7 @@
 <script lang="ts">
+    import { allHotkey } from '$lib/fuzzyfinder/keys'
     import Icon from '$lib/Icon.svelte'
+    import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import { isLightTheme } from '$lib/theme'
     import Button from '$lib/wildcard/Button.svelte'
     import ProductStatusBadge from '$lib/wildcard/ProductStatusBadge.svelte'
@@ -41,8 +43,7 @@
             </div>
             <div>
                 <Icon icon={ILucideScanSearch} />
-                <!-- TODO: add keyboard shortcut here -->
-                <h5>Reworked fuzzy finder</h5>
+                <h5>Reworked fuzzy finder <KeyboardShortcut shortcut={allHotkey} /></h5>
                 <p>Find files and symbols quickly and easily with our whole new fuzzy finder.</p>
             </div>
         </div>
