@@ -437,7 +437,6 @@ func (r *Resolver) UrlMentionContext(ctx context.Context, args graphqlbackend.Ur
 	if err != nil {
 		return "", err
 	}
-	// TODO: add user agent
 
 	// TODO: is it safe to use the external client for arbitrary user-provided URLs?
 	// TODO: does this guarantee that we cannot hit internal endpoints?
@@ -465,6 +464,7 @@ func (r *Resolver) UrlMentionContext(ctx context.Context, args graphqlbackend.Ur
 	if idx := bytes.Index(content, []byte("</main>")); idx > 0 {
 		content = content[:idx+len("</main>")]
 	}
+	// Convert the HTML to text
 	textified := html2text.HTML2TextWithOptions(string(content), html2text.WithUnixLineBreaks())
 	textified = textified[:min(len(textified), 14000)] // arbitrarily truncate
 	return textified, nil
