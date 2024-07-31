@@ -229,6 +229,6 @@ func (u *usageRangeResolver) Path() string {
 
 func (u *usageRangeResolver) Range() resolverstubs.RangeResolver {
 	return &rangeResolver{
-		lspRange: convertRange(shared.TranslateRange(u.range_)),
+		range_: u.range_,
 	}
 }
