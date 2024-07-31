@@ -231,6 +231,8 @@ type startedCmd struct {
 
 	outEg  *pool.ErrorPool
 	result chan error
+
+	finished bool
 }
 
 type commandOptions struct {
@@ -428,6 +430,11 @@ func (sc *startedCmd) getOutputWriter(ctx context.Context, opts *outputOptions, 
 }
 
 func (sc *startedCmd) Exit() <-chan error {
+	// TODO: Explain what's going on here.
+	if sc.finished {
+		fakeChan := make(<-chan error)
+		return fakeChan
+	}
 	if sc.result == nil {
 		sc.result = make(chan error)
 		go func() {
@@ -440,6 +447,7 @@ func (sc *startedCmd) Exit() <-chan error {
 
 func (sc *startedCmd) Wait() error {
 	err := sc.wait()
+	sc.finished = true
 	var e *exec.ExitError
 	if errors.As(err, &e) {
 		err = runErr{

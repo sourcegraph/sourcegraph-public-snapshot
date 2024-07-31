@@ -18,6 +18,7 @@ var ErrHeadBaseMismatch = errors.New("headRepository does not match baseReposito
 // ParseChangesetSpec unmarshals the RawSpec into Spec and validates it against
 // the ChangesetSpec schema and does additional semantic validation.
 func ParseChangesetSpec(rawSpec []byte) (*ChangesetSpec, error) {
+	println("djsds")
 	spec := &ChangesetSpec{}
 	err := jsonutil.UnmarshalValidate(schema.ChangesetSpecJSON, rawSpec, &spec)
 	if err != nil {

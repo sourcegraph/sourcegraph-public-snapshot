@@ -1220,6 +1220,15 @@ commands:
         GuoTldaJ9rF8KxfsjEKkr+ccnxrgDYcfNjKmcXu5lBJGruSom7Uw
         -----END RSA PRIVATE KEY-----
 
+  bolajithree:
+    cmd: |
+      echo "i am here"
+    install: |
+      echo "echo installing"
+    watch:
+      - foo
+    continueWatchOnExit: true
+
   sourcegraph-accounts-web:
     description: |
       Run SAMS from a clone of https://github.com/sourcegraph/sourcegraph-accounts
@@ -1342,16 +1351,6 @@ bazelCommands:
       TMPDIR: $HOME/.sourcegraph/indexer-temp
 
 dockerCommands:
-  batcheshelper-builder:
-    # Nothing to run for this, we just want to re-run the install script every time.
-    cmd: exit 0
-    target: //cmd/batcheshelper:image_tarball
-    image: batcheshelper:candidate
-    env:
-      # TODO: This is required but should only be set on M1 Macs.
-      PLATFORM: linux/arm64
-    continueWatchOnExit: true
-
   grafana:
     target: //docker-images/grafana:image_tarball
     docker:
@@ -1527,6 +1526,10 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - caddy
+
+  jh:
+    commands:
+      - bolajithree
 
   # If you modify this command set, please consider also updating the dotcom runset.
   enterprise: &enterprise_set
@@ -1864,6 +1867,7 @@ commandsets:
       - blobstore
       - batches-executor
       - batcheshelper-builder
+#    dockerCommands:
 
   batches-kubernetes:
     checks:
