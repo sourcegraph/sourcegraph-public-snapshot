@@ -36,6 +36,7 @@ go_test(
     name = "graphql_test",
     srcs = ["root_resolver_test.go"],
     embed = [":graphql"],
+    tags = ["requires-network"],
     deps = [
         "//internal/codeintel/policies",
         "//internal/codeintel/resolvers",
