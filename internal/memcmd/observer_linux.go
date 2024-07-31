@@ -90,7 +90,7 @@ func NewLinuxObserver(ctx context.Context, cmd *exec.Cmd, samplingInterval time.
 	}, nil
 }
 
-func (l *linuxObserver) MaxMemoryUsage() (bytesize.Bytes, error) {
+func (l *linuxObserver) MaxMemoryUsage() (bytesize.Size, error) {
 	select {
 	case <-l.started:
 	default:
@@ -102,7 +102,7 @@ func (l *linuxObserver) MaxMemoryUsage() (bytesize.Bytes, error) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 
-	return bytesize.Bytes(l.highestMemoryUsageBytes), l.errs
+	return bytesize.Size(l.highestMemoryUsageBytes), l.errs
 }
 
 // Start starts the observer.

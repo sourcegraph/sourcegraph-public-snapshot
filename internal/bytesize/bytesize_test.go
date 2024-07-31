@@ -10,7 +10,7 @@ import (
 func TestParse(t *testing.T) {
 	tests := []struct {
 		input string
-		want  Bytes
+		want  Size
 	}{
 		// Happy paths
 		{"1 B", 1},
@@ -107,8 +107,8 @@ func TestReadNumber(t *testing.T) {
 func TestMultiplication(t *testing.T) {
 	tests := []struct {
 		inputNumber int
-		inputUnit   Bytes
-		want        Bytes
+		inputUnit   Size
+		want        Size
 	}{
 		{10, B, 10},
 		{25, KB, 25_000},
@@ -116,7 +116,7 @@ func TestMultiplication(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got := Bytes(tt.inputNumber) * tt.inputUnit
+		got := Size(tt.inputNumber) * tt.inputUnit
 		if got != tt.want {
 			t.Errorf("FromUnit(%d, %v) = %d, want %d", tt.inputNumber, tt.inputUnit, got, tt.want)
 		}

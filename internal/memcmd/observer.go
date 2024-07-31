@@ -40,7 +40,7 @@ type Observer interface {
 	//
 	// See the individual observer implementations for more details on how memory
 	// usage is calculated.
-	MaxMemoryUsage() (bytes bytesize.Bytes, err error)
+	MaxMemoryUsage() (bytes bytesize.Size, err error)
 }
 
 type noopObserver struct {
@@ -63,7 +63,7 @@ func (o *noopObserver) Stop() {
 	})
 }
 
-func (o *noopObserver) MaxMemoryUsage() (bytesize.Bytes, error) {
+func (o *noopObserver) MaxMemoryUsage() (bytesize.Size, error) {
 	select {
 	case <-o.started:
 	default:
