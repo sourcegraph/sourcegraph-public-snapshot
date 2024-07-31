@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -47,19 +48,14 @@ func (u *usageConnectionResolver) PageInfo() resolverstubs.PageInfo {
 //     as the iterator represented by next.
 //   - If the contents were not found, such as due to a network error,
 //     then the corresponding element in the returned slice will be nil.
-func getContentsBatched(ctx context.Context, gitserverClient gitserver.Client, next func() core.Option[types.RepoCommitPath]) ([][]string, error) {
+func getContentsBatched(ctx context.Context, gitserverClient gitserver.Client, iter collections.IterFunc[types.RepoCommitPath]) ([][]string, error) {
 	neededContents := map[types.RepoCommitPath][]int{}
 	type result struct {
 		splitContents []string
 	}
 	results := xsync.NewMapOf[types.RepoCommitPath, result]()
 	myPool := pool.New().WithMaxGoroutines(4).WithContext(ctx)
-	i := 0
-	for optRcp := next(); ; i++ {
-		rcp, ok := optRcp.Get()
-		if !ok {
-			break
-		}
+	nIter := iter.ForEach(func(i int, rcp types.RepoCommitPath) {
 		if ints, ok := neededContents[rcp]; ok {
 			neededContents[rcp] = append(ints, i)
 		} else {
@@ -73,10 +69,9 @@ func getContentsBatched(ctx context.Context, gitserverClient gitserver.Client, n
 				return err
 			})
 		}
-		optRcp = next()
-	}
+	})
 	err := myPool.Wait()
-	out := make([][]string, i) // deliberate nil-initialization
+	out := make([][]string, nIter) // deliberate nil-initialization
 	results.Range(func(rcp types.RepoCommitPath, res result) bool {
 		idxs, ok := neededContents[rcp]
 		if !ok {
@@ -91,18 +86,12 @@ func getContentsBatched(ctx context.Context, gitserverClient gitserver.Client, n
 }
 
 func NewPreciseUsageResolvers(ctx context.Context, gitserverClient gitserver.Client, usages []shared.UploadUsage) ([]resolverstubs.UsageResolver, error) {
-	iterIdx := 0
-	contents, err := getContentsBatched(ctx, gitserverClient, func() core.Option[types.RepoCommitPath] {
-		if iterIdx < len(usages) {
-			usage := &usages[iterIdx]
-			iterIdx++
-			return core.Some(types.RepoCommitPath{
-				Repo:   usage.Upload.RepositoryName,
-				Commit: usage.TargetCommit,
-				Path:   usage.Path.RawValue(),
-			})
+	contents, err := getContentsBatched(ctx, gitserverClient, collections.MapIter(usages, func(usage shared.UploadUsage) U {
+		return types.RepoCommitPath{
+			Repo:   usage.Upload.RepositoryName,
+			Commit: usage.TargetCommit,
+			Path:   usage.Path.RawValue(),
 		}
-		return core.None[types.RepoCommitPath]()
 	})
 	if len(contents) != len(usages) {
 		panic(fmt.Sprintf("broken invariant: returned slice should have same length (got: %d) as input (want: %d)",
