@@ -38,6 +38,7 @@
         }
     }
 
+    // If the repo is a Perforce depot, we remove git specific tabs
     $: tabs = isPerforceDepot ? removeGitTabs() : tabs
 </script>
 
