@@ -18,7 +18,7 @@
 }
 
 .popover {
-    width: 380px;
+    width: 24rem;
 
     p {
         margin: 0;
@@ -40,7 +40,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    & + .section {
+    + .section {
         border-top: 1px solid var(--border-color);
     }
 }
