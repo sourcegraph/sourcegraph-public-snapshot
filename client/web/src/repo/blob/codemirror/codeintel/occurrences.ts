@@ -63,7 +63,7 @@ export class OccurrenceIndex extends Array<Occurrence> {
     }
 
     // Override Symbol.species to return Array instead of OccurrenceIndex
-    static get [Symbol.species]() {
+    public static get [Symbol.species](): ArrayConstructor {
         return Array
     }
 
