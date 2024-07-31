@@ -74,6 +74,17 @@ export function esbuildBuildOptions(ENVIRONMENT_CONFIG: EnvironmentConfig): esbu
                           recharts: '/dev/null',
                       }
                     : null),
+
+                '@sourcegraph/prompt-editor/': path.join(
+                    ROOT_PATH,
+                    // 'client/web/node_modules/@sourcegraph/prompt-editor/src/'
+                    '../cody/lib/prompt-editor/src/'
+                ),
+                '@sourcegraph/prompt-editor': path.join(
+                    ROOT_PATH,
+                    // 'client/web/node_modules/@sourcegraph/prompt-editor/src/index'
+                    '../cody/lib/prompt-editor/src/index'
+                ),
             }),
             ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS ? null : monacoPlugin(MONACO_LANGUAGES_AND_FEATURES),
             buildTimerPlugin,
@@ -95,6 +106,7 @@ export function esbuildBuildOptions(ENVIRONMENT_CONFIG: EnvironmentConfig): esbu
                     JSON.stringify(value === undefined ? null : value),
                 ])
             ),
+            'process.env.CODY_SHIM_TESTING': 'false',
             global: 'window',
         },
         loader: {
@@ -102,6 +114,7 @@ export function esbuildBuildOptions(ENVIRONMENT_CONFIG: EnvironmentConfig): esbu
             '.ttf': 'file',
             '.woff2': 'file',
             '.png': 'file',
+            '.svg': 'file',
         },
         target: 'esnext',
         sourcemap: true,

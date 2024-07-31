@@ -1,5 +1,20 @@
-import React, { useState, type ReactNode } from 'react'
+import React, { useMemo, useState, type ComponentProps, type FunctionComponent, type ReactNode } from 'react'
 
+import {
+    ClientStateContextProvider,
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+    CommandLoading,
+    CommandSeparator,
+    ExtensionAPIProviderForTestsOnly,
+    PromptEditor,
+    PromptEditorConfigProvider,
+    type PromptEditorConfig,
+} from '@sourcegraph/prompt-editor'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Alert,
@@ -16,6 +31,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { PatternConstrainedInput } from '../components/PatternConstrainedInput'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import type { PromptInput, PromptUpdateInput } from '../graphql-operations'
 
 import styles from './Form.module.scss'
@@ -47,6 +63,8 @@ export const PromptForm: React.FunctionComponent<React.PropsWithChildren<PromptF
     flash,
     afterFields,
 }) => {
+    const [richPromptEditor] = useFeatureFlag('rich-prompt-editor')
+
     const [value, setValue] = useState<PromptFormValue>(() => ({
         name: initialValue?.name ?? '',
         description: initialValue?.description ?? '',
@@ -114,13 +132,12 @@ export const PromptForm: React.FunctionComponent<React.PropsWithChildren<PromptF
                     label="Description (optional)"
                 />
                 <div className="form-group">
-                    <TextArea
+                    <PromptTextField
                         name="definitionText"
                         value={value.definitionText}
                         onChange={createInputChangeHandler('definitionText')}
                         label="Prompt template"
-                        rows={10}
-                        resizeable={true}
+                        richPromptEditor={richPromptEditor}
                     />
                     <InputDescription>Describe your desired output and specific requirements.</InputDescription>
                 </div>
@@ -151,5 +168,38 @@ export const PromptForm: React.FunctionComponent<React.PropsWithChildren<PromptF
             )}
             {error && !loading && <ErrorAlert className="mb-0" error={error} />}
         </Form>
+    )
+}
+
+const PromptTextField: FunctionComponent<
+    Pick<ComponentProps<typeof TextArea>, 'label' | 'name' | 'value' | 'onChange'> & {
+        richPromptEditor: boolean
+    }
+> = ({ label, name, value, onChange, richPromptEditor }) => {
+    const promptEditorConfig = useMemo<PromptEditorConfig>(
+        () => ({
+            commandComponents: {
+                Command,
+                CommandEmpty,
+                CommandGroup,
+                CommandInput,
+                CommandItem,
+                CommandList,
+                CommandLoading,
+                CommandSeparator,
+            },
+        }),
+        []
+    )
+    const extensionAPI = useMemo<ExtensionAPI
+    return richPromptEditor ? (
+        <ClientStateContextProvider value={{ initialContext: [] }}>
+            <ExtensionAPIProviderForTestsOnly value={}
+            <PromptEditorConfigProvider value={promptEditorConfig}>
+                <PromptEditor />
+            </PromptEditorConfigProvider>
+        </ClientStateContextProvider>
+    ) : (
+        <TextArea label={label} name={name} value={value} onChange={onChange} rows={10} resizeable={true} />
     )
 }

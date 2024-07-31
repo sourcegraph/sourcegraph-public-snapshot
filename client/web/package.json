@@ -49,6 +49,7 @@
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/http-client": "workspace:*",
     "@sourcegraph/observability-client": "workspace:*",
+    "@sourcegraph/prompt-editor": "^0.0.1",
     "@sourcegraph/schema": "workspace:*",
     "@sourcegraph/shared": "workspace:*",
     "@sourcegraph/telemetry": "^0.16.0",

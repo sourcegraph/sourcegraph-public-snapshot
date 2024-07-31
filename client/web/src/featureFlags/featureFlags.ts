@@ -30,6 +30,7 @@ export const FEATURE_FLAGS = [
     'sourcegraph-cloud-managed-feature-flags-warning-shown',
     'ab-shortened-install-first-signup-flow-cody-2024-04',
     'batches-github-app-integration',
+    'rich-prompt-editor',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]
