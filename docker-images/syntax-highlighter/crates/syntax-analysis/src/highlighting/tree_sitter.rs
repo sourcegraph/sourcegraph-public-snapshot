@@ -7,7 +7,7 @@ use tree_sitter_highlight::{
     Highlight, HighlightConfiguration, HighlightEvent, Highlighter as TSHighlighter,
 };
 
-use crate::range::Range;
+use crate::{locals::LocalResolutionOptions, range::Range};
 
 macro_rules! include_scip_query {
     ($lang:expr, $query:literal) => {
@@ -257,7 +257,11 @@ impl TreeSitterLanguageName {
             let parser = self.parser_id();
             if let Some(parser) = parser {
                 // TODO: Could probably write this in a much better way.
-                let mut local_occs = crate::get_locals(parser, &code).unwrap_or_default();
+                let locals_highlighting_options = LocalResolutionOptions {
+                    emit_global_references: false,
+                };
+                let mut local_occs = crate::get_locals(parser, &code, locals_highlighting_options)
+                    .unwrap_or_default();
 
                 // Get ranges in reverse order, because we're going to pop off the back of the list.
                 //  (that's why we're sorting the opposite way of the document occurrences above).

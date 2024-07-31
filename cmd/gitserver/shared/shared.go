@@ -290,12 +290,6 @@ func makeGRPCServer(logger log.Logger, s *server.Server, c *Config) *grpc.Server
 
 // getDB initializes a connection to the database and returns a dbutil.DB
 func getDB(observationCtx *observation.Context) (*sql.DB, error) {
-	// Gitserver is an internal actor. We rely on the frontend to do authz checks for
-	// user requests.
-	//
-	// This call to SetProviders is here so that calls to GetProviders don't block.
-	authz.SetProviders(true, []authz.Provider{})
-
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})

@@ -14,94 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// GetBulkMonikerLocations returns the locations (within one of the given uploads) with an attached moniker
-// whose scheme+identifier matches one of the given monikers. This method also returns the size of the
-// complete result set to aid in pagination.
-func (s *store) GetBulkSymbolUsages(
-	ctx context.Context,
-	usageKind shared.UsageKind,
-	uploadIDs []int,
-	lookupSymbols []string,
-	limit, offset int,
-) (_ []shared.Location, totalCount int, err error) {
-	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("usageKind", usageKind.String()),
-		attribute.Int("numUploadIDs", len(uploadIDs)),
-		attribute.IntSlice("uploadIDs", uploadIDs),
-		attribute.Int("numLookupSymbols", len(lookupSymbols)),
-		attribute.StringSlice("lookupSymbols", lookupSymbols),
-		attribute.Int("limit", limit),
-		attribute.Int("offset", offset),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	if len(uploadIDs) == 0 || len(lookupSymbols) == 0 {
-		return nil, 0, nil
-	}
-
-	query := sqlf.Sprintf(
-		bulkSymbolUsagesQuery,
-		pq.Array(lookupSymbols),
-		pq.Array(uploadIDs),
-		sqlf.Sprintf(usageKind.RangesColumnName()),
-		sqlf.Sprintf(usageKind.RangesColumnName()),
-	)
-
-	locationData, err := s.scanUploadSymbolLoci(s.db.Query(ctx, query))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	totalCount = 0
-	for _, data := range locationData {
-		totalCount += len(data.Loci)
-	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("numUploads", len(locationData)),
-		attribute.Int("totalCount", totalCount))
-
-	locations := make([]shared.Location, 0, min(totalCount, limit))
-outer:
-	for _, uploadSymbolLoci := range locationData {
-		for _, locus := range uploadSymbolLoci.Loci {
-			offset--
-			if offset >= 0 {
-				continue
-			}
-
-			locations = append(locations, shared.Location{
-				UploadID: uploadSymbolLoci.UploadID,
-				Path:     locus.Path,
-				Range:    shared.TranslateRange(locus.Range),
-			})
-
-			if len(locations) >= limit {
-				break outer
-			}
-		}
-	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
-
-	return locations, totalCount, nil
-}
-
-const bulkSymbolUsagesQuery = `
-WITH RECURSIVE
-` + symbolIDsCTEs + `
-SELECT
-	ss.upload_id,
-	msn.symbol_name,
-	%s,
-	document_path
-FROM codeintel_scip_symbols ss
-JOIN codeintel_scip_document_lookup dl
-     ON dl.id = ss.document_lookup_id
-JOIN matching_symbol_names msn
-     ON msn.upload_id = ss.upload_id AND msn.id = ss.symbol_id
-WHERE ss.%s IS NOT NULL
-ORDER BY ss.upload_id, msn.symbol_name
-`
-
 const locationsDocumentQuery = `
 SELECT
 	sd.id,
@@ -116,26 +28,26 @@ LIMIT 1
 `
 
 type extractedOccurrenceData struct {
-	definitions     []scip.Range
-	references      []scip.Range
-	implementations []scip.Range
-	prototypes      []scip.Range
+	definitions     []shared.UsageBuilder
+	references      []shared.UsageBuilder
+	implementations []shared.UsageBuilder
+	prototypes      []shared.UsageBuilder
 	hoverText       []string
 }
 
-func extractDefinitionRanges(document *scip.Document, lookup *scip.Occurrence) []scip.Range {
+func extractDefinitionRanges(document *scip.Document, lookup *scip.Occurrence) []shared.UsageBuilder {
 	return extractOccurrenceData(document, lookup).definitions
 }
 
-func extractReferenceRanges(document *scip.Document, lookup *scip.Occurrence) []scip.Range {
+func extractReferenceRanges(document *scip.Document, lookup *scip.Occurrence) []shared.UsageBuilder {
 	return extractOccurrenceData(document, lookup).references
 }
 
-func extractImplementationRanges(document *scip.Document, lookup *scip.Occurrence) []scip.Range {
+func extractImplementationRanges(document *scip.Document, lookup *scip.Occurrence) []shared.UsageBuilder {
 	return extractOccurrenceData(document, lookup).implementations
 }
 
-func extractPrototypesRanges(document *scip.Document, lookup *scip.Occurrence) []scip.Range {
+func extractPrototypesRanges(document *scip.Document, lookup *scip.Occurrence) []shared.UsageBuilder {
 	return extractOccurrenceData(document, lookup).prototypes
 }
 
@@ -190,10 +102,10 @@ func extractOccurrenceData(document *scip.Document, lookupOccurrence *scip.Occur
 		}
 	}
 
-	definitions := []scip.Range{}
-	references := []scip.Range{}
-	implementations := []scip.Range{}
-	prototypes := []scip.Range{}
+	definitions := []shared.UsageBuilder{}
+	references := []shared.UsageBuilder{}
+	implementations := []shared.UsageBuilder{}
+	prototypes := []shared.UsageBuilder{}
 
 	// Include original symbol names for reference search below
 	referencesBySymbol.Add(lookupOccurrence.Symbol)
@@ -206,22 +118,22 @@ func extractOccurrenceData(document *scip.Document, lookupOccurrence *scip.Occur
 
 		// This occurrence defines this symbol
 		if definitionSymbol == occ.Symbol && isDefinition {
-			definitions = append(definitions, scip.NewRangeUnchecked(occ.Range))
+			definitions = append(definitions, shared.NewUsageBuilder(occ))
 		}
 
 		// This occurrence references this symbol (or a sibling of it)
 		if !isDefinition && referencesBySymbol.Has(occ.Symbol) {
-			references = append(references, scip.NewRangeUnchecked(occ.Range))
+			references = append(references, shared.NewUsageBuilder(occ))
 		}
 
 		// This occurrence is a definition of a symbol with an implementation relationship
 		if isDefinition && implementationsBySymbol.Has(occ.Symbol) && definitionSymbol != occ.Symbol {
-			implementations = append(implementations, scip.NewRangeUnchecked(occ.Range))
+			implementations = append(implementations, shared.NewUsageBuilder(occ))
 		}
 
 		// This occurrence is a definition of a symbol with a prototype relationship
 		if isDefinition && prototypeBySymbol.Has(occ.Symbol) {
-			prototypes = append(prototypes, scip.NewRangeUnchecked(occ.Range))
+			prototypes = append(prototypes, shared.NewUsageBuilder(occ))
 		}
 	}
 
@@ -255,20 +167,20 @@ func symbolHoverText(symbol *scip.SymbolInformation) []string {
 // from the database and unmarshal it. This means that for the ref panel,
 // we will unmarshal the same Protobuf document at least four times. :facepalm:
 
-func (s *store) ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractDefinitionRanges, symbolExtractDefault, s.operations.getDefinitionLocations, locationKey)
+func (s *store) ExtractDefinitionLocationsFromPosition(ctx context.Context, key FindUsagesKey) (_ []shared.UsageBuilder, _ []string, err error) {
+	return s.extractRelatedUsagesAndSymbolNames(ctx, key, s.operations.getDefinitionLocations, extractDefinitionRanges, symbolExtractDefault)
 }
 
-func (s *store) ExtractReferenceLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractReferenceRanges, symbolExtractDefault, s.operations.getReferenceLocations, locationKey)
+func (s *store) ExtractReferenceLocationsFromPosition(ctx context.Context, key FindUsagesKey) (_ []shared.UsageBuilder, _ []string, err error) {
+	return s.extractRelatedUsagesAndSymbolNames(ctx, key, s.operations.getReferenceLocations, extractReferenceRanges, symbolExtractDefault)
 }
 
-func (s *store) ExtractImplementationLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractImplementationRanges, symbolExtractImplementations, s.operations.getImplementationLocations, locationKey)
+func (s *store) ExtractImplementationLocationsFromPosition(ctx context.Context, key FindUsagesKey) (_ []shared.UsageBuilder, _ []string, err error) {
+	return s.extractRelatedUsagesAndSymbolNames(ctx, key, s.operations.getImplementationLocations, extractImplementationRanges, symbolExtractImplementations)
 }
 
-func (s *store) ExtractPrototypeLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractPrototypesRanges, symbolExtractPrototype, s.operations.getPrototypesLocations, locationKey)
+func (s *store) ExtractPrototypeLocationsFromPosition(ctx context.Context, key FindUsagesKey) (_ []shared.UsageBuilder, _ []string, err error) {
+	return s.extractRelatedUsagesAndSymbolNames(ctx, key, s.operations.getPrototypesLocations, extractPrototypesRanges, symbolExtractPrototype)
 }
 
 func symbolExtractDefault(document *scip.Document, symbolName string) (symbols []string) {
@@ -309,87 +221,108 @@ func symbolExtractPrototype(document *scip.Document, symbolName string) (symbols
 	return symbols
 }
 
-// TODO(id: doc-N-traversals): Since this API is used in a limited number of ways,
-// take some basic 'strategy' enums and implement the logic for extraction here
-// so we can avoid multiple document traversals.
-
-func (s *store) extractLocationsFromPosition(
+// extractRelatedUsagesAndSymbolNames uses findUsagesKey to identify a
+// position/range/symbol within a single SCIP Document and returns the usages
+// and a set of related symbols in that document associated with the findUsagesKey,
+// based on the extraction functions.
+func (s *store) extractRelatedUsagesAndSymbolNames(
 	ctx context.Context,
-	extractRanges func(document *scip.Document, occurrence *scip.Occurrence) []scip.Range,
-	extractSymbolNames func(document *scip.Document, symbolName string) []string,
+	findUsagesKey FindUsagesKey,
 	operation *observation.Operation,
-	locationKey LocationKey,
-) (_ []shared.Location, _ []string, err error) {
-	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("bundleID", locationKey.UploadID),
-		attribute.String("path", locationKey.Path.RawValue()),
-		attribute.Int("line", locationKey.Line),
-		attribute.Int("character", locationKey.Character),
-	}})
+	extractUsages func(document *scip.Document, occurrence *scip.Occurrence) []shared.UsageBuilder,
+	extractRelatedSymbolNames func(document *scip.Document, symbolName string) []string,
+) (_ []shared.UsageBuilder, _ []string, err error) {
+	// TODO(id: doc-N-traversals): Since this API is used in a limited number of ways,
+	// consider de-functionalizing this to take a 'strategy' enum/bitset
+	// and handling extraction of all related symbols in one pass based on that.
+
+	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{Attrs: append([]attribute.KeyValue{
+		attribute.Int("uploadID", findUsagesKey.UploadID),
+		attribute.String("path", findUsagesKey.Path.RawValue()),
+	}, findUsagesKey.Matcher.Attrs()...)})
 	defer endObservation(1, observation.Args{})
 
 	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
 		locationsDocumentQuery,
-		locationKey.UploadID,
-		locationKey.Path.RawValue(),
+		findUsagesKey.UploadID,
+		findUsagesKey.Path.RawValue(),
 	)))
 	if err != nil || !exists {
 		return nil, nil, err
 	}
 
-	trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
-	occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(locationKey.Line), int32(locationKey.Character))
-	trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
+	occurrencesMatchingLookupKey, matchStrategy := findUsagesKey.IdentifyMatchingOccurrences(documentData.SCIPData.Occurrences)
 
-	var locations []shared.Location
-	var symbols []string
-	for _, occurrence := range occurrences {
-		if ranges := extractRanges(documentData.SCIPData, occurrence); len(ranges) != 0 {
-			locations = append(locations, convertSCIPRangesToLocations(ranges, locationKey.UploadID, locationKey.Path)...)
-		}
+	trace.AddEvent("IdentifyMatchingOccurrences",
+		attribute.Int("numDocumentOccurrences", len(documentData.SCIPData.Occurrences)),
+		attribute.Int("numMatchingOccurrences", len(occurrencesMatchingLookupKey)),
+		attribute.String("matchStrategy", string(matchStrategy)))
 
-		if occurrence.Symbol != "" && !scip.IsLocalSymbol(occurrence.Symbol) {
-			symbols = append(symbols, extractSymbolNames(documentData.SCIPData, occurrence.Symbol)...)
+	if len(occurrencesMatchingLookupKey) == 0 {
+		return nil, nil, nil
+	}
+
+	// relatedUsages may contain different kinds of usages depending
+	// on the extraction functions
+	var relatedUsages []shared.UsageBuilder
+	relatedSymbols := collections.NewSet[string]()
+
+	for _, matchingOccurrence := range occurrencesMatchingLookupKey {
+		// TODO(id: doc-N-traversals): Optimize this to do a single pass instead of
+		// one pass per matching occurrence. Also, we shouldn't need one traversal
+		// for an occurrence and one for symbol names, just zero-or-one traversal for the
+		// occurrences and zero-or-one traversal over the symbol information.
+		//
+		// In practice, this loop will only go through 1 iteration in the vast majority
+		// of cases, since one source range will generally have a def/ref for a single symbol,
+		// so this doesn't need to be fixed urgently.
+		relatedUsages = append(relatedUsages,
+			extractUsages(documentData.SCIPData, matchingOccurrence)...)
+
+		// QUESTION(id: stronger-doc-canonicalization): Should we strip out occurrences
+		// with empty symbol names during canonicalization? Such occurrences will
+		// not be targetable by code navigation. This will require a DB migration.
+		//
+		// NOTE: For local symbols, we know that we will not need to perform any
+		// lookups in other documents. So skip the symbol extraction logic instead
+		// of having each caller do the skipping in extractRelatedSymbolNames.
+		if matchingOccurrence.Symbol != "" && !scip.IsLocalSymbol(matchingOccurrence.Symbol) {
+			relatedSymbols.Add(extractRelatedSymbolNames(documentData.SCIPData, matchingOccurrence.Symbol)...)
 		}
 	}
 
-	// We only need to deduplicate by the range, since all location objects share the same path and uploadID.
-	return collections.DeduplicateBy(locations, uniqueByRange), collections.Deduplicate(symbols), nil
+	switch matchStrategy {
+	case SinglePositionBasedMatchStrategy:
+		// When using matching using a single position, we may get a set of overlapping
+		// occurrences, all for the same source range. In that case, we don't care about
+		// the symbol data, so we de-duplicate the objects purely based on source range.
+		//
+		// So if there are multiple symbols for the same range, then only one will be used.
+		relatedUsages = collections.DeduplicateBy(relatedUsages, shared.UsageBuilder.RangeKey)
+	case RangeBasedMatchStrategy:
+		// When using range-based exact matching, we already know that the ranges for
+		// all the occurrences must be equal. So we don't need to deduplicate based on
+		// that. However, we need to maintain different objects for different symbol
+		// names and roles.
+		relatedUsages = collections.DeduplicateBy(relatedUsages, shared.UsageBuilder.SymbolAndRoleKey)
+	case RangeAndSymbolBasedMatchStrategy:
+		relatedUsages = collections.DeduplicateBy(relatedUsages, shared.UsageBuilder.SymbolRoleKey)
+	}
+
+	return relatedUsages, collections.SortedSetValues(relatedSymbols), nil
 }
 
-func uniqueByRange(l shared.Location) [4]int {
-	return [4]int{l.Range.Start.Line, l.Range.Start.Character, l.Range.End.Character}
-}
-
-//
-//
-
-func (s *store) GetMinimalBulkSymbolUsages(
-	ctx context.Context,
-	usageKind shared.UsageKind,
-	uploadIDs []int,
-	skipPaths map[int]string,
-	lookupSymbols []string,
-	limit, offset int,
-) (_ []shared.Location, totalCount int, err error) {
-	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("usageKind", usageKind.String()),
-		attribute.Int("numUploadIDs", len(uploadIDs)),
-		attribute.IntSlice("uploadIDs", uploadIDs),
-		attribute.Int("numLookupSymbols", len(lookupSymbols)),
-		attribute.StringSlice("lookupSymbols", lookupSymbols),
-		attribute.Int("limit", limit),
-		attribute.Int("offset", offset),
-	}})
+func (s *store) GetSymbolUsages(ctx context.Context, opts SymbolUsagesOptions) (_ []shared.Usage, totalCount int, err error) {
+	ctx, trace, endObservation := s.operations.getSymbolUsages.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	defer endObservation(1, observation.Args{})
 
-	if len(uploadIDs) == 0 || len(lookupSymbols) == 0 {
+	if len(opts.UploadIDs) == 0 || len(opts.LookupSymbols) == 0 {
 		return nil, 0, nil
 	}
 
 	var skipConds []*sqlf.Query
-	for _, id := range uploadIDs {
-		if path, ok := skipPaths[id]; ok {
+	for _, id := range opts.UploadIDs {
+		if path, ok := opts.SkipPathsByUploadID[id]; ok {
 			skipConds = append(skipConds, sqlf.Sprintf("(%s, %s)", id, path))
 		}
 	}
@@ -397,60 +330,70 @@ func (s *store) GetMinimalBulkSymbolUsages(
 		skipConds = append(skipConds, sqlf.Sprintf("(%s, %s)", -1, ""))
 	}
 
+	rangesColumn := sqlf.Sprintf(opts.UsageKind.RangesColumnName())
 	query := sqlf.Sprintf(
-		minimalBulkSymbolUsagesQuery,
-		pq.Array(lookupSymbols),
-		pq.Array(uploadIDs),
-		sqlf.Sprintf(usageKind.RangesColumnName()),
-		sqlf.Sprintf(usageKind.RangesColumnName()),
+		symbolUsagesQuery,
+		pq.Array(opts.LookupSymbols),
+		pq.Array(opts.UploadIDs),
+		rangesColumn,
+		rangesColumn,
 		sqlf.Join(skipConds, ", "),
 	)
 
-	locationData, err := s.scanDeduplicatedUploadLoci(s.db.Query(ctx, query))
+	usageData, err := s.scanUploadSymbolLoci(s.db.Query(ctx, query))
 	if err != nil {
 		return nil, 0, err
 	}
 
 	totalCount = 0
-	for _, data := range locationData {
+	for _, data := range usageData {
 		totalCount += len(data.Loci)
 	}
 	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("numUploads", len(locationData)),
+		attribute.Int("numUniqueUploadIDSymbolPairs", len(usageData)),
 		attribute.Int("totalCount", totalCount))
 
-	locations := make([]shared.Location, 0, min(totalCount, limit))
+	usages := make([]shared.Usage, 0, min(totalCount, opts.Limit))
+	offset := opts.Offset
 outer:
-	for _, uploadLoci := range locationData {
-		for _, locus := range uploadLoci.Loci {
+	for _, uploadSymbolLoci := range usageData {
+		for _, locus := range uploadSymbolLoci.Loci {
 			offset--
 			if offset >= 0 {
 				continue
 			}
 
-			locations = append(locations, shared.Location{
-				UploadID: uploadLoci.UploadID,
+			usages = append(usages, shared.Usage{
+				UploadID: uploadSymbolLoci.UploadID,
 				Path:     locus.Path,
 				Range:    shared.TranslateRange(locus.Range),
+				Symbol:   uploadSymbolLoci.Symbol,
+				Kind:     opts.UsageKind,
 			})
 
-			if len(locations) >= limit {
+			if len(usages) >= opts.Limit {
 				break outer
 			}
 		}
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numUsages", len(usages)))
 
-	return locations, totalCount, nil
+	return usages, totalCount, nil
 }
 
-const minimalBulkSymbolUsagesQuery = `
+// symbolUsagesQuery gets ALL usages of a bunch of symbols across the ENTIRE instance
+// (within the given set of uploadIDs). We need to do this because the ranges are
+// stored using a custom binary encoding which means we can't use LIMIT+OFFSET at
+// the level of locations.
+const symbolUsagesQuery = `
 WITH RECURSIVE
 ` + symbolIDsCTEs + `
 SELECT
 	ss.upload_id,
-	%s,
-	document_path
+	msn.symbol_name,
+	array_agg(%s ORDER BY dl.document_path),
+	array_agg(document_path ORDER BY dl.document_path)
+    -- ORDER BY ss.upload_id, msn.symbol_name, dl.document_path to maintain determinism for pagination
 FROM codeintel_scip_symbols ss
 JOIN codeintel_scip_document_lookup dl
      ON dl.id = ss.document_lookup_id
@@ -459,5 +402,6 @@ JOIN matching_symbol_names msn
 WHERE
 	ss.%s IS NOT NULL AND
 	(ss.upload_id, dl.document_path) NOT IN (%s)
-ORDER BY ss.upload_id, dl.document_path
+GROUP BY ss.upload_id, msn.symbol_name
+ORDER BY ss.upload_id, msn.symbol_name
 `

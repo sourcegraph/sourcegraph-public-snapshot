@@ -11,18 +11,17 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetIndexes(t *testing.T) {
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
@@ -132,20 +131,8 @@ func TestGetIndexes(t *testing.T) {
 	}
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Enable permissions user mapping forces checking repository permissions
-		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty.
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				PermissionsUserMapping: &schema.PermissionsUserMapping{
-					Enabled: true,
-					BindID:  "email",
-				},
-			},
-		})
-		t.Cleanup(func() { conf.Mock(nil) })
-
-		indexes, totalCount, err := store.GetAutoIndexJobs(ctx,
+		// Use an actorless context to test permissions.
+		indexes, totalCount, err := store.GetAutoIndexJobs(context.Background(),
 			shared.GetAutoIndexJobsOptions{
 				Limit: 1,
 			},
@@ -160,7 +147,7 @@ func TestGetIndexes(t *testing.T) {
 }
 
 func TestGetAutoIndexJobByID(t *testing.T) {
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
@@ -216,20 +203,8 @@ func TestGetAutoIndexJobByID(t *testing.T) {
 	}
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Enable permissions user mapping forces checking repository permissions
-		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty.
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				PermissionsUserMapping: &schema.PermissionsUserMapping{
-					Enabled: true,
-					BindID:  "email",
-				},
-			},
-		})
-		t.Cleanup(func() { conf.Mock(nil) })
-
-		_, exists, err := store.GetAutoIndexJobByID(ctx, 1)
+		// Use an actorless context to test permissions.
+		_, exists, err := store.GetAutoIndexJobByID(context.Background(), 1)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -262,35 +237,35 @@ func TestGetQueuedIndexRank(t *testing.T) {
 		uploadsshared.AutoIndexJob{ID: 7, QueuedAt: t1, State: "queued", ProcessAfter: &t7},
 	)
 
-	if index, _, _ := store.GetAutoIndexJobByID(context.Background(), 1); index.Rank == nil || *index.Rank != 1 {
+	if index, _, _ := store.GetAutoIndexJobByID(actor.WithInternalActor(context.Background()), 1); index.Rank == nil || *index.Rank != 1 {
 		t.Errorf("unexpected rank. want=%d have=%s", 1, printableRank{index.Rank})
 	}
-	if index, _, _ := store.GetAutoIndexJobByID(context.Background(), 2); index.Rank == nil || *index.Rank != 6 {
+	if index, _, _ := store.GetAutoIndexJobByID(actor.WithInternalActor(context.Background()), 2); index.Rank == nil || *index.Rank != 6 {
 		t.Errorf("unexpected rank. want=%d have=%s", 5, printableRank{index.Rank})
 	}
-	if index, _, _ := store.GetAutoIndexJobByID(context.Background(), 3); index.Rank == nil || *index.Rank != 3 {
+	if index, _, _ := store.GetAutoIndexJobByID(actor.WithInternalActor(context.Background()), 3); index.Rank == nil || *index.Rank != 3 {
 		t.Errorf("unexpected rank. want=%d have=%s", 3, printableRank{index.Rank})
 	}
-	if index, _, _ := store.GetAutoIndexJobByID(context.Background(), 4); index.Rank == nil || *index.Rank != 2 {
+	if index, _, _ := store.GetAutoIndexJobByID(actor.WithInternalActor(context.Background()), 4); index.Rank == nil || *index.Rank != 2 {
 		t.Errorf("unexpected rank. want=%d have=%s", 2, printableRank{index.Rank})
 	}
-	if index, _, _ := store.GetAutoIndexJobByID(context.Background(), 5); index.Rank == nil || *index.Rank != 4 {
+	if index, _, _ := store.GetAutoIndexJobByID(actor.WithInternalActor(context.Background()), 5); index.Rank == nil || *index.Rank != 4 {
 		t.Errorf("unexpected rank. want=%d have=%s", 4, printableRank{index.Rank})
 	}
 
 	// Only considers queued indexes to determine rank
-	if index, _, _ := store.GetAutoIndexJobByID(context.Background(), 6); index.Rank != nil {
+	if index, _, _ := store.GetAutoIndexJobByID(actor.WithInternalActor(context.Background()), 6); index.Rank != nil {
 		t.Errorf("unexpected rank. want=%s have=%s", "nil", printableRank{index.Rank})
 	}
 
 	// Process after takes priority over upload time
-	if upload, _, _ := store.GetAutoIndexJobByID(context.Background(), 7); upload.Rank == nil || *upload.Rank != 5 {
+	if upload, _, _ := store.GetAutoIndexJobByID(actor.WithInternalActor(context.Background()), 7); upload.Rank == nil || *upload.Rank != 5 {
 		t.Errorf("unexpected rank. want=%d have=%s", 4, printableRank{upload.Rank})
 	}
 }
 
 func TestGetAutoIndexJobsByIDs(t *testing.T) {
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
@@ -335,20 +310,8 @@ func TestGetAutoIndexJobsByIDs(t *testing.T) {
 	})
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Enable permissions user mapping forces checking repository permissions
-		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty.
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				PermissionsUserMapping: &schema.PermissionsUserMapping{
-					Enabled: true,
-					BindID:  "email",
-				},
-			},
-		})
-		t.Cleanup(func() { conf.Mock(nil) })
-
-		indexes, err := store.GetAutoIndexJobsByIDs(ctx, 1, 2, 3, 4)
+		// Use an actorless context to test permissions.
+		indexes, err := store.GetAutoIndexJobsByIDs(context.Background(), 1, 2, 3, 4)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -372,7 +335,7 @@ func TestDeleteAutoIndexJobByID(t *testing.T) {
 	}
 
 	// AutoIndexJob no longer exists
-	if _, exists, err := store.GetAutoIndexJobByID(context.Background(), 1); err != nil {
+	if _, exists, err := store.GetAutoIndexJobByID(actor.WithInternalActor(context.Background()), 1); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
 	} else if exists {
 		t.Fatal("unexpected record")
@@ -387,7 +350,7 @@ func TestDeleteAutoIndexJobs(t *testing.T) {
 	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 1, State: "completed"})
 	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 2, State: "errored"})
 
-	if err := store.DeleteAutoIndexJobs(context.Background(), shared.DeleteAutoIndexJobsOptions{
+	if err := store.DeleteAutoIndexJobs(actor.WithInternalActor(context.Background()), shared.DeleteAutoIndexJobsOptions{
 		States:       []string{"errored"},
 		Term:         "",
 		RepositoryID: 0,
@@ -396,7 +359,7 @@ func TestDeleteAutoIndexJobs(t *testing.T) {
 	}
 
 	// AutoIndexJob no longer exists
-	if _, exists, err := store.GetAutoIndexJobByID(context.Background(), 2); err != nil {
+	if _, exists, err := store.GetAutoIndexJobByID(actor.WithInternalActor(context.Background()), 2); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
 	} else if exists {
 		t.Fatal("unexpected record")
@@ -413,7 +376,7 @@ func TestDeleteAutoIndexJobsWithIndexerKey(t *testing.T) {
 	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 3, Indexer: "sourcegraph/scip-typescript"})
 	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 4, Indexer: "sourcegraph/scip-typescript"})
 
-	if err := store.DeleteAutoIndexJobs(context.Background(), shared.DeleteAutoIndexJobsOptions{
+	if err := store.DeleteAutoIndexJobs(actor.WithInternalActor(context.Background()), shared.DeleteAutoIndexJobsOptions{
 		IndexerNames: []string{"scip-go"},
 	}); err != nil {
 		t.Fatalf("unexpected error deleting indexes: %s", err)
@@ -421,7 +384,7 @@ func TestDeleteAutoIndexJobsWithIndexerKey(t *testing.T) {
 
 	// Target indexes no longer exist
 	for _, id := range []int{1, 2} {
-		if _, exists, err := store.GetAutoIndexJobByID(context.Background(), id); err != nil {
+		if _, exists, err := store.GetAutoIndexJobByID(actor.WithInternalActor(context.Background()), id); err != nil {
 			t.Fatalf("unexpected error getting index: %s", err)
 		} else if exists {
 			t.Fatal("unexpected record")
@@ -430,7 +393,7 @@ func TestDeleteAutoIndexJobsWithIndexerKey(t *testing.T) {
 
 	// Unmatched indexes remain
 	for _, id := range []int{3, 4} {
-		if _, exists, err := store.GetAutoIndexJobByID(context.Background(), id); err != nil {
+		if _, exists, err := store.GetAutoIndexJobByID(actor.WithInternalActor(context.Background()), id); err != nil {
 			t.Fatalf("unexpected error getting index: %s", err)
 		} else if !exists {
 			t.Fatal("expected record, got none")
@@ -451,7 +414,7 @@ func TestSetRerunAutoIndexJobByID(t *testing.T) {
 	}
 
 	// AutoIndexJob has been marked for reindexing
-	if index, exists, err := store.GetAutoIndexJobByID(context.Background(), 2); err != nil {
+	if index, exists, err := store.GetAutoIndexJobByID(actor.WithInternalActor(context.Background()), 2); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
 	} else if !exists {
 		t.Fatal("index missing")
@@ -468,7 +431,7 @@ func TestSetRerunAutoIndexJobs(t *testing.T) {
 	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 1, State: "completed"})
 	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 2, State: "errored"})
 
-	if err := store.SetRerunAutoIndexJobs(context.Background(), shared.SetRerunAutoIndexJobsOptions{
+	if err := store.SetRerunAutoIndexJobs(actor.WithInternalActor(context.Background()), shared.SetRerunAutoIndexJobsOptions{
 		States:       []string{"errored"},
 		Term:         "",
 		RepositoryID: 0,
@@ -477,7 +440,7 @@ func TestSetRerunAutoIndexJobs(t *testing.T) {
 	}
 
 	// AutoIndexJob has been marked for reindexing
-	if index, exists, err := store.GetAutoIndexJobByID(context.Background(), 2); err != nil {
+	if index, exists, err := store.GetAutoIndexJobByID(actor.WithInternalActor(context.Background()), 2); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
 	} else if !exists {
 		t.Fatal("index missing")
@@ -496,7 +459,7 @@ func TestSetRerunAutoIndexJobsWithIndexerKey(t *testing.T) {
 	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 3, Indexer: "sourcegraph/scip-typescript"})
 	insertAutoIndexJobs(t, db, uploadsshared.AutoIndexJob{ID: 4, Indexer: "sourcegraph/scip-typescript"})
 
-	if err := store.SetRerunAutoIndexJobs(context.Background(), shared.SetRerunAutoIndexJobsOptions{
+	if err := store.SetRerunAutoIndexJobs(actor.WithInternalActor(context.Background()), shared.SetRerunAutoIndexJobsOptions{
 		IndexerNames: []string{"scip-go"},
 		Term:         "",
 		RepositoryID: 0,
@@ -509,7 +472,7 @@ func TestSetRerunAutoIndexJobsWithIndexerKey(t *testing.T) {
 		1: true, 2: true,
 		3: false, 4: false,
 	} {
-		if index, exists, err := store.GetAutoIndexJobByID(context.Background(), id); err != nil {
+		if index, exists, err := store.GetAutoIndexJobByID(actor.WithInternalActor(context.Background()), id); err != nil {
 			t.Fatalf("unexpected error getting index: %s", err)
 		} else if !exists {
 			t.Fatal("index missing")

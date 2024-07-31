@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -51,7 +52,7 @@ func TestInsertUploadUploading(t *testing.T) {
 		UploadedParts:  []int{},
 	}
 
-	if upload, exists, err := store.GetUploadByID(context.Background(), id); err != nil {
+	if upload, exists, err := store.GetUploadByID(actor.WithInternalActor(context.Background()), id); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
@@ -104,7 +105,7 @@ func TestInsertUploadQueued(t *testing.T) {
 		Rank:           &rank,
 	}
 
-	if upload, exists, err := store.GetUploadByID(context.Background(), id); err != nil {
+	if upload, exists, err := store.GetUploadByID(actor.WithInternalActor(context.Background()), id); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
@@ -161,7 +162,7 @@ func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 		AssociatedIndexID: &associatedIndexIDResult,
 	}
 
-	if upload, exists, err := store.GetUploadByID(context.Background(), id); err != nil {
+	if upload, exists, err := store.GetUploadByID(actor.WithInternalActor(context.Background()), id); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
@@ -187,7 +188,7 @@ func TestAddUploadPart(t *testing.T) {
 			t.Fatalf("unexpected error adding upload part: %s", err)
 		}
 	}
-	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+	if upload, exists, err := store.GetUploadByID(actor.WithInternalActor(context.Background()), 1); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
@@ -207,11 +208,11 @@ func TestMarkQueued(t *testing.T) {
 	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
 
 	uploadSize := int64(300)
-	if err := store.MarkQueued(context.Background(), 1, &uploadSize); err != nil {
+	if err := store.MarkQueued(actor.WithInternalActor(context.Background()), 1, &uploadSize); err != nil {
 		t.Fatalf("unexpected error marking upload as queued: %s", err)
 	}
 
-	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+	if upload, exists, err := store.GetUploadByID(actor.WithInternalActor(context.Background()), 1); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
@@ -233,11 +234,11 @@ func TestMarkQueuedNoSize(t *testing.T) {
 
 	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
 
-	if err := store.MarkQueued(context.Background(), 1, nil); err != nil {
+	if err := store.MarkQueued(actor.WithInternalActor(context.Background()), 1, nil); err != nil {
 		t.Fatalf("unexpected error marking upload as queued: %s", err)
 	}
 
-	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+	if upload, exists, err := store.GetUploadByID(actor.WithInternalActor(context.Background()), 1); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
@@ -260,7 +261,7 @@ func TestMarkFailed(t *testing.T) {
 		t.Fatalf("unexpected error marking upload as failed: %s", err)
 	}
 
-	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+	if upload, exists, err := store.GetUploadByID(actor.WithInternalActor(context.Background()), 1); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
@@ -361,7 +362,7 @@ func TestDeleteOverlappingCompletedUploadsIgnoresIncompleteUploads(t *testing.T)
 	}
 
 	// Original upload still exists
-	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+	if _, exists, err := store.GetUploadByID(actor.WithInternalActor(context.Background()), 1); err != nil {
 		t.Fatalf("unexpected error getting dump: %s", err)
 	} else if !exists {
 		t.Fatal("expected dump record to still exist")

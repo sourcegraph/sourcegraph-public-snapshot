@@ -12,6 +12,7 @@ go_library(
         "delete_command.go",
         "deploy_command.go",
         "ephemeral_command.go",
+        "faq.go",
         "instance.go",
         "lease_command.go",
         "list_command.go",

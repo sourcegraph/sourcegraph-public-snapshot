@@ -10,7 +10,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 use scip::types::Document;
 use scip_syntax::{
     evaluate::Evaluator,
-    index::{index_command, AnalysisMode, IndexMode, IndexOptions},
+    index::{index_command, AnalysisFeatures, IndexMode, IndexOptions},
     io::read_index_from_file,
 };
 
@@ -74,7 +74,7 @@ fn java_e2e_evaluation() {
         None,
         None,
         IndexOptions {
-            analysis_mode: AnalysisMode::Full,
+            analysis_features: AnalysisFeatures::default(),
             fail_fast: true,
         },
     )

@@ -16,11 +16,22 @@ const (
 	AnnotationKeyConfigHash          = "appliance.sourcegraph.com/configHash"
 	AnnotationKeyShouldTakeOwnership = "appliance.sourcegraph.com/adopted"
 
+	// TODO set status on configmap to communicate it across reboots
+	AnnotationKeyStatus = "appliance.sourcegraph.com/status"
+
 	StatusUnknown         Status = "unknown"
 	StatusInstall         Status = "install"
 	StatusInstalling      Status = "installing"
-	StatusIdle            Status = "idle"
 	StatusUpgrading       Status = "upgrading"
 	StatusWaitingForAdmin Status = "wait-for-admin"
 	StatusRefresh         Status = "refresh"
+	StatusMaintenance     Status = "maintenance"
 )
+
+func IsPostInstallStatus(status Status) bool {
+	switch status {
+	case StatusUnknown, StatusInstall, StatusInstalling, StatusWaitingForAdmin:
+		return false
+	}
+	return true
+}

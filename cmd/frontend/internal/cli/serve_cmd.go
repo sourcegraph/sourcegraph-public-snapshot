@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
-	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -213,7 +212,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// Recurring
 	goroutine.Go(func() { updatecheck.Start(logger, db) })
-	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
 
 	schema, err := graphqlbackend.NewSchema(
 		db,
@@ -288,7 +286,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			ExternalServiceURL string `json:"external_service_url"`
 		}
 
-		_, providers := authz.GetProviders()
+		providers := authz.GetProviders()
 		infos := make([]providerInfo, len(providers))
 		for i, p := range providers {
 			_, id := extsvc.DecodeURN(p.URN())

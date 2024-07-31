@@ -1,9 +1,9 @@
 import { type FC, memo, useCallback, useMemo } from 'react'
 
-import { CodyWebChatProvider } from 'cody-web-experimental'
-
+import { CodyWebChatProvider } from '@sourcegraph/cody-web'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
+import { getTelemetrySourceClient } from '../../../telemetry'
 import { ChatUi } from '../../chat/new-chat/components/chat-ui/ChatUi'
 
 interface Repository {
@@ -49,6 +49,7 @@ export const NewCodySidebarWebChat: FC<NewCodySidebarWebChatProps> = memo(functi
             initialContext={contextInfo}
             serverEndpoint={window.location.origin}
             customHeaders={window.context.xhrHeaders}
+            telemetryClientName={getTelemetrySourceClient()}
             onNewChatCreated={handleNewChatCreated}
         >
             <ChatUi />

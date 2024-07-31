@@ -485,6 +485,8 @@ extend type Query {
         When specified, indicates that this request should be paginated and
         the first N results (relative to the cursor) should be returned. i.e.
         how many results to return per page.
+        Will return _at least_ the number of results specified, but may return
+        more to only return completed files.
         """
         first: Int
 
@@ -737,12 +739,9 @@ type Usage {
     # TODO: Add a blob: GitBlob field here for more flexibility?
 
     """
-    Allows accessing a sub-span of the content using relative coordinates
-    from the range of this usage. If linesBefore or linesAfter is negative
-    or exceeds the number of available lines, the value is interpreted as
-    until the start/end of the file.
+    The text contents of the line containing the usage.
     """
-    surroundingContent(surroundingLines: SurroundingLines = { linesBefore: 0, linesAfter: 0 }): String!
+    surroundingContent: String!
 
     """
     Describes the relationship between this usage and the input symbol

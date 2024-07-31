@@ -26,13 +26,13 @@ import (
 // to connection issues.
 func NewAuthzProviders(
 	db database.DB,
-	cfg schema.SiteConfiguration,
 	conns []*types.GitLabConnection,
+	ap []schema.AuthProviders,
 ) *atypes.ProviderInitResult {
 	initResults := &atypes.ProviderInitResult{}
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		p, err := newAuthzProvider(db, c, cfg.AuthProviders)
+		p, err := newAuthzProvider(db, c, ap)
 		if err != nil {
 			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeGitLab)
 			initResults.Problems = append(initResults.Problems, err.Error())

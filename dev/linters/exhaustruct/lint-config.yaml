@@ -10,6 +10,12 @@ include_types:
 - '.+Locus$'
 - '.+Loci$'
 - '.+UploadMatchingOptions'
+- '.+codenav.+Usage$'
+- '.*codenav.*UsageBuilder$'
+- '.+codenav.*Matcher$'
+- '.+codenav.*FindUsagesKey$'
+- '.+codenav.+SymbolUsagesOptions$'
+- '.+codenav.+UsagesForSymbol.*Args$'
 
 # Same as above, but for exclusion.
 #

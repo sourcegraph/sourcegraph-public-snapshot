@@ -11,6 +11,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/auth"
 	workerauthz "github.com/sourcegraph/sourcegraph/cmd/worker/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/batches"
@@ -110,6 +111,7 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 		"event-logs-janitor":                    eventlogs.NewEventLogsJanitorJob(),
 		"cody-llm-token-counter":                completions.NewTokenUsageJob(),
 		"aggregated-users-statistics":           users.NewAggregatedUsersStatisticsJob(),
+		"refresh-analytics-cache":               adminanalytics.NewRefreshAnalyticsCacheJob(),
 
 		"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
 		"codeintel-autoindexing-summary-builder":      codeintel.NewAutoindexingSummaryBuilder(),
@@ -403,7 +405,7 @@ func setAuthzProviders(ctx context.Context, observationCtx *observation.Context)
 	}
 
 	for range time.NewTicker(providers.RefreshInterval(conf.Get())).C {
-		allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
-		authz.SetProviders(allowAccessByDefault, authzProviders)
+		authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
+		authz.SetProviders(authzProviders)
 	}
 }

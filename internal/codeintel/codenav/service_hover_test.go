@@ -132,15 +132,15 @@ func TestHoverRemote(t *testing.T) {
 	mockLsifStore.GetPackageInformationFunc.PushReturn(packageInformation2, true, nil)
 
 	uploadRelPath := core.NewUploadRelPathUnchecked
-	locations := []shared.Location{
+	usages := []shared.Usage{
 		{UploadID: 151, Path: uploadRelPath("a.go"), Range: testRange1},
 		{UploadID: 151, Path: uploadRelPath("b.go"), Range: testRange2},
 		{UploadID: 151, Path: uploadRelPath("a.go"), Range: testRange3},
 		{UploadID: 151, Path: uploadRelPath("b.go"), Range: testRange4},
 		{UploadID: 151, Path: uploadRelPath("c.go"), Range: testRange5},
 	}
-	mockLsifStore.GetBulkSymbolUsagesFunc.PushReturn(locations, 0, nil)
-	mockLsifStore.GetBulkSymbolUsagesFunc.PushReturn(locations, len(locations), nil)
+	mockLsifStore.GetSymbolUsagesFunc.PushReturn(usages, 0, nil)
+	mockLsifStore.GetSymbolUsagesFunc.PushReturn(usages, len(usages), nil)
 
 	mockGitserverClient.GetCommitFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID) (*gitdomain.Commit, error) {
 		return &gitdomain.Commit{ID: "sha"}, nil

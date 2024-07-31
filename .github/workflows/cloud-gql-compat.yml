@@ -1,0 +1,112 @@
+# Cloud controller has tight integration with GraphQL API
+# This workflow ensures that the query/mutation the controller uses are compatible with any changes to the GraphQL schema
+#
+# Maintained by the Cloud Operation team
+
+name: Cloud Controller GQL Compat Test
+
+on:
+  pull_request:
+    paths:
+      - '**.graphql'
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          # The GitHub App is here:
+          # https://github.com/organizations/sourcegraph/settings/apps/cloud-srcgql-compat-test-invoker
+          app-id: ${{ secrets.CLOUD_SRCGQL_COMPAT_TEST_INVOKER_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CLOUD_SRCGQL_COMPAT_TEST_INVOKER_GITHUB_APP_PRIVATE_KEY_PEM }}
+          owner: sourcegraph
+
+      - uses: lasith-kg/dispatch-workflow@91345a2a3b705e950978a584446ab59f7e815ae3 #v2.0.0
+        id: workflow-dispatch
+        with:
+          dispatch-method: workflow_dispatch
+          discover: true
+          repo: controller
+          owner: sourcegraph
+          ref: main
+          # using ID instead of workflow file name to avoid requring content:read permission to the repo
+          # retrieve by running 'gh workflow list' in the controller repo
+          workflow: 58413286 # srcgql-compat.yaml
+          token: ${{ steps.app-token.outputs.token }}
+          workflow-inputs: |
+            {
+              "ref": "${{ github.sha }}",
+              "upstream_pr_number": "${{ github.event.number }}"
+            }
+      - name: await workflow run (id:${{ steps.workflow-dispatch.outputs.run-id }})
+        uses: codex-/await-remote-run@d4a6dbf57245924ff4f23e0db929b8e3ef65486b #1.12.2
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repo: controller
+          owner: sourcegraph
+          run_id: ${{ steps.workflow-dispatch.outputs.run-id }}
+          run_timeout_seconds: 300
+          poll_interval_ms: 5000
+
+      - uses: actions/github-script@v7
+        if: ${{ success() || failure() }}
+        env:
+          FAILED: ${{ job.status == 'failure' }}
+          RUN_URL: https://github.com/sourcegraph/controller/actions/runs/${{ steps.workflow-dispatch.outputs.run-id }}
+        with:
+          script: |
+            const isFailed = process.env.FAILED === 'true'
+            const commentMarker = '<!-- cloud-gql-compat-test-result-marker -->'
+
+            let message
+            if (isFailed) {
+              message = `
+            ## :x: Cloud Controller GraphQL Compatability Test Result
+
+            [sourcegraph/controller](https://github.com/sourcegraph/controller) uses the GraphQL API to perform automation. The compatibility test has failed and this pull request may have introduced breaking changes to the GraphQL schema.
+
+            Next steps:
+            - Review the GitHub Actions [workflow logs](${process.env.RUN_URL}) for more details.
+            - Reach out to the Cloud Ops team to resolve the issue before merging this pull request.
+
+            ${commentMarker}
+            `
+            } else {
+              message = `
+            ## :white_check_mark: Cloud Controller GraphQL Compatability Test Result
+
+            [sourcegraph/controller](https://github.com/sourcegraph/controller) uses the GraphQL API to perform automation. The compatibility test has passed.
+
+            Learn more from [workflow logs](${process.env.RUN_URL}).
+
+            ${commentMarker}
+            `
+            }
+
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            })
+            let existingComment = comments.find(comment => comment.body.includes(commentMarker))
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                comment_id: existingComment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: message
+              })
+            } else if (isFailed) {
+              // we only create comment if the test failed
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: message
+              })
+            }

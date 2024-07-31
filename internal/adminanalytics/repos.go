@@ -10,15 +10,13 @@ import (
 
 type Repos struct {
 	DB    database.DB
-	Cache bool
+	Cache KeyValue
 }
 
 func (r *Repos) Summary(ctx context.Context) (*ReposSummary, error) {
 	cacheKey := "Repos:Summary"
-	if r.Cache {
-		if summary, err := getItemFromCache[ReposSummary](cacheKey); err == nil {
-			return summary, nil
-		}
+	if summary, err := getItemFromCache[ReposSummary](r.Cache, cacheKey); err == nil {
+		return summary, nil
 	}
 
 	query := sqlf.Sprintf(`
@@ -37,7 +35,8 @@ func (r *Repos) Summary(ctx context.Context) (*ReposSummary, error) {
 
 	summary := &ReposSummary{data}
 
-	if err := setItemToCache(cacheKey, summary); err != nil {
+	err := setItemToCache(r.Cache, cacheKey, summary)
+	if err != nil {
 		return nil, err
 	}
 

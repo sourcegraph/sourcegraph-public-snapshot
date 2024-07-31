@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	genslices "github.com/life4/genesis/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
@@ -132,29 +133,63 @@ func TestGetRanges(t *testing.T) {
 		valueHoverText    = "```ts\n(parameter) value: T | T[] | null | undefined\n```\nThe value to test."
 		tHoverText        = "```ts\nT: T\n```"
 	)
-
+	const (
+		nonEmptySymbol = "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/nonEmpty()."
+		tSymbol        = "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/nonEmpty().[T]"
+		valueSymbol    = "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/nonEmpty().(value)"
+	)
 	var (
-		nonEmptyDefinitionLocations = []shared.Location{{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 16, 15, 24)}}
-		tDefinitionLocations        = []shared.Location{{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 25, 15, 26)}}
-		valueDefinitionLocations    = []shared.Location{{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 28, 15, 33)}}
+		nonEmptyDefinitionLocations = []shared.Usage{{
+			UploadID: testSCIPUploadID,
+			Path:     path,
+			Range:    shared.NewRange(15, 16, 15, 24),
+			Symbol:   nonEmptySymbol,
+			Kind:     shared.UsageKindDefinition,
+		}}
+		tDefinitionLocations = []shared.Usage{{
+			UploadID: testSCIPUploadID,
+			Path:     path,
+			Range:    shared.NewRange(15, 25, 15, 26),
+			Symbol:   tSymbol,
+			Kind:     shared.UsageKindDefinition,
+		}}
+		valueDefinitionLocations = []shared.Usage{{
+			UploadID: testSCIPUploadID,
+			Path:     path,
+			Range:    shared.NewRange(15, 28, 15, 33),
+			Symbol:   valueSymbol,
+			Kind:     shared.UsageKindDefinition,
+		}}
 
-		nonEmptyReferenceLocations = []shared.Location{}
-		tReferenceLocations        = []shared.Location{
-			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 35, 15, 36)},
-			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 39, 15, 40)},
-			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 73, 15, 74)},
-			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 77, 15, 78)},
-		}
-		valueReferenceLocations = []shared.Location{
-			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 64, 15, 69)},
-			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(16, 13, 16, 18)},
-			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(16, 38, 16, 43)},
-			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(16, 48, 16, 53)},
-		}
+		nonEmptyReferenceLocations = []shared.Usage{}
+		tReferenceLocations        = genslices.Map([]shared.Usage{
+			{Range: shared.NewRange(15, 35, 15, 36)},
+			{Range: shared.NewRange(15, 39, 15, 40)},
+			{Range: shared.NewRange(15, 73, 15, 74)},
+			{Range: shared.NewRange(15, 77, 15, 78)},
+		}, func(u shared.Usage) shared.Usage {
+			u.UploadID = testSCIPUploadID
+			u.Path = path
+			u.Symbol = tSymbol
+			u.Kind = shared.UsageKindReference
+			return u
+		})
+		valueReferenceLocations = genslices.Map([]shared.Usage{
+			{Range: shared.NewRange(15, 64, 15, 69)},
+			{Range: shared.NewRange(16, 13, 16, 18)},
+			{Range: shared.NewRange(16, 38, 16, 43)},
+			{Range: shared.NewRange(16, 48, 16, 53)},
+		}, func(u shared.Usage) shared.Usage {
+			u.UploadID = testSCIPUploadID
+			u.Path = path
+			u.Symbol = valueSymbol
+			u.Kind = shared.UsageKindReference
+			return u
+		})
 
-		nonEmptyImplementationLocations = []shared.Location(nil)
-		tImplementationLocations        = []shared.Location(nil)
-		valueImplementationLocations    = []shared.Location(nil)
+		nonEmptyImplementationLocations = []shared.Usage(nil)
+		tImplementationLocations        = []shared.Usage(nil)
+		valueImplementationLocations    = []shared.Usage(nil)
 	)
 
 	expectedRanges := []shared.CodeIntelligenceRange{
