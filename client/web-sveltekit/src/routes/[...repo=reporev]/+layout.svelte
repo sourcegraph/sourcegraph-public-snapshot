@@ -114,7 +114,7 @@
     $: navEntriesToShow = viewableNavEntries.slice(0, visibleNavEntryCount)
     $: overflowNavEntries = viewableNavEntries.slice(visibleNavEntryCount)
     $: allMenuEntries = [...overflowNavEntries, ...menuEntries]
-    $: isP4 = data.resolvedRepository.externalRepository.serviceType === 'perforce'
+    $: isPerforceDepot = data.resolvedRepository.externalRepository.serviceType === 'perforce'
 
     function isCodePage(repoURL: string, pathname: string) {
         return (
@@ -134,7 +134,7 @@
     }
 
     function convertToP4Tabs(entry: MenuEntry): TabbableMenuEntry {
-        if (isP4 && entry.label === 'Commits') {
+        if (isPerforceDepot && entry.label === 'Commits') {
             return {
                 id: 'changelists',
                 title: 'Changelists',
@@ -209,7 +209,7 @@
         externalServiceKind={data.resolvedRepository.externalURLs[0]?.serviceKind ?? undefined}
     />
 
-    <TabsHeader id="repoheader" {tabs} {isP4} selected={selectedTab} />
+    <TabsHeader id="repoheader" {tabs} {isPerforceDepot} selected={selectedTab} />
 
     <DropdownMenu
         open={menuOpen}

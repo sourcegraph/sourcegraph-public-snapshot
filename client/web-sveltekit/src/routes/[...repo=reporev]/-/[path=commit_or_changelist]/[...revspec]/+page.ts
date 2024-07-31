@@ -13,9 +13,9 @@ export const load: PageLoad = async ({ parent, params }) => {
     const { repoName } = parseRepoRevision(params.repo)
     const { resolvedRepository } = await parent()
 
-    const isPerforce = resolvedRepository.externalRepository.serviceType === 'perforce'
+    const isPerforceDepot = resolvedRepository.externalRepository.serviceType === 'perforce'
 
-    const result = isPerforce
+    const result = isPerforceDepot
         ? await client.query(CommitPage_Changelist, { repoId: resolvedRepository.id, changelistId: params.revspec })
         : await client.query(CommitPage_CommitQuery, { repoName, revspec: params.revspec })
 
@@ -34,31 +34,31 @@ export const load: PageLoad = async ({ parent, params }) => {
     const diff =
         commit?.oid && commit?.parents[0]?.oid
             ? infinityQuery({
-                  client,
-                  query: CommitPage_DiffQuery,
-                  variables: {
-                      repoName,
-                      base: commit.parents[0].oid,
-                      head: commit.oid,
-                      first: PAGE_SIZE,
-                      after: null as string | null,
-                  },
-                  map: result => {
-                      const diffs = result.data?.repository?.comparison.fileDiffs
-                      return {
-                          nextVariables: diffs?.pageInfo.hasNextPage ? { after: diffs?.pageInfo.endCursor } : undefined,
-                          data: diffs?.nodes,
-                          error: result.error,
-                      }
-                  },
-                  merge: (previous, next) => (previous ?? []).concat(next ?? []),
-                  createRestoreStrategy: api =>
-                      new IncrementalRestoreStrategy(
-                          api,
-                          n => n.length,
-                          n => ({ first: n.length })
-                      ),
-              })
+                client,
+                query: CommitPage_DiffQuery,
+                variables: {
+                    repoName,
+                    base: commit.parents[0].oid,
+                    head: commit.oid,
+                    first: PAGE_SIZE,
+                    after: null as string | null,
+                },
+                map: result => {
+                    const diffs = result.data?.repository?.comparison.fileDiffs
+                    return {
+                        nextVariables: diffs?.pageInfo.hasNextPage ? { after: diffs?.pageInfo.endCursor } : undefined,
+                        data: diffs?.nodes,
+                        error: result.error,
+                    }
+                },
+                merge: (previous, next) => (previous ?? []).concat(next ?? []),
+                createRestoreStrategy: api =>
+                    new IncrementalRestoreStrategy(
+                        api,
+                        n => n.length,
+                        n => ({ first: n.length })
+                    ),
+            })
             : null
 
     return {

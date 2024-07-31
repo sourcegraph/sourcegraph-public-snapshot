@@ -179,7 +179,7 @@
         }
     }
 
-    $: isP4 = data.resolvedRepository.externalRepository.serviceType === 'perforce'
+    $: isPerforceDepot = data.resolvedRepository.externalRepository.serviceType === 'perforce'
 
     onMount(() => {
         if ($isViewportMobile) {
@@ -217,7 +217,7 @@
                     revision={data.revision}
                     commitID={data.resolvedRevision.commitID}
                     defaultBranch={data.defaultBranch}
-                    {isP4}
+                    {isPerforceDepot}
                     getRepositoryBranches={data.getRepoBranches}
                     getRepositoryCommits={data.getRepoCommits}
                     getRepositoryTags={data.getRepoTags}

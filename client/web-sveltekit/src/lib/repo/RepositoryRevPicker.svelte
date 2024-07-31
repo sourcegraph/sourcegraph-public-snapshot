@@ -53,7 +53,7 @@
         defaultBranch: string
         display?: ComponentProps<ButtonGroup>['display']
         placement?: Placement
-        isP4: boolean
+        isPerforceDepot: boolean
         onSelect?: (revision: string) => void
         getRepositoryTags: (query: string) => PromiseLike<RepositoryTags>
         getRepositoryCommits: (query: string) => PromiseLike<RepositoryCommits>
@@ -66,7 +66,7 @@
     export let defaultBranch: $$Props['defaultBranch']
     export let placement: $$Props['placement'] = 'right-start'
     export let display: $$Props['display'] = undefined
-    export let isP4: $$Props['isP4']
+    export let isPerforceDepot: $$Props['isPerforceDepot']
 
     /**
      * Optional handler for revision selection.
@@ -124,7 +124,7 @@
 
     <div slot="content" class="content" let:toggle>
         <Tabs>
-            {#if !isP4}
+            {#if !isPerforceDepot}
                 <TabPanel title="Branches" shortcut={branchesHotkey}>
                     <Picker
                         name="branches"
@@ -172,19 +172,19 @@
                     </Picker>
                 </TabPanel>
             {/if}
-            <TabPanel title={isP4 ? 'Changelists' : 'Commits'} shortcut={commitsHotkey}>
+            <TabPanel title={isPerforceDepot ? 'Changelists' : 'Commits'} shortcut={commitsHotkey}>
                 <Picker
-                    name={isP4 ? 'changelists' : 'commits'}
+                    name={isPerforceDepot ? 'changelists' : 'commits'}
                     seeAllItemsURL={`${repoURL}/-/commits`}
                     getData={getRepositoryCommits}
                     toOption={commit => {
-                        return isP4 && commit.perforceChangelist
+                        return isPerforceDepot && commit.perforceChangelist
                             ? { value: commit.id, label: commit.perforceChangelist.cid }
                             : { value: commit.id, label: commit.oid }
                     }}
                     onSelect={commit => {
                         toggle(false)
-                        if (isP4 && commit.perforceChangelist) {
+                        if (isPerforceDepot && commit.perforceChangelist) {
                             onSelect(`changelist/${commit?.perforceChangelist?.cid}`)
                         } else {
                             onSelect(commit.oid)

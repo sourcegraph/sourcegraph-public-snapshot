@@ -23,7 +23,7 @@
     export let id: string
     export let tabs: Tab[]
     export let selected: number | null = 0
-    export let isP4: boolean
+    export let isPerforceDepot: boolean
 
     const dispatch = createEventDispatcher<{ select: number }>()
 
@@ -38,7 +38,7 @@
         }
     }
 
-    $: tabs = isP4 ? removeGitTabs() : tabs
+    $: tabs = isPerforceDepot ? removeGitTabs() : tabs
 </script>
 
 <div class="tabs-header" role="tablist" data-tab-header>

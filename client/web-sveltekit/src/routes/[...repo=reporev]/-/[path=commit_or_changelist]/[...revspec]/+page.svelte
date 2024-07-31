@@ -61,7 +61,7 @@
         repositoryContext.set({})
     })
 
-    $: isPerforce = data.resolvedRepository.externalRepository.serviceType === 'perforce'
+    $: isPerforceDepot = data.resolvedRepository.externalRepository.serviceType === 'perforce'
     $: changelistId = data.commit.perforceChangelist?.cid
 </script>
 
@@ -76,12 +76,12 @@
                 <div class="info"><Commit commit={data.commit} alwaysExpanded={!$isViewportMobile} /></div>
                 <ul class="actions">
                     <li>
-                        <span>{isPerforce ? 'Changelist ID:' : 'Commit:'}</span>
+                        <span>{isPerforceDepot ? 'Changelist ID:' : 'Commit:'}</span>
                         <Badge variant="secondary"
-                            ><code>{isPerforce ? changelistId : data.commit.abbreviatedOID}</code></Badge
+                            ><code>{isPerforceDepot ? changelistId : data.commit.abbreviatedOID}</code></Badge
                         >&nbsp;<CopyButton value={data.commit.abbreviatedOID} />
                     </li>
-                    {#if !isPerforce}
+                    {#if !isPerforceDepot}
                         <li>
                             <span>{pluralize('Parent', data.commit.parents.length)}:</span>
                             {#each data.commit.parents as parent}
@@ -90,7 +90,7 @@
                             {/each}
                         </li>
                     {/if}
-                    {#if isPerforce}
+                    {#if isPerforceDepot}
                         <li>
                             <a href="{`/${data.repoName}@changelist/${data.commit.perforceChangelist?.cid}`}}"
                                 >Browse files
