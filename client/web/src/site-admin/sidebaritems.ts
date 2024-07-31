@@ -139,8 +139,7 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
         },
         {
             label: maintenanceGroupUpdatesItemLabel,
-            // TODO: change this to point the appliance service
-            to: 'http://localhost:8889/',
+            to: '/appliance/updates',
             condition: ({ applianceManaged }) => applianceManaged,
         },
         {

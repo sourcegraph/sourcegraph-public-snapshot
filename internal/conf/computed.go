@@ -2,9 +2,9 @@ package conf
 
 import (
 	"encoding/hex"
-	"os"
 	stdlog "log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"net/url"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
