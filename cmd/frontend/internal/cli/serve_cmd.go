@@ -109,6 +109,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 	db := database.NewDB(logger, sqlDB)
 
+	// Wait for redis-store to have started up, for about 5 seconds. This is to prevent
+	// the frontend from starting up before redis-store is ready when all requests would
+	// still fail because we cannot validate sessions. If it takes longer than 5 seconds,
+	// we'll just continue and expect redis will eventually come up.
+	waitForRedis(logger, redispool.Store)
+
 	// Used by opentelemetry logging
 	stdr.SetVerbosity(10)
 
@@ -448,4 +454,38 @@ func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
 // GetInternalAddr returns the address of the internal HTTP API server.
 func GetInternalAddr() string {
 	return httpAddrInternal
+}
+
+func pingRedis(kv redispool.KeyValue) error {
+	conn := kv.Pool().Get()
+	defer conn.Close()
+	data, err := conn.Do("PING")
+	if err != nil {
+		return err
+	}
+	if data != "PONG" {
+		return errors.New("no pong received")
+	}
+	return nil
+}
+
+// waitForRedis waits up to a certain timeout for Redis to become reachable, to reduce the
+// likelihood of the HTTP handlers starting to serve requests while Redis (and therefore session
+// data) is still unavailable. After the timeout has elapsed, if Redis is still unreachable, it
+// continues anyway (because that's probably better than the site not coming up at all).
+func waitForRedis(logger sglog.Logger, kv redispool.KeyValue) {
+	const timeout = 5 * time.Second
+	deadline := time.Now().Add(timeout)
+	var err error
+	for {
+		time.Sleep(150 * time.Millisecond)
+		err = pingRedis(kv)
+		if err == nil {
+			return
+		}
+		if time.Now().After(deadline) {
+			logger.Warn("Redis (used for session store) failed to become reachable. Will continue trying to establish connection in background.", sglog.Duration("timeout", timeout), sglog.Error(err))
+			return
+		}
+	}
 }

@@ -8,11 +8,11 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-func ResetMockSessionStore(t *testing.T) (cleanup func()) {
+func ResetMockSessionStore(t *testing.T) {
 	var err error
 	tempdir, err := os.MkdirTemp("", "sourcegraph-oidc-test")
 	if err != nil {
-		return func() {}
+		t.Fatal(err)
 	}
 
 	defer func() {
@@ -21,8 +21,8 @@ func ResetMockSessionStore(t *testing.T) (cleanup func()) {
 		}
 	}()
 
-	SetSessionStore(sessions.NewFilesystemStore(tempdir, securecookie.GenerateRandomKey(2048)))
-	return func() {
+	mockSessionStore = sessions.NewFilesystemStore(tempdir, securecookie.GenerateRandomKey(2048))
+	t.Cleanup(func() {
 		os.RemoveAll(tempdir)
-	}
+	})
 }

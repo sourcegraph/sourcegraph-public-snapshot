@@ -171,8 +171,7 @@ func newMockDBAndRequester() mockDetails {
 }
 
 func TestMiddleware(t *testing.T) {
-	cleanup := session.ResetMockSessionStore(t)
-	defer cleanup()
+	session.ResetMockSessionStore(t)
 
 	const testCode = "testCode"
 	providerConfig := cloud.SchemaAuthProviderSourcegraphOperator{

@@ -32,8 +32,7 @@ import (
 // and `github.com/dghubble/gologin` which ensures the correctness of the `/callback` handler.
 func TestMiddleware(t *testing.T) {
 	logger := logtest.Scoped(t)
-	cleanup := session.ResetMockSessionStore(t)
-	defer cleanup()
+	session.ResetMockSessionStore(t)
 
 	const mockUserID = 123
 
