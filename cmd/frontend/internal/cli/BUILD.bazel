@@ -33,7 +33,6 @@ go_library(
         "//cmd/frontend/internal/cli/middleware",
         "//cmd/frontend/internal/highlight",
         "//cmd/frontend/internal/httpapi",
-        "//cmd/frontend/oneclickexport",
         "//internal/actor",
         "//internal/api",
         "//internal/auth",

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -19,8 +20,6 @@ type Exporter interface {
 }
 
 var _ Exporter = &DataExporter{}
-
-var GlobalExporter Exporter
 
 type DataExporter struct {
 	logger           log.Logger

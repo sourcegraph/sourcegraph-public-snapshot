@@ -30,7 +30,7 @@ func oneClickExportHandler(db database.DB, logger log.Logger) http.HandlerFunc {
 			return
 		}
 
-		archive, err := oce.GlobalExporter.Export(ctx, request)
+		archive, err := oce.NewDataExporter(db, logger).Export(ctx, request)
 		if err != nil {
 			logger.Error("OneClickExport", log.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
