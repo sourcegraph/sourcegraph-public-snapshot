@@ -172,14 +172,17 @@ if $push_prod; then
   done
 fi
 
-honeyvent=$(bazel "${bazelrc[@]}" build //dev/tools:honeyvent 2>/dev/null && bazel "${bazelrc[@]}" cquery //dev/tools:honeyvent --output=files 2>/dev/null)
-
 images=$(bazel "${bazelrc[@]}" query 'kind("oci_push rule", //...)')
 
 echo "--- :bazel: Building all oci_push targets"
 
 # shellcheck disable=SC2086
-bazel "${bazelrc[@]}" build --experimental_execution_log_compact_file=execution_log.zstd --stamp --workspace_status_command=./dev/bazel_stamp_vars.sh ${images}
+bazel "${bazelrc[@]}" build \
+  --announce_rc \
+  --profile=bazel-profile.gz \
+  --experimental_execution_log_compact_file=execution_log.zstd \
+  --stamp --workspace_status_command=./dev/bazel_stamp_vars.sh \
+  ${images}
 
 echo "--- :bash: Generating jobfile - started"
 
@@ -222,15 +225,6 @@ while read -r line; do
     else
       echo "--- :docker::arrow_heading_up: $target ${duration}s: failed with $exitcode) :red_circle:"
     fi
-
-    $honeyvent -k "$CI_HONEYCOMB_API_KEY" -d "buildkite-pushall" \
-      -n "exit_code" -v "$exitcode" \
-      -n "duration" -v "$duration" \
-      -n "target" -v "$target" \
-      -n "commit" -v "$BUILDKITE_COMMIT" \
-      -n "build_number" -v "$BUILDKITE_BUILD_NUMBER" \
-      -n "branch" -v "$BUILDKITE_BRANCH" \
-      -n "label" -v "$BUILDKITE_LABEL"s
   fi
 done <"$log_file"
 
