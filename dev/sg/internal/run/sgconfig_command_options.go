@@ -13,7 +13,8 @@ type SGConfigCommandOptions struct {
 	Env          map[string]string `yaml:"env"`
 	IgnoreStdout bool              `yaml:"ignoreStdout"`
 	IgnoreStderr bool              `yaml:"ignoreStderr"`
-	// TODO: Update comment
+	// If true, the runner will continue watching this commands dependencies
+	// if the command's last execution was successful (i.e exitCode = 0)
 	ContinueWatchOnExitZero bool `yaml:"continueWatchOnExit"`
 	// Preamble is a short and visible message, displayed when the command is launched.
 	Preamble string `yaml:"preamble"`

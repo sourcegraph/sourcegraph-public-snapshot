@@ -430,7 +430,9 @@ func (sc *startedCmd) getOutputWriter(ctx context.Context, opts *outputOptions, 
 }
 
 func (sc *startedCmd) Exit() <-chan error {
-	// TODO: Explain what's going on here.
+	// We track the state of a single process to avoid an infinite loop
+	// for short-running commands. When the command is done executing,
+	// we simply return an empty receiver channel instead.
 	if sc.finished {
 		fakeChan := make(<-chan error)
 		return fakeChan
