@@ -52,7 +52,11 @@
                 <Button variant="secondary" on:click={() => handleDismiss()}>Awesome. I’m ready to use it!</Button>
                 <!-- <a href="TODO">Read release notes</a> -->
             </div>
-            <p> You can opt out at any time by using the toggle at the top of the screen.</p>
+            <p> You can opt out at any time by using the toggle at the top of the screen. </p>
+            <p>
+                Whilst exploring the new experience, consider leaving us some feedback via the button at the top. We'd
+                love to hear from you!
+            </p>
         </div>
     </div>
     {#if $isLightTheme}
@@ -200,6 +204,7 @@
                 color: var(--text-muted);
                 font-size: var(--font-size-small);
                 font-weight: 400;
+                margin: 0;
             }
         }
     }
