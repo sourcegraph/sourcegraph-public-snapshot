@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
@@ -24,7 +23,7 @@ import (
 // and sets the actor in the request context.
 func NewHandler(db database.DB, logger log.Logger) http.Handler {
 	session.SetSessionStore(session.NewRedisStore(func() bool {
-		return globals.ExternalURL().Scheme == "https"
+		return conf.ExternalURLParsed().Scheme == "https"
 	}))
 
 	logger = logger.Scoped("appHandler")

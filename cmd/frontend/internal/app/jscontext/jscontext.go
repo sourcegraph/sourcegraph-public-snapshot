@@ -276,7 +276,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	a := sgactor.FromContext(ctx)
 
 	headers := make(map[string]string)
-	headers["x-sourcegraph-client"] = globals.ExternalURL().String()
+	headers["x-sourcegraph-client"] = conf.ExternalURLParsed().String()
 	headers["X-Requested-With"] = "Sourcegraph" // required for httpapi to use cookie auth
 
 	// Propagate Cache-Control no-cache and max-age=0 directives
@@ -381,7 +381,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	// authentication above, but do not include e.g. hard-coded secrets about
 	// the server instance here as they would be sent to anonymous users.
 	context := JSContext{
-		ExternalURL:         globals.ExternalURL().String(),
+		ExternalURL:         conf.ExternalURLParsed().String(),
 		XHRHeaders:          headers,
 		UserAgentIsBot:      isBot(req.UserAgent()),
 		AssetsRoot:          assetsutil.URL("").String(),
