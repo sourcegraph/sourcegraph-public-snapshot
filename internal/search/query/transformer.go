@@ -1,8 +1,11 @@
 package query
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -689,7 +692,7 @@ func ExperimentalPhraseBoost(basic Basic) Basic {
 	if n, ok := basic.Pattern.(Operator); ok && n.Kind == And {
 		// Gate on the number of operands. We don't want to add a phrase query for very
 		// short queries.
-		if len(n.Operands) < 3 {
+		if len(n.Operands) <= 1 {
 			return basic
 		}
 
@@ -700,16 +703,21 @@ func ExperimentalPhraseBoost(basic Basic) Basic {
 				return basic
 			}
 
-			phrase += c.Value + " "
+			value := regexp.QuoteMeta(c.Value)
+			if c.Annotation.Labels.IsSet(Quoted) {
+				value = fmt.Sprintf(`['"]%s['"]`, value)
+			}
+			phrase += value + " "
 		}
 		phrase = strings.TrimSpace(phrase)
+		pattern := fmt.Sprintf(`\b%s($|\b)`, phrase)
 
 		basic.Pattern = Operator{
 			Kind: Or,
 			Operands: []Node{
 				Pattern{
-					Value:      phrase,
-					Annotation: Annotation{Labels: Boost | Literal | QuotesAsLiterals | Standard},
+					Value:      pattern,
+					Annotation: Annotation{Labels: Boost | Regexp | Standard},
 				},
 				n,
 			},

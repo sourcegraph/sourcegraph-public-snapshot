@@ -21,16 +21,15 @@ func TestExperimentalPhraseBoost(t *testing.T) {
 	}
 
 	// expect phrase query
-	autogold.Expect(`(or "foo bar bas" (and "foo" "bar" "bas"))`).Equal(t, test("foo bar bas", SearchTypeKeyword))
-	autogold.Expect(`(or "foo bar bas" (and "foo" "bar" "bas"))`).Equal(t, test("(foo and bar) and bas", SearchTypeKeyword))
-	autogold.Expect(`(or "* int func(" (and "*" "int" "func("))`).Equal(t, test("* int func(", SearchTypeKeyword))
-	autogold.Expect(`(or "foo bar bas qux" (and "foo bar" "bas" "qux"))`).Equal(t, test(`"foo bar" bas qux`, SearchTypeKeyword))
+	autogold.Expect(`(or "(^|\\b)foo bar bas($|\\b)" (and "foo" "bar" "bas"))`).Equal(t, test("foo bar bas", SearchTypeKeyword))
+	autogold.Expect(`(or "(^|\\b)foo bar bas($|\\b)" (and "foo" "bar" "bas"))`).Equal(t, test("(foo and bar) and bas", SearchTypeKeyword))
+	autogold.Expect(`(or "(^|\\b)\\* int func\\(" (and "*" "int" "func("))($|\\b)`).Equal(t, test("* int func(", SearchTypeKeyword))
+	autogold.Expect(`(or "(^|\\b)foo bar bas qux($|\\b)" (and "foo bar" "bas" "qux"))`).Equal(t, test(`"foo bar" bas qux`, SearchTypeKeyword))
 
 	// expect no phrase query
 	autogold.Expect(`"foo bar bas"`).Equal(t, test("/foo bar bas/", SearchTypeKeyword))
 	autogold.Expect(`(and "foo" "bar" "ba.*")`).Equal(t, test("foo bar /ba.*/", SearchTypeKeyword))
 	autogold.Expect(`"foo"`).Equal(t, test("foo", SearchTypeKeyword))
-	autogold.Expect(`(and "foo" "bar")`).Equal(t, test("foo bar", SearchTypeKeyword))
 	autogold.Expect(`(and "foo" "bar")`).Equal(t, test("foo and bar", SearchTypeKeyword))
 	autogold.Expect(`(and "foo" (not "bar"))`).Equal(t, test("foo not bar", SearchTypeKeyword))
 	autogold.Expect(`(and "foo" "bar" (not "bas") "quz")`).Equal(t, test("foo bar not bas quz", SearchTypeKeyword))
