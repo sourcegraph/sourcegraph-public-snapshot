@@ -233,6 +233,7 @@ type JSContext struct {
 	CodeIntelRankingDocumentReferenceCountsEnabled bool `json:"codeIntelRankingDocumentReferenceCountsEnabled"`
 
 	CodeInsightsEnabled      bool `json:"codeInsightsEnabled"`
+	ApplianceManaged         bool `json:"applianceManaged"`
 	CodeIntelligenceEnabled  bool `json:"codeIntelligenceEnabled"`
 	SearchContextsEnabled    bool `json:"searchContextsEnabled"`
 	NotebooksEnabled         bool `json:"notebooksEnabled"`
@@ -436,6 +437,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
 
 		CodeSearchEnabledOnInstance: codeSearchLicensed,
+		ApplianceManaged:            conf.IsApplianceManaged(),
 
 		ExecutorsEnabled:                               conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:                   conf.CodeIntelAutoIndexingEnabled(),
