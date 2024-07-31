@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
@@ -127,7 +126,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		}
 	}
 
-	userpasswd.Init()
 	highlight.Init()
 
 	// override site config first
