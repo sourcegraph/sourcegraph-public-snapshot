@@ -158,15 +158,16 @@ type AuthProviderCommon struct {
 	Order int `json:"order,omitempty"`
 }
 type AuthProviders struct {
-	AzureDevOps    *AzureDevOpsAuthProvider
-	Bitbucketcloud *BitbucketCloudAuthProvider
-	Builtin        *BuiltinAuthProvider
-	Gerrit         *GerritAuthProvider
-	Github         *GitHubAuthProvider
-	Gitlab         *GitLabAuthProvider
-	HttpHeader     *HTTPHeaderAuthProvider
-	Openidconnect  *OpenIDConnectAuthProvider
-	Saml           *SAMLAuthProvider
+	AzureDevOps     *AzureDevOpsAuthProvider
+	Bitbucketcloud  *BitbucketCloudAuthProvider
+	Bitbucketserver *BitbucketServerAuthProvider
+	Builtin         *BuiltinAuthProvider
+	Gerrit          *GerritAuthProvider
+	Github          *GitHubAuthProvider
+	Gitlab          *GitLabAuthProvider
+	HttpHeader      *HTTPHeaderAuthProvider
+	Openidconnect   *OpenIDConnectAuthProvider
+	Saml            *SAMLAuthProvider
 }
 
 func (v AuthProviders) MarshalJSON() ([]byte, error) {
@@ -175,6 +176,9 @@ func (v AuthProviders) MarshalJSON() ([]byte, error) {
 	}
 	if v.Bitbucketcloud != nil {
 		return json.Marshal(v.Bitbucketcloud)
+	}
+	if v.Bitbucketserver != nil {
+		return json.Marshal(v.Bitbucketserver)
 	}
 	if v.Builtin != nil {
 		return json.Marshal(v.Builtin)
@@ -211,6 +215,8 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, &v.AzureDevOps)
 	case "bitbucketcloud":
 		return json.Unmarshal(data, &v.Bitbucketcloud)
+	case "bitbucketserver":
+		return json.Unmarshal(data, &v.Bitbucketserver)
 	case "builtin":
 		return json.Unmarshal(data, &v.Builtin)
 	case "gerrit":
@@ -226,7 +232,7 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	case "saml":
 		return json.Unmarshal(data, &v.Saml)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"azureDevOps", "bitbucketcloud", "builtin", "gerrit", "github", "gitlab", "http-header", "openidconnect", "saml"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"azureDevOps", "bitbucketcloud", "bitbucketserver", "builtin", "gerrit", "github", "gitlab", "http-header", "openidconnect", "saml"})
 }
 
 // AzureDevOpsAuthProvider description: Azure auth provider for dev.azure.com
@@ -403,6 +409,24 @@ type BitbucketCloudRateLimit struct {
 	Enabled bool `json:"enabled"`
 	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 500, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 500 requests immediately, provided that the complexity cost of each request is 1.
 	RequestsPerHour float64 `json:"requestsPerHour"`
+}
+
+// BitbucketServerAuthProvider description: Configures the Bitbucket Server OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your Bitbucket Server instance: https://confluence.atlassian.com/bitbucketserver0720/configure-an-incoming-link-1116282013.html. The application should have the repository read permission and the callback URL set to the concatenation of your Sourcegraph instance URL and "/.auth/bitbucketserver/callback".
+type BitbucketServerAuthProvider struct {
+	// AllowSignup description: Allows new visitors to sign up for accounts via Bitbucket Server OAuth. If false, users signing in via Bitbucket Server must have an existing Sourcegraph account, which will be linked to their Bitbucket Server identity after sign-in.
+	AllowSignup bool `json:"allowSignup,omitempty"`
+	// ClientId description: The Key of the Bitbucket OAuth app.
+	ClientId string `json:"clientId"`
+	// ClientSecret description: The Client Secret of the Bitbucket OAuth app.
+	ClientSecret  string  `json:"clientSecret"`
+	DisplayName   string  `json:"displayName,omitempty"`
+	DisplayPrefix *string `json:"displayPrefix,omitempty"`
+	Hidden        bool    `json:"hidden,omitempty"`
+	NoSignIn      bool    `json:"noSignIn,omitempty"`
+	Order         int     `json:"order,omitempty"`
+	Type          string  `json:"type"`
+	// Url description: URL of the Bitbucket Server instance.
+	Url string `json:"url,omitempty"`
 }
 
 // BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server / Bitbucket Data Center repository permissions.
