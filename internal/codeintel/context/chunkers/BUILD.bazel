@@ -27,8 +27,6 @@ go_library(
         "@com_github_smacker_go_tree_sitter//ruby",
         "@com_github_smacker_go_tree_sitter//rust",
         "@com_github_smacker_go_tree_sitter//scala",
-        "@com_github_smacker_go_tree_sitter//sql",
-        "@com_github_smacker_go_tree_sitter//swift",
         "@com_github_smacker_go_tree_sitter//typescript/tsx",
         "@com_github_smacker_go_tree_sitter//typescript/typescript",
     ],
