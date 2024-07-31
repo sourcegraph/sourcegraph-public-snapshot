@@ -52,12 +52,12 @@ func newEmbeddingsChunkingHandler(
 				}
 			}),
 		}
-		completionBytes, err := json.Marshal(res)
+		chunkBytes, err := json.Marshal(res)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		_, _ = w.Write(completionBytes)
+		_, _ = w.Write(chunkBytes)
 	})
 }
 
