@@ -226,20 +226,21 @@ func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.Co
 
 func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err error) {
 	ctx, trace, endObservation := r.operations.usagesForSymbol.With(ctx, &err, observation.Args{Attrs: unresolvedArgs.Attrs()})
-	if !conf.SCIPBasedAPIsEnabled() {
-		return nil, ErrNotEnabled
-	}
 
 	numPreciseResults := 0
 	numSyntacticResults := 0
 	numSearchBasedResults := 0
 	defer func() {
-		endObservation.OnCancel(ctx, 1, observation.Args{Attrs: []attribute.KeyValue{
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
 			attribute.Int("results.precise", numPreciseResults),
 			attribute.Int("results.syntactic", numSyntacticResults),
 			attribute.Int("results.searchBased", numSearchBasedResults),
 		}})
 	}()
+
+	if !conf.SCIPBasedAPIsEnabled() {
+		return nil, ErrNotEnabled
+	}
 
 	const maxUsagesCount = 100
 	args, err := unresolvedArgs.Resolve(ctx, r.repoStore, r.gitserverClient, maxUsagesCount)
