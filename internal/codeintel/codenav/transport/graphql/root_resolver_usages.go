@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
@@ -10,7 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type usageConnectionResolver struct {
@@ -28,17 +31,65 @@ func (u *usageConnectionResolver) PageInfo() resolverstubs.PageInfo {
 	return u.pageInfo
 }
 
+func NewPreciseUsageResolver(ctx context.Context, usage shared.UploadUsage, locResolver *gitresolvers.CachedLocationResolver) (resolverstubs.UsageResolver, error) {
+	kind := convertKind(usage.Kind)
+	repoID := api.RepoID(usage.Upload.RepositoryID)
+	res, err := locResolver.Path(ctx, repoID, usage.TargetCommit, usage.Path.RawValue(), false)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to resolve path in usage")
+	}
+	start := usage.TargetRange.Start.ToSCIPPosition()
+	// TODO(id: GRAPH-781): Optimize the code to:
+	// - Avoid refetching/re-splitting the contents repeatedly for the same file
+	// - Avoid line-splitting beyond the needed ranges.
+	// We don't want to make this computation _lazy_, as that would require making
+	// the GraphQL field optional (it is currently non-optional).
+	content, err := res.Content(ctx, &resolverstubs.GitTreeContentPageArgs{StartLine: &start.Line, EndLine: pointers.Ptr(start.Line + 1)})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to fetch contents")
+	}
+
+	return &usageResolver{
+		symbol:             &symbolInformationResolver{name: usage.Symbol},
+		provenance:         codenav.ProvenancePrecise,
+		kind:               kind,
+		surroundingContent: content,
+		usageRange: &usageRangeResolver{
+			repoName: api.RepoName(usage.Upload.RepositoryName),
+			revision: api.CommitID(usage.TargetCommit),
+			path:     usage.Path,
+			range_:   usage.TargetRange.ToSCIPRange(),
+		},
+		dataSource: &usage.Upload.Indexer,
+	}, nil
+}
+
+func convertKind(kind shared.UsageKind) resolverstubs.SymbolUsageKind {
+	switch kind {
+	case shared.UsageKindDefinition:
+		return resolverstubs.UsageKindDefinition
+	case shared.UsageKindImplementation:
+		return resolverstubs.UsageKindImplementation
+	case shared.UsageKindSuper:
+		return resolverstubs.UsageKindSuper
+	case shared.UsageKindReference:
+		return resolverstubs.UsageKindReference
+	}
+	panic(fmt.Sprintf("unhandled kind of shared.UsageKind: %q", kind.String()))
+}
+
 type usageResolver struct {
 	symbol             *symbolInformationResolver
 	provenance         codenav.CodeGraphDataProvenance
 	kind               resolverstubs.SymbolUsageKind
 	surroundingContent string
 	usageRange         *usageRangeResolver
+	dataSource         *string
 }
 
-var _ resolverstubs.UsageResolver = &usageResolver{}
+var _ resolverstubs.UsageResolver = &usageResolver{} //nolint:exhaustruct
 
-func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Repo, revision api.CommitID) resolverstubs.UsageResolver {
+func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repoName api.RepoName, revision api.CommitID) resolverstubs.UsageResolver {
 	var kind resolverstubs.SymbolUsageKind
 	if usage.IsDefinition {
 		kind = resolverstubs.UsageKindDefinition
@@ -53,15 +104,16 @@ func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Re
 		kind:               kind,
 		surroundingContent: usage.SurroundingContent,
 		usageRange: &usageRangeResolver{
-			repository: repository,
-			revision:   revision,
-			path:       usage.Path,
-			range_:     usage.Range,
+			repoName: repoName,
+			revision: revision,
+			path:     usage.Path,
+			range_:   usage.Range,
 		},
+		dataSource: nil,
 	}
 }
 
-func NewSearchBasedUsageResolver(usage codenav.SearchBasedMatch, repository types.Repo, revision api.CommitID) resolverstubs.UsageResolver {
+func NewSearchBasedUsageResolver(usage codenav.SearchBasedMatch, repoName api.RepoName, revision api.CommitID) resolverstubs.UsageResolver {
 	var kind resolverstubs.SymbolUsageKind
 	if usage.IsDefinition {
 		kind = resolverstubs.UsageKindDefinition
@@ -74,11 +126,13 @@ func NewSearchBasedUsageResolver(usage codenav.SearchBasedMatch, repository type
 		kind:               kind,
 		surroundingContent: usage.SurroundingContent,
 		usageRange: &usageRangeResolver{
-			repository: repository,
-			revision:   revision,
-			path:       usage.Path,
-			range_:     usage.Range,
+			repoName: repoName,
+			revision: revision,
+			path:     usage.Path,
+			range_:   usage.Range,
 		},
+		// TODO: Record if we got the results from Searcher or Zoekt
+		dataSource: nil,
 	}
 }
 
@@ -128,16 +182,16 @@ func (s *symbolInformationResolver) Documentation() (*[]string, error) {
 }
 
 type usageRangeResolver struct {
-	repository types.Repo
-	revision   api.CommitID
-	path       core.RepoRelPath
-	range_     scip.Range
+	repoName api.RepoName
+	revision api.CommitID
+	path     core.RepoRelPath
+	range_   scip.Range
 }
 
 var _ resolverstubs.UsageRangeResolver = &usageRangeResolver{}
 
 func (u *usageRangeResolver) Repository() string {
-	return string(u.repository.Name)
+	return string(u.repoName)
 }
 
 func (u *usageRangeResolver) Revision() string {

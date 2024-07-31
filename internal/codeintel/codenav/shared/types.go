@@ -265,22 +265,29 @@ func (r Range) ToSCIPRange() scip.Range {
 }
 
 type Matcher struct {
-	exactSymbol string
+	// exactSymbol cannot be Some("")
+	exactSymbol core.Option[string]
 	start       scip.Position
 	end         core.Option[scip.Position]
 }
 
 func NewStartPositionMatcher(start scip.Position) Matcher {
-	return Matcher{start: start, exactSymbol: "", end: core.None[scip.Position]()}
+	return Matcher{start: start, exactSymbol: core.None[string](), end: core.None[scip.Position]()}
 }
 
 // NewSCIPBasedMatcher creates a matcher based on the given range_.
 //
 // range_ should correspond to a single occurrence, not any arbitrary range.
 // range_ must be well-formed.
+//
+// An empty symbol string is not considered for matching.
 func NewSCIPBasedMatcher(range_ scip.Range, exactSymbol string) Matcher {
+	lookupSymbol := core.None[string]()
+	if exactSymbol != "" {
+		lookupSymbol = core.Some(exactSymbol)
+	}
 	return Matcher{
-		exactSymbol: exactSymbol,
+		exactSymbol: lookupSymbol,
 		start:       range_.Start,
 		end:         core.Some(range_.End),
 	}
@@ -294,7 +301,7 @@ func (m *Matcher) Attrs() []attribute.KeyValue {
 		rangeStr = fmt.Sprintf("pos %d:%d", m.start.Line, m.start.Character)
 	}
 	return []attribute.KeyValue{
-		attribute.String("matcher.symbol", m.exactSymbol),
+		attribute.String("matcher.symbol", m.exactSymbol.UnwrapOr("")),
 		attribute.String("matcher.range", rangeStr),
 	}
 }
@@ -306,9 +313,9 @@ func (m *Matcher) PositionBased() (scip.Position, bool) {
 	return m.start, true
 }
 
-func (m *Matcher) SymbolBased() (string, scip.Range, bool) {
+func (m *Matcher) SymbolBased() (core.Option[string], scip.Range, bool) {
 	if end, ok := m.end.Get(); ok {
 		return m.exactSymbol, scip.Range{Start: m.start, End: end}, true
 	}
-	return "", scip.Range{}, false
+	return core.None[string](), scip.Range{}, false
 }
