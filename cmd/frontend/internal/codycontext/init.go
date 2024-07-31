@@ -7,12 +7,11 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-
-	newembeddings "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/embeddings"
 )
 
 func Init(
@@ -26,7 +25,7 @@ func Init(
 	logger := log.Scoped("embeddings")
 
 	enterpriseServices.NewEmbeddingsHandler = func() http.Handler {
-		completionsHandler := newembeddings.NewEmbeddingsChunkingHandler(logger, db)
+		completionsHandler := embeddings.NewEmbeddingsChunkingHandler(logger, db)
 		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, completionsHandler)
 	}
 
