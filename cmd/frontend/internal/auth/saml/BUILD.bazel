@@ -16,8 +16,8 @@ go_library(
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/external/session",
+        "//cmd/frontend/internal/auth/providers",
         "//internal/actor",
-        "//internal/auth/providers",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
@@ -52,8 +52,8 @@ go_test(
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/external/session",
+        "//cmd/frontend/internal/auth/providers",
         "//internal/actor",
-        "//internal/auth/providers",
         "//internal/conf",
         "//internal/database/dbmocks",
         "//internal/extsvc",

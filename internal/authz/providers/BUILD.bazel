@@ -37,7 +37,6 @@ go_test(
     embed = [":providers"],
     tags = [TAG_PLATFORM_SOURCE],
     deps = [
-        "//internal/auth/providers",
         "//internal/authz",
         "//internal/authz/providers/gitlab",
         "//internal/conf",

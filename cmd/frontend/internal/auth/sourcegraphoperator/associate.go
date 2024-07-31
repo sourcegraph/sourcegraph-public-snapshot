@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/sourcegraphoperator"
@@ -19,7 +19,7 @@ type accountDetailsBody struct {
 	sourcegraphoperator.ExternalAccountData
 }
 
-// addSourcegraphOperatorExternalAccount links the given user with a Sourcegraph Operator
+// AddSourcegraphOperatorExternalAccount links the given user with a Sourcegraph Operator
 // provider, if and only if it already exists. The provider can only be added through
 // Enterprise Sourcegraph Cloud config, so this essentially no-ops outside of Cloud.
 //
@@ -30,7 +30,7 @@ type accountDetailsBody struct {
 //   - The operation will fail if the user is already a SOAP user, which prevents escalating
 //     time-bound accounts to permanent service accounts.
 //   - Both the client ID and the service ID must match the SOAP configuration exactly.
-func addSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, userID int32, serviceID string, accountDetails string) error {
+func AddSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, userID int32, serviceID string, accountDetails string) error {
 	// 🚨 SECURITY: Caller must be a site admin.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return err

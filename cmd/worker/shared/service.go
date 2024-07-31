@@ -3,7 +3,6 @@ package shared
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -20,10 +19,6 @@ func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 }
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
-	// internal/auth/providers.{GetProviderByConfigID,GetProviderbyServiceType} are potentially in the call-graph in worker,
-	// so we init the built-in auth provider just in case.
-	userpasswd.Init()
-
 	return Start(ctx, observationCtx, ready, config.(*Config))
 }
 

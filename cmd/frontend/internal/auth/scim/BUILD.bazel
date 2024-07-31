@@ -22,7 +22,7 @@ go_library(
         "//cmd/frontend/auth",
         "//cmd/frontend/globals",
         "//cmd/frontend/internal/auth/scim/filter",
-        "//internal/auth/userpasswd",
+        "//cmd/frontend/internal/auth/userpasswd",
         "//internal/authz",
         "//internal/conf",
         "//internal/database",

@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/providers/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -260,49 +259,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: nil,
 		},
 		{
-			description: "external auth provider",
-			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthProviders: []schema.AuthProviders{{
-						Saml: &schema.SAMLAuthProvider{
-							ConfigID: "okta",
-							Type:     "saml",
-						},
-					}},
-				},
-			},
-			gitlabConnections: []*schema.GitLabConnection{
-				{
-					Authorization: &schema.GitLabAuthorization{
-						IdentityProvider: schema.IdentityProvider{External: &schema.ExternalIdentity{
-							Type:             "external",
-							AuthProviderID:   "okta",
-							AuthProviderType: "saml",
-							GitlabProvider:   "my-external",
-						}},
-					},
-					Url:   "https://gitlab.mine",
-					Token: "asdf",
-				},
-			},
-			expAuthzProviders: providersEqual(
-				gitlabAuthzProviderParams{
-					SudoOp: gitlab.SudoProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						AuthnConfigID: providers.ConfigID{
-							Type: "saml",
-							ID:   "okta",
-						},
-						GitLabProvider:              "my-external",
-						SudoToken:                   "asdf",
-						UseNativeUsername:           false,
-						SyncInternalRepoPermissions: true,
-					},
-				},
-			),
-		},
-		{
 			description: "exact username matching",
 			cfg: conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
@@ -324,7 +280,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 						URN:                         "extsvc:gitlab:0",
 						BaseURL:                     mustURLParse(t, "https://gitlab.mine"),
 						SudoToken:                   "asdf",
-						UseNativeUsername:           true,
 						SyncInternalRepoPermissions: true,
 					},
 				},
@@ -1719,76 +1674,6 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 				{Gitlab: &schema.GitLabAuthProvider{Url: "https://gitlab.foo.bar"}},
 			},
 			assert: excludes("Did not find authentication provider matching \"https://gitlab.foo.bar\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) exists for https://gitlab.foo.bar."),
-		},
-		{
-			kind: extsvc.KindGitLab,
-			desc: "missing external provider",
-			config: `
-			{
-				"url": "https://gitlab.foo.bar",
-				"authorization": {
-					"identityProvider": {
-						"type": "external",
-						"authProviderID": "foo",
-						"authProviderType": "bar",
-						"gitlabProvider": "baz"
-					}
-				}
-			}
-			`,
-			assert: includes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) matches the type and configID."),
-		},
-		{
-			kind: extsvc.KindGitLab,
-			desc: "valid external provider with SAML",
-			config: `
-			{
-				"url": "https://gitlab.foo.bar",
-				"authorization": {
-					"identityProvider": {
-						"type": "external",
-						"authProviderID": "foo",
-						"authProviderType": "bar",
-						"gitlabProvider": "baz"
-					}
-				}
-			}
-			`,
-			ps: []schema.AuthProviders{
-				{
-					Saml: &schema.SAMLAuthProvider{
-						ConfigID: "foo",
-						Type:     "bar",
-					},
-				},
-			},
-			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) matches the type and configID."),
-		},
-		{
-			kind: extsvc.KindGitLab,
-			desc: "valid external provider with OIDC",
-			config: `
-			{
-				"url": "https://gitlab.foo.bar",
-				"authorization": {
-					"identityProvider": {
-						"type": "external",
-						"authProviderID": "foo",
-						"authProviderType": "bar",
-						"gitlabProvider": "baz"
-					}
-				}
-			}
-			`,
-			ps: []schema.AuthProviders{
-				{
-					Openidconnect: &schema.OpenIDConnectAuthProvider{
-						ConfigID: "foo",
-						Type:     "bar",
-					},
-				},
-			},
-			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) matches the type and configID."),
 		},
 		{
 			kind: extsvc.KindGitLab,
