@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph_test"
 )
@@ -17,6 +18,9 @@ func TestPublicRESTAPI(t *testing.T) {
 	os.Setenv("HTTP_RECORD_REPLAY_NAME", "publicrestapi")
 
 	go sourcegraph_test.RunSingleStaticBinaryMain()
+
+	// TODO: await for all services to start instead of sleeping
+	time.Sleep(time.Second * 5)
 
 	files, err := filepath.Glob("*.hurl")
 	if err != nil {
