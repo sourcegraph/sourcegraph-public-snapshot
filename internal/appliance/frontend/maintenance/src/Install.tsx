@@ -128,7 +128,11 @@ export const Install: React.FC = () => {
                                         Selecting built-in dbs, configures sourcegraph to use built in databases.
                                         Provisioned and controlled directly by appliance.{' '}
                                     </FormHelperText>
-                                    <FormControlLabel value="external" control={<Radio />} label="External DBs (not yet supported)" />
+                                    <FormControlLabel
+                                        value="external"
+                                        control={<Radio />}
+                                        label="External DBs (not yet supported)"
+                                    />
                                 </RadioGroup>
                             </FormGroup>
                         </FormControl>
