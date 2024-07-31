@@ -70,9 +70,13 @@ func transformMessages(messages []ChatCompletionRequestMessage) []map[string]str
 	// Transform OpenAI messages to Sourcegraph format
 	transformed := make([]map[string]string, len(messages))
 	for i, msg := range messages {
+		text := ""
+		for _, part := range msg.Content.Parts {
+			text += part.Text
+		}
 		transformed[i] = map[string]string{
 			"speaker": msg.Role,
-			"text":    msg.Content.(string), // Assuming content is always string
+			"text":    text,
 		}
 	}
 	return transformed
