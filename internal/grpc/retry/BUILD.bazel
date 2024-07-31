@@ -40,7 +40,7 @@ go_test(
         "manual",
     ],
     deps = [
-        "@com_github_grpc_ecosystem_go_grpc_middleware_v2//testing/testpb",
+        "//internal/grpc/retry/testpb",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
