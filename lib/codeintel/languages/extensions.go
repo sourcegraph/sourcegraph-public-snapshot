@@ -114,7 +114,7 @@ var overrideAmbiguousExtensionsMap = map[string]string{
 }
 
 var unsupportedByEnryExtensionToNameMap = map[string]string{
-	// Extensions that are for the Apex programming languages
+	// Extensions for the Apex programming languages
 	// See https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_dev_guide.htm
 	".apex":    "Apex",
 	".apxt":    "Apex",
