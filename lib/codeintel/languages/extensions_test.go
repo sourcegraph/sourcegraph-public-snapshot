@@ -65,19 +65,23 @@ func TestGetLanguageByAlias_NonAmbiguousLanguages(t *testing.T) {
 }
 
 func TestGetLanguageExtensions_UnsupportedExtensions(t *testing.T) {
-	for language, ext := range unsupportedByEnryNameToExtensionMap {
+	for language, exts := range unsupportedByEnryNameToExtensionMap {
 		extensions := GetLanguageExtensions(language)
-		require.Contains(t, extensions, ext,
-			"maybe a typo in `unsupportedByEnryNameToExtensionMap`?")
+		for _, ext := range exts {
+			require.Contains(t, extensions, ext,
+				"maybe a typo in `unsupportedByEnryNameToExtensionMap`?")
+		}
 	}
 }
 
 func TestGetLanguageExtensions_NonAmbiguousExtensions(t *testing.T) {
 	langMap := reverseMap(nonAmbiguousExtensionsCheck)
-	for language, ext := range langMap {
+	for language, exts := range langMap {
 		extensions := GetLanguageExtensions(language)
-		require.Contains(t, extensions, ext,
-			"If this test fails when updating enry, maybe `overrideAmbiguousExtensionsMap` needs updating")
+		for _, ext := range exts {
+			require.Contains(t, extensions, ext,
+				"If this test fails when updating enry, maybe `overrideAmbiguousExtensionsMap` needs updating")
+		}
 	}
 }
 
@@ -177,24 +181,24 @@ func TestUnsupportedByEnry(t *testing.T) {
 	for lang := range unsupportedByEnryNameToExtensionMap {
 		enry_extensions, found := enrydata.ExtensionsByLanguage[lang]
 		if found {
-			validateLanguageExistenceInEnry(t, "unsupportedByEnryNameToExtensionMap", enry_extensions, lang)
+			validateLanguageAgainstGoEnry(t, "unsupportedByEnryNameToExtensionMap", enry_extensions, lang)
 		}
 	}
 	for _, lang := range unsupportedByEnryAliasMap {
 		enry_extensions, found := enrydata.ExtensionsByLanguage[lang]
 		if found {
-			validateLanguageExistenceInEnry(t, "unsupportedByEnryAliasMap", enry_extensions, lang)
+			validateLanguageAgainstGoEnry(t, "unsupportedByEnryAliasMap", enry_extensions, lang)
 		}
 	}
 	for _, lang := range unsupportedByEnryExtensionToNameMap {
 		enry_extensions, found := enrydata.ExtensionsByLanguage[lang]
 		if found {
-			validateLanguageExistenceInEnry(t, "unsupportedByEnryExtensionToNameMap", enry_extensions, lang)
+			validateLanguageAgainstGoEnry(t, "unsupportedByEnryExtensionToNameMap", enry_extensions, lang)
 		}
 	}
 }
 
-func validateLanguageExistenceInEnry(t *testing.T, name string, enry_extensions []string, lang string) {
+func validateLanguageAgainstGoEnry(t *testing.T, name string, enry_extensions []string, lang string) {
 	enry_extensions = slices.Clone(enry_extensions)
 	slices.Sort(enry_extensions)
 	sg_extensions := slices.Clone(unsupportedByEnryNameToExtensionMap[lang])
