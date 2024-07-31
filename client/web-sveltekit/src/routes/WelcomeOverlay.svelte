@@ -50,7 +50,7 @@
         <div class="cta">
             <div>
                 <Button variant="secondary" on:click={() => handleDismiss()}>Awesome. I’m ready to use it!</Button>
-                <a href="TODO">Read release notes</a>
+                <!-- <a href="TODO">Read release notes</a> -->
             </div>
             <p> You can opt out at any time by using the toggle at the top of the screen.</p>
         </div>
