@@ -63,12 +63,7 @@
     </div>
     <div class="author">
         {#if !committerIsAuthor}authored by <strong>{author.person.name}</strong> and{/if}
-
-        {#if isPerforceDepot(commit)}
-            submitted by <strong>{committer.person.name}</strong>
-        {:else}
-            committed by <strong>{committer.person.name}</strong>
-        {/if}
+        {isPerforceDepot(commit) ? 'submitted' : 'committed'} by <strong>{committer.person.name}</strong>
         <Timestamp date={commitDate} />
     </div>
     {#if commit.body}
