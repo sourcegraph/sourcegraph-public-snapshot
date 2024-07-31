@@ -1,51 +1,23 @@
-import type { FC } from 'react'
+import type {FC} from 'react'
 
-import { Routes, Route } from 'react-router-dom'
+import {Route, Routes} from 'react-router-dom'
 
-import { useQuery } from '@sourcegraph/http-client'
-import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
+import {useQuery} from '@sourcegraph/http-client'
+import type {AuthenticatedUser} from '@sourcegraph/shared/src/auth'
+import type {PlatformContextProps} from '@sourcegraph/shared/src/platform/context'
+import type {TelemetryProps} from '@sourcegraph/shared/src/telemetry/telemetryService'
+import {lazyComponent} from '@sourcegraph/shared/src/util/lazyComponent'
+import {ErrorAlert, LoadingSpinner} from '@sourcegraph/wildcard'
 
-import {
-    GitHubAppDomain,
-    GitHubAppKind,
-    type SiteExternalServiceConfigResult,
-    type SiteExternalServiceConfigVariables,
-} from '../../graphql-operations'
-import { SITE_EXTERNAL_SERVICE_CONFIG } from '../../site-admin/backend'
+import {type SiteExternalServiceConfigResult, type SiteExternalServiceConfigVariables,} from '../../graphql-operations'
+import {SITE_EXTERNAL_SERVICE_CONFIG} from '../../site-admin/backend'
 
-const CreateGitHubAppPage = lazyComponent(
-    () => import('../../components/gitHubApps/CreateGitHubAppPage'),
-    'CreateGitHubAppPage'
-)
 const GitHubAppPage = lazyComponent(() => import('../../components/gitHubApps/GitHubAppPage'), 'GitHubAppPage')
 const GitHubAppsPage = lazyComponent(() => import('../../components/gitHubApps/GitHubAppsPage'), 'GitHubAppsPage')
 
 interface Props extends TelemetryProps, PlatformContextProps {
     authenticatedUser: AuthenticatedUser
     batchChangesEnabled: boolean
-}
-
-const DEFAULT_EVENTS = [
-    'repository',
-    'public',
-    'member',
-    'membership',
-    'organization',
-    'team',
-    'team_add',
-    'meta',
-    'push',
-]
-
-const DEFAULT_PERMISSIONS = {
-    contents: 'read',
-    emails: 'read',
-    members: 'read',
-    metadata: 'read',
 }
 
 export const UserGitHubAppsArea: FC<Props> = props => {
@@ -79,19 +51,6 @@ export const UserGitHubAppsArea: FC<Props> = props => {
                 }
             />
 
-            <Route
-                path="new"
-                element={
-                    <CreateGitHubAppPage
-                        appKind={GitHubAppKind.USER_CREDENTIAL}
-                        defaultEvents={DEFAULT_EVENTS}
-                        defaultPermissions={DEFAULT_PERMISSIONS}
-                        appDomain={GitHubAppDomain.BATCHES}
-                        telemetryRecorder={props.platformContext.telemetryRecorder}
-                        {...props}
-                    />
-                }
-            />
             <Route
                 path=":appID"
                 element={
