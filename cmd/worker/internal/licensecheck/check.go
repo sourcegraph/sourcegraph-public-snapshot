@@ -23,9 +23,27 @@ import (
 )
 
 var (
-	licenseCheckStarted = false
-	baseUrl             = env.Get("SOURCEGRAPH_API_URL", "https://sourcegraph.com", "Base URL for license check API")
+	baseUrl = env.Get("SOURCEGRAPH_API_URL", "https://sourcegraph.com", "Base URL for license check API")
 )
+
+// newLicenseChecker returns a goroutine that periodically checks license validity
+// from dotcom and stores the result in redis.
+// It re-runs the check if the license key changes.
+func newLicenseChecker(ctx context.Context, logger log.Logger, db database.DB, kv redispool.KeyValue) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(
+		ctx,
+		&licenseChecker{
+			db:     db,
+			doer:   httpcli.ExternalDoer,
+			logger: logger.Scoped("licenseChecker"),
+			kv:     kv,
+		},
+		goroutine.WithName("licensing.check-license-validity"),
+		goroutine.WithDescription("check if license is valid from sourcegraph.com"),
+		goroutine.WithInterval(15*time.Minute),
+		goroutine.WithInitialDelay(1*time.Minute),
+	)
+}
 
 const (
 	lastCalledAtStoreKey = "licensing:last_called_at"
@@ -33,22 +51,27 @@ const (
 )
 
 type licenseChecker struct {
-	siteID string
-	token  string
+	db     database.DB
 	doer   httpcli.Doer
 	logger log.Logger
 	kv     redispool.KeyValue
 }
 
 func (l *licenseChecker) Handle(ctx context.Context) error {
-	l.logger.Debug("starting license check", log.String("siteID", l.siteID))
-	if err := l.kv.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339)); err != nil {
-		return err
+	l.logger.Debug("starting license check")
+
+	gs, err := l.db.GlobalState().Get(ctx)
+	if err != nil {
+		return errors.Wrap(err, "error reading global state from DB")
 	}
+	siteID := gs.SiteID
 
 	// skip if has explicitly allowed air-gapped feature
 	if err := licensing.Check(licensing.FeatureAllowAirGapped); err == nil {
-		l.logger.Debug("license is air-gapped, skipping check", log.String("siteID", l.siteID))
+		l.logger.Debug("license is air-gapped, skipping check", log.String("siteID", siteID))
+		if err := l.kv.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339)); err != nil {
+			return err
+		}
 		if err := l.kv.Set(licensing.LicenseValidityStoreKey, true); err != nil {
 			return err
 		}
@@ -61,15 +84,39 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 	}
 	if info.HasTag("dev") || info.HasTag("internal") || info.Plan().IsFreePlan() {
 		l.logger.Debug("internal, dev, or free license, skipping license verification check")
+		if err := l.kv.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339)); err != nil {
+			return err
+		}
 		if err := l.kv.Set(licensing.LicenseValidityStoreKey, true); err != nil {
 			return err
 		}
 		return nil
 	}
 
+	// Check if the license key has changed and generate an auth token for the request.
+	prevLicenseToken, _ := l.kv.Get(prevLicenseTokenKey).String()
+	licenseToken := license.GenerateLicenseKeyBasedAccessToken(conf.Get().LicenseKey)
+	// If the key hasn't changed, let's make sure we only hit this endpoint about
+	// every 12 hours.
+	if prevLicenseToken == licenseToken {
+		if waitDuration, _ := calcDurationSinceLastCalled(l.kv, glock.NewRealClock()); waitDuration > 0 {
+			l.logger.Debug("license key check is not due, skipping check", log.String("siteID", siteID))
+			return nil
+		}
+	}
+
+	// Continue running with new license key.
+	if err := l.kv.Set(prevLicenseTokenKey, licenseToken); err != nil {
+		l.logger.Error("error storing license token in redis", log.Error(err))
+	}
+
+	if err := l.kv.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339)); err != nil {
+		return err
+	}
+
 	payload, err := json.Marshal(struct {
 		ClientSiteID string `json:"siteID"`
-	}{ClientSiteID: l.siteID})
+	}{ClientSiteID: siteID})
 	if err != nil {
 		return err
 	}
@@ -84,33 +131,33 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 		return err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+l.token)
+	req.Header.Set("Authorization", "Bearer "+licenseToken)
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := l.doer.Do(req)
 	if err != nil {
-		l.logger.Warn("error while checking license validity", log.Error(err), log.String("siteID", l.siteID))
+		l.logger.Warn("error while checking license validity", log.Error(err), log.String("siteID", siteID))
 		return err
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		l.logger.Warn("invalid http response while checking license validity", log.String("httpStatus", res.Status), log.String("siteID", l.siteID))
+		l.logger.Warn("invalid http response while checking license validity", log.String("httpStatus", res.Status), log.String("siteID", siteID))
 		return errors.Newf("Failed to check license, status code: %d", res.StatusCode)
 	}
 
 	var body licensing.LicenseCheckResponse
 	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
-		l.logger.Warn("error while decoding license check response", log.Error(err), log.String("siteID", l.siteID))
+		l.logger.Warn("error while decoding license check response", log.Error(err), log.String("siteID", siteID))
 		return err
 	}
 
 	if body.Error != "" {
-		l.logger.Warn("error in license check", log.String("responseError", body.Error), log.String("siteID", l.siteID))
+		l.logger.Warn("error in license check", log.String("responseError", body.Error), log.String("siteID", siteID))
 		return errors.New(body.Error)
 	}
 
 	if body.Data == nil {
-		l.logger.Warn("no data returned from license check", log.String("siteID", l.siteID))
+		l.logger.Warn("no data returned from license check", log.String("siteID", siteID))
 		return errors.New("No data returned from license check")
 	}
 
@@ -121,7 +168,7 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 		return err
 	}
 
-	l.logger.Debug("finished license check", log.String("siteID", l.siteID))
+	l.logger.Debug("finished license check", log.String("siteID", siteID))
 	return nil
 }
 
@@ -148,70 +195,4 @@ func calcDurationSinceLastCalled(kv redispool.KeyValue, clock glock.Clock) (time
 		return 0, nil
 	}
 	return licensing.LicenseCheckInterval - elapsed, nil
-}
-
-// StartLicenseCheck starts a goroutine that periodically checks
-// license validity from dotcom and stores the result in redis.
-// It re-runs the check if the license key changes.
-func StartLicenseCheck(originalCtx context.Context, logger log.Logger, db database.DB, kv redispool.KeyValue) {
-	if licenseCheckStarted {
-		logger.Info("license check already started")
-		return
-	}
-	licenseCheckStarted = true
-
-	ctxWithCancel, cancel := context.WithCancel(originalCtx)
-	var siteID string
-
-	// The entire logic is dependent on config so we will
-	// wait for initial config to be loaded as well as
-	// watch for any config changes
-	conf.Watch(func() {
-		// stop previously running routine
-		cancel()
-		ctxWithCancel, cancel = context.WithCancel(originalCtx)
-
-		prevLicenseToken, _ := kv.Get(prevLicenseTokenKey).String()
-		licenseToken := license.GenerateLicenseKeyBasedAccessToken(conf.Get().LicenseKey)
-		var initialWaitInterval time.Duration = 0
-		if prevLicenseToken == licenseToken {
-			initialWaitInterval, _ = calcDurationSinceLastCalled(kv, glock.NewRealClock())
-		}
-
-		// continue running with new license key
-		if err := kv.Set(prevLicenseTokenKey, licenseToken); err != nil {
-			logger.Error("error storing license token in redis", log.Error(err))
-		}
-
-		// read site_id from global_state table if not done before
-		if siteID == "" {
-			gs, err := db.GlobalState().Get(ctxWithCancel)
-			if err != nil {
-				logger.Error("error reading global state from DB", log.Error(err))
-				return
-			}
-			siteID = gs.SiteID
-		}
-
-		routine := goroutine.NewPeriodicGoroutine(
-			ctxWithCancel,
-			&licenseChecker{
-				siteID: siteID,
-				token:  licenseToken,
-				doer:   httpcli.ExternalDoer,
-				logger: logger.Scoped("licenseChecker"),
-				kv:     kv,
-			},
-			goroutine.WithName("licensing.check-license-validity"),
-			goroutine.WithDescription("check if license is valid from sourcegraph.com"),
-			goroutine.WithInterval(licensing.LicenseCheckInterval),
-			goroutine.WithInitialDelay(initialWaitInterval),
-		)
-		go func() {
-			err := goroutine.MonitorBackgroundRoutines(ctxWithCancel, routine)
-			if err != nil {
-				logger.Error("error monitoring background routines", log.Error(err))
-			}
-		}()
-	})
 }

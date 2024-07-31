@@ -2,12 +2,15 @@ package conf
 
 import (
 	"encoding/hex"
-	"log" //nolint:logging // TODO move all logging to sourcegraph/log
+	stdlog "log" //nolint:logging // TODO move all logging to sourcegraph/log
+	"net/url"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/cronexpr"
+	"github.com/sourcegraph/log"
+	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
@@ -28,7 +31,7 @@ const CodyGatewayProdEndpoint = "https://cody-gateway.sourcegraph.com"
 func init() {
 	deployType := deploy.Type()
 	if !deploy.IsValidDeployType(deployType) {
-		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deployType)
+		stdlog.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deployType)
 	}
 
 	confdefaults.Default = defaultConfigForDeployment()
@@ -432,6 +435,62 @@ func ProductResearchPageEnabled() bool {
 		return *enabled
 	}
 	return true
+}
+
+type lastParsedURLValue struct {
+	url       *url.URL
+	confValue string
+}
+
+var lastParsedURL *atomic.Pointer[lastParsedURLValue] = atomic.NewPointer(&lastParsedURLValue{
+	url: &url.URL{
+		Scheme: "http",
+		Host:   "example.com",
+	},
+	confValue: "",
+})
+
+// ExternalURLParsed returns a parsed version of conf.ExternalURL().
+// This function is thread-safe and returns a copy of the cached parsed version
+// of the URL, so it is also safe to mutate.
+func ExternalURLParsed() *url.URL {
+	// Note that we do NOT use a mutex here, and instead let callers parse the URL
+	// simultaneously during the short period where the URL was changed but the new
+	// parsed value has not yet been cached.
+	// This eliminates the need to acquire a mutex entirely, and avoids potential costly
+	// locking if many requests are served concurrently.
+	urlString := ExternalURL()
+	lastParsed := lastParsedURL.Load()
+	clonedURL := cloneURL(lastParsed.url)
+	if lastParsed.confValue != urlString {
+		parsed, err := url.Parse(urlString)
+		if err != nil {
+			log.Scoped("conf.ExternalURL").Error("failed to parse external URL", log.Error(err), log.String("externalURL", urlString))
+			return clonedURL
+		}
+		lastParsed = &lastParsedURLValue{
+			url:       parsed,
+			confValue: urlString,
+		}
+		lastParsedURL.Store(lastParsed)
+		clonedURL = cloneURL(parsed)
+	}
+	return clonedURL
+}
+
+// cloneURL returns a copy of the URL. It is safe to mutate the returned URL.
+// This is copied from net/http/clone.go
+func cloneURL(u *url.URL) *url.URL {
+	if u == nil {
+		return nil
+	}
+	u2 := new(url.URL)
+	*u2 = *u
+	if u.User != nil {
+		u2.User = new(url.Userinfo)
+		*u2.User = *u.User
+	}
+	return u2
 }
 
 func ExternalURL() string {

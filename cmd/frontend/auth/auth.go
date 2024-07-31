@@ -4,7 +4,7 @@ package auth
 import (
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 

@@ -42,10 +42,10 @@ type LsifStore interface {
 	GetDiagnostics(ctx context.Context, bundleID int, prefix core.UploadRelPath, limit, offset int) ([]shared.Diagnostic[core.UploadRelPath], int, error)
 
 	// Extraction methods
-	ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
-	ExtractReferenceLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
-	ExtractImplementationLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
-	ExtractPrototypeLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
+	ExtractDefinitionLocationsFromPosition(context.Context, FindUsagesKey) ([]shared.UsageBuilder, []string, error)
+	ExtractReferenceLocationsFromPosition(context.Context, FindUsagesKey) ([]shared.UsageBuilder, []string, error)
+	ExtractImplementationLocationsFromPosition(context.Context, FindUsagesKey) ([]shared.UsageBuilder, []string, error)
+	ExtractPrototypeLocationsFromPosition(context.Context, FindUsagesKey) ([]shared.UsageBuilder, []string, error)
 }
 
 type SymbolUsagesOptions struct {
@@ -124,7 +124,7 @@ func (key *FindUsagesKey) IdentifyMatchingOccurrences(allOccurrences []*scip.Occ
 		out = scip.FindOccurrences(allOccurrences, startPos.Line, startPos.Character)
 		return
 	}
-	symbolToMatch, range_, ok := key.Matcher.SymbolBased()
+	optSymbolToMatch, range_, ok := key.Matcher.SymbolBased()
 	if !ok {
 		panic(fmt.Sprintf("Unhandled case of locationKey.Matcher: %+v", key.Matcher))
 	}
@@ -133,7 +133,8 @@ func (key *FindUsagesKey) IdentifyMatchingOccurrences(allOccurrences []*scip.Occ
 	if len(sameRangeOccs) == 0 {
 		return
 	}
-	if symbolToMatch == "" {
+	symbolToMatch, isSome := optSymbolToMatch.Get()
+	if !isSome {
 		out = sameRangeOccs
 		return
 	}

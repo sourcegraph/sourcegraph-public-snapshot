@@ -22,6 +22,7 @@ type p4ProtectLine struct {
 	entityType string // e.g. user
 	name       string // e.g. alice
 	match      string // raw match, e.g. //Sourcegraph/, trimmed of leading '-' for exclusion
+	host       string
 
 	// isExclusion is whether the match is an exclusion or inclusion (had a leading '-' or not)
 	// which indicates access should be revoked
@@ -212,6 +213,7 @@ func scanProtects(logger log.Logger, protects []*perforce.Protect, s *protectsSc
 			entityType:  protect.EntityType,
 			name:        protect.EntityName,
 			match:       protect.Match,
+			host:        protect.Host,
 			isExclusion: protect.IsExclusion,
 		}
 
@@ -324,9 +326,9 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 	}
 
 	// Helper function for retrieving an existing SubRepoPermissions or instantiating one
-	getSubRepoPerms := func(repo extsvc.RepoID) *authz.SubRepoPermissions {
+	getSubRepoPerms := func(repo extsvc.RepoID) *authz.SubRepoPermissionsWithIPs {
 		if _, ok := perms.SubRepoPermissions[repo]; !ok {
-			perms.SubRepoPermissions[repo] = &authz.SubRepoPermissions{}
+			perms.SubRepoPermissions[repo] = &authz.SubRepoPermissionsWithIPs{}
 		}
 		return perms.SubRepoPermissions[repo]
 	}
@@ -336,7 +338,7 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 
 	return &protectsScanner{
 		processLine: func(line p4ProtectLine) error {
-			lineLogger := logger.With(log.String("line.match", line.match), log.Bool("line.isExclusion", line.isExclusion))
+			lineLogger := logger.With(log.String("line.match", line.match), log.Bool("line.isExclusion", line.isExclusion), log.String("line.host", line.host))
 			lineLogger.Debug("Processing parsed line")
 
 			match, err := convertToGlobMatch(line.match)
@@ -379,7 +381,16 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 						newPaths[i] = "-" + path
 					}
 				}
-				srp.Paths = append(srp.Paths, newPaths...)
+
+				pathsWithIP := make([]authz.PathWithIP, len(newPaths))
+				for i, path := range newPaths {
+					pathsWithIP[i] = authz.PathWithIP{
+						Path: path,
+						IP:   line.host,
+					}
+				}
+
+				srp.Paths = append(srp.Paths, pathsWithIP...)
 				if line.isExclusion {
 					lineLogger.Debug("Adding exclude rules", log.Strings("rules", newPaths))
 				} else {
@@ -399,7 +410,7 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 
 				onlyExclusions := true
 				for _, path := range srp.Paths {
-					if !strings.HasPrefix(path, "-") {
+					if !strings.HasPrefix(path.Path, "-") {
 						onlyExclusions = false
 						break
 					}
@@ -417,7 +428,7 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 				// which are included in all Helix server rules.
 				depotString := string(depot)
 				for i := range srp.Paths {
-					path := srp.Paths[i]
+					path := srp.Paths[i].Path
 
 					// Covering exclusion paths
 					if strings.HasPrefix(path, "-") {
@@ -428,7 +439,7 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 						path = trimDepotNameAndSlashes(path, depotString)
 					}
 
-					srp.Paths[i] = path
+					srp.Paths[i].Path = path
 				}
 
 				// Add to repos users can access

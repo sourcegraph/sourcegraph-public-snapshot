@@ -69,7 +69,7 @@ func TestVisitorResolver_AffiliatedNamespaces(t *testing.T) {
 	}
 
 	want := int32(0)
-	if got := namespaceConnection.TotalCount(nil); got != want {
+	if got := namespaceConnection.TotalCount(context.Background()); got != want {
 		t.Errorf("got %d namespaces, want %d", got, want)
 	}
 }

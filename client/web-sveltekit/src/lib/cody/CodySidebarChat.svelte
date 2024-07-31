@@ -1,13 +1,22 @@
+<script context="module" lang="ts">
+    function getTelemetrySourceClient(): string {
+        if (window.context?.sourcegraphDotComMode) {
+            return 'dotcom.web'
+        }
+        return 'server.web'
+    }
+</script>
+
 <script lang="ts">
     import { createElement } from 'react'
 
-    import { CodyWebChat, CodyWebChatProvider } from 'cody-web-experimental'
+    import { CodyWebChat, CodyWebChatProvider } from '@sourcegraph/cody-web'
     import { createRoot, type Root } from 'react-dom/client'
     import { onDestroy } from 'svelte'
 
     import type { CodySidebar_ResolvedRevision } from './CodySidebar.gql'
 
-    import 'cody-web-experimental/dist/style.css'
+    import '@sourcegraph/cody-web/dist/style.css'
 
     import { createLocalWritable } from '$lib/stores'
 
@@ -42,6 +51,8 @@
                     fileURL: filePath ? (!filePath.startsWith('/') ? `/${filePath}` : filePath) : undefined,
                 },
                 serverEndpoint: window.location.origin,
+                customHeaders: window.context.xhrHeaders,
+                telemetryClientName: getTelemetrySourceClient(),
                 onNewChatCreated: (chatID: string) => {
                     chatIDs.update(ids => {
                         ids[`${repository.id}-${filePath}`] = chatID

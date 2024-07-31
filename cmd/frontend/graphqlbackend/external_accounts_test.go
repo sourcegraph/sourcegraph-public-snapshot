@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -111,17 +110,6 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 			serviceID:      gerritURL,
 			wantErr:        false,
 			accountDetails: `{"username": "alice", "password": "test"}`,
-		},
-		// OSS packages cannot import enterprise packages, but when we build the entire
-		// application this will be implemented.
-		//
-		// See cmd/frontend/internal/auth/sourcegraphoperator for more details
-		// and additional test coverage on the functionality.
-		"Sourcegraph operator unimplemented in OSS": {
-			user:            &types.User{ID: 1, SiteAdmin: true},
-			serviceType:     auth.SourcegraphOperatorProviderType,
-			wantErr:         true,
-			wantErrContains: "unimplemented in Sourcegraph OSS",
 		},
 	}
 

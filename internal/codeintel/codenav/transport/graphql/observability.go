@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -91,6 +92,10 @@ func lowSlowRequest(logger log.Logger, duration time.Duration, err *error) {
 	logger.Warn("Slow codeintel request", fields...)
 }
 
-func getObservationArgs(args codenav.PositionalRequestArgs) observation.Args {
+func getObservationArgs[T HasAttrs](args T) observation.Args {
 	return observation.Args{Attrs: args.Attrs()}
+}
+
+type HasAttrs interface {
+	Attrs() []attribute.KeyValue
 }

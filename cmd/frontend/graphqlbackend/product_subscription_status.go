@@ -4,11 +4,14 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // productSubscriptionStatus implements the GraphQL type ProductSubscriptionStatus.
-type productSubscriptionStatus struct{}
+type productSubscriptionStatus struct {
+	kv redispool.KeyValue
+}
 
 func (productSubscriptionStatus) ProductNameWithBrand() (string, error) {
 	info, err := getConfiguredProductLicenseInfo()
@@ -19,12 +22,12 @@ func (productSubscriptionStatus) ProductNameWithBrand() (string, error) {
 	return licensing.ProductNameWithBrand(info.Tags()), nil
 }
 
-func (productSubscriptionStatus) ActualUserCount(ctx context.Context) (int32, error) {
-	return licensing.ActualUserCount(ctx)
+func (r *productSubscriptionStatus) ActualUserCount(ctx context.Context) (int32, error) {
+	return licensing.ActualUserCount(ctx, r.kv)
 }
 
-func (productSubscriptionStatus) ActualUserCountDate(ctx context.Context) (string, error) {
-	return licensing.ActualUserCountDate(ctx)
+func (r *productSubscriptionStatus) ActualUserCountDate(ctx context.Context) (string, error) {
+	return licensing.ActualUserCountDate(ctx, r.kv)
 }
 
 func (productSubscriptionStatus) NoLicenseWarningUserCount(ctx context.Context) (*int32, error) {

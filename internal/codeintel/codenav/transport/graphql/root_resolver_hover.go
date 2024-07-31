@@ -22,7 +22,7 @@ func (r *gitBlobLSIFDataResolver) Hover(ctx context.Context, args *resolverstubs
 		Line:      int(args.Line),
 		Character: int(args.Character),
 	}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.hover, time.Second, getObservationArgs(requestArgs))
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.hover, time.Second, getObservationArgs(&requestArgs))
 	defer endObservation()
 
 	text, rx, exists, err := r.codeNavSvc.GetHover(ctx, requestArgs, r.requestState)

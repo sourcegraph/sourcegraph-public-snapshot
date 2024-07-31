@@ -67,10 +67,6 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		serviceType: extsvc.TypeGitLab,
 		serviceID:   "https://gitlab.com/",
 	}
-	authz.SetProviders(false, []authz.Provider{p})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 
 	extAccount := extsvc.Account{
 		AccountSpec: extsvc.AccountSpec{
@@ -132,6 +128,9 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	})
 
 	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{p}
+	}
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
@@ -157,10 +156,6 @@ func TestPermsSyncer_syncUserPerms_listExternalAccountsError(t *testing.T) {
 		serviceType: extsvc.TypeGitLab,
 		serviceID:   "https://gitlab.com/",
 	}
-	authz.SetProviders(false, []authz.Provider{p})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 
 	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
@@ -208,6 +203,9 @@ func TestPermsSyncer_syncUserPerms_listExternalAccountsError(t *testing.T) {
 	})
 
 	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{p}
+	}
 
 	t.Run("fetchUserPermsViaExternalAccounts", func(t *testing.T) {
 		_, _, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
@@ -226,10 +224,6 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 		serviceType: extsvc.TypeGitHub,
 		serviceID:   "https://github.com/",
 	}
-	authz.SetProviders(false, []authz.Provider{p1, p2})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 
 	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
@@ -304,6 +298,9 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 	}
 
 	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{p1, p2}
+	}
 
 	tests := []struct {
 		name                string
@@ -391,94 +388,346 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 // If we hit a temporary error from the provider we should fetch existing
 // permissions from the database
 func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
-	p := &mockProvider{
-		id:          1,
-		serviceType: extsvc.TypeGitLab,
-		serviceID:   "https://gitlab.com/",
-	}
-	authz.SetProviders(false, []authz.Provider{p})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
-
-	extAccount := extsvc.Account{
-		AccountSpec: extsvc.AccountSpec{
-			ServiceType: p.ServiceType(),
-			ServiceID:   p.ServiceID(),
-		},
-	}
-
-	users := dbmocks.NewMockUserStore()
-	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-		return &types.User{ID: id}, nil
-	})
-
-	mockRepos := dbmocks.NewMockRepoStore()
-	mockRepos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
-		if !opt.OnlyPrivate {
-			return nil, errors.New("OnlyPrivate want true but got false")
+	t.Run("no existing permissions", func(t *testing.T) {
+		p := &mockProvider{
+			id:          1,
+			serviceType: extsvc.TypeGitLab,
+			serviceID:   "https://gitlab.com/",
 		}
 
-		names := make([]types.MinimalRepo, 0, len(opt.ExternalRepos))
-		for _, r := range opt.ExternalRepos {
-			id, _ := strconv.Atoi(r.ID)
-			names = append(names, types.MinimalRepo{ID: api.RepoID(id)})
+		extAccount := extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: p.ServiceType(),
+				ServiceID:   p.ServiceID(),
+			},
 		}
-		return names, nil
-	})
 
-	userEmails := dbmocks.NewMockUserEmailsStore()
+		users := dbmocks.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{ID: id}, nil
+		})
 
-	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
-	externalAccounts.ListFunc.SetDefaultHook(func(_ context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
-		if opts.OnlyExpired {
-			return []*extsvc.Account{}, nil
+		mockRepos := dbmocks.NewMockRepoStore()
+		mockRepos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
+			if !opt.OnlyPrivate {
+				return nil, errors.New("OnlyPrivate want true but got false")
+			}
+
+			names := make([]types.MinimalRepo, 0, len(opt.ExternalRepos))
+			for _, r := range opt.ExternalRepos {
+				id, _ := strconv.Atoi(r.ID)
+				names = append(names, types.MinimalRepo{ID: api.RepoID(id)})
+			}
+			return names, nil
+		})
+
+		userEmails := dbmocks.NewMockUserEmailsStore()
+
+		externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
+		externalAccounts.ListFunc.SetDefaultHook(func(_ context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
+			if opts.OnlyExpired {
+				return []*extsvc.Account{}, nil
+			}
+			return []*extsvc.Account{&extAccount}, nil
+		})
+		featureFlags := dbmocks.NewMockFeatureFlagStore()
+
+		subRepoPerms := dbmocks.NewMockSubRepoPermsStore()
+		subRepoPerms.GetByUserAndServiceFunc.SetDefaultReturn(nil, nil)
+
+		syncJobs := dbmocks.NewMockPermissionSyncJobStore()
+		syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
+
+		db := dbmocks.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.ReposFunc.SetDefaultReturn(mockRepos)
+		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+		db.SubRepoPermsFunc.SetDefaultReturn(subRepoPerms)
+		db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
+
+		reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
+		reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
+
+		perms := dbmocks.NewMockPermsStore()
+		perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
+			assert.Equal(t, []int32{}, repoIDs)
+			return &database.SetPermissionsResult{}, nil
+		})
+
+		s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+		s.providerFactory = func(context.Context) []authz.Provider {
+			return []authz.Provider{p}
 		}
-		return []*extsvc.Account{&extAccount}, nil
-	})
-	featureFlags := dbmocks.NewMockFeatureFlagStore()
 
-	subRepoPerms := dbmocks.NewMockSubRepoPermsStore()
-	subRepoPerms.GetByUserAndServiceFunc.SetDefaultReturn(nil, nil)
+		p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+			// DeadlineExceeded implements the Temporary interface
+			return nil, context.DeadlineExceeded
+		}
 
-	syncJobs := dbmocks.NewMockPermissionSyncJobStore()
-	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
-
-	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.ReposFunc.SetDefaultReturn(mockRepos)
-	db.UserEmailsFunc.SetDefaultReturn(userEmails)
-	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
-	db.SubRepoPermsFunc.SetDefaultReturn(subRepoPerms)
-	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
-	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
-
-	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
-	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
-
-	perms := dbmocks.NewMockPermsStore()
-	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
-		assert.Equal(t, []int32{}, repoIDs)
-		return &database.SetPermissionsResult{}, nil
+		_, providers, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, database.CodeHostStatusesSet{{
+			ProviderID:   "https://gitlab.com/",
+			ProviderType: "gitlab",
+			Status:       database.CodeHostStatusError,
+			Message:      "FetchUserPerms: context deadline exceeded",
+		}}, providers)
 	})
 
-	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	t.Run("reinsert permissions with IP address on temporary error", func(t *testing.T) {
+		p := &mockProvider{
+			id:          1,
+			serviceType: extsvc.TypeGitLab,
+			serviceID:   "https://gitlab.com/",
+		}
 
-	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
-		// DeadlineExceeded implements the Temporary interface
-		return nil, context.DeadlineExceeded
-	}
+		extAccount := extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: p.ServiceType(),
+				ServiceID:   p.ServiceID(),
+			},
+		}
 
-	_, providers, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, database.CodeHostStatusesSet{{
-		ProviderID:   "https://gitlab.com/",
-		ProviderType: "gitlab",
-		Status:       database.CodeHostStatusError,
-		Message:      "FetchUserPerms: context deadline exceeded",
-	}}, providers)
+		users := dbmocks.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{ID: id}, nil
+		})
+
+		mockRepos := dbmocks.NewMockRepoStore()
+		mockRepos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
+			if !opt.OnlyPrivate {
+				return nil, errors.New("OnlyPrivate want true but got false")
+			}
+
+			names := make([]types.MinimalRepo, 0, len(opt.ExternalRepos))
+			for _, r := range opt.ExternalRepos {
+				id, _ := strconv.Atoi(r.ID)
+				names = append(names, types.MinimalRepo{ID: api.RepoID(id)})
+			}
+			return names, nil
+		})
+
+		userEmails := dbmocks.NewMockUserEmailsStore()
+
+		externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
+		externalAccounts.ListFunc.SetDefaultHook(func(_ context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
+			if opts.OnlyExpired {
+				return []*extsvc.Account{}, nil
+			}
+			return []*extsvc.Account{&extAccount}, nil
+		})
+		featureFlags := dbmocks.NewMockFeatureFlagStore()
+
+		subRepoPerms := dbmocks.NewMockSubRepoPermsStore()
+
+		// Set up initial state with permissions entry including IP address
+		initialPerms := map[api.ExternalRepoSpec]authz.SubRepoPermissionsWithIPs{
+			{ID: "repo1", ServiceType: p.ServiceType(), ServiceID: p.ServiceID()}: {
+				Paths: []authz.PathWithIP{{Path: "/include1", IP: "1.1.1.1"}},
+			},
+		}
+		subRepoPerms.GetByUserAndServiceWithIPsFunc.SetDefaultReturn(initialPerms, nil)
+
+		// Set up spy for UpsertWithSpecWithIPs
+		var upsertCallCount int
+
+		subRepoPerms.UpsertWithSpecWithIPsFunc.SetDefaultHook(func(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissionsWithIPs) error {
+			upsertCallCount++
+
+			// Check that we're re-inserting the same permissions
+			assert.Equal(t, int32(1), userID, "Incorrect user ID passed to UpsertWithSpecWithIPs")
+			assert.Equal(t, api.ExternalRepoSpec{ID: "repo1", ServiceType: p.ServiceType(), ServiceID: p.ServiceID()}, spec, "Incorrect spec passed to UpsertWithSpecWithIPs")
+			assert.Equal(t, initialPerms[spec], perms, "Incorrect permissions passed to UpsertWithSpecWithIPs")
+			return nil
+		})
+
+		syncJobs := dbmocks.NewMockPermissionSyncJobStore()
+		syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
+
+		db := dbmocks.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.ReposFunc.SetDefaultReturn(mockRepos)
+		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+		db.SubRepoPermsFunc.SetDefaultReturn(subRepoPerms)
+		db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
+
+		reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
+		reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
+
+		perms := dbmocks.NewMockPermsStore()
+		perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
+			assert.Equal(t, []int32{}, repoIDs)
+			return &database.SetPermissionsResult{}, nil
+		})
+
+		s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+		s.providerFactory = func(context.Context) []authz.Provider {
+			return []authz.Provider{p}
+		}
+
+		// Set up initial state with permissions entry including IP address
+
+		p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+			return nil, context.DeadlineExceeded
+		}
+
+		_, providers, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Verify that the code host status is set to error
+		assert.Equal(t, database.CodeHostStatusesSet{{
+			ProviderID:   "https://gitlab.com/",
+			ProviderType: "gitlab",
+			Status:       database.CodeHostStatusError,
+			Message:      "FetchUserPerms: context deadline exceeded",
+		}}, providers)
+
+		// Verify that the UpsertWithSpecWithIPs was called
+		assert.Equal(t, 1, upsertCallCount, "UpsertWithSpecWithIPs should have been called once")
+	})
+
+	t.Run("reinsert permissions without address on temporary error", func(t *testing.T) {
+		p := &mockProvider{
+			id:          1,
+			serviceType: extsvc.TypeGitLab,
+			serviceID:   "https://gitlab.com/",
+		}
+
+		extAccount := extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: p.ServiceType(),
+				ServiceID:   p.ServiceID(),
+			},
+		}
+
+		users := dbmocks.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{ID: id}, nil
+		})
+
+		mockRepos := dbmocks.NewMockRepoStore()
+		mockRepos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
+			if !opt.OnlyPrivate {
+				return nil, errors.New("OnlyPrivate want true but got false")
+			}
+
+			names := make([]types.MinimalRepo, 0, len(opt.ExternalRepos))
+			for _, r := range opt.ExternalRepos {
+				id, _ := strconv.Atoi(r.ID)
+				names = append(names, types.MinimalRepo{ID: api.RepoID(id)})
+			}
+			return names, nil
+		})
+
+		userEmails := dbmocks.NewMockUserEmailsStore()
+
+		externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
+		externalAccounts.ListFunc.SetDefaultHook(func(_ context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
+			if opts.OnlyExpired {
+				return []*extsvc.Account{}, nil
+			}
+			return []*extsvc.Account{&extAccount}, nil
+		})
+		featureFlags := dbmocks.NewMockFeatureFlagStore()
+
+		subRepoPerms := dbmocks.NewMockSubRepoPermsStore()
+
+		// Set up a fake implementation of IP version of the sub repo permissions getter
+		// that simulates a database entry without an IP address
+		var getByUserAndServiceWithIPsCalled bool
+		subRepoPerms.GetByUserAndServiceWithIPsFunc.SetDefaultHook(func(ctx context.Context, userID int32, serviceType string, serviceID string, backfillWithWildcardIP bool) (map[api.ExternalRepoSpec]authz.SubRepoPermissionsWithIPs, error) {
+			getByUserAndServiceWithIPsCalled = true
+
+			assert.Equal(t, int32(1), userID, "Incorrect user ID passed to UpsertWithSpec")
+			assert.Equal(t, p.ServiceType(), serviceType, "Incorrect service type passed to UpsertWithSpec")
+			assert.Equal(t, p.ServiceID(), serviceID, "Incorrect service ID passed to UpsertWithSpec")
+			assert.False(t, backfillWithWildcardIP, "backfillWithWildcardIP should be false since we don't want a fake IP address")
+
+			return nil, database.IPsNotSyncedError
+		})
+
+		// Set up initial state with permissions entry without an IP address
+		initialPerms := map[api.ExternalRepoSpec]authz.SubRepoPermissions{
+			{ID: "repo1", ServiceType: p.ServiceType(), ServiceID: p.ServiceID()}: {
+				Paths: []string{"/include1"},
+			},
+		}
+		subRepoPerms.GetByUserAndServiceFunc.SetDefaultReturn(initialPerms, nil)
+
+		// Set up spy for UpsertWithSpec
+
+		var upsertCallCount int
+
+		subRepoPerms.UpsertWithSpecFunc.SetDefaultHook(func(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error {
+			upsertCallCount++
+
+			// Check that we're re-inserting the same permissions
+			assert.Equal(t, int32(1), userID, "Incorrect user ID passed to UpsertWithSpec")
+			assert.Equal(t, api.ExternalRepoSpec{ID: "repo1", ServiceType: p.ServiceType(), ServiceID: p.ServiceID()}, spec, "Incorrect spec passed to UpsertWithSpec")
+			assert.Equal(t, initialPerms[spec], perms, "Incorrect permissions passed to UpsertWithSpec")
+			return nil
+		})
+
+		syncJobs := dbmocks.NewMockPermissionSyncJobStore()
+		syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
+
+		db := dbmocks.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.ReposFunc.SetDefaultReturn(mockRepos)
+		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+		db.SubRepoPermsFunc.SetDefaultReturn(subRepoPerms)
+		db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
+
+		reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
+		reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
+
+		perms := dbmocks.NewMockPermsStore()
+		perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
+			assert.Equal(t, []int32{}, repoIDs)
+			return &database.SetPermissionsResult{}, nil
+		})
+
+		s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+		s.providerFactory = func(context.Context) []authz.Provider {
+			return []authz.Provider{p}
+		}
+
+		// Set up initial state with permissions entry including IP address
+
+		p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+			return nil, context.DeadlineExceeded
+		}
+
+		_, providers, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Verify that the code host status is set to error
+		assert.Equal(t, database.CodeHostStatusesSet{{
+			ProviderID:   "https://gitlab.com/",
+			ProviderType: "gitlab",
+			Status:       database.CodeHostStatusError,
+			Message:      "FetchUserPerms: context deadline exceeded",
+		}}, providers)
+
+		// Verify that fake version of the sub repo permissions getter that forced a fallback was called
+		assert.True(t, getByUserAndServiceWithIPsCalled, "getByUserWithIPsFunc should have been called")
+
+		// Verify that the UpsertWithSpec (non IP version) was called once
+		assert.Equal(t, 1, upsertCallCount, "UpsertWithSpec should have been called once")
+	})
+
 }
 
 func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
@@ -487,10 +736,6 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 		serviceType: extsvc.TypeGitLab,
 		serviceID:   "https://gitlab.com/",
 	}
-	authz.SetProviders(false, []authz.Provider{p})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 
 	extAccount := extsvc.Account{
 		AccountSpec: extsvc.AccountSpec{
@@ -546,6 +791,9 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 	})
 
 	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{p}
+	}
 
 	tests := []struct {
 		name     string
@@ -583,10 +831,6 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 		serviceType: extsvc.TypeGitHub,
 		serviceID:   "https://github.com/",
 	}
-	authz.SetProviders(false, []authz.Provider{p})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 
 	extAccount := extsvc.Account{
 		AccountSpec: extsvc.AccountSpec{
@@ -630,6 +874,9 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 
 	perms := dbmocks.NewMockPermsStore()
 	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{p}
+	}
 
 	t.Run("invalid token", func(t *testing.T) {
 		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
@@ -680,10 +927,6 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 		serviceType: extsvc.TypePerforce,
 		serviceID:   "ssl:111.222.333.444:1666",
 	}
-	authz.SetProviders(false, []authz.Provider{p})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 
 	extAccount := extsvc.Account{
 		AccountSpec: extsvc.AccountSpec{
@@ -738,6 +981,9 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	perms.SetUserExternalAccountPermsFunc.SetDefaultReturn(&database.SetPermissionsResult{}, nil)
 
 	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{p}
+	}
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
@@ -757,10 +1003,6 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 		serviceType: extsvc.TypePerforce,
 		serviceID:   "ssl:111.222.333.444:1666",
 	}
-	authz.SetProviders(false, []authz.Provider{p})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 
 	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
@@ -822,18 +1064,31 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	})
 
 	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{p}
+	}
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
 			IncludeContains: []extsvc.RepoID{"//Engineering/"},
 			ExcludeContains: []extsvc.RepoID{"//Engineering/Security/"},
 
-			SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
+			SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissionsWithIPs{
 				"abc": {
-					Paths: []string{"/include1", "/include2", "-/exclude1", "-/exclude2"},
+					Paths: []authz.PathWithIP{
+						{Path: "/include1", IP: "1.1.1.1"},
+						{Path: "/include2", IP: "1.1.1.1"},
+						{Path: "-/exclude1", IP: "1.1.1.1"},
+						{Path: "-/exclude2", IP: "1.1.1.1"},
+					},
 				},
 				"def": {
-					Paths: []string{"/include1", "/include2", "-/exclude1", "-/exclude2"},
+					Paths: []authz.PathWithIP{
+						{Path: "/include1", IP: "1.1.1.1"},
+						{Path: "/include2", IP: "1.1.1.1"},
+						{Path: "-/exclude1", IP: "1.1.1.1"},
+						{Path: "-/exclude2", IP: "1.1.1.1"},
+					},
 				},
 			},
 		}, nil
@@ -852,7 +1107,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mockrequire.CalledN(t, subRepoPerms.UpsertWithSpecFunc, 2)
+	mockrequire.CalledN(t, subRepoPerms.UpsertWithSpecWithIPsFunc, 2)
 }
 
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {
@@ -890,6 +1145,9 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 
 		perms := dbmocks.NewMockPermsStore()
 		s := newPermsSyncer(reposStore, perms)
+		s.providerFactory = func(context.Context) []authz.Provider {
+			return []authz.Provider{}
+		}
 
 		// error should be nil in this case
 		_, _, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
@@ -918,10 +1176,6 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 				return nil, errors.New("not supposed to be called")
 			},
 		}
-		authz.SetProviders(false, []authz.Provider{p1, p2})
-		t.Cleanup(func() {
-			authz.SetProviders(true, nil)
-		})
 
 		mockRepos.ListFunc.SetDefaultReturn(
 			[]*types.Repo{
@@ -953,6 +1207,9 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		})
 
 		s := newPermsSyncer(reposStore, perms)
+		s.providerFactory = func(context.Context) []authz.Provider {
+			return []authz.Provider{p1, p2}
+		}
 
 		_, _, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
@@ -985,6 +1242,9 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		})
 
 		s := newPermsSyncer(reposStore, perms)
+		s.providerFactory = func(context.Context) []authz.Provider {
+			return []authz.Provider{}
+		}
 
 		_, _, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
@@ -1004,10 +1264,6 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			},
 		}
 
-		authz.SetProviders(false, []authz.Provider{p})
-		t.Cleanup(func() {
-			authz.SetProviders(true, nil)
-		})
 		mockRepos.GetFunc.SetDefaultReturn(
 			&types.Repo{
 				ID:      1,
@@ -1036,6 +1292,9 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		})
 
 		s := newPermsSyncer(reposStore, perms)
+		s.providerFactory = func(context.Context) []authz.Provider {
+			return []authz.Provider{p}
+		}
 
 		_, providerStates, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
@@ -1054,10 +1313,6 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		serviceType: extsvc.TypeGitLab,
 		serviceID:   "https://gitlab.com/",
 	}
-	authz.SetProviders(false, []authz.Provider{p})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 
 	mockRepos.ListFunc.SetDefaultReturn(
 		[]*types.Repo{
@@ -1098,6 +1353,9 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	})
 
 	s := newPermsSyncer(reposStore, perms)
+	s.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{p}
+	}
 
 	tests := []struct {
 		name     string
