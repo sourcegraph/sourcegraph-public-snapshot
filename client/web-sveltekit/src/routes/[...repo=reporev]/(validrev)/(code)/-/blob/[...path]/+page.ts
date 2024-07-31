@@ -123,7 +123,8 @@ async function fetchCodeGraphData(
                         ),
                         undefined,
                         occ.symbol ?? undefined,
-                        occ.roles?.map(translateRole).reduce((acc, role) => acc | role, 0)
+                        occ.roles?.map(translateRole).reduce((acc, role) => acc | role, 0),
+                        provenance
                     )
             ) ?? []
         const nonOverlapping = nonOverlappingOccurrences([...overlapping])
@@ -203,11 +204,11 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
         // We can ignore the error because if the revision doesn't exist, other queries will fail as well
         revisionOverride: revisionOverride
             ? await client
-                  .query(BlobFileViewCommitQuery_revisionOverride, {
-                      repoName,
-                      revspec: revisionOverride,
-                  })
-                  .then(result => result.data?.repository?.commit)
+                .query(BlobFileViewCommitQuery_revisionOverride, {
+                    repoName,
+                    revspec: revisionOverride,
+                })
+                .then(result => result.data?.repository?.commit)
             : null,
         externalServiceType: parent()
             .then(({ resolvedRevision }) => resolvedRevision.repo?.externalRepository?.serviceType)
