@@ -32,9 +32,4 @@ func MockRepoPermissions(t *testing.T, db database.DB, userID int32, repoIDs ...
 		UserID: userID,
 	}, maps.Keys(repoIDMap), authz.SourceUserSync)
 	require.NoError(t, err)
-
-	authz.SetProviders(false, nil)
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 }

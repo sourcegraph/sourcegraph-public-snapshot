@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -49,8 +48,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// Initialize main DB connection.
 	sqlDB := mustInitializeFrontendDB(observationCtx)
 	db := database.NewDB(logger, sqlDB)
-
-	go setAuthzProviders(ctx, db)
 
 	repoStore := db.Repos()
 	repoEmbeddingJobsStore := repo.NewRepoEmbeddingJobsStore(db)
@@ -168,17 +165,6 @@ func mustInitializeFrontendDB(observationCtx *observation.Context) *sql.DB {
 	}
 
 	return db
-}
-
-// SetAuthzProviders periodically refreshes the global authz providers. This changes the repositories that are visible for reads based on the
-// current actor stored in an operation's context, which is likely an internal actor for many of
-// the jobs configured in this service. This also enables repository update operations to fetch
-// permissions from code hosts.
-func setAuthzProviders(ctx context.Context, db database.DB) {
-	for range time.NewTicker(providers.RefreshInterval(conf.Get())).C {
-		allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
-		authz.SetProviders(allowAccessByDefault, authzProviders)
-	}
 }
 
 func handlePanic(logger log.Logger, next http.Handler) http.Handler {

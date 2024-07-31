@@ -38,6 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -190,7 +191,7 @@ func (r *siteResolver) HasCodeIntelligence() bool {
 }
 
 func (r *siteResolver) ProductSubscription() *productSubscriptionStatus {
-	return &productSubscriptionStatus{}
+	return &productSubscriptionStatus{kv: redispool.Store}
 }
 
 func (r *siteResolver) AllowSiteSettingsEdits() bool {

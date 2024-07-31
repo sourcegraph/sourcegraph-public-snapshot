@@ -647,6 +647,14 @@
                   "description": "Default URL for intent detection API",
                   "$ref": "#/definitions/BackendAPIConfig"
                 },
+                "search": {
+                  "description": "Default URL for intent detection API",
+                  "$ref": "#/definitions/BackendAPIConfig"
+                },
+                "edit": {
+                  "description": "Default URL for intent detection API",
+                  "$ref": "#/definitions/BackendAPIConfig"
+                },
                 "extra": {
                   "description": "Array of additional intent detection API configs",
                   "type": "array",
@@ -1366,11 +1374,6 @@
       "description": "When true, site admins will only be able to see private code they have access to via our authz system.",
       "type": "boolean",
       "default": false
-    },
-    "authz.refreshInterval": {
-      "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
-      "type": "integer",
-      "default": 5
     },
     "permissions.userMapping": {
       "description": "Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.",
@@ -3185,6 +3188,7 @@
           }
         },
         "modelOverridesRecommendedSettings": {
+          "deprecationMessage": "Deprecated; use 'selfHostedModels' instead.",
           "description": "Override, or add to, the list of models Cody is aware of - but let Sourcegraph configure how the model should work. Only available for select models.\n\nSpecifying the same model both here and in 'modelOverrides' is not allowed.",
           "type": "array",
           "default": [],
@@ -3199,8 +3203,78 @@
             ]
           }
         },
+        "selfHostedModels": {
+          "description": "Add models to the list of models Cody is aware of, but let Sourcegraph provide default configuration for the model. Only available for select models, generic models can be configured in 'modelOverrides'.\n\nSpecifying the same model both here and in 'modelOverrides' is not allowed.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/definitions/SelfHostedModel"
+          }
+        },
         "defaultModels": {
           "$ref": "#/definitions/DefaultModels"
+        }
+      }
+    },
+    "SelfHostedModel": {
+      "type": "object",
+      "examples": [
+        {
+          "provider": "mistral",
+          "model": "mixtral-8x7b-instruct",
+          "override": {
+            "serverSideConfig": {
+              "apiModel": "mixtral-8x7b-instruct"
+            }
+          }
+        }
+      ],
+      "required": ["provider"],
+      "properties": {
+        "provider": {
+          "description": "provider ID",
+          "type": "string",
+          "examples": ["mistral", "meta", "acme-corp-custom"]
+        },
+        "apiVersion": {
+          "description": "API version",
+          "type": "string",
+          "examples": ["v1"],
+          "default": "v1"
+        },
+        "model": {
+          "description": "Which default model configuration to use. Sourcegraph provides default model configuration for select models. Arbitrary models can be configured in 'modelOverrides'",
+          "type": "string",
+          "enum": [
+            "starcoder2-7b@v1",
+            "starcoder2-15b@v1",
+            "mistral-7b-instruct@v1",
+            "mixtral-8x7b-instruct@v1",
+            "mixtral-8x22b-instruct@v1"
+          ]
+        },
+        "override": {
+          "$ref": "#/definitions/SelfHostedModelOverride"
+        }
+      }
+    },
+    "SelfHostedModelOverride": {
+      "description": "Properties to override in the default model configuration",
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "description": "Display name",
+          "type": "string",
+          "examples": ["Claude 3 Sonnet", "GPT-4 Turbo"]
+        },
+        "contextWindow": {
+          "$ref": "#/definitions/ContextWindow"
+        },
+        "clientSideConfig": {
+          "$ref": "#/definitions/ClientSideModelConfigOpenAICompatible"
+        },
+        "serverSideConfig": {
+          "$ref": "#/definitions/ServerSideModelConfigOpenAICompatible"
         }
       }
     },

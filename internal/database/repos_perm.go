@@ -6,14 +6,12 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 type BypassAuthzReasonsMap struct {
-	SiteAdmin       bool
-	IsInternal      bool
-	NoAuthzProvider bool
+	SiteAdmin  bool
+	IsInternal bool
 }
 
 type AuthzQueryParameters struct {
@@ -30,16 +28,14 @@ func (p *AuthzQueryParameters) ToAuthzQuery() *sqlf.Query {
 
 func GetAuthzQueryParameters(ctx context.Context, db DB) (params *AuthzQueryParameters, err error) {
 	params = &AuthzQueryParameters{}
-	authzAllowByDefault, authzProviders := authz.GetProviders()
 	params.UsePermissionsUserMapping = conf.PermissionsUserMapping().Enabled
 	params.AuthzEnforceForSiteAdmins = conf.Get().AuthzEnforceForSiteAdmins
 
 	a := actor.FromContext(ctx)
 
-	// Authz is bypassed when the request is coming from an internal actor or
-	// there is no authz provider configured and access to all repositories are
-	// allowed by default. Authz can be bypassed by site admins unless
-	// conf.AuthEnforceForSiteAdmins is set to "true".
+	// Authz is bypassed when the request is coming from an internal actor.
+	// Authz can be bypassed by site admins unless conf.AuthEnforceForSiteAdmins
+	// is set to "true".
 	//
 	// 🚨 SECURITY: internal requests bypass authz provider permissions checks,
 	// so correctness is important here.
@@ -48,16 +44,8 @@ func GetAuthzQueryParameters(ctx context.Context, db DB) (params *AuthzQueryPara
 		params.BypassAuthzReasons.IsInternal = true
 	}
 
-	// 🚨 SECURITY: If explicit permissions API is ON, we want to enforce authz
-	// even if there are no authz providers configured.
-	// Otherwise bypass authorization with no authz providers.
-	if !params.UsePermissionsUserMapping && authzAllowByDefault && len(authzProviders) == 0 {
-		params.BypassAuthz = true
-		params.BypassAuthzReasons.NoAuthzProvider = true
-	}
-
 	if a.IsAuthenticated() {
-		currentUser, err := db.Users().GetByCurrentAuthUser(ctx)
+		currentUser, err := a.User(ctx, db.Users())
 		if err != nil {
 			if !params.BypassAuthz {
 				return nil, err

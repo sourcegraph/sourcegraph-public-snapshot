@@ -20,7 +20,7 @@
       "examples": ["https://gitlab.com", "https://gitlab.example.com"]
     },
     "token": {
-      "description": "A GitLab access token with \"api\" scope. Can be a personal access token (PAT) or an OAuth token. If you are enabling permissions with identity provider type \"external\", this token should also have \"sudo\" scope.",
+      "description": "A GitLab access token with \"api\" scope. Can be a personal access token (PAT) or an OAuth token. If you are enabling permissions with identity provider type \"username\", this token should also have \"sudo\" scope.",
       "type": "string",
       "minLength": 1
     },
@@ -196,14 +196,10 @@
           "properties": {
             "type": {
               "type": "string",
-              "enum": ["oauth", "username", "external"]
+              "enum": ["oauth", "username"]
             }
           },
-          "oneOf": [
-            { "$ref": "#/definitions/OAuthIdentity" },
-            { "$ref": "#/definitions/UsernameIdentity" },
-            { "$ref": "#/definitions/ExternalIdentity" }
-          ],
+          "oneOf": [{ "$ref": "#/definitions/OAuthIdentity" }, { "$ref": "#/definitions/UsernameIdentity" }],
           "!go": {
             "taggedUnionType": true
           }
@@ -249,29 +245,6 @@
         "type": {
           "type": "string",
           "const": "username"
-        }
-      }
-    },
-    "ExternalIdentity": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type", "authProviderID", "authProviderType", "gitlabProvider"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "external"
-        },
-        "authProviderID": {
-          "type": "string",
-          "description": "The value of the `configID` field of the targeted authentication provider."
-        },
-        "authProviderType": {
-          "type": "string",
-          "description": "The `type` field of the targeted authentication provider."
-        },
-        "gitlabProvider": {
-          "type": "string",
-          "description": "The name that identifies the authentication provider to GitLab. This is passed to the `?provider=` query parameter in calls to the GitLab Users API. If you're not sure what this value is, you can look at the `identities` field of the GitLab Users API result (`curl  -H 'PRIVATE-TOKEN: $YOUR_TOKEN' $GITLAB_URL/api/v4/users`)."
         }
       }
     },

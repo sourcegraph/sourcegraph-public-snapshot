@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
 )
 
 func (r *siteResolver) AuthProviders(ctx context.Context) (*authProviderConnectionResolver, error) {

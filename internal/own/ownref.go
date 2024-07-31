@@ -7,25 +7,19 @@ import (
 	"net/mail"
 	"strings"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
-
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-var extSvcProviderNotFound = promauto.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Name:      "own_bag_service_type_not_found_total",
-}, []string{"service_type"})
 
 // RepoContext allows us to anchor an author reference to a repo where it stems from.
 // For instance a handle from a CODEOWNERS file comes from github.com/sourcegraph/sourcegraph.
@@ -430,34 +424,35 @@ func batchFetchCodeHostHandles(ctx context.Context, db database.DB, userIDs []in
 	}
 	handlesByUser := make(map[int32][]string)
 	for userID, accts := range accounts {
-		handles, err := fetchCodeHostHandles(ctx, accts)
-		if err != nil {
-			return nil, errors.Wrap(err, "augmenting code host handles")
-		}
-		handlesByUser[userID] = handles
+		handlesByUser[userID] = fetchCodeHostHandles(ctx, accts)
 	}
 	return handlesByUser, nil
 }
 
-func fetchCodeHostHandles(ctx context.Context, accounts []*extsvc.Account) ([]string, error) {
+func fetchCodeHostHandles(ctx context.Context, accounts []*extsvc.Account) []string {
 	codeHostHandles := make([]string, 0, len(accounts))
 	for _, account := range accounts {
-		serviceType := account.ServiceType
-		p := providers.GetProviderbyServiceType(serviceType)
-		// If the provider is not found, we skip it.
-		if p == nil {
-			extSvcProviderNotFound.WithLabelValues(serviceType).Inc()
+		var accountInfo *extsvc.PublicAccountData
+		var err error
+		switch account.ServiceType {
+		case extsvc.TypeGitHub:
+			accountInfo, err = github.GetPublicExternalAccountData(ctx, &account.AccountData)
+		case extsvc.TypeGitLab:
+			accountInfo, err = gitlab.GetPublicExternalAccountData(ctx, &account.AccountData)
+		case extsvc.TypeBitbucketCloud:
+			accountInfo, err = bitbucketcloud.GetPublicExternalAccountData(ctx, &account.AccountData)
+		case extsvc.TypeAzureDevOps:
+			accountInfo, err = azuredevops.GetPublicExternalAccountData(ctx, &account.AccountData)
+		}
+		if err != nil {
 			continue
 		}
-		data, err := p.ExternalAccountInfo(ctx, *account)
-		if err != nil || data == nil {
-			return nil, errors.Wrap(err, "ExternalAccountInfo")
-		}
-		if data.Login != "" {
-			codeHostHandles = append(codeHostHandles, data.Login)
+
+		if accountInfo != nil && accountInfo.Login != "" {
+			codeHostHandles = append(codeHostHandles, accountInfo.Login)
 		}
 	}
-	return codeHostHandles, nil
+	return codeHostHandles
 }
 
 // linkBack adds all the extra references that were fetched for a user

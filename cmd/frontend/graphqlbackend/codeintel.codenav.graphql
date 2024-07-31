@@ -471,13 +471,26 @@ extend type Query {
 
         """
         Information about an existing source range for a usage of the symbol.
-        TODO: Specify behavior for various cases of overlap between LookupRange
-        and actual occurrence range.
+
+        The range must match the underlying occurrence exactly. For example,
+        if there is code like:
+
+           callMyFunction()
+        #      ^^ (1)
+        # ^^ (2)
+        #  ^^^^^^^^^^^^^^ (3)
+        # ^^^^^^^^^^^^^^^^^^^^ (4)
+
+        Only using the range (3) will return correct results. If the range was
+        obtained from an 'occurrence' in the CodeGraphData.occurrences API,
+        then the same range should be used here.
         """
         range: RangeInput!
 
         """
         Filter to allow customization of returned results.
+
+        STATUS(July 29 2024): Currently unimplemented.
         """
         filter: UsagesFilter
 
@@ -910,6 +923,8 @@ type SymbolInformation {
     by 'dataSource'.
     The value is empty when `dataSource` is confident that there
     is no appropriate hover documentation to display.
+
+    STATUS(July 29 2024): Currently unimplemented.
     """
     documentation: [String!]
 }

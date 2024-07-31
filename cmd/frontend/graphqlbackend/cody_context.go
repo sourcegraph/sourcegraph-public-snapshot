@@ -100,12 +100,14 @@ type RankOptions struct {
 type IntentResolver interface {
 	Intent() string
 	Score() float64
+	SearchScore() float64
+	EditScore() float64
 }
 
 type RankContextResolver interface {
 	Ranker() string
-	Used() []int32
-	Ignored() []int32
+	Used() []RankedItemResolver
+	Ignored() []RankedItemResolver
 }
 
 type ChatContextResolver interface {
@@ -118,4 +120,9 @@ type RetrieverContextItemResolver interface {
 	Item() ContextResultResolver
 	Score() *float64
 	Retriever() string
+}
+
+type RankedItemResolver interface {
+	Index() int32
+	Score() float64
 }

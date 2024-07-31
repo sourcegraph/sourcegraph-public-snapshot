@@ -20,8 +20,8 @@ go_library(
 go_test(
     name = "modelconfig_test",
     srcs = [
-        "until_test.go",
         "updates_test.go",
+        "util_test.go",
         "validation_test.go",
     ],
     embed = [":modelconfig"],

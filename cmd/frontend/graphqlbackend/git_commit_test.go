@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -159,7 +158,7 @@ func TestGitCommitResolver(t *testing.T) {
 				require.NoError(t, err)
 				require.Nil(t, pf)
 
-				f, err := ioutil.TempFile("/tmp", "foo")
+				f, err := os.CreateTemp("/tmp", "foo")
 				require.NoError(t, err)
 
 				fs, err := f.Stat()
@@ -219,7 +218,7 @@ func TestGitCommitResolver(t *testing.T) {
 			require.Empty(t, *body)
 		}
 
-		f, err := ioutil.TempFile("/tmp", "foo")
+		f, err := os.CreateTemp("/tmp", "foo")
 		require.NoError(t, err)
 
 		fs, err := f.Stat()
