@@ -136,7 +136,7 @@ env:
   #
   # in 'sg.config.overwrite.yaml' to point to a locally running Telemetry
   # Gateway instead (via 'sg run telemetry-gateway')
-  TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: "https://telemetry-gateway.sgdev.org:443"
+  TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: 'https://telemetry-gateway.sgdev.org:443'
   SRC_TELEMETRY_EVENTS_EXPORT_ALL: 'true'
 
   # By default, allow temporary edits to external services.
@@ -562,7 +562,7 @@ commands:
       # The SvelteKit app uses this environment variable to determine where
       # to store the generated assets. We don't need to store them in a different
       # place in standalone mode.
-      DEPLOY_TYPE: ""
+      DEPLOY_TYPE: ''
 
   web-sveltekit-prod-watch:
     description: Builds the prod version of the SvelteKit web app and rebuilds on changes
@@ -1120,6 +1120,34 @@ commands:
       - cmd
       - internal
       - lib
+
+  sourcegraph_test:
+    description: Single-program distribution (test only)
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/sourcegraph_test
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -buildvcs=false -gcflags="$GCFLAGS" -o .bin/sourcegraph_test github.com/sourcegraph/sourcegraph/cmd/sourcegraph_test
+    checkBinary: .bin/sourcegraph_test
+    env:
+      CONFIGURATION_MODE: server
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
+      EXTSVC_CONFIG_FILE: ../dev-private/enterprise/dev/external-services-config.json
+      WEB_BUILDER_DEV_SERVER: 1
+      INDEXED_SEARCH_SERVERS:
+      GITSERVER_ADDR: 127.0.0.1:3178
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3178
+      SRC_GIT_SERVERS: 127.0.0.1:3178
+      SRC_DISABLE_OOBMIGRATION_VALIDATION: 1
+    watch:
+      - cmd
+      - internal
+      - lib
+      - schema
       - schema
 
   sourcegraph-accounts-server:
@@ -1173,11 +1201,11 @@ commands:
       REDIS_PORT: 6379
       REDIS_ENDPOINT: 'redis://@127.0.0.1:6379' # Use
       MANAGEMENT_SECRET: sekret # For authentication when using admin APIs to register new SAMS clients.
-      GITHUB_REDIRECT_URI: "http://localhost:$PORT/auth/github/callback"
+      GITHUB_REDIRECT_URI: 'http://localhost:$PORT/auth/github/callback'
       GITLAB_REDIRECT_URI: http://localhost:$PORT/auth/gitlab/callback
       GOOGLE_REDIRECT_URI: http://localhost:$PORT/auth/google/callback
       IDENTITY_PROVIDER_INSECURE_DEBUG: true
-      IDENTITY_PROVIDER_OIDC_GLOBAL_SECRET: "some-cool-secret-that-is-32bytes"
+      IDENTITY_PROVIDER_OIDC_GLOBAL_SECRET: 'some-cool-secret-that-is-32bytes'
       # $ ssh-keygen -t rsa -m PEM -b 2048 -f temp.pem
       IDENTITY_PROVIDER_OIDC_JWK_PRIVATE_KEY: |
         -----BEGIN RSA PRIVATE KEY-----
@@ -1567,8 +1595,7 @@ commandsets:
       # additional connections.
       EXTSVC_CONFIG_FILE: ''
 
-  dotcom: &dotcom-defaults
-    # This is 95% the enterprise runset, with the addition of Cody Gateway.
+  dotcom: &dotcom-defaults # This is 95% the enterprise runset, with the addition of Cody Gateway.
     checks:
       - docker
       - redis
@@ -1983,6 +2010,19 @@ commandsets:
       - redis
     commands:
       - sourcegraph
+      - web
+      - caddy
+    env:
+      # Faster builds in local dev.
+      DEV_WEB_BUILDER_NO_SPLITTING: 1
+
+  single-program-test-experimental-blame-olafurpg:
+    checks:
+      - git
+      - dev-private
+      - redis
+    commands:
+      - sourcegraph_test
       - web
       - caddy
     env:

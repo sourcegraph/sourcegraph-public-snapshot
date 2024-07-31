@@ -48,8 +48,17 @@ type Doer interface {
 // interface by calling itself.
 type DoerFunc func(*http.Request) (*http.Response, error)
 
+type DoerMock struct {
+	DoFunc func(underlying DoerFunc, req *http.Request) (*http.Response, error)
+}
+
+var GlobalDoerMock DoerMock
+
 // Do implements the Doer interface.
 func (f DoerFunc) Do(req *http.Request) (*http.Response, error) {
+	if GlobalDoerMock.DoFunc != nil {
+		return GlobalDoerMock.DoFunc(f, req)
+	}
 	return f(req)
 }
 
