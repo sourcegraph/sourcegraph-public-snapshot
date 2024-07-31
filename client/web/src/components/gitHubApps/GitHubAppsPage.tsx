@@ -91,17 +91,18 @@ export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled, telemetry
                     </>
                 }
                 actions={
-                    isSiteAdmin ?
-                    <ButtonLink
-                        to="/site-admin/github-apps/new"
-                        className="ml-auto text-nowrap"
-                        variant="primary"
-                        as={Link}
-                    >
-                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Create GitHub App
-                    </ButtonLink>
-                        :
+                    isSiteAdmin ? (
+                        <ButtonLink
+                            to="/site-admin/github-apps/new"
+                            className="ml-auto text-nowrap"
+                            variant="primary"
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Create GitHub App
+                        </ButtonLink>
+                    ) : (
                         <></>
+                    )
                 }
             />
             <Container className="mb-3">

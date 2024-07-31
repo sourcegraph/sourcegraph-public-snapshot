@@ -1,16 +1,16 @@
-import type {FC} from 'react'
+import type { FC } from 'react'
 
-import {Route, Routes} from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 
-import {useQuery} from '@sourcegraph/http-client'
-import type {AuthenticatedUser} from '@sourcegraph/shared/src/auth'
-import type {PlatformContextProps} from '@sourcegraph/shared/src/platform/context'
-import type {TelemetryProps} from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {lazyComponent} from '@sourcegraph/shared/src/util/lazyComponent'
-import {ErrorAlert, LoadingSpinner} from '@sourcegraph/wildcard'
+import { useQuery } from '@sourcegraph/http-client'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import {type SiteExternalServiceConfigResult, type SiteExternalServiceConfigVariables,} from '../../graphql-operations'
-import {SITE_EXTERNAL_SERVICE_CONFIG} from '../../site-admin/backend'
+import { type SiteExternalServiceConfigResult, type SiteExternalServiceConfigVariables } from '../../graphql-operations'
+import { SITE_EXTERNAL_SERVICE_CONFIG } from '../../site-admin/backend'
 
 const GitHubAppPage = lazyComponent(() => import('../../components/gitHubApps/GitHubAppPage'), 'GitHubAppPage')
 const GitHubAppsPage = lazyComponent(() => import('../../components/gitHubApps/GitHubAppsPage'), 'GitHubAppsPage')
