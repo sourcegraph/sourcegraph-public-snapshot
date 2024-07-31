@@ -30,6 +30,18 @@ export const Install: React.FC = () => {
                 }
             } catch (error) {
                 console.error('Failed to fetch versions:', error)
+
+                // Very basic fallback for when release registry is down:
+                // hardcode a particular version of Sourcegraph, which is the
+                // latest at the time of writing.
+                // This could be replaced with a fallback to a release registry
+                // response fixture that appliance-frontend has access to on the
+                // filesystem. In Kubernetes, this could be derived from a
+                // ConfigMap, with the files being distributed to airgap users
+                // out-of-band.
+                const publicVersions = ['v5.5.2463']
+                setVersions(publicVersions)
+                setSelectedVersion(publicVersions[0])
             }
         }
 
