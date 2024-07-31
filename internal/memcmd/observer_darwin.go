@@ -56,7 +56,7 @@ func (o *macObserver) Stop() {
 	o.stopOnce.Do(func() {})
 }
 
-func (o *macObserver) MaxMemoryUsage() (bytesize.Bytes, error) {
+func (o *macObserver) MaxMemoryUsage() (bytesize.Size, error) {
 	select {
 	case <-o.started:
 	default:
@@ -77,7 +77,7 @@ func (o *macObserver) MaxMemoryUsage() (bytesize.Bytes, error) {
 
 	// On macOS, MAXRSS is the maximum resident set size used (in bytes, not kilobytes).
 	// See getrusage(2) for more information.
-	return bytesize.Bytes(usage.Maxrss), nil
+	return bytesize.Size(usage.Maxrss), nil
 }
 
 var _ Observer = &macObserver{}
