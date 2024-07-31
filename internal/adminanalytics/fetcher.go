@@ -17,7 +17,7 @@ type AnalyticsFetcher struct {
 	grouping     string
 	nodesQuery   *sqlf.Query
 	summaryQuery *sqlf.Query
-	cache        bool
+	cache        KeyValue
 }
 
 type AnalyticsNodeData struct {
@@ -42,10 +42,8 @@ func (n *AnalyticsNode) RegisteredUsers() float64 { return n.Data.RegisteredUser
 func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) {
 	cacheKey := fmt.Sprintf(`%s:%s:%s:%s`, f.group, f.dateRange, f.grouping, "nodes")
 
-	if f.cache {
-		if nodes, err := getArrayFromCache[AnalyticsNode](cacheKey); err == nil {
-			return nodes, nil
-		}
+	if nodes, err := getArrayFromCache[AnalyticsNode](f.cache, cacheKey); err == nil {
+		return nodes, nil
 	}
 
 	rows, err := f.db.QueryContext(ctx, f.nodesQuery.Query(sqlf.PostgresBindVar), f.nodesQuery.Args()...)
@@ -106,7 +104,8 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 		allNodes = append(allNodes, node)
 	}
 
-	if err := setArrayToCache(cacheKey, allNodes); err != nil {
+	err = setArrayToCache(f.cache, cacheKey, allNodes)
+	if err != nil {
 		return nil, err
 	}
 
@@ -137,10 +136,8 @@ func (s *AnalyticsSummary) TotalRegisteredUsers() float64 { return s.Data.TotalR
 
 func (f *AnalyticsFetcher) Summary(ctx context.Context) (*AnalyticsSummary, error) {
 	cacheKey := fmt.Sprintf(`%s:%s:%s:%s`, f.group, f.dateRange, f.grouping, "summary")
-	if f.cache {
-		if summary, err := getItemFromCache[AnalyticsSummary](cacheKey); err == nil {
-			return summary, nil
-		}
+	if summary, err := getItemFromCache[AnalyticsSummary](f.cache, cacheKey); err == nil {
+		return summary, nil
 	}
 
 	var data AnalyticsSummaryData
@@ -151,7 +148,8 @@ func (f *AnalyticsFetcher) Summary(ctx context.Context) (*AnalyticsSummary, erro
 
 	summary := &AnalyticsSummary{data}
 
-	if err := setItemToCache(cacheKey, summary); err != nil {
+	err := setItemToCache(f.cache, cacheKey, summary)
+	if err != nil {
 		return nil, err
 	}
 

@@ -25,7 +25,7 @@ func writeAdditionalBuildCommandsSuggestion(version string) {
 Once this build completes, you can:
 * %s
 * %s`
-	std.Out.WriteMarkdown(fmt.Sprintf(markdown, versionLine, deployLine, upgradeLine))
+	std.Out.WriteMarkdown(withFAQ(fmt.Sprintf(markdown, versionLine, deployLine, upgradeLine)))
 }
 
 func buildCloudEphemeral(ctx *cli.Context) error {
@@ -50,7 +50,7 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 			steps := "1. create a new branch off main by running `git switch <branch-name>`\n"
 			steps += "2. push the branch to the remote by running `git push -u origin <branch-name>`\n"
 			steps += "3. trigger the build by running `sg cloud ephemeral build`\n"
-			std.Out.WriteMarkdown(fmt.Sprintf("Alternatively, if you still want to deploy \"main\" you can do:\n%s", steps))
+			std.Out.WriteMarkdown(withFAQ(fmt.Sprintf("Alternatively, if you still want to deploy \"main\" you can do:\n%s", steps)))
 		}
 		return errors.Wrapf(err, "failed to trigger epehemeral build for branch")
 	}

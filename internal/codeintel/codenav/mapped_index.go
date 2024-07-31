@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 )
@@ -192,7 +193,7 @@ func (d *mappedDocument) GetOccurrencesAtRange(ctx context.Context, range_ scip.
 	occurrences := d.document.inner.Occurrences
 	if d.document.isMapped {
 		d.document.lock.RUnlock()
-		return FindOccurrencesWithEqualRange(occurrences, range_), nil
+		return codegraph.FindOccurrencesWithEqualRange(occurrences, range_), nil
 	}
 	d.document.lock.RUnlock()
 
@@ -205,7 +206,7 @@ func (d *mappedDocument) GetOccurrencesAtRange(ctx context.Context, range_ scip.
 		// The range was changed/removed in the target commit, so return no occurrences
 		return nil, nil
 	}
-	pastMatchingOccurrences := FindOccurrencesWithEqualRange(occurrences, mappedRg)
+	pastMatchingOccurrences := codegraph.FindOccurrencesWithEqualRange(occurrences, mappedRg)
 	scipRange := range_.SCIPRange()
 	return genslices.Map(pastMatchingOccurrences, func(occ *scip.Occurrence) *scip.Occurrence {
 		newOccurrence := cloneOccurrence(occ)

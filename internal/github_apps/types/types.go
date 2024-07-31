@@ -12,23 +12,24 @@ import (
 
 // GitHubApp represents a GitHub App.
 type GitHubApp struct {
-	ID            int
-	AppID         int
-	Name          string
-	Domain        types.GitHubAppDomain
-	Slug          string
-	BaseURL       string
-	AppURL        string
-	ClientID      string
-	ClientSecret  string
-	WebhookSecret string
-	WebhookID     *int
-	PrivateKey    string
-	EncryptionKey string
-	Logo          string
-	Kind          GitHubAppKind
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	ID              int
+	AppID           int
+	Name            string
+	Domain          types.GitHubAppDomain
+	Slug            string
+	BaseURL         string
+	AppURL          string
+	ClientID        string
+	ClientSecret    string
+	WebhookSecret   string
+	WebhookID       *int
+	PrivateKey      string
+	EncryptionKey   string
+	Logo            string
+	Kind            GitHubAppKind
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	CreatedByUserId int
 }
 
 type GitHubAppKind string

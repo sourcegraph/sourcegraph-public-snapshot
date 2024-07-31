@@ -11,7 +11,7 @@ type Search struct {
 	DateRange string
 	Grouping  string
 	DB        database.DB
-	Cache     bool
+	Cache     KeyValue
 }
 
 func (s *Search) Searches() (*AnalyticsFetcher, error) {
@@ -44,6 +44,7 @@ func (s *Search) ResultClicks() (*AnalyticsFetcher, error) {
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Search:ResultClicked",
+		cache:        NoopCache{},
 	}, nil
 }
 

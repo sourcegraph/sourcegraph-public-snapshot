@@ -6,11 +6,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 type refreshAnalyticsCacheJob struct{}
@@ -34,14 +36,14 @@ func (e refreshAnalyticsCacheJob) Routines(_ context.Context, observationCtx *ob
 	}
 
 	return []goroutine.BackgroundRoutine{
-			newRefreshAnalyticsCacheJob(observationCtx, db),
+			newRefreshAnalyticsCacheJob(observationCtx, redispool.Store, db),
 		},
 		nil
 }
 
-func newRefreshAnalyticsCacheJob(observationCtx *observation.Context, db database.DB) goroutine.BackgroundRoutine {
+func newRefreshAnalyticsCacheJob(observationCtx *observation.Context, cache adminanalytics.KeyValue, db database.DB) goroutine.BackgroundRoutine {
 	handler := goroutine.HandlerFunc(func(ctx context.Context) error {
-		return refreshAnalyticsCache(ctx, db)
+		return refreshAnalyticsCache(ctx, cache, db)
 	})
 
 	operation := observationCtx.Operation(observation.Op{

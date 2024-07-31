@@ -22,13 +22,16 @@ const (
 	StatusUnknown         Status = "unknown"
 	StatusInstall         Status = "install"
 	StatusInstalling      Status = "installing"
-	StatusIdle            Status = "idle"
 	StatusUpgrading       Status = "upgrading"
 	StatusWaitingForAdmin Status = "wait-for-admin"
 	StatusRefresh         Status = "refresh"
+	StatusMaintenance     Status = "maintenance"
 )
 
-// TODO think about this
 func IsPostInstallStatus(status Status) bool {
-	return status == StatusRefresh
+	switch status {
+	case StatusUnknown, StatusInstall, StatusInstalling, StatusWaitingForAdmin:
+		return false
+	}
+	return true
 }

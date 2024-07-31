@@ -1200,8 +1200,8 @@ func TestResolver_AuthzProviderTypes(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 		ghProvider := github.NewProvider("https://github.com", github.ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
-		authz.SetProviders(false, []authz.Provider{ghProvider})
-		defer authz.SetProviders(true, nil)
+		authz.SetProviders([]authz.Provider{ghProvider})
+		defer authz.SetProviders(nil)
 		result, err := (&Resolver{db: db}).AuthzProviderTypes(ctx)
 		assert.NoError(t, err)
 		assert.Equal(t, []string{"github"}, result)
@@ -1471,7 +1471,6 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, repoID int32) ([]authz.Permission, error) {
 		return []authz.Permission{{RepoID: repoID, UserID: 42, UpdatedAt: clock()}}, nil
 	})
-	perms.IsRepoUnrestrictedFunc.SetDefaultReturn(false, nil)
 	perms.ListRepoPermissionsFunc.SetDefaultReturn([]*database.RepoPermission{{User: &types.User{ID: 42}}}, nil)
 
 	syncJobs := dbmocks.NewStrictMockPermissionSyncJobStore()

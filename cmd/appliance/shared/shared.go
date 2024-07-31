@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -48,7 +49,14 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	relregClient := releaseregistry.NewClient(config.relregEndpoint)
 
-	app, err := appliance.NewAppliance(k8sClient, relregClient, config.applianceVersion, config.namespace, logger)
+	noResourceRestrictions := false
+	noResourceRestrictions, err = strconv.ParseBool(config.noResourceRestrictions)
+	if err != nil {
+		logger.Error("parsing APPLIANCE_NO_RESOURCE_RESTRICTIONS as bool", log.Error(err))
+		return err
+	}
+
+	app, err := appliance.NewAppliance(k8sClient, relregClient, config.applianceVersion, config.namespace, noResourceRestrictions, logger)
 	if err != nil {
 		logger.Error("failed to create appliance", log.Error(err))
 		return err
@@ -100,12 +108,12 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	grpcServer := makeGRPCServer(logger, app)
 
 	selfUpdater := &selfupdate.SelfUpdate{
-		Interval:       time.Hour,
-		Logger:         logger.Scoped("SelfUpdate"),
-		K8sClient:      k8sClient,
-		RelregClient:   relregClient,
-		DeploymentName: config.selfDeploymentName,
-		Namespace:      config.namespace,
+		Interval:        time.Hour,
+		Logger:          logger.Scoped("SelfUpdate"),
+		K8sClient:       k8sClient,
+		RelregClient:    relregClient,
+		DeploymentNames: config.selfDeploymentName,
+		Namespace:       config.namespace,
 	}
 
 	probe := &healthchecker.PodProbe{K8sClient: k8sClient}
@@ -147,7 +155,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		return nil
 	})
 	g.Go(func() error {
-		if err := healthChecker.ManageIngressFacingService(ctx, beginHealthCheckLoop, "app=sourcegraph-frontend"); err != nil {
+		if err := healthChecker.ManageIngressFacingService(ctx, beginHealthCheckLoop, "app=sourcegraph-frontend", config.namespace); err != nil {
 			logger.Error("problem running HealthChecker", log.Error(err))
 			return err
 		}

@@ -6,7 +6,11 @@ import (
 	"strings"
 	"time"
 
+	genslices "github.com/life4/genesis/slices"
+	"github.com/sourcegraph/scip/bindings/go/scip"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -29,18 +33,15 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 		return nil, err
 	}
 
-	requestArgs := codenav.PositionalRequestArgs{
-		RequestArgs: codenav.RequestArgs{
-			RepositoryID: r.requestState.RepositoryID,
-			Commit:       r.requestState.Commit,
-			Limit:        limit,
-			RawCursor:    rawCursor,
-		},
-		Path:      r.requestState.Path,
-		Line:      int(args.Line),
-		Character: int(args.Character),
+	requestArgs := codenav.OccurrenceRequestArgs{
+		RepositoryID: r.requestState.RepositoryID,
+		Commit:       r.requestState.Commit,
+		Path:         r.requestState.Path,
+		Limit:        limit,
+		RawCursor:    rawCursor,
+		Matcher:      shared.NewStartPositionMatcher(scip.Position{Line: args.Line, Character: args.Character}),
 	}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.implementations, time.Second, getObservationArgs(requestArgs))
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.implementations, time.Second, getObservationArgs(&requestArgs))
 	defer endObservation()
 
 	// Decode cursor given from previous response or create a new one with default values.
@@ -48,7 +49,7 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 	// is used to resolve each page. This cursor will be modified in-place to become the
 	// cursor used to fetch the subsequent page of results in this result set.
 	var nextCursor string
-	cursor, err := decodeTraversalCursor(rawCursor)
+	cursor, err := codenav.DecodeCursor(rawCursor)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", rawCursor))
 	}
@@ -59,7 +60,7 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 	}
 
 	if implsCursor.Phase != "done" {
-		nextCursor = encodeTraversalCursor(implsCursor)
+		nextCursor = implsCursor.Encode()
 	}
 
 	if args.Filter != nil && *args.Filter != "" {
@@ -72,7 +73,8 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 		impls = filtered
 	}
 
-	return newLocationConnectionResolver(impls, pointers.NonZeroPtr(nextCursor), r.locationResolver), nil
+	implLocs := genslices.Map(impls, shared.UploadUsage.ToLocation)
+	return newLocationConnectionResolver(implLocs, pointers.NonZeroPtr(nextCursor), r.locationResolver), nil
 }
 
 func (r *gitBlobLSIFDataResolver) Prototypes(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
@@ -86,18 +88,15 @@ func (r *gitBlobLSIFDataResolver) Prototypes(ctx context.Context, args *resolver
 		return nil, err
 	}
 
-	requestArgs := codenav.PositionalRequestArgs{
-		RequestArgs: codenav.RequestArgs{
-			RepositoryID: r.requestState.RepositoryID,
-			Commit:       r.requestState.Commit,
-			Limit:        limit,
-			RawCursor:    rawCursor,
-		},
-		Path:      r.requestState.Path,
-		Line:      int(args.Line),
-		Character: int(args.Character),
+	requestArgs := codenav.OccurrenceRequestArgs{
+		RepositoryID: r.requestState.RepositoryID,
+		Commit:       r.requestState.Commit,
+		Path:         r.requestState.Path,
+		Limit:        limit,
+		RawCursor:    rawCursor,
+		Matcher:      shared.NewStartPositionMatcher(scip.Position{Line: args.Line, Character: args.Character}),
 	}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.prototypes, time.Second, getObservationArgs(requestArgs))
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.prototypes, time.Second, getObservationArgs(&requestArgs))
 	defer endObservation()
 
 	// Decode cursor given from previous response or create a new one with default values.
@@ -105,7 +104,7 @@ func (r *gitBlobLSIFDataResolver) Prototypes(ctx context.Context, args *resolver
 	// is used to resolve each page. This cursor will be modified in-place to become the
 	// cursor used to fetch the subsequent page of results in this result set.
 	var nextCursor string
-	cursor, err := decodeTraversalCursor(rawCursor)
+	cursor, err := codenav.DecodeCursor(rawCursor)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", rawCursor))
 	}
@@ -116,7 +115,7 @@ func (r *gitBlobLSIFDataResolver) Prototypes(ctx context.Context, args *resolver
 	}
 
 	if protoCursor.Phase != "done" {
-		nextCursor = encodeTraversalCursor(protoCursor)
+		nextCursor = protoCursor.Encode()
 	}
 
 	if args.Filter != nil && *args.Filter != "" {
@@ -129,5 +128,6 @@ func (r *gitBlobLSIFDataResolver) Prototypes(ctx context.Context, args *resolver
 		prototypes = filtered
 	}
 
-	return newLocationConnectionResolver(prototypes, pointers.NonZeroPtr(nextCursor), r.locationResolver), nil
+	prototypeLocs := genslices.Map(prototypes, shared.UploadUsage.ToLocation)
+	return newLocationConnectionResolver(prototypeLocs, pointers.NonZeroPtr(nextCursor), r.locationResolver), nil
 }

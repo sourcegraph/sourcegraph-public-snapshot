@@ -174,7 +174,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		err = errors.Wrap(scanProtects(p.logger, protects, repoIncludesExcludesScanner(perms), p.ignoreRulesWithHost), "repoIncludesExcludesScanner")
 	} else {
 		// SubRepoPermissions-enabled code path
-		perms.SubRepoPermissions = make(map[extsvc.RepoID]*authz.SubRepoPermissions, len(p.depots))
+		perms.SubRepoPermissions = make(map[extsvc.RepoID]*authz.SubRepoPermissionsWithIPs, len(p.depots))
 		err = errors.Wrap(scanProtects(p.logger, protects, fullRepoPermsScanner(p.logger, perms, p.depots), p.ignoreRulesWithHost), "fullRepoPermsScanner")
 	}
 

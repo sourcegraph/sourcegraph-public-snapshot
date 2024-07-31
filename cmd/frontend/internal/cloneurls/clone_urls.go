@@ -116,6 +116,9 @@ func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.Ext
 	case *schema.BitbucketCloudConnection:
 		rs = reposource.BitbucketCloud{BitbucketCloudConnection: c}
 		host = c.Url
+	case *schema.GerritConnection:
+		rs = reposource.Gerrit{GerritConnection: c}
+		host = c.Url
 	case *schema.AWSCodeCommitConnection:
 		rs = reposource.AWS{AWSCodeCommitConnection: c}
 		// AWS type does not have URL

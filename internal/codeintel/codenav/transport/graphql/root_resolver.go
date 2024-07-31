@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/types"
+
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
@@ -25,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -124,9 +125,9 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 	}
 
 	gitTreeTranslator := r.MakeGitTreeTranslator(opts.Repo)
-	makeResolvers := func(prov resolverstubs.CodeGraphDataProvenance) ([]resolverstubs.CodeGraphDataResolver, error) {
+	makeResolvers := func(prov codenav.CodeGraphDataProvenance) ([]resolverstubs.CodeGraphDataResolver, error) {
 		indexer := ""
-		if prov == resolverstubs.ProvenanceSyntactic {
+		if prov == codenav.ProvenanceSyntactic {
 			indexer = shared.SyntacticIndexer
 		}
 		uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, shared.UploadMatchingOptions{
@@ -150,14 +151,14 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 
 	provs := opts.Args.ProvenancesForSCIPData()
 	if provs.Precise {
-		preciseResolvers, err := makeResolvers(resolverstubs.ProvenancePrecise)
+		preciseResolvers, err := makeResolvers(codenav.ProvenancePrecise)
 		if len(preciseResolvers) != 0 || err != nil {
 			return &preciseResolvers, err
 		}
 	}
 
 	if provs.Syntactic {
-		syntacticResolvers, err := makeResolvers(resolverstubs.ProvenanceSyntactic)
+		syntacticResolvers, err := makeResolvers(codenav.ProvenanceSyntactic)
 		if len(syntacticResolvers) != 0 || err != nil {
 			return &syntacticResolvers, err
 		}
@@ -405,7 +406,7 @@ type codeGraphDataResolver struct {
 	gitTreeTranslator codenav.GitTreeTranslator
 	upload            UploadData
 	opts              *resolverstubs.CodeGraphDataOpts
-	provenance        resolverstubs.CodeGraphDataProvenance
+	provenance        codenav.CodeGraphDataProvenance
 
 	// O11y
 	operations *operations
@@ -452,7 +453,7 @@ func newCodeGraphDataResolver(
 	gitTreeTranslator codenav.GitTreeTranslator,
 	upload shared.CompletedUpload,
 	opts *resolverstubs.CodeGraphDataOpts,
-	provenance resolverstubs.CodeGraphDataProvenance,
+	provenance codenav.CodeGraphDataProvenance,
 	operations *operations,
 ) resolverstubs.CodeGraphDataResolver {
 	return &codeGraphDataResolver{
@@ -478,7 +479,7 @@ type CodeGraphDataID struct {
 	api.RepoID
 	Commit api.CommitID
 	Path   string
-	resolverstubs.CodeGraphDataProvenance
+	codenav.CodeGraphDataProvenance
 }
 
 func (c *codeGraphDataResolver) tryRetrieveDocument(ctx context.Context) (*scip.Document, error) {
@@ -503,7 +504,7 @@ func (c *codeGraphDataResolver) ID() graphql.ID {
 	return relay.MarshalID(resolverstubs.CodeGraphDataIDKind, dataID)
 }
 
-func (c *codeGraphDataResolver) Provenance(_ context.Context) (resolverstubs.CodeGraphDataProvenance, error) {
+func (c *codeGraphDataResolver) Provenance(_ context.Context) (codenav.CodeGraphDataProvenance, error) {
 	return c.provenance, nil
 }
 
