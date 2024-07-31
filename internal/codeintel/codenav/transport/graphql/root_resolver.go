@@ -289,20 +289,13 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			if len(preciseUsages) > remainingCount {
 				trace.Warn("number of precise usages exceeded limit", log.Int("limit", remainingCount), log.Int("numPreciseUsages", len(preciseUsages)))
 			}
-			var multiErr errors.MultiError
-			cachedLocResolver := r.locationResolverFactory.Create()
-			for _, usage := range preciseUsages {
-				if resolver, err := NewPreciseUsageResolver(ctx, usage, cachedLocResolver); err != nil {
-					multiErr = errors.CombineErrors(multiErr, err)
-				} else {
-					numPreciseResults++
-					usageResolvers = append(usageResolvers, resolver)
-				}
-			}
-			if multiErr != nil && len(multiErr.Errors()) != 0 {
-				trace.Warn("errors when constructing precise resolvers", log.Error(multiErr))
+			preciseUsageResolvers, err := NewPreciseUsageResolvers(ctx, r.gitserverClient, preciseUsages)
+			numPreciseResults = len(preciseUsageResolvers)
+			if err != nil {
+				trace.Warn("errors when constructing precise resolvers", log.Error(err))
 			}
 			trace.AddEvent("PreciseUsages", attribute.Int("count", numPreciseResults))
+			usageResolvers = append(usageResolvers, preciseUsageResolvers...)
 			remainingCount -= min(remainingCount, numPreciseResults)
 			nextCursor = nextPreciseCursor // write to captured value
 		}()
