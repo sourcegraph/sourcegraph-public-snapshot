@@ -32,12 +32,12 @@ type modelsLoadTracker struct {
 // implementing a circular buffer to efficiently manage error history.
 type modelCircuitBreaker struct {
 	headIndex int
-	records   []*record
+	records   []*errorRecord
 }
 
-// record represents an individual error occurrence with details about the reason for the error
+// errorRecord represents an individual error occurrence with details about the reason for the error
 // and the timestamp when it happened. This information is used to assess the model's availability.
-type record struct {
+type errorRecord struct {
 	reason    int
 	timestamp time.Time
 }
@@ -56,15 +56,15 @@ func newModelsLoadTracker(failureThreshold int, timeout time.Duration) *modelsLo
 // a timeout (deadline exceeded) or if the response status code is 429 (Too Many Requests).
 // If neither of these conditions are met, it resets the error records for the given model.
 func (mlt *modelsLoadTracker) record(gatewayModel string, resp *http.Response, reqErr error) {
-	var r *record
+	var r *errorRecord
 	if errors.Is(reqErr, context.DeadlineExceeded) {
-		r = &record{
+		r = &errorRecord{
 			reason:    http.StatusGatewayTimeout,
 			timestamp: time.Now(),
 		}
 	}
 	if resp.StatusCode == http.StatusTooManyRequests {
-		r = &record{
+		r = &errorRecord{
 			reason:    http.StatusTooManyRequests,
 			timestamp: time.Now(),
 		}
