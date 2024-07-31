@@ -177,10 +177,18 @@
                     name={isP4 ? 'changelists' : 'commits'}
                     seeAllItemsURL={`${repoURL}/-/commits`}
                     getData={getRepositoryCommits}
-                    toOption={commit => ({ value: commit.id, label: commit.oid })}
+                    toOption={commit => {
+                        return isP4 && commit.perforceChangelist
+                            ? { value: commit.id, label: commit.perforceChangelist.cid }
+                            : { value: commit.id, label: commit.oid }
+                    }}
                     onSelect={commit => {
                         toggle(false)
-                        onSelect(commit.oid)
+                        if (isP4 && commit.perforceChangelist) {
+                            onSelect(`changelist/${commit.perforceChangelist.cid}`)
+                        } else {
+                            onSelect(commit.oid)
+                        }
                     }}
                     let:value
                 >
