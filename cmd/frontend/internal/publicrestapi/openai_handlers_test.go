@@ -1,6 +1,7 @@
 package publicrestapi
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -107,7 +108,7 @@ func TestAPI(t *testing.T) {
 		req, err := http.NewRequest("POST", "/api/openai/v1/chat/completions", strings.NewReader(`{"model": "gpt-4o-mini-2024-07-18", "messages": [{"role": "user", "content": "respond with 'yes' and nothing else"}]}`))
 		assert.NoError(t, err)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", "Bearer theasdfkey")
+		req.Header.Set("Authorization", fmt.Sprintf("token %s", c.AccessToken))
 
 		rr := httptest.NewRecorder()
 		c.Handler.ServeHTTP(rr, req)
