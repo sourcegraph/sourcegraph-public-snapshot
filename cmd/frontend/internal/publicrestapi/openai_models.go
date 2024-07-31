@@ -26,6 +26,7 @@ type CreateChatCompletionRequest struct {
 	User             *string                                 `json:"user,omitempty"`
 }
 
+// CreateChatCompletionRequestStopProperty is equivalent to the type `string | string[]` in TypeScript.
 type CreateChatCompletionRequestStopProperty struct {
 	Stop []string
 }

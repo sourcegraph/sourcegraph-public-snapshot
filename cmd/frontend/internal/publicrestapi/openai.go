@@ -16,14 +16,27 @@ import (
 func serveOpenAIChatCompletions(logger sglog.Logger, apiHandler http.Handler) func(w http.ResponseWriter, r *http.Request) (err error) {
 	return func(w http.ResponseWriter, r *http.Request) (err error) {
 		// Parse OpenAI request
+
+		logger.Info("Received OpenAI chat completion request",
+			sglog.String("method", r.Method),
+			sglog.String("url", r.URL.String()),
+			sglog.String("remote_addr", r.RemoteAddr),
+			sglog.String("user_agent", r.UserAgent()),
+		)
+
+		start := time.Now()
+		defer func() {
+			logger.Info("Completed OpenAI chat completion request",
+				sglog.Duration("duration", time.Since(start)),
+				sglog.Error(err),
+			)
+		}()
+
 		var openAIReq CreateChatCompletionRequest
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			return err
 		}
-		// r.Body = io.NopCloser(bytes.NewBuffer(body))
-
-		fmt.Println("body", string(body))
 
 		decoder := json.NewDecoder(io.NopCloser(bytes.NewBuffer(body)))
 
@@ -33,14 +46,13 @@ func serveOpenAIChatCompletions(logger sglog.Logger, apiHandler http.Handler) fu
 			return err
 		}
 
-		// Transform to /.api/completions format
+		// Transform to /.api/completions/stream format
 		sgReq := transformToSGRequest(openAIReq)
 
-		fmt.Println("sgReq", sgReq)
-
 		// Forward request to apiHandler
-		sgResp, err := forwardToAPIHandler(apiHandler, sgReq)
+		sgResp, err := forwardToAPIHandler(apiHandler, sgReq, r)
 		if err != nil {
+			logger.Error("failed to forward request to apiHandler", sglog.Error(err))
 			return err
 		}
 
@@ -61,7 +73,7 @@ func transformToSGRequest(openAIReq CreateChatCompletionRequest) map[string]inte
 		"messages":          transformMessages(openAIReq.Messages),
 		"model":             openAIReq.Model,
 		"temperature":       openAIReq.Temperature,
-		"stream":            openAIReq.Stream,
+		"stream":            false, // TODO: implement streaming
 		// Add other fields as needed
 	}
 }
@@ -74,27 +86,36 @@ func transformMessages(messages []ChatCompletionRequestMessage) []map[string]str
 		for _, part := range msg.Content.Parts {
 			text += part.Text
 		}
+		speaker := msg.Role
+		if speaker == "user" {
+			speaker = "human"
+		}
 		transformed[i] = map[string]string{
-			"speaker": msg.Role,
+			"speaker": speaker,
 			"text":    text,
 		}
 	}
 	return transformed
 }
 
-func forwardToAPIHandler(apiHandler http.Handler, sgReq map[string]interface{}) (map[string]interface{}, error) {
+func forwardToAPIHandler(apiHandler http.Handler, sgReq map[string]interface{}, r *http.Request) (map[string]interface{}, error) {
 	// Create a new request to /.api/completions
 	reqBody, err := json.Marshal(sgReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request body: %v", err)
 	}
 
-	req, err := http.NewRequest("POST", "/.api/completions", bytes.NewBuffer(reqBody))
+	req, err := http.NewRequest("POST", "/.api/completions/stream?api-version=1&client-name=openai-rest-api&client-version=6.0.0", bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %v", err)
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	// Set headers from the original request
+	for name, values := range r.Header {
+		for _, value := range values {
+			req.Header.Add(name, value)
+		}
+	}
 
 	// Use a ResponseRecorder to capture the response
 	rr := httptest.NewRecorder()
@@ -102,16 +123,17 @@ func forwardToAPIHandler(apiHandler http.Handler, sgReq map[string]interface{}) 
 	// Serve the request using the provided apiHandler
 	apiHandler.ServeHTTP(rr, req)
 
-	// Check the response status
 	if rr.Code != http.StatusOK {
-		return nil, fmt.Errorf("handler returned unexpected status code: got %v want %v", rr.Code, http.StatusOK)
+		// TODO: properly return error matching OpenAI spec.
+		return nil, fmt.Errorf("handler returned unexpected status code: got %v want %v, response body: %s", rr.Code, http.StatusOK, rr.Body.String())
 	}
 
 	// Parse the response body
 	var sgResp map[string]interface{}
-	err = json.Unmarshal(rr.Body.Bytes(), &sgResp)
+	responseBytes := rr.Body.Bytes()
+	err = json.Unmarshal(responseBytes, &sgResp)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response body: %v", err)
+		return nil, fmt.Errorf("failed to unmarshal response body %s: %v", string(responseBytes), err)
 	}
 
 	return sgResp, nil
