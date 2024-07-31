@@ -1,4 +1,4 @@
-package main
+package sourcegraph_test
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/httprecordreplay"
@@ -12,10 +12,10 @@ import (
 	worker_shared "github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 )
 
-func main() {
+func RunSingleStaticBinaryMain() {
 	sanitycheck.Pass()
 
-	httprecordreplay.EnableHTTPRecordReplay()
+	httprecordreplay.EnableHTTPRecordReplayFromEnv()
 
 	// Other services to run (in addition to `frontend`).
 	otherServices := []service.Service{
