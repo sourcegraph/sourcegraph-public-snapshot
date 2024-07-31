@@ -3,15 +3,22 @@ import React, { useState, useEffect } from 'react'
 import {
     Button,
     FormControl,
-    FormGroup,
+    RadioGroup,
     InputLabel,
     MenuItem,
     Paper,
     Select,
     Stack,
     Typography,
-    Checkbox,
+    Radio,
     FormControlLabel,
+    FormGroup,
+    FormLabel,
+    FormHelperText,
+    Box,
+    TextField,
+    Tab,
+    Tabs,
 } from '@mui/material'
 
 import { changeStage } from './state'
@@ -23,8 +30,15 @@ export const Install: React.FC = () => {
     const [versions, setVersions] = useState<string[]>([])
     const [selectedVersion, setSelectedVersion] = useState<string>('')
 
-    type dbType = 'internal' | 'external'
-    const [dbType, setDbType] = useState<dbType>('internal')
+    type dbType = 'built-in' | 'external'
+    const [dbType, setDbType] = useState<dbType>('built-in')
+
+    type dbTab = 'pgsql' | 'codeintel' | 'codeinsights'
+    const [dbTab, setDbTab] = useState<dbTab>('pgsql')
+
+    const handleDbTabChange = (event: React.SyntheticEvent, newValue: dbTab) => {
+        setDbTab(newValue)
+    }
 
     useEffect(() => {
         const fetchVersions = async () => {
@@ -70,10 +84,14 @@ export const Install: React.FC = () => {
         changeStage({ action: 'installing', data: selectedVersion })
     }
 
+    const handleDbSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setDbType(event.target.value as dbType)
+    }
+
     return (
         // Render a version selection box followed by a database configuration screen, then an install prompt
         <div className="install">
-            <Typography variant="h5">Let's get started...</Typography>
+            <Typography variant="h5">Setup Sourcegraph</Typography>
             <Paper elevation={3} sx={{ p: 4 }}>
                 {installState === 'select-version' ? (
                     <Stack direction="column" spacing={2} sx={{ alignItems: 'center' }}>
@@ -93,18 +111,50 @@ export const Install: React.FC = () => {
                             </Select>
                         </FormControl>
                         <div className="message">
-                            <Typography variant="caption">Press install to begin installation.</Typography>
+                            <Typography variant="caption">Proceed to database configuration.</Typography>
                         </div>
                         <Button variant="contained" sx={{ width: 200 }} onClick={next}>
                             Next
                         </Button>
                     </Stack>
                 ) : installState === 'select-db-type' ? (
-                    <Stack direction="column" spacing={2}>
-                        <FormGroup row>
-                            <FormControlLabel control={<Checkbox />} label="Internal DBs" />
-                            <FormControlLabel disabled control={<Checkbox />} label="External DBs" />
-                        </FormGroup>
+                    <Stack direction="column" spacing={2} alignItems={'center'}>
+                        <FormControl>
+                            <FormLabel>Configure Sourcegraph Databases</FormLabel>
+                            <FormGroup>
+                                <RadioGroup value={dbType} onChange={handleDbSelect} defaultValue="built-in">
+                                    <FormControlLabel value="built-in" control={<Radio />} label="built-in DBs" />
+                                    <FormHelperText id="my-helper-text" fontSize="small">
+                                        Selecting built-in dbs, configures sourcegraph to use built in databases.
+                                        Provisioned and controlled directly by appliance.{' '}
+                                    </FormHelperText>
+                                    <FormControlLabel value="external" control={<Radio />} label="External DBs" />
+                                </RadioGroup>
+                            </FormGroup>
+                        </FormControl>
+                        {dbType === 'external' ? (
+                            <Box sx={{ width: '80%' }} alignContent={'center'}>
+                                <Box
+                                    alignContent={'center'}
+                                    sx={{ paddingBottom: 2.5, borderBottom: 1, borderColor: 'divider' }}
+                                >
+                                    <Tabs value={dbTab} onChange={handleDbTabChange}>
+                                        <Tab label="Pgsql" disabled />
+                                        <Tab label="Codeintel-db" disabled />
+                                        <Tab label="Codeinsights-db" disabled />
+                                    </Tabs>
+                                </Box>
+                                <FormGroup>
+                                    <Stack spacing={2}>
+                                        <TextField disabled label="Port" defaultValue="5432" />
+                                        <TextField disabled label="User" defaultValue="sg" />
+                                        <TextField disabled label="Password" defaultValue="sg" />
+                                        <TextField disabled label="Database" defaultValue="sg" />
+                                        <TextField disabled label="SSL Mode" defaultValue="disable" />
+                                    </Stack>
+                                </FormGroup>
+                            </Box>
+                        ) : null}
                         <Stack direction="row" spacing={2}>
                             <Button variant="contained" sx={{ width: 200 }} onClick={back}>
                                 Back
