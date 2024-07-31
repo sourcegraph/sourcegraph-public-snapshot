@@ -3,7 +3,6 @@ package bitbucketcloudoauth
 import (
 	"bytes"
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,15 +10,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -30,8 +31,7 @@ import (
 // various endpoints, but does NOT cover the logic that is contained within `golang.org/x/oauth2`
 // and `github.com/dghubble/gologin` which ensures the correctness of the `/callback` handler.
 func TestMiddleware(t *testing.T) {
-	cleanup := session.ResetMockSessionStore(t)
-	defer cleanup()
+	session.ResetMockSessionStore(t)
 
 	db := dbmocks.NewMockDB()
 

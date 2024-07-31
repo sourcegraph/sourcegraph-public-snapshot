@@ -3,7 +3,6 @@ package gitlab
 import (
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	atypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -26,13 +25,13 @@ import (
 // to connection issues.
 func NewAuthzProviders(
 	db database.DB,
-	cfg schema.SiteConfiguration,
 	conns []*types.GitLabConnection,
+	ap []schema.AuthProviders,
 ) *atypes.ProviderInitResult {
 	initResults := &atypes.ProviderInitResult{}
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		p, err := newAuthzProvider(db, c, cfg.AuthProviders)
+		p, err := newAuthzProvider(db, c, ap)
 		if err != nil {
 			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeGitLab)
 			initResults.Problems = append(initResults.Problems, err.Error())
@@ -100,32 +99,8 @@ func newAuthzProvider(db database.DB, c *types.GitLabConnection, ps []schema.Aut
 			URN:                         c.URN,
 			BaseURL:                     glURL,
 			SudoToken:                   c.Token,
-			UseNativeUsername:           true,
 			SyncInternalRepoPermissions: !c.MarkInternalReposAsPublic,
 		}), nil
-	case idp.External != nil:
-		ext := idp.External
-		for _, authProvider := range ps {
-			saml := authProvider.Saml
-			foundMatchingSAML := saml != nil && saml.ConfigID == ext.AuthProviderID && ext.AuthProviderType == saml.Type
-			oidc := authProvider.Openidconnect
-			foundMatchingOIDC := oidc != nil && oidc.ConfigID == ext.AuthProviderID && ext.AuthProviderType == oidc.Type
-			if foundMatchingSAML || foundMatchingOIDC {
-				return NewSudoProvider(SudoProviderOp{
-					URN:     c.URN,
-					BaseURL: glURL,
-					AuthnConfigID: providers.ConfigID{
-						Type: ext.AuthProviderType,
-						ID:   ext.AuthProviderID,
-					},
-					GitLabProvider:              ext.GitlabProvider,
-					SudoToken:                   c.Token,
-					UseNativeUsername:           false,
-					SyncInternalRepoPermissions: !c.MarkInternalReposAsPublic,
-				}), nil
-			}
-		}
-		return nil, errors.Errorf("Did not find authentication provider matching type %s and configID %s. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) matches the type and configID.", ext.AuthProviderType, ext.AuthProviderID)
 	default:
 		return nil, errors.Errorf("No identityProvider was specified")
 	}

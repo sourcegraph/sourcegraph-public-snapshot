@@ -5,7 +5,8 @@ go_library(
     name = "licensecheck",
     srcs = [
         "check.go",
-        "worker.go",
+        "job.go",
+        "usercount.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/licensecheck",
     tags = [TAG_PLATFORM_SOURCE],
@@ -25,6 +26,7 @@ go_library(
         "//internal/redispool",
         "//lib/errors",
         "@com_github_derision_test_glock//:glock",
+        "@com_github_gomodule_redigo//redis",
         "@com_github_sourcegraph_log//:log",
     ],
 )
@@ -39,6 +41,8 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/license",
         "//internal/licensing",
         "//internal/rcache",

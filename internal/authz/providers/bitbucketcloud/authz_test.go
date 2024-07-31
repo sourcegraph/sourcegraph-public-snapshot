@@ -23,7 +23,6 @@ func TestNewAuthzProviders(t *testing.T) {
 					Url: schema.DefaultBitbucketCloudURL,
 				},
 			}},
-			[]schema.AuthProviders{},
 		)
 
 		assertion := assert.New(t)
@@ -34,75 +33,47 @@ func TestNewAuthzProviders(t *testing.T) {
 		assertion.Len(initResults.InvalidConnections, 0, "unexpected invalidConnections: %+v", initResults.InvalidConnections)
 	})
 
-	t.Run("no matching auth provider", func(t *testing.T) {
+	t.Run("default case", func(t *testing.T) {
 		t.Cleanup(licensing.TestingSkipFeatureChecks())
 		initResults := NewAuthzProviders(
 			db,
 			[]*types.BitbucketCloudConnection{
 				{
 					BitbucketCloudConnection: &schema.BitbucketCloudConnection{
-						Url:           "https://bitbucket.org/my-org", // incorrect
+						Url:           schema.DefaultBitbucketCloudURL,
 						Authorization: &schema.BitbucketCloudAuthorization{},
 					},
 				},
 			},
-			[]schema.AuthProviders{{Bitbucketcloud: &schema.BitbucketCloudAuthProvider{}}},
 		)
 
 		require.Len(t, initResults.Providers, 1, "expect exactly one provider")
 		assert.NotNil(t, initResults.Providers[0])
 
 		assert.Empty(t, initResults.Problems)
+		assert.Empty(t, initResults.Warnings)
 		assert.Empty(t, initResults.InvalidConnections)
-
-		require.Len(t, initResults.Warnings, 0, "expect no warnings")
 	})
 
-	t.Run("matching auth provider found", func(t *testing.T) {
-		t.Run("default case", func(t *testing.T) {
-			t.Cleanup(licensing.TestingSkipFeatureChecks())
-			initResults := NewAuthzProviders(
-				db,
-				[]*types.BitbucketCloudConnection{
-					{
-						BitbucketCloudConnection: &schema.BitbucketCloudConnection{
-							Url:           schema.DefaultBitbucketCloudURL,
-							Authorization: &schema.BitbucketCloudAuthorization{},
-						},
+	t.Run("license does not have ACLs feature", func(t *testing.T) {
+		t.Cleanup(licensing.MockCheckFeatureError("failed"))
+		initResults := NewAuthzProviders(
+			db,
+			[]*types.BitbucketCloudConnection{
+				{
+					BitbucketCloudConnection: &schema.BitbucketCloudConnection{
+						Url:           schema.DefaultBitbucketCloudURL,
+						Authorization: &schema.BitbucketCloudAuthorization{},
 					},
 				},
-				[]schema.AuthProviders{{Bitbucketcloud: &schema.BitbucketCloudAuthProvider{}}},
-			)
+			},
+		)
 
-			require.Len(t, initResults.Providers, 1, "expect exactly one provider")
-			assert.NotNil(t, initResults.Providers[0])
-
-			assert.Empty(t, initResults.Problems)
-			assert.Empty(t, initResults.Warnings)
-			assert.Empty(t, initResults.InvalidConnections)
-		})
-
-		t.Run("license does not have ACLs feature", func(t *testing.T) {
-			t.Cleanup(licensing.MockCheckFeatureError("failed"))
-			initResults := NewAuthzProviders(
-				db,
-				[]*types.BitbucketCloudConnection{
-					{
-						BitbucketCloudConnection: &schema.BitbucketCloudConnection{
-							Url:           schema.DefaultBitbucketCloudURL,
-							Authorization: &schema.BitbucketCloudAuthorization{},
-						},
-					},
-				},
-				[]schema.AuthProviders{{Bitbucketcloud: &schema.BitbucketCloudAuthProvider{}}},
-			)
-
-			expectedError := []string{"failed"}
-			expInvalidConnectionErr := []string{"bitbucketCloud"}
-			assert.Equal(t, expectedError, initResults.Problems)
-			assert.Equal(t, expInvalidConnectionErr, initResults.InvalidConnections)
-			assert.Empty(t, initResults.Providers)
-			assert.Empty(t, initResults.Warnings)
-		})
+		expectedError := []string{"failed"}
+		expInvalidConnectionErr := []string{"bitbucketCloud"}
+		assert.Equal(t, expectedError, initResults.Problems)
+		assert.Equal(t, expInvalidConnectionErr, initResults.InvalidConnections)
+		assert.Empty(t, initResults.Providers)
+		assert.Empty(t, initResults.Warnings)
 	})
 }

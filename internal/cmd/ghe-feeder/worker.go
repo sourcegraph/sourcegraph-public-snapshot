@@ -12,11 +12,11 @@ import (
 	"time"
 
 	"github.com/google/go-github/v55/github"
-	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -98,7 +98,7 @@ type worker struct {
 	currentMaxRepos int
 
 	// logger has worker name inprinted
-	logger log15.Logger
+	logger log.Logger
 
 	// rate limiter for the GHE API calls
 	rateLimiter *ratelimit.InstrumentedLimiter
@@ -123,18 +123,18 @@ func (wkr *worker) run(ctx context.Context) {
 		wkr.currentOrg, wkr.currentMaxRepos = randomOrgNameAndSize()
 	}
 
-	wkr.logger.Debug("switching to org", "org", wkr.currentOrg)
+	wkr.logger.Debug("switching to org", log.String("org", wkr.currentOrg))
 
 	// declare the first org to start the worker processing
 	err := wkr.addGHEOrg(ctx)
 	if err != nil {
-		wkr.logger.Error("failed to create org", "org", wkr.currentOrg, "error", err)
+		wkr.logger.Error("failed to create org", log.String("org", wkr.currentOrg), log.Error(err))
 		// add it to default org then
 		wkr.currentOrg = ""
 	} else {
 		err = wkr.fdr.declareOrg(wkr.currentOrg)
 		if err != nil {
-			wkr.logger.Error("failed to declare org", "org", wkr.currentOrg, "error", err)
+			wkr.logger.Error("failed to declare org", log.String("org", wkr.currentOrg), log.Error(err))
 		}
 	}
 
@@ -147,7 +147,7 @@ func (wkr *worker) run(ctx context.Context) {
 
 		xs := strings.Split(line, "/")
 		if len(xs) != 2 {
-			wkr.logger.Error("failed tos split line", "line", line)
+			wkr.logger.Error("failed tos split line", log.String("line", line))
 			continue
 		}
 		owner, repo := xs[0], xs[1]
@@ -172,23 +172,23 @@ func (wkr *worker) run(ctx context.Context) {
 
 			err = wkr.fdr.succeeded(line, wkr.currentOrg)
 			if err != nil {
-				wkr.logger.Error("failed to mark succeeded repo", "ownerRepo", line, "error", err)
+				wkr.logger.Error("failed to mark succeeded repo", log.String("ownerRepo", line), log.Error(err))
 			}
 
 			// switch to a new org
 			if wkr.currentNumRepos >= wkr.currentMaxRepos {
 				wkr.currentOrg, wkr.currentMaxRepos = randomOrgNameAndSize()
 				wkr.currentNumRepos = 0
-				wkr.logger.Debug("switching to org", "org", wkr.currentOrg)
+				wkr.logger.Debug("switching to org", log.String("org", wkr.currentOrg))
 				err := wkr.addGHEOrg(ctx)
 				if err != nil {
-					wkr.logger.Error("failed to create org", "org", wkr.currentOrg, "error", err)
+					wkr.logger.Error("failed to create org", log.String("org", wkr.currentOrg), log.Error(err))
 					// add it to default org then
 					wkr.currentOrg = ""
 				} else {
 					err = wkr.fdr.declareOrg(wkr.currentOrg)
 					if err != nil {
-						wkr.logger.Error("failed to declare org", "org", wkr.currentOrg, "error", err)
+						wkr.logger.Error("failed to declare org", log.String("org", wkr.currentOrg), log.Error(err))
 					}
 				}
 			}
@@ -198,7 +198,7 @@ func (wkr *worker) run(ctx context.Context) {
 		// clean up clone on disk
 		err = os.RemoveAll(ownerDir)
 		if err != nil {
-			wkr.logger.Error("failed to clean up cloned repo", "ownerRepo", line, "error", err, "ownerDir", ownerDir)
+			wkr.logger.Error("failed to clean up cloned repo", log.String("ownerRepo", line), log.String("ownerDir", ownerDir), log.Error(err))
 		}
 	}
 }
@@ -207,19 +207,19 @@ func (wkr *worker) run(ctx context.Context) {
 func (wkr *worker) process(ctx context.Context, owner, repo string) error {
 	err := wkr.cloneRepo(ctx, owner, repo)
 	if err != nil {
-		wkr.logger.Error("failed to clone repo", "owner", owner, "repo", repo, "error", err)
+		wkr.logger.Error("failed to clone repo", log.String("owner", owner), log.String("repo", repo), log.Error(err))
 		return &feederError{"clone", err}
 	}
 
 	gheRepo, err := wkr.addGHERepo(ctx, owner, repo)
 	if err != nil {
-		wkr.logger.Error("failed to create GHE repo", "owner", owner, "repo", repo, "error", err)
+		wkr.logger.Error("failed to create GHE repo", log.String("owner", owner), log.String("repo", repo), log.Error(err))
 		return &feederError{"api", err}
 	}
 
 	err = wkr.addRemote(ctx, gheRepo, owner, repo)
 	if err != nil {
-		wkr.logger.Error("failed to add GHE as a remote in cloned repo", "owner", owner, "repo", repo, "error", err)
+		wkr.logger.Error("failed to add GHE as a remote in cloned repo", log.String("owner", owner), log.String("repo", repo), log.Error(err))
 		return &feederError{"api", err}
 	}
 
@@ -228,7 +228,7 @@ func (wkr *worker) process(ctx context.Context, owner, repo string) error {
 		if err == nil {
 			return nil
 		}
-		wkr.logger.Error("failed to push cloned repo to GHE", "attempt", attempt+1, "owner", owner, "repo", repo, "error", err)
+		wkr.logger.Error("failed to push cloned repo to GHE", log.Int("attempt", attempt+1), log.String("owner", owner), log.String("repo", repo), log.Error(err))
 	}
 
 	if ctx.Err() != nil {
@@ -248,7 +248,7 @@ func (wkr *worker) cloneRepo(ctx context.Context, owner, repo string) error {
 		ownerDir := filepath.Join(wkr.scratchDir, owner)
 		err := os.MkdirAll(ownerDir, 0o777)
 		if err != nil {
-			wkr.logger.Error("failed to create owner dir", "ownerDir", ownerDir, "error", err)
+			wkr.logger.Error("failed to create owner dir", log.String("ownerDir", ownerDir), log.Error(err))
 			return err
 		}
 
@@ -302,7 +302,7 @@ func (wkr *worker) pushToGHE(ctx context.Context, owner, repo string) error {
 func (wkr *worker) addGHEOrg(ctx context.Context) error {
 	err := wkr.rateLimiter.Wait(ctx)
 	if err != nil {
-		wkr.logger.Error("failed to get a request spot from rate limiter", "error", err)
+		wkr.logger.Error("failed to get a request spot from rate limiter", log.Error(err))
 		return err
 	}
 
@@ -321,7 +321,7 @@ func (wkr *worker) addGHEOrg(ctx context.Context) error {
 func (wkr *worker) addGHERepo(ctx context.Context, owner, repo string) (*github.Repository, error) {
 	err := wkr.rateLimiter.Wait(ctx)
 	if err != nil {
-		wkr.logger.Error("failed to get a request spot from rate limiter", "error", err)
+		wkr.logger.Error("failed to get a request spot from rate limiter", log.Error(err))
 		return nil, err
 	}
 

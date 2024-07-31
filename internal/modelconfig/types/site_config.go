@@ -20,11 +20,8 @@ type ModelFilters struct {
 // SourcegraphModelConfig is how we represent the configuration of Sourcegraph-supplied
 // LLM models to the Sourcegraph instance.
 type SourcegraphModelConfig struct {
-	// Endpoint is the Cody Gateway URL. This is used for two things: (1) Sending API requests
-	// if the Provider is configured to use the `SourcegraphProviderConfig`. (That is, the
-	// provider will use Cody Gateway for serving LLM requests.) And (2) if `PollingInterval`
-	// is set, this endpoint will be used to automatically pick up new LLM models from Cody
-	// Gateway as they get released.
+	// Endpoint is the Cody Gateway URL used for resolving LLM requests, for any Provider using
+	// the `SourcegraphProviderConfig`.
 	Endpoint *string `json:"endpoint"`
 
 	// AccessToken is the access token this Sourcegraph instance should use when contacting
@@ -34,10 +31,11 @@ type SourcegraphModelConfig struct {
 	// See `conf/computed.go`'s `getSourcegraphProviderAccessToken`.
 	AccessToken *string `json:"accessToken"`
 
-	// PollingInterval is the frequency by which this instance should poll Cody Gateway
-	// for an updated list of LLM models. e.g. "6h" or "1d". Or "never" to disable this
-	// capability entirely.
-	PollingInterval *string `json:"pollingInterval"`
+	// TODO(PRIME-290): Support picking up LLM models dynamically.
+	// // PollingInterval is the frequency by which this instance should poll Cody Gateway
+	// // for an updated list of LLM models. e.g. "6h" or "1d". Or "never" to disable this
+	// // capability entirely.
+	// PollingInterval *string `json:"pollingInterval"`
 
 	// ModelFilters provide a way for the Sourcegraph admin to constrain the set of
 	// LLM models made available, e.g. to only "stable" models. Or those from
