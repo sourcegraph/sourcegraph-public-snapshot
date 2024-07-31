@@ -20,9 +20,9 @@ go_library(
         "txemail.go",
         "validation.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/conf/validation",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/conf/validation",
     tags = [TAG_PLATFORM_SOURCE],
-    visibility = ["//:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/actor",
         "//internal/authz/providers",
