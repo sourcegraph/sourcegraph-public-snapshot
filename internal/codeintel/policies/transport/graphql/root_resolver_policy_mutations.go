@@ -39,15 +39,6 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		repositoryID = &id
 	}
 
-	// Tools using the old API will not pass syntactic indexing flag
-	// so we default to false while the feature is still in experimental mode.
-	var syntacticIndexingEnabled bool
-	if args.SyntacticIndexingEnabled == nil {
-		syntacticIndexingEnabled = false
-	} else {
-		syntacticIndexingEnabled = *args.SyntacticIndexingEnabled
-	}
-
 	opts := shared.ConfigurationPolicy{
 		RepositoryID:              repositoryID,
 		Name:                      args.Name,
@@ -58,10 +49,12 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
 		RetainIntermediateCommits: args.RetainIntermediateCommits,
 		PreciseIndexingEnabled:    args.IndexingEnabled,
-		SyntacticIndexingEnabled:  syntacticIndexingEnabled,
-		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
-		IndexIntermediateCommits:  args.IndexIntermediateCommits,
-		EmbeddingEnabled:          args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,
+		// Tools using the old API will not pass syntactic indexing flag
+		// so we default to false while the feature is still in experimental mode.
+		SyntacticIndexingEnabled: args.SyntacticIndexingEnabled != nil && *args.SyntacticIndexingEnabled,
+		IndexCommitMaxAge:        toDuration(args.IndexCommitMaxAgeHours),
+		IndexIntermediateCommits: args.IndexIntermediateCommits,
+		EmbeddingEnabled:         args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,
 	}
 	configurationPolicy, err := r.policySvc.CreateConfigurationPolicy(ctx, opts)
 	if err != nil {
