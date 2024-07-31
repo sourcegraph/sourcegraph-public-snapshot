@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
-	"github.com/puzpuzpuz/xsync/v3"
+	genslices "github.com/life4/genesis/slices"
+	conciter "github.com/sourcegraph/conc/iter"
 
-	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -37,89 +37,45 @@ func (u *usageConnectionResolver) PageInfo() resolverstubs.PageInfo {
 	return u.pageInfo
 }
 
-// getContentsBatched will iterate using `next` to determine the contents
-// to be fetched from gitserver, and attempt to fetch each blob exactly once.
-//
-// The returned slice will be populated on a best-effort basis
-// even in the presence of errors.
-//
-// Post-conditions:
-//   - The returned slice will have exactly the same number of elements
-//     as the iterator represented by next.
-//   - If the contents were not found, such as due to a network error,
-//     then the corresponding element in the returned slice will be nil.
-func getContentsBatched(ctx context.Context, gitserverClient gitserver.Client, iter collections.IterFunc[types.RepoCommitPath]) ([][]string, error) {
-	neededContents := map[types.RepoCommitPath][]int{}
-	type result struct {
-		splitContents []string
-	}
-	results := xsync.NewMapOf[types.RepoCommitPath, result]()
-	myPool := pool.New().WithMaxGoroutines(4).WithContext(ctx)
-	nIter := iter.ForEach(func(i int, rcp types.RepoCommitPath) {
-		if ints, ok := neededContents[rcp]; ok {
-			neededContents[rcp] = append(ints, i)
-		} else {
-			neededContents[rcp] = []int{i}
-			myPool.Go(func(ctx context.Context) error {
-				byteContents, err := gitresolvers.GetFullContents(ctx, gitserverClient,
-					api.RepoName(rcp.Repo), api.CommitID(rcp.Commit), core.NewRepoRelPathUnchecked(rcp.Path))
-				if err == nil {
-					results.Store(rcp, result{strings.Split(string(byteContents), "\n")})
-				}
-				return err
-			})
-		}
-	})
-	err := myPool.Wait()
-	out := make([][]string, nIter) // deliberate nil-initialization
-	results.Range(func(rcp types.RepoCommitPath, res result) bool {
-		idxs, ok := neededContents[rcp]
-		if !ok {
-			panic(fmt.Sprintf("broken invariant: neededContents missing %+v present in results", rcp))
-		}
-		for _, idx := range idxs {
-			out[idx] = res.splitContents
-		}
-		return true // continue iterating
-	})
-	return out, err
-}
-
 func NewPreciseUsageResolvers(ctx context.Context, gitserverClient gitserver.Client, usages []shared.UploadUsage) ([]resolverstubs.UsageResolver, error) {
-	contents, err := getContentsBatched(ctx, gitserverClient, collections.MapIter(usages, func(usage shared.UploadUsage) U {
-		return types.RepoCommitPath{
-			Repo:   usage.Upload.RepositoryName,
-			Commit: usage.TargetCommit,
-			Path:   usage.Path.RawValue(),
+	uniquePaths := genslices.Uniq(genslices.Map(usages, shared.UploadUsage.RepoCommitPath))
+	contentMap := map[types.RepoCommitPath][]string{}
+	contentMapLock := sync.Mutex{}
+	conciter.Iterator[types.RepoCommitPath]{MaxGoroutines: 4}.ForEach(uniquePaths, func(rcp *types.RepoCommitPath) {
+		byteContents, err := gitresolvers.GetFullContents(ctx, gitserverClient,
+			api.RepoName(rcp.Repo), api.CommitID(rcp.Commit), core.NewRepoRelPathUnchecked(rcp.Path))
+		if err != nil {
+			return
 		}
+		splitContents := strings.Split(string(byteContents), "\n")
+		contentMapLock.Lock()
+		contentMap[*rcp] = splitContents
+		contentMapLock.Unlock()
 	})
-	if len(contents) != len(usages) {
-		panic(fmt.Sprintf("broken invariant: returned slice should have same length (got: %d) as input (want: %d)",
-			len(contents), len(usages)))
-	}
 	out := make([]resolverstubs.UsageResolver, 0, len(usages))
-	for i := 0; i < len(usages); i++ {
-		if contents[i] == nil {
+	var err error
+	for _, usage := range usages {
+		contents, ok := contentMap[usage.RepoCommitPath()]
+		if !ok {
 			continue
 		}
-		usage := &usages[i]
 		start := usage.TargetRange.Start.Line
 		if start < 0 {
-			err = errors.CombineErrors(err, errors.Newf("malformed usage: %+v", *usage))
+			err = errors.CombineErrors(err, errors.Newf("malformed usage: %+v", usage))
 			continue
 		}
-		if len(contents[i]) <= start {
+		if len(contents) <= start {
 			err = errors.CombineErrors(err, errors.Newf("start position of usage (%+v) is out-of-bounds (file line count: %d)",
-				*usage, len(contents[i])))
+				usage, len(contents)))
 			continue
 		}
 		kind := convertKind(usage.Kind)
-		content := contents[i][start]
+		lineContent := contents[start]
 		out = append(out, &usageResolver{
 			symbol:             &symbolInformationResolver{name: usage.Symbol},
 			provenance:         codenav.ProvenancePrecise,
 			kind:               kind,
-			surroundingContent: content,
+			surroundingContent: lineContent,
 			usageRange: &usageRangeResolver{
 				repoName: api.RepoName(usage.Upload.RepositoryName),
 				revision: api.CommitID(usage.TargetCommit),

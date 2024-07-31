@@ -5379,13 +5379,6 @@ def go_dependencies():
         version = "v0.0.0-20170810143723-de5bf2ad4578",
     )
     go_repository(
-        name = "com_github_puzpuzpuz_xsync_v3",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/puzpuzpuz/xsync/v3",
-        sum = "h1:DuVBAdXuGFHv8adVXjWWZ63pJq+NRXOWVXlKDBZ+mJ4=",
-        version = "v3.4.0",
-    )
-    go_repository(
         name = "com_github_qustavo_sqlhooks_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/qustavo/sqlhooks/v2",
