@@ -42,7 +42,7 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
     }
 
     const showDeparture = toggledOff && !departureDismissed
-    const popoverProps = showDeparture ? { isOpen: true, onOpenChange: () => {} } : {}
+    const popoverProps = showDeparture ? { isOpen: true, onOpenChange: () => { } } : {}
 
     return (
         <Popover {...popoverProps}>
@@ -72,8 +72,8 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
                                 </Button>
                             </H3>
                             <Text>
-                                Remember, you can always switch back using the toggle above. It’ll keep getting improved
-                                until full release, so check back soon.
+                                Remember, you can always switch back using the toggle above. We're still working on it,
+                                so check back soon.
                             </Text>
                         </div>
                         <div className={styles.section}>
@@ -95,7 +95,7 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
                         <H3>What's this "New, faster UX"?</H3>
                         <Text>
                             We've been busy at work on a new Code Search experience, built from the ground up for
-                            performance, which now available in beta.
+                            performance, which is now available in beta.
                         </Text>
                         <Text>Simply activate the toggle to get it.</Text>
                     </div>

@@ -74,7 +74,13 @@
         box-shadow: var(--fuzzy-finder-shadow);
 
         &::backdrop {
-            backdrop-filter: blur(2px);
+            opacity: 0.48;
+            :global(.theme-light) & {
+                background: var(--color-background, #f9fafb);
+            }
+            :global(.theme-dark) & {
+                background: var(--color-background, #f9fafb);
+            }
         }
 
         container-type: inline-size;
