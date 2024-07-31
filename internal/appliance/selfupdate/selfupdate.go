@@ -17,12 +17,12 @@ import (
 )
 
 type SelfUpdate struct {
-	Interval       time.Duration
-	Logger         log.Logger
-	K8sClient      client.Client
-	RelregClient   releaseregistry.ReleaseRegistryClient
-	DeploymentName string
-	Namespace      string
+	Interval        time.Duration
+	Logger          log.Logger
+	K8sClient       client.Client
+	RelregClient    releaseregistry.ReleaseRegistryClient
+	DeploymentNames string
+	Namespace       string
 }
 
 func (u *SelfUpdate) Loop(ctx context.Context) error {
@@ -31,6 +31,11 @@ func (u *SelfUpdate) Loop(ctx context.Context) error {
 	ticker := time.NewTicker(u.Interval)
 	defer ticker.Stop()
 
+	// Do one iteration without having to wait for the first tick
+	if err := u.Once(ctx); err != nil {
+		u.Logger.Error("error self-updating", log.Error(err))
+		return err
+	}
 	for {
 		select {
 		case <-ticker.C:
@@ -48,10 +53,14 @@ func (u *SelfUpdate) Loop(ctx context.Context) error {
 func (u *SelfUpdate) Once(ctx context.Context) error {
 	u.Logger.Info("starting self-update")
 
-	var dep appsv1.Deployment
-	depName := types.NamespacedName{Name: u.DeploymentName, Namespace: u.Namespace}
-	if err := u.K8sClient.Get(ctx, depName, &dep); err != nil {
-		return errors.Wrap(err, "getting deployment")
+	var deps []appsv1.Deployment
+	for _, depName := range strings.Split(u.DeploymentNames, ",") {
+		depNsName := types.NamespacedName{Name: depName, Namespace: u.Namespace}
+		var dep appsv1.Deployment
+		if err := u.K8sClient.Get(ctx, depNsName, &dep); err != nil {
+			return errors.Wrap(err, "getting deployment")
+		}
+		deps = append(deps, dep)
 	}
 
 	newTag, err := u.getLatestTag(ctx)
@@ -59,9 +68,11 @@ func (u *SelfUpdate) Once(ctx context.Context) error {
 		return errors.Wrap(err, "getting latest tag")
 	}
 
-	dep.Spec.Template.Spec.Containers[0].Image = replaceTag(dep.Spec.Template.Spec.Containers[0].Image, newTag)
-	if err := u.K8sClient.Update(ctx, &dep); err != nil {
-		return errors.Wrap(err, "updating deployment")
+	for _, dep := range deps {
+		dep.Spec.Template.Spec.Containers[0].Image = replaceTag(dep.Spec.Template.Spec.Containers[0].Image, newTag)
+		if err := u.K8sClient.Update(ctx, &dep); err != nil {
+			return errors.Wrap(err, "updating deployment")
+		}
 	}
 
 	return nil

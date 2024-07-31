@@ -259,7 +259,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 					t.Run(strconv.Itoa(i), func(t *testing.T) {
 						opts := CountBatchChangesOpts{RepoID: tc.repoID}
 
-						count, err := s.CountBatchChanges(ctx, opts)
+						count, err := s.CountBatchChanges(actor.WithInternalActor(ctx), opts)
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -430,7 +430,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 					t.Run(strconv.Itoa(i), func(t *testing.T) {
 						opts := ListBatchChangesOpts{RepoID: tc.repoID}
 
-						ts, next, err := s.ListBatchChanges(ctx, opts)
+						ts, next, err := s.ListBatchChanges(actor.WithInternalActor(ctx), opts)
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -800,6 +800,8 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 
 		batchChangeID := bcs[0].ID
 		var testDiffStatCount int32 = 10
+		bt.MockRepoPermissions(t, s.DatabaseDB(), userID, repo.ID)
+		bt.MockRepoPermissions(t, s.DatabaseDB(), otherUserID, repo.ID)
 		bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChanges:    []btypes.BatchChangeAssoc{{BatchChangeID: batchChangeID}},
@@ -825,7 +827,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 
 		// Now give repo access only to otherUserID, and check that
 		// userID cannot see it in the diff stat anymore.
-		bt.MockRepoPermissions(t, s.DatabaseDB(), otherUserID, repo.ID)
+		bt.MockRepoPermissions(t, s.DatabaseDB(), userID)
 		{
 			want := &godiff.Stat{
 				Added:   0,
@@ -856,6 +858,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 		if err := repoStore.Create(ctx, repo1, repo2, repo3); err != nil {
 			t.Fatal(err)
 		}
+		bt.MockRepoPermissions(t, s.DatabaseDB(), userID, repo1.ID, repo2.ID, repo3.ID)
 
 		batchChangeID := bcs[0].ID
 		var testDiffStatCount1 int32 = 10
@@ -930,6 +933,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 
 		// Now give repo access only to otherUserID, and check that
 		// userID cannot see it in the diff stat anymore.
+		bt.MockRepoPermissions(t, s.DatabaseDB(), userID)
 		bt.MockRepoPermissions(t, s.DatabaseDB(), otherUserID, repo1.ID)
 		{
 			want := &godiff.Stat{

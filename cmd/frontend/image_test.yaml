@@ -20,6 +20,16 @@ fileExistenceTests:
   shouldExist: true
   uid: 100
   gid: 101
+- name: '/version.txt'
+  path: '/version.txt'
+  shouldExist: true
+  uid: 0
+  gid: 0
+- name: '/timestamp.txt'
+  path: '/timestamp.txt'
+  shouldExist: true
+  uid: 0
+  gid: 0
 
 metadataTest:
   envVars:

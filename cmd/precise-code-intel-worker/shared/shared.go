@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
@@ -105,21 +104,6 @@ func mustInitializeDB(observationCtx *observation.Context) *sql.DB {
 	if err != nil {
 		log.Scoped("init db").Fatal("Failed to connect to frontend database", log.Error(err))
 	}
-
-	//
-	// START FLAILING
-
-	ctx := context.Background()
-	db := database.NewDB(observationCtx.Logger, sqlDB)
-	go func() {
-		for range time.NewTicker(providers.RefreshInterval(conf.Get())).C {
-			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
-			authz.SetProviders(allowAccessByDefault, authzProviders)
-		}
-	}()
-
-	// END FLAILING
-	//
 
 	return sqlDB
 }

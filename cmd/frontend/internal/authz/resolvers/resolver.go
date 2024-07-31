@@ -492,7 +492,7 @@ func (r *Resolver) AuthzProviderTypes(ctx context.Context) ([]string, error) {
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	_, providers := authz.GetProviders()
+	providers := authz.GetProviders()
 	providerTypes := make([]string, 0, len(providers))
 	for _, p := range providers {
 		providerTypes = append(providerTypes, p.ServiceType())

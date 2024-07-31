@@ -647,6 +647,14 @@
                   "description": "Default URL for intent detection API",
                   "$ref": "#/definitions/BackendAPIConfig"
                 },
+                "search": {
+                  "description": "Default URL for intent detection API",
+                  "$ref": "#/definitions/BackendAPIConfig"
+                },
+                "edit": {
+                  "description": "Default URL for intent detection API",
+                  "$ref": "#/definitions/BackendAPIConfig"
+                },
                 "extra": {
                   "description": "Array of additional intent detection API configs",
                   "type": "array",
