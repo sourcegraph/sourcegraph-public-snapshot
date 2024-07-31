@@ -173,6 +173,7 @@ if $push_prod; then
 fi
 
 echo "--- :lock: Generate access tokens for all the registries"
+rm ~/.docker/config.json
 echo ${DOCKER_PASSWORD_BUILDKITE_AGENT} | docker login -u devxsourcegraph --password-stdin
 access_token="$(gcloud auth print-access-token)"
 for reg in gcr.io us-central1-docker.pkg.dev us-docker.pkg.dev us.gcr.io; do
