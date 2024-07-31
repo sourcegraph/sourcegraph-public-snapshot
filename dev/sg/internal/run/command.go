@@ -449,6 +449,7 @@ func (sc *startedCmd) Exit() <-chan error {
 
 func (sc *startedCmd) Wait() error {
 	err := sc.wait()
+	// We are certain that the command is done executing at this point.
 	sc.finished = true
 	var e *exec.ExitError
 	if errors.As(err, &e) {
