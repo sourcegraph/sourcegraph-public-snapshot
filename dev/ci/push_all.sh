@@ -182,6 +182,10 @@ bazel "${bazelrc[@]}" build \
   --profile=bazel-profile.gz \
   --experimental_execution_log_compact_file=execution_log.zstd \
   --stamp --workspace_status_command=./dev/bazel_stamp_vars.sh \
+  --build_event_binary_file=build_event_log.bin \
+  --build_event_binary_file_path_conversion=false \
+  --build_event_binary_file_upload_mode=wait_for_upload_complete \
+  --build_event_publish_all_actions=true \
   ${images}
 
 echo "--- :bash: Generating jobfile - started"
