@@ -294,7 +294,11 @@ func InvalidateSessionsByIDs(ctx context.Context, db database.DB, ids []int32) e
 func CookieMiddleware(logger log.Logger, db database.DB, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Cookie")
-		next.ServeHTTP(w, r.WithContext(authenticateByCookie(logger, db, r, w)))
+		ctx, done := authenticateByCookie(logger, db, r, w)
+		if done {
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
@@ -327,14 +331,18 @@ func CookieMiddlewareWithCSRFSafety(
 			isTrusted = isTrustedOrigin(r)
 		}
 		if isTrusted {
-			r = r.WithContext(authenticateByCookie(logger, db, r, w))
+			ctx, done := authenticateByCookie(logger, db, r, w)
+			if done {
+				return
+			}
+			r = r.WithContext(ctx)
 		}
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w http.ResponseWriter) context.Context {
+func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w http.ResponseWriter) (_ context.Context, done bool) {
 	span, ctx := trace.New(r.Context(), "session.authenticateByCookie")
 	defer span.End()
 	logger = trace.Logger(ctx, logger)
@@ -353,7 +361,7 @@ func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w 
 			span.AddEvent("has session cookie, deleting session")
 			_ = deleteSession(w, r)
 		}
-		return ctx // unchanged
+		return ctx, false // unchanged
 	}
 
 	var info *sessionInfo
@@ -364,8 +372,9 @@ func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w 
 			// This prevents background requests made by off-screen tabs from signing
 			// the user out during a server update.
 			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "failed to read session actor")
 			span.AddEvent("redis connection refused")
-			return ctx
+			return ctx, true
 		}
 
 		if !strings.Contains(err.Error(), "illegal base64 data at input byte 36") {
@@ -377,7 +386,7 @@ func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w 
 		}
 		_ = deleteSession(w, r) // clear the bad value
 		span.SetError(err)
-		return ctx
+		return ctx, false
 	}
 	if info != nil {
 		logger := logger.With(log.Int32("uid", info.Actor.UID))
@@ -386,7 +395,7 @@ func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w 
 		// Check expiry
 		if info.LastActive.Add(info.ExpiryPeriod).Before(time.Now()) {
 			_ = deleteSession(w, r) // clear the bad value
-			return actor.WithActor(ctx, &actor.Actor{})
+			return actor.WithActor(ctx, &actor.Actor{}), false
 		}
 
 		// Check that user still exists.
@@ -400,24 +409,24 @@ func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w 
 				logger.Error("error looking up user for session", log.Error(err))
 			}
 			span.SetError(err)
-			return ctx // not authenticated
+			return ctx, false // not authenticated
 		}
 
 		licenseInfo, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
-			return ctx
+			return ctx, false
 		}
 
 		if licenseInfo.IsExpired() && !usr.SiteAdmin {
 			_ = deleteSession(w, r) // Delete session since only admins are allowed
-			return ctx
+			return ctx, false
 		}
 
 		// Check that the session is still valid
 		if info.LastActive.Before(usr.InvalidatedSessionsAt) {
 			span.SetAttributes(attribute.Bool("expired", true))
 			_ = deleteSession(w, r) // Delete the now invalid session
-			return ctx
+			return ctx, false
 		}
 
 		// If the session does not have the user's creation date, it's an old (valid)
@@ -427,7 +436,7 @@ func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w 
 			info.UserCreatedAt = usr.CreatedAt
 			if err := SetData(w, r, "actor", info); err != nil {
 				logger.Error("error setting user creation timestamp", log.Error(err))
-				return ctx
+				return ctx, false
 			}
 		}
 
@@ -436,7 +445,7 @@ func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w 
 		if !info.UserCreatedAt.Equal(usr.CreatedAt) {
 			span.SetError(errors.New("user creation date does not match database"))
 			_ = deleteSession(w, r)
-			return ctx
+			return ctx, false
 		}
 
 		// Renew session
@@ -444,14 +453,14 @@ func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w 
 			info.LastActive = time.Now()
 			if err := SetData(w, r, "actor", info); err != nil {
 				logger.Error("error renewing session", log.Error(err))
-				return ctx
+				return ctx, false
 			}
 		}
 
 		span.SetAttributes(attribute.Bool("authenticated", true))
 		info.Actor.FromSessionCookie = true
-		return actor.WithActor(ctx, info.Actor)
+		return actor.WithActor(ctx, info.Actor), false
 	}
 
-	return ctx
+	return ctx, false
 }
