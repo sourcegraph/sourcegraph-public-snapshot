@@ -172,6 +172,7 @@ if $push_prod; then
   done
 fi
 
+cat ~/.docker/config.json
 rm ~/.docker/config.json
 echo "--- :lock: Generate access tokens for all the registries"
 access_token="$(gcloud auth print-access-token)"
@@ -180,6 +181,7 @@ for reg in gcr.io us-central1-docker.pkg.dev us-docker.pkg.dev us.gcr.io; do
   echo "$access_token" | docker login -u oauth2accesstoken --password-stdin "$reg"
 done
 
+cat ~/.docker/config.json
 
 
 images=$(bazel "${bazelrc[@]}" query 'kind("oci_push rule", //...)')
