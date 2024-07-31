@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -81,7 +82,8 @@ func (p *permissionSyncJobScheduler) Routines(_ context.Context, observationCtx 
 			context.Background(),
 			goroutine.HandlerFunc(
 				func(ctx context.Context) error {
-					if permissionSyncingDisabled(conf.Get()) {
+					ps, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
+					if permissionSyncingDisabled(conf.Get(), ps) {
 						logger.Debug("scheduler disabled due to permission syncing disabled")
 						return nil
 					}
@@ -297,9 +299,8 @@ func oldestRepoPermissionsBatchSize() int {
 //   - There are no code host connections with authorization or enforcePermissions enabled
 //   - Not purchased with the current license
 //   - `disableAutoCodeHostSyncs` site setting is set to true
-func permissionSyncingDisabled(cfg conftypes.UnifiedQuerier) bool {
-	p := authz.GetProviders()
-	return len(p) == 0 ||
+func permissionSyncingDisabled(cfg conftypes.SiteConfigQuerier, providers []authz.Provider) bool {
+	return len(providers) == 0 ||
 		licensing.Check(licensing.FeatureACLs) != nil ||
 		cfg.SiteConfig().DisableAutoCodeHostSyncs
 }

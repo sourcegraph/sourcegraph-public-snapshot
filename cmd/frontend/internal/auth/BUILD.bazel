@@ -7,7 +7,6 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
-        "//cmd/frontend/external/app",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/internal/auth/authutil",
         "//cmd/frontend/internal/auth/azureoauth",
@@ -19,7 +18,7 @@ go_library(
         "//cmd/frontend/internal/auth/openidconnect",
         "//cmd/frontend/internal/auth/saml",
         "//cmd/frontend/internal/auth/sourcegraphoperator",
-        "//internal/auth",
+        "//cmd/frontend/internal/auth/userpasswd",
         "//internal/conf",
         "//internal/database",
         "//internal/licensing",

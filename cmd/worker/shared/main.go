@@ -45,10 +45,8 @@ import (
 	workerjob "github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -390,22 +388,4 @@ func jobNames(jobs map[string]workerjob.Job) []string {
 	sort.Strings(names)
 
 	return names
-}
-
-// SetAuthzProviders waits for the database to be initialized, then periodically refreshes the
-// global authz providers. This changes the repositories that are visible for reads based on the
-// current actor stored in an operation's context, which is likely an internal actor for many of
-// the jobs configured in this service. This also enables repository update operations to fetch
-// permissions from code hosts.
-func setAuthzProviders(ctx context.Context, observationCtx *observation.Context) {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("authz-provider"), observationCtx)
-	db, err := workerdb.InitDB(observationCtx)
-	if err != nil {
-		return
-	}
-
-	for range time.NewTicker(providers.RefreshInterval(conf.Get())).C {
-		authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
-		authz.SetProviders(authzProviders)
-	}
 }

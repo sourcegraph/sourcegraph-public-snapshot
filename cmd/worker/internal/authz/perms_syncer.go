@@ -13,7 +13,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -57,6 +59,8 @@ type permsSyncerImpl struct {
 	permsUpdateLock sync.Mutex
 	// The database interface for any permissions operations.
 	permsStore database.PermsStore
+	// Can be overwritten for testing purposes.
+	providerFactory func(context.Context) []authz.Provider
 }
 
 // newPermsSyncer returns a new permissions syncer.
@@ -73,6 +77,10 @@ func newPermsSyncer(
 		reposStore: reposStore,
 		permsStore: permsStore,
 		clock:      clock,
+		providerFactory: func(ctx context.Context) []authz.Provider {
+			ps, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
+			return ps
+		},
 	}
 }
 
@@ -96,7 +104,7 @@ func (s *permsSyncerImpl) syncRepoPerms(ctx context.Context, repoID api.RepoID, 
 	// fetch permissions for private repositories.
 	if repo.Private {
 		// Loop over repository's sources and see if matching any authz provider's URN.
-		providers := s.providersByURNs()
+		providers := s.providersByURNs(ctx)
 		for urn := range repo.Sources {
 			p, ok := providers[urn]
 			if ok {
@@ -339,8 +347,8 @@ func (s *permsSyncerImpl) syncUserPerms(ctx context.Context, userID int32, noPer
 
 // providersByServiceID returns a list of authz.Provider configured in the external services.
 // Keys are ServiceID, e.g. "https://github.com/".
-func (s *permsSyncerImpl) providersByServiceID() map[string]authz.Provider {
-	ps := authz.GetProviders()
+func (s *permsSyncerImpl) providersByServiceID(ctx context.Context) map[string]authz.Provider {
+	ps := s.providerFactory(ctx)
 	providers := make(map[string]authz.Provider, len(ps))
 	for _, p := range ps {
 		providers[p.ServiceID()] = p
@@ -350,8 +358,8 @@ func (s *permsSyncerImpl) providersByServiceID() map[string]authz.Provider {
 
 // providersByURNs returns a list of authz.Provider configured in the external services.
 // Keys are URN, e.g. "extsvc:github:1".
-func (s *permsSyncerImpl) providersByURNs() map[string]authz.Provider {
-	ps := authz.GetProviders()
+func (s *permsSyncerImpl) providersByURNs(ctx context.Context) map[string]authz.Provider {
+	ps := s.providerFactory(ctx)
 	providers := make(map[string]authz.Provider, len(ps))
 	for _, p := range ps {
 		providers[p.URN()] = p
@@ -456,7 +464,7 @@ func (s *permsSyncerImpl) fetchUserPermsViaExternalAccounts(ctx context.Context,
 		emails[i] = userEmails[i].Email
 	}
 
-	byServiceID := s.providersByServiceID()
+	byServiceID := s.providersByServiceID(ctx)
 	accounts := s.db.UserExternalAccounts()
 	logger := s.logger.Scoped("fetchUserPermsViaExternalAccounts").With(log.Int32("userID", user.ID))
 

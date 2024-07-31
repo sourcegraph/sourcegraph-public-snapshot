@@ -478,6 +478,8 @@ extend type Query {
 
         """
         Filter to allow customization of returned results.
+
+        STATUS(July 29 2024): Currently unimplemented.
         """
         filter: UsagesFilter
 
@@ -910,6 +912,8 @@ type SymbolInformation {
     by 'dataSource'.
     The value is empty when `dataSource` is confident that there
     is no appropriate hover documentation to display.
+
+    STATUS(July 29 2024): Currently unimplemented.
     """
     documentation: [String!]
 }

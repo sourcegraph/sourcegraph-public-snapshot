@@ -353,21 +353,14 @@ func TestOldestRepoPermissionsBatchSize(t *testing.T) {
 }
 
 func TestPermissionSyncingDisabled(t *testing.T) {
-	authz.SetProviders([]authz.Provider{&mockProvider{}})
 	cleanupLicense := licensing.MockCheckFeatureError("")
 
 	t.Cleanup(func() {
-		authz.SetProviders(nil)
 		cleanupLicense()
 	})
 
 	t.Run("no authz providers", func(t *testing.T) {
-		authz.SetProviders(nil)
-		t.Cleanup(func() {
-			authz.SetProviders([]authz.Provider{&mockProvider{}})
-		})
-
-		assert.True(t, permissionSyncingDisabled(&conf.Unified{}))
+		assert.True(t, permissionSyncingDisabled(&conf.Unified{}, nil))
 	})
 
 	t.Run("permissions user mapping enabled", func(t *testing.T) {
@@ -377,7 +370,7 @@ func TestPermissionSyncingDisabled(t *testing.T) {
 			conf.Mock(nil)
 		})
 
-		assert.False(t, permissionSyncingDisabled(&conf.Unified{}))
+		assert.False(t, permissionSyncingDisabled(&conf.Unified{}, []authz.Provider{&mockProvider{}}))
 	})
 
 	t.Run("license does not have acls feature", func(t *testing.T) {
@@ -385,15 +378,15 @@ func TestPermissionSyncingDisabled(t *testing.T) {
 		t.Cleanup(func() {
 			licensing.MockCheckFeatureError("")
 		})
-		assert.True(t, permissionSyncingDisabled(&conf.Unified{}))
+		assert.True(t, permissionSyncingDisabled(&conf.Unified{}, []authz.Provider{&mockProvider{}}))
 	})
 
 	t.Run("Auto code host syncs disabled", func(t *testing.T) {
-		assert.True(t, permissionSyncingDisabled(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{DisableAutoCodeHostSyncs: true}}))
+		assert.True(t, permissionSyncingDisabled(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{DisableAutoCodeHostSyncs: true}}, []authz.Provider{&mockProvider{}}))
 	})
 
 	t.Run("Auto code host syncs enabled", func(t *testing.T) {
-		assert.False(t, permissionSyncingDisabled(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{DisableAutoCodeHostSyncs: false}}))
+		assert.False(t, permissionSyncingDisabled(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{DisableAutoCodeHostSyncs: false}}, []authz.Provider{&mockProvider{}}))
 	})
 }
 

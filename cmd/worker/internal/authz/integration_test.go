@@ -215,8 +215,13 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				DB:             testDB,
 			})
 
-			authz.SetProviders([]authz.Provider{provider})
-			defer authz.SetProviders(nil)
+			prevProviderFactory := syncer.providerFactory
+			syncer.providerFactory = func(context.Context) []authz.Provider {
+				return []authz.Provider{provider}
+			}
+			defer func() {
+				syncer.providerFactory = prevProviderFactory
+			}()
 
 			assertGitHubRepoPermissions(t, ctx, repo.ID, user.ID, uri.String(), syncer, permsStore, []int32{1})
 		})
@@ -232,8 +237,13 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				DB:             testDB,
 			})
 
-			authz.SetProviders([]authz.Provider{provider})
-			defer authz.SetProviders(nil)
+			prevProviderFactory := syncer.providerFactory
+			syncer.providerFactory = func(context.Context) []authz.Provider {
+				return []authz.Provider{provider}
+			}
+			defer func() {
+				syncer.providerFactory = prevProviderFactory
+			}()
 
 			assertGitHubRepoPermissions(t, ctx, repo.ID, user.ID, uri.String(), syncer, permsStore, []int32{1})
 		})
@@ -254,8 +264,13 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				DB:             testDB,
 			})
 
-			authz.SetProviders([]authz.Provider{provider})
-			defer authz.SetProviders(nil)
+			prevProviderFactory := syncer.providerFactory
+			syncer.providerFactory = func(context.Context) []authz.Provider {
+				return []authz.Provider{provider}
+			}
+			defer func() {
+				syncer.providerFactory = prevProviderFactory
+			}()
 
 			assertGitHubUserPermissions(t, ctx, user.ID, uri.String(), syncer, permsStore, []int32{1})
 		})
@@ -271,8 +286,13 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				DB:             testDB,
 			})
 
-			authz.SetProviders([]authz.Provider{provider})
-			defer authz.SetProviders(nil)
+			prevProviderFactory := syncer.providerFactory
+			syncer.providerFactory = func(context.Context) []authz.Provider {
+				return []authz.Provider{provider}
+			}
+			defer func() {
+				syncer.providerFactory = prevProviderFactory
+			}()
 
 			assertGitHubUserPermissions(t, ctx, user.ID, uri.String(), syncer, permsStore, []int32{1})
 		})
@@ -361,9 +381,6 @@ func TestIntegration_GitHubInternalRepositories(t *testing.T) {
 		DB:             testDB,
 	})
 
-	authz.SetProviders([]authz.Provider{provider})
-	defer authz.SetProviders(nil)
-
 	repo := types.Repo{
 		Name:    "ghe.sgdev.org/sourcegraph/sourcegraph_internal_repo",
 		Private: true,
@@ -403,6 +420,10 @@ func TestIntegration_GitHubInternalRepositories(t *testing.T) {
 
 	permsStore := database.Perms(logger, testDB, timeutil.Now)
 	syncer := newPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
+
+	syncer.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{provider}
+	}
 
 	assertGitHubUserPermissions(t, ctx, user.ID, uri.String(), syncer, permsStore, []int32{1})
 }
@@ -505,8 +526,6 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 			SyncInternalRepoPermissions: true,
 		})
 
-		authz.SetProviders([]authz.Provider{provider})
-		defer authz.SetProviders(nil)
 		for _, repo := range testRepos {
 			err = reposStore.RepoStore().Create(ctx, &repo)
 			require.NoError(t, err)
@@ -522,6 +541,10 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 
 		permsStore := database.Perms(logger, testDB, timeutil.Now)
 		syncer := newPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
+
+		syncer.providerFactory = func(context.Context) []authz.Provider {
+			return []authz.Provider{provider}
+		}
 
 		assertUserPermissions := func(t *testing.T, wantIDs []int32) {
 			t.Helper()
