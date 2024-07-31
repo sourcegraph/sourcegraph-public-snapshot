@@ -127,7 +127,7 @@
         <ProductStatusBadge status="beta" />
         <a
             class={getButtonClassName({ variant: 'secondary', size: 'sm' })}
-            href="https://community.sourcegraph.com/"
+            href="https://community.sourcegraph.com/c/code-search/9"
             target="_blank"
             rel="noreferrer noopener"
         >

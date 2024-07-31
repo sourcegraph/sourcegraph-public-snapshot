@@ -82,13 +82,13 @@
     $: currentUserID = data.user?.id
     $: handleOptOut = currentUserID
         ? async (): Promise<void> => {
-              $temporarySettingsStorage.set('webNext.toggled.off', true)
+              // Show departure message after switching off
+              $temporarySettingsStorage.set('webNext.departureMessage.dismissed', false)
               await data.disableSvelteFeatureFlags(currentUserID)
               window.location.reload()
           }
         : undefined
 
-    $: webNextActivated = $temporarySettingsStorage.get('webNext.toggled.on', false)
     $: welcomeOverlayDismissed = $temporarySettingsStorage.get('webNext.welcomeOverlay.dismissed', false)
     function handleDismissWelcomeOverlay() {
         $temporarySettingsStorage.set('webNext.welcomeOverlay.dismissed', true)
@@ -111,10 +111,7 @@
     <slot />
 </main>
 
-<WelcomeOverlay
-    show={($webNextActivated && !$welcomeOverlayDismissed) ?? false}
-    handleDismiss={handleDismissWelcomeOverlay}
-/>
+<WelcomeOverlay show={!$welcomeOverlayDismissed ?? false} handleDismiss={handleDismissWelcomeOverlay} />
 
 <FuzzyFinderContainer />
 

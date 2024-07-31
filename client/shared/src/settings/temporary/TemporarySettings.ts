@@ -99,8 +99,6 @@ export interface TemporarySettingsSchema {
 
     'webNext.welcomeOverlay.dismissed': boolean
     'webNext.departureMessage.dismissed': boolean
-    'webNext.toggled.on': boolean // whether the user has explicitly enabled with the toggle
-    'webNext.toggled.off': boolean // whether the user has explicitly disabled with the toggle
 }
 
 /**
@@ -168,8 +166,6 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
     'openCodeGraph.annotations.visible': null,
     'webNext.welcomeOverlay.dismissed': null,
     'webNext.departureMessage.dismissed': null,
-    'webNext.toggled.on': null,
-    'webNext.toggled.off': null,
 }
 
 export const TEMPORARY_SETTINGS_KEYS = Object.keys(TEMPORARY_SETTINGS) as readonly (keyof TemporarySettings)[]

@@ -15,15 +15,15 @@ import styles from './SvelteKitNavItem.module.scss'
 export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
     const location = useLocation()
     const client = useApolloClient()
-    const [toggledOff] = useTemporarySetting('webNext.toggled.off', false)
     const [departureDismissed, setDepartureDismissed] = useTemporarySetting('webNext.departureMessage.dismissed', false)
-    const [_toggledOn, setToggledOn] = useTemporarySetting('webNext.toggled.on', false)
+    const [_welcomeDismissed, setWelcomeDismissed] = useTemporarySetting('webNext.welcomeOverlay.dismissed', false)
 
     const departureRef = useRef<HTMLDivElement | null>(null)
 
     const handleClickOutside = useCallback(
         (event: MouseEvent) => {
             if (departureRef.current && !departureRef.current.contains(event.target as Node)) {
+                console.log('dismissing', event)
                 setDepartureDismissed(true)
             }
         },
@@ -41,7 +41,7 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
         return null
     }
 
-    const showDeparture = toggledOff && !departureDismissed
+    const showDeparture = !departureDismissed
     const popoverProps = showDeparture ? { isOpen: true, onOpenChange: () => {} } : {}
 
     return (
@@ -53,7 +53,7 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
                     <Toggle
                         value={false}
                         onToggle={() => {
-                            setToggledOn(true)
+                            setWelcomeDismissed(false) // Show welcome after switching on
                             enableSvelteAndReload(client, userID)
                         }}
                         title="Enable new, faster UX"
