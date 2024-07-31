@@ -464,7 +464,12 @@ func (sc *startedCmd) Wait() error {
 	return err
 }
 
+var mockStartedCmdWaitFunc func() error
+
 func (sc *startedCmd) wait() error {
+	if mockStartedCmdWaitFunc != nil {
+		return mockStartedCmdWaitFunc()
+	}
 	if err := sc.outEg.Wait(); err != nil {
 		return err
 	}
