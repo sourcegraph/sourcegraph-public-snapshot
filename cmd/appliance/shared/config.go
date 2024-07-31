@@ -25,6 +25,7 @@ type Config struct {
 	applianceVersion       string
 	selfDeploymentName     string
 	noResourceRestrictions string
+	defaultImageRepository string
 }
 
 func (c *Config) Load() {
@@ -51,6 +52,7 @@ func (c *Config) Load() {
 	c.selfDeploymentName = c.Get("APPLIANCE_DEPLOYMENT_NAME", "", "Own deployment name for self-update. Default is to disable self-update.")
 	c.relregEndpoint = c.Get("RELEASE_REGISTRY_ENDPOINT", releaseregistry.Endpoint, "Release registry endpoint.")
 	c.noResourceRestrictions = c.Get("APPLIANCE_NO_RESOURCE_RESTRICTIONS", "false", "Remove all resource requests and limits from deployed resources. Only recommended for local development.")
+	c.defaultImageRepository = c.Get("APPLIANCE_DEFAULT_IMAGE_REPOSITORY", "", "Override index.docker.io as the default image repository.")
 }
 
 func (c *Config) Validate() error {

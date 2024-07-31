@@ -27,9 +27,10 @@ var _ reconcile.Reconciler = &Reconciler{}
 type Reconciler struct {
 	sync.Mutex
 	client.Client
-	Scheme               *runtime.Scheme
-	Recorder             record.EventRecorder
-	BeginHealthCheckLoop chan struct{}
+	Scheme                 *runtime.Scheme
+	Recorder               record.EventRecorder
+	DefaultImageRepository string
+	BeginHealthCheckLoop   chan struct{}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -69,6 +70,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	sourcegraph := config.NewDefaultConfig()
+	if r.DefaultImageRepository != "" {
+		sourcegraph.Spec.ImageRepository = r.DefaultImageRepository
+	}
+
 	if err := yaml.Unmarshal([]byte(data), &sourcegraph); err != nil {
 		return reconcile.Result{}, err
 	}
