@@ -64,8 +64,8 @@ func (s *InterceptorTestSuite) SetupSuite() {
 		for {
 			var err error
 			s.ServerListener, err = net.Listen("tcp", s.serverAddr)
-			s.serverAddr = s.ServerListener.Addr().String()
 			require.NoError(s.T(), err, "must be able to allocate a port for serverListener")
+			s.serverAddr = s.ServerListener.Addr().String()
 			if *flagTls {
 				cert, err := tls.X509KeyPair(certPEM, keyPEM)
 				require.NoError(s.T(), err, "unable to load test TLS certificate")
