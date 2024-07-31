@@ -151,8 +151,8 @@ func (r *codyLLMConfigurationResolver) FastChatModelMaxTokens() (*int32, error) 
 // 1) If the server has the new `modelConfiguration` in their site config, then the
 // client will use the autocomplete `Model.provider` (provider ID, not name) field
 // as the string.
-// 2) Else `if (authStatus.configOverwrites?.provider)` - the string returned by this
-// function will be used.
+// 2) Else `if (authStatus.configOverwrites?.provider)` -- i.e. the string returned by this
+// function -- will be used.
 // 3) Else, the default string 'anthropic' will be used.
 //
 // The 'autocomplete provider name string' is then entered into a switch statement
