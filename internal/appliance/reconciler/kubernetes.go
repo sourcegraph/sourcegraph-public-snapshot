@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
@@ -28,7 +29,7 @@ func reconcileObject[T client.Object](
 	sg *config.Sourcegraph, owner client.Object,
 ) error {
 	if cfg.IsDisabled() {
-		return r.ensureObjectDeleted(ctx, obj)
+		return ensureObjectDeleted(ctx, r, owner, obj)
 	}
 
 	updateIfChanged := struct {
@@ -62,7 +63,11 @@ func createOrUpdateObject[R client.Object](
 	ctx context.Context, r *Reconciler, updateIfChanged any,
 	owner client.Object, obj, objKind R,
 ) error {
-	logger := log.FromContext(ctx).WithValues("kind", obj.GetObjectKind().GroupVersionKind(), "namespace", obj.GetNamespace(), "name", obj.GetName())
+	gvk, err := apiutil.GVKForObject(obj, r.Scheme)
+	if err != nil {
+		return errors.Wrap(err, "getting GVK for object")
+	}
+	logger := log.FromContext(ctx).WithValues("kind", gvk.String(), "namespace", obj.GetNamespace(), "name", obj.GetName())
 	namespacedName := types.NamespacedName{Namespace: obj.GetNamespace(), Name: obj.GetName()}
 
 	cfgHash, err := configHash(updateIfChanged)
@@ -81,7 +86,7 @@ func createOrUpdateObject[R client.Object](
 	// error: "cluster-scoped resource must not have a namespace-scoped owner".
 	// non-namespaced resources will therefore not be garbage-collected when the
 	// ConfigMap is deleted.
-	if !isNamespaced(obj) {
+	if isNamespaced(obj) {
 		if err := ctrl.SetControllerReference(owner, obj, r.Scheme); err != nil {
 			return errors.Newf("setting controller reference: %w", err)
 		}
@@ -102,6 +107,11 @@ func createOrUpdateObject[R client.Object](
 		return err
 	}
 
+	if !isControlledBy(owner, existingRes) && isNamespaced(obj) && !config.ShouldAdopt(obj) {
+		logger.Info("refusing to update non-owned resource")
+		return nil
+	}
+
 	if cfgHash != existingRes.GetAnnotations()[config.AnnotationKeyConfigHash] {
 		logger.Info("Found existing object with spec that does not match desired state. Clobbering it.")
 		if err := r.Client.Update(ctx, obj); err != nil {
@@ -117,18 +127,40 @@ func createOrUpdateObject[R client.Object](
 
 func isNamespaced(obj client.Object) bool {
 	if _, ok := obj.(*rbacv1.ClusterRole); ok {
-		return true
+		return false
 	}
 	if _, ok := obj.(*rbacv1.ClusterRoleBinding); ok {
-		return true
+		return false
 	}
-	return false
+	return true
 }
 
-func (r *Reconciler) ensureObjectDeleted(ctx context.Context, obj client.Object) error {
-	logger := log.FromContext(ctx).WithValues("kind", obj.GetObjectKind().GroupVersionKind(), "namespace", obj.GetNamespace(), "name", obj.GetName())
+func ensureObjectDeleted[T client.Object](ctx context.Context, r *Reconciler, owner client.Object, obj T) error {
+	// We need to try to get the object first, in order to check its owner
+	// references later.
+	objKey := types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}
+	if err := r.Client.Get(ctx, objKey, obj); err != nil {
+		if kerrors.IsNotFound(err) {
+			// Object doesn't exist, we don't need to delete it
+			return nil
+		}
+	}
+	gvk, err := apiutil.GVKForObject(obj, r.Scheme)
+	if err != nil {
+		return errors.Wrap(err, "getting GVK for object")
+	}
+
+	logger := log.FromContext(ctx).WithValues("kind", gvk.String(), "namespace", obj.GetNamespace(), "name", obj.GetName())
+
+	if !isControlledBy(owner, obj) && isNamespaced(obj) {
+		logger.Info("refusing to delete non-owned resource")
+		return nil
+	}
+
+	logger.Info("deleting resource")
 	if err := r.Client.Delete(ctx, obj); err != nil {
 		if kerrors.IsNotFound(err) {
+			// If by chance it got deleted concurrently, no harm done.
 			return nil
 		}
 
@@ -136,6 +168,15 @@ func (r *Reconciler) ensureObjectDeleted(ctx context.Context, obj client.Object)
 		return err
 	}
 	return nil
+}
+
+func isControlledBy(owner, obj client.Object) bool {
+	for _, ownerRef := range obj.GetOwnerReferences() {
+		if owner.GetUID() == ownerRef.UID {
+			return true
+		}
+	}
+	return false
 }
 
 func configHash(configElement any) (string, error) {

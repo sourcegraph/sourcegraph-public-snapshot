@@ -8,19 +8,17 @@ import (
 
 func (a *Appliance) Routes() *mux.Router {
 	r := mux.NewRouter()
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
-	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/appliance", http.StatusFound)
-	})
+	r.Use(a.checkAuthorization)
 
-	r.Handle("/appliance/login", a.getLoginHandler()).Methods(http.MethodGet)
-	r.Handle("/appliance/login", a.postLoginHandler()).Methods(http.MethodPost)
-	r.Handle("/appliance/error", a.errorHandler()).Methods(http.MethodGet)
+	// Route errors
+	r.NotFoundHandler = http.HandlerFunc(a.notFoundResponse)
+	r.MethodNotAllowedHandler = http.HandlerFunc(a.methodNotAllowedResponse)
 
-	// Auth-gated endpoints
-	r.Handle("/appliance", a.CheckAuthorization(a.applianceHandler())).Methods(http.MethodGet)
-	r.Handle("/appliance/setup", a.CheckAuthorization(a.getSetupHandler())).Methods(http.MethodGet)
-	r.Handle("/appliance/setup", a.CheckAuthorization(a.postSetupHandler())).Methods(http.MethodPost)
+	// Maintenance API URIs
+	r.Handle("/api/v1/appliance/status", a.getStatusJSONHandler()).Methods("GET")
+	r.Handle("/api/v1/appliance/status", a.postStatusJSONHandler()).Methods("POST")
+	r.Handle("/api/v1/appliance/install/progress", a.getInstallProgressJSONHandler()).Methods("GET")
+	r.Handle("/api/v1/appliance/maintenance/serviceStatuses", a.getMaintenanceStatusHandler()).Methods("GET")
 
 	return r
 }

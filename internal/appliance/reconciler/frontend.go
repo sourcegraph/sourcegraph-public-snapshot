@@ -7,9 +7,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/container"
@@ -22,12 +25,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
-)
 
-const (
-	pgsqlSecretName          = "pgsql-auth"
-	codeInsightsDBSecretName = "codeinsights-db-auth"
-	codeIntelDBSecretName    = "codeintel-db-auth"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 )
 
 func (r *Reconciler) reconcileFrontend(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
@@ -114,6 +114,26 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 	}
 
 	template := pod.NewPodTemplate("sourcegraph-frontend", cfg)
+	dbConnSpecs, err := r.getDBSecrets(ctx, sg)
+	if err != nil {
+		return err
+	}
+	dbConnHash, err := configHash(dbConnSpecs)
+	if err != nil {
+		return err
+	}
+	template.Template.ObjectMeta.Annotations["checksum/auth"] = dbConnHash
+
+	redisConnSpecs, err := r.getRedisSecrets(ctx, sg)
+	if err != nil {
+		return err
+	}
+	redisConnHash, err := configHash(redisConnSpecs)
+	if err != nil {
+		return err
+	}
+	template.Template.ObjectMeta.Annotations["checksum/redis"] = redisConnHash
+
 	template.Template.Spec.Containers = []corev1.Container{ctr}
 	template.Template.Spec.Volumes = []corev1.Volume{pod.NewVolumeEmptyDir("home-dir")}
 	template.Template.Spec.ServiceAccountName = "sourcegraph-frontend"
@@ -142,27 +162,65 @@ func (r *Reconciler) reconcileFrontendDeployment(ctx context.Context, sg *config
 	dep := deployment.NewDeployment("sourcegraph-frontend", sg.Namespace, sg.Spec.RequestedVersion)
 	dep.Spec.Replicas = &cfg.Replicas
 	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
-		MaxSurge:       pointers.Ptr(intstr.FromInt(2)),
-		MaxUnavailable: pointers.Ptr(intstr.FromInt(0)),
+		MaxSurge:       pointers.Ptr(intstr.FromInt32(2)),
+		MaxUnavailable: pointers.Ptr(intstr.FromInt32(0)),
 	}
 	dep.Spec.Template = template.Template
 
-	return reconcileObject(ctx, r, cfg, &dep, &appsv1.Deployment{}, sg, owner)
+	ifChanged := struct {
+		config.FrontendSpec
+		DBConnSpecs
+		RedisConnSpecs
+	}{
+		FrontendSpec:   cfg,
+		DBConnSpecs:    dbConnSpecs,
+		RedisConnSpecs: redisConnSpecs,
+	}
+
+	return reconcileObject(ctx, r, ifChanged, &dep, &appsv1.Deployment{}, sg, owner)
 }
 
 func (r *Reconciler) reconcileFrontendService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	name := "sourcegraph-frontend"
 	cfg := sg.Spec.Frontend
+	logger := log.FromContext(ctx).WithValues("kind", "from ingress creation")
+	namespacedName := types.NamespacedName{Namespace: sg.Namespace, Name: name}
+	existingObj := &corev1.Service{}
+	if err := r.Client.Get(ctx, namespacedName, existingObj); err != nil {
+		// If we don't find an object, create one from the spec
+		if kerrors.IsNotFound(err) {
+			svc := service.NewService(name, sg.Namespace, cfg)
+			svc.Spec.Ports = []corev1.ServicePort{
+				{Name: "http", Port: 30080, TargetPort: intstr.FromString("http")},
+			}
+			svc.Spec.Selector = map[string]string{
+				"app": "sourcegraph-appliance",
+			}
 
-	svc := service.NewService(name, sg.Namespace, cfg)
-	svc.Spec.Ports = []corev1.ServicePort{
-		{Name: "http", Port: 30080, TargetPort: intstr.FromString("http")},
-	}
-	svc.Spec.Selector = map[string]string{
-		"app": name,
+			config.MarkObjectForAdoption(&svc)
+			return reconcileObject(ctx, r, cfg, &svc, &corev1.Service{}, sg, owner)
+		}
+		logger.Error(err, "unexpected error getting object")
+		return err
 	}
 
-	return reconcileObject(ctx, r, cfg, &svc, &corev1.Service{}, sg, owner)
+	// If we found an object, we only want to change configmap-specified things,
+	// and certain defaults such as the prometheus port.
+	svcChanges := &corev1.Service{}
+	svcChanges.SetAnnotations(map[string]string{
+		"prometheus.io/port":            "6060",
+		"sourcegraph.prometheus/scrape": "true",
+	})
+	config.MarkObjectForAdoption(svcChanges)
+	newObj, err := MergeK8sObjects(existingObj, svcChanges)
+	if err != nil {
+		return errors.Wrap(err, "merging objects")
+	}
+	newSvc, ok := newObj.(*corev1.Service)
+	if !ok {
+		return errors.Wrap(err, "asserting type")
+	}
+	return reconcileObject(ctx, r, sg.Spec.Frontend, newSvc, &corev1.Service{}, sg, owner)
 }
 
 func (r *Reconciler) reconcileFrontendServiceInternal(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
@@ -228,43 +286,75 @@ func (r *Reconciler) reconcileFrontendRoleBinding(ctx context.Context, sg *confi
 func (r *Reconciler) reconcileFrontendIngress(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	name := "sourcegraph-frontend"
 	cfg := sg.Spec.Frontend
-	ingress := ingress.NewIngress(name, sg.Namespace)
-	if cfg.Ingress == nil {
-		return r.ensureObjectDeleted(ctx, &ingress)
+	logger := log.FromContext(ctx).WithValues("kind", "from ingress creation")
+	namespacedName := types.NamespacedName{Namespace: sg.Namespace, Name: name}
+	existingObj := &netv1.Ingress{}
+	if err := r.Client.Get(ctx, namespacedName, existingObj); err != nil {
+		// If we don't find an object, create one from the spec
+		if kerrors.IsNotFound(err) {
+			ingress := ingress.NewIngress(name, sg.Namespace)
+			if cfg.Ingress == nil {
+				return ensureObjectDeleted(ctx, r, owner, &ingress)
+			}
+
+			ingress.SetAnnotations(cfg.Ingress.Annotations)
+
+			if cfg.Ingress.TLSSecret != "" {
+				ingress.Spec.TLS = []netv1.IngressTLS{{
+					Hosts:      []string{cfg.Ingress.Host},
+					SecretName: cfg.Ingress.TLSSecret,
+				}}
+			}
+
+			ingress.Spec.Rules = []netv1.IngressRule{{
+				Host: cfg.Ingress.Host,
+				IngressRuleValue: netv1.IngressRuleValue{
+					HTTP: &netv1.HTTPIngressRuleValue{
+						Paths: []netv1.HTTPIngressPath{{
+							Path:     "/",
+							PathType: pointers.Ptr(netv1.PathTypePrefix),
+							Backend: netv1.IngressBackend{
+								Service: &netv1.IngressServiceBackend{
+									Name: name,
+									Port: netv1.ServiceBackendPort{
+										Number: 30080,
+									},
+								},
+							},
+						}},
+					},
+				},
+			}}
+
+			ingress.Spec.IngressClassName = cfg.Ingress.IngressClassName
+
+			config.MarkObjectForAdoption(&ingress)
+			return reconcileObject(ctx, r, sg.Spec.Frontend, &ingress, &netv1.Ingress{}, sg, owner)
+		}
+		logger.Error(err, "unexpected error getting object")
+		return err
 	}
 
-	ingress.SetAnnotations(cfg.Ingress.Annotations)
-
+	//Otherwise we found an object and only want to craft changes
+	cfgIngress := ingress.NewIngress(name, sg.Namespace)
+	cfgIngress.SetAnnotations(cfg.Ingress.Annotations)
 	if cfg.Ingress.TLSSecret != "" {
-		ingress.Spec.TLS = []netv1.IngressTLS{{
+		cfgIngress.Spec.TLS = []netv1.IngressTLS{{
 			Hosts:      []string{cfg.Ingress.Host},
 			SecretName: cfg.Ingress.TLSSecret,
 		}}
 	}
-
-	ingress.Spec.Rules = []netv1.IngressRule{{
-		Host: cfg.Ingress.Host,
-		IngressRuleValue: netv1.IngressRuleValue{
-			HTTP: &netv1.HTTPIngressRuleValue{
-				Paths: []netv1.HTTPIngressPath{{
-					Path:     "/",
-					PathType: pointers.Ptr(netv1.PathTypePrefix),
-					Backend: netv1.IngressBackend{
-						Service: &netv1.IngressServiceBackend{
-							Name: name,
-							Port: netv1.ServiceBackendPort{
-								Number: 30080,
-							},
-						},
-					},
-				}},
-			},
-		},
-	}}
-
-	ingress.Spec.IngressClassName = cfg.Ingress.IngressClassName
-
-	return reconcileObject(ctx, r, sg.Spec.Frontend, &ingress, &netv1.Ingress{}, sg, owner)
+	cfgIngress.Spec.IngressClassName = cfg.Ingress.IngressClassName
+	config.MarkObjectForAdoption(&cfgIngress)
+	newObj, err := MergeK8sObjects(existingObj, &cfgIngress)
+	if err != nil {
+		return errors.Wrap(err, "merging objects")
+	}
+	newObjAsIngress, ok := newObj.(*netv1.Ingress)
+	if !ok {
+		return errors.Wrap(err, "asserting type")
+	}
+	return reconcileObject(ctx, r, sg.Spec.Frontend, newObjAsIngress, &netv1.Ingress{}, sg, owner)
 }
 
 func frontendEnvVars(sg *config.Sourcegraph) []corev1.EnvVar {
@@ -301,4 +391,34 @@ func dbAuthVars() []corev1.EnvVar {
 		container.NewEnvVarSecretKeyRef("CODEINSIGHTS_PGPORT", codeInsightsDBSecretName, "port"),
 		container.NewEnvVarSecretKeyRef("CODEINSIGHTS_PGUSER", codeInsightsDBSecretName, "user"),
 	}
+}
+
+// MergeK8sObjects merges a Kubernetes object that already exists within the cluster
+// with an existing Kubernetes object definition.
+func MergeK8sObjects(existingObj client.Object, newObject client.Object) (client.Object, error) {
+	// Convert existing object to unstructured
+	existingUnstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(existingObj)
+	if err != nil {
+		return nil, errors.Newf("failed to convert existing object to unstructured: %w", err)
+	}
+
+	newUnstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(newObject)
+	if err != nil {
+		return nil, errors.Newf("failed to convert new object to unstructured: %w", err)
+	}
+
+	// Merge the objects using strategic merge patch
+	mergedUnstructured, err := strategicpatch.StrategicMergeMapPatch(existingUnstructured, newUnstructured, existingObj)
+	if err != nil {
+		return nil, errors.Newf("failed to merge objects: %w", err)
+	}
+
+	// Convert the merged unstructured object back to the original type
+	mergedObj := existingObj.DeepCopyObject().(client.Object)
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(mergedUnstructured, mergedObj)
+	if err != nil {
+		return nil, errors.Newf("failed to convert merged object from unstructured: %w", err)
+	}
+
+	return mergedObj, nil
 }
