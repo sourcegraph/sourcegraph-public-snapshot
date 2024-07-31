@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
+	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/oneclickexport"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
