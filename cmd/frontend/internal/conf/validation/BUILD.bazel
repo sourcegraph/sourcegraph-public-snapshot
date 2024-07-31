@@ -24,6 +24,7 @@ go_library(
     tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
+        "//cmd/frontend/internal/highlight",
         "//internal/actor",
         "//internal/authz/providers",
         "//internal/batches/types/scheduler/window",
@@ -33,7 +34,6 @@ go_library(
         "//internal/ctags_config",
         "//internal/database",
         "//internal/encryption/keyring",
-        "//internal/highlight",
         "//internal/licensing",
         "//internal/src-prometheus",
         "//internal/txemail",
