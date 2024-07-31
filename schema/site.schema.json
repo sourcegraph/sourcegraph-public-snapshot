@@ -1375,11 +1375,6 @@
       "type": "boolean",
       "default": false
     },
-    "authz.refreshInterval": {
-      "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
-      "type": "integer",
-      "default": 5
-    },
     "permissions.userMapping": {
       "description": "Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.",
       "type": "object",

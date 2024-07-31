@@ -131,13 +131,6 @@ func Init(
 		return nil
 	})
 
-	go func() {
-		for range time.NewTicker(providers.RefreshInterval(conf.Get())).C {
-			authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
-			authz.SetProviders(authzProviders)
-		}
-	}()
-
 	enterpriseServices.AuthzResolver = resolvers.NewResolver(observationCtx, db)
 	return nil
 }
