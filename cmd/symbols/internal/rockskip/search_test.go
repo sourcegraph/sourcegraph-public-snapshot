@@ -132,10 +132,8 @@ func TestSearch(t *testing.T) {
 				result.Symbol{Path: "b.java", Name: "sym2b", Line: 1},
 				result.Symbol{Path: "a.txt", Name: "sym2a"},
 				result.Symbol{Path: "a.txt", Name: "sym3a", Line: 1},
-
-				// Test for parser id prefix when using Scip CTAGS
-				result.Symbol{Path: "a.go", Name: "SCIP_sym1a"},
-				result.Symbol{Path: "a.go", Name: "SCIP_sym2a", Line: 1},
+				result.Symbol{Path: "a.go", Name: "sym1a"},
+				result.Symbol{Path: "a.go", Name: "sym2a", Line: 1},
 			},
 		},
 		{
@@ -184,10 +182,8 @@ func TestSearch(t *testing.T) {
 				result.Symbol{Path: "b.java", Name: "sym2b", Line: 1},
 				result.Symbol{Path: "a.txt", Name: "sym2a"},
 				result.Symbol{Path: "a.txt", Name: "sym3a", Line: 1},
-
-				// Test for parser id prefix when using Scip CTAGS
-				result.Symbol{Path: "a.go", Name: "SCIP_sym1a"},
-				result.Symbol{Path: "a.go", Name: "SCIP_sym2a", Line: 1},
+				result.Symbol{Path: "a.go", Name: "sym1a"},
+				result.Symbol{Path: "a.go", Name: "sym2a", Line: 1},
 			},
 		},
 		{
@@ -256,10 +252,8 @@ func TestSearch(t *testing.T) {
 				result.Symbol{Path: "c.txt", Name: "sym2c", Line: 1},
 				result.Symbol{Path: "a.txt", Name: "sym2a"},
 				result.Symbol{Path: "a.txt", Name: "sym3a", Line: 1},
-
-				// Test for parser id prefix when using Scip CTAGS
-				result.Symbol{Path: "a.go", Name: "SCIP_sym1a"},
-				result.Symbol{Path: "a.go", Name: "SCIP_sym2a", Line: 1},
+				result.Symbol{Path: "a.go", Name: "sym1a"},
+				result.Symbol{Path: "a.go", Name: "sym2a", Line: 1},
 			},
 		},
 		{

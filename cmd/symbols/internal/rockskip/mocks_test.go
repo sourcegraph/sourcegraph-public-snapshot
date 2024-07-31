@@ -45,12 +45,6 @@ func (p mockParser) Parse(path string, bytes []byte) ([]*ctags.Entry, error) {
 			continue
 		}
 
-		// If scip ctags parser, prefix symbol so we can test for different parser being
-		// chosen
-		if p.parserType == ctags_config.ScipCtags {
-			line = fmt.Sprintf("SCIP_%s", line)
-		}
-
 		symbols = append(symbols, &ctags.Entry{Name: line, Line: lineNumber + 1})
 	}
 
