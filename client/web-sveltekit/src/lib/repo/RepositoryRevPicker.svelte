@@ -195,11 +195,9 @@
                     <RepositoryRevPickerItem label="" author={value.author}>
                         <svelte:fragment slot="title">
                             <Icon icon={ILucideGitCommitVertical} inline aria-hidden="true" />
-                            {#if value.perforceChangelist}
-                                <Badge variant="link">{value.perforceChangelist.cid}</Badge>
-                            {:else}
-                                <Badge variant="link">{value.abbreviatedOID}</Badge>
-                            {/if}
+                            <Badge variant="link">
+                                {value.perforceChangelist?.cid ?? value.abbreviatedOID}
+                            </Badge>
                             <span class="commit-subject">{value.subject}</span>
                         </svelte:fragment>
                     </RepositoryRevPickerItem>
