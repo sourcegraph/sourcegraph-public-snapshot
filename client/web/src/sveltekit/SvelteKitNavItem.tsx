@@ -42,7 +42,7 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
     }
 
     const showDeparture = toggledOff && !departureDismissed
-    const popoverProps = showDeparture ? { isOpen: true, onOpenChange: () => { } } : {}
+    const popoverProps = showDeparture ? { isOpen: true, onOpenChange: () => {} } : {}
 
     return (
         <Popover {...popoverProps}>
@@ -81,7 +81,7 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
                             <Button
                                 as="a"
                                 variant="secondary"
-                                href="https://community.sourcegraph.com/"
+                                href="https://community.sourcegraph.com/c/code-search/9"
                                 target="_blank"
                                 rel="noreferrer noopener"
                             >
