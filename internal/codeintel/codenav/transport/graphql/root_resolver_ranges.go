@@ -63,7 +63,7 @@ type codeIntelligenceRangeResolver struct {
 }
 
 func (r *codeIntelligenceRangeResolver) Range(ctx context.Context) (resolverstubs.RangeResolver, error) {
-	return newRangeResolver(convertRange(r.r.Range)), nil
+	return newRangeResolver(r.r.Range.ToSCIPRange()), nil
 }
 
 func (r *codeIntelligenceRangeResolver) Definitions(ctx context.Context) (resolverstubs.LocationConnectionResolver, error) {
@@ -79,5 +79,5 @@ func (r *codeIntelligenceRangeResolver) Implementations(ctx context.Context) (re
 }
 
 func (r *codeIntelligenceRangeResolver) Hover(ctx context.Context) (resolverstubs.HoverResolver, error) {
-	return newHoverResolver(r.r.HoverText, convertRange(r.r.Range)), nil
+	return newHoverResolver(r.r.HoverText, r.r.Range.ToSCIPRange()), nil
 }

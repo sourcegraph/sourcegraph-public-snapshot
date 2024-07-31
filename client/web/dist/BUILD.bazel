@@ -1,24 +1,7 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
-go_library(
-    name = "dist",
-    srcs = ["assets.go"],
-    embedsrcs = select({
-        "//conditions:default": [":copy_bundle"],
-        "//:integration_testing_enabled": [":dummy_web_manifest"],
-    }),  # keep
-    importpath = "github.com/sourcegraph/sourcegraph/client/web/dist",
-    visibility = ["//visibility:public"],
-    x_defs = select({
-        "//conditions:default": {},
-        "//:integration_testing_enabled": {"github.com/sourcegraph/sourcegraph/client/web/dist.assetsSubdir": "integration"},
-    }),
-    deps = [
-        "//lib/errors",
-        "//ui/assets",
-    ],
-)
+ASSETS_DIR = "assets-dist"
 
 copy_to_directory(
     name = "copy_bundle",
@@ -29,7 +12,7 @@ copy_to_directory(
         "//client/web-sveltekit",
         "//client/web/dist/img",
     ],
-    out = "dist",
+    out = ASSETS_DIR,
     replace_prefixes = {
         "client/web/bundle": "",
         "client/web-sveltekit/build": "",
@@ -40,10 +23,31 @@ copy_to_directory(
         "client/browser/integration-assets/extension/js/extensionHostWorker.bundle.js": "extension/scripts/extensionHostWorker.bundle.js",
         "client/browser/integration-assets": "",
     },
+    visibility = ["//visibility:public"],
 )
 
 genrule(
     name = "dummy_web_manifest",
-    outs = ["integration/web.manifest.json"],
+    outs = ["web.manifest.json"],
     cmd = "echo '{}' > $@",
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "tar_dummy_manifest",
+    srcs = [
+        ":dummy_web_manifest",
+    ],
+    mode = "0655",
+    package_dir = ASSETS_DIR,
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "tar_bundle",
+    srcs = [
+        ":copy_bundle",
+    ],
+    mode = "0655",
+    visibility = ["//visibility:public"],
 )

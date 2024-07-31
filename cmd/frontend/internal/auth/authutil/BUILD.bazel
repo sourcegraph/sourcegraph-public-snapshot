@@ -7,7 +7,7 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
-        "//cmd/frontend/external/session",
+        "//cmd/frontend/internal/auth/session",
         "//internal/actor",
         "//internal/database",
     ],

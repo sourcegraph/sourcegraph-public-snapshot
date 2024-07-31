@@ -17,7 +17,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	repogitserver "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/purge"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater"
@@ -118,7 +117,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		server.ChangesetSyncRegistry = syncRegistry
 	}
 
-	go globals.WatchExternalURL()
 	go watchSyncer(ctx, logger, syncer, updateScheduler, server.ChangesetSyncRegistry)
 
 	routines := []goroutine.BackgroundRoutine{

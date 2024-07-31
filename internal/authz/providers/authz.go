@@ -3,7 +3,6 @@ package providers
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -44,6 +44,9 @@ func ProvidersFromConfig(
 	warnings []string,
 	invalidConnections []string,
 ) {
+	tr, ctx := trace.New(ctx, "ProvidersFromConfig")
+	defer tr.End()
+
 	logger := log.Scoped("authz")
 
 	defer func() {
@@ -161,14 +164,6 @@ func ProvidersFromConfig(
 	initResult.Append(azuredevops.NewAuthzProviders(db, azuredevopsConns, httpcli.ExternalClient))
 
 	return initResult.Providers, initResult.Problems, initResult.Warnings, initResult.InvalidConnections
-}
-
-func RefreshInterval(cfg conftypes.UnifiedQuerier) time.Duration {
-	interval := cfg.SiteConfig().AuthzRefreshInterval
-	if interval <= 0 {
-		return 5 * time.Second
-	}
-	return time.Duration(interval) * time.Second
 }
 
 var ValidateExternalServiceConfig = database.MakeValidateExternalServiceConfigFunc(

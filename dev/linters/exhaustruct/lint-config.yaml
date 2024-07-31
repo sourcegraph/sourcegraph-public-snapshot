@@ -16,6 +16,7 @@ include_types:
 - '.+codenav.*FindUsagesKey$'
 - '.+codenav.+SymbolUsagesOptions$'
 - '.+codenav.+UsagesForSymbol.*Args$'
+- '.+codenav.+usageResolver$'
 
 # Same as above, but for exclusion.
 #

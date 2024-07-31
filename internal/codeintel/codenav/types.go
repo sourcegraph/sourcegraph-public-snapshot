@@ -193,7 +193,8 @@ func (m CursorMatcher) ToShared() shared.Matcher {
 func NewCursorMatcher(matcher shared.Matcher) CursorMatcher {
 	if sym, range_, ok := matcher.SymbolBased(); ok {
 		return CursorMatcher{
-			ExactSymbol: sym,
+			// OK to use "" here as lookups based on "" are not allowed
+			ExactSymbol: sym.UnwrapOr(""),
 			Start:       shared.TranslatePosition(range_.Start),
 			End:         shared.TranslatePosition(range_.End),
 			HasEnd:      true,
@@ -386,6 +387,14 @@ const (
 type UsagesCursor struct {
 	PreciseCursorType `json:"ty"`
 	PreciseCursor     Cursor `json:"pc"`
+}
+
+func (c UsagesCursor) Encode() string {
+	return encodeViaJSON(c)
+}
+
+func DecodeUsagesCursor(rawEncoded string) (UsagesCursor, error) {
+	return decodeViaJSON[UsagesCursor](rawEncoded)
 }
 
 func encodeViaJSON[T any](t T) string {
