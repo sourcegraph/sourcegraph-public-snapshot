@@ -41,6 +41,7 @@ go_test(
     name = "run_test",
     timeout = "short",
     srcs = [
+        "command_test.go",
         "docker_command_test.go",
         "logger_test.go",
     ],
