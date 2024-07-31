@@ -38,7 +38,7 @@ type modelCircuitBreaker struct {
 // record represents an individual error occurrence with details about the reason for the error
 // and the timestamp when it happened. This information is used to assess the model's availability.
 type record struct {
-	reason    string
+	reason    int
 	timestamp time.Time
 }
 
@@ -59,13 +59,13 @@ func (mlt *modelsLoadTracker) record(gatewayModel string, resp *http.Response, r
 	var r *record
 	if errors.Is(reqErr, context.DeadlineExceeded) {
 		r = &record{
-			reason:    "timeout",
+			reason:    http.StatusGatewayTimeout,
 			timestamp: time.Now(),
 		}
 	}
 	if resp.StatusCode == http.StatusTooManyRequests {
 		r = &record{
-			reason:    "rate limit exceeded",
+			reason:    http.StatusTooManyRequests,
 			timestamp: time.Now(),
 		}
 	}
