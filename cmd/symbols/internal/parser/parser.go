@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -33,7 +32,7 @@ type SymbolOrError struct {
 }
 
 type parser struct {
-	parserPool         *parserPool
+	parserPool         *ParserPool
 	repositoryFetcher  fetcher.RepositoryFetcher
 	requestBufferSize  int
 	numParserProcesses int
@@ -42,7 +41,7 @@ type parser struct {
 
 func NewParser(
 	observationCtx *observation.Context,
-	parserPool *parserPool,
+	parserPool *ParserPool,
 	repositoryFetcher fetcher.RepositoryFetcher,
 	requestBufferSize int,
 	numParserProcesses int,
@@ -144,20 +143,20 @@ func (p *parser) handleParseRequest(
 	}})
 	defer endObservation(1, observation.Args{})
 
-	language, found := languages.GetMostLikelyLanguage(parseRequest.Path, string(parseRequest.Data))
-	if !found {
-		return nil
-	}
+	parser, parserType, err := p.parserPool.GetParser(ctx, parseRequest.Path, parseRequest.Data)
 
-	source := GetParserType(language)
-	if ctags_config.ParserIsNoop(source) {
-		return nil
-	}
-
-	parser, err := p.parserFromPool(ctx, source)
+	// If the language has a parser but we cannot retrieve it, we get an error
 	if err != nil {
 		return err
 	}
+
+	// If we cannot determine type of ctags it means we don't support symbols for
+	// this file type so we bail out early. This is not considered an error since
+	// many file types may not be supported
+	if ctags_config.ParserIsNoop(parserType) {
+		return nil
+	}
+
 	trace.AddEvent("parser", attribute.String("event", "acquired parser from pool"))
 
 	defer func() {
@@ -168,7 +167,7 @@ func (p *parser) handleParseRequest(
 		}
 
 		if err == nil {
-			p.parserPool.Done(parser, source)
+			p.parserPool.Done(parser, parserType)
 		} else {
 			// If we are canceled we still kill the parser just in case, but
 			// we do not record as failure nor logspam since this is a more
@@ -182,7 +181,7 @@ func (p *parser) handleParseRequest(
 			// Close parser and return nil to pool, indicating that the next
 			// receiver should create a new parser
 			parser.Close()
-			p.parserPool.Done(nil, source)
+			p.parserPool.Done(nil, parserType)
 		}
 	}()
 
@@ -238,27 +237,6 @@ func (p *parser) handleParseRequest(
 	}
 
 	return nil
-}
-
-func (p *parser) parserFromPool(ctx context.Context, source ctags_config.ParserType) (ctags.Parser, error) {
-	if ctags_config.ParserIsNoop(source) {
-		return nil, errors.New("Should not pass Noop ParserType to this function")
-	}
-
-	p.operations.parseQueueSize.Inc()
-	defer p.operations.parseQueueSize.Dec()
-
-	parser, err := p.parserPool.Get(ctx, source)
-	if err != nil {
-		if err == context.DeadlineExceeded {
-			p.operations.parseQueueTimeouts.Inc()
-		}
-		if err != ctx.Err() {
-			err = errors.Wrap(err, "failed to create parser")
-		}
-	}
-
-	return parser, err
 }
 
 func shouldPersistEntry(e *ctags.Entry) bool {

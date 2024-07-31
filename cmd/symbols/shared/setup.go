@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
 	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
-	symbolsParser "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
+	symbolparser "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/rockskip"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -95,6 +96,8 @@ func CreateSetup(config rockskipConfig) SetupFunc {
 type rockskipConfig struct {
 	env.BaseConfig
 	Ctags                   types.CtagsConfig
+	NumCtagsProcesses       int
+	RequestBufferSize       int
 	RepositoryFetcher       types.RepositoryFetcherConfig
 	MaxRepos                int
 	LogQueries              bool
@@ -109,9 +112,11 @@ func (c *rockskipConfig) Load() {
 	// TODO(sqs): TODO(single-binary): load rockskip config from here
 }
 
-func loadRockskipConfig(baseConfig env.BaseConfig, ctags types.CtagsConfig, repositoryFetcher types.RepositoryFetcherConfig) rockskipConfig {
+func loadRockskipConfig(baseConfig env.BaseConfig, ctags types.CtagsConfig, numCtagsProcesses int, requestBufferSize int, repositoryFetcher types.RepositoryFetcherConfig) rockskipConfig {
 	return rockskipConfig{
 		Ctags:                   ctags,
+		NumCtagsProcesses:       numCtagsProcesses,
+		RequestBufferSize:       requestBufferSize,
 		RepositoryFetcher:       repositoryFetcher,
 		MaxRepos:                baseConfig.GetInt("MAX_REPOS", "1000", "maximum number of repositories to store in Postgres, with LRU eviction"),
 		LogQueries:              baseConfig.GetBool("LOG_QUERIES", "false", "print search queries to stdout"),
@@ -127,10 +132,17 @@ func setupRockskip(observationCtx *observation.Context, config rockskipConfig, g
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("rockskip"), observationCtx)
 
 	codeintelDB := mustInitializeCodeIntelDB(observationCtx)
-	createParser := func() (ctags.Parser, error) {
-		return symbolsParser.SpawnCtags(log.Scoped("parser"), config.Ctags, ctags_config.UniversalCtags)
+
+	logger := log.Scoped("parser")
+	parserFactory := func(source ctags_config.ParserType) (ctags.Parser, error) {
+		return symbolparser.SpawnCtags(logger, config.Ctags, source)
 	}
-	server, err := rockskip.NewService(observationCtx, codeintelDB, gitserverClient, repositoryFetcher, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize, config.SearchLastIndexedCommit)
+	symbolParserPool, err := symbolparser.NewParserPool(observationCtx, "src_rockskip_service", parserFactory, config.NumCtagsProcesses, parserTypesForDeployment())
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to create symbol parser pool")
+	}
+
+	server, err := rockskip.NewService(observationCtx, codeintelDB, gitserverClient, repositoryFetcher, symbolParserPool, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize, config.SearchLastIndexedCommit)
 	if err != nil {
 		return nil, nil, err
 	}

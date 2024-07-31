@@ -30,7 +30,7 @@ func TestIndex(t *testing.T) {
 	defer db.Close()
 
 	state := map[string][]string{}
-	verifyBlobs := func() {
+	verifyBlobs := func(lang string, ext string) {
 		out, err := gitserver.CreateGitCommand(repoDir, "git", "rev-parse", "HEAD").CombinedOutput()
 		require.NoError(t, err, string(out))
 		commit := string(bytes.TrimSpace(out))
@@ -39,7 +39,7 @@ func TestIndex(t *testing.T) {
 			Repo:         repo,
 			CommitID:     api.CommitID(commit),
 			Query:        "",
-			IncludeLangs: []string{"Text"}}
+			IncludeLangs: []string{lang}}
 		symbols, err := service.Search(context.Background(), args)
 		require.NoError(t, err)
 
@@ -54,8 +54,7 @@ func TestIndex(t *testing.T) {
 		}
 		wantPaths := []string{}
 		for wantPath := range state {
-			// We only want .txt files since we're filtering by lang: text
-			if strings.Contains(wantPath, ".txt") {
+			if strings.Contains(wantPath, ext) {
 				wantPaths = append(wantPaths, wantPath)
 			}
 		}
@@ -90,22 +89,22 @@ func TestIndex(t *testing.T) {
 	}
 
 	gitAdd(t, repoDir, state, "a.txt", "sym1\n")
-	verifyBlobs()
+	verifyBlobs("Text", ".txt")
 
 	gitAdd(t, repoDir, state, "b.txt", "sym1\n")
-	verifyBlobs()
+	verifyBlobs("Text", ".txt")
 
 	gitAdd(t, repoDir, state, "c.txt", "sym1\nsym2")
-	verifyBlobs()
+	verifyBlobs("Text", ".txt")
 
 	gitAdd(t, repoDir, state, "a.java", "sym1\nsym2")
-	verifyBlobs()
+	verifyBlobs("Java", ".java")
 
 	gitAdd(t, repoDir, state, "a.txt", "sym1\nsym2")
-	verifyBlobs()
+	verifyBlobs("Text", ".txt")
 
 	gitRm(t, repoDir, state, "a.txt")
-	verifyBlobs()
+	verifyBlobs("Text", ".txt")
 }
 
 func TestRuler(t *testing.T) {

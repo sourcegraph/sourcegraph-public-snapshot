@@ -105,6 +105,8 @@ func TestSearch(t *testing.T) {
 	gitRm(t, repoDir, state, "a.java")
 	gitAdd(t, repoDir, state, "a.txt", "sym2a\nsym3a")
 
+	gitAdd(t, repoDir, state, "a.go", "sym1a\nsym2a")
+
 	out, err = gitserver.CreateGitCommand(repoDir, "git", "rev-parse", "HEAD").CombinedOutput()
 	require.NoError(t, err, string(out))
 	commit2 := string(bytes.TrimSpace(out))
@@ -130,6 +132,8 @@ func TestSearch(t *testing.T) {
 				result.Symbol{Path: "b.java", Name: "sym2b", Line: 1},
 				result.Symbol{Path: "a.txt", Name: "sym2a"},
 				result.Symbol{Path: "a.txt", Name: "sym3a", Line: 1},
+				result.Symbol{Path: "a.go", Name: "sym1a"},
+				result.Symbol{Path: "a.go", Name: "sym2a", Line: 1},
 			},
 		},
 		{
@@ -178,6 +182,8 @@ func TestSearch(t *testing.T) {
 				result.Symbol{Path: "b.java", Name: "sym2b", Line: 1},
 				result.Symbol{Path: "a.txt", Name: "sym2a"},
 				result.Symbol{Path: "a.txt", Name: "sym3a", Line: 1},
+				result.Symbol{Path: "a.go", Name: "sym1a"},
+				result.Symbol{Path: "a.go", Name: "sym2a", Line: 1},
 			},
 		},
 		{
@@ -246,6 +252,8 @@ func TestSearch(t *testing.T) {
 				result.Symbol{Path: "c.txt", Name: "sym2c", Line: 1},
 				result.Symbol{Path: "a.txt", Name: "sym2a"},
 				result.Symbol{Path: "a.txt", Name: "sym3a", Line: 1},
+				result.Symbol{Path: "a.go", Name: "sym1a"},
+				result.Symbol{Path: "a.go", Name: "sym2a", Line: 1},
 			},
 		},
 		{
