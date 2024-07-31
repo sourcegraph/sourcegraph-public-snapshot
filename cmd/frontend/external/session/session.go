@@ -2,7 +2,7 @@
 // parent package godoc for more information.
 package session
 
-import "github.com/sourcegraph/sourcegraph/internal/session"
+import "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
 
 var (
 	ResetMockSessionStore = session.ResetMockSessionStore

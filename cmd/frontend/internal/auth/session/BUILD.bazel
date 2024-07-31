@@ -7,7 +7,7 @@ go_library(
         "session.go",
         "test_util.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/session",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session",
     tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
