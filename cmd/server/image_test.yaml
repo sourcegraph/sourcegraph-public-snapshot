@@ -112,6 +112,9 @@ fileExistenceTests:
   shouldExist: true
   uid: 0
   gid: 0
+- name: '/assets-dist/web.manifest.json'
+  path: '/assets-dist/web.manifest.json'
+  shouldExist: true
 
 metadataTest:
   envVars:
