@@ -13,6 +13,7 @@ type CodyContextResolver interface {
 	RecordContext(ctx context.Context, args RecordContextArgs) (*EmptyResponse, error)
 	// GetCodyContext is the existing Cody Enterprise context endpoint
 	GetCodyContext(ctx context.Context, args GetContextArgs) ([]ContextResultResolver, error)
+	UrlMentionContext(ctx context.Context, args UrlMentionContextArgs) (string, error)
 }
 
 type GetContextArgs struct {
@@ -20,6 +21,10 @@ type GetContextArgs struct {
 	Query            string
 	CodeResultsCount int32
 	TextResultsCount int32
+}
+
+type UrlMentionContextArgs struct {
+	Url string
 }
 
 type ContextResultResolver interface {

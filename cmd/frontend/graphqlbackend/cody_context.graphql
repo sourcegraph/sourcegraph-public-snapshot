@@ -112,6 +112,8 @@ extend type Query {
         """
         resultsCount: Int
     ): ChatContextResult!
+
+    urlMentionContext(url: String!): String!
 }
 
 """
