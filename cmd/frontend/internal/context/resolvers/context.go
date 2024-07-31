@@ -376,7 +376,8 @@ func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextAr
 	if r.reranker == conf.CodyRerankerIdentity {
 		var used []graphqlbackend.RankedItemResolver
 		for i := range args.ContextItems {
-			used = append(used, rankedItem{index: int32(i), score: 0.0})
+			// no information about relevance, so we just return 0.5 for all items
+			used = append(used, rankedItem{index: int32(i), score: 0.5})
 		}
 		return conf.CodyRerankerIdentity, used, nil
 	}
