@@ -23,8 +23,13 @@
     export let id: string
     export let tabs: Tab[]
     export let selected: number | null = 0
+    export let isP4: boolean
 
     const dispatch = createEventDispatcher<{ select: number }>()
+
+    function removeGitTabs() {
+        return tabs.filter(tab => !['Branches', 'Tags'].includes(tab.title))
+    }
 
     function selectTab(event: MouseEvent) {
         const index = (event.target as HTMLElement).closest('[role="tab"]')?.id.match(/\d+$/)?.[0]
@@ -32,6 +37,8 @@
             dispatch('select', +index)
         }
     }
+
+    $: tabs = isP4 ? removeGitTabs() : tabs
 </script>
 
 <div class="tabs-header" role="tablist" data-tab-header>

@@ -209,7 +209,7 @@
         externalServiceKind={data.resolvedRepository.externalURLs[0]?.serviceKind ?? undefined}
     />
 
-    <TabsHeader id="repoheader" {tabs} selected={selectedTab} />
+    <TabsHeader id="repoheader" {tabs} {isP4} selected={selectedTab} />
 
     <DropdownMenu
         open={menuOpen}

@@ -152,26 +152,26 @@
                         </RepositoryRevPickerItem>
                     </Picker>
                 </TabPanel>
+                <TabPanel title="Tags" shortcut={tagsHotkey}>
+                    <Picker
+                        name="tags"
+                        seeAllItemsURL={`${repoURL}/-/tags`}
+                        getData={getRepositoryTags}
+                        toOption={tag => ({ value: tag.id, label: tag.displayName })}
+                        onSelect={tag => {
+                            toggle(false)
+                            onSelect(tag.abbrevName)
+                        }}
+                        let:value
+                    >
+                        <RepositoryRevPickerItem
+                            icon={ILucideTag}
+                            label={value.displayName}
+                            author={value.target.commit?.author}
+                        />
+                    </Picker>
+                </TabPanel>
             {/if}
-            <TabPanel title="Tags" shortcut={tagsHotkey}>
-                <Picker
-                    name="tags"
-                    seeAllItemsURL={`${repoURL}/-/tags`}
-                    getData={getRepositoryTags}
-                    toOption={tag => ({ value: tag.id, label: tag.displayName })}
-                    onSelect={tag => {
-                        toggle(false)
-                        onSelect(tag.abbrevName)
-                    }}
-                    let:value
-                >
-                    <RepositoryRevPickerItem
-                        icon={ILucideTag}
-                        label={value.displayName}
-                        author={value.target.commit?.author}
-                    />
-                </Picker>
-            </TabPanel>
             <TabPanel title={isP4 ? 'Changelists' : 'Commits'} shortcut={commitsHotkey}>
                 <Picker
                     name={isP4 ? 'changelists' : 'commits'}
