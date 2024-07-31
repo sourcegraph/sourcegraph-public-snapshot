@@ -70,7 +70,6 @@ go_test(
         "//lib/iterator",
         "//schema",
         "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_sourcegraph_log//:log",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
