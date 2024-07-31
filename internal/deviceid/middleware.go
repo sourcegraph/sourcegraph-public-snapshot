@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 )
 
@@ -22,7 +22,7 @@ func Middleware(next http.Handler) http.Handler {
 				Name:    "sourcegraphDeviceId",
 				Value:   newDeviceId.String(),
 				Expires: time.Now().AddDate(1, 0, 0),
-				Secure:  globals.ExternalURL().Scheme == "https",
+				Secure:  conf.ExternalURLParsed().Scheme == "https",
 				Domain:  r.URL.Host,
 			})
 		}

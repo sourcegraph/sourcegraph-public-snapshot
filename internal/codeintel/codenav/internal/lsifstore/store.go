@@ -124,7 +124,7 @@ func (key *FindUsagesKey) IdentifyMatchingOccurrences(allOccurrences []*scip.Occ
 		out = scip.FindOccurrences(allOccurrences, startPos.Line, startPos.Character)
 		return
 	}
-	symbolToMatch, range_, ok := key.Matcher.SymbolBased()
+	optSymbolToMatch, range_, ok := key.Matcher.SymbolBased()
 	if !ok {
 		panic(fmt.Sprintf("Unhandled case of locationKey.Matcher: %+v", key.Matcher))
 	}
@@ -133,7 +133,8 @@ func (key *FindUsagesKey) IdentifyMatchingOccurrences(allOccurrences []*scip.Occ
 	if len(sameRangeOccs) == 0 {
 		return
 	}
-	if symbolToMatch == "" {
+	symbolToMatch, isSome := optSymbolToMatch.Get()
+	if !isSome {
 		out = sameRangeOccs
 		return
 	}

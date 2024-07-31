@@ -2,6 +2,7 @@ package conf
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -1355,4 +1356,55 @@ func TestAccessTokensExpirationOptions(t *testing.T) {
 			assert.Equal(t, tc.wantOptions, options)
 		})
 	}
+}
+
+func TestExternalURLParsed(t *testing.T) {
+	t.Run("Result is mutable", func(t *testing.T) {
+		Mock(&Unified{SiteConfiguration: schema.SiteConfiguration{
+			ExternalURL: "https://sourcegraph.com",
+		}})
+		t.Cleanup(func() { Mock(nil) })
+		u := ExternalURLParsed()
+		u.Scheme = "http"
+		assert.Equal(t, "http://sourcegraph.com", u.String())
+		u2 := ExternalURLParsed()
+		assert.Equal(t, "https://sourcegraph.com", u2.String())
+		Mock(&Unified{SiteConfiguration: schema.SiteConfiguration{
+			ExternalURL: "https://sourcegraph.sourcegraph.com",
+		}})
+		assert.Equal(t, "http://sourcegraph.com", u.String())
+		assert.Equal(t, "https://sourcegraph.com", u2.String())
+	})
+	t.Run("Concurrent access and updates are memory safe", func(t *testing.T) {
+		Mock(&Unified{SiteConfiguration: schema.SiteConfiguration{
+			ExternalURL: "https://host-0.sourcegraph.com",
+		}})
+		t.Cleanup(func() { Mock(nil) })
+
+		var wg sync.WaitGroup
+		wg.Add(2)
+
+		go func() {
+			defer wg.Done()
+			for i := range 1000 {
+				Mock(&Unified{SiteConfiguration: schema.SiteConfiguration{
+					ExternalURL: fmt.Sprintf("https://host-%d.sourcegraph.com", i),
+				}})
+				// Allow some time for synchronization.
+				time.Sleep(time.Millisecond)
+			}
+		}()
+
+		go func() {
+			defer wg.Done()
+			for range 1000 {
+				u := ExternalURLParsed()
+				assert.Contains(t, u.Host, ".sourcegraph.com")
+				// Allow some time for synchronization.
+				time.Sleep(time.Millisecond)
+			}
+		}()
+
+		wg.Wait()
+	})
 }

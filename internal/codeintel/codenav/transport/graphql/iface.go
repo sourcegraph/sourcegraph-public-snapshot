@@ -27,6 +27,10 @@ type CodeNavService interface {
 	VisibleUploadsForPath(ctx context.Context, requestState codenav.RequestState) ([]uploadsshared.CompletedUpload, error)
 	SnapshotForDocument(ctx context.Context, repositoryID api.RepoID, commit api.CommitID, path core.RepoRelPath, uploadID int) (data []shared.SnapshotData, err error)
 	SCIPDocument(_ context.Context, _ codenav.GitTreeTranslator, _ core.UploadLike, targetCommit api.CommitID, _ core.RepoRelPath) (*scip.Document, error)
+	// PreciseUsages implements the precise part of usagesForSymbol.
+	//
+	// Subsequent calls can pass the returned cursor (if non-empty) via args.Cursor.
+	PreciseUsages(ctx context.Context, requestState codenav.RequestState, args codenav.UsagesForSymbolResolvedArgs) (_ []shared.UploadUsage, nextCursor core.Option[codenav.UsagesCursor], err error)
 	SyntacticUsages(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError)
 	SearchBasedUsages(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs, core.Option[codenav.PreviousSyntacticSearch]) ([]codenav.SearchBasedMatch, error)
 }

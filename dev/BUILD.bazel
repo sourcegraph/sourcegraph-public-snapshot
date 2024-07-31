@@ -66,7 +66,6 @@ write_source_files(
         "//cmd/symbols/internal/api:generate_mocks",
         "//cmd/worker/internal/telemetry:generate_mocks",
         "//dev/team:generate_mocks",
-        "//internal/auth/userpasswd:generate_mocks",
         "//internal/authz/providers/gerrit:generate_mocks",
         "//internal/authz/providers/github:generate_mocks",
         "//internal/authz/subrepoperms:generate_mocks",
@@ -130,5 +129,6 @@ write_source_files(
         "//internal/object:generate_mocks",
         "//internal/codeintel/codegraph/codegraphmocks:generate_mocks",
         "//internal/codeintel/codenav/internal/lsifstore/mocks:generate_mocks",
+        "//cmd/frontend/internal/auth/userpasswd:generate_mocks",
     ],
 )

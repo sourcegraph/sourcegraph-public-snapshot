@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -25,13 +24,10 @@ type SudoProvider struct {
 	// is set per client and defines which user to impersonate.
 	sudoToken string
 
-	urn               string
-	clientProvider    *gitlab.ClientProvider
-	clientURL         *url.URL
-	codeHost          *extsvc.CodeHost
-	gitlabProvider    string
-	authnConfigID     providers.ConfigID
-	useNativeUsername bool
+	urn            string
+	clientProvider *gitlab.ClientProvider
+	clientURL      *url.URL
+	codeHost       *extsvc.CodeHost
 
 	syncInternalRepoPermissions bool
 }
@@ -45,23 +41,10 @@ type SudoProviderOp struct {
 	// BaseURL is the URL of the GitLab instance.
 	BaseURL *url.URL
 
-	// AuthnConfigID identifies the authn provider to use to lookup users on the GitLab instance.
-	// This should be the authn provider that's used to sign into the GitLab instance.
-	AuthnConfigID providers.ConfigID
-
-	// GitLabProvider is the id of the authn provider to GitLab. It will be used in the
-	// `users?extern_uid=$uid&provider=$provider` API query.
-	GitLabProvider string
-
 	// SudoToken is an access token with sudo *and* api scope.
 	//
 	// 🚨 SECURITY: This value contains secret information that must not be shown to non-site-admins.
 	SudoToken string
-
-	// UseNativeUsername, if true, maps Sourcegraph users to GitLab users using username equivalency
-	// instead of the authn provider user ID. This is *very* insecure (Sourcegraph usernames can be
-	// changed at the user's will) and should only be used in development environments.
-	UseNativeUsername bool
 
 	SyncInternalRepoPermissions bool
 }
@@ -74,9 +57,6 @@ func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
 		clientProvider:              gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
 		clientURL:                   op.BaseURL,
 		codeHost:                    extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
-		authnConfigID:               op.AuthnConfigID,
-		gitlabProvider:              op.GitLabProvider,
-		useNativeUsername:           op.UseNativeUsername,
 		syncInternalRepoPermissions: op.SyncInternalRepoPermissions,
 	}
 }
@@ -115,27 +95,7 @@ func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, curre
 		return nil, nil
 	}
 
-	var glUser *gitlab.AuthUser
-	if p.useNativeUsername {
-		glUser, err = p.fetchAccountByUsername(ctx, user.Username)
-	} else {
-		// resolve the GitLab account using the authn provider (specified by p.AuthnConfigID)
-		authnProvider := providers.GetProviderByConfigID(p.authnConfigID)
-		if authnProvider == nil {
-			return nil, nil
-		}
-		var authnAcct *extsvc.Account
-		for _, acct := range current {
-			if acct.ServiceID == authnProvider.CachedInfo().ServiceID && acct.ServiceType == authnProvider.ConfigID().Type {
-				authnAcct = acct
-				break
-			}
-		}
-		if authnAcct == nil {
-			return nil, nil
-		}
-		glUser, err = p.fetchAccountByExternalUID(ctx, authnAcct.AccountID)
-	}
+	glUser, err := p.fetchAccountByUsername(ctx, user.Username)
 	if err != nil {
 		return nil, err
 	}
@@ -158,24 +118,6 @@ func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, curre
 		AccountData: accountData,
 	}
 	return &glExternalAccount, nil
-}
-
-func (p *SudoProvider) fetchAccountByExternalUID(ctx context.Context, uid string) (*gitlab.AuthUser, error) {
-	q := make(url.Values)
-	q.Add("extern_uid", uid)
-	q.Add("provider", p.gitlabProvider)
-	q.Add("per_page", "2")
-	glUsers, _, err := p.clientProvider.GetPATClient(p.sudoToken, "").ListUsers(ctx, "users?"+q.Encode())
-	if err != nil {
-		return nil, err
-	}
-	if len(glUsers) >= 2 {
-		return nil, errors.Errorf("failed to determine unique GitLab user for query %q", q.Encode())
-	}
-	if len(glUsers) == 0 {
-		return nil, nil
-	}
-	return glUsers[0], nil
 }
 
 func (p *SudoProvider) fetchAccountByUsername(ctx context.Context, username string) (*gitlab.AuthUser, error) {

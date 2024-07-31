@@ -8,32 +8,19 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/saml"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrystore/teestore"
 )
-
-type SignOutURL struct {
-	ProviderDisplayName string
-	ProviderServiceType string
-	URL                 string
-}
-
-var ssoSignOutHandler func(w http.ResponseWriter, r *http.Request)
-
-// RegisterSSOSignOutHandler registers a SSO sign-out handler that takes care of cleaning up SSO
-// session state, both on Sourcegraph and on the SSO provider. This function should only be called
-// once from an init function.
-func RegisterSSOSignOutHandler(f func(w http.ResponseWriter, r *http.Request)) {
-	if ssoSignOutHandler != nil {
-		panic("RegisterSSOSignOutHandler already called")
-	}
-	ssoSignOutHandler = f
-}
 
 func serveSignOutHandler(logger log.Logger, db database.DB) http.HandlerFunc {
 	logger = logger.Scoped("signOut")
@@ -64,9 +51,7 @@ func serveSignOutHandler(logger log.Logger, db database.DB) http.HandlerFunc {
 
 		auth.SetSignOutCookie(w)
 
-		if ssoSignOutHandler != nil {
-			ssoSignOutHandler(w, r)
-		}
+		ssoSignOutHandler(w, r)
 
 		if err == nil {
 			recordSecurityEvent(r, db, database.SecurityEventNameSignOutSucceeded, nil)
@@ -111,4 +96,34 @@ func recordSecurityEvent(r *http.Request, db database.DB, name database.Security
 	}
 	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	_ = db.EventLogs().Insert(ctx, logEvent)
+}
+
+func ssoSignOutHandler(w http.ResponseWriter, r *http.Request) {
+	logger := log.Scoped("ssoSignOutHandler")
+	for _, p := range conf.Get().AuthProviders {
+		var err error
+		switch {
+		case p.Openidconnect != nil:
+			_, err = openidconnect.SignOut(w, r, openidconnect.SessionKey, openidconnect.GetProvider)
+		case p.Saml != nil:
+			_, err = saml.SignOut(w, r)
+		}
+		if err != nil {
+			logger.Error("failed to clear auth provider session data", log.Error(err))
+		}
+	}
+
+	if p := sourcegraphoperator.GetOIDCProvider(internalauth.SourcegraphOperatorProviderType); p != nil {
+		_, err := openidconnect.SignOut(
+			w,
+			r,
+			sourcegraphoperator.SessionKey,
+			func(string) *openidconnect.Provider {
+				return p
+			},
+		)
+		if err != nil {
+			logger.Error("failed to clear auth provider session data", log.Error(err))
+		}
+	}
 }

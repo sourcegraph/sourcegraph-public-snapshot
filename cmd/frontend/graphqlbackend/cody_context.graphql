@@ -213,13 +213,26 @@ type RankingResponse {
     """
     ranker: String!
     """
-    Indices of context items that were used by the ranker, ordered by decreasing relevance.
+    Items and scores that were used by the ranker, ordered by decreasing relevance.
     """
-    used: [Int!]!
+    used: [RankedItem!]!
     """
     Indices of context items that were ignored by the ranker. Order is undefined.
     """
-    ignored: [Int!]!
+    ignored: [RankedItem!]!
+}
+"""
+EXPERIMENTAL: Re-ranker output item.
+"""
+type RankedItem {
+    """
+    Index of the context item in the input list.
+    """
+    index: Int!
+    """
+    Score assigned by the ranker.
+    """
+    score: Float!
 }
 
 """

@@ -13,17 +13,18 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
-        "//internal/auth/providers",
         "//internal/collections",
         "//internal/database",
         "//internal/errcode",
         "//internal/extsvc",
+        "//internal/extsvc/azuredevops",
+        "//internal/extsvc/bitbucketcloud",
+        "//internal/extsvc/github",
+        "//internal/extsvc/gitlab",
         "//internal/gitserver",
         "//internal/own/codeowners",
         "//internal/types",
         "//lib/errors",
-        "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_prometheus_client_golang//prometheus/promauto",
     ],
 )
 
@@ -41,7 +42,6 @@ go_test(
     ],
     deps = [
         "//internal/api",
-        "//internal/auth/providers",
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",

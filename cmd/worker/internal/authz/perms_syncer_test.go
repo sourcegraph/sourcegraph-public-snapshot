@@ -67,10 +67,6 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		serviceType: extsvc.TypeGitLab,
 		serviceID:   "https://gitlab.com/",
 	}
-	authz.SetProviders(false, []authz.Provider{p})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 
 	extAccount := extsvc.Account{
 		AccountSpec: extsvc.AccountSpec{
@@ -132,6 +128,9 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	})
 
 	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{p}
+	}
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
@@ -157,10 +156,6 @@ func TestPermsSyncer_syncUserPerms_listExternalAccountsError(t *testing.T) {
 		serviceType: extsvc.TypeGitLab,
 		serviceID:   "https://gitlab.com/",
 	}
-	authz.SetProviders(false, []authz.Provider{p})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 
 	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
@@ -208,6 +203,9 @@ func TestPermsSyncer_syncUserPerms_listExternalAccountsError(t *testing.T) {
 	})
 
 	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{p}
+	}
 
 	t.Run("fetchUserPermsViaExternalAccounts", func(t *testing.T) {
 		_, _, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
@@ -226,10 +224,6 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 		serviceType: extsvc.TypeGitHub,
 		serviceID:   "https://github.com/",
 	}
-	authz.SetProviders(false, []authz.Provider{p1, p2})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 
 	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
@@ -304,6 +298,9 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 	}
 
 	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{p1, p2}
+	}
 
 	tests := []struct {
 		name                string
@@ -397,10 +394,6 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 			serviceType: extsvc.TypeGitLab,
 			serviceID:   "https://gitlab.com/",
 		}
-		authz.SetProviders(false, []authz.Provider{p})
-		t.Cleanup(func() {
-			authz.SetProviders(true, nil)
-		})
 
 		extAccount := extsvc.Account{
 			AccountSpec: extsvc.AccountSpec{
@@ -464,6 +457,9 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 		})
 
 		s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+		s.providerFactory = func(context.Context) []authz.Provider {
+			return []authz.Provider{p}
+		}
 
 		p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 			// DeadlineExceeded implements the Temporary interface
@@ -488,10 +484,6 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 			serviceType: extsvc.TypeGitLab,
 			serviceID:   "https://gitlab.com/",
 		}
-		authz.SetProviders(false, []authz.Provider{p})
-		t.Cleanup(func() {
-			authz.SetProviders(true, nil)
-		})
 
 		extAccount := extsvc.Account{
 			AccountSpec: extsvc.AccountSpec{
@@ -575,6 +567,9 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 		})
 
 		s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+		s.providerFactory = func(context.Context) []authz.Provider {
+			return []authz.Provider{p}
+		}
 
 		// Set up initial state with permissions entry including IP address
 
@@ -605,10 +600,6 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 			serviceType: extsvc.TypeGitLab,
 			serviceID:   "https://gitlab.com/",
 		}
-		authz.SetProviders(false, []authz.Provider{p})
-		t.Cleanup(func() {
-			authz.SetProviders(true, nil)
-		})
 
 		extAccount := extsvc.Account{
 			AccountSpec: extsvc.AccountSpec{
@@ -707,6 +698,9 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 		})
 
 		s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+		s.providerFactory = func(context.Context) []authz.Provider {
+			return []authz.Provider{p}
+		}
 
 		// Set up initial state with permissions entry including IP address
 
@@ -742,10 +736,6 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 		serviceType: extsvc.TypeGitLab,
 		serviceID:   "https://gitlab.com/",
 	}
-	authz.SetProviders(false, []authz.Provider{p})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 
 	extAccount := extsvc.Account{
 		AccountSpec: extsvc.AccountSpec{
@@ -801,6 +791,9 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 	})
 
 	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{p}
+	}
 
 	tests := []struct {
 		name     string
@@ -838,10 +831,6 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 		serviceType: extsvc.TypeGitHub,
 		serviceID:   "https://github.com/",
 	}
-	authz.SetProviders(false, []authz.Provider{p})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 
 	extAccount := extsvc.Account{
 		AccountSpec: extsvc.AccountSpec{
@@ -885,6 +874,9 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 
 	perms := dbmocks.NewMockPermsStore()
 	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{p}
+	}
 
 	t.Run("invalid token", func(t *testing.T) {
 		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
@@ -935,10 +927,6 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 		serviceType: extsvc.TypePerforce,
 		serviceID:   "ssl:111.222.333.444:1666",
 	}
-	authz.SetProviders(false, []authz.Provider{p})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 
 	extAccount := extsvc.Account{
 		AccountSpec: extsvc.AccountSpec{
@@ -993,6 +981,9 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	perms.SetUserExternalAccountPermsFunc.SetDefaultReturn(&database.SetPermissionsResult{}, nil)
 
 	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{p}
+	}
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
@@ -1012,10 +1003,6 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 		serviceType: extsvc.TypePerforce,
 		serviceID:   "ssl:111.222.333.444:1666",
 	}
-	authz.SetProviders(false, []authz.Provider{p})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 
 	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
@@ -1077,6 +1064,9 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	})
 
 	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{p}
+	}
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
@@ -1155,6 +1145,9 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 
 		perms := dbmocks.NewMockPermsStore()
 		s := newPermsSyncer(reposStore, perms)
+		s.providerFactory = func(context.Context) []authz.Provider {
+			return []authz.Provider{}
+		}
 
 		// error should be nil in this case
 		_, _, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
@@ -1183,10 +1176,6 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 				return nil, errors.New("not supposed to be called")
 			},
 		}
-		authz.SetProviders(false, []authz.Provider{p1, p2})
-		t.Cleanup(func() {
-			authz.SetProviders(true, nil)
-		})
 
 		mockRepos.ListFunc.SetDefaultReturn(
 			[]*types.Repo{
@@ -1218,6 +1207,9 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		})
 
 		s := newPermsSyncer(reposStore, perms)
+		s.providerFactory = func(context.Context) []authz.Provider {
+			return []authz.Provider{p1, p2}
+		}
 
 		_, _, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
@@ -1250,6 +1242,9 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		})
 
 		s := newPermsSyncer(reposStore, perms)
+		s.providerFactory = func(context.Context) []authz.Provider {
+			return []authz.Provider{}
+		}
 
 		_, _, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
@@ -1269,10 +1264,6 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			},
 		}
 
-		authz.SetProviders(false, []authz.Provider{p})
-		t.Cleanup(func() {
-			authz.SetProviders(true, nil)
-		})
 		mockRepos.GetFunc.SetDefaultReturn(
 			&types.Repo{
 				ID:      1,
@@ -1301,6 +1292,9 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		})
 
 		s := newPermsSyncer(reposStore, perms)
+		s.providerFactory = func(context.Context) []authz.Provider {
+			return []authz.Provider{p}
+		}
 
 		_, providerStates, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
@@ -1319,10 +1313,6 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		serviceType: extsvc.TypeGitLab,
 		serviceID:   "https://gitlab.com/",
 	}
-	authz.SetProviders(false, []authz.Provider{p})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
 
 	mockRepos.ListFunc.SetDefaultReturn(
 		[]*types.Repo{
@@ -1363,6 +1353,9 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	})
 
 	s := newPermsSyncer(reposStore, perms)
+	s.providerFactory = func(context.Context) []authz.Provider {
+		return []authz.Provider{p}
+	}
 
 	tests := []struct {
 		name     string

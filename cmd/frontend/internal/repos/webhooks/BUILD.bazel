@@ -39,9 +39,9 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//cmd/frontend/external/globals",
         "//cmd/frontend/webhooks",
         "//internal/api",
+        "//internal/conf",
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",

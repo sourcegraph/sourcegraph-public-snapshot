@@ -5,8 +5,5 @@ go_library(
     srcs = ["globals.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/globals",
     visibility = ["//visibility:public"],
-    deps = [
-        "//internal/conf",
-        "@com_github_inconshreveable_log15//:log15",
-    ],
+    deps = ["//internal/conf"],
 )

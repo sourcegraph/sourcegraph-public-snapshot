@@ -372,11 +372,12 @@ func (r *Resolver) fileChunkToResolver(ctx context.Context, chunk *codycontext.F
 	return graphqlbackend.NewFileChunkContextResolver(gitTreeEntryResolver, chunk.StartLine, endLine), nil
 }
 
-func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextArgs) (conf.CodyRerankerBackend, []int32, error) {
+func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextArgs) (conf.CodyRerankerBackend, []graphqlbackend.RankedItemResolver, error) {
 	if r.reranker == conf.CodyRerankerIdentity {
-		var used []int32
+		var used []graphqlbackend.RankedItemResolver
 		for i := range args.ContextItems {
-			used = append(used, int32(i))
+			// no information about relevance, so we just return 0.5 for all items
+			used = append(used, rankedItem{index: int32(i), score: 0.5})
 		}
 		return conf.CodyRerankerIdentity, used, nil
 	}
@@ -394,9 +395,9 @@ func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextAr
 		r.logger.Error("cohere reranking error", log.String("interactionId", args.InteractionID), log.String("query", args.Query), log.Error(err))
 		return conf.CodyRerankerCohere, nil, err
 	}
-	var used []int32
+	var used []graphqlbackend.RankedItemResolver
 	for _, r := range resp.Results {
-		used = append(used, int32(r.Index))
+		used = append(used, rankedItem{index: int32(r.Index), score: r.RelevanceScore})
 	}
 	return conf.CodyRerankerCohere, used, nil
 }
@@ -445,19 +446,19 @@ func countLines(content string, numRunes int) int {
 
 type rankContextResponse struct {
 	ranker  string
-	used    []int32
-	ignored []int32
+	used    []graphqlbackend.RankedItemResolver
+	ignored []graphqlbackend.RankedItemResolver
 }
 
 func (r rankContextResponse) Ranker() string {
 	return r.ranker
 }
 
-func (r rankContextResponse) Used() []int32 {
+func (r rankContextResponse) Used() []graphqlbackend.RankedItemResolver {
 	return r.used
 }
 
-func (r rankContextResponse) Ignored() []int32 {
+func (r rankContextResponse) Ignored() []graphqlbackend.RankedItemResolver {
 	return r.ignored
 }
 
@@ -500,3 +501,18 @@ func (r retrieverContextItem) Retriever() string {
 }
 
 var _ graphqlbackend.RetrieverContextItemResolver = retrieverContextItem{}
+
+type rankedItem struct {
+	index int32
+	score float64
+}
+
+func (r rankedItem) Index() int32 {
+	return r.index
+}
+
+func (r rankedItem) Score() float64 {
+	return r.score
+}
+
+var _ graphqlbackend.RankedItemResolver = rankedItem{}
