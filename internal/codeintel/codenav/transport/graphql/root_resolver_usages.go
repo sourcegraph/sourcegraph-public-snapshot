@@ -3,7 +3,11 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/puzpuzpuz/xsync/v3"
+
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -12,8 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type usageConnectionResolver struct {
@@ -31,37 +36,112 @@ func (u *usageConnectionResolver) PageInfo() resolverstubs.PageInfo {
 	return u.pageInfo
 }
 
-func NewPreciseUsageResolver(ctx context.Context, usage shared.UploadUsage, locResolver *gitresolvers.CachedLocationResolver) (resolverstubs.UsageResolver, error) {
-	kind := convertKind(usage.Kind)
-	repoID := api.RepoID(usage.Upload.RepositoryID)
-	res, err := locResolver.Path(ctx, repoID, usage.TargetCommit, usage.Path.RawValue(), false)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to resolve path in usage")
+// getContentsBatched will iterate using `next` to determine the contents
+// to be fetched from gitserver, and attempt to fetch each blob exactly once.
+//
+// The returned slice will be populated on a best-effort basis
+// even in the presence of errors.
+//
+// Post-conditions:
+//   - The returned slice will have exactly the same number of elements
+//     as the iterator represented by next.
+//   - If the contents were not found, such as due to a network error,
+//     then the corresponding element in the returned slice will be nil.
+func getContentsBatched(ctx context.Context, gitserverClient gitserver.Client, next func() core.Option[types.RepoCommitPath]) ([][]string, error) {
+	neededContents := map[types.RepoCommitPath][]int{}
+	type result struct {
+		splitContents []string
 	}
-	start := usage.TargetRange.Start.ToSCIPPosition()
-	// TODO(id: GRAPH-781): Optimize the code to:
-	// - Avoid refetching/re-splitting the contents repeatedly for the same file
-	// - Avoid line-splitting beyond the needed ranges.
-	// We don't want to make this computation _lazy_, as that would require making
-	// the GraphQL field optional (it is currently non-optional).
-	content, err := res.Content(ctx, &resolverstubs.GitTreeContentPageArgs{StartLine: &start.Line, EndLine: pointers.Ptr(start.Line + 1)})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch contents")
+	results := xsync.NewMapOf[types.RepoCommitPath, result]()
+	myPool := pool.New().WithMaxGoroutines(4).WithContext(ctx)
+	i := 0
+	for optRcp := next(); ; i++ {
+		rcp, ok := optRcp.Get()
+		if !ok {
+			break
+		}
+		if ints, ok := neededContents[rcp]; ok {
+			neededContents[rcp] = append(ints, i)
+		} else {
+			neededContents[rcp] = []int{i}
+			myPool.Go(func(ctx context.Context) error {
+				byteContents, err := gitresolvers.GetFullContents(ctx, gitserverClient,
+					api.RepoName(rcp.Repo), api.CommitID(rcp.Commit), core.NewRepoRelPathUnchecked(rcp.Path))
+				if err == nil {
+					results.Store(rcp, result{strings.Split(string(byteContents), "\n")})
+				}
+				return err
+			})
+		}
+		optRcp = next()
+	}
+	err := myPool.Wait()
+	out := make([][]string, i) // deliberate nil-initialization
+	results.Range(func(rcp types.RepoCommitPath, res result) bool {
+		idxs, ok := neededContents[rcp]
+		if !ok {
+			panic(fmt.Sprintf("broken invariant: neededContents missing %+v present in results", rcp))
+		}
+		for _, idx := range idxs {
+			out[idx] = res.splitContents
+		}
+		return true // continue iterating
+	})
+	return out, err
+}
+
+func NewPreciseUsageResolvers(ctx context.Context, gitserverClient gitserver.Client, usages []shared.UploadUsage) ([]resolverstubs.UsageResolver, error) {
+	iterIdx := 0
+	contents, err := getContentsBatched(ctx, gitserverClient, func() core.Option[types.RepoCommitPath] {
+		if iterIdx < len(usages) {
+			usage := &usages[iterIdx]
+			iterIdx++
+			return core.Some(types.RepoCommitPath{
+				Repo:   usage.Upload.RepositoryName,
+				Commit: usage.TargetCommit,
+				Path:   usage.Path.RawValue(),
+			})
+		}
+		return core.None[types.RepoCommitPath]()
+	})
+	if len(contents) != len(usages) {
+		panic(fmt.Sprintf("broken invariant: returned slice should have same length (got: %d) as input (want: %d)",
+			len(contents), len(usages)))
+	}
+	out := make([]resolverstubs.UsageResolver, 0, len(usages))
+	for i := 0; i < len(usages); i++ {
+		if contents[i] == nil {
+			continue
+		}
+		usage := &usages[i]
+		start := usage.TargetRange.Start.Line
+		if start < 0 {
+			err = errors.CombineErrors(err, errors.Newf("malformed usage: %+v", *usage))
+			continue
+		}
+		if len(contents[i]) <= start {
+			err = errors.CombineErrors(err, errors.Newf("start position of usage (%+v) is out-of-bounds (file line count: %d)",
+				*usage, len(contents[i])))
+			continue
+		}
+		kind := convertKind(usage.Kind)
+		content := contents[i][start]
+		out = append(out, &usageResolver{
+			symbol:             &symbolInformationResolver{name: usage.Symbol},
+			provenance:         codenav.ProvenancePrecise,
+			kind:               kind,
+			surroundingContent: content,
+			usageRange: &usageRangeResolver{
+				repoName: api.RepoName(usage.Upload.RepositoryName),
+				revision: api.CommitID(usage.TargetCommit),
+				path:     usage.Path,
+				range_:   usage.TargetRange.ToSCIPRange(),
+			},
+			dataSource: &usage.Upload.Indexer,
+		})
 	}
 
-	return &usageResolver{
-		symbol:             &symbolInformationResolver{name: usage.Symbol},
-		provenance:         codenav.ProvenancePrecise,
-		kind:               kind,
-		surroundingContent: content,
-		usageRange: &usageRangeResolver{
-			repoName: api.RepoName(usage.Upload.RepositoryName),
-			revision: api.CommitID(usage.TargetCommit),
-			path:     usage.Path,
-			range_:   usage.TargetRange.ToSCIPRange(),
-		},
-		dataSource: &usage.Upload.Indexer,
-	}, nil
+	return out, err
 }
 
 func convertKind(kind shared.UsageKind) resolverstubs.SymbolUsageKind {

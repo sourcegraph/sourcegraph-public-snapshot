@@ -300,6 +300,7 @@ require (
 	github.com/pkoukk/tiktoken-go v0.1.7
 	github.com/pkoukk/tiktoken-go-loader v0.0.2-0.20240522064338-c17e8bc0f699
 	github.com/prometheus/statsd_exporter v0.22.7
+	github.com/puzpuzpuz/xsync/v3 v3.4.0
 	github.com/redis/go-redis/extra/redisotel/v9 v9.0.5
 	github.com/redis/go-redis/v9 v9.5.3
 	github.com/robert-nix/ansihtml v1.0.1
