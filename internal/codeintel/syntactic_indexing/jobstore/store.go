@@ -170,6 +170,7 @@ SELECT
 	u.should_reindex,
 	u.enqueuer_user_id
 FROM syntactic_scip_indexing_jobs_with_repository_name u
+JOIN repo ON repo.id = u.repository_id AND repo.deleted_at IS NULL AND repo.blocked IS NULL
 WHERE u.id IN (%s) and %s
 ORDER BY u.id
 `

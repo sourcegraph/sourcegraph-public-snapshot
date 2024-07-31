@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/batches/search"
 	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
@@ -1439,7 +1440,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 		bt.CreateChangeset(t, ctx, s, opts9)
 		wantStats.Draft += 1
 
-		haveStats, err := s.GetRepoChangesetsStats(ctx, r.ID)
+		haveStats, err := s.GetRepoChangesetsStats(actor.WithInternalActor(ctx), r.ID)
 		if err != nil {
 			t.Fatal(err)
 		}

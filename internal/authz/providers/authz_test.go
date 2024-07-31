@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/providers/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -87,13 +86,12 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 	}
 
 	tests := []struct {
-		description                  string
-		cfg                          conf.Unified
-		gitlabConnections            []*schema.GitLabConnection
-		bitbucketServerConnections   []*schema.BitbucketServerConnection
-		expAuthzAllowAccessByDefault bool
-		expAuthzProviders            func(*testing.T, []authz.Provider)
-		expSeriousProblems           []string
+		description                string
+		cfg                        conf.Unified
+		gitlabConnections          []*schema.GitLabConnection
+		bitbucketServerConnections []*schema.BitbucketServerConnection
+		expAuthzProviders          func(*testing.T, []authz.Provider)
+		expSeriousProblems         []string
 	}{
 		{
 			description: "1 GitLab connection with authz enabled, 1 GitLab matching auth provider",
@@ -119,7 +117,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 					Token: "asdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
@@ -155,8 +152,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 					Token: "asdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) exists for https://gitlab.mine."},
+			expSeriousProblems: []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) exists for https://gitlab.mine."},
 		},
 		{
 			description: "1 GitLab connection with authz enabled, no GitLab auth provider",
@@ -176,8 +172,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 					Token: "asdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) exists for https://gitlab.mine."},
+			expSeriousProblems: []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) exists for https://gitlab.mine."},
 		},
 		{
 			description: "Two GitLab connections with authz enabled, two matching GitLab auth providers",
@@ -220,7 +215,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 					Token: "asdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
@@ -262,52 +256,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 					Token:         "asdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders:            nil,
-		},
-		{
-			description: "external auth provider",
-			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthProviders: []schema.AuthProviders{{
-						Saml: &schema.SAMLAuthProvider{
-							ConfigID: "okta",
-							Type:     "saml",
-						},
-					}},
-				},
-			},
-			gitlabConnections: []*schema.GitLabConnection{
-				{
-					Authorization: &schema.GitLabAuthorization{
-						IdentityProvider: schema.IdentityProvider{External: &schema.ExternalIdentity{
-							Type:             "external",
-							AuthProviderID:   "okta",
-							AuthProviderType: "saml",
-							GitlabProvider:   "my-external",
-						}},
-					},
-					Url:   "https://gitlab.mine",
-					Token: "asdf",
-				},
-			},
-			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders: providersEqual(
-				gitlabAuthzProviderParams{
-					SudoOp: gitlab.SudoProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						AuthnConfigID: providers.ConfigID{
-							Type: "saml",
-							ID:   "okta",
-						},
-						GitLabProvider:              "my-external",
-						SudoToken:                   "asdf",
-						UseNativeUsername:           false,
-						SyncInternalRepoPermissions: true,
-					},
-				},
-			),
+			expAuthzProviders: nil,
 		},
 		{
 			description: "exact username matching",
@@ -325,14 +274,12 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 					Token: "asdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					SudoOp: gitlab.SudoProviderOp{
 						URN:                         "extsvc:gitlab:0",
 						BaseURL:                     mustURLParse(t, "https://gitlab.mine"),
 						SudoToken:                   "asdf",
-						UseNativeUsername:           true,
 						SyncInternalRepoPermissions: true,
 					},
 				},
@@ -348,8 +295,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 					Token:         "secret-token",
 				},
 			},
-			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders:            providersEqual(),
+			expAuthzProviders: providersEqual(),
 		},
 		{
 			description: "Bitbucket Server Oauth config error",
@@ -372,8 +318,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 					Token:    "secret-token",
 				},
 			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"authorization.oauth.signingKey: illegal base64 data at input byte 7"},
+			expSeriousProblems: []string{"authorization.oauth.signingKey: illegal base64 data at input byte 7"},
 		},
 		{
 			description: "Bitbucket Server exact username matching",
@@ -396,7 +341,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 					Token:    "secret-token",
 				},
 			},
-			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: func(t *testing.T, have []authz.Provider) {
 				if len(have) == 0 {
 					t.Fatalf("no providers")
@@ -437,7 +381,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 					Token: "asdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
@@ -487,12 +430,11 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				}
 				return svcs, nil
 			})
-			allowAccessByDefault, authzProviders, seriousProblems, _, _ := ProvidersFromConfig(
+			authzProviders, seriousProblems, _, _ := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
 				db,
 			)
-			assert.Equal(t, test.expAuthzAllowAccessByDefault, allowAccessByDefault)
 			if test.expAuthzProviders != nil {
 				test.expAuthzProviders(t, authzProviders)
 			}
@@ -733,7 +675,7 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 				return svcs, nil
 			})
 
-			_, _, seriousProblems, _, invalidConnections := ProvidersFromConfig(
+			_, seriousProblems, _, invalidConnections := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
 				db,
@@ -757,90 +699,6 @@ func mustURLParse(t *testing.T, u string) *url.URL {
 		t.Fatal(err)
 	}
 	return parsed
-}
-
-type mockProvider struct {
-	codeHost *extsvc.CodeHost
-	extAcct  *extsvc.Account
-}
-
-func (p *mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (mine *extsvc.Account, err error) {
-	return p.extAcct, nil
-}
-
-func (p *mockProvider) ServiceType() string { return p.codeHost.ServiceType }
-func (p *mockProvider) ServiceID() string   { return p.codeHost.ServiceID }
-func (p *mockProvider) URN() string         { return extsvc.URN(p.codeHost.ServiceType, 0) }
-
-func (p *mockProvider) ValidateConnection(context.Context) error { return nil }
-
-func (p *mockProvider) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return nil, nil
-}
-
-func (p *mockProvider) FetchUserPermsByToken(context.Context, string, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return nil, nil
-}
-
-func (p *mockProvider) FetchRepoPerms(context.Context, *extsvc.Repository, authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
-	return nil, nil
-}
-
-func mockExplicitPermissions(enabled bool) func() {
-	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			PermissionsUserMapping: &schema.PermissionsUserMapping{
-				Enabled: enabled,
-				BindID:  "email",
-			},
-		},
-	})
-	return func() { conf.Mock(nil) }
-}
-
-func TestPermissionSyncingDisabled(t *testing.T) {
-	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
-	cleanupLicense := licensing.MockCheckFeatureError("")
-
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-		cleanupLicense()
-	})
-
-	t.Run("no authz providers", func(t *testing.T) {
-		authz.SetProviders(true, nil)
-		t.Cleanup(func() {
-			authz.SetProviders(true, []authz.Provider{&mockProvider{}})
-		})
-
-		assert.True(t, PermissionSyncingDisabled(&conf.Unified{}))
-	})
-
-	t.Run("permissions user mapping enabled", func(t *testing.T) {
-		cleanup := mockExplicitPermissions(true)
-		t.Cleanup(func() {
-			cleanup()
-			conf.Mock(nil)
-		})
-
-		assert.False(t, PermissionSyncingDisabled(&conf.Unified{}))
-	})
-
-	t.Run("license does not have acls feature", func(t *testing.T) {
-		licensing.MockCheckFeatureError("failed")
-		t.Cleanup(func() {
-			licensing.MockCheckFeatureError("")
-		})
-		assert.True(t, PermissionSyncingDisabled(&conf.Unified{}))
-	})
-
-	t.Run("Auto code host syncs disabled", func(t *testing.T) {
-		assert.True(t, PermissionSyncingDisabled(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{DisableAutoCodeHostSyncs: true}}))
-	})
-
-	t.Run("Auto code host syncs enabled", func(t *testing.T) {
-		assert.False(t, PermissionSyncingDisabled(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{DisableAutoCodeHostSyncs: false}}))
-	})
 }
 
 func TestValidateExternalServiceConfig(t *testing.T) {
@@ -1816,76 +1674,6 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 				{Gitlab: &schema.GitLabAuthProvider{Url: "https://gitlab.foo.bar"}},
 			},
 			assert: excludes("Did not find authentication provider matching \"https://gitlab.foo.bar\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) exists for https://gitlab.foo.bar."),
-		},
-		{
-			kind: extsvc.KindGitLab,
-			desc: "missing external provider",
-			config: `
-			{
-				"url": "https://gitlab.foo.bar",
-				"authorization": {
-					"identityProvider": {
-						"type": "external",
-						"authProviderID": "foo",
-						"authProviderType": "bar",
-						"gitlabProvider": "baz"
-					}
-				}
-			}
-			`,
-			assert: includes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) matches the type and configID."),
-		},
-		{
-			kind: extsvc.KindGitLab,
-			desc: "valid external provider with SAML",
-			config: `
-			{
-				"url": "https://gitlab.foo.bar",
-				"authorization": {
-					"identityProvider": {
-						"type": "external",
-						"authProviderID": "foo",
-						"authProviderType": "bar",
-						"gitlabProvider": "baz"
-					}
-				}
-			}
-			`,
-			ps: []schema.AuthProviders{
-				{
-					Saml: &schema.SAMLAuthProvider{
-						ConfigID: "foo",
-						Type:     "bar",
-					},
-				},
-			},
-			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) matches the type and configID."),
-		},
-		{
-			kind: extsvc.KindGitLab,
-			desc: "valid external provider with OIDC",
-			config: `
-			{
-				"url": "https://gitlab.foo.bar",
-				"authorization": {
-					"identityProvider": {
-						"type": "external",
-						"authProviderID": "foo",
-						"authProviderType": "bar",
-						"gitlabProvider": "baz"
-					}
-				}
-			}
-			`,
-			ps: []schema.AuthProviders{
-				{
-					Openidconnect: &schema.OpenIDConnectAuthProvider{
-						ConfigID: "foo",
-						Type:     "bar",
-					},
-				},
-			},
-			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) matches the type and configID."),
 		},
 		{
 			kind: extsvc.KindGitLab,

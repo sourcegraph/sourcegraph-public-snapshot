@@ -11,8 +11,8 @@ import (
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -128,7 +128,7 @@ func (p *Provider) oauth2Config() *oauth2.Config {
 		// It would be nice if this was "/.auth/openidconnect/callback" not "/.auth/callback", but
 		// many instances have the "/.auth/callback" value hardcoded in their external auth
 		// provider, so we can't change it easily
-		RedirectURL: globals.ExternalURL().
+		RedirectURL: conf.ExternalURLParsed().
 			ResolveReference(&url.URL{Path: p.callbackUrl}).
 			String(),
 
