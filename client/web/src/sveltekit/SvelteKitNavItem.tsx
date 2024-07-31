@@ -23,7 +23,6 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
     const handleClickOutside = useCallback(
         (event: MouseEvent) => {
             if (departureRef.current && !departureRef.current.contains(event.target as Node)) {
-                console.log('dismissing', event)
                 setDepartureDismissed(true)
             }
         },
