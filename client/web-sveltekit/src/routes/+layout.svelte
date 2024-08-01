@@ -111,7 +111,10 @@
     <slot />
 </main>
 
-<WelcomeOverlay show={!$welcomeOverlayDismissed ?? false} handleDismiss={handleDismissWelcomeOverlay} />
+<WelcomeOverlay
+    show={(process.env.PW_TEST === 'true' && !$welcomeOverlayDismissed) ?? false}
+    handleDismiss={handleDismissWelcomeOverlay}
+/>
 
 <FuzzyFinderContainer />
 
