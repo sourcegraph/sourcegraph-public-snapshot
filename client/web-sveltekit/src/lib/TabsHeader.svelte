@@ -62,8 +62,6 @@
 
 <style lang="scss">
     .tabs-header {
-        --icon-color: var(--icon-color);
-
         display: flex;
         align-items: stretch;
         justify-content: var(--tabs-header-align, flex-start);
