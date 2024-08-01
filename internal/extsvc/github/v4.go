@@ -207,7 +207,12 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 	// requests may expect errors but have useful responses (e.g., querying a list of repositories,
 	// some of which you expect to 404).
 	if len(respBody.Errors) > 0 {
-		err = respBody.Errors
+		var errorMessages []string
+		for _, e := range respBody.Errors {
+			path := strings.Join(convertToStringSlice(e.Path), ".")
+			errorMessages = append(errorMessages, fmt.Sprintf("Message: %s, Type: %s, Path: %s", e.Message, e.Type, path))
+		}
+		err = errors.New(strings.Join(errorMessages, "; "))
 	}
 	if result != nil && respBody.Data != nil {
 		if err0 := unmarshal(respBody.Data, result); err0 != nil && err == nil {
@@ -215,6 +220,23 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 		}
 	}
 	return err
+}
+
+func convertToStringSlice(path []interface{}) []string {
+	result := make([]string, len(path))
+	for i, v := range path {
+		switch val := v.(type) {
+		case string:
+			result[i] = val
+		case int:
+			result[i] = strconv.Itoa(val)
+		case float64:
+			result[i] = strconv.FormatFloat(val, 'f', -1, 64)
+		default:
+			result[i] = fmt.Sprintf("%v", val)
+		}
+	}
+	return result
 }
 
 // estimateGraphQLCost estimates the cost of the query as described here:
