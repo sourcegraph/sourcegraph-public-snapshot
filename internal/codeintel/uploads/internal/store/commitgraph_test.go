@@ -198,7 +198,7 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 		makeCommit(2):  {1},
 		makeCommit(3):  {2},
 		makeCommit(4):  {2},
-		makeCommit(5):  {2},
+		makeCommit(5):  {4},
 		makeCommit(6):  {3},
 		makeCommit(7):  {3},
 		makeCommit(8):  {4},
@@ -218,7 +218,7 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff([]int{2, 3, 5}, getProtectedUploads(t, db, 50)); diff != "" {
+	if diff := cmp.Diff([]int{2, 3, 4, 5}, getProtectedUploads(t, db, 50)); diff != "" {
 		t.Errorf("unexpected protected uploads (-want +got):\n%s", diff)
 	}
 }
@@ -722,10 +722,10 @@ func TestFindClosestCompletedUploads(t *testing.T) {
 		api.CommitID(makeCommit(2)): {{UploadID: 1, Distance: 1}},
 		api.CommitID(makeCommit(3)): {{UploadID: 2, Distance: 0}},
 		api.CommitID(makeCommit(4)): {{UploadID: 2, Distance: 1}},
-		api.CommitID(makeCommit(5)): {{UploadID: 1, Distance: 2}},
-		api.CommitID(makeCommit(6)): {{UploadID: 1, Distance: 3}},
+		api.CommitID(makeCommit(5)): {{UploadID: 2, Distance: 2}},
+		api.CommitID(makeCommit(6)): {{UploadID: 2, Distance: 3}},
 		api.CommitID(makeCommit(7)): {{UploadID: 3, Distance: 0}},
-		api.CommitID(makeCommit(8)): {{UploadID: 1, Distance: 4}},
+		api.CommitID(makeCommit(8)): {{UploadID: 2, Distance: 4}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -745,7 +745,7 @@ func TestFindClosestCompletedUploads(t *testing.T) {
 		{commit: makeCommit(2), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1}},
 		{commit: makeCommit(3), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{2}},
 		{commit: makeCommit(4), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{2}},
-		{commit: makeCommit(6), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1}},
+		{commit: makeCommit(6), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{2}},
 		{commit: makeCommit(7), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{3}},
 		{commit: makeCommit(5), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1, 2, 3}},
 		{commit: makeCommit(8), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1, 2}},
@@ -1199,6 +1199,62 @@ func TestFindClosestCompletedUploadsFromGraphFragment(t *testing.T) {
 	})
 }
 
+func TestFindClosetCompletedUploadsSCIPShadowsLSIF(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(t))
+	store := New(observation.TestContextTB(t), db)
+
+	// This database has the following commit graph:
+	//
+	//          lsif-zzz <- this one shouldn't be shadowed by scip-lol
+	//          v
+	// [1] --- [2] --- [3] --- 4
+	//  ^ lsif-lol      ^ scip-lol <- this upload should shadow the one from lsif-lol
+
+	uploads := []shared.Upload{
+		{ID: 1, Commit: makeCommit(1), Indexer: "lsif-lol", Root: ""},
+		{ID: 2, Commit: makeCommit(2), Indexer: "lsif-zzz", Root: ""},
+		{ID: 3, Commit: makeCommit(3), Indexer: "scip-lol", Root: ""},
+	}
+	insertUploads(t, db, uploads...)
+
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
+	})
+
+	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
+
+	expectedVisibleUploads := map[api.CommitID][]commitgraph.UploadMeta{
+		api.CommitID(makeCommit(1)): {{UploadID: 1, Distance: 0}},
+		api.CommitID(makeCommit(2)): {{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 0}},
+		api.CommitID(makeCommit(3)): {{UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 0}},
+	}
+
+	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
+		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	}
+	expectedLinks := map[api.CommitID]commitgraph.LinkRelationship{
+		api.CommitID(makeCommit(4)): {Commit: api.CommitID(makeCommit(4)), AncestorCommit: api.CommitID(makeCommit(3)), Distance: 1},
+	}
+	if diff := cmp.Diff(expectedLinks, links); diff != "" {
+		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
+	}
+
+	insertNearestUploads(t, db, 50, visibleUploads)
+	insertLinks(t, db, 50, links)
+
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
+		{commit: makeCommit(1), file: "placeholder", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{1}},
+		{commit: makeCommit(2), file: "placeholder", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{1, 2}},
+		// Upload 3 is shadowing upload 1 for both of these commits.
+		{commit: makeCommit(3), file: "placeholder", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{3, 2}},
+		{commit: makeCommit(4), file: "placeholder", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{3, 2}},
+	})
+}
+
 func TestGetRepositoriesMaxStaleAge(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
@@ -1409,7 +1465,12 @@ func deleteRepo(t testing.TB, db database.DB, id int, deleted_at time.Time) {
 func toCommitGraphView(uploads []shared.Upload) *commitgraph.CommitGraphView {
 	commitGraphView := commitgraph.NewCommitGraphView()
 	for _, upload := range uploads {
-		commitGraphView.Add(commitgraph.UploadMeta{UploadID: upload.ID}, api.CommitID(upload.Commit), fmt.Sprintf("%s:%s", upload.Root, upload.Indexer))
+		// See NOTE(id: scip-over-lsif)
+		indexerSuffix := upload.Indexer
+		if strings.HasPrefix(upload.Indexer, "scip-") || strings.HasPrefix(upload.Indexer, "lsif-") {
+			indexerSuffix = upload.Indexer[5:]
+		}
+		commitGraphView.Add(commitgraph.UploadMeta{UploadID: upload.ID}, api.CommitID(upload.Commit), fmt.Sprintf("%s:%s", upload.Root, indexerSuffix))
 	}
 
 	return commitGraphView

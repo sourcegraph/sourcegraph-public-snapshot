@@ -277,7 +277,9 @@ func adjustVisibleUploads(ancestorVisibleUploads map[string]UploadMeta, ancestor
 }
 
 // replaces returns true if upload1 has a smaller distance than upload2.
-// Ties are broken by the minimum upload identifier to remain determinstic.
+//
+// NOTE(id: upload-tie-breaking): Ties are broken by the maximum upload
+// identifier to remain determinstic, and to prefer newer uploads over older ones.
 func replaces(upload1, upload2 UploadMeta) bool {
-	return upload1.Distance < upload2.Distance || (upload1.Distance == upload2.Distance && upload1.UploadID < upload2.UploadID)
+	return upload1.Distance < upload2.Distance || (upload1.Distance == upload2.Distance && upload1.UploadID > upload2.UploadID)
 }

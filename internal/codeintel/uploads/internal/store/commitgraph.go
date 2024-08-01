@@ -382,12 +382,16 @@ func (s *store) FindClosestCompletedUploadsFromGraphFragment(ctx context.Context
 	return uploads, nil
 }
 
-const findClosestCompletedUploadsFromGraphFragmentCommitGraphQuery = `
+const findClosestCompletedUploadsFromGraphFragmentCommitGraphQuery =
+/*language=SQL*/ `
 WITH cte_nearest_uploads AS (%s)
 SELECT
 	cte_nu.upload_id,
 	encode(cte_nu.commit_bytea, 'hex'),
-	md5(u.root || ':' || u.indexer) as token,
+	md5(u.root || ':' || (CASE -- See NOTE(id: scip-over-lsif)
+							WHEN u.indexer LIKE 'scip-%%' OR u.indexer LIKE 'lsif-%%' THEN substr(u.indexer, 6)
+							ELSE u.indexer
+						  END)) as token,
 	cte_nu.distance
 FROM cte_nearest_uploads cte_nu
 JOIN lsif_uploads u ON u.id = cte_nu.upload_id
