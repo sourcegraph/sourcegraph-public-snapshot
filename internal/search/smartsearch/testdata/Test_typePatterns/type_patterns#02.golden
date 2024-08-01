@@ -1,4 +1,0 @@
-{
-  "Input": "context:global code or monitor commit",
-  "Query": "context:global type:commit (code OR monitor)"
-}

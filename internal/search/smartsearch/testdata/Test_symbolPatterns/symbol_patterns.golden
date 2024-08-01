@@ -1,4 +1,0 @@
-{
-  "Input": "context:global function",
-  "Query": "context:global select:symbol.function type:symbol"
-}
