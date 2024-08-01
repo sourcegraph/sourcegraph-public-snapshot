@@ -277,6 +277,7 @@
                             <CodySidebar
                                 repository={data.resolvedRevision.repo}
                                 filePath={data.filePath}
+                                lineOrPosition={data.lineOrPosition}
                                 on:close={() => ($rightSidePanelOpen = false)}
                             />
                         </Panel>
