@@ -227,7 +227,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     Site admin
                                 </MenuLink>
                             )}
-                            {authenticatedUser.siteAdmin && window.context.applianceMenuTarget != '' && (
+                            {authenticatedUser.siteAdmin && window.context.applianceMenuTarget !== '' && (
                                 <MenuLink as={Link} to={window.context.applianceMenuTarget}>
                                     Appliance
                                 </MenuLink>
