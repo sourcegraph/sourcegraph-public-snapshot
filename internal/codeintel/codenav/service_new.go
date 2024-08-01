@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (s *Service) GetDefinitions(
@@ -638,7 +639,10 @@ func (s *Service) PreciseUsages(ctx context.Context, requestState RequestState, 
 			nextUsages, nextPreciseCursor, err = s.GetPrototypes(ctx, requestArgs, requestState, currentCursor.PreciseCursor)
 		case CursorTypeReferences:
 			nextUsages, nextPreciseCursor, err = s.GetReferences(ctx, requestArgs, requestState, currentCursor.PreciseCursor)
+		default:
+			return nil, noCursor, errors.New("Non-precise cursor type in PreciseUsages")
 		}
+
 		if err != nil {
 			return nil, noCursor, err
 		}
@@ -681,6 +685,8 @@ func (s *Service) PreciseUsages(ctx context.Context, requestState RequestState, 
 				}
 			case CursorTypeReferences:
 				return returnUsages, noCursor, nil
+			default:
+				return nil, noCursor, errors.New("Non-precise cursor type in PreciseUsages")
 			}
 		}
 	}

@@ -393,7 +393,7 @@ const (
 type UsagesCursor struct {
 	CursorType      CursorType      `json:"ty"`
 	PreciseCursor   PreciseCursor   `json:"pc"`
-	SyntacticCursor SyntacticCursor `json:"sc"`
+	SyntacticCursor SyntacticCursor `json:"sc"` // TODO(GRAPH-696)
 }
 
 func (c UsagesCursor) Encode() string {
