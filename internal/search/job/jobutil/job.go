@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	"github.com/sourcegraph/sourcegraph/internal/search/smartsearch"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
@@ -46,13 +45,6 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 	jobTree := NewOrJob(children...)
 	newJob := func(b query.Basic) (job.Job, error) {
 		return NewBasicJob(inputs, b)
-	}
-
-	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky {
-		if inputs.PatternType == query.SearchTypeCodyContext || inputs.PatternType == query.SearchTypeKeyword {
-			return nil, errors.Newf("The '%s' patterntype is not compatible with Smart Search", inputs.PatternType)
-		}
-		jobTree = smartsearch.NewSmartSearchJob(jobTree, newJob, plan)
 	}
 
 	if inputs.PatternType == query.SearchTypeCodyContext {

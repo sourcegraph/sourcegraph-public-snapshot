@@ -824,7 +824,7 @@ func (s *Service) getVisibleUpload(ctx context.Context, sourceMatcher shared.Mat
 		if sym, sourceRange, ok := sourceMatcher.SymbolBased(); ok {
 			optTargetRange, err := r.GitTreeTranslator.TranslateRange(ctx, r.Commit, api.CommitID(upload.Commit), targetPath, sourceRange)
 			targetRange, ok := optTargetRange.Get()
-			return shared.NewSCIPBasedMatcher(targetRange, sym), ok, err
+			return shared.NewSCIPBasedMatcher(targetRange, sym.UnwrapOr("")), ok, err
 		} else if sourcePos, ok := sourceMatcher.PositionBased(); ok {
 			optTargetPos, err := r.GitTreeTranslator.TranslatePosition(ctx, r.Commit, api.CommitID(upload.Commit), targetPath, sourcePos)
 			targetPos, ok := optTargetPos.Get()

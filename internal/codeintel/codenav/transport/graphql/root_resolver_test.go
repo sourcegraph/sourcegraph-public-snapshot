@@ -122,7 +122,7 @@ func TestReferences(t *testing.T) {
 	)
 
 	offset := int32(25)
-	mockRefCursor := codenav.Cursor{Phase: "local"}
+	mockRefCursor := codenav.PreciseCursor{Phase: "local"}
 	encodedCursor := mockRefCursor.Encode()
 	mockCursor := base64.StdEncoding.EncodeToString([]byte(encodedCursor))
 

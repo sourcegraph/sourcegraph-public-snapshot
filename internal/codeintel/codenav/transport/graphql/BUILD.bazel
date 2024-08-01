@@ -47,7 +47,7 @@ go_library(
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_life4_genesis//slices",
-        "@com_github_sourcegraph_go_lsp//:go-lsp",
+        "@com_github_sourcegraph_conc//iter",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_scip//bindings/go/scip",
         "@com_github_wk8_go_ordered_map_v2//:go-ordered-map",

@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	workerjob "github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -44,7 +44,7 @@ type searchJob struct {
 	workers []goroutine.BackgroundRoutine
 }
 
-func NewSearchJob() job.Job {
+func NewSearchJob() workerjob.Job {
 	return &searchJob{
 		config: config{
 			WorkerInterval: 1 * time.Second,
@@ -103,6 +103,8 @@ func (j *searchJob) newSearchJobRoutines(
 		repoWorkerStore := store.NewRepoSearchJobWorkerStore(observationCtx, db.Handle())
 		revWorkerStore := store.NewRevSearchJobWorkerStore(observationCtx, db.Handle())
 
+		svc := service.New(observationCtx, exhaustiveSearchStore, uploadStore, newSearcher)
+
 		j.workerStores = append(j.workerStores,
 			searchWorkerStore,
 			repoWorkerStore,
@@ -123,6 +125,8 @@ func (j *searchJob) newSearchJobRoutines(
 			newExhaustiveSearchWorkerResetter(observationCtx, searchWorkerStore),
 			newExhaustiveSearchRepoWorkerResetter(observationCtx, repoWorkerStore),
 			newExhaustiveSearchRepoRevisionWorkerResetter(observationCtx, revWorkerStore),
+
+			newJanitorJob(observationCtx, db, svc),
 		}
 	})
 

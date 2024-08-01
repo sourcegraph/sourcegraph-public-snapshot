@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
-
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -27,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -81,15 +81,15 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 	ctx, _, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	reqState, err := r.makeRequestState(ctx, args.Repo, opts)
-	if err != nil || reqState == nil {
+	optReqState, err := r.makeRequestState(ctx, args.Repo, opts)
+	reqState, ok := optReqState.Get()
+	if err != nil || !ok {
 		return
 	}
-
 	return newGitBlobLSIFDataResolver(
 		r.svc,
 		r.indexResolverFactory,
-		*reqState,
+		reqState,
 		r.uploadLoaderFactory.Create(),
 		r.autoIndexJobLoaderFactory.Create(),
 		r.locationResolverFactory.Create(),
@@ -97,12 +97,12 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 	), nil
 }
 
-func (r *rootResolver) makeRequestState(ctx context.Context, repo *types.Repo, opts shared.UploadMatchingOptions) (*codenav.RequestState, error) {
+// makeRequestState returns (None, nil) if no uploads exist for the blob
+func (r *rootResolver) makeRequestState(ctx context.Context, repo *types.Repo, opts shared.UploadMatchingOptions) (core.Option[codenav.RequestState], error) {
 	uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, opts)
 	if err != nil || len(uploads) == 0 {
-		return nil, err
+		return core.None[codenav.RequestState](), err
 	}
-
 	reqState := codenav.NewRequestState(
 		uploads,
 		r.repoStore,
@@ -113,7 +113,7 @@ func (r *rootResolver) makeRequestState(ctx context.Context, repo *types.Repo, o
 		opts.Path,
 		r.maximumIndexesPerMonikerSearch,
 	)
-	return &reqState, nil
+	return core.Some(reqState), nil
 }
 
 func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.CodeGraphDataOpts) (_ *[]resolverstubs.CodeGraphDataResolver, err error) {
@@ -225,35 +225,80 @@ func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.Co
 }
 
 func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err error) {
-	ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{Attrs: unresolvedArgs.Attrs()})
-
-	if !conf.SCIPBasedAPIsEnabled() {
-		return nil, ErrNotEnabled
-	}
+	ctx, trace, endObservation := r.operations.usagesForSymbol.With(ctx, &err, observation.Args{Attrs: unresolvedArgs.Attrs()})
 
 	numPreciseResults := 0
 	numSyntacticResults := 0
 	numSearchBasedResults := 0
 	defer func() {
-		endObservation.OnCancel(ctx, 1, observation.Args{Attrs: []attribute.KeyValue{
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
 			attribute.Int("results.precise", numPreciseResults),
 			attribute.Int("results.syntactic", numSyntacticResults),
 			attribute.Int("results.searchBased", numSearchBasedResults),
 		}})
 	}()
 
+	if !conf.SCIPBasedAPIsEnabled() {
+		return nil, ErrNotEnabled
+	}
+
 	const maxUsagesCount = 100
 	args, err := unresolvedArgs.Resolve(ctx, r.repoStore, r.gitserverClient, maxUsagesCount)
 	if err != nil {
 		return nil, err
 	}
+
+	trace = trace.WithFields(
+		log.Int("repo.id", int(args.Repo.ID)),
+		log.String("repo.name", string(args.Repo.Name)),
+		log.String("commitID", string(args.CommitID)),
+		log.String("path", args.Path.RawValue()),
+		log.String("range", args.Range.String()))
+
 	remainingCount := int(args.RemainingCount)
 	provsForSCIPData := args.Symbol.ProvenancesForSCIPData()
 	usageResolvers := []resolverstubs.UsageResolver{}
 
+	nextCursor := core.None[codenav.UsagesCursor]()
 	if provsForSCIPData.Precise {
-		// Attempt to get up to remainingCount precise results.
-		remainingCount = remainingCount - numPreciseResults
+		func() {
+			optRequestState, err := r.makeRequestState(ctx, &args.Repo, shared.UploadMatchingOptions{
+				RepositoryID:       args.Repo.ID,
+				Commit:             args.CommitID,
+				Path:               args.Path,
+				RootToPathMatching: shared.RootMustEnclosePath,
+				Indexer:            "", // any precise indexer is OK
+			})
+			if err != nil {
+				trace.Error("failed to construct request state", log.Error(err))
+				return
+			}
+			requestState, ok := optRequestState.Get()
+			if !ok {
+				if args.Symbol != nil && args.Symbol.EqualsProvenance == codenav.ProvenancePrecise {
+					trace.Warn("expected precise matches for symbol but didn't find any matching uploads",
+						log.String("symbol", args.Symbol.EqualsName))
+				}
+				return
+			}
+			preciseUsages, nextPreciseCursor, err := r.svc.PreciseUsages(ctx, requestState, args)
+			if err != nil {
+				trace.Error("CodeNavService.PreciseUsages", log.Error(err))
+				return
+			}
+			if len(preciseUsages) > remainingCount {
+				trace.Warn("number of precise usages exceeded limit", log.Int("limit", remainingCount), log.Int("numPreciseUsages", len(preciseUsages)))
+			}
+			preciseUsageResolvers, err := NewPreciseUsageResolvers(ctx, r.gitserverClient, preciseUsages)
+			numPreciseResults = len(preciseUsageResolvers)
+			if err != nil {
+				trace.Warn("errors when constructing precise resolvers", log.Error(err))
+			}
+			trace.AddEvent("PreciseUsages", attribute.Int("count", numPreciseResults))
+			usageResolvers = append(usageResolvers, preciseUsageResolvers...)
+			remainingCount -= min(remainingCount, numPreciseResults)
+			nextCursor = nextPreciseCursor // write to captured value
+		}()
 	}
 
 	usagesForSymbolArgs := codenav.UsagesForSymbolArgs{
@@ -281,7 +326,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 		} else {
 			for _, result := range syntacticResult.Matches {
-				usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo, args.CommitID))
+				usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo.Name, args.CommitID))
 			}
 			numSyntacticResults = len(syntacticResult.Matches)
 			remainingCount = remainingCount - numSyntacticResults
@@ -301,19 +346,24 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 		} else {
 			for _, result := range results {
-				usageResolvers = append(usageResolvers, NewSearchBasedUsageResolver(result, args.Repo, args.CommitID))
+				usageResolvers = append(usageResolvers, NewSearchBasedUsageResolver(result, args.Repo.Name, args.CommitID))
 			}
 		}
 	}
 
-	if len(usageResolvers) != 0 {
-		return &usageConnectionResolver{
-			nodes:    usageResolvers,
-			pageInfo: resolverstubs.NewSimplePageInfo(false),
-		}, nil
+	pageInfo := resolverstubs.NewSimplePageInfo(false)
+	if nextCursorVal, ok := nextCursor.Get(); ok {
+		if len(usageResolvers) > 0 {
+			pageInfo = resolverstubs.NewPageInfoFromCursor(nextCursorVal.Encode())
+		} else {
+			trace.Error("cursor should be None if no usageResolvers were found",
+				log.String("UsagesCursor", nextCursorVal.Encode()))
+		}
 	}
-
-	return nil, errors.New("Not implemented yet")
+	return &usageConnectionResolver{
+		nodes:    usageResolvers,
+		pageInfo: pageInfo,
+	}, nil
 }
 
 func (r *rootResolver) MakeGitTreeTranslator(repo *sgtypes.Repo) codenav.GitTreeTranslator {

@@ -15,6 +15,8 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -109,7 +111,6 @@ func Test_licenseChecker(t *testing.T) {
 	}
 
 	siteID := "some-site-id"
-	token := "test-token"
 
 	skipTests := map[string]struct {
 		license *license.Info
@@ -145,9 +146,14 @@ func Test_licenseChecker(t *testing.T) {
 				status:   '1',
 				response: []byte(``),
 			}
+			mockDB := dbmocks.NewMockDB()
+			gs := dbmocks.NewMockGlobalStateStore()
+			mockDB.GlobalStateFunc.SetDefaultReturn(gs)
+			gs.GetFunc.SetDefaultReturn(database.GlobalState{
+				SiteID: siteID,
+			}, nil)
 			handler := licenseChecker{
-				siteID: siteID,
-				token:  token,
+				db:     mockDB,
 				doer:   doer,
 				logger: logtest.NoOp(t),
 				kv:     kv,
@@ -225,9 +231,14 @@ func Test_licenseChecker(t *testing.T) {
 				status:   test.status,
 				response: test.response,
 			}
+			mockDB := dbmocks.NewMockDB()
+			gs := dbmocks.NewMockGlobalStateStore()
+			mockDB.GlobalStateFunc.SetDefaultReturn(gs)
+			gs.GetFunc.SetDefaultReturn(database.GlobalState{
+				SiteID: siteID,
+			}, nil)
 			checker := licenseChecker{
-				siteID: siteID,
-				token:  token,
+				db:     mockDB,
 				doer:   doer,
 				logger: logtest.NoOp(t),
 				kv:     kv,
@@ -266,7 +277,8 @@ func Test_licenseChecker(t *testing.T) {
 			require.Equal(t, "POST", doer.Request.Method)
 			require.Equal(t, rUrl, doer.Request.URL.String())
 			require.Equal(t, "application/json", doer.Request.Header.Get("Content-Type"))
-			require.Equal(t, "Bearer "+token, doer.Request.Header.Get("Authorization"))
+			// The token for the license.
+			require.Equal(t, "Bearer slk_e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", doer.Request.Header.Get("Authorization"))
 			var body struct {
 				SiteID string `json:"siteID"`
 			}

@@ -140,12 +140,12 @@ type AdjustedCodeIntelligenceRange struct {
 	HoverText       string
 }
 
-// Cursor is a struct that holds the state necessary to resume a locations query from a second or
+// PreciseCursor is a struct that holds the state necessary to resume a locations query from a second or
 // subsequent request. This struct is used internally as a request-specific context object that is
 // mutated as the locations request is fulfilled. This struct is serialized to JSON then base64
 // encoded to make an opaque string that is handed to a future request to get the remainder of the
 // result set.
-type Cursor struct {
+type PreciseCursor struct {
 	// the following fields...
 	// track the current phase and offset within phase
 
@@ -193,7 +193,8 @@ func (m CursorMatcher) ToShared() shared.Matcher {
 func NewCursorMatcher(matcher shared.Matcher) CursorMatcher {
 	if sym, range_, ok := matcher.SymbolBased(); ok {
 		return CursorMatcher{
-			ExactSymbol: sym,
+			// OK to use "" here as lookups based on "" are not allowed
+			ExactSymbol: sym.UnwrapOr(""),
 			Start:       shared.TranslatePosition(range_.Start),
 			End:         shared.TranslatePosition(range_.End),
 			HasEnd:      true,
@@ -210,17 +211,17 @@ func NewCursorMatcher(matcher shared.Matcher) CursorMatcher {
 	panic(fmt.Sprintf("Unhandled case for matcher: %+v", matcher))
 }
 
-var exhaustedCursor = Cursor{Phase: "done"}
+var exhaustedCursor = PreciseCursor{Phase: "done"}
 
-func (c Cursor) Encode() string {
+func (c PreciseCursor) Encode() string {
 	return encodeViaJSON(c)
 }
 
-func DecodeCursor(rawEncoded string) (Cursor, error) {
-	return decodeViaJSON[Cursor](rawEncoded)
+func DecodeCursor(rawEncoded string) (PreciseCursor, error) {
+	return decodeViaJSON[PreciseCursor](rawEncoded)
 }
 
-func (c Cursor) BumpLocalLocationOffset(n, totalCount int) Cursor {
+func (c PreciseCursor) BumpLocalLocationOffset(n, totalCount int) PreciseCursor {
 	c.LocalLocationOffset += n
 	if c.LocalLocationOffset >= totalCount {
 		// We've consumed this upload completely. Skip it the next time we find
@@ -233,7 +234,7 @@ func (c Cursor) BumpLocalLocationOffset(n, totalCount int) Cursor {
 	return c
 }
 
-func (c Cursor) BumpRemoteUploadOffset(n, totalCount int) Cursor {
+func (c PreciseCursor) BumpRemoteUploadOffset(n, totalCount int) PreciseCursor {
 	c.RemoteUploadOffset += n
 	if c.RemoteUploadOffset >= totalCount {
 		// We've consumed all upload batches
@@ -243,7 +244,7 @@ func (c Cursor) BumpRemoteUploadOffset(n, totalCount int) Cursor {
 	return c
 }
 
-func (c Cursor) BumpRemoteUsageOffset(n, totalCount int) Cursor {
+func (c PreciseCursor) BumpRemoteUsageOffset(n, totalCount int) PreciseCursor {
 	c.RemoteLocationOffset += n
 	if c.RemoteLocationOffset >= totalCount {
 		// We've consumed the locations for this set of uploads. Reset this slice value in the
@@ -299,6 +300,10 @@ type RemoteCursor struct {
 	UploadBatchIDs []int `json:"uploadBatchIDs"`
 	// The location offset within the associated batch of uploads.
 	LocationOffset int `json:"locationOffset"`
+}
+
+type SyntacticCursor struct {
+	SeenFiles []string `json:"files"`
 }
 
 type UsagesForSymbolResolvedArgs struct {
@@ -373,19 +378,30 @@ type ForEachProvenance[T any] struct {
 	Precise     T
 }
 
-// PreciseCursorType's string representation is used for debugging.
-type PreciseCursorType string
+// CursorType's string representation is used for debugging.
+type CursorType string
 
 const (
-	CursorTypeDefinitions     PreciseCursorType = "definitions"
-	CursorTypeImplementations PreciseCursorType = "implementations"
-	CursorTypePrototypes      PreciseCursorType = "prototypes"
-	CursorTypeReferences      PreciseCursorType = "references"
+	CursorTypeDefinitions     CursorType = "definitions"
+	CursorTypeImplementations CursorType = "implementations"
+	CursorTypePrototypes      CursorType = "prototypes"
+	CursorTypeReferences      CursorType = "references"
+	CursorTypeSyntactic       CursorType = "syntactic"
+	CursorTypeSearchBased     CursorType = "searchBased"
 )
 
 type UsagesCursor struct {
-	PreciseCursorType `json:"ty"`
-	PreciseCursor     Cursor `json:"pc"`
+	CursorType      CursorType      `json:"ty"`
+	PreciseCursor   PreciseCursor   `json:"pc"`
+	SyntacticCursor SyntacticCursor `json:"sc"` // TODO(GRAPH-696)
+}
+
+func (c UsagesCursor) Encode() string {
+	return encodeViaJSON(c)
+}
+
+func DecodeUsagesCursor(rawEncoded string) (UsagesCursor, error) {
+	return decodeViaJSON[UsagesCursor](rawEncoded)
 }
 
 func encodeViaJSON[T any](t T) string {

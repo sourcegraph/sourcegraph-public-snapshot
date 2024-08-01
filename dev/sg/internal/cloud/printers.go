@@ -34,13 +34,9 @@ func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 		if len(name) > 37 {
 			name = name[:37] + "..."
 		}
-
 		status := "n/a"
 		if inst.Status.Status != "" {
 			status = inst.Status.Status
-			if inst.Status.Reason.Step != "" && inst.Status.Reason.Phase != "" {
-				status += " (" + inst.Status.Reason.Step + " " + inst.Status.Reason.Phase + ")"
-			}
 		}
 
 		expireValue := "n/a"
@@ -53,20 +49,19 @@ func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 			}
 		}
 
-		var jobCount = inst.Status.Reason.JobCount
-		var overallJobStatus = inst.Status.Reason.Overall
+		var overallJobStatus = inst.Status.Reason
 		if inst.Status.Status == InstanceStatusCompleted {
 			overallJobStatus = "completed"
 		} else if overallJobStatus == "" {
-			overallJobStatus = "n/a"
+			overallJobStatus = fmt.Sprintf("n/a (hint - run sg cloud eph status --name %q)", inst.Name)
 		}
 
 		return []any{
-			name, expireValue, status, jobCount, overallJobStatus,
+			name, expireValue, status, overallJobStatus,
 		}
 
 	}
-	return newTerminalInstancePrinter(valueFunc, "%-40s %-20s %-40s %-5s %s", "Name", "Expires In", "Status", "Jobs", "Overall job status")
+	return newTerminalInstancePrinter(valueFunc, "%-40s %-20s %-40s %s", "Name", "Expires In", "Instance status", "Details")
 }
 
 func newTerminalInstancePrinter(valueFunc func(i *Instance) []any, headingFmt string, headings ...string) *terminalInstancePrinter {
@@ -87,7 +82,7 @@ func (p *terminalInstancePrinter) Print(items ...*Instance) error {
 	std.Out.WriteLine(output.Line("", output.StyleBold, heading))
 	for _, inst := range items {
 		values := p.valueFunc(inst)
-		line := fmt.Sprintf("%-40s %-20s %-40s %-5d %s", values...)
+		line := fmt.Sprintf("%-40s %-20s %-40s %s", values...)
 		std.Out.WriteLine(output.Line("", output.StyleGrey, line))
 	}
 

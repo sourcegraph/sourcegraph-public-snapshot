@@ -130,7 +130,7 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 				bk.Env("PROD_REGISTRY", prodRegistry),
 				bk.Env("ADDITIONAL_PROD_REGISTRIES", additionalProdRegistry),
 				bk.AutomaticRetry(1),
-				bk.ArtifactPaths("build_event_log.bin", "execution_log.zstd"),
+				bk.ArtifactPaths("build_event_log.bin", "execution_log.zstd", "bazel-profile.gz"),
 				bk.AnnotatedCmd(
 					"./dev/ci/push_all.sh",
 					bk.AnnotatedCmdOpts{

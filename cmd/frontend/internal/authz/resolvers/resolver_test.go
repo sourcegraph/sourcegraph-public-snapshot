@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers/github"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -1168,44 +1167,6 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 			graphqlbackend.RunTests(t, test.gqlTests)
 		})
 	}
-}
-
-func TestResolver_AuthzProviderTypes(t *testing.T) {
-	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := dbmocks.NewStrictMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
-
-		db := dbmocks.NewStrictMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
-
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{db: db}).AuthzProviderTypes(ctx)
-		if want := auth.ErrMustBeSiteAdmin; err != want {
-			t.Errorf("err: want %q but got %v", want, err)
-		}
-		if result != nil {
-			t.Errorf("result: want nil but got %v", result)
-		}
-	})
-
-	t.Run("get authz provider types", func(t *testing.T) {
-		users := dbmocks.NewStrictMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{
-			SiteAdmin: true,
-		}, nil)
-
-		db := dbmocks.NewStrictMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
-
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-
-		ghProvider := github.NewProvider("https://github.com", github.ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
-		authz.SetProviders([]authz.Provider{ghProvider})
-		defer authz.SetProviders(nil)
-		result, err := (&Resolver{db: db}).AuthzProviderTypes(ctx)
-		assert.NoError(t, err)
-		assert.Equal(t, []string{"github"}, result)
-	})
 }
 
 func mustURL(t *testing.T, u string) *url.URL {

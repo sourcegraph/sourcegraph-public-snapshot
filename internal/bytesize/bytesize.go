@@ -9,33 +9,33 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Bytes represents an amount of bytes.
-type Bytes int64
+// Size represents the size of a file/buffer etc. in bytes.
+type Size int64
 
 const (
-	maxSize Bytes = 1<<63 - 1
+	maxSize Size = 1<<63 - 1
 )
 
 const (
-	B   Bytes = 1
-	KB        = 1_000 * B
-	KiB       = 1_024 * B
-	MB        = 1_000 * KB
-	MiB       = 1_024 * KiB
-	GB        = 1_000 * MB
-	GiB       = 1_024 * MiB
+	B   Size = 1
+	KB       = 1_000 * B
+	KiB      = 1_024 * B
+	MB       = 1_000 * KB
+	MiB      = 1_024 * KiB
+	GB       = 1_000 * MB
+	GiB      = 1_024 * MiB
 )
 
 // Parse parses string that represents an amount of bytes and returns the
-// amount in Bytes.
+// amount in Size.
 //
 // Only positive amounts are supported.
 //
-// Bytes are represented as int64. If the value overflows, an error is
+// Size are represented as int64. If the value overflows, an error is
 // returned.
 //
 // Example inputs: "3 MB", "4 GiB", "172 KiB". See the tests for more examples.
-func Parse(str string) (Bytes, error) {
+func Parse(str string) (Size, error) {
 	str = strings.TrimSpace(str)
 
 	num, unitIndex, err := readNumber(str)
@@ -52,7 +52,7 @@ func Parse(str string) (Bytes, error) {
 		return 0, err
 	}
 
-	result := Bytes(num) * unit
+	result := Size(num) * unit
 	if result < 0 {
 		return 0, errors.Newf("value overflows max size of %d bytes", maxSize)
 	}
@@ -76,7 +76,7 @@ func readNumber(str string) (int, int, error) {
 
 func isDigit(ch rune) bool { return '0' <= ch && ch <= '9' }
 
-func parseUnit(unit string) (Bytes, error) {
+func parseUnit(unit string) (Size, error) {
 	switch strings.TrimSpace(unit) {
 	case "B", "b":
 		return B, nil
