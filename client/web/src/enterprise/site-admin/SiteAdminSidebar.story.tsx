@@ -67,7 +67,7 @@ export const AdminSidebarItems: StoryFn = () => (
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={false}
-                    applianceManaged={false}
+                    applianceUpdateTarget={''}
                     endUserOnboardingEnabled={false}
                 />
             </Grid>
