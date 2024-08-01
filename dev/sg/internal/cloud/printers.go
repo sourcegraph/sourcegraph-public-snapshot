@@ -61,7 +61,7 @@ func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 		}
 
 	}
-	return newTerminalInstancePrinter(valueFunc, "%-40s %-20s %-40s %s", "Name", "Expires In", "Instance status", "Job status")
+	return newTerminalInstancePrinter(valueFunc, "%-40s %-20s %-40s %s", "Name", "Expires In", "Instance status", "Details")
 }
 
 func newTerminalInstancePrinter(valueFunc func(i *Instance) []any, headingFmt string, headings ...string) *terminalInstancePrinter {
