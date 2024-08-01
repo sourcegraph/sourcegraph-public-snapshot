@@ -109,7 +109,7 @@
                 commitID={data.base?.commitID || ''}
                 defaultBranch={data.defaultBranch}
                 placement="bottom-start"
-                isPerforceDepot={data.resolvedRepository.externalRepository.serviceType === 'perforce'}
+                isPerforceDepot={data.isPerforceDepot}
                 onSelect={revision => handleSelect(revision, data.head?.revision || '')}
                 getRepositoryBranches={data.getRepoBranches}
                 getRepositoryCommits={data.getRepoCommits}
@@ -126,7 +126,7 @@
                 commitID={data.head?.commitID || ''}
                 defaultBranch={data.defaultBranch}
                 placement="bottom-start"
-                isPerforceDepot={data.resolvedRepository.externalRepository.serviceType === 'perforce'}
+                isPerforceDepot={data.isPerforceDepot}
                 onSelect={revision => handleSelect(data.base?.revision || '', revision)}
                 getRepositoryBranches={data.getRepoBranches}
                 getRepositoryCommits={data.getRepoCommits}
@@ -155,7 +155,7 @@
                         <ul>
                             {#each $commits.value.commits as commit}
                                 <li>
-                                    <Commit {commit} />
+                                    <Commit {commit} isPerforceChangelist={data.isPerforceDepot} />
                                 </li>
                             {/each}
                         </ul>

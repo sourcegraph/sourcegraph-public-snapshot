@@ -114,7 +114,7 @@
     $: navEntriesToShow = viewableNavEntries.slice(0, visibleNavEntryCount)
     $: overflowNavEntries = viewableNavEntries.slice(visibleNavEntryCount)
     $: allMenuEntries = [...overflowNavEntries, ...menuEntries]
-    $: isPerforceDepot = data.resolvedRepository.externalRepository.serviceType === 'perforce'
+    $: isPerforceDepot = data.isPerforceDepot
 
     function isCodePage(repoURL: string, pathname: string) {
         return (

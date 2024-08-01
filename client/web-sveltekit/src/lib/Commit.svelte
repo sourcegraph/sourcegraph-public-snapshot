@@ -12,6 +12,7 @@
 
     export let commit: Commit
     export let alwaysExpanded: boolean = false
+    export let isPerforceChangelist: boolean
 
     function getCommitter({ committer }: Commit): NonNullable<Commit['committer']> | null {
         if (!committer) {
@@ -22,10 +23,6 @@
             return null
         }
         return committer
-    }
-
-    function isPerforceDepot(commit: Commit): boolean {
-        return commit.perforceChangelist !== null
     }
 
     $: expanded = alwaysExpanded
@@ -51,7 +48,7 @@
     <div class="title">
         <a
             class="subject"
-            href={isPerforceDepot(commit) ? commit.perforceChangelist?.canonicalURL : commit.canonicalURL}
+            href={isPerforceChangelist ? commit.perforceChangelist?.canonicalURL : commit.canonicalURL}
             >{commit.subject}</a
         >
         {#if !alwaysExpanded && commit.body && !$isViewportMobile}
@@ -67,7 +64,7 @@
     </div>
     <div class="author">
         {#if !committerIsAuthor}authored by <strong>{author.person.name}</strong> and{/if}
-        {isPerforceDepot(commit) ? 'submitted' : 'committed'} by <strong>{committer.person.name}</strong>
+        {isPerforceChangelist ? 'submitted' : 'committed'} by <strong>{committer.person.name}</strong>
         <Timestamp date={commitDate} />
     </div>
     {#if commit.body}

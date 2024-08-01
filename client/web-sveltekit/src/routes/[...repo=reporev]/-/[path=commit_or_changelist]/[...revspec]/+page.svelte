@@ -61,7 +61,6 @@
         repositoryContext.set({})
     })
 
-    $: isPerforceDepot = data.resolvedRepository.externalRepository.serviceType === 'perforce'
     $: changelistId = data.commit.perforceChangelist?.cid
 </script>
 
@@ -73,15 +72,21 @@
     {#if data.commit}
         <Scroller bind:this={scroller} margin={600} on:more={diffQuery?.fetchMore}>
             <div class="header">
-                <div class="info"><Commit commit={data.commit} alwaysExpanded={!$isViewportMobile} /></div>
+                <div class="info">
+                    <Commit
+                        commit={data.commit}
+                        alwaysExpanded={!$isViewportMobile}
+                        isPerforceChangelist={data.isPerforceDepot}
+                    />
+                </div>
                 <ul class="actions">
                     <li>
-                        <span>{isPerforceDepot ? 'Changelist ID:' : 'Commit:'}</span>
+                        <span>{data.isPerforceDepot ? 'Changelist ID:' : 'Commit:'}</span>
                         <Badge variant="secondary"
-                            ><code>{isPerforceDepot ? changelistId : data.commit.abbreviatedOID}</code></Badge
+                            ><code>{data.isPerforceDepot ? changelistId : data.commit.abbreviatedOID}</code></Badge
                         >&nbsp;<CopyButton value={data.commit.abbreviatedOID} />
                     </li>
-                    {#if !isPerforceDepot}
+                    {#if !data.isPerforceDepot}
                         <li>
                             <span>{pluralize('Parent', data.commit.parents.length)}:</span>
                             {#each data.commit.parents as parent}

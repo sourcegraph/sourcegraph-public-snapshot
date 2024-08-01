@@ -76,7 +76,7 @@
             commitID={data.resolvedRevision.commitID}
             defaultBranch={data.defaultBranch}
             placement="bottom-start"
-            isPerforceDepot={data.resolvedRepository.externalRepository.serviceType === 'perforce'}
+            isPerforceDepot={data.isPerforceDepot}
             getRepositoryBranches={data.getRepoBranches}
             getRepositoryCommits={data.getRepoCommits}
             getRepositoryTags={data.getRepoTags}
@@ -90,7 +90,7 @@
                 {#each commits as commit (commit.canonicalURL)}
                     <li>
                         <div class="commit">
-                            <Commit {commit} />
+                            <Commit {commit} isPerforceChangelist={data.isPerforceDepot} />
                         </div>
                         <ul class="actions">
                             <li>

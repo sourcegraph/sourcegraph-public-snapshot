@@ -175,7 +175,7 @@
             <TabPanel title={isPerforceDepot ? 'Changelists' : 'Commits'} shortcut={commitsHotkey}>
                 <Picker
                     name={isPerforceDepot ? 'changelists' : 'commits'}
-                    seeAllItemsURL={`${repoURL}/-/commits`}
+                    seeAllItemsURL={`${repoURL}/-/${isPerforceDepot ? 'changelists' : 'commits'}`}
                     getData={getRepositoryCommits}
                     toOption={commit => {
                         return isPerforceDepot && commit.perforceChangelist
