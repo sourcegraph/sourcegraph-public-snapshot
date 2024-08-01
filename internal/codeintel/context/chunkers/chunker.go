@@ -17,5 +17,5 @@ var defaultChunkOptions = ChunkOptions{
 	ChunkTokensThreshold:           256,
 	NoSplitTokensThreshold:         384,
 	ChunkEarlySplitTokensThreshold: 224,
-	CoalesceThreshold:              100,
+	CoalesceThreshold:              50,
 }
