@@ -341,6 +341,9 @@ func (s *Service) DeleteSearchJob(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
+	// The log file is not guaranteed to exist, so we ignore the error here.
+	_ = s.uploadStore.Delete(ctx, getLogKey(id))
+
 	return s.store.DeleteExhaustiveSearchJob(ctx, id)
 }
 
