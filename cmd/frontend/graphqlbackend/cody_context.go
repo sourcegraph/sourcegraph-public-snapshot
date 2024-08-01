@@ -11,7 +11,7 @@ type CodyContextResolver interface {
 	ChatContext(ctx context.Context, args ChatContextArgs) (ChatContextResolver, error)
 	RankContext(ctx context.Context, args RankContextArgs) (RankContextResolver, error)
 	RecordContext(ctx context.Context, args RecordContextArgs) (*EmptyResponse, error)
-	UrlMentionContext(ctx context.Context, args UrlMentionContextArgs) (*UrlMentionContextResponse, error)
+	UrlMentionContext(ctx context.Context, args UrlMentionContextArgs) (UrlMentionContextResolver, error)
 	// GetCodyContext is the existing Cody Enterprise context endpoint
 	GetCodyContext(ctx context.Context, args GetContextArgs) ([]ContextResultResolver, error)
 }
@@ -27,9 +27,9 @@ type UrlMentionContextArgs struct {
 	Url string
 }
 
-type UrlMentionContextResponse struct {
-	Title   *string
-	Content string
+type UrlMentionContextResolver interface {
+	Title() *string
+	Content() string
 }
 
 type ContextResultResolver interface {

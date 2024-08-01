@@ -435,7 +435,20 @@ var titleRegexp = regexp.MustCompile(`<title>([^<]+)</title>`)
 const urlContextReadLimit = 5 * 1024 * 1024
 const urlContextOutputLimit = 14000
 
-func (r *Resolver) UrlMentionContext(ctx context.Context, args graphqlbackend.UrlMentionContextArgs) (*graphqlbackend.UrlMentionContextResponse, error) {
+type urlMentionContextResponse struct {
+	title   *string
+	content string
+}
+
+func (u *urlMentionContextResponse) Title() *string {
+	return u.title
+}
+
+func (u *urlMentionContextResponse) Content() string {
+	return u.content
+}
+
+func (r *Resolver) UrlMentionContext(ctx context.Context, args graphqlbackend.UrlMentionContextArgs) (graphqlbackend.UrlMentionContextResolver, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", args.Url, nil)
 	if err != nil {
 		return nil, err
@@ -479,9 +492,9 @@ func (r *Resolver) UrlMentionContext(ctx context.Context, args graphqlbackend.Ur
 	// content extraction here.
 	textified := html2text.HTML2TextWithOptions(string(content), html2text.WithUnixLineBreaks())
 	textified = textified[:min(len(textified), urlContextOutputLimit)]
-	return &graphqlbackend.UrlMentionContextResponse{
-		Title:   title,
-		Content: textified,
+	return &urlMentionContextResponse{
+		title:   title,
+		content: textified,
 	}, nil
 }
 
