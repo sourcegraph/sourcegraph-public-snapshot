@@ -197,11 +197,11 @@ func TestUnsupportedByEnry(t *testing.T) {
 	}
 }
 
-func validateLanguageAgainstGoEnry(t *testing.T, name string, enry_extensions []string, lang string) {
-	enry_extensions = slices.Clone(enry_extensions)
-	slices.Sort(enry_extensions)
-	sg_extensions := slices.Clone(unsupportedByEnryNameToExtensionMap[lang])
-	slices.Sort(sg_extensions)
+func validateLanguageAgainstGoEnry(t *testing.T, name string, enryExtensions []string, lang string) {
+	enryExtensions = slices.Clone(enryExtensions)
+	slices.Sort(enryExtensions)
+	sgExtensions := slices.Clone(unsupportedByEnryNameToExtensionMap[lang])
+	slices.Sort(sgExtensions)
 
-	require.NotEqualf(t, enry_extensions, sg_extensions, "looks like language %q is supported by enry with the same extensions; remove it from %q", lang, name)
+	require.NotEqualf(t, enryExtensions, sgExtensions, "looks like language %q is supported by enry with the same extensions; remove it from %q", lang, name)
 }
