@@ -241,6 +241,7 @@ type JSContext struct {
 	CodeMonitoringEnabled    bool   `json:"codeMonitoringEnabled"`
 	SearchAggregationEnabled bool   `json:"searchAggregationEnabled"`
 	OwnEnabled               bool   `json:"ownEnabled"`
+	SearchJobsEnabled        bool   `json:"searchJobsEnabled"`
 
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
 
