@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/completions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -26,20 +26,8 @@ func Init(
 
 	enterpriseServices.NewEmbeddingsHandler = func() http.Handler {
 		completionsHandler := embeddings.NewEmbeddingsChunkingHandler(logger, db)
-		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, completionsHandler)
+		return completions.RequireVerifiedEmailMiddleware(db, observationCtx.Logger, completionsHandler)
 	}
 
 	return nil
-}
-
-func requireVerifiedEmailMiddleware(db database.DB, logger log.Logger, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := cody.CheckVerifiedEmailRequirement(r.Context(), db, logger); err != nil {
-			// Report HTTP 403 Forbidden if user has no verified email address.
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
 }
