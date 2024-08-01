@@ -23,8 +23,7 @@ var ErrInstanceNotFound error = errors.New("instance not found")
 const HeaderUserToken = "X-GCP-User-Token"
 
 // APIEndpoint is the endpoint where Cloud API is running.
-// const APIEndpoint = "https://cloud-ops-dev.sgdev.org/api"
-const APIEndpoint = "http://localhost:8080/api"
+const APIEndpoint = "https://cloud-ops-dev.sgdev.org/api"
 
 // DevEnvironment is the environment where Cloud allows ephemeral instance types
 const DevEnvironment = "dev"
