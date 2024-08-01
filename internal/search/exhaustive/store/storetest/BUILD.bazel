@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "storetest",
+    srcs = ["store.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store/storetest",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/api",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/search/exhaustive/store",
+        "//internal/search/exhaustive/types",
+        "//internal/types",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)
