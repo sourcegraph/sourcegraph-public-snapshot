@@ -59,7 +59,7 @@ export interface SiteAdminAreaRouteContext
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<{}>>[]
 
     codeInsightsEnabled: boolean
-    applianceManaged: boolean
+    applianceUpdateTarget: string
 
     endUserOnboardingEnabled: boolean
 }
