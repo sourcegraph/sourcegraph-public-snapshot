@@ -684,44 +684,47 @@ func ToBasicQuery(nodes []Node) (Basic, error) {
 // Example:
 //
 //	foo bar bas -> (or (and foo bar bas) ("foo bar bas"))
-func ExperimentalPhraseBoost(basic Basic) Basic {
+func ExperimentalPhraseBoost(originalQuery string, basic Basic) Basic {
 	if basic.Pattern == nil {
 		return basic
 	}
 
-	if n, ok := basic.Pattern.(Operator); ok && n.Kind == And {
-		// Gate on the number of operands. We don't want to add a phrase query for very
-		// short queries.
-		if len(n.Operands) <= 1 {
+	// Check if the pattern is a single top-level AND expression with no negated or regexp clauses.
+	switch p := basic.Pattern.(type) {
+	case Operator:
+		if p.Kind != And || len(p.Operands) <= 1 {
 			return basic
 		}
-
-		phrase := ""
-		for _, child := range n.Operands {
-			c, isPattern := child.(Pattern)
-			if !isPattern || c.Negated || c.Annotation.Labels.IsSet(Regexp) {
+		for _, child := range p.Operands {
+			if c, isPattern := child.(Pattern); !isPattern || c.Negated || c.Annotation.Labels.IsSet(Regexp) {
 				return basic
 			}
-
-			value := regexp.QuoteMeta(c.Value)
-			if c.Annotation.Labels.IsSet(Quoted) {
-				value = fmt.Sprintf(`['"]%s['"]`, value)
-			}
-			phrase += value + " "
 		}
-		phrase = strings.TrimSpace(phrase)
-		pattern := fmt.Sprintf(`\b%s($|\b)`, phrase)
+	default:
+		return basic
+	}
 
-		basic.Pattern = Operator{
-			Kind: Or,
-			Operands: []Node{
-				Pattern{
-					Value:      pattern,
-					Annotation: Annotation{Labels: Boost | Regexp | Standard},
-				},
-				n,
+	// Remove predicates from the original query to keep just the pattern string.
+	terms := strings.Fields(originalQuery)
+	filteredTerms := make([]string, 0)
+	for _, term := range terms {
+		if !strings.Contains(term, ":") {
+			filteredTerms = append(filteredTerms, term)
+		}
+	}
+
+	query := strings.Join(filteredTerms, " ")
+	pattern := fmt.Sprintf(`(^|\b)%s($|\b)`, regexp.QuoteMeta(query))
+
+	basic.Pattern = Operator{
+		Kind: Or,
+		Operands: []Node{
+			Pattern{
+				Value:      pattern,
+				Annotation: Annotation{Labels: Boost | Regexp | Standard},
 			},
-		}
+			basic.Pattern,
+		},
 	}
 
 	return basic
