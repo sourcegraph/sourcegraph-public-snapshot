@@ -15,7 +15,7 @@ type PoliciesService interface {
 
 	// Modify policies
 	CreateConfigurationPolicy(ctx context.Context, configurationPolicy shared.ConfigurationPolicy) (shared.ConfigurationPolicy, error)
-	UpdateConfigurationPolicy(ctx context.Context, policy shared.ConfigurationPolicy) (err error)
+	UpdateConfigurationPolicy(ctx context.Context, policy shared.ConfigurationPolicyPatch) (err error)
 	DeleteConfigurationPolicyByID(ctx context.Context, id int) error
 
 	// Filter previews
