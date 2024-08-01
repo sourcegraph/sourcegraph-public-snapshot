@@ -1315,6 +1315,8 @@ type FusionClient struct {
 	NetworkThreads int `json:"networkThreads,omitempty"`
 	// NetworkThreadsFetch description: The number of threads in the threadpool for running network calls when performing fetches. Defaults to the number of logical CPUs.
 	NetworkThreadsFetch int `json:"networkThreadsFetch,omitempty"`
+	// NoConvertLabels description: Disable Perforce label to git tag conversion.
+	NoConvertLabels bool `json:"noConvertLabels,omitempty"`
 	// PrintBatch description: The p4 print batch size
 	PrintBatch int `json:"printBatch,omitempty"`
 	// Refresh description: How many times a connection should be reused before it is refreshed

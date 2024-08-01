@@ -192,6 +192,7 @@ func (s *perforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, usern
 		"--maxChanges", strconv.Itoa(s.fusionConfig.MaxChanges),
 		"--includeBinaries", strconv.FormatBool(s.fusionConfig.IncludeBinaries),
 		"--fsyncEnable", strconv.FormatBool(s.fusionConfig.FsyncEnable),
+		"--noConvertLabels", strconv.FormatBool(s.fusionConfig.NoConvertLabels),
 		"--noColor", "true",
 		// We don't want an empty commit for a sane merge base across branches,
 		// since we don't use them and the empty commit breaks changelist parsing.
@@ -320,6 +321,8 @@ type fusionConfig struct {
 	// written to permanent storage immediately instead of being cached. This is to
 	// mitigate data loss in events of hardware failure.
 	FsyncEnable bool
+	// NoConvertLabels disables the conversion of Perforce labels to git tags.
+	NoConvertLabels bool
 }
 
 func configureFusionClient(conn *schema.PerforceConnection) fusionConfig {
@@ -335,6 +338,7 @@ func configureFusionClient(conn *schema.PerforceConnection) fusionConfig {
 		MaxChanges:          -1,
 		IncludeBinaries:     false,
 		FsyncEnable:         false,
+		NoConvertLabels:     false,
 	}
 
 	if conn.FusionClient == nil {
@@ -365,6 +369,7 @@ func configureFusionClient(conn *schema.PerforceConnection) fusionConfig {
 	}
 	fc.IncludeBinaries = conn.FusionClient.IncludeBinaries
 	fc.FsyncEnable = conn.FusionClient.FsyncEnable
+	fc.NoConvertLabels = conn.FusionClient.NoConvertLabels
 
 	return fc
 }
