@@ -302,6 +302,10 @@ type RemoteCursor struct {
 	LocationOffset int `json:"locationOffset"`
 }
 
+type SyntacticCursor struct {
+	SeenFiles []string `json:"files"`
+}
+
 type UsagesForSymbolResolvedArgs struct {
 	// Symbol is either nil or all the fields are populated for the equality check.
 	Symbol   *ResolvedSymbolComparator
@@ -382,11 +386,14 @@ const (
 	CursorTypeImplementations CursorType = "implementations"
 	CursorTypePrototypes      CursorType = "prototypes"
 	CursorTypeReferences      CursorType = "references"
+	CursorTypeSyntactic       CursorType = "syntactic"
+	CursorTypeSearchBased     CursorType = "searchBased"
 )
 
 type UsagesCursor struct {
-	CursorType    CursorType    `json:"ty"`
-	PreciseCursor PreciseCursor `json:"pc"`
+	CursorType      CursorType      `json:"ty"`
+	PreciseCursor   PreciseCursor   `json:"pc"`
+	SyntacticCursor SyntacticCursor `json:"sc"`
 }
 
 func (c UsagesCursor) Encode() string {
