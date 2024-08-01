@@ -308,7 +308,7 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 		makeCommit(2):  {1},
 		makeCommit(3):  {2},
 		makeCommit(4):  {2},
-		makeCommit(5):  {2},
+		makeCommit(5):  {4},
 		makeCommit(6):  {3},
 		makeCommit(7):  {3},
 		makeCommit(8):  {4},
@@ -328,7 +328,7 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff([]int{2, 3, 5}, getProtectedUploads(t, db, 50)); diff != "" {
+	if diff := cmp.Diff([]int{2, 3, 4, 5}, getProtectedUploads(t, db, 50)); diff != "" {
 		t.Errorf("unexpected protected uploads (-want +got):\n%s", diff)
 	}
 }
@@ -375,10 +375,10 @@ func TestUpdateUploadsVisibleToCommits(t *testing.T) {
 		makeCommit(2): {1},
 		makeCommit(3): {2},
 		makeCommit(4): {2},
-		makeCommit(5): {1},
-		makeCommit(6): {1},
+		makeCommit(5): {2},
+		makeCommit(6): {2},
 		makeCommit(7): {3},
-		makeCommit(8): {1},
+		makeCommit(8): {2},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -387,7 +387,7 @@ func TestUpdateUploadsVisibleToCommits(t *testing.T) {
 	// Ensure data can be queried in reverse direction as well
 	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
 
-	if diff := cmp.Diff([]int{1}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
+	if diff := cmp.Diff([]int{2}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
 	}
 }
