@@ -195,13 +195,20 @@ func TestAPI(t *testing.T) {
 		c.Handler.ServeHTTP(rr, req)
 
 		assert.Equal(t, http.StatusOK, rr.Code)
-		body := rr.Body.String()
-		var prettyJSON bytes.Buffer
-		err = json.Indent(&prettyJSON, []byte(body), "", "    ")
+		var resp CreateChatCompletionResponse
+		err = json.Unmarshal(rr.Body.Bytes(), &resp)
 		if err != nil {
-			t.Fatalf("Failed to format JSON: %v", err)
+			t.Fatalf("Failed to unmarshal response: %v", err)
 		}
-		body = prettyJSON.String()
+
+		// Default "Changed" value is time.Now().Unix(), we make it 0 for determinism here.
+		resp.Created = 0
+
+		jsonData, err := json.MarshalIndent(resp, "", "    ")
+		if err != nil {
+			t.Fatalf("Failed to marshal response: %v", err)
+		}
+		body := string(jsonData)
 
 		autogold.Expect(`{
     "id": "chat-12345678-1234-1234-1234-123456789012",
@@ -215,7 +222,7 @@ func TestAPI(t *testing.T) {
             }
         }
     ],
-    "created": 1722516460,
+    "created": 0,
     "model": "anthropic::xxxx::claude-sonnet-3.5-20240728",
     "system_fingerprint": "",
     "object": "chat.completion",
@@ -224,7 +231,6 @@ func TestAPI(t *testing.T) {
         "prompt_tokens": 0,
         "total_tokens": 0
     }
-}
-`).Equal(t, body)
+}`).Equal(t, body)
 	})
 }
