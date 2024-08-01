@@ -104,7 +104,7 @@ type InstanceStatus struct {
 
 func (s *InstanceStatus) String() string {
 	return fmt.Sprintf(`Status       : %s
-Details      : %s`, s.Reason)
+Details      : %s`, s.Status, s.Reason)
 }
 
 type InstanceFeatures struct {
