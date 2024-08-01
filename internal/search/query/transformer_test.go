@@ -219,10 +219,6 @@ func TestConcat(t *testing.T) {
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeLucky)))
-	})
-
-	t.Run("", func(t *testing.T) {
 		autogold.ExpectFile(t, autogold.Raw(test(`/alsace/ bourgogne bordeaux /champagne/`, SearchTypeKeyword)))
 	})
 

@@ -1,4 +1,0 @@
-{
-  "Input": "(using|struct)",
-  "Query": "/(using|struct)/"
-}

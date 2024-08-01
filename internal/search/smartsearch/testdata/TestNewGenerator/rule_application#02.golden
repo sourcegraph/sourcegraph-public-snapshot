@@ -1,7 +1,0 @@
-[
-  {
-    "Description": "AND patterns together",
-    "Input": "go commit yikes derp",
-    "Query": "(go AND commit AND yikes AND derp)"
-  }
-]

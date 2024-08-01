@@ -5,7 +5,9 @@
         "value": "alsace",
         "negated": false,
         "labels": [
-          "Regexp"
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
         ],
         "range": {
           "start": {
@@ -14,7 +16,7 @@
           },
           "end": {
             "line": 0,
-            "column": 8
+            "column": 6
           }
         }
       },
@@ -22,14 +24,12 @@
         "value": "bourgogne",
         "negated": false,
         "labels": [
-          "Literal",
-          "QuotesAsLiterals",
-          "Standard"
+          "Regexp"
         ],
         "range": {
           "start": {
             "line": 0,
-            "column": 9
+            "column": 7
           },
           "end": {
             "line": 0,
@@ -53,23 +53,6 @@
           "end": {
             "line": 0,
             "column": 27
-          }
-        }
-      },
-      {
-        "value": "champagne",
-        "negated": false,
-        "labels": [
-          "Regexp"
-        ],
-        "range": {
-          "start": {
-            "line": 0,
-            "column": 28
-          },
-          "end": {
-            "line": 0,
-            "column": 39
           }
         }
       }
