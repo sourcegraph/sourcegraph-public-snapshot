@@ -3,9 +3,13 @@ load("//dev:go_defs.bzl", "go_test")
 go_test(
     name = "rockskipintegration_test",
     srcs = ["main_test.go"],
-    data = ["//dev/tools:universal-ctags"],
+    data = [
+        "//dev/tools:universal-ctags",
+        "//docker-images/syntax-highlighter:scip-ctags",
+    ],
     env = {
         "CTAGS_RLOCATIONPATH": "$(rlocationpath //dev/tools:universal-ctags)",
+        "SCIP_CTAGS_RLOCATIONPATH": "$(rlocationpath //docker-images/syntax-highlighter:scip-ctags)",
     },
     tags = [
         TAG_PLATFORM_SEARCH,

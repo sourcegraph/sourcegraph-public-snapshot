@@ -124,7 +124,9 @@ func (s *searchClient) Plan(
 	}
 
 	if searchType == query.SearchTypeKeyword {
-		plan = query.MapPlan(plan, query.ExperimentalPhraseBoost)
+		plan = query.MapPlan(plan, func(basic query.Basic) query.Basic {
+			return query.ExperimentalPhraseBoost(searchQuery, basic)
+		})
 		tr.AddEvent("applied phrase boost")
 	}
 

@@ -10,6 +10,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -1299,10 +1300,11 @@ func (t *FindClosestCompletedUploadsTestCase) uploadMatchingOptions() shared.Upl
 }
 
 func testFindClosestCompletedUploads(t *testing.T, store Store, testCases []FindClosestCompletedUploadsTestCase) {
+	t.Helper()
 	for _, testCase := range testCases {
 		name := fmt.Sprintf(
 			"commit=%s file=%s rootMustEnclosePath=%v indexer=%s",
-			testCase.commit,
+			strings.TrimLeft(testCase.commit, "0"),
 			testCase.file,
 			testCase.rootMustEnclosePath,
 			testCase.indexer,
@@ -1337,7 +1339,7 @@ func testFindClosestCompletedUploads(t *testing.T, store Store, testCases []Find
 		}
 
 		if testCase.graph != nil {
-			t.Run(name+" [graph-fragment]", func(t *testing.T) {
+			t.Run("[graph-fragment] "+name, func(t *testing.T) {
 				uploads, err := store.FindClosestCompletedUploadsFromGraphFragment(context.Background(), testCase.uploadMatchingOptions(), testCase.graph)
 				if err != nil {
 					t.Fatalf("unexpected error finding closest uploads: %s", err)
@@ -1351,7 +1353,7 @@ func testFindClosestCompletedUploads(t *testing.T, store Store, testCases []Find
 
 func testAnyOf(t *testing.T, uploads []shared.CompletedUpload, expectedIDs []int) {
 	if len(uploads) != 1 {
-		t.Errorf("unexpected nearest upload length. want=%d have=%d", 1, len(uploads))
+		t.Errorf("unexpected nearest upload length. want=%d have=%d\nlist: %+v", 1, len(uploads), uploads)
 		return
 	}
 
@@ -1462,10 +1464,11 @@ func getProtectedUploads(t testing.TB, db database.DB, repositoryID int) []int {
 	return ids
 }
 
+// getVisibleUploads separately returns the uploads visible at each commit in commits.
 func getVisibleUploads(t testing.TB, db database.DB, repositoryID int, commits []string) map[string][]int {
 	idsByCommit := map[string][]int{}
 	for _, commit := range commits {
-		query := makeVisibleUploadsQuery(repositoryID, commit)
+		query := makeVisibleUploadsQuery(api.RepoID(repositoryID), api.CommitID(commit))
 
 		uploadIDs, err := basestore.ScanInts(db.QueryContext(
 			context.Background(),

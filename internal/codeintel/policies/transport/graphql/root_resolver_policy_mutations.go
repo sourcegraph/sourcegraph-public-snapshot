@@ -49,10 +49,12 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
 		RetainIntermediateCommits: args.RetainIntermediateCommits,
 		PreciseIndexingEnabled:    args.IndexingEnabled,
-		SyntacticIndexingEnabled:  *args.SyntacticIndexingEnabled,
-		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
-		IndexIntermediateCommits:  args.IndexIntermediateCommits,
-		EmbeddingEnabled:          args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,
+		// Tools using the old API will not pass syntactic indexing flag
+		// so we default to false while the feature is still in experimental mode.
+		SyntacticIndexingEnabled: args.SyntacticIndexingEnabled != nil && *args.SyntacticIndexingEnabled,
+		IndexCommitMaxAge:        toDuration(args.IndexCommitMaxAgeHours),
+		IndexIntermediateCommits: args.IndexIntermediateCommits,
+		EmbeddingEnabled:         args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,
 	}
 	configurationPolicy, err := r.policySvc.CreateConfigurationPolicy(ctx, opts)
 	if err != nil {
@@ -82,7 +84,7 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		return nil, err
 	}
 
-	opts := shared.ConfigurationPolicy{
+	opts := shared.ConfigurationPolicyPatch{
 		ID:                        id,
 		Name:                      args.Name,
 		RepositoryPatterns:        args.RepositoryPatterns,
@@ -92,7 +94,7 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
 		RetainIntermediateCommits: args.RetainIntermediateCommits,
 		PreciseIndexingEnabled:    args.IndexingEnabled,
-		SyntacticIndexingEnabled:  *args.SyntacticIndexingEnabled,
+		SyntacticIndexingEnabled:  args.SyntacticIndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
 		EmbeddingEnabled:          args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,

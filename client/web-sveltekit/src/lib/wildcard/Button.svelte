@@ -2,6 +2,7 @@
     // In addition to the props explicitly listed here, this component also
     // accepts any HTMLButton attributes. Note that those will only be used when
     // the default implementation is used.
+
     import type { HTMLButtonAttributes } from 'svelte/elements'
 
     import { type BUTTON_DISPLAY, type BUTTON_SIZES, type BUTTON_VARIANTS, getButtonClassName } from './Button'

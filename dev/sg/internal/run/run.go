@@ -85,20 +85,6 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 					runner.WriteLine(output.Styledf(output.StyleSuccess, "%s%s stopped due to context error: %v%s", output.StyleBold, config.Name, ctx.Err(), output.StyleReset))
 					return ctx.Err()
 
-				// Handle process exit
-				case err := <-proc.Exit():
-					// If the process failed, we exit immediately
-					if err != nil {
-						return err
-					}
-
-					runner.WriteLine(output.Styledf(output.StyleSuccess, "%s%s exited without error%s", output.StyleBold, config.Name, output.StyleReset))
-
-					// If we shouldn't restart when the process exits, return
-					if !config.ContinueWatchOnExit {
-						return nil
-					}
-
 				// handle file watcher triggered
 				case <-wantRestart:
 					// If the command has an installer, re-run the install and determine if we should restart
@@ -125,6 +111,20 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 						defer proc.cancel()
 					} else {
 						runner.WriteLine(output.Styledf(output.StylePending, "Binary for %s did not change. Not restarting.", config.Name))
+					}
+
+				// Handle process exit
+				case err := <-proc.Exit():
+					// If the process failed, we exit immediately
+					if err != nil {
+						return err
+					}
+
+					runner.WriteLine(output.Styledf(output.StyleSuccess, "%s%s exited without error%s", output.StyleBold, config.Name, output.StyleReset))
+
+					// If we shouldn't restart when the process exits, return
+					if !config.ContinueWatchOnExitZero {
+						return nil
 					}
 				}
 			}
