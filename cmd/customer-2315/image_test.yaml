@@ -1,0 +1,15 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "not running as root"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    excludedOutput: ["^0"]
+    exitCode: 0
+  - name: "validate /customer-2315 file exists and is executable"
+    command: "test"
+    args:
+      - "-x"
+      - "/customer-2315"
+    exitCode: 0

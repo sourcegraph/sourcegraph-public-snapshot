@@ -3,6 +3,9 @@ load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//internal/appliance/frontend/maintenance:tsconfig-to-swcconfig/package_json.bzl", tsconfig_to_swcconfig = "bin")
 load("@npm//internal/appliance/frontend/maintenance:vite/package_json.bzl", vite_bin = "bin")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//wolfi-images:defs.bzl", "wolfi_base")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
 
 npm_link_all_packages(
     name = "node_modules",
@@ -19,13 +22,12 @@ RUNTIME_DEPS = [
     "src/Install.tsx",
     "src/Login.tsx",
     "src/Maintenance.tsx",
-    "src/OperatorDebugBar.tsx",
     "src/OperatorStatus.tsx",
     "src/Progress.tsx",
     "src/Theme.tsx",
     "src/WaitForAdmin.tsx",
     "src/api.ts",
-    "src/debugBar.ts",
+    "src/state.ts",
     "src/index.css",
     "src/main.tsx",
     "src/reportWebVitals.ts",
@@ -104,6 +106,7 @@ js_run_binary(
     mnemonic = "ViteBuild",
     out_dirs = ["dist"],
     tool = ":vite",
+    visibility = ["//docker-images/appliance-frontend:__pkg__"],
 )
 
 # Hosts the production-bundled application in a web server
@@ -113,3 +116,38 @@ vite_bin.vite_binary(
     chdir = package_name(),
     data = [":build"],
 )
+
+pkg_tar(
+    name = "tar_frontend",
+    srcs = [":build"],
+    package_dir = "maintenance",
+    strip_prefix = "dist",
+    visibility = ["//docker-images/appliance-frontend:__pkg__"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = "//docker-images/appliance-frontend:image",
+    tags = [
+        "exclusive",
+        "requires-network",
+        TAG_INFRA_DEVINFRA,
+    ],
+)
+
+filegroup(
+    name = "config",
+    srcs = ["maintenance.conf.template"],
+)
+
+pkg_tar(
+    name = "tar_config",
+    srcs = [":config"],
+    package_dir = "/etc/nginx/templates",
+    visibility = ["//docker-images/appliance-frontend:__pkg__"],
+)
+
+wolfi_base(target = "appliance-frontend")

@@ -1,0 +1,31 @@
+load("//dev:go_defs.bzl", "go_test")
+
+go_test(
+    name = "integrationtest_test",
+    srcs = ["integration_test.go"],
+    data = [
+        "//dev/tools:kubebuilder-assets",
+    ],
+    env = {
+        "KUBEBUILDER_ASSET_PATHS": "$(rlocationpaths //dev/tools:kubebuilder-assets)",
+    },
+    deps = [
+        "//internal/appliance/config",
+        "//internal/appliance/k8senvtest",
+        "//internal/appliance/selfupdate",
+        "//internal/k8s/resource/container",
+        "//internal/k8s/resource/deployment",
+        "//internal/k8s/resource/pod",
+        "//internal/releaseregistry",
+        "//internal/releaseregistry/mocks",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_sourcegraph_log_logr//:logr",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+    ],
+)

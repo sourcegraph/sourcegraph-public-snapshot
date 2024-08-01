@@ -258,6 +258,7 @@ require (
 	connectrpc.com/connect v1.16.2
 	connectrpc.com/grpcreflect v1.2.0
 	connectrpc.com/otelconnect v0.7.0
+	dario.cat/mergo v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.5.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.2
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.4.0
@@ -275,7 +276,6 @@ require (
 	github.com/go-json-experiment/json v0.0.0-20231102232822-2e55bd4e08b0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-redsync/redsync/v4 v4.13.0
-	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/go-containerregistry v0.16.1
 	github.com/google/go-github/v48 v48.2.0
 	github.com/google/go-github/v55 v55.0.0
@@ -320,7 +320,6 @@ require (
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-00010101000000-000000000000
 	github.com/vektah/gqlparser/v2 v2.4.5
 	github.com/vvakame/gcplogurl v0.2.0
-	github.com/wagslane/go-password-validator v0.3.0
 	go.opentelemetry.io/collector/config/confighttp v0.103.0
 	go.opentelemetry.io/collector/config/configtelemetry v0.103.0
 	go.opentelemetry.io/collector/config/configtls v0.103.0
@@ -342,7 +341,6 @@ require (
 	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	cloud.google.com/go/longrunning v0.5.6 // indirect
 	cloud.google.com/go/trace v1.10.6 // indirect
-	dario.cat/mergo v1.0.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.2 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.1.1 // indirect
@@ -390,6 +388,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.0.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gofrs/uuid/v5 v5.0.0 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/cel-go v0.20.1 // indirect

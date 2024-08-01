@@ -16,13 +16,15 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	k8sConfig        *rest.Config
-	metrics          metricsConfig
-	grpc             grpcConfig
-	http             httpConfig
-	namespace        string
-	relregEndpoint   string
-	applianceVersion string
+	k8sConfig              *rest.Config
+	metrics                metricsConfig
+	grpc                   grpcConfig
+	http                   httpConfig
+	namespace              string
+	relregEndpoint         string
+	applianceVersion       string
+	selfDeploymentName     string
+	noResourceRestrictions string
 }
 
 func (c *Config) Load() {
@@ -43,10 +45,12 @@ func (c *Config) Load() {
 	c.metrics.addr = c.Get("APPLIANCE_METRICS_ADDR", ":8734", "Appliance metrics server address.")
 	c.metrics.secure = c.GetBool("APPLIANCE_METRICS_SECURE", "false", "Appliance metrics server uses https.")
 	c.grpc.addr = c.Get("APPLIANCE_GRPC_ADDR", ":9000", "Appliance gRPC address.")
-	c.http.addr = c.Get("APPLIANCE_HTTP_ADDR", ":8080", "Appliance http address.")
+	c.http.addr = c.Get("APPLIANCE_HTTP_ADDR", ":8888", "Appliance http address.")
 	c.namespace = c.Get("APPLIANCE_NAMESPACE", "default", "Namespace to monitor.")
 	c.applianceVersion = c.Get("APPLIANCE_VERSION", version.Version(), "Version tag for the running appliance.")
+	c.selfDeploymentName = c.Get("APPLIANCE_DEPLOYMENT_NAME", "", "Own deployment name for self-update. Default is to disable self-update.")
 	c.relregEndpoint = c.Get("RELEASE_REGISTRY_ENDPOINT", releaseregistry.Endpoint, "Release registry endpoint.")
+	c.noResourceRestrictions = c.Get("APPLIANCE_NO_RESOURCE_RESTRICTIONS", "false", "Remove all resource requests and limits from deployed resources. Only recommended for local development.")
 }
 
 func (c *Config) Validate() error {

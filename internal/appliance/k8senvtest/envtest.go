@@ -119,3 +119,11 @@ func kubebuilderAssetPathLocalDev() (string, error) {
 	}
 	return strings.TrimSpace(envtestOut.String()), nil
 }
+
+func NewNoopReconciler(mgr ctrl.Manager) KubernetesController {
+	return noopReconicler{}
+}
+
+type noopReconicler struct{}
+
+func (noopReconicler) SetupWithManager(_ ctrl.Manager) error { return nil }

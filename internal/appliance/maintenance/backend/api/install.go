@@ -3,19 +3,17 @@ package api
 import (
 	"fmt"
 	"net/http"
-
-	"github.com/sourcegraph/sourcegraph/internal/appliance/maintenance/backend/operator"
 )
 
 var installError string = ""
-var installTasks []operator.Task = createInstallTasks()
+var installTasks []Task = createInstallTasks()
 var installVersion string = ""
 
 type InstallProgress struct {
-	Version  string          `json:"version"`
-	Progress int             `json:"progress"`
-	Error    string          `json:"error"`
-	Tasks    []operator.Task `json:"tasks"`
+	Version  string `json:"version"`
+	Progress int    `json:"progress"`
+	Error    string `json:"error"`
+	Tasks    []Task `json:"tasks"`
 }
 
 func InstallProgressHandler(w http.ResponseWriter, r *http.Request) {
