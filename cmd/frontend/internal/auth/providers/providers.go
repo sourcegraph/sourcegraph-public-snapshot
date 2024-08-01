@@ -3,6 +3,7 @@ package providers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"sort"
 	"sync"
@@ -294,8 +295,11 @@ func GetProviderByConfigID(id ConfigID) Provider {
 	curProvidersMu.RLock()
 	defer curProvidersMu.RUnlock()
 
+	fmt.Println("Curr providers:", curProviders)
+	fmt.Println("ID:", id)
 	for _, pkgProviders := range curProviders {
 		for _, p := range pkgProviders {
+			fmt.Println("p.ConfigID():", p.ConfigID())
 			if p.ConfigID() == id {
 				return p
 			}

@@ -4407,7 +4407,7 @@
       "description": "Configures the Bitbucket Server OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your Bitbucket Server instance: https://confluence.atlassian.com/bitbucketserver0720/configure-an-incoming-link-1116282013.html. The application should have the repository read permission and the callback URL set to the concatenation of your Sourcegraph instance URL and \"/.auth/bitbucketserver/callback\".",
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "clientId", "clientSecret"],
+      "required": ["type", "clientID", "clientSecret"],
       "properties": {
         "type": {
           "type": "string",
@@ -4418,9 +4418,9 @@
           "description": "URL of the Bitbucket Server instance.",
           "default": "https://bitbucket.example.org/"
         },
-        "clientId": {
+        "clientID": {
           "type": "string",
-          "description": "The Key of the Bitbucket OAuth app."
+          "description": "The ID of the Bitbucket OAuth app."
         },
         "clientSecret": {
           "type": "string",

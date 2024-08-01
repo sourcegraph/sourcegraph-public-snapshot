@@ -51,6 +51,10 @@ export const defaultExternalAccounts: Record<ExternalAccountKind, ExternalAccoun
         title: 'Bitbucket Cloud',
         icon: BitbucketIcon,
     },
+    bitbucketServer: {
+        title: 'Bitbucket Cloud',
+        icon: BitbucketIcon,
+    },
     gerrit: {
         title: 'Gerrit',
         icon: GerritIcon,

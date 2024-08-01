@@ -415,8 +415,8 @@ type BitbucketCloudRateLimit struct {
 type BitbucketServerAuthProvider struct {
 	// AllowSignup description: Allows new visitors to sign up for accounts via Bitbucket Server OAuth. If false, users signing in via Bitbucket Server must have an existing Sourcegraph account, which will be linked to their Bitbucket Server identity after sign-in.
 	AllowSignup bool `json:"allowSignup,omitempty"`
-	// ClientId description: The Key of the Bitbucket OAuth app.
-	ClientId string `json:"clientId"`
+	// ClientID description: The Key of the Bitbucket OAuth app.
+	ClientID string `json:"clientID"`
 	// ClientSecret description: The Client Secret of the Bitbucket OAuth app.
 	ClientSecret  string  `json:"clientSecret"`
 	DisplayName   string  `json:"displayName,omitempty"`
