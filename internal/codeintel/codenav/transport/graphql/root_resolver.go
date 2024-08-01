@@ -317,6 +317,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 		Commit:      args.CommitID,
 		Path:        args.Path,
 		SymbolRange: args.Range,
+		Limit:       args.RemainingCount,
 	}
 
 	gitTreeTranslator := r.MakeGitTreeTranslator(&args.Repo)

@@ -51,6 +51,7 @@ type searchArgs struct {
 	commit     api.CommitID
 	identifier string
 	language   string
+	countLimit int
 }
 
 func lineForRange(match result.ChunkMatch, range_ result.Range) string {
@@ -76,7 +77,7 @@ func findCandidateOccurrencesViaSearch(
 	resultMap := *orderedmap.New[core.RepoRelPath, candidateFile]()
 	// TODO: countLimit should be dependent on the number of requested usages, with a configured global limit
 	// For now we're matching the current web app with 500
-	searchResults, err := executeQuery(ctx, client, trace, args, "file", 500, 0)
+	searchResults, err := executeQuery(ctx, client, trace, args, "file", 0)
 	if err != nil {
 		return []candidateFile{}, err
 	}
@@ -181,7 +182,7 @@ func symbolSearch(
 		return symbolSearchResult{}, nil
 	}
 	// Using the same limit as the current web app
-	searchResults, err := executeQuery(ctx, client, trace, args, "symbol", 50, 0)
+	searchResults, err := executeQuery(ctx, client, trace, args, "symbol", 0)
 	if err != nil {
 		return symbolSearchResult{}, err
 	}
@@ -219,12 +220,12 @@ func symbolSearch(
 	return symbolSearchResult{resultMap}, nil
 }
 
-func buildQuery(args searchArgs, queryType string, countLimit int) string {
+func buildQuery(args searchArgs, queryType string) string {
 	repoName := fmt.Sprintf("^%s$", args.repo)
 	wordBoundaryIdentifier := fmt.Sprintf("/\\b%s\\b/", args.identifier)
 	return fmt.Sprintf(
 		"case:yes type:%s repo:%s rev:%s language:%s count:%d %s",
-		queryType, repoName, string(args.commit), args.language, countLimit, wordBoundaryIdentifier)
+		queryType, repoName, string(args.commit), args.language, args.countLimit, wordBoundaryIdentifier)
 }
 
 func executeQuery(
@@ -233,10 +234,9 @@ func executeQuery(
 	trace observation.TraceLogger,
 	args searchArgs,
 	queryType string,
-	countLimit int,
 	surroundingLines int,
 ) (result.Matches, error) {
-	searchQuery := buildQuery(args, queryType, countLimit)
+	searchQuery := buildQuery(args, queryType)
 	patternType := "standard"
 	contextLines := int32(surroundingLines)
 	plan, err := client.Plan(ctx, "V3", &patternType, searchQuery, search.Precise, search.Streaming, &contextLines)
@@ -398,6 +398,8 @@ func syntacticUsagesImpl(
 		commit:     args.Commit,
 		identifier: symbolName,
 		language:   language,
+		// TODO: Assumes at least every third match is a search-based one
+		countLimit: args.Limit * 3,
 	}
 	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
 	if searchErr != nil {
@@ -450,13 +452,6 @@ func searchBasedUsagesImpl(
 	language string,
 	syntacticIndex core.Option[MappedIndex],
 ) (matches []SearchBasedMatch, err error) {
-	searchCoords := searchArgs{
-		repo:       args.Repo.Name,
-		commit:     args.Commit,
-		identifier: symbolName,
-		language:   language,
-	}
-
 	var matchResults struct {
 		candidateMatches []candidateFile
 		err              error
@@ -465,11 +460,23 @@ func searchBasedUsagesImpl(
 		candidateSymbols symbolSearchResult
 		err              error
 	}
+	mkSearchArgs := func(countLimit int) searchArgs {
+		return searchArgs{
+			repo:       args.Repo.Name,
+			commit:     args.Commit,
+			identifier: symbolName,
+			language:   language,
+			countLimit: countLimit,
+		}
+	}
 	var wg conc.WaitGroup
 	wg.Go(func() {
+		// TODO: Assumes at least every third match is a syntactic one
+		searchCoords := mkSearchArgs(args.Limit * 3)
 		matchResults.candidateMatches, matchResults.err = findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
 	})
 	wg.Go(func() {
+		searchCoords := mkSearchArgs(50)
 		symbolResults.candidateSymbols, symbolResults.err = symbolSearch(ctx, trace, searchClient, searchCoords)
 	})
 	wg.Wait()

@@ -1140,6 +1140,7 @@ type UsagesForSymbolArgs struct {
 	Commit      api.CommitID
 	Path        core.RepoRelPath
 	SymbolRange scip.Range
+	Limit       int
 }
 
 func (s *Service) SyntacticUsages(
