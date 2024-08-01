@@ -2,12 +2,13 @@ import { dirname } from 'path'
 
 import { readable, derived, type Readable } from 'svelte/store'
 
+import { SourcegraphURL } from '@sourcegraph/common'
+
 import { CodyContextFiltersSchema, getFiltersFromCodyContextFilters } from '$lib/cody/config'
 import { getGraphQLClient, infinityQuery, type GraphQLClient, IncrementalRestoreStrategy } from '$lib/graphql'
 import { ROOT_PATH, fetchSidebarFileTree } from '$lib/repo/api/tree'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
-import { SourcegraphURL } from '@sourcegraph/common'
 
 import type { LayoutLoad } from './$types'
 import { CodyContextFiltersQuery, GitHistoryQuery, LastCommitQuery } from './layout.gql'
