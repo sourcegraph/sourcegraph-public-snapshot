@@ -150,7 +150,7 @@ function fetchRawBlameHunks(repoName: string, revision: string, filePath: string
         fetchEventSource(`/.api/blame${repoAndRevisionPath}/stream/${filePath}`, {
             method: 'GET',
             headers: {
-                'X-Requested-With': 'Sourcegraph',
+                ...window.context.xhrHeaders,
                 'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
             },
             async onopen(response) {
