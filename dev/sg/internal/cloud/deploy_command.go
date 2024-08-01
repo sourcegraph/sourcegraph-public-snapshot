@@ -105,7 +105,8 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 	if err != nil && !errors.Is(err, ErrInstanceNotFound) {
 		return errors.Wrapf(err, "failed to check if instance %q already exists", name)
 	}
-	if inst != nil {
+	// non-empty reason means instance is not fully created yet, it's ok to re-create
+	if inst != nil && inst.Status.Reason == "" {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", name))
 		// Deployment exists
 		return ErrDeploymentExists
