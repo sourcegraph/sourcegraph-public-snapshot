@@ -432,30 +432,30 @@ func (r *Resolver) fetchZoekt(ctx context.Context, query string, repo *types.Rep
 
 var multiWhitespaceRegexp = regexp.MustCompile(`(\s)\s+`)
 
-func (r *Resolver) UrlMentionContext(ctx context.Context, args graphqlbackend.UrlMentionContextArgs) (string, error) {
+func (r *Resolver) UrlMentionContext(ctx context.Context, args graphqlbackend.UrlMentionContextArgs) (*graphqlbackend.UrlMentionContextResponse, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", args.Url, nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// TODO: is it safe to use the external client for arbitrary user-provided URLs?
 	// TODO: does this guarantee that we cannot hit internal endpoints?
 	resp, err := httpcli.UncachedExternalClient.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	// TODO: follow redirects?
 	if resp.StatusCode >= http.StatusBadRequest {
-		return "", errors.Errorf("request failed with status %d", resp.StatusCode)
+		return nil, errors.Errorf("request failed with status %d", resp.StatusCode)
 	}
 
 	// Limit the amount we read from the response to protect against
 	// TODO: what's a reasonable amount to limit to?
 	content, err := io.ReadAll(io.LimitReader(resp.Body, 5*1024*1024))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	// Trim to main if it exists since that's a decent signal pointing to the important part of the page.
 	if idx := bytes.Index(content, []byte("<main")); idx > 0 {
