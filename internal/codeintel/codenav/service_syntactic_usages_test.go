@@ -2,6 +2,7 @@ package codenav
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/sourcegraph/log"
@@ -48,6 +49,27 @@ func TestSearchBasedUsages_ResultWithSymbol(t *testing.T) {
 	require.NoError(t, err)
 	expectRanges(t, usages, refRange, refRange2, defRange)
 	expectDefinitionRanges(t, usages, defRange)
+}
+
+func TestSearchBasedUsages_CountLimit(t *testing.T) {
+	searchBuilder := FakeSearchClient().WithLimit()
+	for n := range 10 {
+		searchBuilder = searchBuilder.WithFile(fmt.Sprintf("file%d.java", n), ChunkMatch(testRange(n)))
+	}
+	mockSearchClient := searchBuilder.Build()
+	limit := 3
+
+	usages, err := searchBasedUsagesImpl(
+		context.Background(), observation.TestTraceLogger(log.NoOp()), mockSearchClient,
+		UsagesForSymbolArgs{Limit: limit}, "symbol", "Java", core.None[MappedIndex](),
+	)
+
+	resultRanges := make([]scip.Range, 0)
+	for n := range limit * 3 {
+		resultRanges = append(resultRanges, testRange(n))
+	}
+	require.NoError(t, err)
+	expectRanges(t, usages, resultRanges...)
 }
 
 func TestSearchBasedUsages_SyntacticMatchesGetRemovedFromSearchBasedResults(t *testing.T) {
