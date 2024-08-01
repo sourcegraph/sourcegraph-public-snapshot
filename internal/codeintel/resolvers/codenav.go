@@ -350,7 +350,7 @@ func (args *UsagesForSymbolArgs) Resolve(
 			return out, errors.Wrap(err, "invalid after: cursor")
 		}
 	} else {
-		cursor.PreciseCursorType = codenav.CursorTypeDefinitions
+		cursor.CursorType = codenav.CursorTypeDefinitions
 	}
 
 	scipRange, err := scip.NewRange([]int32{
