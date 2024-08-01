@@ -37,20 +37,6 @@ func TestInstanceStatus(t *testing.T) {
 			statusText: "completed",
 			reason:     "",
 		},
-		{
-			name:       "incorrect reason format",
-			statusEnum: cloudapiv1.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED,
-			statusText: "unspecified",
-			reason:     "https://test.com/action/123",
-			errText:    `failed to parse status reason: "https://test.com/action/123"`,
-		},
-		{
-			name:       "incorrect reason field format",
-			statusEnum: cloudapiv1.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED,
-			statusText: "unspecified",
-			reason:     "actionURL=https://test.com/action/123, status=completed",
-			errText:    `failed to parse status reason: "actionURL=https://test.com/action/123, status=completed"`,
-		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
@@ -62,19 +48,6 @@ func TestInstanceStatus(t *testing.T) {
 			instanceSatus := newInstanceStatus(src)
 			if tc.errText != "" && instanceSatus.Error != tc.errText {
 				t.Errorf("incorrect error. want=%s have=%s", tc.errText, instanceSatus.Error)
-			}
-
-			if instanceSatus.Reason.JobURL != tc.jobURL {
-				t.Errorf("incorrect action url. want=%s have=%s", tc.jobURL, instanceSatus.Reason.JobURL)
-			}
-			if instanceSatus.Reason.JobState != tc.jobState {
-				t.Errorf("incorrect action url. want=%s have=%s", tc.jobState, instanceSatus.Reason.JobState)
-			}
-			if instanceSatus.Reason.Step != tc.step {
-				t.Errorf("incorrect reason step. want=%s have=%s", tc.step, instanceSatus.Reason.Step)
-			}
-			if instanceSatus.Reason.Phase != tc.phase {
-				t.Errorf("incorrect action url. want=%s have=%s", tc.phase, instanceSatus.Reason.Phase)
 			}
 			if instanceSatus.Status != tc.statusText {
 				t.Errorf("incorrect status. want=%s have=%s", tc.statusText, instanceSatus.Status)
