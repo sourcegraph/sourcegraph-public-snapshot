@@ -101,9 +101,6 @@ func Init(
 	// for admin-supplied changes to LLM model configuration.
 	conf.ContributeValidator(func(q conftypes.SiteConfigQuerier) conf.Problems {
 		newSiteConfig := q.SiteConfig()
-		if newSiteConfig.ModelConfiguration == nil {
-			return nil // No modelconfig to validate.
-		}
 
 		// Unfortuantely we fail on the first error we encounter, rather than trying to
 		// aggregate as many errors as we can find.
