@@ -53,7 +53,7 @@ func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 		if inst.Status.Status == InstanceStatusCompleted {
 			overallJobStatus = "completed"
 		} else if overallJobStatus == "" {
-			overallJobStatus = "invoke: sg cloud eph status --name " + inst.Name
+			overallJobStatus = fmt.Sprintf("n/a (hint - run sg cloud eph status --name %q)", inst.Name)
 		}
 
 		return []any{
