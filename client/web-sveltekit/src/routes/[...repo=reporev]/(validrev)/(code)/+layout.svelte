@@ -412,6 +412,9 @@
                 justify-content: space-between;
                 gap: 0.25rem;
 
+                font-size: var(--font-size-xs);
+                color: var(--text-body);
+
                 span {
                     white-space: nowrap;
                     text-overflow: ellipsis;
@@ -469,6 +472,7 @@
     }
 
     :global([data-panel-id='bottom-actions-panel']) {
+        background: var(--color-bg-1);
         min-height: 2.5625rem; // 41px which is bottom panel compact size
         box-shadow: var(--bottom-panel-shadow);
     }

@@ -93,7 +93,7 @@
         width: 480px;
 
         & > div {
-            padding: 0.75rem;
+            padding: 0.5rem 0.75rem;
 
             &:not(:last-child) {
                 border-bottom: 1px solid var(--border-color);
@@ -101,11 +101,14 @@
         }
     }
 
+    small {
+        font-size: var(--font-size-xs);
+    }
+
     .header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background-color: var(--subtle-bg);
 
         .left {
             display: flex;
@@ -114,7 +117,7 @@
             gap: 0.25rem;
 
             h4 {
-                color: var(--text-body);
+                color: var(--text-title);
                 margin: 0;
             }
 
@@ -131,6 +134,11 @@
             justify-content: flex-end;
             align-items: center;
             gap: 0.25rem;
+
+            svg {
+                width: 16px;
+                height: 16px;
+            }
 
             small {
                 color: var(--text-muted);
@@ -199,6 +207,6 @@
         display: flex;
         color: var(--text-muted);
         justify-content: flex-end;
-        font-size: var(--font-size-tiny);
+        font-size: var(--font-size-xs);
     }
 </style>

@@ -58,7 +58,7 @@
 
         .small {
             color: var(--text-muted);
-            font-size: var(--font-size-extra-small);
+            font-size: var(--font-size-xs);
             text-align: center;
             margin-top: 0.25rem;
             margin-bottom: 0;
