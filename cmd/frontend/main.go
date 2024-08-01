@@ -4,11 +4,11 @@ package main
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
-
-	_ "github.com/sourcegraph/sourcegraph/client/web/dist" // use assets
+	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
 
 func main() {
+	assets.Init()
 	sanitycheck.Pass()
 	shared.FrontendMain(nil)
 }

@@ -14,7 +14,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//internal/api",
-        "//internal/authz",
         "//internal/codeintel/shared",
         "//internal/codeintel/shared/lsifuploadstore",
         "//internal/codeintel/syntactic_indexing/jobstore",

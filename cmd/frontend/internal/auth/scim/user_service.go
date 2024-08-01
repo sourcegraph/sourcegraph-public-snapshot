@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -249,7 +248,7 @@ func (u *UserSCIMService) Create(ctx context.Context, attributes scim.ResourceAt
 	// Attempt to send emails in the background.
 	goroutine.Go(func() {
 		_ = sendPasswordResetEmail(u.getLogger(), u.db, user, primaryEmail)
-		_ = sendWelcomeEmail(primaryEmail, globals.ExternalURL().String(), u.getLogger())
+		_ = sendWelcomeEmail(primaryEmail, conf.ExternalURLParsed().String(), u.getLogger())
 	})
 
 	now := time.Now()

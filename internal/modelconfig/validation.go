@@ -15,18 +15,31 @@ import (
 // We can NEVER "relax" any validation checks we perform. Because that would lead to older
 // Sourcegraph instances failing to accept newer versions of the configuration data.
 
-const maxDisplayNameLength = 128
+const (
+	maxDisplayNameLength = 128
 
-var (
-	// resourceIDRE is a regular expression for verifying resource IDs are
-	// of a simple format.
-	resourceIDRE = regexp.MustCompile(`^[a-z0-9_][a-z0-9_\-\.]*[a-z0-9_]$`)
-
-	// The "parts" of resourceIDRE so we can more easily identify and replace
-	// invalid characters when sanitizing user-supplied resource names.
-	resourceIDFirstLastRE = regexp.MustCompile(`[a-z0-9]`)
-	resourceIDMiddleRE    = regexp.MustCompile(`[a-z0-9_\-\.]`)
+	// validResourceCharREString is the regular expression for validating a single character
+	// and if it is valid according to the "naming rules for resource IDs". This is to ensure
+	// that resource IDs are constrainted to not contain gibberish, etc.
+	//
+	// Ideally we would have a very strict bar to ensure names are clear, e.g.
+	// ^[a-z0-9_][a-z0-9_\-\.]*[a-z0-9_]$  However, we don't control what names are supplied
+	// by an LLM provider. And enforcing our users to differentate the "Model ID" from "Model
+	// Name" and "Display Name" is not great.
+	//
+	// So the following abomination of a regex is the allowed set of characters from RFC 3986
+	// "Uniform Resource Identifier: Generic Syntax". Which may  still cause failures for more
+	// exotic model names, but broad enough that a user wouldn't be surprised if the ID was
+	// rejected.
+	//
+	// Pedant's note: We added '%' which is NOT included in the RFC, but is instead called out
+	// for escape encoding. (e.g. "%20".) Also, colons were removed, since we use those to
+	// delimit the sections of a ModelReference.
+	validResourceCharREString = `^[a-zA-Z0-9-._~/?#[\]@!$&'()*+,;=%]+$`
 )
+
+// resourceIDRE verifies if the entire string matches our naming rules for IDs.
+var resourceIDRE = regexp.MustCompile(validResourceCharREString)
 
 func validateProvider(p types.Provider) error {
 	// Display name is optional, but if it is set ensure it is under 128 chars.
@@ -76,20 +89,12 @@ func ValidateModelRef(ref types.ModelRef) error {
 	if !resourceIDRE.MatchString(parts[0]) {
 		return errors.New("invalid ProviderID")
 	}
+	if !resourceIDRE.MatchString(parts[1]) {
+		return errors.New("invalid APIVersionID")
+	}
 	if !resourceIDRE.MatchString(parts[2]) {
 		return errors.New("invalid ModelID")
 	}
-	// We don't impose any constraints on the API Version ID, because
-	// while it's something Sourcegraph manages, there are lots of exotic
-	// but reasonable forms it could take. e.g. "2024-06-01" or
-	// "v1+beta2/with-git-lfs-context-support".
-	//
-	// But we still want to impose some basic standards, defined here.
-	apiVersion := parts[1]
-	if strings.ContainsAny(apiVersion, `:;*% $#\"',!@`) {
-		return errors.New("invalid APIVersionID")
-	}
-
 	return nil
 }
 

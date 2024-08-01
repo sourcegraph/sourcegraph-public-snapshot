@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store/storetest"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -32,11 +32,11 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 
 	bs := basestore.NewWithHandle(db.Handle())
 
-	userID, err := createUser(bs, "alice")
+	userID, err := storetest.CreateUser(bs, "alice")
 	require.NoError(t, err)
-	malloryID, err := createUser(bs, "mallory")
+	malloryID, err := storetest.CreateUser(bs, "mallory")
 	require.NoError(t, err)
-	adminID, err := createUser(bs, "admin")
+	adminID, err := storetest.CreateUser(bs, "admin")
 	require.NoError(t, err)
 
 	s := store.New(db, observation.TestContextTB(t))
@@ -140,10 +140,10 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	bs := basestore.NewWithHandle(db.Handle())
 
-	userID, err := createUser(bs, "alice")
+	userID, err := storetest.CreateUser(bs, "alice")
 	require.NoError(t, err)
 
-	adminID, err := createUser(bs, "admin")
+	adminID, err := storetest.CreateUser(bs, "admin")
 	require.NoError(t, err)
 
 	ctx := actor.WithActor(context.Background(), actor.FromUser(userID))
@@ -291,31 +291,31 @@ func TestStore_AggregateStatus(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	bs := basestore.NewWithHandle(db.Handle())
 
-	_, err := createRepo(db, "repo1")
+	_, err := storetest.CreateRepo(db, "repo1")
 	require.NoError(t, err)
 
 	s := store.New(db, observation.TestContextTB(t))
 
 	tc := []struct {
 		name string
-		c    stateCascade
+		c    storetest.StateCascade
 		want types.JobState
 	}{
 		{
 			name: "only repo rev jobs running",
-			c: stateCascade{
-				searchJob:   types.JobStateCompleted,
-				repoJobs:    []types.JobState{types.JobStateCompleted},
-				repoRevJobs: []types.JobState{types.JobStateProcessing},
+			c: storetest.StateCascade{
+				SearchJob:   types.JobStateCompleted,
+				RepoJobs:    []types.JobState{types.JobStateCompleted},
+				RepoRevJobs: []types.JobState{types.JobStateProcessing},
 			},
 			want: types.JobStateProcessing,
 		},
 		{
 			name: "processing, because at least 1 job is running",
-			c: stateCascade{
-				searchJob: types.JobStateProcessing,
-				repoJobs:  []types.JobState{types.JobStateCompleted},
-				repoRevJobs: []types.JobState{
+			c: storetest.StateCascade{
+				SearchJob: types.JobStateProcessing,
+				RepoJobs:  []types.JobState{types.JobStateCompleted},
+				RepoRevJobs: []types.JobState{
 					types.JobStateProcessing,
 					types.JobStateQueued,
 					types.JobStateCompleted,
@@ -325,10 +325,10 @@ func TestStore_AggregateStatus(t *testing.T) {
 		},
 		{
 			name: "processing, although some jobs failed",
-			c: stateCascade{
-				searchJob: types.JobStateCompleted,
-				repoJobs:  []types.JobState{types.JobStateCompleted},
-				repoRevJobs: []types.JobState{
+			c: storetest.StateCascade{
+				SearchJob: types.JobStateCompleted,
+				RepoJobs:  []types.JobState{types.JobStateCompleted},
+				RepoRevJobs: []types.JobState{
 					types.JobStateProcessing,
 					types.JobStateFailed,
 				},
@@ -337,52 +337,52 @@ func TestStore_AggregateStatus(t *testing.T) {
 		},
 		{
 			name: "all jobs finished, at least 1 failed",
-			c: stateCascade{
-				searchJob:   types.JobStateCompleted,
-				repoJobs:    []types.JobState{types.JobStateCompleted},
-				repoRevJobs: []types.JobState{types.JobStateCompleted, types.JobStateFailed},
+			c: storetest.StateCascade{
+				SearchJob:   types.JobStateCompleted,
+				RepoJobs:    []types.JobState{types.JobStateCompleted},
+				RepoRevJobs: []types.JobState{types.JobStateCompleted, types.JobStateFailed},
 			},
 			want: types.JobStateFailed,
 		},
 		{
 			name: "all jobs finished successfully",
-			c: stateCascade{
-				searchJob:   types.JobStateCompleted,
-				repoJobs:    []types.JobState{types.JobStateCompleted},
-				repoRevJobs: []types.JobState{types.JobStateCompleted, types.JobStateCompleted},
+			c: storetest.StateCascade{
+				SearchJob:   types.JobStateCompleted,
+				RepoJobs:    []types.JobState{types.JobStateCompleted},
+				RepoRevJobs: []types.JobState{types.JobStateCompleted, types.JobStateCompleted},
 			},
 			want: types.JobStateCompleted,
 		},
 		{
 			name: "search job was canceled, but some jobs haven't stopped yet",
-			c: stateCascade{
-				searchJob:   types.JobStateCanceled,
-				repoJobs:    []types.JobState{types.JobStateCompleted},
-				repoRevJobs: []types.JobState{types.JobStateProcessing, types.JobStateFailed},
+			c: storetest.StateCascade{
+				SearchJob:   types.JobStateCanceled,
+				RepoJobs:    []types.JobState{types.JobStateCompleted},
+				RepoRevJobs: []types.JobState{types.JobStateProcessing, types.JobStateFailed},
 			},
 			want: types.JobStateCanceled,
 		},
 		{
 			name: "top-level search job finished, but the other jobs haven't started yet",
-			c: stateCascade{
-				searchJob: types.JobStateCompleted,
-				repoJobs:  []types.JobState{types.JobStateQueued},
+			c: storetest.StateCascade{
+				SearchJob: types.JobStateCompleted,
+				RepoJobs:  []types.JobState{types.JobStateQueued},
 			},
 			want: types.JobStateProcessing,
 		},
 		{
 			name: "no job is processing, some are completed, some are queued",
-			c: stateCascade{
-				searchJob:   types.JobStateCompleted,
-				repoJobs:    []types.JobState{types.JobStateCompleted},
-				repoRevJobs: []types.JobState{types.JobStateCompleted, types.JobStateQueued},
+			c: storetest.StateCascade{
+				SearchJob:   types.JobStateCompleted,
+				RepoJobs:    []types.JobState{types.JobStateCompleted},
+				RepoRevJobs: []types.JobState{types.JobStateCompleted, types.JobStateQueued},
 			},
 			want: types.JobStateProcessing,
 		},
 		{
 			name: "search job is queued, but no other job has been created yet",
-			c: stateCascade{
-				searchJob: types.JobStateQueued,
+			c: storetest.StateCascade{
+				SearchJob: types.JobStateQueued,
 			},
 			want: types.JobStateQueued,
 		},
@@ -390,11 +390,11 @@ func TestStore_AggregateStatus(t *testing.T) {
 
 	for i, tt := range tc {
 		t.Run(tt.name, func(t *testing.T) {
-			userID, err := createUser(bs, fmt.Sprintf("user_%d", i))
+			userID, err := storetest.CreateUser(bs, fmt.Sprintf("user_%d", i))
 			require.NoError(t, err)
 
 			ctx := actor.WithActor(context.Background(), actor.FromUser(userID))
-			jobID := createJobCascade(t, ctx, s, tt.c)
+			jobID := storetest.CreateJobCascade(t, ctx, s, tt.c)
 
 			jobs, err := s.ListExhaustiveSearchJobs(ctx, store.ListArgs{})
 			require.NoError(t, err)
@@ -403,80 +403,6 @@ func TestStore_AggregateStatus(t *testing.T) {
 			assert.Equal(t, tt.want, jobs[0].AggState)
 		})
 	}
-}
-
-// createJobCascade creates a cascade of jobs (1 search job -> n repo jobs -> m
-// repo rev jobs) with states as defined in stateCascade.
-//
-// This is a fairly large test helper, because don't want to start the worker
-// routines, but instead we want to create a snapshot of the state of the jobs
-// at a given point in time.
-func createJobCascade(
-	t *testing.T,
-	ctx context.Context,
-	stor *store.Store,
-	casc stateCascade,
-) (searchJobID int64) {
-	t.Helper()
-
-	searchJob := types.ExhaustiveSearchJob{
-		InitiatorID: actor.FromContext(ctx).UID,
-		Query:       "repo:job1",
-		WorkerJob:   types.WorkerJob{State: casc.searchJob},
-	}
-
-	repoJobs := make([]types.ExhaustiveSearchRepoJob, len(casc.repoJobs))
-	for i, r := range casc.repoJobs {
-		repoJobs[i] = types.ExhaustiveSearchRepoJob{
-			WorkerJob: types.WorkerJob{State: r},
-			RepoID:    1, // same repo for all tests
-			RefSpec:   "HEAD",
-		}
-	}
-
-	repoRevJobs := make([]types.ExhaustiveSearchRepoRevisionJob, len(casc.repoRevJobs))
-	for i, rr := range casc.repoRevJobs {
-		repoRevJobs[i] = types.ExhaustiveSearchRepoRevisionJob{
-			WorkerJob: types.WorkerJob{State: rr},
-			Revision:  "HEAD",
-		}
-	}
-
-	jobID, err := stor.CreateExhaustiveSearchJob(ctx, searchJob)
-	require.NoError(t, err)
-	assert.NotZero(t, jobID)
-
-	err = stor.Exec(ctx, sqlf.Sprintf("UPDATE exhaustive_search_jobs SET state = %s WHERE id = %s", casc.searchJob, jobID))
-	require.NoError(t, err)
-
-	for i, r := range repoJobs {
-		r.SearchJobID = jobID
-		repoJobID, err := stor.CreateExhaustiveSearchRepoJob(ctx, r)
-		require.NoError(t, err)
-		assert.NotZero(t, repoJobID)
-
-		err = stor.Exec(ctx, sqlf.Sprintf("UPDATE exhaustive_search_repo_jobs SET state = %s WHERE id = %s", casc.repoJobs[i], repoJobID))
-		require.NoError(t, err)
-
-		for j, rr := range repoRevJobs {
-			rr.SearchRepoJobID = repoJobID
-			repoRevJobID, err := stor.CreateExhaustiveSearchRepoRevisionJob(ctx, rr)
-			require.NoError(t, err)
-			assert.NotZero(t, repoRevJobID)
-			require.NoError(t, err)
-
-			err = stor.Exec(ctx, sqlf.Sprintf("UPDATE exhaustive_search_repo_revision_jobs SET state = %s WHERE id = %s", casc.repoRevJobs[j], repoRevJobID))
-			require.NoError(t, err)
-		}
-	}
-
-	return jobID
-}
-
-type stateCascade struct {
-	searchJob   types.JobState
-	repoJobs    []types.JobState
-	repoRevJobs []types.JobState
 }
 
 func intptr(s int) *int { return &s }

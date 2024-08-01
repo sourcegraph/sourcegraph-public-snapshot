@@ -3,19 +3,16 @@ package auth
 
 import (
 	"fmt"
-	"net/http"
 	"sort"
 	"strings"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/authutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/azureoauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/bitbucketcloudoauth"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/gerrit"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/githuboauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/gitlaboauth"
@@ -23,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/saml"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/sourcegraphoperator"
-	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -32,6 +29,7 @@ import (
 // Init must be called by the frontend to initialize the auth middlewares.
 func Init(logger log.Logger, db database.DB) {
 	logger = logger.Scoped("auth")
+	userpasswd.Init()
 	azureoauth.Init(logger, db)
 	bitbucketcloudoauth.Init(logger, db)
 	gerrit.Init()
@@ -54,8 +52,6 @@ func Init(logger log.Logger, db database.DB) {
 		bitbucketcloudoauth.Middleware(db),
 		azureoauth.Middleware(db),
 	)
-	// Register app-level sign-out handler
-	app.RegisterSSOSignOutHandler(ssoSignOutHandler)
 
 	// Warn about usage of auth providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
@@ -111,34 +107,4 @@ func Init(logger log.Logger, db database.DB) {
 			MessageValue: fmt.Sprintf("A Sourcegraph license is required to enable following authentication providers: %s. [**Get a license.**](/site-admin/license)", strings.Join(names, ", ")),
 		}}
 	})
-}
-
-func ssoSignOutHandler(w http.ResponseWriter, r *http.Request) {
-	logger := log.Scoped("ssoSignOutHandler")
-	for _, p := range conf.Get().AuthProviders {
-		var err error
-		switch {
-		case p.Openidconnect != nil:
-			_, err = openidconnect.SignOut(w, r, openidconnect.SessionKey, openidconnect.GetProvider)
-		case p.Saml != nil:
-			_, err = saml.SignOut(w, r)
-		}
-		if err != nil {
-			logger.Error("failed to clear auth provider session data", log.Error(err))
-		}
-	}
-
-	if p := sourcegraphoperator.GetOIDCProvider(internalauth.SourcegraphOperatorProviderType); p != nil {
-		_, err := openidconnect.SignOut(
-			w,
-			r,
-			sourcegraphoperator.SessionKey,
-			func(string) *openidconnect.Provider {
-				return p
-			},
-		)
-		if err != nil {
-			logger.Error("failed to clear auth provider session data", log.Error(err))
-		}
-	}
 }

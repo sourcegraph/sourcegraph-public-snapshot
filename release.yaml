@@ -116,8 +116,8 @@ test:
           echo "pulling $image image ${IMAGE}"
           # docker pull "${IMAGE}"
 
-          echo "checking $image binary in $image image for web bundle"
-          marker=$(docker run -t --rm --entrypoint /bin/sh "${IMAGE}" -c "strings $image | grep WEB_BUNDLE" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          echo "checking $image has web-bundle at /assets-dist inside the container"
+          marker=$(docker run --rm --entrypoint /bin/sh "${IMAGE}" -c "grep -h 'WEB_BUNDLE' -R /assets-dist | sed -e 's/^[[:space:]]*//'")
           if [[ "$marker" != '"_marker": "WEB_BUNDLE"' ]]; then
             echo "$image:{{tag}} does not contain the web bundle marker string: '$marker'"
             exit 1

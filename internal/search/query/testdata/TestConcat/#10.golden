@@ -2,7 +2,7 @@
   {
     "and": [
       {
-        "value": "alsace",
+        "value": "a",
         "negated": false,
         "labels": [
           "Literal",
@@ -16,29 +16,12 @@
           },
           "end": {
             "line": 0,
-            "column": 6
+            "column": 1
           }
         }
       },
       {
-        "value": "bourgogne",
-        "negated": false,
-        "labels": [
-          "Regexp"
-        ],
-        "range": {
-          "start": {
-            "line": 0,
-            "column": 7
-          },
-          "end": {
-            "line": 0,
-            "column": 18
-          }
-        }
-      },
-      {
-        "value": "bordeaux",
+        "value": "b",
         "negated": false,
         "labels": [
           "Literal",
@@ -48,11 +31,87 @@
         "range": {
           "start": {
             "line": 0,
-            "column": 19
+            "column": 2
           },
           "end": {
             "line": 0,
-            "column": 27
+            "column": 3
+          }
+        }
+      },
+      {
+        "value": "c",
+        "negated": false,
+        "labels": [
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 4
+          },
+          "end": {
+            "line": 0,
+            "column": 5
+          }
+        }
+      },
+      {
+        "value": "d",
+        "negated": false,
+        "labels": [
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 6
+          },
+          "end": {
+            "line": 0,
+            "column": 7
+          }
+        }
+      },
+      {
+        "value": "e",
+        "negated": false,
+        "labels": [
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 8
+          },
+          "end": {
+            "line": 0,
+            "column": 9
+          }
+        }
+      },
+      {
+        "value": "f",
+        "negated": false,
+        "labels": [
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 10
+          },
+          "end": {
+            "line": 0,
+            "column": 11
           }
         }
       }

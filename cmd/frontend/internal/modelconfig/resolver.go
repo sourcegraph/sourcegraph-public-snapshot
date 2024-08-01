@@ -135,11 +135,59 @@ func (r *codyLLMConfigurationResolver) FastChatModelMaxTokens() (*int32, error) 
 	return &maxTokens, nil
 }
 
+// Here Be Dragons (written July 30 2024)
+//
+// Cody clients currently rely on CodyLLMConfiguration, they shouldn't, they should
+// use the information provided by the ModelsService and the /.api/client-config -
+// both of which supersede this information. However, they use it today.
+//
+// Clients currently rely on this CodyLLMConfiguration.provider field ONLY to
+// determine which **autocomplete provider implementation** to use. That is, to
+// control context limits, prompting behavior, and other aspects of autocomplete.
+// This is not a great way to handle this (provider/model-specific behavior being
+// fundamentally tied together), but again, it's how it works today.
+//
+// The 'autocomplete provider name string' is determined by the following logic:
+// 1) If the server has the new `modelConfiguration` in their site config, then the
+// client will use the autocomplete `Model.provider` (provider ID, not name) field
+// as the string.
+// 2) Else `if (authStatus.configOverwrites?.provider)` -- i.e. the string returned by this
+// function -- will be used.
+// 3) Else, the default string 'anthropic' will be used.
+//
+// The 'autocomplete provider name string' is then entered into a switch statement
+// (see create-provider.ts, `createProviderConfig` - which can be summarized as:
+//
+// * 'openai', 'azure-openai' => createUnstableOpenAIProviderConfig
+// * 'fireworks' => createFireworksProviderConfig
+// * 'aws-bedrock', 'anthropic' => createAnthropicProviderConfig
+// * 'google' => createAnthropicProviderConfig or createGeminiProviderConfig depending on model
+//
+// Note that all other cases are irrelevant:
+//
+// * 'experimental-openaicompatible' => deprecated; client-side only option; does not need to be returned by this function.
+// * 'openaicompatible' => does not need to be returned by this function (uses new Models service instead of CodyLLMConfiguration.provider)
+// * Ollama and other options => are client-side only
+//
+// Finally, it is worth noting that Sourcegraph instance versions prior to Aug 7th 2024
+// using Cody Gateway would return 'sourcegraph' as the provider name here, which would
+// hit a default 'fireworks' case in the client. Today, this logic no longer exists but
+// some remnants of it exist in the client codebase.
+//
+// Lastly, remember that we only ever use the default autocomplete model. There is no UI
+// currently in the product to choose the autocomplete model as a Cody user. However,
+// when we choose to add that feature, note that this return value is NOT used when
+// `modelConfiguration` is present in the site config: `Model.provider`.
+//
+// TL;DR: this function is currently expected to return strings that satisfy these conditions:
+//
+// * 'openai', 'azure-openai' => createUnstableOpenAIProviderConfig
+// * 'fireworks' => createFireworksProviderConfig
+// * 'aws-bedrock', 'anthropic' => createAnthropicProviderConfig
+// * 'google' => createAnthropicProviderConfig or createGeminiProviderConfig depending on model
 func (r *codyLLMConfigurationResolver) Provider() string {
-	if len(r.modelconfig.Providers) != 1 {
-		return "various"
-	}
-	return r.modelconfig.Providers[0].DisplayName
+	// Provider ID is the thing we have that maps closest to these strings and should be correct in the cases noted above.
+	return string(r.modelconfig.DefaultModels.CodeCompletion.ProviderID())
 }
 
 func (r *codyLLMConfigurationResolver) CompletionModel() (string, error) {

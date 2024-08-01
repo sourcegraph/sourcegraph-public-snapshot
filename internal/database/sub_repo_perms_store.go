@@ -18,19 +18,6 @@ import (
 // and exclude patterns.
 const SubRepoPermsVersion = 1
 
-var (
-	SubRepoSupportedCodeHostTypes = []string{extsvc.TypePerforce}
-	supportedTypesQuery           = make([]*sqlf.Query, len(SubRepoSupportedCodeHostTypes))
-)
-
-func init() {
-	// Build this up at startup, so we don't need to rebuild it every time
-	// RepoSupported is called
-	for i, hostType := range SubRepoSupportedCodeHostTypes {
-		supportedTypesQuery[i] = sqlf.Sprintf("%s", hostType)
-	}
-}
-
 type SubRepoPermsStore interface {
 	basestore.ShareableStore
 	With(other basestore.ShareableStore) SubRepoPermsStore
@@ -471,9 +458,9 @@ SELECT
 FROM repo
 WHERE id = %s
 AND private = TRUE
-AND external_service_type IN (%s)
+AND external_service_type = %s
 )
-`, repoID, sqlf.Join(supportedTypesQuery, ","))
+`, repoID, extsvc.TypePerforce)
 
 	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
 	if err != nil {
@@ -491,9 +478,9 @@ SELECT
 FROM repo
 WHERE name = %s
 AND private = TRUE
-AND external_service_type IN (%s)
+AND external_service_type = %s
 )
-`, repo, sqlf.Join(supportedTypesQuery, ","))
+`, repo, extsvc.TypePerforce)
 
 	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
 	if err != nil {

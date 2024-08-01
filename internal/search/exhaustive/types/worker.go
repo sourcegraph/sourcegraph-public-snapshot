@@ -34,3 +34,14 @@ const (
 
 // ToGraphQL returns the GraphQL representation of the worker state.
 func (s JobState) ToGraphQL() string { return strings.ToUpper(string(s)) }
+
+func (s JobState) String() string { return strings.ToLower(string(s)) }
+
+func (s JobState) IsTerminal() bool {
+	switch s {
+	case JobStateCompleted, JobStateFailed, JobStateCanceled:
+		return true
+	default:
+		return false
+	}
+}

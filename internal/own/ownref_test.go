@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -334,10 +333,11 @@ func TestBagManyUsers(t *testing.T) {
 	})
 	require.NoError(t, err)
 	addMockExternalAccount(ctx, t, db, user2.ID, extsvc.TypeGitLab, "ssmith-gl")
-	addMockExternalAccount(ctx, t, db, user2.ID, extsvc.TypeBitbucketServer, "ssmith-bbs")
+	// TODO: Once Bitbucket supports OAuth, we want to enable this test.
+	// addMockExternalAccount(ctx, t, db, user2.ID, extsvc.TypeBitbucketServer, "ssmith-bbs")
 	bag := ByTextReference(ctx, db, "jdoe", "ssmith")
 	assert.True(t, bag.Contains(Reference{Handle: "ssmith"}))
-	assert.True(t, bag.Contains(Reference{Handle: "ssmith-bbs"}))
+	// assert.True(t, bag.Contains(Reference{Handle: "ssmith-bbs"}))
 	assert.True(t, bag.Contains(Reference{Handle: "ssmith-gl"}))
 	assert.True(t, bag.Contains(Reference{Handle: "jdoe"}))
 	assert.True(t, bag.Contains(Reference{Handle: "jdoe-gh"}))
@@ -371,9 +371,6 @@ func initUser(ctx context.Context, t *testing.T, db database.DB) (*types.User, e
 			AccountData: scimAccountData,
 		})
 	require.NoError(t, err)
-	t.Cleanup(func() {
-		providers.MockProviders = nil
-	})
 	return user, err
 }
 
@@ -400,10 +397,4 @@ func addMockExternalAccount(ctx context.Context, t *testing.T, db database.DB, u
 			AccountData: accountData,
 		})
 	require.NoError(t, err)
-	mockProvider := providers.MockAuthProvider{
-		MockConfigID:          providers.ConfigID{Type: serviceType},
-		MockPublicAccountData: &extsvc.PublicAccountData{Login: handle},
-	}
-	// Adding providers to the mock.
-	providers.MockProviders = append(providers.MockProviders, mockProvider)
 }

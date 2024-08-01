@@ -1824,8 +1824,8 @@ type PublicRepository struct {
 	IsFork        bool   // Whether the repository is a fork of another repository
 }
 
-func (r *Repository) SizeBytes() bytesize.Bytes {
-	return bytesize.Bytes(r.DiskUsageKibibytes) * bytesize.KiB
+func (r *Repository) SizeBytes() bytesize.Size {
+	return bytesize.Size(r.DiskUsageKibibytes) * bytesize.KiB
 }
 
 // ParentRepository is the parent of a GitHub repository.

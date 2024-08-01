@@ -13,8 +13,6 @@ import (
 
 type operations struct {
 	parsing            prometheus.Gauge
-	parseQueueSize     prometheus.Gauge
-	parseQueueTimeouts prometheus.Counter
 	parseFailed        prometheus.Counter
 	parseCanceled      prometheus.Counter
 	parse              *observation.Operation
@@ -28,20 +26,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		Help:      "The number of parse jobs currently running.",
 	})
 	observationCtx.Registerer.MustRegister(parsing)
-
-	parseQueueSize := prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Name:      "codeintel_symbols_parse_queue_size",
-		Help:      "The number of parse jobs enqueued.",
-	})
-	observationCtx.Registerer.MustRegister(parseQueueSize)
-
-	parseQueueTimeouts := prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Name:      "codeintel_symbols_parse_queue_timeouts_total",
-		Help:      "The total number of parse jobs that timed out while enqueued.",
-	})
-	observationCtx.Registerer.MustRegister(parseQueueTimeouts)
 
 	parseFailed := prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
@@ -87,8 +71,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 	return &operations{
 		parsing:            parsing,
-		parseQueueSize:     parseQueueSize,
-		parseQueueTimeouts: parseQueueTimeouts,
 		parseFailed:        parseFailed,
 		parseCanceled:      parseCanceled,
 		parse:              observationCtx.Operation(op("Parse")),

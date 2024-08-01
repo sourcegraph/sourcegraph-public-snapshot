@@ -1,0 +1,30 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "providers",
+    srcs = [
+        "mock_auth_provider.go",
+        "providers.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers",
+    tags = [TAG_PLATFORM_SOURCE],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/auth",
+        "//internal/extsvc",
+        "//schema",
+        "@com_github_inconshreveable_log15//:log15",
+    ],
+)
+
+go_test(
+    name = "providers_test",
+    srcs = ["providers_test.go"],
+    embed = [":providers"],
+    tags = [TAG_PLATFORM_SOURCE],
+    deps = [
+        "//schema",
+        "@com_github_stretchr_testify//require",
+    ],
+)
