@@ -7,13 +7,14 @@ import { getGraphQLClient, infinityQuery, type GraphQLClient, IncrementalRestore
 import { ROOT_PATH, fetchSidebarFileTree } from '$lib/repo/api/tree'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
+import { SourcegraphURL } from '$root/client/common'
 
 import type { LayoutLoad } from './$types'
 import { CodyContextFiltersQuery, GitHistoryQuery, LastCommitQuery } from './layout.gql'
 
 const HISTORY_COMMITS_PER_PAGE = 20
 
-export const load: LayoutLoad = async ({ parent, params }) => {
+export const load: LayoutLoad = async ({ parent, params, url }) => {
     const client = getGraphQLClient()
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
     const filePath = params.path ? decodeURIComponent(params.path) : ''
@@ -37,6 +38,7 @@ export const load: LayoutLoad = async ({ parent, params }) => {
         fileTree,
         filePath,
         parentPath,
+        lineOrPosition: SourcegraphURL.from(url).lineRange,
         isCodyAvailable: createCodyAvailableStore(client, repoName),
         lastCommit: resolvedRevision
             .then(revspec =>
