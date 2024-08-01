@@ -320,6 +320,14 @@ func (s *store) UpdateConfigurationPolicy(ctx context.Context, policyPatch share
 			}
 		}
 
+		var syntaticIndexingEnabled bool
+		if policyPatch.SyntacticIndexingEnabled != nil {
+			syntaticIndexingEnabled = *policyPatch.SyntacticIndexingEnabled
+
+		} else {
+			syntaticIndexingEnabled = currentPolicy.SyntacticIndexingEnabled
+		}
+
 		return tx.Exec(ctx, sqlf.Sprintf(updateConfigurationPolicyQuery,
 			policyPatch.Name,
 			repositoryPatterns,
@@ -329,7 +337,7 @@ func (s *store) UpdateConfigurationPolicy(ctx context.Context, policyPatch share
 			retentionDuration,
 			policyPatch.RetainIntermediateCommits,
 			policyPatch.PreciseIndexingEnabled,
-			policyPatch.SyntacticIndexingEnabled,
+			syntaticIndexingEnabled,
 			indexCommitMaxAge,
 			policyPatch.IndexIntermediateCommits,
 			policyPatch.EmbeddingEnabled,
@@ -370,7 +378,7 @@ UPDATE lsif_configuration_policies p SET
 	retention_duration_hours = %s,
 	retain_intermediate_commits = %s,
 	indexing_enabled = %s,
-	syntactic_indexing_enabled = COALESCE(%s, p.syntactic_indexing_enabled),
+	syntactic_indexing_enabled = %s,
 	index_commit_max_age_hours = %s,
 	index_intermediate_commits = %s,
 	embeddings_enabled = %s
