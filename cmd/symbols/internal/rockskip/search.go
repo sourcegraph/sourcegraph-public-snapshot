@@ -15,9 +15,11 @@ import (
 	pg "github.com/lib/pq"
 	"github.com/segmentio/fasthash/fnv1"
 
+	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -280,24 +282,17 @@ func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameter
 
 	symbols := []result.Symbol{}
 
-	parser, err := s.createParser()
-	if err != nil {
-		return nil, errors.Wrap(err, "create parser")
-	}
-	defer parser.Close()
-
 	threadStatus.Tasklog.Start("ArchiveEach")
 	err = archiveEach(ctx, s.fetcher, string(args.Repo), string(args.CommitID), paths.Items(), func(path string, contents []byte) error {
 		defer threadStatus.Tasklog.Continue("ArchiveEach")
 
 		threadStatus.Tasklog.Start("parse")
-		allSymbols, err := parser.Parse(path, contents)
+
+		lines := strings.Split(string(contents), "\n")
+		allSymbols, err := s.parseSymbols(ctx, path, contents)
 		if err != nil {
 			return err
 		}
-
-		lines := strings.Split(string(contents), "\n")
-
 		for _, symbol := range allSymbols {
 			if isMatch(symbol.Name) {
 				if symbol.Line < 1 || symbol.Line > len(lines) {
@@ -346,6 +341,49 @@ func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameter
 	}
 
 	return symbols, nil
+}
+
+func (s *Service) parseSymbols(ctx context.Context, path string, contents []byte) (allSymbols []*ctags.Entry, err error) {
+	parser, parserType, err := s.symbolParserPool.GetParser(ctx, path, contents)
+	// If the language has a parser but we cannot retrieve it, we get an error
+	if err != nil {
+		return nil, err
+	}
+
+	// If we cannot determine type of ctags it means we don't support symbols for
+	// this file type so we bail out early. This is not considered an error since
+	// many file types may not be supported
+	if ctags_config.ParserIsNoop(parserType) {
+		return nil, nil
+	}
+
+	defer func() {
+		if err == nil {
+			if e := recover(); e != nil {
+				err = errors.Errorf("panic: %s", e)
+			}
+		}
+
+		if err == nil {
+			s.symbolParserPool.Done(parser, parserType)
+		} else {
+			// If we are canceled we still kill the parser just in case, but
+			// we do not record as failure nor logspam since this is a more
+			// expected case.
+
+			// Close parser and return nil to pool, indicating that the next
+			// receiver should create a new parser
+			parser.Close()
+			s.symbolParserPool.Done(nil, parserType)
+		}
+	}()
+
+	allSymbols, err = parser.Parse(path, contents)
+	if err != nil {
+		return nil, err
+	}
+
+	return allSymbols, nil
 }
 
 func logQuery(ctx context.Context, db database.DB, args search.SymbolsParameters, q *sqlf.Query, duration time.Duration, symbols int) error {

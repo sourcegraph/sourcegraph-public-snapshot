@@ -123,7 +123,8 @@ async function fetchCodeGraphData(
                         ),
                         undefined,
                         occ.symbol ?? undefined,
-                        occ.roles?.map(translateRole).reduce((acc, role) => acc | role, 0)
+                        occ.roles?.map(translateRole).reduce((acc, role) => acc | role, 0),
+                        provenance
                     )
             ) ?? []
         const nonOverlapping = nonOverlappingOccurrences([...overlapping])

@@ -34,6 +34,10 @@ func TestRockskipIntegration(t *testing.T) {
 		"github.com/sourcegraph/rockskiptest": gitserverintegration.RepoWithCommands(t,
 			"echo '# Title' > README.md",
 			"git add README.md",
+			"echo '_global magik_global << 1' > magik.magik",
+			"git add magik.magik",
+			"echo 'int c_function() {}' > c.c",
+			"git add c.c",
 			"git commit -m commit --author='Foo Author <foo@sourcegraph.com>'",
 		),
 	})
@@ -56,10 +60,11 @@ func TestRockskipIntegration(t *testing.T) {
 	// dev/rockskipintegration later.
 	sgs := symbolsgitserver.NewClient(observationCtx, gs)
 	ctagsConfig := symbolstypes.LoadCtagsConfig(env.BaseConfig{})
-	// Try to find the universal ctags binary. In bazel, it will be provided by bazel.
+	// Try to find the universal and scip ctags binaries. In bazel, it will be provided by bazel.
 	// Outside of bazel, we rely on the system.
 	if os.Getenv("BAZEL_TEST") != "" {
 		ctagsConfig.UniversalCommand, _ = runfiles.Rlocation(os.Getenv("CTAGS_RLOCATIONPATH"))
+		ctagsConfig.ScipCommand, _ = runfiles.Rlocation(os.Getenv("SCIP_CTAGS_RLOCATIONPATH"))
 	} else {
 		_, err = exec.LookPath(ctagsConfig.UniversalCommand)
 		if err != nil {
@@ -70,15 +75,30 @@ func TestRockskipIntegration(t *testing.T) {
 				// In bazel, we expose the path to ctags via an environment variable.
 			}
 		}
+		_, err = exec.LookPath(ctagsConfig.ScipCommand)
+		if err != nil {
+			path := os.Getenv("SCIP_CTAGS_COMMAND")
+			if path == "" {
+				ctagsConfig.ScipCommand = "scip-ctags"
+			} else {
+				ctagsConfig.ScipCommand = path
+			}
+		}
+	}
+	logger := log.Scoped("parser")
+	parserFactory := func(source ctags_config.ParserType) (ctags.Parser, error) {
+		return symbolsParser.SpawnCtags(logger, ctagsConfig, source)
+	}
+	symbolParserPool, err := symbolsParser.NewParserPool(observationCtx, "integration", parserFactory, 1, symbolsParser.DefaultParserTypes)
+	if err != nil {
+		logger.Fatal("failed to create symbol parser pool", log.Error(err))
 	}
 	svc, err := rockskip.NewService(
 		observationCtx,
 		db,
 		sgs,
 		fetcher.NewRepositoryFetcher(observationCtx, sgs, 100000, 1000),
-		func() (ctags.Parser, error) {
-			return symbolsParser.SpawnCtags(log.Scoped("parser"), ctagsConfig, ctags_config.UniversalCtags)
-		},
+		symbolParserPool,
 		// TODO: Adjust these numbers as needed:
 		1, 1, true, 1, 1024, 1024, true,
 	)
@@ -99,6 +119,20 @@ func TestRockskipIntegration(t *testing.T) {
 			Line:      0,
 			Character: 2,
 			Kind:      "chapter",
+		},
+		{
+			Name:      "c_function",
+			Path:      "c.c",
+			Line:      0,
+			Character: 4,
+			Kind:      "function",
+		},
+		{
+			Name:      "magik_global",
+			Path:      "magik.magik",
+			Line:      0,
+			Character: 8,
+			Kind:      "variable",
 		},
 	}, res)
 }

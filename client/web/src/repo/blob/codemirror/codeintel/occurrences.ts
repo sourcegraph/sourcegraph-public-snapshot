@@ -62,6 +62,11 @@ export class OccurrenceIndex extends Array<Occurrence> {
         this.lineIndex = lineIndex
     }
 
+    // Override Symbol.species to return Array instead of OccurrenceIndex
+    public static get [Symbol.species](): ArrayConstructor {
+        return Array
+    }
+
     // atPosition returns the occurrence whose range contains position,
     // or undefined if no such occurrence exists.
     public atPosition(position: Position): Occurrence | undefined {

@@ -4,15 +4,10 @@ go_library(
     name = "assets",
     srcs = [
         "assets.go",
-        "dev.go",
         "doc.go",
         "manifest.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/ui/assets",
     visibility = ["//visibility:public"],
-    x_defs = select({
-        "//conditions:default": {},
-        "//:integration_testing_enabled": {"github.com/sourcegraph/sourcegraph/client/web/dist.assetsSubdir": "integration"},
-    }),
     deps = ["//lib/errors"],
 )

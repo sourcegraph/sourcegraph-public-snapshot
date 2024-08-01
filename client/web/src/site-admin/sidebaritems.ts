@@ -135,6 +135,12 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: maintenanceGroupUpdatesItemLabel,
             to: '/site-admin/updates',
+            condition: ({ applianceManaged }) => !applianceManaged,
+        },
+        {
+            label: maintenanceGroupUpdatesItemLabel,
+            to: '/appliance/updates',
+            condition: ({ applianceManaged }) => applianceManaged,
         },
         {
             label: 'Documentation',
