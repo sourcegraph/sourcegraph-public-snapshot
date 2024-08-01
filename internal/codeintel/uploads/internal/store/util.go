@@ -80,9 +80,10 @@ func makeVisibleUploadsQuery(repositoryID api.RepoID, commit api.CommitID) *sqlf
 }
 
 func makeNearestUploadsQuery(repositoryID api.RepoID, commits ...api.CommitID) *sqlf.Query {
-	commitQueries := sqlf.Join(genslices.Map(commits, func(commit api.CommitID) *sqlf.Query {
+	format := func(commit api.CommitID) *sqlf.Query {
 		return sqlf.Sprintf("%s", dbutil.CommitBytea(commit))
-	}), ", ")
+	}
+	commitQueries := sqlf.Join(genslices.Map(commits, format), ", ")
 	return sqlf.Sprintf(nearestUploadsQuery, int(repositoryID), commitQueries, int(repositoryID), commitQueries)
 }
 
