@@ -276,6 +276,9 @@ type RetrieverContextItem {
     item: CodyContextResult!
 }
 
+"""
+EXPERIMENTAL: The result of fetching context for a URL mention
+"""
 type URLMentionContextResult {
     """
     The extracted title of the page, if it exists
