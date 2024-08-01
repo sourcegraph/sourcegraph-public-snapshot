@@ -144,7 +144,7 @@ filegroup(
 
 ts_project(
     name = "web_lib",
-    srcs = glob(["!src/playwright/*.spec.ts"]) + [
+    srcs = [
         "src/Index.tsx",
         "src/LegacyLayout.tsx",
         "src/LegacyRouteContext.tsx",
