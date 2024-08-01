@@ -5,7 +5,6 @@ import (
 	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 
@@ -443,11 +442,12 @@ func AuthPrimaryLoginProvidersCount() int {
 	return c
 }
 
-func IsApplianceManaged() bool {
-	if v, _ := strconv.ParseBool(os.Getenv("APPLIANCE_MANAGED")); v {
-		return v
-	}
-	return false
+func ApplianceUpdateTarget() string {
+	return os.Getenv("APPLIANCE_UPDATE_TARGET")
+}
+
+func ApplianceMenuTarget() string {
+	return os.Getenv("APPLIANCE_MENU_TARGET")
 }
 
 // SearchSymbolsParallelism returns 20, or the site config
