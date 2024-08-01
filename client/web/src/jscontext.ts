@@ -199,7 +199,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /**
      * Whether this sourcegraph instance is managed by Appliance
      */
-    applianceManaged: boolean
+    applianceUpdateTarget: string
+    applianceMenuTarget: string
 
     /**
      * Whether Cody is enabled on this instance. Check
