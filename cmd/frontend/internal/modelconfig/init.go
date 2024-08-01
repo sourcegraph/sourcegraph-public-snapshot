@@ -16,6 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
+
+	modelconfigSDK "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 )
 
 // Init is the initalization function wired into the `frontend` application startup.
@@ -94,6 +97,20 @@ func Init(
 		configManager.OnSiteConfigChange()
 	})
 
+	// Register a new site configuration validator, to surface any errors
+	// for admin-supplied changes to LLM model configuration.
+	conf.ContributeValidator(func(q conftypes.SiteConfigQuerier) conf.Problems {
+		newSiteConfig := q.SiteConfig()
+
+		// Unfortuantely we fail on the first error we encounter, rather than trying to
+		// aggregate as many errors as we can find.
+		_, err := configManager.applyNewSiteConfig(newSiteConfig)
+		if err != nil {
+			return conf.NewSiteProblems(err.Error())
+		}
+		return nil
+	})
+
 	return nil
 }
 
@@ -110,6 +127,20 @@ type manager struct {
 // (e.g. whatever the previous configuration data was will remain in-place.)
 func (m *manager) OnSiteConfigChange() {
 	latestSiteConfig := conf.Get().SiteConfiguration
+	updatedConfig, err := m.applyNewSiteConfig(latestSiteConfig)
+	if err != nil {
+		// On error, just log and keep the current settings as-is.
+		m.logger.Error("error applying site config changes", log.Error(err))
+		return
+	}
+
+	// Expose the new configuration data from the Service.
+	singletonConfigService.set(updatedConfig)
+}
+
+// applyNewSiteConfig attempts to merge the new site configuration data, with what is already
+// available statically or from Cody Gateway.
+func (m *manager) applyNewSiteConfig(latestSiteConfig schema.SiteConfiguration) (*modelconfigSDK.ModelConfiguration, error) {
 	latestSiteModelConfiguration, err := maybeGetSiteModelConfiguration(m.logger, latestSiteConfig)
 	if err != nil {
 		// NOTE: If the site configuration data is somehow bad, we silently ignore
@@ -118,8 +149,7 @@ func (m *manager) OnSiteConfigChange() {
 		// validation logic inside the site configuration validation checks, so
 		// that they will be prevented from saving invalid config data in the first
 		// place. But we need to always account for bogus/corrupted config data.
-		m.logger.Error("error loading updated site configuration", log.Error(err))
-		return
+		return nil, errors.Wrap(err, "loading site configuration data")
 	}
 
 	// Update and rebuild the LLM model configuration.
@@ -130,10 +160,8 @@ func (m *manager) OnSiteConfigChange() {
 	m.builder.siteConfigData = latestSiteModelConfiguration
 	updatedConfig, err := m.builder.build()
 	if err != nil {
-		m.logger.Error("error calculating new model configuration based on config update", log.Error(err))
-		return
+		return nil, err
 	}
 
-	// Expose the new configuration data from the Service.
-	singletonConfigService.set(updatedConfig)
+	return updatedConfig, nil
 }
