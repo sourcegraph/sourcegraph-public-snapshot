@@ -130,6 +130,8 @@ func newCompletionsHandler(
 			return
 		}
 
+		fmt.Println("currentModelConfig", currentModelConfig)
+
 		// Load the Provider and Model configuration data. This is surprisingly tricky, because of
 		// various contextual defaults and/or checking the user has access to the model, etc.
 		providerConfig, modelConfig, err := resolveRequestedModel(ctx, logger, currentModelConfig, requestParams, getModel)

@@ -174,6 +174,7 @@ func getChatModelFn(db database.DB) getModelFn {
 	return func(
 		ctx context.Context, requestParams types.CodyCompletionRequestParameters, cfg *modelconfigSDK.ModelConfiguration) (
 		modelconfigSDK.ModelRef, error) {
+		fmt.Println("cfgGetChatModelFn", cfg)
 		// We want to support newer clients sending fully-qualified ModelRefs, as well as older
 		// clients using the legacy format. So we check if the incomming model reference is in either
 		// format.
@@ -222,6 +223,8 @@ func getChatModelFn(db database.DB) getModelFn {
 		if requestParams.Fast {
 			return cfg.DefaultModels.FastChat, nil
 		}
+
+		fmt.Println("cfg.DefaultModels.Chat:", cfg)
 
 		// Now, for Cody Enterprise, if the caller requested a specific model we simply look
 		// it up in the site config. By definition, if it is found then the model is allowed.

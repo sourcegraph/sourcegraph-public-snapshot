@@ -105,7 +105,9 @@ func forwardToAPIHandler(apiHandler http.Handler, sgReq map[string]interface{}, 
 		return nil, fmt.Errorf("failed to marshal request body: %v", err)
 	}
 
-	req, err := http.NewRequest("POST", "/.api/completions/stream?api-version=1&client-name=openai-rest-api&client-version=6.0.0", bytes.NewBuffer(reqBody))
+	req, err := http.NewRequestWithContext(r.Context(), "POST",
+		"/.api/completions/stream?api-version=1&client-name=openai-rest-api&client-version=6.0.0",
+		bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %v", err)
 	}

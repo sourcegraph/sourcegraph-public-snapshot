@@ -1,6 +1,7 @@
 package publicrestapi
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -17,6 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/completions"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/modelconfig"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -37,6 +40,7 @@ type publicrestTest struct {
 }
 
 func newTest(t *testing.T) *publicrestTest {
+	assert.NoError(t, modelconfig.InitMock())
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
@@ -55,13 +59,41 @@ func newTest(t *testing.T) *publicrestTest {
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			CodyEnabled:     &truePtr,
-			CodyPermissions: &falsePtr, // disable RBAC Cody permissions
+			CodyPermissions: &falsePtr,
 			Completions: &schema.Completions{
 				AccessToken: licenseAccessToken,
+			},
+			ModelConfiguration: &schema.SiteModelConfiguration{
+				ProviderOverrides: []*schema.ProviderOverride{
+					{
+						DisplayName: "OpenAI",
+						Id:          "openai",
+					},
+				},
+				ModelOverrides: []*schema.ModelOverride{
+					{
+						ModelRef:     "openai::xxxx::gpt-4o-mini-2024-07-18",
+						Capabilities: []string{"chat"},
+					},
+				},
+				DefaultModels: &schema.DefaultModels{
+					Chat:           "openai::xxxx::gpt-4o-mini-2024-07-18",
+					CodeCompletion: "openai::xxxx::gpt-4o-mini-2024-07-18",
+					FastChat:       "openai::xxxx::gpt-4o-mini-2024-07-18",
+				},
 			},
 		},
 	})
 	t.Cleanup(func() { conf.Mock(nil) })
+
+	// needs to happen after conf.Mock(...) to pick up model config
+	assert.NoError(t, modelconfig.ResetMock())
+
+	cfg, err := modelconfig.Get().Get()
+	assert.NoError(t, err)
+	if len(cfg.Models) == 0 {
+		t.Fatal("expected model overrides")
+	}
 
 	enterpriseServices := enterprise.DefaultServices()
 	rateLimitStore, _ := memstore.NewCtx(1024)
@@ -105,10 +137,24 @@ func TestAPI(t *testing.T) {
 	c := newTest(t)
 
 	t.Run("hello world", func(t *testing.T) {
-		req, err := http.NewRequest("POST", "/api/openai/v1/chat/completions", strings.NewReader(`{"model": "gpt-4o-mini-2024-07-18", "messages": [{"role": "user", "content": "respond with 'yes' and nothing else"}]}`))
-		assert.NoError(t, err)
+		modelConfig := conf.GetCompletionsConfig(conf.Get().SiteConfiguration)
+		fmt.Println("chatModel:", modelConfig.ChatModel)
+		req, err := http.NewRequest("POST",
+			"/api/openai/v1/chat/completions",
+			strings.NewReader(`{
+			    "model": "openai::xxxx::gpt-4o-mini-2024-07-18",
+			    "messages": [{"role": "user", "content": "respond with 'yes' and nothing else"}]
+			}`))
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("token %s", c.AccessToken))
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.AccessToken))
+		assert.NoError(t, err)
+
+		ctx := context.Background()
+		req = req.WithContext(
+			actor.WithActor(ctx, &actor.Actor{
+				UID: 99,
+			}),
+		)
 
 		rr := httptest.NewRecorder()
 		c.Handler.ServeHTTP(rr, req)
