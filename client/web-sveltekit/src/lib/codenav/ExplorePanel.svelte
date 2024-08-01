@@ -402,6 +402,8 @@
         height: 100%;
         width: 100%;
 
+        --icon-color: currentColor;
+
         color: var(--text-muted);
         font-weight: 400;
     }

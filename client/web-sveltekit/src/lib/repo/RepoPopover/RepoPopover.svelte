@@ -199,6 +199,6 @@
         display: flex;
         color: var(--text-muted);
         justify-content: flex-end;
-        font-size: var(--font-size-tiny);
+        font-size: var(--font-size-xs);
     }
 </style>
