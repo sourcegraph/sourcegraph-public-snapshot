@@ -10,7 +10,6 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/k3a/html2text"
-	// "github.com/microcosm-cc/bluemonday"
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
