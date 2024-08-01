@@ -117,6 +117,9 @@ class Sourcegraph {
                     },
                 })
             })
+            await this.page.addInitScript(() =>
+                window.localStorage.setItem('temporarySettings', '{"webNext.welcomeOverlay.dismissed": true}')
+            )
         }
         // mock graphql calls
         await this.page.route(/\.api\/graphql/, route => {
