@@ -15,7 +15,7 @@ func (svc) Name() string { return "symbols" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 	LoadConfig()
-	config := loadRockskipConfig(env.BaseConfig{}, CtagsConfig, RepositoryFetcherConfig)
+	config := loadRockskipConfig(env.BaseConfig{}, CtagsConfig, config.NumCtagsProcesses, config.RequestBufferSize, RepositoryFetcherConfig)
 	return &config, []debugserver.Endpoint{GRPCWebUIDebugEndpoint()}
 }
 

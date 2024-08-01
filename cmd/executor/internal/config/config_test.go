@@ -59,7 +59,7 @@ func TestConfig_Load(t *testing.T) {
 		case "EXECUTOR_KUBERNETES_NODE_TOLERATIONS":
 			return `[{"key": "foo", "operator": "Equal", "value": "bar", "effect": "NoSchedule"}]`
 		case "KUBERNETES_SINGLE_JOB_POD":
-			return "true"
+			return "false"
 		case "KUBERNETES_JOB_VOLUME_TYPE":
 			return "pvc"
 		case "KUBERNETES_JOB_VOLUME_SIZE":
@@ -163,7 +163,7 @@ func TestConfig_Load(t *testing.T) {
 		[]corev1.Toleration{{Key: "foo", Operator: corev1.TolerationOpEqual, Value: "bar", Effect: corev1.TaintEffectNoSchedule}},
 		cfg.KubernetesNodeTolerations,
 	)
-	assert.True(t, cfg.KubernetesSingleJobPod)
+	assert.False(t, cfg.KubernetesSingleJobPod)
 	assert.Equal(t, "pvc", cfg.KubernetesJobVolumeType)
 	assert.Equal(t, "10Gi", cfg.KubernetesJobVolumeSize)
 	assert.Equal(
@@ -234,7 +234,7 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Equal(t, -1, cfg.KubernetesSecurityContextRunAsUser)
 	assert.Equal(t, -1, cfg.KubernetesSecurityContextRunAsGroup)
 	assert.Equal(t, 1000, cfg.KubernetesSecurityContextFSGroup)
-	assert.False(t, cfg.KubernetesSingleJobPod)
+	assert.True(t, cfg.KubernetesSingleJobPod)
 	assert.Equal(t, "emptyDir", cfg.KubernetesJobVolumeType)
 	assert.Equal(t, "5Gi", cfg.KubernetesJobVolumeSize)
 	assert.Empty(t, cfg.KubernetesAdditionalJobVolumes)

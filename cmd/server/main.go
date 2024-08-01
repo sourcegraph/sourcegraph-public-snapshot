@@ -7,10 +7,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/server/shared"
 	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 
-	_ "github.com/sourcegraph/sourcegraph/client/web/dist" // use assets
+	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
 
 func main() {
+	assets.Init()
 	sanitycheck.Pass()
 
 	enableEmbeddings, _ := strconv.ParseBool(os.Getenv("SRC_ENABLE_EMBEDDINGS"))

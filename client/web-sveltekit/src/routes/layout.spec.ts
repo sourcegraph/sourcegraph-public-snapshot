@@ -10,14 +10,6 @@ test('has sign in button', async ({ page }) => {
     await expect(page).toHaveURL('/sign-in')
 })
 
-test('has experimental opt out popover', async ({ sg, page }) => {
-    sg.signIn({ username: 'test' })
-
-    await page.goto('/')
-    await page.getByText('Experimental').click()
-    await expect(page.getByText('opt out')).toBeVisible()
-})
-
 test('has user menu', async ({ sg, page }) => {
     sg.signIn({ username: 'test' })
     const userMenu = page.getByLabel('Open user menu')

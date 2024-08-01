@@ -17,8 +17,10 @@ go_library(
     visibility = ["//cmd/symbols:__subpackages__"],
     deps = [
         "//cmd/symbols/internal/fetcher",
+        "//cmd/symbols/internal/parser",
         "//internal/actor",
         "//internal/api",
+        "//internal/ctags_config",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/batch",
@@ -60,8 +62,11 @@ go_test(
     ],
     deps = [
         "//cmd/symbols/internal/fetcher",
+        "//cmd/symbols/internal/parser",
         "//internal/api",
         "//internal/byteutils",
+        "//internal/conf",
+        "//internal/ctags_config",
         "//internal/database/dbtest",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
