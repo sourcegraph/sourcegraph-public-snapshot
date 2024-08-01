@@ -114,9 +114,9 @@ extend type Query {
     ): ChatContextResult!
 
     """
-    Gets the
+    EXPERIMENTAL: Fetches the relevant context for a mentioned URL
     """
-    urlMentionContext(url: String!): String!
+    urlMentionContext(url: String!): URLMentionContextResult!
 }
 
 """
@@ -276,9 +276,6 @@ type RetrieverContextItem {
     item: CodyContextResult!
 }
 
-"""
-EXPERIMENTAL:
-"""
 type URLMentionContextResult {
     """
     The extracted title of the page, if it exists

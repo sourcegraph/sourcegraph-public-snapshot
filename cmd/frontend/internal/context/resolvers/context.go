@@ -430,7 +430,10 @@ func (r *Resolver) fetchZoekt(ctx context.Context, query string, repo *types.Rep
 	return res, partialErrors, nil
 }
 
-var multiWhitespaceRegexp = regexp.MustCompile(`(\s)\s+`)
+var titleRegexp = regexp.MustCompile(`<title>([^<]+)</title>`)
+
+const urlContextReadLimit = 5 * 1024 * 1024
+const urlContextOutputLimit = 14000
 
 func (r *Resolver) UrlMentionContext(ctx context.Context, args graphqlbackend.UrlMentionContextArgs) (*graphqlbackend.UrlMentionContextResponse, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", args.Url, nil)
@@ -438,25 +441,30 @@ func (r *Resolver) UrlMentionContext(ctx context.Context, args graphqlbackend.Ur
 		return nil, err
 	}
 
-	// TODO: is it safe to use the external client for arbitrary user-provided URLs?
-	// TODO: does this guarantee that we cannot hit internal endpoints?
+	// 🚨 SECURITY: This endpoint allows API users to create GET requests against arbitrary URLs.
+	// To mitigate risk of SSRF, we use an the ExternalClient, which denies requests to internal targets.
 	resp, err := httpcli.UncachedExternalClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	// TODO: follow redirects?
 	if resp.StatusCode >= http.StatusBadRequest {
 		return nil, errors.Errorf("request failed with status %d", resp.StatusCode)
 	}
 
-	// Limit the amount we read from the response to protect against
-	// TODO: what's a reasonable amount to limit to?
-	content, err := io.ReadAll(io.LimitReader(resp.Body, 5*1024*1024))
+	// 🚨 SECURITY: Limit the amount of data we will read into memory.
+	content, err := io.ReadAll(io.LimitReader(resp.Body, urlContextReadLimit))
 	if err != nil {
 		return nil, err
 	}
+
+	// Attempt to extract the title
+	var title *string
+	if match := titleRegexp.FindSubmatch(content); match != nil {
+		title = pointers.Ptr(string(match[1]))
+	}
+
 	// Trim to main if it exists since that's a decent signal pointing to the important part of the page.
 	if idx := bytes.Index(content, []byte("<main")); idx > 0 {
 		content = content[idx:]
@@ -464,10 +472,17 @@ func (r *Resolver) UrlMentionContext(ctx context.Context, args graphqlbackend.Ur
 	if idx := bytes.Index(content, []byte("</main>")); idx > 0 {
 		content = content[:idx+len("</main>")]
 	}
-	// Convert the HTML to text
+
+	// Convert the HTML to text to make the ouptut higher density. The output
+	// is still pretty crude, but it does enough to capture the description and
+	// most comments from a github PR. There is significant room to improve
+	// content extraction here.
 	textified := html2text.HTML2TextWithOptions(string(content), html2text.WithUnixLineBreaks())
-	textified = textified[:min(len(textified), 14000)] // arbitrarily truncate
-	return textified, nil
+	textified = textified[:min(len(textified), urlContextOutputLimit)]
+	return &graphqlbackend.UrlMentionContextResponse{
+		Title:   title,
+		Content: textified,
+	}, nil
 }
 
 // countLines finds the number of lines corresponding to the number of runes. We 'round down'
