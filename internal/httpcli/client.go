@@ -1,9 +1,12 @@
 package httpcli
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
+	"io"
 	"math"
 	"math/rand"
 	"net"
@@ -59,7 +62,21 @@ func (f DoerFunc) Do(req *http.Request) (*http.Response, error) {
 	if GlobalDoerMock.DoFunc != nil {
 		return GlobalDoerMock.DoFunc(f, req)
 	}
-	return f(req)
+	body, _ := io.ReadAll(req.Body)
+	req.Body = io.NopCloser(bytes.NewBuffer(body))
+	fmt.Println("DOER_REQUEST:", req.Method, req.URL.String(), string(body), req.Header)
+	res, err := f(req)
+	if err == nil {
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			fmt.Println("Error reading body:", err)
+		} else {
+			fmt.Println("DOER_RESPONSE:", res.Status, res.Header, string(body))
+		}
+		res.Body.Close()
+		res.Body = io.NopCloser(bytes.NewBuffer(body))
+	}
+	return res, err
 }
 
 // A Middleware function wraps a Doer with a layer of behaviour. It's used

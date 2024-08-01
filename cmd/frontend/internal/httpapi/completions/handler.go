@@ -143,6 +143,8 @@ func newCompletionsHandler(
 			return
 		}
 
+		fmt.Println("RESOLVED MODEL:", modelConfig.ModelName)
+
 		ctx, done := Trace(ctx, traceFamily, modelConfig.ModelName, requestParams.MaxTokensToSample).
 			WithErrorP(&err).
 			WithRequest(r).
@@ -465,6 +467,7 @@ func serveSyncResponse(
 	ctx context.Context, db database.DB, logger log.Logger,
 	compRequest types.CompletionRequest, cc types.CompletionsClient, _ guardrails.AttributionTest) {
 
+	fmt.Println("COMP_REQUEST", compRequest)
 	completion, err := cc.Complete(ctx, logger, compRequest)
 	if err != nil {
 		logFields := []log.Field{log.Error(err)}

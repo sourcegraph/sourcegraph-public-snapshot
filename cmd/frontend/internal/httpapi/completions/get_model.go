@@ -187,6 +187,9 @@ func getChatModelFn(db database.DB) getModelFn {
 			legacyMRef legacyModelRef          = legacyModelRef(requestParams.RequestedModel)
 		)
 
+		fmt.Println("REQUESTEDMODEL", requestParams.RequestedModel)
+		fmt.Println("MREFFFF", mref)
+
 		// If running on dotcom, i.e. using Cody Free/Cody Pro, then the available
 		// models depend on the caller's subscription status.
 		//
@@ -488,6 +491,11 @@ func resolveRequestedModel(
 	if gotModel == nil {
 		return nil, nil, errors.Errorf("unable to find model %q", mref)
 	}
+
+	fmt.Println("GOT PROVIDER:", gotProvider.DisplayName)
+	fmt.Println("GOT MODEL:", gotModel.ModelName)
+	fmt.Println("CFGMODELS", cfg.Models)
+	fmt.Println("MREF", mref)
 
 	return gotProvider, gotModel, nil
 }

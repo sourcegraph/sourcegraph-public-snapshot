@@ -1,13 +1,17 @@
 package publicrestapi
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/throttled/throttled/v2/store/memstore"
@@ -23,8 +27,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -39,7 +45,18 @@ type publicrestTest struct {
 	AccessToken string
 }
 
+// Mock of the httpcli.Doer interface.
+type mockDoer struct {
+	do func(*http.Request) (*http.Response, error)
+}
+
+func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
+	return c.do(r)
+}
+
 func newTest(t *testing.T) *publicrestTest {
+	rcache.SetupForTest(t)
+
 	assert.NoError(t, modelconfig.InitMock())
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
@@ -66,20 +83,21 @@ func newTest(t *testing.T) *publicrestTest {
 			ModelConfiguration: &schema.SiteModelConfiguration{
 				ProviderOverrides: []*schema.ProviderOverride{
 					{
-						DisplayName: "OpenAI",
-						Id:          "openai",
+						DisplayName: "Anthropic",
+						Id:          "anthropic",
 					},
 				},
 				ModelOverrides: []*schema.ModelOverride{
 					{
-						ModelRef:     "openai::xxxx::gpt-4o-mini-2024-07-18",
-						Capabilities: []string{"chat"},
+						ModelRef:     "anthropic::xxxx::claude-sonnet-3.5-20240728",
+						ModelName:    "claude-sonnet-3.5-20240728",
+						Capabilities: []string{"chat", "completion", "fastChat"},
 					},
 				},
 				DefaultModels: &schema.DefaultModels{
-					Chat:           "openai::xxxx::gpt-4o-mini-2024-07-18",
-					CodeCompletion: "openai::xxxx::gpt-4o-mini-2024-07-18",
-					FastChat:       "openai::xxxx::gpt-4o-mini-2024-07-18",
+					Chat:           "anthropic::xxxx::claude-sonnet-3.5-20240728",
+					CodeCompletion: "anthropic::xxxx::claude-sonnet-3.5-20240728",
+					FastChat:       "anthropic::xxxx::claude-sonnet-3.5-20240728",
 				},
 			},
 		},
@@ -98,6 +116,23 @@ func newTest(t *testing.T) *publicrestTest {
 	enterpriseServices := enterprise.DefaultServices()
 	rateLimitStore, _ := memstore.NewCtx(1024)
 	rateLimiter := graphqlbackend.NewBasicLimitWatcher(logger, rateLimitStore)
+
+	initialDoer := httpcli.CodyGatewayDoer
+	t.Cleanup(func() {
+		httpcli.CodyGatewayDoer = initialDoer
+	})
+	httpcli.CodyGatewayDoer = &mockDoer{
+		do: func(r *http.Request) (*http.Response, error) {
+			fmt.Println("DOER_REQUEST:", r.Method, r.URL.String(), r.Header.Get("Authorization"))
+			response := http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewBufferString(`{"id":"msg_01159fxVenqQDniWYomhMFYj","type":"message","role":"assistant","model":"claude-sonnet-3.5-20240728","content":[{"type":"text","text":"yes"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":25,"output_tokens":32}}`)),
+				Header:     make(http.Header),
+			}
+			response.Header.Add("Content-Type", "application/json")
+			return &response, nil
+		},
+	}
 
 	chatCompletionsStreamHandler := func() http.Handler {
 		return completions.NewChatCompletionsStreamHandler(logger, db)
@@ -142,7 +177,7 @@ func TestAPI(t *testing.T) {
 		req, err := http.NewRequest("POST",
 			"/api/openai/v1/chat/completions",
 			strings.NewReader(`{
-			    "model": "openai::xxxx::gpt-4o-mini-2024-07-18",
+			    "model": "anthropic::xxxx::claude-sonnet-3.5-20240728",
 			    "messages": [{"role": "user", "content": "respond with 'yes' and nothing else"}]
 			}`))
 		req.Header.Set("Content-Type", "application/json")
@@ -160,31 +195,36 @@ func TestAPI(t *testing.T) {
 		c.Handler.ServeHTTP(rr, req)
 
 		assert.Equal(t, http.StatusOK, rr.Code)
+		body := rr.Body.String()
+		var prettyJSON bytes.Buffer
+		err = json.Indent(&prettyJSON, []byte(body), "", "    ")
+		if err != nil {
+			t.Fatalf("Failed to format JSON: %v", err)
+		}
+		body = prettyJSON.String()
 
-		expectedResponse := `{
-			"id": "chat-12345678-1234-1234-1234-123456789012",
-			"choices": [
-				{
-					"finish_reason": "end_turn",
-					"index": 0,
-					"message": {
-						"content": "yes",
-						"role": "assistant"
-					}
-				}
-			],
-			"created": 1722438858,
-			"model": "anthropic::unknown::claude-3-sonnet-20240229",
-			"system_fingerprint": "",
-			"object": "chat.completion",
-			"usage": {
-				"completion_tokens": 0,
-				"prompt_tokens": 0,
-				"total_tokens": 0
-			}
-		}`
-
-		assert.JSONEq(t, expectedResponse, rr.Body.String())
-		assert.NoError(t, err)
+		autogold.Expect(`{
+    "id": "chat-12345678-1234-1234-1234-123456789012",
+    "choices": [
+        {
+            "finish_reason": "end_turn",
+            "index": 0,
+            "message": {
+                "content": "yes",
+                "role": "assistant"
+            }
+        }
+    ],
+    "created": 1722516460,
+    "model": "anthropic::xxxx::claude-sonnet-3.5-20240728",
+    "system_fingerprint": "",
+    "object": "chat.completion",
+    "usage": {
+        "completion_tokens": 0,
+        "prompt_tokens": 0,
+        "total_tokens": 0
+    }
+}
+`).Equal(t, body)
 	})
 }

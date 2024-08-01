@@ -9,6 +9,7 @@ import (
 )
 
 func assertRountripJson(t *testing.T, jsonStr, expectedJSON string) {
+	t.Helper()
 	var req CreateChatCompletionRequest
 	err := json.Unmarshal([]byte(jsonStr), &req)
 	if err != nil {
