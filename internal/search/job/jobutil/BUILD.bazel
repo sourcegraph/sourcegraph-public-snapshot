@@ -47,7 +47,6 @@ go_library(
         "//internal/search/result",
         "//internal/search/searchcontexts",
         "//internal/search/searcher",
-        "//internal/search/smartsearch",
         "//internal/search/streaming",
         "//internal/search/structural",
         "//internal/search/zoekt",

@@ -243,8 +243,6 @@ func SearchTypeFromString(patternType string) (query.SearchType, error) {
 		return query.SearchTypeRegex, nil
 	case "structural":
 		return query.SearchTypeStructural, nil
-	case "lucky":
-		return query.SearchTypeLucky, nil
 	case "codycontext":
 		return query.SearchTypeCodyContext, nil
 	case "keyword":
@@ -295,8 +293,6 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 			searchType = query.SearchTypeLiteral
 		case "structural":
 			searchType = query.SearchTypeStructural
-		case "lucky":
-			searchType = query.SearchTypeLucky
 		case "codycontext":
 			searchType = query.SearchTypeCodyContext
 		case "keyword":

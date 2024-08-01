@@ -41,8 +41,8 @@ func GetLanguageByNameOrAlias(nameOrAlias string) (lang string, ok bool) {
 // Mutually consistent with getLanguagesByExtension, see the tests
 // for the exact invariants.
 func GetLanguageExtensions(language string) []string {
-	if lang, ok := unsupportedByEnryNameToExtensionMap[language]; ok {
-		return []string{lang}
+	if langs, ok := unsupportedByEnryNameToExtensionMap[language]; ok {
+		return langs
 	}
 
 	ignoreExts, isNiche := nicheExtensionUsages[language]
@@ -114,6 +114,13 @@ var overrideAmbiguousExtensionsMap = map[string]string{
 }
 
 var unsupportedByEnryExtensionToNameMap = map[string]string{
+	// Extensions for the Apex programming language
+	// See https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_dev_guide.htm
+	".apex":    "Apex",
+	".apxt":    "Apex",
+	".apxc":    "Apex",
+	".cls":     "Apex",
+	".trigger": "Apex",
 	// See TODO(id: remove-pkl-special-case)
 	".pkl":   "Pkl",
 	".magik": "Magik",
@@ -171,10 +178,10 @@ var unsupportedByEnryAliasMap = func() map[string]string {
 	return out
 }()
 
-func reverseMap(m map[string]string) map[string]string {
-	n := make(map[string]string, len(m))
+func reverseMap(m map[string]string) map[string][]string {
+	n := make(map[string][]string, len(m))
 	for k, v := range m {
-		n[v] = k
+		n[v] = append(n[v], k)
 	}
 	return n
 }
