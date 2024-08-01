@@ -232,15 +232,15 @@ type JSContext struct {
 	CodeIntelAutoIndexingAllowGlobalPolicies       bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
 	CodeIntelRankingDocumentReferenceCountsEnabled bool `json:"codeIntelRankingDocumentReferenceCountsEnabled"`
 
-	CodeInsightsEnabled      bool `json:"codeInsightsEnabled"`
-	ApplianceManaged         bool `json:"applianceManaged"`
-	CodeIntelligenceEnabled  bool `json:"codeIntelligenceEnabled"`
-	SearchContextsEnabled    bool `json:"searchContextsEnabled"`
-	NotebooksEnabled         bool `json:"notebooksEnabled"`
-	CodeMonitoringEnabled    bool `json:"codeMonitoringEnabled"`
-	SearchAggregationEnabled bool `json:"searchAggregationEnabled"`
-	OwnEnabled               bool `json:"ownEnabled"`
-	SearchJobsEnabled        bool `json:"searchJobsEnabled"`
+	CodeInsightsEnabled      bool   `json:"codeInsightsEnabled"`
+	ApplianceUpdateTarget    string `json:"applianceUpdateTarget"`
+	ApplianceMenuTarget      string `json:"applianceMenuTarget"`
+	CodeIntelligenceEnabled  bool   `json:"codeIntelligenceEnabled"`
+	SearchContextsEnabled    bool   `json:"searchContextsEnabled"`
+	NotebooksEnabled         bool   `json:"notebooksEnabled"`
+	CodeMonitoringEnabled    bool   `json:"codeMonitoringEnabled"`
+	SearchAggregationEnabled bool   `json:"searchAggregationEnabled"`
+	OwnEnabled               bool   `json:"ownEnabled"`
 
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
 
@@ -437,7 +437,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
 
 		CodeSearchEnabledOnInstance: codeSearchLicensed,
-		ApplianceManaged:            conf.IsApplianceManaged(),
+		ApplianceUpdateTarget:       conf.ApplianceUpdateTarget(),
+		ApplianceMenuTarget:         conf.ApplianceMenuTarget(),
 
 		ExecutorsEnabled:                               conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:                   conf.CodeIntelAutoIndexingEnabled(),

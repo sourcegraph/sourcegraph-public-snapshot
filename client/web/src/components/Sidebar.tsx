@@ -25,6 +25,7 @@ interface SidebarNavItemProps {
     source?: string
     onClick?: () => void
     exact?: boolean
+    applianceUpdateTarget: string
 }
 
 /**
@@ -37,6 +38,7 @@ export const SidebarNavItem: FC<PropsWithChildren<SidebarNavItemProps>> = ({
     source,
     onClick,
     exact = false,
+    applianceUpdateTarget,
 }) => {
     // Match nested routes too.
     const routeMatch = useMatch(to + (exact ? '' : '/*'))
