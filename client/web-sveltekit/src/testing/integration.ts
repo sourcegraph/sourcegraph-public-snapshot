@@ -45,7 +45,7 @@ const defaultMocks: TypeMocks = {
     }),
     TemporarySettings: () => ({
         // Ensure this is valid JSON
-        contents: '{}',
+        contents: '{"webNext.welcomeOverlay.dismissed": true}',
     }),
     GitBlob: () => ({
         highlight: {
