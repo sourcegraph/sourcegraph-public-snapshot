@@ -90,6 +90,7 @@
         : undefined
 
     $: welcomeOverlayDismissed = $temporarySettingsStorage.get('webNext.welcomeOverlay.dismissed', false)
+    $: showWelcomeOverlay = !$welcomeOverlayDismissed ?? false
     function handleDismissWelcomeOverlay() {
         $temporarySettingsStorage.set('webNext.welcomeOverlay.dismissed', true)
     }
@@ -111,10 +112,7 @@
     <slot />
 </main>
 
-<WelcomeOverlay
-    show={(process.env.PW_TEST === 'true' && !$welcomeOverlayDismissed) ?? false}
-    handleDismiss={handleDismissWelcomeOverlay}
-/>
+<WelcomeOverlay show={showWelcomeOverlay} handleDismiss={handleDismissWelcomeOverlay} />
 
 <FuzzyFinderContainer />
 

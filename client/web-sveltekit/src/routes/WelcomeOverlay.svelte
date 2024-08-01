@@ -83,7 +83,7 @@
                 background: var(--color-background, #f9fafb);
             }
             :global(.theme-dark) & {
-                background: var(--color-background, #f9fafb);
+                background: var(--color-background, #0f111a);
             }
         }
 

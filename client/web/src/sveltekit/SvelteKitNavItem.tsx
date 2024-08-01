@@ -16,7 +16,7 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
     const location = useLocation()
     const client = useApolloClient()
     const [departureDismissed, setDepartureDismissed] = useTemporarySetting('webNext.departureMessage.dismissed', false)
-    const [_welcomeDismissed, setWelcomeDismissed] = useTemporarySetting('webNext.welcomeOverlay.dismissed', false)
+    const [welcomeDismissed, setWelcomeDismissed] = useTemporarySetting('webNext.welcomeOverlay.dismissed', false)
 
     const departureRef = useRef<HTMLDivElement | null>(null)
 
@@ -40,7 +40,8 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
         return null
     }
 
-    const showDeparture = !departureDismissed
+    // only show if the welcome message has been dismissed so we know they have been introduced to the new webapp
+    const showDeparture = !departureDismissed && welcomeDismissed
     const popoverProps = showDeparture ? { isOpen: true, onOpenChange: () => {} } : {}
 
     return (

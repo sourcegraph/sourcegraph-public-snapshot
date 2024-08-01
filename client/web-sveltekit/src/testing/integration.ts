@@ -45,7 +45,7 @@ const defaultMocks: TypeMocks = {
     }),
     TemporarySettings: () => ({
         // Ensure this is valid JSON
-        contents: '{}',
+        contents: '{"webNext.welcomeOverlay.dismissed": true}',
     }),
     GitBlob: () => ({
         highlight: {
@@ -117,6 +117,9 @@ class Sourcegraph {
                     },
                 })
             })
+            await this.page.addInitScript(() =>
+                window.localStorage.setItem('temporarySettings', '{"webNext.welcomeOverlay.dismissed": true}')
+            )
         }
         // mock graphql calls
         await this.page.route(/\.api\/graphql/, route => {
