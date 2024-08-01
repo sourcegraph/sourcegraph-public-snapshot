@@ -277,9 +277,9 @@ func start(ctx context.Context, args StartArgs) error {
 		case conf := <-configs:
 			// Construct the new commands definition and only restart if the changes
 			// to the config file are relevant to the commands we're running
-			cmds, err := args.toCommands(conf)
-			fmt.Println(cmds.Env, err)
+			fmt.Println(conf.Env, err, conf.NewEnv)
 			return nil
+			cmds, err := args.toCommands(conf)
 			for _, cc := range cmds.Commands {
 				fmt.Println("command env: ", cc.GetConfig().Env, " \n command name: ", cc.GetConfig().Name)
 			}

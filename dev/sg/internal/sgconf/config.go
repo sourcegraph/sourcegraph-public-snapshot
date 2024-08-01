@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/env"
 	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
@@ -137,13 +138,43 @@ func (c *Commandset) Merge(other *Commandset) *Commandset {
 
 // If you add an entry here, remember to add it to the merge function.
 type Config struct {
-	Env               map[string]string             `yaml:"env"`
+	Env               map[string]string `yaml:"env"`
+	NewEnv            map[string]env.EnvVar
 	Commands          map[string]*run.Command       `yaml:"commands"`
 	BazelCommands     map[string]*run.BazelCommand  `yaml:"bazelCommands"`
 	DockerCommands    map[string]*run.DockerCommand `yaml:"dockerCommands"`
 	Commandsets       map[string]*Commandset        `yaml:"commandsets"`
 	DefaultCommandset string                        `yaml:"defaultCommandset"`
 	Tests             map[string]*run.Command       `yaml:"tests"`
+}
+
+func (c *Config) UnmarshalYAML(unmarshal func(any) error) error {
+	println("unmarshalling ...", c.Env)
+	var tempConfig struct {
+		Env               map[string]string             `yaml:"env"`
+		Commands          map[string]*run.Command       `yaml:"commands"`
+		BazelCommands     map[string]*run.BazelCommand  `yaml:"bazelCommands"`
+		DockerCommands    map[string]*run.DockerCommand `yaml:"dockerCommands"`
+		Commandsets       map[string]*Commandset        `yaml:"commandsets"`
+		DefaultCommandset string                        `yaml:"defaultCommandset"`
+		Tests             map[string]*run.Command       `yaml:"tests"`
+	}
+	// Use an alias to prevent cyclical unmarshalling
+	if err := unmarshal(&tempConfig); err != nil {
+		return err
+	}
+
+	c.NewEnv = make(map[string]env.EnvVar, len(tempConfig.Env))
+	for k, v := range tempConfig.Env {
+		c.NewEnv[k] = env.New(k, v, env.GlobalEnvPriority)
+	}
+	c.Commands = tempConfig.Commands
+	c.BazelCommands = tempConfig.BazelCommands
+	c.DockerCommands = tempConfig.DockerCommands
+	c.Commandsets = tempConfig.Commandsets
+	c.DefaultCommandset = tempConfig.DefaultCommandset
+	c.Tests = tempConfig.Tests
+	return nil
 }
 
 // Merge merges the top-level entries of two Config objects, using the
