@@ -67,8 +67,8 @@ WHERE r.state = 'queued'
 `
 
 // makeVisibleUploadsQuery returns a SQL query returning the set of identifiers of uploads
-// visible from the given set of commits. This is done by removing the
-// "shadowed" values created by looking at a commit and it's ancestors visible commits.
+// visible from the given commit. This is done by removing the "shadowed" values
+// created by looking at the commit and it's ancestors visible commits.
 //
 // This function deliberately accepts a single commit and not a list,
 // as the shadowing calculation involves comparison by distance,
