@@ -73,7 +73,7 @@ func TestGetDefinitions(t *testing.T) {
 			return nil, nil, nil
 		})
 
-		adjustedLocations, _, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState, Cursor{})
+		adjustedLocations, _, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState, PreciseCursor{})
 		if err != nil {
 			t.Fatalf("unexpected error querying definitions: %s", err)
 		}
@@ -156,7 +156,7 @@ func TestGetDefinitions(t *testing.T) {
 			Matcher:      posMatcher(10, 20),
 		}
 		remoteUploads := uploads2
-		adjustedLocations, _, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState, Cursor{})
+		adjustedLocations, _, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState, PreciseCursor{})
 		if err != nil {
 			t.Fatalf("unexpected error querying definitions: %s", err)
 		}
@@ -253,7 +253,7 @@ func TestGetReferences(t *testing.T) {
 			return nil, nil, nil
 		})
 
-		mockCursor := Cursor{}
+		mockCursor := PreciseCursor{}
 		mockRequest := OccurrenceRequestArgs{
 			RepositoryID: 42,
 			Commit:       mockCommit,
@@ -374,7 +374,7 @@ func TestGetReferences(t *testing.T) {
 		mockLsifStore.GetSymbolUsagesFunc.PushReturn(returnedUsages[1:2], 1, nil) // refs batch 1
 		mockLsifStore.GetSymbolUsagesFunc.PushReturn(returnedUsages[2:], 3, nil)  // refs batch 2
 
-		mockCursor := Cursor{}
+		mockCursor := PreciseCursor{}
 		mockRequest := OccurrenceRequestArgs{
 			RepositoryID: 42,
 			Commit:       mockCommit,
@@ -495,7 +495,7 @@ func TestGetImplementations(t *testing.T) {
 			{ID: 52, Commit: "deadbeef", Root: "sub2/"},
 		}
 		mockRequestState.SetUploadsDataLoader(uploads)
-		mockCursor := Cursor{}
+		mockCursor := PreciseCursor{}
 		mockRequest := OccurrenceRequestArgs{
 			RepositoryID: 99,
 			Commit:       "deadbeef",

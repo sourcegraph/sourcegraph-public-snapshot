@@ -239,7 +239,7 @@ func NewMockCodeNavService() *MockCodeNavService {
 			},
 		},
 		GetDefinitionsFunc: &CodeNavServiceGetDefinitionsFunc{
-			defaultHook: func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) (r0 []shared1.UploadUsage, r1 codenav.Cursor, r2 error) {
+			defaultHook: func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) (r0 []shared1.UploadUsage, r1 codenav.PreciseCursor, r2 error) {
 				return
 			},
 		},
@@ -254,12 +254,12 @@ func NewMockCodeNavService() *MockCodeNavService {
 			},
 		},
 		GetImplementationsFunc: &CodeNavServiceGetImplementationsFunc{
-			defaultHook: func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) (r0 []shared1.UploadUsage, r1 codenav.Cursor, r2 error) {
+			defaultHook: func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) (r0 []shared1.UploadUsage, r1 codenav.PreciseCursor, r2 error) {
 				return
 			},
 		},
 		GetPrototypesFunc: &CodeNavServiceGetPrototypesFunc{
-			defaultHook: func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) (r0 []shared1.UploadUsage, r1 codenav.Cursor, r2 error) {
+			defaultHook: func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) (r0 []shared1.UploadUsage, r1 codenav.PreciseCursor, r2 error) {
 				return
 			},
 		},
@@ -269,7 +269,7 @@ func NewMockCodeNavService() *MockCodeNavService {
 			},
 		},
 		GetReferencesFunc: &CodeNavServiceGetReferencesFunc{
-			defaultHook: func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) (r0 []shared1.UploadUsage, r1 codenav.Cursor, r2 error) {
+			defaultHook: func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) (r0 []shared1.UploadUsage, r1 codenav.PreciseCursor, r2 error) {
 				return
 			},
 		},
@@ -321,7 +321,7 @@ func NewStrictMockCodeNavService() *MockCodeNavService {
 			},
 		},
 		GetDefinitionsFunc: &CodeNavServiceGetDefinitionsFunc{
-			defaultHook: func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+			defaultHook: func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 				panic("unexpected invocation of MockCodeNavService.GetDefinitions")
 			},
 		},
@@ -336,12 +336,12 @@ func NewStrictMockCodeNavService() *MockCodeNavService {
 			},
 		},
 		GetImplementationsFunc: &CodeNavServiceGetImplementationsFunc{
-			defaultHook: func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+			defaultHook: func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 				panic("unexpected invocation of MockCodeNavService.GetImplementations")
 			},
 		},
 		GetPrototypesFunc: &CodeNavServiceGetPrototypesFunc{
-			defaultHook: func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+			defaultHook: func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 				panic("unexpected invocation of MockCodeNavService.GetPrototypes")
 			},
 		},
@@ -351,7 +351,7 @@ func NewStrictMockCodeNavService() *MockCodeNavService {
 			},
 		},
 		GetReferencesFunc: &CodeNavServiceGetReferencesFunc{
-			defaultHook: func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+			defaultHook: func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 				panic("unexpected invocation of MockCodeNavService.GetReferences")
 			},
 		},
@@ -562,15 +562,15 @@ func (c CodeNavServiceGetClosestCompletedUploadsForBlobFuncCall) Results() []int
 // GetDefinitions method of the parent MockCodeNavService instance is
 // invoked.
 type CodeNavServiceGetDefinitionsFunc struct {
-	defaultHook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error)
-	hooks       []func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error)
+	defaultHook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error)
+	hooks       []func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error)
 	history     []CodeNavServiceGetDefinitionsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetDefinitions delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeNavService) GetDefinitions(v0 context.Context, v1 codenav.OccurrenceRequestArgs, v2 codenav.RequestState, v3 codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+func (m *MockCodeNavService) GetDefinitions(v0 context.Context, v1 codenav.OccurrenceRequestArgs, v2 codenav.RequestState, v3 codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 	r0, r1, r2 := m.GetDefinitionsFunc.nextHook()(v0, v1, v2, v3)
 	m.GetDefinitionsFunc.appendCall(CodeNavServiceGetDefinitionsFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
@@ -579,7 +579,7 @@ func (m *MockCodeNavService) GetDefinitions(v0 context.Context, v1 codenav.Occur
 // SetDefaultHook sets function that is called when the GetDefinitions
 // method of the parent MockCodeNavService instance is invoked and the hook
 // queue is empty.
-func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultHook(hook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error)) {
+func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultHook(hook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error)) {
 	f.defaultHook = hook
 }
 
@@ -587,7 +587,7 @@ func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultHook(hook func(context.Cont
 // GetDefinitions method of the parent MockCodeNavService instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeNavServiceGetDefinitionsFunc) PushHook(hook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error)) {
+func (f *CodeNavServiceGetDefinitionsFunc) PushHook(hook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -595,20 +595,20 @@ func (f *CodeNavServiceGetDefinitionsFunc) PushHook(hook func(context.Context, c
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultReturn(r0 []shared1.UploadUsage, r1 codenav.Cursor, r2 error) {
-	f.SetDefaultHook(func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultReturn(r0 []shared1.UploadUsage, r1 codenav.PreciseCursor, r2 error) {
+	f.SetDefaultHook(func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceGetDefinitionsFunc) PushReturn(r0 []shared1.UploadUsage, r1 codenav.Cursor, r2 error) {
-	f.PushHook(func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+func (f *CodeNavServiceGetDefinitionsFunc) PushReturn(r0 []shared1.UploadUsage, r1 codenav.PreciseCursor, r2 error) {
+	f.PushHook(func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *CodeNavServiceGetDefinitionsFunc) nextHook() func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+func (f *CodeNavServiceGetDefinitionsFunc) nextHook() func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -652,13 +652,13 @@ type CodeNavServiceGetDefinitionsFuncCall struct {
 	Arg2 codenav.RequestState
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 codenav.Cursor
+	Arg3 codenav.PreciseCursor
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []shared1.UploadUsage
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 codenav.Cursor
+	Result1 codenav.PreciseCursor
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 error
@@ -912,15 +912,15 @@ func (c CodeNavServiceGetHoverFuncCall) Results() []interface{} {
 // GetImplementations method of the parent MockCodeNavService instance is
 // invoked.
 type CodeNavServiceGetImplementationsFunc struct {
-	defaultHook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error)
-	hooks       []func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error)
+	defaultHook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error)
+	hooks       []func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error)
 	history     []CodeNavServiceGetImplementationsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetImplementations delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeNavService) GetImplementations(v0 context.Context, v1 codenav.OccurrenceRequestArgs, v2 codenav.RequestState, v3 codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+func (m *MockCodeNavService) GetImplementations(v0 context.Context, v1 codenav.OccurrenceRequestArgs, v2 codenav.RequestState, v3 codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 	r0, r1, r2 := m.GetImplementationsFunc.nextHook()(v0, v1, v2, v3)
 	m.GetImplementationsFunc.appendCall(CodeNavServiceGetImplementationsFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
@@ -929,7 +929,7 @@ func (m *MockCodeNavService) GetImplementations(v0 context.Context, v1 codenav.O
 // SetDefaultHook sets function that is called when the GetImplementations
 // method of the parent MockCodeNavService instance is invoked and the hook
 // queue is empty.
-func (f *CodeNavServiceGetImplementationsFunc) SetDefaultHook(hook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error)) {
+func (f *CodeNavServiceGetImplementationsFunc) SetDefaultHook(hook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error)) {
 	f.defaultHook = hook
 }
 
@@ -938,7 +938,7 @@ func (f *CodeNavServiceGetImplementationsFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *CodeNavServiceGetImplementationsFunc) PushHook(hook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error)) {
+func (f *CodeNavServiceGetImplementationsFunc) PushHook(hook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -946,20 +946,20 @@ func (f *CodeNavServiceGetImplementationsFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CodeNavServiceGetImplementationsFunc) SetDefaultReturn(r0 []shared1.UploadUsage, r1 codenav.Cursor, r2 error) {
-	f.SetDefaultHook(func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+func (f *CodeNavServiceGetImplementationsFunc) SetDefaultReturn(r0 []shared1.UploadUsage, r1 codenav.PreciseCursor, r2 error) {
+	f.SetDefaultHook(func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceGetImplementationsFunc) PushReturn(r0 []shared1.UploadUsage, r1 codenav.Cursor, r2 error) {
-	f.PushHook(func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+func (f *CodeNavServiceGetImplementationsFunc) PushReturn(r0 []shared1.UploadUsage, r1 codenav.PreciseCursor, r2 error) {
+	f.PushHook(func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *CodeNavServiceGetImplementationsFunc) nextHook() func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+func (f *CodeNavServiceGetImplementationsFunc) nextHook() func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1004,13 +1004,13 @@ type CodeNavServiceGetImplementationsFuncCall struct {
 	Arg2 codenav.RequestState
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 codenav.Cursor
+	Arg3 codenav.PreciseCursor
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []shared1.UploadUsage
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 codenav.Cursor
+	Result1 codenav.PreciseCursor
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 error
@@ -1032,15 +1032,15 @@ func (c CodeNavServiceGetImplementationsFuncCall) Results() []interface{} {
 // GetPrototypes method of the parent MockCodeNavService instance is
 // invoked.
 type CodeNavServiceGetPrototypesFunc struct {
-	defaultHook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error)
-	hooks       []func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error)
+	defaultHook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error)
+	hooks       []func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error)
 	history     []CodeNavServiceGetPrototypesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetPrototypes delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockCodeNavService) GetPrototypes(v0 context.Context, v1 codenav.OccurrenceRequestArgs, v2 codenav.RequestState, v3 codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+func (m *MockCodeNavService) GetPrototypes(v0 context.Context, v1 codenav.OccurrenceRequestArgs, v2 codenav.RequestState, v3 codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 	r0, r1, r2 := m.GetPrototypesFunc.nextHook()(v0, v1, v2, v3)
 	m.GetPrototypesFunc.appendCall(CodeNavServiceGetPrototypesFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
@@ -1049,7 +1049,7 @@ func (m *MockCodeNavService) GetPrototypes(v0 context.Context, v1 codenav.Occurr
 // SetDefaultHook sets function that is called when the GetPrototypes method
 // of the parent MockCodeNavService instance is invoked and the hook queue
 // is empty.
-func (f *CodeNavServiceGetPrototypesFunc) SetDefaultHook(hook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error)) {
+func (f *CodeNavServiceGetPrototypesFunc) SetDefaultHook(hook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error)) {
 	f.defaultHook = hook
 }
 
@@ -1057,7 +1057,7 @@ func (f *CodeNavServiceGetPrototypesFunc) SetDefaultHook(hook func(context.Conte
 // GetPrototypes method of the parent MockCodeNavService instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeNavServiceGetPrototypesFunc) PushHook(hook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error)) {
+func (f *CodeNavServiceGetPrototypesFunc) PushHook(hook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1065,20 +1065,20 @@ func (f *CodeNavServiceGetPrototypesFunc) PushHook(hook func(context.Context, co
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CodeNavServiceGetPrototypesFunc) SetDefaultReturn(r0 []shared1.UploadUsage, r1 codenav.Cursor, r2 error) {
-	f.SetDefaultHook(func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+func (f *CodeNavServiceGetPrototypesFunc) SetDefaultReturn(r0 []shared1.UploadUsage, r1 codenav.PreciseCursor, r2 error) {
+	f.SetDefaultHook(func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceGetPrototypesFunc) PushReturn(r0 []shared1.UploadUsage, r1 codenav.Cursor, r2 error) {
-	f.PushHook(func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+func (f *CodeNavServiceGetPrototypesFunc) PushReturn(r0 []shared1.UploadUsage, r1 codenav.PreciseCursor, r2 error) {
+	f.PushHook(func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *CodeNavServiceGetPrototypesFunc) nextHook() func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+func (f *CodeNavServiceGetPrototypesFunc) nextHook() func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1122,13 +1122,13 @@ type CodeNavServiceGetPrototypesFuncCall struct {
 	Arg2 codenav.RequestState
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 codenav.Cursor
+	Arg3 codenav.PreciseCursor
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []shared1.UploadUsage
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 codenav.Cursor
+	Result1 codenav.PreciseCursor
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 error
@@ -1267,15 +1267,15 @@ func (c CodeNavServiceGetRangesFuncCall) Results() []interface{} {
 // GetReferences method of the parent MockCodeNavService instance is
 // invoked.
 type CodeNavServiceGetReferencesFunc struct {
-	defaultHook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error)
-	hooks       []func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error)
+	defaultHook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error)
+	hooks       []func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error)
 	history     []CodeNavServiceGetReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetReferences delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockCodeNavService) GetReferences(v0 context.Context, v1 codenav.OccurrenceRequestArgs, v2 codenav.RequestState, v3 codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+func (m *MockCodeNavService) GetReferences(v0 context.Context, v1 codenav.OccurrenceRequestArgs, v2 codenav.RequestState, v3 codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 	r0, r1, r2 := m.GetReferencesFunc.nextHook()(v0, v1, v2, v3)
 	m.GetReferencesFunc.appendCall(CodeNavServiceGetReferencesFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
@@ -1284,7 +1284,7 @@ func (m *MockCodeNavService) GetReferences(v0 context.Context, v1 codenav.Occurr
 // SetDefaultHook sets function that is called when the GetReferences method
 // of the parent MockCodeNavService instance is invoked and the hook queue
 // is empty.
-func (f *CodeNavServiceGetReferencesFunc) SetDefaultHook(hook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error)) {
+func (f *CodeNavServiceGetReferencesFunc) SetDefaultHook(hook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error)) {
 	f.defaultHook = hook
 }
 
@@ -1292,7 +1292,7 @@ func (f *CodeNavServiceGetReferencesFunc) SetDefaultHook(hook func(context.Conte
 // GetReferences method of the parent MockCodeNavService instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeNavServiceGetReferencesFunc) PushHook(hook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error)) {
+func (f *CodeNavServiceGetReferencesFunc) PushHook(hook func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1300,20 +1300,20 @@ func (f *CodeNavServiceGetReferencesFunc) PushHook(hook func(context.Context, co
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CodeNavServiceGetReferencesFunc) SetDefaultReturn(r0 []shared1.UploadUsage, r1 codenav.Cursor, r2 error) {
-	f.SetDefaultHook(func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+func (f *CodeNavServiceGetReferencesFunc) SetDefaultReturn(r0 []shared1.UploadUsage, r1 codenav.PreciseCursor, r2 error) {
+	f.SetDefaultHook(func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceGetReferencesFunc) PushReturn(r0 []shared1.UploadUsage, r1 codenav.Cursor, r2 error) {
-	f.PushHook(func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+func (f *CodeNavServiceGetReferencesFunc) PushReturn(r0 []shared1.UploadUsage, r1 codenav.PreciseCursor, r2 error) {
+	f.PushHook(func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *CodeNavServiceGetReferencesFunc) nextHook() func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadUsage, codenav.Cursor, error) {
+func (f *CodeNavServiceGetReferencesFunc) nextHook() func(context.Context, codenav.OccurrenceRequestArgs, codenav.RequestState, codenav.PreciseCursor) ([]shared1.UploadUsage, codenav.PreciseCursor, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1357,13 +1357,13 @@ type CodeNavServiceGetReferencesFuncCall struct {
 	Arg2 codenav.RequestState
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 codenav.Cursor
+	Arg3 codenav.PreciseCursor
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []shared1.UploadUsage
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 codenav.Cursor
+	Result1 codenav.PreciseCursor
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 error
