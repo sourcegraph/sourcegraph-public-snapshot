@@ -113,11 +113,7 @@ type InstanceFeatures struct {
 
 func newInstanceStatus(src *cloudapiv1.InstanceState) *InstanceStatus {
 	status := InstanceStatus{}
-	var err error
 	status.Reason = src.GetReason()
-	if err != nil {
-		status.Error = err.Error()
-	}
 	switch src.GetInstanceStatus() {
 	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED:
 		status.Status = InstanceStatusUnspecified
