@@ -192,11 +192,7 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
             )
             .then(mapOrThrow(result => result.data?.repository?.commit?.blob?.highlight ?? null)),
         codeGraphData: resolvedRevision.then(async resolvedRevision => {
-            if ((await parent()).settings.experimentalFeatures?.enablePreciseOccurrences ?? false) {
-                return fetchCodeGraphData(client, repoName, resolvedRevision, filePath)
-            } else {
-                return []
-            }
+            return fetchCodeGraphData(client, repoName, resolvedRevision, filePath)
         }),
         // We can ignore the error because if the revision doesn't exist, other queries will fail as well
         revisionOverride: revisionOverride
