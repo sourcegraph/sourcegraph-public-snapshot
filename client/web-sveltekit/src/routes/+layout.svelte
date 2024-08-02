@@ -90,7 +90,7 @@
         : undefined
 
     $: welcomeOverlayDismissed = $temporarySettingsStorage.get('webNext.welcomeOverlay.dismissed', false)
-    $: showWelcomeOverlay = !$welcomeOverlayDismissed ?? false
+    $: showWelcomeOverlay = !($welcomeOverlayDismissed ?? true)
     function handleDismissWelcomeOverlay() {
         $temporarySettingsStorage.set('webNext.welcomeOverlay.dismissed', true)
     }
