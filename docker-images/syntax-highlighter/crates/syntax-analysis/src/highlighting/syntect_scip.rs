@@ -45,7 +45,6 @@ fn should_skip_scope(scope: &Scope) -> bool {
                 scope("punctuation.definition.metadata.end"),
                 scope("punctuation.definition.string.begin"),
                 scope("punctuation.definition.string.end"),
-                scope("punctuation.definition.comment"),
             ]
         })
         .iter()
@@ -75,6 +74,7 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
         vec![
             (scope("comment"), Comment),
             (scope("meta.documentation"), Comment),
+            (scope("punctuation.definition.comment"), Comment),
             // TODO: How does this play with this: keyword.control.import.include
             (scope("meta.preprocessor.include"), IdentifierNamespace),
             (scope("storage.type.keyword"), IdentifierKeyword),
