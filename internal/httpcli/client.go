@@ -412,6 +412,8 @@ type denyRule struct {
 var defaultDenylist = []denyRule{
 	{builtin: "loopback"},
 	{pattern: "169.254.169.254"},
+	{pattern: "0.0.0.0"},
+	{pattern: "<nil>"},
 }
 
 var localDevDenylist = []denyRule{
