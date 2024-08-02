@@ -100,7 +100,7 @@ export const NewCodySidebarWebChat: FC<NewCodySidebarWebChatProps> = memo(functi
                                     isSelectedChat={history.isSelectedChat}
                                     withCreationButton={false}
                                     onChatSelect={chat => {
-                                        onChatSelect()
+                                        onChatSelect?.()
                                         history.selectChat(chat)
                                     }}
                                     onChatDelete={history.deleteChat}

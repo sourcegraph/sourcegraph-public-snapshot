@@ -27,7 +27,7 @@ export const NewCodySidebar: FC<NewCodySidebarProps> = props => {
     const { repository, filePath, isAuthorized, onClose } = props
 
     const [chatMode, setChatMode] = useState<'chat' | 'history'>('chat')
-    const codyClientRef = useRef<CodyWebChatContextClient>(null)
+    const codyClientRef = useRef<CodyWebChatContextClient>()
 
     const handleShowHistory = (): void => {
         setChatMode('history')
@@ -37,7 +37,7 @@ export const NewCodySidebar: FC<NewCodySidebarProps> = props => {
         setChatMode('chat')
     }
 
-    const handleCreateNewChat = async (): void => {
+    const handleCreateNewChat = async (): Promise<void> => {
         if (codyClientRef.current) {
             await codyClientRef.current.createNewChat()
             setChatMode('chat')
