@@ -142,7 +142,7 @@ server_integration_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
-    port = "7081",
+    port = "7082",
     runner_src = ":backend_integration_test.sh",
     server_image = "//cmd/server:no_client_bundle.image_tarball",
 )
@@ -175,7 +175,7 @@ server_integration_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
-    port = "7081",
+    port = "7083",
     runner_src = ":backend_integration_test.sh",
     server_image = "//cmd/server:no_client_bundle.image_tarball",
 )
@@ -208,7 +208,7 @@ server_integration_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
-    port = "7081",
+    port = "7084",
     runner_src = ":backend_integration_test.sh",
     server_image = "//cmd/server:no_client_bundle.image_tarball",
 )
@@ -241,7 +241,7 @@ server_integration_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
-    port = "7081",
+    port = "7085",
     runner_src = ":backend_integration_test.sh",
     server_image = "//cmd/server:no_client_bundle.image_tarball",
 )
@@ -281,7 +281,7 @@ server_integration_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
-    port = "7082",
+    port = "7086",
     runner_src = ":backend_integration_test.sh",
     server_image = "//cmd/server:no_client_bundle.image_tarball",
     tags = [TAG_PLATFORM_SOURCE],
@@ -332,7 +332,7 @@ server_integration_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
-    port = "7083",
+    port = "7087",
     runner_src = ":codeintel_integration_test.sh",
     server_image = "//cmd/server:no_client_bundle.image_tarball",
     tags = [
@@ -396,7 +396,7 @@ server_integration_test(
         "SOURCEGRAPH_LICENSE_KEY",
         "GOOGLE_APPLICATION_CREDENTIALS",
     ],
-    port = "7083",
+    port = "7088",
     runner_src = ":codeintel_integration_test.sh",
     server_image = "//cmd/server:no_client_bundle.image_tarball",
     tags = [
