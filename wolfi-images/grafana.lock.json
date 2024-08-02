@@ -493,22 +493,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1psJ24/VHaT925s7JQuYJ4Pm1h2A=",
+        "checksum": "Q1kMaD6Oljgubm2GX7rJ6xmZpRjHs=",
         "control": {
-          "checksum": "sha1-psJ24/VHaT925s7JQuYJ4Pm1h2A=",
-          "range": "bytes=697-1134"
+          "checksum": "sha1-kMaD6Oljgubm2GX7rJ6xmZpRjHs=",
+          "range": "bytes=701-1126"
         },
         "data": {
-          "checksum": "sha256-osV7oSjnN/b3X1s99n8gbB1SLL/yAxtrp4Z2eM3K55k=",
-          "range": "bytes=1135-262143"
+          "checksum": "sha256-lc7d20ivb08NvkqS9I2SS3kCkcZxqGraiFHO/xpKd94=",
+          "range": "bytes=1127-262138"
         },
         "name": "libtirpc",
         "signature": {
-          "checksum": "sha1-Xa2j3RNIruMZ/lXd1n5OvyN3cPs=",
-          "range": "bytes=0-696"
+          "checksum": "sha1-09CFF48pP6MLk3RS9307lml1t5w=",
+          "range": "bytes=0-700"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libtirpc-1.3.4-r2.apk",
-        "version": "1.3.4-r2"
+        "url": "https://packages.wolfi.dev/os/x86_64/libtirpc-1.3.5-r0.apk",
+        "version": "1.3.5-r0"
       },
       {
         "architecture": "x86_64",
