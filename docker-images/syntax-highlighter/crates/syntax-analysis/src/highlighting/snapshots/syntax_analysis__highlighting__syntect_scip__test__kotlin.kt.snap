@@ -24,13 +24,15 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //                                                                           ^ IdentifierOperator keyword.operator.dot.kotlin
   
   /***
-//^^^^ Comment 6:0..12:3 comment.block.kotlin
+//^^ Comment punctuation.definition.comment.kotlin
+//  ^^ Comment 6:2..12:1 punctuation.definition.comment.kotlin
    *  Example use:
    *
    *  val (b, g, r) = mat.at<UByte>(50, 50).v3c
    *  mat.at<UByte>(50, 50).val = T3(245u, 113u, 34u)
    *
    */
+// ^^ Comment punctuation.definition.comment.kotlin
   @Suppress("UNCHECKED_CAST")
 //          ^^^^^^^^^^^^^^^^ StringLiteral string.quoted.double.kotlin
   inline fun <reified T> Mat.at(row: Int, col: Int) : Atable<T> =
@@ -64,10 +66,12 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
   
   
   /**
-//^^^ Comment 21:0..24:3 comment.block.kotlin
+//^^ Comment punctuation.definition.comment.kotlin
+//  ^ Comment 21:2..24:1 punctuation.definition.comment.kotlin
    * Implementation of [DataAccess] which handles access and interactions with file and data
    * under scoped storage via the MediaStore API.
    */
+// ^^ Comment punctuation.definition.comment.kotlin
   @RequiresApi(Build.VERSION_CODES.Q)
 //                  ^ IdentifierOperator keyword.operator.dot.kotlin
 //                                ^ IdentifierOperator keyword.operator.dot.kotlin
@@ -172,4 +176,3 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //                ^ IdentifierOperator keyword.operator.dot.kotlin
    }
   }
-

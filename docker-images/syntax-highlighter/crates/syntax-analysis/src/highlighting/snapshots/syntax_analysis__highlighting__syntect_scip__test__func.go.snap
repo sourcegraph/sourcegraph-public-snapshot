@@ -52,7 +52,8 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //          ^ PunctuationBracket punctuation.section.parens.end.go
 //            ^ PunctuationBracket punctuation.section.braces.begin.go
    // this is comment
-// ^^^^^^^^^^^^^^^^^^ Comment comment.line.go
+// ^^ Comment punctuation.definition.comment.go
+//   ^^^^^^^^^^^^^^^^ Comment comment.line.go
   
    x := 1234
 // ^ Identifier variable.declaration.go
@@ -140,4 +141,3 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //                                                                             ^ PunctuationBracket punctuation.section.parens.end.go
   }
 //^ PunctuationBracket punctuation.section.braces.end.go
-

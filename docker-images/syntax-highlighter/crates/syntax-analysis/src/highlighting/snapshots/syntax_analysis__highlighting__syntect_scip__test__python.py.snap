@@ -29,12 +29,15 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //                                 ^ PunctuationBracket punctuation.section.function.begin.python
       r'''A docstring'''
 //    ^ IdentifierType storage.type.string.python
-//     ^^^^^^^^^^^^^^^^^ Comment comment.block.documentation.python
+//     ^^^ Comment punctuation.definition.comment.begin.python
+//        ^^^^^^^^^^^ Comment punctuation.definition.comment.end.python
+//                   ^^^ Comment punctuation.definition.comment.end.python
       if param1 > param2: # interesting
 //    ^^ Keyword keyword.control.conditional.if.python
 //              ^ IdentifierOperator keyword.operator.comparison.python
 //                      ^ PunctuationBracket punctuation.section.block.conditional.if.python
-//                        ^^^^^^^^^^^^^ Comment comment.line.number-sign.python
+//                        ^ Comment punctuation.definition.comment.python
+//                         ^^^^^^^^^^^^ Comment comment.line.number-sign.python
           print 'Gre\'ater'
 //        ^^^^^ Keyword keyword.other.print.python
 //              ^ StringLiteral string.quoted.single.python
@@ -61,4 +64,3 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //               ^ PunctuationBracket punctuation.section.class.begin.python
       pass
 //    ^^^^ Keyword keyword.control.flow.pass.python
-
