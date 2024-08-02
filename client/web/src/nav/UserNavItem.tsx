@@ -227,6 +227,11 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     Site admin
                                 </MenuLink>
                             )}
+                            {authenticatedUser.siteAdmin && window.context.applianceMenuTarget !== '' && (
+                                <MenuLink as={Link} to={window.context.applianceMenuTarget}>
+                                    Appliance
+                                </MenuLink>
+                            )}
                             <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
                                 Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                             </MenuLink>

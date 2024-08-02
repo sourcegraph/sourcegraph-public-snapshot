@@ -38,7 +38,7 @@ const fetchStatus = async (lastContext: OutletContext): Promise<OutletContext> =
                             onlineDate: lastContext.onlineDate ?? Date.now(),
                         })
                     } else {
-                        resolve({ online: false, onlineDate: undefined })
+                        resolve({ online: false, onlineDate: undefined, stage: 'refresh' })
                     }
                     return
                 }
@@ -53,7 +53,7 @@ const fetchStatus = async (lastContext: OutletContext): Promise<OutletContext> =
                 })
             })
             .catch(() => {
-                resolve({ online: false, onlineDate: undefined })
+                resolve({ online: false, onlineDate: undefined, stage: 'refresh' })
             })
     })
 
