@@ -21,6 +21,6 @@ export ALLOW_SINGLE_DOCKER_CODE_INSIGHTS
 run_server_image "$tarball" "$image_name" "$url" "$PORT"
 
 echo "--- integration test $TEST_TARGET"
-"$gqltest" -test.skip TestSubRepoPermissions -long -base-url "$url"
+"$gqltest" -long -base-url "$url"
 
 echo "--- done"

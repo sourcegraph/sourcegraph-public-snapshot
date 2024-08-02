@@ -20,7 +20,7 @@ export ALLOW_SINGLE_DOCKER_CODE_INSIGHTS
 
 run_server_image "$tarball" "$image_name" "$url" "$PORT"
 
-echo "--- integration test ./dev/gqltest -long (only TestSubRepoPermissions)"
-"$gqltest" -test.run TestSubRepoPermissions -long -base-url "$url"
+echo "--- integration test $TEST_TARGET"
+"$gqltest" -long -base-url "$url" -email "gqltest@sourcegraph.com" -username "gqltest-admin"
 
 echo "--- done"

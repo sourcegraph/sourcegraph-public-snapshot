@@ -42,45 +42,6 @@ server_integration_test(
     server_image = "//cmd/server:image_tarball",
 )
 
-# Warning, this targets explicitly exclude p4 subrepo perms tests as they're very heavy and time
-# consuming, due to having to add a repo, index it, etc ...
-#
-# See :backend_integration_test_p4 for then one, as opposed to this target, runs those tests
-# exclusively.
-# server_integration_test(
-#     name = "backend_integration_test",
-#     timeout = "long",
-#     args = [
-#         "$(location //dev/gqltest:gqltest_test)",  # actual test
-#         "$(location //dev/authtest:authtest_test)",  # actual test
-#     ],
-#     data = [
-#         "//cmd/server:no_client_bundle.image_tarball",
-#         "//dev/authtest:authtest_test",
-#         "//dev/gqltest:gqltest_test",
-#     ],
-#     env_inherit = [
-#         "AWS_ACCESS_KEY_ID",
-#         "AWS_CODE_COMMIT_PASSWORD",
-#         "AWS_CODE_COMMIT_USERNAME",
-#         "AWS_SECRET_ACCESS_KEY",
-#         "AZURE_DEVOPS_TOKEN",
-#         "AZURE_DEVOPS_USERNAME",
-#         "BITBUCKET_SERVER_TOKEN",
-#         "BITBUCKET_SERVER_URL",
-#         "BITBUCKET_SERVER_USERNAME",
-#         "GHE_GITHUB_TOKEN",
-#         "PERFORCE_PASSWORD",
-#         "PERFORCE_PORT",
-#         "PERFORCE_USER",
-#         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
-#         "SOURCEGRAPH_LICENSE_KEY",
-#     ],
-#     port = "7081",
-#     runner_src = ":backend_integration_test.sh",
-#     server_image = "//cmd/server:no_client_bundle.image_tarball",
-# )
-
 server_integration_test(
     name = "backend_integration_test_bitbucket",
     timeout = "long",
@@ -89,7 +50,6 @@ server_integration_test(
     ],
     data = [
         "//cmd/server:no_client_bundle.image_tarball",
-        "//dev/authtest:authtest_test",
         "//dev/gqltest/bitbucket:bitbucket_test",
     ],
     env_inherit = [
@@ -112,6 +72,7 @@ server_integration_test(
     port = "7081",
     runner_src = ":backend_integration_test.sh",
     server_image = "//cmd/server:no_client_bundle.image_tarball",
+    tags = [TAG_PLATFORM_SOURCE],
 )
 
 server_integration_test(
@@ -122,7 +83,6 @@ server_integration_test(
     ],
     data = [
         "//cmd/server:no_client_bundle.image_tarball",
-        "//dev/authtest:authtest_test",
         "//dev/gqltest/access_token:access_token_test",
     ],
     env_inherit = [
@@ -145,6 +105,40 @@ server_integration_test(
     port = "7082",
     runner_src = ":backend_integration_test.sh",
     server_image = "//cmd/server:no_client_bundle.image_tarball",
+    tags = [TAG_INFRA_CORESERVICES],
+)
+
+server_integration_test(
+    name = "backend_integration_test_auth",
+    timeout = "long",
+    args = [
+        "$(location //dev/authtest:authtest_test)",
+    ],
+    data = [
+        "//cmd/server:no_client_bundle.image_tarball",
+        "//dev/authtest:authtest_test",
+    ],
+    env_inherit = [
+        "AWS_ACCESS_KEY_ID",
+        "AWS_CODE_COMMIT_PASSWORD",
+        "AWS_CODE_COMMIT_USERNAME",
+        "AWS_SECRET_ACCESS_KEY",
+        "AZURE_DEVOPS_TOKEN",
+        "AZURE_DEVOPS_USERNAME",
+        "BITBUCKET_SERVER_TOKEN",
+        "BITBUCKET_SERVER_URL",
+        "BITBUCKET_SERVER_USERNAME",
+        "GHE_GITHUB_TOKEN",
+        "PERFORCE_PASSWORD",
+        "PERFORCE_PORT",
+        "PERFORCE_USER",
+        "SOURCEGRAPH_LICENSE_GENERATION_KEY",
+        "SOURCEGRAPH_LICENSE_KEY",
+    ],
+    port = "7082",
+    runner_src = ":auth_integration_test.sh",
+    server_image = "//cmd/server:no_client_bundle.image_tarball",
+    tags = [TAG_INFRA_CORESERVICES],
 )
 
 server_integration_test(
@@ -155,7 +149,6 @@ server_integration_test(
     ],
     data = [
         "//cmd/server:no_client_bundle.image_tarball",
-        "//dev/authtest:authtest_test",
         "//dev/gqltest/codeinsights:codeinsights_test",
     ],
     env_inherit = [
@@ -178,6 +171,7 @@ server_integration_test(
     port = "7083",
     runner_src = ":backend_integration_test.sh",
     server_image = "//cmd/server:no_client_bundle.image_tarball",
+    tags = [TAG_SEARCHSUITE],
 )
 
 server_integration_test(
@@ -188,7 +182,6 @@ server_integration_test(
     ],
     data = [
         "//cmd/server:no_client_bundle.image_tarball",
-        "//dev/authtest:authtest_test",
         "//dev/gqltest/search:search_test",
     ],
     env_inherit = [
@@ -211,6 +204,7 @@ server_integration_test(
     port = "7084",
     runner_src = ":backend_integration_test.sh",
     server_image = "//cmd/server:no_client_bundle.image_tarball",
+    tags = [TAG_PLATFORM_SEARCH],
 )
 
 server_integration_test(
@@ -221,7 +215,6 @@ server_integration_test(
     ],
     data = [
         "//cmd/server:no_client_bundle.image_tarball",
-        "//dev/authtest:authtest_test",
         "//dev/gqltest/siteadmin:siteadmin_test",
     ],
     env_inherit = [
@@ -244,6 +237,7 @@ server_integration_test(
     port = "7085",
     runner_src = ":backend_integration_test.sh",
     server_image = "//cmd/server:no_client_bundle.image_tarball",
+    tags = [TAG_INFRA_CORESERVICES],
 )
 
 # The perforce subrepo permission testing is really heayv, as it requires to add a new repo,
@@ -261,7 +255,6 @@ server_integration_test(
     ],
     data = [
         "//cmd/server:no_client_bundle.image_tarball",
-        "//dev/authtest:authtest_test",
         "//dev/gqltest/repositories:repositories_test",
     ],
     env_inherit = [
