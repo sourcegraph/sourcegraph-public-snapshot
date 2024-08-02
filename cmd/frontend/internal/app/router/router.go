@@ -7,6 +7,7 @@ package router
 import (
 	"github.com/gorilla/mux"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 )
 
@@ -101,6 +102,9 @@ func newRouter() *mux.Router {
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/badge.svg").Methods("GET").Name(RepoBadge)
+
+	// Make these paths known to the SvelteKit app
+	sveltekit.RegisterSvelteKit(base, nil)
 
 	// Must come last
 	base.PathPrefix("/").Name(UI)

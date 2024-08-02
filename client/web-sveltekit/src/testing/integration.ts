@@ -238,9 +238,10 @@ class Sourcegraph {
         return this.page.addInitScript(context => {
             if (!window.context) {
                 // @ts-expect-error - Unclear how to type this correctly
-                window.context = {}
+                window.playwriteContext = {}
             }
-            Object.assign(window.context, context)
+            // @ts-expect-error - Unclear how to type this correctly
+            Object.assign(window.playwriteContext, context)
         }, context)
     }
 
