@@ -6111,8 +6111,8 @@ def go_dependencies():
         patches = [
             "//third_party/com_github_sourcegraph_scip:add_parser_h_to_srcs.patch",
         ],
-        sum = "h1:Tqf5ThVlPu8fV+WeTkJEbW34fPOfDUpbxQWU4iLvaQI=",
-        version = "v0.4.0",
+        sum = "h1:5JZAZpvl15jfrLu0aujng0guhlHfQXWr/CrGXsP4mUw=",
+        version = "v0.4.1-0.20240802084008-0504a347d36d",
     )
     go_repository(
         name = "com_github_sourcegraph_sourcegraph_accounts_sdk_go",
