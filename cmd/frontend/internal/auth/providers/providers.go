@@ -9,7 +9,6 @@ import (
 
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -157,13 +156,10 @@ func Providers() []Provider {
 
 // SignInProviders returns the list of currently registered authentication providers that aren't hidden.
 // The list is not sorted in any way.
-func SignInProviders(skipSoap bool) []Provider {
+func SignInProviders() []Provider {
 	if MockProviders != nil {
 		providers := make([]Provider, 0, len(MockProviders))
 		for _, p := range MockProviders {
-			if skipSoap && p.ConfigID().Type == auth.SourcegraphOperatorProviderType {
-				continue
-			}
 			common := GetAuthProviderCommon(p)
 			if !common.Hidden && !common.NoSignIn {
 				providers = append(providers, p)
@@ -186,9 +182,6 @@ func SignInProviders(skipSoap bool) []Provider {
 	providers := make([]Provider, 0, ct)
 	for _, pkgProviders := range curProviders {
 		for _, p := range pkgProviders {
-			if skipSoap && p.ConfigID().Type == auth.SourcegraphOperatorProviderType {
-				continue
-			}
 			common := GetAuthProviderCommon(p)
 			if !common.Hidden && !common.NoSignIn {
 				providers = append(providers, p)
