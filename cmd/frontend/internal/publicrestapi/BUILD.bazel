@@ -27,6 +27,7 @@ go_test(
         "openai_models_test.go",
     ],
     embed = [":publicrestapi"],
+    tags = ["requires-network"],
     deps = [
         "//cmd/frontend/enterprise",
         "//cmd/frontend/graphqlbackend",
