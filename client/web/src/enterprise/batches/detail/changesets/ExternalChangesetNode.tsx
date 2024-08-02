@@ -241,9 +241,17 @@ const ChangesetError: React.FunctionComponent<
         return null
     }
 
+    if (node.state === ChangesetState.FAILED) {
+        return (
+            <Alert role="alert" variant="danger">
+                <H4 className={classNames(styles.alertHeading)}>The changeset has failed to run the operations.</H4>
+                <ErrorMessage error={node.error} />
+            </Alert>
+        )
+    }
     return (
-        <Alert role="alert" variant="danger">
-            <H4 className={classNames(styles.alertHeading)}>Failed to run operations on changeset</H4>
+        <Alert role="alert" variant="warning">
+            <H4 className={classNames(styles.alertHeading)}>The changeset encountered an error, but is retrying.</H4>
             <ErrorMessage error={node.error} />
         </Alert>
     )
