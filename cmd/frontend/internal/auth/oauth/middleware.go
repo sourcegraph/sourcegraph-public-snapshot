@@ -60,7 +60,7 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 		// instance, it's an app request, the sign-out cookie is not present, and access requests are disabled, redirect to sign-in immediately.
 		//
 		// For sign-out requests (sign-out cookie is  present), the user will be redirected to the SG login page.
-		pc := getExactlyOneOAuthProvider(!r.URL.Query().Has("sourcegraph-operator"))
+		pc := getExactlyOneOAuthProvider()
 		if pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && !auth.HasSignOutCookie(r) && isHuman(r) && !conf.IsAccessRequestEnabled() {
 			span.AddEvent("redirect to signin")
 			v := make(url.Values)
@@ -210,8 +210,8 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 	}
 }
 
-func getExactlyOneOAuthProvider(skipSoap bool) *Provider {
-	ps := providers.SignInProviders(skipSoap)
+func getExactlyOneOAuthProvider() *Provider {
+	ps := providers.SignInProviders()
 	if len(ps) != 1 {
 		return nil
 	}
