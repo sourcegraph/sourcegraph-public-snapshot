@@ -147,7 +147,7 @@ function fetchBlameHunks(repoName: string, revision: string, filePath: string): 
 function fetchRawBlameHunks(repoName: string, revision: string, filePath: string): Observable<RawStreamHunk[]> {
     const repoAndRevisionPath = `/${repoName}${revision ? `@${revision}` : ''}`
     return new Observable<RawStreamHunk[]>(subscriber => {
-        fetchEventSource(`/.api/blame${repoAndRevisionPath}/stream/${filePath}`, {
+        fetchEventSource(`/.api/blame${repoAndRevisionPath}/-/stream/${filePath}`, {
             method: 'GET',
             headers: {
                 ...window.context.xhrHeaders,
