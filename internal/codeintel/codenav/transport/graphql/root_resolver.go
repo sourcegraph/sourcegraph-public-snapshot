@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
@@ -122,6 +124,15 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 
 	if !conf.SCIPBasedAPIsEnabled() {
 		return nil, ErrNotEnabled
+	}
+
+	currentActor := actor.FromContext(ctx)
+	hasAccess, err := authz.FilterActorPath(ctx, authz.DefaultSubRepoPermsChecker,
+		currentActor, opts.Repo.Name, opts.Path.RawValue())
+	if err != nil {
+		return nil, err
+	} else if !hasAccess {
+		return nil, os.ErrNotExist
 	}
 
 	gitTreeTranslator := r.MakeGitTreeTranslator(opts.Repo)
