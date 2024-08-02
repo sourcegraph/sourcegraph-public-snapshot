@@ -25,6 +25,7 @@ export interface ChatExportResult {
 interface ChatHistoryListProps {
     chats: ChatExportResult[]
     isSelectedChat: (chat: ChatExportResult) => boolean
+    withCreationButton?: boolean
     className?: string
     onChatSelect: (chat: ChatExportResult) => void
     onChatDelete: (chat: ChatExportResult) => void
@@ -32,7 +33,15 @@ interface ChatHistoryListProps {
 }
 
 export const ChatHistoryList: FC<ChatHistoryListProps> = props => {
-    const { chats, isSelectedChat, className, onChatSelect, onChatDelete, onChatCreate } = props
+    const {
+        chats,
+        isSelectedChat,
+        withCreationButton = true,
+        className,
+        onChatSelect,
+        onChatDelete,
+        onChatCreate,
+    } = props
 
     const sortedChats = useMemo(() => {
         try {
@@ -65,12 +74,14 @@ export const ChatHistoryList: FC<ChatHistoryListProps> = props => {
                     onDelete={() => onChatDelete(chat)}
                 />
             ))}
-            <footer className={styles.footer}>
-                <Button variant="primary" onClick={() => onChatCreate()} className="w-100">
-                    Start new chat
-                    <Icon aria-label="Add chat" svgPath={mdiPlus} />
-                </Button>
-            </footer>
+            {withCreationButton && (
+                <footer className={styles.footer}>
+                    <Button variant="primary" onClick={() => onChatCreate()} className="w-100">
+                        Start new chat
+                        <Icon aria-label="Add chat" svgPath={mdiPlus} />
+                    </Button>
+                </footer>
+            )}
         </ul>
     )
 }
