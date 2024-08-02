@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
@@ -52,25 +53,32 @@ func (r *treeEntryResolver) ToGitTree() (resolvers.GitBlobResolver, bool) { retu
 func (r *treeEntryResolver) ToGitBlob() (resolvers.GitTreeResolver, bool) { return r, !r.isDir }
 
 func (r *treeEntryResolver) Content(ctx context.Context, args *resolvers.GitTreeContentPageArgs) (string, error) {
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-
-	fr, err := r.gitserverClient.NewFileReader(
-		ctx,
-		api.RepoName(r.commit.Repository().Name()), // repository name
-		api.CommitID(r.commit.OID()),               // commit oid
-		r.path,                                     // path
-	)
-	if err != nil {
-		return "", err
-	}
-	defer fr.Close()
-	content, err := io.ReadAll(fr)
+	content, err := GetFullContents(ctx,
+		r.gitserverClient,
+		api.RepoName(r.Repository().Name()),
+		api.CommitID(r.commit.OID()),
+		core.NewRepoRelPathUnchecked(r.path))
 	if err != nil {
 		return "", err
 	}
 
 	return joinSelection(strings.Split(string(content), "\n"), args.StartLine, args.EndLine), nil
+}
+
+func GetFullContents(ctx context.Context, gitserverClient gitserver.Client, repoName api.RepoName, commit api.CommitID, path core.RepoRelPath) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	fr, err := gitserverClient.NewFileReader(ctx, repoName, commit, path.RawValue())
+	if err != nil {
+		return nil, err
+	}
+	defer fr.Close()
+	content, err := io.ReadAll(fr)
+	if err != nil {
+		return nil, err
+	}
+	return content, nil
 }
 
 func joinSelection(lines []string, startLine, endLine *int32) string {

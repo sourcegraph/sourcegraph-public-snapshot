@@ -14,9 +14,11 @@
     import { Alert, Badge, Button } from '$lib/wildcard'
 
     import type { CodySidebar_ResolvedRevision } from './CodySidebar.gql'
+    import type { LineOrPositionOrRange } from '@sourcegraph/common';
 
     export let repository: CodySidebar_ResolvedRevision
     export let filePath: string
+    export let lineOrPosition: LineOrPositionOrRange | undefined = undefined
 
     const headingID = uniqueID('cody-sidebar-heading')
     const dispatch = createEventDispatcher<{ close: void }>()
@@ -26,7 +28,7 @@
     <div class="header">
         <h3 id={headingID}>
             <Icon icon={ISgCody} /> Cody
-            <Badge variant="warning">Experimental</Badge>
+            <Badge variant="info">Beta</Badge>
         </h3>
         <Tooltip tooltip="Close Cody chat">
             <Button
@@ -44,7 +46,7 @@
         {#await import('./CodySidebarChat.svelte')}
             <LoadingSpinner />
         {:then module}
-            <svelte:component this={module.default} {repository} {filePath} />
+            <svelte:component this={module.default} {repository} {filePath} {lineOrPosition} />
         {/await}
     {:else}
         <Alert variant="info">

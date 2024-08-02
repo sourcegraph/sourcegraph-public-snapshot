@@ -11,6 +11,7 @@ type CodyContextResolver interface {
 	ChatContext(ctx context.Context, args ChatContextArgs) (ChatContextResolver, error)
 	RankContext(ctx context.Context, args RankContextArgs) (RankContextResolver, error)
 	RecordContext(ctx context.Context, args RecordContextArgs) (*EmptyResponse, error)
+	UrlMentionContext(ctx context.Context, args UrlMentionContextArgs) (UrlMentionContextResolver, error)
 	// GetCodyContext is the existing Cody Enterprise context endpoint
 	GetCodyContext(ctx context.Context, args GetContextArgs) ([]ContextResultResolver, error)
 }
@@ -20,6 +21,15 @@ type GetContextArgs struct {
 	Query            string
 	CodeResultsCount int32
 	TextResultsCount int32
+}
+
+type UrlMentionContextArgs struct {
+	Url string
+}
+
+type UrlMentionContextResolver interface {
+	Title() *string
+	Content() string
 }
 
 type ContextResultResolver interface {
@@ -106,8 +116,8 @@ type IntentResolver interface {
 
 type RankContextResolver interface {
 	Ranker() string
-	Used() []int32
-	Ignored() []int32
+	Used() []RankedItemResolver
+	Ignored() []RankedItemResolver
 }
 
 type ChatContextResolver interface {
@@ -120,4 +130,9 @@ type RetrieverContextItemResolver interface {
 	Item() ContextResultResolver
 	Score() *float64
 	Retriever() string
+}
+
+type RankedItemResolver interface {
+	Index() int32
+	Score() float64
 }

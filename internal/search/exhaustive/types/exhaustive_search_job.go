@@ -25,6 +25,10 @@ type ExhaustiveSearchJob struct {
 	// from ListSearchJobs. This state is different from WorkerJob.State, because it
 	// reflects the combined state of all jobs created as part of the search job.
 	AggState JobState
+
+	// Set to true by the janitor job if it has processed the job. This is used to
+	// avoid aggregating the same job multiple times.
+	IsAggregated bool
 }
 
 func (j *ExhaustiveSearchJob) RecordID() int {

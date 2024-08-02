@@ -3,10 +3,8 @@ package cloud
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/grafana/regexp"
 	cloudapiv1 "github.com/sourcegraph/cloud-api/go/cloudapi/v1"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -99,79 +97,14 @@ func (i *Instance) HasStatus(status string) bool {
 }
 
 type InstanceStatus struct {
-	Status string       `json:"status"`
-	Reason StatusReason `json:"reason"`
-	Error  string       `json:"error"`
-}
-
-type StatusReason struct {
-	Step     string `json:"step"`
-	Phase    string `json:"phase"`
-	JobCount int    `json:"job_count"`
-	JobURL   string `json:"job_url"`
-	JobState string `json:"job_state"`
-	Overall  string `json:"overall"`
-}
-
-func newStatusReason(reason string) (StatusReason, error) {
-	if reason == "" {
-		return StatusReason{}, nil
-	}
-
-	// TODO(burmudar): handle storing of multiple jobs
-	jobCount := 1
-	// if the reason contains a semicolon it means there are multiple jobs, we only want the last job
-	if strings.Contains(reason, ";") {
-		parts := strings.Split(reason, ";")
-		// we want to know the number of jobs
-		jobCount = len(parts)
-		// we want to know the last job
-		reason = strings.TrimSpace(parts[jobCount-1])
-	}
-	// step 1/3:creating instance, job-url:https://github.com/sourcegraph/cloud/actions/runs/9209264595, state:in_progress, conclusion: failed
-	statusRegex := regexp.MustCompile(`^step (\d\/\d):(.*), job-url:(.*), state:(\w+)(, conclusion:(\w+))?$`)
-	matches := statusRegex.FindStringSubmatch(reason)
-	// if matches is 7, it means we have a conclusion, if matches is 5 then we don't have aa conclusion
-	if len(matches) != 5 && len(matches) != 7 {
-		return StatusReason{}, errors.Newf("failed to parse status reason: %q", reason)
-	}
-	var conclusion string
-	if len(matches) == 7 {
-		conclusion = matches[6]
-	}
-	return StatusReason{
-		Step:     matches[1],
-		Phase:    matches[2],
-		JobCount: jobCount,
-		JobURL:   matches[3],
-		JobState: matches[4],
-		Overall:  conclusion,
-	}, nil
-}
-
-func (s *StatusReason) GetStepPhaseString() string {
-	if s.Step == "" || s.Phase == "" {
-		return ""
-	}
-
-	return fmt.Sprintf("(%s %s)", s.Step, s.Phase)
-}
-
-func (s *StatusReason) GetJobURLStateString() string {
-	value := s.JobURL
-	if s.JobState != "" {
-		value = fmt.Sprintf("%s (%s)", value, s.JobState)
-	}
-	return value
+	Status string `json:"status"`
+	Reason string `json:"reason"`
+	Error  string `json:"error"`
 }
 
 func (s *InstanceStatus) String() string {
 	return fmt.Sprintf(`Status       : %s
-Step         : %s
-Phase        : %s
-JobURL       : %s
-JobState     : %s
-Overall      : %s`, s.Status, s.Reason.Step, s.Reason.Phase, s.Reason.JobURL, s.Reason.JobState, s.Reason.Overall)
+Details      : %s`, s.Status, s.Reason)
 }
 
 type InstanceFeatures struct {
@@ -180,11 +113,7 @@ type InstanceFeatures struct {
 
 func newInstanceStatus(src *cloudapiv1.InstanceState) *InstanceStatus {
 	status := InstanceStatus{}
-	var err error
-	status.Reason, err = newStatusReason(src.GetReason())
-	if err != nil {
-		status.Error = err.Error()
-	}
+	status.Reason = src.GetReason()
 	switch src.GetInstanceStatus() {
 	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED:
 		status.Status = InstanceStatusUnspecified
@@ -274,7 +203,7 @@ func (f *InstanceFeatures) IsEphemeralInstance() bool {
 }
 
 func (f *InstanceFeatures) SetEphemeralInstance(v bool) {
-	f.features["ephemeral"] = strconv.FormatBool(v)
+	f.features["ephemeral_instance"] = strconv.FormatBool(v)
 }
 
 func (f *InstanceFeatures) SetEphemeralLeaseTime(expiresAt time.Time) {

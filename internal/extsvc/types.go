@@ -192,9 +192,6 @@ const (
 	// VariantAzureDevOps is the (api.ExternalRepoSpec).ServiceType value for ADO projects.
 	VariantAzureDevOps
 
-	// VariantAzureDevOps is the (api.ExternalRepoSpec).ServiceType value for ADO projects.
-	VariantSCIM
-
 	// VariantNpmPackages is the (api.ExternalRepoSpec).ServiceType value for Npm packages (JavaScript/VariantScript ecosystem libraries).
 	VariantNpmPackages
 
@@ -238,7 +235,6 @@ var variantValuesMap = map[Variant]variantValues{
 	VariantPythonPackages:  {AsKind: "PYTHONPACKAGES", AsType: "pythonPackages", ConfigPrototype: func() any { return &schema.PythonPackagesConnection{} }},
 	VariantRubyPackages:    {AsKind: "RUBYPACKAGES", AsType: "rubyPackages", ConfigPrototype: func() any { return &schema.RubyPackagesConnection{} }},
 	VariantRustPackages:    {AsKind: "RUSTPACKAGES", AsType: "rustPackages", ConfigPrototype: func() any { return &schema.RustPackagesConnection{} }},
-	VariantSCIM:            {AsKind: "SCIM", AsType: "scim"},
 }
 
 func (v Variant) AsKind() string {
@@ -304,7 +300,6 @@ var (
 	KindNpmPackages     = VariantNpmPackages.AsKind()
 	KindPagure          = VariantPagure.AsKind()
 	KindAzureDevOps     = VariantAzureDevOps.AsKind()
-	KindSCIM            = VariantSCIM.AsKind()
 	KindOther           = VariantOther.AsKind()
 )
 

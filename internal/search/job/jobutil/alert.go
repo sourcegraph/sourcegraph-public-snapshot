@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchalert "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -67,6 +68,12 @@ func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream s
 		} else {
 			err = nil
 		}
+	}
+
+	if countingStream.Count() == 0 &&
+		j.inputs.SearchMode == search.SmartSearch &&
+		(j.inputs.PatternType == query.SearchTypeLiteral || j.inputs.PatternType == query.SearchTypeStandard) {
+		return search.AlertForSmartSearch(), nil
 	}
 
 	return search.MaxPriorityAlert(jobAlert, observerAlert), err

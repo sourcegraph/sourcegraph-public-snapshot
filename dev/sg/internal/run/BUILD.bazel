@@ -41,14 +41,17 @@ go_test(
     name = "run_test",
     timeout = "short",
     srcs = [
+        "command_test.go",
         "docker_command_test.go",
         "logger_test.go",
     ],
     embed = [":run"],
     tags = [TAG_INFRA_DEVINFRA],
     deps = [
+        "//lib/errors",
         "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
         "@in_gopkg_yaml_v2//:yaml_v2",
     ],
 )

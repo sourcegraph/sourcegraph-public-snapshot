@@ -198,6 +198,6 @@ func setupRepoPolicies(t *testing.T, ctx context.Context, db database.DB, polici
 	for _, policyID := range []int{1100} {
 		policy, _, err := policies.GetConfigurationPolicyByID(ctx, policyID)
 		require.NoError(t, err)
-		require.NoError(t, policies.UpdateReposMatchingPolicyPatterns(ctx, policy))
+		require.NoError(t, policies.UpdateReposMatchingPolicyPatterns(ctx, policy.RepositoryPatterns, policy.ID))
 	}
 }

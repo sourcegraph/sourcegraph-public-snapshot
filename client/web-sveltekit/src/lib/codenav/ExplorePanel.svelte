@@ -114,20 +114,19 @@
     }
 
     export function getUsagesStore(client: GraphQLClient, documentInfo: DocumentInfo, occurrence: Occurrence) {
-        const baseVariables = {
+        const baseVariables: ExplorePanel_UsagesVariables = {
             repoName: documentInfo.repoName,
             revspec: documentInfo.commitID,
             filePath: documentInfo.filePath,
             rangeStart: occurrence.range.start,
             rangeEnd: occurrence.range.end,
-            symbolComparator: occurrence.symbol
-                ? {
-                      name: { equals: occurrence.symbol },
-                      provenance: {
-                          /* equals: TODO */
-                      },
-                  }
-                : null,
+            symbolComparator:
+                occurrence.symbol && occurrence.symbolProvenance
+                    ? {
+                          name: { equals: occurrence.symbol },
+                          provenance: { equals: occurrence.symbolProvenance },
+                      }
+                    : null,
             first: 100,
             afterCursor: null,
         }

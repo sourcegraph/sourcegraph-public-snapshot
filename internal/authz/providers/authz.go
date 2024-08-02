@@ -3,7 +3,6 @@ package providers
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -19,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -40,19 +39,19 @@ func ProvidersFromConfig(
 	cfg conftypes.SiteConfigQuerier,
 	db database.DB,
 ) (
-	allowAccessByDefault bool,
 	providers []authz.Provider,
 	seriousProblems []string,
 	warnings []string,
 	invalidConnections []string,
 ) {
+	tr, ctx := trace.New(ctx, "ProvidersFromConfig")
+	defer tr.End()
+
 	logger := log.Scoped("authz")
 
-	allowAccessByDefault = true
 	defer func() {
 		if len(seriousProblems) > 0 {
 			logger.Error("Repository authz config was invalid (errors are visible in the UI as an admin user, you should fix ASAP). Restricting access to repositories by default for now to be safe.", log.Strings("seriousProblems", seriousProblems))
-			allowAccessByDefault = false
 		}
 	}()
 
@@ -157,34 +156,14 @@ func ProvidersFromConfig(
 	}
 
 	initResult := github.NewAuthzProviders(ctx, db, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
-	initResult.Append(gitlab.NewAuthzProviders(db, cfg.SiteConfig(), gitLabConns))
+	initResult.Append(gitlab.NewAuthzProviders(db, gitLabConns, cfg.SiteConfig().AuthProviders))
 	initResult.Append(bitbucketserver.NewAuthzProviders(bitbucketServerConns))
 	initResult.Append(perforce.NewAuthzProviders(perforceConns))
-	initResult.Append(bitbucketcloud.NewAuthzProviders(db, bitbucketCloudConns, cfg.SiteConfig().AuthProviders))
-	initResult.Append(gerrit.NewAuthzProviders(gerritConns, cfg.SiteConfig().AuthProviders))
+	initResult.Append(bitbucketcloud.NewAuthzProviders(db, bitbucketCloudConns))
+	initResult.Append(gerrit.NewAuthzProviders(gerritConns))
 	initResult.Append(azuredevops.NewAuthzProviders(db, azuredevopsConns, httpcli.ExternalClient))
 
-	return allowAccessByDefault, initResult.Providers, initResult.Problems, initResult.Warnings, initResult.InvalidConnections
-}
-
-func RefreshInterval(cfg conftypes.UnifiedQuerier) time.Duration {
-	interval := cfg.SiteConfig().AuthzRefreshInterval
-	if interval <= 0 {
-		return 5 * time.Second
-	}
-	return time.Duration(interval) * time.Second
-}
-
-// PermissionSyncingDisabled returns true if the background permissions syncing is not enabled.
-// It is not enabled if:
-//   - There are no code host connections with authorization or enforcePermissions enabled
-//   - Not purchased with the current license
-//   - `disableAutoCodeHostSyncs` site setting is set to true
-func PermissionSyncingDisabled(cfg conftypes.UnifiedQuerier) bool {
-	_, p := authz.GetProviders()
-	return len(p) == 0 ||
-		licensing.Check(licensing.FeatureACLs) != nil ||
-		cfg.SiteConfig().DisableAutoCodeHostSyncs
+	return initResult.Providers, initResult.Problems, initResult.Warnings, initResult.InvalidConnections
 }
 
 var ValidateExternalServiceConfig = database.MakeValidateExternalServiceConfigFunc(

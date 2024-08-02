@@ -27,7 +27,7 @@ func (r *gitBlobLSIFDataResolver) Stencil(ctx context.Context) (_ []resolverstub
 
 	resolvers := make([]resolverstubs.RangeResolver, 0, len(ranges))
 	for _, r := range ranges {
-		resolvers = append(resolvers, newRangeResolver(convertRange(r)))
+		resolvers = append(resolvers, newRangeResolver(r.ToSCIPRange()))
 	}
 
 	return resolvers, nil

@@ -24,8 +24,8 @@ import (
 
 // SubRepoPermissionsGetter allows getting sub repository permissions.
 type SubRepoPermissionsGetter interface {
-	// GetByUser returns the sub repository permissions rules known for a user.
-	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error)
+	// GetByUserWithIPs returns the sub repository permissions rules known for a user.
+	GetByUserWithIPs(ctx context.Context, userID int32, backfillWithWildcardIP bool) (map[api.RepoName]authz.SubRepoPermissionsWithIPs, error)
 
 	// RepoIDSupported returns true if repo with the given ID has sub-repo permissions.
 	RepoIDSupported(ctx context.Context, repoID api.RepoID) (bool, error)
@@ -272,7 +272,7 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 	// work
 	groupKey := strconv.FormatInt(int64(userID), 10)
 	result, err, _ := s.group.Do(groupKey, func() (any, error) {
-		repoPerms, err := s.permissionsGetter.GetByUser(ctx, userID)
+		repoPerms, err := s.permissionsGetter.GetByUserWithIPs(ctx, userID, true) // TODO@ggilmore: (Once IP configuration option is in place, don't hardcode true)
 		if err != nil {
 			return nil, errors.Wrap(err, "fetching rules")
 		}
@@ -281,7 +281,8 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 		}
 		for repo, perms := range repoPerms {
 			paths := make([]path, 0, len(perms.Paths))
-			for _, rule := range perms.Paths {
+			for _, p := range perms.Paths {
+				rule := p.Path // TODO@ggilmore: Adapt this logic to thread through ip information
 				exclusion := strings.HasPrefix(rule, "-")
 				rule = strings.TrimPrefix(rule, "-")
 
@@ -411,12 +412,12 @@ func expandDirs(rule string) []string {
 // NewSimpleChecker is exposed for testing and allows creation of a simple
 // checker based on the rules provided. The rules are expected to be in glob
 // format.
-func NewSimpleChecker(repo api.RepoName, paths []string) authz.SubRepoPermissionChecker {
+func NewSimpleChecker(repo api.RepoName, pathsWithIps []authz.PathWithIP) authz.SubRepoPermissionChecker {
 	getter := NewMockSubRepoPermissionsGetter()
-	getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
-		return map[api.RepoName]authz.SubRepoPermissions{
+	getter.GetByUserWithIPsFunc.SetDefaultHook(func(ctx context.Context, i int32, _ bool) (map[api.RepoName]authz.SubRepoPermissionsWithIPs, error) {
+		return map[api.RepoName]authz.SubRepoPermissionsWithIPs{
 			repo: {
-				Paths: paths,
+				Paths: pathsWithIps,
 			},
 		}, nil
 	})

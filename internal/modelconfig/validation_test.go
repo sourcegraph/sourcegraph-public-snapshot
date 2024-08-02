@@ -31,23 +31,22 @@ func TestValidationMethods(t *testing.T) {
 
 			{"anthropic::2023-06-01::claude-3.5-sonnet", ""},
 
+			// Exotic resource IDs, but they are all valid. Unfortunately.
+			{"provider/v1::api-version::model", ""},
+			{"CAPS_PROVIDER::v1::model", ""},
+			{"foo::name-with!exclamatnions-should::be-ok", ""},
+			{"anthropic::2023-01-01:://///", ""},
+			{"provider::api-version::model/v1", ""},
+			{"provider::apiver::CAPS_MODEL", ""},
+
 			// Expected failure with older-style model references.
 			{"claude-2", "modelRef syntax error"},
 			{"anthropic/claude-2", "modelRef syntax error"},
 
 			// Generic validation errors.
 			{"a::b::c::d", "modelRef syntax error"},
-
-			{"provider/v1::api-version::model", "invalid ProviderID"},
-			{"CAPS_PROVIDER::v1::model", "invalid ProviderID"},
 			{"g o o g l e::v1::gemini-1.5", "invalid ProviderID"},
-
-			{"foo::name-with!exclamatnions-should::be-ok", "invalid APIVersionID"},
-			{"google::version one::gemini-1.5", "invalid APIVersionID"},
-
-			{"provider::api-version::model/v1", "invalid ModelID"},
-			{"provider::apiver::CAPS_MODEL", "invalid ModelID"},
-			{"anthropic::2023-01-01::claude instant", "invalid ModelID"},
+			{"google::版本一::gemini-1.5", "invalid APIVersionID"},
 			{"google::v1::Gemini 1.5", "invalid ModelID"},
 		}
 
@@ -104,11 +103,25 @@ func TestValidationMethods(t *testing.T) {
 				},
 				WantError: "",
 			},
+			// Allow any Provider ID that is URL-safe(*).
+			{
+				P: types.Provider{
+					ID:               types.ProviderID("provider%20id/v2-beta@2024;with_9000+power"),
+					DisplayName:      "",
+					ClientSideConfig: nil,
+					ServerSideConfig: &types.ServerSideProviderConfig{
+						GenericProvider: &types.GenericProviderConfig{
+							ServiceName: "openai",
+						},
+					},
+				},
+				WantError: "",
+			},
 
 			// Error cases.
 			{
 				P: types.Provider{
-					ID:               types.ProviderID("invalid-generic-provider-config"),
+					ID:               types.ProviderID("invalid-generic-provider-config2"),
 					DisplayName:      "",
 					ClientSideConfig: nil,
 					ServerSideConfig: &types.ServerSideProviderConfig{
@@ -135,7 +148,7 @@ func TestValidationMethods(t *testing.T) {
 			if gotErr := validateProvider(test.P); gotErr != nil {
 				gotErrStr = gotErr.Error()
 			}
-			assert.Equal(t, test.WantError, gotErrStr, "test scenario %d", i)
+			assert.Equal(t, test.WantError, gotErrStr, "test scenario %d. (%q)", i, test.P.ID)
 		}
 	})
 }
@@ -376,12 +389,17 @@ func TestValidateSiteConfig(t *testing.T) {
 		{
 			siteConfig := getValidSiteConfiguration()
 			siteConfig.DefaultModels = &types.DefaultModels{
-				// Invalid ModelRefs, Chat not specified.
+				// Chat not specified.
 				FastChat:       types.ModelRef("foo::bar::baz"),
 				CodeCompletion: types.ModelRef("foo::bar::baz"),
 			}
 			err := ValidateSiteConfig(siteConfig)
-			assert.ErrorContains(t, err, "default chat model: modelRef is blank")
+
+			// We do not report this as a validation error because when we render
+			// the supported models, we can simply fallback to a reasonable default.
+			// (e.g. picking the first acceptable model, and not require the admin
+			// to explicitly provide defaults for all categories of model.)
+			assert.Nil(t, err)
 		}
 	})
 }

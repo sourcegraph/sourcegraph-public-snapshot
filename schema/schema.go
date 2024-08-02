@@ -1279,15 +1279,6 @@ type ExportUsageTelemetry struct {
 	// TopicProjectName description: GCP project name containing the usage data pubsub topic
 	TopicProjectName string `json:"topicProjectName,omitempty"`
 }
-type ExternalIdentity struct {
-	// AuthProviderID description: The value of the `configID` field of the targeted authentication provider.
-	AuthProviderID string `json:"authProviderID"`
-	// AuthProviderType description: The `type` field of the targeted authentication provider.
-	AuthProviderType string `json:"authProviderType"`
-	// GitlabProvider description: The name that identifies the authentication provider to GitLab. This is passed to the `?provider=` query parameter in calls to the GitLab Users API. If you're not sure what this value is, you can look at the `identities` field of the GitLab Users API result (`curl  -H 'PRIVATE-TOKEN: $YOUR_TOKEN' $GITLAB_URL/api/v4/users`).
-	GitlabProvider string `json:"gitlabProvider"`
-	Type           string `json:"type"`
-}
 
 // FileFilters description: Filters that allow you to specify which files in a repository should get embedded.
 type FileFilters struct {
@@ -1601,7 +1592,7 @@ type GitLabConnection struct {
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	// Token description: A GitLab access token with "api" scope. Can be a personal access token (PAT) or an OAuth token. If you are enabling permissions with identity provider type "external", this token should also have "sudo" scope.
+	// Token description: A GitLab access token with "api" scope. Can be a personal access token (PAT) or an OAuth token. If you are enabling permissions with identity provider type "username", this token should also have "sudo" scope.
 	Token string `json:"token"`
 	// TokenOauthExpiry description: The OAuth token expiry (Unix timestamp in seconds)
 	TokenOauthExpiry int `json:"token.oauth.expiry,omitempty"`
@@ -1715,7 +1706,6 @@ type Header struct {
 type IdentityProvider struct {
 	Oauth    *OAuthIdentity
 	Username *UsernameIdentity
-	External *ExternalIdentity
 }
 
 func (v IdentityProvider) MarshalJSON() ([]byte, error) {
@@ -1724,9 +1714,6 @@ func (v IdentityProvider) MarshalJSON() ([]byte, error) {
 	}
 	if v.Username != nil {
 		return json.Marshal(v.Username)
-	}
-	if v.External != nil {
-		return json.Marshal(v.External)
 	}
 	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
 }
@@ -1738,14 +1725,12 @@ func (v *IdentityProvider) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch d.DiscriminantProperty {
-	case "external":
-		return json.Unmarshal(data, &v.External)
 	case "oauth":
 		return json.Unmarshal(data, &v.Oauth)
 	case "username":
 		return json.Unmarshal(data, &v.Username)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"oauth", "username", "external"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"oauth", "username"})
 }
 
 type ImportChangesets struct {
@@ -2590,6 +2575,24 @@ type Selector struct {
 	// Use `**/` before the glob to match in any parent directory. Use `/**` after the glob to match any files under a directory. Leading slashes are stripped from the path before being matched against the glob.
 	Path string `json:"path,omitempty"`
 }
+type SelfHostedModel struct {
+	// ApiVersion description: API version
+	ApiVersion string `json:"apiVersion,omitempty"`
+	// Model description: Which default model configuration to use. Sourcegraph provides default model configuration for select models. Arbitrary models can be configured in 'modelOverrides'
+	Model    string                   `json:"model,omitempty"`
+	Override *SelfHostedModelOverride `json:"override,omitempty"`
+	// Provider description: provider ID
+	Provider string `json:"provider"`
+}
+
+// SelfHostedModelOverride description: Properties to override in the default model configuration
+type SelfHostedModelOverride struct {
+	ClientSideConfig *ClientSideModelConfigOpenAICompatible `json:"clientSideConfig,omitempty"`
+	ContextWindow    *ContextWindow                         `json:"contextWindow,omitempty"`
+	// DisplayName description: Display name
+	DisplayName      string                                 `json:"displayName,omitempty"`
+	ServerSideConfig *ServerSideModelConfigOpenAICompatible `json:"serverSideConfig,omitempty"`
+}
 
 // Sentry description: Configuration for Sentry
 type Sentry struct {
@@ -2950,8 +2953,6 @@ type SettingsExperimentalFeatures struct {
 	EnableLazyBlobSyntaxHighlighting *bool `json:"enableLazyBlobSyntaxHighlighting,omitempty"`
 	// EnableLazyFileResultSyntaxHighlighting description: Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.
 	EnableLazyFileResultSyntaxHighlighting *bool `json:"enableLazyFileResultSyntaxHighlighting,omitempty"`
-	// EnablePreciseOccurrences description: Enable the new precise occurrences API, which can provide more accurate hovers for some languages.
-	EnablePreciseOccurrences bool `json:"enablePreciseOccurrences,omitempty"`
 	// EnableSearchFilePrefetch description: Pre-fetch plaintext file revisions from search results on hover/focus.
 	EnableSearchFilePrefetch *bool `json:"enableSearchFilePrefetch,omitempty"`
 	// EnableSidebarFilePrefetch description: Pre-fetch plaintext file revisions from sidebar on hover/focus.
@@ -3034,7 +3035,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "codeMonitoringWebHooks")
 	delete(m, "enableLazyBlobSyntaxHighlighting")
 	delete(m, "enableLazyFileResultSyntaxHighlighting")
-	delete(m, "enablePreciseOccurrences")
 	delete(m, "enableSearchFilePrefetch")
 	delete(m, "enableSidebarFilePrefetch")
 	delete(m, "fuzzyFinder")
@@ -3145,8 +3145,6 @@ type SiteConfiguration struct {
 	AuthUserOrgMap map[string][]string `json:"auth.userOrgMap,omitempty"`
 	// AuthzEnforceForSiteAdmins description: When true, site admins will only be able to see private code they have access to via our authz system.
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
-	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
-	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
 	// BatchChangesAutoDeleteBranch description: Automatically delete branches created for Batch Changes changesets when the changeset is merged or closed, for supported code hosts. Overrides any setting on the repository on the code host itself.
 	BatchChangesAutoDeleteBranch bool `json:"batchChanges.autoDeleteBranch,omitempty"`
 	// BatchChangesChangesetsRetention description: How long changesets will be retained after they have been detached from a batch change.
@@ -3440,7 +3438,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "auth.unlockAccountLinkSigningKey")
 	delete(m, "auth.userOrgMap")
 	delete(m, "authz.enforceForSiteAdmins")
-	delete(m, "authz.refreshInterval")
 	delete(m, "batchChanges.autoDeleteBranch")
 	delete(m, "batchChanges.changesetsRetention")
 	delete(m, "batchChanges.disableWebhooksWarning")
@@ -3581,8 +3578,12 @@ type SiteModelConfiguration struct {
 	// Specifying the same model both here and in 'modelOverrides' is not allowed.
 	ModelOverridesRecommendedSettings []string `json:"modelOverridesRecommendedSettings,omitempty"`
 	// ProviderOverrides description: Configures model providers. Here you can override how Cody connects to model providers and e.g. bring your own API keys or self-hosted models.
-	ProviderOverrides []*ProviderOverride     `json:"providerOverrides,omitempty"`
-	Sourcegraph       *SourcegraphModelConfig `json:"sourcegraph,omitempty"`
+	ProviderOverrides []*ProviderOverride `json:"providerOverrides,omitempty"`
+	// SelfHostedModels description: Add models to the list of models Cody is aware of, but let Sourcegraph provide default configuration for the model. Only available for select models, generic models can be configured in 'modelOverrides'.
+	//
+	// Specifying the same model both here and in 'modelOverrides' is not allowed.
+	SelfHostedModels []*SelfHostedModel      `json:"selfHostedModels,omitempty"`
+	Sourcegraph      *SourcegraphModelConfig `json:"sourcegraph,omitempty"`
 }
 
 // SourcegraphModelConfig description: If null, Cody will not use Sourcegraph's servers for model discovery.

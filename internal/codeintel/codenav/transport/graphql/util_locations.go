@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
@@ -47,22 +47,18 @@ func resolveLocation(ctx context.Context, locationResolver *gitresolvers.CachedL
 		return nil, err
 	}
 
-	lspRange := convertRange(location.TargetRange)
-	return newLocationResolver(treeResolver, &lspRange), nil
+	return newLocationResolver(treeResolver, location.TargetRange.ToSCIPRange()), nil
 }
-
-//
-//
 
 type locationResolver struct {
 	resource resolverstubs.GitTreeEntryResolver
-	lspRange *lsp.Range
+	range_   scip.Range
 }
 
-func newLocationResolver(resource resolverstubs.GitTreeEntryResolver, lspRange *lsp.Range) resolverstubs.LocationResolver {
+func newLocationResolver(resource resolverstubs.GitTreeEntryResolver, range_ scip.Range) resolverstubs.LocationResolver {
 	return &locationResolver{
 		resource: resource,
-		lspRange: lspRange,
+		range_:   range_,
 	}
 }
 
@@ -73,10 +69,7 @@ func (r *locationResolver) Range() resolverstubs.RangeResolver {
 }
 
 func (r *locationResolver) rangeInternal() *rangeResolver {
-	if r.lspRange == nil {
-		return nil
-	}
-	return &rangeResolver{*r.lspRange}
+	return &rangeResolver{r.range_}
 }
 
 func (r *locationResolver) URL(ctx context.Context) (string, error) {
@@ -88,65 +81,39 @@ func (r *locationResolver) CanonicalURL() string {
 }
 
 func (r *locationResolver) urlPath(prefix string) string {
-	url := prefix
-	if r.lspRange != nil {
-		url += "?L" + r.rangeInternal().urlFragment()
-	}
-	return url
+	return prefix + "?L" + r.rangeInternal().urlFragment()
 }
 
-//
-//
+type rangeResolver struct{ range_ scip.Range }
 
-type rangeResolver struct{ lspRange lsp.Range }
-
-func newRangeResolver(lspRange lsp.Range) resolverstubs.RangeResolver {
+func newRangeResolver(range_ scip.Range) resolverstubs.RangeResolver {
 	return &rangeResolver{
-		lspRange: lspRange,
+		range_: range_,
 	}
 }
 
 func (r *rangeResolver) Start() resolverstubs.PositionResolver { return r.start() }
 func (r *rangeResolver) End() resolverstubs.PositionResolver   { return r.end() }
 
-func (r *rangeResolver) start() *positionResolver { return &positionResolver{r.lspRange.Start} }
-func (r *rangeResolver) end() *positionResolver   { return &positionResolver{r.lspRange.End} }
+func (r *rangeResolver) start() *positionResolver { return &positionResolver{r.range_.Start} }
+func (r *rangeResolver) end() *positionResolver   { return &positionResolver{r.range_.End} }
 
 func (r *rangeResolver) urlFragment() string {
-	if r.lspRange.Start == r.lspRange.End {
+	if r.range_.Start == r.range_.End {
 		return r.start().urlFragment(false)
 	}
-	hasCharacter := r.lspRange.Start.Character != 0 || r.lspRange.End.Character != 0
+	hasCharacter := r.range_.Start.Character != 0 || r.range_.End.Character != 0
 	return r.start().urlFragment(hasCharacter) + "-" + r.end().urlFragment(hasCharacter)
 }
 
-//
-//
+type positionResolver struct{ pos scip.Position }
 
-type positionResolver struct{ pos lsp.Position }
-
-// func newPositionResolver(pos lsp.Position) resolverstubs.PositionResolver {
-// 	return &positionResolver{pos: pos}
-// }
-
-func (r *positionResolver) Line() int32      { return int32(r.pos.Line) }
-func (r *positionResolver) Character() int32 { return int32(r.pos.Character) }
+func (r *positionResolver) Line() int32      { return r.pos.Line }
+func (r *positionResolver) Character() int32 { return r.pos.Character }
 
 func (r *positionResolver) urlFragment(forceIncludeCharacter bool) string {
 	if !forceIncludeCharacter && r.pos.Character == 0 {
-		return strconv.Itoa(r.pos.Line + 1)
+		return strconv.Itoa(int(r.pos.Line + 1))
 	}
 	return fmt.Sprintf("%d:%d", r.pos.Line+1, r.pos.Character+1)
-}
-
-//
-//
-
-// convertRange creates an LSP range from a bundle range.
-func convertRange(r shared.Range) lsp.Range {
-	return lsp.Range{Start: convertPosition(r.Start.Line, r.Start.Character), End: convertPosition(r.End.Line, r.End.Character)}
-}
-
-func convertPosition(line, character int) lsp.Position {
-	return lsp.Position{Line: line, Character: character}
 }

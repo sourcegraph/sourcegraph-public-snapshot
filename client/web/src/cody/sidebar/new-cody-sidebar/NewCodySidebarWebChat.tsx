@@ -1,9 +1,12 @@
 import { type FC, memo, useCallback, useMemo } from 'react'
 
-import { CodyWebChatProvider } from 'cody-web-experimental'
+import { useLocation } from 'react-router-dom'
 
+import { CodyWebChatProvider, type InitialContext } from '@sourcegraph/cody-web'
+import { SourcegraphURL } from '@sourcegraph/common'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
+import { getTelemetrySourceClient } from '../../../telemetry'
 import { ChatUi } from '../../chat/new-chat/components/chat-ui/ChatUi'
 
 interface Repository {
@@ -19,6 +22,7 @@ interface NewCodySidebarWebChatProps {
 export const NewCodySidebarWebChat: FC<NewCodySidebarWebChatProps> = memo(function CodyWebChat(props) {
     const { filePath, repository } = props
 
+    const location = useLocation()
     const [contextToChatIds, setContextToChatIds] = useLocalStorage<Record<string, string>>(
         'cody.context-to-chat-ids',
         {}
@@ -32,13 +36,22 @@ export const NewCodySidebarWebChat: FC<NewCodySidebarWebChatProps> = memo(functi
         [contextToChatIds, setContextToChatIds, filePath, repository.id]
     )
 
-    const contextInfo = useMemo(
-        () => ({
+    const contextInfo = useMemo<InitialContext>(() => {
+        const lineOrPosition = SourcegraphURL.from(location).lineRange
+        const hasFileRangeSelection = lineOrPosition.line
+
+        return {
             repositories: [repository],
             fileURL: filePath ? `/${filePath}` : undefined,
-        }),
-        [repository, filePath]
-    )
+            // Line range - 1 because of Cody Web initial context file range bug
+            fileRange: hasFileRangeSelection
+                ? {
+                      startLine: lineOrPosition.line - 1,
+                      endLine: lineOrPosition.endLine ? lineOrPosition.endLine - 1 : lineOrPosition.line - 1,
+                  }
+                : undefined,
+        }
+    }, [repository, filePath, location])
 
     const chatID = contextToChatIds[`${repository.id}-${filePath}`] ?? null
 
@@ -49,6 +62,7 @@ export const NewCodySidebarWebChat: FC<NewCodySidebarWebChatProps> = memo(functi
             initialContext={contextInfo}
             serverEndpoint={window.location.origin}
             customHeaders={window.context.xhrHeaders}
+            telemetryClientName={getTelemetrySourceClient()}
             onNewChatCreated={handleNewChatCreated}
         >
             <ChatUi />

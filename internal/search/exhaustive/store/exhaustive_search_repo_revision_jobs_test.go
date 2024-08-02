@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store/storetest"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -28,9 +29,9 @@ func TestStore_CreateExhaustiveSearchRepoRevisionJob(t *testing.T) {
 
 	bs := basestore.NewWithHandle(db.Handle())
 
-	userID, err := createUser(bs, "alice")
+	userID, err := storetest.CreateUser(bs, "alice")
 	require.NoError(t, err)
-	repoID, err := createRepo(db, "repo-test")
+	repoID, err := storetest.CreateRepo(db, "repo-test")
 	require.NoError(t, err)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{

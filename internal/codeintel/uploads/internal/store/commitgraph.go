@@ -11,6 +11,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"go.opentelemetry.io/otel/attribute"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
@@ -300,7 +301,7 @@ func (s *store) FindClosestCompletedUploads(ctx context.Context, opts shared.Upl
 
 	conds := makeFindClosestProcessUploadsConditions(opts)
 	// TODO(id: completed-state-check) Make sure we only return uploads with state = 'completed' here
-	query := sqlf.Sprintf(findClosestCompletedUploadsQuery, makeVisibleUploadsQuery(int(opts.RepositoryID), string(opts.Commit)), sqlf.Join(conds, " AND "))
+	query := sqlf.Sprintf(findClosestCompletedUploadsQuery, makeVisibleUploadsQuery(opts.RepositoryID, opts.Commit), sqlf.Join(conds, " AND "))
 
 	uploads, err := scanCompletedUploads(s.db.Query(ctx, query))
 	if err != nil {
@@ -349,17 +350,9 @@ func (s *store) FindClosestCompletedUploadsFromGraphFragment(ctx context.Context
 		return nil, nil
 	}
 
-	commitQueries := make([]*sqlf.Query, 0, len(commitGraph.Graph()))
-	for commit := range commitGraph.Graph() {
-		commitQueries = append(commitQueries, sqlf.Sprintf("%s", dbutil.CommitBytea(commit)))
-	}
-
 	commitGraphView, err := scanCommitGraphView(s.db.Query(ctx, sqlf.Sprintf(
 		findClosestCompletedUploadsFromGraphFragmentCommitGraphQuery,
-		opts.RepositoryID,
-		sqlf.Join(commitQueries, ", "),
-		opts.RepositoryID,
-		sqlf.Join(commitQueries, ", "),
+		makeNearestUploadsQuery(opts.RepositoryID, maps.Keys(commitGraph.Graph())...),
 	)))
 	if err != nil {
 		return nil, err
@@ -389,42 +382,19 @@ func (s *store) FindClosestCompletedUploadsFromGraphFragment(ctx context.Context
 	return uploads, nil
 }
 
-const findClosestCompletedUploadsFromGraphFragmentCommitGraphQuery = `
-WITH
-visible_uploads AS (
-	-- Select the set of uploads visible from one of the given commits. This is done by
-	-- looking at each commit's row in the lsif_nearest_uploads table, and the (adjusted)
-	-- set of uploads from each commit's nearest ancestor according to the data compressed
-	-- in the links table.
-	--
-	-- NB: A commit should be present in at most one of these tables.
-	SELECT
-		nu.repository_id,
-		upload_id::integer,
-		nu.commit_bytea,
-		u_distance::text::integer as distance
-	FROM lsif_nearest_uploads nu
-	CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
-	WHERE nu.repository_id = %s AND nu.commit_bytea IN (%s)
-	UNION (
-		SELECT
-			nu.repository_id,
-			upload_id::integer,
-			ul.commit_bytea,
-			u_distance::text::integer + ul.distance as distance
-		FROM lsif_nearest_uploads_links ul
-		JOIN lsif_nearest_uploads nu ON nu.repository_id = ul.repository_id AND nu.commit_bytea = ul.ancestor_commit_bytea
-		CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
-		WHERE nu.repository_id = %s AND ul.commit_bytea IN (%s)
-	)
-)
+const findClosestCompletedUploadsFromGraphFragmentCommitGraphQuery =
+/*language=SQL*/ `
+WITH cte_nearest_uploads AS (%s)
 SELECT
-	vu.upload_id,
-	encode(vu.commit_bytea, 'hex'),
-	md5(u.root || ':' || u.indexer) as token,
-	vu.distance
-FROM visible_uploads vu
-JOIN lsif_uploads u ON u.id = vu.upload_id
+	cte_nu.upload_id,
+	encode(cte_nu.commit_bytea, 'hex'),
+	md5(u.root || ':' || (CASE -- See NOTE(id: scip-over-lsif)
+							WHEN u.indexer LIKE 'scip-%%' OR u.indexer LIKE 'lsif-%%' THEN substr(u.indexer, 6)
+							ELSE u.indexer
+						  END)) as token,
+	cte_nu.distance
+FROM cte_nearest_uploads cte_nu
+JOIN lsif_uploads u ON u.id = cte_nu.upload_id
 `
 
 const findClosestCompletedUploadsFromGraphFragmentQuery = `

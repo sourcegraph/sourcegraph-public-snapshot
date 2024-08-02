@@ -27,6 +27,8 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     accessTokensExpirationDaysOptions: [7, 30, 60, 90],
     allowSignup: false,
     batchChangesEnabled: true,
+    applianceUpdateTarget: '',
+    applianceMenuTarget: '',
     batchChangesDisableWebhooksWarning: false,
     batchChangesWebhookLogsEnabled: true,
     codeInsightsEnabled: true,

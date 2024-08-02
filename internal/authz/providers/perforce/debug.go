@@ -16,7 +16,7 @@ import (
 // information about how each line was parsed.
 func PerformDebugScan(logger log.Logger, r io.Reader, depot extsvc.RepoID, ignoreRulesWithHost bool) (*authz.ExternalUserPermissions, error) {
 	perms := &authz.ExternalUserPermissions{
-		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
+		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissionsWithIPs),
 	}
 
 	pr, err := parseP4ProtectsRaw(r)

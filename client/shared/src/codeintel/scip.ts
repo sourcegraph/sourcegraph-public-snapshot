@@ -2,6 +2,8 @@
 // but it doesn't make sense to do so right now.
 import type * as extensions from '@sourcegraph/extension-api-types'
 
+import { CodeGraphDataProvenance } from '../graphql-operations'
+
 import type * as sourcegraph from './legacy-extensions/api'
 
 export interface JsonDocument {
@@ -144,7 +146,8 @@ export class Occurrence {
         public readonly range: Range,
         public readonly kind?: SyntaxKind,
         public readonly symbol?: string,
-        public readonly symbolRoles?: number
+        public readonly symbolRoles?: number,
+        public readonly symbolProvenance?: CodeGraphDataProvenance
     ) {}
 
     public withStartPosition(newStartPosition: Position): Occurrence {

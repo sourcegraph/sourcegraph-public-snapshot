@@ -60,6 +60,7 @@ var exhaustiveSearchJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("cancel"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
+	sqlf.Sprintf("is_aggregated"),
 }
 
 func (s *Store) CreateExhaustiveSearchJob(ctx context.Context, job types.ExhaustiveSearchJob) (_ int64, err error) {
@@ -549,6 +550,7 @@ func defaultScanTargets(job *types.ExhaustiveSearchJob) []any {
 		&job.Cancel,
 		&job.CreatedAt,
 		&job.UpdatedAt,
+		&job.IsAggregated,
 	}
 }
 

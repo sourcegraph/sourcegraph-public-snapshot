@@ -1,9 +1,10 @@
 import type { FC } from 'react'
 
 import classnames from 'classnames'
-import { CodyWebChat } from 'cody-web-experimental'
 
-import 'cody-web-experimental/dist/style.css'
+import { CodyWebChat } from '@sourcegraph/cody-web'
+
+import '@sourcegraph/cody-web/dist/style.css'
 
 import styles from './ChatUI.module.scss'
 

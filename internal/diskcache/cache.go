@@ -80,15 +80,15 @@ func NewStore(dir, component string, opts ...StoreOpt) Store {
 
 type StoreOpt func(*store)
 
-func WithBackgroundTimeout(t time.Duration) func(*store) {
+func WithBackgroundTimeout(t time.Duration) StoreOpt {
 	return func(s *store) { s.backgroundTimeout = t }
 }
 
-func WithBeforeEvict(f func(string, observation.TraceLogger)) func(*store) {
+func WithBeforeEvict(f func(string, observation.TraceLogger)) StoreOpt {
 	return func(s *store) { s.beforeEvict = f }
 }
 
-func WithobservationCtx(ctx *observation.Context) func(*store) {
+func WithobservationCtx(ctx *observation.Context) StoreOpt {
 	return func(s *store) { s.observe = newOperations(ctx, s.component) }
 }
 
