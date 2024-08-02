@@ -51,13 +51,13 @@
         const repoGroups: RepoGroup[] = []
 
         for (const usage of usages) {
-            const repo = usage.usageRange!.repository
+            const repo = usage.usageRange.repository
             if (seenRepos[repo] === undefined) {
                 seenRepos[repo] = { index: repoGroups.length, seenPaths: {} }
                 repoGroups.push({ repo, pathGroups: [] })
             }
 
-            const path = usage.usageRange!.path
+            const path = usage.usageRange.path
             const seenPaths = seenRepos[repo].seenPaths
             const pathGroups = repoGroups[seenRepos[repo].index].pathGroups
 

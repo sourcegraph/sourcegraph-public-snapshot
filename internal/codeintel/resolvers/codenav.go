@@ -533,7 +533,7 @@ type UsageResolver interface {
 	Symbol(context.Context) (SymbolInformationResolver, error)
 	Provenance(context.Context) (codenav.CodeGraphDataProvenance, error)
 	DataSource() *string
-	UsageRange(context.Context) (UsageRangeResolver, error)
+	UsageRange(context.Context) UsageRangeResolver
 	SurroundingContent(_ context.Context) string
 	UsageKind() SymbolUsageKind
 }
