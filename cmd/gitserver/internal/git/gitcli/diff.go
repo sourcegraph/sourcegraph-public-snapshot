@@ -15,11 +15,11 @@ import (
 )
 
 func (g *gitCLIBackend) RawDiff(ctx context.Context, base string, head string, typ git.GitDiffComparisonType, opts git.RawDiffOpts, paths ...string) (io.ReadCloser, error) {
-	baseOID, err := g.revParse(ctx, base)
+	baseOID, err := g.ResolveRevision(ctx, base)
 	if err != nil {
 		return nil, err
 	}
-	headOID, err := g.revParse(ctx, head)
+	headOID, err := g.ResolveRevision(ctx, head)
 	if err != nil {
 		return nil, err
 	}
