@@ -101,10 +101,6 @@
         }
     }
 
-    small {
-        font-size: var(--font-size-xs);
-    }
-
     .header {
         display: flex;
         justify-content: space-between;
