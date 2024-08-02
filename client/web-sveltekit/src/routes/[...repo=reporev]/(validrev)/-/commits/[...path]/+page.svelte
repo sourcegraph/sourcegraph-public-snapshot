@@ -60,7 +60,7 @@
 
 <header>
     <h2>
-        {#if commits && commits[0].perforceChangelist !== null}
+        {#if commits && commits[0]?.perforceChangelist !== null}
             Changelists
         {:else}
             Commit History
