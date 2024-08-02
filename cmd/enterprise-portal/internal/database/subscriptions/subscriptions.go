@@ -156,7 +156,7 @@ func (opts ListEnterpriseSubscriptionsOptions) toQueryConditions() (where, limit
 	}
 	if len(opts.DisplayNameSubstring) > 0 {
 		whereConds = append(whereConds,
-			"display_name LIKE '%' || @displayName || '%'")
+			"LOWER(display_name) LIKE '%' || LOWER(@displayName) || '%'")
 		namedArgs["displayName"] = opts.DisplayNameSubstring
 	}
 	if len(opts.SalesforceSubscriptionIDs) > 0 {

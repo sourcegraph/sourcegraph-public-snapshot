@@ -143,6 +143,8 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		assert.Len(t, ss, 3) // all 3 are returned
 
 		t.Run("single match", func(t *testing.T) {
+			t.Parallel()
+
 			ss, err := s.List(
 				ctx,
 				subscriptions.ListEnterpriseSubscriptionsOptions{
@@ -155,10 +157,26 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		})
 
 		t.Run("exact match", func(t *testing.T) {
+			t.Parallel()
+
 			ss, err := s.List(
 				ctx,
 				subscriptions.ListEnterpriseSubscriptionsOptions{
 					DisplayNameSubstring: "Subscription 2",
+				},
+			)
+			require.NoError(t, err)
+			assert.Len(t, ss, 1)
+			assert.Equal(t, s2.ID, ss[0].ID)
+		})
+
+		t.Run("case-insensitive match", func(t *testing.T) {
+			t.Parallel()
+
+			ss, err := s.List(
+				ctx,
+				subscriptions.ListEnterpriseSubscriptionsOptions{
+					DisplayNameSubstring: "subscription 2",
 				},
 			)
 			require.NoError(t, err)
