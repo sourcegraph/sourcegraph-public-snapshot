@@ -746,7 +746,7 @@ type Usage {
     # Invariant: `range.path` == `blob.path`. The path is made available
     # as part of this type for convenience.
     # """
-    usageRange: UsageRange
+    usageRange: UsageRange!
 
     # TODO: Add a blob: GitBlob field here for more flexibility?
 
