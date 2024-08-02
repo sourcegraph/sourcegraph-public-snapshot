@@ -432,7 +432,7 @@
         grid-area: actions;
 
         button.toggle {
-            --icon-color: currentColor;
+            --icon-color: var(--text-body);
 
             width: 1.5rem;
             height: 1.5rem;
@@ -445,6 +445,7 @@
             &.active {
                 background-color: var(--primary);
                 color: var(--light-text);
+                --icon-color: currentColor;
             }
 
             :global(svg) {

@@ -13,7 +13,7 @@
 
 <div class="last-commit">
     <Avatar avatar={user} --avatar-size="1.5rem" />
-    <span>{user.displayName || user.name}</span>
+    <span class="display-name">{user.displayName || user.name}</span>
     <a href={canonicalURL}>
         {commitMessage}
     </a>
@@ -21,10 +21,13 @@
 </div>
 
 <style lang="scss">
+    .display-name {
+        padding-right: 0.25rem;
+    }
     .last-commit {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 0.5rem;
         white-space: nowrap;
         font-size: var(--font-size-small);
     }
