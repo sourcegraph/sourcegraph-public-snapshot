@@ -131,13 +131,17 @@ index 0ef51c52043997fdd257a0b77d761e9ca58bcc1f..58692a00a73d1f78df00014edf4ef39e
 			"git tag test",
 		)
 
-		_, err := backend.RawDiff(ctx, "unknown", "test", git.GitDiffComparisonTypeOnlyInHead, defaultOpts)
-		require.Error(t, err)
-		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
+		// Test with both an unknown ref that needs resolving and something
+		// that looks like a sha256 (hits different code paths inside of git)
+		for _, missing := range []string{"404aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "unknown"} {
+			_, err := backend.RawDiff(ctx, missing, "test", git.GitDiffComparisonTypeOnlyInHead, defaultOpts)
+			require.Error(t, err)
+			require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 
-		_, err = backend.RawDiff(ctx, "test", "unknown", git.GitDiffComparisonTypeOnlyInHead, defaultOpts)
-		require.Error(t, err)
-		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
+			_, err = backend.RawDiff(ctx, "test", missing, git.GitDiffComparisonTypeOnlyInHead, defaultOpts)
+			require.Error(t, err)
+			require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
+		}
 	})
 	t.Run("files outside repository", func(t *testing.T) {
 		// We use git-diff-tree, but with git-diff you can diff any files on disk

@@ -1292,8 +1292,8 @@ type FileFilters struct {
 
 // FusionClient description: Configuration for the experimental p4-fusion client
 type FusionClient struct {
-	// Enabled description: Enable the p4-fusion client for cloning and fetching repos
-	Enabled bool `json:"enabled"`
+	// Enabled description: DEPRECATED. p4-fusion is always enabled.
+	Enabled bool `json:"enabled,omitempty"`
 	// FsyncEnable description:  Enable fsync() while writing objects to disk to ensure they get written to permanent storage immediately instead of being cached. This is to mitigate data loss in events of hardware failure.
 	FsyncEnable bool `json:"fsyncEnable,omitempty"`
 	// IncludeBinaries description: Whether to include binary files
@@ -1306,6 +1306,8 @@ type FusionClient struct {
 	NetworkThreads int `json:"networkThreads,omitempty"`
 	// NetworkThreadsFetch description: The number of threads in the threadpool for running network calls when performing fetches. Defaults to the number of logical CPUs.
 	NetworkThreadsFetch int `json:"networkThreadsFetch,omitempty"`
+	// NoConvertLabels description: Disable Perforce label to git tag conversion.
+	NoConvertLabels bool `json:"noConvertLabels,omitempty"`
 	// PrintBatch description: The p4 print batch size
 	PrintBatch int `json:"printBatch,omitempty"`
 	// Refresh description: How many times a connection should be reused before it is refreshed

@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
@@ -126,9 +127,11 @@ func handleOpenIDConnectAuth(logger log.Logger, db database.DB, w http.ResponseW
 	// it's an app request, and the sign-out cookie is not present, redirect to sign-in immediately.
 	//
 	// For sign-out requests (sign-out cookie is  present), the user is redirected to the Sourcegraph login page.
-	ps := providers.SignInProviders()
+	// Note: For instances that are conf.AuthPublic(), we don't redirect to sign-in automatically, as that would
+	// lock out unauthenticated access.
+	ps := providers.SignInProviders(!r.URL.Query().Has("sourcegraph-operator"))
 	openIDConnectEnabled := len(ps) == 1 && ps[0].Config().Openidconnect != nil
-	if openIDConnectEnabled && !auth.HasSignOutCookie(r) && !isAPIRequest {
+	if !conf.AuthPublic() && openIDConnectEnabled && !auth.HasSignOutCookie(r) && !isAPIRequest {
 		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, GetProvider)
 		if err != nil {
 			log15.Error("Failed to get provider", "error", err)

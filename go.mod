@@ -316,7 +316,7 @@ require (
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/slack v0.0.0-20240513203650-e2b1273f1c1a
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-20240513203650-e2b1273f1c1a
 	github.com/sourcegraph/notionreposync v0.0.0-20240517090426-98b2d4b017d7
-	github.com/sourcegraph/scip v0.4.0
+	github.com/sourcegraph/scip v0.4.1-0.20240802084008-0504a347d36d
 	github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240702160611-15589d6d8eac
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20240524140455-2589fef13ea8
 	github.com/sourcegraph/sourcegraph/lib/managedservicesplatform v0.0.0-00010101000000-000000000000
@@ -674,7 +674,7 @@ require (
 	github.com/scim2/filter-parser/v2 v2.2.0
 	github.com/sourcegraph/conc v0.3.1-0.20240108182409-4afefce20f9b
 	github.com/sourcegraph/mountinfo v0.0.0-20240201124957-b314c0befab1
-	github.com/sourcegraph/zoekt v0.0.0-20240729125313-ebb3ca24249d
+	github.com/sourcegraph/zoekt v0.0.0-20240801154129-764fe4f9de0e
 	github.com/spf13/cobra v1.8.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
