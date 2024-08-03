@@ -126,7 +126,7 @@
         })
     }
 
-    let haveSetFocus = false
+    let haveSetFocus = false // gets reset on query resubmission or filter changes
     afterUpdate(() => {
         if (!$isViewportMobile && !haveSetFocus && results.length > 0) {
             const firstFocusableResult = $resultContainer?.querySelector<HTMLElement>(
@@ -138,6 +138,7 @@
             }
         }
     })
+    $: selectedFilters, (haveSetFocus = false) // reset focus on filter change
 
     // Logic for maintaining list state (scroll position, rendered items, open
     // items) for backwards navigation.
@@ -207,6 +208,7 @@
     }
 
     function handleSubmit() {
+        haveSetFocus = false // reset focus when a new query is submitted
         TELEMETRY_RECORDER.recordEvent('search', 'submit', {
             metadata: { source: TELEMETRY_SEARCH_SOURCE_TYPE['nav'] },
         })
