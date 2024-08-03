@@ -34,11 +34,8 @@
 </SearchResult>
 
 <style lang="scss">
-    div {
-        display: contents;
-    }
-
     .header-container {
+        display: contents;
         :global([data-focusable-search-result='true']:focus) {
             box-shadow: var(--focus-shadow);
         }
