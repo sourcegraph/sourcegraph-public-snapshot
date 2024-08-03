@@ -178,4 +178,8 @@
             padding: 0.125rem 0.375rem;
         }
     }
+
+    a[data-focusable-search-result='true']:where(:focus, :focus-visible) {
+        box-shadow: var(--focus-shadow-inner);
+    }
 </style>

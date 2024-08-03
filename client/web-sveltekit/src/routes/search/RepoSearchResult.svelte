@@ -36,7 +36,7 @@
 </script>
 
 <SearchResult>
-    <div bind:this={title} slot="title">
+    <div bind:this={title} slot="title" class="title">
         <RepoRev repoName={result.repository} {rev} highlights={repositoryMatches} />
         {#if result.fork}
             <span class="info">
@@ -111,5 +111,11 @@
         border-left: 1px solid var(--border-color);
         margin-left: 0.5rem;
         padding-left: 0.5rem;
+    }
+
+    .title {
+        :global(a[data-focusable-search-result='true']:where(:focus, :focus-visible)) {
+            box-shadow: var(--focus-shadow-inner);
+        }
     }
 </style>

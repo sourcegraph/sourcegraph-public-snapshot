@@ -22,7 +22,7 @@
 </script>
 
 <SearchResult>
-    <div bind:this={headerContainer} slot="title">
+    <div bind:this={headerContainer} class="header-container" slot="title">
         <FileSearchResultHeader {result} />
     </div>
     <svelte:fragment slot="info">
@@ -36,5 +36,11 @@
 <style lang="scss">
     div {
         display: contents;
+    }
+
+    .header-container {
+        :global(a[data-focusable-search-result='true']:where(:focus, :focus-visible)) {
+            box-shadow: var(--focus-shadow);
+        }
     }
 </style>

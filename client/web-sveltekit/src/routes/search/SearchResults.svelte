@@ -126,14 +126,16 @@
         })
     }
 
-    let hasSetFocus = false
+    let haveSetFocus = false
     afterUpdate(() => {
-        if (!$isViewportMobile && !hasSetFocus && results.length > 0) {
+        if (!$isViewportMobile && !haveSetFocus && results.length > 0) {
             const firstFocusableResult = $resultContainer?.querySelector<HTMLElement>(
                 '[data-focusable-search-result="true"]'
             )
-            firstFocusableResult?.focus()
-            hasSetFocus = true
+            if (firstFocusableResult) {
+                firstFocusableResult.focus()
+                haveSetFocus = true
+            }
         }
     })
 

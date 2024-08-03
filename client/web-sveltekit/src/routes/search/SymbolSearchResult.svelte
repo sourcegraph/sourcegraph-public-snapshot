@@ -81,4 +81,8 @@
             text-decoration: none;
         }
     }
+
+    a[data-focusable-search-result='true']:where(:focus, :focus-visible) {
+        box-shadow: var(--focus-shadow-inner);
+    }
 </style>

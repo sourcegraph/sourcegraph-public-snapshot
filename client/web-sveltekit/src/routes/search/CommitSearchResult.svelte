@@ -100,4 +100,8 @@
         font-family: var(--code-font-family);
         font-size: var(--code-font-size);
     }
+
+    a[data-focusable-search-result='true']:where(:focus, :focus-visible) {
+        box-shadow: var(--focus-shadow);
+    }
 </style>
