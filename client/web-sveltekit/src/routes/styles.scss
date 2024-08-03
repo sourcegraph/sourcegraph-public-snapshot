@@ -24,7 +24,7 @@
 // styles for them (like focus ring).
 
 body {
-    --focus-shadow-inner: 0 0 0 2px var(--primary-2) inset;
+    --focus-shadow-inset: 0 0 0 2px var(--primary-2) inset;
     --focus-shadow: 0 0 0 2px var(--primary-2);
 }
 
@@ -37,7 +37,7 @@ a:focus-visible {
     // that don't have any spacing between their border and
     // overflowed parent visible border (so any outside shadow
     // is visually cut/cropped)
-    box-shadow: var(--focus-shadow-inner);
+    box-shadow: var(--focus-shadow-inset);
 }
 
 button:focus-visible,
