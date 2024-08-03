@@ -15,7 +15,7 @@
 
 <script lang="ts">
     import type { Observable } from 'rxjs'
-    import { onMount, tick } from 'svelte'
+    import { afterUpdate, onMount, tick } from 'svelte'
     import { writable } from 'svelte/store'
 
     import { beforeNavigate, goto } from '$app/navigation'
@@ -105,6 +105,17 @@
             resultCount: $stream.progress.matchCount,
         })
     }
+
+    let hasSetFocus = false
+    afterUpdate(() => {
+        if (!$isViewportMobile && !hasSetFocus && results.length > 0) {
+            const firstFocusableResult = $resultContainer?.querySelector<HTMLElement>(
+                '[data-focusable-search-result="true"]'
+            )
+            firstFocusableResult?.focus()
+            hasSetFocus = true
+        }
+    })
 
     // Logic for maintaining list state (scroll position, rendered items, open
     // items) for backwards navigation.

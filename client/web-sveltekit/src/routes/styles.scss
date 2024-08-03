@@ -23,7 +23,7 @@
 // links, buttons, inputs, etc. We have to have some common "global"
 // styles for them (like focus ring).
 
-:root {
+body {
     --focus-shadow-inner: 0 0 0 2px var(--primary-2) inset;
     --focus-shadow: 0 0 0 2px var(--primary-2);
 }
