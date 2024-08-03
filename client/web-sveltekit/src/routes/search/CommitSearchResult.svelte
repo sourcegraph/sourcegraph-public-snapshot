@@ -101,7 +101,7 @@
         font-size: var(--code-font-size);
     }
 
-    a[data-focusable-search-result='true']:where(:focus, :focus-visible) {
+    a[data-focusable-search-result='true']:focus {
         box-shadow: var(--focus-shadow);
     }
 </style>
