@@ -49,11 +49,6 @@
 
     const menuOpen = writable(false)
 
-    /**
-     * These entries represent default items for navigating git repos.
-     * If the current project is a perforce depot, the entries will be adjusted
-     * to match perforce concepts in the $: tabs declaration below.
-     */
     const navEntries: MenuEntry[] = [
         { path: '', icon: ILucideCode, label: 'Code', visibility: 'user', preserveRevision: true },
         {
