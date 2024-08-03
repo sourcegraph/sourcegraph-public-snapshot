@@ -66,6 +66,32 @@
         }
     }
 
+    export function focusNextResult(direction: 'up' | 'down'): boolean {
+        const focusedResult =
+            document.activeElement &&
+            document.activeElement instanceof HTMLElement &&
+            document.activeElement.dataset.focusableSearchResult === 'true' &&
+            $resultContainer?.contains(document.activeElement)
+                ? document.activeElement
+                : null
+
+        const focusableResults = Array.from(
+            $resultContainer?.querySelectorAll<HTMLElement>('[data-focusable-search-result="true"]') ?? []
+        )
+        if (!focusedResult || focusableResults.length === 0) {
+            return false
+        }
+        const currentIndex = focusableResults.findIndex(selectable => selectable.isEqualNode(focusedResult))
+        const nextIndex = direction === 'down' ? currentIndex + 1 : currentIndex - 1
+        const nextFocus = nextIndex >= 0 && nextIndex < focusableResults.length ? focusableResults[nextIndex] : null
+        if (!nextFocus) {
+            return false
+        }
+        nextFocus.focus({ preventScroll: true })
+        nextFocus.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        return true
+    }
+
     const resultContainer = writable<HTMLElement | null>(null)
     let searchResultsFiltersPanel: Panel
     const recentSearches = createRecentSearchesStore()
@@ -313,6 +339,10 @@
                 padding: 0;
                 margin: 0;
                 list-style: none;
+            }
+
+            :global([data-focusable-search-result='true']) {
+                scroll-margin: 4rem;
             }
         }
 
