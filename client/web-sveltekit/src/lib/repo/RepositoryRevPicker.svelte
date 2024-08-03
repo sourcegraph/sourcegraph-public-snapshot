@@ -196,9 +196,11 @@
                     <RepositoryRevPickerItem label="" author={value.author}>
                         <svelte:fragment slot="title">
                             <Icon icon={ILucideGitCommitVertical} inline aria-hidden="true" />
-                            <Badge variant="link">
-                                {value.perforceChangelist?.cid ?? value.abbreviatedOID}
-                            </Badge>
+                            <span class="rev-badge"
+                                ><Badge variant="link">
+                                    {value.perforceChangelist?.cid ?? value.abbreviatedOID}
+                                </Badge></span
+                            >
                             <span class="commit-subject">{value.subject}</span>
                         </svelte:fragment>
                     </RepositoryRevPickerItem>
@@ -214,6 +216,14 @@
         white-space: nowrap;
         text-overflow: ellipsis;
         text-align: left;
+    }
+
+    .rev-badge {
+        display: contents;
+        :global([data-badge]) {
+            // Always show the full (abbreviated) changelist ID or commit hash
+            flex-shrink: 0;
+        }
     }
 
     .close-button {
