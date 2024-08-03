@@ -82,7 +82,7 @@
         }
     }
 
-    a[data-focusable-search-result='true']:focus {
+    [data-focusable-search-result='true']:focus {
         box-shadow: var(--focus-shadow-inner);
     }
 </style>

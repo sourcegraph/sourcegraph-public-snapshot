@@ -39,7 +39,7 @@
     }
 
     .header-container {
-        :global(a[data-focusable-search-result='true']:focus) {
+        :global([data-focusable-search-result='true']:focus) {
             box-shadow: var(--focus-shadow);
         }
     }
