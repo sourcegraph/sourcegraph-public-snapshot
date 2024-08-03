@@ -263,9 +263,15 @@ func patternForRouteId(routeId string) (string, error) {
 			continue
 		}
 
-		// We don't use params within a segement, e.g.
-		// foo-[bar]-[[baz]], so for simplicity we don't support that.
-		if strings.Contains(segment, "[") {
+		if segment == "[path=commit_or_changelist]" {
+			// TODO(camdencheek): clean this up.
+			// We don't generally support arbitrary matchers,
+			// but for the one case we use this right now this just hard-codes it.
+			b.WriteString(`/(?:commit|changelist)`)
+			continue
+		} else if strings.Contains(segment, "[") {
+			// We don't use params within a segement, e.g.
+			// foo-[bar]-[[baz]], so for simplicity we don't support that.
 			return "", errors.New("params within a segment are not supported")
 		}
 

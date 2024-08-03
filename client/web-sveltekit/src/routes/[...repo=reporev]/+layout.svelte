@@ -48,6 +48,7 @@
     export let data: LayoutData
 
     const menuOpen = writable(false)
+
     const navEntries: MenuEntry[] = [
         { path: '', icon: ILucideCode, label: 'Code', visibility: 'user', preserveRevision: true },
         {
@@ -61,6 +62,21 @@
         { path: '/-/tags', icon: ILucideTag, label: 'Tags', visibility: 'user' },
         { path: '/-/stats/contributors', icon: ILucideUsers, label: 'Contributors', visibility: 'user' },
     ]
+    const perforceNavEntries: MenuEntry[] = navEntries
+        .map(entry => {
+            // Replace commits with changelists
+            if (entry.label === 'Commits') {
+                return {
+                    // TODO: this should direct the user to a "changelists" page
+                    path: '/-/commits',
+                    icon: ILucideGitCommitVertical,
+                    label: 'Changelists',
+                    visibility: 'user',
+                } satisfies MenuEntry
+            }
+            return entry
+        })
+        .filter(entry => entry.label !== 'Branches')
     const menuEntries: MenuEntry[] = [
         { path: '/-/compare', icon: ILucideGitCompare, label: 'Compare', visibility: 'user' },
         { path: '/-/own', icon: ILucideUsers, label: 'Ownership', visibility: 'admin' },
@@ -85,7 +101,7 @@
 
     setRepositoryPageContext(repositoryContext)
 
-    $: viewableNavEntries = navEntries.filter(
+    $: viewableNavEntries = (data.isPerforceDepot ? perforceNavEntries : navEntries).filter(
         entry => entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)
     )
     $: visibleNavEntryCount = viewableNavEntries.length
@@ -118,6 +134,7 @@
     function isActive(href: string, url: URL): boolean {
         return href === data.repoURL ? isCodePage(data.repoURL, $page.url.pathname) : url.pathname.startsWith(href)
     }
+
     $: tabs = navEntriesToShow.map(entry => ({
         id: entry.label,
         title: entry.label,
@@ -129,6 +146,7 @@
     $: ({ repoName, revision } = data)
     $: query = `repo:${repositoryInsertText({ repository: repoName })}${revision ? `@${revision}` : ''} `
     $: queryState = queryStateStore({ query }, $settings)
+
     function handleSearchSubmit(): void {
         TELEMETRY_RECORDER.recordEvent('search', 'submit', {
             metadata: { source: TELEMETRY_SEARCH_SOURCE_TYPE['repo'] },

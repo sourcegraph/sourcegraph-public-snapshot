@@ -39,6 +39,11 @@ var svelteKitRoutes = []svelteKitRoute{
 		Tag:     tags.EnableOptIn | tags.EnableRollout,
 	},
 	{
+		Id:      "/[...repo=reporev]/-/[path=commit_or_changelist]/[...revspec]",
+		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/(?:commit|changelist)(?:/.*)?/?$"),
+		Tag:     tags.EnableOptIn | tags.EnableRollout,
+	},
+	{
 		Id:      "/[...repo=reporev]/-/branches",
 		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/branches/?$"),
 		Tag:     tags.EnableOptIn | tags.EnableRollout,
@@ -46,11 +51,6 @@ var svelteKitRoutes = []svelteKitRoute{
 	{
 		Id:      "/[...repo=reporev]/-/branches/all",
 		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/branches/all/?$"),
-		Tag:     tags.EnableOptIn | tags.EnableRollout,
-	},
-	{
-		Id:      "/[...repo=reporev]/-/commit/[...revspec]",
-		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/commit(?:/.*)?/?$"),
 		Tag:     tags.EnableOptIn | tags.EnableRollout,
 	},
 	{

@@ -60,6 +60,8 @@
 
         repositoryContext.set({})
     })
+
+    $: changelistId = data.commit.perforceChangelist?.cid
 </script>
 
 <svelte:head>
@@ -70,26 +72,38 @@
     {#if data.commit}
         <Scroller bind:this={scroller} margin={600} on:more={diffQuery?.fetchMore}>
             <div class="header">
-                <div class="info"><Commit commit={data.commit} alwaysExpanded={!$isViewportMobile} /></div>
+                <div class="info">
+                    <Commit commit={data.commit} alwaysExpanded={!$isViewportMobile} />
+                </div>
                 <ul class="actions">
                     <li>
-                        <span>Commit:</span>
-                        <Badge variant="secondary"><code>{data.commit.abbreviatedOID}</code></Badge>&nbsp;<CopyButton
-                            value={data.commit.abbreviatedOID}
-                        />
+                        <span>{data.isPerforceDepot ? 'Changelist ID:' : 'Commit:'}</span>
+                        <Badge variant="secondary"
+                            ><code>{data.isPerforceDepot ? changelistId : data.commit.abbreviatedOID}</code></Badge
+                        >&nbsp;<CopyButton value={data.commit.abbreviatedOID} />
                     </li>
-                    <li>
-                        <span>{pluralize('Parent', data.commit.parents.length)}:</span>
-                        {#each data.commit.parents as parent}
-                            <Badge variant="link"><a href={parent.canonicalURL}>{parent.abbreviatedOID}</a></Badge
-                            >&nbsp;<CopyButton value={parent.abbreviatedOID} />{' '}
-                        {/each}
-                    </li>
-                    <li>
-                        <a href="/{data.repoName}@{data.commit.oid}"
-                            >Browse files at <Badge variant="link">{data.commit.abbreviatedOID}</Badge></a
-                        >
-                    </li>
+                    {#if !data.isPerforceDepot}
+                        <li>
+                            <span>{pluralize('Parent', data.commit.parents.length)}:</span>
+                            {#each data.commit.parents as parent}
+                                <Badge variant="link">
+                                    <a href={parent.canonicalURL}>{parent.abbreviatedOID}</a>
+                                </Badge>&nbsp;<CopyButton value={parent.abbreviatedOID} />{' '}
+                            {/each}
+                        </li>
+                        <li>
+                            <a href="/{data.repoName}@{data.commit.oid}">
+                                Browse files at
+                                <Badge variant="link">{data.commit.abbreviatedOID}</Badge>
+                            </a>
+                        </li>
+                    {:else}
+                        <li>
+                            <a href={`/${data.repoName}@changelist/${data.commit.perforceChangelist?.cid}`}
+                                >Browse files
+                            </a>
+                        </li>
+                    {/if}
                     {#each data.commit.externalURLs as { url, serviceKind }}
                         <li>
                             <a href={url}>

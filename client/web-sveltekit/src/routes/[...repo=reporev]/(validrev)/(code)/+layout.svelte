@@ -215,6 +215,7 @@
                     revision={data.revision}
                     commitID={data.resolvedRevision.commitID}
                     defaultBranch={data.defaultBranch}
+                    isPerforceDepot={data.isPerforceDepot}
                     getRepositoryBranches={data.getRepoBranches}
                     getRepositoryCommits={data.getRepoCommits}
                     getRepositoryTags={data.getRepoTags}
