@@ -104,12 +104,6 @@
         color: var(--text-body);
         & > a {
             color: inherit;
-            &:focus-visible {
-                // By default, links use --focus-shadow-inner, but these links
-                // are often highlighted, so ensure the focus ring doesn't overlap
-                // the highlight.
-                box-shadow: var(--focus-shadow);
-            }
         }
     }
 
