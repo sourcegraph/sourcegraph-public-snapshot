@@ -76,7 +76,9 @@
             <WelcomeOverlayScreenshotDark />
         {/if}
 
-        <Button variant="icon" on:click={() => handleDismiss()}><Icon icon={ILucideX} /></Button>
+        <Button variant="icon" aria-label="Close welcome overlay" on:click={() => handleDismiss()}>
+            <Icon icon={ILucideX} aria-hidden="true" />
+        </Button>
     </div>
 </dialog>
 
