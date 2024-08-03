@@ -73,11 +73,7 @@
         <Scroller bind:this={scroller} margin={600} on:more={diffQuery?.fetchMore}>
             <div class="header">
                 <div class="info">
-                    <Commit
-                        commit={data.commit}
-                        alwaysExpanded={!$isViewportMobile}
-                        isPerforceChangelist={data.isPerforceDepot}
-                    />
+                    <Commit commit={data.commit} alwaysExpanded={!$isViewportMobile} />
                 </div>
                 <ul class="actions">
                     <li>
@@ -90,17 +86,16 @@
                         <li>
                             <span>{pluralize('Parent', data.commit.parents.length)}:</span>
                             {#each data.commit.parents as parent}
-                                <Badge variant="link"><a href={parent.canonicalURL}>{parent.abbreviatedOID}</a></Badge
-                                >&nbsp;<CopyButton value={parent.abbreviatedOID} />{' '}
+                                <Badge variant="link">
+                                    <a href={parent.canonicalURL}>{parent.abbreviatedOID}</a>
+                                </Badge>&nbsp;<CopyButton value={parent.abbreviatedOID} />{' '}
                             {/each}
                         </li>
                         <li>
-                            <a href="/{data.repoName}@{data.commit.oid}"
-                                >Browse files at
-                                <Badge variant="link">
-                                    {data.commit.abbreviatedOID}
-                                </Badge></a
-                            >
+                            <a href="/{data.repoName}@{data.commit.oid}">
+                                Browse files at
+                                <Badge variant="link">{data.commit.abbreviatedOID}</Badge>
+                            </a>
                         </li>
                     {:else}
                         <li>
