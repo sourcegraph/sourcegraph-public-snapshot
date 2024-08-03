@@ -6,7 +6,7 @@
     import { page } from '$app/stores'
     import { sizeToFit } from '$lib/dom'
     import { registerHotkey } from '$lib/Hotkey'
-    import Icon, { type IconComponent } from '$lib/Icon.svelte'
+    import Icon from '$lib/Icon.svelte'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
     import { createScopeSuggestions } from '$lib/search/codemirror/suggestions'
     import SearchInput, { Style } from '$lib/search/input/SearchInput.svelte'
@@ -67,6 +67,21 @@
         { path: '/-/tags', icon: ILucideTag, label: 'Tags', visibility: 'user' },
         { path: '/-/stats/contributors', icon: ILucideUsers, label: 'Contributors', visibility: 'user' },
     ]
+    const perforceNavEntries: MenuEntry[] = navEntries
+        .map(entry => {
+            // Replace commits with changelists
+            if (entry.label === 'Commits') {
+                return {
+                    // TODO: this should direct the user to a "changelists" page
+                    path: '/-/commits',
+                    icon: ILucideGitCommitVertical,
+                    label: 'Changelists',
+                    visibility: 'user',
+                } satisfies MenuEntry
+            }
+            return entry
+        })
+        .filter(entry => entry.label !== 'Branches')
     const menuEntries: MenuEntry[] = [
         { path: '/-/compare', icon: ILucideGitCompare, label: 'Compare', visibility: 'user' },
         { path: '/-/own', icon: ILucideUsers, label: 'Ownership', visibility: 'admin' },
@@ -91,7 +106,7 @@
 
     setRepositoryPageContext(repositoryContext)
 
-    $: viewableNavEntries = navEntries.filter(
+    $: viewableNavEntries = (data.isPerforceDepot ? perforceNavEntries : navEntries).filter(
         entry => entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)
     )
     $: visibleNavEntryCount = viewableNavEntries.length
@@ -114,7 +129,6 @@
     $: navEntriesToShow = viewableNavEntries.slice(0, visibleNavEntryCount)
     $: overflowNavEntries = viewableNavEntries.slice(visibleNavEntryCount)
     $: allMenuEntries = [...overflowNavEntries, ...menuEntries]
-    $: isPerforceDepot = data.isPerforceDepot
 
     function isCodePage(repoURL: string, pathname: string) {
         return (
@@ -126,32 +140,12 @@
         return href === data.repoURL ? isCodePage(data.repoURL, $page.url.pathname) : url.pathname.startsWith(href)
     }
 
-    interface TabbableMenuEntry {
-        id: string
-        title: string
-        icon: IconComponent | undefined
-        href: string
-    }
-
-    function convertToP4Tabs(entry: MenuEntry): TabbableMenuEntry {
-        if (isPerforceDepot && entry.label === 'Commits') {
-            return {
-                id: 'changelists',
-                title: 'Changelists',
-                icon: entry.icon,
-                href: (entry.preserveRevision ? data.repoURL : data.repoURLWithoutRevision) + entry.path,
-            }
-        }
-
-        return {
-            id: entry.label,
-            title: entry.label,
-            icon: entry.icon,
-            href: (entry.preserveRevision ? data.repoURL : data.repoURLWithoutRevision) + entry.path,
-        }
-    }
-
-    $: tabs = navEntriesToShow.map(entry => convertToP4Tabs(entry))
+    $: tabs = navEntriesToShow.map(entry => ({
+        id: entry.label,
+        title: entry.label,
+        icon: entry.icon,
+        href: (entry.preserveRevision ? data.repoURL : data.repoURLWithoutRevision) + entry.path,
+    }))
     $: selectedTab = tabs.findIndex(tab => isActive(tab.href, $page.url))
 
     $: ({ repoName, revision } = data)
@@ -209,7 +203,7 @@
         externalServiceKind={data.resolvedRepository.externalURLs[0]?.serviceKind ?? undefined}
     />
 
-    <TabsHeader id="repoheader" {tabs} {isPerforceDepot} selected={selectedTab} />
+    <TabsHeader id="repoheader" {tabs} selected={selectedTab} />
 
     <DropdownMenu
         open={menuOpen}

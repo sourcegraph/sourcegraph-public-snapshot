@@ -2,36 +2,17 @@ query CommitPage_CommitQuery($repoName: String!, $revspec: String!) {
     repository(name: $repoName) {
         id
         commit(rev: $revspec) {
-            id
-            oid
-            perforceChangelist {
-                cid
-                canonicalURL
-            }
-            parents {
-                id
-                oid
-                abbreviatedOID
-                canonicalURL
-            }
-            externalURLs {
-                url
-                serviceKind
-            }
-            ...Commit
+            ...CommitPage_Commit
         }
     }
 }
 
-query CommitPage_Changelist($repoId: ID!, $changelistId: String!) {
-    node(id: $repoId) {
-        __typename
-        ... on Repository {
-            sourceType
-            changelist(cid: $changelistId) {
-                __typename
-                ...PerforceChangelistFields
-            }
+query CommitPage_Changelist($repoName: String!, $changelistId: String!) {
+    repository(name: $repoName) {
+        sourceType
+        changelist(cid: $changelistId) {
+            __typename
+            ...PerforceChangelistFields
         }
     }
 }
@@ -40,6 +21,11 @@ fragment PerforceChangelistFields on PerforceChangelist {
     cid
     canonicalURL
     commit {
+        ...CommitPage_Commit
+    }
+}
+
+fragment CommitPage_Commit on GitCommit {
         id
         oid
         perforceChangelist {
@@ -58,7 +44,6 @@ fragment PerforceChangelistFields on PerforceChangelist {
         }
         ...Commit
         __typename
-    }
 }
 
 query CommitPage_DiffQuery($repoName: String!, $base: String, $head: String, $first: Int, $after: String) {
