@@ -56,8 +56,10 @@ export const CommunitySearchContextPage: React.FunctionComponent<
     const navigate = useNavigate()
     const LOADING = 'loading' as const
 
+    const contextQuery = `context:${props.communitySearchContextMetadata.spec}`
+
     const [queryState, setQueryState] = useState<QueryState>({
-        query: '',
+        query: contextQuery + ' ',
     })
 
     const telemetryRecorder = props.platformContext.telemetryRecorder
@@ -68,8 +70,6 @@ export const CommunitySearchContextPage: React.FunctionComponent<
         })
     }, [props.communitySearchContextMetadata.spec, telemetryRecorder])
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
-
-    const contextQuery = `context:${props.communitySearchContextMetadata.spec}`
 
     const { fetchSearchContextBySpec } = props
     const searchContextOrError = useObservable(
