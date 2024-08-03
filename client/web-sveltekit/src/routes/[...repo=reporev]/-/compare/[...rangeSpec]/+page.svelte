@@ -155,7 +155,7 @@
                         <ul>
                             {#each $commits.value.commits as commit}
                                 <li>
-                                    <Commit {commit} isPerforceChangelist={data.isPerforceDepot} />
+                                    <Commit {commit} />
                                 </li>
                             {/each}
                         </ul>

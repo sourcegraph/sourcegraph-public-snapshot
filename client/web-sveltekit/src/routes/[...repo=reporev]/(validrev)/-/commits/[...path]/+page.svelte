@@ -90,7 +90,7 @@
                 {#each commits as commit (commit.canonicalURL)}
                     <li>
                         <div class="commit">
-                            <Commit {commit} isPerforceChangelist={data.isPerforceDepot} />
+                            <Commit {commit} />
                         </div>
                         <ul class="actions">
                             <li>
