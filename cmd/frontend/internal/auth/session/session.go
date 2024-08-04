@@ -217,15 +217,15 @@ func SetActor(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiry
 				expiryPeriod = defaultExpiryPeriod
 			}
 		}
-		RemoveSignOutCookieIfSet(r, w)
+		removeSignOutCookieIfSet(r, w)
 
 		value = &sessionInfo{Actor: actor, ExpiryPeriod: expiryPeriod, LastActive: time.Now(), UserCreatedAt: userCreatedAt}
 	}
 	return SetData(w, r, "actor", value)
 }
 
-// RemoveSignOutCookieIfSet removes the sign-out cookie if it is set.
-func RemoveSignOutCookieIfSet(r *http.Request, w http.ResponseWriter) {
+// removeSignOutCookieIfSet removes the sign-out cookie if it is set.
+func removeSignOutCookieIfSet(r *http.Request, w http.ResponseWriter) {
 	if HasSignOutCookie(r) {
 		http.SetCookie(w, &http.Cookie{Name: SignOutCookie, Value: "", MaxAge: -1})
 	}
@@ -238,6 +238,16 @@ func HasSignOutCookie(r *http.Request) bool {
 		return false
 	}
 	return ck != nil
+}
+
+// SetSignOutCookie sets a sign-out cookie on the given response.
+func SetSignOutCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:   SignOutCookie,
+		Value:  "true",
+		Secure: true,
+		Path:   "/",
+	})
 }
 
 // hasSessionCookie returns true if the given request has a session cookie.
