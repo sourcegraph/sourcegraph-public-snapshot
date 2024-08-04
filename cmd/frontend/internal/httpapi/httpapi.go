@@ -16,9 +16,9 @@ import (
 	zoektProto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 
 	samssdk "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/clientconfig"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/enterpriseportal"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
