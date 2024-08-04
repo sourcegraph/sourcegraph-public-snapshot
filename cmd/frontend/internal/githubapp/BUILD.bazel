@@ -13,9 +13,9 @@ go_library(
     tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/backend",
         "//cmd/frontend/enterprise",
         "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/internal/backend",
         "//cmd/frontend/internal/repos/webhooks/resolvers",
         "//internal/auth",
         "//internal/codeintel",
