@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -34,11 +33,11 @@ func GetHandler(svc *uploads.Service, db database.DB, gitserverClient gitserver.
 		uploadHandlerOperations := uploadhandler.NewOperations(observationCtx, "codeintel")
 
 		userStore := db.Users()
-		repoStore := backend.NewRepos(logger, db, gitserverClient)
+		repoStore := db.Repos()
 
 		// Construct base handler, used in internal routes and as internal handler wrapped
 		// in the auth middleware defined on the next few lines
-		handler = newHandler(observationCtx, repoStore, uploadStore, svc.UploadHandlerStore(), uploadHandlerOperations)
+		handler = newHandler(observationCtx, repoStore, gitserverClient, uploadStore, svc.UploadHandlerStore(), uploadHandlerOperations)
 
 		// 🚨 SECURITY: Non-internal installations of this handler will require a user/repo
 		// visibility check with the remote code host (if enabled via site configuration).

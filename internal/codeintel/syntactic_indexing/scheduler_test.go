@@ -144,7 +144,7 @@ func bootstrapScheduler(t *testing.T, observationCtx *observation.Context,
 	)
 	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, frontendDB)
 	repoSchedulingSvc := reposcheduler.NewService(repoSchedulingStore)
-	jobStore := unwrap(jobstore.NewStoreWithDB(observationCtx, frontendRawDB))(t)
+	jobStore := unwrap(jobstore.NewStoreWithDB(observationCtx, frontendDB))(t)
 
 	repoStore := frontendDB.Repos()
 	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore)
