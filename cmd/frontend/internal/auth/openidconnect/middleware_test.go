@@ -208,7 +208,7 @@ func TestMiddleware(t *testing.T) {
 	}
 
 	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg sign-in", func(t *testing.T) {
-		cookie := &http.Cookie{Name: auth.SignOutCookie, Value: "true"}
+		cookie := &http.Cookie{Name: session.SignOutCookie, Value: "true"}
 
 		resp := doRequest("GET", "http://example.com/", "", "", []*http.Cookie{cookie}, false)
 		if want := http.StatusOK; resp.StatusCode != want {

@@ -131,7 +131,7 @@ func handleOpenIDConnectAuth(logger log.Logger, db database.DB, w http.ResponseW
 	// lock out unauthenticated access.
 	ps := providers.SignInProviders(!r.URL.Query().Has("sourcegraph-operator"))
 	openIDConnectEnabled := len(ps) == 1 && ps[0].Config().Openidconnect != nil
-	if !conf.AuthPublic() && openIDConnectEnabled && !auth.HasSignOutCookie(r) && !isAPIRequest {
+	if !conf.AuthPublic() && openIDConnectEnabled && !session.HasSignOutCookie(r) && !isAPIRequest {
 		p, oidcClient, safeErrMsg, err := GetProviderAndClient(r.Context(), ps[0].ConfigID().ID, GetProvider)
 		if err != nil {
 			log15.Error("Failed to get provider", "error", err)
