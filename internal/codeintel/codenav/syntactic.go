@@ -7,6 +7,7 @@ import (
 	"io"
 	"slices"
 	"strings"
+	"sync"
 
 	genslices "github.com/life4/genesis/slices"
 	"github.com/sourcegraph/conc"
@@ -46,11 +47,12 @@ type candidateFile struct {
 }
 
 type searchArgs struct {
-	repo       api.RepoName
-	commit     api.CommitID
-	identifier string
-	language   string
-	countLimit int32
+	repo         api.RepoName
+	commit       api.CommitID
+	identifier   string
+	language     string
+	countLimit   int32
+	ignoredFiles []string
 }
 
 func lineForRange(match result.ChunkMatch, range_ result.Range) string {
@@ -239,8 +241,56 @@ func buildQuery(args searchArgs, queryType string) string {
 	repoName := fmt.Sprintf("^%s$", args.repo)
 	wordBoundaryIdentifier := fmt.Sprintf("/\\b%s\\b/", args.identifier)
 	return fmt.Sprintf(
-		"case:yes type:%s repo:%s rev:%s language:%s count:%d %s",
-		queryType, repoName, string(args.commit), args.language, args.countLimit, wordBoundaryIdentifier)
+		"case:yes type:%s repo:%s rev:%s language:%s %s",
+		queryType, repoName, string(args.commit), args.language, wordBoundaryIdentifier)
+}
+
+func newCandidateStream(
+	filterFunc func(result.Matches) result.Matches,
+	limit int32,
+	limitFunc func(),
+) *candidateStream {
+	return &candidateStream{
+		limit:      int(limit),
+		filterFunc: filterFunc,
+		limitFunc:  limitFunc,
+	}
+}
+
+type candidateStream struct {
+	sync.Mutex
+	streaming.SearchEvent
+	limit      int
+	filterFunc func(result.Matches) result.Matches
+	limitFunc  func()
+}
+
+func (c *candidateStream) Send(event streaming.SearchEvent) {
+	c.Lock()
+	defer c.Unlock()
+	fmt.Printf("SEEING MORE RESULTS: %d/%d\n", c.Results.ResultCount(), c.limit)
+	if c.Results.ResultCount() < c.limit {
+		c.Results = append(c.Results, c.filterFunc(event.Results)...)
+		c.Stats.Update(&event.Stats)
+		if c.Results.ResultCount() >= c.limit {
+			fmt.Printf("LIMIT HIT: %d/%d\n", c.Results.ResultCount(), c.limit)
+			c.limitFunc()
+		}
+	}
+}
+
+func filterResultMatches(
+	matches result.Matches,
+	filterFiles []string,
+) result.Matches {
+	return genslices.Filter(matches, func(match result.Match) bool {
+		if fileMatch, ok := match.(*result.FileMatch); ok {
+			if slices.Contains(filterFiles, fileMatch.Path) {
+				return false
+			}
+		}
+		return true
+	})
 }
 
 func executeQuery(
@@ -259,8 +309,11 @@ func executeQuery(
 		return nil, err
 	}
 	trace.Info("Running query", log.String("query", searchQuery))
-	stream := streaming.NewAggregatingStream()
-	_, err = client.Execute(ctx, stream, plan)
+	searchCtx, cancelFn := context.WithCancel(ctx)
+	stream := newCandidateStream(func(m result.Matches) result.Matches {
+		return filterResultMatches(m, args.ignoredFiles)
+	}, args.countLimit, cancelFn)
+	_, err = client.Execute(searchCtx, stream, plan)
 	if err != nil {
 		return nil, err
 	}
@@ -419,7 +472,8 @@ func syntacticUsagesImpl(
 		identifier: symbolName,
 		language:   language,
 		// TODO: Assumes at least every third match is a search-based one
-		countLimit: args.Limit * 3,
+		countLimit:   args.Limit * 3,
+		ignoredFiles: args.Cursor.SyntacticCursor.SeenFiles,
 	}
 	searchResult, searchErr := findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
 	if searchErr != nil {
@@ -496,11 +550,12 @@ func searchBasedUsagesImpl(
 	}
 	mkSearchArgs := func(countLimit int32) searchArgs {
 		return searchArgs{
-			repo:       args.Repo.Name,
-			commit:     args.Commit,
-			identifier: symbolName,
-			language:   language,
-			countLimit: countLimit,
+			repo:         args.Repo.Name,
+			commit:       args.Commit,
+			identifier:   symbolName,
+			language:     language,
+			countLimit:   countLimit,
+			ignoredFiles: args.Cursor.SyntacticCursor.SeenFiles,
 		}
 	}
 	var wg conc.WaitGroup
