@@ -1,12 +1,11 @@
 <script lang="ts">
     import { onMount, setContext } from 'svelte'
 
-    import { logoDark, logoLight } from '$lib/images'
+    import logo from '$lib/assets/sourcegraph-logo.svg'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import type { QueryStateStore } from '$lib/search/state'
     import type { SearchPageContext } from '$lib/search/utils'
     import { TELEMETRY_SEARCH_SOURCE_TYPE } from '$lib/shared'
-    import { isLightTheme } from '$lib/stores'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
 
     import SearchHomeNotifications from './SearchHomeNotifications.svelte'
@@ -32,7 +31,7 @@
 
 <section>
     <div class="content">
-        <img class="logo" src={$isLightTheme ? logoLight : logoDark} alt="Sourcegraph Logo" />
+        <img class="logo" src={logo} alt="Sourcegraph Logo" />
         <div class="search">
             <SearchInput {queryState} autoFocus onSubmit={handleSubmit} />
             <SearchHomeNotifications />
