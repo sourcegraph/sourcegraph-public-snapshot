@@ -19,7 +19,7 @@ func (c *codeGraphDataResolver) Occurrences(ctx context.Context, args *resolvers
 	defer endObservation(1, observation.Args{})
 
 	const maxPageSize = 100000
-	args.Normalize(maxPageSize)
+	args = args.Normalize(maxPageSize)
 
 	impl, err := graphqlutil.NewConnectionResolver[resolverstubs.SCIPOccurrenceResolver](
 		&occurrenceConnectionStore{c},

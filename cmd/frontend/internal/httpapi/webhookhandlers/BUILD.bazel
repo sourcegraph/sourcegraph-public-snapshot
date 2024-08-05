@@ -10,7 +10,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/webhooks",
+        "//cmd/frontend/internal/webhooks",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",

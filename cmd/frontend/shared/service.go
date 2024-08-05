@@ -17,9 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
-
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/registry"
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 )
 
 // FrontendMain is called from the `main` function of a command that includes the frontend.

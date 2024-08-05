@@ -506,7 +506,7 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //                        ^ PunctuationBracket punctuation.definition.block.tsx
 //                         ^ PunctuationBracket meta.brace.round.tsx
 //                          ^ PunctuationDelimiter punctuation.terminator.statement.tsx
-//                            ^^ Comment comment.line.double-slash.tsx
+//                            ^^ Comment punctuation.definition.comment.tsx
 //                              ^^^^^^^^^^^^^^^^^ Comment comment.line.double-slash.tsx
   const oneOf = (a:number): number => a + 1
 //^^^^^ Keyword storage.type.tsx
@@ -748,5 +748,3 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //                ^ IdentifierOperator keyword.operator.type.annotation.tsx
 //                  ^^^^^^ Keyword keyword.operator.expression.typeof.tsx
 //                         ^^^ IdentifierType entity.name.type.tsx
-  
-

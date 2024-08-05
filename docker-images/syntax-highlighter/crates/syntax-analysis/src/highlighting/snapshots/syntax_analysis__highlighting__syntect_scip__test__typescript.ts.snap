@@ -93,7 +93,7 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //                        ^ PunctuationBracket punctuation.definition.block.ts
 //                         ^ PunctuationBracket meta.brace.round.ts
 //                          ^ PunctuationDelimiter punctuation.terminator.statement.ts
-//                            ^^ Comment comment.line.double-slash.ts
+//                            ^^ Comment punctuation.definition.comment.ts
 //                              ^^^^^^^^^^^^^^^^^ Comment comment.line.double-slash.ts
   const oneOf = (a:number): number => a + 1
 //^^^^^ Keyword storage.type.ts
@@ -396,4 +396,3 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
   
   }
 //^ PunctuationBracket punctuation.definition.block.ts
-

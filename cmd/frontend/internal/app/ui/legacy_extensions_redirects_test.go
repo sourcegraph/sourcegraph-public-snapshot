@@ -9,7 +9,7 @@ import (
 )
 
 func TestLegacyExtensionsRedirects(t *testing.T) {
-	InitRouter(dbmocks.NewMockDB())
+	InitRouter(dbmocks.NewMockDB(), nil)
 	router := Router()
 
 	tests := map[string]bool{

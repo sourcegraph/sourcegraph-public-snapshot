@@ -13,7 +13,7 @@ import (
 
 func TestEnterpriseLicenseHasFeature(t *testing.T) {
 	r := &LicenseResolver{}
-	schema, err := graphqlbackend.NewSchemaWithLicenseResolver(nil, r)
+	schema, err := graphqlbackend.NewSchemaWithLicenseResolver(nil, nil, r)
 	if err != nil {
 		t.Fatal(err)
 	}

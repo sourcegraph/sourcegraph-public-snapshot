@@ -3,9 +3,11 @@ source: crates/syntax-analysis/src/highlighting/syntect_scip.rs
 expression: "snapshot_sciptect_documents(&document, &contents)"
 ---
   // Original:
+//^^ Comment punctuation.definition.comment.cs
 //  ^^^^^^^^^^ Comment comment.line.double-slash.cs
   // repo:^github\.com/radzenhq/radzen-blazor$ file:^Radzen\.Blazor\.Tests/DataGridTests\.cs
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment comment.line.double-slash.cs
+//^^ Comment punctuation.definition.comment.cs
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment comment.line.double-slash.cs
   
   using AngleSharp.Dom;
 //^^^^^ Keyword keyword.control.import.cs
@@ -80,7 +82,8 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
       {
 //    ^ PunctuationBracket punctuation.section.block.begin.cs
           // Css classes tests
-//        ^^^^^^^^^^^^^^^^^^^^ Comment comment.line.double-slash.cs
+//        ^^ Comment punctuation.definition.comment.cs
+//          ^^^^^^^^^^^^^^^^^^ Comment comment.line.double-slash.cs
           [Fact]
 //        ^ PunctuationBracket punctuation.definition.annotation.begin.cs
 //         ^^^^ Identifier variable.annotation.cs
@@ -249,7 +252,8 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //              ^ PunctuationDelimiter punctuation.terminator.statement.cs
   
               // Main
-//            ^^^^^^^ Comment comment.line.double-slash.cs
+//            ^^ Comment punctuation.definition.comment.cs
+//              ^^^^^ Comment comment.line.double-slash.cs
               Assert.Contains(@$"rz-datatable-scrollable-wrapper", component.Markup);
 //            ^^^^^^ Identifier variable.other.cs
 //                  ^ PunctuationBracket punctuation.accessor.dot.cs
@@ -484,4 +488,3 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //    ^ PunctuationBracket punctuation.section.block.end.cs
   }
 //^ PunctuationBracket punctuation.section.block.end.cs
-

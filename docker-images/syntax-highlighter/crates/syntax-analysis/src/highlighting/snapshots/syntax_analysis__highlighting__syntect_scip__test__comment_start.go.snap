@@ -1,0 +1,15 @@
+---
+source: crates/syntax-analysis/src/highlighting/syntect_scip.rs
+expression: "snapshot_sciptect_documents(&document, &contents)"
+---
+  // Package log is cool!
+//^^ Comment punctuation.definition.comment.go
+//  ^^^^^^^^^^^^^^^^^^^^^ Comment comment.line.go
+  //
+//^^ Comment punctuation.definition.comment.go
+  // Learn more: https://docs.sourcegraph.com/dev/how-to/add_logging
+//^^ Comment punctuation.definition.comment.go
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment comment.line.go
+  package log
+//^^^^^^^ Keyword keyword.other.package.go
+//        ^^^ Identifier variable.other.go

@@ -19,7 +19,6 @@ go_library(
         "//cmd/frontend/enterprise",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/internal/auth",
-        "//cmd/frontend/internal/registry",
         "//internal/actor",
         "//internal/codeintel",
         "//internal/conf",

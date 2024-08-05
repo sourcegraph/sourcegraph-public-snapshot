@@ -385,57 +385,58 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{})
+func NewSchemaWithoutResolvers(db database.DB, configurationServer *conf.Server) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), configurationServer, []OptionalResolver{})
 }
 
-func NewSchemaWithGitserverClient(db database.DB, gitserverClient gitserver.Client) (*graphql.Schema, error) {
-	return NewSchema(db, gitserverClient, []OptionalResolver{})
+func NewSchemaWithGitserverClient(db database.DB, configurationServer *conf.Server, gitserverClient gitserver.Client) (*graphql.Schema, error) {
+	return NewSchema(db, gitserverClient, configurationServer, []OptionalResolver{})
 }
 
-func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{NotebooksResolver: notebooks}})
+func NewSchemaWithNotebooksResolver(db database.DB, configurationServer *conf.Server, notebooks NotebooksResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), configurationServer, []OptionalResolver{{NotebooksResolver: notebooks}})
 }
 
-func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{AuthzResolver: authz}})
+func NewSchemaWithAuthzResolver(db database.DB, configurationServer *conf.Server, authz AuthzResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), configurationServer, []OptionalResolver{{AuthzResolver: authz}})
 }
 
-func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver, githubApps GitHubAppsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{BatchChangesResolver: batchChanges}, {GitHubAppsResolver: githubApps}})
+func NewSchemaWithBatchChangesResolver(db database.DB, configurationServer *conf.Server, batchChanges BatchChangesResolver, githubApps GitHubAppsResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), configurationServer, []OptionalResolver{{BatchChangesResolver: batchChanges}, {GitHubAppsResolver: githubApps}})
 }
 
-func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{CodeMonitorsResolver: codeMonitors}})
+func NewSchemaWithCodeMonitorsResolver(db database.DB, configurationServer *conf.Server, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), configurationServer, []OptionalResolver{{CodeMonitorsResolver: codeMonitors}})
 }
 
-func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{LicenseResolver: license}})
+func NewSchemaWithLicenseResolver(db database.DB, configurationServer *conf.Server, license LicenseResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), configurationServer, []OptionalResolver{{LicenseResolver: license}})
 }
 
-func NewSchemaWithWebhooksResolver(db database.DB, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{WebhooksResolver: webhooksResolver}})
+func NewSchemaWithWebhooksResolver(db database.DB, configurationServer *conf.Server, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), configurationServer, []OptionalResolver{{WebhooksResolver: webhooksResolver}})
 }
 
-func NewSchemaWithRBACResolver(db database.DB, rbacResolver RBACResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{RBACResolver: rbacResolver}})
+func NewSchemaWithRBACResolver(db database.DB, configurationServer *conf.Server, rbacResolver RBACResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), configurationServer, []OptionalResolver{{RBACResolver: rbacResolver}})
 }
 
-func NewSchemaWithOwnResolver(db database.DB, own OwnResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{OwnResolver: own}})
+func NewSchemaWithOwnResolver(db database.DB, configurationServer *conf.Server, own OwnResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), configurationServer, []OptionalResolver{{OwnResolver: own}})
 }
 
-func NewSchemaWithCompletionsResolver(db database.DB, completionsResolver CompletionsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{CompletionsResolver: completionsResolver}})
+func NewSchemaWithCompletionsResolver(db database.DB, configurationServer *conf.Server, completionsResolver CompletionsResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), configurationServer, []OptionalResolver{{CompletionsResolver: completionsResolver}})
 }
 
 func NewSchema(
 	db database.DB,
 	gitserverClient gitserver.Client,
+	configurationServer *conf.Server,
 	optionals []OptionalResolver,
 	graphqlOpts ...graphql.SchemaOpt,
 ) (*graphql.Schema, error) {
-	resolver := newSchemaResolver(db, gitserverClient)
+	resolver := newSchemaResolver(db, gitserverClient, configurationServer)
 	schemas := []string{
 		mainSchema,
 		outboundWebhooksSchema,
@@ -671,11 +672,12 @@ func NewSchema(
 //
 // schemaResolver must be instantiated using newSchemaResolver.
 type schemaResolver struct {
-	logger            log.Logger
-	db                database.DB
-	gitserverClient   gitserver.Client
-	repoupdaterClient *repoupdater.Client
-	nodeByIDFns       map[string]NodeByIDFunc
+	logger              log.Logger
+	db                  database.DB
+	gitserverClient     gitserver.Client
+	repoupdaterClient   *repoupdater.Client
+	configurationServer *conf.Server
+	nodeByIDFns         map[string]NodeByIDFunc
 
 	OptionalResolver
 }
@@ -712,12 +714,13 @@ type OptionalResolver struct {
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
 // defaults. It does not implement any sub-resolvers.
-func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schemaResolver {
+func newSchemaResolver(db database.DB, gitserverClient gitserver.Client, configurationServer *conf.Server) *schemaResolver {
 	r := &schemaResolver{
-		logger:            log.Scoped("schemaResolver"),
-		db:                db,
-		gitserverClient:   gitserverClient,
-		repoupdaterClient: repoupdater.DefaultClient,
+		logger:              log.Scoped("schemaResolver"),
+		db:                  db,
+		gitserverClient:     gitserverClient,
+		configurationServer: configurationServer,
+		repoupdaterClient:   repoupdater.DefaultClient,
 	}
 
 	r.nodeByIDFns = map[string]NodeByIDFunc{
@@ -838,7 +841,7 @@ var EnterpriseResolvers = struct {
 //
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
-	return newSchemaResolver(r.db, r.gitserverClient)
+	return newSchemaResolver(r.db, r.gitserverClient, r.configurationServer)
 }
 
 func (r *schemaResolver) Repository(ctx context.Context, args *struct {

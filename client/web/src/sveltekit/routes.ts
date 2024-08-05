@@ -32,11 +32,6 @@ export const svelteKitRoutes: SvelteKitRoute[] = [
         isRepoRoot: false,
     },
     {
-        id: '/[...repo=reporev]/-/[path=commit_or_changelist]/[...revspec]',
-        pattern: new RegExp('^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/(?:commit|changelist)(?:/.*)?/?$'),
-        isRepoRoot: false,
-    },
-    {
         id: '/[...repo=reporev]/-/branches',
         pattern: new RegExp('^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/branches/?$'),
         isRepoRoot: false,
@@ -44,6 +39,11 @@ export const svelteKitRoutes: SvelteKitRoute[] = [
     {
         id: '/[...repo=reporev]/-/branches/all',
         pattern: new RegExp('^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/branches/all/?$'),
+        isRepoRoot: false,
+    },
+    {
+        id: '/[...repo=reporev]/-/commit/[...revspec]',
+        pattern: new RegExp('^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/commit(?:/.*)?/?$'),
         isRepoRoot: false,
     },
     {

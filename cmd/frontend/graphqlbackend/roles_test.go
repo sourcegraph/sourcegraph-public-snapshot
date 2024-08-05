@@ -33,7 +33,7 @@ func TestRoleConnectionResolver(t *testing.T) {
 	adminID := createTestUser(t, db, true).ID
 	adminCtx := actor.WithActor(ctx, actor.FromUser(adminID))
 
-	s, err := NewSchemaWithoutResolvers(db)
+	s, err := NewSchemaWithoutResolvers(db, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestUserRoleListing(t *testing.T) {
 	adminUserID := createTestUser(t, db, true).ID
 	adminActorCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
 
-	s, err := NewSchemaWithoutResolvers(db)
+	s, err := NewSchemaWithoutResolvers(db, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
