@@ -77,7 +77,7 @@ func (mlt *modelsLoadTracker) record(model string, resp *http.Response, reqErr e
 	} else if resp != nil {
 		statusCode = resp.StatusCode
 	} else {
-		// explicitly set to 0 to represent an unknown error
+		// We don't have a response object, so we use 0 to represent an unknown error.
 		statusCode = 0
 	}
 	r := record{
