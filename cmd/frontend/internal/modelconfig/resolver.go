@@ -192,12 +192,29 @@ func (r *codyLLMConfigurationResolver) Provider() string {
 		return r.doNotUseCompletionsConfig.Provider
 	}
 
-	// Otherwise, just return the provider ID of the code completion model.
-	// NOTE: In situations where the site admin has configured their LLM models, the Provider ID
-	// could be something unknown to the client. So there are situations where this value cannot
-	// be used correctly on the client, without additional information from the server. (Such as
-	// knowing the specific API service the provider is using, e.g. OpenAI, AWS Bedrock, etc.)
-	return string(r.modelconfig.DefaultModels.CodeCompletion.ProviderID())
+	// If this Sourcegraph instance is using the newer "modelconfig" way to define models,
+	// we still need to return "sourcegraph" if the underlying API provider is Cody Gateway.
+	completionProviderID := r.modelconfig.DefaultModels.CodeCompletion.ProviderID()
+	var completionProvider *modelconfigSDK.Provider
+	for _, provider := range r.modelconfig.Providers {
+		if provider.ID == completionProviderID {
+			completionProvider = &provider
+			break
+		}
+	}
+	if completionProvider != nil && completionProvider.ServerSideConfig != nil {
+		codyGatewayCfg := completionProvider.ServerSideConfig.SourcegraphProvider
+		if codyGatewayCfg != nil {
+			return "sourcegraph"
+		}
+	}
+
+	// Otherwise, just return the provider ID. In situations where the site admin has configured
+	// their LLM models, the Provider ID could be something unknown to the client. So there are
+	// situations where this value cannot be used correctly on the client, without additional
+	// information from the server. (Such as knowing the specific API service the provider is using,
+	// e.g. OpenAI, AWS Bedrock, etc.)
+	return string(completionProviderID)
 }
 
 func (r *codyLLMConfigurationResolver) CompletionModel() (string, error) {
