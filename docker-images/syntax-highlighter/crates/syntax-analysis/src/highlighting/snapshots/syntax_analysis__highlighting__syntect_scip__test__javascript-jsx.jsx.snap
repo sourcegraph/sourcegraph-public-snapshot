@@ -86,7 +86,9 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //            ^ PunctuationBracket punctuation.section.group.end.js
 //              ^ PunctuationBracket punctuation.section.block.begin.js
       /* handle exception */
-//    ^^^^^^^^^^^^^^^^^^^^^^ Comment comment.block.js
+//    ^^ Comment punctuation.definition.comment.begin.js
+//      ^^^^^^^^^^^^^^^^^^ Comment punctuation.definition.comment.end.js
+//                        ^^ Comment punctuation.definition.comment.end.js
     }
 //  ^ PunctuationBracket punctuation.section.block.end.js
     for (var i = 0 / 2; i < classes.length; i++) {
@@ -164,4 +166,3 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //^^^^^^ Keyword keyword.control.import-export.js
 //        ^^^^^^^^^^^^^^ Identifier variable.other.readwrite.js
 //                      ^ PunctuationDelimiter punctuation.terminator.statement.js
-

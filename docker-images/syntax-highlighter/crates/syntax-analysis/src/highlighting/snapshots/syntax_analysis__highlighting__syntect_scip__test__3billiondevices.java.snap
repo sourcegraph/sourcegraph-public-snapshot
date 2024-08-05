@@ -74,7 +74,8 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
       {
 //    ^ PunctuationBracket punctuation.section.block.begin.java
           //lambda expression
-//        ^^^^^^^^^^^^^^^^^^^ Comment comment.line.double-slash.java
+//        ^^ Comment punctuation.definition.comment.java
+//          ^^^^^^^^^^^^^^^^^ Comment comment.line.double-slash.java
           MyInterface fobj = (int x, int y)->System.out.println(x+y);
 //        ^^^^^^^^^^^ IdentifierType support.class.java
 //                         ^ IdentifierOperator keyword.operator.assignment.java
@@ -139,4 +140,3 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //    ^ PunctuationBracket punctuation.section.block.end.java
   }
 //^ PunctuationBracket punctuation.section.block.end.java
-

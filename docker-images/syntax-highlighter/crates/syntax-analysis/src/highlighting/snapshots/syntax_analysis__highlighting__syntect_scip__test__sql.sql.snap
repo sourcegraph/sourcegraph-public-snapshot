@@ -24,7 +24,8 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
           name IN (
 //             ^^ Keyword keyword.operator.logical.sql
               -- The events that share a line are events that changed names and are aliases of each other
-//            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment comment.line.double-dash.sql
+//            ^^ Comment punctuation.definition.comment.sql
+//              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment comment.line.double-dash.sql
               'CodeMonitoringLogsPageViewed'
 //            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral string.quoted.single.sql
           )
@@ -43,4 +44,3 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
       action_jobs,
       trigger_jobs
   ;
-
