@@ -65,9 +65,7 @@ func newModelCircuitBreaker(maxRecords int) *modelCircuitBreaker {
 	}
 }
 
-// record adds a new record to the modelsLoadTracker if a request error occurred due to
-// a timeout (deadline exceeded) or if the response status code is 429 (Too Many Requests).
-// If neither of these conditions are met, it resets the error records for the given model.
+// record adds a new record to the model's circuit breaker.
 func (mlt *modelsLoadTracker) record(model string, resp *http.Response, reqErr error) {
 	var statusCode int
 	if errors.Is(reqErr, context.DeadlineExceeded) {
