@@ -377,6 +377,10 @@
             }
 
             :global([data-focusable-search-result='true']) {
+                // Set a scroll margin on the focused search results
+                // so that it doesn't underlay the sticky headers and
+                // so that there is a little bit of space between the
+                // result and the scroll box.
                 scroll-margin: 4rem;
             }
         }
