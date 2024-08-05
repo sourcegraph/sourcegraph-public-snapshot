@@ -45,7 +45,7 @@
         {/if}
     </div>
     <div class="title">
-        <a class="subject" href={commit.perforceChangelist?.canonicalURL ?? commit.canonicalURL}>{commit.subject}</a>
+        <a class="subject" href={commit.canonicalURL}>{commit.subject}</a>
         {#if !alwaysExpanded && commit.body && !$isViewportMobile}
             <Button
                 variant="secondary"
@@ -59,7 +59,7 @@
     </div>
     <div class="author">
         {#if !committerIsAuthor}authored by <strong>{author.person.name}</strong> and{/if}
-        {commit.perforceChangelist ? 'submitted' : 'committed'} by <strong>{committer.person.name}</strong>
+        committed by <strong>{committer.person.name}</strong>
         <Timestamp date={commitDate} />
     </div>
     {#if commit.body}

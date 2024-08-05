@@ -5,11 +5,12 @@
     import { navigating } from '$app/stores'
     import Commit from '$lib/Commit.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
     import { getHumanNameForCodeHost } from '$lib/repo/shared/codehost'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { Alert, Badge } from '$lib/wildcard'
+
+    import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
 
     import type { PageData, Snapshot } from './$types'
 
@@ -60,13 +61,9 @@
 
 <header>
     <h2>
-        {#if commits && commits[0]?.perforceChangelist !== null}
-            Changelists
-        {:else}
-            Commit History
-            {#if data.path}
-                in <code>{data.path}</code>
-            {/if}
+        Commit History
+        {#if data.path}
+            in <code>{data.path}</code>
         {/if}
     </h2>
     <div>
@@ -76,7 +73,6 @@
             commitID={data.resolvedRevision.commitID}
             defaultBranch={data.defaultBranch}
             placement="bottom-start"
-            isPerforceDepot={data.isPerforceDepot}
             getRepositoryBranches={data.getRepoBranches}
             getRepositoryCommits={data.getRepoCommits}
             getRepositoryTags={data.getRepoTags}
@@ -94,27 +90,11 @@
                         </div>
                         <ul class="actions">
                             <li>
-                                {#if commit.perforceChangelist}
-                                    Changelist ID:
-                                {/if}
                                 <Badge variant="link">
-                                    {#if commit.perforceChangelist}
-                                        <a href={commit.perforceChangelist?.canonicalURL} title="View changelist"
-                                            >{commit.perforceChangelist?.cid}</a
-                                        >
-                                    {:else}
-                                        <a href={commit.canonicalURL} title="View commit">{commit.abbreviatedOID}</a>
-                                    {/if}
+                                    <a href={commit.canonicalURL} title="View commit">{commit.abbreviatedOID}</a>
                                 </Badge>
                             </li>
-
-                            <li>
-                                <a
-                                    href={commit.perforceChangelist
-                                        ? `/${data.repoName}@changelist/${commit.perforceChangelist.cid}`
-                                        : `/${data.repoName}@${commit.oid}`}>Browse files</a
-                                >
-                            </li>
+                            <li><a href="/{data.repoName}@{commit.oid}">Browse files</a></li>
                             {#each commit.externalURLs as { url, serviceKind }}
                                 <li>
                                     <a href={url}>
