@@ -74,7 +74,7 @@ func (l *LogJob) MapChildren(fn job.MapFunc) job.Job {
 // invariant that query and pattern error checking has already been performed.
 func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, duration time.Duration) {
 	a := actor.FromContext(ctx)
-	if !(a.IsAuthenticated() || a.IsMockUser()) {
+	if !a.IsAuthenticated() || a.IsMockUser() {
 		return
 	}
 
