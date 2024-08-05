@@ -1221,6 +1221,7 @@ func (s *Service) SearchBasedUsages(
 		attribute.String("commit", string(args.Commit)),
 		attribute.String("path", args.Path.RawValue()),
 		attribute.String("symbolRange", args.SymbolRange.String()),
+		attribute.Int("limit", int(args.Limit)),
 	}})
 	defer endObservation(1, observation.Args{})
 
