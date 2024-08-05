@@ -200,7 +200,7 @@ type analyticsStore struct {
 	db Execer
 }
 
-func (s analyticsStore) NewInvocation(ctx context.Context, uuid uuid.UUID, version string, meta map[string]any) error {
+func (s analyticsStore) NewInvocation(_ context.Context, uuid uuid.UUID, version string, meta map[string]any) error {
 	if s.db == nil {
 		return ErrDBNotInitialized
 	}
@@ -223,7 +223,7 @@ func (s analyticsStore) NewInvocation(ctx context.Context, uuid uuid.UUID, versi
 	return nil
 }
 
-func (s analyticsStore) AddMetadata(ctx context.Context, uuid uuid.UUID, meta map[string]any) error {
+func (s analyticsStore) AddMetadata(_ context.Context, uuid uuid.UUID, meta map[string]any) error {
 	if s.db == nil {
 		return ErrDBNotInitialized
 	}
@@ -241,7 +241,7 @@ func (s analyticsStore) AddMetadata(ctx context.Context, uuid uuid.UUID, meta ma
 	return nil
 }
 
-func (s analyticsStore) DeleteInvocation(ctx context.Context, uuid string) error {
+func (s analyticsStore) DeleteInvocation(_ context.Context, uuid string) error {
 	if s.db == nil {
 		return ErrDBNotInitialized
 	}
@@ -254,7 +254,7 @@ func (s analyticsStore) DeleteInvocation(ctx context.Context, uuid string) error
 	return nil
 }
 
-func (s analyticsStore) ListCompleted(ctx context.Context) ([]invocation, error) {
+func (s analyticsStore) ListCompleted(_ context.Context) ([]invocation, error) {
 	if s.db == nil {
 		return nil, nil
 	}
