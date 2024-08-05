@@ -171,7 +171,16 @@ func getFireworksModels() []types.Model {
 				Status:       types.ModelStatusStable,
 				Tier:         types.ModelTierPro,
 			},
-			standardCtxWindow),
+			types.ContextWindow{
+				// These values are much lower than other, text-centric models. We are
+				// erring on the side of matching the token limits defined on the client
+				// today. (And maybe the StarCoder is able to use a more efficient
+				// tokenizer, because it's not processing many languages.)
+				// https://github.com/sourcegraph/cody/blob/066d9c6ff48beb96a834f17021affc4e62094415/vscode/src/completions/providers/fireworks.ts#L132
+				// https://github.com/sourcegraph/cody/blob/066d9c6ff48beb96a834f17021affc4e62094415/vscode/src/completions/providers/get-completion-params.ts#L5
+				MaxInputTokens:  2048,
+				MaxOutputTokens: 256,
+			}),
 	}
 }
 

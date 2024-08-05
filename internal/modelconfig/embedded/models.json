@@ -124,8 +124,8 @@
       "status": "stable",
       "tier": "pro",
       "contextWindow": {
-        "maxInputTokens": 7000,
-        "maxOutputTokens": 4000
+        "maxInputTokens": 2048,
+        "maxOutputTokens": 256
       }
     },
     {
