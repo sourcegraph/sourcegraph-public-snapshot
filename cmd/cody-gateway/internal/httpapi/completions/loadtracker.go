@@ -135,8 +135,8 @@ func (mcb *modelCircuitBreaker) getFailureRatio(now time.Time, evaluationWindow 
 		if now.Sub(r.timestamp) <= evaluationWindow {
 			reqCount++
 
-			// Check if the record is a failure
-			if r.statusCode == http.StatusTooManyRequests || r.statusCode == http.StatusGatewayTimeout {
+			switch r.statusCode {
+			case http.StatusTooManyRequests, http.StatusGatewayTimeout, http.StatusInternalServerError:
 				failureCount++
 			}
 		}
