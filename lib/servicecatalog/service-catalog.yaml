@@ -49,7 +49,6 @@ protected_services:
       - gitserver
       - migrator
       - repo-updater
-      - searcher
       - symbols
       - worker
       - precise-code-intel-worker
