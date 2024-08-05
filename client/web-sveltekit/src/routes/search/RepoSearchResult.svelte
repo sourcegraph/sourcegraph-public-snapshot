@@ -114,7 +114,7 @@
     }
 
     .title {
-        :global([data-focusable-search-result='true']:where(:focus, :focus-visible)) {
+        :global([data-focusable-search-result='true']:focus) {
             box-shadow: var(--focus-shadow-inset);
         }
     }
