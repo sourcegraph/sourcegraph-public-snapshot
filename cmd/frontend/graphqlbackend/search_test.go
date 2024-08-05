@@ -119,7 +119,7 @@ func TestSearch(t *testing.T) {
 			gsClient := gitserver.NewMockClient()
 			gsClient.ResolveRevisionFunc.SetDefaultHook(tc.repoRevsMock)
 
-			sr := newSchemaResolver(db, gsClient)
+			sr := newSchemaResolver(db, gsClient, nil)
 			gqlSchema, err := graphql.ParseSchema(mainSchema, sr,
 				graphql.Tracer(newRequestTracer(logtest.Scoped(t), db)),
 				graphql.MaxDepth(conf.RateLimits().GraphQLMaxDepth))

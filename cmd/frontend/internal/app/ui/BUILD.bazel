@@ -86,7 +86,6 @@ go_test(
     tags = [TAG_SEARCHSUITE],
     deps = [
         "//cmd/frontend/backend",
-        "//cmd/frontend/globals",
         "//cmd/frontend/internal/app/ui/router",
         "//internal/api",
         "//internal/conf",

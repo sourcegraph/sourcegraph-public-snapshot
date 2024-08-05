@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit"
@@ -273,7 +272,7 @@ type JSContext struct {
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
 // request.
-func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
+func NewJSContextFromRequest(req *http.Request, db database.DB, configurationServer *conf.Server) JSContext {
 	ctx := req.Context()
 	a := sgactor.FromContext(ctx)
 
@@ -403,7 +402,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		NeedsSiteInit:     needsSiteInit,
 		EmailEnabled:      conf.CanSendEmail(),
 		Site:              publicSiteConfiguration(),
-		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
+		NeedServerRestart: configurationServer.NeedServerRestart(),
 		DeployType:        deploy.Type(),
 
 		SourcegraphDotComMode: isDotComMode,
