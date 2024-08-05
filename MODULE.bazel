@@ -1,0 +1,21 @@
+"""Bazel module for Sourcegraph."""
+bazel_dep(name = "rules_java", version = "7.8.0")
+bazel_dep(name = "rules_jvm_external", version = "6.2")
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+
+maven.install(
+    artifacts = [
+        "software.amazon.smithy:smithy-build:1.50.0",
+        "software.amazon.smithy:smithy-model:1.50.0",
+    ],
+    repositories = [
+        "https://repo1.maven.org/maven2",
+    ],
+    lock_file = "//:maven_install.json",
+)
+
+use_repo(
+    maven,
+    "maven",
+)

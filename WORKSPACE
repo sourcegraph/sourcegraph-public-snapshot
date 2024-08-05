@@ -535,3 +535,41 @@ apko_translate_locks()
 load("@apko_lockfiles//:repositories.bzl", "apko_repositories")
 
 apko_repositories()
+
+# Smithy REST API codegen
+RULES_JVM_EXTERNAL_TAG = "6.2"
+
+RULES_JVM_EXTERNAL_SHA = "808cb5c30b5f70d12a2a745a29edc46728fd35fa195c1762a596b63ae9cebe05"
+
+http_archive(
+    name = "rules_jvm_external",
+    sha256 = RULES_JVM_EXTERNAL_SHA,
+    strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
+    url = "https://github.com/bazelbuild/rules_jvm_external/releases/download/%s/rules_jvm_external-%s.tar.gz" % (RULES_JVM_EXTERNAL_TAG, RULES_JVM_EXTERNAL_TAG),
+)
+
+load("@rules_jvm_external//:repositories.bzl", "rules_jvm_external_deps")
+
+rules_jvm_external_deps()
+
+load("@rules_jvm_external//:setup.bzl", "rules_jvm_external_setup")
+
+rules_jvm_external_setup()
+
+load("@rules_jvm_external//:defs.bzl", "maven_install")
+
+# When updating this list of dependencies, run: bazel run @unpinned_maven//:pin
+maven_install(
+    artifacts = [
+        "software.amazon.smithy:smithy-build:1.50.0",
+        "software.amazon.smithy:smithy-model:1.50.0",
+    ],
+    maven_install_json = "@//:maven_install.json",
+    repositories = [
+        "https://repo1.maven.org/maven2",
+    ],
+)
+
+load("@maven//:defs.bzl", "pinned_maven_install")
+
+pinned_maven_install()

@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "smithy-codegen-lib",
+    srcs = glob(["src/main/java/**/*.java"]),
+    exports = [
+        "@maven//:software_amazon_smithy_smithy_build",
+        "@maven//:software_amazon_smithy_smithy_model",
+    ],
+)
+
+java_binary(
+    name = "smithy-codegen",
+    main_class = "com.sourcegraph.smithy_go.SmithyGo",
+    runtime_deps = [":smithy-codegen-lib"],
+)
