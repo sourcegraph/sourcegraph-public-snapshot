@@ -157,7 +157,7 @@ func getFireworksModels() []types.Model {
 		newModel(
 			modelIdentity{
 				MRef: mRef(fireworksV1, "starcoder"),
-				// NOTE: THis model name is virutalized.
+				// NOTE: This model name is virtualized.
 				//
 				// When Cody Gateway receives a request using model
 				// "fireworks/starcoder", it will then pick a specialized

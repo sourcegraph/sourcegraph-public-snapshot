@@ -86,7 +86,7 @@ func GenerateModelConfigurationDoc() (*types.ModelConfiguration, error) {
 		// PR, which would have a different SHA than in main...
 		//
 		// See internal/version/version.go for reference.
-		Revision: "0.0.`0+dev",
+		Revision: "0.0.0+dev",
 
 		Providers: providers,
 		// There are no Cody Enterprise-only models at this time.

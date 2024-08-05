@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "revision": "0.0.`0+dev",
+  "revision": "0.0.0+dev",
   "providers": [
     {
       "id": "anthropic",
@@ -119,7 +119,7 @@
       "modelRef": "fireworks::v1::starcoder",
       "displayName": "StarCoder",
       "modelName": "starcoder",
-      "capabilities": ["autocomplete", "chat"],
+      "capabilities": ["autocomplete"],
       "category": "speed",
       "status": "stable",
       "tier": "pro",
