@@ -15,7 +15,7 @@ if [ "${CI:-}" ]; then
   bazelArgs+=("--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc")
 fi
 
-# TO enable us access the error message / warning returned by gazelle, we trap stderr in a variable
+# To enable us access the error message / warning returned by gazelle, we trap stderr in a variable
 # so we can check for glob warnings and report accordingly.
 stderr_output=$(bazel "${bazelArgs[@]}" run //:gazelle 2>&1 >/dev/null)
 
