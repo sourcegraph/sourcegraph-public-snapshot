@@ -99,12 +99,14 @@ func newRouter() *mux.Router {
 
 	base.Path("/site-admin/pings/latest").Methods("GET").Name(LatestPing)
 
+	// Make the abov paths known to the SvelteKit app
+	// (the repo route is ignored since it's basically catch-all;
+	//  it's also handled by ui/router.go)
+	sveltekit.RegisterSvelteKit(base, nil)
+
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/badge.svg").Methods("GET").Name(RepoBadge)
-
-	// Make these paths known to the SvelteKit app
-	sveltekit.RegisterSvelteKit(base, nil)
 
 	// Must come last
 	base.PathPrefix("/").Name(UI)
