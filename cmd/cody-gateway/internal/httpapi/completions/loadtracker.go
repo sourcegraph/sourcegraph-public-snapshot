@@ -14,8 +14,6 @@ import (
 // pattern to temporarily mark models as unavailable if they exceed the allowed number
 // of errors within the defined time window.
 type modelsLoadTracker struct {
-	mu sync.RWMutex
-
 	// failureRatio represents the maximum ratio of failure records out of last maxRecords
 	// allowed within the evaluationWindow before a model is considered unavailable.
 	failureRatio float64
@@ -28,7 +26,8 @@ type modelsLoadTracker struct {
 	// within this duration, it's considered unavailable.
 	evaluationWindow time.Duration
 
-	circuitBreakerByModel map[string]*modelCircuitBreaker
+	// circuitBreakerByModel stores circuit breakers for each model, allowing concurrent access.
+	circuitBreakerByModel sync.Map
 }
 
 // modelCircuitBreaker keeps track of error records for a specific model,
@@ -55,7 +54,7 @@ func newModelsLoadTracker() *modelsLoadTracker {
 		failureRatio:          0.95,
 		maxRecords:            100,
 		evaluationWindow:      1 * time.Minute,
-		circuitBreakerByModel: map[string]*modelCircuitBreaker{},
+		circuitBreakerByModel: sync.Map{},
 	}
 }
 
@@ -85,27 +84,33 @@ func (mlt *modelsLoadTracker) record(model string, resp *http.Response, reqErr e
 		timestamp:  time.Now(),
 	}
 
-	mcb := mlt.getOrCreateCircuitBreakerForModel(model)
+	var mcb *modelCircuitBreaker
+	if v, exists := mlt.getCircuitBreaker(model); exists {
+		mcb = v
+	} else {
+		mcb = mlt.createCircuitBreaker(model)
+	}
+
 	mcb.addRecord(r)
 }
 
-func (mlt *modelsLoadTracker) getOrCreateCircuitBreakerForModel(model string) *modelCircuitBreaker {
-	mlt.mu.Lock()
-	defer mlt.mu.Unlock()
-
-	mcb := mlt.circuitBreakerByModel[model]
-	if mcb == nil {
-		mcb = newModelCircuitBreaker(mlt.maxRecords)
+func (mlt *modelsLoadTracker) getCircuitBreaker(model string) (mcb *modelCircuitBreaker, exists bool) {
+	if v, ok := mlt.circuitBreakerByModel.Load(model); ok {
+		return v.(*modelCircuitBreaker), true
 	}
-	mlt.circuitBreakerByModel[model] = mcb
-	return mcb
+	return nil, false
+}
+
+func (mlt *modelsLoadTracker) createCircuitBreaker(model string) *modelCircuitBreaker {
+	v, _ := mlt.circuitBreakerByModel.LoadOrStore(model, newModelCircuitBreaker(mlt.maxRecords))
+	return v.(*modelCircuitBreaker)
 }
 
 // isModelAvailable returns false if the percentage of failures for model in the timeframe
 // is greater than the failureThreshold.Otherwise, returns true.
 func (mlt *modelsLoadTracker) isModelAvailable(model string) bool {
-	mcb := mlt.circuitBreakerByModel[model]
-	if mcb == nil {
+	mcb, ok := mlt.getCircuitBreaker(model)
+	if !ok {
 		return true
 	}
 

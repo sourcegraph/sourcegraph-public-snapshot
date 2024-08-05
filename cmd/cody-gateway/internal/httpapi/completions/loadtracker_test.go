@@ -3,6 +3,7 @@ package completions
 import (
 	"context"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 
@@ -21,17 +22,24 @@ func TestModelLoadTracker(t *testing.T) {
 			failureRatio:          0.2,
 			maxRecords:            maxRecords,
 			evaluationWindow:      1 * time.Minute,
-			circuitBreakerByModel: map[string]*modelCircuitBreaker{},
+			circuitBreakerByModel: sync.Map{},
 		}
 
-		require.Nil(t, mlt.circuitBreakerByModel[model1])
-		require.Nil(t, mlt.circuitBreakerByModel[model2])
+		for _, m := range []string{model1, model2} {
+			if _, exists := mlt.getCircuitBreaker(m); exists {
+				t.Errorf("Circuit breaker for model %q should not exist", m)
+			}
+		}
 
 		mlt.record(model1, &http.Response{StatusCode: http.StatusOK}, nil)
 
-		require.NotNil(t, mlt.circuitBreakerByModel[model1])
-		require.Equal(t, maxRecords, len(mlt.circuitBreakerByModel[model1].records))
-		require.Nil(t, mlt.circuitBreakerByModel[model2])
+		mcb, exists := mlt.getCircuitBreaker(model1)
+		require.True(t, exists)
+		require.Equal(t, maxRecords, len(mcb.records))
+
+		if _, exists := mlt.getCircuitBreaker(model2); exists {
+			t.Errorf("Circuit breaker for model %q should not exist", model2)
+		}
 	})
 
 	t.Run("adds records with proper status codes", func(t *testing.T) {
@@ -74,14 +82,15 @@ func TestModelLoadTracker(t *testing.T) {
 			failureRatio:          0.2,
 			maxRecords:            10,
 			evaluationWindow:      1 * time.Minute,
-			circuitBreakerByModel: map[string]*modelCircuitBreaker{},
+			circuitBreakerByModel: sync.Map{},
 		}
 
 		for _, r := range toRecord {
 			mlt.record(model, r.resp, r.reqErr)
 		}
 
-		mcb := mlt.circuitBreakerByModel[model]
+		mcb, exists := mlt.getCircuitBreaker(model)
+		require.True(t, exists)
 
 		for i, r := range toRecord {
 			var wantStatusCode int
@@ -98,7 +107,6 @@ func TestModelLoadTracker(t *testing.T) {
 	})
 
 	t.Run("performs is model available check", func(t *testing.T) {
-		maxRecords := 10
 		now := time.Now()
 		testCases := []struct {
 			model   string
@@ -131,7 +139,7 @@ func TestModelLoadTracker(t *testing.T) {
 					{statusCode: http.StatusOK, timestamp: now},
 					{statusCode: http.StatusTooManyRequests, timestamp: now},
 					{statusCode: http.StatusTooManyRequests, timestamp: now},
-					{statusCode: http.StatusTooManyRequests, timestamp: now},
+					{statusCode: http.StatusInternalServerError, timestamp: now},
 				},
 				want: false,
 			},
@@ -144,14 +152,13 @@ func TestModelLoadTracker(t *testing.T) {
 
 		mlt := modelsLoadTracker{
 			failureRatio:          0.5,
-			maxRecords:            maxRecords,
+			maxRecords:            10,
 			evaluationWindow:      1 * time.Minute,
-			circuitBreakerByModel: map[string]*modelCircuitBreaker{},
+			circuitBreakerByModel: sync.Map{},
 		}
 		for _, tc := range testCases {
-			// Mock the circuit breaker with records-  we test record addition and failure ration calculation separately.
-			mcb := newModelCircuitBreaker(maxRecords)
-			mlt.circuitBreakerByModel[tc.model] = mcb
+			// Mock the circuit breaker with records - we test record addition and failure ration calculation separately.
+			mcb := mlt.createCircuitBreaker(tc.model)
 			mcb.records = tc.records
 
 			require.Equal(t, tc.want, mlt.isModelAvailable(tc.model))
