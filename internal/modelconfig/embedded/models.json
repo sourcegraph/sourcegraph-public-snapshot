@@ -1,22 +1,26 @@
 {
   "schemaVersion": "1.0",
-  "revision": "0.0.0+dev",
+  "revision": "0.0.`0+dev",
   "providers": [
     {
       "id": "anthropic",
       "displayName": "Anthropic"
     },
     {
+      "id": "fireworks",
+      "displayName": "Fireworks"
+    },
+    {
       "id": "google",
       "displayName": "Google"
     },
     {
-      "id": "mistral",
-      "displayName": "Mistral"
-    },
-    {
       "id": "openai",
       "displayName": "OpenAI"
+    },
+    {
+      "id": "mistral",
+      "displayName": "Mistral"
     }
   ],
   "models": [
@@ -106,6 +110,19 @@
       "category": "balanced",
       "status": "deprecated",
       "tier": "free",
+      "contextWindow": {
+        "maxInputTokens": 7000,
+        "maxOutputTokens": 4000
+      }
+    },
+    {
+      "modelRef": "fireworks::v1::starcoder",
+      "displayName": "StarCoder",
+      "modelName": "starcoder",
+      "capabilities": ["autocomplete", "chat"],
+      "category": "speed",
+      "status": "stable",
+      "tier": "pro",
       "contextWindow": {
         "maxInputTokens": 7000,
         "maxOutputTokens": 4000
@@ -204,8 +221,8 @@
     }
   ],
   "defaultModels": {
-    "chat": "anthropic::2023-06-01::claude-3-sonnet",
-    "fastChat": "anthropic::2023-06-01::claude-3-sonnet",
-    "codeCompletion": "anthropic::2023-06-01::claude-3-sonnet"
+    "chat": "anthropic::2023-06-01::claude-3.5-sonnet",
+    "fastChat": "anthropic::2023-06-01::claude-3-haiku",
+    "codeCompletion": "fireworks::v1::starcoder"
   }
 }

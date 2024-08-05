@@ -18,6 +18,9 @@ var (
 		types.ModelCapabilityAutocomplete,
 		types.ModelCapabilityChat,
 	}
+	editOnly = []types.ModelCapability{
+		types.ModelCapabilityAutocomplete,
+	}
 
 	// Standard context window sizes.
 	standardCtxWindow = types.ContextWindow{
@@ -140,6 +143,33 @@ func getAnthropicModels() []types.Model {
 				Category:     types.ModelCategoryBalanced,
 				Status:       types.ModelStatusDeprecated,
 				Tier:         types.ModelTierFree,
+			},
+			standardCtxWindow),
+	}
+}
+
+func getFireworksModels() []types.Model {
+	// https://docs.fireworks.ai/api-reference/post-completions
+	const fireworksV1 = "fireworks::v1"
+
+	return []types.Model{
+		// https://huggingface.co/blog/starcoder
+		newModel(
+			modelIdentity{
+				MRef: mRef(fireworksV1, "starcoder"),
+				// NOTE: THis model name is virutalized.
+				//
+				// When Cody Gateway receives a request using model
+				// "fireworks/starcoder", it will then pick a specialized
+				// model name such as "starcoder2-15b" or "starcoder-7b".
+				Name:        "starcoder",
+				DisplayName: "StarCoder",
+			},
+			modelMetadata{
+				Capabilities: editOnly,
+				Category:     types.ModelCategorySpeed,
+				Status:       types.ModelStatusStable,
+				Tier:         types.ModelTierPro,
 			},
 			standardCtxWindow),
 	}
@@ -279,6 +309,7 @@ func GetCodyFreeProModels() ([]types.Model, error) {
 	// ================================================
 	var allModels []types.Model
 	allModels = append(allModels, getAnthropicModels()...)
+	allModels = append(allModels, getFireworksModels()...)
 	allModels = append(allModels, getGoogleModels()...)
 	allModels = append(allModels, getMistralModels()...)
 	allModels = append(allModels, getOpenAIModels()...)

@@ -163,10 +163,10 @@ func ValidateModelConfig(cfg *types.ModelConfiguration) error {
 		return errors.Errorf("unknown chat model %q", cfg.DefaultModels.Chat)
 	}
 	if !isKnownModel(cfg.DefaultModels.CodeCompletion) {
-		return errors.Errorf("unknown chat model %q", cfg.DefaultModels.CodeCompletion)
+		return errors.Errorf("unknown code completion model %q", cfg.DefaultModels.CodeCompletion)
 	}
 	if !isKnownModel(cfg.DefaultModels.FastChat) {
-		return errors.Errorf("unknown chat model %q", cfg.DefaultModels.FastChat)
+		return errors.Errorf("unknown fast chat model %q", cfg.DefaultModels.FastChat)
 	}
 
 	return nil

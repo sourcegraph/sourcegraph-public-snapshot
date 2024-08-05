@@ -27,6 +27,11 @@ var (
 func main() {
 	flag.Parse()
 
+	liblog := log.Init(log.Resource{
+		Name: "Cody Gateway Configuration App",
+	})
+	defer liblog.Sync()
+
 	logger := log.Scoped("cody-gateway-config")
 
 	// Generate the configuration.
@@ -81,16 +86,16 @@ func GenerateModelConfigurationDoc() (*types.ModelConfiguration, error) {
 		// PR, which would have a different SHA than in main...
 		//
 		// See internal/version/version.go for reference.
-		Revision: "0.0.0+dev",
+		Revision: "0.0.`0+dev",
 
 		Providers: providers,
 		// There are no Cody Enterprise-only models at this time.
 		Models: dotcomModels,
 
 		DefaultModels: types.DefaultModels{
-			Chat:           types.ModelRef("anthropic::2023-06-01::claude-3-sonnet"),
-			CodeCompletion: types.ModelRef("anthropic::2023-06-01::claude-3-sonnet"),
-			FastChat:       types.ModelRef("anthropic::2023-06-01::claude-3-sonnet"),
+			Chat:           types.ModelRef("anthropic::2023-06-01::claude-3.5-sonnet"),
+			CodeCompletion: types.ModelRef("fireworks::v1::starcoder"),
+			FastChat:       types.ModelRef("anthropic::2023-06-01::claude-3-haiku"),
 		},
 	}
 
