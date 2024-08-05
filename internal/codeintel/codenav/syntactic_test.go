@@ -32,7 +32,7 @@ func TestSearchBasedUsages_ResultWithoutSymbols(t *testing.T) {
 	expectContent(t, usages, refRange, refRangeLineContent)
 }
 
-func TestSearchBasedUsages_ResultWithSymbol(t *testing.T) {
+func TestSearchBasedUsages_ResultWithSymbols(t *testing.T) {
 	refRange := testRange(1)
 	defRange := testRange(2)
 	refRange2 := testRange(3)
@@ -49,27 +49,6 @@ func TestSearchBasedUsages_ResultWithSymbol(t *testing.T) {
 	require.NoError(t, err)
 	expectRanges(t, usages, refRange, refRange2, defRange)
 	expectDefinitionRanges(t, usages, defRange)
-}
-
-func TestSearchBasedUsages_CountLimit(t *testing.T) {
-	searchBuilder := FakeSearchClient().WithLimit()
-	for n := range 10 {
-		searchBuilder = searchBuilder.WithFile(fmt.Sprintf("file%d.java", n), ChunkMatch(testRange(n)))
-	}
-	mockSearchClient := searchBuilder.Build()
-	limit := 3
-
-	usages, err := searchBasedUsagesImpl(
-		context.Background(), observation.TestTraceLogger(log.NoOp()), mockSearchClient,
-		UsagesForSymbolArgs{Limit: limit}, "symbol", "Java", core.None[MappedIndex](),
-	)
-
-	resultRanges := make([]scip.Range, 0)
-	for n := range limit * 3 {
-		resultRanges = append(resultRanges, testRange(n))
-	}
-	require.NoError(t, err)
-	expectRanges(t, usages, resultRanges...)
 }
 
 func TestSearchBasedUsages_SyntacticMatchesGetRemovedFromSearchBasedResults(t *testing.T) {
@@ -89,6 +68,49 @@ func TestSearchBasedUsages_SyntacticMatchesGetRemovedFromSearchBasedResults(t *t
 	)
 	require.NoError(t, err)
 	expectRanges(t, usages, commentRange)
+}
+
+func TestSearchBasedUsages_CountLimitNoSyntacticUpload(t *testing.T) {
+	searchBuilder := FakeSearchClient().WithLimit()
+	for n := range 10 {
+		searchBuilder = searchBuilder.WithFile(fmt.Sprintf("file%d.java", n), ChunkMatch(testRange(n)))
+	}
+	mockSearchClient := searchBuilder.Build()
+	limit := 1
+
+	usages, err := searchBasedUsagesImpl(
+		context.Background(), observation.TestTraceLogger(log.NoOp()), mockSearchClient,
+		UsagesForSymbolArgs{Limit: int32(limit)}, "symbol", "Java", core.None[MappedIndex](),
+	)
+
+	resultRanges := make([]scip.Range, 0)
+	for n := range limit {
+		resultRanges = append(resultRanges, testRange(n))
+	}
+	require.NoError(t, err)
+	expectRanges(t, usages, resultRanges...)
+}
+
+func TestSearchBasedUsages_CountLimitWithSyntacticUpload(t *testing.T) {
+	searchBuilder := FakeSearchClient().WithLimit()
+	for n := range 10 {
+		searchBuilder = searchBuilder.WithFile(fmt.Sprintf("file%d.java", n), ChunkMatch(testRange(n)))
+	}
+	mockSearchClient := searchBuilder.Build()
+	limit := 1
+	usages, err := searchBasedUsagesImpl(
+		context.Background(), observation.TestTraceLogger(log.NoOp()), mockSearchClient,
+		UsagesForSymbolArgs{Limit: int32(limit)}, "symbol", "Java", core.Some[MappedIndex](emptyMappedIndex()),
+	)
+
+	resultRanges := make([]scip.Range, 0)
+	// We search for 5x the limit, because we're assuming a bunch of matches will be filtered
+	// as syntactic results
+	for n := range limit * 5 {
+		resultRanges = append(resultRanges, testRange(n))
+	}
+	require.NoError(t, err)
+	expectRanges(t, usages, resultRanges...)
 }
 
 func TestSyntacticUsages(t *testing.T) {
@@ -193,3 +215,5 @@ func TestSyntacticUsages_IndexCommitTranslated(t *testing.T) {
 	}
 	expectRanges(t, syntacticUsages.Matches, refRange)
 }
+
+func TestSyntacticUsages_WithCount(t *testing.T) {}

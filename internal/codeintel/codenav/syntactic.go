@@ -399,7 +399,7 @@ func syntacticUsagesImpl(
 		identifier: symbolName,
 		language:   language,
 		// TODO: Assumes at least every third match is a search-based one
-		countLimit: args.Limit * 3,
+		countLimit: int(args.Limit) * 3,
 	}
 	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
 	if searchErr != nil {
@@ -471,11 +471,18 @@ func searchBasedUsagesImpl(
 	}
 	var wg conc.WaitGroup
 	wg.Go(func() {
-		// TODO: Assumes at least every third match is a syntactic one
-		searchCoords := mkSearchArgs(args.Limit * 3)
+		// TODO: Assumes at least every fifth match is a search-based one (might not hold up?)
+		searchLimit := args.Limit * 5
+		// If we don't have a syntactic index all matches are search-based
+		// usages, so we can just fetch the exact amount we need.
+		if syntacticIndex.IsNone() {
+			searchLimit = args.Limit
+		}
+		searchCoords := mkSearchArgs(int(searchLimit))
 		matchResults.candidateMatches, matchResults.err = findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
 	})
 	wg.Go(func() {
+		// NOTE: Same hard-coded 50 the web app used to use
 		searchCoords := mkSearchArgs(50)
 		symbolResults.candidateSymbols, symbolResults.err = symbolSearch(ctx, trace, searchClient, searchCoords)
 	})
