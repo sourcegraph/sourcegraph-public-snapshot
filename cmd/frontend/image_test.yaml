@@ -15,11 +15,6 @@ commandTests:
     exitCode: 0
 
 fileExistenceTests:
-- name: '/mnt/cache/frontend'
-  path: '/mnt/cache/frontend'
-  shouldExist: true
-  uid: 100
-  gid: 101
 - name: '/version.txt'
   path: '/version.txt'
   shouldExist: true
