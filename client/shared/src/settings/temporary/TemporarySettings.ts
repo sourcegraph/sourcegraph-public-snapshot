@@ -98,7 +98,9 @@ export interface TemporarySettingsSchema {
     'openCodeGraph.annotations.visible': boolean
 
     'webNext.welcomeOverlay.dismissed': boolean
+    'webNext.welcomeOverlay.show': boolean
     'webNext.departureMessage.dismissed': boolean
+    'webNext.departureMessage.show': boolean
 }
 
 /**

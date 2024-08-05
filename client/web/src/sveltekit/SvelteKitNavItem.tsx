@@ -1,13 +1,14 @@
-import { FC, useRef, useEffect, useCallback } from 'react'
+import { FC, useRef, useEffect, useCallback, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import { mdiHelpCircleOutline, mdiClose } from '@mdi/js'
+import { mdiChevronDown, mdiClose } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { Text, H3, Popover, PopoverTrigger, PopoverContent, Icon, Button } from '@sourcegraph/wildcard'
 
+import { LearnMoreOverlay } from './LearnMoreOverlay'
 import { enableSvelteAndReload, canEnableSvelteKit } from './util'
 
 import styles from './SvelteKitNavItem.module.scss'
@@ -16,7 +17,8 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
     const location = useLocation()
     const client = useApolloClient()
     const [departureDismissed, setDepartureDismissed] = useTemporarySetting('webNext.departureMessage.dismissed', false)
-    const [welcomeDismissed, setWelcomeDismissed] = useTemporarySetting('webNext.welcomeOverlay.dismissed', false)
+    const [departureShown, _setDepartureDismissed] = useTemporarySetting('webNext.departureMessage.show', false)
+    const [_showWelcomeMessage, setShowWelcomeMessage] = useTemporarySetting('webNext.welcomeOverlay.show', false)
 
     const departureRef = useRef<HTMLDivElement | null>(null)
 
@@ -40,26 +42,20 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
         return null
     }
 
+    const [showLearnMore, setShowLearnMore] = useState(false)
+
     // only show if the welcome message has been dismissed so we know they have been introduced to the new webapp
-    const showDeparture = !departureDismissed && welcomeDismissed
+    const showDeparture = !departureDismissed
     const popoverProps = showDeparture ? { isOpen: true, onOpenChange: () => {} } : {}
 
     return (
         <Popover {...popoverProps}>
+            {showLearnMore && <LearnMoreOverlay />}
             <PopoverTrigger className={styles.badge}>
-                <div className={styles.container}>
-                    <Icon className={styles.helpIcon} svgPath={mdiHelpCircleOutline} aria-hidden={true} />
-                    <Text>New, faster UX</Text>
-                    <Toggle
-                        value={false}
-                        onToggle={() => {
-                            setWelcomeDismissed(false) // Show welcome after switching on
-                            enableSvelteAndReload(client, userID)
-                        }}
-                        title="Enable new, faster UX"
-                        className={styles.toggle}
-                    />
-                </div>
+                <Button>
+                    Try a new, faster UX
+                    <Icon svgPath={mdiChevronDown} aria-hidden="true" />
+                </Button>
             </PopoverTrigger>
             <PopoverContent className={styles.popover} position="bottomEnd">
                 {showDeparture ? (
@@ -92,12 +88,27 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
                     </div>
                 ) : (
                     <div className={styles.section}>
-                        <H3>What's this "New, faster UX"?</H3>
+                        <H3>
+                            <span className={styles.colorful}>Try a new, faster UX (Beta)</span>
+                            <span className={styles.enableToggle}>
+                                <Toggle
+                                    value={false}
+                                    onToggle={() => {
+                                        setShowWelcomeMessage(true)
+                                        enableSvelteAndReload(client, userID)
+                                    }}
+                                    title="Enable new, faster UX"
+                                    className={styles.toggle}
+                                />
+                                Enable
+                            </span>
+                        </H3>
                         <Text>
-                            We've been busy at work on a new Code Search experience, built from the ground up for
-                            performance, which is now available in beta.
+                            We've rewritten Code Search from the ground-up for performance to empower your workflow.
                         </Text>
-                        <Text>Simply activate the toggle to get it.</Text>
+                        <Button variant="secondary" onClick={() => setShowLearnMore(true)}>
+                            Learn more
+                        </Button>
                     </div>
                 )}
             </PopoverContent>
