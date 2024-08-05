@@ -20,8 +20,4 @@ fragment Commit on GitCommit {
             ...Avatar_Person
         }
     }
-    perforceChangelist {
-        cid
-        canonicalURL
-    }
 }
