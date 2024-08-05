@@ -470,8 +470,8 @@ var githubStore = &Store{
 	ObservationCtx: &observation.TestContext,
 }
 
-func fetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-	r, err := fetchTarFromGithubWithPaths(ctx, repo, commit, []string{})
+func fetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
+	r, err := fetchTarFromGithubWithPaths(ctx, repo, commit, paths)
 	return r, err
 }
 
