@@ -258,15 +258,16 @@ type OccurrencesArgs struct {
 	After *string
 }
 
-// Normalize returns args for convenience of chaining
+// Normalize returns a normalized copy of args.
 func (args *OccurrencesArgs) Normalize(maxPageSize int32) *OccurrencesArgs {
-	if args == nil {
-		*args = OccurrencesArgs{}
+	var out OccurrencesArgs
+	if args != nil {
+		out = *args
 	}
-	if args.First == nil || *args.First > maxPageSize {
-		args.First = &maxPageSize
+	if out.First == nil || *out.First > maxPageSize {
+		out.First = &maxPageSize
 	}
-	return args
+	return &out
 }
 
 type SCIPOccurrenceConnectionResolver interface {
