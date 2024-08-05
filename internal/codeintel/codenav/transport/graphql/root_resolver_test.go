@@ -473,8 +473,8 @@ func TestOccurrences_BadArgs(t *testing.T) {
 
 	t.Run("fetching with undeserializable 'after'", func(t *testing.T) {
 		badArgs := resolverstubs.OccurrencesArgs{After: pointers.Ptr("not-a-cursor")}
-		badArgs.Normalize(10)
-		occs := unwrap(resolver.Occurrences(bgCtx, &badArgs))(t)
+		normalizedArgs := badArgs.Normalize(10)
+		occs := unwrap(resolver.Occurrences(bgCtx, normalizedArgs))(t)
 		_, err := occs.Nodes(bgCtx)
 		require.Error(t, err)
 	})
@@ -482,8 +482,8 @@ func TestOccurrences_BadArgs(t *testing.T) {
 	t.Run("fetching with out-of-bounds 'after'", func(t *testing.T) {
 		oobCursor := unwrap(marshalCursor(cursor{100}))(t)
 		badArgs := resolverstubs.OccurrencesArgs{After: oobCursor}
-		badArgs.Normalize(10)
-		occs := unwrap(resolver.Occurrences(bgCtx, &badArgs))(t)
+		normalizedArgs := badArgs.Normalize(10)
+		occs := unwrap(resolver.Occurrences(bgCtx, normalizedArgs))(t)
 		nodes, err := occs.Nodes(bgCtx)
 		// TODO: I think this should be an out-of-bounds error, Slack discussion:
 		// https://sourcegraph.slack.com/archives/C02UC4WUX1Q/p1716378462737019
