@@ -1153,7 +1153,7 @@ func (p *parser) parseAnd() ([]Node, error) {
 		left, err = p.parseLeaves(Regexp)
 	case SearchTypeLiteral, SearchTypeStructural:
 		left, err = p.parseLeaves(Literal)
-	case SearchTypeStandard, SearchTypeLucky:
+	case SearchTypeStandard:
 		left, err = p.parseLeaves(Literal | Standard)
 	case SearchTypeKeyword:
 		left, err = p.parseLeaves(Literal | Standard | QuotesAsLiterals)

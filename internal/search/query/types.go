@@ -39,7 +39,6 @@ const (
 	SearchTypeRegex SearchType = iota
 	SearchTypeLiteral
 	SearchTypeStructural
-	SearchTypeLucky
 	SearchTypeStandard
 	SearchTypeCodyContext
 	SearchTypeKeyword
@@ -55,8 +54,6 @@ func (s SearchType) String() string {
 		return "literal"
 	case SearchTypeStructural:
 		return "structural"
-	case SearchTypeLucky:
-		return "lucky"
 	case SearchTypeCodyContext:
 		return "codycontext"
 	case SearchTypeKeyword:

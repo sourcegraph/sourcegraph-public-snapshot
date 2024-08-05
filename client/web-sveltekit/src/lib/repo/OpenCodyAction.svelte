@@ -23,5 +23,9 @@
         all: unset;
         white-space: nowrap;
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        color: var(--text-body);
     }
 </style>

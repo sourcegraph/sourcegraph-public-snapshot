@@ -52,6 +52,7 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
         displayRevision: displayRevision(revision, resolvedRepository),
         defaultBranch: resolvedRepository.defaultBranch?.abbrevName || 'HEAD',
         resolvedRepository: resolvedRepository,
+        isPerforceDepot: resolvedRepository.externalRepository.serviceType === 'perforce',
 
         // Repository pickers queries (branch, tags and commits)
         getRepoBranches: (searchTerm: string) =>

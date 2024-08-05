@@ -5,25 +5,7 @@
         "value": "a",
         "negated": false,
         "labels": [
-          "Literal",
-          "QuotesAsLiterals",
-          "Standard"
-        ],
-        "range": {
-          "start": {
-            "line": 0,
-            "column": 1
-          },
-          "end": {
-            "line": 0,
-            "column": 2
-          }
-        }
-      },
-      {
-        "value": "b",
-        "negated": true,
-        "labels": [
+          "HeuristicHoisted",
           "Literal",
           "QuotesAsLiterals",
           "Standard"
@@ -35,14 +17,15 @@
           },
           "end": {
             "line": 0,
-            "column": 8
+            "column": 4
           }
         }
       },
       {
-        "value": "c",
-        "negated": true,
+        "value": "b",
+        "negated": false,
         "labels": [
+          "HeuristicHoisted",
           "Literal",
           "QuotesAsLiterals",
           "Standard"
@@ -50,11 +33,31 @@
         "range": {
           "start": {
             "line": 0,
-            "column": 9
+            "column": 5
           },
           "end": {
             "line": 0,
-            "column": 14
+            "column": 6
+          }
+        }
+      },
+      {
+        "value": "c",
+        "negated": false,
+        "labels": [
+          "HeuristicHoisted",
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 7
+          },
+          "end": {
+            "line": 0,
+            "column": 8
           }
         }
       },
@@ -62,6 +65,7 @@
         "value": "d",
         "negated": false,
         "labels": [
+          "HeuristicHoisted",
           "Literal",
           "QuotesAsLiterals",
           "Standard"
@@ -69,11 +73,11 @@
         "range": {
           "start": {
             "line": 0,
-            "column": 15
+            "column": 16
           },
           "end": {
             "line": 0,
-            "column": 16
+            "column": 17
           }
         }
       }

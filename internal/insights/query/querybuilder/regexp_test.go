@@ -180,18 +180,6 @@ func TestReplace_Valid(t *testing.T) {
 			searchType:  query.SearchTypeKeyword,
 		},
 		{
-			query:       "/replaceme/",
-			replacement: "replace",
-			want:        autogold.Expect(BasicQuery("/replace/")),
-			searchType:  query.SearchTypeLucky,
-		},
-		{
-			query:       "/replace(me)/",
-			replacement: "you",
-			want:        autogold.Expect(BasicQuery("/replace(?:you)/")),
-			searchType:  query.SearchTypeLucky,
-		},
-		{
 			query:       "/b(u)tt(er)/",
 			replacement: "e",
 			want:        autogold.Expect(BasicQuery("/b(?:e)tt(er)/")),

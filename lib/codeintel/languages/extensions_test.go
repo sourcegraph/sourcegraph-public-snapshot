@@ -12,7 +12,12 @@ import (
 
 // Languages/extensions that we don't want to regress
 var nonAmbiguousExtensionsCheck = map[string]string{
-	".js": "JavaScript",
+	".apex":    "Apex",
+	".apxt":    "Apex",
+	".apxc":    "Apex",
+	".cls":     "Apex",
+	".trigger": "Apex",
+	".js":      "JavaScript",
 	// Linguist removed JSX (but not TSX) as a separate language:
 	// https://github.com/github-linguist/linguist/pull/5133
 	".jsx":   "JavaScript",
@@ -60,19 +65,23 @@ func TestGetLanguageByAlias_NonAmbiguousLanguages(t *testing.T) {
 }
 
 func TestGetLanguageExtensions_UnsupportedExtensions(t *testing.T) {
-	for language, ext := range unsupportedByEnryNameToExtensionMap {
+	for language, exts := range unsupportedByEnryNameToExtensionMap {
 		extensions := GetLanguageExtensions(language)
-		require.Contains(t, extensions, ext,
-			"maybe a typo in `unsupportedByEnryNameToExtensionMap`?")
+		for _, ext := range exts {
+			require.Contains(t, extensions, ext,
+				"maybe a typo in `unsupportedByEnryNameToExtensionMap`?")
+		}
 	}
 }
 
 func TestGetLanguageExtensions_NonAmbiguousExtensions(t *testing.T) {
 	langMap := reverseMap(nonAmbiguousExtensionsCheck)
-	for language, ext := range langMap {
+	for language, exts := range langMap {
 		extensions := GetLanguageExtensions(language)
-		require.Contains(t, extensions, ext,
-			"If this test fails when updating enry, maybe `overrideAmbiguousExtensionsMap` needs updating")
+		for _, ext := range exts {
+			require.Contains(t, extensions, ext,
+				"If this test fails when updating enry, maybe `overrideAmbiguousExtensionsMap` needs updating")
+		}
 	}
 }
 
@@ -169,15 +178,30 @@ func TestExtensionsConsistency2(t *testing.T) {
 // cases for Pkl.
 func TestUnsupportedByEnry(t *testing.T) {
 	for lang := range unsupportedByEnryNameToExtensionMap {
-		_, found := enrydata.ExtensionsByLanguage[lang]
-		require.False(t, found, "looks like language %q is supported by enry; remove it from unsupportedByEnryNameToExtensionMap")
+		enry_extensions, found := enrydata.ExtensionsByLanguage[lang]
+		if found {
+			validateLanguageAgainstGoEnry(t, "unsupportedByEnryNameToExtensionMap", enry_extensions, lang)
+		}
 	}
 	for _, lang := range unsupportedByEnryAliasMap {
-		_, found := enrydata.ExtensionsByLanguage[lang]
-		require.False(t, found, "looks like language %q is supported by enry; remove it from unsupportedByEnryAliasMap")
+		enry_extensions, found := enrydata.ExtensionsByLanguage[lang]
+		if found {
+			validateLanguageAgainstGoEnry(t, "unsupportedByEnryAliasMap", enry_extensions, lang)
+		}
 	}
 	for _, lang := range unsupportedByEnryExtensionToNameMap {
-		_, found := enrydata.ExtensionsByLanguage[lang]
-		require.False(t, found, "looks like language %q is supported by enry; remove it from unsupportedByEnryExtensionToNameMap")
+		enry_extensions, found := enrydata.ExtensionsByLanguage[lang]
+		if found {
+			validateLanguageAgainstGoEnry(t, "unsupportedByEnryExtensionToNameMap", enry_extensions, lang)
+		}
 	}
+}
+
+func validateLanguageAgainstGoEnry(t *testing.T, name string, enryExtensions []string, lang string) {
+	enryExtensions = slices.Clone(enryExtensions)
+	slices.Sort(enryExtensions)
+	sgExtensions := slices.Clone(unsupportedByEnryNameToExtensionMap[lang])
+	slices.Sort(sgExtensions)
+
+	require.NotEqualf(t, enryExtensions, sgExtensions, "looks like language %q is supported by enry with the same extensions; remove it from %q", lang, name)
 }

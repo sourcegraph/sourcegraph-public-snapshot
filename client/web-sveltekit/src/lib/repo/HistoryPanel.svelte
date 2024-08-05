@@ -133,7 +133,7 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        padding: 0.25rem 0.5rem;
+        padding: 0.5rem;
 
         :global([data-avatar]) {
             vertical-align: middle;
@@ -143,6 +143,7 @@
     .timestamp {
         grid-area: timestamp;
         text-align: right;
+        color: var(--text-muted);
     }
 
     .revision {
@@ -158,12 +159,15 @@
     }
 
     .actions {
+        display: flex;
+        gap: 1rem;
+        padding: 0.5rem 1rem;
         grid-area: actions;
     }
 
     tr {
-        --icon-color: var(--header-icon-color);
         border-bottom: 1px solid var(--border-color);
+        font-size: var(--font-size-small);
 
         &.selected {
             --icon-color: currentColor;
@@ -171,7 +175,8 @@
             color: var(--light-text);
             background-color: var(--primary);
 
-            a {
+            a,
+            .timestamp {
                 color: inherit;
             }
         }

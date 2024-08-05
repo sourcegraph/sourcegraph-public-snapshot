@@ -122,7 +122,18 @@ FROM (
 		t.*,
 		-- NOTE(id: closest-uploads-postcondition) Only return a single result
 		-- for an (indexer, root) pair, see also the WHERE clause at the end.
-		row_number() OVER (PARTITION BY u.root, u.indexer ORDER BY t.distance) AS r
+		row_number() OVER (PARTITION BY u.root, (
+			-- NOTE(id: scip-over-lsif) Group lsif-K and scip-K together, so that for
+			-- long-running instances which still have lingering indexes from our old
+			-- LSIF indexers, we make sure to prefer newer SCIP indexes.
+			-- This should also provide better results for someone changing indexers
+			-- in the future.
+			CASE
+				WHEN u.indexer LIKE 'scip-%%' OR u.indexer LIKE 'lsif-%%' THEN substr(u.indexer, 6)
+				ELSE u.indexer
+			END
+		) ORDER BY t.distance ASC, t.upload_id DESC) -- See NOTE(id: upload-tie-breaking)
+		AS r
 	FROM (%s) t
 	JOIN lsif_uploads u ON u.id = t.upload_id
 ) t

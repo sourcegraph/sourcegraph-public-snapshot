@@ -24,6 +24,8 @@ go_library(
         "//schema",
         "@com_github_cohere_ai_cohere_go_v2//:cohere-go",
         "@com_github_cohere_ai_cohere_go_v2//client",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_k3a_html2text//:html2text",
         "@com_github_sourcegraph_conc//iter",
         "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",

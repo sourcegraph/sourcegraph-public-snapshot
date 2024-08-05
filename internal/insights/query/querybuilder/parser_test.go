@@ -111,12 +111,6 @@ func TestDetectSearchType(t *testing.T) {
 			query.SearchTypeRegex,
 		},
 		{
-			"submit literal with patterntype",
-			"test patterntype:regexp",
-			"lucky",
-			query.SearchTypeRegex,
-		},
-		{
 			"submit structural with structural patterntype",
 			"[a] patterntype:structural",
 			"structural",

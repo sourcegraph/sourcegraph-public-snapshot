@@ -30,6 +30,10 @@ query CommitsPage_CommitsQuery(
             ancestors(first: $first, afterCursor: $afterCursor, path: $path) {
                 ...CommitsPage_GitCommitConnection
             }
+            perforceChangelist {
+                cid
+                canonicalURL
+            }
         }
     }
 }

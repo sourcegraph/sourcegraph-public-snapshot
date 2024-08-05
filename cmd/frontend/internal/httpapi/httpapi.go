@@ -160,7 +160,7 @@ func NewHandler(
 	m.Path("/scip/upload").Methods("POST").Handler(handlers.NewCodeIntelUploadHandler(true))
 	m.Path("/scip/upload").Methods("HEAD").Handler(noopHandler)
 	m.Path("/compute/stream").Methods("GET", "POST").Handler(handlers.NewComputeStreamHandler())
-	m.Path("/blame/" + routevar.Repo + routevar.RepoRevSuffix + "/stream/{Path:.*}").Methods("GET").Handler(handleStreamBlame(logger, db, gitserver.NewClient("http.blamestream")))
+	m.Path("/blame/" + routevar.Repo + routevar.RepoRevSuffix + "/-/stream/{Path:.*}").Methods("GET").Handler(handleStreamBlame(logger, db, gitserver.NewClient("http.blamestream")))
 	// Set up the src-cli version cache handler (this will effectively be a
 	// no-op anywhere other than dot-com).
 	m.Path("/src-cli/versions/{rest:.*}").Methods("GET", "POST").Handler(releasecache.NewHandler(logger))

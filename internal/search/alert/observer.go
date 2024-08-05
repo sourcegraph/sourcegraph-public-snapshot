@@ -218,13 +218,6 @@ func (o *Observer) Done() (*search.Alert, error) {
 	return o.alert, o.err
 }
 
-type alertKind string
-
-const (
-	smartSearchAdditionalResults alertKind = "smart-search-additional-results"
-	smartSearchPureResults       alertKind = "smart-search-pure-results"
-)
-
 func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, error) {
 	if err == nil {
 		return nil, nil
@@ -238,7 +231,6 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	var (
 		mErr *searchrepos.MissingRepoRevsError
 		oErr *errOverRepoLimit
-		lErr *ErrLuckyQueries
 	)
 
 	if errors.HasType[authz.ErrStalePermissions](err) {
@@ -269,24 +261,6 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		a := AlertForMissingRepoRevs(mErr.Missing)
 		a.Priority = 6
 		return a, nil
-	}
-
-	if errors.As(err, &lErr) {
-		title := "Also showing additional results"
-		description := "We returned all the results for your query. We also added results for similar queries that might interest you."
-		kind := string(smartSearchAdditionalResults)
-		if lErr.Type == LuckyAlertPure {
-			title = "No results for original query. Showing related results instead"
-			description = "The original query returned no results. Below are results for similar queries that might interest you."
-			kind = string(smartSearchPureResults)
-		}
-		return &search.Alert{
-			PrometheusType:  "smart_search_notice",
-			Title:           title,
-			Kind:            kind,
-			Description:     description,
-			ProposedQueries: lErr.ProposedQueries,
-		}, nil
 	}
 
 	if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
@@ -349,22 +323,6 @@ type errOverRepoLimit struct {
 
 func (e *errOverRepoLimit) Error() string {
 	return "Too many matching repositories"
-}
-
-type LuckyAlertType int
-
-const (
-	LuckyAlertAdded LuckyAlertType = iota
-	LuckyAlertPure
-)
-
-type ErrLuckyQueries struct {
-	Type            LuckyAlertType
-	ProposedQueries []*search.QueryDescription
-}
-
-func (e *ErrLuckyQueries) Error() string {
-	return "Showing results for lucky search"
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err

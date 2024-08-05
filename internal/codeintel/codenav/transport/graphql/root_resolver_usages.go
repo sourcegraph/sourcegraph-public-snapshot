@@ -179,8 +179,8 @@ func (u *usageResolver) DataSource() *string {
 	panic("implement me")
 }
 
-func (u *usageResolver) UsageRange(ctx context.Context) (resolverstubs.UsageRangeResolver, error) {
-	return u.usageRange, nil
+func (u *usageResolver) UsageRange(ctx context.Context) resolverstubs.UsageRangeResolver {
+	return u.usageRange
 }
 
 func (u *usageResolver) SurroundingContent(ctx context.Context) string {

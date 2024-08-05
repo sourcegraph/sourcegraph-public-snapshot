@@ -10,7 +10,6 @@ import {
 import { type BlameHunkData, fetchBlameHunksMemoized } from '@sourcegraph/web/src/repo/blame/shared'
 import type { CodeGraphData } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/occurrences'
 
-import { SourcegraphURL } from '$lib/common'
 import { getGraphQLClient, mapOrThrow, type GraphQLClient } from '$lib/graphql'
 import { SymbolRole as GraphQLSymbolRole } from '$lib/graphql-types'
 import { resolveRevision } from '$lib/repo/utils'
@@ -142,7 +141,6 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
     const client = getGraphQLClient()
     const revisionOverride = url.searchParams.get('rev')
     const isBlame = url.searchParams.get('view') === 'blame'
-    const lineOrPosition = SourcegraphURL.from(url).lineRange
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
     const resolvedRevision = revisionOverride ? Promise.resolve(revisionOverride) : resolveRevision(parent, revision)
     const filePath = decodeURIComponent(params.path)
@@ -173,7 +171,6 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
         enableInlineDiff: true,
         enableViewAtCommit: true,
         graphQLClient: client,
-        lineOrPosition,
         filePath,
         blob: resolvedRevision
             .then(resolvedRevision =>
@@ -195,11 +192,7 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
             )
             .then(mapOrThrow(result => result.data?.repository?.commit?.blob?.highlight ?? null)),
         codeGraphData: resolvedRevision.then(async resolvedRevision => {
-            if ((await parent()).settings.experimentalFeatures?.enablePreciseOccurrences ?? false) {
-                return fetchCodeGraphData(client, repoName, resolvedRevision, filePath)
-            } else {
-                return []
-            }
+            return fetchCodeGraphData(client, repoName, resolvedRevision, filePath)
         }),
         // We can ignore the error because if the revision doesn't exist, other queries will fail as well
         revisionOverride: revisionOverride

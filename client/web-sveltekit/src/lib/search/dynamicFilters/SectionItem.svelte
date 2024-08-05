@@ -32,7 +32,7 @@
 
 <style lang="scss">
     a {
-        --icon-color: currentColor;
+        --icon-color: var(--text-body);
 
         display: flex;
         width: 100%;
@@ -68,6 +68,7 @@
             // Explicitly override icon color to ensure that icons with custom colors
             // are visible on the primary background
             --file-icon-color: currentColor;
+            --icon-color: currentColor;
 
             background-color: var(--primary);
             color: var(--light-text);

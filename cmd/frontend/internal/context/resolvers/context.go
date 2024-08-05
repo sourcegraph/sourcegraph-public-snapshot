@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/grafana/regexp"
+	"github.com/k3a/html2text"
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
@@ -425,6 +427,74 @@ func (r *Resolver) fetchZoekt(ctx context.Context, query string, repo *types.Rep
 		})
 	}
 	return res, partialErrors, nil
+}
+
+var titleRegexp = regexp.MustCompile(`<title>([^<]+)</title>`)
+
+const urlContextReadLimit = 5 * 1024 * 1024
+const urlContextOutputLimit = 14000
+
+type urlMentionContextResponse struct {
+	title   *string
+	content string
+}
+
+func (u *urlMentionContextResponse) Title() *string {
+	return u.title
+}
+
+func (u *urlMentionContextResponse) Content() string {
+	return u.content
+}
+
+func (r *Resolver) UrlMentionContext(ctx context.Context, args graphqlbackend.UrlMentionContextArgs) (graphqlbackend.UrlMentionContextResolver, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", args.Url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: This endpoint allows API users to create GET requests against arbitrary URLs.
+	// To mitigate risk of SSRF, we use an the ExternalClient, which denies requests to internal targets.
+	resp, err := httpcli.UncachedExternalClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, errors.Errorf("request failed with status %d", resp.StatusCode)
+	}
+
+	// 🚨 SECURITY: Limit the amount of data we will read into memory.
+	content, err := io.ReadAll(io.LimitReader(resp.Body, urlContextReadLimit))
+	if err != nil {
+		return nil, err
+	}
+
+	// Attempt to extract the title
+	var title *string
+	if match := titleRegexp.FindSubmatch(content); match != nil {
+		title = pointers.Ptr(string(match[1]))
+	}
+
+	// Trim to main if it exists since that's a decent signal pointing to the important part of the page.
+	if idx := bytes.Index(content, []byte("<main")); idx > 0 {
+		content = content[idx:]
+	}
+	if idx := bytes.Index(content, []byte("</main>")); idx > 0 {
+		content = content[:idx+len("</main>")]
+	}
+
+	// Convert the HTML to text to make the ouptut higher density. The output
+	// is still pretty crude, but it does enough to capture the description and
+	// most comments from a github PR. There is significant room to improve
+	// content extraction here.
+	textified := html2text.HTML2TextWithOptions(string(content), html2text.WithUnixLineBreaks())
+	textified = textified[:min(len(textified), urlContextOutputLimit)]
+	return &urlMentionContextResponse{
+		title:   title,
+		content: textified,
+	}, nil
 }
 
 // countLines finds the number of lines corresponding to the number of runes. We 'round down'
