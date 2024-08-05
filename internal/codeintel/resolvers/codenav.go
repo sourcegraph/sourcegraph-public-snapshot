@@ -260,17 +260,14 @@ type OccurrencesArgs struct {
 
 // Normalize returns a normalized copy of args.
 func (args *OccurrencesArgs) Normalize(maxPageSize int32) *OccurrencesArgs {
-	out := &OccurrencesArgs{}
+	var out OccurrencesArgs
 	if args != nil {
-		// Trying to simplify this to &(*args) triggers a lint:
-		// https://staticcheck.dev/docs/checks/#SA4001
-		tmp := *args
-		out = &tmp
+		out = *args
 	}
 	if out.First == nil || *out.First > maxPageSize {
 		out.First = &maxPageSize
 	}
-	return out
+	return &out
 }
 
 type SCIPOccurrenceConnectionResolver interface {
