@@ -85,6 +85,9 @@ const typeDefs = glob
 
 class Sourcegraph {
     private debugMode = false
+    private dotcomModeEnabled = false
+    private signedIn = false
+
     constructor(private readonly page: Page, private readonly graphqlMock: GraphQLMockServer) {}
 
     async setup(): Promise<void> {
@@ -236,16 +239,18 @@ class Sourcegraph {
 
     public setWindowContext(context: Partial<Window['context']>): Promise<void> {
         return this.page.addInitScript(context => {
+            // @ts-expect-error - Unclear how to type this correctly
             if (!window.context) {
                 // @ts-expect-error - Unclear how to type this correctly
-                window.playwriteContext = {}
+                window.context = {}
             }
             // @ts-expect-error - Unclear how to type this correctly
-            Object.assign(window.playwriteContext, context)
+            Object.assign(window.context, context)
         }, context)
     }
 
     public signIn(userMock: UserMock = {}): void {
+        this.signedIn = true
         this.mockTypes({
             Query: () => ({
                 currentUser: {
@@ -254,21 +259,40 @@ class Sourcegraph {
                 },
             }),
         })
+
+        if (this.dotcomModeEnabled) {
+            this.setWindowContext({
+                codyEnabledForCurrentUser: true,
+            })
+        }
     }
 
     public signOut(): void {
+        this.signedIn = false
         this.mockTypes({
             Query: () => ({
                 currentUser: null,
             }),
         })
+
+        if (this.dotcomModeEnabled) {
+            this.setWindowContext({
+                codyEnabledForCurrentUser: false,
+            })
+        }
     }
 
     /**
      * Mock the current window context to be in "dotcom mode" (sourcegraph.com).
      */
     public dotcomMode(): void {
-        this.setWindowContext({ sourcegraphDotComMode: true })
+        this.dotcomModeEnabled = true
+        this.setWindowContext({
+            sourcegraphDotComMode: true,
+            // These are enabled by default on sourcegraph.com
+            codyEnabledOnInstance: true,
+            codyEnabledForCurrentUser: this.signedIn,
+        })
     }
 
     public teardown(): void {

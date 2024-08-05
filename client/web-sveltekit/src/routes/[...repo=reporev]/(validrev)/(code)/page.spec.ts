@@ -329,12 +329,9 @@ test.describe('cody sidebar', () => {
             sg.dotcomMode()
         })
 
-        test('enabled when signed out', async ({ page, sg }) => {
+        test('disabled when signed out', async ({ page, sg }) => {
             await page.goto(path)
-            await hasCody(page)
-            await expect(
-                page.getByText('Cody is only available to signed-in users. Sign in to use Cody.')
-            ).toBeVisible()
+            await doesNotHaveCody(page)
         })
 
         test('enabled when signed in', async ({ page, sg }) => {

@@ -15,16 +15,15 @@
             // The window.context object extracted from the origin server is injected here.
             // Needs to be kept in sync with the vite-sg-proxy.ts plugin
             // ---window.context---
+
             window.context = Object.assign(
                 {},
-                // Injected window.context if available
+                // Injected window.context (via proxy or playwright) if available
                 window.context,
                 // Dev specific overwrites
                 {
                     sentryDNS: undefined,
                 },
-                // Playwright specific overwrites if available
-                typeof playwrightContext === 'object' ? playwrightContext : {}
             )
             window.pageError = undefined
         </script>
