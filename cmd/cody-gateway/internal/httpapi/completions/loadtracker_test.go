@@ -207,7 +207,7 @@ func TestModelCircuitBreaker(t *testing.T) {
 					{statusCode: http.StatusGatewayTimeout, timestamp: now.Add(-50 * time.Second)},
 					{statusCode: http.StatusGatewayTimeout, timestamp: now},
 				},
-				want: 0.5,
+				want: 0.75,
 			},
 			{
 				records: []record{
