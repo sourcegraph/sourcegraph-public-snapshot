@@ -481,7 +481,7 @@ func searchBasedUsagesImpl(
 	symbolName string,
 	language string,
 	syntacticIndex core.Option[MappedIndex],
-) (matches []SearchBasedMatch, err error) {
+) (_ SearchBasedUsagesResult, err error) {
 	var matchResults struct {
 		searchResult candidateOccurrenceResult
 		err          error
@@ -518,7 +518,7 @@ func searchBasedUsagesImpl(
 	})
 	wg.Wait()
 	if matchResults.err != nil {
-		return nil, matchResults.err
+		return SearchBasedUsagesResult{}, matchResults.err
 	}
 	if symbolResults.err != nil {
 		trace.Warn("Failed to run symbol search, will not mark any search-based usages as definitions", log.Error(symbolResults.err))
@@ -570,7 +570,10 @@ func searchBasedUsagesImpl(
 		// cursor = appendCursor(args.Cursor, searchedFiles)
 	}
 	_ = searchedFiles
-	return finalMatches, nil
+	return SearchBasedUsagesResult{
+		Matches:    finalMatches,
+		NextCursor: core.None[UsagesCursor](),
+	}, nil
 }
 
 func applyLimit[T any](limit int32, fileMatchess [][]fileMatches[T]) ([]T, []core.RepoRelPath) {
