@@ -37,13 +37,12 @@ const SYNTACTIC_USAGES_DOCUMENTS_CHUNK_SIZE = 20
 
 type candidateMatch struct {
 	range_             scip.Range
-	surroundindContent string
+	surroundingContent string
 }
 
 type candidateFile struct {
-	path                core.RepoRelPath
-	matches             []candidateMatch // Guaranteed to be sorted by range
-	didSearchEntireFile bool             // Or did we hit the search count limit?
+	path    core.RepoRelPath
+	matches []candidateMatch // Guaranteed to be sorted by range
 }
 
 type searchArgs struct {
@@ -63,6 +62,11 @@ func lineForRange(match result.ChunkMatch, range_ result.Range) string {
 	return lines[index]
 }
 
+type candidateOccurrenceResult struct {
+	candidateFiles []candidateFile
+	limitHit       bool
+}
+
 // findCandidateOccurrencesViaSearch calls out to Searcher/Zoekt to find candidate occurrences of the given symbol.
 // It returns a map of file paths to candidate ranges.
 func findCandidateOccurrencesViaSearch(
@@ -70,20 +74,21 @@ func findCandidateOccurrencesViaSearch(
 	trace observation.TraceLogger,
 	client searchclient.SearchClient,
 	args searchArgs,
-) ([]candidateFile, error) {
+) (candidateOccurrenceResult, error) {
 	if args.identifier == "" {
-		return []candidateFile{}, nil
+		return candidateOccurrenceResult{}, nil
 	}
 	resultMap := *orderedmap.New[core.RepoRelPath, candidateFile]()
 	searchResults, err := executeQuery(ctx, client, trace, args, "file", 0)
 	if err != nil {
-		return []candidateFile{}, err
+		return candidateOccurrenceResult{}, err
 	}
 
 	nonFileMatches := 0
 	inconsistentFilepaths := 0
 	duplicatedFilepaths := collections.NewSet[string]()
 	matchCount := 0
+	limitHit := false
 	for _, streamResult := range searchResults {
 		fileMatch, ok := streamResult.(*result.FileMatch)
 		if !ok {
@@ -93,6 +98,7 @@ func findCandidateOccurrencesViaSearch(
 		// Pagination for search-based usages works at file granularity,
 		// so don't consider partially searched files.
 		if fileMatch.LimitHit {
+			limitHit = true
 			continue
 		}
 		path := fileMatch.Path
@@ -114,7 +120,7 @@ func findCandidateOccurrencesViaSearch(
 				matchCount += 1
 				matches = append(matches, candidateMatch{
 					range_:             scipRange,
-					surroundindContent: lineForRange(chunkMatch, matchRange),
+					surroundingContent: lineForRange(chunkMatch, matchRange),
 				})
 			}
 		}
@@ -124,9 +130,8 @@ func findCandidateOccurrencesViaSearch(
 		// OK to use Unchecked method here as search API only returns repo-root relative paths
 		relPath := core.NewRepoRelPathUnchecked(path)
 		_, alreadyPresent := resultMap.Set(relPath, candidateFile{
-			matches:             matches,
-			path:                relPath,
-			didSearchEntireFile: !fileMatch.LimitHit,
+			matches: matches,
+			path:    relPath,
 		})
 		if alreadyPresent {
 			duplicatedFilepaths.Add(path)
@@ -148,7 +153,14 @@ func findCandidateOccurrencesViaSearch(
 	for pair := resultMap.Oldest(); pair != nil; pair = pair.Next() {
 		results = append(results, pair.Value)
 	}
-	return results, nil
+	// FIXME: Edge case where limitHit is true but candidateFiles is empty => means we get more than limit matches in the same file.
+	// This will cause the cursor to get stuck, as we can't make progress. Potential "fix" would be to return the incomplete
+	// list of matches for that file (accepting that we'd be missing matches past the limit for that file).
+	// This would end up adding the problematic file to the cursor, meaning it would be skipped on the next page.
+	return candidateOccurrenceResult{
+		candidateFiles: results,
+		limitHit:       limitHit || matchCount >= int(args.countLimit),
+	}, nil
 }
 
 type symbolData struct {
@@ -347,7 +359,7 @@ func findSyntacticMatchesForCandidateFile(
 				syntacticMatches = append(syntacticMatches, SyntacticMatch{
 					Path:               filePath,
 					Range:              candidateMatch.range_,
-					SurroundingContent: candidateMatch.surroundindContent,
+					SurroundingContent: candidateMatch.surroundingContent,
 					Symbol:             occ.Symbol,
 					IsDefinition:       scip.SymbolRole_Definition.Matches(occ),
 				})
@@ -357,7 +369,7 @@ func findSyntacticMatchesForCandidateFile(
 			searchBasedMatches = append(searchBasedMatches, SearchBasedMatch{
 				Path:               filePath,
 				Range:              candidateMatch.range_,
-				SurroundingContent: candidateMatch.surroundindContent,
+				SurroundingContent: candidateMatch.surroundingContent,
 				IsDefinition:       false,
 			})
 		}
@@ -409,7 +421,7 @@ func syntacticUsagesImpl(
 		// TODO: Assumes at least every third match is a search-based one
 		countLimit: args.Limit * 3,
 	}
-	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
+	searchResult, searchErr := findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
 	if searchErr != nil {
 		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
@@ -417,7 +429,7 @@ func syntacticUsagesImpl(
 		}
 	}
 
-	tasks, _ := genslices.ChunkEvery(candidateMatches, SYNTACTIC_USAGES_DOCUMENTS_CHUNK_SIZE)
+	tasks, _ := genslices.ChunkEvery(searchResult.candidateFiles, SYNTACTIC_USAGES_DOCUMENTS_CHUNK_SIZE)
 	results, err := conciter.MapErr(tasks, func(files *[]candidateFile) ([]fileMatches[SyntacticMatch], error) {
 		paths := genslices.Map(*files, func(f candidateFile) core.RepoRelPath {
 			return f.path
@@ -445,8 +457,13 @@ func syntacticUsagesImpl(
 		}
 	}
 	finalMatches, searchedFiles := applyLimit(args.Limit, results)
-	// TODO: Detect if we're done => transition to searchbased cursor || add searchedFiles to cursor
-	_ = searchedFiles
+	if !searchResult.limitHit && len(searchedFiles) == len(results) {
+		// We're done!
+		// cursor = mkSearchBasedCursor()
+	} else {
+		_ = searchedFiles
+		// cursor = appendCursor(args.Cursor, searchedFiles)
+	}
 	return SyntacticUsagesResult{Matches: finalMatches}, PreviousSyntacticSearch{
 		MappedIndex: mappedIndex,
 		SymbolName:  symbolName,
@@ -466,8 +483,8 @@ func searchBasedUsagesImpl(
 	syntacticIndex core.Option[MappedIndex],
 ) (matches []SearchBasedMatch, err error) {
 	var matchResults struct {
-		candidateMatches []candidateFile
-		err              error
+		searchResult candidateOccurrenceResult
+		err          error
 	}
 	var symbolResults struct {
 		candidateSymbols symbolSearchResult
@@ -492,7 +509,7 @@ func searchBasedUsagesImpl(
 			searchLimit = args.Limit
 		}
 		searchCoords := mkSearchArgs(searchLimit)
-		matchResults.candidateMatches, matchResults.err = findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
+		matchResults.searchResult, matchResults.err = findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
 	})
 	wg.Go(func() {
 		// NOTE: Same hard-coded 50 the web app used to use
@@ -506,10 +523,10 @@ func searchBasedUsagesImpl(
 	if symbolResults.err != nil {
 		trace.Warn("Failed to run symbol search, will not mark any search-based usages as definitions", log.Error(symbolResults.err))
 	}
-	candidateMatches := matchResults.candidateMatches
+	searchResult := matchResults.searchResult
 	candidateSymbols := symbolResults.candidateSymbols
 
-	tasks, _ := genslices.ChunkEvery(candidateMatches, SYNTACTIC_USAGES_DOCUMENTS_CHUNK_SIZE)
+	tasks, _ := genslices.ChunkEvery(searchResult.candidateFiles, SYNTACTIC_USAGES_DOCUMENTS_CHUNK_SIZE)
 	results := conciter.Map(tasks, func(files *[]candidateFile) []fileMatches[SearchBasedMatch] {
 		documents := map[core.RepoRelPath]MappedDocument{}
 		if mappedIndex, ok := syntacticIndex.Get(); ok {
@@ -531,7 +548,7 @@ func searchBasedUsagesImpl(
 					searchBasedMatches = append(searchBasedMatches, SearchBasedMatch{
 						Path:               file.path,
 						Range:              match.range_,
-						SurroundingContent: match.surroundindContent,
+						SurroundingContent: match.surroundingContent,
 						IsDefinition:       candidateSymbols.Contains(file.path, match.range_),
 					})
 				}
@@ -545,7 +562,13 @@ func searchBasedUsagesImpl(
 	})
 
 	finalMatches, searchedFiles := applyLimit(args.Limit, results)
-	// TODO: Detect if we're done => no cursor || add searchedFiles to cursor
+	if !searchResult.limitHit && len(searchedFiles) == len(results) {
+		// We're done!
+		// cursor = None
+	} else {
+		_ = searchedFiles
+		// cursor = appendCursor(args.Cursor, searchedFiles)
+	}
 	_ = searchedFiles
 	return finalMatches, nil
 }
