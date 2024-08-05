@@ -456,15 +456,19 @@ func syntacticUsagesImpl(
 			UnderlyingError: err,
 		}
 	}
+	nextCursor := core.None[UsagesCursor]()
 	finalMatches, searchedFiles := applyLimit(args.Limit, results)
-	if !searchResult.limitHit && len(searchedFiles) == len(results) {
-		// We're done!
-		// cursor = mkSearchBasedCursor()
-	} else {
-		_ = searchedFiles
-		// cursor = appendCursor(args.Cursor, searchedFiles)
+	if searchResult.limitHit || len(searchedFiles) != len(results) {
+		seenFiles := args.Cursor.SyntacticCursor.SeenFiles
+		for _, file := range searchedFiles {
+			seenFiles = append(seenFiles, file.RawValue())
+		}
+		nextCursor = core.Some(UsagesCursor{
+			CursorType:      CursorTypeSyntactic,
+			SyntacticCursor: SyntacticCursor{SeenFiles: seenFiles},
+		})
 	}
-	return SyntacticUsagesResult{Matches: finalMatches}, PreviousSyntacticSearch{
+	return SyntacticUsagesResult{Matches: finalMatches, NextCursor: nextCursor}, PreviousSyntacticSearch{
 		MappedIndex: mappedIndex,
 		SymbolName:  symbolName,
 		Language:    language,
@@ -561,18 +565,21 @@ func searchBasedUsagesImpl(
 		return results
 	})
 
+	nextCursor := core.None[UsagesCursor]()
 	finalMatches, searchedFiles := applyLimit(args.Limit, results)
-	if !searchResult.limitHit && len(searchedFiles) == len(results) {
-		// We're done!
-		// cursor = None
-	} else {
-		_ = searchedFiles
-		// cursor = appendCursor(args.Cursor, searchedFiles)
+	if searchResult.limitHit || len(searchedFiles) != len(results) {
+		seenFiles := args.Cursor.SyntacticCursor.SeenFiles
+		for _, file := range searchedFiles {
+			seenFiles = append(seenFiles, file.RawValue())
+		}
+		nextCursor = core.Some(UsagesCursor{
+			CursorType:      CursorTypeSearchBased,
+			SyntacticCursor: SyntacticCursor{SeenFiles: seenFiles},
+		})
 	}
-	_ = searchedFiles
 	return SearchBasedUsagesResult{
 		Matches:    finalMatches,
-		NextCursor: core.None[UsagesCursor](),
+		NextCursor: nextCursor,
 	}, nil
 }
 
