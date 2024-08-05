@@ -8,13 +8,16 @@ export PATH
 
 cd "${BUILD_WORKSPACE_DIRECTORY}"
 
+bazelArgs=("--bazelrc=.bazelrc")
+
+if [ "${CI:-}" ]; then
+  bazelArgs+=("--bazelrc=.aspect/bazelrc/ci.bazelrc")
+  bazelArgs+=("--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc")
+fi
+
 # TO enable us access the error message / warning returned by gazelle, we trap stderr in a variable
 # so we can check for glob warnings and report accordingly.
-stderr_output=$(bazel \
-    --bazelrc=.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
-    run //:gazelle 2>&1 >/dev/null)
+stderr_output=$(bazel "${bazelArgs[@]}" run //:gazelle 2>&1 >/dev/null)
 
 # If the messages output to stderr includes `could not merge expression`, then it means gazelle
 # encountered an issue while reading a glob expression. We surface that to the user so they can
