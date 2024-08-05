@@ -1,0 +1,53 @@
+package tenant
+
+// func TestActorPropagator(t *testing.T) {
+// 	t.Run("no actor", func(t *testing.T) {
+// 		ap := ActorPropagator{}
+// 		md := ap.FromContext(context.Background())
+// 		ctx := ap.InjectContext(context.Background(), md)
+// 		actor := FromContext(ctx)
+// 		require.False(t, actor.IsAuthenticated())
+// 	})
+
+// 	t.Run("internal actor", func(t *testing.T) {
+// 		ap := ActorPropagator{}
+// 		ctx1 := WithInternalActor(context.Background())
+// 		md := ap.FromContext(ctx1)
+// 		ctx2 := ap.InjectContext(context.Background(), md)
+// 		actor := FromContext(ctx2)
+// 		require.True(t, actor.IsInternal())
+// 	})
+
+// 	t.Run("user actor", func(t *testing.T) {
+// 		ap := ActorPropagator{}
+// 		ctx1 := WithActor(context.Background(), FromUser(16))
+// 		md := ap.FromContext(ctx1)
+// 		ctx2 := ap.InjectContext(context.Background(), md)
+// 		actor := FromContext(ctx2)
+// 		require.True(t, actor.IsAuthenticated())
+// 		require.Equal(t, int32(16), actor.UID)
+// 	})
+
+// 	t.Run("anonymous user actor", func(t *testing.T) {
+// 		ap := ActorPropagator{}
+// 		ctx1 := WithActor(context.Background(), FromAnonymousUser("anon123"))
+// 		md := ap.FromContext(ctx1)
+// 		ctx2 := ap.InjectContext(context.Background(), md)
+// 		actor := FromContext(ctx2)
+// 		require.Equal(t, "anon123", actor.AnonymousUID)
+// 	})
+
+// 	t.Run("user actor with anonymous UID", func(t *testing.T) {
+// 		originalActor := FromUser(16)
+// 		originalActor.AnonymousUID = "foobar"
+// 		ctx1 := WithActor(context.Background(), originalActor)
+
+// 		ap := ActorPropagator{}
+// 		md := ap.FromContext(ctx1)
+// 		ctx2 := ap.InjectContext(context.Background(), md)
+// 		actor := FromContext(ctx2)
+// 		require.True(t, actor.IsAuthenticated())
+// 		require.Equal(t, "foobar", actor.AnonymousUID)
+// 		require.Equal(t, int32(16), actor.UID)
+// 	})
+// }
