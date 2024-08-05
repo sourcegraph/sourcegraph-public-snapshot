@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/webhooks"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	authzproviders "github.com/sourcegraph/sourcegraph/internal/authz/providers"
