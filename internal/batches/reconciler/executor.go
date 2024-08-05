@@ -232,8 +232,11 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 	}
 
 	if triggerUpdateWebhook && err == nil {
-		afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdate) }
+		afterDone = func(store *store.Store) {
+			e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdate)
+		}
 	}
+	e.ch.Pushed = true
 	return afterDone, err
 }
 

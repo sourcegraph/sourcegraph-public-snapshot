@@ -193,7 +193,9 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, currentChang
 		calc := calculatePublicationState(currentSpec.Published, wantedChangeset.UiPublicationState)
 		if calc.IsPublished() {
 			pl.SetOp(btypes.ReconcilerOperationPublish)
-			pl.AddOp(btypes.ReconcilerOperationPush)
+			if !currentSpec.Pushed && !wantedChangeset.Pushed {
+				pl.AddOp(btypes.ReconcilerOperationPush)
+			}
 		} else if calc.IsDraft() && wantedChangeset.SupportsDraft() {
 			// If configured to be opened as draft, and the changeset supports
 			// draft mode, publish as draft. Otherwise, take no action.

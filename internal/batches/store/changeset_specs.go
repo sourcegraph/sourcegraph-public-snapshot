@@ -45,6 +45,7 @@ var changesetSpecInsertColumns = []string{
 	"commit_author_name",
 	"commit_author_email",
 	"type",
+	"pushed",
 }
 
 // changesetSpecColumns are used by the changeset spec related Store methods to
@@ -72,6 +73,7 @@ var changesetSpecColumns = SQLColumns{
 	"changeset_specs.commit_author_name",
 	"changeset_specs.commit_author_email",
 	"changeset_specs.type",
+	"changeset_specs.pushed",
 }
 
 var oneGigabyte = 1000000000
@@ -137,6 +139,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				dbutil.NewNullString(c.CommitAuthorName),
 				dbutil.NewNullString(c.CommitAuthorEmail),
 				c.Type,
+				c.Pushed,
 			); err != nil {
 				return err
 			}
@@ -563,6 +566,7 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 		&dbutil.NullString{S: &c.CommitAuthorName},
 		&dbutil.NullString{S: &c.CommitAuthorEmail},
 		&typ,
+		&c.Pushed,
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset spec")

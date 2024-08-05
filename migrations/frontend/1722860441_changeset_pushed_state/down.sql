@@ -1,0 +1,2 @@
+ALTER TABLE changeset_specs DROP COLUMN IF EXISTS pushed;
+ALTER TABLE changesets DROP COLUMN IF EXISTS pushed;

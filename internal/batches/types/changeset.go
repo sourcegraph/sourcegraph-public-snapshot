@@ -313,6 +313,8 @@ type Changeset struct {
 
 	// DetachedAt is the time when the changeset became "detached".
 	DetachedAt time.Time
+
+	Pushed bool
 }
 
 // RecordID is needed to implement the workerutil.Record interface.

@@ -216,7 +216,8 @@ func buildCreatePullRequestInput(c *Changeset) (*github.CreatePullRequestInput, 
 
 func (s GitHubSource) createChangeset(ctx context.Context, c *Changeset, prInput *github.CreatePullRequestInput) (bool, error) {
 	var exists bool
-	pr, err := s.client.CreatePullRequest(ctx, prInput)
+	pr, err := s.client.CreatePullRequest(ctx, prInput) // we waited here for more than 20 seconds and it still failed
+
 	if err != nil {
 		if err != github.ErrPullRequestAlreadyExists {
 			// There is a creation limit (undocumented) in GitHub. When reached, GitHub provides an unclear error

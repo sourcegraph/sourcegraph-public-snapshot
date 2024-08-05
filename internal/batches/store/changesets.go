@@ -123,6 +123,7 @@ var ChangesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.syncer_error"),
 	sqlf.Sprintf("changesets.detached_at"),
 	sqlf.Sprintf("changesets.previous_failure_message"),
+	sqlf.Sprintf("changesets.pushed"),
 }
 
 // changesetInsertColumns is the list of changeset columns that are modified in
@@ -167,6 +168,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	// indexable for searching.
 	sqlf.Sprintf("external_title"),
 	sqlf.Sprintf("previous_failure_message"),
+	sqlf.Sprintf("pushed"),
 }
 
 // changesetCodeHostStateInsertColumns are the columns that Store.UpdateChangesetCodeHostState uses to update a changeset
@@ -230,6 +232,7 @@ var changesetInsertStringColumns = []string{
 	"syncer_error",
 	"external_title",
 	"previous_failure_message",
+	"pushed",
 }
 
 // temporaryChangesetInsertColumns is the list of column names used by Store.UpdateChangesetsForApply to insert into
@@ -337,6 +340,7 @@ func (s *Store) CreateChangeset(ctx context.Context, cs ...*btypes.Changeset) (e
 				c.SyncErrorMessage,
 				dbutil.NullStringColumn(title),
 				c.PreviousFailureMessage,
+				c.Pushed,
 			); err != nil {
 				return err
 			}

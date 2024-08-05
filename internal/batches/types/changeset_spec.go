@@ -110,6 +110,7 @@ type ChangesetSpec struct {
 	Title             string
 	Body              string
 	Published         batcheslib.PublishedValue
+	Pushed            bool
 	Diff              []byte
 	CommitMessage     string
 	CommitAuthorName  string
