@@ -2,18 +2,21 @@
     import { allHotkey } from '$lib/fuzzyfinder/keys'
     import Icon from '$lib/Icon.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
+    import { temporarySetting } from '$lib/temporarySettings'
     import { isLightTheme } from '$lib/theme'
     import Button from '$lib/wildcard/Button.svelte'
     import ProductStatusBadge from '$lib/wildcard/ProductStatusBadge.svelte'
 
-    import WelcomeOverlayScreenshotDark from './WelcomeOverlayScreenshotDark.svelte'
-    import WelcomeOverlayScreenshotLight from './WelcomeOverlayScreenshotLight.svelte'
-
-    export let show: boolean
-    export let handleDismiss: () => void
-
     let dialog: HTMLDialogElement | undefined
     let inner: HTMLDivElement | undefined
+
+    $: activated = temporarySetting('webNext.welcomeOverlay.show', false)
+    $: dismissed = temporarySetting('webNext.welcomeOverlay.dismissed', false)
+    $: show = !$activated.loading && $activated.data && !$dismissed.loading && !$dismissed.data
+
+    function handleDismiss() {
+        dismissed.setValue(true)
+    }
     function handleClickOutside(event: MouseEvent) {
         // Use an inner div because the whole backdrop registers as part of the dialog
         if (inner && !inner.contains(event.target as Node)) {
@@ -70,11 +73,7 @@
                 </p>
             </div>
         </div>
-        {#if $isLightTheme}
-            <WelcomeOverlayScreenshotLight />
-        {:else}
-            <WelcomeOverlayScreenshotDark />
-        {/if}
+        <img src={`/.assets/img/welcome-overlay-screenshot-${$isLightTheme ? 'light' : 'dark'}.svg`} />
 
         <Button variant="icon" aria-label="Close welcome overlay" on:click={() => handleDismiss()}>
             <Icon icon={ILucideX} aria-hidden="true" />
@@ -118,7 +117,7 @@
     }
 
     .inner {
-        > :global(svg) {
+        > :global(img) {
             position: absolute;
             right: 0;
             bottom: 0;

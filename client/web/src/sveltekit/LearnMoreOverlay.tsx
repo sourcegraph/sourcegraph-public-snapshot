@@ -1,19 +1,37 @@
-import { FC, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 
 import { mdiFilePlusOutline, mdiGraphOutline, mdiMagnifyScan, mdiClose } from '@mdi/js'
 import { BrandLogo } from 'src/components/branding/BrandLogo'
 
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Icon, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import styles from './LearnMoreOverlay.module.scss'
 
-export const LearnMoreOverlay: FC<{}> = ({ }) => {
-    const dialogRef = useRef<HTMLDialogElement | null>(null)
+export const LearnMoreOverlay = forwardRef<_, { handleEnable: () => void }>(({ handleEnable }, forwardedRef) => {
     const innerRef = useRef<HTMLDivElement | null>(null)
+    const dialogRef = useRef<HTMLDialogElement | null>(null)
+
+    const isLightTheme = useIsLightTheme()
+
+    const show = () => dialogRef.current?.showModal()
+    const hide = () => dialogRef.current?.close()
+
+    useImperativeHandle(forwardedRef, () => ({ show, hide }))
+
+    const handleClickOutside = (event: MouseEvent) => {
+        // Use an inner div because the whole backdrop registers as part of the dialog
+        if (innerRef.current && !innerRef.current.contains(event.target as Node)) {
+            hide()
+        }
+    }
 
     useEffect(() => {
-        dialogRef.current?.showModal()
-    }, [dialogRef, innerRef])
+        document.body.addEventListener('mousedown', handleClickOutside)
+        return () => {
+            document.body.removeEventListener('mousedown', handleClickOutside)
+        }
+    })
 
     return (
         <dialog ref={dialogRef} className={styles.dialog}>
@@ -55,10 +73,10 @@ export const LearnMoreOverlay: FC<{}> = ({ }) => {
                     </div>
                     <div className={styles.cta}>
                         <div>
-                            <Button variant="primary" onClick={() => handleDismiss()}>
+                            <Button variant="primary" onClick={handleEnable}>
                                 Enable
                             </Button>
-                            <Button variant="secondary" onClick={() => handleDismiss()}>
+                            <Button variant="secondary" onClick={hide}>
                                 No thanks
                             </Button>
                         </div>
@@ -69,19 +87,16 @@ export const LearnMoreOverlay: FC<{}> = ({ }) => {
                         </p>
                     </div>
                 </div>
-                {/*
 
-            {#if $isLightTheme}
-            <WelcomeOverlayScreenshotLight />
-            {:else}
-            <WelcomeOverlayScreenshotDark />
-            {/if}
-            */}
+                <img
+                    src={`/.assets/img/welcome-overlay-screenshot-${isLightTheme ? 'light' : 'dark'}.svg`}
+                    aria-hidden="true"
+                />
 
-                <Button variant="icon" aria-label="Close welcome overlay" onClick={() => handleDismiss()}>
+                <Button variant="icon" aria-label="Close welcome overlay" onClick={hide}>
                     <Icon svgPath={mdiClose} aria-hidden="true" />
                 </Button>
             </div>
         </dialog>
     )
-}
+})

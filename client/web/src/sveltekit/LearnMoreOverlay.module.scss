@@ -1,10 +1,15 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .dialog {
-    padding: 0;
-    width: 80vw;
-    border-radius: 0.75rem;
-    border: 1px solid var(--border-color);
+    position: absolute;
+    margin: 0 auto;
+    top: min(10vh, 10rem);
+    width: min(80vw, 100rem);
     padding: 2rem;
     overflow: hidden;
+
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
     background-color: var(--color-bg-1);
 
     box-shadow: var(--fuzzy-finder-shadow);
@@ -21,7 +26,7 @@
 
     container-type: inline-size;
 
-    @media (--mobile) {
+    @media (--xs-breakpoint-down) {
         border-radius: 0;
         border: none;
         position: fixed;
@@ -33,7 +38,7 @@
 }
 
 .inner {
-    > :global(svg) {
+    > :global(img) {
         position: absolute;
         right: 0;
         bottom: 0;
@@ -59,7 +64,7 @@
         --color-text-subtle: #a6b6d9;
     }
 
-    width: calc(100% - 350px);
+    width: calc(100% - 375px);
     @container (width < 975px) {
         width: 100%;
     }
@@ -95,6 +100,7 @@
         font-size: var(--font-size-large);
         font-weight: 500;
         color: var(--color-text-subtle);
+        text-wrap: wrap;
     }
 
     .features {
@@ -153,6 +159,7 @@
             font-size: var(--font-size-small);
             font-weight: 400;
             margin: 0;
+            text-wrap: wrap;
         }
     }
 }
