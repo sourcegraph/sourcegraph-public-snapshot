@@ -205,7 +205,6 @@ func symbolSearch(
 	if args.identifier == "" {
 		return symbolSearchResult{}, nil
 	}
-	// Using the same limit as the current web app
 	searchResults, err := executeQuery(ctx, client, trace, args, "symbol", 0)
 	if err != nil {
 		return symbolSearchResult{}, err
@@ -476,7 +475,7 @@ func syntacticUsagesImpl(
 		commit:     args.Commit,
 		identifier: symbolName,
 		language:   language,
-		// TODO: Assumes at least every third match is a search-based one
+		// TODO: Assumes at least every third match is a syntactic one
 		countLimit:   args.Limit * 3,
 		ignoredFiles: args.Cursor.SyntacticCursor.SeenFiles,
 	}
