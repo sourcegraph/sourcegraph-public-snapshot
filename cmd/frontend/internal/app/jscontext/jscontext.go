@@ -4,7 +4,6 @@ package jscontext
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"runtime"
 	"slices"
