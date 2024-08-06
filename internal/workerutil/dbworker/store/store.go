@@ -83,7 +83,17 @@ type Store[T workerutil.Record] interface {
 
 	// QueuedCount returns the number of queued and errored records. If includeProcessing
 	// is true it returns the number of queued _and_ processing records.
+	//
+	// If possible, prefer using Exists over this function.
 	QueuedCount(ctx context.Context, includeProcessing bool) (int, error)
+	// TODO: Change above API to also use a bitset like below for greater
+	// clarity at call-sites.
+
+	// Exists checks if there is at least one record in one of the given states
+	// in stateBitset.
+	//
+	// Pre-condition: stateBitset must be one or more RecordState values or-ed together.
+	Exists(ctx context.Context, stateBitset RecordState) (bool, error)
 
 	// MaxDurationInQueue returns the maximum age of queued records in this store. Returns 0 if there are no queued records.
 	MaxDurationInQueue(ctx context.Context) (time.Duration, error)
@@ -133,6 +143,28 @@ type Store[T workerutil.Record] interface {
 	// identifiers the age of the record's last heartbeat timestamp for each record reset to queued and failed states,
 	// respectively.
 	ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error)
+}
+
+type RecordState uint
+
+const (
+	StateQueued     RecordState = 1 << 0
+	StateErrored    RecordState = 1 << 1
+	StateProcessing RecordState = 1 << 2
+)
+
+func (bitset RecordState) toList() []*sqlf.Query {
+	fragments := []*sqlf.Query{}
+	if (bitset & StateQueued) != 0 {
+		fragments = append(fragments, sqlf.Sprintf("%s", "queued"))
+	}
+	if (bitset & StateErrored) != 0 {
+		fragments = append(fragments, sqlf.Sprintf("%s", "errored"))
+	}
+	if (bitset & StateProcessing) != 0 {
+		fragments = append(fragments, sqlf.Sprintf("%s", "processing"))
+	}
+	return fragments
 }
 
 type store[T workerutil.Record] struct {
@@ -369,6 +401,32 @@ SELECT
 FROM %s
 WHERE
 	{state} IN (%s)
+`
+
+func (s *store[T]) Exists(ctx context.Context, statesBitset RecordState) (_ bool, err error) {
+	ctx, _, endObservation := s.operations.queuedCount.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	fragments := statesBitset.toList()
+	if len(fragments) == 0 {
+		return false, errors.New("pre-condition failure: statesBitset should contain at least one state")
+	}
+
+	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, s.formatQuery(
+		existsQuery,
+		quote(s.options.ViewName),
+		sqlf.Join(fragments, ","),
+	)))
+
+	return exists, err
+}
+
+const existsQuery = `
+SELECT EXISTS (
+	SELECT *
+	FROM %s
+	WHERE {state} IN (%s)
+)
 `
 
 // MaxDurationInQueue returns the longest duration for which a job associated with this store instance has
