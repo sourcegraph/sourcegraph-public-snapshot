@@ -90,7 +90,7 @@ go_test(
         "//internal/codeintel/core",
         "//internal/codeintel/uploads/shared",
         "//internal/collections",
-        "//internal/database/dbmocks",
+        "//internal/database",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/observation",

@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	searcher "github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -32,7 +31,7 @@ import (
 )
 
 type Service struct {
-	repoStore    database.RepoStore
+	repoStore    minimalRepoStore
 	lsifstore    lsifstore.LsifStore
 	gitserver    gitserver.Client
 	uploadSvc    UploadService
@@ -41,9 +40,18 @@ type Service struct {
 	logger       log.Logger
 }
 
+// minimalRepoStore covers the subset of database.RepoStore APIs that we need
+// for code navigation.
+//
+// Prefer calling GetReposSetByIDs instead of calling Get in a loop.
+type minimalRepoStore interface {
+	Get(context.Context, api.RepoID) (*types.Repo, error)
+	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
+}
+
 func newService(
 	observationCtx *observation.Context,
-	repoStore database.RepoStore,
+	repoStore minimalRepoStore,
 	lsifstore lsifstore.LsifStore,
 	uploadSvc UploadService,
 	gitserver gitserver.Client,
