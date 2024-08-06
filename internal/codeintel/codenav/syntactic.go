@@ -512,7 +512,7 @@ func syntacticUsagesImpl(
 	}
 	nextCursor := core.None[UsagesCursor]()
 	finalMatches, searchedFiles := applyLimit(args.Limit, results)
-	if searchResult.limitHit || len(searchedFiles) != len(results) {
+	if len(results) > 0 && (searchResult.limitHit || len(searchedFiles) != len(results)) {
 		seenFiles := args.Cursor.SyntacticCursor.SeenFiles
 		for _, file := range searchedFiles {
 			seenFiles = append(seenFiles, file.RawValue())
@@ -622,7 +622,7 @@ func searchBasedUsagesImpl(
 
 	nextCursor := core.None[UsagesCursor]()
 	finalMatches, searchedFiles := applyLimit(args.Limit, results)
-	if searchResult.limitHit || len(searchedFiles) != len(results) {
+	if len(results) > 0 && (searchResult.limitHit || len(searchedFiles) != len(results)) {
 		seenFiles := args.Cursor.SyntacticCursor.SeenFiles
 		for _, file := range searchedFiles {
 			seenFiles = append(seenFiles, file.RawValue())
