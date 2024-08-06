@@ -1,6 +1,7 @@
 package uploads
 
 import (
+	"context"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -50,6 +51,7 @@ var (
 )
 
 func NewUploadProcessorJob(
+	ctx context.Context,
 	observationCtx *observation.Context,
 	uploadSvc *Service,
 	db database.DB,
@@ -65,6 +67,7 @@ func NewUploadProcessorJob(
 	ProcessorConfigInst.MaximumRuntimePerJob = maximumRuntimePerJob
 
 	return background.NewUploadProcessorJob(
+		ctx,
 		scopedContext("processor", observationCtx),
 		uploadSvc.store,
 		uploadSvc.codeGraphDataStore,
