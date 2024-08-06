@@ -356,60 +356,60 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q16dshY4mWrFh3rG3iXgrkQSyDcn8=",
+        "checksum": "Q1I1UZ216J+Pry+WoMF+QviXl5l/o=",
         "control": {
-          "checksum": "sha1-6dshY4mWrFh3rG3iXgrkQSyDcn8=",
-          "range": "bytes=707-1088"
+          "checksum": "sha1-I1UZ216J+Pry+WoMF+QviXl5l/o=",
+          "range": "bytes=703-1084"
         },
         "data": {
-          "checksum": "sha256-gIE/c5fpzyXliorfhwc5JkhXaJSz11fS3lHj5maVOvM=",
-          "range": "bytes=1089-185639"
+          "checksum": "sha256-AY9vBSKSZPh9DpH7v7nqDB2fue1d1IOKTEVoD+/0tY8=",
+          "range": "bytes=1085-185640"
         },
         "name": "libgcc",
         "signature": {
-          "checksum": "sha1-sAgTfqdSeUogET099x/Gvz5Gb8k=",
-          "range": "bytes=0-706"
+          "checksum": "sha1-y8++PAq44+VVDXG/DSXZydLBEHw=",
+          "range": "bytes=0-702"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libgcc-13.3.0-r1.apk",
-        "version": "13.3.0-r1"
+        "url": "https://packages.wolfi.dev/os/x86_64/libgcc-13.3.0-r2.apk",
+        "version": "13.3.0-r2"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1/62H+qzcKYNbV/R/Kg1pdKjuCOo=",
+        "checksum": "Q1VT9mg2sr91XtrjIhsSGFtHTNvmc=",
         "control": {
-          "checksum": "sha1-/62H+qzcKYNbV/R/Kg1pdKjuCOo=",
-          "range": "bytes=699-1102"
+          "checksum": "sha1-VT9mg2sr91XtrjIhsSGFtHTNvmc=",
+          "range": "bytes=702-1104"
         },
         "data": {
-          "checksum": "sha256-LPMPoDvecHB9Byl/0ych8WKdHL+gb0iD5bwIpQopj9A=",
-          "range": "bytes=1103-3171983"
+          "checksum": "sha256-BnX0bYpvBmQ3YN4XF2Wswh8ebTk+V9t+0WtIu1tUJ5U=",
+          "range": "bytes=1105-3171980"
         },
         "name": "libstdc++",
         "signature": {
-          "checksum": "sha1-yhTOO6fo7273bHbpD/cIGkRpCPQ=",
-          "range": "bytes=0-698"
+          "checksum": "sha1-z5uNAkz2h4xtf4MOEH2YpDAJPB8=",
+          "range": "bytes=0-701"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libstdc++-13.3.0-r1.apk",
-        "version": "13.3.0-r1"
+        "url": "https://packages.wolfi.dev/os/x86_64/libstdc++-13.3.0-r2.apk",
+        "version": "13.3.0-r2"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1F18C4nDz6+fzBYGQsKCBtHcufGU=",
+        "checksum": "Q1Ih50BR1cw7C0mAoc5DuxT2LyzS4=",
         "control": {
-          "checksum": "sha1-F18C4nDz6+fzBYGQsKCBtHcufGU=",
-          "range": "bytes=701-1066"
+          "checksum": "sha1-Ih50BR1cw7C0mAoc5DuxT2LyzS4=",
+          "range": "bytes=702-1066"
         },
         "data": {
-          "checksum": "sha256-WzeVjw8ROa6vrjTsCW005r5miWhaNGfwxi94+lfR1Xo=",
-          "range": "bytes=1067-255911"
+          "checksum": "sha256-2E9u6l5qsX+QONuHf29iItqZHbgx2aWN28a6u8/wFDM=",
+          "range": "bytes=1067-261123"
         },
         "name": "c-ares",
         "signature": {
-          "checksum": "sha1-pJet9qesYYyzB147oqQs+6X9fiA=",
-          "range": "bytes=0-700"
+          "checksum": "sha1-U8duAR/vdSu6louNZGpZtsHCooc=",
+          "range": "bytes=0-701"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/c-ares-1.32.3-r0.apk",
-        "version": "1.32.3-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/c-ares-1.33.0-r0.apk",
+        "version": "1.33.0-r0"
       },
       {
         "architecture": "x86_64",
@@ -679,41 +679,41 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1KbFP3IFuOKhVxlQN8fTT9RLhPvI=",
+        "checksum": "Q1GpOYIfmydH3cGHnNafCS1twC68Q=",
         "control": {
-          "checksum": "sha1-KbFP3IFuOKhVxlQN8fTT9RLhPvI=",
-          "range": "bytes=695-1118"
+          "checksum": "sha1-GpOYIfmydH3cGHnNafCS1twC68Q=",
+          "range": "bytes=701-1126"
         },
         "data": {
-          "checksum": "sha256-sqNF7IWCee/XyG3uXSr2HhNzEA+h6TUCko8HC/oejDQ=",
-          "range": "bytes=1119-870256"
+          "checksum": "sha256-ceyWZ2Rhnbl5/xnnUoVMznTuO52AmtqlfmHB7cA/e5E=",
+          "range": "bytes=1127-842364"
         },
         "name": "libcurl-openssl4",
         "signature": {
-          "checksum": "sha1-xs4x7PvRXbK7RT0NFGWbdZlv2EM=",
-          "range": "bytes=0-694"
+          "checksum": "sha1-ti49lZCBuoJumHjFwiKJ3immCaA=",
+          "range": "bytes=0-700"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libcurl-openssl4-8.9.1-r0.apk",
-        "version": "8.9.1-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/libcurl-openssl4-8.9.1-r1.apk",
+        "version": "8.9.1-r1"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1c+vbPth5pZDG0L9JRstXMvCydqc=",
+        "checksum": "Q1QjcAxWgbDYgCxWqUZu3nkgEC9M0=",
         "control": {
-          "checksum": "sha1-c+vbPth5pZDG0L9JRstXMvCydqc=",
-          "range": "bytes=693-1082"
+          "checksum": "sha1-QjcAxWgbDYgCxWqUZu3nkgEC9M0=",
+          "range": "bytes=700-1089"
         },
         "data": {
-          "checksum": "sha256-Y9pMB8FoK3ifC2xV9LFmbHOLL6VEGOCD898QSSFDljQ=",
-          "range": "bytes=1083-363412"
+          "checksum": "sha256-vpmoJeotOy2bcRn9XevvA/tyway9MNzuo2GS4EQsOc8=",
+          "range": "bytes=1090-363400"
         },
         "name": "curl",
         "signature": {
-          "checksum": "sha1-x9vu8DXDEhGBBkiVZVMlFiCaRD4=",
-          "range": "bytes=0-692"
+          "checksum": "sha1-yy42pUIxif1bo1TuGRG5YGnh9ck=",
+          "range": "bytes=0-699"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/curl-8.9.1-r0.apk",
-        "version": "8.9.1-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/curl-8.9.1-r1.apk",
+        "version": "8.9.1-r1"
       },
       {
         "architecture": "x86_64",
@@ -793,22 +793,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1opLz4TV9yWwutIxZ2CAQhzWzFrw=",
+        "checksum": "Q1aT1af+9sJX1JHnr47fEsiv7eSk8=",
         "control": {
-          "checksum": "sha1-opLz4TV9yWwutIxZ2CAQhzWzFrw=",
-          "range": "bytes=707-1109"
+          "checksum": "sha1-aT1af+9sJX1JHnr47fEsiv7eSk8=",
+          "range": "bytes=702-1089"
         },
         "data": {
-          "checksum": "sha256-Db4mIkfSZnx8qTJH9h9fgrAMbCLfyPlu/KHn7wuf6uQ=",
-          "range": "bytes=1110-783544"
+          "checksum": "sha256-OhKFv9i1Gj97aXtSfvyC/0rbIHxOxKZxDzoUQ504ajk=",
+          "range": "bytes=1090-779523"
         },
         "name": "wget",
         "signature": {
-          "checksum": "sha1-puv4H1i2MyhmxxEmp0i/tUdF8TI=",
-          "range": "bytes=0-706"
+          "checksum": "sha1-7KcHJIn5fJZEMGXA7gxjN0rGGpA=",
+          "range": "bytes=0-701"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/wget-1.24.5-r3.apk",
-        "version": "1.24.5-r3"
+        "url": "https://packages.wolfi.dev/os/x86_64/wget-1.24.5-r4.apk",
+        "version": "1.24.5-r4"
       }
     ],
     "repositories": [
