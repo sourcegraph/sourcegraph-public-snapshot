@@ -60,9 +60,8 @@ go_test(
         "//internal/api",
         "//internal/codeintel/codegraph",
         "//internal/codeintel/codegraph/codegraphmocks",
-        "//internal/codeintel/core",
-        "//internal/codeintel/uploads/internal/commitgraph",
         "//internal/codeintel/uploads/internal/store",
+        "//internal/codeintel/uploads/internal/storemocks",
         "//internal/codeintel/uploads/shared",
         "//internal/database/basestore",
         "//internal/database/dbmocks",
@@ -97,7 +96,6 @@ go_mockgen(
     ],
     deps = [
         ":processor",
-        "//internal/codeintel/uploads/internal/store",
         "//internal/workerutil/dbworker/store",
     ],
 )

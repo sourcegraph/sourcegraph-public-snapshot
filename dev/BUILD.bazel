@@ -80,7 +80,6 @@ write_source_files(
         "//internal/codeintel/dependencies/internal/background:generate_mocks",
         "//internal/codeintel/policies:generate_mocks",
         "//internal/codeintel/ranking:generate_mocks",
-        "//internal/codeintel/uploads/internal/background/backfiller:generate_mocks",
         "//internal/codeintel/uploads/internal/background/expirer:generate_mocks",
         "//internal/codeintel/uploads/internal/background/processor:generate_mocks",
         "//internal/codeintel/uploads/transport/graphql:generate_mocks",
@@ -130,5 +129,6 @@ write_source_files(
         "//internal/codeintel/codegraph/codegraphmocks:generate_mocks",
         "//internal/codeintel/codenav/internal/lsifstore/mocks:generate_mocks",
         "//cmd/frontend/internal/auth/userpasswd:generate_mocks",
+        "//internal/codeintel/uploads/internal/storemocks:generate_mocks",
     ],
 )
