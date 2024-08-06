@@ -159,6 +159,9 @@ resources:
           indexedSearch:
             disabled: true
 
+          nodeExporter:
+            disabled: true
+
           openTelemetryCollector:
             disabled: true
 

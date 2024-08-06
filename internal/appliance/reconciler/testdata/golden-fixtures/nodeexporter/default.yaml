@@ -1,17 +1,18 @@
 resources:
   - apiVersion: apps/v1
-    kind: Deployment
+    kind: DaemonSet
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: ccfa606a4b7366e50b7d56618c7c3754e05e82431f86d23a22e7a560fbc5ef8a
+        appliance.sourcegraph.com/configHash: c84ac276e60e85a888146303bb5d592cb42507dc290a515051c6ecedc03d6f4c
+        deprecated.daemonset.template.generation: "1"
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
-        app.kubernetes.io/component: precise-code-intel-worker
+        app.kubernetes.io/component: node-exporter
         app.kubernetes.io/name: sourcegraph
         app.kubernetes.io/version: 5.3.9104
         deploy: sourcegraph
-      name: precise-code-intel-worker
+      name: node-exporter
       namespace: NORMALIZED_FOR_TESTING
       ownerReferences:
         - apiVersion: v1
@@ -24,102 +25,115 @@ resources:
       uid: NORMALIZED_FOR_TESTING
     spec:
       minReadySeconds: 10
-      progressDeadlineSeconds: 600
-      replicas: 3
       revisionHistoryLimit: 10
       selector:
         matchLabels:
-          app: precise-code-intel-worker
-      strategy:
-        rollingUpdate:
-          maxSurge: 1
-          maxUnavailable: 1
-        type: RollingUpdate
+          app: node-exporter
       template:
         metadata:
           annotations:
-            kubectl.kubernetes.io/default-container: precise-code-intel-worker
+            kubectl.kubernetes.io/default-container: node-exporter
           creationTimestamp: null
           labels:
-            app: precise-code-intel-worker
+            app: node-exporter
             deploy: sourcegraph
-          name: precise-code-intel-worker
+          name: node-exporter
         spec:
           containers:
-            - env:
-                - name: NUM_WORKERS
-                  value: "4"
-                - name: POD_NAME
-                  valueFrom:
-                    fieldRef:
-                      apiVersion: v1
-                      fieldPath: metadata.name
-                - name: OTEL_AGENT_HOST
-                  valueFrom:
-                    fieldRef:
-                      apiVersion: v1
-                      fieldPath: status.hostIP
-                - name: OTEL_EXPORTER_OTLP_ENDPOINT
-                  value: http://$(OTEL_AGENT_HOST):4317
-              image: index.docker.io/sourcegraph/precise-code-intel-worker:5.3.9104
+            - args:
+                - --web.listen-address=:9100
+                - --path.sysfs=/host/sys
+                - --path.rootfs=/host/root
+                - --path.procfs=/host/proc
+                - --no-collector.wifi
+                - --no-collector.hwmon
+                - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/pods/.+)($|/)
+                - --collector.netclass.ignored-devices=^(veth.*)$
+                - --collector.netdev.device-exclude=^(veth.*)$
+              image: index.docker.io/sourcegraph/node-exporter:5.3.9104
               imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 3
                 httpGet:
-                  path: /healthz
-                  port: debug
+                  path: /
+                  port: metrics
                   scheme: HTTP
-                initialDelaySeconds: 60
                 periodSeconds: 10
                 successThreshold: 1
-                timeoutSeconds: 5
-              name: precise-code-intel-worker
+                timeoutSeconds: 1
+              name: node-exporter
               ports:
-                - containerPort: 3188
-                  name: http
-                  protocol: TCP
-                - containerPort: 6060
-                  name: debug
+                - containerPort: 9100
+                  name: metrics
                   protocol: TCP
               readinessProbe:
                 failureThreshold: 3
                 httpGet:
-                  path: /ready
-                  port: debug
+                  path: /
+                  port: metrics
                   scheme: HTTP
-                periodSeconds: 5
+                periodSeconds: 10
                 successThreshold: 1
-                timeoutSeconds: 5
+                timeoutSeconds: 1
               resources:
                 limits:
-                  cpu: "2"
-                  memory: 4G
+                  cpu: "1"
+                  memory: 1Gi
                 requests:
-                  cpu: 500m
-                  memory: 2G
+                  cpu: 200m
+                  memory: 100Mi
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
-                runAsGroup: 101
-                runAsUser: 100
+                runAsGroup: 65534
+                runAsUser: 65534
               terminationMessagePath: /dev/termination-log
               terminationMessagePolicy: FallbackToLogsOnError
               volumeMounts:
-                - mountPath: /tmp
-                  name: tmpdir
+                - mountPath: /host/root
+                  mountPropagation: HostToContainer
+                  name: rootfs
+                  readOnly: true
+                - mountPath: /host/sys
+                  mountPropagation: HostToContainer
+                  name: sys
+                  readOnly: true
+                - mountPath: /host/proc
+                  mountPropagation: HostToContainer
+                  name: proc
+                  readOnly: true
           dnsPolicy: ClusterFirst
           restartPolicy: Always
           schedulerName: default-scheduler
           securityContext:
-            fsGroup: 101
-            fsGroupChangePolicy: OnRootMismatch
-            runAsGroup: 101
-            runAsUser: 100
+            fsGroup: 65534
+            runAsGroup: 65534
+            runAsNonRoot: true
+            runAsUser: 65534
           terminationGracePeriodSeconds: 30
           volumes:
-            - emptyDir: {}
-              name: tmpdir
-    status: {}
+            - hostPath:
+                path: /
+                type: ""
+              name: rootfs
+            - hostPath:
+                path: /sys
+                type: ""
+              name: sys
+            - hostPath:
+                path: /proc
+                type: ""
+              name: proc
+      updateStrategy:
+        rollingUpdate:
+          maxSurge: 0
+          maxUnavailable: 1
+        type: RollingUpdate
+    status:
+      currentNumberScheduled: 0
+      desiredNumberScheduled: 0
+      numberMisscheduled: 0
+      numberReady: 0
   - apiVersion: v1
     data:
       spec: |
@@ -144,10 +158,9 @@ resources:
           gitServer:
             disabled: true
 
-          indexedSearch:
-            disabled: true
+          nodeExporter: {}
 
-          nodeExporter:
+          indexedSearch:
             disabled: true
 
           openTelemetryCollector:
@@ -163,7 +176,7 @@ resources:
             disabled: true
 
           preciseCodeIntel:
-            replicas: 3
+            disabled: true
 
           redisCache:
             disabled: true
@@ -198,15 +211,15 @@ resources:
       namespace: NORMALIZED_FOR_TESTING
       resourceVersion: NORMALIZED_FOR_TESTING
       uid: NORMALIZED_FOR_TESTING
-  - apiVersion: v1
-    kind: ServiceAccount
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: Role
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: ccfa606a4b7366e50b7d56618c7c3754e05e82431f86d23a22e7a560fbc5ef8a
+        appliance.sourcegraph.com/configHash: c84ac276e60e85a888146303bb5d592cb42507dc290a515051c6ecedc03d6f4c
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
-      name: precise-code-intel-worker
+      name: node-exporter
       namespace: NORMALIZED_FOR_TESTING
       ownerReferences:
         - apiVersion: v1
@@ -217,19 +230,53 @@ resources:
           uid: NORMALIZED_FOR_TESTING
       resourceVersion: NORMALIZED_FOR_TESTING
       uid: NORMALIZED_FOR_TESTING
+    rules:
+      - apiGroups:
+          - policy
+        resourceNames:
+          - node-exporter
+        resources:
+          - podsecuritypolicies
+        verbs:
+          - use
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: c84ac276e60e85a888146303bb5d592cb42507dc290a515051c6ecedc03d6f4c
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        deploy: sourcegraph
+      name: node-exporter
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: node-exporter
+    subjects:
+      - kind: ServiceAccount
+        name: node-exporter
+        namespace: NORMALIZED_FOR_TESTING
   - apiVersion: v1
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: ccfa606a4b7366e50b7d56618c7c3754e05e82431f86d23a22e7a560fbc5ef8a
-        prometheus.io/port: "6060"
-        sourcegraph.prometheus/scrape: "true"
+        appliance.sourcegraph.com/configHash: c84ac276e60e85a888146303bb5d592cb42507dc290a515051c6ecedc03d6f4c
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
-        app: precise-code-intel-worker
-        app.kubernetes.io/component: precise-code-intel-worker
+        app: node-exporter
+        app.kubernetes.io/component: node-exporter
         deploy: sourcegraph
-      name: precise-code-intel-worker
+      name: node-exporter
       namespace: NORMALIZED_FOR_TESTING
       ownerReferences:
         - apiVersion: v1
@@ -249,16 +296,12 @@ resources:
         - IPv4
       ipFamilyPolicy: SingleStack
       ports:
-        - name: http
-          port: 3188
+        - name: metrics
+          port: 9100
           protocol: TCP
-          targetPort: http
-        - name: debug
-          port: 6060
-          protocol: TCP
-          targetPort: debug
+          targetPort: metrics
       selector:
-        app: precise-code-intel-worker
+        app: node-exporter
       sessionAffinity: None
       type: ClusterIP
     status:
