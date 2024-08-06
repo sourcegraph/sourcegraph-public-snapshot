@@ -55,3 +55,12 @@ func TestContext() context.Context {
 	}
 	return withTenant(context.Background(), 1)
 }
+
+// TestContextWithID is like TestContext but allows you to specify the tenant
+// ID.
+func TestContextWithID(i int) context.Context {
+	if !testutil.IsTest {
+		panic("only call this function in tests")
+	}
+	return withTenant(context.Background(), i)
+}
