@@ -232,6 +232,38 @@ func (s *Service) GetSearchJobLogsWriterTo(parentCtx context.Context, id int64) 
 	}), nil
 }
 
+// getLogKey returns the key for the log that is stored in the blobstore.
+func getLogKey(searchJobID int64) string {
+	return fmt.Sprintf("log-%d.csv", searchJobID)
+}
+
+func (s *Service) UploadJobLogs(ctx context.Context, id int64, r io.Reader) (int64, error) {
+	// 🚨 SECURITY: only someone with access to the job may upload the logs
+	if err := s.store.UserHasAccess(ctx, id); err != nil {
+		return 0, err
+	}
+
+	return s.uploadStore.Upload(ctx, getLogKey(id), r)
+}
+
+func (s *Service) GetJobLogs(ctx context.Context, id int64) (io.ReadCloser, error) {
+	// 🚨 SECURITY: only someone with access to the job may download the logs
+	if err := s.store.UserHasAccess(ctx, id); err != nil {
+		return nil, err
+	}
+
+	return s.uploadStore.Get(ctx, getLogKey(id))
+}
+
+func (s *Service) DeleteJobLogs(ctx context.Context, id int64) error {
+	// 🚨 SECURITY: only someone with access to the job may delete the logs
+	if err := s.store.UserHasAccess(ctx, id); err != nil {
+		return err
+	}
+
+	return s.uploadStore.Delete(ctx, getLogKey(id))
+}
+
 // JobLogsIterLimit is the number of lines the iterator will read from the
 // database per page. Assuming 100 bytes per line, this will be ~1MB of memory
 // per 10k repo-rev jobs.
@@ -308,6 +340,9 @@ func (s *Service) DeleteSearchJob(ctx context.Context, id int64) (err error) {
 	if err := iter.Err(); err != nil {
 		return err
 	}
+
+	// The log file is not guaranteed to exist, so we ignore the error here.
+	_ = s.uploadStore.Delete(ctx, getLogKey(id))
 
 	return s.store.DeleteExhaustiveSearchJob(ctx, id)
 }

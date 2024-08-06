@@ -95,8 +95,6 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 				types = append(types, "literal")
 			case l.inputs.PatternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
-			case l.inputs.PatternType == query.SearchTypeLucky:
-				types = append(types, "lucky")
 			}
 		}
 	}

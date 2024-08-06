@@ -29,7 +29,7 @@ import (
 func TestGuardrails(t *testing.T) {
 	// This test is just asserting that our interface is correct. It seems
 	// graphql-go only does the schema check if your interface is non-nil.
-	_, err := graphqlbackend.NewSchema(nil, nil, []graphqlbackend.OptionalResolver{{GuardrailsResolver: guardrailsFake{}}})
+	_, err := graphqlbackend.NewSchema(nil, nil, nil, []graphqlbackend.OptionalResolver{{GuardrailsResolver: guardrailsFake{}}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -210,7 +210,7 @@ func TestSnippetAttributionReactsToSiteConfigChanges(t *testing.T) {
 	g := gitserver.NewClient("graphql.test")
 	var enterpriseServices enterprise.Services
 	require.NoError(t, guardrails.Init(ctx, observation.TestContextTB(t), db, codeintel.Services{}, confMock, &enterpriseServices))
-	s, err := graphqlbackend.NewSchema(db, g, []graphqlbackend.OptionalResolver{{GuardrailsResolver: enterpriseServices.OptionalResolver.GuardrailsResolver}})
+	s, err := graphqlbackend.NewSchema(db, g, nil, []graphqlbackend.OptionalResolver{{GuardrailsResolver: enterpriseServices.OptionalResolver.GuardrailsResolver}})
 	require.NoError(t, err)
 	// Same query runs in every test:
 	query := `query SnippetAttribution {
@@ -311,6 +311,7 @@ func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	parsedSchema, parseSchemaErr := graphqlbackend.NewSchema(
 		db,
 		gitserverClient,
+		nil,
 		[]graphqlbackend.OptionalResolver{},
 		graphql.MaxDepth(conf.RateLimits().GraphQLMaxDepth),
 	)

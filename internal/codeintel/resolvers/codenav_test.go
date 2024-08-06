@@ -25,7 +25,7 @@ import (
 func malformedAfterCursorGenerator() *rapid.Generator[*string] {
 	return rapid.Custom(func(t *rapid.T) *string {
 		val := codenav.UsagesCursor{}
-		val.PreciseCursorType = "nonsense"
+		val.CursorType = "nonsense"
 		bytes, err := json.Marshal(val)
 		require.NoError(t, err)
 		if rapid.Bool().Draw(t, "") {
@@ -48,7 +48,7 @@ func wellFormedAfterCursorGenerator() *rapid.Generator[*string] {
 	)
 	return rapid.Custom(func(t *rapid.T) *string {
 		val := codenav.UsagesCursor{}
-		val.PreciseCursorType = cursorTypeGen.Draw(t, "cursortype")
+		val.CursorType = cursorTypeGen.Draw(t, "cursortype")
 		bytes, err := json.Marshal(val)
 		require.NoError(t, err)
 		s := base64.StdEncoding.EncodeToString(bytes)

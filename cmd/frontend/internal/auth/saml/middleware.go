@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -61,8 +62,10 @@ func authHandler(db database.DB, w http.ResponseWriter, r *http.Request, next ht
 	// app request, and the sign-out cookie is not present, redirect to the sso sign-in immediately.
 	//
 	// For sign-out requests (sign-out cookie is  present), the user will be redirected to the Sourcegraph login page.
-	ps := providers.SignInProviders()
-	if len(ps) == 1 && ps[0].Config().Saml != nil && !auth.HasSignOutCookie(r) && !isAPIRequest {
+	// Note: For instances that are conf.AuthPublic(), we don't redirect to sign-in automatically, as that would
+	// lock out unauthenticated access.
+	ps := providers.SignInProviders(!r.URL.Query().Has("sourcegraph-operator"))
+	if !conf.AuthPublic() && len(ps) == 1 && ps[0].Config().Saml != nil && !auth.HasSignOutCookie(r) && !isAPIRequest {
 		p, handled := handleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
 		if handled {
 			return

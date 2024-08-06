@@ -73,8 +73,6 @@ func (q *QueryDescription) QueryString() string {
 			return q.Query + " patternType:literal"
 		case query.SearchTypeStructural:
 			return q.Query + " patternType:structural"
-		case query.SearchTypeLucky:
-			return q.Query
 		default:
 			panic("unreachable")
 		}
@@ -82,8 +80,8 @@ func (q *QueryDescription) QueryString() string {
 	return q.Query
 }
 
-// AlertForQuery converts errors in the query to search alerts.
-func AlertForQuery(queryString string, err error) *Alert {
+// AlertForQuery converts errors query parsing to search alerts.
+func AlertForQuery(err error) *Alert {
 	if errors.HasType[*query.ExpectedOperand](err) {
 		return &Alert{
 			PrometheusType: "unsupported_and_or_query",
@@ -95,6 +93,14 @@ func AlertForQuery(queryString string, err error) *Alert {
 		PrometheusType: "generic_invalid_query",
 		Title:          "Unable To Process Query",
 		Description:    capFirst(err.Error()),
+	}
+}
+
+func AlertForSmartSearch() *Alert {
+	return &Alert{
+		PrometheusType: "smart_search_no_results",
+		Title:          "No results matched your search.",
+		Description:    "To find more results, try your search again using the default `patterntype:keyword`.",
 	}
 }
 

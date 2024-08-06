@@ -93,7 +93,7 @@ func SubstituteSearchContexts(lookupQueryString func(contextValue string) (strin
 func For(searchType SearchType) step {
 	var processType step
 	switch searchType {
-	case SearchTypeStandard, SearchTypeLucky, SearchTypeCodyContext:
+	case SearchTypeStandard, SearchTypeCodyContext:
 		processType = succeeds(substituteConcat(standard))
 	case SearchTypeLiteral:
 		processType = succeeds(substituteConcat(space))

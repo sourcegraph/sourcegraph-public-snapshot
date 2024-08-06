@@ -2,8 +2,8 @@
 
 package:
   name: p4-fusion-sg
-  version: 1.13.2
-  epoch: 4
+  version: 1.14.0
+  epoch: 0
   description: "A fast Perforce to Git conversion tool, Sourcegraph fork"
   target-architecture:
     - x86_64
@@ -35,12 +35,12 @@ pipeline:
   # Download p4-fusion
   - uses: fetch
     with:
-      uri: https://github.com/sourcegraph/p4-fusion/archive/60a9f5a9d48ba0218ff3114b94fed98cf9813de5.tar.gz
-      expected-sha256: a6c2ced6ad4d73ee50fc77c74962d6e0488da04c48882a47012c817477c709ba
+      uri: https://github.com/sourcegraph/p4-fusion/archive/00c54b37be9cbf3b1b70a79fef55ce0e78945c06.tar.gz
+      expected-sha256: 6f4fc7726537d934070af3d09b883de843e44ca0496952a1872af46e7449dbab
       extract: false
   - runs: |
       mkdir p4-fusion-src
-      tar -C p4-fusion-src -xzf 60a9f5a9d48ba0218ff3114b94fed98cf9813de5.tar.gz --strip 1
+      tar -C p4-fusion-src -xzf 00c54b37be9cbf3b1b70a79fef55ce0e78945c06.tar.gz --strip 1
 
   # Download OpenSSL
   - uses: fetch
@@ -57,7 +57,7 @@ pipeline:
     with:
       uri: https://filehost.perforce.com/perforce/r23.1/bin.linux26x86_64/p4api-glibc2.3-openssl1.1.1.tgz
       # Hash occasionally changes, available at https://filehost.perforce.com/perforce/r23.1/bin.linux26x86_64/SHA256SUMS (check version)
-      expected-sha256: b6e391a2b288f363693aeae2620188500f3e555d4382bcc2356d7721085a9062 # based on url
+      expected-sha256: 5243d70b3a34ada544f87b0907d30d5dcd2f2881c0120e6da8dcdf6767a91bc6 # based on url
       extract: false
   - runs: |
       mkdir -p p4-fusion-src/vendor/helix-core-api/linux

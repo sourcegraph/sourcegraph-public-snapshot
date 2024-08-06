@@ -84,6 +84,8 @@
             text-decoration: none;
             white-space: nowrap;
 
+            --icon-color: var(--link-color);
+
             // This is used to avoid having the whitespace being underlined on hover
             &:hover span {
                 text-decoration: underline;

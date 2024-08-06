@@ -389,12 +389,17 @@ func TestValidateSiteConfig(t *testing.T) {
 		{
 			siteConfig := getValidSiteConfiguration()
 			siteConfig.DefaultModels = &types.DefaultModels{
-				// Invalid ModelRefs, Chat not specified.
+				// Chat not specified.
 				FastChat:       types.ModelRef("foo::bar::baz"),
 				CodeCompletion: types.ModelRef("foo::bar::baz"),
 			}
 			err := ValidateSiteConfig(siteConfig)
-			assert.ErrorContains(t, err, "default chat model: modelRef is blank")
+
+			// We do not report this as a validation error because when we render
+			// the supported models, we can simply fallback to a reasonable default.
+			// (e.g. picking the first acceptable model, and not require the admin
+			// to explicitly provide defaults for all categories of model.)
+			assert.Nil(t, err)
 		}
 	})
 }

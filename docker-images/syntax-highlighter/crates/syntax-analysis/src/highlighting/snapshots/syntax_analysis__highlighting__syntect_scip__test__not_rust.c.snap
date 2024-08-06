@@ -14,7 +14,8 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //         ^ PunctuationBracket punctuation.section.group.end.c
 //           ^ PunctuationBracket punctuation.section.block.begin.c
     // Single line comment
-//  ^^^^^^^^^^^^^^^^^^^^^^ Comment comment.line.double-slash.c
+//  ^^ Comment punctuation.definition.comment.c
+//    ^^^^^^^^^^^^^^^^^^^^ Comment comment.line.double-slash.c
     int x = 1;
 //  ^^^ IdentifierType storage.type.c
 //        ^ IdentifierOperator keyword.operator.assignment.c
@@ -22,13 +23,16 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //           ^ PunctuationDelimiter punctuation.terminator.c
   
     /*
-//  ^^ Comment 6:2..8:5 comment.block.c
+//  ^^ Comment punctuation.definition.comment.c
+//     Comment 6:4..7:3 punctuation.definition.comment.c
      *Multi Line
+//   ^ Comment punctuation.definition.comment.c
+//    ^^^^^^^^^^ Comment 7:4..8:3 punctuation.definition.comment.c
      */
+//   ^^ Comment punctuation.definition.comment.c
   
     return x;
 //  ^^^^^^ Keyword keyword.control.flow.return.c
 //          ^ PunctuationDelimiter punctuation.terminator.c
   }
 //^ PunctuationBracket punctuation.section.block.end.c
-

@@ -51,13 +51,13 @@
         const repoGroups: RepoGroup[] = []
 
         for (const usage of usages) {
-            const repo = usage.usageRange!.repository
+            const repo = usage.usageRange.repository
             if (seenRepos[repo] === undefined) {
                 seenRepos[repo] = { index: repoGroups.length, seenPaths: {} }
                 repoGroups.push({ repo, pathGroups: [] })
             }
 
-            const path = usage.usageRange!.path
+            const path = usage.usageRange.path
             const seenPaths = seenRepos[repo].seenPaths
             const pathGroups = repoGroups[seenRepos[repo].index].pathGroups
 
@@ -114,20 +114,19 @@
     }
 
     export function getUsagesStore(client: GraphQLClient, documentInfo: DocumentInfo, occurrence: Occurrence) {
-        const baseVariables = {
+        const baseVariables: ExplorePanel_UsagesVariables = {
             repoName: documentInfo.repoName,
             revspec: documentInfo.commitID,
             filePath: documentInfo.filePath,
             rangeStart: occurrence.range.start,
             rangeEnd: occurrence.range.end,
-            symbolComparator: occurrence.symbol
-                ? {
-                      name: { equals: occurrence.symbol },
-                      provenance: {
-                          /* equals: TODO */
-                      },
-                  }
-                : null,
+            symbolComparator:
+                occurrence.symbol && occurrence.symbolProvenance
+                    ? {
+                          name: { equals: occurrence.symbol },
+                          provenance: { equals: occurrence.symbolProvenance },
+                      }
+                    : null,
             first: 100,
             afterCursor: null,
         }
@@ -232,7 +231,7 @@
 {#if $inputs.activeOccurrence === undefined}
     <div class="no-selection">
         <Icon icon={ISgSymbols} />
-        <p>Select a symbol in the code panel to view references.</p>
+        <p>Select a symbol in the code panel to view references</p>
     </div>
 {:else}
     <PanelGroup id="references">
@@ -401,6 +400,8 @@
 
         height: 100%;
         width: 100%;
+
+        --icon-color: currentColor;
 
         color: var(--text-muted);
         font-weight: 500;

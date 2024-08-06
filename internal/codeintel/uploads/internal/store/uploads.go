@@ -14,6 +14,7 @@ import (
 	"github.com/lib/pq"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -439,6 +440,7 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 	}
 
 	var (
+		visibleUploadsCTE    = sqlf.Sprintf("%s", makeVisibleUploadsQuery(api.RepoID(repositoryID), api.CommitID(commit)))
 		countExpr            = sqlf.Sprintf("COUNT(distinct r.dump_id)")
 		emptyExpr            = sqlf.Sprintf("")
 		selectExpr           = sqlf.Sprintf("r.dump_id, r.scheme, r.manager, r.name, r.version")
@@ -447,8 +449,7 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 
 	countQuery := sqlf.Sprintf(
 		referenceIDsQuery,
-		repositoryID, dbutil.CommitBytea(commit),
-		repositoryID, dbutil.CommitBytea(commit),
+		visibleUploadsCTE,
 		countExpr,
 		sqlf.Join(qs, ", "),
 		authzConds,
@@ -462,8 +463,7 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
 		referenceIDsQuery,
-		repositoryID, dbutil.CommitBytea(commit),
-		repositoryID, dbutil.CommitBytea(commit),
+		visibleUploadsCTE,
 		selectExpr,
 		sqlf.Join(qs, ", "),
 		authzConds,
@@ -478,40 +478,7 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 
 const referenceIDsQuery = `
 WITH
-visible_uploads AS (
-	SELECT t.upload_id
-	FROM (
-
-		-- Select the set of uploads visible from the given commit. This is done by looking
-		-- at each commit's row in the lsif_nearest_uploads table, and the (adjusted) set of
-		-- uploads from each commit's nearest ancestor according to the data compressed in
-		-- the links table.
-		--
-		-- NB: A commit should be present in at most one of these tables.
-		SELECT
-			t.upload_id,
-			row_number() OVER (PARTITION BY root, indexer ORDER BY distance) AS r
-		FROM (
-			SELECT
-				upload_id::integer,
-				u_distance::text::integer as distance
-			FROM lsif_nearest_uploads nu
-			CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
-			WHERE nu.repository_id = %s AND nu.commit_bytea = %s
-			UNION (
-				SELECT
-					upload_id::integer,
-					u_distance::text::integer + ul.distance as distance
-				FROM lsif_nearest_uploads_links ul
-				JOIN lsif_nearest_uploads nu ON nu.repository_id = ul.repository_id AND nu.commit_bytea = ul.ancestor_commit_bytea
-				CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
-				WHERE nu.repository_id = %s AND ul.commit_bytea = %s
-			)
-		) t
-		JOIN lsif_uploads u ON u.id = upload_id
-	) t
-	WHERE t.r <= 1
-)
+visible_uploads AS (%s)
 SELECT %s
 FROM lsif_references r
 LEFT JOIN lsif_dumps u ON u.id = r.dump_id

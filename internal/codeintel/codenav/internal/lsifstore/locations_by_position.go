@@ -76,7 +76,7 @@ func extractOccurrenceData(document *scip.Document, lookupOccurrence *scip.Occur
 	// matches the given occurrence. This will give us additional symbol names that
 	// we should include in reference and implementation searches.
 
-	if lookupSymbolInfo := scip.FindSymbol(document, lookupOccurrence.Symbol); lookupSymbolInfo != nil {
+	if lookupSymbolInfo := scip.FindSymbolBinarySearch(document, lookupOccurrence.Symbol); lookupSymbolInfo != nil {
 		hoverText = symbolHoverText(lookupSymbolInfo)
 
 		for _, rel := range lookupSymbolInfo.Relationships {
@@ -184,7 +184,7 @@ func (s *store) ExtractPrototypeLocationsFromPosition(ctx context.Context, key F
 }
 
 func symbolExtractDefault(document *scip.Document, symbolName string) (symbols []string) {
-	if symbol := scip.FindSymbol(document, symbolName); symbol != nil {
+	if symbol := scip.FindSymbolBinarySearch(document, symbolName); symbol != nil {
 		for _, rel := range symbol.Relationships {
 			if rel.IsReference {
 				symbols = append(symbols, rel.Symbol)
@@ -210,7 +210,7 @@ func symbolExtractImplementations(document *scip.Document, symbolName string) (s
 }
 
 func symbolExtractPrototype(document *scip.Document, symbolName string) (symbols []string) {
-	if symbol := scip.FindSymbol(document, symbolName); symbol != nil {
+	if symbol := scip.FindSymbolBinarySearch(document, symbolName); symbol != nil {
 		for _, rel := range symbol.Relationships {
 			if rel.IsImplementation {
 				symbols = append(symbols, rel.Symbol)

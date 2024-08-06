@@ -1342,16 +1342,6 @@ bazelCommands:
       TMPDIR: $HOME/.sourcegraph/indexer-temp
 
 dockerCommands:
-  batcheshelper-builder:
-    # Nothing to run for this, we just want to re-run the install script every time.
-    cmd: exit 0
-    target: //cmd/batcheshelper:image_tarball
-    image: batcheshelper:candidate
-    env:
-      # TODO: This is required but should only be set on M1 Macs.
-      PLATFORM: linux/arm64
-    continueWatchOnExit: true
-
   grafana:
     target: //docker-images/grafana:image_tarball
     docker:

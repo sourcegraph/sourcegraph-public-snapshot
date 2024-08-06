@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -14,13 +15,16 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"github.com/sourcegraph/scip/cmd/scip/tests/reprolang/bindings/go/repro"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -28,6 +32,7 @@ import (
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // Only exposed for tests, production code should use Unchecked function
@@ -122,7 +127,7 @@ func TestReferences(t *testing.T) {
 	)
 
 	offset := int32(25)
-	mockRefCursor := codenav.Cursor{Phase: "local"}
+	mockRefCursor := codenav.PreciseCursor{Phase: "local"}
 	encodedCursor := mockRefCursor.Encode()
 	mockCursor := base64.StdEncoding.EncodeToString([]byte(encodedCursor))
 
@@ -468,8 +473,8 @@ func TestOccurrences_BadArgs(t *testing.T) {
 
 	t.Run("fetching with undeserializable 'after'", func(t *testing.T) {
 		badArgs := resolverstubs.OccurrencesArgs{After: pointers.Ptr("not-a-cursor")}
-		badArgs.Normalize(10)
-		occs := unwrap(resolver.Occurrences(bgCtx, &badArgs))(t)
+		normalizedArgs := badArgs.Normalize(10)
+		occs := unwrap(resolver.Occurrences(bgCtx, normalizedArgs))(t)
 		_, err := occs.Nodes(bgCtx)
 		require.Error(t, err)
 	})
@@ -477,8 +482,8 @@ func TestOccurrences_BadArgs(t *testing.T) {
 	t.Run("fetching with out-of-bounds 'after'", func(t *testing.T) {
 		oobCursor := unwrap(marshalCursor(cursor{100}))(t)
 		badArgs := resolverstubs.OccurrencesArgs{After: oobCursor}
-		badArgs.Normalize(10)
-		occs := unwrap(resolver.Occurrences(bgCtx, &badArgs))(t)
+		normalizedArgs := badArgs.Normalize(10)
+		occs := unwrap(resolver.Occurrences(bgCtx, normalizedArgs))(t)
 		nodes, err := occs.Nodes(bgCtx)
 		// TODO: I think this should be an out-of-bounds error, Slack discussion:
 		// https://sourcegraph.slack.com/archives/C02UC4WUX1Q/p1716378462737019
@@ -597,5 +602,64 @@ func TestOccurrences_Pages(t *testing.T) {
 			require.Less(t, i, maxIters)
 			testCase.wantPages.Equal(t, allOccurrences)
 		})
+	}
+}
+
+func TestSubRepoPerms(t *testing.T) {
+	checker := authz.NewMockSubRepoPermissionChecker()
+	oldChecker := authz.DefaultSubRepoPermsChecker
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		ExperimentalFeatures: &schema.ExperimentalFeatures{ScipBasedAPIs: pointers.Ptr(true)},
+	}})
+	authz.DefaultSubRepoPermsChecker = checker
+	t.Cleanup(func() {
+		conf.Mock(nil)
+		authz.DefaultSubRepoPermsChecker = oldChecker
+	})
+
+	a := &actor.Actor{UID: 1}
+	ctx := actor.WithActor(context.Background(), a)
+	repoName := api.RepoName("foo")
+
+	checker.EnabledFunc.SetDefaultReturn(true)
+	permsFunc := func(path string) (authz.Perms, error) {
+		switch path {
+		case "can-access.txt":
+			return authz.Read, nil
+		default:
+			return authz.None, nil
+		}
+	}
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		return permsFunc(content.Path)
+	})
+	checker.EnabledForRepoFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName) (bool, error) {
+		if rn == repoName {
+			return true, nil
+		}
+		return false, nil
+	})
+
+	mockCodeNavService := NewMockCodeNavService()
+	observationCtx := observation.NewContext(nil)
+
+	resolver := NewRootResolver(
+		observationCtx, mockCodeNavService, nil, nil, nil, nil,
+		nil, nil, nil, nil, 10)
+	repo := sgtypes.Repo{ID: 0, Name: repoName}
+	opts := resolverstubs.CodeGraphDataOpts{Args: nil, Repo: &repo, Commit: ""}
+	{
+		opts := opts
+		opts.Path = core.NewRepoRelPathUnchecked("can-access.txt")
+		data, err := resolver.CodeGraphData(ctx, &opts)
+		require.NoError(t, err)
+		require.Empty(t, data)
+	}
+	{
+		opts := opts
+		opts.Path = core.NewRepoRelPathUnchecked("cannot-access.txt")
+		data, err := resolver.CodeGraphData(ctx, &opts)
+		require.ErrorIs(t, err, os.ErrNotExist)
+		require.Empty(t, data)
 	}
 }

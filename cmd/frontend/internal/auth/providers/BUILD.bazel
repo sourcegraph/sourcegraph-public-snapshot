@@ -11,6 +11,7 @@ go_library(
     tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
     deps = [
+        "//internal/auth",
         "//internal/extsvc",
         "//schema",
         "@com_github_inconshreveable_log15//:log15",

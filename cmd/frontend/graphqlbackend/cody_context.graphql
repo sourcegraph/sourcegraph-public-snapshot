@@ -112,6 +112,11 @@ extend type Query {
         """
         resultsCount: Int
     ): ChatContextResult!
+
+    """
+    EXPERIMENTAL: Fetches the relevant context for a mentioned URL
+    """
+    urlMentionContext(url: String!): URLMentionContextResult!
 }
 
 """
@@ -269,4 +274,19 @@ type RetrieverContextItem {
     Represents the content of the context item.
     """
     item: CodyContextResult!
+}
+
+"""
+EXPERIMENTAL: The result of fetching context for a URL mention
+"""
+type URLMentionContextResult {
+    """
+    The extracted title of the page, if it exists
+    """
+    title: String
+    """
+    The content of the page in its processed and truncated form.
+    Not guaranteed to be in any particular format.
+    """
+    content: String!
 }
