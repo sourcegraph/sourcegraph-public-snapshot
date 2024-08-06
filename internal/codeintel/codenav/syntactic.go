@@ -85,6 +85,9 @@ func findCandidateOccurrencesViaSearch(
 	if err != nil {
 		return candidateOccurrenceResult{}, err
 	}
+	trace.Info("Query complete",
+		log.Int("countLimit", int(args.countLimit)),
+		log.Int("resultCount", searchResults.ResultCount()))
 
 	nonFileMatches := 0
 	inconsistentFilepaths := 0
@@ -102,6 +105,10 @@ func findCandidateOccurrencesViaSearch(
 		if fileMatch.LimitHit {
 			limitHit = true
 			continue
+		}
+		// Sometimes Zoekt/Searcher give us way more results than we asked for.
+		if matchCount >= int(args.countLimit) {
+			break
 		}
 		path := fileMatch.Path
 		matches := []candidateMatch{}
@@ -268,12 +275,10 @@ type candidateStream struct {
 func (c *candidateStream) Send(event streaming.SearchEvent) {
 	c.Lock()
 	defer c.Unlock()
-	fmt.Printf("SEEING MORE RESULTS: %d/%d\n", c.Results.ResultCount(), c.limit)
 	if c.Results.ResultCount() < c.limit {
 		c.Results = append(c.Results, c.filterFunc(event.Results)...)
 		c.Stats.Update(&event.Stats)
 		if c.Results.ResultCount() >= c.limit {
-			fmt.Printf("LIMIT HIT: %d/%d\n", c.Results.ResultCount(), c.limit)
 			c.limitFunc()
 		}
 	}
