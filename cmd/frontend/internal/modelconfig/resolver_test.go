@@ -143,7 +143,7 @@ func TestModelConfigResolver(t *testing.T) {
 	}
 	codyGatewayModel := modelconfigSDK.Model{
 		ModelRef:  modelconfigSDK.ModelRef("test-provider_cody-gateway::xxx::cody-gateway_model-id"),
-		ModelName: "cody-gateway)model-name",
+		ModelName: "cody-gateway_model-name",
 	}
 
 	modelconfigData := modelconfigSDK.ModelConfiguration{
