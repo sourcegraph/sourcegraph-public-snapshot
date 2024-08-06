@@ -43,10 +43,9 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
     }
 
     const [showLearnMore, setShowLearnMore] = useState(false)
-
     // only show if the welcome message has been dismissed so we know they have been introduced to the new webapp
     const showDeparture = !departureDismissed
-    const popoverProps = showDeparture ? { isOpen: true, onOpenChange: () => {} } : {}
+    const popoverProps = showDeparture ? { isOpen: true, onOpenChange: () => { } } : {}
 
     return (
         <Popover {...popoverProps}>
