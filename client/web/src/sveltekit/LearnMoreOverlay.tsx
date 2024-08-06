@@ -16,12 +16,12 @@ export const LearnMoreOverlay = forwardRef<{ show: () => void; hide: () => void 
 
         const isLightTheme = useIsLightTheme()
 
-        const show = () => dialogRef.current?.showModal()
-        const hide = () => dialogRef.current?.close()
+        const show = (): void => dialogRef.current?.showModal()
+        const hide = (): void => dialogRef.current?.close()
 
         useImperativeHandle(forwardedRef, () => ({ show, hide }))
 
-        const handleClickOutside = (event: MouseEvent) => {
+        const handleClickOutside = (event: MouseEvent): void => {
             // Use an inner div because the whole backdrop registers as part of the dialog
             if (innerRef.current && !innerRef.current.contains(event.target as Node)) {
                 hide()
@@ -94,6 +94,7 @@ export const LearnMoreOverlay = forwardRef<{ show: () => void; hide: () => void 
                     <img
                         src={`/.assets/img/welcome-overlay-screenshot-${isLightTheme ? 'light' : 'dark'}.svg`}
                         aria-hidden="true"
+                        alt="Example screenshot of beta web app"
                     />
 
                     <Button variant="icon" aria-label="Close welcome overlay" onClick={hide}>
