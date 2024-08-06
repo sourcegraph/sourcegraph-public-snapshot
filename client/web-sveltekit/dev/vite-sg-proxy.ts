@@ -33,8 +33,20 @@ export function sgProxy(options: Options): Plugin {
     const contextPlaceholder = '// ---window.context---'
 
     // Additional endpoints that should be proxied to the real Sourcegraph instance.
-    // These are not part of the known routes, but are required for the SvelteKit app to work.
-    const additionalEndpoints = ['/.api/', '/.assets/', '/.auth/']
+    const additionalEndpoints = [
+        // These are not part of the known routes list, but are required for the SvelteKit app to work
+        // in development mode.
+        '^/.api/',
+        '^/.assets/',
+        '^/.auth/',
+        // Repo sub pages are also not part of the known routes list. They are listed here so that we
+        // proxy them to the real Sourcegraph instance, for consistency with the production setup.
+        '/-/raw/',
+        '/-/batch-changes/?',
+        '/-/settings/?',
+        '/-/code-graph/?',
+        '/-/own/?',
+    ]
 
     // Routes known by the server that need to (potentially) be proxied to the real Sourcegraph instance.
     let knownServerRoutes: string[] = []
@@ -91,6 +103,7 @@ export function sgProxy(options: Options): Plugin {
             // from the JS context object. This is used to determine which requests should be proxied to the real Sourcegraph
             // instance.
             try {
+                logger.info(`Fetching JS context from ${options.target}`, { timestamp: true })
                 // The /sign-in endpoint is always available on dotcom and enterprise instances.
                 context = await fetch(`${options.target}/sign-in`)
                     .then(response => response.text())
@@ -125,7 +138,7 @@ export function sgProxy(options: Options): Plugin {
 
             const proxyConfig: Record<string, ProxyOptions> = {
                 // Proxy requests to specific endpoints to a real Sourcegraph instance.
-                [`^(${additionalEndpoints.join('|')})`]: baseOptions,
+                [`${additionalEndpoints.join('|')}`]: baseOptions,
             }
 
             const dynamicOptions: ProxyOptions = {
