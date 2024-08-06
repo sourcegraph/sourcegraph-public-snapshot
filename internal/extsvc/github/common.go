@@ -996,6 +996,46 @@ func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, ba
 	return &pr, nil
 }
 
+func (c *V4Client) GetOpenPullRequestByRefsReduced(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error) {
+	version := c.determineGitHubVersion(ctx)
+	prFragment, err := pullRequestFragmentsSimple(version)
+	if err != nil {
+		return nil, err
+	}
+	var q strings.Builder
+	q.WriteString(prFragment)
+	q.WriteString("query {\n")
+	q.WriteString(fmt.Sprintf("repository(owner: %q, name: %q) {\n",
+		owner, name))
+	q.WriteString(fmt.Sprintf("pullRequests(baseRefName: %q, headRefName: %q, first: 1, states: OPEN) { \n",
+		abbreviateRef(baseRef), abbreviateRef(headRef),
+	))
+	q.WriteString("nodes{ ... pr }\n}\n}\n}")
+
+	var results struct {
+		Repository struct {
+			PullRequests struct {
+				Nodes []*struct {
+					PullRequest
+				}
+			}
+		}
+	}
+
+	err = c.requestGraphQL(ctx, q.String(), nil, &results)
+	if err != nil {
+		return nil, err
+	}
+	if len(results.Repository.PullRequests.Nodes) != 1 {
+		return nil, errors.Errorf("expected 1 pull request, got %d instead", len(results.Repository.PullRequests.Nodes))
+	}
+
+	node := results.Repository.PullRequests.Nodes[0]
+	pr := node.PullRequest
+
+	return &pr, nil
+}
+
 const createPullRequestCommentMutation = `
 mutation CreatePullRequestComment($input: AddCommentInput!) {
   addComment(input: $input) {
@@ -1502,6 +1542,59 @@ fragment pr on PullRequest {
   }
 }
 `
+
+const pullRequestFragmentsFmtstrSimple = `
+fragment actor on Actor {
+  avatarUrl
+  login
+  url
+}
+
+fragment repo on Repository {
+  id
+  name
+  owner {
+    login
+  }
+}
+
+fragment pr on PullRequest {
+  id
+  title
+  body
+  state
+  url
+  number
+  createdAt
+  updatedAt
+  headRefOid
+  baseRefOid
+  headRefName
+  baseRefName
+  reviewDecision
+  %s
+  author {
+    ...actor
+  }
+  baseRepository {
+    ...repo
+  }
+  headRepository {
+    ...repo
+  }
+}
+`
+
+func pullRequestFragmentsSimple(version *semver.Version) (string, error) {
+	if ghe220Semver.Check(version) {
+		// Don't ask for isDraft for ghe 2.20.
+		return fmt.Sprintf(pullRequestFragmentsFmtstrSimple, ""), nil
+	}
+	if ghe221PlusOrDotComSemver.Check(version) {
+		return fmt.Sprintf(pullRequestFragmentsFmtstrSimple, "isDraft"), nil
+	}
+	return "", errors.Errorf("unsupported version of GitHub: %s", version)
+}
 
 func pullRequestFragments(version *semver.Version) (string, error) {
 	timelineItemTypes, err := timelineItemTypes(version)
