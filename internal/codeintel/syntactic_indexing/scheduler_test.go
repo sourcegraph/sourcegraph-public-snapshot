@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	dbworker "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 func TestSyntacticIndexingScheduler(t *testing.T) {
@@ -81,7 +82,7 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 
 	err := scheduler.Schedule(observationCtx, ctx, time.Now())
 	require.NoError(t, err)
-	require.Equal(t, 2, unwrap(jobStore.DBWorkerStore().QueuedCount(ctx, false))(t))
+	require.Equal(t, 2, unwrap(jobStore.DBWorkerStore().CountByState(ctx, dbworker.StateQueued|dbworker.StateErrored))(t))
 
 	job1, recordReturned, err := jobStore.DBWorkerStore().Dequeue(ctx, "worker-1", []*sqlf.Query{})
 	require.NoError(t, err)

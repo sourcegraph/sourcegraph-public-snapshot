@@ -65,6 +65,7 @@ go_test(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/observation",
+        "//internal/workerutil/dbworker/store",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_stretchr_testify//require",
     ],
