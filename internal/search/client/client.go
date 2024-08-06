@@ -300,6 +300,9 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 			searchType = query.SearchTypeCodyContext
 		case "keyword":
 			searchType = query.SearchTypeKeyword
+		// NOTE: the lucky patterntype is deprecated. For now, we remap it to 'standard' to avoid breaks.
+		case "lucky":
+			searchType = query.SearchTypeStandard
 		}
 	})
 	return searchType

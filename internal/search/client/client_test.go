@@ -42,6 +42,7 @@ func TestDetectSearchType(t *testing.T) {
 		{"V1, override literal pattern type", "V1", &typeRegexp, "patterntype:literal", query.SearchTypeLiteral},
 		{"V1, override literal pattern type, with case-insensitive query", "V1", &typeRegexp, "pAtTErNTypE:literal", query.SearchTypeLiteral},
 		{"V1, lucky pattern type should be mapped to standard", "V1", &typeLucky, "", query.SearchTypeStandard},
+		{"V1, lucky pattern type in query should be mapped to standard", "V1", nil, "patternType:lucky", query.SearchTypeStandard},
 	}
 
 	for _, test := range testCases {
