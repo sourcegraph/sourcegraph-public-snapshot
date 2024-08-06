@@ -247,6 +247,9 @@ func SearchTypeFromString(patternType string) (query.SearchType, error) {
 		return query.SearchTypeCodyContext, nil
 	case "keyword":
 		return query.SearchTypeKeyword, nil
+	// NOTE: the lucky patterntype is deprecated. For now, we remap it to 'standard' to avoid breaks.
+	case "lucky":
+		return query.SearchTypeStandard, nil
 	default:
 		return -1, errors.Errorf("unrecognized patternType %q", patternType)
 	}
@@ -297,6 +300,9 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 			searchType = query.SearchTypeCodyContext
 		case "keyword":
 			searchType = query.SearchTypeKeyword
+		// NOTE: the lucky patterntype is deprecated. For now, we remap it to 'standard' to avoid breaks.
+		case "lucky":
+			searchType = query.SearchTypeStandard
 		}
 	})
 	return searchType
