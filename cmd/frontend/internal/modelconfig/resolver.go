@@ -196,7 +196,7 @@ func (r *codyLLMConfigurationResolver) CompletionModel() (string, error) {
 	if model == nil {
 		return "", errors.Errorf("default code completion model %q not found", defaultCompletionModel)
 	}
-	return toLegacyModelIdentifier(model.ModelRef), nil
+	return string(model.ModelRef.ModelID()), nil
 }
 
 func (r *codyLLMConfigurationResolver) CompletionModelMaxTokens() (*int32, error) {
