@@ -248,7 +248,7 @@
                         />
                     {/if}
                 {:else}
-                    <LoadingSpinner center={false} />
+                    <LoadingSpinner />
                 {/if}
             </div>
         </div>
