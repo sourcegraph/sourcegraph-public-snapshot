@@ -532,7 +532,7 @@ AND EXISTS (
 )
 `, licenseCond)
 
-	rows, err := r.db.Query(ctx, query, namedArgs)
+	rows, err := r.db.Query(ctx, query+"ORDER BY product_subscriptions.created_at DESC", namedArgs)
 	if err != nil {
 		return nil, errors.Wrap(err, "query subscription attributes")
 	}

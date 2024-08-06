@@ -495,9 +495,9 @@ func TestListEnterpriseSubscriptions(t *testing.T) {
 		for _, s := range ss {
 			s.CreatedAt = time.Time{} // zero time for autogold
 		}
-		autogold.Expect("barbaz - 0001-01-01").Equal(t, ss[0].GenerateDisplayName())
+		autogold.Expect("foobar - 0001-01-01").Equal(t, ss[0].GenerateDisplayName())
 		autogold.Expect("user - 0001-01-01").Equal(t, ss[1].GenerateDisplayName())
-		autogold.Expect("foobar - 0001-01-01").Equal(t, ss[2].GenerateDisplayName())
+		autogold.Expect("barbaz - 0001-01-01").Equal(t, ss[2].GenerateDisplayName())
 
 		var found bool
 		for _, s := range ss {
