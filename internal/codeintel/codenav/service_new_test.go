@@ -30,19 +30,19 @@ func posMatcher(line int, char int) shared.Matcher {
 func TestGetDefinitions(t *testing.T) {
 	t.Run("local", func(t *testing.T) {
 		// Set up mocks
-		mockRepoStore := defaultMockRepoStore()
+		fakeRepoStore := AllPresentFakeRepoStore{}
 		mockLsifStore := lsifstoremocks.NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
 		mockSearchClient := client.NewMockSearchClient()
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
+		svc := newService(observation.TestContextTB(t), fakeRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		// Set up request state
 		lookupPath := core.NewRepoRelPathUnchecked("sub2/a.go")
 		mockRequestState := RequestState{Path: lookupPath}
-		mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
+		mockRequestState.SetLocalCommitCache(fakeRepoStore, mockGitserverClient)
 
 		mockRequestState.GitTreeTranslator = noopTranslator()
 		mockRequest := OccurrenceRequestArgs{
@@ -92,19 +92,19 @@ func TestGetDefinitions(t *testing.T) {
 
 	t.Run("remote", func(t *testing.T) {
 		// Set up mocks
-		mockRepoStore := defaultMockRepoStore()
+		fakeRepoStore := AllPresentFakeRepoStore{}
 		mockLsifStore := lsifstoremocks.NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
 		mockSearchClient := client.NewMockSearchClient()
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
+		svc := newService(observation.TestContextTB(t), fakeRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		// Set up request state
 		lookupPath := core.NewRepoRelPathUnchecked("sub2/a.go")
 		mockRequestState := RequestState{Path: lookupPath}
-		mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
+		mockRequestState.SetLocalCommitCache(fakeRepoStore, mockGitserverClient)
 		mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42})
 		mockRequestState.GitTreeTranslator = noopTranslator()
 		uploads1 := []uploadsshared.CompletedUpload{
@@ -209,19 +209,19 @@ func TestGetDefinitions(t *testing.T) {
 func TestGetReferences(t *testing.T) {
 	t.Run("local", func(t *testing.T) {
 		// Set up mocks
-		mockRepoStore := defaultMockRepoStore()
+		fakeRepoStore := AllPresentFakeRepoStore{}
 		mockLsifStore := lsifstoremocks.NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
 		mockSearchClient := client.NewMockSearchClient()
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
+		svc := newService(observation.TestContextTB(t), fakeRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		// Set up request state
 		lookupPath := core.NewRepoRelPathUnchecked("sub2/a.go")
 		mockRequestState := RequestState{Path: lookupPath}
-		mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
+		mockRequestState.SetLocalCommitCache(fakeRepoStore, mockGitserverClient)
 		mockRequestState.GitTreeTranslator = noopTranslator()
 		uploads := []uploadsshared.CompletedUpload{
 			{ID: 50, Commit: "deadbeef", Root: "sub2/"},
@@ -285,19 +285,19 @@ func TestGetReferences(t *testing.T) {
 
 	t.Run("remote", func(t *testing.T) {
 		// Set up mocks
-		mockRepoStore := defaultMockRepoStore()
+		fakeRepoStore := AllPresentFakeRepoStore{}
 		mockLsifStore := lsifstoremocks.NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
 		mockSearchClient := client.NewMockSearchClient()
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
+		svc := newService(observation.TestContextTB(t), fakeRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		// Set up request state
 		lookupPath := core.NewRepoRelPathUnchecked("sub2/a.go")
 		mockRequestState := RequestState{Path: lookupPath}
-		mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
+		mockRequestState.SetLocalCommitCache(fakeRepoStore, mockGitserverClient)
 		mockRequestState.GitTreeTranslator = noopTranslator()
 		uploads := []uploadsshared.CompletedUpload{
 			{ID: 50, Commit: "deadbeef", Root: "sub1/"},
@@ -458,19 +458,19 @@ func TestGetReferences(t *testing.T) {
 func TestGetImplementations(t *testing.T) {
 	t.Run("local", func(t *testing.T) {
 		// Set up mocks
-		mockRepoStore := defaultMockRepoStore()
+		fakeRepoStore := AllPresentFakeRepoStore{}
 		mockLsifStore := lsifstoremocks.NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
 		mockSearchClient := client.NewMockSearchClient()
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
+		svc := newService(observation.TestContextTB(t), fakeRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		// Set up request state
 		lookupPath := core.NewRepoRelPathUnchecked("sub2/a.go")
 		mockRequestState := RequestState{Path: lookupPath}
-		mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
+		mockRequestState.SetLocalCommitCache(fakeRepoStore, mockGitserverClient)
 		mockRequestState.GitTreeTranslator = noopTranslator()
 
 		// Empty result set (prevents nil pointer as scanner is always non-nil)

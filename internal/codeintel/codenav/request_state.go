@@ -99,7 +99,7 @@ func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *
 	r.GitTreeTranslator = NewGitTreeTranslator(client, *repo)
 }
 
-func (r *RequestState) SetLocalCommitCache(repoStore database.RepoStore, client gitserver.Client) {
+func (r *RequestState) SetLocalCommitCache(repoStore minimalRepoStore, client gitserver.Client) {
 	r.commitCache = NewCommitCache(repoStore, client)
 }
 
