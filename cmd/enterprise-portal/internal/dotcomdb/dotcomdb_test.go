@@ -492,9 +492,12 @@ func TestListEnterpriseSubscriptions(t *testing.T) {
 		// We expect 1 less subscription because one of the subscriptions does not
 		// have a dev/internal license
 		assert.Len(t, ss, mock.createdSubscriptions-mock.archivedSubscriptions-1)
-		autogold.Expect("barbaz - 2024-07-26").Equal(t, ss[0].GenerateDisplayName())
-		autogold.Expect("user - 2024-07-26").Equal(t, ss[1].GenerateDisplayName())
-		autogold.Expect("foobar - 2024-07-26").Equal(t, ss[2].GenerateDisplayName())
+		for _, s := range ss {
+			s.CreatedAt = time.Time{} // zero time for autogold
+		}
+		autogold.Expect("barbaz - 0001-01-01").Equal(t, ss[0].GenerateDisplayName())
+		autogold.Expect("user - 0001-01-01").Equal(t, ss[1].GenerateDisplayName())
+		autogold.Expect("foobar - 0001-01-01").Equal(t, ss[2].GenerateDisplayName())
 
 		var found bool
 		for _, s := range ss {
@@ -524,6 +527,6 @@ func TestListEnterpriseSubscriptions(t *testing.T) {
 			dotcomdb.ListEnterpriseSubscriptionsOptions{})
 		require.NoError(t, err)
 		assert.Len(t, ss, 1) // only 1 created without a dev tag
-		autogold.Expect("not-devlicense - 2024-07-26").Equal(t, ss[0].GenerateDisplayName())
+		autogold.Expect("not-devlicense - 2024-08-06").Equal(t, ss[0].GenerateDisplayName())
 	})
 }
