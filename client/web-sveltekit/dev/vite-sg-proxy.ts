@@ -39,12 +39,17 @@ export function sgProxy(options: Options): Plugin {
     // Routes known by the server that need to (potentially) be proxied to the real Sourcegraph instance.
     let knownServerRoutes: string[] = []
 
-    function extractContext(body: string) {
-        return body.match(/window\.context\s*=\s*{.*}/)?.[0] ?? ''
+    function extractContextRaw(body: string): string | null {
+        const match = body.match(/window\.context\s*=\s*{.*}/)
+        return match?.[0] ?? null
     }
 
-    function getKnownRoutes(context: string) {
-        return new Function(`return ${context.match(/\{.*\}/)?.[0] ?? ''}`)()?.['svelteKit']?.['knownRoutes'] || []
+    function extractContext(body: string): Window['context'] | null {
+        const context = extractContextRaw(body)
+        if (!context) {
+            return null
+        }
+        return new Function(`return ${context.match(/\{.*\}/)?.[0] ?? ''}`)()
     }
 
     /**
@@ -80,28 +85,30 @@ export function sgProxy(options: Options): Plugin {
                 return
             }
 
+            let context: Window['context'] | null
+
             // At startup we fetch the sign-in page from the real Sourcegraph instance to extract the `knownRoutes` array
             // from the JS context object. This is used to determine which requests should be proxied to the real Sourcegraph
             // instance.
             try {
                 // The /sign-in endpoint is always available on dotcom and enterprise instances.
-                const context = await fetch(`${options.target}/sign-in`)
+                context = await fetch(`${options.target}/sign-in`)
                     .then(response => response.text())
                     .then(extractContext)
-
-                if (!context) {
-                    logger.error('Failed to extract JS context from origin', { timestamp: true })
-                    return
-                }
-
-                knownServerRoutes = getKnownRoutes(context)
-                if (!knownServerRoutes.length) {
-                    logger.error('Failed to extract known routes from JS context', { timestamp: true })
-                    return
-                }
             } catch (error) {
                 console.error(error)
                 logger.error(`Failed to fetch JS context: ${(error as Error).message}`, { timestamp: true })
+                return
+            }
+
+            if (!context) {
+                logger.error('Failed to extract JS context from origin', { timestamp: true })
+                return
+            }
+
+            knownServerRoutes = context.svelteKit?.knownRoutes ?? []
+            if (!knownServerRoutes.length) {
+                logger.error('Failed to extract known routes from JS context', { timestamp: true })
                 return
             }
 
@@ -113,11 +120,7 @@ export function sgProxy(options: Options): Plugin {
                 target: options.target,
                 changeOrigin: true,
                 secure: false,
-                headers: {
-                    // This needs to be set to make the cody sidebar work, which doesn't use the web graphql client work.
-                    // todo(fkling): Figure out how the React app makes this work without this header.
-                    'X-Requested-With': 'Sourcegraph',
-                },
+                headers: context.xhrHeaders,
             }
 
             const proxyConfig: Record<string, ProxyOptions> = {
@@ -173,7 +176,7 @@ export function sgProxy(options: Options): Plugin {
                     })
                         .then(response => response.text())
                         .then(body => {
-                            const context = extractContext(body)
+                            const context = extractContextRaw(body)
                             if (!context) {
                                 throw new Error('window.context not found in response from origin')
                             }
