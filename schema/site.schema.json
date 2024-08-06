@@ -193,7 +193,7 @@
         "scipBasedAPIs": {
           "description": "Enable usage of new CodeGraph and usagesForSymbol APIs",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "_comment": "Keep default above in sync with NOTE(id: scip-based-apis-feature-flag)",
           "!go": {
             "pointer": true
