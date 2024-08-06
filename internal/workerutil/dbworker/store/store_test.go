@@ -65,6 +65,41 @@ func TestStoreQueuedCountIncludeProcessing(t *testing.T) {
 	}
 }
 
+func TestStoreExists(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state, created_at)
+		VALUES
+			(1, 'queued', NOW() - '1 minute'::interval),
+			(2, 'queued', NOW() - '2 minute'::interval),
+			(3, 'state2', NOW() - '3 minute'::interval),
+			(4, 'queued', NOW() - '4 minute'::interval),
+			(5, 'processing', NOW() - '5 minute'::interval)
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	myStore := testStore(db, defaultTestStoreOptions(nil, testScanRecord))
+	ctx := context.Background()
+
+	hasQueued, err := myStore.Exists(ctx, StateQueued)
+	require.NoError(t, err)
+	require.True(t, hasQueued)
+
+	hasErrored, err := myStore.Exists(ctx, StateErrored)
+	require.NoError(t, err)
+	require.False(t, hasErrored)
+
+	hasQueuedOrErrored, err := myStore.Exists(ctx, StateQueued|StateErrored)
+	require.NoError(t, err)
+	require.True(t, hasQueuedOrErrored)
+
+	_, err = myStore.Exists(ctx, 0)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "should contain at least one state")
+}
+
 func TestStoreQueuedCountFailed(t *testing.T) {
 	db := setupStoreTest(t)
 

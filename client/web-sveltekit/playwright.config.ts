@@ -11,6 +11,10 @@ const config: PlaywrightTestConfig = {
               command: 'pnpm build:preview && pnpm preview',
               port: PORT,
               reuseExistingServer: true,
+              env: {
+                  PLAYWRIGHT: '1',
+              },
+              timeout: 5 * 60_000,
           }
         : undefined,
     reporter: 'list',

@@ -185,3 +185,8 @@
       interfaces:
         - DataStore
         - SCIPWriter
+- filename: internal/codeintel/uploads/internal/storemocks/mocks_temp.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
+      interfaces:
+        - Store

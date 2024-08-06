@@ -47,7 +47,7 @@ func (ps *ProxyServer) updateAccessToken() {
 	for {
 		token, err := ps.getAccessToken()
 		if err != nil {
-			ps.logger.Fatal("Error getting access token: %v", log.Error(err))
+			ps.logger.Error("Error getting access token: %v", log.Error(err))
 		} else {
 			ps.tokenMutex.Lock()
 			ps.accessToken = token
@@ -193,7 +193,7 @@ func (ps *ProxyServer) handleProxy(w http.ResponseWriter, req *http.Request) {
 			break
 		}
 		if _, writeErr := w.Write(buf[:n]); writeErr != nil {
-			ps.logger.Fatal("Error writing response: %v", log.Error(writeErr))
+			ps.logger.Error("Error writing response: %v", log.Error(writeErr))
 			break
 		}
 		if flusher, ok := w.(http.Flusher); ok {

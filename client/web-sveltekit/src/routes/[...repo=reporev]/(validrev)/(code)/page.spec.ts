@@ -325,26 +325,25 @@ test.describe('cody sidebar', () => {
     }
 
     test.describe('dotcom', () => {
-        test.beforeEach(({ sg }) => {
-            sg.dotcomMode()
+        test.beforeEach(async ({ sg }) => {
+            await sg.dotcomMode()
         })
 
-        test('enabled when signed out', async ({ page, sg }) => {
+        test('disabled when signed out', async ({ page }) => {
             await page.goto(path)
-            await hasCody(page)
-            await expect(
-                page.getByText('Cody is only available to signed-in users. Sign in to use Cody.')
-            ).toBeVisible()
+            await doesNotHaveCody(page)
         })
 
         test('enabled when signed in', async ({ page, sg }) => {
-            sg.signIn()
+            await sg.signIn()
 
             await page.goto(path)
             await hasCody(page)
         })
 
         test('ignores context filters', async ({ page, sg }) => {
+            await sg.signIn()
+
             sg.mockTypes({
                 Site: () => ({
                     codyContextFilters: {
@@ -361,8 +360,8 @@ test.describe('cody sidebar', () => {
     })
 
     test.describe('enterprise', () => {
-        test.beforeEach(({ sg }) => {
-            sg.signIn()
+        test.beforeEach(async ({ sg }) => {
+            await sg.signIn()
 
             sg.mockTypes({
                 Site: () => ({
@@ -373,11 +372,11 @@ test.describe('cody sidebar', () => {
             })
         })
 
-        test.fixme('disabled when disabled on instance', async ({ page, sg }) => {
+        test('disabled when disabled on instance', async ({ page, sg }) => {
             // These tests seem to take longer than the default timeout
             test.setTimeout(10000)
 
-            sg.setWindowContext({
+            await sg.setWindowContext({
                 codyEnabledOnInstance: false,
             })
 
@@ -385,11 +384,11 @@ test.describe('cody sidebar', () => {
             await doesNotHaveCody(page)
         })
 
-        test.fixme('disabled when disabled for user', async ({ page, sg }) => {
+        test('disabled when disabled for user', async ({ page, sg }) => {
             // These tests seem to take longer than the default timeout
             test.setTimeout(10000)
 
-            sg.setWindowContext({
+            await sg.setWindowContext({
                 codyEnabledOnInstance: true,
                 codyEnabledForCurrentUser: false,
             })
@@ -402,7 +401,7 @@ test.describe('cody sidebar', () => {
             // teardown takes longer than default timeout
             test.setTimeout(10000)
 
-            sg.setWindowContext({
+            await sg.setWindowContext({
                 codyEnabledOnInstance: true,
                 codyEnabledForCurrentUser: true,
             })
@@ -412,7 +411,7 @@ test.describe('cody sidebar', () => {
         })
 
         test('disabled for excluded repo', async ({ page, sg }) => {
-            sg.setWindowContext({
+            await sg.setWindowContext({
                 codyEnabledOnInstance: true,
                 codyEnabledForCurrentUser: true,
             })
@@ -431,7 +430,7 @@ test.describe('cody sidebar', () => {
         })
 
         test('disabled with invalid context filter', async ({ page, sg }) => {
-            sg.setWindowContext({
+            await sg.setWindowContext({
                 codyEnabledOnInstance: true,
                 codyEnabledForCurrentUser: true,
             })

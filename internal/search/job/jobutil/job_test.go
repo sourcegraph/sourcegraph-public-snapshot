@@ -1393,10 +1393,10 @@ func TestToTextPatternInfo(t *testing.T) {
 		output: autogold.Expect(`{"Query":{"Value":"(?://).*?(?:literal).*?(?:slash)","IsNegated":false,"IsRegExp":true},"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":null,"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
 		input:  `repo:contains.path(Dockerfile)`,
-		output: autogold.Expect(`{"Query":{"Value":"","IsNegated":false,"IsRegExp":true},"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":null,"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		output: autogold.Expect("Error"),
 	}, {
 		input:  `repohasfile:Dockerfile`,
-		output: autogold.Expect(`{"Query":{"Value":"","IsNegated":false,"IsRegExp":true},"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":null,"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		output: autogold.Expect("Error"),
 	}, {
 		input:  `repo:^github\.com/sgtest/go-diff$ make(:[1]) index:only patterntype:structural count:3`,
 		output: autogold.Expect(`{"Query":{"Value":"make(:[1])","IsNegated":false,"IsRegExp":false},"IsStructuralPat":true,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":3,"Index":"only","Select":[],"IncludePaths":null,"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
@@ -1434,7 +1434,10 @@ func TestToTextPatternInfo(t *testing.T) {
 		}
 		b := plan[0]
 		resultTypes := computeResultTypes(b, query.SearchTypeLiteral, defaultResultTypes)
-		p := toTextPatternInfo(b, resultTypes, &feat, limits.DefaultMaxSearchResults)
+		p, err := toTextPatternInfo(b, resultTypes, &feat, limits.DefaultMaxSearchResults)
+		if err != nil {
+			return "Error"
+		}
 		v, _ := json.Marshal(p)
 		return string(v)
 	}

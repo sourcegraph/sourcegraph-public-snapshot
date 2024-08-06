@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/dotcom/productsubscription"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/licensing/enforcement"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/licensing/resolvers"

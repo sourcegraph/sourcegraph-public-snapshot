@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 const sampleFile1 = `package food
@@ -25,7 +24,7 @@ type banana struct{}`
 
 func TestSnapshotForDocument(t *testing.T) {
 	// Set up mocks
-	mockRepoStore := defaultMockRepoStore()
+	fakeRepoStore := AllPresentFakeRepoStore{}
 	mockLsifStore := lsifstoremocks.NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
@@ -33,10 +32,9 @@ func TestSnapshotForDocument(t *testing.T) {
 	mockSearchClient := client.NewMockSearchClient()
 
 	// Init service
-	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
+	svc := newService(observation.TestContextTB(t), fakeRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 	mockUploadSvc.GetCompletedUploadsByIDsFunc.SetDefaultReturn([]shared.CompletedUpload{{}}, nil)
-	mockRepoStore.GetFunc.SetDefaultReturn(&types.Repo{}, nil)
 	mockGitserverClient.NewFileReaderFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte(sampleFile1))), nil)
 	mockLsifStore.SCIPDocumentFunc.SetDefaultReturn(core.Some(&scip.Document{
 		RelativePath: "burger.go",
