@@ -20,6 +20,7 @@ import (
 func TestDetectSearchType(t *testing.T) {
 	typeRegexp := "regexp"
 	typeLiteral := "literal"
+	typeLucky := "lucky"
 	testCases := []struct {
 		name        string
 		version     string
@@ -40,6 +41,7 @@ func TestDetectSearchType(t *testing.T) {
 		{"V2, override regex variant pattern type with single quotes", "V2", &typeLiteral, `patterntype:'regex'`, query.SearchTypeRegex},
 		{"V1, override literal pattern type", "V1", &typeRegexp, "patterntype:literal", query.SearchTypeLiteral},
 		{"V1, override literal pattern type, with case-insensitive query", "V1", &typeRegexp, "pAtTErNTypE:literal", query.SearchTypeLiteral},
+		{"V1, lucky pattern type should be mapped to standard", "V1", &typeLucky, "", query.SearchTypeStandard},
 	}
 
 	for _, test := range testCases {
