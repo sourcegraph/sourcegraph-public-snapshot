@@ -11,7 +11,7 @@ test('has sign in button', async ({ page }) => {
 })
 
 test('has user menu', async ({ sg, page }) => {
-    sg.signIn({ username: 'test' })
+    await sg.signIn({ username: 'test' })
     const userMenu = page.getByLabel('Open user menu')
 
     await page.goto('/')
@@ -64,7 +64,7 @@ test.describe('cody top level navigation', () => {
             await sg.setWindowContext(context)
 
             if (signedIn) {
-                sg.signIn({ username: 'test' })
+                await sg.signIn({ username: 'test' })
             }
 
             await page.goto('/')
