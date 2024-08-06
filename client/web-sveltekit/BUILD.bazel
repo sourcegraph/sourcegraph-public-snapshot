@@ -18,8 +18,6 @@ SRCS = [
     ".eslintignore",
     ".eslintrc.cjs",
     ".prettierignore",
-    ".env",
-    ".env.dotcom",
     "//client/wildcard:sass-breakpoints",
     "//client/wildcard:global-style-sources",
     "//client/web/dist/img:copy",
