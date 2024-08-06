@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
@@ -344,6 +345,9 @@ func (args *UsagesForSymbolArgs) Resolve(
 		cursor, err = codenav.DecodeUsagesCursor(*args.After)
 		if err != nil {
 			return out, errors.Wrap(err, "invalid after: cursor")
+		}
+		if cursor.CursorType == codenav.CursorTypeSyntactic {
+			slices.Sort(cursor.SyntacticCursor.SeenFiles)
 		}
 	} else {
 		cursor.CursorType = codenav.CursorTypeDefinitions

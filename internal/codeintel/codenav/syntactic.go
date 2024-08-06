@@ -290,7 +290,7 @@ func filterResultMatches(
 ) result.Matches {
 	return genslices.Filter(matches, func(match result.Match) bool {
 		if fileMatch, ok := match.(*result.FileMatch); ok {
-			if slices.Contains(filterFiles, fileMatch.Path) {
+			if _, found := slices.BinarySearch(filterFiles, fileMatch.Path); found {
 				return false
 			}
 		}
