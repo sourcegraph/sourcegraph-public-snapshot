@@ -19,6 +19,7 @@ import type { PageLoad } from './$types'
 import DotcomFooterLinks from './DotcomFooterLinks.svelte'
 import { DefaultSearchContext } from './page.gql'
 import { queryExampleDotcom, queryExampleEnterprise } from './queryExamples'
+import { SearchJob } from './searchJob'
 
 type SearchStreamCacheEntry = Observable<AggregateStreamingSearchResults>
 
@@ -145,6 +146,9 @@ export const load: PageLoad = async ({ parent, url, depends }) => {
                 patternType,
                 searchMode,
             },
+            searchJob: window.context.searchJobsEnabled
+                ? new SearchJob(getGraphQLClient(), `${query} patternType:${patternType}`)
+                : undefined,
         }
     }
 

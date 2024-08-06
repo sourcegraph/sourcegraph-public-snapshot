@@ -35,11 +35,9 @@ a:focus-visible {
     box-shadow: 0 0 0 2px var(--primary-2) inset;
 }
 
-button:focus-visible {
-    box-shadow: 0 0 0 2px var(--primary-2);
-}
-
-input:focus-visible {
+button:focus-visible,
+input:focus-visible,
+summary:focus-visible {
     box-shadow: 0 0 0 2px var(--primary-2);
 }
 
