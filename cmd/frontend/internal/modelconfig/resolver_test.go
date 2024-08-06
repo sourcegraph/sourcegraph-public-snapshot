@@ -59,6 +59,45 @@ func TestCompletionsResolver(t *testing.T) {
 		model, err = testResolver.CompletionModel()
 		assert.EqualValues(t, siteConfigData.CompletionModel, model)
 		assert.NoError(t, err)
+
+		// In the GraphQL resolver we are returning the model name expressed in
+		// the site config, but the HTTP completions API only accepts model IDs.
+		// For the "completions" config, these are 99% identical, but in some cases
+		// may differ.
+		//
+		// In the completions API (see get_model.go) we lookup a model by its mref
+		// or model ID, and then use the unmodified model name when making the API
+		// request.
+		t.Run("Sanitization", func(t *testing.T) {
+			// Copy and introduce more challenging model names.
+			updatedSiteConfigData := *siteConfigData
+			updatedSiteConfigData.ChatModel = "anthropic.claude-3-opus-20240229-v1:0/so:many:colons"
+			updatedSiteConfigData.FastChatModel = "all/sorts@of;special_chars&but!no#sanitization"
+			updatedSiteConfigData.CompletionModel = "other invalid tokens 😭😭😭"
+
+			updatedResolver := &completionsConfigResolver{
+				config: &updatedSiteConfigData,
+			}
+
+			var (
+				model string
+				err   error
+			)
+			model, err = updatedResolver.ChatModel()
+			assert.NotEqualValues(t, updatedSiteConfigData.ChatModel, model)
+			assert.EqualValues(t, "anthropic.claude-3-opus-20240229-v1_0/so_many_colons", model)
+			assert.NoError(t, err)
+
+			// Fast chat had wonky characters, but none required sanitizing.
+			model, err = updatedResolver.FastChatModel()
+			assert.EqualValues(t, updatedSiteConfigData.FastChatModel, model)
+			assert.NoError(t, err)
+
+			model, err = updatedResolver.CompletionModel()
+			assert.NotEqualValues(t, updatedSiteConfigData.CompletionModel, model)
+			assert.EqualValues(t, "other_invalid_tokens_____________", model)
+			assert.NoError(t, err)
+		})
 	})
 }
 
@@ -75,8 +114,8 @@ func TestModelConfigResolver(t *testing.T) {
 		},
 	}
 	awsBedrockModel := modelconfigSDK.Model{
-		ModelRef:  modelconfigSDK.ModelRef("test-provider_aws-bedrock::xxx::test-model_aws-bedrock"),
-		ModelName: "aws-bedrock-model-name",
+		ModelRef:  modelconfigSDK.ModelRef("test-provider_aws-bedrock::xxx::aws-bedrock_model-id"),
+		ModelName: "aws-bedrock_model-name",
 	}
 
 	// Azure OpenAI provider and model.
@@ -89,8 +128,8 @@ func TestModelConfigResolver(t *testing.T) {
 		},
 	}
 	azureOpenAIModel := modelconfigSDK.Model{
-		ModelRef:  modelconfigSDK.ModelRef("test-provider_azure-openai::xxx::test-model_azure-openai"),
-		ModelName: "azure-openai-model-name",
+		ModelRef:  modelconfigSDK.ModelRef("test-provider_azure-openai::xxx::azure-openai_model-id"),
+		ModelName: "azure-openai_model-name",
 	}
 
 	// Cody Gateway provider and model.
@@ -103,8 +142,8 @@ func TestModelConfigResolver(t *testing.T) {
 		},
 	}
 	codyGatewayModel := modelconfigSDK.Model{
-		ModelRef:  modelconfigSDK.ModelRef("test-provider_cody-gateway::xxx::test-model_cody-gateway"),
-		ModelName: "cody-gateway-model-name",
+		ModelRef:  modelconfigSDK.ModelRef("test-provider_cody-gateway::xxx::cody-gateway_model-id"),
+		ModelName: "cody-gateway)model-name",
 	}
 
 	modelconfigData := modelconfigSDK.ModelConfiguration{
@@ -146,24 +185,24 @@ func TestModelConfigResolver(t *testing.T) {
 	})
 
 	t.Run("Models", func(t *testing.T) {
-		// Note that for all these cases the returned string doesn't match
-		// either the Provider ID nor the Model ID. Instead, it is the name
-		// of the API Provider (e.g. "sourcegraph" if using Cody Gateway),
-		// and we return the model name.
+		// The models returned here are kinda confusing:
+		// We replace the "provider" with whatever underlying API is used for serving responses.
+		// However, we return the model IDs (rather than model Names) since that's what the
+		// completions API expects.
 		var (
 			model string
 			err   error
 		)
 		model, err = testResolver.ChatModel()
-		assert.Equal(t, "aws-bedrock/aws-bedrock-model-name", model)
+		assert.Equal(t, "aws-bedrock/aws-bedrock_model-id", model)
 		assert.NoError(t, err)
 
 		model, err = testResolver.CompletionModel()
-		assert.Equal(t, "azure-openai/azure-openai-model-name", model)
+		assert.Equal(t, "azure-openai/azure-openai_model-id", model)
 		assert.NoError(t, err)
 
 		model, err = testResolver.FastChatModel()
-		assert.Equal(t, "sourcegraph/cody-gateway-model-name", model)
+		assert.Equal(t, "sourcegraph/cody-gateway_model-id", model)
 		assert.NoError(t, err)
 	})
 }
