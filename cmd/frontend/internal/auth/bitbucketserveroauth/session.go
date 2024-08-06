@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/log"
@@ -112,7 +113,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 				ServiceType: extsvc.TypeBitbucketServer,
 				ServiceID:   s.baseURL.String(),
 				ClientID:    s.clientKey,
-				AccountID:   bbUser.Slug,
+				AccountID:   strconv.Itoa(bbUser.ID),
 			},
 			ExternalAccountData: data,
 			CreateIfNotExist:    attempt.createIfNotExist,
