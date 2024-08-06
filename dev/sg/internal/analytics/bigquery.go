@@ -77,6 +77,7 @@ func NewEvent(i invocation) *event {
 		"failed":    i.IsFailed(),
 		"cancelled": i.IsCancelled(),
 		"panicked":  i.IsPanicked(),
+		"os":        i.GetOS(),
 	}
 
 	e.Metadata, _ = json.Marshal(metadata)
