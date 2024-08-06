@@ -404,7 +404,7 @@ WHERE
 `
 
 func (s *store[T]) Exists(ctx context.Context, statesBitset RecordState) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.queuedCount.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.exists.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	fragments := statesBitset.toList()
