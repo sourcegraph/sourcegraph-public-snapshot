@@ -1,11 +1,8 @@
 package query
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -691,8 +688,12 @@ func ExperimentalPhraseBoost(originalQuery string, basic Basic) Basic {
 
 	// Check if the pattern is a single top-level AND expression with no negated or regexp clauses.
 	switch p := basic.Pattern.(type) {
+	case Pattern:
+		if !p.Annotation.Labels.IsSet(Quoted) || p.Negated || p.Annotation.Labels.IsSet(Regexp) {
+			return basic
+		}
 	case Operator:
-		if p.Kind != And || len(p.Operands) <= 1 {
+		if p.Kind != And {
 			return basic
 		}
 		for _, child := range p.Operands {
@@ -714,14 +715,12 @@ func ExperimentalPhraseBoost(originalQuery string, basic Basic) Basic {
 	}
 
 	query := strings.Join(filteredTerms, " ")
-	pattern := fmt.Sprintf(`(^|\b)%s($|\b)`, regexp.QuoteMeta(query))
-
 	basic.Pattern = Operator{
 		Kind: Or,
 		Operands: []Node{
 			Pattern{
-				Value:      pattern,
-				Annotation: Annotation{Labels: Boost | Regexp | Standard},
+				Value:      query,
+				Annotation: Annotation{Labels: Boost | Literal | Standard},
 			},
 			basic.Pattern,
 		},
