@@ -282,18 +282,19 @@ func (m *MultiHandler) SelectNonEmptyQueues(ctx context.Context, queueNames []st
 	var nonEmptyQueues []string
 	for _, queue := range queueNames {
 		var err error
-		var count int
+		var isNonEmpty bool
+		statesBitset := dbworkerstore.StateQueued | dbworkerstore.StateErrored
 		switch queue {
 		case m.BatchesQueueHandler.Name:
-			count, err = m.BatchesQueueHandler.Store.QueuedCount(ctx, false)
+			isNonEmpty, err = m.BatchesQueueHandler.Store.Exists(ctx, statesBitset)
 		case m.AutoIndexQueueHandler.Name:
-			count, err = m.AutoIndexQueueHandler.Store.QueuedCount(ctx, false)
+			isNonEmpty, err = m.AutoIndexQueueHandler.Store.Exists(ctx, statesBitset)
 		}
 		if err != nil {
 			m.logger.Error("fetching queue size", log.Error(err), log.String("queue", queue))
 			return nil, err
 		}
-		if count != 0 {
+		if isNonEmpty {
 			nonEmptyQueues = append(nonEmptyQueues, queue)
 		}
 	}
