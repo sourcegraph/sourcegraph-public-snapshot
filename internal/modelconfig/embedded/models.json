@@ -7,16 +7,20 @@
       "displayName": "Anthropic"
     },
     {
+      "id": "fireworks",
+      "displayName": "Fireworks"
+    },
+    {
       "id": "google",
       "displayName": "Google"
     },
     {
-      "id": "mistral",
-      "displayName": "Mistral"
-    },
-    {
       "id": "openai",
       "displayName": "OpenAI"
+    },
+    {
+      "id": "mistral",
+      "displayName": "Mistral"
     }
   ],
   "models": [
@@ -112,6 +116,19 @@
       }
     },
     {
+      "modelRef": "fireworks::v1::starcoder",
+      "displayName": "StarCoder",
+      "modelName": "starcoder",
+      "capabilities": ["autocomplete"],
+      "category": "speed",
+      "status": "stable",
+      "tier": "pro",
+      "contextWindow": {
+        "maxInputTokens": 2048,
+        "maxOutputTokens": 256
+      }
+    },
+    {
       "modelRef": "google::v1::gemini-1.5-pro-latest",
       "displayName": "Gemini 1.5 Pro",
       "modelName": "gemini-1.5-pro-latest",
@@ -204,8 +221,8 @@
     }
   ],
   "defaultModels": {
-    "chat": "anthropic::2023-06-01::claude-3-sonnet",
-    "fastChat": "anthropic::2023-06-01::claude-3-sonnet",
-    "codeCompletion": "anthropic::2023-06-01::claude-3-sonnet"
+    "chat": "anthropic::2023-06-01::claude-3.5-sonnet",
+    "fastChat": "anthropic::2023-06-01::claude-3-haiku",
+    "codeCompletion": "fireworks::v1::starcoder"
   }
 }
