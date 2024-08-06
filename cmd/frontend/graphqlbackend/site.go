@@ -112,7 +112,7 @@ func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfiguratio
 		// The only way a non-admin can access this field is when `returnSafeConfigsOnly`
 		// is set to true.
 		if returnSafeConfigsOnly {
-			if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+			if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 
 				// Log an event when site config is viewed by non-admin user.
 				if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigRedactedViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
@@ -123,7 +123,7 @@ func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfiguratio
 		}
 		return nil, err
 	}
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 
 		// Log an event when site config is viewed by admin user.
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
@@ -340,7 +340,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 		return false, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 
 		// Log an event when site config is updated
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {

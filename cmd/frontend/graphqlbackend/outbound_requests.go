@@ -65,7 +65,7 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 		after = ""
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 
 		// Log an even when Outbound requests are viewed
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
@@ -90,7 +90,7 @@ func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID)
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 
 		// Log an even when Outbound requests are viewed
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", graphql.ID(key)); err != nil {

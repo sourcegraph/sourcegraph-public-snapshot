@@ -491,7 +491,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	if err := r.db.Users().Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 		// Log an event when a user account is modified/updated
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameAccountModified, "", uint32(userID), "", "BACKEND", args); err != nil {
 			r.logger.Error("Error logging security event", log.Error(err))
@@ -878,7 +878,7 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 		log.Int("targetUserID", int(user.ID)),
 		log.Intp("oldQuota", oldQuota),
 		log.Intp("newQuota", newQuota))
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameUserCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", args); err != nil {
 			r.logger.Error("Error logging security event", log.Error(err))
 		}
@@ -920,7 +920,7 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 	if err := r.db.Users().SetCodeCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 
 		// Log an event when user's code completions quota is updated
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameUserCodeCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", args); err != nil {

@@ -47,7 +47,7 @@ func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, erro
 			org: org,
 		})
 	}
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 
 		// Log an event when listing organizations.
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgListViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {

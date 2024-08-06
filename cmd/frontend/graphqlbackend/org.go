@@ -28,7 +28,7 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 		// Log action for siteadmin viewing an organization's details
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
@@ -273,7 +273,7 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 		// Log an event when a new organization being created
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
@@ -311,7 +311,7 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 		// Log an event when organization settings are updated
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))

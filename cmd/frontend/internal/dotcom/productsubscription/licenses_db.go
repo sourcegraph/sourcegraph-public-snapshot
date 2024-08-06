@@ -103,7 +103,7 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		return "", errors.Wrap(err, "insert")
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 		arg := struct {
 			SubscriptionID string    `json:"subscriptionID"`
 			NewUUID        uuid.UUID `json:"newUUID"`
@@ -390,7 +390,7 @@ ORDER BY created_at DESC
 		results = append(results, &v)
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 		// Log an event when liscense list is viewed in Dotcom
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", q.Args()); err != nil {
 			logger.Warn("Error logging security event", log.Error(err))

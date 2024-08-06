@@ -92,7 +92,7 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 		return err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 		arguments := struct {
 			UserID int32  `json:"UserID"`
 			Email  string `json:"email"`
@@ -147,7 +147,7 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) err
 		if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
 			return errors.Wrap(err, "removing user e-mail")
 		}
-		if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+		if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 			arguments := struct {
 				UserID int32  `json:"UserID"`
 				Email  string `json:"email"`
@@ -263,7 +263,7 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 		Email:    email,
 		Verified: verified,
 	}
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 
 		// Log action of email being verified/unverified
 		if err := e.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailVerifiedToggle, "", uint32(userID), "", "BACKEND", arguments); err != nil {

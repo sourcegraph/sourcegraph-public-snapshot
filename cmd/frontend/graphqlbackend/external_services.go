@@ -80,7 +80,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 
 		arg := struct {
 			Kind        string
@@ -196,7 +196,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		logger.Warn("Failed to get new redacted config", log.Error(err))
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 		arg := struct {
 			ID           graphql.ID
 			DisplayName  *string
@@ -344,7 +344,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		}
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
 		arguments := struct {
 			GraphQLID         graphql.ID `json:"GraphQL ID"`
 			ExternalServiceID int64      `json:"External Service ID"`
