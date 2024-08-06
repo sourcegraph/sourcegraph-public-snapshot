@@ -62,7 +62,7 @@ func NewMultiqueueMetricReporter(queueNames []string, metricsConfig *Config, cou
 		},
 		goroutine.WithName("multiqueue-executors.autoscaler-metrics"),
 		goroutine.WithDescription("emits multiqueue metrics to GCP/AWS for auto-scaling"),
-		goroutine.WithInterval(5*time.Second),
+		goroutine.WithInterval(30*time.Second),
 	), nil
 }
 
