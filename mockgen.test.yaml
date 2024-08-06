@@ -232,9 +232,6 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/processor
       interfaces:
         - RepoStore
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
-      interfaces:
-        - Store
     - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
       interfaces:
         - Store
@@ -245,18 +242,10 @@
       interfaces:
         - PolicyService
         - PolicyMatcher
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
-      interfaces:
-        - Store
     - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
       interfaces:
         - Store
       prefix: Worker
-- filename: internal/codeintel/uploads/internal/background/backfiller/mocks_test.go
-  sources:
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
-      interfaces:
-        - Store
 - filename: internal/database/migration/runner/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/database/migration/runner
   interfaces:

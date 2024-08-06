@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph/codegraphmocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/storemocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
@@ -49,7 +50,7 @@ func TestHandle(t *testing.T) {
 	}
 
 	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
-	mockDBStore := NewMockStore()
+	mockDBStore := storemocks.NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLSIFStore := codegraphmocks.NewMockDataStore()
 	mockUploadStore := objectmocks.NewMockStorage()
@@ -298,7 +299,7 @@ func TestHandleError(t *testing.T) {
 	}
 
 	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
-	mockDBStore := NewMockStore()
+	mockDBStore := storemocks.NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLSIFStore := codegraphmocks.NewMockDataStore()
 	mockUploadStore := objectmocks.NewMockStorage()
@@ -364,7 +365,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 	}
 
 	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
-	mockDBStore := NewMockStore()
+	mockDBStore := storemocks.NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockUploadStore := objectmocks.NewMockStorage()
 	gitserverClient := gitserver.NewMockClient()

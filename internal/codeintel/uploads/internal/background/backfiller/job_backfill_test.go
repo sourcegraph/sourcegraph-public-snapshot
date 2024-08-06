@@ -10,13 +10,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/storemocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 func TestBackfillCommittedAtBatch(t *testing.T) {
 	ctx := context.Background()
-	store := NewMockStore()
+	store := storemocks.NewMockStore()
 	gitserverClient := gitserver.NewMockClient()
 	svc := &backfiller{
 		store:           store,
@@ -72,7 +73,7 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 	}
 
 	committedAtByCommit := map[string]time.Time{}
-	history := store.UpdateCommittedAtFunc.history
+	history := store.UpdateCommittedAtFunc.History()
 
 	for i := range n {
 		if len(history) <= i {
@@ -98,7 +99,7 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 
 func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 	ctx := context.Background()
-	store := NewMockStore()
+	store := storemocks.NewMockStore()
 	gitserverClient := gitserver.NewMockClient()
 	svc := &backfiller{
 		store:           store,
@@ -159,7 +160,7 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 	}
 
 	committedAtByCommit := map[string]time.Time{}
-	history := store.UpdateCommittedAtFunc.history
+	history := store.UpdateCommittedAtFunc.History()
 
 	for i := range n {
 		if len(history) <= i {
