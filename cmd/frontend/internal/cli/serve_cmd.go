@@ -13,7 +13,6 @@ import (
 	"github.com/go-logr/stdr"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/keegancsmith/tmpfriend"
 	sglog "github.com/sourcegraph/log"
 	"github.com/throttled/throttled/v2"
 	"github.com/throttled/throttled/v2/store/redigostore"
@@ -197,9 +196,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	printConfigValidation(logger)
-
-	cleanup := tmpfriend.SetupOrNOOP()
-	defer cleanup()
 
 	// Don't proceed if system requirements are missing, to avoid
 	// presenting users with a half-working experience.
