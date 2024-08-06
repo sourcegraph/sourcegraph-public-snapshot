@@ -1,10 +1,11 @@
 import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 
 import { mdiFilePlusOutline, mdiGraphOutline, mdiMagnifyScan, mdiClose } from '@mdi/js'
-import { BrandLogo } from 'src/components/branding/BrandLogo'
 
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, H1, H3, H5, Text, Icon, ProductStatusBadge } from '@sourcegraph/wildcard'
+
+import { BrandLogo } from '../components/branding/BrandLogo'
 
 import styles from './LearnMoreOverlay.module.scss'
 
