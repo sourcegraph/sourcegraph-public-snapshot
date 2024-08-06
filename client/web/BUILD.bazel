@@ -1653,6 +1653,7 @@ ts_project(
         "src/storm/pages/SearchPageWrapper/SearchPageWrapper.tsx",
         "src/storm/pages/SearchPageWrapper/index.ts",
         "src/storm/routes.tsx",
+        "src/sveltekit/LearnMoreOverlay.tsx",
         "src/sveltekit/SvelteKitNavItem.tsx",
         "src/sveltekit/WebNextAwareLink.tsx",
         "src/sveltekit/routes.ts",
