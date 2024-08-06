@@ -7,6 +7,9 @@
     import Button from '$lib/wildcard/Button.svelte'
     import ProductStatusBadge from '$lib/wildcard/ProductStatusBadge.svelte'
 
+    import WelcomeOverlayScreenshotDark from './WelcomeOverlayScreenshotDark.svelte'
+    import WelcomeOverlayScreenshotLight from './WelcomeOverlayScreenshotLight.svelte'
+
     let dialog: HTMLDialogElement | undefined
     let inner: HTMLDivElement | undefined
 
@@ -73,7 +76,11 @@
                 </p>
             </div>
         </div>
-        <img src={`/.assets/img/welcome-overlay-screenshot-${$isLightTheme ? 'light' : 'dark'}.svg`} />
+        {#if $isLightTheme}
+            <WelcomeOverlayScreenshotLight />
+        {:else}
+            <WelcomeOverlayScreenshotDark />
+        {/if}
 
         <Button variant="icon" aria-label="Close welcome overlay" on:click={() => handleDismiss()}>
             <Icon icon={ILucideX} aria-hidden="true" />
@@ -117,7 +124,7 @@
     }
 
     .inner {
-        > :global(img) {
+        > :global(svg) {
             position: absolute;
             right: 0;
             bottom: 0;
