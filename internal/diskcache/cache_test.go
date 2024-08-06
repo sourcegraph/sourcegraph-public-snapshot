@@ -9,10 +9,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 func TestOpen(t *testing.T) {
+	ctx := tenant.TestContext()
 	dir := t.TempDir()
 
 	store := &store{
@@ -24,7 +28,7 @@ func TestOpen(t *testing.T) {
 	do := func() (*File, bool) {
 		want := "foobar"
 		calledFetcher := false
-		f, err := store.Open(context.Background(), []string{"key"}, func(ctx context.Context) (io.ReadCloser, error) {
+		f, err := store.Open(ctx, []string{"key"}, func(ctx context.Context) (io.ReadCloser, error) {
 			calledFetcher = true
 			return io.NopCloser(bytes.NewReader([]byte(want))), nil
 		})
@@ -63,6 +67,7 @@ func TestOpen(t *testing.T) {
 }
 
 func TestMultiKeyEviction(t *testing.T) {
+	ctx := tenant.TestContext()
 	dir := t.TempDir()
 
 	store := &store{
@@ -71,7 +76,7 @@ func TestMultiKeyEviction(t *testing.T) {
 		observe:   newOperations(observation.TestContextTB(t), "test"),
 	}
 
-	f, err := store.Open(context.Background(), []string{"key1", "key2"}, func(ctx context.Context) (io.ReadCloser, error) {
+	f, err := store.Open(ctx, []string{"key1", "key2"}, func(ctx context.Context) (io.ReadCloser, error) {
 		return io.NopCloser(bytes.NewReader([]byte("blah"))), nil
 	})
 	if err != nil {
@@ -88,7 +93,7 @@ func TestMultiKeyEviction(t *testing.T) {
 	}
 }
 
-func TestEvict(t *testing.T) {
+func TestMultiTenantEvict(t *testing.T) {
 	dir := t.TempDir()
 
 	store := &store{
@@ -97,15 +102,33 @@ func TestEvict(t *testing.T) {
 		observe:   newOperations(observation.TestContextTB(t), "test"),
 	}
 
-	for _, name := range []string{
-		"key-first",
-		"key-second",
-		"not-managed.txt",
-		"key-third",
-		"key-fourth",
+	for _, tenantKey := range []struct {
+		tenantID int
+		key      string
+	}{
+		{
+			tenantID: 1,
+			key:      "key-first",
+		},
+		{
+			tenantID: 1,
+			key:      "key-second",
+		},
+		{
+			tenantID: 2,
+			key:      "key-third",
+		},
+		{
+			tenantID: 2,
+			key:      "key-fourth",
+		},
+		{
+			key: "not-managed.txt",
+		},
 	} {
-		if strings.HasPrefix(name, "key-") {
-			f, err := store.Open(context.Background(), []string{name}, func(ctx context.Context) (io.ReadCloser, error) {
+		if strings.HasPrefix(tenantKey.key, "key-") {
+			ctx := tenant.TestContextWithID(tenantKey.tenantID)
+			f, err := store.Open(ctx, []string{tenantKey.key}, func(ctx context.Context) (io.ReadCloser, error) {
 				return io.NopCloser(bytes.NewReader([]byte("x"))), nil
 			})
 			if err != nil {
@@ -113,7 +136,7 @@ func TestEvict(t *testing.T) {
 			}
 			f.Close()
 		} else {
-			if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0o600); err != nil {
+			if err := os.WriteFile(filepath.Join(dir, tenantKey.key), []byte("x"), 0o600); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -152,6 +175,49 @@ func TestEvict(t *testing.T) {
 	expect(4, 4, 1)
 
 	// we have 4 files left, but 1 can't be evicted since it isn't managed by
-	// disckcache.
+	// diskcache.
 	expect(0, 1, 3)
+}
+
+func TestTenantRequired(t *testing.T) {
+	dir := t.TempDir()
+
+	store := &store{
+		dir:       dir,
+		component: "test",
+		observe:   newOperations(observation.TestContextTB(t), "test"),
+	}
+
+	_, err := store.Open(context.Background(), []string{"key"}, func(ctx context.Context) (io.ReadCloser, error) {
+		return nil, nil
+	})
+	if err == nil {
+		t.Fatal("Expected error when no tenant is provided")
+	}
+}
+
+func TestTenantsHaveSeparateDirs(t *testing.T) {
+	ctx1 := tenant.TestContextWithID(1)
+	ctx2 := tenant.TestContextWithID(2)
+	dir := t.TempDir()
+
+	store := &store{
+		dir:       dir,
+		component: "test",
+		observe:   newOperations(observation.TestContextTB(t), "test"),
+	}
+
+	f1, err := store.Open(ctx1, []string{"key"}, func(ctx context.Context) (io.ReadCloser, error) {
+		return io.NopCloser(bytes.NewReader([]byte("x"))), nil
+	})
+	require.NoError(t, err)
+	f1.Close()
+
+	f2, err := store.Open(ctx2, []string{"key"}, func(ctx context.Context) (io.ReadCloser, error) {
+		return io.NopCloser(bytes.NewReader([]byte("y"))), nil
+	})
+	require.NoError(t, err)
+	f2.Close()
+
+	require.NotEqual(t, filepath.Dir(f1.Path), filepath.Dir(f2.Path))
 }
