@@ -8,7 +8,7 @@ import (
 
 // RedactServerSideConfig modifies the provided ModelConfiguration data in-place to remove
 // all server-side configuration data.
-// SECURITY: This function is used to redact sensitive server-side configuration data
+// SECURITY: This function is used to redact sensitive server-side configuration data.
 func RedactServerSideConfig(doc *types.ModelConfiguration) {
 	for i := range doc.Providers {
 		doc.Providers[i].ServerSideConfig = nil

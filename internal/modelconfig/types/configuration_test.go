@@ -17,7 +17,8 @@ func TestClientSideProviderConfigMarshalJSON(t *testing.T) {
 
 	actual := string(jsonBytes)
 
-	// Check whether ClientSideProviderConfig contains any data which looks sensitive
+	// Check whether ClientSideProviderConfig contains any data which looks sensitive.
+	// This isn't perfect, but provides some sanity-check level coverage that we haven't done anything obviously wrong.
 	secretRe := regex.MustCompile("(?i)access|token|secret|key")
 	if secretRe.MatchString(actual) {
 		t.Fatalf("ClientSideProviderConfig contains a field that appears to be sensitive - this should be stored under ServerSideProviderConfig to prevent secret disclosure")
