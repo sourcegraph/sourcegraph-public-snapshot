@@ -35,11 +35,11 @@ type sessionIssuerHelper struct {
 }
 
 func (s *sessionIssuerHelper) AuthSucceededEventName() database.SecurityEventName {
-	return database.SecurityEventBitbucketCloudAuthSucceeded
+	return database.SecurityEventBitbucketServerAuthSucceeded
 }
 
 func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
-	return database.SecurityEventBitbucketCloudAuthFailed
+	return database.SecurityEventBitbucketServerAuthFailed
 }
 
 func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter, r *http.Request) {

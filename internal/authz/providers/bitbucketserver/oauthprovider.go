@@ -61,7 +61,7 @@ func NewOAuthProvider(db database.DB, conn *types.BitbucketServerConnection, opt
 // ValidateConnection validates that the Provider has access to the Bitbucket Server API
 // with the credentials it was configured with.
 //
-// Credentials are verified by querying the "/2.0/repositories" endpoint.
+// Credentials are verified by querying the "rest/api/1.0/repositories" endpoint.
 // This validates that the credentials have the `REPO_READ` scope.
 func (p *OAuthProvider) ValidateConnection(ctx context.Context) error {
 	// We don't care about the contents returned, only whether or not an error occurred

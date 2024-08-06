@@ -82,7 +82,6 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 	mux.Handle("/login", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("pc")
 		p := GetProvider(serviceType, id)
-		fmt.Println("GOT PROVIDER:", p)
 		if p == nil {
 			// NOTE: Within the Sourcegraph application, we have been using both the
 			// "redirect" and "returnTo" query parameters inconsistently, and some of the
