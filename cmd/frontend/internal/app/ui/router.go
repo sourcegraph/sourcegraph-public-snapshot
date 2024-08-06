@@ -140,6 +140,10 @@ func InitRouter(db database.DB, configurationServer *conf.Server) {
 		{pathPrefix: "/contexts", name: "contexts", title: "Search Contexts", index: false},
 		{pathPrefix: "/saved-searches", name: "saved-searches", title: "Saved searches", index: false},
 		{pathPrefix: "/prompts", name: "prompts", title: "Prompts", index: false},
+		// /cody/dashboard is subject to removal in the future, in favor of /cody/manage, but for the
+		// for now this page still exists in the (React) web client.
+		// See also SRCH-766
+		{path: "/cody/dashboard", name: "cody", title: "Cody Dashboard", index: false},
 		{path: "/cody/manage", name: "cody", title: "Cody Manage", index: false},
 		{path: "/cody/subscription", name: "cody", title: "Cody Pricing", index: false},
 		{path: "/cody/chat", name: "cody", title: "Cody", index: false},
