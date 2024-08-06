@@ -18,6 +18,8 @@ import type { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
 
 import styles from './RepositoryOwnPageContents.module.scss'
 
+const ownershipPageBreadcrumb = { key: 'own', element: 'Ownership' }
+
 export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPageProps> = ({
     useBreadcrumb,
     repo,
@@ -51,7 +53,7 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
         }, [filePath, repo, telemetryService, telemetryRecorder])
     )
 
-    useBreadcrumb({ key: 'own', element: 'Ownership' })
+    useBreadcrumb(ownershipPageBreadcrumb)
 
     const [openAddOwnerModal, setOpenAddOwnerModal] = useState<boolean>(false)
     const onClickAdd = useCallback<React.MouseEventHandler>(event => {
