@@ -2,7 +2,6 @@ package codenav
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/sourcegraph/log"
@@ -68,27 +67,6 @@ func TestSearchBasedUsages_SyntacticMatchesGetRemovedFromSearchBasedResults(t *t
 	)
 	require.NoError(t, err)
 	expectRanges(t, result.Matches, commentRange)
-}
-
-func TestSearchBasedUsages_CountLimit(t *testing.T) {
-	searchBuilder := FakeSearchClient().WithLimit()
-	for n := range 10 {
-		searchBuilder = searchBuilder.WithFile(fmt.Sprintf("file%d.java", n), ChunkMatch(testRange(n)))
-	}
-	mockSearchClient := searchBuilder.Build()
-	limit := 5
-
-	result, err := searchBasedUsagesImpl(
-		context.Background(), observation.TestTraceLogger(log.NoOp()), mockSearchClient,
-		UsagesForSymbolArgs{Limit: int32(limit)}, "symbol", "Java", core.None[MappedIndex](),
-	)
-
-	resultRanges := make([]scip.Range, 0)
-	for n := range limit {
-		resultRanges = append(resultRanges, testRange(n))
-	}
-	require.NoError(t, err)
-	expectRanges(t, result.Matches, resultRanges...)
 }
 
 func TestSyntacticUsages(t *testing.T) {

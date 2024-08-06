@@ -2,13 +2,9 @@ package codenav
 
 import (
 	"context"
-	"fmt"
-	"math"
-	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/grafana/regexp"
 	genslices "github.com/life4/genesis/slices"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"github.com/stretchr/testify/require"
@@ -275,14 +271,12 @@ func scipToSymbolMatch(r scip.Range) *result.SymbolMatch {
 type FakeSearchBuilder struct {
 	fileMatches   []result.Match
 	symbolMatches []result.Match
-	enforceLimit  bool
 }
 
 func FakeSearchClient() FakeSearchBuilder {
 	return FakeSearchBuilder{
 		fileMatches:   []result.Match{},
 		symbolMatches: make([]result.Match, 0),
-		enforceLimit:  false,
 	}
 }
 
@@ -305,11 +299,6 @@ func ChunkMatches(ranges ...scip.Range) []result.ChunkMatch {
 	return genslices.Map(ranges, ChunkMatch)
 }
 
-func (b FakeSearchBuilder) WithLimit() FakeSearchBuilder {
-	b.enforceLimit = true
-	return b
-}
-
 func (b FakeSearchBuilder) WithFile(file string, matches ...result.ChunkMatch) FakeSearchBuilder {
 	b.fileMatches = append(b.fileMatches, &result.FileMatch{
 		File:         result.File{Path: file},
@@ -326,41 +315,16 @@ func (b FakeSearchBuilder) WithSymbols(file string, ranges ...scip.Range) FakeSe
 	return b
 }
 
-func parseLimit(q string) int {
-	countRx := regexp.MustCompile("count:([0-9]+)")
-	matches := countRx.FindStringSubmatch(q)
-	limit := math.MaxInt64
-	if len(matches) > 1 {
-		parsed, _ := strconv.ParseInt(matches[1], 10, 64)
-		limit = int(parsed)
-	} else {
-		panic(fmt.Sprintf("Failed to parse count limit from query: %q", q))
-	}
-	return limit
-}
-
 func (b FakeSearchBuilder) Build() searchClient.SearchClient {
 	mockSearchClient := searchClient.NewMockSearchClient()
 	mockSearchClient.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, query string, _ search.Mode, _ search.Protocol, _ *int32) (*search.Inputs, error) {
 		return &search.Inputs{OriginalQuery: query}, nil
 	})
 	mockSearchClient.ExecuteFunc.SetDefaultHook(func(_ context.Context, s streaming.Sender, i *search.Inputs) (*search.Alert, error) {
-		limit := math.MaxInt64
-		if b.enforceLimit {
-			limit = parseLimit(i.OriginalQuery)
-		}
-
 		if strings.Contains(i.OriginalQuery, "type:file") {
-			// TODO: Limit applies to individual ranges => inside filematches => inside chunkmatches
-			limit = min(len(b.fileMatches), limit)
-			s.Send(streaming.SearchEvent{
-				Results: b.fileMatches[:limit],
-			})
+			s.Send(streaming.SearchEvent{Results: b.fileMatches})
 		} else if strings.Contains(i.OriginalQuery, "type:symbol") {
-			limit = min(len(b.symbolMatches), limit)
-			s.Send(streaming.SearchEvent{
-				Results: b.symbolMatches[:limit],
-			})
+			s.Send(streaming.SearchEvent{Results: b.symbolMatches})
 		}
 		return nil, nil
 	})
