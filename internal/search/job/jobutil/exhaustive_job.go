@@ -93,7 +93,11 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 				skipPartitioning: true,
 			}
 	} else if resultTypes.Has(result.TypeFile | result.TypePath) {
-		planJob = NewTextSearchJob(b, inputs, resultTypes, repoOptions)
+		var err error
+		planJob, err = NewTextSearchJob(b, inputs, resultTypes, repoOptions)
+		if err != nil {
+			return Exhaustive{}, err
+		}
 	} else {
 		// This should never happen because we checked for supported types above.
 		return Exhaustive{}, errors.Errorf("internal error: unsupported result types %v", resultTypes)
