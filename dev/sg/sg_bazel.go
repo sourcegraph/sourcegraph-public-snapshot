@@ -45,7 +45,7 @@ var bzlgenTargets = map[string]bzlgenTarget{
 	"builds": {
 		order: 1,
 		cmd:   "run",
-		args:  []string{"//:gazelle"},
+		args:  []string{"//:configure"},
 	},
 	"godeps": {
 		cmd:  "run",
