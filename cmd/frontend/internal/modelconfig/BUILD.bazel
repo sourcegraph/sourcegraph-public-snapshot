@@ -39,6 +39,7 @@ go_test(
     name = "modelconfig_test",
     srcs = [
         "builder_test.go",
+        "resolver_test.go",
         "siteconfig_completions_test.go",
         "util_test.go",
     ],
