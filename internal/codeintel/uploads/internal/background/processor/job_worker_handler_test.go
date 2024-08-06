@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
+	dbworkermocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -49,7 +50,7 @@ func TestHandle(t *testing.T) {
 		ContentType:  "application/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
+	mockWorkerStore := dbworkermocks.NewMockStore[shared.Upload]()
 	mockDBStore := storemocks.NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLSIFStore := codegraphmocks.NewMockDataStore()
@@ -298,7 +299,7 @@ func TestHandleError(t *testing.T) {
 		ContentType:  "application/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
+	mockWorkerStore := dbworkermocks.NewMockStore[shared.Upload]()
 	mockDBStore := storemocks.NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLSIFStore := codegraphmocks.NewMockDataStore()
@@ -364,7 +365,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 		ContentType:  "application/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
+	mockWorkerStore := dbworkermocks.NewMockStore[shared.Upload]()
 	mockDBStore := storemocks.NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockUploadStore := objectmocks.NewMockStorage()

@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	dbworkermocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 )
 
 func TestDependencyIndexingSchedulerHandler(t *testing.T) {
@@ -22,7 +23,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	mockRepoStore := NewMockReposStore()
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
-	mockWorkerStore := NewMockWorkerStore[dependencyIndexingJob]()
+	mockWorkerStore := dbworkermocks.NewMockStore[dependencyIndexingJob]()
 	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(shared.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
@@ -120,7 +121,7 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 	mockRepoStore := NewMockReposStore()
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
-	mockWorkerStore := NewMockWorkerStore[dependencyIndexingJob]()
+	mockWorkerStore := dbworkermocks.NewMockStore[dependencyIndexingJob]()
 	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(shared.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 

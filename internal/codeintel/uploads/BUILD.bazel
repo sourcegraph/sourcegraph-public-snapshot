@@ -56,14 +56,11 @@ go_test(
         "//internal/codeintel/uploads/internal/store",
         "//internal/codeintel/uploads/shared",
         "//internal/database/basestore",
-        "//internal/executor",
         "//internal/gitserver/gitdomain",
         "//internal/observation",
         "//internal/types",
-        "//internal/workerutil",
         "//internal/workerutil/dbworker/store",
         "//lib/codeintel/precise",
-        "@com_github_keegancsmith_sqlf//:sqlf",
     ],
 )
 
@@ -78,6 +75,5 @@ go_mockgen(
     deps = [
         ":uploads",
         "//internal/codeintel/uploads/internal/store",
-        "//internal/workerutil/dbworker/store",
     ],
 )
