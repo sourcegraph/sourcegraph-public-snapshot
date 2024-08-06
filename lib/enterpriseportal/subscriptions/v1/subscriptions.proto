@@ -82,6 +82,9 @@ message EnterpriseSubscriptionCondition {
     STATUS_CREATED = 1;
     // Subscription archival status. i.e. 'is_archived'
     STATUS_ARCHIVED = 2;
+    // Subscription import status, from the one-time migration from the
+    // predecessor in-dotcom database to Enterprise Portal.
+    STATUS_IMPORTED = 3;
   }
 
   // The time this subscription transitioned into this status.

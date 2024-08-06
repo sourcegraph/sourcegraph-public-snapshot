@@ -159,6 +159,13 @@ func (i *importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 					TransitionTime: utctime.FromTime(*dotcomSub.ArchivedAt),
 				})
 		}
+		// Lastly, also create an initial-import event.
+		conditions = append(conditions,
+			subscriptions.CreateSubscriptionConditionOptions{
+				Status:         subscriptionsv1.EnterpriseSubscriptionCondition_STATUS_IMPORTED,
+				TransitionTime: utctime.Now(),
+				Message:        "Initial automated import to Enterprise Portal",
+			})
 	}
 
 	// Apply updates to the subscription, creating it if it does not
