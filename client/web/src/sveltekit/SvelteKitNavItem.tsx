@@ -1,4 +1,4 @@
-import { FC, useRef, useEffect, useCallback, useState } from 'react'
+import { FC, useRef, useEffect, useCallback } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiChevronDown, mdiClose } from '@mdi/js'
