@@ -28,6 +28,7 @@ import (
 	sharedsearch "github.com/sourcegraph/sourcegraph/internal/search"
 	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -131,6 +132,7 @@ func makeHTTPServer(logger log.Logger, grpcServer *grpc.Server, listenAddress st
 		http.NotFoundHandler().ServeHTTP(w, r)
 	})
 	handler = actor.HTTPMiddleware(logger, handler)
+	handler = tenant.InternalHTTPMiddleware(logger, handler)
 	handler = requestclient.InternalHTTPMiddleware(handler)
 	handler = requestinteraction.HTTPMiddleware(handler)
 	handler = trace.HTTPMiddleware(logger, handler)

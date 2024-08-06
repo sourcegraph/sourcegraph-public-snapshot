@@ -22,6 +22,7 @@ go_library(
         "//internal/grpc/retry",
         "//internal/requestclient",
         "//internal/requestinteraction",
+        "//internal/tenant",
         "//internal/trace/policy",
         "//internal/ttlcache",
         "//lib/errors",
