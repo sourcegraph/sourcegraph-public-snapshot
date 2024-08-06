@@ -4,7 +4,11 @@ import (
 	"context"
 	"strconv"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // TenantPropagator implements the (internal/grpc).Propagator interface
@@ -13,11 +17,11 @@ import (
 type TenantPropagator struct{}
 
 func (TenantPropagator) FromContext(ctx context.Context) metadata.MD {
-	tenant := FromContext(ctx)
+	tenant, ok := FromContext(ctx)
 	md := make(metadata.MD)
 
 	switch {
-	case tenant.ID() == 0:
+	case !ok:
 		md.Append(headerKeyTenantID, headerValueNoTenant)
 	default:
 		md.Append(headerKeyTenantID, strconv.Itoa(tenant.ID()))
@@ -26,7 +30,7 @@ func (TenantPropagator) FromContext(ctx context.Context) metadata.MD {
 	return md
 }
 
-func (TenantPropagator) InjectContext(ctx context.Context, md metadata.MD) context.Context {
+func (TenantPropagator) InjectContext(ctx context.Context, md metadata.MD) (context.Context, error) {
 	var idStr string
 	if vals := md.Get(headerKeyTenantID); len(vals) > 0 {
 		idStr = vals[0]
@@ -35,14 +39,13 @@ func (TenantPropagator) InjectContext(ctx context.Context, md metadata.MD) conte
 	switch idStr {
 	case headerValueNoTenant:
 		// Nothing to do, empty tenant.
-		return ctx
+		return ctx, nil
 	default:
 		uid, err := strconv.Atoi(idStr)
 		if err != nil {
-			// If the actor is invalid, ignore the error
-			// and do not set an actor on the context.
-			return ctx
+			// The tenant value is invalid.
+			return ctx, status.New(codes.InvalidArgument, errors.Wrap(err, "bad tenant value in metadata").Error()).Err()
 		}
-		return withTenant(ctx, uid)
+		return withTenant(ctx, uid), nil
 	}
 }

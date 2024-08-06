@@ -1,53 +1,45 @@
 package tenant
 
-// func TestActorPropagator(t *testing.T) {
-// 	t.Run("no actor", func(t *testing.T) {
-// 		ap := ActorPropagator{}
-// 		md := ap.FromContext(context.Background())
-// 		ctx := ap.InjectContext(context.Background(), md)
-// 		actor := FromContext(ctx)
-// 		require.False(t, actor.IsAuthenticated())
-// 	})
+import (
+	"context"
+	"testing"
 
-// 	t.Run("internal actor", func(t *testing.T) {
-// 		ap := ActorPropagator{}
-// 		ctx1 := WithInternalActor(context.Background())
-// 		md := ap.FromContext(ctx1)
-// 		ctx2 := ap.InjectContext(context.Background(), md)
-// 		actor := FromContext(ctx2)
-// 		require.True(t, actor.IsInternal())
-// 	})
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+)
 
-// 	t.Run("user actor", func(t *testing.T) {
-// 		ap := ActorPropagator{}
-// 		ctx1 := WithActor(context.Background(), FromUser(16))
-// 		md := ap.FromContext(ctx1)
-// 		ctx2 := ap.InjectContext(context.Background(), md)
-// 		actor := FromContext(ctx2)
-// 		require.True(t, actor.IsAuthenticated())
-// 		require.Equal(t, int32(16), actor.UID)
-// 	})
+func TestTenantPropagator(t *testing.T) {
+	t.Run("no tenant", func(t *testing.T) {
+		tp := TenantPropagator{}
+		md := tp.FromContext(context.Background())
+		ctx, err := tp.InjectContext(context.Background(), md)
+		require.NoError(t, err)
+		_, ok := FromContext(ctx)
+		require.False(t, ok)
+	})
 
-// 	t.Run("anonymous user actor", func(t *testing.T) {
-// 		ap := ActorPropagator{}
-// 		ctx1 := WithActor(context.Background(), FromAnonymousUser("anon123"))
-// 		md := ap.FromContext(ctx1)
-// 		ctx2 := ap.InjectContext(context.Background(), md)
-// 		actor := FromContext(ctx2)
-// 		require.Equal(t, "anon123", actor.AnonymousUID)
-// 	})
+	t.Run("with tenant", func(t *testing.T) {
+		tp := TenantPropagator{}
+		tenantID := 1
+		ctx1 := withTenant(context.Background(), tenantID)
+		md := tp.FromContext(ctx1)
+		ctx2, err := tp.InjectContext(context.Background(), md)
+		require.NoError(t, err)
+		tenant, ok := FromContext(ctx2)
+		require.True(t, ok)
+		require.Equal(t, tenantID, tenant.ID())
+	})
 
-// 	t.Run("user actor with anonymous UID", func(t *testing.T) {
-// 		originalActor := FromUser(16)
-// 		originalActor.AnonymousUID = "foobar"
-// 		ctx1 := WithActor(context.Background(), originalActor)
-
-// 		ap := ActorPropagator{}
-// 		md := ap.FromContext(ctx1)
-// 		ctx2 := ap.InjectContext(context.Background(), md)
-// 		actor := FromContext(ctx2)
-// 		require.True(t, actor.IsAuthenticated())
-// 		require.Equal(t, "foobar", actor.AnonymousUID)
-// 		require.Equal(t, int32(16), actor.UID)
-// 	})
-// }
+	t.Run("bad tenant value", func(t *testing.T) {
+		tp := TenantPropagator{}
+		md := make(metadata.MD)
+		md.Append(headerKeyTenantID, "suchabadvalue")
+		_, err := tp.InjectContext(context.Background(), md)
+		require.Error(t, err)
+		s, ok := status.FromError(err)
+		require.True(t, ok)
+		require.Equal(t, codes.InvalidArgument, s.Code())
+	})
+}

@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/retry"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
@@ -78,6 +79,7 @@ func defaultDialOptions(logger log.Logger, creds credentials.TransportCredential
 	out := []grpc.DialOption{
 		grpc.WithTransportCredentials(creds),
 		grpc.WithChainStreamInterceptor(
+			propagator.StreamClientPropagator(tenant.TenantPropagator{}),
 			propagator.StreamClientPropagator(actor.ActorPropagator{}),
 			propagator.StreamClientPropagator(policy.ShouldTracePropagator{}),
 			propagator.StreamClientPropagator(requestclient.Propagator{}),
@@ -91,6 +93,7 @@ func defaultDialOptions(logger log.Logger, creds credentials.TransportCredential
 			contextconv.StreamClientInterceptor,
 		),
 		grpc.WithChainUnaryInterceptor(
+			propagator.UnaryClientPropagator(tenant.TenantPropagator{}),
 			propagator.UnaryClientPropagator(actor.ActorPropagator{}),
 			propagator.UnaryClientPropagator(policy.ShouldTracePropagator{}),
 			propagator.UnaryClientPropagator(requestclient.Propagator{}),

@@ -4,7 +4,8 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "tenant",
     srcs = [
-        "create.go",
+        "context.go",
+        "externalhttp.go",
         "grpc.go",
         "http.go",
         "tenant.go",
@@ -12,20 +13,33 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/tenant",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/errcode",
+        "//internal/testutil",
         "//internal/trace",
         "//lib/errors",
-        "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//metadata",
+        "@org_golang_google_grpc//status",
     ],
 )
 
 go_test(
     name = "tenant_test",
     srcs = [
+        "context_test.go",
+        "externalhttp_test.go",
         "grpc_test.go",
         "http_test.go",
     ],
     embed = [":tenant"],
+    deps = [
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//metadata",
+        "@org_golang_google_grpc//status",
+    ],
 )
