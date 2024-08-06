@@ -21,12 +21,6 @@ accounts:
 
 # Set up directories needed by base images
 paths:
-  # Used by frontend
-  - path: /mnt/cache/frontend
-    type: directory
-    uid: 100
-    gid: 101
-    permissions: 0o755
   # Used by indexed-searcher
   - path: /data
     type: directory

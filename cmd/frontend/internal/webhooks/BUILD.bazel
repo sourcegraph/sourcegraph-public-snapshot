@@ -12,9 +12,9 @@ go_library(
         "middleware.go",
         "webhooks.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/webhooks",
     tags = [TAG_PLATFORM_SOURCE],
-    visibility = ["//visibility:public"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/actor",
         "//internal/batches/service",

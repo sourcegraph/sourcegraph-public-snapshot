@@ -37,9 +37,13 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
   
   
   /*
-//^^ Comment 9:0..11:3 comment.block.css
+//^^ Comment punctuation.definition.comment.css
+//   Comment 9:2..10:1 punctuation.definition.comment.css
    * Positions
+// ^ Comment punctuation.definition.comment.css
+//  ^^^^^^^^^^ Comment 10:2..11:1 punctuation.definition.comment.css
    */
+// ^^ Comment punctuation.definition.comment.css
   .center,
 //^ PunctuationBracket punctuation.definition.entity.css
 // ^^^^^^ Identifier entity.other.attribute-name.class.css
@@ -83,4 +87,3 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //             ^ PunctuationDelimiter punctuation.terminator.rule.css
   }
 //^ PunctuationBracket punctuation.section.property-list.css
-

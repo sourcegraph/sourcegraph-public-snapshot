@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_mockgen.bzl", "go_mockgen")
+
+go_library(
+    name = "storemocks",
+    srcs = ["mocks_temp.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/storemocks",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/codeintel/core",
+        "//internal/codeintel/uploads/internal/commitgraph",
+        "//internal/codeintel/uploads/internal/store",
+        "//internal/codeintel/uploads/shared",
+        "//internal/database/basestore",
+        "//internal/gitserver/gitdomain",
+        "//internal/observation",
+        "//internal/workerutil/dbworker/store",
+        "//lib/codeintel/precise",
+    ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_temp.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = ["//internal/codeintel/uploads/internal/store"],
+)

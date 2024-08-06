@@ -17,6 +17,7 @@ type operations struct {
 	markFailed              *observation.Operation
 	maxDurationInQueue      *observation.Operation
 	queuedCount             *observation.Operation
+	exists                  *observation.Operation
 	requeue                 *observation.Operation
 	resetStalled            *observation.Operation
 	updateExecutionLogEntry *observation.Operation
@@ -66,6 +67,7 @@ func newOperations(observationCtx *observation.Context, storeName string) *opera
 		markFailed:              op("MarkFailed"),
 		maxDurationInQueue:      op("MaxDurationInQueue"),
 		queuedCount:             op("QueuedCount"),
+		exists:                  op("Exists"),
 		requeue:                 op("Requeue"),
 		resetStalled:            op("ResetStalled"),
 		updateExecutionLogEntry: op("UpdateExecutionLogEntry"),

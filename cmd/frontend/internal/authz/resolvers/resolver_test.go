@@ -49,7 +49,7 @@ func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 
 	resolver := NewResolver(observation.TestContextTB(t), db)
-	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, resolver)
+	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, nil, resolver)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2099,7 +2099,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 	logger := logtest.NoOp(t)
 	r := &Resolver{logger: logger, db: db}
 
-	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, r)
+	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, nil, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2346,7 +2346,7 @@ func TestResolverPermissionsSyncJobsFiltering(t *testing.T) {
 	logger := logtest.NoOp(t)
 	r := &Resolver{logger: logger, db: db}
 
-	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, r)
+	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, nil, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2516,7 +2516,7 @@ func TestResolverPermissionsSyncJobsSearching(t *testing.T) {
 	// Creating a resolver and validating GraphQL schema.
 	logger := logtest.NoOp(t)
 	r := &Resolver{logger: logger, db: db}
-	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, r)
+	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, nil, r)
 	if err != nil {
 		t.Fatal(err)
 	}

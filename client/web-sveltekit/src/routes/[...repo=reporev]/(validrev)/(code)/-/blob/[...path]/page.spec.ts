@@ -152,7 +152,7 @@ test.describe('file header', () => {
             }),
         })
 
-        sg.signIn({ username: 'test' })
+        await sg.signIn({ username: 'test' })
         await page.goto(url)
         const link = page.getByLabel('Open in IntelliJ IDEA')
         await expect(link, 'links to correct editor').toHaveAttribute(

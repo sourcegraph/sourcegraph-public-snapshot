@@ -30,7 +30,7 @@ type fakeTB struct{}
 func (fakeTB) Cleanup(func()) {}
 
 func TestRouter(t *testing.T) {
-	InitRouter(dbmocks.NewMockDB())
+	InitRouter(dbmocks.NewMockDB(), nil)
 	router := Router()
 	tests := []struct {
 		path      string
@@ -222,7 +222,7 @@ func TestRouter(t *testing.T) {
 }
 
 func TestRouter_RootPath(t *testing.T) {
-	InitRouter(dbmocks.NewMockDB())
+	InitRouter(dbmocks.NewMockDB(), nil)
 	router := Router()
 
 	tests := []struct {

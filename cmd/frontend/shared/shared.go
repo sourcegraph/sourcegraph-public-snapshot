@@ -46,7 +46,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/notebooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/own"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/rbac"
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/repos/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/savedsearches"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/scim"

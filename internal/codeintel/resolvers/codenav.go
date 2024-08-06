@@ -2,8 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"path"
 	"strings"
@@ -343,11 +341,8 @@ func (args *UsagesForSymbolArgs) Resolve(
 	}
 	var cursor codenav.UsagesCursor
 	if args.After != nil {
-		bytes, err := base64.StdEncoding.DecodeString(*args.After)
+		cursor, err = codenav.DecodeUsagesCursor(*args.After)
 		if err != nil {
-			return out, errors.Wrap(err, "invalid after: cursor")
-		}
-		if err = json.Unmarshal(bytes, &cursor); err != nil {
 			return out, errors.Wrap(err, "invalid after: cursor")
 		}
 	} else {

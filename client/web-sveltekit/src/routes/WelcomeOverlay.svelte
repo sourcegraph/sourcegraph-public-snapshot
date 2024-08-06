@@ -12,62 +12,79 @@
     export let show: boolean
     export let handleDismiss: () => void
 
-    let root: HTMLDialogElement
+    let dialog: HTMLDialogElement | undefined
+    let inner: HTMLDivElement | undefined
+    function handleClickOutside(event: MouseEvent) {
+        // Use an inner div because the whole backdrop registers as part of the dialog
+        if (inner && !inner.contains(event.target as Node)) {
+            handleDismiss()
+        }
+    }
+
     $: if (show) {
-        root?.showModal()
+        dialog?.showModal()
+        document.body.addEventListener('click', handleClickOutside)
     } else {
-        root?.close()
+        dialog?.close()
+        document.body.removeEventListener('click', handleClickOutside)
     }
 </script>
 
-<dialog bind:this={root}>
-    <div class="content">
-        <div class="logo"><Icon icon={ISgMark} /><ProductStatusBadge status="beta" /></div>
-        <div class="message">
-            <h1><span>You've activated a better, faster experience</span> ⚡</h1>
-            <p class="subtitle">
-                Get ready for a new Code Search experience: rewritten from the ground-up for performance to empower your
-                workflow.
-            </p>
+<dialog bind:this={dialog}>
+    <div class="inner" bind:this={inner}>
+        <div class="content">
+            <div class="logo"><Icon icon={ISgMark} /><ProductStatusBadge status="beta" /></div>
+            <div class="message">
+                <h1><span>You've activated a better, faster experience</span> ⚡</h1>
+                <p class="subtitle">
+                    Get ready for a new Code Search experience: rewritten from the ground-up for performance to empower
+                    your workflow.
+                </p>
+            </div>
+            <div class="features">
+                <div>
+                    <Icon icon={ILucideFileDiff} />
+                    <h5>New in-line diff view</h5>
+                    <p>Easily compare commits and see how a file changed over time, all in-line</p>
+                </div>
+                <div>
+                    <Icon icon={ILucideNetwork} />
+                    <h5>Revamped code navigation</h5>
+                    <p>Quickly find a list of references of a given symbol, or immediately jump to the definition</p>
+                </div>
+                <div>
+                    <Icon icon={ILucideScanSearch} />
+                    <h5>Reworked fuzzy finder <KeyboardShortcut shortcut={allHotkey} /></h5>
+                    <p>Find files and symbols quickly and easily with our whole new fuzzy finder.</p>
+                </div>
+            </div>
+            <div class="cta">
+                <div>
+                    <Button variant="primary" on:click={() => handleDismiss()}>Awesome. I’m ready to use it!</Button>
+                    <!-- <a href="TODO">Read release notes</a> -->
+                </div>
+                <p> You can opt out at any time by using the toggle at the top of the screen. </p>
+                <p>
+                    Whilst exploring the new experience, consider leaving us some feedback via the button at the top.
+                    We'd love to hear from you!
+                </p>
+            </div>
         </div>
-        <div class="features">
-            <div>
-                <Icon icon={ILucideFileDiff} />
-                <h5>New in-line diff view</h5>
-                <p>Easily compare commits and see how a file changed over time, all in-line</p>
-            </div>
-            <div>
-                <Icon icon={ILucideNetwork} />
-                <h5>Revamped code navigation</h5>
-                <p>Quickly find a list of references of a given symbol, or immediately jump to the definition</p>
-            </div>
-            <div>
-                <Icon icon={ILucideScanSearch} />
-                <h5>Reworked fuzzy finder <KeyboardShortcut shortcut={allHotkey} /></h5>
-                <p>Find files and symbols quickly and easily with our whole new fuzzy finder.</p>
-            </div>
-        </div>
-        <div class="cta">
-            <div>
-                <Button variant="secondary" on:click={() => handleDismiss()}>Awesome. I’m ready to use it!</Button>
-                <!-- <a href="TODO">Read release notes</a> -->
-            </div>
-            <p> You can opt out at any time by using the toggle at the top of the screen. </p>
-            <p>
-                Whilst exploring the new experience, consider leaving us some feedback via the button at the top. We'd
-                love to hear from you!
-            </p>
-        </div>
+        {#if $isLightTheme}
+            <WelcomeOverlayScreenshotLight />
+        {:else}
+            <WelcomeOverlayScreenshotDark />
+        {/if}
+
+        <Button variant="icon" aria-label="Close welcome overlay" on:click={() => handleDismiss()}>
+            <Icon icon={ILucideX} aria-hidden="true" />
+        </Button>
     </div>
-    {#if $isLightTheme}
-        <WelcomeOverlayScreenshotLight />
-    {:else}
-        <WelcomeOverlayScreenshotDark />
-    {/if}
 </dialog>
 
 <style lang="scss">
     dialog {
+        padding: 0;
         width: 80vw;
         border-radius: 0.75rem;
         border: 1px solid var(--border-color);
@@ -98,7 +115,9 @@
             max-height: 100vh;
             max-width: 100vw;
         }
+    }
 
+    .inner {
         > :global(svg) {
             position: absolute;
             right: 0;
@@ -107,6 +126,12 @@
             @container (width < 975px) {
                 display: none;
             }
+        }
+
+        > :global(button) {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
         }
     }
 

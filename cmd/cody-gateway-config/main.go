@@ -27,6 +27,11 @@ var (
 func main() {
 	flag.Parse()
 
+	liblog := log.Init(log.Resource{
+		Name: "Cody Gateway Configuration App",
+	})
+	defer liblog.Sync()
+
 	logger := log.Scoped("cody-gateway-config")
 
 	// Generate the configuration.
@@ -88,9 +93,9 @@ func GenerateModelConfigurationDoc() (*types.ModelConfiguration, error) {
 		Models: dotcomModels,
 
 		DefaultModels: types.DefaultModels{
-			Chat:           types.ModelRef("anthropic::2023-06-01::claude-3-sonnet"),
-			CodeCompletion: types.ModelRef("anthropic::2023-06-01::claude-3-sonnet"),
-			FastChat:       types.ModelRef("anthropic::2023-06-01::claude-3-sonnet"),
+			Chat:           types.ModelRef("anthropic::2023-06-01::claude-3.5-sonnet"),
+			CodeCompletion: types.ModelRef("fireworks::v1::starcoder"),
+			FastChat:       types.ModelRef("anthropic::2023-06-01::claude-3-haiku"),
 		},
 	}
 

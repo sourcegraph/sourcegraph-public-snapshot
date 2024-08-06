@@ -28,7 +28,6 @@
 
 <script lang="ts">
     import type { Placement } from '@floating-ui/dom'
-    import type { ComponentProps } from 'svelte'
     import type { HTMLButtonAttributes } from 'svelte/elements'
 
     import { goto } from '$app/navigation'
@@ -45,6 +44,7 @@
 
     import Picker from './Picker.svelte'
     import RepositoryRevPickerItem from './RepositoryRevPickerItem.svelte'
+    import type { ComponentProps } from 'svelte'
 
     type $$Props = HTMLButtonAttributes & {
         repoURL: string
@@ -53,7 +53,6 @@
         defaultBranch: string
         display?: ComponentProps<ButtonGroup>['display']
         placement?: Placement
-        isPerforceDepot: boolean
         onSelect?: (revision: string) => void
         getRepositoryTags: (query: string) => PromiseLike<RepositoryTags>
         getRepositoryCommits: (query: string) => PromiseLike<RepositoryCommits>
@@ -66,8 +65,6 @@
     export let defaultBranch: $$Props['defaultBranch']
     export let placement: $$Props['placement'] = 'right-start'
     export let display: $$Props['display'] = undefined
-    export let isPerforceDepot: $$Props['isPerforceDepot']
-
     /**
      * Optional handler for revision selection.
      * If not provided, the default handler will replace the revision in the current URL.
@@ -124,83 +121,68 @@
 
     <div slot="content" class="content" let:toggle>
         <Tabs>
-            {#if !isPerforceDepot}
-                <TabPanel title="Branches" shortcut={branchesHotkey}>
-                    <Picker
-                        name="branches"
-                        seeAllItemsURL={`${repoURL}/-/branches`}
-                        getData={getRepositoryBranches}
-                        toOption={branch => ({ value: branch.id, label: branch.displayName })}
-                        onSelect={branch => {
-                            toggle(false)
-                            onSelect(branch.abbrevName)
-                        }}
-                        let:value
-                    >
-                        <RepositoryRevPickerItem
-                            icon={ILucideGitBranch}
-                            label={value.displayName}
-                            author={value.target.commit?.author}
-                        >
-                            <svelte:fragment slot="title">
-                                <Icon icon={ILucideGitBranch} inline aria-hidden="true" />
-                                <Badge variant="link">{value.displayName}</Badge>
-                                {#if value.displayName === defaultBranch}
-                                    <Badge variant="secondary" small>DEFAULT</Badge>
-                                {/if}
-                            </svelte:fragment>
-                        </RepositoryRevPickerItem>
-                    </Picker>
-                </TabPanel>
-                <TabPanel title="Tags" shortcut={tagsHotkey}>
-                    <Picker
-                        name="tags"
-                        seeAllItemsURL={`${repoURL}/-/tags`}
-                        getData={getRepositoryTags}
-                        toOption={tag => ({ value: tag.id, label: tag.displayName })}
-                        onSelect={tag => {
-                            toggle(false)
-                            onSelect(tag.abbrevName)
-                        }}
-                        let:value
-                    >
-                        <RepositoryRevPickerItem
-                            icon={ILucideTag}
-                            label={value.displayName}
-                            author={value.target.commit?.author}
-                        />
-                    </Picker>
-                </TabPanel>
-            {/if}
-            <TabPanel title={isPerforceDepot ? 'Changelists' : 'Commits'} shortcut={commitsHotkey}>
-                <!-- TODO: seeAllItemsURL should point to /-/changelists for perforce, but that doesn't exist yet -->
+            <TabPanel title="Branches" shortcut={branchesHotkey}>
                 <Picker
-                    name={isPerforceDepot ? 'changelists' : 'commits'}
+                    name="branches"
+                    seeAllItemsURL={`${repoURL}/-/branches`}
+                    getData={getRepositoryBranches}
+                    toOption={branch => ({ value: branch.id, label: branch.displayName })}
+                    onSelect={branch => {
+                        toggle(false)
+                        onSelect(branch.abbrevName)
+                    }}
+                    let:value
+                >
+                    <RepositoryRevPickerItem
+                        icon={ILucideGitBranch}
+                        label={value.displayName}
+                        author={value.target.commit?.author}
+                    >
+                        <svelte:fragment slot="title">
+                            <Icon icon={ILucideGitBranch} inline aria-hidden="true" />
+                            <Badge variant="link">{value.displayName}</Badge>
+                            {#if value.displayName === defaultBranch}
+                                <Badge variant="secondary" small>DEFAULT</Badge>
+                            {/if}
+                        </svelte:fragment>
+                    </RepositoryRevPickerItem>
+                </Picker>
+            </TabPanel>
+            <TabPanel title="Tags" shortcut={tagsHotkey}>
+                <Picker
+                    name="tags"
+                    seeAllItemsURL={`${repoURL}/-/tags`}
+                    getData={getRepositoryTags}
+                    toOption={tag => ({ value: tag.id, label: tag.displayName })}
+                    onSelect={tag => {
+                        toggle(false)
+                        onSelect(tag.abbrevName)
+                    }}
+                    let:value
+                >
+                    <RepositoryRevPickerItem
+                        icon={ILucideTag}
+                        label={value.displayName}
+                        author={value.target.commit?.author}
+                    />
+                </Picker>
+            </TabPanel>
+            <TabPanel title="Commits" shortcut={commitsHotkey}>
+                <Picker
+                    name="commits"
                     seeAllItemsURL={`${repoURL}/-/commits`}
                     getData={getRepositoryCommits}
-                    toOption={commit => {
-                        return isPerforceDepot && commit.perforceChangelist
-                            ? { value: commit.id, label: commit.perforceChangelist.cid }
-                            : { value: commit.id, label: commit.oid }
-                    }}
+                    toOption={commit => ({ value: commit.id, label: commit.oid })}
                     onSelect={commit => {
                         toggle(false)
-                        if (isPerforceDepot && commit.perforceChangelist) {
-                            onSelect(`changelist/${commit?.perforceChangelist?.cid}`)
-                        } else {
-                            onSelect(commit.oid)
-                        }
+                        onSelect(commit.oid)
                     }}
                     let:value
                 >
                     <RepositoryRevPickerItem label="" author={value.author}>
                         <svelte:fragment slot="title">
                             <Icon icon={ILucideGitCommitVertical} inline aria-hidden="true" />
-                            <span class="rev-badge"
-                                ><Badge variant="link">
-                                    {value.perforceChangelist?.cid ?? value.abbreviatedOID}
-                                </Badge></span
-                            >
+                            <Badge variant="link">{value.abbreviatedOID}</Badge>
                             <span class="commit-subject">{value.subject}</span>
                         </svelte:fragment>
                     </RepositoryRevPickerItem>
@@ -216,14 +198,6 @@
         white-space: nowrap;
         text-overflow: ellipsis;
         text-align: left;
-    }
-
-    .rev-badge {
-        display: contents;
-        :global([data-badge]) {
-            // Always show the full (abbreviated) changelist ID or commit hash
-            flex-shrink: 0;
-        }
     }
 
     .close-button {

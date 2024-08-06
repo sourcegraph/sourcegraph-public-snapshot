@@ -199,7 +199,7 @@ func TestSingleNotebookCRUD(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	schema, err := graphqlbackend.NewSchemaWithNotebooksResolver(db, NewResolver(db))
+	schema, err := graphqlbackend.NewSchemaWithNotebooksResolver(db, nil, NewResolver(db))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -592,7 +592,7 @@ func TestListNotebooks(t *testing.T) {
 		return ids
 	}
 
-	schema, err := graphqlbackend.NewSchemaWithNotebooksResolver(db, NewResolver(db))
+	schema, err := graphqlbackend.NewSchemaWithNotebooksResolver(db, nil, NewResolver(db))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -729,7 +729,7 @@ func TestGetNotebookWithSoftDeletedUserColumns(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	schema, err := graphqlbackend.NewSchemaWithNotebooksResolver(db, NewResolver(db))
+	schema, err := graphqlbackend.NewSchemaWithNotebooksResolver(db, nil, NewResolver(db))
 	if err != nil {
 		t.Fatal(err)
 	}

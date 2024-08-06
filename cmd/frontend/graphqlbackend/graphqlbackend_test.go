@@ -94,7 +94,7 @@ func TestRecloneRepository(t *testing.T) {
 	t.Cleanup(func() {
 		backend.Mocks = backend.MockServices{}
 	})
-	r := newSchemaResolver(db, gitserver.NewStrictMockClient())
+	r := newSchemaResolver(db, gitserver.NewStrictMockClient(), nil)
 
 	_, err := r.RecloneRepository(context.Background(), &struct{ Repo graphql.ID }{Repo: repoID})
 	require.NoError(t, err)

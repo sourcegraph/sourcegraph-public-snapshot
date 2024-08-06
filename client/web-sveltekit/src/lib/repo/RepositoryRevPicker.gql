@@ -28,10 +28,6 @@ fragment RevPickerGitCommit on GitCommit {
     oid
     subject
     abbreviatedOID
-    perforceChangelist {
-        cid
-        canonicalURL
-    }
     ...RepositoryGitRevAuthor
 }
 

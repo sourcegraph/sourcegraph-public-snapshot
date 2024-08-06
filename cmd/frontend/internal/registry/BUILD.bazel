@@ -6,16 +6,13 @@ go_library(
     srcs = [
         "frozen.go",
         "http_api.go",
+        "types.go",
     ],
     embedsrcs = ["frozen_legacy_extensions.json"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/registry",
     tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
-    deps = [
-        "//cmd/frontend/registry/api",
-        "//cmd/frontend/registry/client",
-        "//internal/dotcom",
-    ],
+    deps = ["//internal/dotcom"],
 )
 
 go_test(

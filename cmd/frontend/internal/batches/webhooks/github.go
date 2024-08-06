@@ -8,7 +8,7 @@ import (
 	gh "github.com/google/go-github/v55/github"
 	sglog "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"

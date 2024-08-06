@@ -656,12 +656,6 @@ func (s *Service) PreciseUsages(ctx context.Context, requestState RequestState, 
 		returnUsages = append(returnUsages, nextUsages...)
 		remainingCount -= min(remainingCount, len(nextUsages))
 
-		if len(nextUsages) == 0 && currentCursor.PreciseCursor.Phase != "done" {
-			trace.Warn("len(nextUsages) == 0 should imply nextCursor.Phase == \"done\"",
-				log.String("cursorType", string(currentCursor.CursorType)),
-				log.String("cursor.Phase", currentCursor.PreciseCursor.Phase))
-		}
-
 		currentCursor.PreciseCursor = nextPreciseCursor
 		if len(nextUsages) == 0 || currentCursor.PreciseCursor.Phase == "done" {
 			// Switching types requires zero-ing the precise cursor

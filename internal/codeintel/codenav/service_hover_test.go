@@ -21,18 +21,18 @@ import (
 
 func TestHover(t *testing.T) {
 	// Set up mocks
-	mockRepoStore := defaultMockRepoStore()
+	fakeRepoStore := AllPresentFakeRepoStore{}
 	mockLsifStore := lsifstoremocks.NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 	mockSearchClient := client.NewMockSearchClient()
 
 	// Init service
-	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
+	svc := newService(observation.TestContextTB(t), fakeRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 	// Set up request state
 	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
+	mockRequestState.SetLocalCommitCache(fakeRepoStore, mockGitserverClient)
 	mockRequestState.GitTreeTranslator = noopTranslator()
 	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
@@ -77,18 +77,18 @@ func TestHover(t *testing.T) {
 
 func TestHoverRemote(t *testing.T) {
 	// Set up mocks
-	mockRepoStore := defaultMockRepoStore()
+	fakeRepoStore := AllPresentFakeRepoStore{}
 	mockLsifStore := lsifstoremocks.NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 	mockSearchClient := client.NewMockSearchClient()
 
 	// Init service
-	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
+	svc := newService(observation.TestContextTB(t), fakeRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 	// Set up request state
 	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
+	mockRequestState.SetLocalCommitCache(fakeRepoStore, mockGitserverClient)
 	mockRequestState.GitTreeTranslator = noopTranslator()
 	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef"},

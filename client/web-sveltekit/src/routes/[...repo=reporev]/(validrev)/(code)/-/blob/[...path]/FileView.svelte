@@ -111,9 +111,7 @@
               })
             : null
 
-    $: codeGraphDataCommitHashes = data.user?.siteAdmin
-        ? codeGraphData?.map(datum => datum.commit.slice(0, 7))
-        : undefined
+    $: codeGraphDataCommitHashes = codeGraphData?.map(datum => datum.commit.slice(0, 7))
     $: codeGraphDataDebugOptions = codeGraphDataCommitHashes ? ['None', ...codeGraphDataCommitHashes] : undefined
     const selectedCodeGraphDataDebugOption = writable<string>('None')
     $: selectedCodeGraphDataOccurrences = codeGraphData?.find(datum =>

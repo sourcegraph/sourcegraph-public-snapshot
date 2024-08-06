@@ -151,22 +151,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1w2/J0nDU8aA/f0HxunA5N19L1gw=",
+        "checksum": "Q1SrwI3nLOr5UGEgtO3tOMyBCF9ww=",
         "control": {
-          "checksum": "sha1-w2/J0nDU8aA/f0HxunA5N19L1gw=",
-          "range": "bytes=702-1086"
+          "checksum": "sha1-SrwI3nLOr5UGEgtO3tOMyBCF9ww=",
+          "range": "bytes=703-1088"
         },
         "data": {
-          "checksum": "sha256-/2i+TNHbkrOsjrx7WHrrloXc6gcoyfyGrUHdBljYM+o=",
-          "range": "bytes=1087-1440232"
+          "checksum": "sha256-VJCK5+IjXnuE9RMa+UlLBQcovmD7FtJmbavtzFVj14c=",
+          "range": "bytes=1089-1440526"
         },
         "name": "bash",
         "signature": {
-          "checksum": "sha1-tnYcLxCgV8srkBsTl4c/f6m11vQ=",
-          "range": "bytes=0-701"
+          "checksum": "sha1-FRZ99Z19ubiO+yT5pETHn1ASurA=",
+          "range": "bytes=0-702"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/bash-5.2.21-r5.apk",
-        "version": "5.2.21-r5"
+        "url": "https://packages.wolfi.dev/os/x86_64/bash-5.2.32-r2.apk",
+        "version": "5.2.32-r2"
       },
       {
         "architecture": "x86_64",
@@ -455,22 +455,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1F18C4nDz6+fzBYGQsKCBtHcufGU=",
+        "checksum": "Q1Ih50BR1cw7C0mAoc5DuxT2LyzS4=",
         "control": {
-          "checksum": "sha1-F18C4nDz6+fzBYGQsKCBtHcufGU=",
-          "range": "bytes=701-1066"
+          "checksum": "sha1-Ih50BR1cw7C0mAoc5DuxT2LyzS4=",
+          "range": "bytes=702-1066"
         },
         "data": {
-          "checksum": "sha256-WzeVjw8ROa6vrjTsCW005r5miWhaNGfwxi94+lfR1Xo=",
-          "range": "bytes=1067-255911"
+          "checksum": "sha256-2E9u6l5qsX+QONuHf29iItqZHbgx2aWN28a6u8/wFDM=",
+          "range": "bytes=1067-261123"
         },
         "name": "c-ares",
         "signature": {
-          "checksum": "sha1-pJet9qesYYyzB147oqQs+6X9fiA=",
-          "range": "bytes=0-700"
+          "checksum": "sha1-U8duAR/vdSu6louNZGpZtsHCooc=",
+          "range": "bytes=0-701"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/c-ares-1.32.3-r0.apk",
-        "version": "1.32.3-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/c-ares-1.33.0-r0.apk",
+        "version": "1.33.0-r0"
       },
       {
         "architecture": "x86_64",
@@ -1063,41 +1063,41 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1Ba20KoIgLWqTMZ4Pbznhsk/TYRo=",
+        "checksum": "Q185B6q4DzDD//zcCU0JWkkHxijsU=",
         "control": {
-          "checksum": "sha1-Ba20KoIgLWqTMZ4Pbznhsk/TYRo=",
-          "range": "bytes=703-1143"
+          "checksum": "sha1-85B6q4DzDD//zcCU0JWkkHxijsU=",
+          "range": "bytes=697-1139"
         },
         "data": {
-          "checksum": "sha256-QHZujUhJ3AGy94XE+6XGYpGMFyM7tKOQB4syR9aiuGM=",
-          "range": "bytes=1144-1342009"
+          "checksum": "sha256-3PlDBSQN8HG1qDjQG53xk5k2DY+rhH/wnFF35621CPQ=",
+          "range": "bytes=1140-1336085"
         },
         "name": "nginx-mainline",
         "signature": {
-          "checksum": "sha1-Lstaj2vaaATxnhSfiZLcl2AFCnk=",
-          "range": "bytes=0-702"
+          "checksum": "sha1-3/vCsMg2DjoNChT4tJZcfraMR74=",
+          "range": "bytes=0-696"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/nginx-mainline-1.27.0-r6.apk",
-        "version": "1.27.0-r6"
+        "url": "https://packages.wolfi.dev/os/x86_64/nginx-mainline-1.27.0-r7.apk",
+        "version": "1.27.0-r7"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1KMMgnvt16Z8QOgOaISyRx/kQi6A=",
+        "checksum": "Q1y6S9bbDfFUw+0tN2VkqsAHWrbwM=",
         "control": {
-          "checksum": "sha1-KMMgnvt16Z8QOgOaISyRx/kQi6A=",
-          "range": "bytes=705-1090"
+          "checksum": "sha1-y6S9bbDfFUw+0tN2VkqsAHWrbwM=",
+          "range": "bytes=701-1086"
         },
         "data": {
-          "checksum": "sha256-8ZAqh1Vl2VA4L3zPzGdNIaW8HOydRm1F4nq/vYfyehY=",
-          "range": "bytes=1091-61920"
+          "checksum": "sha256-CUzibd+CeRNExRfGogJAMyNBjNsVNZAMnLph6yw0iFU=",
+          "range": "bytes=1087-61932"
         },
         "name": "nginx-mainline-config",
         "signature": {
-          "checksum": "sha1-dksSmh2X/KWL+bmz31/sY8kkHeg=",
-          "range": "bytes=0-704"
+          "checksum": "sha1-azckUqdwF6E8PovL9nEUsWesYFQ=",
+          "range": "bytes=0-700"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/nginx-mainline-config-1.27.0-r6.apk",
-        "version": "1.27.0-r6"
+        "url": "https://packages.wolfi.dev/os/x86_64/nginx-mainline-config-1.27.0-r7.apk",
+        "version": "1.27.0-r7"
       },
       {
         "architecture": "x86_64",
@@ -1424,22 +1424,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1NyPDKnpnwrKJ7+7foWCAaDw7V5s=",
+        "checksum": "Q1zisGiPMDWReX3GqYu9MqRzIa9rQ=",
         "control": {
-          "checksum": "sha1-NyPDKnpnwrKJ7+7foWCAaDw7V5s=",
-          "range": "bytes=660-1036"
+          "checksum": "sha1-zisGiPMDWReX3GqYu9MqRzIa9rQ=",
+          "range": "bytes=659-1035"
         },
         "data": {
-          "checksum": "sha256-4VGdMs4AxZGZuJXWW2ztq3UWSnWb0z6+Aa4s5uInmzI=",
-          "range": "bytes=1037-20466010"
+          "checksum": "sha256-W7f/5e+BE5wXrYnbe3IcA9bkK+BIxnR6gA9WRxvRgRk=",
+          "range": "bytes=1036-23454410"
         },
         "name": "p4-fusion-sg",
         "signature": {
-          "checksum": "sha1-3jfZRXx840UdCOYzfJKSoffWnJY=",
-          "range": "bytes=0-659"
+          "checksum": "sha1-vxg8oLyyom86h0kh/1C4v9hIBg0=",
+          "range": "bytes=0-658"
         },
-        "url": "https://packages.sgdev.org/main/x86_64/p4-fusion-sg-1.13.2-r4.apk",
-        "version": "1.13.2-r4"
+        "url": "https://packages.sgdev.org/main/x86_64/p4-fusion-sg-1.14.0-r0.apk",
+        "version": "1.14.0-r0"
       },
       {
         "architecture": "x86_64",

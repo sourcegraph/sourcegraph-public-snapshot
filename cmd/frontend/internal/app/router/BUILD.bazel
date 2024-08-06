@@ -12,6 +12,7 @@ go_library(
     tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
+        "//cmd/frontend/internal/app/ui/sveltekit",
         "//cmd/frontend/internal/routevar",
         "//internal/api",
         "@com_github_gorilla_mux//:mux",
