@@ -342,6 +342,8 @@ test.describe('cody sidebar', () => {
         })
 
         test('ignores context filters', async ({ page, sg }) => {
+            sg.signIn()
+
             sg.mockTypes({
                 Site: () => ({
                     codyContextFilters: {
