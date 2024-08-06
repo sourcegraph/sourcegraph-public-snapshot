@@ -413,22 +413,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1F18C4nDz6+fzBYGQsKCBtHcufGU=",
+        "checksum": "Q1Ih50BR1cw7C0mAoc5DuxT2LyzS4=",
         "control": {
-          "checksum": "sha1-F18C4nDz6+fzBYGQsKCBtHcufGU=",
-          "range": "bytes=701-1066"
+          "checksum": "sha1-Ih50BR1cw7C0mAoc5DuxT2LyzS4=",
+          "range": "bytes=702-1066"
         },
         "data": {
-          "checksum": "sha256-WzeVjw8ROa6vrjTsCW005r5miWhaNGfwxi94+lfR1Xo=",
-          "range": "bytes=1067-255911"
+          "checksum": "sha256-2E9u6l5qsX+QONuHf29iItqZHbgx2aWN28a6u8/wFDM=",
+          "range": "bytes=1067-261123"
         },
         "name": "c-ares",
         "signature": {
-          "checksum": "sha1-pJet9qesYYyzB147oqQs+6X9fiA=",
-          "range": "bytes=0-700"
+          "checksum": "sha1-U8duAR/vdSu6louNZGpZtsHCooc=",
+          "range": "bytes=0-701"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/c-ares-1.32.3-r0.apk",
-        "version": "1.32.3-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/c-ares-1.33.0-r0.apk",
+        "version": "1.33.0-r0"
       },
       {
         "architecture": "x86_64",

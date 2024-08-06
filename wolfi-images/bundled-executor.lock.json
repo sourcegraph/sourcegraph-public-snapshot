@@ -394,22 +394,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1F18C4nDz6+fzBYGQsKCBtHcufGU=",
+        "checksum": "Q1Ih50BR1cw7C0mAoc5DuxT2LyzS4=",
         "control": {
-          "checksum": "sha1-F18C4nDz6+fzBYGQsKCBtHcufGU=",
-          "range": "bytes=701-1066"
+          "checksum": "sha1-Ih50BR1cw7C0mAoc5DuxT2LyzS4=",
+          "range": "bytes=702-1066"
         },
         "data": {
-          "checksum": "sha256-WzeVjw8ROa6vrjTsCW005r5miWhaNGfwxi94+lfR1Xo=",
-          "range": "bytes=1067-255911"
+          "checksum": "sha256-2E9u6l5qsX+QONuHf29iItqZHbgx2aWN28a6u8/wFDM=",
+          "range": "bytes=1067-261123"
         },
         "name": "c-ares",
         "signature": {
-          "checksum": "sha1-pJet9qesYYyzB147oqQs+6X9fiA=",
-          "range": "bytes=0-700"
+          "checksum": "sha1-U8duAR/vdSu6louNZGpZtsHCooc=",
+          "range": "bytes=0-701"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/c-ares-1.32.3-r0.apk",
-        "version": "1.32.3-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/c-ares-1.33.0-r0.apk",
+        "version": "1.33.0-r0"
       },
       {
         "architecture": "x86_64",
@@ -1420,22 +1420,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1OE9Tcv5FRM2R59X1GeBqhBSjO2c=",
+        "checksum": "Q17AwlSdfIPxMYPPS/H4Ft9xLdBv8=",
         "control": {
-          "checksum": "sha1-OE9Tcv5FRM2R59X1GeBqhBSjO2c=",
-          "range": "bytes=701-1083"
+          "checksum": "sha1-7AwlSdfIPxMYPPS/H4Ft9xLdBv8=",
+          "range": "bytes=698-1079"
         },
         "data": {
-          "checksum": "sha256-G20U3AWP68ABai8Co/Yw7FURY39/cGwhZlAe2G0C1cM=",
-          "range": "bytes=1084-10723002"
+          "checksum": "sha256-WcvhGP/A9DbHMOM0wm2DTicccPJyQ8y9lZv3N0Dxtyk=",
+          "range": "bytes=1080-10727154"
         },
         "name": "yq",
         "signature": {
-          "checksum": "sha1-pLMmu1lquvuF098yf/9+Vbk33YU=",
-          "range": "bytes=0-700"
+          "checksum": "sha1-qs3jEJRLG+t7HyfBiz0KABM/FRg=",
+          "range": "bytes=0-697"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/yq-4.44.2-r1.apk",
-        "version": "4.44.2-r1"
+        "url": "https://packages.wolfi.dev/os/x86_64/yq-4.44.3-r0.apk",
+        "version": "4.44.3-r0"
       }
     ],
     "repositories": [
