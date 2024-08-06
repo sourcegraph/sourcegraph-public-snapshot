@@ -28,7 +28,6 @@ func Init(logger log.Logger, db database.DB) {
 			providers.Update(pkgName, nil)
 			return
 		}
-		fmt.Println(newProviders)
 
 		if err := licensing.Check(licensing.FeatureSSO); err != nil {
 			logger.Error("Check license for SSO (Bitbucket Server OAuth)", log.Error(err))

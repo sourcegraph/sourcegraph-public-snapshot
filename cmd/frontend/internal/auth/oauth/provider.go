@@ -94,7 +94,7 @@ func (p *Provider) ExternalAccountInfo(ctx context.Context, account extsvc.Accou
 	case extsvc.TypeBitbucketCloud:
 		return bitbucketcloud.GetPublicExternalAccountData(ctx, &account.AccountData)
 	case extsvc.TypeBitbucketServer:
-		return bitbucketserver.GetPublicExternalAccountData(ctx, &account.AccountData)
+		return bitbucketserver.GetPublicExternalAccountData(ctx, &account.AccountData, p.ServiceID)
 	case extsvc.TypeAzureDevOps:
 		return azuredevops.GetPublicExternalAccountData(ctx, &account.AccountData)
 	}

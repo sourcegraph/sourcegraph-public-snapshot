@@ -300,13 +300,11 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	for _, p := range providers.SortedProviders() {
 		commonConfig := providers.GetAuthProviderCommon(p)
 		if commonConfig.Hidden {
-			fmt.Println("info is hidden?")
 			continue
 		}
 
 		info := p.CachedInfo()
 		if info == nil {
-			fmt.Println("info is nil")
 			continue
 		}
 
@@ -328,9 +326,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		authProviders = append(authProviders, providerInfo)
 	}
-
-	fmt.Println("authProviders", authProviders)
-	fmt.Println("authzProviders", authzProviders)
 
 	pp := conf.AuthPasswordPolicy()
 

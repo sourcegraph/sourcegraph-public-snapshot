@@ -1,7 +1,6 @@
 package bitbucketserver
 
 import (
-	"fmt"
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -33,7 +32,6 @@ func NewAuthzProviders(
 	oauthProviders := make(map[string]*schema.BitbucketServerAuthProvider)
 	for _, p := range authProviders {
 		if p.Bitbucketserver != nil {
-			fmt.Println("Got auth provider")
 			var id string
 			bbURL, err := url.Parse(p.Bitbucketserver.Url)
 			if err != nil {

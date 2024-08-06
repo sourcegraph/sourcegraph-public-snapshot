@@ -7,6 +7,7 @@ import (
 
 	"github.com/dghubble/gologin/v2"
 	"github.com/dghubble/gologin/v2/bitbucket"
+	oauth2Login "github.com/dghubble/gologin/v2/oauth2"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -20,6 +21,10 @@ import (
 )
 
 const sessionKey = "bitbucketserveroauth@0"
+
+func bitbucketServerCallbackHandler(config *oauth2.Config, success, failure http.Handler) http.Handler {
+	return oauth2Login.CallbackHandler(config, success, failure)
+}
 
 func parseProvider(logger log.Logger, p *schema.BitbucketServerAuthProvider, db database.DB, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
 	rawURL := p.Url
@@ -44,7 +49,7 @@ func parseProvider(logger log.Logger, p *schema.BitbucketServerAuthProvider, db 
 					TokenURL: parsedURL.ResolveReference(&url.URL{Path: "/rest/oauth2/latest/token"}).String(),
 				},
 				Scopes:      []string{"REPO_READ"},
-				RedirectURL: url.QueryEscape(extURL.ResolveReference(&url.URL{Path: "/.auth/bitbucketserver/callback"}).String()),
+				RedirectURL: extURL.ResolveReference(&url.URL{Path: "/.auth/bitbucketserver/callback"}).String(),
 			}
 		},
 		SourceConfig: sourceCfg,
@@ -54,7 +59,7 @@ func parseProvider(logger log.Logger, p *schema.BitbucketServerAuthProvider, db 
 			return bitbucket.LoginHandler(&oauth2Cfg, nil)
 		},
 		Callback: func(oauth2Cfg oauth2.Config) http.Handler {
-			return bitbucket.CallbackHandler(
+			return bitbucketServerCallbackHandler(
 				&oauth2Cfg,
 				oauth.SessionIssuer(logger, db, &sessionIssuerHelper{
 					logger:      logger.Scoped("sessionIssuerHelper"),

@@ -3,6 +3,7 @@ package bitbucketserver
 import (
 	"context"
 	"encoding/json"
+	"net/url"
 
 	"golang.org/x/oauth2"
 
@@ -30,17 +31,21 @@ func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr 
 	return usr, tok, nil
 }
 
-func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
+func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.AccountData, serverURL string) (*extsvc.PublicAccountData, error) {
 	data, _, err := GetExternalAccountData(ctx, accountData)
 	if err != nil {
 		return nil, err
 	}
 
+	url, err := url.JoinPath(serverURL, "profile")
+	if err != nil {
+		url = serverURL
+	}
+
 	return &extsvc.PublicAccountData{
 		DisplayName: data.DisplayName,
 		Login:       data.Name,
-		// TODO: Can we get the URL?
-		// URL:         url,
+		URL:         url,
 	}, nil
 }
 
