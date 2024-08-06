@@ -45,7 +45,7 @@ export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
 
     // only show if the welcome message has been dismissed so we know they have been introduced to the new webapp
     const departureVisible = !departureDismissed && showDeparture
-    const popoverProps = departureVisible ? { isOpen: true, onOpenChange: () => { } } : {}
+    const popoverProps = departureVisible ? { isOpen: true, onOpenChange: () => {} } : {}
 
     return (
         <>
