@@ -1475,7 +1475,7 @@ func SCIPBasedAPIsEnabled() bool {
 	expt := siteConfig.ExperimentalFeatures
 	if expt == nil || expt.ScipBasedAPIs == nil {
 		// NOTE(id: scip-based-apis-feature-flag): Keep this in sync with site.schema.json
-		return false
+		return true
 	}
 	return *expt.ScipBasedAPIs
 }
