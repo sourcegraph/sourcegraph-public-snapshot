@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
@@ -93,6 +94,9 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 				skipPartitioning: true,
 			}
 	} else if resultTypes.Has(result.TypeFile | result.TypePath) {
+		if err := validateSearcherParams(b, inputs, resultTypes); err != nil {
+			return Exhaustive{}, err
+		}
 		planJob = NewTextSearchJob(b, inputs, resultTypes, repoOptions)
 	} else {
 		// This should never happen because we checked for supported types above.
@@ -107,6 +111,20 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 	return Exhaustive{
 		repoPagerJob: repoPagerJob,
 	}, nil
+}
+
+// validateSearcherParams performs the same validation as searcher does in
+// /internal/search/search.go. We duplicate the check here to make sure we fail
+// early and not during execution.
+func validateSearcherParams(b query.Basic, inputs *search.Inputs, resultTypes result.Types) error {
+	r := toTextPatternInfo(b, resultTypes, inputs.Features, inputs.DefaultLimit())
+	if p, ok := r.Query.(*protocol.PatternNode); ok {
+		if p.Value == "" && r.ExcludePaths == "" && len(r.IncludePaths) == 0 &&
+			len(r.IncludeLangs) == 0 && len(r.ExcludeLangs) == 0 {
+			return errors.New("your query uses filters that require an explicit search term for Search Jobs to work. Add a search term to your query and try again. ")
+		}
+	}
+	return nil
 }
 
 func hasPredicates(field string, q query.Q) (pred string, ok bool) {
