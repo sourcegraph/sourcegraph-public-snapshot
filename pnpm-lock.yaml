@@ -1576,8 +1576,8 @@ importers:
         specifier: workspace:*
         version: link:../client-api
       '@sourcegraph/cody-web':
-        specifier: ^0.3.4
-        version: 0.3.4
+        specifier: ^0.3.7
+        version: 0.3.7
       '@sourcegraph/common':
         specifier: workspace:*
         version: link:../common
@@ -9719,10 +9719,6 @@ packages:
   /@sourcegraph/cody-context-filters-test-dataset@1.0.0:
     resolution: {integrity: sha512-Uf7wMo5Fu3+g03gl2jvU2qHMaDp0p9RK9U2ucmy6VxWaavxALCC8iy47JL5GdgR5qG3ekEd5mAQV0dIIfoKELA==}
     dev: true
-
-  /@sourcegraph/cody-web@0.3.4:
-    resolution: {integrity: sha512-g9wXZcQTrPBrxE3Pm6A3ip57diIEQAwBEqy16gCoN7DIwI9YYsP47svXxwgJmF6JS0XEA33Ah9k3RbRfoMadKg==}
-    dev: false
 
   /@sourcegraph/cody-web@0.3.7:
     resolution: {integrity: sha512-Y0Ld/Qla4bUK0XSCx7uibMT5K1lbIhP8JvuvTOAgISahMWpOpzzLdBLFlrBfEopxL5CG4rjgj2GHVjPwt+UD8w==}
