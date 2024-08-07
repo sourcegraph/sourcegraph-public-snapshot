@@ -33,7 +33,8 @@ import (
 // CAUTION: To avoid releasing someone else's lock, the duration of the entire
 // operation should be well-below the lock timeout.
 func TryAcquire(ctx context.Context, rs redispool.KeyValue, lockKey string, lockTimeout time.Duration) (acquired bool, release func(), err error) {
-	tr, ctx := trace.New(ctx, "redislock.TryAcquire",
+	// Returned ctx is not yet used anywhere, discard to avoid the linter
+	tr, _ := trace.New(ctx, "redislock.TryAcquire",
 		attribute.String("lockKey", lockKey),
 		attribute.Float64("lockTimeoutSeconds", lockTimeout.Seconds()))
 	defer func() {
