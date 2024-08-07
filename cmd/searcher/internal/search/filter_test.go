@@ -3,20 +3,20 @@ package search
 import (
 	"archive/tar"
 	"bytes"
-	"context"
 	"io"
 	"os"
 	"testing"
 	"testing/quick"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 func TestNewFilter(t *testing.T) {
 	gitserverClient := gitserver.NewMockClient()
 	gitserverClient.NewFileReaderFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("foo/"))), nil)
 
-	ig, err := NewFilterFactory(gitserverClient)(context.Background(), "", "")
+	ig, err := NewFilterFactory(gitserverClient)(tenant.TestContext(), "", "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -55,7 +55,7 @@ func TestMissingIgnoreFile(t *testing.T) {
 	gitserverClient := gitserver.NewMockClient()
 	gitserverClient.NewFileReaderFunc.SetDefaultReturn(nil, os.ErrNotExist)
 
-	ig, err := NewFilterFactory(gitserverClient)(context.Background(), "", "")
+	ig, err := NewFilterFactory(gitserverClient)(tenant.TestContext(), "", "")
 	if err != nil {
 		t.Error(err)
 	}

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 func BenchmarkSearchRegex_large_fixed(b *testing.B) {
@@ -269,7 +270,7 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 		b.Fatal(err)
 	}
 
-	ctx := context.Background()
+	ctx := tenant.TestContext()
 	path, err := githubStore.PrepareZip(ctx, p.Repo, p.Commit, nil)
 	if err != nil {
 		b.Fatal(err)
@@ -387,7 +388,7 @@ func TestMaxMatches(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), maxMatches)
+	ctx, cancel, sender := newLimitedStreamCollector(tenant.TestContext(), maxMatches)
 	defer cancel()
 	err = regexSearch(ctx, m, pm, lm, zf, true, false, false, sender, 0)
 	fileMatches := sender.collected
@@ -444,7 +445,7 @@ func TestPathMatches(t *testing.T) {
 		Limit:                 10,
 	}
 
-	fileMatches, err := regexSearchBatch(context.Background(), patternInfo, zf, 0)
+	fileMatches, err := regexSearchBatch(tenant.TestContext(), patternInfo, zf, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -501,7 +502,7 @@ func TestRegexSearch(t *testing.T) {
 		{
 			name: "empty pattern returns a FileMatch with no LineMatches",
 			args: args{
-				ctx: context.Background(),
+				ctx: tenant.TestContext(),
 				// Check this case specifically.
 				p: &protocol.PatternInfo{
 					Query:                 &protocol.PatternNode{Value: ""},
@@ -515,7 +516,7 @@ func TestRegexSearch(t *testing.T) {
 		{
 			name: "'and' query with matches",
 			args: args{
-				ctx: context.Background(),
+				ctx: tenant.TestContext(),
 				p: &protocol.PatternInfo{
 					Query: &protocol.AndNode{
 						Children: []protocol.QueryNode{
@@ -546,7 +547,7 @@ func TestRegexSearch(t *testing.T) {
 		{
 			name: "'and' query with no matches",
 			args: args{
-				ctx: context.Background(),
+				ctx: tenant.TestContext(),
 				p: &protocol.PatternInfo{
 					Query: &protocol.AndNode{
 						Children: []protocol.QueryNode{
@@ -576,7 +577,7 @@ func TestRegexSearch(t *testing.T) {
 		{
 			name: "'or' query with matches",
 			args: args{
-				ctx: context.Background(),
+				ctx: tenant.TestContext(),
 				p: &protocol.PatternInfo{
 					Query: &protocol.OrNode{
 						Children: []protocol.QueryNode{
@@ -604,7 +605,7 @@ func TestRegexSearch(t *testing.T) {
 		{
 			name: "'or' query with no matches",
 			args: args{
-				ctx: context.Background(),
+				ctx: tenant.TestContext(),
 				p: &protocol.PatternInfo{
 					Query: &protocol.OrNode{
 						Children: []protocol.QueryNode{
@@ -652,7 +653,7 @@ func TestRegexSearch(t *testing.T) {
 			patternInfo.ExcludePaths = `README\.md`
 			patternInfo.Limit = 5
 
-			gotFm, err := regexSearchBatch(context.Background(), tt.args.p, tt.args.zf, 0)
+			gotFm, err := regexSearchBatch(tenant.TestContext(), tt.args.p, tt.args.zf, 0)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("regexSearch() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -686,7 +687,7 @@ func TestLangFilters(t *testing.T) {
 		{
 			name: "include filter with matches",
 			args: args{
-				ctx: context.Background(),
+				ctx: tenant.TestContext(),
 				p: &protocol.PatternInfo{
 					Query:                 &protocol.PatternNode{Value: ""},
 					IncludeLangs:          []string{"Go"},
@@ -703,7 +704,7 @@ func TestLangFilters(t *testing.T) {
 		{
 			name: "include filter with no matches",
 			args: args{
-				ctx: context.Background(),
+				ctx: tenant.TestContext(),
 				p: &protocol.PatternInfo{
 					Query:                 &protocol.PatternNode{Value: ""},
 					IncludeLangs:          []string{"Go", "Markdown"},
@@ -717,7 +718,7 @@ func TestLangFilters(t *testing.T) {
 		{
 			name: "exclude filter with matches",
 			args: args{
-				ctx: context.Background(),
+				ctx: tenant.TestContext(),
 				p: &protocol.PatternInfo{
 					Query:                 &protocol.PatternNode{Value: "aaaa11"},
 					ExcludeLangs:          []string{"Markdown", "Ruby"},
@@ -742,7 +743,7 @@ func TestLangFilters(t *testing.T) {
 		{
 			name: "include and exclude filters with matches",
 			args: args{
-				ctx: context.Background(),
+				ctx: tenant.TestContext(),
 				p: &protocol.PatternInfo{
 					Query:                 &protocol.PatternNode{Value: ""},
 					IncludeLangs:          []string{"Markdown"},
@@ -760,7 +761,7 @@ func TestLangFilters(t *testing.T) {
 		{
 			name: "include filter with ambiguous extension",
 			args: args{
-				ctx: context.Background(),
+				ctx: tenant.TestContext(),
 				p: &protocol.PatternInfo{
 					Query:                 &protocol.PatternNode{Value: ""},
 					IncludeLangs:          []string{"MATLAB"},
@@ -777,7 +778,7 @@ func TestLangFilters(t *testing.T) {
 		{
 			name: "include filter with ambiguous extension and no matches",
 			args: args{
-				ctx: context.Background(),
+				ctx: tenant.TestContext(),
 				p: &protocol.PatternInfo{
 					Query:                 &protocol.PatternNode{Value: ""},
 					IncludeLangs:          []string{"Objective-C"},
@@ -795,7 +796,7 @@ func TestLangFilters(t *testing.T) {
 			patternInfo := tt.args.p
 			patternInfo.Limit = 5
 
-			gotFm, err := regexSearchBatch(context.Background(), tt.args.p, tt.args.zf, 0)
+			gotFm, err := regexSearchBatch(tenant.TestContext(), tt.args.p, tt.args.zf, 0)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("regexSearch() error = %v, wantErr %v", err, tt.wantErr)
 				return

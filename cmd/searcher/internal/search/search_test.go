@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	v1 "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
@@ -622,7 +623,7 @@ func doSearch(t *testing.T, urlString string, p *protocol.Request) ([]protocol.F
 	}
 	c := v1.NewSearcherServiceClient(conn)
 
-	cc, err := c.Search(context.Background(), p.ToProto())
+	cc, err := c.Search(tenant.TestContext(), p.ToProto())
 	if err != nil {
 		return nil, err
 	}

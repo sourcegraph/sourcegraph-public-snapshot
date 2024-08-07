@@ -67,6 +67,7 @@ go_test(
         "//internal/search",
         "//internal/search/result",
         "//internal/symbols",
+        "//internal/tenant",
         "//internal/types",
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",
