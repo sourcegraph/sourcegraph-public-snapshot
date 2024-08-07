@@ -527,6 +527,9 @@ func TestListEnterpriseSubscriptions(t *testing.T) {
 			dotcomdb.ListEnterpriseSubscriptionsOptions{})
 		require.NoError(t, err)
 		assert.Len(t, ss, 1) // only 1 created without a dev tag
-		autogold.Expect("not-devlicense - 2024-08-06").Equal(t, ss[0].GenerateDisplayName())
+		for _, s := range ss {
+			s.CreatedAt = time.Time{} // zero time for autogold
+		}
+		autogold.Expect("not-devlicense - 0001-01-01").Equal(t, ss[0].GenerateDisplayName())
 	})
 }
