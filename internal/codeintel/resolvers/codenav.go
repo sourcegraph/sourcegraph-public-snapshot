@@ -346,9 +346,7 @@ func (args *UsagesForSymbolArgs) Resolve(
 		if err != nil {
 			return out, errors.Wrap(err, "invalid after: cursor")
 		}
-		if cursor.CursorType == codenav.CursorTypeSyntactic {
-			slices.Sort(cursor.SyntacticCursor.SeenFiles)
-		}
+		slices.Sort(cursor.SyntacticCursor.SeenFiles)
 	} else {
 		cursor = codenav.InitialCursor(resolvedSymbol.ProvenancesForSCIPData())
 	}
