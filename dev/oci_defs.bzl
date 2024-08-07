@@ -40,9 +40,19 @@ def oci_image(name, **kwargs):
         visibility = kwargs.pop("visibility", ["//visibility:public"]),
     )
 
+def _oci_image_cross_impl(ctx):
+    runfiles = ctx.runfiles(files = ctx.files.image)
+    runfiles = runfiles.merge(ctx.attr.image[0][DefaultInfo].default_runfiles)
+    return [
+        DefaultInfo(
+            files = depset(ctx.files.image),
+            runfiles = runfiles,
+        ),
+    ]
+
 # rule that allows transitioning in order to transition an oci_image target and its deps
 oci_image_cross = rule(
-    implementation = lambda ctx: DefaultInfo(files = depset(ctx.files.image)),
+    implementation = _oci_image_cross_impl,
     attrs = {
         "image": attr.label(cfg = transition(
             implementation = lambda settings, attr: [
