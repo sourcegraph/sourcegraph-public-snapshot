@@ -300,6 +300,32 @@ func TestNewExhaustive(t *testing.T) {
   (indexed . false))
 `),
 		},
+		{
+			Name:  "bytes -r:has.path(go.mod)",
+			Query: "index:no bytes -r:has.path(go.mod)",
+			WantPager: autogold.Expect(`
+(REPOPAGER
+  (containsRefGlobs . false)
+  (repoOpts.useIndex . no)
+  (repoOpts.hasFileContent[0].path . go.mod)
+  (repoOpts.hasFileContent[0].negated . true)
+  (PARTIALREPOS
+    (SEARCHERTEXTSEARCH
+      (useFullDeadline . true)
+      (patternInfo . TextPatternInfo{"bytes",filematchlimit:1000000})
+      (numRepos . 0)
+      (pathRegexps . ["(?i)bytes"])
+      (indexed . false))))
+`),
+			WantJob: autogold.Expect(`
+(SEARCHERTEXTSEARCH
+  (useFullDeadline . true)
+  (patternInfo . TextPatternInfo{"bytes",filematchlimit:1000000})
+  (numRepos . 1)
+  (pathRegexps . ["(?i)bytes"])
+  (indexed . false))
+`),
+		},
 	}
 
 	for _, tc := range cases {
@@ -352,6 +378,10 @@ func TestNewExhaustive_negative(t *testing.T) {
 		{query: `index:no type:repo`},
 		{query: `index:no type:symbol`},
 		{query: `index:no foo select:file.owners`},
+		// repo filter without pattern
+		{query: `index:no -repo:has.path(go.mod)`},
+		{query: `index:no repo:has.path(go.mod)`},
+		{query: `index:no repo:foo`},
 	}
 
 	for _, c := range tc {

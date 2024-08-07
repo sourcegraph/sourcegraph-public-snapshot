@@ -91,7 +91,7 @@ func TestSyntacticUsages(t *testing.T) {
 			ref("initial", initialRange)))
 	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, noopTranslator(), upload, commit)
 
-	syntacticUsages, _, err := syntacticUsagesImpl(
+	syntacticUsages, err := syntacticUsagesImpl(
 		context.Background(), observation.TestTraceLogger(log.NoOp()),
 		mockSearchClient, fakeMappedIndex, UsagesForSymbolArgs{
 			Commit:      commit,
@@ -120,7 +120,7 @@ func TestSyntacticUsages_DocumentNotInIndex(t *testing.T) {
 		doc("initial.java",
 			ref("initial", initialRange)))
 	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, noopTranslator(), upload, commit)
-	syntacticUsages, _, err := syntacticUsagesImpl(
+	syntacticUsages, err := syntacticUsagesImpl(
 		context.Background(), observation.TestTraceLogger(log.NoOp()),
 		mockSearchClient, fakeMappedIndex, UsagesForSymbolArgs{
 			Commit:      commit,
@@ -160,7 +160,7 @@ func TestSyntacticUsages_IndexCommitTranslated(t *testing.T) {
 			return r.CompareStrict(editedRange) == 0
 		}), upload, targetCommit)
 
-	syntacticUsages, _, err := syntacticUsagesImpl(
+	syntacticUsages, err := syntacticUsagesImpl(
 		context.Background(), observation.TestTraceLogger(log.NoOp()),
 		mockSearchClient, fakeMappedIndex, UsagesForSymbolArgs{
 			Commit:      targetCommit,

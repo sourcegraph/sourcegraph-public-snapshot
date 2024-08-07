@@ -299,7 +299,7 @@ func NewMockCodeNavService() *MockCodeNavService {
 			},
 		},
 		SyntacticUsagesFunc: &CodeNavServiceSyntacticUsagesFunc{
-			defaultHook: func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (r0 codenav.SyntacticUsagesResult, r1 codenav.PreviousSyntacticSearch, r2 *codenav.SyntacticUsagesError) {
+			defaultHook: func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (r0 codenav.SyntacticUsagesResult, r1 *codenav.SyntacticUsagesError) {
 				return
 			},
 		},
@@ -381,7 +381,7 @@ func NewStrictMockCodeNavService() *MockCodeNavService {
 			},
 		},
 		SyntacticUsagesFunc: &CodeNavServiceSyntacticUsagesFunc{
-			defaultHook: func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError) {
+			defaultHook: func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.SyntacticUsagesError) {
 				panic("unexpected invocation of MockCodeNavService.SyntacticUsages")
 			},
 		},
@@ -1965,24 +1965,24 @@ func (c CodeNavServiceSnapshotForDocumentFuncCall) Results() []interface{} {
 // SyntacticUsages method of the parent MockCodeNavService instance is
 // invoked.
 type CodeNavServiceSyntacticUsagesFunc struct {
-	defaultHook func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError)
-	hooks       []func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError)
+	defaultHook func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.SyntacticUsagesError)
+	hooks       []func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.SyntacticUsagesError)
 	history     []CodeNavServiceSyntacticUsagesFuncCall
 	mutex       sync.Mutex
 }
 
 // SyntacticUsages delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeNavService) SyntacticUsages(v0 context.Context, v1 codenav.GitTreeTranslator, v2 codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError) {
-	r0, r1, r2 := m.SyntacticUsagesFunc.nextHook()(v0, v1, v2)
-	m.SyntacticUsagesFunc.appendCall(CodeNavServiceSyntacticUsagesFuncCall{v0, v1, v2, r0, r1, r2})
-	return r0, r1, r2
+func (m *MockCodeNavService) SyntacticUsages(v0 context.Context, v1 codenav.GitTreeTranslator, v2 codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.SyntacticUsagesError) {
+	r0, r1 := m.SyntacticUsagesFunc.nextHook()(v0, v1, v2)
+	m.SyntacticUsagesFunc.appendCall(CodeNavServiceSyntacticUsagesFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the SyntacticUsages
 // method of the parent MockCodeNavService instance is invoked and the hook
 // queue is empty.
-func (f *CodeNavServiceSyntacticUsagesFunc) SetDefaultHook(hook func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError)) {
+func (f *CodeNavServiceSyntacticUsagesFunc) SetDefaultHook(hook func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.SyntacticUsagesError)) {
 	f.defaultHook = hook
 }
 
@@ -1990,7 +1990,7 @@ func (f *CodeNavServiceSyntacticUsagesFunc) SetDefaultHook(hook func(context.Con
 // SyntacticUsages method of the parent MockCodeNavService instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeNavServiceSyntacticUsagesFunc) PushHook(hook func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError)) {
+func (f *CodeNavServiceSyntacticUsagesFunc) PushHook(hook func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.SyntacticUsagesError)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1998,20 +1998,20 @@ func (f *CodeNavServiceSyntacticUsagesFunc) PushHook(hook func(context.Context, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CodeNavServiceSyntacticUsagesFunc) SetDefaultReturn(r0 codenav.SyntacticUsagesResult, r1 codenav.PreviousSyntacticSearch, r2 *codenav.SyntacticUsagesError) {
-	f.SetDefaultHook(func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError) {
-		return r0, r1, r2
+func (f *CodeNavServiceSyntacticUsagesFunc) SetDefaultReturn(r0 codenav.SyntacticUsagesResult, r1 *codenav.SyntacticUsagesError) {
+	f.SetDefaultHook(func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.SyntacticUsagesError) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceSyntacticUsagesFunc) PushReturn(r0 codenav.SyntacticUsagesResult, r1 codenav.PreviousSyntacticSearch, r2 *codenav.SyntacticUsagesError) {
-	f.PushHook(func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError) {
-		return r0, r1, r2
+func (f *CodeNavServiceSyntacticUsagesFunc) PushReturn(r0 codenav.SyntacticUsagesResult, r1 *codenav.SyntacticUsagesError) {
+	f.PushHook(func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.SyntacticUsagesError) {
+		return r0, r1
 	})
 }
 
-func (f *CodeNavServiceSyntacticUsagesFunc) nextHook() func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError) {
+func (f *CodeNavServiceSyntacticUsagesFunc) nextHook() func(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.SyntacticUsagesError) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2059,10 +2059,7 @@ type CodeNavServiceSyntacticUsagesFuncCall struct {
 	Result0 codenav.SyntacticUsagesResult
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 codenav.PreviousSyntacticSearch
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 *codenav.SyntacticUsagesError
+	Result1 *codenav.SyntacticUsagesError
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -2074,7 +2071,7 @@ func (c CodeNavServiceSyntacticUsagesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c CodeNavServiceSyntacticUsagesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // CodeNavServiceVisibleUploadsForPathFunc describes the behavior when the

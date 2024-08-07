@@ -382,7 +382,7 @@ func (r *rootResolver) preciseUsages(
 func (r *rootResolver) syntacticUsages(
 	ctx context.Context, trace observation.TraceLogger, gitTreeTranslator codenav.GitTreeTranslator, args codenav.UsagesForSymbolArgs,
 ) (core.Option[codenav.UsagesCursor], []resolverstubs.UsageResolver, core.Option[codenav.PreviousSyntacticSearch]) {
-	syntacticResult, prevSearch, err := r.svc.SyntacticUsages(ctx, gitTreeTranslator, args)
+	syntacticResult, err := r.svc.SyntacticUsages(ctx, gitTreeTranslator, args)
 	if err != nil {
 		switch err.Code {
 		case codenav.SU_Fatal:
@@ -399,7 +399,7 @@ func (r *rootResolver) syntacticUsages(
 	for _, result := range syntacticResult.Matches {
 		usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo.Name, args.Commit))
 	}
-	return syntacticResult.NextCursor, usageResolvers, core.Some(prevSearch)
+	return syntacticResult.NextCursor, usageResolvers, core.Some(syntacticResult.PreviousSyntacticSearch)
 }
 
 func (r *rootResolver) searchBasedUsages(

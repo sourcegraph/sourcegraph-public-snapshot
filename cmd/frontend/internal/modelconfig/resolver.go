@@ -69,7 +69,7 @@ type completionsConfigResolver struct {
 }
 
 func (c *completionsConfigResolver) ChatModel() (string, error) {
-	return c.config.ChatModel, nil
+	return convertLegacyModelNameToModelID(c.config.ChatModel), nil
 }
 
 func (c *completionsConfigResolver) ChatModelMaxTokens() (*int32, error) {
@@ -92,7 +92,7 @@ func (c *completionsConfigResolver) DisableClientConfigAPI() bool {
 }
 
 func (c *completionsConfigResolver) FastChatModel() (string, error) {
-	return c.config.FastChatModel, nil
+	return convertLegacyModelNameToModelID(c.config.FastChatModel), nil
 }
 
 func (c *completionsConfigResolver) FastChatModelMaxTokens() (*int32, error) {
@@ -108,7 +108,7 @@ func (c *completionsConfigResolver) Provider() string {
 }
 
 func (c *completionsConfigResolver) CompletionModel() (string, error) {
-	return c.config.CompletionModel, nil
+	return convertLegacyModelNameToModelID(c.config.CompletionModel), nil
 }
 
 func (c *completionsConfigResolver) CompletionModelMaxTokens() (*int32, error) {
@@ -254,12 +254,18 @@ func (r *modelconfigResolver) CompletionModelMaxTokens() (*int32, error) {
 // the provider as needed to match older behavior. (See unit tests and convertProviderID for
 // more information.)
 func (r *modelconfigResolver) toLegacyModelRef(model modelconfigSDK.Model) string {
+	modelID := model.ModelRef.ModelID()
 	providerID := model.ModelRef.ProviderID()
 	legacyProviderName := r.convertProviderID(providerID)
 
-	// For compatibility, we are returning the model _name_ instead of the model _id_.
-	// So the client will see "claude-3-xxxx" not the shortened model ID like "claude-3".
-	return fmt.Sprintf("%s/%s", legacyProviderName, model.ModelName)
+	// Potential issue: Older Cody clients calling the GraphQL may expect to see the model **name**
+	// such as "claude-3-sonnet-20240229". But it is important that we only return the model **ID**
+	// because that is what the HTTP completions API is expecting to see from the client.
+	//
+	// So when using older Cody clients, unaware of the newer modelconfig system, this could lead
+	// to some errors. (But newer clients won't be using this GraphQL endpoint at all and instead
+	// just use the newer modelconfig system, so hopefully this won't be a major concern.)
+	return fmt.Sprintf("%s/%s", legacyProviderName, modelID)
 }
 
 // convertProviderID returns the _API Provider_ for the referenced modelconfig provider.

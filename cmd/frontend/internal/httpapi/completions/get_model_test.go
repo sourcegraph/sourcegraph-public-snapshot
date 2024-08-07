@@ -263,7 +263,7 @@ func TestCodyProModelAllowlists(t *testing.T) {
 					}
 				}
 				if !supportsChat {
-					t.Logf("NA. Skipping model %q as it does not support chat.", sourcegraphSuppliedModel.ModelRef)
+					t.Skipf("NA. Skipping model %q as it does not support chat.", sourcegraphSuppliedModel.ModelRef)
 				}
 
 				legacyModelRef := toLegacyMRef(sourcegraphSuppliedModel.ModelRef)

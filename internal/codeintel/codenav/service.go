@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	searcher "github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -32,7 +31,7 @@ import (
 )
 
 type Service struct {
-	repoStore    database.RepoStore
+	repoStore    minimalRepoStore
 	lsifstore    lsifstore.LsifStore
 	gitserver    gitserver.Client
 	uploadSvc    UploadService
@@ -41,9 +40,18 @@ type Service struct {
 	logger       log.Logger
 }
 
+// minimalRepoStore covers the subset of database.RepoStore APIs that we need
+// for code navigation.
+//
+// Prefer calling GetReposSetByIDs instead of calling Get in a loop.
+type minimalRepoStore interface {
+	Get(context.Context, api.RepoID) (*types.Repo, error)
+	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
+}
+
 func newService(
 	observationCtx *observation.Context,
-	repoStore database.RepoStore,
+	repoStore minimalRepoStore,
 	lsifstore lsifstore.LsifStore,
 	uploadSvc UploadService,
 	gitserver gitserver.Client,
@@ -1132,8 +1140,9 @@ func (s SyntacticMatch) GetSurroundingContent() string {
 }
 
 type SyntacticUsagesResult struct {
-	Matches    []SyntacticMatch
-	NextCursor core.Option[UsagesCursor]
+	Matches                 []SyntacticMatch
+	PreviousSyntacticSearch PreviousSyntacticSearch
+	NextCursor              core.Option[UsagesCursor]
 }
 
 type UsagesForSymbolArgs struct {
@@ -1149,7 +1158,7 @@ func (s *Service) SyntacticUsages(
 	ctx context.Context,
 	gitTreeTranslator GitTreeTranslator,
 	args UsagesForSymbolArgs,
-) (SyntacticUsagesResult, PreviousSyntacticSearch, *SyntacticUsagesError) {
+) (SyntacticUsagesResult, *SyntacticUsagesError) {
 	// The `nil` in the second argument is here, because `With` does not work with custom error types.
 	ctx, trace, endObservation := s.operations.syntacticUsages.With(ctx, nil, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoId", int(args.Repo.ID)),
@@ -1162,7 +1171,7 @@ func (s *Service) SyntacticUsages(
 
 	upload, err := s.getSyntacticUpload(ctx, trace, args)
 	if err != nil {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, err
+		return SyntacticUsagesResult{}, err
 	}
 	index := NewMappedIndexFromTranslator(s.lsifstore, gitTreeTranslator, upload, args.Commit)
 	return syntacticUsagesImpl(ctx, trace, s.searchClient, index, args)

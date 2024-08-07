@@ -322,22 +322,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1w2/J0nDU8aA/f0HxunA5N19L1gw=",
+        "checksum": "Q1SrwI3nLOr5UGEgtO3tOMyBCF9ww=",
         "control": {
-          "checksum": "sha1-w2/J0nDU8aA/f0HxunA5N19L1gw=",
-          "range": "bytes=702-1086"
+          "checksum": "sha1-SrwI3nLOr5UGEgtO3tOMyBCF9ww=",
+          "range": "bytes=703-1088"
         },
         "data": {
-          "checksum": "sha256-/2i+TNHbkrOsjrx7WHrrloXc6gcoyfyGrUHdBljYM+o=",
-          "range": "bytes=1087-1440232"
+          "checksum": "sha256-VJCK5+IjXnuE9RMa+UlLBQcovmD7FtJmbavtzFVj14c=",
+          "range": "bytes=1089-1440526"
         },
         "name": "bash",
         "signature": {
-          "checksum": "sha1-tnYcLxCgV8srkBsTl4c/f6m11vQ=",
-          "range": "bytes=0-701"
+          "checksum": "sha1-FRZ99Z19ubiO+yT5pETHn1ASurA=",
+          "range": "bytes=0-702"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/bash-5.2.21-r5.apk",
-        "version": "5.2.21-r5"
+        "url": "https://packages.wolfi.dev/os/x86_64/bash-5.2.32-r2.apk",
+        "version": "5.2.32-r2"
       },
       {
         "architecture": "x86_64",

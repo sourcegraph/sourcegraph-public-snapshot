@@ -129,7 +129,10 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 					})
 				}
 
-				searcherJob := NewTextSearchJob(b, inputs, resultTypes, repoOptions)
+				searcherJob, err := NewTextSearchJob(b, inputs, resultTypes, repoOptions)
+				if err != nil {
+					return nil, err
+				}
 				addJob(searcherJob)
 			}
 		}
@@ -276,10 +279,13 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	return basicJob, nil
 }
 
-func NewTextSearchJob(b query.Basic, inputs *search.Inputs, types result.Types, options search.RepoOptions) job.Job {
+func NewTextSearchJob(b query.Basic, inputs *search.Inputs, types result.Types, options search.RepoOptions) (job.Job, error) {
 	// searcher to use full deadline if timeout: set or we are not batch.
 	useFullDeadline := b.GetTimeout() != nil || b.Count() != nil || inputs.Protocol != search.Batch
-	patternInfo := toTextPatternInfo(b, types, inputs.Features, inputs.DefaultLimit())
+	patternInfo, err := toTextPatternInfo(b, types, inputs.Features, inputs.DefaultLimit())
+	if err != nil {
+		return nil, err
+	}
 
 	searcherJob := &searcher.TextSearchJob{
 		PatternInfo:     patternInfo,
@@ -294,7 +300,7 @@ func NewTextSearchJob(b query.Basic, inputs *search.Inputs, types result.Types, 
 		child:            &reposPartialJob{searcherJob},
 		repoOpts:         options,
 		containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
-	}
+	}, nil
 }
 
 // orderRacingJobs ensures that searcher and repo search jobs only ever run
@@ -391,7 +397,10 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 		}
 
 		if resultTypes.Has(result.TypeStructural) {
-			patternInfo := toTextPatternInfo(f.ToBasic(), resultTypes, searchInputs.Features, searchInputs.DefaultLimit())
+			patternInfo, err := toTextPatternInfo(f.ToBasic(), resultTypes, searchInputs.Features, searchInputs.DefaultLimit())
+			if err != nil {
+				return nil, err
+			}
 			searcherArgs := &search.SearcherParameters{
 				PatternInfo:     patternInfo,
 				UseFullDeadline: useFullDeadline,
@@ -671,7 +680,7 @@ func toSymbolSearchRequest(f query.Flat, feat *search.Features) (*searcher.Symbo
 }
 
 // toTextPatternInfo converts a query to internal values that drive text search.
-func toTextPatternInfo(b query.Basic, resultTypes result.Types, feat *search.Features, defaultLimit int) *search.TextPatternInfo {
+func toTextPatternInfo(b query.Basic, resultTypes result.Types, feat *search.Features, defaultLimit int) (*search.TextPatternInfo, error) {
 	// Handle file: and -file: filters.
 	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
 
@@ -691,8 +700,16 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, feat *search.Fea
 	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 	count := b.MaxResults(defaultLimit)
 
+	q := protocol.FromJobNode(b.Pattern)
+	if p, ok := q.(*protocol.PatternNode); ok {
+		if p.Value == "" && len(filesExclude) == 0 && len(filesInclude) == 0 &&
+			len(langExclude) == 0 && len(langExclude) == 0 {
+			return nil, errors.New("At least one of pattern and include/exclude patterns must be non-empty")
+		}
+	}
+
 	return &search.TextPatternInfo{
-		Query:                        protocol.FromJobNode(b.Pattern),
+		Query:                        q,
 		IsStructuralPat:              b.IsStructural(),
 		IsCaseSensitive:              b.IsCaseSensitive(),
 		FileMatchLimit:               int32(count),
@@ -707,7 +724,7 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, feat *search.Fea
 		CombyRule:                    b.FindValue(query.FieldCombyRule),
 		Index:                        b.Index(),
 		Select:                       selector,
-	}
+	}, nil
 }
 
 func toLangFilters(aliases []string) []string {

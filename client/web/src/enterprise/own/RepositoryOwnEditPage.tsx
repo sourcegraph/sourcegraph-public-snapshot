@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 import { mdiAccount } from '@mdi/js'
 
@@ -35,7 +35,9 @@ export const RepositoryOwnEditPage: React.FunctionComponent<Omit<RepositoryOwnAr
     authenticatedUser,
     telemetryRecorder,
 }) => {
-    const breadcrumbSetters = useBreadcrumb({ key: 'own', element: <Link to={`/${repo.name}/-/own`}>Ownership</Link> })
+    const breadcrumbSetters = useBreadcrumb(
+        useMemo(() => ({ key: 'own', element: <Link to={`/${repo.name}/-/own`}>Ownership</Link> }), [repo.name])
+    )
     breadcrumbSetters.useBreadcrumb(EDIT_PAGE_BREADCRUMB)
 
     useEffect(() => {

@@ -448,24 +448,24 @@ func syntacticUsagesImpl(
 	searchClient searchclient.SearchClient,
 	mappedIndex MappedIndex,
 	args UsagesForSymbolArgs,
-) (SyntacticUsagesResult, PreviousSyntacticSearch, *SyntacticUsagesError) {
+) (SyntacticUsagesResult, *SyntacticUsagesError) {
 	searchSymbol, symErr := symbolAtRange(ctx, mappedIndex, args)
 	if symErr != nil {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, &SyntacticUsagesError{
 			Code:            SU_NoSymbolAtRequestedRange,
 			UnderlyingError: symErr,
 		}
 	}
 	language, langErr := languageFromFilepath(trace, args.Path)
 	if langErr != nil {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: langErr,
 		}
 	}
 	symbolName, ok := nameFromGlobalSymbol(searchSymbol)
 	if !ok {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: errors.New("can't find syntactic occurrences for locals via search"),
 		}
@@ -481,7 +481,7 @@ func syntacticUsagesImpl(
 	}
 	searchResult, searchErr := findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
 	if searchErr != nil {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: searchErr,
 		}
@@ -509,7 +509,7 @@ func syntacticUsagesImpl(
 		return results, nil
 	})
 	if err != nil {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, &SyntacticUsagesError{
 			Code:            SU_Fatal,
 			UnderlyingError: err,
 		}
@@ -526,10 +526,14 @@ func syntacticUsagesImpl(
 			SyntacticCursor: SyntacticCursor{SeenFiles: seenFiles},
 		})
 	}
-	return SyntacticUsagesResult{Matches: finalMatches, NextCursor: nextCursor}, PreviousSyntacticSearch{
-		MappedIndex: mappedIndex,
-		SymbolName:  symbolName,
-		Language:    language,
+	return SyntacticUsagesResult{
+		Matches: finalMatches,
+		NextCursor: nextCursor
+		PreviousSyntacticSearch: PreviousSyntacticSearch{
+			MappedIndex: mappedIndex,
+			SymbolName:  symbolName,
+			Language:    language,
+		},
 	}, nil
 }
 
