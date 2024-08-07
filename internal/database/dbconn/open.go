@@ -6,9 +6,12 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"log" //nolint:logging // TODO move all logging to sourcegraph/log
+	"runtime"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/XSAM/otelsql"
@@ -18,10 +21,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/qustavo/sqlhooks/v2"
+	sglog "github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -49,6 +54,16 @@ var defaultMaxIdle = func() int {
 	v, err := strconv.Atoi(str)
 	if err != nil {
 		log.Fatalln("SRC_PGSQL_MAX_IDLE:", err)
+	}
+	return v
+}()
+
+var logTenantlessQueries = func() bool {
+	// For now, use the old default of max_idle == max_open
+	str := env.Get("SRC_PGSQL_LOG_TENANTLESS_QUERIES", "false", "INTERNAL: When true, log all tenantless queries and stack traces")
+	v, err := strconv.ParseBool(str)
+	if err != nil {
+		log.Fatalln("SRC_PGSQL_LOG_TENANTLESS_QUERIES:", err)
 	}
 	return v
 }()
@@ -219,14 +234,45 @@ func (n *extendedConn) CheckNamedValue(namedValue *driver.NamedValue) error {
 	return n.Raw().(driver.NamedValueChecker).CheckNamedValue(namedValue)
 }
 
+var (
+	TheProfiler = pprof.NewProfile("queries_without")
+	uniqID      atomic.Int64
+)
+
 func (n *extendedConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	if logTenantlessQueries && !strings.Contains(query, "critical_and_site_config.id") {
+		_, ok := tenant.FromContext(ctx)
+		if !ok {
+			TheProfiler.Add(uniqID.Add(1), 1)
+			sglog.Scoped("tenantQueryLogger").Warn("Saw query without tenant", sglog.String("query", query), sglog.String("stack", captureStackTrace()))
+		}
+	}
 	ctx, query = instrumentQuery(ctx, query, len(args))
 	return n.execerContext.ExecContext(ctx, query, args)
 }
 
 func (n *extendedConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+	if logTenantlessQueries && !strings.Contains(query, "critical_and_site_config.id") {
+		_, ok := tenant.FromContext(ctx)
+		if !ok {
+			TheProfiler.Add(uniqID.Add(1), 1)
+			sglog.Scoped("tenantQueryLogger").Warn("Saw query without tenant", sglog.String("query", query), sglog.String("stack", captureStackTrace()))
+		}
+	}
 	ctx, query = instrumentQuery(ctx, query, len(args))
 	return n.queryerContext.QueryContext(ctx, query, args)
+}
+
+func captureStackTrace() string {
+	// Allocate a large enough buffer to capture the stack trace
+	buf := make([]byte, 1024)
+	for {
+		n := runtime.Stack(buf, false)
+		if n < len(buf) {
+			return string(buf[:n])
+		}
+		buf = make([]byte, len(buf)*2)
+	}
 }
 
 func registerPostgresProxy() {
