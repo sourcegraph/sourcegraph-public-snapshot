@@ -79,11 +79,8 @@ function getTelemetrySourceClient(): string {
 <div class="chat" bind:this={container} />
 
 <style lang="scss">
-    :root {
-        --vscode-sideBar-background: transparent;
-    }
-
     .chat {
+        --vscode-sideBar-background: transparent;
         --vscode-editor-background: var(--body-bg);
         --vscode-editor-foreground: var(--body-color);
         --vscode-input-background: var(--input-bg);
