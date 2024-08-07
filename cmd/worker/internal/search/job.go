@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // config stores shared config we can override in each worker. We don't expose
@@ -39,7 +40,7 @@ type searchJob struct {
 	once         sync.Once
 	err          error
 	workerStores []interface {
-		QueuedCount(context.Context, bool) (int, error)
+		CountByState(_ context.Context, bitset dbworkerstore.RecordState) (int, error)
 	}
 	workers []goroutine.BackgroundRoutine
 }
@@ -136,8 +137,9 @@ func (j *searchJob) newSearchJobRoutines(
 // hasWork returns true if any of the workers have work in its queue or is
 // processing something. This is only exposed for tests.
 func (j *searchJob) hasWork(ctx context.Context) bool {
+	statesBitset := dbworkerstore.StateQueued | dbworkerstore.StateErrored | dbworkerstore.StateProcessing
 	for _, w := range j.workerStores {
-		if count, _ := w.QueuedCount(ctx, true); count > 0 {
+		if count, _ := w.CountByState(ctx, statesBitset); count > 0 {
 			return true
 		}
 	}

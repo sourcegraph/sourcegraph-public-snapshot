@@ -47,8 +47,8 @@ func (j *multiqueueMetricsReporterJob) Routines(_ context.Context, observationCt
 	multiqueueMetricsReporter, err := executorqueue.NewMultiqueueMetricReporter(
 		executortypes.ValidQueueNames,
 		configInst.MetricsConfig,
-		codeIntelStore.QueuedCount,
-		batchesStore.QueuedCount,
+		codeIntelStore.CountByState,
+		batchesStore.CountByState,
 	)
 	if err != nil {
 		return nil, err
