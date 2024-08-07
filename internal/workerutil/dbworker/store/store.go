@@ -791,13 +791,13 @@ func (s *store[T]) AddExecutionLogEntry(ctx context.Context, id int, entry execu
 	}})
 	defer endObservation(1, observation.Args{})
 
-	conds := []*sqlf.Query{
-		s.formatQuery("{id} = %s", id),
-	}
+	conds := []*sqlf.Query{sqlf.Sprintf("%s", true)}
 	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
 
 	entryID, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
 		addExecutionLogEntryQuery,
+		quote(s.options.TableName),
+		id,
 		quote(s.options.TableName),
 		entry,
 		sqlf.Join(conds, "AND"),
@@ -825,11 +825,15 @@ func (s *store[T]) AddExecutionLogEntry(ctx context.Context, id int, entry execu
 }
 
 const addExecutionLogEntryQuery = `
-UPDATE
-	%s
+WITH candidate AS (
+  -- Directly using id = blah in WHERE clause would sometimes
+  -- trigger use of the state index under high contention, so
+  -- try forcing the use of pkey on id
+  SELECT id FROM %s WHERE id = %s FOR UPDATE
+)
+UPDATE %s
 SET {execution_logs} = {execution_logs} || %s::json
-WHERE
-	%s
+WHERE id IN (SELECT id FROM candidate) AND %s
 RETURNING array_length({execution_logs}, 1)
 `
 
