@@ -47,11 +47,12 @@ type candidateFile struct {
 }
 
 type searchArgs struct {
-	repo         api.RepoName
-	commit       api.CommitID
-	identifier   string
-	language     string
-	countLimit   int32
+	repo       api.RepoName
+	commit     api.CommitID
+	identifier string
+	language   string
+	countLimit int
+	// ignoredFiles has to be sorted
 	ignoredFiles []string
 }
 
@@ -235,24 +236,40 @@ func symbolSearch(
 func buildQuery(args searchArgs, queryType string) string {
 	repoName := fmt.Sprintf("^%s$", args.repo)
 	wordBoundaryIdentifier := fmt.Sprintf("/\\b%s\\b/", args.identifier)
+	// NOTE: Not setting count at all will set a default limit of 10,000 according to the search-platform
+	// team. As we're setting a limit on the matches we will actually process and will cancel the search
+	// when hitting that limit I'm bumping that by another 10x here.
 	return fmt.Sprintf(
-		"case:yes type:%s repo:%s rev:%s language:%s %s",
+		"case:yes type:%s repo:%s rev:%s language:%s count:100000 %s",
 		queryType, repoName, string(args.commit), args.language, wordBoundaryIdentifier)
 }
 
-func newCandidateStream(
-	filterFunc func(result.Matches) result.Matches,
-	limit int32,
+func NewCandidateStream(
+	filterFiles []string,
+	limit int,
 	limitFunc func(),
-) *candidateStream {
-	return &candidateStream{
-		limit:      int(limit),
-		filterFunc: filterFunc,
-		limitFunc:  limitFunc,
+) *CandidateStream {
+	return &CandidateStream{
+		limit: limit,
+		filterFunc: func(matches result.Matches) result.Matches {
+			return genslices.Filter(matches, func(match result.Match) bool {
+				if fileMatch, ok := match.(*result.FileMatch); ok {
+					// We only want to consider complete files for syntactic/search-based usages
+					if fileMatch.LimitHit {
+						return false
+					}
+					if _, found := slices.BinarySearch(filterFiles, fileMatch.Path); found {
+						return false
+					}
+				}
+				return true
+			})
+		},
+		limitFunc: limitFunc,
 	}
 }
 
-type candidateStream struct {
+type CandidateStream struct {
 	sync.Mutex
 	streaming.SearchEvent
 	limit      int
@@ -260,7 +277,7 @@ type candidateStream struct {
 	limitFunc  func()
 }
 
-func (c *candidateStream) Send(event streaming.SearchEvent) {
+func (c *CandidateStream) Send(event streaming.SearchEvent) {
 	c.Lock()
 	defer c.Unlock()
 	if c.Results.ResultCount() < c.limit {
@@ -270,20 +287,6 @@ func (c *candidateStream) Send(event streaming.SearchEvent) {
 			c.limitFunc()
 		}
 	}
-}
-
-func filterResultMatches(
-	matches result.Matches,
-	filterFiles []string,
-) result.Matches {
-	return genslices.Filter(matches, func(match result.Match) bool {
-		if fileMatch, ok := match.(*result.FileMatch); ok {
-			if _, found := slices.BinarySearch(filterFiles, fileMatch.Path); found {
-				return false
-			}
-		}
-		return true
-	})
 }
 
 func executeQuery(
@@ -303,14 +306,22 @@ func executeQuery(
 	}
 	trace.Info("Running query", log.String("query", searchQuery))
 	searchCtx, cancelFn := context.WithCancel(ctx)
-	stream := newCandidateStream(func(m result.Matches) result.Matches {
-		return filterResultMatches(m, args.ignoredFiles)
-	}, args.countLimit, cancelFn)
+	stream := NewCandidateStream(args.ignoredFiles, args.countLimit, cancelFn)
 	_, err = client.Execute(searchCtx, stream, plan)
 	if err != nil {
 		return nil, err
 	}
-	return stream.Results, nil
+	resultCount := 0
+	limited := genslices.TakeWhile(stream.Results, func(match result.Match) bool {
+		keepGoing := resultCount < args.countLimit
+		resultCount += match.ResultCount()
+		return keepGoing
+	})
+	trace.Info("finished search",
+		log.Int("countLimit", args.countLimit),
+		log.Int("matchCount", stream.Results.ResultCount()),
+		log.Int("limitedTo", limited.ResultCount()))
+	return limited, nil
 }
 
 func nameFromGlobalSymbol(symbol *scip.Symbol) (string, bool) {
@@ -465,7 +476,7 @@ func syntacticUsagesImpl(
 		identifier: symbolName,
 		language:   language,
 		// TODO: Assumes at least every third match is a syntactic one
-		countLimit:   args.Limit * 3,
+		countLimit:   int(args.Limit) * 3,
 		ignoredFiles: args.Cursor.SyntacticCursor.SeenFiles,
 	}
 	searchResult, searchErr := findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
@@ -545,7 +556,7 @@ func searchBasedUsagesImpl(
 		candidateSymbols symbolSearchResult
 		err              error
 	}
-	mkSearchArgs := func(countLimit int32) searchArgs {
+	mkSearchArgs := func(countLimit int) searchArgs {
 		return searchArgs{
 			repo:         args.Repo.Name,
 			commit:       args.Commit,
@@ -564,7 +575,7 @@ func searchBasedUsagesImpl(
 		if syntacticIndex.IsNone() {
 			searchLimit = args.Limit
 		}
-		searchCoords := mkSearchArgs(searchLimit)
+		searchCoords := mkSearchArgs(int(searchLimit))
 		matchResults.searchResult, matchResults.err = findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
 	})
 	wg.Go(func() {
