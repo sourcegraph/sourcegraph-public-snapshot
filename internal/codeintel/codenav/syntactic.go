@@ -93,22 +93,11 @@ func findCandidateOccurrencesViaSearch(
 	inconsistentFilepaths := 0
 	duplicatedFilepaths := collections.NewSet[string]()
 	matchCount := 0
-	limitHit := false
 	for _, streamResult := range searchResults {
 		fileMatch, ok := streamResult.(*result.FileMatch)
 		if !ok {
 			nonFileMatches += 1
 			continue
-		}
-		// Pagination for search-based usages works at file granularity,
-		// so don't consider partially searched files.
-		if fileMatch.LimitHit {
-			limitHit = true
-			continue
-		}
-		// Sometimes Zoekt/Searcher give us way more results than we asked for.
-		if matchCount >= int(args.countLimit) {
-			break
 		}
 		path := fileMatch.Path
 		matches := []candidateMatch{}
@@ -168,7 +157,7 @@ func findCandidateOccurrencesViaSearch(
 	// This would end up adding the problematic file to the cursor, meaning it would be skipped on the next page.
 	return candidateOccurrenceResult{
 		candidateFiles: results,
-		limitHit:       limitHit || matchCount >= int(args.countLimit),
+		limitHit:       matchCount >= int(args.countLimit),
 	}, nil
 }
 
