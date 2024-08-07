@@ -301,7 +301,17 @@ func executeQuery(
 	if err != nil {
 		return nil, err
 	}
-	return stream.Results, nil
+	resultCount := 0
+	limited := genslices.TakeWhile(stream.Results, func(match result.Match) bool {
+		keepGoing := resultCount < countLimit
+		resultCount += match.ResultCount()
+		return keepGoing
+	})
+	trace.Info("finished search",
+		log.Int("countLimit", countLimit),
+		log.Int("matchCount", stream.Results.ResultCount()),
+		log.Int("limitedTo", limited.ResultCount()))
+	return limited, nil
 }
 
 func nameFromGlobalSymbol(symbol *scip.Symbol) (string, bool) {
