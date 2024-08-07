@@ -92,6 +92,7 @@ func upgradeCloudEphemeral(ctx *cli.Context) error {
 	}
 	email, err := GetGCloudAccount(ctx.Context)
 	if err != nil {
+		writeGCloudErrorSuggestion()
 		return err
 	}
 	deploymentName := determineDeploymentName(ctx.String("name"), version, email, currentBranch)

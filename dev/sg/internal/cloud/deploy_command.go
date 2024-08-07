@@ -261,6 +261,7 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 	}
 	email, err := GetGCloudAccount(ctx.Context)
 	if err != nil {
+		writeGCloudErrorSuggestion()
 		return err
 	}
 
