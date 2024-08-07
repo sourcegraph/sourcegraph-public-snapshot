@@ -68,6 +68,9 @@ func New(
 			licenses:          enterprisePortal.Subscriptions().Licenses(),
 			codyGatewayAccess: enterprisePortal.CodyAccess().CodyGateway(),
 			tryAcquireFn: func() (acquired bool, release func(), _ error) {
+				if interval <= time.Second {
+					return true, func() {}, nil
+				}
 				return redislock.TryAcquire(
 					rs,
 					"enterpriseportal.dotcomimporter",
