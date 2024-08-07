@@ -54,14 +54,13 @@ func oneOfEquals(value string, i ...string) bool {
 }
 
 func GetGCloudAccount(ctx context.Context) (string, error) {
-	return run.Cmd(ctx, "gcloud", "config", "get", "account").Run().String()
+	return run.Cmd(ctx, "gcloud", "auth", "list", "--filter", "status:ACTIVE", "--format", "value(account)").Run().String()
 }
 
 func writeGCloudErrorSuggestion() {
 	msg := "Failed to determine your gcloud account to get your email address. This might indicate that there is a problem with your local gcloud configuration"
 	suggestion := "Try the following steps:\n"
 	suggestion += "1. `gcloud auth login` should open a browser window and prompt you to log in with your Google account - ensure you login with your sourcegraph address!\n"
-	suggestion += "2. `gcloud config get account` should return a @sourcegraph.com email address\n"
 	suggestion += "\nIf the steps above don't work please reach out to #discuss-dev-infra\n"
 	std.Out.WriteWarningf(msg)
 	std.Out.WriteMarkdown(withFAQ(suggestion))
