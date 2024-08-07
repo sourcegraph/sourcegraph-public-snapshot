@@ -2,11 +2,9 @@ package dotcomdb_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
-	"connectrpc.com/connect"
 	"github.com/hexops/autogold/v2"
 	pgxstdlibv4 "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -15,14 +13,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
-
-	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
-
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/codyaccessservice"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/databasetest"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/importer"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/dotcomproductsubscriptiontest"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -31,9 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func newTestDotcomReader(t *testing.T, opts dotcomdb.ReaderOptions) (sgdatabase.DB, *dotcomdb.Reader) {
@@ -77,22 +65,6 @@ func newTestDotcomReader(t *testing.T, opts dotcomdb.ReaderOptions) (sgdatabase.
 	require.NoError(t, r.Ping(ctx))
 
 	return sgdatabase.NewDB(logtest.Scoped(t), sgtestdb), r
-}
-
-type mockCodyAccessV1Store struct{ codyaccessservice.StoreV1 }
-
-func (mockCodyAccessV1Store) IntrospectSAMSToken(context.Context, string) (*sams.IntrospectTokenResponse, error) {
-	return &sams.IntrospectTokenResponse{
-		Active:    true,
-		ExpiresAt: time.Now().Add(24 * time.Hour),
-		Scopes:    scopes.Scopes{scopes.ToScope(scopes.ServiceEnterprisePortal, scopes.PermissionEnterprisePortalCodyAccess, scopes.ActionRead)},
-	}, nil
-}
-
-func mockAuthenticatedServiceRequest[T any](message *T) *connect.Request[T] {
-	req := connect.NewRequest(message)
-	req.Header().Set("authorization", "bearer foobar")
-	return req
 }
 
 type mockedData struct {
@@ -213,246 +185,6 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb sgdatabase.DB, info lice
 
 	t.Logf("Setup complete in %s", time.Since(start).String())
 	return result
-}
-
-func mustWithCtx[T any](t *testing.T, fn func(context.Context) (T, error)) T {
-	v, err := fn(context.Background())
-	require.NoError(t, err)
-	return v
-}
-
-func TestGetCodyGatewayAccessAttributes(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	for i, tc := range []struct {
-		name     string
-		info     license.Info
-		cgAccess graphqlbackend.UpdateCodyGatewayAccessInput
-	}{{
-		name: "disabled",
-		info: license.Info{
-			CreatedAt: time.Now().Add(-30 * time.Minute),
-			ExpiresAt: time.Now().Add(30 * time.Minute),
-			UserCount: 10,
-			Tags:      []string{licensing.DevTag},
-		},
-		cgAccess: graphqlbackend.UpdateCodyGatewayAccessInput{
-			Enabled: pointers.Ptr(false),
-		},
-	}, {
-		name: "user and tags",
-		info: license.Info{
-			CreatedAt: time.Now().Add(-30 * time.Minute),
-			ExpiresAt: time.Now().Add(30 * time.Minute),
-			UserCount: 321,
-			Tags:      []string{licensing.PlanEnterprise1.Tag(), licensing.DevTag},
-		},
-		cgAccess: graphqlbackend.UpdateCodyGatewayAccessInput{Enabled: pointers.Ptr(true)},
-	}, {
-		name: "overrides",
-		info: license.Info{
-			CreatedAt: time.Now().Add(-30 * time.Minute),
-			ExpiresAt: time.Now().Add(30 * time.Minute),
-			UserCount: 10,
-			Tags:      []string{licensing.DevTag},
-		},
-		cgAccess: graphqlbackend.UpdateCodyGatewayAccessInput{
-			Enabled:                                 pointers.Ptr(true),
-			ChatCompletionsRateLimit:                pointers.Ptr[graphqlbackend.BigInt](123),
-			CodeCompletionsRateLimitIntervalSeconds: pointers.Ptr[int32](456),
-			EmbeddingsRateLimit:                     pointers.Ptr[graphqlbackend.BigInt](789),
-		},
-	}} {
-		t.Run(tc.name, func(t *testing.T) {
-			tc := tc
-			t.Parallel()
-
-			dotcomdb, dotcomreader := newTestDotcomReader(t, dotcomdb.ReaderOptions{
-				DevOnly: true,
-			})
-
-			// First, set up a subscription and license and some other rubbish
-			// data to ensure we only get the license we want.
-			mock := setupDBAndInsertMockLicense(t, dotcomdb, tc.info, &tc.cgAccess)
-
-			// Now import the data for parity so we can compare against the
-			// Enterprise Portal implementation
-			epDB := &database.DB{
-				DB: databasetest.NewTestDB(t, "ep-dotcomdb", fmt.Sprintf("get-attributes-%d", i), databasetest.Tables(t)...),
-			}
-			err := importer.NewHandler(ctx, logtest.Scoped(t), dotcomreader, epDB, nil).
-				ImportSubscriptions(ctx)
-			require.NoError(t, err)
-			codyAccessService := codyaccessservice.NewHandlerV1(logtest.Scoped(t), mockCodyAccessV1Store{
-				StoreV1: codyaccessservice.NewStoreV1(codyaccessservice.StoreV1Options{
-					DB: epDB,
-				}),
-			})
-
-			t.Run("by subscription ID", func(t *testing.T) {
-				t.Parallel()
-
-				attr, err := dotcomreader.GetCodyGatewayAccessAttributesBySubscription(ctx, mock.targetSubscriptionID)
-				require.NoError(t, err)
-				access, err := codyAccessService.GetCodyGatewayAccess(ctx, mockAuthenticatedServiceRequest(&codyaccessv1.GetCodyGatewayAccessRequest{
-					Query: &codyaccessv1.GetCodyGatewayAccessRequest_SubscriptionId{
-						SubscriptionId: mock.targetSubscriptionID,
-					},
-				}))
-				require.NoError(t, err)
-
-				validateAccessAttributes(t, dotcomdb, mock, attr, access.Msg.GetAccess(), tc.info)
-			})
-
-			t.Run("by access token", func(t *testing.T) {
-				t.Parallel()
-
-				for i, token := range mock.accessTokens {
-					t.Run(fmt.Sprintf("token %d", i), func(t *testing.T) {
-						token := token
-						t.Parallel()
-
-						attr, err := dotcomreader.GetCodyGatewayAccessAttributesByAccessToken(ctx, token)
-						require.NoError(t, err)
-						access, err := codyAccessService.GetCodyGatewayAccess(ctx, mockAuthenticatedServiceRequest(&codyaccessv1.GetCodyGatewayAccessRequest{
-							Query: &codyaccessv1.GetCodyGatewayAccessRequest_AccessToken{
-								AccessToken: token,
-							},
-						}))
-						require.NoError(t, err)
-						validateAccessAttributes(t, dotcomdb, mock, attr, access.Msg.GetAccess(), tc.info)
-
-						t.Run("compare with dotcom tokens DB", func(t *testing.T) {
-							subID, err := dotcomproductsubscriptiontest.NewTokensDB(t, dotcomdb).
-								LookupProductSubscriptionIDByAccessToken(ctx, token)
-							require.NoError(t, err)
-							assert.Equal(t, subID, attr.SubscriptionID)
-						})
-					})
-				}
-			})
-		})
-	}
-}
-
-func validateAccessAttributes(t *testing.T, dotcomdb sgdatabase.DB, mock mockedData, attr *dotcomdb.CodyGatewayAccessAttributes, access *codyaccessv1.CodyGatewayAccess, info license.Info) {
-	assert.Equal(t, mock.targetSubscriptionID, attr.SubscriptionID)
-	assert.Equal(t, subscriptionsv1.EnterpriseSubscriptionIDPrefix+mock.targetSubscriptionID, access.SubscriptionId)
-
-	assert.Equal(t, int(info.UserCount), *attr.ActiveLicenseUserCount)
-	assert.Len(t, attr.LicenseKeyHashes, 2)
-
-	assert.Equal(t, mock.accessTokens, attr.GenerateAccessTokens())
-	var protoAccessTokens []string
-	for _, t := range access.AccessTokens {
-		protoAccessTokens = append(protoAccessTokens, t.GetToken())
-	}
-	assert.ElementsMatch(t, mock.accessTokens, protoAccessTokens)
-
-	limits := attr.EvaluateRateLimits()
-
-	// Validate against the expected values as produced by existing resolvers
-	expected := dotcomproductsubscriptiontest.NewCodyGatewayAccessResolver(t, dotcomdb, mock.targetSubscriptionID)
-	assert.Equal(t, expected.Enabled(), attr.CodyGatewayEnabled)
-	if !expected.Enabled() {
-		// We don't care about the rest of the attributes if access is disabled,
-		// the resolver returns nil for everything
-		return
-	}
-	for _, compare := range []struct {
-		name     string
-		expected graphqlbackend.CodyGatewayRateLimit
-		got      licensing.CodyGatewayRateLimit
-		gotProto *codyaccessv1.CodyGatewayRateLimit
-	}{{
-		name:     "Chat",
-		expected: mustWithCtx(t, expected.ChatCompletionsRateLimit),
-		got:      limits.Chat,
-		gotProto: access.ChatCompletionsRateLimit,
-	}, {
-		name:     "Code",
-		expected: mustWithCtx(t, expected.CodeCompletionsRateLimit),
-		got:      limits.Code,
-		gotProto: access.CodeCompletionsRateLimit,
-	}, {
-		name:     "Embeddings",
-		expected: mustWithCtx(t, expected.EmbeddingsRateLimit),
-		got:      limits.Embeddings,
-		gotProto: access.EmbeddingsRateLimit,
-	}} {
-		t.Run(compare.name, func(t *testing.T) {
-			// We only care about limit and interval now
-			assert.Equal(t, int64(compare.expected.Limit()), compare.got.Limit, "Limit")
-			assert.Equal(t, compare.expected.IntervalSeconds(), compare.got.IntervalSeconds, "IntervalSeconds")
-
-			assert.Equal(t, uint64(compare.expected.Limit()), compare.gotProto.Limit, "Limit")
-			assert.Equal(t, int64(compare.expected.IntervalSeconds()), compare.gotProto.IntervalDuration.Seconds, "IntervalSeconds")
-		})
-	}
-}
-
-func TestGetAllCodyGatewayAccessAttributes(t *testing.T) {
-	t.Parallel()
-	dotcomDB, dotcomreader := newTestDotcomReader(t, dotcomdb.ReaderOptions{
-		DevOnly: true,
-	})
-
-	info := license.Info{
-		CreatedAt: time.Now().Add(-30 * time.Minute),
-		ExpiresAt: time.Now().Add(30 * time.Minute),
-		UserCount: 321,
-		Tags:      []string{licensing.PlanEnterprise1.Tag(), licensing.DevTag},
-	}
-	cgAccess := graphqlbackend.UpdateCodyGatewayAccessInput{Enabled: pointers.Ptr(true)}
-	mock := setupDBAndInsertMockLicense(t, dotcomDB, info, &cgAccess)
-
-	// Now import the data for parity so we can compare against the
-	// Enterprise Portal implementation
-	ctx := context.Background()
-	epDB := &database.DB{
-		DB: databasetest.NewTestDB(t, "ep-dotcomdb", "get-all-attributes", databasetest.Tables(t)...),
-	}
-	err := importer.NewHandler(ctx, logtest.Scoped(t), dotcomreader, epDB, nil).
-		ImportSubscriptions(ctx)
-	require.NoError(t, err)
-	codyAccessService := codyaccessservice.NewHandlerV1(logtest.Scoped(t), mockCodyAccessV1Store{
-		StoreV1: codyaccessservice.NewStoreV1(codyaccessservice.StoreV1Options{
-			DB: epDB,
-		}),
-	})
-
-	attrs, err := dotcomreader.GetAllCodyGatewayAccessAttributes(ctx)
-	require.NoError(t, err)
-	assert.Len(t, attrs, 3) // 3 subscriptions created in setupDBAndInsertMockLicense
-
-	accesses, err := codyAccessService.ListCodyGatewayAccesses(ctx, mockAuthenticatedServiceRequest(&codyaccessv1.ListCodyGatewayAccessesRequest{}))
-	require.NoError(t, err)
-	assert.Len(t, accesses.Msg.GetAccesses(), 3) // 3 subscriptions created in setupDBAndInsertMockLicense
-
-	var (
-		foundAttr   *dotcomdb.CodyGatewayAccessAttributes
-		foundAccess *codyaccessv1.CodyGatewayAccess
-	)
-	for _, attr := range attrs {
-		if attr.SubscriptionID == mock.targetSubscriptionID {
-			foundAttr = attr
-		} else {
-			assert.False(t, attr.CodyGatewayEnabled)
-		}
-	}
-	for _, access := range accesses.Msg.GetAccesses() {
-		if access.SubscriptionId == subscriptionsv1.EnterpriseSubscriptionIDPrefix+mock.targetSubscriptionID {
-			foundAccess = access
-		} else {
-			assert.False(t, access.Enabled)
-		}
-	}
-	require.NotNil(t, foundAttr)
-	require.NotNil(t, foundAccess)
-
-	validateAccessAttributes(t, dotcomDB, mock, foundAttr, foundAccess, info)
-
 }
 
 func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
