@@ -98,7 +98,7 @@ func (c *publicrestTest) chatCompletions(t *testing.T, body string) *httptest.Re
 		strings.NewReader(body))
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.Credentials.AccessToken()))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.Credentials.AccessToken))
 
 	rr := httptest.NewRecorder()
 	c.Handler.ServeHTTP(rr, req)
@@ -120,7 +120,7 @@ func (c *publicrestTest) getChatModels() []*types.Model {
 
 func (c *publicrestTest) getModelConfig() *types.ModelConfiguration {
 	req, err := http.NewRequest("GET", c.Credentials.Endpoint+"/.api/modelconfig/supported-models.json", nil)
-	req.Header.Set("Authorization", "token "+c.Credentials.AccessToken())
+	req.Header.Set("Authorization", "token "+c.Credentials.AccessToken)
 	assert.NoError(c.t, err)
 	res, err := c.Golly.Do(req)
 	assert.NoError(c.t, err)

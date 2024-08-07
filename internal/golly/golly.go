@@ -144,7 +144,6 @@ func NewGollyDoer(t *testing.T, recordingName string, doer httpcli.Doer) *Golly 
 		T: t,
 		Credentials: []TestingCredentials{
 			DotcomTestingCredentials(),
-			S2TestingCredentials(),
 		},
 		RecordingName:                 recordingName,
 		RecordingFilePath:             recordingFilePath,
@@ -162,17 +161,8 @@ func NewGollyDoer(t *testing.T, recordingName string, doer httpcli.Doer) *Golly 
 
 func DotcomTestingCredentials() TestingCredentials {
 	return TestingCredentials{
-		Endpoint:              "https://sourcegraph.com",
-		ProductionAccessToken: DotcomAccessToken,
-		RedactedToken:         "REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d",
-	}
-}
-
-func S2TestingCredentials() TestingCredentials {
-	return TestingCredentials{
-		Endpoint:              "https://sourcegraph.sourcegraph.com",
-		ProductionAccessToken: S2AccessToken,
-		RedactedToken:         "REDACTED_964f5256e709a8c5c151a63d8696d5c7ac81604d179405864d88ff48a9232364",
+		Endpoint:    "https://sourcegraph.com",
+		AccessToken: DotcomAccessToken,
 	}
 }
 
