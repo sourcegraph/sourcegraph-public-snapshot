@@ -185,8 +185,6 @@
     }
 
     a {
-        text-overflow: ellipsis;
-        overflow: hidden;
         white-space: nowrap;
         color: inherit;
         text-decoration: none;
