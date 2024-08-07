@@ -342,6 +342,11 @@ svelte_check.svelte_check_test(
         # Needed to properly extend vite's UserConfig type
         ":node_modules/vitest",
     ],
+    env = {
+        # It appears that svelte-check will start the vite dev server,
+        # but in this case we don't want the proxy to be enabled.
+        "SK_DISABLE_PROXY": "1",
+    },
 )
 
 filegroup(
