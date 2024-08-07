@@ -111,7 +111,7 @@ func handleNotify(
 	span := trace.SpanFromContext(ctx)
 
 	lockKey := fmt.Sprintf("rate_limit:%s:alert:lock:%s", feature, actor.GetID())
-	acquired, release, err := redislock.TryAcquire(rs, lockKey, 30*time.Second)
+	acquired, release, err := redislock.TryAcquire(ctx, rs, lockKey, 30*time.Second)
 	span.SetAttributes(attribute.Bool("lock.acquired", acquired))
 	if err != nil {
 		return errors.Wrap(err, "failed to acquire lock")

@@ -16,7 +16,6 @@ import (
 	subscriptionsv1connect "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1/v1connect"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/iam"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/connectutil"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
@@ -330,30 +329,26 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 	// Empty field paths means update all non-empty fields.
 	if len(fieldPaths) == 0 {
 		if v := req.Msg.GetSubscription().GetInstanceDomain(); v != "" {
-			opts.InstanceDomain = pointers.Ptr(database.NewNullString(v))
+			opts.InstanceDomain = database.NewNullString(v)
 		}
 		if v := req.Msg.GetSubscription().GetDisplayName(); v != "" {
-			opts.DisplayName = pointers.Ptr(database.NewNullString(v))
+			opts.DisplayName = database.NewNullString(v)
 		}
 	} else {
 		for _, p := range fieldPaths {
 			switch p {
 			case "instance_domain":
-				opts.InstanceDomain = pointers.Ptr(
-					database.NewNullString(req.Msg.GetSubscription().GetInstanceDomain()),
-				)
+				opts.InstanceDomain =
+					database.NewNullString(req.Msg.GetSubscription().GetInstanceDomain())
 			case "display_name":
-				opts.DisplayName = pointers.Ptr(
-					database.NewNullString(req.Msg.GetSubscription().GetDisplayName()),
-				)
+				opts.DisplayName =
+					database.NewNullString(req.Msg.GetSubscription().GetDisplayName())
 			case "*":
 				opts.ForceUpdate = true
-				opts.InstanceDomain = pointers.Ptr(
-					database.NewNullString(req.Msg.GetSubscription().GetInstanceDomain()),
-				)
-				opts.DisplayName = pointers.Ptr(
-					database.NewNullString(req.Msg.GetSubscription().GetDisplayName()),
-				)
+				opts.InstanceDomain =
+					database.NewNullString(req.Msg.GetSubscription().GetInstanceDomain())
+				opts.DisplayName =
+					database.NewNullString(req.Msg.GetSubscription().GetDisplayName())
 			}
 		}
 	}

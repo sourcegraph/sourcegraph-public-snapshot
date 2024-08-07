@@ -251,15 +251,15 @@ type UpsertCodyGatewayAccessOptions struct {
 
 	// chat_completions_rate_limit
 	ChatCompletionsRateLimit                *int64
-	ChatCompletionsRateLimitIntervalSeconds *int
+	ChatCompletionsRateLimitIntervalSeconds *int32
 
 	// code_completions_rate_limit
 	CodeCompletionsRateLimit                *int64
-	CodeCompletionsRateLimitIntervalSeconds *int
+	CodeCompletionsRateLimitIntervalSeconds *int32
 
 	// embeddings_rate_limit
 	EmbeddingsRateLimit                *int64
-	EmbeddingsRateLimitIntervalSeconds *int
+	EmbeddingsRateLimitIntervalSeconds *int32
 
 	// ForceUpdate indicates whether to force update all fields of the subscription
 	// record.
