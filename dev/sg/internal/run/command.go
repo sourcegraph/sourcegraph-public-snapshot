@@ -298,7 +298,13 @@ func startSgCmd(ctx context.Context, cmd SGConfigCommand, parentEnv map[string]s
 	}
 
 	if conf.Preamble != "" {
-		std.Out.WriteLine(output.Styledf(output.StyleOrange, "[%s] %s %s", conf.Name, output.EmojiInfo, conf.Preamble))
+		// White on purple'ish gray, to make it noticeable, but not burning everyone eyes.
+		preambleStyle := output.CombineStyles(output.Bg256Color(60), output.Fg256Color(255))
+		lines := strings.Split(conf.Preamble, "\n")
+		for _, line := range lines {
+			// Pad with 16 chars, so it matches the other commands prefixes.
+			std.Out.WriteLine(output.Styledf(preambleStyle, "[%-16s] %s %s", fmt.Sprintf("📣 %s", conf.Name), output.EmojiInfo, line))
+		}
 	}
 
 	return startCmd(ctx, opts)
