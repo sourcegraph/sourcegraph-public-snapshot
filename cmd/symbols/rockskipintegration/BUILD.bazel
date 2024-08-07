@@ -31,6 +31,7 @@ go_test(
         "//internal/observation",
         "//internal/search",
         "//internal/search/result",
+        "//internal/tenant",
         "//internal/types",
         "@com_github_sourcegraph_go_ctags//:go-ctags",
         "@com_github_sourcegraph_log//:log",

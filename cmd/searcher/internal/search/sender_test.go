@@ -1,7 +1,6 @@
 package search
 
 import (
-	"context"
 	"sync"
 	"testing"
 	"testing/quick"
@@ -10,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 func TestLimitedStream(t *testing.T) {
@@ -88,7 +88,7 @@ func TestLimitedStream(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run("", func(t *testing.T) {
-			ctx := context.Background()
+			ctx := tenant.TestContext()
 			var got []protocol.FileMatch
 			_, _, s := newLimitedStream(ctx, tt.limit, func(m protocol.FileMatch) {
 				got = append(got, m)
@@ -121,7 +121,7 @@ func TestLimitedStream(t *testing.T) {
 			}
 
 			var (
-				ctx           = context.Background()
+				ctx           = tenant.TestContext()
 				mux           sync.Mutex
 				outputMatches []protocol.FileMatch
 			)
