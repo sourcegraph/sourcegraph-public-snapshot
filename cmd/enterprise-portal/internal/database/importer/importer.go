@@ -19,6 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/redislock"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
@@ -34,6 +36,8 @@ type importer struct {
 	subscriptions     *subscriptions.Store
 	licenses          *subscriptions.LicensesStore
 	codyGatewayAccess *codyaccess.CodyGatewayStore
+
+	tryAcquireFn func() (acquired bool, release func(), _ error)
 }
 
 var _ goroutine.Handler = (*importer)(nil)
@@ -48,6 +52,7 @@ func New(
 	logger log.Logger,
 	dotcom *dotcomdb.Reader,
 	enterprisePortal *database.DB,
+	rs redispool.KeyValue,
 	interval time.Duration,
 ) background.Routine {
 	if interval == 0 {
@@ -62,6 +67,13 @@ func New(
 			subscriptions:     enterprisePortal.Subscriptions(),
 			licenses:          enterprisePortal.Subscriptions().Licenses(),
 			codyGatewayAccess: enterprisePortal.CodyAccess().CodyGateway(),
+			tryAcquireFn: func() (acquired bool, release func(), _ error) {
+				return redislock.TryAcquire(
+					rs,
+					"enterpriseportal.dotcomimporter",
+					// Ensure lock is free by the time the next interval occurs
+					interval-time.Second)
+			},
 		},
 		goroutine.WithOperation(
 			observation.NewContext(logger, observation.Tracer(trace.GetTracer())).
@@ -72,7 +84,28 @@ func New(
 		goroutine.WithInterval(interval))
 }
 
-func (i *importer) Handle(ctx context.Context) error {
+func (i *importer) Handle(ctx context.Context) (err error) {
+	if i.tryAcquireFn != nil {
+		acquired, release, err := i.tryAcquireFn()
+		if err != nil {
+			return errors.Wrap(err, "acquire job")
+		}
+		trace.FromContext(ctx).
+			SetAttributes(attribute.Bool("skipped", !acquired))
+		if !acquired {
+			return nil // nothing to do
+		}
+		defer func() {
+			// Release on error for retry
+			if err != nil {
+				release()
+			}
+		}()
+	}
+	return i.ImportSubscriptions(ctx)
+}
+
+func (i *importer) ImportSubscriptions(ctx context.Context) error {
 	l := trace.Logger(ctx, i.logger)
 
 	dotcomSubscriptions, err := i.dotcom.ListEnterpriseSubscriptions(ctx, dotcomdb.ListEnterpriseSubscriptionsOptions{})

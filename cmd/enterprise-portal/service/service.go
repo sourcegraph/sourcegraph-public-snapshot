@@ -46,6 +46,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	if err != nil {
 		return nil, errors.Wrap(err, "initialize Redis client")
 	}
+	redisKVClient := newRedisKVClient(contract.RedisEndpoint)
 
 	dbHandle, err := database.NewHandle(ctx, logger, contract.Contract, redisClient, version.Version())
 	if err != nil {
@@ -203,7 +204,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 			},
 		},
 		// Run importer in background
-		importer.New(ctx, logger.Scoped("importer"), dotcomDB, dbHandle, config.DotComDB.ImportInterval),
+		importer.New(ctx, logger.Scoped("importer"), dotcomDB, dbHandle, redisKVClient, config.DotComDB.ImportInterval),
 		// Stop server first
 		server,
 	}, nil
