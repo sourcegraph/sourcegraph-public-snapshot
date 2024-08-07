@@ -182,10 +182,10 @@ func TestCandidateStream(t *testing.T) {
 		}
 		return matches
 	}
-
 	testCtx := context.Background()
 	searchCtx, cancelFn := context.WithCancel(testCtx)
 	stream := NewCandidateStream([]string{"a.go"}, 5, cancelFn)
+
 	stream.Send(streaming.SearchEvent{
 		Results: fakeMatches(2, "a.go"),
 		Stats:   streaming.Stats{},
@@ -210,4 +210,31 @@ func TestCandidateStream(t *testing.T) {
 	})
 	require.ErrorIs(t, searchCtx.Err(), context.Canceled)
 	require.Equal(t, 7, stream.Results.ResultCount())
+}
+
+func TestCandidateStream_FiltersFilesWithLimitHit(t *testing.T) {
+	fakeMatches := func(count int, limitHit bool) result.Matches {
+		matches := make(result.Matches, count)
+		for i := 0; i < count; i++ {
+			matches[i] = &result.FileMatch{LimitHit: limitHit}
+		}
+		return matches
+	}
+	testCtx := context.Background()
+	searchCtx, cancelFn := context.WithCancel(testCtx)
+	stream := NewCandidateStream([]string{}, 5, cancelFn)
+
+	stream.Send(streaming.SearchEvent{
+		Results: fakeMatches(10, true),
+		Stats:   streaming.Stats{},
+	})
+	require.NoError(t, searchCtx.Err())
+	require.Equal(t, 0, stream.Results.ResultCount())
+
+	stream.Send(streaming.SearchEvent{
+		Results: fakeMatches(6, false),
+		Stats:   streaming.Stats{},
+	})
+	require.ErrorIs(t, searchCtx.Err(), context.Canceled)
+	require.Equal(t, 6, stream.Results.ResultCount())
 }

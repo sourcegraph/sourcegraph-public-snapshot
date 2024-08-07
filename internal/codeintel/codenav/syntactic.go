@@ -243,6 +243,10 @@ func NewCandidateStream(
 		filterFunc: func(matches result.Matches) result.Matches {
 			return genslices.Filter(matches, func(match result.Match) bool {
 				if fileMatch, ok := match.(*result.FileMatch); ok {
+					// We only want to consider complete files for syntactic/search-based usages
+					if fileMatch.LimitHit {
+						return false
+					}
 					if _, found := slices.BinarySearch(filterFiles, fileMatch.Path); found {
 						return false
 					}
