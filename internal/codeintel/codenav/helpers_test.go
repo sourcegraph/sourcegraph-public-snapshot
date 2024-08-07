@@ -33,6 +33,18 @@ func testRange(r int) scip.Range {
 	return scip.NewRangeUnchecked([]int32{int32(r), int32(r), int32(r)})
 }
 
+// Generates fake scip.Range's for the given range [hi, lo)
+func testRanges(lo int, hi int) []scip.Range {
+	if hi < lo {
+		panic("hi must be greater than lo")
+	}
+	ranges := make([]scip.Range, 0, hi-lo+1)
+	for i := lo; i < hi; i++ {
+		ranges = append(ranges, testRange(i))
+	}
+	return ranges
+}
+
 type fakeOccurrence struct {
 	symbol       string
 	isDefinition bool
@@ -263,6 +275,16 @@ func expectDefinitionRanges[T MatchLike](t *testing.T, matches []T, ranges ...sc
 			return
 		}
 	}
+}
+
+func expectSome[A any](t *testing.T, opt core.Option[A]) {
+	t.Helper()
+	require.True(t, opt.IsSome(), "Expected Some but got None")
+}
+
+func expectNone[A any](t *testing.T, opt core.Option[A]) {
+	t.Helper()
+	require.True(t, opt.IsNone(), "Expected None but got Some")
 }
 
 func scipToResultPosition(p scip.Position) result.Location {

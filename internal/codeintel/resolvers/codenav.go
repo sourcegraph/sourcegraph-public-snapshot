@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"path"
-	"slices"
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
@@ -346,7 +345,6 @@ func (args *UsagesForSymbolArgs) Resolve(
 		if err != nil {
 			return out, errors.Wrap(err, "invalid after: cursor")
 		}
-		slices.Sort(cursor.SyntacticCursor.SeenFiles)
 	} else {
 		cursor = codenav.InitialCursor(resolvedSymbol.ProvenancesForSCIPData())
 	}

@@ -52,7 +52,7 @@ type searchArgs struct {
 	identifier string
 	language   string
 	countLimit int
-	// ignoredFiles has to be sorted
+	// ignoredFiles will be sorted in place
 	ignoredFiles []string
 }
 
@@ -86,9 +86,6 @@ func findCandidateOccurrencesViaSearch(
 	if err != nil {
 		return candidateOccurrenceResult{}, err
 	}
-	trace.Info("Query complete",
-		log.Int("countLimit", int(args.countLimit)),
-		log.Int("resultCount", searchResults.ResultCount()))
 
 	nonFileMatches := 0
 	inconsistentFilepaths := 0
@@ -152,13 +149,9 @@ func findCandidateOccurrencesViaSearch(
 	for pair := resultMap.Oldest(); pair != nil; pair = pair.Next() {
 		results = append(results, pair.Value)
 	}
-	// FIXME: Edge case where limitHit is true but candidateFiles is empty => means we get more than limit matches in the same file.
-	// This will cause the cursor to get stuck, as we can't make progress. Potential "fix" would be to return the incomplete
-	// list of matches for that file (accepting that we'd be missing matches past the limit for that file).
-	// This would end up adding the problematic file to the cursor, meaning it would be skipped on the next page.
 	return candidateOccurrenceResult{
 		candidateFiles: results,
-		limitHit:       matchCount >= int(args.countLimit),
+		limitHit:       matchCount >= args.countLimit,
 	}, nil
 }
 
@@ -249,6 +242,7 @@ func NewCandidateStream(
 	limit int,
 	limitFunc func(),
 ) *CandidateStream {
+	slices.Sort(filterFiles)
 	return &CandidateStream{
 		limit: limit,
 		filterFunc: func(matches result.Matches) result.Matches {
@@ -304,7 +298,7 @@ func executeQuery(
 	if err != nil {
 		return nil, err
 	}
-	trace.Info("Running query", log.String("query", searchQuery))
+	trace.Info("running query", log.String("query", searchQuery))
 	searchCtx, cancelFn := context.WithCancel(ctx)
 	stream := NewCandidateStream(args.ignoredFiles, args.countLimit, cancelFn)
 	_, err = client.Execute(searchCtx, stream, plan)
@@ -475,7 +469,7 @@ func syntacticUsagesImpl(
 		commit:     args.Commit,
 		identifier: symbolName,
 		language:   language,
-		// TODO: Assumes at least every third match is a syntactic one
+		// NOTE: Assumes at least every third match is a syntactic one
 		countLimit:   int(args.Limit) * 3,
 		ignoredFiles: args.Cursor.SyntacticCursor.SeenFiles,
 	}
@@ -515,8 +509,8 @@ func syntacticUsagesImpl(
 		}
 	}
 	nextCursor := core.None[UsagesCursor]()
-	finalMatches, searchedFiles := applyLimit(args.Limit, results)
-	if len(results) > 0 && (searchResult.limitHit || len(searchedFiles) != len(results)) {
+	finalMatches, searchedFiles, limitHit := applyLimit(args.Limit, results)
+	if len(results) > 0 && (searchResult.limitHit || limitHit) {
 		seenFiles := args.Cursor.SyntacticCursor.SeenFiles
 		for _, file := range searchedFiles {
 			seenFiles = append(seenFiles, file.RawValue())
@@ -568,7 +562,7 @@ func searchBasedUsagesImpl(
 	}
 	var wg conc.WaitGroup
 	wg.Go(func() {
-		// TODO: Assumes at least every fifth match is a search-based one (might not hold up?)
+		// NOTE: Assumes at least every fifth match is a search-based one (might not hold up?)
 		searchLimit := args.Limit * 5
 		// If we don't have a syntactic index all matches are search-based
 		// usages, so we can just fetch the exact amount we need.
@@ -629,8 +623,8 @@ func searchBasedUsagesImpl(
 	})
 
 	nextCursor := core.None[UsagesCursor]()
-	finalMatches, searchedFiles := applyLimit(args.Limit, results)
-	if len(results) > 0 && (searchResult.limitHit || len(searchedFiles) != len(results)) {
+	finalMatches, searchedFiles, limitHit := applyLimit(args.Limit, results)
+	if len(results) > 0 && (searchResult.limitHit || limitHit) {
 		seenFiles := args.Cursor.SyntacticCursor.SeenFiles
 		for _, file := range searchedFiles {
 			seenFiles = append(seenFiles, file.RawValue())
@@ -646,18 +640,20 @@ func searchBasedUsagesImpl(
 	}, nil
 }
 
-func applyLimit[T any](limit int32, fileMatchess [][]fileMatches[T]) ([]T, []core.RepoRelPath) {
+func applyLimit[T any](limit int32, fileMatchess [][]fileMatches[T]) ([]T, []core.RepoRelPath, bool) {
 	matches := make([]T, 0)
 	paths := make([]core.RepoRelPath, 0)
+	limitHit := false
 outer:
 	for _, fileMatches := range fileMatchess {
 		for _, fileMatch := range fileMatches {
 			if int32(len(matches)) >= limit {
+				limitHit = true
 				break outer
 			}
 			paths = append(paths, fileMatch.path)
 			matches = append(matches, fileMatch.matches...)
 		}
 	}
-	return matches, paths
+	return matches, paths, limitHit
 }
