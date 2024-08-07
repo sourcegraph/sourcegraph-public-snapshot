@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/cloudsql"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -110,7 +111,9 @@ func (i *importer) Handle(ctx context.Context) (err error) {
 			}
 		}()
 	}
-	return i.ImportSubscriptions(ctx)
+	// Disable tracing on database interactions, because we could generate
+	// traces with 10k+ spans in production.
+	return i.ImportSubscriptions(cloudsql.WithoutTrace(ctx))
 }
 
 func (i *importer) ImportSubscriptions(ctx context.Context) error {
@@ -276,7 +279,7 @@ func (i *importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 }
 
 func (i *importer) importLicense(ctx context.Context, subscriptionID string, dotcomLicense *dotcomdb.LicenseAttributes) (err error) {
-	tr, ctx := trace.New(ctx, "importSubscription",
+	tr, ctx := trace.New(ctx, "importLicense",
 		attribute.String("dotcomSub.ID", subscriptionID),
 		attribute.String("dotcomLicense.ID", dotcomLicense.ID))
 	defer tr.EndWithErr(&err)
