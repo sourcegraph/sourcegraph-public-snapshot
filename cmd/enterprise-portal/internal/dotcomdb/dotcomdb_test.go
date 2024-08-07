@@ -281,7 +281,8 @@ func TestGetCodyGatewayAccessAttributes(t *testing.T) {
 			epDB := &database.DB{
 				DB: databasetest.NewTestDB(t, "ep-dotcomdb", fmt.Sprintf("get-attributes-%d", i), databasetest.Tables(t)...),
 			}
-			err := importer.NewHandler(ctx, logtest.Scoped(t), dotcomreader, epDB).Handle(ctx)
+			err := importer.NewHandler(ctx, logtest.Scoped(t), dotcomreader, epDB, nil).
+				ImportSubscriptions(ctx)
 			require.NoError(t, err)
 			codyAccessService := codyaccessservice.NewHandlerV1(logtest.Scoped(t), mockCodyAccessV1Store{
 				StoreV1: codyaccessservice.NewStoreV1(codyaccessservice.StoreV1Options{
@@ -412,7 +413,8 @@ func TestGetAllCodyGatewayAccessAttributes(t *testing.T) {
 	epDB := &database.DB{
 		DB: databasetest.NewTestDB(t, "ep-dotcomdb", "get-all-attributes", databasetest.Tables(t)...),
 	}
-	err := importer.NewHandler(ctx, logtest.Scoped(t), dotcomreader, epDB).Handle(ctx)
+	err := importer.NewHandler(ctx, logtest.Scoped(t), dotcomreader, epDB, nil).
+		ImportSubscriptions(ctx)
 	require.NoError(t, err)
 	codyAccessService := codyaccessservice.NewHandlerV1(logtest.Scoped(t), mockCodyAccessV1Store{
 		StoreV1: codyaccessservice.NewStoreV1(codyaccessservice.StoreV1Options{
