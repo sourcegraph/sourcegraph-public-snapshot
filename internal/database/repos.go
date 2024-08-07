@@ -74,7 +74,7 @@ type RepoStore interface {
 	Delete(context.Context, ...api.RepoID) error
 	// Get gets information about a single repo.
 	//
-	// Prefer using GetReposSetByIDs for bulk retrieval.
+	// Prefer using GetByIDs or GetReposSetByIDs for bulk retrieval.
 	//
 	// Returns database.RepoNotFoundErr if the repo was not found.
 	// Returns types.BlockedRepoError if the repo was blocked.
