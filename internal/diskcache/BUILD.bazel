@@ -14,6 +14,7 @@ go_library(
     deps = [
         "//internal/metrics",
         "//internal/observation",
+        "//internal/tenant",
         "//internal/trace",
         "//lib/errors",
         "@io_opentelemetry_go_otel//attribute",
@@ -25,5 +26,9 @@ go_test(
     timeout = "short",
     srcs = ["cache_test.go"],
     embed = [":diskcache"],
-    deps = ["//internal/observation"],
+    deps = [
+        "//internal/observation",
+        "//internal/tenant",
+        "@com_github_stretchr_testify//require",
+    ],
 )
