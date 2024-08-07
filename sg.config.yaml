@@ -528,11 +528,9 @@ commands:
     install: |
       pnpm install
     env:
-      # Proxy to the local server
-      SOURCEGRAPH_API_URL: http://localhost:3080
       # The SvelteKit app uses this environment variable to determine where
       # to store the generated assets. We don't need to store them in a different
-      # place in standalone mode.
+      # place in this mode.
       DEPLOY_TYPE: ""
 
   web-standalone-http:
@@ -557,19 +555,6 @@ commands:
     env:
       INTEGRATION_TESTS: true
       NODE_ENV: production
-
-  web-sveltekit-standalone:
-    description: Standalone SvelteKit web frontend (dev) with API proxy to a configurable URL
-    cmd: pnpm --filter @sourcegraph/web-sveltekit run dev
-    install: |
-      pnpm install
-      pnpm generate
-    env:
-      SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
-      # The SvelteKit app uses this environment variable to determine where
-      # to store the generated assets. We don't need to store them in a different
-      # place in standalone mode.
-      DEPLOY_TYPE: ""
 
   docsite:
     description: Docsite instance serving the docs
@@ -1576,6 +1561,8 @@ commandsets:
       DISABLE_CODE_INSIGHTS_HISTORICAL: false
       DISABLE_CODE_INSIGHTS: false
       CADDY_FILE: dev/Caddyfile-sveltekit
+      # Proxy to the local server
+      SOURCEGRAPH_API_URL: http://localhost:3080
 
   enterprise-e2e:
     <<: *enterprise_set
@@ -1969,7 +1956,7 @@ commandsets:
 
   web-sveltekit-standalone:
     commands:
-      - web-sveltekit-standalone
+      - web-sveltekit
       - caddy
     env:
       SK_PORT: 3080

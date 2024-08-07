@@ -3,27 +3,51 @@
 This folder contains the experimental [SvelteKit](https://kit.svelte.dev/)
 implementation of the Sourcegraph app.
 
-**NOTE:** This is a _very early_ prototype and it will change a lot.
-
 ## Developing
 
-```bash
-# Install dependencies
-pnpm install
-# Run dev server
-pnpm run dev
-```
+There are multiple ways to start the app:
 
-The dev server can be accessed on http://localhost:5173. API requests and
-signin/signout are proxied to an actual Sourcegraph instance,
-https://sourcegraph.com by default (can be overwritten via the
-`SOURCEGRAPH_API_URL` environment variable.
-
-If you're a Sourcegraph employee you should run this command to use the right auth instance:
+1. Standalone and proxying to S2
 
 ```bash
-SOURCEGRAPH_API_URL=https://sourcegraph.sourcegraph.com pnpm run dev
+cd client/web-sveltekit
+pnpm dev
 ```
+
+Then go to (usually) http://localhost:5173.
+
+Or via `sg`:
+
+```bash
+sg start web-sveltekit-standalone
+```
+
+Then go to https://sourcegraph.test:5173.
+
+2. Standalone and proxying to dotcom
+
+```bash
+cd client/web-sveltekit
+pnpm dev:dotcom
+```
+
+3. Standalone and proxying to another Sourcegraph instance
+
+```bash
+cd client/web-sveltekit
+SOURCEGRAPH_API_URL=https://<instance> pnpm dev
+```
+
+Then go to (usually) http://localhost:5173.
+
+3. Against a local Sourcegraph instance
+
+
+```bash
+sg start enterprise-sveltekit
+```
+
+Then go to https://sourcegraph.test:5173.
 
 ### Using code from `@sourcegraph/*`
 
@@ -59,7 +83,20 @@ pnpm vitest # Run vitest tests
 pnpm test # Run playwright tests
 ```
 
-In CI we run vitest tests. Playwright test support is currently being worked on.
+You can also run playwright tests against a running vite dev server. This is
+useful for debugging tests.
+
+```sh
+# In one terminal
+pnpm dev
+```
+
+```sh
+# In another terminal
+pnpm test:dev
+```
+
+Both vitest and playwright tests are run in CI.
 
 ### Formatting and linting
 
