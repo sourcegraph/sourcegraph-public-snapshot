@@ -1,6 +1,7 @@
 """OCI bazel defs"""
 
 load("@rules_oci//oci:defs.bzl", _oci_image = "oci_image", _oci_load = "oci_load", _oci_push = "oci_push")
+load("@rules_pkg//:pkg.bzl", _pkg_tar = "pkg_tar")
 
 REGISTRY_REPOSITORY_PREFIX = "europe-west1-docker.pkg.dev/sourcegraph-security-logging/rules-oci-test/{}"
 # REGISTRY_REPOSITORY_PREFIX = "us.gcr.io/sourcegraph-dev/{}"
@@ -57,3 +58,10 @@ oci_image_cross = rule(
         ),
     },
 )
+
+def pkg_tar(name, **kwargs):
+    _pkg_tar(
+        name = name,
+        extension = "tar.gz",
+        **kwargs
+    )
