@@ -20,6 +20,7 @@ go_library(
         "//lib/background",
         "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "//lib/errors",
+        "//lib/managedservicesplatform/cloudsql",
         "//lib/pointers",
         "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
