@@ -242,7 +242,7 @@ export class Sourcegraph {
     public setWindowContext(context: Partial<Window['context']>): Promise<void> {
         return this.page.addInitScript(context => {
             // @ts-expect-error - Unclear how to type this correctly
-            if (!window.playwrighContext) {
+            if (!window.playwrightContext) {
                 // @ts-expect-error - Unclear how to type this correctly
                 window.playwrightContext = {}
             }
@@ -289,7 +289,7 @@ export class Sourcegraph {
      */
     public async dotcomMode(): Promise<void> {
         this.dotcomModeEnabled = true
-        await this.setWindowContext({
+        return this.setWindowContext({
             sourcegraphDotComMode: true,
             // These are enabled by default on sourcegraph.com
             codyEnabledOnInstance: true,
