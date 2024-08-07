@@ -1,6 +1,7 @@
 package publicrestapi
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/golly"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 )
 
@@ -25,6 +27,7 @@ type publicrestTest struct {
 	Handler     http.Handler
 	Golly       *golly.Golly
 	Credentials *golly.TestingCredentials
+	HttpClient  http.Handler
 }
 
 func newTest(t *testing.T, name string) *publicrestTest {
@@ -37,6 +40,7 @@ func newTest(t *testing.T, name string) *publicrestTest {
 		Handler:     publicrestHandler,
 		Golly:       gollyDoer,
 		Credentials: gollyDoer.DotcomCredentials(),
+		HttpClient:  recordReplayHandler,
 	}
 
 }
@@ -99,4 +103,29 @@ func (c *publicrestTest) chatCompletions(t *testing.T, body string) *httptest.Re
 	rr := httptest.NewRecorder()
 	c.Handler.ServeHTTP(rr, req)
 	return rr
+}
+
+func (c *publicrestTest) getChatModels() []*types.Model {
+	modelConfig := c.getModelConfig()
+	chatModels := []*types.Model{}
+	for _, model := range modelConfig.Models {
+		for _, capability := range model.Capabilities {
+			if capability == "chat" {
+				chatModels = append(chatModels, &model)
+			}
+		}
+	}
+	return chatModels
+}
+
+func (c *publicrestTest) getModelConfig() *types.ModelConfiguration {
+	req, err := http.NewRequest("GET", c.Credentials.Endpoint+"/.api/modelconfig/supported-models.json", nil)
+	req.Header.Set("Authorization", "token "+c.Credentials.AccessToken())
+	assert.NoError(c.t, err)
+	res, err := c.Golly.Do(req)
+	assert.NoError(c.t, err)
+	var modelConfig types.ModelConfiguration
+	assert.Equal(c.t, http.StatusOK, res.StatusCode, "Failed to get model config %s", res.Body)
+	assert.NoError(c.t, json.NewDecoder(res.Body).Decode(&modelConfig))
+	return &modelConfig
 }

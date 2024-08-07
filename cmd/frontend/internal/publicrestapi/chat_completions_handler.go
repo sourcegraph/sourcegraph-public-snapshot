@@ -43,20 +43,13 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	decoder := json.NewDecoder(io.NopCloser(bytes.NewBuffer(body)))
 
 	if err := decoder.Decode(&chatCompletionRequest); err != nil {
-		http.Error(w, "decoder.Decode(body) failed", http.StatusInternalServerError)
+		http.Error(w, "decoder.Decode(body) failed "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if chatCompletionRequest.Stream != nil && *chatCompletionRequest.Stream {
-		http.Error(w, "stream is not supported", http.StatusBadRequest)
+	if errorMsg := validateChatCompletionRequest(chatCompletionRequest); errorMsg != "" {
+		http.Error(w, errorMsg, http.StatusBadRequest)
 		return
-	}
-
-	for _, message := range chatCompletionRequest.Messages {
-		if message.Role == "system" {
-			http.Error(w, "system role is not supported", http.StatusBadRequest)
-			return
-		}
 	}
 
 	sgReq := transformToSGRequest(chatCompletionRequest)
@@ -74,6 +67,44 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		h.logger.Error("writing /chat/completions response body", log.Error(err))
 	}
 
+}
+
+func validateChatCompletionRequest(chatCompletionRequest CreateChatCompletionRequest) string {
+
+	if chatCompletionRequest.N != nil && *chatCompletionRequest.N != 1 {
+		return "n is not supported"
+	}
+
+	if chatCompletionRequest.Stream != nil && *chatCompletionRequest.Stream {
+		return "stream is not supported"
+	}
+
+	if chatCompletionRequest.Seed != nil {
+		return "seed is not supported"
+	}
+
+	if chatCompletionRequest.ServiceTier != nil {
+		return "service_tier is not supported"
+	}
+
+	if chatCompletionRequest.ResponseFormat != nil {
+		return "response_format is not supported"
+	}
+
+	if chatCompletionRequest.StreamOptions != nil {
+		return "stream_options is not supported"
+	}
+
+	if chatCompletionRequest.User != nil {
+		return "user is not supported"
+	}
+
+	for _, message := range chatCompletionRequest.Messages {
+		if message.Role == "system" {
+			return "system role is not supported"
+		}
+	}
+	return ""
 }
 
 func transformToSGRequest(openAIReq CreateChatCompletionRequest) completions.CompletionRequestParameters {

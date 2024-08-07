@@ -69,6 +69,9 @@ type yamlRecording struct {
 }
 
 func readyBodyIntoMemory(t *testing.T, req *http.Request) []byte {
+	if req.Body == nil {
+		return []byte{}
+	}
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		t.Fatalf("Failed to read request body: %v", err)
