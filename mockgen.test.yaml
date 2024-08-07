@@ -408,3 +408,9 @@
   package: mocks
   interfaces:
     - ReleaseRegistryClient
+- filename: cmd/enterprise-portal/internal/routines/licenseexpiration/mocks_test.go
+  package: licenseexpiration
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/routines/licenseexpiration
+      interfaces:
+        - Store
