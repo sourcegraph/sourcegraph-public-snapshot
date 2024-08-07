@@ -175,6 +175,7 @@
                 display: inherit;
                 gap: inherit;
                 margin-left: var(--indent-size);
+                width: 100%;
             }
         }
 
