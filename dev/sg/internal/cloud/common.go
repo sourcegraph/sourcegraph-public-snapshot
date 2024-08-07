@@ -54,7 +54,6 @@ func oneOfEquals(value string, i ...string) bool {
 }
 
 func GetGCloudAccount(ctx context.Context) (string, error) {
-	return "", errors.New("fake")
 	return run.Cmd(ctx, "gcloud", "config", "get", "account").Run().String()
 }
 
