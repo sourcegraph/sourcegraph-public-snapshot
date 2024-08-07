@@ -3,6 +3,7 @@ package publicrestapi
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -22,7 +23,7 @@ import (
 type chatCompletionsHandler struct {
 	logger sglog.Logger
 
-	// apiHandler is the underlying implemenation of the Sourcegraph /.api/completions/stream endpoint.
+	// apiHandler is the underlying implementation of the Sourcegraph /.api/completions/stream endpoint.
 	// We access this endpoint via HTTP to keep a single source-of-truth about LLM completions.
 	// The goal with this OpenAI endpoint is compatibility, not optimal performance. Ideally, we
 	// would have an in-house service we can use instead of going via HTTP but using HTTP
@@ -36,14 +37,14 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	var chatCompletionRequest CreateChatCompletionRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "io.ReadAll(r.Body) failed", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("io.ReadAll: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	decoder := json.NewDecoder(io.NopCloser(bytes.NewBuffer(body)))
 
 	if err := decoder.Decode(&chatCompletionRequest); err != nil {
-		http.Error(w, "decoder.Decode(body) failed "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("decoder.Decode: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -55,7 +56,7 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	sgReq := transformToSGRequest(chatCompletionRequest)
 	sgResp, err := h.forwardToAPIHandler(sgReq, r)
 	if err != nil {
-		http.Error(w, "failed to forward request to apiHandler "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("failed to forward request to apiHandler: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -72,7 +73,7 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 func validateChatCompletionRequest(chatCompletionRequest CreateChatCompletionRequest) string {
 
 	if chatCompletionRequest.N != nil && *chatCompletionRequest.N != 1 {
-		return "n is not supported"
+		return "n must be nil or 1"
 	}
 
 	if chatCompletionRequest.Stream != nil && *chatCompletionRequest.Stream {
@@ -205,9 +206,8 @@ func (h *chatCompletionsHandler) forwardToAPIHandler(sgReq completions.Completio
 }
 
 func transformToOpenAIResponse(sgResp *completions.CompletionResponse, openAIReq CreateChatCompletionRequest) CreateChatCompletionResponse {
-	// Transform Sourcegraph response to OpenAI format
 	return CreateChatCompletionResponse{
-		ID:      "chat-" + generateUUID(), // You'll need to implement generateUUID
+		ID:      "chat-" + generateUUID(),
 		Object:  "chat.completion",
 		Created: time.Now().Unix(),
 		Model:   openAIReq.Model,
@@ -221,10 +221,7 @@ func transformToOpenAIResponse(sgResp *completions.CompletionResponse, openAIReq
 				FinishReason: sgResp.StopReason,
 			},
 		},
-		Usage: CompletionUsage{
-			// You might need to implement token counting logic here
-			// or get this information from the Sourcegraph response
-		},
+		Usage: CompletionUsage{},
 	}
 }
 
