@@ -20,7 +20,7 @@ import { createCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { useSettings, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { useSettings } from '@sourcegraph/shared/src/settings/settings'
 import type { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -61,7 +61,6 @@ import { scipSnapshot } from './codemirror/scip-snapshot'
 import { search, type SearchPanelConfig } from './codemirror/search'
 import { SearchPanel } from './codemirror/search/SearchPanel'
 import { staticHighlights, type Range } from './codemirror/static-highlights'
-import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
 import { HovercardView } from './codemirror/tooltips/HovercardView'
 import { showTemporaryTooltip, temporaryTooltip } from './codemirror/tooltips/TemporaryTooltip'
 import { locationToURL, positionToOffset } from './codemirror/utils'
@@ -339,10 +338,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     )
 
     const { isFileIgnored } = useCodyIgnore()
-    const newCodyWeb = useExperimentalFeatures(features => features.newCodyWeb)
-    const isCodyEnabledForFile =
-        !newCodyWeb && window.context?.codyEnabledForCurrentUser && !isFileIgnored(blobInfo.repoName, blobInfo.filePath)
-
     const extensions = useMemo(
         () => [
             staticExtensions,
@@ -355,20 +350,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             scipSnapshot(blobInfo.content, blobInfo.snapshotData),
             openCodeGraphExtension,
             codeFoldingExtension(),
-            isCodyEnabledForFile
-                ? codyWidgetExtension(
-                      telemetryRecorder,
-                      editorRef.current
-                          ? new CodeMirrorEditor({
-                                view: editorRef.current,
-                                repo: props.blobInfo.repoName,
-                                revision: props.blobInfo.revision,
-                                filename: props.blobInfo.filePath,
-                                content: props.blobInfo.content,
-                            })
-                          : undefined
-                  )
-                : [],
+            [],
             pinnedTooltip,
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension(navigate) : codeIntelExtension,
             syntaxHighlight.of(blobInfo),
@@ -395,7 +377,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             staticHighlightRanges,
             navigate,
             blobInfo,
-            isCodyEnabledForFile,
             openCodeGraphExtension,
             codeIntelExtension,
             editorRef.current,
