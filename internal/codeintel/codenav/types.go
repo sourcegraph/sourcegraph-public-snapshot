@@ -418,6 +418,19 @@ func (c UsagesCursor) IsDone() bool {
 	return c.CursorType == CursorTypeDone
 }
 
+func (c UsagesCursor) AdvanceCursor(nextCursor core.Option[UsagesCursor], provenances ForEachProvenance[bool]) UsagesCursor {
+	if next, isSome := nextCursor.Get(); isSome {
+		return next
+	}
+	if c.IsPrecise() && provenances.Syntactic {
+		return UsagesCursor{CursorType: CursorTypeSyntactic}
+	} else if (c.IsPrecise() || c.IsSyntactic()) && provenances.SearchBased {
+		return UsagesCursor{CursorType: CursorTypeSearchBased}
+	} else {
+		return UsagesCursor{CursorType: CursorTypeDone}
+	}
+}
+
 func (c UsagesCursor) Encode() string {
 	return encodeViaJSON(c)
 }

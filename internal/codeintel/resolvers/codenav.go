@@ -346,6 +346,8 @@ func (args *UsagesForSymbolArgs) Resolve(
 			return out, errors.Wrap(err, "invalid after: cursor")
 		}
 	} else {
+		// TODO: Needs to decide the initial cursor based on the provenance filter
+		// I don't see how to make `AdvanceCursor` work here
 		cursor.CursorType = codenav.CursorTypeDefinitions
 	}
 
