@@ -1,10 +1,9 @@
-import { type FC, memo, useCallback, useMemo } from 'react'
+import { type FC, memo, useMemo } from 'react'
 
 import { useLocation } from 'react-router-dom'
 
 import { CodyWebPanelProvider, type InitialContext } from '@sourcegraph/cody-web'
 import { SourcegraphURL } from '@sourcegraph/common'
-import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { getTelemetrySourceClient } from '../../../telemetry'
 import { ChatUi } from '../../chat/new-chat/components/chat-ui/ChatUi'
@@ -23,18 +22,6 @@ export const NewCodySidebarWebChat: FC<NewCodySidebarWebChatProps> = memo(functi
     const { filePath, repository } = props
 
     const location = useLocation()
-    const [contextToChatIds, setContextToChatIds] = useLocalStorage<Record<string, string>>(
-        'cody.context-to-chat-ids',
-        {}
-    )
-
-    const handleNewChatCreated = useCallback(
-        (chatId: string): void => {
-            contextToChatIds[`${repository.id}-${filePath}`] = chatId
-            setContextToChatIds(contextToChatIds)
-        },
-        [contextToChatIds, setContextToChatIds, filePath, repository.id]
-    )
 
     const contextInfo = useMemo<InitialContext>(() => {
         const lineOrPosition = SourcegraphURL.from(location).lineRange
@@ -53,17 +40,13 @@ export const NewCodySidebarWebChat: FC<NewCodySidebarWebChatProps> = memo(functi
         }
     }, [repository, filePath, location])
 
-    const chatID = contextToChatIds[`${repository.id}-${filePath}`] ?? null
-
     return (
         <CodyWebPanelProvider
             accessToken=""
-            chatID={chatID}
             initialContext={contextInfo}
             serverEndpoint={window.location.origin}
             customHeaders={window.context.xhrHeaders}
             telemetryClientName={getTelemetrySourceClient()}
-            onNewChatCreated={handleNewChatCreated}
         >
             <ChatUi />
         </CodyWebPanelProvider>

@@ -1,11 +1,5 @@
 // stylelint-disable custom-property-pattern
 
-:root {
-    // Turn off background color for picker popover element
-    // Which causes glitch effect in Cody Web
-    --vscode-sideBar-background: transparent;
-}
-
 .chat {
     --vscode-editor-background: var(--body-bg);
     --vscode-editor-foreground: var(--body-color);
@@ -18,6 +12,7 @@
     --vscode-loading-dot-color: var(--body-color);
     --vscode-textPreformat-foreground: var(--body-color);
     --vscode-textPreformat-background: var(--secondary);
+    --vscode-sideBar-background: var(--body-bg);
     --vscode-sideBarSectionHeader-border: var(--border-color);
     --mention-color-opacity: 100%;
 
@@ -28,18 +23,16 @@
     --vscode-foreground: var(--body-color);
 
     line-height: 1.55;
+    padding-bottom: 2rem;
 
-    h3 {
+    h3,
+    h4 {
         font-size: inherit;
         margin: 0;
     }
 
     ul {
         margin: 0;
-    }
-
-    a {
-        color: var(--link-color) !important;
     }
 
     code {
@@ -78,4 +71,8 @@
     --vscode-list-activeSelectionBackground: var(--primary);
     --vscode-foreground: var(--body-color);
     --vscode-widget-shadow: rgba(36, 41, 54, 0.2);
+}
+
+[cmdk-root] :global(.focus-visible) {
+    box-shadow: unset !important;
 }
