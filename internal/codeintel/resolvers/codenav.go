@@ -346,7 +346,7 @@ func (args *UsagesForSymbolArgs) Resolve(
 			return out, errors.Wrap(err, "invalid after: cursor")
 		}
 	} else {
-		cursor.CursorType = codenav.CursorTypeDefinitions
+		cursor = codenav.InitialCursor(resolvedSymbol.ProvenancesForSCIPData())
 	}
 
 	scipRange, err := scip.NewRange([]int32{
