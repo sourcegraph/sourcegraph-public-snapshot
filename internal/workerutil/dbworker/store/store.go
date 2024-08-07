@@ -81,13 +81,18 @@ type Store[T workerutil.Record] interface {
 	// handle of the other ShareableStore.
 	With(other basestore.ShareableStore) Store[T]
 
-	// QueuedCount returns the number of queued and errored records. If includeProcessing
-	// is true it returns the number of queued _and_ processing records.
+	// CountByState returns the number of records for all the states in
+	// stateBitset. This method will trigger a full table scan due to
+	// Postgres MVCC, so avoid calling this method frequently, especially
+	// for potentially large queues.
+	//
+	// For example, when the auto-indexing queue on Sourcegraph.com
+	// goes over 100K+ records, this method can take 1s+ to run.
 	//
 	// If possible, prefer using Exists over this function.
-	QueuedCount(ctx context.Context, includeProcessing bool) (int, error)
-	// TODO: Change above API to also use a bitset like below for greater
-	// clarity at call-sites.
+	//
+	// Pre-condition: stateBitset must be one or more RecordState values or-ed together.
+	CountByState(ctx context.Context, stateBitset RecordState) (int, error)
 
 	// Exists checks if there is at least one record in one of the given states
 	// in stateBitset.
@@ -375,32 +380,30 @@ var columnNames = []string{
 	"cancel",
 }
 
-// QueuedCount returns the number of queued records matching the given conditions.
-func (s *store[T]) QueuedCount(ctx context.Context, includeProcessing bool) (_ int, err error) {
-	ctx, _, endObservation := s.operations.queuedCount.With(ctx, &err, observation.Args{})
+var errAtLeastOneState = errors.New("pre-condition failure: statesBitset should contain at least one state")
+
+func (s *store[T]) CountByState(ctx context.Context, statesBitset RecordState) (_ int, err error) {
+	ctx, _, endObservation := s.operations.countByState.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	stateQueries := make([]*sqlf.Query, 0, 3)
-	stateQueries = append(stateQueries, sqlf.Sprintf("%s", "queued"), sqlf.Sprintf("%s", "errored"))
-	if includeProcessing {
-		stateQueries = append(stateQueries, sqlf.Sprintf("%s", "processing"))
+	fragments := statesBitset.toList()
+	if len(fragments) == 0 {
+		return 0, errAtLeastOneState
 	}
 
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
-		queuedCountQuery,
+		countByStateQuery,
 		quote(s.options.ViewName),
-		sqlf.Join(stateQueries, ","),
+		sqlf.Join(fragments, ","),
 	)))
 
 	return count, err
 }
 
-const queuedCountQuery = `
-SELECT
-	COUNT(*)
+const countByStateQuery = `
+SELECT COUNT(*)
 FROM %s
-WHERE
-	{state} IN (%s)
+WHERE {state} IN (%s)
 `
 
 func (s *store[T]) Exists(ctx context.Context, statesBitset RecordState) (_ bool, err error) {
@@ -409,7 +412,7 @@ func (s *store[T]) Exists(ctx context.Context, statesBitset RecordState) (_ bool
 
 	fragments := statesBitset.toList()
 	if len(fragments) == 0 {
-		return false, errors.New("pre-condition failure: statesBitset should contain at least one state")
+		return false, errAtLeastOneState
 	}
 
 	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, s.formatQuery(

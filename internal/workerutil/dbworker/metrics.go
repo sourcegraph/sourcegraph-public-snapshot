@@ -25,7 +25,7 @@ func InitPrometheusMetric[T workerutil.Record](observationCtx *observation.Conte
 		Help:        fmt.Sprintf("Total number of %s records in the queued state.", resource),
 		ConstLabels: constLabels,
 	}, func() float64 {
-		count, err := workerStore.QueuedCount(context.Background(), false)
+		count, err := workerStore.CountByState(context.Background(), store.StateQueued|store.StateErrored)
 		if err != nil {
 			logger.Error("Failed to determine queue size", log.Error(err))
 			return 0

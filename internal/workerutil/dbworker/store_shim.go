@@ -28,7 +28,7 @@ func newStoreShim[T workerutil.Record](store store.Store[T]) workerutil.Store[T]
 
 // QueuedCount calls into the inner store.
 func (s *storeShim[T]) QueuedCount(ctx context.Context) (int, error) {
-	return s.Store.QueuedCount(ctx, false)
+	return s.Store.CountByState(ctx, store.StateQueued|store.StateErrored)
 }
 
 // Dequeue calls into the inner store.

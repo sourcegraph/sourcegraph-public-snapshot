@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	dbworker "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -39,7 +40,7 @@ func TestStore(t *testing.T) {
 	require.NotZero(t, jobID)
 
 	store := createBitbucketProjectPermissionsStore(observation.TestContextTB(t), db, &config{})
-	count, err := store.QueuedCount(ctx, true)
+	count, err := store.CountByState(ctx, dbworker.StateQueued|dbworker.StateErrored|dbworker.StateProcessing)
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
 }
