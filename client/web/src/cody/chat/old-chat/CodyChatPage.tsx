@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react'
+import type React from 'react'
+import { useEffect, useState } from 'react'
 
 import { mdiCogOutline, mdiDelete, mdiDotsVertical, mdiFormatListBulleted, mdiOpenInNew, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 
 import { CodyLogo } from '@sourcegraph/cody-ui'
-import { type AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Badge,

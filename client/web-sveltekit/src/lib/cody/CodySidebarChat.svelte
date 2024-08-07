@@ -1,16 +1,16 @@
 <script context="module" lang="ts">
-    function getTelemetrySourceClient(): string {
-        if (window.context?.sourcegraphDotComMode) {
-            return 'dotcom.web'
-        }
-        return 'server.web'
-    }
+function getTelemetrySourceClient(): string {
+	if (window.context?.sourcegraphDotComMode) {
+		return "dotcom.web";
+	}
+	return "server.web";
+}
 </script>
 
 <script lang="ts">
     import { createElement } from 'react'
 
-    import { CodyWebChat, CodyWebChatProvider } from '@sourcegraph/cody-web'
+    import { CodyWebPanel, CodyWebPanelProvider } from '@sourcegraph/cody-web'
     import { createRoot, type Root } from 'react-dom/client'
     import { onDestroy } from 'svelte'
 
@@ -43,11 +43,11 @@
             root = createRoot(container)
         }
 
-        const chat = createElement(CodyWebChat)
+        const chat = createElement(CodyWebPanel)
         const hasFileRangeSelection = lineOrPosition?.line
 
         const provider = createElement(
-            CodyWebChatProvider,
+            CodyWebPanelProvider,
             {
                 accessToken: '',
                 chatID: $chatIDs[`${repository.id}-${filePath}`] ?? null,

@@ -80,7 +80,7 @@
     "@sentry/sveltekit": "^8.7.0",
     "@sourcegraph/branded": "workspace:*",
     "@sourcegraph/client-api": "workspace:*",
-    "@sourcegraph/cody-web": "^0.3.4",
+    "@sourcegraph/cody-web": "^0.3.7",
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/http-client": "workspace:*",
     "@sourcegraph/shared": "workspace:*",
