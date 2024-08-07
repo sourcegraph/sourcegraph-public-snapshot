@@ -24,22 +24,24 @@ func (r *Golly) Find(requestHash string) *yamlRecording {
 	return nil
 }
 
-func (r *Golly) HashOrPanic(req *http.Request) string {
-	hash, err := r.Hasher(req)
+func (r *Golly) HashOrPanic(req *http.Request, requestBody []byte) string {
+	hash, err := r.Hasher(req, requestBody)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to hash request: %v", err))
 	}
 	return hash
 }
 
-func (g *Golly) AddRecording(req *http.Request, hash string, res *http.Response) {
-	g.Recordings = append(g.Recordings, &yamlRecording{
+func (g *Golly) AddRecording(req *http.Request, requestBody []byte, hash string, res *http.Response) *yamlRecording {
+	recording := &yamlRecording{
 		Hash:     hash,
-		Request:  g.newYamlRequest(req),
+		Request:  g.newYamlRequest(req, requestBody),
 		Response: g.newYamlResponse(res),
 		isActive: true,
-	})
+	}
+	g.Recordings = append(g.Recordings, recording)
 	g.shouldSaveRecordingsOnCleanup = true
+	return recording
 }
 
 func (g *Golly) Cleanup() {
@@ -54,14 +56,6 @@ func (g *Golly) Cleanup() {
 
 type yamlRecordings struct {
 	Recordings []*yamlRecording `yaml:"recordings"`
-}
-
-func (g *Golly) newYamlRecording(hash string, req *http.Request, res *http.Response) *yamlRecording {
-	return &yamlRecording{
-		Hash:     hash,
-		Request:  g.newYamlRequest(req),
-		Response: g.newYamlResponse(res),
-	}
 }
 
 type yamlRecording struct {
@@ -81,13 +75,13 @@ func readyBodyIntoMemory(t *testing.T, req *http.Request) []byte {
 	return body
 }
 
-func (g *Golly) newYamlRequest(req *http.Request) *yamlRequest {
+func (g *Golly) newYamlRequest(req *http.Request, requestBody []byte) *yamlRequest {
 	return &yamlRequest{
 		RecordingDate: time.Now().Format(time.RFC3339),
 		URL:           req.URL.String(),
 		Method:        req.Method,
 		Headers:       g.newYamlRequestHeaders(req),
-		Body:          string(readyBodyIntoMemory(g.T, req)),
+		Body:          string(requestBody),
 	}
 }
 

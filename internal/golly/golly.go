@@ -47,17 +47,16 @@ func (g *Golly) DotcomCredentials() *TestingCredentials {
 // DefaultRequestHasher returns hashes a request based on its URL, method, and body.
 // Note that it does not include headers.
 func DefaultRequestHasher(t *testing.T) RequestHasher {
-	return func(req *http.Request) (string, error) {
+	return func(req *http.Request, requestBody []byte) (string, error) {
 		h := sha256.New()
 		h.Write([]byte(req.URL.String()))
 		h.Write([]byte(req.Method))
-		body := readyBodyIntoMemory(t, req)
-		h.Write(body)
+		h.Write(requestBody)
 		return hex.EncodeToString(h.Sum(nil)), nil
 	}
 }
 
-type RequestHasher func(req *http.Request) (string, error)
+type RequestHasher func(req *http.Request, requestBody []byte) (string, error)
 
 var _ httpcli.Doer = (*Golly)(nil)
 
@@ -72,7 +71,9 @@ func (g *Golly) Do(r *http.Request) (*http.Response, error) {
 }
 
 func (g *Golly) record(r *http.Request) (*http.Response, error) {
-	requestHash := g.HashOrPanic(r)
+	// Need to store the body here because it's set to nil by `g.passthrough`.
+	body := readyBodyIntoMemory(g.T, r)
+	requestHash := g.HashOrPanic(r, body)
 	recording := g.Find(requestHash)
 	if recording != nil {
 		return recording.Response.HttpResponse(), nil
@@ -81,15 +82,13 @@ func (g *Golly) record(r *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	g.AddRecording(r, requestHash, res)
-
-	freshRecording := g.newYamlRecording(requestHash, r, res)
-	g.Recordings = append(g.Recordings, freshRecording)
+	freshRecording := g.AddRecording(r, body, requestHash, res)
 	return freshRecording.Response.HttpResponse(), nil
 }
 
 func (g *Golly) replay(r *http.Request) (*http.Response, error) {
-	requestHash := g.HashOrPanic(r)
+	body := readyBodyIntoMemory(g.T, r)
+	requestHash := g.HashOrPanic(r, body)
 	recording := g.Find(requestHash)
 	if recording != nil {
 		return recording.Response.HttpResponse(), nil

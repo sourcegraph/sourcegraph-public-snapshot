@@ -38,7 +38,11 @@ func TestAPI(t *testing.T) {
 			}`)
 
 		if rr.Code != http.StatusOK {
-			t.Fatalf("Expected status code %d, got %d. Body: %s", http.StatusOK, rr.Code, rr.Body.String())
+			extraMessage := ""
+			if rr.Code == http.StatusUnauthorized {
+				extraMessage = " (to fix authorization issues, you may want to run the command 'source dev/export-http-recording-tokens.sh')"
+			}
+			t.Fatalf("Expected status code %d, got %d. Body: %s%s", http.StatusOK, rr.Code, rr.Body.String(), extraMessage)
 		}
 
 		var resp CreateChatCompletionResponse
