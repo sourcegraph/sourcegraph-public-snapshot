@@ -3,20 +3,8 @@
 .root {
     display: flex;
     flex-direction: column;
-    // stylelint-disable-next-line property-no-unknown
-    container-type: inline-size;
     padding-bottom: 0 !important;
-
-    @media (--sm-breakpoint-down) {
-        // These need to be !important to override the `py-4`
-        // default padding on the page
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
-
-        .page-header {
-            display: none;
-        }
-    }
+    width: 100%;
 }
 
 .page-header {
@@ -28,18 +16,11 @@
     display: flex;
     flex-grow: 1;
     overflow: hidden;
-    border-top: 1px solid var(--border-color);
-}
-
-.chat-history {
-    width: 30%;
-    flex-shrink: 0;
-    overflow: auto;
-    padding-top: 0.5rem;
 }
 
 .chat {
     flex-grow: 1;
-    height: 100%;
-    border-left: 1px solid var(--border-color);
+    [role='tabpanel'] {
+        overflow: auto;
+    }
 }
