@@ -22,13 +22,13 @@ func TestSearchBasedUsages_ResultWithoutSymbols(t *testing.T) {
 		WithFile("path.java", ChunkMatchWithLine(refRange, refRangeLineContent), ChunkMatch(refRange2)).
 		Build()
 
-	usages, err := searchBasedUsagesImpl(
+	result, err := searchBasedUsagesImpl(
 		context.Background(), observation.TestTraceLogger(log.NoOp()), mockSearchClient,
 		UsagesForSymbolArgs{}, "symbol", "Java", core.None[MappedIndex](),
 	)
 	require.NoError(t, err)
-	expectRanges(t, usages, refRange, refRange2)
-	expectContent(t, usages, refRange, refRangeLineContent)
+	expectRanges(t, result.Matches, refRange, refRange2)
+	expectContent(t, result.Matches, refRange, refRangeLineContent)
 }
 
 func TestSearchBasedUsages_ResultWithSymbol(t *testing.T) {
@@ -41,13 +41,13 @@ func TestSearchBasedUsages_ResultWithSymbol(t *testing.T) {
 		WithSymbols("path.java", defRange).
 		Build()
 
-	usages, err := searchBasedUsagesImpl(
+	result, err := searchBasedUsagesImpl(
 		context.Background(), observation.TestTraceLogger(log.NoOp()), mockSearchClient,
 		UsagesForSymbolArgs{}, "symbol", "Java", core.None[MappedIndex](),
 	)
 	require.NoError(t, err)
-	expectRanges(t, usages, refRange, refRange2, defRange)
-	expectDefinitionRanges(t, usages, defRange)
+	expectRanges(t, result.Matches, refRange, refRange2, defRange)
+	expectDefinitionRanges(t, result.Matches, defRange)
 }
 
 func TestSearchBasedUsages_SyntacticMatchesGetRemovedFromSearchBasedResults(t *testing.T) {
@@ -61,12 +61,12 @@ func TestSearchBasedUsages_SyntacticMatchesGetRemovedFromSearchBasedResults(t *t
 	upload, lsifStore := setupUpload(commit, "", doc("path.java", ref("ref", syntacticRange)))
 	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, noopTranslator(), upload, commit)
 
-	usages, err := searchBasedUsagesImpl(
+	result, err := searchBasedUsagesImpl(
 		context.Background(), observation.TestTraceLogger(log.NoOp()), mockSearchClient,
 		UsagesForSymbolArgs{}, "symbol", "Java", core.Some(fakeMappedIndex),
 	)
 	require.NoError(t, err)
-	expectRanges(t, usages, commentRange)
+	expectRanges(t, result.Matches, commentRange)
 }
 
 func TestSyntacticUsages(t *testing.T) {
@@ -91,7 +91,7 @@ func TestSyntacticUsages(t *testing.T) {
 			ref("initial", initialRange)))
 	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, noopTranslator(), upload, commit)
 
-	syntacticUsages, _, err := syntacticUsagesImpl(
+	syntacticUsages, err := syntacticUsagesImpl(
 		context.Background(), observation.TestTraceLogger(log.NoOp()),
 		mockSearchClient, fakeMappedIndex, UsagesForSymbolArgs{
 			Commit:      commit,
@@ -119,7 +119,7 @@ func TestSyntacticUsages_DocumentNotInIndex(t *testing.T) {
 		doc("initial.java",
 			ref("initial", initialRange)))
 	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, noopTranslator(), upload, commit)
-	syntacticUsages, _, err := syntacticUsagesImpl(
+	syntacticUsages, err := syntacticUsagesImpl(
 		context.Background(), observation.TestTraceLogger(log.NoOp()),
 		mockSearchClient, fakeMappedIndex, UsagesForSymbolArgs{
 			Commit:      commit,
@@ -158,7 +158,7 @@ func TestSyntacticUsages_IndexCommitTranslated(t *testing.T) {
 			return r.CompareStrict(editedRange) == 0
 		}), upload, targetCommit)
 
-	syntacticUsages, _, err := syntacticUsagesImpl(
+	syntacticUsages, err := syntacticUsagesImpl(
 		context.Background(), observation.TestTraceLogger(log.NoOp()),
 		mockSearchClient, fakeMappedIndex, UsagesForSymbolArgs{
 			Commit:      targetCommit,
