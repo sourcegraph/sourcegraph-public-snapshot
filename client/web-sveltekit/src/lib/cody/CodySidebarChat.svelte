@@ -80,6 +80,7 @@ function getTelemetrySourceClient(): string {
 
 <style lang="scss">
     .chat {
+        --vscode-sideBar-background: transparent;
         --vscode-editor-background: var(--body-bg);
         --vscode-editor-foreground: var(--body-color);
         --vscode-input-background: var(--input-bg);
