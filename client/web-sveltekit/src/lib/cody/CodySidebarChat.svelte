@@ -78,7 +78,7 @@
 
 <style lang="scss">
     .chat {
-        --vscode-sideBar-background: transparent;
+        --vscode-sideBar-background: var(--body-bg);
         --vscode-editor-background: var(--body-bg);
         --vscode-editor-foreground: var(--body-color);
         --vscode-input-background: var(--input-bg);
@@ -90,7 +90,6 @@
         --vscode-loading-dot-color: var(--body-color);
         --vscode-textPreformat-foreground: var(--body-color);
         --vscode-textPreformat-background: var(--secondary);
-        --vscode-sideBar-background: var(--body-bg);
         --vscode-sideBarSectionHeader-border: var(--border-color);
         --vscode-editor-font-family: var(--code-font-family);
         --vscode-editor-font-size: var(--code-font-size);
@@ -154,6 +153,10 @@
         :global(.tw-transition-all) {
             animation: none !important;
         }
+
+        :global([cmdk-root] input:focus-visible) {
+            box-shadow: unset !important;
+        }
     }
 
     :global([data-floating-ui-portal]) {
@@ -165,9 +168,5 @@
         // Turn off background color for picker popover element
         // Which causes glitch effect in Cody Web
         --vscode-sideBar-background: transparent;
-    }
-
-    [cmdk-root] :global(.focus-visible) {
-        box-shadow: unset !important;
     }
 </style>
