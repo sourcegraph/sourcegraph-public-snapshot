@@ -125,21 +125,14 @@
 
     <div class="web-next-notice">
         <ProductStatusBadge status="beta" />
-        <a
-            class={getButtonClassName({ variant: 'secondary', size: 'sm' })}
-            href="https://community.sourcegraph.com/c/code-search/9"
-            target="_blank"
-            rel="noreferrer noopener"
-        >
-            Feedback
-        </a>
         <Popover let:registerTrigger let:toggle placement="bottom-end">
             <button
                 use:registerTrigger
                 class={getButtonClassName({ variant: 'secondary', size: 'sm' })}
                 on:click={() => toggle()}
             >
-                <Icon icon={ILucideEllipsis} inline />
+                New UI Feedback
+                <Icon icon={ILucideChevronDown} inline />
             </button>
             <FeedbackDialog slot="content" {handleOptOut} />
         </Popover>
