@@ -154,8 +154,11 @@ We can now build this image _locally_ and run those tests as well.
 Example:
 
 ```
-# Create and load a tarball that can be loaded in Docker of the worker service:
-bazel run //cmd/worker:image_tarball
+# Create a tarball that can be loaded in Docker of the worker service:
+bazel build //cmd/worker:image_tarball
+
+# Load the image in Docker:
+docker load --input $(bazel cquery //cmd/worker:image_tarball  --output=files)
 
 # Run the container structure tests
 bazel test //cmd/worker:image_test

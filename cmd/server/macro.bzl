@@ -2,7 +2,7 @@
 Various helpers to help with server image building
 """
 
-load("//dev:oci_defs.bzl", "pkg_tar")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 def get_last_segment(path):
     """
