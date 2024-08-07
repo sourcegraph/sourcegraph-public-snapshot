@@ -415,7 +415,7 @@ type BitbucketCloudRateLimit struct {
 type BitbucketServerAuthProvider struct {
 	// AllowSignup description: Allows new visitors to sign up for accounts via Bitbucket Server OAuth. If false, users signing in via Bitbucket Server must have an existing Sourcegraph account, which will be linked to their Bitbucket Server identity after sign-in.
 	AllowSignup bool `json:"allowSignup,omitempty"`
-	// ClientID description: The Key of the Bitbucket OAuth app.
+	// ClientID description: The ID of the Bitbucket OAuth app.
 	ClientID string `json:"clientID"`
 	// ClientSecret description: The Client Secret of the Bitbucket OAuth app.
 	ClientSecret  string  `json:"clientSecret"`
@@ -429,18 +429,10 @@ type BitbucketServerAuthProvider struct {
 	Url string `json:"url,omitempty"`
 }
 
-// BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server / Bitbucket Data Center repository permissions.
-type BitbucketServerAuthorization struct {
-	// IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server / Bitbucket Data Center identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server / Bitbucket Data Center accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
-	IdentityProvider BitbucketServerIdentityProvider `json:"identityProvider"`
-	// Oauth description: OAuth configuration specified when creating the Bitbucket Server / Bitbucket Data Center Application Link with incoming authentication. Two Legged OAuth with 'ExecuteAs=admin' must be enabled as well as user impersonation.
-	Oauth BitbucketServerOAuth `json:"oauth"`
-}
-
 // BitbucketServerConnection description: Configuration for a connection to Bitbucket Server / Bitbucket Data Center.
 type BitbucketServerConnection struct {
 	// Authorization description: If non-null, enforces Bitbucket Server / Bitbucket Data Center repository permissions.
-	Authorization *BitbucketServerAuthorization `json:"authorization,omitempty"`
+	Authorization map[string]any `json:"authorization,omitempty"`
 	// Certificate description: TLS certificate of the Bitbucket Server / Bitbucket Data Center instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	Certificate string `json:"certificate,omitempty"`
 	// Exclude description: A list of repositories to never mirror from this Bitbucket Server / Bitbucket Data Center instance. Takes precedence over "repos" and "repositoryQuery".
@@ -493,39 +485,6 @@ type BitbucketServerConnection struct {
 	Username string `json:"username"`
 	// Webhooks description: DEPRECATED: Switch to "plugin.webhooks"
 	Webhooks *Webhooks `json:"webhooks,omitempty"`
-}
-
-// BitbucketServerIdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server / Bitbucket Data Center identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server / Bitbucket Data Center accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
-type BitbucketServerIdentityProvider struct {
-	Username *BitbucketServerUsernameIdentity
-}
-
-func (v BitbucketServerIdentityProvider) MarshalJSON() ([]byte, error) {
-	if v.Username != nil {
-		return json.Marshal(v.Username)
-	}
-	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
-}
-func (v *BitbucketServerIdentityProvider) UnmarshalJSON(data []byte) error {
-	var d struct {
-		DiscriminantProperty string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &d); err != nil {
-		return err
-	}
-	switch d.DiscriminantProperty {
-	case "username":
-		return json.Unmarshal(data, &v.Username)
-	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"username"})
-}
-
-// BitbucketServerOAuth description: OAuth configuration specified when creating the Bitbucket Server / Bitbucket Data Center Application Link with incoming authentication. Two Legged OAuth with 'ExecuteAs=admin' must be enabled as well as user impersonation.
-type BitbucketServerOAuth struct {
-	// ConsumerKey description: The OAuth consumer key specified when creating the Bitbucket Server / Bitbucket Data Center Application Link with incoming authentication.
-	ConsumerKey string `json:"consumerKey"`
-	// SigningKey description: Base64 encoding of the OAuth PEM encoded RSA private key used to generate the public key specified when creating the Bitbucket Server / Bitbucket Data Center Application Link with incoming authentication.
-	SigningKey string `json:"signingKey"`
 }
 
 // BitbucketServerPlugin description: Configuration for Bitbucket Server / Bitbucket Data Center Sourcegraph plugin
