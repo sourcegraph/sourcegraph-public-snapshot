@@ -3,11 +3,13 @@ package golly
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -76,12 +78,24 @@ func readyBodyIntoMemory(t *testing.T, req *http.Request) []byte {
 }
 
 func (g *Golly) newYamlRequest(req *http.Request, requestBody []byte) *yamlRequest {
+	body := string(requestBody)
+	if contentType := req.Header.Get("Content-Type"); strings.HasPrefix(contentType, "application/json") {
+		var jsonBody interface{}
+		if err := json.Unmarshal(requestBody, &jsonBody); err == nil {
+			// Format as YAML for readability. We don't deserialize the
+			// request body back when reading recordings so it doesn't
+			// matter if we use JSON or YAML here.
+			if formattedYAML, err := yaml.Marshal(jsonBody); err == nil {
+				body = string(formattedYAML)
+			}
+		}
+	}
 	return &yamlRequest{
 		RecordingDate: time.Now().Format(time.RFC3339),
 		URL:           req.URL.String(),
 		Method:        req.Method,
 		Headers:       g.newYamlRequestHeaders(req),
-		Body:          string(requestBody),
+		Body:          body,
 	}
 }
 

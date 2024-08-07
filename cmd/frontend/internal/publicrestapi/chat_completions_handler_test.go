@@ -61,6 +61,9 @@ func TestAPI(t *testing.T) {
 		}
 		body := string(jsonData)
 
+		// Important assertion. The old /.api/completions/stream endpoint returned text/plain.
+		assert.Equal(t, "application/json", rr.Header().Get("Content-Type"))
+
 		autogold.Expect(`{
     "id": "chat-mocked-publicrestapi-uuid",
     "choices": [
