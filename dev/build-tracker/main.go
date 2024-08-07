@@ -427,7 +427,7 @@ func (s Service) Initialize(ctx context.Context, logger log.Logger, contract run
 		return nil, err
 	}
 	rclient := redis.NewClient(redisOpts)
-	rlock := redsync.New(goredis.NewPool(rclient)).NewMutex("build-tracker", redsync.WithExpiry(time.Minute))
+	rlock := redsync.New(goredis.NewPool(rclient)).NewMutex("build-tracker", redsync.WithExpiry(time.Second*30))
 
 	server := NewServer(fmt.Sprintf(":%d", contract.Port), logger, config, bqWriter, rclient, rlock)
 

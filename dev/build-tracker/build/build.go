@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/go-redsync/redsync/v4"
 	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/log"
 
@@ -252,16 +250,10 @@ func NewBuildStore(logger log.Logger, rclient RedisClient, lock Locker) *Store {
 }
 
 func (s *Store) lock() (func(), error) {
-	for {
-		err := s.m1.Lock()
-		if err == redsync.ErrFailed {
-			time.Sleep(100 * time.Millisecond)
-			continue
-		} else if err != nil {
-			s.logger.Error("failed to acquire lock", log.Error(err))
-			return nil, err
-		}
-		break
+	err := s.m1.Lock()
+	if err != nil {
+		s.logger.Error("failed to acquire lock", log.Error(err))
+		return nil, err
 	}
 	return func() {
 		if _, err := s.m1.Unlock(); err != nil {
@@ -318,7 +310,8 @@ func (s *Store) Add(event *Event) {
 		// We instead depend on the state of the jobs associated with said build.
 		if event.Build.TriggeredFrom != nil {
 			parentBuildb, err := s.r.Get(context.Background(), "build/"+strconv.Itoa(*event.Build.TriggeredFrom.BuildNumber)).Bytes()
-			if err == nil {
+			switch err {
+			case nil:
 				var parentBuild *Build
 				if err := json.Unmarshal(parentBuildb, &parentBuild); err != nil {
 					s.logger.Error("failed to unmarshal build", log.Error(err))
@@ -327,7 +320,7 @@ func (s *Store) Add(event *Event) {
 				parentBuild.AppendSteps(build.Steps)
 				buildb, _ = json.Marshal(parentBuild)
 				s.r.Set(context.Background(), "build/"+strconv.Itoa(event.GetBuildNumber()), buildb, 0)
-			} else if err == redis.Nil {
+			case redis.Nil:
 				// If the triggered build doesn't exist, we'll just leave log a message
 				s.logger.Warn(
 					"build triggered from non-existent build",
@@ -347,7 +340,9 @@ func (s *Store) Add(event *Event) {
 			build.ConsecutiveFailure = int(i)
 		} else {
 			// We got a pass, reset the global count
-			s.r.Set(context.Background(), failuresKey, 0, 0).Result()
+			if _, err := s.r.Set(context.Background(), failuresKey, 0, 0).Result(); err != nil {
+				s.logger.Error("failed to reset consecutive failures count", log.Error(err))
+			}
 		}
 	}
 
