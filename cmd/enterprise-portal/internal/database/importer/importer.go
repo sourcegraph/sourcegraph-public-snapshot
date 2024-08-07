@@ -37,7 +37,7 @@ type importer struct {
 	licenses          *subscriptions.LicensesStore
 	codyGatewayAccess *codyaccess.CodyGatewayStore
 
-	tryAcquireFn func() (acquired bool, release func(), _ error)
+	tryAcquireFn func(context.Context) (acquired bool, release func(), _ error)
 }
 
 var _ goroutine.Handler = (*importer)(nil)
@@ -67,13 +67,17 @@ func New(
 			subscriptions:     enterprisePortal.Subscriptions(),
 			licenses:          enterprisePortal.Subscriptions().Licenses(),
 			codyGatewayAccess: enterprisePortal.CodyAccess().CodyGateway(),
-			tryAcquireFn: func() (acquired bool, release func(), _ error) {
+			tryAcquireFn: func(ctx context.Context) (acquired bool, release func(), _ error) {
 				if interval <= time.Second {
 					return true, func() {}, nil
 				}
 				return redislock.TryAcquire(
+					ctx,
 					rs,
-					"enterpriseportal.dotcomimporter",
+					// Use a different lock when the interval configuration is
+					// changed significantly, to avoid being blocked by an old
+					// configuration
+					fmt.Sprintf("enterpriseportal.dotcomimporter.%d", int(interval.Seconds())),
 					// Ensure lock is free by the time the next interval occurs
 					interval-time.Second)
 			},
@@ -89,13 +93,14 @@ func New(
 
 func (i *importer) Handle(ctx context.Context) (err error) {
 	if i.tryAcquireFn != nil {
-		acquired, release, err := i.tryAcquireFn()
+		acquired, release, err := i.tryAcquireFn(ctx)
 		if err != nil {
 			return errors.Wrap(err, "acquire job")
 		}
 		trace.FromContext(ctx).
 			SetAttributes(attribute.Bool("skipped", !acquired))
 		if !acquired {
+			trace.Logger(ctx, i.logger).Debug("skipping, job already acquired")
 			return nil // nothing to do
 		}
 		defer func() {
