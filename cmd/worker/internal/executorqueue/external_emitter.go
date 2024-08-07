@@ -7,12 +7,13 @@ import (
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type externalEmitter[T workerutil.Record] struct {
 	queueName  string
-	countFuncs []func(ctx context.Context, includeProcessing bool) (int, error)
+	countFuncs []func(ctx context.Context, bitset store.RecordState) (int, error)
 	reporters  []reporter
 	allocation QueueAllocation
 }
@@ -27,9 +28,9 @@ type reporter interface {
 func (r *externalEmitter[T]) Handle(ctx context.Context) error {
 	var count int
 	for _, countFunc := range r.countFuncs {
-		subCount, err := countFunc(context.Background(), true)
+		subCount, err := countFunc(context.Background(), store.StateQueued|store.StateErrored|store.StateProcessing)
 		if err != nil {
-			return errors.Wrap(err, "dbworkerstore.QueuedCount")
+			return errors.Wrap(err, "dbworkerstore.CountByState")
 		}
 		count += subCount
 	}

@@ -154,7 +154,7 @@ func TestSyntacticUsages_IndexCommitTranslated(t *testing.T) {
 			ref("edited", shiftSCIPRange(editedRange, 2)),
 			ref("noMatch", noMatchRange)))
 	// Ranges in the index are shifted by +2, so the translator needs to shift by -2 to match up with the search results.
-	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, fakeTranslator(upload.GetCommit(), targetCommit, -2,
+	fakeMappedIndex := NewMappedIndexFromTranslator(lsifStore, NewFakeTranslator(upload.GetCommit(), targetCommit, -2,
 		func(_ core.RepoRelPath, r scip.Range) bool {
 			// When a line was edited in a diff we invalidate all occurrences on that line.
 			return r.CompareStrict(editedRange) == 0

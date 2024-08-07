@@ -350,7 +350,7 @@ func (args *UsagesForSymbolArgs) Resolve(
 			slices.Sort(cursor.SyntacticCursor.SeenFiles)
 		}
 	} else {
-		cursor.CursorType = codenav.CursorTypeDefinitions
+		cursor = codenav.InitialCursor(resolvedSymbol.ProvenancesForSCIPData())
 	}
 
 	scipRange, err := scip.NewRange([]int32{

@@ -270,24 +270,18 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	remainingCount := int(args.RemainingCount)
 	provsForSCIPData := args.Symbol.ProvenancesForSCIPData()
 	usageResolvers := []resolverstubs.UsageResolver{}
-	cursor := args.Cursor
 
-	if cursor.IsPrecise() && !provsForSCIPData.Precise {
-		cursor = codenav.UsagesCursor{CursorType: codenav.CursorTypeSyntactic}
-	}
-	if provsForSCIPData.Precise && cursor.IsPrecise() {
+	cursor := args.Cursor
+	if cursor.IsPrecise() {
 		nextPreciseCursor, preciseUsageResolvers := r.preciseUsages(ctx, trace, args, remainingCount)
 		usageResolvers = append(usageResolvers, preciseUsageResolvers...)
 		numPreciseResults = len(preciseUsageResolvers)
 		remainingCount -= min(remainingCount, numPreciseResults)
-		cursor = nextPreciseCursor.UnwrapOr(codenav.UsagesCursor{CursorType: codenav.CursorTypeSyntactic})
+		cursor = cursor.AdvanceCursor(nextPreciseCursor, provsForSCIPData)
 	}
 
-	if cursor.IsSyntactic() && !provsForSCIPData.Syntactic {
-		cursor = codenav.UsagesCursor{CursorType: codenav.CursorTypeSearchBased}
-	}
 	previousSyntacticSearch := core.None[codenav.PreviousSyntacticSearch]()
-	if provsForSCIPData.Syntactic && cursor.IsSyntactic() && remainingCount > 0 {
+	if cursor.IsSyntactic() && remainingCount > 0 {
 		usagesForSymbolArgs := codenav.UsagesForSymbolArgs{
 			Repo:        args.Repo,
 			Commit:      args.CommitID,
@@ -301,13 +295,10 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 		usageResolvers = append(usageResolvers, syntacticUsageResolvers...)
 		numSyntacticResults = len(syntacticUsageResolvers)
 		remainingCount -= min(remainingCount, numSyntacticResults)
-		cursor = nextSyntacticCursor.UnwrapOr(codenav.UsagesCursor{CursorType: codenav.CursorTypeSearchBased})
+		cursor = cursor.AdvanceCursor(nextSyntacticCursor, provsForSCIPData)
 	}
 
-	if cursor.IsSearchBased() && !provsForSCIPData.SearchBased {
-		cursor = codenav.UsagesCursor{CursorType: codenav.CursorTypeDone}
-	}
-	if provsForSCIPData.SearchBased && cursor.IsSearchBased() && remainingCount > 0 {
+	if cursor.IsSearchBased() && remainingCount > 0 {
 		usagesForSymbolArgs := codenav.UsagesForSymbolArgs{
 			Repo:        args.Repo,
 			Commit:      args.CommitID,
@@ -321,7 +312,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 		)
 		usageResolvers = append(usageResolvers, searchBasedUsageResolvers...)
 		numSearchBasedResults = len(searchBasedUsageResolvers)
-		cursor = nextSearchBasedCursor.UnwrapOr(codenav.UsagesCursor{CursorType: codenav.CursorTypeDone})
+		cursor = cursor.AdvanceCursor(nextSearchBasedCursor, provsForSCIPData)
 	}
 
 	pageInfo := resolverstubs.NewSimplePageInfo(false)

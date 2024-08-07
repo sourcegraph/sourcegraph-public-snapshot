@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	dbworker "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 func TestSyntacticIndexingStoreDequeue(t *testing.T) {
@@ -38,7 +39,7 @@ func TestSyntacticIndexingStoreDequeue(t *testing.T) {
 
 	ctx := context.Background()
 
-	initCount, _ := store.QueuedCount(ctx, true)
+	initCount, _ := store.CountByState(ctx, dbworker.StateQueued|dbworker.StateErrored|dbworker.StateProcessing)
 
 	require.Equal(t, 0, initCount)
 
@@ -83,7 +84,7 @@ func TestSyntacticIndexingStoreDequeue(t *testing.T) {
 		},
 	)
 
-	afterCount, _ := store.QueuedCount(ctx, true)
+	afterCount, _ := store.CountByState(ctx, dbworker.StateQueued|dbworker.StateErrored|dbworker.StateProcessing)
 
 	require.Equal(t, 3, afterCount)
 
@@ -166,7 +167,7 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 
 	// Assertions below verify that records inserted by InsertJobs are
 	// still visible by DB Worker interface
-	afterCount, _ := store.QueuedCount(ctx, true)
+	afterCount, _ := store.CountByState(ctx, dbworker.StateQueued|dbworker.StateErrored|dbworker.StateProcessing)
 
 	require.Equal(t, 2, afterCount)
 
