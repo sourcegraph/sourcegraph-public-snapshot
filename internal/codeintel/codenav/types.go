@@ -388,12 +388,34 @@ const (
 	CursorTypeReferences      CursorType = "references"
 	CursorTypeSyntactic       CursorType = "syntactic"
 	CursorTypeSearchBased     CursorType = "searchBased"
+	CursorTypeDone            CursorType = "done"
 )
 
 type UsagesCursor struct {
 	CursorType      CursorType      `json:"ty"`
 	PreciseCursor   PreciseCursor   `json:"pc"`
 	SyntacticCursor SyntacticCursor `json:"sc"` // TODO(GRAPH-696)
+}
+
+func (c UsagesCursor) IsPrecise() bool {
+	switch c.CursorType {
+	case CursorTypeDefinitions, CursorTypeImplementations, CursorTypePrototypes, CursorTypeReferences:
+		return true
+	default:
+		return false
+	}
+}
+
+func (c UsagesCursor) IsSyntactic() bool {
+	return c.CursorType == CursorTypeSyntactic
+}
+
+func (c UsagesCursor) IsSearchBased() bool {
+	return c.CursorType == CursorTypeSearchBased
+}
+
+func (c UsagesCursor) IsDone() bool {
+	return c.CursorType == CursorTypeDone
 }
 
 func (c UsagesCursor) Encode() string {
