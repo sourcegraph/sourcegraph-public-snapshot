@@ -14,6 +14,8 @@ go_library(
         "//internal/goroutine",
         "//internal/license",
         "//internal/observation",
+        "//internal/redislock",
+        "//internal/redispool",
         "//internal/trace",
         "//lib/background",
         "//lib/enterpriseportal/subscriptions/v1:subscriptions",
