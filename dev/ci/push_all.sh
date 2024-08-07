@@ -186,7 +186,6 @@ bazel "${bazelrc[@]}" build \
   --build_event_binary_file_path_conversion=false \
   --build_event_binary_file_upload_mode=wait_for_upload_complete \
   --build_event_publish_all_actions=true \
-  --remote_download_outputs=toplevel \
   ${images}
 
 echo "--- :bash: Generating jobfile - started"
