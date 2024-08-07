@@ -6,7 +6,6 @@ import type { OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables } 
 export const FEATURE_FLAGS = [
     'admin-analytics-cache-disabled',
     'admin-onboarding',
-    'auditlog-expansion',
     'blob-page-switch-areas-shortcuts',
     'cody-chat-mock-test',
     'contrast-compliant-syntax-highlighting',

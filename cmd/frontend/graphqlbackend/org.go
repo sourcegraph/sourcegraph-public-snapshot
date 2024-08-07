@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -28,11 +27,9 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
-		// Log action for siteadmin viewing an organization's details
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
-			r.logger.Warn("Error logging security event", log.Error(err))
-		}
+	// Log action for siteadmin viewing an organization's details
+	if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
+		r.logger.Warn("Error logging security event", log.Error(err))
 	}
 
 	return &OrgResolver{db: r.db, org: org}, nil
@@ -273,12 +270,10 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
-		// Log an event when a new organization being created
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
-			r.logger.Warn("Error logging security event", log.Error(err))
+	// Log an event when a new organization being created
+	if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
+		r.logger.Warn("Error logging security event", log.Error(err))
 
-		}
 	}
 
 	// Add the current user as the first member of the new org.
@@ -311,13 +306,12 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", true) {
-		// Log an event when organization settings are updated
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
-			r.logger.Warn("Error logging security event", log.Error(err))
+	// Log an event when organization settings are updated
+	if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
+		r.logger.Warn("Error logging security event", log.Error(err))
 
-		}
 	}
+
 	return &OrgResolver{db: r.db, org: updatedOrg}, nil
 }
 
