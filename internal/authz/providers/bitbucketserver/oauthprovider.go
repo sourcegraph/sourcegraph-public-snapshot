@@ -18,11 +18,12 @@ import (
 )
 
 type OAuthProvider struct {
-	urn      string
-	codeHost *extsvc.CodeHost
-	client   *bitbucketserver.Client
-	pageSize int // Page size to use in paginated requests.
-	db       database.DB
+	urn        string
+	codeHost   *extsvc.CodeHost
+	client     *bitbucketserver.Client
+	pageSize   int // Page size to use in paginated requests.
+	db         database.DB
+	pluginPerm bool
 }
 
 type ProviderOptions struct {
@@ -35,7 +36,7 @@ var _ authz.Provider = (*OAuthProvider)(nil)
 // the given bitbucket.Client to talk to the Bitbucket Server API that is
 // the source of truth for permissions. Sourcegraph users will need a valid
 // Bitbucket Server external account for permissions to sync correctly.
-func NewOAuthProvider(db database.DB, conn *types.BitbucketServerConnection, opts ProviderOptions) *OAuthProvider {
+func NewOAuthProvider(db database.DB, conn *types.BitbucketServerConnection, opts ProviderOptions, pluginPerm bool) *OAuthProvider {
 	baseURL, err := url.Parse(conn.Url)
 	if err != nil {
 		return nil
@@ -55,6 +56,7 @@ func NewOAuthProvider(db database.DB, conn *types.BitbucketServerConnection, opt
 		client:   opts.BitbucketServerClient,
 		pageSize: 1000,
 		db:       db,
+		pluginPerm: pluginPerm,
 	}
 }
 
@@ -131,11 +133,14 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 }
 
 func (p *OAuthProvider) repoIDs(ctx context.Context, client *bitbucketserver.Client) ([]uint32, error) {
-	// TODO: reimplement or not?
-	// if p.pluginPerm {
-	// 	return p.repoIDsFromPlugin(ctx, username)
-	// }
+	if p.pluginPerm {
+		return p.repoIDsFromPlugin(ctx, client)
+	}
 	return repoIDsFromAPI(ctx, p.pageSize, client)
+}
+
+func (p *OAuthProvider) repoIDsFromPlugin(ctx context.Context, client *bitbucketserver.Client) (ids []uint32, err error) {
+	return client.RepoIDs(ctx, "read")
 }
 
 // repoIDsFromAPI returns all repositories for which the given user has the permission to read from

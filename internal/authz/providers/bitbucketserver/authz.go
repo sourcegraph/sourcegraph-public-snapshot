@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -79,11 +80,15 @@ func newAuthzProvider(
 		return nil, err
 	}
 
-	switch idp := c.Authorization.IdentityProvider; {
-	case idp.Username != nil:
-		return NewProvider(cli, c.URN, pluginPerm), nil
-	default:
-		return NewOAuthProvider(db, c, ProviderOptions{BitbucketServerClient: cli}), nil
+	if c.Authorization.Oauth2 {
+		return NewOAuthProvider(db, c, ProviderOptions{BitbucketServerClient: cli}, pluginPerm), nil
+	} else {
+		switch idp := c.Authorization.IdentityProvider; {
+		case idp.Username != nil:
+			return NewProvider(cli, c.URN, pluginPerm), nil
+		default:
+			return nil, errors.Errorf("No identityProvider was specified")
+		}
 	}
 }
 
