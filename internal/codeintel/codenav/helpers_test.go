@@ -152,38 +152,55 @@ func shiftPos(pos scip.Position, numLines int32) scip.Position {
 
 // A GitTreeTranslator that returns positions and ranges shifted by numLines
 // and returns failed translations for path/range pairs if shouldFail returns true
-func fakeTranslator(
+type fakeTranslator struct {
+	from       api.CommitID
+	to         api.CommitID
+	numLines   int
+	shouldFail func(core.RepoRelPath, scip.Range) bool
+}
+
+func (t fakeTranslator) TranslatePosition(ctx context.Context, from, to api.CommitID, path core.RepoRelPath, pos scip.Position) (core.Option[scip.Position], error) {
+	numLines := t.numLines
+	if from == t.to && to == t.from {
+		numLines = -numLines
+	}
+	if t.shouldFail(path, scip.Range{Start: pos, End: pos}) {
+		return core.None[scip.Position](), nil
+	}
+	return core.Some(shiftPos(pos, int32(numLines))), nil
+}
+
+func (t fakeTranslator) TranslateRange(ctx context.Context, from, to api.CommitID, path core.RepoRelPath, r scip.Range) (core.Option[scip.Range], error) {
+	numLines := t.numLines
+	if from == t.to && to == t.from {
+		numLines = -numLines
+	}
+	if t.shouldFail(path, r) {
+		return core.None[scip.Range](), nil
+	}
+	return core.Some(shiftSCIPRange(r, numLines)), nil
+}
+
+func (t fakeTranslator) Prefetch(ctx context.Context, from api.CommitID, to api.CommitID, paths []core.RepoRelPath) {
+	return
+}
+
+func NewFakeTranslator(
 	from, to api.CommitID,
 	numLines int,
 	shouldFail func(core.RepoRelPath, scip.Range) bool,
 ) GitTreeTranslator {
-	translator := NewMockGitTreeTranslator()
-	translator.TranslatePositionFunc.SetDefaultHook(func(ctx context.Context, f, t api.CommitID, path core.RepoRelPath, pos scip.Position) (core.Option[scip.Position], error) {
-		numLines := numLines
-		if f == to && t == from {
-			numLines = -numLines
-		}
-		if shouldFail(path, scip.Range{Start: pos, End: pos}) {
-			return core.None[scip.Position](), nil
-		}
-		return core.Some(shiftPos(pos, int32(numLines))), nil
-	})
-	translator.TranslateRangeFunc.SetDefaultHook(func(ctx context.Context, f, t api.CommitID, path core.RepoRelPath, range_ scip.Range) (core.Option[scip.Range], error) {
-		numLines := numLines
-		if f == to && t == from {
-			numLines = -numLines
-		}
-		if shouldFail(path, range_) {
-			return core.None[scip.Range](), nil
-		}
-		return core.Some(shiftSCIPRange(range_, numLines)), nil
-	})
-	return translator
+	return fakeTranslator{
+		from:       from,
+		to:         to,
+		numLines:   numLines,
+		shouldFail: shouldFail,
+	}
 }
 
 // A GitTreeTranslator that returns all positions and ranges shifted by numLines.
 func shiftAllTranslator(from, to api.CommitID, numLines int) GitTreeTranslator {
-	return fakeTranslator(from, to, numLines, func(path core.RepoRelPath, range_ scip.Range) bool { return false })
+	return NewFakeTranslator(from, to, numLines, func(path core.RepoRelPath, range_ scip.Range) bool { return false })
 }
 
 // A GitTreeTranslator that returns all positions and ranges unchanged
