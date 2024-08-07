@@ -2,7 +2,6 @@ package chunkers
 
 import (
 	"context"
-	"fmt"
 	"path"
 	"strings"
 
@@ -168,7 +167,7 @@ func (tsc *TreeSitterChunker) chunkNode(node *sitter.Node) []Span {
 	return append(chunks, curSpan)
 }
 func detectLanguage(filename string) *sitter.Language {
-	lang, safe := enry.GetLanguageByExtension(path.Base(filename))
+	lang, _ := enry.GetLanguageByExtension(path.Base(filename))
 	// TODO do we care about "safe"?
 
 	// TODO file extension preferences
@@ -180,8 +179,6 @@ func detectLanguage(filename string) *sitter.Language {
 	} else if lang == "Hack" {
 		lang = "PHP"
 	}
-
-	fmt.Println("enry", path.Base(filename), lang, safe)
 
 	switch lang {
 	case "Python":

@@ -41,30 +41,7 @@ func (ts *TreeSitterChunkerSuite) TestTreeSitterChunker() {
 	tree, err := parser.ParseCtx(context.Background(), nil, []byte(content))
 	node := tree.RootNode()
 	ts.NoError(err)
-
-	for i := 0; uint32(i) < node.ChildCount(); i++ {
-		c := node.Child(i)
-		fmt.Println("child", content[c.StartByte():c.EndByte()])
-		if c.ChildCount() > 0 {
-			fmt.Println("     has children")
-		}
-		for j := 0; uint32(j) < c.ChildCount(); j++ {
-			cc := c.Child(j)
-			fmt.Println("         child", content[cc.StartByte():cc.EndByte()])
-			if cc.ChildCount() > 0 {
-				fmt.Println("             has children")
-			}
-
-			for k := 0; uint32(k) < cc.ChildCount(); k++ {
-				ccc := cc.Child(k)
-				fmt.Println("                 child", content[ccc.StartByte():ccc.EndByte()])
-
-				if ccc.ChildCount() > 0 {
-					fmt.Println("               has children")
-				}
-			}
-		}
-	}
+	printTree(node, content, "")
 
 	chunks := tsc.Chunk(content, "foo.js")
 	fmt.Println()
@@ -80,6 +57,15 @@ func (ts *TreeSitterChunkerSuite) TestTreeSitterChunker() {
 	}
 
 	ts.Equal(content, reconstructedContent)
+}
+
+func printTree(node *sitter.Node, content, indent string) {
+	if node.ChildCount() == 0 {
+		fmt.Println(indent, content[node.StartByte():node.EndByte()])
+	}
+	for i := 0; uint32(i) < node.ChildCount(); i++ {
+		printTree(node.Child(i), content, indent+"  ")
+	}
 }
 
 func (ts *TreeSitterChunkerSuite) TestCases() {
@@ -119,5 +105,5 @@ func (ts *TreeSitterChunkerSuite) testTreeSitterChunker(filename string, expecte
 		// fmt.Printf("chunk (len %d, start line %d, end line %d): ```\n%s```\n", len(chunk.Content), chunk.StartLine, chunk.EndLine, chunk.Content)
 	}
 
-	//ts.Equal(strings.TrimSpace(content), strings.TrimSpace(reconstructedContent))
+	ts.Equal(strings.TrimSpace(content), strings.TrimSpace(reconstructedContent))
 }
