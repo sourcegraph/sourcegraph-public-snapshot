@@ -479,7 +479,10 @@ func (s SubscriptionAttributes) GenerateDisplayName() string {
 	if s.UserDisplayName != "" {
 		parts = append(parts, s.UserDisplayName)
 	}
-	parts = append(parts, s.CreatedAt.Format(time.DateOnly))
+	parts = append(parts,
+		// Stick a seconds-granularity component to the name to guarantee
+		// uniqueness during migration.
+		s.CreatedAt.Format(time.DateTime))
 	return strings.Join(parts, " - ")
 }
 
