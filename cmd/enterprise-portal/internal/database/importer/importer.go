@@ -252,6 +252,9 @@ func (i *importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 	// Import Cody Gateway access configured for this subscription
 	dotcomCGAccess, err := i.dotcom.GetCodyGatewayAccessAttributesBySubscription(ctx, dotcomSub.ID)
 	if err != nil {
+		if errors.Is(err, dotcomdb.ErrCodyGatewayAccessNotFound) {
+			return nil // nothing to do
+		}
 		return errors.Wrap(err, "dotcom: get cody gateway access")
 	}
 	if _, err := i.codyGatewayAccess.Upsert(ctx, dotcomSub.ID, codyaccess.UpsertCodyGatewayAccessOptions{
