@@ -522,7 +522,7 @@ WHERE true`
 	if r.opts.DevOnly {
 		licenseCond = fmt.Sprintf("'%s' = ANY(product_licenses.license_tags)", licensing.DevTag)
 	} else {
-		licenseCond = fmt.Sprintf("NOT '%s' = ANY(product_licenses.license_tags)", licensing.DevTag)
+		licenseCond = "true"
 	}
 	query += fmt.Sprintf(`
 AND EXISTS (

@@ -520,16 +520,13 @@ func TestListEnterpriseSubscriptions(t *testing.T) {
 			UserCount: 321,
 			Tags:      []string{licensing.PlanEnterprise1.Tag(), licensing.DevTag},
 		}
-		_ = setupDBAndInsertMockLicense(t, db, info, nil)
+		mock := setupDBAndInsertMockLicense(t, db, info, nil)
 
 		ss, err := dotcomreader.ListEnterpriseSubscriptions(
 			context.Background(),
 			dotcomdb.ListEnterpriseSubscriptionsOptions{})
 		require.NoError(t, err)
-		assert.Len(t, ss, 1) // only 1 created without a dev tag
-		for _, s := range ss {
-			s.CreatedAt = time.Time{} // zero time for autogold
-		}
-		autogold.Expect("not-devlicense - 0001-01-01 00:00:00").Equal(t, ss[0].GenerateDisplayName())
+		// all subscriptions included, minus the ones without any license
+		assert.Len(t, ss, mock.createdSubscriptions-1)
 	})
 }
