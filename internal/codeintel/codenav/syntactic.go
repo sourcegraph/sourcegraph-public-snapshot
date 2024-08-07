@@ -527,8 +527,8 @@ func syntacticUsagesImpl(
 		})
 	}
 	return SyntacticUsagesResult{
-		Matches: finalMatches,
-		NextCursor: nextCursor
+		Matches:    finalMatches,
+		NextCursor: nextCursor,
 		PreviousSyntacticSearch: PreviousSyntacticSearch{
 			MappedIndex: mappedIndex,
 			SymbolName:  symbolName,
