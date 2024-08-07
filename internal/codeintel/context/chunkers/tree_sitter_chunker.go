@@ -2,26 +2,42 @@ package chunkers
 
 import (
 	"context"
-	"path/filepath"
+	"fmt"
+	"path"
 	"strings"
 
+	"github.com/go-enry/go-enry/v2"
 	"github.com/pkg/errors"
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/bash"
 	"github.com/smacker/go-tree-sitter/c"
 	"github.com/smacker/go-tree-sitter/cpp"
 	"github.com/smacker/go-tree-sitter/csharp"
+	"github.com/smacker/go-tree-sitter/css"
+	"github.com/smacker/go-tree-sitter/dockerfile"
+	"github.com/smacker/go-tree-sitter/elixir"
+	"github.com/smacker/go-tree-sitter/elm"
 	"github.com/smacker/go-tree-sitter/golang"
+	"github.com/smacker/go-tree-sitter/groovy"
+	"github.com/smacker/go-tree-sitter/hcl"
+	"github.com/smacker/go-tree-sitter/html"
 	"github.com/smacker/go-tree-sitter/java"
 	"github.com/smacker/go-tree-sitter/javascript"
 	"github.com/smacker/go-tree-sitter/kotlin"
+	markdown "github.com/smacker/go-tree-sitter/markdown/tree-sitter-markdown"
 	"github.com/smacker/go-tree-sitter/php"
+	"github.com/smacker/go-tree-sitter/protobuf"
 	"github.com/smacker/go-tree-sitter/python"
 	"github.com/smacker/go-tree-sitter/ruby"
 	"github.com/smacker/go-tree-sitter/rust"
 	"github.com/smacker/go-tree-sitter/scala"
+	"github.com/smacker/go-tree-sitter/sql"
+	"github.com/smacker/go-tree-sitter/svelte"
+	"github.com/smacker/go-tree-sitter/swift"
+	"github.com/smacker/go-tree-sitter/toml"
 	"github.com/smacker/go-tree-sitter/typescript/tsx"
 	"github.com/smacker/go-tree-sitter/typescript/typescript"
+	"github.com/smacker/go-tree-sitter/yaml"
 
 	ctxt "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
 )
@@ -151,40 +167,81 @@ func (tsc *TreeSitterChunker) chunkNode(node *sitter.Node) []Span {
 
 	return append(chunks, curSpan)
 }
-
-// TODO expand or find a better way to do this
 func detectLanguage(filename string) *sitter.Language {
-	switch filepath.Ext(filename) {
-	case ".py":
+	lang, safe := enry.GetLanguageByExtension(path.Base(filename))
+	// TODO do we care about "safe"?
+
+	// TODO file extension preferences
+	// h: C++
+	if lang == "RenderScript" {
+		lang = "Rust"
+	} else if lang == "GCC Machine Description" {
+		lang = "Markdown"
+	} else if lang == "Hack" {
+		lang = "PHP"
+	}
+
+	fmt.Println("enry", path.Base(filename), lang, safe)
+
+	switch lang {
+	case "Python":
 		return python.GetLanguage()
-	case ".js":
+	case "Javascript", "JSX":
 		return javascript.GetLanguage()
-	case ".ts":
+	case "Typescript":
 		return typescript.GetLanguage()
-	case ".tsx":
+	case "TSX":
 		return tsx.GetLanguage()
-	case ".java":
+	case "Java":
 		return java.GetLanguage()
-	case ".scala":
+	case "Scala":
 		return scala.GetLanguage()
-	case ".kt":
+	case "Kotlin":
 		return kotlin.GetLanguage()
-	case ".c":
+	case "C":
 		return c.GetLanguage()
-	case ".cc", ".cpp", ".cxx", ".h", ".hh", ".hxx":
+	case "C++":
 		return cpp.GetLanguage()
-	case ".cs":
+	case "C#":
 		return csharp.GetLanguage()
-	case ".go":
+	case "Go":
 		return golang.GetLanguage()
-	case ".rb":
+	case "Ruby":
 		return ruby.GetLanguage()
-	case ".rs":
+	case "Rust":
 		return rust.GetLanguage()
-	case ".php":
+	case "PHP":
 		return php.GetLanguage()
-	case ".sh":
+	case "Shell":
 		return bash.GetLanguage()
+	case "Swift":
+		return swift.GetLanguage()
+	case "SQL":
+		return sql.GetLanguage()
+	case "TOML":
+		return toml.GetLanguage()
+	case "CSS":
+		return css.GetLanguage()
+	case "Dockerfile":
+		return dockerfile.GetLanguage()
+	case "Elixir":
+		return elixir.GetLanguage()
+	case "Elm":
+		return elm.GetLanguage()
+	case "Groovy":
+		return groovy.GetLanguage()
+	case "HCL":
+		return hcl.GetLanguage()
+	case "HTML":
+		return html.GetLanguage()
+	case "Markdown":
+		return markdown.GetLanguage()
+	case "Protocol Buffer":
+		return protobuf.GetLanguage()
+	case "Svelte":
+		return svelte.GetLanguage()
+	case "YAML":
+		return yaml.GetLanguage()
 	default:
 		return nil
 	}
