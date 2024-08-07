@@ -42,7 +42,6 @@ Then go to (usually) http://localhost:5173.
 
 3. Against a local Sourcegraph instance
 
-
 ```bash
 sg start enterprise-sveltekit
 ```
