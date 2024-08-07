@@ -1,0 +1,11 @@
+query ValidateSearchJob($query: String!) {
+    validateSearchJob(query: $query) {
+        alwaysNil
+    }
+}
+
+mutation CreateSearchJob($query: String!) {
+    createSearchJob(query: $query) {
+        id
+    }
+}

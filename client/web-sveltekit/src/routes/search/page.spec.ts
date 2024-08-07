@@ -1,6 +1,6 @@
 import type { ContentMatch } from '$lib/shared'
 
-import { test, expect } from '../../testing/integration'
+import { test, expect, type Page, Sourcegraph, type Locator } from '../../testing/integration'
 import {
     createDoneEvent,
     createProgressEvent,
@@ -334,5 +334,81 @@ test.describe('search filters', async () => {
 
         await page.getByRole('link', { name: 'Test snippet' }).click()
         await page.waitForURL(/Test\+snippet/)
+    })
+})
+
+test.describe('search jobs', async () => {
+    let button: Locator
+    let popover: Locator
+    let createSearchJobHeading: Locator
+    let createSearchJobButton: Locator
+
+    async function setup(page: Page, sg: Sourcegraph): Promise<void> {
+        const stream = await sg.mockSearchStream()
+        await sg.signIn()
+        await page.goto('/search?q=test')
+        await page.getByRole('heading', { name: 'Filter results' }).waitFor()
+        await stream.publish(
+            {
+                type: 'matches',
+                data: [chunkMatch],
+            },
+            createProgressEvent(),
+            createDoneEvent()
+        )
+        await stream.close()
+        await button.click()
+        await expect(popover).toBeVisible()
+    }
+
+    test.beforeEach(async ({ page }) => {
+        button = page.getByTestId('page.search-results.progress-button')
+        popover = page.getByTestId('page.search-results.progress-popover')
+        createSearchJobHeading = popover.getByRole('heading', { name: 'Create a search job' })
+        createSearchJobButton = popover.getByRole('button', { name: 'Create a search job' })
+    })
+
+    test('not visible when search jobs is disabled', async ({ page, sg }) => {
+        await sg.setWindowContext({ searchJobsEnabled: false })
+        await setup(page, sg)
+        await expect(createSearchJobHeading).toBeHidden()
+    })
+
+    test('visible when search jobs are enabled', async ({ page, sg }) => {
+        await sg.setWindowContext({ searchJobsEnabled: true })
+        await setup(page, sg)
+        await expect(createSearchJobHeading).toBeVisible()
+    })
+
+    test('shows error if query validation fails', async ({ page, sg }) => {
+        await sg.setWindowContext({ searchJobsEnabled: true })
+        sg.mockOperations({
+            ValidateSearchJob() {
+                throw new Error('Test error')
+            },
+        })
+        await setup(page, sg)
+        await expect(popover.getByText('Test error')).toBeVisible()
+        await expect(createSearchJobButton).toBeDisabled()
+    })
+
+    test('shows error if job creation fails', async ({ page, sg }) => {
+        await sg.setWindowContext({ searchJobsEnabled: true })
+        sg.mockOperations({
+            CreateSearchJob() {
+                throw new Error('Test error')
+            },
+        })
+        await setup(page, sg)
+        await createSearchJobButton.click()
+        await expect(popover.getByText('Test error')).toBeVisible()
+        await expect(createSearchJobButton).toBeEnabled()
+    })
+
+    test('redirects on job creation', async ({ page, sg }) => {
+        await sg.setWindowContext({ searchJobsEnabled: true })
+        await setup(page, sg)
+        await createSearchJobButton.click()
+        await expect(page).toHaveURL(/\/search-jobs/)
     })
 })
