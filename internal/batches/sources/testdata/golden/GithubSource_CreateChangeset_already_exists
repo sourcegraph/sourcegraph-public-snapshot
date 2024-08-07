@@ -30,13 +30,13 @@
     }
   },
   "Commits": {
-    "Nodes": null
+    "Nodes": []
   },
   "Labels": {
-    "Nodes": null
+    "Nodes": []
   },
-  "Participants": null,
-  "TimelineItems": null,
+  "Participants": [],
+  "TimelineItems": [],
   "IsDraft": false,
   "CreatedAt": "2019-11-12T06:40:21Z",
   "UpdatedAt": "2023-02-03T20:42:20Z"

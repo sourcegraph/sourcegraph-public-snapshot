@@ -998,7 +998,7 @@ func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, ba
 
 // GetOpenPullRequestByRefsReduced fetches the pull request associated with the supplied,
 // but only the fields that are required to determine if the PR is open. It does not include
-// the timeline items, participants, labels and commits.
+// the timeline items, participants, labels and commits (and returns empty lists instead).
 func (c *V4Client) GetOpenPullRequestByRefsReduced(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error) {
 	version := c.determineGitHubVersion(ctx)
 	prFragment, err := pullRequestFragmentsSimple(version)
@@ -1035,6 +1035,11 @@ func (c *V4Client) GetOpenPullRequestByRefsReduced(ctx context.Context, owner, n
 
 	node := results.Repository.PullRequests.Nodes[0]
 	pr := node.PullRequest
+	// Initialize lists that would otherwise be nil, to match downstream expectations to use the len function.
+	pr.Commits.Nodes = []CommitWithChecks{}
+	pr.Participants = []Actor{}
+	pr.TimelineItems = []TimelineItem{}
+	pr.Labels.Nodes = []Label{}
 
 	return &pr, nil
 }
