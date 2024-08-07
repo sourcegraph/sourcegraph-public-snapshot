@@ -28,6 +28,7 @@ export const NewCodySidebar: FC<NewCodySidebarProps> = props => {
     return (
         <div className={styles.root}>
             <div className={styles.header}>
+                <div />
                 <span className={styles.headerLogo}>
                     <CodyLogo />
                     Cody

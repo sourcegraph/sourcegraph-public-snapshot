@@ -4,11 +4,17 @@ import { svelteKitRoutes, type SvelteKitRoute } from './routes'
 
 let knownRoutesRegex: RegExp | undefined
 
+// Additional known routes that are not in the list of known routes provided by the server.
+// Having a separate list is error-prone and should be avoided if possible.
+const additionalKnownRoutes: string[] = [
+    // Cody's marketing page
+    '^/cody/?$',
+]
+
 function getKnownRoutesRegex(): RegExp {
     if (!knownRoutesRegex) {
-        const knownRoutes = (browser && window.context?.svelteKit?.knownRoutes) || []
-        knownRoutesRegex =
-            knownRoutes.length === 0 ? /$^/ : new RegExp(`(${window.context?.svelteKit?.knownRoutes?.join(')|(')})`)
+        const knownRoutes = additionalKnownRoutes.concat((browser && window.context?.svelteKit?.knownRoutes) || [])
+        knownRoutesRegex = knownRoutes.length === 0 ? /$^/ : new RegExp(`${knownRoutes.join('|')}`)
     }
     return knownRoutesRegex
 }

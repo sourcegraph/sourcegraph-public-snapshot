@@ -356,7 +356,7 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
         if (!validationLoading) {
             telemetryService.log('SearchJobsSearchFormShown', { validState }, { validState })
             telemetryRecorder.recordEvent('search.exhaustiveJobs', 'view', {
-                metadata: { validState: validState ? 1 : 0 },
+                metadata: { validState: validState === 'valid' ? 1 : 0 },
             })
         }
     }, [telemetryService, telemetryRecorder, validationError, validationLoading])
