@@ -11,8 +11,6 @@
     interface Capture {
         selectedTab: number | null
         historyPanel: HistoryCapture
-        exploreInputs: ExplorePanelInputs | undefined
-        // TODO: consider also capturing the file in the references panel
     }
 
     // Not ideal solution, [TODO] Improve Tabs component API in order
@@ -39,23 +37,15 @@
 </script>
 
 <script lang="ts">
-    import { onMount } from 'svelte'
-    import { get, writable } from 'svelte/store'
+    import { onMount, type ComponentProps } from 'svelte'
 
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
-    import ExplorePanel, {
-        setExplorePanelContext,
-        getUsagesStore,
-        entryIDForFilter,
-        type ExplorePanelInputs,
-        type ActiveOccurrence,
-    } from '$lib/codenav/ExplorePanel.svelte'
+    import ExplorePanel, { setExplorePanelContext, type ActiveOccurrence } from '$lib/codenav/ExplorePanel.svelte'
     import CodySidebar from '$lib/cody/CodySidebar.svelte'
     import { isErrorLike } from '$lib/common'
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import { filesHotkey } from '$lib/fuzzyfinder/keys'
-    import { getGraphQLClient } from '$lib/graphql'
     import { SymbolUsageKind } from '$lib/graphql-types'
     import Icon from '$lib/Icon.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
@@ -69,7 +59,6 @@
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
-    import { createEmptySingleSelectTreeState, type SingleSelectTreeState } from '$lib/TreeView'
     import { Alert, PanelGroup, Panel, PanelResizeHandle, Button } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
 
@@ -84,14 +73,12 @@
             return {
                 selectedTab,
                 historyPanel: historyPanel?.capture(),
-                exploreInputs: get(exploreInputs),
+                // TODO: capture explore panel
             }
         },
         restore(data) {
             selectedTab = data.selectedTab
-            if (data.exploreInputs) {
-                exploreInputs.set(data.exploreInputs)
-            }
+            // TODO: capture explore panel
             if (data.historyPanel) {
                 historyPanel?.restore(data.historyPanel)
             }
@@ -107,32 +94,18 @@
     $: ({ revision = '', parentPath, repoName, resolvedRevision, isCodyAvailable } = data)
     $: fileTreeStore.set({ repoName, revision: resolvedRevision.commitID, path: parentPath })
 
-    const exploreTreeState = writable<SingleSelectTreeState>({
-        ...createEmptySingleSelectTreeState(),
-        disableScope: true,
-    })
-    const exploreInputs = writable<ExplorePanelInputs>({})
+    let exploreProps: ComponentProps<ExplorePanel> = {}
     function openExploreTab(usageKindFilter: SymbolUsageKind, occurrence: ActiveOccurrence) {
-        exploreInputs.set({ activeOccurrence: occurrence, usageKindFilter })
         // Open the tab when we find references
         selectedTab = TabPanels.References
+        exploreProps = { activeOccurrence: occurrence, usageKindFilter }
     }
     setExplorePanelContext({
         openReferences: openExploreTab.bind(null, SymbolUsageKind.REFERENCE),
         openDefinitions: openExploreTab.bind(null, SymbolUsageKind.DEFINITION),
         openImplementations: openExploreTab.bind(null, SymbolUsageKind.IMPLEMENTATION),
     })
-    $: usagesConnection = $exploreInputs.activeOccurrence
-        ? getUsagesStore(
-              getGraphQLClient(),
-              $exploreInputs.activeOccurrence.documentInfo,
-              $exploreInputs.activeOccurrence.occurrence
-          )
-        : undefined
-    $: exploreTreeState.update(old => ({
-        ...old,
-        selected: $exploreInputs.treeFilter ? entryIDForFilter($exploreInputs.treeFilter) : '',
-    }))
+
     function selectTab(event: { detail: number | null }) {
         trackHistoryPanelTabAction(selectedTab, event.detail)
 
@@ -333,11 +306,7 @@
                         {/key}
                     </TabPanel>
                     <TabPanel title="Explore" shortcut={referenceHotkey}>
-                        <ExplorePanel
-                            inputs={exploreInputs}
-                            connection={usagesConnection}
-                            treeState={exploreTreeState}
-                        />
+                        <ExplorePanel {...exploreProps} />
                     </TabPanel>
                 </Tabs>
             </Panel>

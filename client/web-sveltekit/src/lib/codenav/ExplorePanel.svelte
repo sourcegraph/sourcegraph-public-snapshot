@@ -170,9 +170,9 @@
 
 <script lang="ts">
     import { getContext, setContext } from 'svelte'
-    import { type Writable } from 'svelte/store'
+    import { writable } from 'svelte/store'
 
-    import { infinityQuery, type GraphQLClient, type InfinityQueryStore } from '$lib/graphql'
+    import { getGraphQLClient, infinityQuery, type GraphQLClient } from '$lib/graphql'
     import { SymbolUsageKind } from '$lib/graphql-types'
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
@@ -180,7 +180,7 @@
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import LoadingSkeleton from '$lib/search/dynamicFilters/LoadingSkeleton.svelte'
     import { displayRepoName, Occurrence } from '$lib/shared'
-    import { type SingleSelectTreeState, type TreeProvider } from '$lib/TreeView'
+    import { createEmptySingleSelectTreeState, type SingleSelectTreeState, type TreeProvider } from '$lib/TreeView'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
     import type { DocumentInfo } from '$lib/web'
     import { Alert, PanelGroup } from '$lib/wildcard'
@@ -191,46 +191,53 @@
     import { ExplorePanel_Usages } from './ExplorePanel.gql'
     import ExplorePanelFileUsages from './ExplorePanelFileUsages.svelte'
 
-    export let inputs: Writable<ExplorePanelInputs>
-    export let connection: InfinityQueryStore<ExplorePanel_Usage[], ExplorePanel_UsagesVariables> | undefined
-    export let treeState: Writable<SingleSelectTreeState>
+    export let activeOccurrence: ActiveOccurrence | undefined = undefined
+    export let usageKindFilter: SymbolUsageKind | undefined = undefined
+    export let treeFilter: TreeFilter | undefined = undefined
 
-    $: setTreeContext(treeState)
+    const treeState = writable<SingleSelectTreeState>({
+        ...createEmptySingleSelectTreeState(),
+        disableScope: true,
+    })
+    $: treeState.update(old => ({
+        ...old,
+        selected: treeFilter ? entryIDForFilter(treeFilter) : '',
+    }))
+    setTreeContext(treeState)
 
     // TODO: it would be really nice if the tree API emitted select events with tree elements, not HTML elements
     function handleSelect(target: HTMLElement) {
         const selected = target.querySelector('[data-repo-name]') as HTMLElement
         const repository = selected.dataset.repoName ?? ''
         const path = selected.dataset.path
-        inputs.update(old => {
-            const deselect = old.treeFilter && old.treeFilter.repository === repository && old.treeFilter.path === path
-            return {
-                ...old,
-                treeFilter: deselect ? undefined : { repository, path },
-            }
-        })
+        const deselect = treeFilter && treeFilter.repository === repository && treeFilter.path === path
+        treeFilter = deselect ? undefined : { repository, path }
     }
+
+    $: connection = activeOccurrence
+        ? getUsagesStore(getGraphQLClient(), activeOccurrence.documentInfo, activeOccurrence.occurrence)
+        : undefined
 
     $: loading = $connection?.fetching
     $: usages = $connection?.data
-    $: kindFilteredUsages = usages?.filter(matchesUsageKind($inputs.usageKindFilter))
+    $: kindFilteredUsages = usages?.filter(matchesUsageKind(usageKindFilter))
     $: repoGroups = groupUsages(kindFilteredUsages ?? [])
     $: outlineTree = generateOutlineTree(repoGroups)
     $: displayGroups = repoGroups
         .flatMap(repoGroup => repoGroup.pathGroups.map(pathGroup => ({ repo: repoGroup.repo, ...pathGroup })))
         .filter(displayGroup => {
-            if ($inputs.treeFilter === undefined) {
+            if (treeFilter === undefined) {
                 return true
-            } else if ($inputs.treeFilter.repository !== displayGroup.repo) {
+            } else if (treeFilter.repository !== displayGroup.repo) {
                 return false
             }
-            return $inputs.treeFilter.path === undefined || $inputs.treeFilter.path === displayGroup.path
+            return treeFilter.path === undefined || treeFilter.path === displayGroup.path
         })
 
     let referencesScroller: HTMLElement | undefined
 </script>
 
-{#if $inputs.activeOccurrence === undefined}
+{#if activeOccurrence === undefined}
     <div class="no-selection">
         <Icon icon={ISgSymbols} />
         <p>Select a symbol in the code panel to view references</p>
@@ -242,11 +249,11 @@
                 <fieldset>
                     <legend hidden>Select usage kind</legend>
                     {#each Object.values(SymbolUsageKind) as usageKind}
-                        {@const checked = usageKind === $inputs.usageKindFilter}
+                        {@const checked = usageKind === usageKindFilter}
                         {@const id = `usage-kind-${usageKind}`}
                         <input
                             type="radio"
-                            bind:group={$inputs.usageKindFilter}
+                            bind:group={usageKindFilter}
                             name="usageKind"
                             value={usageKind}
                             {id}
