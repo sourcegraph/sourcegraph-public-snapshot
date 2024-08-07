@@ -431,6 +431,18 @@ func (c UsagesCursor) AdvanceCursor(nextCursor core.Option[UsagesCursor], proven
 	}
 }
 
+func InitialCursor(provenances ForEachProvenance[bool]) UsagesCursor {
+	if provenances.Precise {
+		return UsagesCursor{CursorType: CursorTypeDefinitions}
+	} else if provenances.Syntactic {
+		return UsagesCursor{CursorType: CursorTypeSyntactic}
+	} else if provenances.SearchBased {
+		return UsagesCursor{CursorType: CursorTypeSearchBased}
+	} else {
+		return UsagesCursor{CursorType: CursorTypeDone}
+	}
+}
+
 func (c UsagesCursor) Encode() string {
 	return encodeViaJSON(c)
 }
