@@ -119,6 +119,18 @@ type FetchPermsOptions struct {
 	InvalidateCaches bool `json:"invalidate_caches"`
 }
 
+type UserPermissionsFetcher interface {
+	Provider
+	FetchUserPerms(ctx context.Context, account *extsvc.Account, opts FetchPermsOptions) (*ExternalUserPermissions, error)
+}
+
+// RepoPermissionsFetcher defines a source that can fetch permissions for
+// a repository from a code host.
+type RepoPermissionsFetcher interface {
+	Provider
+	FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts FetchPermsOptions) ([]extsvc.AccountID, error)
+}
+
 // Provider defines a source of truth of which repositories a user is authorized to view. The
 // user is identified by an extsvc.Account instance. Examples of authz providers include the
 // following:
@@ -145,27 +157,6 @@ type Provider interface {
 	// The `verifiedEmails` should only contain a list of verified emails that is
 	// associated to the `user`.
 	FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, verifiedEmails []string) (mine *extsvc.Account, err error)
-
-	// FetchUserPerms returns a collection of accessible repository/project IDs (on
-	// code host) that the given account has read access on the code host. The
-	// repository/project ID should be the same value as it would be used as or
-	// prefix of api.ExternalRepoSpec.ID. The returned set should only include
-	// private repositories/project IDs.
-	//
-	// Because permissions fetching APIs are often expensive, the implementation should
-	// try to return partial but valid results in case of error, and it is up to callers
-	// to decide whether to discard.
-	FetchUserPerms(ctx context.Context, account *extsvc.Account, opts FetchPermsOptions) (*ExternalUserPermissions, error)
-
-	// FetchRepoPerms returns a list of user IDs (on code host) who have read access to
-	// the given repository/project on the code host. The user ID should be the same value
-	// as it would be used as extsvc.Account.AccountID. The returned list should
-	// include both direct access and inherited from the group/organization/team membership.
-	//
-	// Because permissions fetching APIs are often expensive, the implementation should
-	// try to return partial but valid results in case of error, and it is up to callers
-	// to decide whether to discard.
-	FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts FetchPermsOptions) ([]extsvc.AccountID, error)
 
 	// ServiceType returns the service type (e.g., "gitlab") of this authz provider.
 	ServiceType() string

@@ -282,9 +282,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			ExternalServiceURL string `json:"external_service_url"`
 		}
 
-		providers, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
-		infos := make([]providerInfo, len(providers))
-		for i, p := range providers {
+		userPermsFetchers, _, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
+		infos := make([]providerInfo, len(userPermsFetchers))
+		for i, p := range userPermsFetchers {
 			_, id := extsvc.DecodeURN(p.URN())
 
 			// Note that the ID marshalling below replicates code found in `graphqlbackend`.

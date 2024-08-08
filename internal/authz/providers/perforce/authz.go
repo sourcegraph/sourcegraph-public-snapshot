@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	atypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -32,7 +31,8 @@ func NewAuthzProviders(conns []*types.PerforceConnection) *atypes.ProviderInitRe
 			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypePerforce)
 			initResults.Problems = append(initResults.Problems, err.Error())
 		} else if p != nil {
-			initResults.Providers = append(initResults.Providers, p)
+			initResults.UserPermissionsFetchers = append(initResults.UserPermissionsFetchers, p)
+			initResults.RepoPermissionsFetchers = append(initResults.RepoPermissionsFetchers, p)
 		}
 	}
 
@@ -44,7 +44,7 @@ func newAuthzProvider(
 	a *schema.PerforceAuthorization,
 	host, user, password string,
 	depots []string,
-) (authz.Provider, error) {
+) (*Provider, error) {
 	// Call this function from ValidateAuthz if this function starts returning an error.
 	if a == nil {
 		return nil, nil

@@ -17,7 +17,7 @@ func init() {
 }
 
 func validateAuthzProviders(cfg conftypes.SiteConfigQuerier, db database.DB) (problems conf.Problems) {
-	providers, seriousProblems, warnings, _ := providers.ProvidersFromConfig(context.Background(), cfg, db)
+	ups, rps, seriousProblems, warnings, _ := providers.ProvidersFromConfig(context.Background(), cfg, db)
 	problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
 
 	// Validating the connection may make a cross service call, so we should use an
@@ -25,7 +25,12 @@ func validateAuthzProviders(cfg conftypes.SiteConfigQuerier, db database.DB) (pr
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Add connection validation issue
-	for _, p := range providers {
+	for _, p := range ups {
+		if err := p.ValidateConnection(ctx); err != nil {
+			warnings = append(warnings, fmt.Sprintf("%s provider %q: %s", p.ServiceType(), p.ServiceID(), err))
+		}
+	}
+	for _, p := range rps {
 		if err := p.ValidateConnection(ctx); err != nil {
 			warnings = append(warnings, fmt.Sprintf("%s provider %q: %s", p.ServiceType(), p.ServiceID(), err))
 		}

@@ -296,7 +296,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB, configurationSer
 	// Auth providers
 	authProviders := []authProviderInfo{} // Explicitly initialise array, otherwise it gets marshalled to null instead of []
 
-	authzProviders, _, _, _ := authzproviders.ProvidersFromConfig(ctx, conf.Get(), db)
+	ups, rps, _, _, _ := authzproviders.ProvidersFromConfig(ctx, conf.Get(), db)
 	for _, p := range providers.SortedProviders() {
 		commonConfig := providers.GetAuthProviderCommon(p)
 		if commonConfig.Hidden {
@@ -308,7 +308,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB, configurationSer
 			continue
 		}
 
-		requiredForAuthz := slices.ContainsFunc(authzProviders, func(authzProvider authz.Provider) bool {
+		upsRequiredForAuthz := slices.ContainsFunc(ups, func(authzProvider authz.UserPermissionsFetcher) bool {
+			return authzProvider.ServiceID() == info.ServiceID && authzProvider.ServiceType() == p.ConfigID().Type
+		})
+		rpsRequiredForAuthz := slices.ContainsFunc(rps, func(authzProvider authz.RepoPermissionsFetcher) bool {
 			return authzProvider.ServiceID() == info.ServiceID && authzProvider.ServiceType() == p.ConfigID().Type
 		})
 
@@ -321,7 +324,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB, configurationSer
 			AuthenticationURL: info.AuthenticationURL,
 			ServiceID:         info.ServiceID,
 			ClientID:          info.ClientID,
-			RequiredForAuthz:  requiredForAuthz,
+			RequiredForAuthz:  upsRequiredForAuthz || rpsRequiredForAuthz,
 		}
 
 		authProviders = append(authProviders, providerInfo)

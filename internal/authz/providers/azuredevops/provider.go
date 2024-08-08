@@ -63,7 +63,7 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection, htt
 		initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeAzureDevOps)
 		initResults.Problems = append(initResults.Problems, err.Error())
 	} else if p != nil {
-		initResults.Providers = append(initResults.Providers, p)
+		initResults.UserPermissionsFetchers = append(initResults.UserPermissionsFetchers, p)
 	}
 
 	return initResults
@@ -253,20 +253,6 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	return &authz.ExternalUserPermissions{
 		Exacts: extIDs,
 	}, err
-}
-
-// FetchRepoPerms remains unimplemented for Azure DevOps.
-//
-// Repo permissions syncing is a three step process with the Azure DevOps API:
-// 1. Trigger a permissions report for a specific repo
-// 2. Check the status of the permissions report (and maybe backoff and check again until the report is generated)
-// 3. Download the report and parse it to generate the permissions table
-//
-// This makes the entire process per repo fragile and cumbersome. Repo syncing could be unreliable and may not scale very well in terms of rate limits if we have to make at least three API requests per repo.
-//
-// As a result, we prefer incremental user permissions sync instead.
-func (p *Provider) FetchRepoPerms(_ context.Context, _ *extsvc.Repository, _ authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
-	return nil, authz.ErrUnimplemented{Feature: "azuredevops.FetchRepoPerms"}
 }
 
 func (p *Provider) ServiceType() string {

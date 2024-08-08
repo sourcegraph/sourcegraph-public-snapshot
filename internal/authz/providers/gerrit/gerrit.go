@@ -95,10 +95,6 @@ func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, o
 	}, nil
 }
 
-func (p Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
-	return nil, &authz.ErrUnimplemented{Feature: "gerrit.FetchRepoPerms"}
-}
-
 func (p Provider) ServiceType() string {
 	return p.codeHost.ServiceType
 }

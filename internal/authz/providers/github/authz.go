@@ -90,7 +90,8 @@ func NewAuthzProviders(
 		}
 
 		// Register this provider.
-		initResults.Providers = append(initResults.Providers, p)
+		initResults.UserPermissionsFetchers = append(initResults.UserPermissionsFetchers, p)
+		initResults.RepoPermissionsFetchers = append(initResults.RepoPermissionsFetchers, p)
 	}
 
 	return initResults

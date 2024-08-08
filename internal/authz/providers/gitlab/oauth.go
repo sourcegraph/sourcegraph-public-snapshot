@@ -125,10 +125,3 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 	client := p.clientProvider.NewClient(token)
 	return listProjects(ctx, client, p.syncInternalRepoPermissions)
 }
-
-// FetchRepoPerms is not implemented for the OAuthProvider type.
-// When the authorization type is set to OAuth, we rely on user-based permissions syncs (FetchUserPerms)
-// to handle user permissions.
-func (p *OAuthProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
-	return nil, authz.ErrUnimplemented{}
-}

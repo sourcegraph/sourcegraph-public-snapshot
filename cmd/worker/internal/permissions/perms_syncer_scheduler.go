@@ -82,8 +82,8 @@ func (p *permissionSyncJobScheduler) Routines(_ context.Context, observationCtx 
 			context.Background(),
 			goroutine.HandlerFunc(
 				func(ctx context.Context) error {
-					ps, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
-					if permissionSyncingDisabled(conf.Get(), ps) {
+					ups, rps, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
+					if permissionSyncingDisabled(conf.Get(), ups, rps) {
 						logger.Debug("scheduler disabled due to permission syncing disabled")
 						return nil
 					}
@@ -299,8 +299,8 @@ func oldestRepoPermissionsBatchSize() int {
 //   - There are no code host connections with authorization or enforcePermissions enabled
 //   - Not purchased with the current license
 //   - `disableAutoCodeHostSyncs` site setting is set to true
-func permissionSyncingDisabled(cfg conftypes.SiteConfigQuerier, providers []authz.Provider) bool {
-	return len(providers) == 0 ||
+func permissionSyncingDisabled(cfg conftypes.SiteConfigQuerier, userPermsFetchers []authz.UserPermissionsFetcher, repoPermsFetchers []authz.RepoPermissionsFetcher) bool {
+	return (len(userPermsFetchers) == 0 && len(repoPermsFetchers) == 0) ||
 		licensing.Check(licensing.FeatureACLs) != nil ||
 		cfg.SiteConfig().DisableAutoCodeHostSyncs
 }

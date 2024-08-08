@@ -29,7 +29,7 @@ func NewAuthzProviders(conns []*types.GerritConnection) *atypes.ProviderInitResu
 			initResults.Problems = append(initResults.Problems, err.Error())
 		}
 		if p != nil {
-			initResults.Providers = append(initResults.Providers, p)
+			initResults.UserPermissionsFetchers = append(initResults.UserPermissionsFetchers, p)
 		}
 	}
 	return initResults

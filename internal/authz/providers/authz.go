@@ -39,7 +39,8 @@ func ProvidersFromConfig(
 	cfg conftypes.SiteConfigQuerier,
 	db database.DB,
 ) (
-	providers []authz.Provider,
+	userPermissionsFetchers []authz.UserPermissionsFetcher,
+	repoPermissionsFetchers []authz.RepoPermissionsFetcher,
 	seriousProblems []string,
 	warnings []string,
 	invalidConnections []string,
@@ -163,7 +164,7 @@ func ProvidersFromConfig(
 	initResult.Append(gerrit.NewAuthzProviders(gerritConns))
 	initResult.Append(azuredevops.NewAuthzProviders(db, azuredevopsConns, httpcli.ExternalClient))
 
-	return initResult.Providers, initResult.Problems, initResult.Warnings, initResult.InvalidConnections
+	return initResult.UserPermissionsFetchers, initResult.RepoPermissionsFetchers, initResult.Problems, initResult.Warnings, initResult.InvalidConnections
 }
 
 var ValidateExternalServiceConfig = database.MakeValidateExternalServiceConfigFunc(

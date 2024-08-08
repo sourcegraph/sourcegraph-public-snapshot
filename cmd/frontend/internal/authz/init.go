@@ -69,7 +69,7 @@ func Init(
 			return nil
 		}
 
-		_, _, _, invalidConnections := providers.ProvidersFromConfig(ctx, conf.Get(), db)
+		_, _, _, _, invalidConnections := providers.ProvidersFromConfig(ctx, conf.Get(), db)
 
 		authzTypes := map[string]struct{}{}
 		for _, conn := range invalidConnections {

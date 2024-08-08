@@ -61,6 +61,10 @@ type permsSyncerImpl struct {
 	permsStore database.PermsStore
 	// Can be overwritten for testing purposes.
 	providerFactory func(context.Context) []authz.Provider
+
+	userPermsFetcherFactory func(context.Context) []authz.UserPermissionsFetcher
+
+	repoPermsFetcherFactory func(context.Context) []authz.RepoPermissionsFetcher
 }
 
 // newPermsSyncer returns a new permissions syncer.
@@ -77,9 +81,13 @@ func newPermsSyncer(
 		reposStore: reposStore,
 		permsStore: permsStore,
 		clock:      clock,
-		providerFactory: func(ctx context.Context) []authz.Provider {
-			ps, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
-			return ps
+		userPermsFetcherFactory: func(ctx context.Context) []authz.UserPermissionsFetcher {
+			ups, _, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
+			return ups
+		},
+		repoPermsFetcherFactory: func(ctx context.Context) []authz.RepoPermissionsFetcher {
+			_, rps, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
+			return rps
 		},
 	}
 }
@@ -98,13 +106,13 @@ func (s *permsSyncerImpl) syncRepoPerms(ctx context.Context, repoID api.RepoID, 
 		}
 		return result, providerStates, errors.Wrap(err, "get repository")
 	}
-	var provider authz.Provider
+	var provider authz.RepoPermissionsFetcher
 
 	// Only check authz provider for private repositories because we only need to
 	// fetch permissions for private repositories.
 	if repo.Private {
 		// Loop over repository's sources and see if matching any authz provider's URN.
-		providers := s.providersByURNs(ctx)
+		providers := s.repoPermsFetchersByURNs(ctx)
 		for urn := range repo.Sources {
 			p, ok := providers[urn]
 			if ok {
@@ -356,11 +364,38 @@ func (s *permsSyncerImpl) providersByServiceID(ctx context.Context) map[string]a
 	return providers
 }
 
+func (s *permsSyncerImpl) userPermsFetchersByServiceID(ctx context.Context) map[string]authz.UserPermissionsFetcher {
+	ps := s.userPermsFetcherFactory(ctx)
+	providers := make(map[string]authz.UserPermissionsFetcher, len(ps))
+	for _, p := range ps {
+		providers[p.ServiceID()] = p
+	}
+	return providers
+}
+
+func (s *permsSyncerImpl) repoPermsFetchersByServiceID(ctx context.Context) map[string]authz.RepoPermissionsFetcher {
+	ps := s.repoPermsFetcherFactory(ctx)
+	providers := make(map[string]authz.RepoPermissionsFetcher, len(ps))
+	for _, p := range ps {
+		providers[p.ServiceID()] = p
+	}
+	return providers
+}
+
 // providersByURNs returns a list of authz.Provider configured in the external services.
 // Keys are URN, e.g. "extsvc:github:1".
 func (s *permsSyncerImpl) providersByURNs(ctx context.Context) map[string]authz.Provider {
 	ps := s.providerFactory(ctx)
 	providers := make(map[string]authz.Provider, len(ps))
+	for _, p := range ps {
+		providers[p.URN()] = p
+	}
+	return providers
+}
+
+func (s *permsSyncerImpl) repoPermsFetchersByURNs(ctx context.Context) map[string]authz.RepoPermissionsFetcher {
+	ps := s.repoPermsFetcherFactory(ctx)
+	providers := make(map[string]authz.RepoPermissionsFetcher, len(ps))
 	for _, p := range ps {
 		providers[p.URN()] = p
 	}
@@ -464,7 +499,7 @@ func (s *permsSyncerImpl) fetchUserPermsViaExternalAccounts(ctx context.Context,
 		emails[i] = userEmails[i].Email
 	}
 
-	byServiceID := s.providersByServiceID(ctx)
+	byServiceID := s.userPermsFetchersByServiceID(ctx)
 	accounts := s.db.UserExternalAccounts()
 	logger := s.logger.Scoped("fetchUserPermsViaExternalAccounts").With(log.Int32("userID", user.ID))
 

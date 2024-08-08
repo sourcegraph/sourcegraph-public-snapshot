@@ -50,12 +50,18 @@ func NewAuthzProviders(
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
 		pluginPerm := c.Plugin != nil && c.Plugin.Permissions == "enabled"
-		p, err := newAuthzProvider(db, c, pluginPerm)
+		up, rp, err := newAuthzProvider(db, c, pluginPerm)
 		if err != nil {
 			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeBitbucketServer)
 			initResults.Problems = append(initResults.Problems, err.Error())
-		} else if p != nil {
-			initResults.Providers = append(initResults.Providers, p)
+			continue
+		}
+
+		if up != nil {
+			initResults.UserPermissionsFetchers = append(initResults.UserPermissionsFetchers, up)
+		}
+		if rp != nil {
+			initResults.RepoPermissionsFetchers = append(initResults.RepoPermissionsFetchers, rp)
 		}
 	}
 
@@ -66,28 +72,30 @@ func newAuthzProvider(
 	db database.DB,
 	c *types.BitbucketServerConnection,
 	pluginPerm bool,
-) (authz.Provider, error) {
+) (authz.UserPermissionsFetcher, authz.RepoPermissionsFetcher, error) {
 	if c.Authorization == nil {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	if err := licensing.Check(licensing.FeatureACLs); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	cli, err := bitbucketserver.NewClient(c.URN, c.BitbucketServerConnection, nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if c.Authorization.Oauth2 {
-		return NewOAuthProvider(db, c, ProviderOptions{BitbucketServerClient: cli}, pluginPerm), nil
+		p := NewOAuthProvider(db, c, ProviderOptions{BitbucketServerClient: cli}, pluginPerm)
+		return p, p, nil
 	} else {
 		switch idp := c.Authorization.IdentityProvider; {
 		case idp.Username != nil:
-			return NewProvider(cli, c.URN, pluginPerm), nil
+			p := NewProvider(cli, c.URN, pluginPerm)
+			return p, p, nil
 		default:
-			return nil, errors.Errorf("No identityProvider was specified")
+			return nil, nil, errors.Errorf("No identityProvider was specified")
 		}
 	}
 }
@@ -95,6 +103,6 @@ func newAuthzProvider(
 // ValidateAuthz validates the authorization fields of the given BitbucketServer external
 // service config.
 func ValidateAuthz(c *schema.BitbucketServerConnection) error {
-	_, err := newAuthzProvider(nil, &types.BitbucketServerConnection{BitbucketServerConnection: c}, false)
+	_, _, err := newAuthzProvider(nil, &types.BitbucketServerConnection{BitbucketServerConnection: c}, false)
 	return err
 }

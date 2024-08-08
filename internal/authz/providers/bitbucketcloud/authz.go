@@ -3,7 +3,6 @@ package bitbucketcloud
 import (
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	atypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -34,7 +33,8 @@ func NewAuthzProviders(db database.DB, conns []*types.BitbucketCloudConnection) 
 			continue
 		}
 
-		initResults.Providers = append(initResults.Providers, p)
+		initResults.UserPermissionsFetchers = append(initResults.UserPermissionsFetchers, p)
+		initResults.RepoPermissionsFetchers = append(initResults.RepoPermissionsFetchers, p)
 	}
 
 	return initResults
@@ -43,7 +43,7 @@ func NewAuthzProviders(db database.DB, conns []*types.BitbucketCloudConnection) 
 func newAuthzProvider(
 	db database.DB,
 	c *types.BitbucketCloudConnection,
-) (authz.Provider, error) {
+) (*Provider, error) {
 	// If authorization is not set for this connection, we do not need an
 	// authz provider.
 	if c.Authorization == nil {
