@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -191,10 +190,9 @@ func TestHandler(t *testing.T) {
 		},
 	}
 
-	ctx := tenant.TestContext()
 	for label, testCase := range testCases {
 		t.Run(label, func(t *testing.T) {
-			resultSymbols, limitHit, err := client.Search(ctx, testCase.args)
+			resultSymbols, limitHit, err := client.Search(context.Background(), testCase.args)
 
 			// Sort to ensure consistent comparisons
 			sort.Slice(resultSymbols, func(i, j int) bool {

@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -47,7 +46,7 @@ func TestPrepareZip(t *testing.T) {
 	for range 10 {
 		go func() {
 			<-startPrepareZip
-			_, err := s.PrepareZip(tenant.TestContext(), wantRepo, wantCommit, nil)
+			_, err := s.PrepareZip(context.Background(), wantRepo, wantCommit, nil)
 			prepareZipErr <- err
 		}()
 	}
@@ -81,7 +80,7 @@ func TestPrepareZip(t *testing.T) {
 	if !onDisk {
 		t.Fatal("timed out waiting for items to appear in cache at", s.Path)
 	}
-	_, err := s.PrepareZip(tenant.TestContext(), wantRepo, wantCommit, nil)
+	_, err := s.PrepareZip(context.Background(), wantRepo, wantCommit, nil)
 	if err != nil {
 		t.Fatal("expected PrepareZip to succeed:", err)
 	}
@@ -93,7 +92,7 @@ func TestPrepareZip_fetchTarFail(t *testing.T) {
 	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
 		return nil, fetchErr
 	}
-	_, err := s.PrepareZip(tenant.TestContext(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", nil)
+	_, err := s.PrepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", nil)
 	if !errors.Is(err, fetchErr) {
 		t.Fatalf("expected PrepareZip to fail with %v, failed with %v", fetchErr, err)
 	}
@@ -107,7 +106,7 @@ func TestPrepareZip_fetchTarReaderErr(t *testing.T) {
 		w.CloseWithError(fetchErr)
 		return r, nil
 	}
-	_, err := s.PrepareZip(tenant.TestContext(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", nil)
+	_, err := s.PrepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", nil)
 	if !errors.Is(err, fetchErr) {
 		t.Fatalf("expected PrepareZip to fail with %v, failed with %v", fetchErr, err)
 	}
@@ -126,7 +125,7 @@ func TestPrepareZip_errHeader(t *testing.T) {
 		}
 		return io.NopCloser(bytes.NewReader(buf.Bytes())), nil
 	}
-	_, err := s.PrepareZip(tenant.TestContext(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", nil)
+	_, err := s.PrepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", nil)
 	if have, want := errors.Cause(err).Error(), tar.ErrHeader.Error(); have != want {
 		t.Fatalf("expected PrepareZip to fail with tar.ErrHeader, failed with %v", err)
 	}

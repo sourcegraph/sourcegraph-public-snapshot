@@ -150,7 +150,6 @@ go_test(
         "//internal/search/backend",
         "//internal/searcher/protocol",
         "//internal/searcher/v1:searcher",
-        "//internal/tenant",
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",
         "@com_github_grafana_regexp//:regexp",

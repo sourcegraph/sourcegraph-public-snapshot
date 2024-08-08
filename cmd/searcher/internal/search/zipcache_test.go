@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 // TestZipCacheDelete ensures that zip cache deletion is correctly hooked up to cache eviction.
@@ -20,7 +19,7 @@ func TestZipCacheDelete(t *testing.T) {
 	}
 
 	// Grab a zip.
-	path, err := s.PrepareZip(tenant.TestContext(), "somerepo", "0123456789012345678901234567890123456789", nil)
+	path, err := s.PrepareZip(context.Background(), "somerepo", "0123456789012345678901234567890123456789", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

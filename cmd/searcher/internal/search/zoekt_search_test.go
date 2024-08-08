@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,7 +27,7 @@ func (mc *mockClient) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.S
 }
 
 func Test_zoektSearch(t *testing.T) {
-	ctx := tenant.TestContext()
+	ctx := context.Background()
 
 	// Create a mock client that will send a few files worth of matches
 	client := &mockClient{

@@ -2,6 +2,7 @@ package search
 
 import (
 	"archive/tar"
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 func TestMatcherLookupByLanguage(t *testing.T) {
@@ -68,7 +68,7 @@ func foo(go string) {}
 				pattern := "foo(:[args])"
 				includePatterns := []string{"file_without_extension"}
 
-				ctx, cancel, sender := newLimitedStreamCollector(tenant.TestContext(), 100000000)
+				ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 100000000)
 				defer cancel()
 				err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(includePatterns), "", pattern, "", tt.Languages, "repo_foo", 0, sender)
 				if err != nil {
@@ -122,7 +122,7 @@ func foo(go.txt) {}
 		}
 
 		extensionHint := filepath.Ext(filename)
-		ctx, cancel, sender := newLimitedStreamCollector(tenant.TestContext(), 1000000000)
+		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
 		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), all, extensionHint, "foo(:[args])", "", languages, "repo_foo", 0, sender)
 		if err != nil {
@@ -211,7 +211,7 @@ func foo(real string) {}
 		},
 		Limit: 30,
 	}
-	ctx, cancel, sender := newLimitedStreamCollector(tenant.TestContext(), 1000000000)
+	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 	defer cancel()
 	err = filteredStructuralSearch(ctx, logtest.Scoped(t), zPath, zFile, p, "foo", sender, 0)
 	if err != nil {
@@ -308,7 +308,7 @@ func TestIncludePatterns(t *testing.T) {
 	includePatterns := []string{"a/b/c/foo.go", "bar.go"}
 	pattern := ""
 
-	ctx, cancel, sender := newLimitedStreamCollector(tenant.TestContext(), 1000000000)
+	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 	defer cancel()
 	err = structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(includePatterns), "", pattern, "", nil, "foo", 0, sender)
 	if err != nil {
@@ -343,7 +343,7 @@ func TestRule(t *testing.T) {
 	includePatterns := []string{".go"}
 	combyRule := `where :[args] == "success"`
 
-	ctx, cancel, sender := newLimitedStreamCollector(tenant.TestContext(), 1000000000)
+	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 	defer cancel()
 	err = structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(includePatterns), "", pattern, combyRule, nil, "repo", 0, sender)
 	if err != nil {
@@ -408,7 +408,7 @@ func bar() {
 
 	test := func(limit, wantCount int, pattern string) func(t *testing.T) {
 		return func(t *testing.T) {
-			ctx, cancel, sender := newLimitedStreamCollector(tenant.TestContext(), limit)
+			ctx, cancel, sender := newLimitedStreamCollector(context.Background(), limit)
 			defer cancel()
 			err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), nil, "", pattern, "", nil, "repo_foo", 0, sender)
 			require.NoError(t, err)
@@ -447,7 +447,7 @@ func bar() {
 	zf := tempZipFileOnDisk(t, zipData)
 
 	t.Run("Strutural search match count", func(t *testing.T) {
-		ctx, cancel, sender := newLimitedStreamCollector(tenant.TestContext(), 1000000000)
+		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
 
 		pattern := "{:[body]}"
@@ -488,7 +488,7 @@ func bar() {
 	zf := tempZipFileOnDisk(t, zipData)
 
 	t.Run("Strutural search match count", func(t *testing.T) {
-		ctx, cancel, sender := newLimitedStreamCollector(tenant.TestContext(), 1000000000)
+		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
 
 		pattern := "{:[body]}"
@@ -558,7 +558,7 @@ func bar() {
 	close(tarInputEventC)
 
 	t.Run("Structural search tar input to comby", func(t *testing.T) {
-		ctx, cancel, sender := newLimitedStreamCollector(tenant.TestContext(), 1000000000)
+		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
 
 		pattern := "{:[body]}"

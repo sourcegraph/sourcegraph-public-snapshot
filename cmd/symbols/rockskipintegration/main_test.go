@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"testing"
@@ -25,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -42,7 +42,7 @@ func TestRockskipIntegration(t *testing.T) {
 		),
 	})
 
-	ctx := tenant.TestContext()
+	ctx := context.Background()
 	observationCtx := observation.TestContextTB(t)
 
 	// Verify gitserver cloned correctly:

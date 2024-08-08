@@ -6,15 +6,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"github.com/sourcegraph/sourcegraph/internal/tenant"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestConvertToGRPCError(t *testing.T) {
-	expiredContext, done := context.WithDeadline(tenant.TestContext(), time.Now().Add(-time.Minute))
+	expiredContext, done := context.WithDeadline(context.Background(), time.Now().Add(-time.Minute))
 	t.Cleanup(func() {
 		done()
 	})
@@ -30,7 +28,7 @@ func TestConvertToGRPCError(t *testing.T) {
 		{
 			name: "nil error",
 
-			ctx: tenant.TestContext(),
+			ctx: context.Background(),
 			err: nil,
 
 			want: nil,
@@ -38,7 +36,7 @@ func TestConvertToGRPCError(t *testing.T) {
 		{
 			name: "existing status error",
 
-			ctx: tenant.TestContext(),
+			ctx: context.Background(),
 			err: status.Error(codes.InvalidArgument, "invalid"),
 
 			want: status.Error(codes.InvalidArgument, "invalid"),
@@ -54,7 +52,7 @@ func TestConvertToGRPCError(t *testing.T) {
 		{
 			name: "unknown error",
 
-			ctx: tenant.TestContext(),
+			ctx: context.Background(),
 			err: errors.New("unknown"),
 
 			want: status.Error(codes.Unknown, "unknown"),
@@ -62,7 +60,7 @@ func TestConvertToGRPCError(t *testing.T) {
 		{
 			name: "killed error",
 
-			ctx: tenant.TestContext(),
+			ctx: context.Background(),
 			err: errors.New("failed to wait for executing comby command: signal: killed"),
 
 			want: status.Error(codes.Aborted, "failed to wait for executing comby command: signal: killed"),
