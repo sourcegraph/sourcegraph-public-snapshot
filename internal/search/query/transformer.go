@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -684,6 +685,14 @@ func ToBasicQuery(nodes []Node) (Basic, error) {
 func ExperimentalPhraseBoost(originalQuery string, basic Basic) Basic {
 	if basic.Pattern == nil {
 		return basic
+	}
+
+	// Only apply the ranking boost for text searches. The other search backends
+	// (for example repo or diff search) cannot handle it effectively.
+	for _, param := range basic.Parameters {
+		if param.Field == FieldType && !(param.Value == result.TypeFile.String() || param.Value == result.TypePath.String()) {
+			return basic
+		}
 	}
 
 	// Check if the pattern is a single top-level AND expression with no negated or regexp clauses.
