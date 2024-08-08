@@ -74,6 +74,7 @@ go_library(
         "//internal/service",
         "//internal/symbols",
         "//internal/sysreq",
+        "//internal/tenant",
         "//internal/trace",
         "//internal/types",
         "//internal/updatecheck",

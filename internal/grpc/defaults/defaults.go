@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/retry"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
@@ -78,6 +79,7 @@ func defaultDialOptions(logger log.Logger, creds credentials.TransportCredential
 	out := []grpc.DialOption{
 		grpc.WithTransportCredentials(creds),
 		grpc.WithChainStreamInterceptor(
+			propagator.StreamClientPropagator(tenant.TenantPropagator{}),
 			propagator.StreamClientPropagator(actor.ActorPropagator{}),
 			propagator.StreamClientPropagator(policy.ShouldTracePropagator{}),
 			propagator.StreamClientPropagator(requestclient.Propagator{}),
@@ -91,6 +93,7 @@ func defaultDialOptions(logger log.Logger, creds credentials.TransportCredential
 			contextconv.StreamClientInterceptor,
 		),
 		grpc.WithChainUnaryInterceptor(
+			propagator.UnaryClientPropagator(tenant.TenantPropagator{}),
 			propagator.UnaryClientPropagator(actor.ActorPropagator{}),
 			propagator.UnaryClientPropagator(policy.ShouldTracePropagator{}),
 			propagator.UnaryClientPropagator(requestclient.Propagator{}),
@@ -179,6 +182,7 @@ func buildServerOptions(logger log.Logger, opts serverOptions) []grpc.ServerOpti
 			messagesize.StreamServerInterceptor,
 			propagator.StreamServerPropagator(requestclient.Propagator{}),
 			propagator.StreamServerPropagator(requestinteraction.Propagator{}),
+			propagator.StreamServerPropagator(tenant.TenantPropagator{}),
 			propagator.StreamServerPropagator(actor.ActorPropagator{}),
 			propagator.StreamServerPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.StreamServerInterceptor(otelOpts...), //lint:ignore SA1019 the advertised replacement doesn't seem to be a drop-in replacement, use deprecated mechanism for now
@@ -191,6 +195,7 @@ func buildServerOptions(logger log.Logger, opts serverOptions) []grpc.ServerOpti
 			messagesize.UnaryServerInterceptor,
 			propagator.UnaryServerPropagator(requestclient.Propagator{}),
 			propagator.UnaryServerPropagator(requestinteraction.Propagator{}),
+			propagator.UnaryServerPropagator(tenant.TenantPropagator{}),
 			propagator.UnaryServerPropagator(actor.ActorPropagator{}),
 			propagator.UnaryServerPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.UnaryServerInterceptor(otelOpts...), //lint:ignore SA1019 the advertised replacement doesn't seem to be a drop-in replacement, use deprecated mechanism for now

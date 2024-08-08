@@ -19,7 +19,7 @@ type Propagator interface {
 	// InjectContext takes a context and some metadata and creates a new context
 	// with the information from the metadata injected into the context.
 	// This will be called on the server side of an RPC.
-	InjectContext(context.Context, metadata.MD) context.Context
+	InjectContext(context.Context, metadata.MD) (context.Context, error)
 }
 
 // StreamClientPropagator returns an interceptor that will use the given propagator
@@ -79,7 +79,11 @@ func StreamServerPropagator(prop Propagator) grpc.StreamServerInterceptor {
 		ctx := ss.Context()
 		md, ok := metadata.FromIncomingContext(ctx)
 		if ok {
-			ctx = prop.InjectContext(ss.Context(), md)
+			var err error
+			ctx, err = prop.InjectContext(ss.Context(), md)
+			if err != nil {
+				return err
+			}
 			ss = contextedServerStream{ss, ctx}
 		}
 		return handler(srv, ss)
@@ -98,7 +102,10 @@ func UnaryServerPropagator(prop Propagator) grpc.UnaryServerInterceptor {
 	) (resp interface{}, err error) {
 		md, ok := metadata.FromIncomingContext(ctx)
 		if ok {
-			ctx = prop.InjectContext(ctx, md)
+			ctx, err = prop.InjectContext(ctx, md)
+			if err != nil {
+				return nil, err
+			}
 		}
 		return handler(ctx, req)
 	}
