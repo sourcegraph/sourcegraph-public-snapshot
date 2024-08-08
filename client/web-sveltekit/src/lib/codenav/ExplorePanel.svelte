@@ -145,13 +145,10 @@
                         .map(([_name, entry]) => entry.entry)
                         .toSorted((a, b) => {
                             if (a.type !== b.type) {
-                                if (a.type === 'dir') {
-                                    return -1
-                                } else {
-                                    return 1
-                                }
+                                const typeRanks = { repo: 0, dir: 1, file: 2 }
+                                return typeRanks[a.type] < typeRanks[b.type] ? -1 : 1
                             }
-                            // TODO: finish this
+                            return a.name < b.name ? -1 : 1
                         })
                 },
                 isExpandable(entry) {
