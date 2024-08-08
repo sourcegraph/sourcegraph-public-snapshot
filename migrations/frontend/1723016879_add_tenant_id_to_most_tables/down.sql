@@ -2,18 +2,10 @@
 CREATE OR REPLACE FUNCTION migrate_table(table_name text)
 RETURNS void AS $$
 BEGIN
-    -- todo: non nullable column?
-    EXECUTE format('
-        ALTER TABLE %I DROP COLUMN IF EXISTS tenant_id;
-        ALTER TABLE %I DISABLE ROW LEVEL SECURITY;
-        DROP POLICY IF EXISTS %I_isolation_policy ON %I;
-        ALTER TABLE %I NO FORCE ROW LEVEL SECURITY;',
-        table_name, table_name, table_name, table_name
-    );
+    EXECUTE format('ALTER TABLE %I DROP COLUMN IF EXISTS tenant_id;', table_name);
 END;
 $$ LANGUAGE plpgsql;
 
--- TODO: Those might all need to run in separate transactions, as pending triggers can fail here.
 SELECT migrate_table('access_requests');
 SELECT migrate_table('access_tokens');
 SELECT migrate_table('aggregated_user_statistics');
@@ -64,7 +56,6 @@ SELECT migrate_table('codeowners_owners');
 SELECT migrate_table('commit_authors');
 SELECT migrate_table('configuration_policies_audit_logs');
 SELECT migrate_table('context_detection_embedding_jobs');
--- SELECT migrate_table('critical_and_site_config');
 SELECT migrate_table('discussion_comments');
 SELECT migrate_table('discussion_mail_reply_tokens');
 SELECT migrate_table('discussion_threads');
@@ -144,6 +135,7 @@ SELECT migrate_table('permissions');
 SELECT migrate_table('phabricator_repos');
 SELECT migrate_table('product_licenses');
 SELECT migrate_table('product_subscriptions');
+SELECT migrate_table('prompts');
 SELECT migrate_table('query_runner_state');
 SELECT migrate_table('redis_key_value');
 SELECT migrate_table('registry_extension_releases');
@@ -184,8 +176,6 @@ SELECT migrate_table('user_public_repos');
 SELECT migrate_table('user_repo_permissions');
 SELECT migrate_table('user_roles');
 SELECT migrate_table('users');
--- TODO: This one is global I believe and part of migrator?
--- SELECT migrate_table('versions');
 SELECT migrate_table('vulnerabilities');
 SELECT migrate_table('vulnerability_affected_packages');
 SELECT migrate_table('vulnerability_affected_symbols');
