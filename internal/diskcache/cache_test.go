@@ -16,7 +16,6 @@ import (
 )
 
 func TestOpen(t *testing.T) {
-	ctx := tenant.TestContext()
 	dir := t.TempDir()
 
 	store := &store{
@@ -28,7 +27,7 @@ func TestOpen(t *testing.T) {
 	do := func() (*File, bool) {
 		want := "foobar"
 		calledFetcher := false
-		f, err := store.Open(ctx, []string{"key"}, func(ctx context.Context) (io.ReadCloser, error) {
+		f, err := store.Open(context.Background(), []string{"key"}, func(ctx context.Context) (io.ReadCloser, error) {
 			calledFetcher = true
 			return io.NopCloser(bytes.NewReader([]byte(want))), nil
 		})
@@ -67,7 +66,6 @@ func TestOpen(t *testing.T) {
 }
 
 func TestMultiKeyEviction(t *testing.T) {
-	ctx := tenant.TestContext()
 	dir := t.TempDir()
 
 	store := &store{
@@ -76,7 +74,7 @@ func TestMultiKeyEviction(t *testing.T) {
 		observe:   newOperations(observation.TestContextTB(t), "test"),
 	}
 
-	f, err := store.Open(ctx, []string{"key1", "key2"}, func(ctx context.Context) (io.ReadCloser, error) {
+	f, err := store.Open(context.Background(), []string{"key1", "key2"}, func(ctx context.Context) (io.ReadCloser, error) {
 		return io.NopCloser(bytes.NewReader([]byte("blah"))), nil
 	})
 	if err != nil {
@@ -93,7 +91,7 @@ func TestMultiKeyEviction(t *testing.T) {
 	}
 }
 
-func TestMultiTenantEvict(t *testing.T) {
+func TestEvict(t *testing.T) {
 	dir := t.TempDir()
 
 	store := &store{
@@ -102,33 +100,15 @@ func TestMultiTenantEvict(t *testing.T) {
 		observe:   newOperations(observation.TestContextTB(t), "test"),
 	}
 
-	for _, tenantKey := range []struct {
-		tenantID int
-		key      string
-	}{
-		{
-			tenantID: 1,
-			key:      "key-first",
-		},
-		{
-			tenantID: 1,
-			key:      "key-second",
-		},
-		{
-			tenantID: 2,
-			key:      "key-third",
-		},
-		{
-			tenantID: 2,
-			key:      "key-fourth",
-		},
-		{
-			key: "not-managed.txt",
-		},
+	for _, name := range []string{
+		"key-first",
+		"key-second",
+		"not-managed.txt",
+		"key-third",
+		"key-fourth",
 	} {
-		if strings.HasPrefix(tenantKey.key, "key-") {
-			ctx := tenant.TestContextWithID(tenantKey.tenantID)
-			f, err := store.Open(ctx, []string{tenantKey.key}, func(ctx context.Context) (io.ReadCloser, error) {
+		if strings.HasPrefix(name, "key-") {
+			f, err := store.Open(context.Background(), []string{name}, func(ctx context.Context) (io.ReadCloser, error) {
 				return io.NopCloser(bytes.NewReader([]byte("x"))), nil
 			})
 			if err != nil {
@@ -136,7 +116,7 @@ func TestMultiTenantEvict(t *testing.T) {
 			}
 			f.Close()
 		} else {
-			if err := os.WriteFile(filepath.Join(dir, tenantKey.key), []byte("x"), 0o600); err != nil {
+			if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0o600); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -181,6 +161,7 @@ func TestMultiTenantEvict(t *testing.T) {
 
 func TestTenantRequired(t *testing.T) {
 	dir := t.TempDir()
+	tenant.MockEnforceTenant(t)
 
 	store := &store{
 		dir:       dir,
@@ -197,9 +178,11 @@ func TestTenantRequired(t *testing.T) {
 }
 
 func TestTenantsHaveSeparateDirs(t *testing.T) {
-	ctx1 := tenant.TestContextWithID(1)
-	ctx2 := tenant.TestContextWithID(2)
 	dir := t.TempDir()
+	tenant.MockEnforceTenant(t)
+
+	ctx1 := tenant.NewTestContext()
+	ctx2 := tenant.NewTestContext()
 
 	store := &store{
 		dir:       dir,

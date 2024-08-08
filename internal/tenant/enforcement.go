@@ -1,6 +1,10 @@
 package tenant
 
-import "github.com/sourcegraph/sourcegraph/internal/env"
+import (
+	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/env"
+)
 
 var enforcementMode = env.Get("SRC_TENANT_ENFORCEMENT_MODE", "disabled", "INTERNAL: enforcement mode for tenant isolation. Valid values: disabled, logging, strict")
 
@@ -28,4 +32,13 @@ func EnforceTenant() bool {
 	default:
 		return false
 	}
+}
+
+// MockEnforceTenant sets the tenant enforcement mode to strict for the duration
+// of the test. It automatically resets the enforcement mode to its previous
+// value after the test.
+func MockEnforceTenant(t *testing.T) {
+	old := enforcementMode
+	enforcementMode = "strict"
+	t.Cleanup(func() { enforcementMode = old })
 }

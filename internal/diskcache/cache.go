@@ -202,14 +202,23 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 	}
 }
 
-// path returns the path for key. It requires a context to get the tenant ID.
+// path returns the path for key.
 func (s *store) path(ctx context.Context, key []string) (string, error) {
+	if !tenant.EnforceTenant() {
+		return s.pathNoTenant(key)
+	}
+
 	// 🚨SECURITY: We use the tenant ID as part of the path for tenant isolation.
 	tnt, ok := tenant.FromContext(ctx)
 	if !ok {
-		return "", errors.New("no tenant in context")
+		return "", tenant.ErrNoTenantInContext
 	}
 	encoded := append([]string{s.dir, "tenants", strconv.Itoa(tnt.ID())}, EncodeKeyComponents(key)...)
+	return filepath.Join(encoded...) + ".zip", nil
+}
+
+func (s *store) pathNoTenant(key []string) (string, error) {
+	encoded := append([]string{s.dir}, EncodeKeyComponents(key)...)
 	return filepath.Join(encoded...) + ".zip", nil
 }
 
