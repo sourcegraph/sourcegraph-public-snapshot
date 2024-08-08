@@ -1,14 +1,25 @@
+import type { PartialMessage } from '@bufbuild/protobuf'
 import type { ConnectError, Transport } from '@connectrpc/connect'
-import { createQueryOptions, defaultOptions } from '@connectrpc/connect-query'
+import { defaultOptions, useMutation, useQuery } from '@connectrpc/connect-query'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { QueryClient, type UseQueryResult, useQuery } from '@tanstack/react-query'
+import { QueryClient, type UseMutationResult, type UseQueryResult } from '@tanstack/react-query'
 
-import { getCodyGatewayUsage } from './enterpriseportalgen/codyaccess-CodyAccessService_connectquery'
-import type { GetCodyGatewayUsageResponse } from './enterpriseportalgen/codyaccess_pb'
+import {
+    getCodyGatewayAccess,
+    getCodyGatewayUsage,
+    updateCodyGatewayAccess,
+} from './enterpriseportalgen/codyaccess-CodyAccessService_connectquery'
+import type {
+    GetCodyGatewayAccessResponse,
+    GetCodyGatewayUsageResponse,
+    UpdateCodyGatewayAccessRequest,
+    UpdateCodyGatewayAccessResponse,
+} from './enterpriseportalgen/codyaccess_pb'
 
 /**
- * Use a shared QueryClient defined here and explicitly provided to react-query
- * for now to avoid bleading the QueryClientProvider to the site admin parent.
+ * Use a shared QueryClient defined here and explicitly provided via
+ * QueryClientProvider on only the components that need it, to avoid bleading
+ * the QueryClientProvider to the site admin parent for now.
  *
  * Another problem is that @robert was unable to get QueryClientProvider working
  * even when placing it at various points the the tree.
@@ -17,7 +28,7 @@ import type { GetCodyGatewayUsageResponse } from './enterpriseportalgen/codyacce
  * Portal gets its own dedicated UI:
  * https://linear.app/sourcegraph/project/kr-p-enterprise-portal-user-interface-dadd5ff28bd8
  */
-const queryClient = new QueryClient({ defaultOptions })
+export const queryClient = new QueryClient({ defaultOptions })
 
 /**
  * Use proxy that routes to a locally running Enterprise Portal at localhost:6081
@@ -86,13 +97,36 @@ export function useGetCodyGatewayUsage(
     subscriptionUUID: string
 ): UseQueryResult<GetCodyGatewayUsageResponse, ConnectError> {
     return useQuery(
-        createQueryOptions(
-            getCodyGatewayUsage,
-            {
-                query: { value: subscriptionUUID, case: 'subscriptionId' },
-            },
-            { transport: mustGetEnvironment(env) }
-        ),
-        queryClient
+        getCodyGatewayUsage,
+        {
+            query: { value: subscriptionUUID, case: 'subscriptionId' },
+        },
+        { transport: mustGetEnvironment(env) }
     )
+}
+
+export function useGetCodyGatewayAccess(
+    env: EnterprisePortalEnvironment,
+    subscriptionUUID: string
+): UseQueryResult<GetCodyGatewayAccessResponse, ConnectError> {
+    return useQuery(
+        getCodyGatewayAccess,
+        {
+            query: { value: subscriptionUUID, case: 'subscriptionId' },
+        },
+        { transport: mustGetEnvironment(env) }
+    )
+}
+
+export function useUpdateCodyGatewayAccess(
+    env: EnterprisePortalEnvironment
+): UseMutationResult<
+    UpdateCodyGatewayAccessResponse,
+    ConnectError,
+    PartialMessage<UpdateCodyGatewayAccessRequest>,
+    unknown
+> {
+    return useMutation(updateCodyGatewayAccess, {
+        transport: mustGetEnvironment(env),
+    })
 }

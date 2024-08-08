@@ -12,7 +12,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/codyaccess"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
@@ -34,9 +33,8 @@ type Importer struct {
 
 	dotcom *dotcomdb.Reader
 
-	subscriptions     *subscriptions.Store
-	licenses          *subscriptions.LicensesStore
-	codyGatewayAccess *codyaccess.CodyGatewayStore
+	subscriptions *subscriptions.Store
+	licenses      *subscriptions.LicensesStore
 
 	tryAcquireFn func(context.Context) (acquired bool, release func(), _ error)
 }
@@ -49,12 +47,11 @@ func NewHandler(
 	tryAcquireFn func(context.Context) (acquired bool, release func(), _ error),
 ) *Importer {
 	return &Importer{
-		logger:            logger,
-		dotcom:            dotcom,
-		subscriptions:     enterprisePortal.Subscriptions(),
-		licenses:          enterprisePortal.Subscriptions().Licenses(),
-		codyGatewayAccess: enterprisePortal.CodyAccess().CodyGateway(),
-		tryAcquireFn:      tryAcquireFn,
+		logger:        logger,
+		dotcom:        dotcom,
+		subscriptions: enterprisePortal.Subscriptions(),
+		licenses:      enterprisePortal.Subscriptions().Licenses(),
+		tryAcquireFn:  tryAcquireFn,
 	}
 }
 
@@ -261,29 +258,6 @@ func (i *Importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 		if err := i.importLicense(ctx, dotcomSub.ID, dotcomLicense); err != nil {
 			return errors.Wrap(err, "import license")
 		}
-	}
-
-	// Import Cody Gateway access configured for this subscription
-	dotcomCGAccess, err := i.dotcom.GetCodyGatewayAccessAttributesBySubscription(ctx, dotcomSub.ID)
-	if err != nil {
-		if errors.Is(err, dotcomdb.ErrCodyGatewayAccessNotFound) {
-			return nil // nothing to do
-		}
-		return errors.Wrap(err, "dotcom: get cody gateway access")
-	}
-	if _, err := i.codyGatewayAccess.Upsert(ctx, dotcomSub.ID, codyaccess.UpsertCodyGatewayAccessOptions{
-		Enabled: pointers.Ptr(dotcomCGAccess.CodyGatewayEnabled),
-
-		ChatCompletionsRateLimit:                nullInt64IfValid(dotcomCGAccess.ChatCompletionsRateLimit),
-		ChatCompletionsRateLimitIntervalSeconds: nullInt32IfValid(dotcomCGAccess.ChatCompletionsRateSeconds),
-
-		CodeCompletionsRateLimit:                nullInt64IfValid(dotcomCGAccess.CodeCompletionsRateLimit),
-		CodeCompletionsRateLimitIntervalSeconds: nullInt32IfValid(dotcomCGAccess.CodeCompletionsRateSeconds),
-
-		EmbeddingsRateLimit:                nullInt64IfValid(dotcomCGAccess.EmbeddingsRateLimit),
-		EmbeddingsRateLimitIntervalSeconds: nullInt32IfValid(dotcomCGAccess.EmbeddingsRateSeconds),
-	}); err != nil {
-		return errors.Wrap(err, "upsert cody gateway access")
 	}
 
 	return nil
