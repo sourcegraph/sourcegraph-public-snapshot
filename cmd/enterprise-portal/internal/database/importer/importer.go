@@ -274,19 +274,33 @@ func (i *Importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 	if _, err := i.codyGatewayAccess.Upsert(ctx, dotcomSub.ID, codyaccess.UpsertCodyGatewayAccessOptions{
 		Enabled: pointers.Ptr(dotcomCGAccess.CodyGatewayEnabled),
 
-		ChatCompletionsRateLimit:                dotcomCGAccess.ChatCompletionsRateLimit,
-		ChatCompletionsRateLimitIntervalSeconds: dotcomCGAccess.ChatCompletionsRateSeconds,
+		ChatCompletionsRateLimit:                nullInt64IfValid(dotcomCGAccess.ChatCompletionsRateLimit),
+		ChatCompletionsRateLimitIntervalSeconds: nullInt32IfValid(dotcomCGAccess.ChatCompletionsRateSeconds),
 
-		CodeCompletionsRateLimit:                dotcomCGAccess.CodeCompletionsRateLimit,
-		CodeCompletionsRateLimitIntervalSeconds: dotcomCGAccess.CodeCompletionsRateSeconds,
+		CodeCompletionsRateLimit:                nullInt64IfValid(dotcomCGAccess.CodeCompletionsRateLimit),
+		CodeCompletionsRateLimitIntervalSeconds: nullInt32IfValid(dotcomCGAccess.CodeCompletionsRateSeconds),
 
-		EmbeddingsRateLimit:                dotcomCGAccess.EmbeddingsRateLimit,
-		EmbeddingsRateLimitIntervalSeconds: dotcomCGAccess.EmbeddingsRateSeconds,
+		EmbeddingsRateLimit:                nullInt64IfValid(dotcomCGAccess.EmbeddingsRateLimit),
+		EmbeddingsRateLimitIntervalSeconds: nullInt32IfValid(dotcomCGAccess.EmbeddingsRateSeconds),
 	}); err != nil {
 		return errors.Wrap(err, "upsert cody gateway access")
 	}
 
 	return nil
+}
+
+func nullInt64IfValid(v *int64) *sql.NullInt64 {
+	if v == nil {
+		return nil
+	}
+	return database.NewNullInt64(*v)
+}
+
+func nullInt32IfValid(v *int32) *sql.NullInt32 {
+	if v == nil {
+		return nil
+	}
+	return database.NewNullInt32(*v)
 }
 
 func (i *Importer) importLicense(ctx context.Context, subscriptionID string, dotcomLicense *dotcomdb.LicenseAttributes) (err error) {
