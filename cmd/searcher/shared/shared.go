@@ -73,13 +73,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	// Explicitly don't scope Store logger under the parent logger
 	storeObservationCtx := observation.NewContext(log.Scoped("Store"))
 	store := &search.Store{
-		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-			return git.ArchiveReader(ctx, repo, gitserver.ArchiveOptions{
-				Treeish: string(commit),
-				Format:  gitserver.ArchiveFormatTar,
-			})
-		},
-		FetchTarPaths: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
+		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
 			return git.ArchiveReader(ctx, repo, gitserver.ArchiveOptions{
 				Treeish: string(commit),
 				Format:  gitserver.ArchiveFormatTar,
