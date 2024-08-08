@@ -34,7 +34,10 @@ func newTestHandlerV1() *testHandlerV1 {
 		&sams.IntrospectTokenResponse{
 			Active: true,
 			Scopes: scopes.Scopes{
-				samsm2m.EnterprisePortalScope(scopes.PermissionEnterprisePortalCodyAccess, scopes.ActionRead),
+				samsm2m.EnterprisePortalScope(
+					scopes.PermissionEnterprisePortalCodyAccess, scopes.ActionRead),
+				samsm2m.EnterprisePortalScope(
+					scopes.PermissionEnterprisePortalCodyAccess, scopes.ActionWrite),
 			},
 		},
 		nil,

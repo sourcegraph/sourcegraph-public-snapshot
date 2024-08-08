@@ -61,7 +61,8 @@ func (s *HandlerV1) GetCodyGatewayAccess(ctx context.Context, req *connect.Reque
 		With(log.String("queryType", fmt.Sprintf("%T", req.Msg.GetQuery())))
 
 	// 🚨 SECURITY: Require approrpiate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("codyaccess", scopes.ActionRead)
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalCodyAccess, scopes.ActionRead)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -105,7 +106,8 @@ func (s *HandlerV1) ListCodyGatewayAccesses(ctx context.Context, req *connect.Re
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require approrpiate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("codyaccess", scopes.ActionRead)
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalCodyAccess, scopes.ActionRead)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -148,7 +150,8 @@ func (s *HandlerV1) UpdateCodyGatewayAccess(ctx context.Context, req *connect.Re
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require approrpiate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("codyaccess", scopes.ActionRead)
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalCodyAccess, scopes.ActionWrite)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -272,7 +275,8 @@ func (s *HandlerV1) GetCodyGatewayUsage(ctx context.Context, req *connect.Reques
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("codyaccess", scopes.ActionRead)
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalCodyAccess, scopes.ActionRead)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
