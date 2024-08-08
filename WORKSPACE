@@ -28,30 +28,30 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "aspect_bazel_lib",
-    sha256 = "6d758a8f646ecee7a3e294fbe4386daafbe0e5966723009c290d493f227c390b",
-    strip_prefix = "bazel-lib-2.7.7",
-    url = "https://github.com/aspect-build/bazel-lib/releases/download/v2.7.7/bazel-lib-v2.7.7.tar.gz",
+    sha256 = "c780120ab99a4ca9daac69911eb06434b297214743ee7e0a1f1298353ef686db",
+    strip_prefix = "bazel-lib-2.7.9",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v2.7.9/bazel-lib-v2.7.9.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_js",
-    sha256 = "3bad4ab669d4d38d0d137275b946a46ce6f8f17fecc6c7affba64966a9054246",
-    strip_prefix = "rules_js-2.0.0-rc5",
-    url = "https://github.com/aspect-build/rules_js/releases/download/v2.0.0-rc5/rules_js-v2.0.0-rc5.tar.gz",
+    sha256 = "f8536470864c91f91c83aea91de9a27607ca5e6d8a9fcdd56132cf422c6b7b56",
+    strip_prefix = "rules_js-2.0.0-rc9",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v2.0.0-rc9/rules_js-v2.0.0-rc9.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_ts",
-    sha256 = "3ea5cdb825d5dbffe286b3d9c5197a2648cf04b5e6bd8b913a45823cdf0ae960",
-    strip_prefix = "rules_ts-3.0.0-rc0",
-    url = "https://github.com/aspect-build/rules_ts/releases/download/v3.0.0-rc0/rules_ts-v3.0.0-rc0.tar.gz",
+    sha256 = "1d745fd7a5ffdb5bb7c0b77b36b91409a5933c0cbe25af32b05d90e26b7d14a7",
+    strip_prefix = "rules_ts-3.0.0-rc2",
+    url = "https://github.com/aspect-build/rules_ts/releases/download/v3.0.0-rc2/rules_ts-v3.0.0-rc2.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_swc",
-    sha256 = "c085647585c3d01bee3966eb9ba433a1efbb0ee79bb1b8c67882a81d82a9b37f",
-    strip_prefix = "rules_swc-2.0.0-rc0",
-    url = "https://github.com/aspect-build/rules_swc/releases/download/v2.0.0-rc0/rules_swc-v2.0.0-rc0.tar.gz",
+    sha256 = "0c2e8912725a1d97a37bb751777c9846783758f5a0a8e996f1b9d21cad42e839",
+    strip_prefix = "rules_swc-2.0.0-rc1",
+    url = "https://github.com/aspect-build/rules_swc/releases/download/v2.0.0-rc1/rules_swc-v2.0.0-rc1.tar.gz",
 )
 
 http_archive(
