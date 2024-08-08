@@ -10,8 +10,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
@@ -31,13 +31,17 @@ import (
 const testCommit = "deadbeef01deadbeef02deadbeef03deadbeef04"
 
 func TestHandleEnqueueAuth(t *testing.T) {
-	setupRepoMocks(t)
-
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	repoStore := backend.NewRepos(logger, db, gitserver.NewMockClient())
 	mockDBStore := NewMockDBStore[uploads.UploadMetadata]()
 	mockUploadStore := objectmocks.NewMockStorage()
+	gitserverClient := gitserver.NewMockClient()
+	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		if commit != testCommit {
+			t.Errorf("unexpected commit. want=%s have=%s", testCommit, commit)
+		}
+		return "", nil
+	})
 
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
@@ -45,6 +49,8 @@ func TestHandleEnqueueAuth(t *testing.T) {
 		},
 	})
 	t.Cleanup(func() { conf.Mock(nil) })
+
+	require.NoError(t, db.Repos().Create(context.Background(), &types.Repo{Name: "github.com/test/test"}))
 
 	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(tx uploadhandler.DBStore[uploads.UploadMetadata]) error) error {
 		return f(mockDBStore)
@@ -118,13 +124,14 @@ func TestHandleEnqueueAuth(t *testing.T) {
 		auth.AuthMiddleware(
 			newHandler(
 				observation.TestContextTB(t),
-				repoStore,
+				db.Repos(),
+				gitserverClient,
 				mockUploadStore,
 				mockDBStore,
 				uploadhandler.NewOperations(observation.TestContextTB(t), "test"),
 			),
 			db.Users(),
-			repoStore,
+			db.Repos(),
 			authValidators,
 			newOperations(observation.TestContextTB(t)).authMiddleware,
 		).ServeHTTP(w, r)
@@ -132,27 +139,6 @@ func TestHandleEnqueueAuth(t *testing.T) {
 		if w.Code != user.statusCode {
 			t.Errorf("unexpected status code for user %s. want=%d have=%d", user.name, user.statusCode, w.Code)
 		}
-	}
-}
-
-func setupRepoMocks(t testing.TB) {
-	t.Cleanup(func() {
-		backend.Mocks.Repos.GetByName = nil
-		backend.Mocks.Repos.ResolveRev = nil
-	})
-
-	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-		if name != "github.com/test/test" {
-			t.Errorf("unexpected repository name. want=%s have=%s", "github.com/test/test", name)
-		}
-		return &types.Repo{ID: 50}, nil
-	}
-
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
-		if rev != testCommit {
-			t.Errorf("unexpected commit. want=%s have=%s", testCommit, rev)
-		}
-		return "", nil
 	}
 }
 

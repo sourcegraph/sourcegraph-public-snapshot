@@ -56,7 +56,6 @@ go_test(
     embed = [":processor"],
     tags = [TAG_PLATFORM_GRAPH],
     deps = [
-        "//cmd/frontend/backend",
         "//internal/api",
         "//internal/codeintel/codegraph",
         "//internal/codeintel/codegraph/codegraphmocks",

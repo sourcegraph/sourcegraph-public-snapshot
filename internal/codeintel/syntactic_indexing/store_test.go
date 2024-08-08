@@ -30,10 +30,9 @@ func TestSyntacticIndexingStoreDequeue(t *testing.T) {
 		schema/implementation drift.
 	*/
 	observationContext := observation.TestContextTB(t)
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(observationContext.Logger, sqlDB)
+	db := database.NewDB(observationContext.Logger, dbtest.NewDB(t))
 
-	jobStore, err := jobstore.NewStoreWithDB(observationContext, sqlDB)
+	jobStore, err := jobstore.NewStoreWithDB(observationContext, db)
 	require.NoError(t, err, "unexpected error creating dbworker stores")
 	store := jobStore.DBWorkerStore()
 
@@ -117,11 +116,10 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 		are valid from the point of view of the DB worker interface
 	*/
 	observationContext := observation.TestContextTB(t)
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(observationContext.Logger, sqlDB)
+	db := database.NewDB(observationContext.Logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
-	jobStore, err := jobstore.NewStoreWithDB(observationContext, sqlDB)
+	jobStore, err := jobstore.NewStoreWithDB(observationContext, db)
 	require.NoError(t, err, "unexpected error creating dbworker stores")
 	store := jobStore.DBWorkerStore()
 

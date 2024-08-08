@@ -36,12 +36,12 @@ func (job *syntacticIndexingSchedulerJob) Config() []env.Config {
 }
 
 func (job *syntacticIndexingSchedulerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	frontendDB, err := workerdb.InitRawDB(observationCtx)
+	frontendDB, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	codeintelDB, err := codeinteldb.InitRawDB(observationCtx)
+	codeintelDB, err := codeinteldb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
