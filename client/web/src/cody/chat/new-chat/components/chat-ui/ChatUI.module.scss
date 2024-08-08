@@ -79,7 +79,8 @@
     [cmdk-root] a {
         background-color: transparent;
         color: var(--body-color);
-        padding: 2px 4px;
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
+        padding: 0.125rem 0.25rem;
 
         &:hover {
             color: #181b26;
