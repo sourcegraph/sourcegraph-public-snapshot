@@ -36,7 +36,6 @@ import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { CodeMirrorEditor } from '../../cody/components/CodeMirrorEditor'
 import { useCodySidebar } from '../../cody/sidebar/Provider'
-import { useCodyIgnore } from '../../cody/useCodyIgnore'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type { ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { requestGraphQLAdapter } from '../../platform/context'
@@ -337,7 +336,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         useMemo(() => EditorView.darkTheme.of(!isLightTheme), [isLightTheme])
     )
 
-    const { isFileIgnored } = useCodyIgnore()
     const extensions = useMemo(
         () => [
             staticExtensions,
