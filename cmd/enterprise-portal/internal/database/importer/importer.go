@@ -291,14 +291,14 @@ func (i *Importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 
 func nullInt64IfValid(v *int64) *sql.NullInt64 {
 	if v == nil {
-		return nil
+		return &sql.NullInt64{}
 	}
 	return database.NewNullInt64(*v)
 }
 
 func nullInt32IfValid(v *int32) *sql.NullInt32 {
 	if v == nil {
-		return nil
+		return &sql.NullInt32{}
 	}
 	return database.NewNullInt32(*v)
 }
