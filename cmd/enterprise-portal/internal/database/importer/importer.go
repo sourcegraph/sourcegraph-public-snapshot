@@ -29,7 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-type importer struct {
+type Importer struct {
 	logger log.Logger
 
 	dotcom *dotcomdb.Reader
@@ -41,14 +41,31 @@ type importer struct {
 	tryAcquireFn func(context.Context) (acquired bool, release func(), _ error)
 }
 
-var _ goroutine.Handler = (*importer)(nil)
+func NewHandler(
+	ctx context.Context,
+	logger log.Logger,
+	dotcom *dotcomdb.Reader,
+	enterprisePortal *database.DB,
+	tryAcquireFn func(context.Context) (acquired bool, release func(), _ error),
+) *Importer {
+	return &Importer{
+		logger:            logger,
+		dotcom:            dotcom,
+		subscriptions:     enterprisePortal.Subscriptions(),
+		licenses:          enterprisePortal.Subscriptions().Licenses(),
+		codyGatewayAccess: enterprisePortal.CodyAccess().CodyGateway(),
+		tryAcquireFn:      tryAcquireFn,
+	}
+}
 
-// New returns a periodic goroutine that runs an importer that reconciles
-// subscriptions, licenses, and Cody Gateway access from dotcom into the
-// Enterprise Portal database.
+var _ goroutine.Handler = (*Importer)(nil)
+
+// NewPeriodicImporter returns a periodic goroutine that runs an importer that
+// reconciles subscriptions, licenses, and Cody Gateway access from dotcom into
+// the Enterprise Portal database.
 //
 // If interval is 0, the importer is disabled.
-func New(
+func NewPeriodicImporter(
 	ctx context.Context,
 	logger log.Logger,
 	dotcom *dotcomdb.Reader,
@@ -62,13 +79,8 @@ func New(
 	}
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
-		&importer{
-			logger:            logger,
-			dotcom:            dotcom,
-			subscriptions:     enterprisePortal.Subscriptions(),
-			licenses:          enterprisePortal.Subscriptions().Licenses(),
-			codyGatewayAccess: enterprisePortal.CodyAccess().CodyGateway(),
-			tryAcquireFn: func(ctx context.Context) (acquired bool, release func(), _ error) {
+		NewHandler(ctx, logger, dotcom, enterprisePortal,
+			func(ctx context.Context) (acquired bool, release func(), _ error) {
 				if interval <= time.Second {
 					return true, func() {}, nil
 				}
@@ -81,8 +93,7 @@ func New(
 					fmt.Sprintf("enterpriseportal.dotcomimporter.%d", int(interval.Seconds())),
 					// Ensure lock is free by the time the next interval occurs
 					interval-time.Second)
-			},
-		},
+			}),
 		goroutine.WithOperation(
 			observation.NewContext(logger, observation.Tracer(trace.GetTracer())).
 				Operation(observation.Op{
@@ -92,7 +103,7 @@ func New(
 		goroutine.WithInterval(interval))
 }
 
-func (i *importer) Handle(ctx context.Context) (err error) {
+func (i *Importer) Handle(ctx context.Context) (err error) {
 	if i.tryAcquireFn != nil {
 		acquired, release, err := i.tryAcquireFn(ctx)
 		if err != nil {
@@ -116,7 +127,7 @@ func (i *importer) Handle(ctx context.Context) (err error) {
 	return i.ImportSubscriptions(cloudsql.WithoutTrace(ctx))
 }
 
-func (i *importer) ImportSubscriptions(ctx context.Context) error {
+func (i *Importer) ImportSubscriptions(ctx context.Context) error {
 	l := trace.Logger(ctx, i.logger)
 
 	dotcomSubscriptions, err := i.dotcom.ListEnterpriseSubscriptions(ctx, dotcomdb.ListEnterpriseSubscriptionsOptions{})
@@ -145,7 +156,7 @@ func (i *importer) ImportSubscriptions(ctx context.Context) error {
 	return nil
 }
 
-func (i *importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.SubscriptionAttributes) (err error) {
+func (i *Importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.SubscriptionAttributes) (err error) {
 	tr, ctx := trace.New(ctx, "importSubscription",
 		attribute.String("dotcomSub.ID", dotcomSub.ID))
 	defer tr.EndWithErr(&err)
@@ -278,7 +289,7 @@ func (i *importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 	return nil
 }
 
-func (i *importer) importLicense(ctx context.Context, subscriptionID string, dotcomLicense *dotcomdb.LicenseAttributes) (err error) {
+func (i *Importer) importLicense(ctx context.Context, subscriptionID string, dotcomLicense *dotcomdb.LicenseAttributes) (err error) {
 	tr, ctx := trace.New(ctx, "importLicense",
 		attribute.String("dotcomSub.ID", subscriptionID),
 		attribute.String("dotcomLicense.ID", dotcomLicense.ID))

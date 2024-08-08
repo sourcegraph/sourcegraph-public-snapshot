@@ -16,9 +16,12 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables/custommigrator"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
+
+func Tables(_ *testing.T) []schema.Tabler { return tables.All() }
 
 // NewTestDB creates a new test database and initializes the given list of
 // tables for the suite. The test database is dropped after testing is completed
@@ -37,6 +40,7 @@ func NewTestDB(t testing.TB, system, suite string, tables ...schema.Tabler) *pgx
 
 	// Set up test suite database.
 	dbName := fmt.Sprintf("sourcegraph-test-%s-%s-%d", system, suite, time.Now().Unix())
+	t.Logf("Preparing database %s", dbName)
 	_, err = sqlDB.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %q", dbName))
 	require.NoError(t, err)
 
