@@ -10,6 +10,7 @@ import (
 	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -206,7 +207,7 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 func (s *store) path(ctx context.Context, key []string) (string, error) {
 	if tenant.ShouldLogNoTenant() {
 		if _, ok := tenant.FromContext(ctx); !ok {
-			log.Printf("diskcache.store.path: no tenant in context")
+			log.Printf("diskcache: no tenant in context:\n%s\n", captureStackTrace())
 		}
 	}
 	if !tenant.EnforceTenant() {
@@ -432,4 +433,16 @@ func fsync(path string) error {
 		err = err1
 	}
 	return err
+}
+
+func captureStackTrace() string {
+	// Allocate a large enough buffer to capture the stack trace
+	buf := make([]byte, 1024)
+	for {
+		n := runtime.Stack(buf, false)
+		if n < len(buf) {
+			return string(buf[:n])
+		}
+		buf = make([]byte, len(buf)*2)
+	}
 }
