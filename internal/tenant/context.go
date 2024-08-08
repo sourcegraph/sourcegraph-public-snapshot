@@ -3,6 +3,8 @@ package tenant
 import (
 	"context"
 
+	"go.uber.org/atomic"
+
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -10,6 +12,8 @@ import (
 type contextKey int
 
 const tenantKey contextKey = iota
+
+var ErrNoTenantInContext = errors.New("no tenant in context")
 
 // FromContext returns the tenant from a given context, or ok=false when no tenant
 // is set in the passed context.
@@ -54,4 +58,15 @@ func TestContext() context.Context {
 		panic("only call this function in tests")
 	}
 	return withTenant(context.Background(), 1)
+}
+
+var tenantCounter atomic.Int64
+
+// NewTestContext is like TestContext, but it will return a context with a new
+// tenant every time.
+func NewTestContext() context.Context {
+	if !testutil.IsTest {
+		panic("only call this function in tests")
+	}
+	return withTenant(context.Background(), int(tenantCounter.Inc()))
 }
