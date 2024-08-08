@@ -49,6 +49,21 @@ type legacyModelRef struct {
 	serverSideConfig *types.ServerSideModelConfig
 }
 
+// convertLegacyModelNameToModelID returns the ID that should be used for a model name
+// defined in the "completions" site config.
+//
+// When sending LLM models to the client, it expects to see the exact value specified in the site
+// configuration. So the client sees the model **name**. However, internally, this Sourcegraph
+// instance converts the site configuration into a modelconfigSDK.ModelConfigruation, which may
+// have a slightly different model **ID** from model name.
+//
+// When converting older-style completions config, we just keep these identical for 99.9% of
+// cases. (No need to differ.) But we need to have model IDs adhear to naming rules. So we
+// need to sanitize the results.
+func convertLegacyModelNameToModelID(model string) string {
+	return modelconfig.SanitizeResourceName(model)
+}
+
 // parseLegacyModelRef takes a reference to a model from the site configuration in the "legacy format",
 // and infers all the surrounding data. e.g. "claude-instant", "openai/gpt-4o".
 func parseLegacyModelRef(
@@ -83,7 +98,7 @@ func parseLegacyModelRef(
 		// The model ID may contain colons or other invalid characters. So we strip those out here,
 		// so that the Model's mref is valid.
 		// But the model NAME remains unchanged. As that's what is sent to AWS.
-		modelID = modelconfig.SanitizeResourceName(bedrockModelRef.Model)
+		modelID = convertLegacyModelNameToModelID(bedrockModelRef.Model)
 		modelName = bedrockModelRef.Model
 
 		if bedrockModelRef.ProvisionedCapacity != nil {
@@ -122,7 +137,7 @@ func parseLegacyModelRef(
 			modelID = modelNameFromConfig[kind]
 		}
 		// Finally, sanitize the user-supplied model ID to ensure it is valid.
-		modelID = modelconfig.SanitizeResourceName(modelID)
+		modelID = convertLegacyModelNameToModelID(modelID)
 
 	default:
 		// No other processing is needed.

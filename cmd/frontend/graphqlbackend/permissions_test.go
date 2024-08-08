@@ -33,7 +33,7 @@ func TestPermissionsResolver(t *testing.T) {
 	adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
 	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
 
-	s, err := NewSchemaWithoutResolvers(db)
+	s, err := NewSchemaWithoutResolvers(db, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,7 +144,7 @@ func TestUserPermissionsListing(t *testing.T) {
 	adminUserID := createTestUser(t, db, true).ID
 	adminActorCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
 
-	s, err := NewSchemaWithoutResolvers(db)
+	s, err := NewSchemaWithoutResolvers(db, nil)
 	require.NoError(t, err)
 
 	// create a new role

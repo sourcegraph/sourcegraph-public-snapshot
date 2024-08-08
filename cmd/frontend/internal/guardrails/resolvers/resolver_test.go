@@ -28,7 +28,7 @@ func (s *fakeAttributionService) SnippetAttribution(ctx context.Context, snippet
 func TestSuccessfulAttribution(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	attributionService := &fakeAttributionService{}
-	schema, err := graphqlbackend.NewSchema(db, nil, []graphqlbackend.OptionalResolver{
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, []graphqlbackend.OptionalResolver{
 		{GuardrailsResolver: NewGuardrailsResolver(attributionService)}})
 	require.NoError(t, err)
 	t.Run("search performed", func(t *testing.T) {

@@ -501,7 +501,7 @@ load("//dev:schema_migrations.bzl", "schema_migrations")
 
 schema_migrations(
     name = "schemas_migrations",
-    updated_at = "2024-07-10 23:24",
+    updated_at = "2024-08-07 19:10",
 )
 
 # wolfi images setup ================================

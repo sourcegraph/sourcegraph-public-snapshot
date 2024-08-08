@@ -5,8 +5,6 @@ import * as esbuild from 'esbuild'
 
 /**
  * chunkCleaner is a small plugin that removes the 'chunks' directory when the build starts from the configured `outDir` if it exists
- *
- * NOTE: This is a bandage, long term solution: https://linear.app/sourcegraph/issue/DINF-115
  **/
 const chunkCleaner: esbuild.Plugin = {
     name: 'chunkCleaner',

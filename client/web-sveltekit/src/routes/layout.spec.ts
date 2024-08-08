@@ -10,16 +10,8 @@ test('has sign in button', async ({ page }) => {
     await expect(page).toHaveURL('/sign-in')
 })
 
-test('has experimental opt out popover', async ({ sg, page }) => {
-    sg.signIn({ username: 'test' })
-
-    await page.goto('/')
-    await page.getByText('Experimental').click()
-    await expect(page.getByText('opt out')).toBeVisible()
-})
-
 test('has user menu', async ({ sg, page }) => {
-    sg.signIn({ username: 'test' })
+    await sg.signIn({ username: 'test' })
     const userMenu = page.getByLabel('Open user menu')
 
     await page.goto('/')
@@ -72,7 +64,7 @@ test.describe('cody top level navigation', () => {
             await sg.setWindowContext(context)
 
             if (signedIn) {
-                sg.signIn({ username: 'test' })
+                await sg.signIn({ username: 'test' })
             }
 
             await page.goto('/')

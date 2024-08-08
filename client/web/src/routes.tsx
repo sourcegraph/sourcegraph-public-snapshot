@@ -299,6 +299,7 @@ export const routes: RouteObject[] = [
                         sideBarGroups={props.siteAdminSideBarGroups}
                         overviewComponents={props.siteAdminOverviewComponents}
                         codeInsightsEnabled={window.context.codeInsightsEnabled}
+                        applianceUpdateTarget={window.context.applianceUpdateTarget}
                         telemetryRecorder={props.platformContext.telemetryRecorder}
                     />
                 )}

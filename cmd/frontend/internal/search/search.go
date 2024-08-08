@@ -134,7 +134,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 	if err != nil {
 		var queryErr *client.QueryError
 		if errors.As(err, &queryErr) {
-			eventWriter.Alert(search.AlertForQuery(queryErr.Query, queryErr.Err))
+			eventWriter.Alert(search.AlertForQuery(queryErr.Err))
 			return nil
 		} else {
 			return err
@@ -201,7 +201,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 	}()
 
 	if err != nil && errors.HasType[*query.UnsupportedError](err) {
-		eventWriter.Alert(search.AlertForQuery(inputs.OriginalQuery, err))
+		eventWriter.Alert(search.AlertForQuery(err))
 		err = nil
 	}
 	if alert != nil {

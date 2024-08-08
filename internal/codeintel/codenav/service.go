@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	searcher "github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -32,7 +31,7 @@ import (
 )
 
 type Service struct {
-	repoStore    database.RepoStore
+	repoStore    minimalRepoStore
 	lsifstore    lsifstore.LsifStore
 	gitserver    gitserver.Client
 	uploadSvc    UploadService
@@ -41,9 +40,18 @@ type Service struct {
 	logger       log.Logger
 }
 
+// minimalRepoStore covers the subset of database.RepoStore APIs that we need
+// for code navigation.
+//
+// Prefer calling GetReposSetByIDs instead of calling Get in a loop.
+type minimalRepoStore interface {
+	Get(context.Context, api.RepoID) (*types.Repo, error)
+	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
+}
+
 func newService(
 	observationCtx *observation.Context,
-	repoStore database.RepoStore,
+	repoStore minimalRepoStore,
 	lsifstore lsifstore.LsifStore,
 	uploadSvc UploadService,
 	gitserver gitserver.Client,
@@ -107,7 +115,7 @@ func (s *Service) GetHover(ctx context.Context, args PositionalRequestArgs, requ
 		}
 
 		// Adjust the highlighted range back to the appropriate range in the target commit
-		_, adjustedRange, _, err := s.getSourceRange(ctx,
+		_, adjustedRange, success, err := s.getSourceRange(ctx,
 			args.RequestArgs, requestState,
 			cachedUploads[i].RepositoryID, cachedUploads[i].Commit,
 			args.Path, rn)
@@ -118,8 +126,10 @@ func (s *Service) GetHover(ctx context.Context, args PositionalRequestArgs, requ
 			// Text attached to source range
 			return text, adjustedRange, true, nil
 		}
+		if success {
+			adjustedRanges = append(adjustedRanges, adjustedRange)
 
-		adjustedRanges = append(adjustedRanges, adjustedRange)
+		}
 	}
 
 	// The Slow path:
@@ -632,12 +642,13 @@ func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, re
 			// FIXME: change this at it expects an empty uploadsshared.CompletedUpload{}
 			cu := requestState.GetCacheUploadsAtIndex(i)
 			// Adjust the highlighted range back to the appropriate range in the target commit
-			_, adjustedRange, _, err := s.getSourceRange(ctx, args.RequestArgs, requestState, cu.RepositoryID, cu.Commit, args.Path, rn)
+			_, adjustedRange, success, err := s.getSourceRange(ctx, args.RequestArgs, requestState, cu.RepositoryID, cu.Commit, args.Path, rn)
 			if err != nil {
 				return nil, err
 			}
-
-			adjustedRanges = append(adjustedRanges, adjustedRange)
+			if success {
+				adjustedRanges = append(adjustedRanges, adjustedRange)
+			}
 		}
 	}
 	trace.AddEvent("TODO Domain Owner", attribute.Int("numRanges", len(adjustedRanges)))
@@ -1129,7 +1140,9 @@ func (s SyntacticMatch) GetSurroundingContent() string {
 }
 
 type SyntacticUsagesResult struct {
-	Matches []SyntacticMatch
+	Matches                 []SyntacticMatch
+	PreviousSyntacticSearch PreviousSyntacticSearch
+	NextCursor              core.Option[UsagesCursor]
 }
 
 type UsagesForSymbolArgs struct {
@@ -1143,7 +1156,7 @@ func (s *Service) SyntacticUsages(
 	ctx context.Context,
 	gitTreeTranslator GitTreeTranslator,
 	args UsagesForSymbolArgs,
-) (SyntacticUsagesResult, PreviousSyntacticSearch, *SyntacticUsagesError) {
+) (SyntacticUsagesResult, *SyntacticUsagesError) {
 	// The `nil` in the second argument is here, because `With` does not work with custom error types.
 	ctx, trace, endObservation := s.operations.syntacticUsages.With(ctx, nil, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoId", int(args.Repo.ID)),
@@ -1155,7 +1168,7 @@ func (s *Service) SyntacticUsages(
 
 	upload, err := s.getSyntacticUpload(ctx, trace, args)
 	if err != nil {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, err
+		return SyntacticUsagesResult{}, err
 	}
 	index := NewMappedIndexFromTranslator(s.lsifstore, gitTreeTranslator, upload, args.Commit)
 	return syntacticUsagesImpl(ctx, trace, s.searchClient, index, args)
@@ -1205,12 +1218,17 @@ func languageFromFilepath(trace observation.TraceLogger, path core.RepoRelPath) 
 	return langs[0], nil
 }
 
+type SearchBasedUsagesResult struct {
+	Matches    []SearchBasedMatch
+	NextCursor core.Option[UsagesCursor]
+}
+
 func (s *Service) SearchBasedUsages(
 	ctx context.Context,
 	gitTreeTranslator GitTreeTranslator,
 	args UsagesForSymbolArgs,
 	previousSyntacticSearch core.Option[PreviousSyntacticSearch],
-) (matches []SearchBasedMatch, err error) {
+) (_ SearchBasedUsagesResult, err error) {
 	ctx, trace, endObservation := s.operations.searchBasedUsages.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoId", int(args.Repo.ID)),
 		attribute.String("commit", string(args.Commit)),
@@ -1230,12 +1248,12 @@ func (s *Service) SearchBasedUsages(
 	} else {
 		language, err = languageFromFilepath(trace, args.Path)
 		if err != nil {
-			return nil, err
+			return SearchBasedUsagesResult{}, err
 		}
 
 		nameFromGit, err := s.symbolNameFromGit(ctx, args)
 		if err != nil {
-			return nil, err
+			return SearchBasedUsagesResult{}, err
 		}
 		symbolName = nameFromGit
 

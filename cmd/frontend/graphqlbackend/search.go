@@ -44,7 +44,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 	if err != nil {
 		var queryErr *client.QueryError
 		if errors.As(err, &queryErr) {
-			return NewSearchAlertResolver(search.AlertForQuery(queryErr.Query, queryErr.Err)).wrapSearchImplementer(db), nil
+			return NewSearchAlertResolver(search.AlertForQuery(queryErr.Err)).wrapSearchImplementer(db), nil
 		}
 		return nil, err
 	}

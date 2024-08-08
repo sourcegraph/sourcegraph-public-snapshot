@@ -1,7 +1,7 @@
 <script context="module" lang="ts">
-    import { uniqueID } from '$lib/dom'
+import { uniqueID } from "$lib/dom";
 
-    export const CODY_SIDEBAR_ID = uniqueID('cody-sidebar')
+export const CODY_SIDEBAR_ID = uniqueID("cody-sidebar");
 </script>
 
 <script lang="ts">
@@ -14,9 +14,11 @@
     import { Alert, Badge, Button } from '$lib/wildcard'
 
     import type { CodySidebar_ResolvedRevision } from './CodySidebar.gql'
+    import type { LineOrPositionOrRange } from '@sourcegraph/common';
 
     export let repository: CodySidebar_ResolvedRevision
     export let filePath: string
+    export let lineOrPosition: LineOrPositionOrRange | undefined = undefined
 
     const headingID = uniqueID('cody-sidebar-heading')
     const dispatch = createEventDispatcher<{ close: void }>()
@@ -24,6 +26,7 @@
 
 <aside id={CODY_SIDEBAR_ID} aria-labelledby={headingID}>
     <div class="header">
+        <div />
         <h3 id={headingID}>
             <Icon icon={ISgCody} /> Cody
             <Badge variant="info">Beta</Badge>
@@ -44,7 +47,7 @@
         {#await import('./CodySidebarChat.svelte')}
             <LoadingSpinner />
         {:then module}
-            <svelte:component this={module.default} {repository} {filePath} />
+            <svelte:component this={module.default} {repository} {filePath} {lineOrPosition} />
         {/await}
     {:else}
         <Alert variant="info">

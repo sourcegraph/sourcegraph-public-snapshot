@@ -1,6 +1,7 @@
 package redislock
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -13,10 +14,12 @@ import (
 )
 
 func TestTryAcquire(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("acquire and release", func(t *testing.T) {
 		rs := redispool.NewMockKeyValue()
 		rs.SetNxFunc.SetDefaultReturn(true, nil)
-		acquired, release, err := TryAcquire(rs, "chicken-dinner", time.Minute)
+		acquired, release, err := TryAcquire(ctx, rs, "chicken-dinner", time.Minute)
 		require.NoError(t, err)
 		require.NotNil(t, release)
 		assert.True(t, acquired)
@@ -26,7 +29,7 @@ func TestTryAcquire(t *testing.T) {
 	t.Run("acquire and give up", func(t *testing.T) {
 		rs := redispool.NewMockKeyValue()
 		rs.SetNxFunc.PushReturn(true, nil)
-		aliceAcquired, aliceRelease, err := TryAcquire(rs, "chicken-dinner", time.Minute)
+		aliceAcquired, aliceRelease, err := TryAcquire(ctx, rs, "chicken-dinner", time.Minute)
 		require.NoError(t, err)
 		require.NotNil(t, aliceRelease)
 		assert.True(t, aliceAcquired)
@@ -34,7 +37,7 @@ func TestTryAcquire(t *testing.T) {
 
 		rs.SetNxFunc.PushReturn(false, nil)
 		rs.GetFunc.PushReturn(redispool.NewValue(fmt.Sprintf("%d,8527", time.Now().Add(time.Minute).UnixNano()), nil))
-		bobAcquired, _, err := TryAcquire(rs, "chicken-dinner", time.Minute)
+		bobAcquired, _, err := TryAcquire(ctx, rs, "chicken-dinner", time.Minute)
 		require.NoError(t, err)
 		assert.False(t, bobAcquired)
 		mockrequire.CalledN(t, rs.SetNxFunc, 2)
@@ -44,7 +47,7 @@ func TestTryAcquire(t *testing.T) {
 	t.Run("acquire an expired lock", func(t *testing.T) {
 		rs := redispool.NewMockKeyValue()
 		rs.SetNxFunc.PushReturn(true, nil)
-		aliceAcquired, aliceRelease, err := TryAcquire(rs, "chicken-dinner", time.Minute)
+		aliceAcquired, aliceRelease, err := TryAcquire(ctx, rs, "chicken-dinner", time.Minute)
 		require.NoError(t, err)
 		require.NotNil(t, aliceRelease)
 		assert.True(t, aliceAcquired)
@@ -54,7 +57,7 @@ func TestTryAcquire(t *testing.T) {
 		rs.SetNxFunc.PushReturn(false, nil)
 		rs.GetFunc.PushReturn(redispool.NewValue(mockCurrentLockToken, nil))
 		rs.GetSetFunc.PushReturn(redispool.NewValue(mockCurrentLockToken, nil))
-		bobAcquired, bobRelease, err := TryAcquire(rs, "chicken-dinner", time.Minute)
+		bobAcquired, bobRelease, err := TryAcquire(ctx, rs, "chicken-dinner", time.Minute)
 		require.NoError(t, err)
 		require.NotNil(t, bobRelease)
 		assert.True(t, bobAcquired)
@@ -67,7 +70,7 @@ func TestTryAcquire(t *testing.T) {
 	t.Run("acquire an expired lock but act too slow", func(t *testing.T) {
 		rs := redispool.NewMockKeyValue()
 		rs.SetNxFunc.PushReturn(true, nil)
-		aliceAcquired, aliceRelease, err := TryAcquire(rs, "chicken-dinner", time.Minute)
+		aliceAcquired, aliceRelease, err := TryAcquire(ctx, rs, "chicken-dinner", time.Minute)
 		require.NoError(t, err)
 		require.NotNil(t, aliceRelease)
 		assert.True(t, aliceAcquired)
@@ -79,7 +82,7 @@ func TestTryAcquire(t *testing.T) {
 		rs.GetSetFunc.PushHook(func(_ string, value any) redispool.Value {
 			return redispool.NewValue(value, nil) // Return anything that's not mockCurrentLockToken
 		})
-		bobAcquired, _, err := TryAcquire(rs, "chicken-dinner", time.Minute)
+		bobAcquired, _, err := TryAcquire(ctx, rs, "chicken-dinner", time.Minute)
 		require.NoError(t, err)
 		assert.False(t, bobAcquired)
 		mockrequire.CalledN(t, rs.SetNxFunc, 2)

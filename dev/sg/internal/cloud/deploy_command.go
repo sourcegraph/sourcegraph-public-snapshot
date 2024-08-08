@@ -105,7 +105,8 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 	if err != nil && !errors.Is(err, ErrInstanceNotFound) {
 		return errors.Wrapf(err, "failed to check if instance %q already exists", name)
 	}
-	if inst != nil {
+	// non-empty reason means instance is not fully created yet, it's ok to re-create
+	if inst != nil && inst.Status.Reason == "" {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", name))
 		// Deployment exists
 		return ErrDeploymentExists
@@ -138,6 +139,8 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
 	if currRepo.Branch == "main" {
 		return nil, ErrMainBranchBuild
+	} else if strings.HasPrefix(currRepo.Branch, "main-dry-run") {
+		return nil, ErrMainDryRunBranch
 	}
 	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote branch", currRepo.Branch))
 	if isOutOfSync, err := currRepo.IsOutOfSync(ctx); err != nil {
@@ -205,6 +208,10 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 		return errors.Wrap(err, "failed to determine current branch")
 	}
 
+	if strings.HasPrefix(currentBranch, "main-dry-run") {
+		return ErrMainDryRunBranch
+	}
+
 	// TODO(burmudar): We need to handle tags
 	var currRepo *repo.GitRepo
 	// We are on the branch we want to deploy, so we use the current commit
@@ -230,6 +237,15 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 				steps += "2. push the branch to the remote by running `git push -u origin <branch-name>`\n"
 				steps += "3. trigger the build by running `sg cloud ephemeral build`\n"
 				std.Out.WriteMarkdown(withFAQ(fmt.Sprintf("Alternatively, if you still want to deploy \"main\" you can do:\n%s", steps)))
+			} else if errors.Is(err, ErrMainDryRunBranch) {
+				msg := "Triggering Cloud Ephemeral builds from \"main-dry-run\" branches are not supported. Try renaming the branch to not have the \"main-dry-run\" prefix as it complicates the eventual pipeline that gets generated"
+				suggestion := "To rename a branch and launch a cloud ephemeral deployment do:\n"
+				suggestion += fmt.Sprintf("1. `git branch -m %q <my-new-name>`\n", currRepo.Branch)
+				suggestion += "2. `git push --set-upstream origin <my-new-name>`\n"
+				suggestion += "3. trigger the build by running `sg cloud ephemeral build`\n"
+
+				std.Out.WriteWarningf(msg)
+				std.Out.WriteMarkdown(withFAQ(suggestion))
 			}
 			return errors.Wrapf(err, "cloud ephemeral deployment failure")
 		}
@@ -245,6 +261,7 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 	}
 	email, err := GetGCloudAccount(ctx.Context)
 	if err != nil {
+		writeGCloudErrorSuggestion()
 		return err
 	}
 

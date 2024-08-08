@@ -14,7 +14,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/webhooks",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/webhooks",
+        "//cmd/frontend/internal/webhooks",
         "//internal/actor",
         "//internal/api",
         "//internal/batches/sources/bitbucketcloud",
@@ -59,7 +59,7 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//cmd/frontend/webhooks",
+        "//cmd/frontend/internal/webhooks",
         "//internal/api",
         "//internal/batches/sources",
         "//internal/batches/sources/bitbucketcloud",

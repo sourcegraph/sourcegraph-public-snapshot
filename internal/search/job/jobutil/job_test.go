@@ -313,56 +313,6 @@ func TestNewPlanJob(t *testing.T) {
           NOOP)))))
 `),
 	}, {
-		query:      `repo:sourcegraph/sourcegraph rev:*refs/heads/*`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLucky,
-		want: autogold.Expect(`
-(LOG
-  (ALERT
-    (features . error decoding features)
-    (protocol . Streaming)
-    (onSourcegraphDotCom . true)
-    (query . )
-    (originalQuery . )
-    (patternType . lucky)
-    (FEELINGLUCKYSEARCH
-      (TIMEOUT
-        (timeout . 20s)
-        (LIMIT
-          (limit . 10000)
-          (PARALLEL
-            (REPOSCOMPUTEEXCLUDED
-              (repoOpts.repoFilters . [sourcegraph/sourcegraph@*refs/heads/*]))
-            (REPOSEARCH
-              (repoOpts.repoFilters . [sourcegraph/sourcegraph@*refs/heads/*])
-              (repoNamePatterns . ["(?i)sourcegraph/sourcegraph"]))))))))
-`),
-	}, {
-		query:      `repo:sourcegraph/sourcegraph@*refs/heads/*`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLucky,
-		want: autogold.Expect(`
-(LOG
-  (ALERT
-    (features . error decoding features)
-    (protocol . Streaming)
-    (onSourcegraphDotCom . true)
-    (query . )
-    (originalQuery . )
-    (patternType . lucky)
-    (FEELINGLUCKYSEARCH
-      (TIMEOUT
-        (timeout . 20s)
-        (LIMIT
-          (limit . 10000)
-          (PARALLEL
-            (REPOSCOMPUTEEXCLUDED
-              (repoOpts.repoFilters . [sourcegraph/sourcegraph@*refs/heads/*]))
-            (REPOSEARCH
-              (repoOpts.repoFilters . [sourcegraph/sourcegraph@*refs/heads/*])
-              (repoNamePatterns . ["(?i)sourcegraph/sourcegraph"]))))))))
-`),
-	}, {
 		query:      `foo @bar`,
 		protocol:   search.Streaming,
 		searchType: query.SearchTypeRegex,
@@ -1294,62 +1244,6 @@ func TestNewPlanJob(t *testing.T) {
 	}
 }
 
-func TestSmartSearchRestrictions(t *testing.T) {
-	cases := []struct {
-		query      string
-		protocol   search.Protocol
-		searchType query.SearchType
-		searchMode search.Mode
-		wantErr    error
-	}{{
-		query:      `foo context:@userA`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeStandard,
-		searchMode: search.SmartSearch,
-		wantErr:    nil,
-	},
-		{
-			query:      `foo context:@userA`,
-			protocol:   search.Streaming,
-			searchType: query.SearchTypeKeyword,
-			searchMode: search.SmartSearch,
-			wantErr:    errors.New("The 'keyword' patterntype is not compatible with Smart Search"),
-		},
-		{
-			query:      `foo context:@userA`,
-			protocol:   search.Streaming,
-			searchType: query.SearchTypeCodyContext,
-			searchMode: search.SmartSearch,
-			wantErr:    errors.New("The 'codycontext' patterntype is not compatible with Smart Search"),
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.query, func(t *testing.T) {
-			plan, err := query.Pipeline(query.Init(tc.query, tc.searchType))
-			require.NoError(t, err)
-
-			inputs := &search.Inputs{
-				UserSettings:        &schema.Settings{},
-				PatternType:         tc.searchType,
-				SearchMode:          tc.searchMode,
-				Protocol:            tc.protocol,
-				Features:            &search.Features{},
-				OnSourcegraphDotCom: true,
-			}
-
-			_, err = NewPlanJob(inputs, plan)
-			if !errors.Is(err, tc.wantErr) {
-				if tc.wantErr == nil {
-					t.Errorf("got unexpected error %v", err)
-				} else {
-					t.Errorf("error mismatch: got %v, want %v", err, tc.wantErr)
-				}
-			}
-		})
-	}
-}
-
 func TestToEvaluateJob(t *testing.T) {
 	test := func(input string, protocol search.Protocol) string {
 		q, _ := query.ParseLiteral(input)
@@ -1499,10 +1393,10 @@ func TestToTextPatternInfo(t *testing.T) {
 		output: autogold.Expect(`{"Query":{"Value":"(?://).*?(?:literal).*?(?:slash)","IsNegated":false,"IsRegExp":true},"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":null,"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
 		input:  `repo:contains.path(Dockerfile)`,
-		output: autogold.Expect(`{"Query":{"Value":"","IsNegated":false,"IsRegExp":true},"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":null,"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		output: autogold.Expect("Error"),
 	}, {
 		input:  `repohasfile:Dockerfile`,
-		output: autogold.Expect(`{"Query":{"Value":"","IsNegated":false,"IsRegExp":true},"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":null,"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		output: autogold.Expect("Error"),
 	}, {
 		input:  `repo:^github\.com/sgtest/go-diff$ make(:[1]) index:only patterntype:structural count:3`,
 		output: autogold.Expect(`{"Query":{"Value":"make(:[1])","IsNegated":false,"IsRegExp":false},"IsStructuralPat":true,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":3,"Index":"only","Select":[],"IncludePaths":null,"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
@@ -1540,7 +1434,10 @@ func TestToTextPatternInfo(t *testing.T) {
 		}
 		b := plan[0]
 		resultTypes := computeResultTypes(b, query.SearchTypeLiteral, defaultResultTypes)
-		p := toTextPatternInfo(b, resultTypes, &feat, limits.DefaultMaxSearchResults)
+		p, err := toTextPatternInfo(b, resultTypes, &feat, limits.DefaultMaxSearchResults)
+		if err != nil {
+			return "Error"
+		}
 		v, _ := json.Marshal(p)
 		return string(v)
 	}

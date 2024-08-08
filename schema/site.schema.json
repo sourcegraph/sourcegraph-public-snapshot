@@ -193,7 +193,7 @@
         "scipBasedAPIs": {
           "description": "Enable usage of new CodeGraph and usagesForSymbol APIs",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "_comment": "Keep default above in sync with NOTE(id: scip-based-apis-feature-flag)",
           "!go": {
             "pointer": true
@@ -2994,7 +2994,7 @@
         "azureUseDeprecatedCompletionsAPIForOldModels": {
           "description": "Enables the use of the older completions API for select Azure OpenAI models.",
           "type": "boolean",
-          "default": false
+          "default": true
         },
         "fastChatModelMaxTokens": {
           "description": "The maximum number of tokens to use as client when talking to fastChatModel. If not set, clients need to set their own limit.",

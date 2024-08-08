@@ -16,14 +16,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (s *Service) GetDefinitions(
 	ctx context.Context,
 	args OccurrenceRequestArgs,
 	requestState RequestState,
-	cursor Cursor,
-) (_ []shared.UploadUsage, nextCursor Cursor, err error) {
+	cursor PreciseCursor,
+) (_ []shared.UploadUsage, nextCursor PreciseCursor, err error) {
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
 		s.operations.getDefinitions, // operation
@@ -37,8 +38,8 @@ func (s *Service) GetReferences(
 	ctx context.Context,
 	args OccurrenceRequestArgs,
 	requestState RequestState,
-	cursor Cursor,
-) (_ []shared.UploadUsage, nextCursor Cursor, err error) {
+	cursor PreciseCursor,
+) (_ []shared.UploadUsage, nextCursor PreciseCursor, err error) {
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
 		s.operations.getReferences, // operation
@@ -52,8 +53,8 @@ func (s *Service) GetImplementations(
 	ctx context.Context,
 	args OccurrenceRequestArgs,
 	requestState RequestState,
-	cursor Cursor,
-) (_ []shared.UploadUsage, nextCursor Cursor, err error) {
+	cursor PreciseCursor,
+) (_ []shared.UploadUsage, nextCursor PreciseCursor, err error) {
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
 		s.operations.getImplementations, // operation
@@ -67,8 +68,8 @@ func (s *Service) GetPrototypes(
 	ctx context.Context,
 	args OccurrenceRequestArgs,
 	requestState RequestState,
-	cursor Cursor,
-) (_ []shared.UploadUsage, nextCursor Cursor, err error) {
+	cursor PreciseCursor,
+) (_ []shared.UploadUsage, nextCursor PreciseCursor, err error) {
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
 		s.operations.getPrototypes, // operation
@@ -104,12 +105,12 @@ func (s *Service) gatherLocations(
 	ctx context.Context,
 	args OccurrenceRequestArgs,
 	requestState RequestState,
-	cursor Cursor,
+	cursor PreciseCursor,
 	operation *observation.Operation,
 	usageKind shared.UsageKind,
 	includeReferencingIndexes bool,
 	extractor LocationExtractor,
-) (allOccurrences []shared.UploadUsage, _ Cursor, err error) {
+) (allOccurrences []shared.UploadUsage, _ PreciseCursor, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, operation, serviceObserverThreshold,
 		observation.Args{Attrs: observation.MergeAttributes(args.Attrs(), requestState.Attrs()...)})
 	defer endObservation()
@@ -132,7 +133,7 @@ func (s *Service) gatherLocations(
 		cursor,
 	)
 	if err != nil {
-		return nil, Cursor{}, err
+		return nil, PreciseCursor{}, err
 	}
 
 	var visibleUploadIDs []int
@@ -178,7 +179,7 @@ outer:
 				visibleUploads,
 			)
 			if err != nil {
-				return nil, Cursor{}, err
+				return nil, PreciseCursor{}, err
 			}
 			allOccurrences = append(allOccurrences, occurrences...)
 		}
@@ -191,15 +192,15 @@ func (s *Service) getVisibleUploadsFromCursor(
 	ctx context.Context,
 	args OccurrenceRequestArgs,
 	requestState RequestState,
-	cursor Cursor,
-) ([]visibleUpload, Cursor, error) {
+	cursor PreciseCursor,
+) ([]visibleUpload, PreciseCursor, error) {
 
 	if cursor.VisibleUploads != nil {
 		visibleUploads := make([]visibleUpload, 0, len(cursor.VisibleUploads))
 		for _, u := range cursor.VisibleUploads {
 			upload, ok := requestState.dataLoader.GetUploadFromCacheMap(u.UploadID)
 			if !ok {
-				return nil, Cursor{}, ErrConcurrentModification
+				return nil, PreciseCursor{}, ErrConcurrentModification
 			}
 
 			// OK to use Unchecked functions at ~serialization boundary for simplicity.
@@ -215,7 +216,7 @@ func (s *Service) getVisibleUploadsFromCursor(
 
 	visibleUploads, err := s.getVisibleUploads(ctx, args.Matcher, requestState)
 	if err != nil {
-		return nil, Cursor{}, err
+		return nil, PreciseCursor{}, err
 	}
 
 	cursorVisibleUpload := make([]CursorVisibleUpload, 0, len(visibleUploads))
@@ -238,11 +239,11 @@ type gatherLocationsFunc func(
 	requestState RequestState,
 	usageKind shared.UsageKind,
 	includeReferencingIndexes bool,
-	cursor Cursor,
+	cursor PreciseCursor,
 	limit int,
 	extractor LocationExtractor,
 	visibleUploads []visibleUpload,
-) ([]shared.UploadUsage, Cursor, error)
+) ([]shared.UploadUsage, PreciseCursor, error)
 
 const skipPrefix = "lsif ."
 
@@ -253,11 +254,11 @@ func (s *Service) gatherLocalLocations(
 	requestState RequestState,
 	_ shared.UsageKind,
 	includeReferencingIndexes bool,
-	cursor Cursor,
+	cursor PreciseCursor,
 	limit int,
 	extractor LocationExtractor,
 	visibleUploads []visibleUpload,
-) (allLocations []shared.UploadUsage, _ Cursor, _ error) {
+) (allLocations []shared.UploadUsage, _ PreciseCursor, _ error) {
 	if cursor.Phase != "local" {
 		// not our turn
 		return nil, cursor, nil
@@ -306,7 +307,7 @@ func (s *Service) gatherLocalLocations(
 		// Attach the upload ID, TargetPath and def/ref information here?
 
 		if err != nil {
-			return nil, Cursor{}, err
+			return nil, PreciseCursor{}, err
 		}
 		trace.AddEvent("ReadDocument", attribute.Int("numLocations", len(usages)), attribute.Int("numSymbolNames", len(symbolNames)))
 
@@ -332,7 +333,7 @@ func (s *Service) gatherLocalLocations(
 				true,
 			)
 			if err != nil {
-				return nil, Cursor{}, err
+				return nil, PreciseCursor{}, err
 			}
 			allLocations = append(allLocations, adjustedLocations...)
 
@@ -364,11 +365,11 @@ func (s *Service) gatherRemoteLocationsShim(
 	requestState RequestState,
 	usageKind shared.UsageKind,
 	includeReferencingIndexes bool,
-	cursor Cursor,
+	cursor PreciseCursor,
 	limit int,
 	_ LocationExtractor,
 	_ []visibleUpload,
-) ([]shared.UploadUsage, Cursor, error) {
+) ([]shared.UploadUsage, PreciseCursor, error) {
 	return s.gatherRemoteLocations(
 		ctx,
 		trace,
@@ -386,11 +387,11 @@ func (s *Service) gatherRemoteLocations(
 	trace observation.TraceLogger,
 	args RequestArgs,
 	requestState RequestState,
-	cursor Cursor,
+	cursor PreciseCursor,
 	usageKind shared.UsageKind,
 	includeReferencingIndexes bool,
 	limit int,
-) ([]shared.UploadUsage, Cursor, error) {
+) ([]shared.UploadUsage, PreciseCursor, error) {
 	if cursor.Phase != "remote" {
 		// not our turn
 		return nil, cursor, nil
@@ -399,7 +400,7 @@ func (s *Service) gatherRemoteLocations(
 
 	monikers, err := symbolsToMonikers(cursor.SymbolNames)
 	if err != nil {
-		return nil, Cursor{}, err
+		return nil, PreciseCursor{}, err
 	}
 	if len(monikers) == 0 {
 		// no symbol names from local phase
@@ -418,7 +419,7 @@ func (s *Service) gatherRemoteLocations(
 		monikers,
 	)
 	if err != nil {
-		return nil, Cursor{}, err
+		return nil, PreciseCursor{}, err
 	}
 
 	// If we have no upload ids stashed in our cursor at this point then there are no more
@@ -441,7 +442,7 @@ func (s *Service) gatherRemoteLocations(
 		Offset:              cursor.RemoteLocationOffset,
 	})
 	if err != nil {
-		return nil, Cursor{}, err
+		return nil, PreciseCursor{}, err
 	}
 
 	// adjust cursor offset for next page
@@ -450,7 +451,7 @@ func (s *Service) gatherRemoteLocations(
 	// Adjust locations back to target commit
 	adjustedLocations, err := s.getUploadLocations(ctx, args, requestState, usages, includeFallbackLocations)
 	if err != nil {
-		return nil, Cursor{}, err
+		return nil, PreciseCursor{}, err
 	}
 
 	return adjustedLocations, cursor, nil
@@ -472,10 +473,10 @@ func (s *Service) prepareCandidateUploads(
 	trace observation.TraceLogger,
 	args RequestArgs,
 	requestState RequestState,
-	cursor Cursor,
+	cursor PreciseCursor,
 	includeReferencingIndexes bool,
 	monikers []precise.QualifiedMonikerData,
-) (_ Cursor, fallback bool, _ error) {
+) (_ PreciseCursor, fallback bool, _ error) {
 	fallback = true // TODO - document
 
 	// We always want to look into the uploads that define one of the symbols for our
@@ -492,7 +493,7 @@ func (s *Service) prepareCandidateUploads(
 
 		uploads, err := s.getUploadsWithDefinitionsForMonikers(ctx, monikers, requestState)
 		if err != nil {
-			return Cursor{}, false, err
+			return PreciseCursor{}, false, err
 		}
 
 		idSet := collections.NewSet[int]()
@@ -528,7 +529,7 @@ func (s *Service) prepareCandidateUploads(
 				cursor.RemoteUploadOffset,                   // offset
 			)
 			if err != nil {
-				return Cursor{}, false, err
+				return PreciseCursor{}, false, err
 			}
 
 			cursor.UploadIDs = uploadIDs
@@ -546,7 +547,7 @@ func (s *Service) prepareCandidateUploads(
 	//
 	// FIXME: That's a dangerous design assumption we should get rid of.
 	if _, err := s.getUploadsByIDs(ctx, cursor.UploadIDs, requestState); err != nil {
-		return Cursor{}, false, err
+		return PreciseCursor{}, false, err
 	}
 
 	return cursor, fallback, nil
@@ -615,7 +616,7 @@ func (s *Service) PreciseUsages(ctx context.Context, requestState RequestState, 
 
 	// Loop invariant: At the end of an iteration, either
 	//    (1) remainingCount has decreased
-	// OR (2) currentCursor.PreciseCursorType has been advanced
+	// OR (2) currentCursor.CursorType has been advanced
 	for remainingCount > 0 {
 		requestArgs := OccurrenceRequestArgs{
 			RepositoryID: args.Repo.ID,
@@ -628,8 +629,8 @@ func (s *Service) PreciseUsages(ctx context.Context, requestState RequestState, 
 
 		var err error
 		var nextUsages []shared.UploadUsage
-		var nextPreciseCursor Cursor
-		switch currentCursor.PreciseCursorType {
+		var nextPreciseCursor PreciseCursor
+		switch currentCursor.CursorType {
 		case CursorTypeDefinitions:
 			nextUsages, nextPreciseCursor, err = s.GetDefinitions(ctx, requestArgs, requestState, currentCursor.PreciseCursor)
 		case CursorTypeImplementations:
@@ -638,7 +639,10 @@ func (s *Service) PreciseUsages(ctx context.Context, requestState RequestState, 
 			nextUsages, nextPreciseCursor, err = s.GetPrototypes(ctx, requestArgs, requestState, currentCursor.PreciseCursor)
 		case CursorTypeReferences:
 			nextUsages, nextPreciseCursor, err = s.GetReferences(ctx, requestArgs, requestState, currentCursor.PreciseCursor)
+		default:
+			return nil, noCursor, errors.New("Non-precise cursor type in PreciseUsages")
 		}
+
 		if err != nil {
 			return nil, noCursor, err
 		}
@@ -647,40 +651,36 @@ func (s *Service) PreciseUsages(ctx context.Context, requestState RequestState, 
 			trace.Warn("sub-operation returned usages that exceeded limit",
 				log.Int("numNextUsages", len(nextUsages)),
 				log.Int("limit", remainingCount),
-				log.String("cursorType", string(currentCursor.PreciseCursorType)))
+				log.String("cursorType", string(currentCursor.CursorType)))
 		}
 		returnUsages = append(returnUsages, nextUsages...)
 		remainingCount -= min(remainingCount, len(nextUsages))
-
-		if len(nextUsages) == 0 && currentCursor.PreciseCursor.Phase != "done" {
-			trace.Warn("len(nextUsages) == 0 should imply nextCursor.Phase == \"done\"",
-				log.String("cursorType", string(currentCursor.PreciseCursorType)),
-				log.String("cursor.Phase", currentCursor.PreciseCursor.Phase))
-		}
 
 		currentCursor.PreciseCursor = nextPreciseCursor
 		if len(nextUsages) == 0 || currentCursor.PreciseCursor.Phase == "done" {
 			// Switching types requires zero-ing the precise cursor
 			// as the old Service API code is meant to be used with separate
 			// cursors per usage type.
-			switch currentCursor.PreciseCursorType {
+			switch currentCursor.CursorType {
 			case CursorTypeDefinitions:
 				currentCursor = UsagesCursor{
-					PreciseCursor:     Cursor{},
-					PreciseCursorType: CursorTypeImplementations,
+					PreciseCursor: PreciseCursor{},
+					CursorType:    CursorTypeImplementations,
 				}
 			case CursorTypeImplementations:
 				currentCursor = UsagesCursor{
-					PreciseCursor:     Cursor{},
-					PreciseCursorType: CursorTypePrototypes,
+					PreciseCursor: PreciseCursor{},
+					CursorType:    CursorTypePrototypes,
 				}
 			case CursorTypePrototypes:
 				currentCursor = UsagesCursor{
-					PreciseCursor:     Cursor{},
-					PreciseCursorType: CursorTypeReferences,
+					PreciseCursor: PreciseCursor{},
+					CursorType:    CursorTypeReferences,
 				}
 			case CursorTypeReferences:
 				return returnUsages, noCursor, nil
+			default:
+				return nil, noCursor, errors.New("Non-precise cursor type in PreciseUsages")
 			}
 		}
 	}

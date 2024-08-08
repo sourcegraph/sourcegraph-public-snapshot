@@ -14,10 +14,10 @@ import (
 
 type CodeNavService interface {
 	GetHover(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState) (_ string, _ shared.Range, _ bool, err error)
-	GetReferences(ctx context.Context, args codenav.OccurrenceRequestArgs, requestState codenav.RequestState, cursor codenav.Cursor) (_ []shared.UploadUsage, nextCursor codenav.Cursor, err error)
-	GetImplementations(ctx context.Context, args codenav.OccurrenceRequestArgs, requestState codenav.RequestState, cursor codenav.Cursor) (_ []shared.UploadUsage, nextCursor codenav.Cursor, err error)
-	GetPrototypes(ctx context.Context, args codenav.OccurrenceRequestArgs, requestState codenav.RequestState, cursor codenav.Cursor) (_ []shared.UploadUsage, nextCursor codenav.Cursor, err error)
-	GetDefinitions(ctx context.Context, args codenav.OccurrenceRequestArgs, requestState codenav.RequestState, cursor codenav.Cursor) (_ []shared.UploadUsage, nextCursor codenav.Cursor, err error)
+	GetReferences(ctx context.Context, args codenav.OccurrenceRequestArgs, requestState codenav.RequestState, cursor codenav.PreciseCursor) (_ []shared.UploadUsage, nextCursor codenav.PreciseCursor, err error)
+	GetImplementations(ctx context.Context, args codenav.OccurrenceRequestArgs, requestState codenav.RequestState, cursor codenav.PreciseCursor) (_ []shared.UploadUsage, nextCursor codenav.PreciseCursor, err error)
+	GetPrototypes(ctx context.Context, args codenav.OccurrenceRequestArgs, requestState codenav.RequestState, cursor codenav.PreciseCursor) (_ []shared.UploadUsage, nextCursor codenav.PreciseCursor, err error)
+	GetDefinitions(ctx context.Context, args codenav.OccurrenceRequestArgs, requestState codenav.RequestState, cursor codenav.PreciseCursor) (_ []shared.UploadUsage, nextCursor codenav.PreciseCursor, err error)
 	GetDiagnostics(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState) (diagnosticsAtUploads []codenav.DiagnosticAtUpload, _ int, err error)
 	GetRanges(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState, startLine, endLine int) (adjustedRanges []codenav.AdjustedCodeIntelligenceRange, err error)
 	GetStencil(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState) (adjustedRanges []shared.Range, err error)
@@ -31,8 +31,8 @@ type CodeNavService interface {
 	//
 	// Subsequent calls can pass the returned cursor (if non-empty) via args.Cursor.
 	PreciseUsages(ctx context.Context, requestState codenav.RequestState, args codenav.UsagesForSymbolResolvedArgs) (_ []shared.UploadUsage, nextCursor core.Option[codenav.UsagesCursor], err error)
-	SyntacticUsages(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError)
-	SearchBasedUsages(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs, core.Option[codenav.PreviousSyntacticSearch]) ([]codenav.SearchBasedMatch, error)
+	SyntacticUsages(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.SyntacticUsagesError)
+	SearchBasedUsages(context.Context, codenav.GitTreeTranslator, codenav.UsagesForSymbolArgs, core.Option[codenav.PreviousSyntacticSearch]) (codenav.SearchBasedUsagesResult, error)
 }
 
 var _ CodeNavService = &codenav.Service{}

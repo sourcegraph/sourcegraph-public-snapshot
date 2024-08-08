@@ -3,6 +3,7 @@ source: crates/syntax-analysis/src/highlighting/syntect_scip.rs
 expression: "snapshot_sciptect_documents(&document, &contents)"
 ---
   #!/bin/sh
+//^ Comment punctuation.definition.comment.begin.shell
 // ^^^^^^^^ Comment comment.line.number-sign.shell
   
   export RUNTIME_IMAGE="sourcegraph/ignite:${IGNITE_VERSION}"
@@ -14,4 +15,3 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //                                          ^ PunctuationBracket punctuation.section.expansion.parameter.begin.shell
 //                                           ^^^^^^^^^^^^^^ Identifier variable.other.readwrite.shell
 //                                                         ^ PunctuationBracket punctuation.section.expansion.parameter.end.shell
-

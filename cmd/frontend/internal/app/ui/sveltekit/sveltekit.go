@@ -53,7 +53,7 @@ func (r *svelteKitRoute) matches(url *url.URL) bool {
 }
 
 // RegisterSvelteKit registers a middleware that determines which routes are enabled for SvelteKit.
-// It also extends the request context with inormation that is sent to the client apps via JSContext.
+// It also extends the request context with information that is sent to the client apps via JSContext.
 func RegisterSvelteKit(r *mux.Router, repoRootRoute *mux.Route) {
 	var knownRoutes []string
 
@@ -107,7 +107,11 @@ func RegisterSvelteKit(r *mux.Router, repoRootRoute *mux.Route) {
 			}
 
 			value := &contextValue{enabledRoutes: enabledRoutes, knownRoutes: knownRoutes, enabled: enabled}
-			next.ServeHTTP(w, req.WithContext(context.WithValue(req.Context(), contextKey{}, value)))
+			existingValue := fromContext(ctx)
+			if existingValue != nil {
+				value.knownRoutes = append(existingValue.knownRoutes, knownRoutes...)
+			}
+			next.ServeHTTP(w, req.WithContext(context.WithValue(ctx, contextKey{}, value)))
 		})
 	})
 }
@@ -141,7 +145,7 @@ func GetJSContext(ctx context.Context) JSContext {
 	ff := featureflag.FromContext(ctx)
 
 	return JSContext{
-		ShowToggle:    ff.GetBoolOr("web-next-toggle", false),
+		ShowToggle:    ff.GetBoolOr("web-next-toggle", true),
 		KnownRoutes:   skctx.knownRoutes,
 		EnabledRoutes: skctx.enabledRoutes,
 	}

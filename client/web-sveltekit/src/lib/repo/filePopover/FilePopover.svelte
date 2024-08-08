@@ -107,33 +107,34 @@
 <style lang="scss">
     .root {
         width: 400px;
-        background: var(--body-bg);
+        background: var(--color-bg-1);
 
         .section {
-            padding: 0.5rem 1rem;
+            padding: 0.375rem 1rem 0.5rem 1rem;
             border-bottom: 1px solid var(--border-color);
         }
 
         .lang-and-file {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.75rem;
 
             .file {
                 display: flex;
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 0.25rem;
+                gap: 0.125rem;
 
-                div {
-                    color: var(--text-body);
+                small {
+                    color: var(--text-muted);
                 }
             }
         }
 
         .last-changed {
             background-color: var(--secondary-4);
-            border-bottom: 1px solid var(--border-color);
+            color: var(--text-body);
+            font-size: var(--font-size-xs);
         }
 
         .commit {
@@ -152,14 +153,15 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 0.25rem;
-                padding: 0.5rem 0.5rem 0.5rem 0;
+                padding: 0.625rem 0.625rem 0.625rem 0;
 
                 .author {
                     display: flex;
                     justify-content: flex-start;
                     align-items: center;
-                    gap: 0.25rem;
-                    font-size: var(--font-size-tiny);
+                    gap: 0.375rem;
+                    font-size: var(--font-size-xs);
+                    color: var(--text-muted);
                 }
             }
         }
@@ -167,10 +169,6 @@
 
     .mono {
         font-family: var(--monospace-font-family);
-    }
-
-    .title {
-        color: var(--text-title);
     }
 
     .body {

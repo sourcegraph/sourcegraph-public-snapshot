@@ -92,12 +92,6 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 
 	logger.Info("rockskip indexing missing commits", log.Int("missingCount", len(missingCommits)))
 
-	parser, err := s.createParser()
-	if err != nil {
-		return errors.Wrap(err, "createParser")
-	}
-	defer parser.Close()
-
 	symbolCache := lru.New(s.symbolsCacheSize)
 	pathSymbolsCache := lru.New(s.pathSymbolsCacheSize)
 
@@ -216,7 +210,7 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 					defer tasklog.Continue("ArchiveEach")
 
 					tasklog.Start("parse")
-					symbols, err := parser.Parse(path, contents)
+					symbols, err := s.parseSymbols(ctx, path, contents)
 					if err != nil {
 						return errors.Wrap(err, "parse")
 					}

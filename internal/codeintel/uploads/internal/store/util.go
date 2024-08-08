@@ -5,7 +5,9 @@ import (
 	"sort"
 
 	"github.com/keegancsmith/sqlf"
+	genslices "github.com/life4/genesis/slices"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -65,17 +67,54 @@ WHERE r.state = 'queued'
 `
 
 // makeVisibleUploadsQuery returns a SQL query returning the set of identifiers of uploads
-// visible from the given commit. This is done by removing the "shadowed" values created
-// by looking at a commit and it's ancestors visible commits.
-func makeVisibleUploadsQuery(repositoryID int, commit string) *sqlf.Query {
-	return sqlf.Sprintf(
-		visibleUploadsQuery,
-		repositoryID, dbutil.CommitBytea(commit),
-		repositoryID, dbutil.CommitBytea(commit),
-	)
+// visible from the given commit. This is done by removing the "shadowed" values
+// created by looking at the commit and it's ancestors visible commits.
+//
+// This function deliberately accepts a single commit and not a list,
+// as the shadowing calculation involves comparison by distance,
+// and we don't do that across commits.
+//
+// IMPORTANT: The shadowing logic should be kept in sync with commitgraph.populateUploadsForCommit.
+func makeVisibleUploadsQuery(repositoryID api.RepoID, commit api.CommitID) *sqlf.Query {
+	return sqlf.Sprintf(visibleUploadsQueryFragment, makeNearestUploadsQuery(repositoryID, commit))
 }
 
-const visibleUploadsQuery = `
+func makeNearestUploadsQuery(repositoryID api.RepoID, commits ...api.CommitID) *sqlf.Query {
+	format := func(commit api.CommitID) *sqlf.Query {
+		return sqlf.Sprintf("%s", dbutil.CommitBytea(commit))
+	}
+	commitQueries := sqlf.Join(genslices.Map(commits, format), ", ")
+	return sqlf.Sprintf(nearestUploadsQuery, int(repositoryID), commitQueries, int(repositoryID), commitQueries)
+}
+
+// nearestUploadsQuery finds the set of uploads marked as 'nearest'
+// from the given list of commits based on the lsif_nearest_uploads
+// and the lsif_nearest_uploads_links tables.
+//
+// NB: A commit should be present in at most one of these tables.
+const nearestUploadsQuery = `
+SELECT
+	nu.repository_id,
+	upload_id::integer,
+	nu.commit_bytea,
+	u_distance::text::integer as distance
+FROM lsif_nearest_uploads nu
+CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
+WHERE nu.repository_id = %s AND nu.commit_bytea IN (%s)
+UNION (
+	SELECT
+		nu.repository_id,
+		upload_id::integer,
+		ul.commit_bytea,
+		u_distance::text::integer + ul.distance as distance
+	FROM lsif_nearest_uploads_links ul
+	JOIN lsif_nearest_uploads nu ON nu.repository_id = ul.repository_id AND nu.commit_bytea = ul.ancestor_commit_bytea
+	CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
+	WHERE nu.repository_id = %s AND ul.commit_bytea IN (%s)
+)
+`
+
+const visibleUploadsQueryFragment = `
 SELECT
 	t.upload_id
 FROM (
@@ -83,35 +122,20 @@ FROM (
 		t.*,
 		-- NOTE(id: closest-uploads-postcondition) Only return a single result
 		-- for an (indexer, root) pair, see also the WHERE clause at the end.
-		row_number() OVER (PARTITION BY root, indexer ORDER BY distance) AS r
-	FROM (
-		-- Select the set of uploads visible from the given commit. This is done by looking
-		-- at each commit's row in the lsif_nearest_uploads table, and the (adjusted) set of
-		-- uploads from each commit's nearest ancestor according to the data compressed in
-		-- the links table.
-		--
-		-- NB: A commit should be present in at most one of these tables.
-		SELECT
-			nu.repository_id,
-			upload_id::integer,
-			nu.commit_bytea,
-			u_distance::text::integer as distance
-		FROM lsif_nearest_uploads nu
-		CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
-		WHERE nu.repository_id = %s AND nu.commit_bytea = %s
-		UNION (
-			SELECT
-				nu.repository_id,
-				upload_id::integer,
-				ul.commit_bytea,
-				u_distance::text::integer + ul.distance as distance
-			FROM lsif_nearest_uploads_links ul
-			JOIN lsif_nearest_uploads nu ON nu.repository_id = ul.repository_id AND nu.commit_bytea = ul.ancestor_commit_bytea
-			CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
-			WHERE nu.repository_id = %s AND ul.commit_bytea = %s
-		)
-	) t
-	JOIN lsif_uploads u ON u.id = upload_id
+		row_number() OVER (PARTITION BY u.root, (
+			-- NOTE(id: scip-over-lsif) Group lsif-K and scip-K together, so that for
+			-- long-running instances which still have lingering indexes from our old
+			-- LSIF indexers, we make sure to prefer newer SCIP indexes.
+			-- This should also provide better results for someone changing indexers
+			-- in the future.
+			CASE
+				WHEN u.indexer LIKE 'scip-%%' OR u.indexer LIKE 'lsif-%%' THEN substr(u.indexer, 6)
+				ELSE u.indexer
+			END
+		) ORDER BY t.distance ASC, t.upload_id DESC) -- See NOTE(id: upload-tie-breaking)
+		AS r
+	FROM (%s) t
+	JOIN lsif_uploads u ON u.id = t.upload_id
 ) t
 -- Remove ranks > 1, as they are shadowed by another upload in the same output set
 WHERE t.r <= 1

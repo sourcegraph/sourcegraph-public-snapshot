@@ -8,11 +8,13 @@ import (
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var ErrUserCancelled = errors.New("user cancelled")
 var ErrWrongBranch = errors.New("wrong current branch")
+var ErrMainDryRunBranch = errors.New("main-dry-run branch is not supported")
 var ErrBranchOutOfSync = errors.New("branch is out of sync with remote")
 var ErrNotEphemeralInstance = errors.New("instance is not ephemeral")
 var ErrInstanceStatusNotComplete = errors.New("instance is not not in completed status")
@@ -51,6 +53,15 @@ func oneOfEquals(value string, i ...string) bool {
 	return false
 }
 
-func getGCloudAccount(ctx context.Context) (string, error) {
-	return run.Cmd(ctx, "gcloud", "config", "get", "account").Run().String()
+func GetGCloudAccount(ctx context.Context) (string, error) {
+	return run.Cmd(ctx, "gcloud", "auth", "list", "--filter", "status:ACTIVE", "--format", "value(account)").Run().String()
+}
+
+func writeGCloudErrorSuggestion() {
+	msg := "Failed to determine your gcloud account to get your email address. This might indicate that there is a problem with your local gcloud configuration"
+	suggestion := "Try the following steps:\n"
+	suggestion += "1. `gcloud auth login` should open a browser window and prompt you to log in with your Google account - ensure you login with your sourcegraph address!\n"
+	suggestion += "\nIf the steps above don't work please reach out to #discuss-dev-infra\n"
+	std.Out.WriteWarningf(msg)
+	std.Out.WriteMarkdown(withFAQ(suggestion))
 }

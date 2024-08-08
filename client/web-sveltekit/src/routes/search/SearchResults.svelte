@@ -45,6 +45,7 @@
 
     import PreviewPanel from './PreviewPanel.svelte'
     import SearchAlert from './SearchAlert.svelte'
+    import type { SearchJob } from './searchJob'
     import { getSearchResultComponent } from './searchResultFactory'
     import { setSearchResultsContext } from './searchResultsContext'
     import StreamingProgress from './StreamingProgress.svelte'
@@ -53,6 +54,7 @@
     export let queryFromURL: string
     export let selectedFilters: URLQueryFilter[]
     export let queryState: QueryStateStore
+    export let searchJob: SearchJob | undefined = undefined
 
     export function capture(): SearchResultsCapture {
         return $resultContainer?.scrollTop ?? 0
@@ -195,7 +197,7 @@
                             data-scope-button>Filters</Button
                         >
                     {/if}
-                    <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} />
+                    <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} {searchJob} />
                 </aside>
                 <div class="result-list" bind:this={$resultContainer}>
                     {#if $stream.alert}

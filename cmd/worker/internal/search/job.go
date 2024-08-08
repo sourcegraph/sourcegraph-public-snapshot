@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	workerjob "github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // config stores shared config we can override in each worker. We don't expose
@@ -39,12 +40,12 @@ type searchJob struct {
 	once         sync.Once
 	err          error
 	workerStores []interface {
-		QueuedCount(context.Context, bool) (int, error)
+		CountByState(_ context.Context, bitset dbworkerstore.RecordState) (int, error)
 	}
 	workers []goroutine.BackgroundRoutine
 }
 
-func NewSearchJob() job.Job {
+func NewSearchJob() workerjob.Job {
 	return &searchJob{
 		config: config{
 			WorkerInterval: 1 * time.Second,
@@ -103,6 +104,8 @@ func (j *searchJob) newSearchJobRoutines(
 		repoWorkerStore := store.NewRepoSearchJobWorkerStore(observationCtx, db.Handle())
 		revWorkerStore := store.NewRevSearchJobWorkerStore(observationCtx, db.Handle())
 
+		svc := service.New(observationCtx, exhaustiveSearchStore, uploadStore, newSearcher)
+
 		j.workerStores = append(j.workerStores,
 			searchWorkerStore,
 			repoWorkerStore,
@@ -123,6 +126,8 @@ func (j *searchJob) newSearchJobRoutines(
 			newExhaustiveSearchWorkerResetter(observationCtx, searchWorkerStore),
 			newExhaustiveSearchRepoWorkerResetter(observationCtx, repoWorkerStore),
 			newExhaustiveSearchRepoRevisionWorkerResetter(observationCtx, revWorkerStore),
+
+			newJanitorJob(observationCtx, db, svc),
 		}
 	})
 
@@ -132,8 +137,9 @@ func (j *searchJob) newSearchJobRoutines(
 // hasWork returns true if any of the workers have work in its queue or is
 // processing something. This is only exposed for tests.
 func (j *searchJob) hasWork(ctx context.Context) bool {
+	statesBitset := dbworkerstore.StateQueued | dbworkerstore.StateErrored | dbworkerstore.StateProcessing
 	for _, w := range j.workerStores {
-		if count, _ := w.QueuedCount(ctx, true); count > 0 {
+		if count, _ := w.CountByState(ctx, statesBitset); count > 0 {
 			return true
 		}
 	}

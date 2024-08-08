@@ -146,8 +146,8 @@ importers:
         specifier: ^7.8.1
         version: 7.8.1
       '@sourcegraph/cody-web':
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.4.0
+        version: 0.4.0
       '@sourcegraph/extension-api-classes':
         specifier: ^1.1.0
         version: 1.1.0(sourcegraph@client+extension-api)
@@ -1576,8 +1576,8 @@ importers:
         specifier: workspace:*
         version: link:../client-api
       '@sourcegraph/cody-web':
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.4.0
+        version: 0.4.0
       '@sourcegraph/common':
         specifier: workspace:*
         version: link:../common
@@ -9720,8 +9720,8 @@ packages:
     resolution: {integrity: sha512-Uf7wMo5Fu3+g03gl2jvU2qHMaDp0p9RK9U2ucmy6VxWaavxALCC8iy47JL5GdgR5qG3ekEd5mAQV0dIIfoKELA==}
     dev: true
 
-  /@sourcegraph/cody-web@0.3.0:
-    resolution: {integrity: sha512-Dh29FumKyuSIA437iT/0JAiD+xGdcKLqy2/4+99aqJRGns8/crGamGpY6M4ZvmkCZCEgtElslPsAxZ+L5yJRtg==}
+  /@sourcegraph/cody-web@0.4.0:
+    resolution: {integrity: sha512-lEwDrFQ6JSUxmoWeatHpsW/6bQOvJVoJVxlAbXxPcK7qq/0fE1DBi65gTJvdGfe43z+3JaUQgITZvrI8zfR06Q==}
     dev: false
 
   /@sourcegraph/eslint-config@0.37.1(@testing-library/dom@8.13.0)(eslint@8.57.0)(typescript@5.4.2):

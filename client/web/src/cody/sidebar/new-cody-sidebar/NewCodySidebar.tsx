@@ -28,13 +28,15 @@ export const NewCodySidebar: FC<NewCodySidebarProps> = props => {
     return (
         <div className={styles.root}>
             <div className={styles.header}>
-                <div className="d-flex flex-shrink-0 align-items-center">
+                <div />
+                <span className={styles.headerLogo}>
                     <CodyLogo />
                     Cody
                     <div className="ml-2">
                         <ProductStatusBadge status="beta" />
                     </div>
-                </div>
+                </span>
+
                 <Button variant="icon" aria-label="Close" onClick={onClose}>
                     <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>

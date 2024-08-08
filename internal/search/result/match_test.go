@@ -22,12 +22,16 @@ func TestSelect(t *testing.T) {
 					{Symbol: Symbol{Name: "a()", Kind: "func"}},
 					{Symbol: Symbol{Name: "b()", Kind: "function"}},
 					{Symbol: Symbol{Name: "var c", Kind: "variable"}},
+					{Symbol: Symbol{Name: "enum d", Kind: "enumerator"}},
+					{Symbol: Symbol{Name: "enum e", Kind: "enum"}},
 				},
 			}
 
 			test := func(input string) string {
 				selectPath, _ := filter.SelectPathFromString(input)
-				symbols := data.Select(selectPath).(*FileMatch).Symbols
+
+				dataCopy := *data // copy the data because Select modifies the set of symbols
+				symbols := dataCopy.Select(selectPath).(*FileMatch).Symbols
 				var values []string
 				for _, s := range symbols {
 					values = append(values, s.Symbol.Name+":"+s.Symbol.Kind)
@@ -35,8 +39,9 @@ func TestSelect(t *testing.T) {
 				return strings.Join(values, ", ")
 			}
 
-			autogold.Expect("a():func, b():function, var c:variable").Equal(t, test("symbol"))
+			autogold.Expect("a():func, b():function, var c:variable, enum d:enumerator, enum e:enum").Equal(t, test("symbol"))
 			autogold.Expect("var c:variable").Equal(t, test("symbol.variable"))
+			autogold.Expect("enum d:enumerator, enum e:enum").Equal(t, test("symbol.enum"))
 		})
 
 		t.Run("path match", func(t *testing.T) {

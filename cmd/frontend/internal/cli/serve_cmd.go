@@ -13,14 +13,12 @@ import (
 	"github.com/go-logr/stdr"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/keegancsmith/tmpfriend"
 	sglog "github.com/sourcegraph/log"
 	"github.com/throttled/throttled/v2"
 	"github.com/throttled/throttled/v2/store/redigostore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
@@ -137,7 +135,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	if err := overrideSiteConfig(ctx, logger, db); err != nil {
 		return errors.Wrap(err, "failed to apply site config overrides")
 	}
-	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(newConfigurationSource(logger, db))
+
+	configurationServer := conf.InitConfigurationServerFrontendOnly(newConfigurationSource(logger, db))
 	conf.MustValidateDefaults()
 
 	// now we can init the keyring, as it depends on site config
@@ -158,7 +157,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// Run enterprise setup hook
 	enterpriseServices := enterpriseSetupHook(db, conf.DefaultClient())
 
-	ui.InitRouter(db)
+	ui.InitRouter(db, configurationServer)
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
@@ -198,9 +197,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	printConfigValidation(logger)
 
-	cleanup := tmpfriend.SetupOrNOOP()
-	defer cleanup()
-
 	// Don't proceed if system requirements are missing, to avoid
 	// presenting users with a half-working experience.
 	if err := checkSysReqs(context.Background(), os.Stderr); err != nil {
@@ -217,6 +213,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	schema, err := graphqlbackend.NewSchema(
 		db,
 		gitserver.NewClient("graphql.schemaresolver"),
+		configurationServer,
 		[]graphqlbackend.OptionalResolver{enterpriseServices.OptionalResolver},
 	)
 	if err != nil {

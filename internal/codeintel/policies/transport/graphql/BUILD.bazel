@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -28,5 +29,23 @@ go_library(
         "//lib/pointers",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "graphql_test",
+    srcs = ["root_resolver_test.go"],
+    embed = [":graphql"],
+    tags = ["requires-network"],
+    deps = [
+        "//internal/codeintel/policies",
+        "//internal/codeintel/resolvers",
+        "//internal/codeintel/shared/resolvers",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/gitserver",
+        "//internal/observation",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
     ],
 )

@@ -7,6 +7,7 @@ package router
 import (
 	"github.com/gorilla/mux"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 )
 
@@ -97,6 +98,11 @@ func newRouter() *mux.Router {
 	base.Path("/site-admin/data-export/archive").Methods("POST").Name(OneClickExportArchive)
 
 	base.Path("/site-admin/pings/latest").Methods("GET").Name(LatestPing)
+
+	// Make the abov paths known to the SvelteKit app
+	// (the repo route is ignored since it's basically catch-all;
+	//  it's also handled by ui/router.go)
+	sveltekit.RegisterSvelteKit(base, nil)
 
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()

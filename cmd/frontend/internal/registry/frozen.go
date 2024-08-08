@@ -4,8 +4,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"sync"
-
-	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
 )
 
 var (
@@ -13,10 +11,10 @@ var (
 	frozenRegistryJSON []byte
 
 	frozenRegistryDataOnce sync.Once
-	frozenRegistryData     []*registry.Extension
+	frozenRegistryData     []*Extension
 )
 
-func getFrozenRegistryData() []*registry.Extension {
+func getFrozenRegistryData() []*Extension {
 	frozenRegistryDataOnce.Do(func() {
 		json.Unmarshal(frozenRegistryJSON, &frozenRegistryData)
 	})

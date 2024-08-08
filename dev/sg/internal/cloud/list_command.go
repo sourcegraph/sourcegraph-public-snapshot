@@ -35,6 +35,7 @@ var listEphemeralCommand = cli.Command{
 func listCloudEphemeral(ctx *cli.Context) error {
 	email, err := GetGCloudAccount(ctx.Context)
 	if err != nil {
+		writeGCloudErrorSuggestion()
 		return err
 	}
 

@@ -35,7 +35,7 @@
     {#if withHeader}
         <div class="header">
             <div class="left">
-                <Icon icon={ILucideGitMerge} aria-hidden --icon-color="var(--primary)" />
+                <Icon icon={ILucideGitMerge} aria-hidden --icon-color="var(--primary)" inline />
                 <h4>{displayRepoName(data.name)}</h4>
                 <Badge variant="outlineSecondary" small pill>
                     {data.isPrivate ? 'Private' : 'Public'}
@@ -45,7 +45,7 @@
                 <Icon
                     icon={getIconForCodeHost(data.externalRepository.serviceType)}
                     --icon-color="var(--text-body)"
-                    --size={24}
+                    inline
                 />
                 <small>{getHumanNameForCodeHost(data.externalRepository.serviceType)}</small>
             </div>
@@ -93,7 +93,7 @@
         width: 480px;
 
         & > div {
-            padding: 0.75rem;
+            padding: 0.5rem 0.75rem;
 
             &:not(:last-child) {
                 border-bottom: 1px solid var(--border-color);
@@ -105,7 +105,6 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background-color: var(--subtle-bg);
 
         .left {
             display: flex;
@@ -114,7 +113,7 @@
             gap: 0.25rem;
 
             h4 {
-                color: var(--text-body);
+                color: var(--text-title);
                 margin: 0;
             }
 
@@ -199,6 +198,6 @@
         display: flex;
         color: var(--text-muted);
         justify-content: flex-end;
-        font-size: var(--font-size-tiny);
+        font-size: var(--font-size-xs);
     }
 </style>

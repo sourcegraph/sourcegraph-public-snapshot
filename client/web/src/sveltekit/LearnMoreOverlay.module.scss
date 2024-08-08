@@ -1,0 +1,182 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.dialog {
+    position: absolute;
+    margin: 0 auto;
+    top: min(10vh, 10rem);
+    width: min(80vw, 100rem);
+    padding: 2rem;
+    overflow: hidden;
+
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--color-bg-1);
+
+    :global(.theme-light) & {
+        box-shadow: 0 186px 52px 0 rgba(0, 0, 0, 0), 0 119px 48px 0 rgba(0, 0, 0, 0.01),
+            0 67px 40px 0 rgba(0, 0, 0, 0.02), 0 30px 30px 0 rgba(0, 0, 0, 0.03), 0 7px 16px 0 rgba(0, 0, 0, 0.04);
+    }
+    :global(.theme-dark) & {
+        box-shadow: 0 186px 52px 0 rgba(0, 0, 0, 0.01), 0 119px 48px 0 rgba(0, 0, 0, 0.03),
+            0 67px 40px 0 rgba(0, 0, 0, 0.06), 0 30px 30px 0 rgba(0, 0, 0, 0.12), 0 7px 16px 0 rgba(0, 0, 0, 0.24);
+    }
+
+    &::backdrop {
+        opacity: 0.48;
+        :global(.theme-light) & {
+            background: var(--color-background, #f9fafb);
+        }
+        :global(.theme-dark) & {
+            background: var(--color-background, #0f111a);
+        }
+    }
+
+    /* stylelint-disable-next-line property-no-unknown */
+    container-type: inline-size;
+
+    @media (--xs-breakpoint-down) {
+        margin: 0;
+        border-radius: 0;
+        border: none;
+        position: fixed;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        max-width: 100vw;
+    }
+}
+
+.inner {
+    > :global(img) {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        filter: drop-shadow(0 25px 50px rgba(15, 17, 26, 0.25));
+
+        /* stylelint-disable-next-line scss/at-rule-no-unknown */
+        @container (width < 975px) {
+            display: none;
+        }
+    }
+
+    > :global(button) {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+    }
+}
+
+.content {
+    // TODO: import this from shadcn color library (once it exists)
+    :global(.theme-light) & {
+        --color-text-subtle: var(--text-body);
+    }
+    :global(.theme-dark) & {
+        --color-text-subtle: #a6b6d9;
+    }
+
+    width: calc(100% - 24rem);
+    /* stylelint-disable-next-line scss/at-rule-no-unknown */
+    @container (width < 975px) {
+        width: 100%;
+    }
+
+    display: flex;
+    gap: 1rem;
+    flex-direction: column;
+
+    .logo {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+
+        img {
+            width: 2rem;
+            height: 2rem;
+        }
+    }
+
+    .message {
+        h1 {
+            text-wrap: balance;
+            span {
+                background: linear-gradient(90deg, #00cbec 0%, #a112ff 48.53%, #ff5543 97.06%);
+                color: transparent;
+                background-clip: text;
+            }
+        }
+    }
+
+    .subtitle {
+        margin: 0;
+        font-size: var(--font-size-large);
+        font-weight: 500;
+        color: var(--color-text-subtle);
+        text-wrap: wrap;
+    }
+
+    .features {
+        display: grid;
+        max-width: 700px;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem 0.75rem;
+        padding: 1rem 0;
+
+        > div {
+            display: grid;
+            grid-template-columns: min-content auto;
+            gap: 0.25rem 0.75rem;
+            svg {
+                grid-column: 1;
+                grid-row: 1;
+                width: 1.25rem;
+                height: 1.25rem;
+            }
+            h5 {
+                all: unset;
+                font-weight: 600;
+
+                grid-column: 2;
+                grid-row: 1;
+            }
+            p {
+                all: unset;
+                font-size: var(--font-size-small);
+                font-weight: 400;
+                color: var(--color-text-subtle);
+
+                grid-column: 2;
+                grid-row: 2;
+                text-wrap: wrap;
+            }
+        }
+    }
+
+    .cta {
+        display: flex;
+        gap: 1rem;
+        flex-direction: column;
+
+        h3 {
+            color: #ff5644;
+        }
+        div {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        button {
+            width: 15rem;
+        }
+        p {
+            grid-column: 1 / -1;
+            color: var(--text-muted);
+            font-size: var(--font-size-small);
+            font-weight: 400;
+            margin: 0;
+            text-wrap: wrap;
+        }
+    }
+}

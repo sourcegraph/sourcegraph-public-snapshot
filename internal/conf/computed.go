@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	stdlog "log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"net/url"
+	"os"
 	"slices"
 	"strings"
 	"time"
@@ -531,6 +532,14 @@ func AuthPrimaryLoginProvidersCount() int {
 		return 3 // default to 3
 	}
 	return c
+}
+
+func ApplianceUpdateTarget() string {
+	return os.Getenv("APPLIANCE_UPDATE_TARGET")
+}
+
+func ApplianceMenuTarget() string {
+	return os.Getenv("APPLIANCE_MENU_TARGET")
 }
 
 // SearchSymbolsParallelism returns 20, or the site config
@@ -1466,7 +1475,7 @@ func SCIPBasedAPIsEnabled() bool {
 	expt := siteConfig.ExperimentalFeatures
 	if expt == nil || expt.ScipBasedAPIs == nil {
 		// NOTE(id: scip-based-apis-feature-flag): Keep this in sync with site.schema.json
-		return false
+		return true
 	}
 	return *expt.ScipBasedAPIs
 }

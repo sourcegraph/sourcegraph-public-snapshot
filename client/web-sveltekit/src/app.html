@@ -12,22 +12,21 @@
         <meta name="color-scheme" content="light dark" />
 
         <script ignore-csp>
-            window.context = {
-                // Necessary to make authenticated GraphQL requests in dev mode
-                xhrHeaders: {
-                    'X-Requested-With': 'Sourcegraph',
-                },
-                // Local standalone dev server for dotcom can be started with
-                // pnpm dev:dotcom
-                sourcegraphDotComMode: !!'%sveltekit.env.PUBLIC_DOTCOM%',
-                codyEnabledOnInstance: !!'%sveltekit.env.PUBLIC_CODY_ENABLED_ON_INSTANCE%',
-                codyEnabledForCurrentUser: !!'%sveltekit.env.PUBLIC_CODY_ENABLED_FOR_CURRENT_USER%',
-                batchChangesEnabled: !!'%sveltekit.env.PUBLIC_BATCH_CHANGES_ENABLED%',
-                codeInsightsEnabled: !!'%sveltekit.env.PUBLIC_CODE_INSIGHTS_ENABLED%',
+            // The window.context object extracted from the origin server is injected here.
+            // Needs to be kept in sync with the vite-sg-proxy.ts plugin
+            // ---window.context---
 
-                // The following are used to mock context in playwright tests
-                ...(typeof window.context === 'object' ? window.context : {}),
-            }
+            window.context = Object.assign(
+                {},
+                // Injected window.context (via proxy) if available
+                window.context,
+                // Dev specific overwrites
+                {
+                    sentryDNS: undefined,
+                },
+                // Playwright specific overwrites
+                window.playwrightContext
+            )
             window.pageError = undefined
         </script>
 

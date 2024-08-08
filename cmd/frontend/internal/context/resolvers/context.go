@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/grafana/regexp"
+	"github.com/k3a/html2text"
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
@@ -372,11 +374,12 @@ func (r *Resolver) fileChunkToResolver(ctx context.Context, chunk *codycontext.F
 	return graphqlbackend.NewFileChunkContextResolver(gitTreeEntryResolver, chunk.StartLine, endLine), nil
 }
 
-func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextArgs) (conf.CodyRerankerBackend, []int32, error) {
+func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextArgs) (conf.CodyRerankerBackend, []graphqlbackend.RankedItemResolver, error) {
 	if r.reranker == conf.CodyRerankerIdentity {
-		var used []int32
+		var used []graphqlbackend.RankedItemResolver
 		for i := range args.ContextItems {
-			used = append(used, int32(i))
+			// no information about relevance, so we just return 0.5 for all items
+			used = append(used, rankedItem{index: int32(i), score: 0.5})
 		}
 		return conf.CodyRerankerIdentity, used, nil
 	}
@@ -394,9 +397,9 @@ func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextAr
 		r.logger.Error("cohere reranking error", log.String("interactionId", args.InteractionID), log.String("query", args.Query), log.Error(err))
 		return conf.CodyRerankerCohere, nil, err
 	}
-	var used []int32
+	var used []graphqlbackend.RankedItemResolver
 	for _, r := range resp.Results {
-		used = append(used, int32(r.Index))
+		used = append(used, rankedItem{index: int32(r.Index), score: r.RelevanceScore})
 	}
 	return conf.CodyRerankerCohere, used, nil
 }
@@ -426,6 +429,74 @@ func (r *Resolver) fetchZoekt(ctx context.Context, query string, repo *types.Rep
 	return res, partialErrors, nil
 }
 
+var titleRegexp = regexp.MustCompile(`<title>([^<]+)</title>`)
+
+const urlContextReadLimit = 5 * 1024 * 1024
+const urlContextOutputLimit = 14000
+
+type urlMentionContextResponse struct {
+	title   *string
+	content string
+}
+
+func (u *urlMentionContextResponse) Title() *string {
+	return u.title
+}
+
+func (u *urlMentionContextResponse) Content() string {
+	return u.content
+}
+
+func (r *Resolver) UrlMentionContext(ctx context.Context, args graphqlbackend.UrlMentionContextArgs) (graphqlbackend.UrlMentionContextResolver, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", args.Url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: This endpoint allows API users to create GET requests against arbitrary URLs.
+	// To mitigate risk of SSRF, we use an the ExternalClient, which denies requests to internal targets.
+	resp, err := httpcli.UncachedExternalClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, errors.Errorf("request failed with status %d", resp.StatusCode)
+	}
+
+	// 🚨 SECURITY: Limit the amount of data we will read into memory.
+	content, err := io.ReadAll(io.LimitReader(resp.Body, urlContextReadLimit))
+	if err != nil {
+		return nil, err
+	}
+
+	// Attempt to extract the title
+	var title *string
+	if match := titleRegexp.FindSubmatch(content); match != nil {
+		title = pointers.Ptr(string(match[1]))
+	}
+
+	// Trim to main if it exists since that's a decent signal pointing to the important part of the page.
+	if idx := bytes.Index(content, []byte("<main")); idx > 0 {
+		content = content[idx:]
+	}
+	if idx := bytes.Index(content, []byte("</main>")); idx > 0 {
+		content = content[:idx+len("</main>")]
+	}
+
+	// Convert the HTML to text to make the ouptut higher density. The output
+	// is still pretty crude, but it does enough to capture the description and
+	// most comments from a github PR. There is significant room to improve
+	// content extraction here.
+	textified := html2text.HTML2TextWithOptions(string(content), html2text.WithUnixLineBreaks())
+	textified = textified[:min(len(textified), urlContextOutputLimit)]
+	return &urlMentionContextResponse{
+		title:   title,
+		content: textified,
+	}, nil
+}
+
 // countLines finds the number of lines corresponding to the number of runes. We 'round down'
 // to ensure that we don't return more characters than our budget.
 func countLines(content string, numRunes int) int {
@@ -445,19 +516,19 @@ func countLines(content string, numRunes int) int {
 
 type rankContextResponse struct {
 	ranker  string
-	used    []int32
-	ignored []int32
+	used    []graphqlbackend.RankedItemResolver
+	ignored []graphqlbackend.RankedItemResolver
 }
 
 func (r rankContextResponse) Ranker() string {
 	return r.ranker
 }
 
-func (r rankContextResponse) Used() []int32 {
+func (r rankContextResponse) Used() []graphqlbackend.RankedItemResolver {
 	return r.used
 }
 
-func (r rankContextResponse) Ignored() []int32 {
+func (r rankContextResponse) Ignored() []graphqlbackend.RankedItemResolver {
 	return r.ignored
 }
 
@@ -500,3 +571,18 @@ func (r retrieverContextItem) Retriever() string {
 }
 
 var _ graphqlbackend.RetrieverContextItemResolver = retrieverContextItem{}
+
+type rankedItem struct {
+	index int32
+	score float64
+}
+
+func (r rankedItem) Index() int32 {
+	return r.index
+}
+
+func (r rankedItem) Score() float64 {
+	return r.score
+}
+
+var _ graphqlbackend.RankedItemResolver = rankedItem{}

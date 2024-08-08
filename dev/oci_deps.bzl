@@ -17,7 +17,7 @@ def oci_deps():
     """
     oci_pull(
         name = "scip-java",
-        digest = "sha256:808b063b7376cfc0a4937d89ddc3d4dd9652d10609865fae3f3b34302132737a",
+        digest = "sha256:85f55daef32aa1b2d9e4248bb97fea30dadc9fc7c6f7beb630120737734ed1d1",
         image = "index.docker.io/sourcegraph/scip-java",
     )
 
@@ -35,8 +35,9 @@ def oci_deps():
     # Tag: docker:27.0.3-dind
     oci_pull(
         name = "upstream_dind_base",
-        digest = "sha256:4e52dcbcf86f5222648bc411cb32287f7b8480c97558eab0fee7b8b5a9376ab5",
+        digest = "sha256:75f620cbf8e87543ec1fb0bf98fa2cfde8f684308dafb6c50cc75f3a235fa1fc",
         image = "index.docker.io/library/docker",
+        platforms = ["linux/amd64"],
     )
 
     oci_pull(

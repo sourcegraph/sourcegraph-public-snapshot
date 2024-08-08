@@ -1,7 +1,9 @@
-import { type FC, memo, useCallback, useMemo } from 'react'
+import { type FC, memo, useMemo } from 'react'
 
-import { CodyWebChatProvider } from '@sourcegraph/cody-web'
-import { useLocalStorage } from '@sourcegraph/wildcard'
+import { useLocation } from 'react-router-dom'
+
+import { CodyWebPanelProvider, type InitialContext } from '@sourcegraph/cody-web'
+import { SourcegraphURL } from '@sourcegraph/common'
 
 import { getTelemetrySourceClient } from '../../../telemetry'
 import { ChatUi } from '../../chat/new-chat/components/chat-ui/ChatUi'
@@ -19,40 +21,34 @@ interface NewCodySidebarWebChatProps {
 export const NewCodySidebarWebChat: FC<NewCodySidebarWebChatProps> = memo(function CodyWebChat(props) {
     const { filePath, repository } = props
 
-    const [contextToChatIds, setContextToChatIds] = useLocalStorage<Record<string, string>>(
-        'cody.context-to-chat-ids',
-        {}
-    )
+    const location = useLocation()
 
-    const handleNewChatCreated = useCallback(
-        (chatId: string): void => {
-            contextToChatIds[`${repository.id}-${filePath}`] = chatId
-            setContextToChatIds(contextToChatIds)
-        },
-        [contextToChatIds, setContextToChatIds, filePath, repository.id]
-    )
+    const contextInfo = useMemo<InitialContext>(() => {
+        const lineOrPosition = SourcegraphURL.from(location).lineRange
+        const hasFileRangeSelection = lineOrPosition.line
 
-    const contextInfo = useMemo(
-        () => ({
+        return {
             repositories: [repository],
             fileURL: filePath ? `/${filePath}` : undefined,
-        }),
-        [repository, filePath]
-    )
-
-    const chatID = contextToChatIds[`${repository.id}-${filePath}`] ?? null
+            // Line range - 1 because of Cody Web initial context file range bug
+            fileRange: hasFileRangeSelection
+                ? {
+                      startLine: lineOrPosition.line - 1,
+                      endLine: lineOrPosition.endLine ? lineOrPosition.endLine - 1 : lineOrPosition.line - 1,
+                  }
+                : undefined,
+        }
+    }, [repository, filePath, location])
 
     return (
-        <CodyWebChatProvider
+        <CodyWebPanelProvider
             accessToken=""
-            chatID={chatID}
             initialContext={contextInfo}
             serverEndpoint={window.location.origin}
             customHeaders={window.context.xhrHeaders}
             telemetryClientName={getTelemetrySourceClient()}
-            onNewChatCreated={handleNewChatCreated}
         >
             <ChatUi />
-        </CodyWebChatProvider>
+        </CodyWebPanelProvider>
     )
 })

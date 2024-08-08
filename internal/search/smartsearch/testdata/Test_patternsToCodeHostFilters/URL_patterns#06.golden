@@ -1,4 +1,0 @@
-{
-  "Input": "https://github.com/sourcegraph/sourcegraph/commit/abc",
-  "Query": "repo:^github\\.com/sourcegraph/sourcegraph$ rev:abc"
-}

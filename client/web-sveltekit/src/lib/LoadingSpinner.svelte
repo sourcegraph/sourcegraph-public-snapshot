@@ -3,8 +3,8 @@
     export let center = true
 </script>
 
-<div class:center>
-    <div class="loading-spinner" class:inline aria-label="loading" aria-live="polite" />
+<div class:center class:inline>
+    <div class="loading-spinner" aria-label="loading" aria-live="polite" />
 </div>
 
 <style lang="scss">
@@ -14,6 +14,11 @@
         align-items: center;
         flex: 1;
         justify-content: center;
+
+    }
+
+    .inline {
+        display: contents;
     }
 
     .loading-spinner {
@@ -28,13 +33,12 @@
 
         width: var(--size, 1rem);
         height: var(--size, 1rem);
-        &.inline {
+        .inline & {
             width: #{(16 / 14)}em;
             height: #{(16 / 14)}em;
 
-            vertical-align: bottom;
-            display: inline-flex;
-            align-items: center;
+            vertical-align: middle;
+            display: inline-block;
         }
 
         border-radius: 50%;

@@ -120,6 +120,11 @@ type UpstreamRequest interface {
 // being cancelled as DeadlineExceeded.
 const maxRequestDuration = 1 * time.Minute
 
+// modelAvaialbilityTracker acts as an in-memory store of recent requests broken down
+// by LLM model. We use it to block requests to LLMs that are timing out or returning 429s
+// as a way of improving the stability on our end. (And not sending traffic to unhealthy LLMs.)
+var modelAvailabilityTracker = newModelsLoadTracker()
+
 type UpstreamHandlerConfig struct {
 	// defaultRetryAfterSeconds sets the retry-after policy on upstream rate
 	// limit events in case a retry-after is not provided by the upstream
@@ -413,7 +418,14 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			}
 		}()
 
+		if !modelAvailabilityTracker.isModelAvailable(gatewayModel) {
+			response.JSONError(logger, w, http.StatusServiceUnavailable,
+				errors.Newf("model %s is currently unavailable", gatewayModel))
+			return
+		}
+
 		resp, err := httpClient.Do(upstreamRequest)
+		defer modelAvailabilityTracker.record(gatewayModel, resp, err)
 
 		if err != nil {
 			// Ignore reporting errors where client disconnected

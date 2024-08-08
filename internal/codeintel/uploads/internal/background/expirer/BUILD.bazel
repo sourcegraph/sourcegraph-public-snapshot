@@ -42,25 +42,16 @@ go_test(
     tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/api",
-        "//internal/codeintel/core",
         "//internal/codeintel/policies",
         "//internal/codeintel/policies/shared",
-        "//internal/codeintel/uploads/internal/commitgraph",
-        "//internal/codeintel/uploads/internal/store",
+        "//internal/codeintel/uploads/internal/storemocks",
         "//internal/codeintel/uploads/shared",
-        "//internal/database/basestore",
         "//internal/database/dbmocks",
-        "//internal/executor",
-        "//internal/gitserver/gitdomain",
         "//internal/observation",
         "//internal/timeutil",
         "//internal/types",
-        "//internal/workerutil",
-        "//internal/workerutil/dbworker/store",
-        "//lib/codeintel/precise",
         "//lib/pointers",
         "@com_github_google_go_cmp//cmp",
-        "@com_github_keegancsmith_sqlf//:sqlf",
     ],
 )
 
@@ -72,9 +63,5 @@ go_mockgen(
         "//:mockgen.test.yaml",
         "//:mockgen.temp.yaml",
     ],
-    deps = [
-        ":expirer",
-        "//internal/codeintel/uploads/internal/store",
-        "//internal/workerutil/dbworker/store",
-    ],
+    deps = [":expirer"],
 )

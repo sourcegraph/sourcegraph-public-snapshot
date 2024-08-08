@@ -498,8 +498,7 @@ extend type Query {
         When specified, indicates that this request should be paginated and
         the first N results (relative to the cursor) should be returned. i.e.
         how many results to return per page.
-        Will return _at least_ the number of results specified, but may return
-        more to only return completed files.
+        May return more results than requested to complete usages for a file.
         """
         first: Int
 
@@ -747,7 +746,7 @@ type Usage {
     # Invariant: `range.path` == `blob.path`. The path is made available
     # as part of this type for convenience.
     # """
-    usageRange: UsageRange
+    usageRange: UsageRange!
 
     # TODO: Add a blob: GitBlob field here for more flexibility?
 

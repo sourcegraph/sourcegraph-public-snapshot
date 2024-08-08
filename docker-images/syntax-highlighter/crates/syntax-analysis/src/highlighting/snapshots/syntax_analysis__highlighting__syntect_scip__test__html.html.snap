@@ -66,15 +66,21 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 // ^^^^ Identifier entity.name.tag.structure.any.html
 //     ^ PunctuationBracket punctuation.definition.tag.end.html
       <!-- This is a comment -->
-//    ^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment comment.block.html
+//    ^^^^ Comment punctuation.definition.comment.begin.html
+//        ^^^^^^^^^^^^^^^^^^^ Comment punctuation.definition.comment.end.html
+//                           ^^^ Comment punctuation.definition.comment.end.html
       <style>
 //    ^ PunctuationBracket punctuation.definition.tag.begin.html
 //     ^^^^^ Identifier entity.name.tag.style.html
 //          ^ PunctuationBracket punctuation.definition.tag.end.html
   /*
-//^^ Comment 11:0..13:3 comment.block.css
+//^^ Comment punctuation.definition.comment.css
+//   Comment 11:2..12:1 punctuation.definition.comment.css
    * Positions
+// ^ Comment punctuation.definition.comment.css
+//  ^^^^^^^^^^ Comment 12:2..13:1 punctuation.definition.comment.css
    */
+// ^^ Comment punctuation.definition.comment.css
   .center,
 //^ PunctuationBracket punctuation.definition.entity.css
 // ^^^^^^ Identifier entity.other.attribute-name.class.css
@@ -202,4 +208,3 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //^^ PunctuationBracket punctuation.definition.tag.begin.html
 //  ^^^^ Identifier entity.name.tag.structure.any.html
 //      ^ PunctuationBracket punctuation.definition.tag.end.html
-

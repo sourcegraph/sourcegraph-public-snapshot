@@ -22,6 +22,7 @@
     import { isRouteEnabled } from '$lib/navigation'
 
     import type { LayoutData } from './$types'
+    import WelcomeOverlay from './WelcomeOverlay.svelte'
 
     export let data: LayoutData
 
@@ -81,10 +82,10 @@
     $: currentUserID = data.user?.id
     $: handleOptOut = currentUserID
         ? async (): Promise<void> => {
-              if (currentUserID) {
-                  await data.disableSvelteFeatureFlags(currentUserID)
-                  window.location.reload()
-              }
+              // Show departure message after switching off
+              $temporarySettingsStorage.set('webNext.departureMessage.show', true)
+              await data.disableSvelteFeatureFlags(currentUserID)
+              window.location.reload()
           }
         : undefined
 </script>
@@ -104,6 +105,8 @@
 <main>
     <slot />
 </main>
+
+<WelcomeOverlay />
 
 <FuzzyFinderContainer />
 

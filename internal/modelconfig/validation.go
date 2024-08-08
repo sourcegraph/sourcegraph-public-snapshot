@@ -163,10 +163,10 @@ func ValidateModelConfig(cfg *types.ModelConfiguration) error {
 		return errors.Errorf("unknown chat model %q", cfg.DefaultModels.Chat)
 	}
 	if !isKnownModel(cfg.DefaultModels.CodeCompletion) {
-		return errors.Errorf("unknown chat model %q", cfg.DefaultModels.CodeCompletion)
+		return errors.Errorf("unknown code completion model %q", cfg.DefaultModels.CodeCompletion)
 	}
 	if !isKnownModel(cfg.DefaultModels.FastChat) {
-		return errors.Errorf("unknown chat model %q", cfg.DefaultModels.FastChat)
+		return errors.Errorf("unknown fast chat model %q", cfg.DefaultModels.FastChat)
 	}
 
 	return nil
@@ -265,13 +265,13 @@ func ValidateSiteConfig(doc *types.SiteModelConfiguration) error {
 	// that we expect to be supplied by Sourcegraph. So we just check if they
 	// are valid ModelRefs.
 	if defModels := doc.DefaultModels; defModels != nil {
-		if err := ValidateModelRef(defModels.Chat); err != nil {
+		if err := ValidateModelRef(defModels.Chat); defModels.Chat != "" && err != nil {
 			return errors.Wrap(err, "default chat model")
 		}
-		if err := ValidateModelRef(defModels.CodeCompletion); err != nil {
+		if err := ValidateModelRef(defModels.CodeCompletion); defModels.CodeCompletion != "" && err != nil {
 			return errors.Wrap(err, "default completion model")
 		}
-		if err := ValidateModelRef(defModels.FastChat); err != nil {
+		if err := ValidateModelRef(defModels.FastChat); defModels.FastChat != "" && err != nil {
 			return errors.Wrap(err, "default fast chat model")
 		}
 	}

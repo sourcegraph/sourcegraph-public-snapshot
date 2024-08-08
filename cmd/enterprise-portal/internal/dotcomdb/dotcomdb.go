@@ -467,9 +467,23 @@ func (r *Reader) ListEnterpriseSubscriptionLicenses(
 }
 
 type SubscriptionAttributes struct {
-	ID         string
+	ID         string // UUID-format ID
 	CreatedAt  time.Time
 	ArchivedAt *time.Time
+
+	UserDisplayName string
+}
+
+func (s SubscriptionAttributes) GenerateDisplayName() string {
+	var parts []string
+	if s.UserDisplayName != "" {
+		parts = append(parts, s.UserDisplayName)
+	}
+	parts = append(parts,
+		// Stick a seconds-granularity component to the name to guarantee
+		// uniqueness during migration.
+		s.CreatedAt.Format(time.DateTime))
+	return strings.Join(parts, " - ")
 }
 
 type ListEnterpriseSubscriptionsOptions struct {
@@ -486,25 +500,29 @@ type ListEnterpriseSubscriptionsOptions struct {
 func (r *Reader) ListEnterpriseSubscriptions(ctx context.Context, opts ListEnterpriseSubscriptionsOptions) ([]*SubscriptionAttributes, error) {
 	query := `
 SELECT
-	id, created_at, archived_at
+	product_subscriptions.id,
+	product_subscriptions.created_at,
+	product_subscriptions.archived_at,
+	COALESCE( NULLIF(users.display_name, ''), users.username ) AS user_display_name
 FROM
 	product_subscriptions
+JOIN users ON users.id = product_subscriptions.user_id
 WHERE true`
 	namedArgs := pgx.NamedArgs{}
 	if len(opts.SubscriptionIDs) > 0 {
-		query += "\nAND id = ANY(@ids)"
+		query += "\nAND product_subscriptions.id = ANY(@ids)"
 		namedArgs["ids"] = opts.SubscriptionIDs
 	}
 	if opts.IsArchived {
-		query += "\nAND archived_at IS NOT NULL"
+		query += "\nAND product_subscriptions.archived_at IS NOT NULL"
 	} else {
-		query += "\nAND archived_at IS NULL"
+		query += "\nAND product_subscriptions.archived_at IS NULL"
 	}
 	var licenseCond string
 	if r.opts.DevOnly {
 		licenseCond = fmt.Sprintf("'%s' = ANY(product_licenses.license_tags)", licensing.DevTag)
 	} else {
-		licenseCond = fmt.Sprintf("NOT '%s' = ANY(product_licenses.license_tags)", licensing.DevTag)
+		licenseCond = "true"
 	}
 	query += fmt.Sprintf(`
 AND EXISTS (
@@ -517,7 +535,7 @@ AND EXISTS (
 )
 `, licenseCond)
 
-	rows, err := r.db.Query(ctx, query, namedArgs)
+	rows, err := r.db.Query(ctx, query+"ORDER BY product_subscriptions.created_at DESC", namedArgs)
 	if err != nil {
 		return nil, errors.Wrap(err, "query subscription attributes")
 	}
@@ -525,7 +543,7 @@ AND EXISTS (
 	var attrs []*SubscriptionAttributes
 	for rows.Next() {
 		var attr SubscriptionAttributes
-		err = rows.Scan(&attr.ID, &attr.CreatedAt, &attr.ArchivedAt)
+		err = rows.Scan(&attr.ID, &attr.CreatedAt, &attr.ArchivedAt, &attr.UserDisplayName)
 		if err != nil {
 			return nil, errors.Wrap(err, "scan subscription attributes")
 		}

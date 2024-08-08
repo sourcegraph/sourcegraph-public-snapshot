@@ -8,81 +8,135 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	modelconfigSDK "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type modelconfigResolver struct {
+type codyLLMConfigResolver struct {
 	logger log.Logger
 }
 
 func newResolver(logger log.Logger) graphqlbackend.ModelconfigResolver {
-	return &modelconfigResolver{logger: logger}
+	return &codyLLMConfigResolver{logger: logger}
 }
 
 var _ = (*graphqlbackend.CodyLLMConfigurationResolver)(nil)
 
-func (r *modelconfigResolver) CodyLLMConfiguration(ctx context.Context) (graphqlbackend.CodyLLMConfigurationResolver, error) {
-
+// CodyLLMConfiguration returns the GraphQL resolver which returns the CodyLLMConfiguration data,
+// the behavior of which depends on exactly how the current site is configured.
+func (llmResolver *codyLLMConfigResolver) CodyLLMConfiguration(ctx context.Context) (graphqlbackend.CodyLLMConfigurationResolver, error) {
 	siteConfig := conf.Get().SiteConfig()
 
+	// If the site is configured to only use the older "completions" configuration, then we return a
+	// resolver that matches the previous behavior. (Which just returned the provider and models as-is,
+	// which is what older Cody clients expect.)
+	if siteConfig.Completions != nil && siteConfig.ModelConfiguration == nil {
+		completionsCfg := conf.GetCompletionsConfig(siteConfig)
+		// e.g. if Cody is not enabled.
+		if completionsCfg == nil {
+			return nil, nil
+		}
+		return &completionsConfigResolver{
+			config: completionsCfg,
+		}, nil
+	}
+
+	// Otherwise, use a different GraphQL resolver which needs to go to great lengths to preserve
+	// the previous behavior.
 	modelCfgSvc := Get()
 	modelconfig, err := modelCfgSvc.Get()
 	if err != nil {
-		r.logger.Warn("error obtaining model configuration data", log.Error(err))
+		llmResolver.logger.Warn("error obtaining model configuration data", log.Error(err))
 		return nil, errors.New("error fetching model configuration data")
 	}
 
 	// Create a new instance of the codyLLMConfigurationResolver per-request, so that
 	// we always pick up the latest site config, rather than using a stale version from
 	// when the Sourcegraph instance was initialized.
-	resolver := &codyLLMConfigurationResolver{
-		modelconfig:               modelconfig,
-		doNotUseCompletionsConfig: siteConfig.Completions,
+	resolver := &modelconfigResolver{
+		modelconfig: modelconfig,
 	}
 	return resolver, nil
 
 }
 
-type codyLLMConfigurationResolver struct {
+// completionsConfigResolver is the original logic of the CodyLLMConfigurationResolver before the
+// modelconfig changes landed. This should be used when the site configuration is only using the
+// "completions" section to configure LLM models.
+type completionsConfigResolver struct {
+	config *conftypes.CompletionsConfig
+}
+
+func (c *completionsConfigResolver) ChatModel() (string, error) {
+	return convertLegacyModelNameToModelID(c.config.ChatModel), nil
+}
+
+func (c *completionsConfigResolver) ChatModelMaxTokens() (*int32, error) {
+	if c.config.ChatModelMaxTokens != 0 {
+		max := int32(c.config.ChatModelMaxTokens)
+		return &max, nil
+	}
+	return nil, nil
+}
+
+func (c *completionsConfigResolver) SmartContextWindow() string {
+	if c.config.SmartContextWindow == "disabled" {
+		return "disabled"
+	}
+	return "enabled"
+}
+
+func (c *completionsConfigResolver) DisableClientConfigAPI() bool {
+	return c.config.DisableClientConfigAPI
+}
+
+func (c *completionsConfigResolver) FastChatModel() (string, error) {
+	return convertLegacyModelNameToModelID(c.config.FastChatModel), nil
+}
+
+func (c *completionsConfigResolver) FastChatModelMaxTokens() (*int32, error) {
+	if c.config.FastChatModelMaxTokens != 0 {
+		max := int32(c.config.FastChatModelMaxTokens)
+		return &max, nil
+	}
+	return nil, nil
+}
+
+func (c *completionsConfigResolver) Provider() string {
+	return string(c.config.Provider)
+}
+
+func (c *completionsConfigResolver) CompletionModel() (string, error) {
+	return convertLegacyModelNameToModelID(c.config.CompletionModel), nil
+}
+
+func (c *completionsConfigResolver) CompletionModelMaxTokens() (*int32, error) {
+	if c.config.CompletionModelMaxTokens != 0 {
+		max := int32(c.config.CompletionModelMaxTokens)
+		return &max, nil
+	}
+	return nil, nil
+}
+
+// modelconfigResolver implements the CodyLLMConfigurationResolver, used when the
+// site is configured to use the newer-style LLM model configuration format.
+type modelconfigResolver struct {
 	// modelconfig is the LLM model configuration data for this Sourcegraph instance.
 	// This is the source of truth and accurately reflects the site configuration.
 	modelconfig *modelconfigSDK.ModelConfiguration
-
-	// doNotUseCompletionsConfig is the older-style configuration data for Cody
-	// Enterprise, and is only passed along for backwards compatibility.
-	//
-	// DO NOT USE IT.
-	//
-	// The information it returns is only looking at the "completions" site config
-	// data, which may not even be provided. Only read from this value if you really
-	// know what you are doing.
-	doNotUseCompletionsConfig *schema.Completions
 }
 
-// toLegacyModelIdentifier converts the "new style" model identity into the old style
-// expected by Cody Clients.
-//
-// This is dangerous, as it will only work if this Sourcegraph backend AND Cody Gateway
-// can correctly map the legacy identifier into the correct ModelRef.
-//
-// Once Cody Clients are capable of natively using the modelref format, we should remove
-// this function and have all of our GraphQL APIs only refer to models using a ModelRef.
-func toLegacyModelIdentifier(mref modelconfigSDK.ModelRef) string {
-	return fmt.Sprintf("%s/%s", mref.ProviderID(), mref.ModelID())
-}
-
-func (r *codyLLMConfigurationResolver) ChatModel() (string, error) {
+func (r *modelconfigResolver) ChatModel() (string, error) {
 	defaultChatModelRef := r.modelconfig.DefaultModels.Chat
 	model := r.modelconfig.GetModelByMRef(defaultChatModelRef)
 	if model == nil {
 		return "", errors.Errorf("default chat model %q not found", defaultChatModelRef)
 	}
-	return toLegacyModelIdentifier(model.ModelRef), nil
+	return r.toLegacyModelRef(*model), nil
 }
 
-func (r *codyLLMConfigurationResolver) ChatModelMaxTokens() (*int32, error) {
+func (r *modelconfigResolver) ChatModelMaxTokens() (*int32, error) {
 	defaultChatModelRef := r.modelconfig.DefaultModels.Chat
 	model := r.modelconfig.GetModelByMRef(defaultChatModelRef)
 	if model == nil {
@@ -91,41 +145,28 @@ func (r *codyLLMConfigurationResolver) ChatModelMaxTokens() (*int32, error) {
 	maxTokens := int32(model.ContextWindow.MaxInputTokens)
 	return &maxTokens, nil
 }
-func (r *codyLLMConfigurationResolver) SmartContextWindow() string {
-	if r.doNotUseCompletionsConfig != nil {
-		if r.doNotUseCompletionsConfig.SmartContextWindow == "disabled" {
-			return "disabled"
-		} else {
-			return "enabled"
-		}
-	}
 
-	// If the admin has explicitly provided the newer "modelConfiguration" site config
-	// data, disable SmartContextWindow. We may want to re-enable this capability, but
-	// in some other way. (e.g. passing this flag on a per-model basis, or just having
-	// a more nuanced view of a model's specific context window.)
+func (r *modelconfigResolver) SmartContextWindow() string {
 	return "disabled"
 }
-func (r *codyLLMConfigurationResolver) DisableClientConfigAPI() bool {
-	if r.doNotUseCompletionsConfig != nil {
-		if val := r.doNotUseCompletionsConfig.DisableClientConfigAPI; val != nil {
-			return *val
-		}
-	}
+
+func (r *modelconfigResolver) DisableClientConfigAPI() bool {
+	// There is no way to disable the client config API if the site
+	// is using the "modelConfiguration" format.
 	return false
 }
 
-func (r *codyLLMConfigurationResolver) FastChatModel() (string, error) {
+func (r *modelconfigResolver) FastChatModel() (string, error) {
 	defaultFastChatModelRef := r.modelconfig.DefaultModels.FastChat
 	model := r.modelconfig.GetModelByMRef(defaultFastChatModelRef)
 	if model == nil {
 		return "", errors.Errorf("default fast chat model %q not found", defaultFastChatModelRef)
 	}
-	return toLegacyModelIdentifier(model.ModelRef), nil
+	return r.toLegacyModelRef(*model), nil
 
 }
 
-func (r *codyLLMConfigurationResolver) FastChatModelMaxTokens() (*int32, error) {
+func (r *modelconfigResolver) FastChatModelMaxTokens() (*int32, error) {
 	defaultFastChatModelRef := r.modelconfig.DefaultModels.FastChat
 	model := r.modelconfig.GetModelByMRef(defaultFastChatModelRef)
 	if model == nil {
@@ -158,21 +199,20 @@ func (r *codyLLMConfigurationResolver) FastChatModelMaxTokens() (*int32, error) 
 // The 'autocomplete provider name string' is then entered into a switch statement
 // (see create-provider.ts, `createProviderConfig` - which can be summarized as:
 //
-// * 'openai', 'azure-openai' => createUnstableOpenAIProviderConfig
-// * 'fireworks' => createFireworksProviderConfig
-// * 'aws-bedrock', 'anthropic' => createAnthropicProviderConfig
-// * 'google' => createAnthropicProviderConfig or createGeminiProviderConfig depending on model
+// 'openai', 'azure-openai'   - createUnstableOpenAIProviderConfig
+// 'fireworks'                - createFireworksProviderConfig
+// 'aws-bedrock', 'anthropic' - createAnthropicProviderConfig
+// 'google'                   - createAnthropicProviderConfig or createGeminiProviderConfig dep. on model
 //
 // Note that all other cases are irrelevant:
 //
-// * 'experimental-openaicompatible' => deprecated; client-side only option; does not need to be returned by this function.
-// * 'openaicompatible' => does not need to be returned by this function (uses new Models service instead of CodyLLMConfiguration.provider)
-// * Ollama and other options => are client-side only
+// 'experimental-openaicompatible' - deprecated; client-side only option; does not need to be returned by this function.
+// 'openaicompatible'              - does not need to be returned by this function (uses new Models service instead of CodyLLMConfiguration.provider)
+// Ollama and other options        - are client-side only
 //
 // Finally, it is worth noting that Sourcegraph instance versions prior to Aug 7th 2024
-// using Cody Gateway would return 'sourcegraph' as the provider name here, which would
-// hit a default 'fireworks' case in the client. Today, this logic no longer exists but
-// some remnants of it exist in the client codebase.
+// using Cody Gateway would return 'sourcegraph' as the provider name here. This is expected
+// on the client side in some places.
 //
 // Lastly, remember that we only ever use the default autocomplete model. There is no UI
 // currently in the product to choose the autocomplete model as a Cody user. However,
@@ -181,25 +221,25 @@ func (r *codyLLMConfigurationResolver) FastChatModelMaxTokens() (*int32, error) 
 //
 // TL;DR: this function is currently expected to return strings that satisfy these conditions:
 //
-// * 'openai', 'azure-openai' => createUnstableOpenAIProviderConfig
-// * 'fireworks' => createFireworksProviderConfig
-// * 'aws-bedrock', 'anthropic' => createAnthropicProviderConfig
-// * 'google' => createAnthropicProviderConfig or createGeminiProviderConfig depending on model
-func (r *codyLLMConfigurationResolver) Provider() string {
-	// Provider ID is the thing we have that maps closest to these strings and should be correct in the cases noted above.
-	return string(r.modelconfig.DefaultModels.CodeCompletion.ProviderID())
+// 'openai', 'azure-openai'   - createUnstableOpenAIProviderConfig
+// 'fireworks'                - createFireworksProviderConfig
+// 'aws-bedrock', 'anthropic' - createAnthropicProviderConfig
+// 'google'                   - createAnthropicProviderConfig or createGeminiProviderConfig depending on model
+func (r *modelconfigResolver) Provider() string {
+	completionProviderID := r.modelconfig.DefaultModels.CodeCompletion.ProviderID()
+	return r.convertProviderID(completionProviderID)
 }
 
-func (r *codyLLMConfigurationResolver) CompletionModel() (string, error) {
+func (r *modelconfigResolver) CompletionModel() (string, error) {
 	defaultCompletionModel := r.modelconfig.DefaultModels.CodeCompletion
 	model := r.modelconfig.GetModelByMRef(defaultCompletionModel)
 	if model == nil {
 		return "", errors.Errorf("default code completion model %q not found", defaultCompletionModel)
 	}
-	return toLegacyModelIdentifier(model.ModelRef), nil
+	return r.toLegacyModelRef(*model), nil
 }
 
-func (r *codyLLMConfigurationResolver) CompletionModelMaxTokens() (*int32, error) {
+func (r *modelconfigResolver) CompletionModelMaxTokens() (*int32, error) {
 	defaultCompletionModel := r.modelconfig.DefaultModels.CodeCompletion
 	model := r.modelconfig.GetModelByMRef(defaultCompletionModel)
 	if model == nil {
@@ -207,4 +247,67 @@ func (r *codyLLMConfigurationResolver) CompletionModelMaxTokens() (*int32, error
 	}
 	maxTokens := int32(model.ContextWindow.MaxInputTokens)
 	return &maxTokens, nil
+}
+
+// toLegacyModelRef converts the newer-style model (e.g. mref anthropic::v1::claude-3-sonnet) to
+// the older style (anthropic/claude-3-sonnet-20240229). However, this function will rename
+// the provider as needed to match older behavior. (See unit tests and convertProviderID for
+// more information.)
+func (r *modelconfigResolver) toLegacyModelRef(model modelconfigSDK.Model) string {
+	modelID := model.ModelRef.ModelID()
+	providerID := model.ModelRef.ProviderID()
+	legacyProviderName := r.convertProviderID(providerID)
+
+	// Potential issue: Older Cody clients calling the GraphQL may expect to see the model **name**
+	// such as "claude-3-sonnet-20240229". But it is important that we only return the model **ID**
+	// because that is what the HTTP completions API is expecting to see from the client.
+	//
+	// So when using older Cody clients, unaware of the newer modelconfig system, this could lead
+	// to some errors. (But newer clients won't be using this GraphQL endpoint at all and instead
+	// just use the newer modelconfig system, so hopefully this won't be a major concern.)
+	return fmt.Sprintf("%s/%s", legacyProviderName, modelID)
+}
+
+// convertProviderID returns the _API Provider_ for the referenced modelconfig provider.
+// The provider ID may be admin-defined, or typically just the _model_ provider like "anthropic".
+// But the Cody client needs to know the _API provider_, so it can build API requests in the
+// right format.
+//
+// Now, client's _shouldn't_ do this, because it doesn't account for LLM providers shipping breaking
+// changes with their models. But we still want to keep older Cody clients working.
+func (r *modelconfigResolver) convertProviderID(id modelconfigSDK.ProviderID) string {
+	// Lookup the provider that was referenced.
+	var referencedProvider *modelconfigSDK.Provider
+	for _, provider := range r.modelconfig.Providers {
+		if provider.ID == id {
+			referencedProvider = &provider
+			break
+		}
+	}
+
+	if referencedProvider == nil || referencedProvider.ServerSideConfig == nil {
+		return "sourcegraph"
+	}
+
+	// Inspect the server-side configuration to see what API provider is being used
+	// under the hood.
+	ssConfig := referencedProvider.ServerSideConfig
+	if ssConfig.AWSBedrock != nil {
+		return "aws-bedrock"
+	}
+	if ssConfig.AzureOpenAI != nil {
+		return "azure-openai"
+	}
+	if ssConfig.GenericProvider != nil {
+		// e.g. "anthropic", "fireworks", "google", etc.
+		return string(ssConfig.GenericProvider.ServiceName)
+	}
+	if ssConfig.OpenAICompatible != nil {
+		return "openaicompatible"
+	}
+	if ssConfig.SourcegraphProvider != nil {
+		return "sourcegraph"
+	}
+
+	return "unknown"
 }

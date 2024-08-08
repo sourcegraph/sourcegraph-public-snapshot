@@ -371,24 +371,24 @@ func syntacticUsagesImpl(
 	searchClient searchclient.SearchClient,
 	mappedIndex MappedIndex,
 	args UsagesForSymbolArgs,
-) (SyntacticUsagesResult, PreviousSyntacticSearch, *SyntacticUsagesError) {
+) (SyntacticUsagesResult, *SyntacticUsagesError) {
 	searchSymbol, symErr := symbolAtRange(ctx, mappedIndex, args)
 	if symErr != nil {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, &SyntacticUsagesError{
 			Code:            SU_NoSymbolAtRequestedRange,
 			UnderlyingError: symErr,
 		}
 	}
 	language, langErr := languageFromFilepath(trace, args.Path)
 	if langErr != nil {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: langErr,
 		}
 	}
 	symbolName, ok := nameFromGlobalSymbol(searchSymbol)
 	if !ok {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: errors.New("can't find syntactic occurrences for locals via search"),
 		}
@@ -401,7 +401,7 @@ func syntacticUsagesImpl(
 	}
 	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(ctx, trace, searchClient, searchCoords)
 	if searchErr != nil {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: searchErr,
 		}
@@ -426,16 +426,20 @@ func syntacticUsagesImpl(
 		return slices.Concat(results...), nil
 	})
 	if err != nil {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, &SyntacticUsagesError{
 			Code:            SU_Fatal,
 			UnderlyingError: err,
 		}
 	}
 
-	return SyntacticUsagesResult{Matches: slices.Concat(results...)}, PreviousSyntacticSearch{
-		MappedIndex: mappedIndex,
-		SymbolName:  symbolName,
-		Language:    language,
+	return SyntacticUsagesResult{
+		Matches: slices.Concat(results...),
+		PreviousSyntacticSearch: PreviousSyntacticSearch{
+			MappedIndex: mappedIndex,
+			SymbolName:  symbolName,
+			Language:    language,
+		},
+		NextCursor: core.None[UsagesCursor](),
 	}, nil
 }
 
@@ -449,7 +453,7 @@ func searchBasedUsagesImpl(
 	symbolName string,
 	language string,
 	syntacticIndex core.Option[MappedIndex],
-) (matches []SearchBasedMatch, err error) {
+) (_ SearchBasedUsagesResult, err error) {
 	searchCoords := searchArgs{
 		repo:       args.Repo.Name,
 		commit:     args.Commit,
@@ -474,7 +478,7 @@ func searchBasedUsagesImpl(
 	})
 	wg.Wait()
 	if matchResults.err != nil {
-		return nil, matchResults.err
+		return SearchBasedUsagesResult{}, matchResults.err
 	}
 	if symbolResults.err != nil {
 		trace.Warn("Failed to run symbol search, will not mark any search-based usages as definitions", log.Error(symbolResults.err))
@@ -513,5 +517,8 @@ func searchBasedUsagesImpl(
 		}
 		return slices.Concat(results...)
 	})
-	return slices.Concat(results...), nil
+	return SearchBasedUsagesResult{
+		Matches:    slices.Concat(results...),
+		NextCursor: core.None[UsagesCursor](),
+	}, nil
 }

@@ -54,8 +54,8 @@ func TestObserverIntegration(t *testing.T) {
 
 	t.Logf("memory usage: %s", humanize.Bytes(uint64(memoryUsage)))
 
-	memoryLow := bytesize.Bytes(200 << 20)  // 200 MB
-	memoryHigh := bytesize.Bytes(350 << 20) // 350 MB
+	memoryLow := bytesize.Size(200 << 20)  // 200 MB
+	memoryHigh := bytesize.Size(350 << 20) // 350 MB
 
 	if !(memoryLow < memoryUsage && memoryUsage < memoryHigh) {
 		t.Fatalf("memory usage is not in the expected range (low: %s, high: %s): %s", humanize.Bytes(uint64(memoryLow)), humanize.Bytes(uint64(memoryHigh)), humanize.Bytes(uint64(memoryUsage)))
@@ -346,8 +346,8 @@ func benchFunc(b *testing.B, observerInterval time.Duration) {
 					return errors.Errorf("getting memory usage: %v", err)
 				}
 
-				memoryLow := bytesize.Bytes(10 << 20)   // 10MB
-				memoryHigh := bytesize.Bytes(100 << 20) // 100MB
+				memoryLow := bytesize.Size(10 << 20)   // 10MB
+				memoryHigh := bytesize.Size(100 << 20) // 100MB
 
 				if !(memoryLow < memory && memory < memoryHigh) {
 					return errors.Errorf("memory usage is not in the expected range (low: %s, high: %s): %s", humanize.Bytes(uint64(memoryLow)), humanize.Bytes(uint64(memoryHigh)), humanize.Bytes(uint64(memory)))

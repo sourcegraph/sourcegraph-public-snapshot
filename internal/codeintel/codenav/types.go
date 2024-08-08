@@ -140,12 +140,12 @@ type AdjustedCodeIntelligenceRange struct {
 	HoverText       string
 }
 
-// Cursor is a struct that holds the state necessary to resume a locations query from a second or
+// PreciseCursor is a struct that holds the state necessary to resume a locations query from a second or
 // subsequent request. This struct is used internally as a request-specific context object that is
 // mutated as the locations request is fulfilled. This struct is serialized to JSON then base64
 // encoded to make an opaque string that is handed to a future request to get the remainder of the
 // result set.
-type Cursor struct {
+type PreciseCursor struct {
 	// the following fields...
 	// track the current phase and offset within phase
 
@@ -211,17 +211,17 @@ func NewCursorMatcher(matcher shared.Matcher) CursorMatcher {
 	panic(fmt.Sprintf("Unhandled case for matcher: %+v", matcher))
 }
 
-var exhaustedCursor = Cursor{Phase: "done"}
+var exhaustedCursor = PreciseCursor{Phase: "done"}
 
-func (c Cursor) Encode() string {
+func (c PreciseCursor) Encode() string {
 	return encodeViaJSON(c)
 }
 
-func DecodeCursor(rawEncoded string) (Cursor, error) {
-	return decodeViaJSON[Cursor](rawEncoded)
+func DecodeCursor(rawEncoded string) (PreciseCursor, error) {
+	return decodeViaJSON[PreciseCursor](rawEncoded)
 }
 
-func (c Cursor) BumpLocalLocationOffset(n, totalCount int) Cursor {
+func (c PreciseCursor) BumpLocalLocationOffset(n, totalCount int) PreciseCursor {
 	c.LocalLocationOffset += n
 	if c.LocalLocationOffset >= totalCount {
 		// We've consumed this upload completely. Skip it the next time we find
@@ -234,7 +234,7 @@ func (c Cursor) BumpLocalLocationOffset(n, totalCount int) Cursor {
 	return c
 }
 
-func (c Cursor) BumpRemoteUploadOffset(n, totalCount int) Cursor {
+func (c PreciseCursor) BumpRemoteUploadOffset(n, totalCount int) PreciseCursor {
 	c.RemoteUploadOffset += n
 	if c.RemoteUploadOffset >= totalCount {
 		// We've consumed all upload batches
@@ -244,7 +244,7 @@ func (c Cursor) BumpRemoteUploadOffset(n, totalCount int) Cursor {
 	return c
 }
 
-func (c Cursor) BumpRemoteUsageOffset(n, totalCount int) Cursor {
+func (c PreciseCursor) BumpRemoteUsageOffset(n, totalCount int) PreciseCursor {
 	c.RemoteLocationOffset += n
 	if c.RemoteLocationOffset >= totalCount {
 		// We've consumed the locations for this set of uploads. Reset this slice value in the
@@ -300,6 +300,10 @@ type RemoteCursor struct {
 	UploadBatchIDs []int `json:"uploadBatchIDs"`
 	// The location offset within the associated batch of uploads.
 	LocationOffset int `json:"locationOffset"`
+}
+
+type SyntacticCursor struct {
+	SeenFiles []string `json:"files"`
 }
 
 type UsagesForSymbolResolvedArgs struct {
@@ -374,19 +378,69 @@ type ForEachProvenance[T any] struct {
 	Precise     T
 }
 
-// PreciseCursorType's string representation is used for debugging.
-type PreciseCursorType string
+// CursorType's string representation is used for debugging.
+type CursorType string
 
 const (
-	CursorTypeDefinitions     PreciseCursorType = "definitions"
-	CursorTypeImplementations PreciseCursorType = "implementations"
-	CursorTypePrototypes      PreciseCursorType = "prototypes"
-	CursorTypeReferences      PreciseCursorType = "references"
+	CursorTypeDefinitions     CursorType = "definitions"
+	CursorTypeImplementations CursorType = "implementations"
+	CursorTypePrototypes      CursorType = "prototypes"
+	CursorTypeReferences      CursorType = "references"
+	CursorTypeSyntactic       CursorType = "syntactic"
+	CursorTypeSearchBased     CursorType = "searchBased"
+	CursorTypeDone            CursorType = "done"
 )
 
 type UsagesCursor struct {
-	PreciseCursorType `json:"ty"`
-	PreciseCursor     Cursor `json:"pc"`
+	CursorType      CursorType      `json:"ty"`
+	PreciseCursor   PreciseCursor   `json:"pc"`
+	SyntacticCursor SyntacticCursor `json:"sc"` // TODO(GRAPH-696)
+}
+
+func (c UsagesCursor) IsPrecise() bool {
+	switch c.CursorType {
+	case CursorTypeDefinitions, CursorTypeImplementations, CursorTypePrototypes, CursorTypeReferences:
+		return true
+	default:
+		return false
+	}
+}
+
+func (c UsagesCursor) IsSyntactic() bool {
+	return c.CursorType == CursorTypeSyntactic
+}
+
+func (c UsagesCursor) IsSearchBased() bool {
+	return c.CursorType == CursorTypeSearchBased
+}
+
+func (c UsagesCursor) IsDone() bool {
+	return c.CursorType == CursorTypeDone
+}
+
+func (c UsagesCursor) AdvanceCursor(nextCursor core.Option[UsagesCursor], provenances ForEachProvenance[bool]) UsagesCursor {
+	if next, isSome := nextCursor.Get(); isSome {
+		return next
+	}
+	if c.IsPrecise() && provenances.Syntactic {
+		return UsagesCursor{CursorType: CursorTypeSyntactic}
+	} else if (c.IsPrecise() || c.IsSyntactic()) && provenances.SearchBased {
+		return UsagesCursor{CursorType: CursorTypeSearchBased}
+	} else {
+		return UsagesCursor{CursorType: CursorTypeDone}
+	}
+}
+
+func InitialCursor(provenances ForEachProvenance[bool]) UsagesCursor {
+	if provenances.Precise {
+		return UsagesCursor{CursorType: CursorTypeDefinitions}
+	} else if provenances.Syntactic {
+		return UsagesCursor{CursorType: CursorTypeSyntactic}
+	} else if provenances.SearchBased {
+		return UsagesCursor{CursorType: CursorTypeSearchBased}
+	} else {
+		return UsagesCursor{CursorType: CursorTypeDone}
+	}
 }
 
 func (c UsagesCursor) Encode() string {

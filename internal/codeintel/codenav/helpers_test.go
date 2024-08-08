@@ -2,6 +2,7 @@ package codenav
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	genslices "github.com/life4/genesis/slices"
@@ -13,6 +14,10 @@ import (
 	lsifstoremocks "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	searchClient "github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -152,38 +157,55 @@ func shiftPos(pos scip.Position, numLines int32) scip.Position {
 
 // A GitTreeTranslator that returns positions and ranges shifted by numLines
 // and returns failed translations for path/range pairs if shouldFail returns true
-func fakeTranslator(
+type fakeTranslator struct {
+	from       api.CommitID
+	to         api.CommitID
+	numLines   int
+	shouldFail func(core.RepoRelPath, scip.Range) bool
+}
+
+func (t fakeTranslator) TranslatePosition(ctx context.Context, from, to api.CommitID, path core.RepoRelPath, pos scip.Position) (core.Option[scip.Position], error) {
+	numLines := t.numLines
+	if from == t.to && to == t.from {
+		numLines = -numLines
+	}
+	if t.shouldFail(path, scip.Range{Start: pos, End: pos}) {
+		return core.None[scip.Position](), nil
+	}
+	return core.Some(shiftPos(pos, int32(numLines))), nil
+}
+
+func (t fakeTranslator) TranslateRange(ctx context.Context, from, to api.CommitID, path core.RepoRelPath, r scip.Range) (core.Option[scip.Range], error) {
+	numLines := t.numLines
+	if from == t.to && to == t.from {
+		numLines = -numLines
+	}
+	if t.shouldFail(path, r) {
+		return core.None[scip.Range](), nil
+	}
+	return core.Some(shiftSCIPRange(r, numLines)), nil
+}
+
+func (t fakeTranslator) Prefetch(ctx context.Context, from api.CommitID, to api.CommitID, paths []core.RepoRelPath) {
+	return
+}
+
+func NewFakeTranslator(
 	from, to api.CommitID,
 	numLines int,
 	shouldFail func(core.RepoRelPath, scip.Range) bool,
 ) GitTreeTranslator {
-	translator := NewMockGitTreeTranslator()
-	translator.TranslatePositionFunc.SetDefaultHook(func(ctx context.Context, f, t api.CommitID, path core.RepoRelPath, pos scip.Position) (core.Option[scip.Position], error) {
-		numLines := numLines
-		if f == to && t == from {
-			numLines = -numLines
-		}
-		if shouldFail(path, scip.Range{Start: pos, End: pos}) {
-			return core.None[scip.Position](), nil
-		}
-		return core.Some(shiftPos(pos, int32(numLines))), nil
-	})
-	translator.TranslateRangeFunc.SetDefaultHook(func(ctx context.Context, f, t api.CommitID, path core.RepoRelPath, range_ scip.Range) (core.Option[scip.Range], error) {
-		numLines := numLines
-		if f == to && t == from {
-			numLines = -numLines
-		}
-		if shouldFail(path, range_) {
-			return core.None[scip.Range](), nil
-		}
-		return core.Some(shiftSCIPRange(range_, numLines)), nil
-	})
-	return translator
+	return fakeTranslator{
+		from:       from,
+		to:         to,
+		numLines:   numLines,
+		shouldFail: shouldFail,
+	}
 }
 
 // A GitTreeTranslator that returns all positions and ranges shifted by numLines.
 func shiftAllTranslator(from, to api.CommitID, numLines int) GitTreeTranslator {
-	return fakeTranslator(from, to, numLines, func(path core.RepoRelPath, range_ scip.Range) bool { return false })
+	return NewFakeTranslator(from, to, numLines, func(path core.RepoRelPath, range_ scip.Range) bool { return false })
 }
 
 // A GitTreeTranslator that returns all positions and ranges unchanged
@@ -237,4 +259,95 @@ func expectDefinitionRanges[T MatchLike](t *testing.T, matches []T, ranges ...sc
 			return
 		}
 	}
+}
+
+func scipToResultPosition(p scip.Position) result.Location {
+	return result.Location{
+		Line:   int(p.Line),
+		Column: int(p.Character),
+	}
+}
+
+func scipToResultRange(r scip.Range) result.Range {
+	return result.Range{
+		Start: scipToResultPosition(r.Start),
+		End:   scipToResultPosition(r.End),
+	}
+}
+
+// scipToSymbolMatch "reverse engineers" the lsp.Range function on result.Symbol
+func scipToSymbolMatch(r scip.Range) *result.SymbolMatch {
+	return &result.SymbolMatch{
+		Symbol: result.Symbol{
+			Line:      int(r.Start.Line + 1),
+			Character: int(r.Start.Character),
+			Name:      strings.Repeat("a", int(r.End.Character-r.Start.Character)),
+		}}
+}
+
+type FakeSearchBuilder struct {
+	fileMatches   []result.Match
+	symbolMatches []result.Match
+}
+
+func FakeSearchClient() FakeSearchBuilder {
+	return FakeSearchBuilder{
+		fileMatches:   []result.Match{},
+		symbolMatches: make([]result.Match, 0),
+	}
+}
+
+func ChunkMatchWithLine(range_ scip.Range, line string) result.ChunkMatch {
+	return result.ChunkMatch{
+		Ranges:  []result.Range{scipToResultRange(range_)},
+		Content: line,
+		ContentStart: result.Location{
+			Line:   int(range_.Start.Line),
+			Column: 0,
+		},
+	}
+}
+
+func ChunkMatch(range_ scip.Range) result.ChunkMatch {
+	return ChunkMatchWithLine(range_, "chonky")
+}
+
+func ChunkMatches(ranges ...scip.Range) []result.ChunkMatch {
+	return genslices.Map(ranges, ChunkMatch)
+}
+
+func (b FakeSearchBuilder) WithFile(file string, matches ...result.ChunkMatch) FakeSearchBuilder {
+	b.fileMatches = append(b.fileMatches, &result.FileMatch{
+		File:         result.File{Path: file},
+		ChunkMatches: matches,
+	})
+	return b
+}
+
+func (b FakeSearchBuilder) WithSymbols(file string, ranges ...scip.Range) FakeSearchBuilder {
+	b.symbolMatches = append(b.symbolMatches, &result.FileMatch{
+		File:    result.File{Path: file},
+		Symbols: genslices.Map(ranges, scipToSymbolMatch),
+	})
+	return b
+}
+
+func (b FakeSearchBuilder) Build() searchClient.SearchClient {
+	mockSearchClient := searchClient.NewMockSearchClient()
+	mockSearchClient.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, query string, _ search.Mode, _ search.Protocol, _ *int32) (*search.Inputs, error) {
+		return &search.Inputs{OriginalQuery: query}, nil
+	})
+	mockSearchClient.ExecuteFunc.SetDefaultHook(func(_ context.Context, s streaming.Sender, i *search.Inputs) (*search.Alert, error) {
+		if strings.Contains(i.OriginalQuery, "type:file") {
+			s.Send(streaming.SearchEvent{
+				Results: b.fileMatches,
+			})
+		} else if strings.Contains(i.OriginalQuery, "type:symbol") {
+			s.Send(streaming.SearchEvent{
+				Results: b.symbolMatches,
+			})
+		}
+		return nil, nil
+	})
+	return mockSearchClient
 }

@@ -7,8 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
+
+	symbolparser "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -32,7 +33,7 @@ type Service struct {
 	db                      *sql.DB
 	git                     GitserverClient
 	fetcher                 fetcher.RepositoryFetcher
-	createParser            func() (ctags.Parser, error)
+	symbolParserPool        *symbolparser.ParserPool
 	status                  *ServiceStatus
 	repoUpdates             chan struct{}
 	maxRepos                int
@@ -50,7 +51,7 @@ func NewService(
 	db *sql.DB,
 	git GitserverClient,
 	fetcher fetcher.RepositoryFetcher,
-	createParser func() (ctags.Parser, error),
+	symbolParserPool *symbolparser.ParserPool,
 	maxConcurrentlyIndexing int,
 	maxRepos int,
 	logQueries bool,
@@ -70,7 +71,7 @@ func NewService(
 		db:                      db,
 		git:                     git,
 		fetcher:                 fetcher,
-		createParser:            createParser,
+		symbolParserPool:        symbolParserPool,
 		status:                  NewStatus(),
 		repoUpdates:             make(chan struct{}, 1),
 		maxRepos:                maxRepos,

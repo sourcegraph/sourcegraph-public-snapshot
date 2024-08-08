@@ -1587,6 +1587,7 @@ Referenced by:
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
  queued_at         | timestamp with time zone |           |          | now()
+ is_aggregated     | boolean                  |           | not null | false
 Indexes:
     "exhaustive_search_jobs_pkey" PRIMARY KEY, btree (id)
     "exhaustive_search_jobs_state" btree (state)

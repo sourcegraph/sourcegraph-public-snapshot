@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -182,6 +183,10 @@ type UploadUsage struct {
 
 func (u UploadUsage) ToLocation() UploadLocation {
 	return UploadLocation{u.Upload, u.Path, u.TargetCommit, u.TargetRange}
+}
+
+func (u UploadUsage) RepoCommitPath() types.RepoCommitPath {
+	return types.RepoCommitPath{Repo: u.Upload.RepositoryName, Commit: u.TargetCommit, Path: u.Path.RawValue()}
 }
 
 func SortAndDedupLocations(locs []UploadLocation) []UploadLocation {

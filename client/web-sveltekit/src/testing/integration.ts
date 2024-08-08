@@ -45,7 +45,7 @@ const defaultMocks: TypeMocks = {
     }),
     TemporarySettings: () => ({
         // Ensure this is valid JSON
-        contents: '{}',
+        contents: '{"webNext.welcomeOverlay.dismissed": true}',
     }),
     GitBlob: () => ({
         highlight: {
@@ -83,8 +83,11 @@ const typeDefs = glob
     .map(file => readFileSync(path.join(SCHEMA_DIR, file), 'utf8'))
     .join('\n')
 
-class Sourcegraph {
+export class Sourcegraph {
     private debugMode = false
+    private dotcomModeEnabled = false
+    private signedIn = false
+
     constructor(private readonly page: Page, private readonly graphqlMock: GraphQLMockServer) {}
 
     async setup(): Promise<void> {
@@ -118,6 +121,11 @@ class Sourcegraph {
                 })
             })
         }
+
+        await this.page.addInitScript(() => {
+            window.localStorage.setItem('temporarySettings', '{"webNext.welcomeOverlay.dismissed": true}')
+        })
+
         // mock graphql calls
         await this.page.route(/\.api\/graphql/, route => {
             const { query, variables, operationName } = JSON.parse(route.request().postData() ?? '')
@@ -233,15 +241,18 @@ class Sourcegraph {
 
     public setWindowContext(context: Partial<Window['context']>): Promise<void> {
         return this.page.addInitScript(context => {
-            if (!window.context) {
+            // @ts-expect-error - Unclear how to type this correctly
+            if (!window.playwrightContext) {
                 // @ts-expect-error - Unclear how to type this correctly
-                window.context = {}
+                window.playwrightContext = {}
             }
-            Object.assign(window.context, context)
+            // @ts-expect-error - Unclear how to type this correctly
+            Object.assign(window.playwrightContext, context)
         }, context)
     }
 
-    public signIn(userMock: UserMock = {}): void {
+    public async signIn(userMock: UserMock = {}): Promise<void> {
+        this.signedIn = true
         this.mockTypes({
             Query: () => ({
                 currentUser: {
@@ -250,21 +261,40 @@ class Sourcegraph {
                 },
             }),
         })
+
+        if (this.dotcomModeEnabled) {
+            await this.setWindowContext({
+                codyEnabledForCurrentUser: true,
+            })
+        }
     }
 
-    public signOut(): void {
+    public async signOut(): Promise<void> {
+        this.signedIn = false
         this.mockTypes({
             Query: () => ({
                 currentUser: null,
             }),
         })
+
+        if (this.dotcomModeEnabled) {
+            await this.setWindowContext({
+                codyEnabledForCurrentUser: false,
+            })
+        }
     }
 
     /**
      * Mock the current window context to be in "dotcom mode" (sourcegraph.com).
      */
-    public dotcomMode(): void {
-        this.setWindowContext({ sourcegraphDotComMode: true })
+    public async dotcomMode(): Promise<void> {
+        this.dotcomModeEnabled = true
+        return this.setWindowContext({
+            sourcegraphDotComMode: true,
+            // These are enabled by default on sourcegraph.com
+            codyEnabledOnInstance: true,
+            codyEnabledForCurrentUser: this.signedIn,
+        })
     }
 
     public teardown(): void {

@@ -10,25 +10,26 @@
 <script lang="ts">
     import { createElement } from 'react'
 
-    import { CodyWebChat, CodyWebChatProvider } from '@sourcegraph/cody-web'
     import { createRoot, type Root } from 'react-dom/client'
     import { onDestroy } from 'svelte'
+
+    import { CodyWebPanel, CodyWebPanelProvider } from '@sourcegraph/cody-web'
 
     import type { CodySidebar_ResolvedRevision } from './CodySidebar.gql'
 
     import '@sourcegraph/cody-web/dist/style.css'
 
-    import { createLocalWritable } from '$lib/stores'
+    import type { LineOrPositionOrRange } from '@sourcegraph/common'
 
     export let repository: CodySidebar_ResolvedRevision
     export let filePath: string
+    export let lineOrPosition: LineOrPositionOrRange | undefined = undefined
 
-    const chatIDs = createLocalWritable<Record<string, string>>('cody.context-to-chat-ids', {})
     let container: HTMLDivElement
     let root: Root | null
 
     $: if (container) {
-        render(repository, filePath)
+        render(repository, filePath, lineOrPosition)
     }
 
     onDestroy(() => {
@@ -36,29 +37,36 @@
         root = null
     })
 
-    function render(repository: CodySidebar_ResolvedRevision, filePath: string) {
+    function render(
+        repository: CodySidebar_ResolvedRevision,
+        filePath: string,
+        lineOrPosition?: LineOrPositionOrRange
+    ) {
         if (!root) {
             root = createRoot(container)
         }
-        const chat = createElement(CodyWebChat)
+
+        const chat = createElement(CodyWebPanel)
+        const hasFileRangeSelection = lineOrPosition?.line
+
         const provider = createElement(
-            CodyWebChatProvider,
+            CodyWebPanelProvider,
             {
                 accessToken: '',
-                chatID: $chatIDs[`${repository.id}-${filePath}`] ?? null,
                 initialContext: {
                     repositories: [repository],
                     fileURL: filePath ? (!filePath.startsWith('/') ? `/${filePath}` : filePath) : undefined,
+                    // Line range - 1 because of Cody Web initial context file range bug
+                    fileRange: hasFileRangeSelection
+                        ? {
+                              startLine: lineOrPosition.line - 1,
+                              endLine: lineOrPosition.endLine ? lineOrPosition.endLine - 1 : lineOrPosition.line - 1,
+                          }
+                        : undefined,
                 },
                 serverEndpoint: window.location.origin,
                 customHeaders: window.context.xhrHeaders,
                 telemetryClientName: getTelemetrySourceClient(),
-                onNewChatCreated: (chatID: string) => {
-                    chatIDs.update(ids => {
-                        ids[`${repository.id}-${filePath}`] = chatID
-                        return ids
-                    })
-                },
             },
             [chat]
         )
@@ -70,6 +78,7 @@
 
 <style lang="scss">
     .chat {
+        --vscode-sideBar-background: var(--body-bg);
         --vscode-editor-background: var(--body-bg);
         --vscode-editor-foreground: var(--body-color);
         --vscode-input-background: var(--input-bg);
@@ -93,20 +102,18 @@
         --vscode-foreground: var(--body-color);
 
         line-height: 1.55;
+        padding-bottom: 2rem;
         flex: 1;
         min-height: 0;
 
-        :global(h3) {
+        :global(h3),
+        :global(h4) {
             font-size: inherit;
             margin: 0;
         }
 
         :global(ul) {
             margin: 0;
-        }
-
-        :global(a) {
-            color: var(--link-color) !important;
         }
 
         :global(code) {
@@ -145,6 +152,10 @@
         // animations.
         :global(.tw-transition-all) {
             animation: none !important;
+        }
+
+        :global([cmdk-root] input:focus-visible) {
+            box-shadow: unset !important;
         }
     }
 
