@@ -5,7 +5,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
@@ -77,7 +76,7 @@ type OwnResolver interface {
 type OwnershipConnectionResolver interface {
 	TotalCount(context.Context) (int32, error)
 	TotalOwners(context.Context) (int32, error)
-	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(context.Context) (*gqlutil.PageInfo, error)
 	Nodes(context.Context) ([]OwnershipResolver, error)
 }
 
@@ -192,7 +191,7 @@ type CodeownersIngestedFileResolver interface {
 type CodeownersIngestedFileConnectionResolver interface {
 	Nodes(ctx context.Context) ([]CodeownersIngestedFileResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(ctx context.Context) (*gqlutil.PageInfo, error)
 }
 
 type SignalConfigurationResolver interface {

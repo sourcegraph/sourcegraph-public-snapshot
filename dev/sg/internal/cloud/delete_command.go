@@ -28,6 +28,7 @@ var deleteEphemeralCommand = cli.Command{
 func deleteCloudEphemeral(ctx *cli.Context) error {
 	email, err := GetGCloudAccount(ctx.Context)
 	if err != nil {
+		writeGCloudErrorSuggestion()
 		return err
 	}
 

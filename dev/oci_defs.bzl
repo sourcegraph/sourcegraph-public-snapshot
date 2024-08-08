@@ -1,6 +1,7 @@
 """OCI bazel defs"""
 
-load("@rules_oci//oci:defs.bzl", _oci_image = "oci_image", _oci_push = "oci_push", _oci_tarball = "oci_tarball")
+load("@rules_oci//oci:defs.bzl", _oci_image = "oci_image", _oci_load = "oci_load", _oci_push = "oci_push")
+load("@rules_pkg//:pkg.bzl", _pkg_tar = "pkg_tar")
 
 REGISTRY_REPOSITORY_PREFIX = "europe-west1-docker.pkg.dev/sourcegraph-security-logging/rules-oci-test/{}"
 # REGISTRY_REPOSITORY_PREFIX = "us.gcr.io/sourcegraph-dev/{}"
@@ -12,7 +13,7 @@ def image_repository(image):
     return REGISTRY_REPOSITORY_PREFIX.format(image)
 
 def oci_tarball(name, **kwargs):
-    _oci_tarball(
+    _oci_load(
         name = name,
         # Don't build this by default with bazel build //... since most oci_tarball
         # targets do not need to be built on CI. This prevents the remote cache from
@@ -40,9 +41,19 @@ def oci_image(name, **kwargs):
         visibility = kwargs.pop("visibility", ["//visibility:public"]),
     )
 
+def _oci_image_cross_impl(ctx):
+    runfiles = ctx.runfiles(files = ctx.files.image)
+    runfiles = runfiles.merge(ctx.attr.image[0][DefaultInfo].default_runfiles)
+    return [
+        DefaultInfo(
+            files = depset(ctx.files.image),
+            runfiles = runfiles,
+        ),
+    ]
+
 # rule that allows transitioning in order to transition an oci_image target and its deps
 oci_image_cross = rule(
-    implementation = lambda ctx: DefaultInfo(files = depset(ctx.files.image)),
+    implementation = _oci_image_cross_impl,
     attrs = {
         "image": attr.label(cfg = transition(
             implementation = lambda settings, attr: [
@@ -57,3 +68,10 @@ oci_image_cross = rule(
         ),
     },
 )
+
+def pkg_tar(name, **kwargs):
+    _pkg_tar(
+        name = name,
+        extension = "tar.gz",
+        **kwargs
+    )

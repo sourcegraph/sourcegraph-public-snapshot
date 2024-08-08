@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -19,7 +19,7 @@ import (
 func TestPermissionSyncJobsResolver(t *testing.T) {
 	ctx := context.Background()
 	first := int32(1337)
-	args := graphqlutil.ConnectionResolverArgs{First: &first}
+	args := gqlutil.ConnectionResolverArgs{First: &first}
 
 	t.Run("No jobs found", func(t *testing.T) {
 		db := dbmocks.NewMockDB()

@@ -3,16 +3,38 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "gqlutil",
-    srcs = ["datetime.go"],
+    srcs = [
+        "connection.go",
+        "connection_resolver.go",
+        "cursors.go",
+        "datetime.go",
+        "doc.go",
+        "offset.go",
+        "page_info.go",
+        "slice_connection_resolver.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/gqlutil",
     visibility = ["//:__subpackages__"],
-    deps = ["//lib/errors"],
+    deps = [
+        "//internal/database",
+        "//lib/errors",
+        "//lib/pointers",
+    ],
 )
 
 go_test(
     name = "gqlutil_test",
     timeout = "short",
-    srcs = ["datetime_test.go"],
+    srcs = [
+        "connection_resolver_test.go",
+        "datetime_test.go",
+        "slice_connection_resolver_test.go",
+    ],
     embed = [":gqlutil"],
-    deps = ["@com_github_stretchr_testify//require"],
+    deps = [
+        "//internal/database",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_stretchr_testify//require",
+    ],
 )

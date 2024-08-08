@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -158,7 +158,7 @@ func (r *gitCommitConnectionResolver) TotalCount(ctx context.Context) (*int32, e
 	return &n, nil
 }
 
-func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	commits, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -167,7 +167,7 @@ func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 	totalCommits := len(commits)
 	// If no limit is set, we have retrieved all the commits and there is no next page.
 	if r.first == nil {
-		return graphqlutil.HasNextPage(false), nil
+		return gqlutil.HasNextPage(false), nil
 	}
 
 	limit := int(*r.first)
@@ -200,8 +200,8 @@ func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 		}
 
 		endCursor := limit + after
-		return graphqlutil.NextPageCursor(strconv.Itoa(endCursor)), nil
+		return gqlutil.NextPageCursor(strconv.Itoa(endCursor)), nil
 	}
 
-	return graphqlutil.HasNextPage(false), nil
+	return gqlutil.HasNextPage(false), nil
 }

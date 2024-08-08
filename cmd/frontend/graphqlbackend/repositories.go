@@ -9,12 +9,12 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -39,7 +39,7 @@ type repositoryArgs struct {
 
 	OrderBy    string
 	Descending bool
-	graphqlutil.ConnectionResolverArgs
+	gqlutil.ConnectionResolverArgs
 }
 
 func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, error) {
@@ -102,7 +102,7 @@ func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, err
 	return opt, nil
 }
 
-func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs) (*graphqlutil.ConnectionResolver[*RepositoryResolver], error) {
+func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs) (*gqlutil.ConnectionResolver[*RepositoryResolver], error) {
 	opt, err := args.toReposListOptions()
 	if err != nil {
 		return nil, err
@@ -123,13 +123,13 @@ func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs)
 		orderBy = args.OrderBy
 	}
 
-	connectionOptions := graphqlutil.ConnectionResolverOptions{
+	connectionOptions := gqlutil.ConnectionResolverOptions{
 		MaxPageSize: maxPageSize,
 		OrderBy:     database.OrderBy{{Field: string(toDBRepoListColumn(orderBy))}, {Field: "id"}},
 		Ascending:   !args.Descending,
 	}
 
-	return graphqlutil.NewConnectionResolver[*RepositoryResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
+	return gqlutil.NewConnectionResolver[*RepositoryResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
 }
 
 type repositoriesConnectionStore struct {
@@ -250,7 +250,7 @@ type TotalCountArgs struct {
 type RepositoryConnectionResolver interface {
 	Nodes(ctx context.Context) ([]*RepositoryResolver, error)
 	TotalCount(ctx context.Context, args *TotalCountArgs) (*int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(ctx context.Context) (*gqlutil.PageInfo, error)
 }
 
 func toDBRepoListColumn(ob string) database.RepoListColumn {

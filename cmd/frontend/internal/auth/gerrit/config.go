@@ -87,10 +87,6 @@ func (p *Provider) CachedInfo() *providers.Info {
 	}
 }
 
-func (p *Provider) Refresh(ctx context.Context) error {
-	return nil
-}
-
 func (p *Provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
 	return gerrit.GetPublicExternalAccountData(ctx, &account.AccountData)
 }

@@ -3,27 +3,50 @@
 This folder contains the experimental [SvelteKit](https://kit.svelte.dev/)
 implementation of the Sourcegraph app.
 
-**NOTE:** This is a _very early_ prototype and it will change a lot.
-
 ## Developing
 
-```bash
-# Install dependencies
-pnpm install
-# Run dev server
-pnpm run dev
-```
+There are multiple ways to start the app:
 
-The dev server can be accessed on http://localhost:5173. API requests and
-signin/signout are proxied to an actual Sourcegraph instance,
-https://sourcegraph.com by default (can be overwritten via the
-`SOURCEGRAPH_API_URL` environment variable.
-
-If you're a Sourcegraph employee you should run this command to use the right auth instance:
+1. Standalone and proxying to S2
 
 ```bash
-SOURCEGRAPH_API_URL=https://sourcegraph.sourcegraph.com pnpm run dev
+cd client/web-sveltekit
+pnpm dev
 ```
+
+Then go to (usually) http://localhost:5173.
+
+Or via `sg`:
+
+```bash
+sg start web-sveltekit-standalone
+```
+
+Then go to https://sourcegraph.test:5173.
+
+2. Standalone and proxying to dotcom
+
+```bash
+cd client/web-sveltekit
+pnpm dev:dotcom
+```
+
+3. Standalone and proxying to another Sourcegraph instance
+
+```bash
+cd client/web-sveltekit
+SOURCEGRAPH_API_URL=https://<instance> pnpm dev
+```
+
+Then go to (usually) http://localhost:5173.
+
+3. Against a local Sourcegraph instance
+
+```bash
+sg start enterprise-sveltekit
+```
+
+Then go to https://sourcegraph.test:5173.
 
 ### Using code from `@sourcegraph/*`
 
@@ -59,7 +82,20 @@ pnpm vitest # Run vitest tests
 pnpm test # Run playwright tests
 ```
 
-In CI we run vitest tests. Playwright test support is currently being worked on.
+You can also run playwright tests against a running vite dev server. This is
+useful for debugging tests.
+
+```sh
+# In one terminal
+pnpm dev
+```
+
+```sh
+# In another terminal
+pnpm test:dev
+```
+
+Both vitest and playwright tests are run in CI.
 
 ### Formatting and linting
 
@@ -86,6 +122,34 @@ This noise can be avoided by running the corresponding bazel command instead:
 ```sh
 bazel test //client/web-sveltekit:svelte-check
 ```
+
+### Icons
+
+We use [unplugin-icons](https://github.com/unplugin/unplugin-icons) together
+with [unplugin-auto-import](https://github.com/unplugin/unplugin-auto-import)
+to manage icons. This allows us to use icons from multiple icon sets without
+having to import them manually.
+
+For a list of currently available icon sets see the `@iconify-json/*` packages
+in the `package.json` file.
+
+Icon references have the form `I<IconSetName><IconName>`. For example the
+[corner down left arrow from Lucide](https://lucide.dev/icons/corner-down-left)
+can be referenced as `ILucideCornerDownLeft`.
+
+The icon reference is then used in the `Icon` component. Note that the icon
+doesn't have to be imported manually.
+
+```svelte
+<script lang="ts">
+  import { Icon } from '$lib/Icon.svelte';
+</script>
+
+<Icon icon={ILucideCornerDownLeft} />
+```
+
+When the development server is running, the icon will be automatically added to
+`auto-imports.d.ts` so TypeScript knows about it.
 
 ### Data loading with GraphQL
 

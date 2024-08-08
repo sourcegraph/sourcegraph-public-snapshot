@@ -536,6 +536,21 @@ CREATE TABLE series_points_snapshots (
 
 COMMENT ON TABLE series_points_snapshots IS 'Stores ephemeral snapshot data of insight recordings.';
 
+CREATE TABLE tenants (
+    id bigint NOT NULL,
+    name text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT tenant_name_length CHECK (((char_length(name) <= 32) AND (char_length(name) >= 3))),
+    CONSTRAINT tenant_name_valid_chars CHECK ((name ~ '^[a-z](?:[a-z0-9\_-])*[a-z0-9]$'::text))
+);
+
+COMMENT ON TABLE tenants IS 'The table that holds all tenants known to the instance. In enterprise instances, this table will only contain the "default" tenant.';
+
+COMMENT ON COLUMN tenants.id IS 'The ID of the tenant. To keep tenants globally addressable, and be able to move them aronud instances more easily, the ID is NOT a serial and has to be specified explicitly. The creator of the tenant is responsible for choosing a unique ID, if it cares.';
+
+COMMENT ON COLUMN tenants.name IS 'The name of the tenant. This may be displayed to the user and must be unique.';
+
 ALTER TABLE ONLY dashboard ALTER COLUMN id SET DEFAULT nextval('dashboard_id_seq'::regclass);
 
 ALTER TABLE ONLY dashboard_grants ALTER COLUMN id SET DEFAULT nextval('dashboard_grants_id_seq'::regclass);
@@ -614,6 +629,12 @@ ALTER TABLE ONLY repo_iterator
 
 ALTER TABLE ONLY repo_names
     ADD CONSTRAINT repo_names_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY tenants
+    ADD CONSTRAINT tenants_name_key UNIQUE (name);
+
+ALTER TABLE ONLY tenants
+    ADD CONSTRAINT tenants_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY dashboard_insight_view
     ADD CONSTRAINT unique_dashboard_id_insight_view_id UNIQUE (dashboard_id, insight_view_id);

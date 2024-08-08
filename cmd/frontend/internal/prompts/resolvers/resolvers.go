@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -229,10 +228,10 @@ func (r *Resolver) Prompts(ctx context.Context, args graphqlbackend.PromptsArgs)
 		return nil, errors.New("invalid orderBy")
 	}
 
-	opts := graphqlutil.ConnectionResolverOptions{}
+	opts := gqlutil.ConnectionResolverOptions{}
 	opts.OrderBy, opts.Ascending = orderBy.ToOptions()
 
-	return graphqlutil.NewConnectionResolver(connectionStore, &args.ConnectionResolverArgs, &opts)
+	return gqlutil.NewConnectionResolver(connectionStore, &args.ConnectionResolverArgs, &opts)
 }
 
 func (r *Resolver) CreatePrompt(ctx context.Context, args *graphqlbackend.CreatePromptArgs) (graphqlbackend.PromptResolver, error) {

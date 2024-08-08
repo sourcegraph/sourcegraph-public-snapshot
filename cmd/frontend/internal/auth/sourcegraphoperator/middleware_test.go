@@ -183,14 +183,9 @@ func TestMiddleware(t *testing.T) {
 	defer oidcIDServer.Close()
 	providerConfig.Issuer = oidcIDServer.URL
 
-	mockProvider := NewProvider(providerConfig, httpcli.TestExternalClient).(*provider)
+	mockProvider := NewProvider(providerConfig, httpcli.TestExternalClient)
 	providers.MockProviders = []providers.Provider{mockProvider}
 	defer func() { providers.MockProviders = nil }()
-
-	t.Run("refresh", func(t *testing.T) {
-		err := mockProvider.Refresh(context.Background())
-		require.NoError(t, err)
-	})
 
 	t.Run("unauthenticated API request should pass through", func(t *testing.T) {
 		mocks := newMockDBAndRequester()

@@ -220,11 +220,13 @@ func (n *extendedConn) CheckNamedValue(namedValue *driver.NamedValue) error {
 }
 
 func (n *extendedConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	pprofCheckTenantlessQuery(ctx)
 	ctx, query = instrumentQuery(ctx, query, len(args))
 	return n.execerContext.ExecContext(ctx, query, args)
 }
 
 func (n *extendedConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+	pprofCheckTenantlessQuery(ctx)
 	ctx, query = instrumentQuery(ctx, query, len(args))
 	return n.queryerContext.QueryContext(ctx, query, args)
 }

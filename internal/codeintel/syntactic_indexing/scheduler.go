@@ -2,7 +2,6 @@ package syntactic_indexing
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -51,12 +50,8 @@ func NewSyntacticJobScheduler(repoSchedulingSvc reposcheduler.RepositoryScheduli
 	}, nil
 }
 
-func BootstrapSyntacticJobScheduler(observationCtx *observation.Context, frontendSQLDB *sql.DB, codeintelSQLDB *sql.DB) (SyntacticJobScheduler, error) {
-	frontendDB := database.NewDB(observationCtx.Logger, frontendSQLDB)
-
+func BootstrapSyntacticJobScheduler(observationCtx *observation.Context, frontendDB database.DB, codeIntelDB codeintelshared.CodeIntelDB) (SyntacticJobScheduler, error) {
 	gitserverClient := gitserver.NewClient("codeintel-syntactic-indexing")
-
-	codeIntelDB := codeintelshared.NewCodeIntelDB(observationCtx.Logger, codeintelSQLDB)
 
 	uploadsSvc := uploads.NewService(observationCtx, frontendDB, codeIntelDB, gitserverClient.Scoped("uploads"))
 	policiesSvc := policies.NewService(observationCtx, frontendDB, uploadsSvc, gitserverClient.Scoped("policies"))
@@ -71,7 +66,7 @@ func BootstrapSyntacticJobScheduler(observationCtx *observation.Context, fronten
 	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, frontendDB)
 	repoSchedulingSvc := reposcheduler.NewService(repoSchedulingStore)
 
-	jobStore, err := jobstore.NewStoreWithDB(observationCtx, frontendSQLDB)
+	jobStore, err := jobstore.NewStoreWithDB(observationCtx, frontendDB)
 	if err != nil {
 		return nil, err
 	}

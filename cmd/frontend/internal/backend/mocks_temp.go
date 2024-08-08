@@ -19,8 +19,8 @@ import (
 
 // MockExternalServicesService is a mock implementation of the
 // ExternalServicesService interface (from the package
-// github.com/sourcegraph/sourcegraph/cmd/frontend/backend) used for unit
-// testing.
+// github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend) used
+// for unit testing.
 type MockExternalServicesService struct {
 	// DiscoverReposFunc is an instance of a mock function object
 	// controlling the behavior of the method DiscoverRepos.
@@ -583,8 +583,8 @@ func (c ExternalServicesServiceValidateConnectionFuncCall) Results() []interface
 
 // MockReposService is a mock implementation of the ReposService interface
 // (from the package
-// github.com/sourcegraph/sourcegraph/cmd/frontend/backend) used for unit
-// testing.
+// github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend) used
+// for unit testing.
 type MockReposService struct {
 	// GetFunc is an instance of a mock function object controlling the
 	// behavior of the method Get.
@@ -1483,8 +1483,8 @@ func (c ReposServiceResolveRevFuncCall) Results() []interface{} {
 
 // MockUserEmailsService is a mock implementation of the UserEmailsService
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/cmd/frontend/backend) used for unit
-// testing.
+// github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend) used
+// for unit testing.
 type MockUserEmailsService struct {
 	// AddFunc is an instance of a mock function object controlling the
 	// behavior of the method Add.

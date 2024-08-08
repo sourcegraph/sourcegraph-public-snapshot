@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -144,7 +143,7 @@ func (r *slowRequestConnectionResolver) TotalCount(ctx context.Context) (int32, 
 	return r.totalCount, err
 }
 
-func (r *slowRequestConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *slowRequestConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	reqs, err := r.fetch(ctx)
 	if err != nil {
 		return nil, err
@@ -159,9 +158,9 @@ func (r *slowRequestConnectionResolver) PageInfo(ctx context.Context) (*graphqlu
 		return nil, err
 	}
 	if int32(n+r.perPage) >= total {
-		return graphqlutil.HasNextPage(false), nil
+		return gqlutil.HasNextPage(false), nil
 	} else {
-		return graphqlutil.NextPageCursor(reqs[len(reqs)-1].Index), nil
+		return gqlutil.NextPageCursor(reqs[len(reqs)-1].Index), nil
 	}
 }
 

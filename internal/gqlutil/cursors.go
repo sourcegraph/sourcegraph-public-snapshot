@@ -1,4 +1,4 @@
-package graphqlutil
+package gqlutil
 
 import (
 	"encoding/base64"

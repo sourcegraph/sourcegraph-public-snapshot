@@ -23,9 +23,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/backend",
         "//cmd/frontend/enterprise",
         "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/internal/backend",
         "//cmd/frontend/internal/clientconfig",
         "//cmd/frontend/internal/cody",
         "//cmd/frontend/internal/enterpriseportal",
@@ -111,9 +111,9 @@ go_test(
     ],
     embed = [":httpapi"],
     deps = [
-        "//cmd/frontend/backend",
         "//cmd/frontend/enterprise",
         "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/internal/backend",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",

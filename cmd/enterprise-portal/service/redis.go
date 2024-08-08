@@ -4,11 +4,14 @@ import (
 	"context"
 	"net"
 	"os"
+	"time"
 
+	redigo "github.com/gomodule/redigo/redis"
 	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel"
 
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -60,4 +63,17 @@ func (h *redisTracingWrappingHook) ProcessPipelineHook(next redis.ProcessPipelin
 		// The ProcessPipelineHook already has "redis." prefix, thus we do nothing.
 		return next(ctx, cmds)
 	}
+}
+
+// newRedisKVClient provides a redis client compatible with monorepo-isms.
+func newRedisKVClient(endpoint *string) redispool.KeyValue {
+	if endpoint == nil {
+		// Local dev fallback: use monorepo default client
+		return redispool.Cache
+	}
+	return redispool.NewKeyValue(*endpoint, &redigo.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		MaxActive:   1000,
+	})
 }

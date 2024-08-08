@@ -54,3 +54,16 @@
 .help-icon {
     color: var(--icon-color);
 }
+
+.colorful {
+    background: linear-gradient(90deg, #00cbec 0%, #a112ff 48.53%, #ff5543 97.06%);
+    color: transparent;
+    background-clip: text;
+}
+
+.enable-toggle {
+    display: flex;
+    align-items: center;
+    font-weight: normal;
+    gap: 0.5rem;
+}

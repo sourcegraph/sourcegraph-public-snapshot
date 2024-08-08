@@ -145,7 +145,7 @@ func GetJSContext(ctx context.Context) JSContext {
 	ff := featureflag.FromContext(ctx)
 
 	return JSContext{
-		ShowToggle:    ff.GetBoolOr("web-next-toggle", false),
+		ShowToggle:    ff.GetBoolOr("web-next-toggle", true),
 		KnownRoutes:   skctx.knownRoutes,
 		EnabledRoutes: skctx.enabledRoutes,
 	}

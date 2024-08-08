@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
@@ -304,14 +303,14 @@ type BatchChangesResolver interface {
 
 	MaxUnlicensedChangesets(ctx context.Context) int32
 
-	GetChangesetsByIDs(ctx context.Context, args *GetChangesetsByIDsArgs) (graphqlutil.SliceConnectionResolver[ChangesetResolver], error)
+	GetChangesetsByIDs(ctx context.Context, args *GetChangesetsByIDsArgs) (gqlutil.SliceConnectionResolver[ChangesetResolver], error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
 type BulkOperationConnectionResolver interface {
 	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(ctx context.Context) (*gqlutil.PageInfo, error)
 	Nodes(ctx context.Context) ([]BulkOperationResolver, error)
 }
 
@@ -459,14 +458,14 @@ type ChangesetApplyPreviewConnectionStatsResolver interface {
 
 type ChangesetApplyPreviewConnectionResolver interface {
 	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(ctx context.Context) (*gqlutil.PageInfo, error)
 	Nodes(ctx context.Context) ([]ChangesetApplyPreviewResolver, error)
 	Stats(ctx context.Context) (ChangesetApplyPreviewConnectionStatsResolver, error)
 }
 
 type ChangesetSpecConnectionResolver interface {
 	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(ctx context.Context) (*gqlutil.PageInfo, error)
 	Nodes(ctx context.Context) ([]ChangesetSpecResolver, error)
 }
 
@@ -548,7 +547,7 @@ type ForkTargetInterface interface {
 type BatchChangesCodeHostConnectionResolver interface {
 	Nodes(ctx context.Context) ([]BatchChangesCodeHostResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(ctx context.Context) (*gqlutil.PageInfo, error)
 }
 
 type BatchChangesCodeHostResolver interface {
@@ -681,18 +680,18 @@ type BatchChangeResolver interface {
 type BatchChangesConnectionResolver interface {
 	Nodes(ctx context.Context) ([]BatchChangeResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(ctx context.Context) (*gqlutil.PageInfo, error)
 }
 
 type BatchSpecConnectionResolver interface {
 	Nodes(ctx context.Context) ([]BatchSpecResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(ctx context.Context) (*gqlutil.PageInfo, error)
 }
 
 type BatchSpecWorkspaceFileConnectionResolver interface {
 	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(ctx context.Context) (*gqlutil.PageInfo, error)
 	Nodes(ctx context.Context) ([]BatchWorkspaceFileResolver, error)
 }
 
@@ -754,7 +753,7 @@ type ChangesetsStatsResolver interface {
 type ChangesetsConnectionResolver interface {
 	Nodes(ctx context.Context) ([]ChangesetResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(ctx context.Context) (*gqlutil.PageInfo, error)
 }
 
 type ChangesetLabelResolver interface {
@@ -842,7 +841,7 @@ type GitHubCommitVerificationResolver interface {
 type ChangesetEventsConnectionResolver interface {
 	Nodes(ctx context.Context) ([]ChangesetEventResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(ctx context.Context) (*gqlutil.PageInfo, error)
 }
 
 type ChangesetEventResolver interface {
@@ -878,7 +877,7 @@ type BatchSpecWorkspaceResolutionResolver interface {
 type BatchSpecWorkspaceConnectionResolver interface {
 	Nodes(ctx context.Context) ([]BatchSpecWorkspaceResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(ctx context.Context) (*gqlutil.PageInfo, error)
 	Stats(ctx context.Context) (BatchSpecWorkspacesStatsResolver, error)
 }
 
@@ -948,7 +947,7 @@ type BatchSpecWorkspaceStagesResolver interface {
 
 type BatchSpecWorkspaceStepOutputLineConnectionResolver interface {
 	TotalCount() (int32, error)
-	PageInfo() (*graphqlutil.PageInfo, error)
+	PageInfo() (*gqlutil.PageInfo, error)
 	Nodes() ([]string, error)
 }
 

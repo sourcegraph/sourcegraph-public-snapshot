@@ -1,6 +1,8 @@
 package service
 
 import (
+	"time"
+
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayevents"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/cloudsql"
@@ -16,6 +18,8 @@ type Config struct {
 		PGDSNOverride *string
 
 		IncludeProductionLicenses bool
+
+		ImportInterval time.Duration
 	}
 
 	// If nil, no connection was configured.
@@ -41,6 +45,8 @@ func (c *Config) Load(env *runtime.Env) {
 		"For local dev: custom PostgreSQL DSN, overrides DOTCOM_CLOUDSQL_* options")
 	c.DotComDB.IncludeProductionLicenses = env.GetBool("DOTCOM_INCLUDE_PRODUCTION_LICENSES", "false",
 		"Include production licenses in API results")
+	c.DotComDB.ImportInterval = env.GetInterval("DOTCOM_IMPORT_INTERVAL", "10m",
+		"Interval at which to import data from Sourcegraph.com")
 
 	c.SAMS.ConnConfig = sams.NewConnConfigFromEnv(env)
 	c.SAMS.ClientID = env.Get("ENTERPRISE_PORTAL_SAMS_CLIENT_ID", "",

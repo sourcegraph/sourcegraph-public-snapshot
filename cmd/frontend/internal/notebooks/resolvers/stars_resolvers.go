@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/notebooks"
@@ -44,12 +43,12 @@ func (n *notebookStarConnectionResolver) TotalCount() int32 {
 	return n.totalCount
 }
 
-func (n *notebookStarConnectionResolver) PageInfo() *graphqlutil.PageInfo {
+func (n *notebookStarConnectionResolver) PageInfo() *gqlutil.PageInfo {
 	if len(n.stars) == 0 || !n.hasNextPage {
-		return graphqlutil.HasNextPage(false)
+		return gqlutil.HasNextPage(false)
 	}
 	// The after value (offset) for the next page is computed from the current after value + the number of retrieved notebook stars
-	return graphqlutil.NextPageCursor(marshalNotebookStarCursor(n.afterCursor + int64(len(n.stars))))
+	return gqlutil.NextPageCursor(marshalNotebookStarCursor(n.afterCursor + int64(len(n.stars))))
 }
 
 type notebookStarResolver struct {

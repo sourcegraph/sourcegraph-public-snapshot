@@ -9,11 +9,11 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type changesetsConnectionResolver struct {
@@ -100,15 +100,15 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) (cs btypes.C
 	return r.changesets, r.next, r.err
 }
 
-func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if next > 0 {
-		return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
+		return gqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
 	}
 
-	return graphqlutil.HasNextPage(false), nil
+	return gqlutil.HasNextPage(false), nil
 }

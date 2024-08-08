@@ -10,7 +10,6 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -18,7 +17,7 @@ import (
 )
 
 func decodeExportedEventsCursor(cursor string) (*time.Time, error) {
-	cursor, err := graphqlutil.DecodeCursor(&cursor)
+	cursor, err := gqlutil.DecodeCursor(&cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "invalid cursor")
 	}
@@ -29,12 +28,12 @@ func decodeExportedEventsCursor(cursor string) (*time.Time, error) {
 	return &t, nil
 }
 
-func encodeExportedEventsCursor(t time.Time) *graphqlutil.PageInfo {
+func encodeExportedEventsCursor(t time.Time) *gqlutil.PageInfo {
 	ts, err := t.MarshalText()
 	if err != nil {
-		return graphqlutil.HasNextPage(false)
+		return gqlutil.HasNextPage(false)
 	}
-	return graphqlutil.EncodeCursor(pointers.Ptr(string(ts)))
+	return gqlutil.EncodeCursor(pointers.Ptr(string(ts)))
 }
 
 type ExportedEventResolver struct {
@@ -86,9 +85,9 @@ func (r *ExportedEventsConnectionResolver) TotalCount() (int32, error) {
 	return int32(count), nil
 }
 
-func (r *ExportedEventsConnectionResolver) PageInfo() *graphqlutil.PageInfo {
+func (r *ExportedEventsConnectionResolver) PageInfo() *gqlutil.PageInfo {
 	if len(r.exported) == 0 || len(r.exported) < r.limit {
-		return graphqlutil.HasNextPage(false)
+		return gqlutil.HasNextPage(false)
 	}
 	lastEvent := r.exported[len(r.exported)-1]
 	return encodeExportedEventsCursor(lastEvent.Timestamp)

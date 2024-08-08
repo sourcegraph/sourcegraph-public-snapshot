@@ -506,7 +506,7 @@ commands:
   caddy:
     ignoreStdout: true
     ignoreStderr: true
-    cmd: .bin/caddy_${CADDY_VERSION} run --watch --config=dev/Caddyfile
+    cmd: .bin/caddy_${CADDY_VERSION} run --watch --config=${CADDY_FILE:-dev/Caddyfile}
     install_func: installCaddy
     env:
       CADDY_VERSION: 2.7.3
@@ -522,11 +522,24 @@ commands:
       # Needed so that node can ping the caddy server
       NODE_TLS_REJECT_UNAUTHORIZED: 0
 
-  web-sveltekit:
-    description: Enterprise version of the web sveltekit app
-    cmd: pnpm --filter @sourcegraph/web-sveltekit dev:enterprise
+  web-sveltekit-prod:
+    description: Builds the production version of the SvelteKit app
+    cmd: pnpm --filter @sourcegraph/web-sveltekit build
     install: |
       pnpm install
+      pnpm run generate
+
+  web-sveltekit-server:
+    description: Starts the vite dev server for the SvelteKit app
+    cmd: pnpm --filter @sourcegraph/web-sveltekit dev
+    install: |
+      pnpm install
+      pnpm run generate
+    env:
+      # The SvelteKit app uses this environment variable to determine where
+      # to store the generated assets. We don't need to store them in a different
+      # place in this mode.
+      DEPLOY_TYPE: ""
 
   web-standalone-http:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
@@ -550,26 +563,6 @@ commands:
     env:
       INTEGRATION_TESTS: true
       NODE_ENV: production
-
-  web-sveltekit-standalone:
-    description: Standalone SvelteKit web frontend (dev) with API proxy to a configurable URL
-    cmd: pnpm --filter @sourcegraph/web-sveltekit run dev
-    install: |
-      pnpm install
-      pnpm generate
-    env:
-      SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
-      # The SvelteKit app uses this environment variable to determine where
-      # to store the generated assets. We don't need to store them in a different
-      # place in standalone mode.
-      DEPLOY_TYPE: ""
-
-  web-sveltekit-prod-watch:
-    description: Builds the prod version of the SvelteKit web app and rebuilds on changes
-    cmd: pnpm --filter @sourcegraph/web-sveltekit run build --watch
-    install: |
-      pnpm install
-      pnpm generate
 
   docsite:
     description: Docsite instance serving the docs
@@ -822,8 +815,7 @@ commands:
     # Nothing to run for this, we just want to re-run the install script every time.
     cmd: exit 0
     install: |
-      bazel build //cmd/batcheshelper:image_tarball
-      docker load --input $(bazel cquery //cmd/batcheshelper:image_tarball --output=files)
+      bazel run //cmd/batcheshelper:image_tarball
     env:
       IMAGE: batcheshelper:candidate
       # TODO: This is required but should only be set on M1 Macs.
@@ -920,8 +912,7 @@ commands:
       mkdir -p "${GRAFANA_DISK}"
       mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
-      bazel build //docker-images/grafana:image_tarball
-      docker load --input $(bazel cquery //docker-images/grafana:image_tarball --output=files)
+      bazel run //docker-images/grafana:image_tarball
     env:
       GRAFANA_DISK: $HOME/.sourcegraph-dev/data/grafana
       # Log file location: since we log outside of the Docker container, we should
@@ -978,8 +969,7 @@ commands:
 
       cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
 
-      bazel build //docker-images/prometheus:image_tarball
-      docker load --input $(bazel cquery //docker-images/prometheus:image_tarball --output=files)
+      bazel run //docker-images/prometheus:image_tarball
     env:
       PROMETHEUS_DISK: $HOME/.sourcegraph-dev/data/prometheus
       # See comment above for `grafana`
@@ -1035,8 +1025,7 @@ commands:
         "${IMAGE}"
     install: |
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
-      bazel build //docker-images/postgres_exporter:image_tarball
-      docker load --input $(bazel cquery //docker-images/postgres_exporter:image_tarball --output=files)
+      bazel run //docker-images/postgres_exporter:image_tarball
     env:
       IMAGE: postgres-exporter:candidate
       CONTAINER: postgres_exporter
@@ -1050,8 +1039,7 @@ commands:
 
   otel-collector:
     install: |
-      bazel build //docker-images/opentelemetry-collector:image_tarball
-      docker load --input $(bazel cquery //docker-images/opentelemetry-collector:image_tarball --output=files)
+      bazel run //docker-images/opentelemetry-collector:image_tarball
     description: OpenTelemetry collector
     cmd: |
       JAEGER_HOST='host.docker.internal'
@@ -1095,6 +1083,22 @@ commands:
     install: pnpm install
 
   sourcegraph:
+    preamble: &sourcegraph-preamble |
+      💡 You are running the single-program distribution of Sourcegraph, which is way faster to work against when
+      iterating locally, but it doesn't boot all services.
+
+      Included:
+        - frontend
+        - gitserver (only one instance)
+        - repoupdater
+        - searcher
+        - worker
+      Excluded:
+        - zoekt
+        - symbols
+        - syntax-highlighter
+        - blobstore
+        - embeddings
     description: Single-program distribution (dev only)
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -1239,6 +1243,24 @@ commands:
       - ../sourcegraph-accounts/pnpm-lock.yaml
 
 bazelCommands:
+  sourcegraph:
+    preamble: *sourcegraph-preamble
+    precmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+    target:
+      //cmd/sourcegraph
+    env:
+      CONFIGURATION_MODE: server
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
+      EXTSVC_CONFIG_FILE: ../dev-private/enterprise/dev/external-services-config.json
+      WEB_BUILDER_DEV_SERVER: 1
+      INDEXED_SEARCH_SERVERS:
+      GITSERVER_ADDR: 127.0.0.1:3178
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3178
+      SRC_GIT_SERVERS: 127.0.0.1:3178
+      SRC_DISABLE_OOBMIGRATION_VALIDATION: 1
+
   blobstore:
     target: //cmd/blobstore
     env:
@@ -1518,7 +1540,7 @@ commandsets:
       - zoekt-web-1
       - caddy
 
-  # If you modify this command set, please consider also updating the dotcom runset.
+  # If you modify this command set, please consider also updating the dotcom and enterprise-sveltekit runsets.
   enterprise: &enterprise_set
     checks:
       - docker
@@ -1531,6 +1553,7 @@ commandsets:
       - worker
       - repo-updater
       - web
+      - web-sveltekit-prod
       - gitserver-0
       - gitserver-1
       - searcher
@@ -1546,6 +1569,38 @@ commandsets:
     env:
       DISABLE_CODE_INSIGHTS_HISTORICAL: false
       DISABLE_CODE_INSIGHTS: false
+
+  enterprise-sveltekit:
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+      - dev-private
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - web-sveltekit-server
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - caddy
+      - symbols
+      - syntax-highlighter
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+      - embeddings
+    env:
+      DISABLE_CODE_INSIGHTS_HISTORICAL: false
+      DISABLE_CODE_INSIGHTS: false
+      CADDY_FILE: dev/Caddyfile-sveltekit
+      # Proxy to the local server
+      SOURCEGRAPH_API_URL: http://localhost:3080
 
   enterprise-e2e:
     <<: *enterprise_set
@@ -1939,7 +1994,7 @@ commandsets:
 
   web-sveltekit-standalone:
     commands:
-      - web-sveltekit-standalone
+      - web-sveltekit-server
       - caddy
     env:
       SK_PORT: 3080
@@ -1953,15 +2008,33 @@ commandsets:
       - otel-collector
       - jaeger
 
+  single-program-experimental-blame-sqs:
+    deprecated: |
+      "single-program-experimental-blame-sqs" has been renamed to "minimal"
+      👉 Please run "sg start minimal" instead.
+
   # NOTE: This is an experimental way of running a subset of Sourcegraph. See
   # cmd/sourcegraph/README.md.
-  single-program-experimental-blame-sqs:
+  minimal:
     checks:
       - git
       - dev-private
       - redis
     commands:
       - sourcegraph
+      - web
+      - caddy
+    env:
+      # Faster builds in local dev.
+      DEV_WEB_BUILDER_NO_SPLITTING: 1
+  minimal-bazel:
+    checks:
+      - git
+      - dev-private
+      - redis
+    bazelCommands:
+      - sourcegraph
+    commands:
       - web
       - caddy
     env:

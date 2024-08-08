@@ -19,7 +19,7 @@ import (
 )
 
 // TestDBPaginationWithRepoFilter exercises a bug filed in #58313 where
-// a unscoped default ordering column from graphqlutil.ConnectionResolver ("id")
+// a unscoped default ordering column from gqlutil.ConnectionResolver ("id")
 // makes into a query joining two tables (both having an id column),
 // causing ambiguous SQL.
 func TestDBPaginationWithRepoFilter(t *testing.T) {

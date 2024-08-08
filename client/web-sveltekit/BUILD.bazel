@@ -328,10 +328,10 @@ svelte_check.svelte_check_test(
     args = [
         "--tsconfig",
         "tsconfig.json",
-        "--compiler-warnings",
-        # missing-declaration is raised for our icon components. The Svelte compiler
-        # does not take into account ambient declarations (will be fixed in Svelte 5).
-        "missing-declaration:ignore",
+        # This causes only errors to be displayed, which is what we want
+        # to keep noise down in CI
+        "--threshold",
+        "error",
     ],
     chdir = package_name(),
     data = SRCS + BUILD_DEPS + CONFIGS + [
@@ -342,6 +342,11 @@ svelte_check.svelte_check_test(
         # Needed to properly extend vite's UserConfig type
         ":node_modules/vitest",
     ],
+    env = {
+        # It appears that svelte-check will start the vite dev server,
+        # but in this case we don't want the proxy to be enabled.
+        "SK_DISABLE_PROXY": "1",
+    },
 )
 
 filegroup(

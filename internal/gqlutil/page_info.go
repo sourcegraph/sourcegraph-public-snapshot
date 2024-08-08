@@ -1,4 +1,4 @@
-package graphqlutil
+package gqlutil
 
 // PageInfo implements the GraphQL type PageInfo.
 type PageInfo struct {

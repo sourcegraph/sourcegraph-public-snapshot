@@ -6,7 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -120,16 +120,16 @@ func (r *backgroundJobConnectionResolver) TotalCount(context.Context) (int32, er
 	return int32(len(resolvers)), nil
 }
 
-func (r *backgroundJobConnectionResolver) PageInfo(context.Context) (*graphqlutil.PageInfo, error) {
+func (r *backgroundJobConnectionResolver) PageInfo(context.Context) (*gqlutil.PageInfo, error) {
 	resolvers, err := r.compute()
 	if err != nil {
 		return nil, err
 	}
 
 	if r.first != nil && *r.first > -1 && len(resolvers) > int(*r.first) {
-		return graphqlutil.NextPageCursor(string(resolvers[*r.first-1].ID())), nil
+		return gqlutil.NextPageCursor(string(resolvers[*r.first-1].ID())), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return gqlutil.HasNextPage(false), nil
 }
 
 func (r *backgroundJobConnectionResolver) compute() ([]*BackgroundJobResolver, error) {

@@ -19,6 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/codyaccessservice"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/importer"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -45,6 +46,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	if err != nil {
 		return nil, errors.Wrap(err, "initialize Redis client")
 	}
+	redisKVClient := newRedisKVClient(contract.RedisEndpoint)
 
 	dbHandle, err := database.NewHandle(ctx, logger, contract.Contract, redisClient, version.Version())
 	if err != nil {
@@ -104,12 +106,12 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		codyaccessservice.NewStoreV1(
 			codyaccessservice.StoreV1Options{
 				SAMSClient: samsClient,
+				DB:         dbHandle,
 				CodyGatewayEvents: newCodyGatewayEventsService(
 					logger.Scoped("codygatewayevents"),
 					config.CodyGatewayEvents),
 			},
 		),
-		dotcomDB,
 		connect.WithInterceptors(otelConnctInterceptor),
 	)
 	subscriptionsservice.RegisterV1(
@@ -201,6 +203,8 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 				},
 			},
 		},
+		// Run importer in background
+		importer.NewPeriodicImporter(ctx, logger.Scoped("importer"), dotcomDB, dbHandle, redisKVClient, config.DotComDB.ImportInterval),
 		// Stop server first
 		server,
 	}, nil

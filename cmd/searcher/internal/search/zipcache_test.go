@@ -14,7 +14,7 @@ func TestZipCacheDelete(t *testing.T) {
 	// Set up a store.
 	s := tmpStore(t)
 
-	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
 		return emptyTar(t), nil
 	}
 

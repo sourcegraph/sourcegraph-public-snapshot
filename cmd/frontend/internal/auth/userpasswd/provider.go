@@ -23,9 +23,6 @@ func (provider) ConfigID() providers.ConfigID {
 // Config implements providers.Provider.
 func (p provider) Config() schema.AuthProviders { return schema.AuthProviders{Builtin: p.c} }
 
-// Refresh implements providers.Provider.
-func (p provider) Refresh(context.Context) error { return nil }
-
 // CachedInfo implements providers.Provider.
 func (p provider) CachedInfo() *providers.Info {
 	return &providers.Info{

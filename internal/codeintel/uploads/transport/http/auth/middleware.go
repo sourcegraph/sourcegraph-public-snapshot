@@ -10,7 +10,6 @@ import (
 	sglog "github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -24,6 +23,9 @@ import (
 type (
 	AuthValidator    func(context.Context, url.Values, string) (int, error)
 	AuthValidatorMap = map[string]AuthValidator
+	RepoStore        interface {
+		GetByName(context.Context, api.RepoName) (*types.Repo, error)
+	}
 )
 
 var DefaultValidatorByCodeHost = AuthValidatorMap{
@@ -45,7 +47,7 @@ var errVerificationNotSupported = errors.New(strings.Join([]string{
 func AuthMiddleware(
 	next http.Handler,
 	userStore UserStore,
-	repoStore backend.ReposService,
+	repoStore RepoStore,
 	authValidators AuthValidatorMap,
 	operation *observation.Operation,
 ) http.Handler {
@@ -128,7 +130,7 @@ func isLoggedIn(ctx context.Context, userStore UserStore, trace observation.Trac
 
 func (u *loggedInUserDoNotCreateThisTypeDirectly) canAccessRepository(
 	ctx context.Context,
-	repoStore backend.ReposService,
+	repoStore RepoStore,
 	repositoryName string,
 	trace observation.TraceLogger,
 ) (int, error) {

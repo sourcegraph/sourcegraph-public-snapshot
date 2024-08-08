@@ -1,10 +1,6 @@
 package sourcegraphoperator
 
 import (
-	"context"
-
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -40,12 +36,6 @@ func Init() {
 	conf.ContributeValidator(validateConfig)
 
 	p := NewProvider(*cloudSiteConfig.AuthProviders.SourcegraphOperator, httpcli.ExternalClient)
-	logger := log.Scoped(auth.SourcegraphOperatorProviderType)
-	go func() {
-		if err := p.Refresh(context.Background()); err != nil {
-			logger.Error("failed to fetch Sourcegraph Operator service provider metadata", log.Error(err))
-		}
-	}()
 	providers.Update(auth.SourcegraphOperatorProviderType, []providers.Provider{p})
 }
 

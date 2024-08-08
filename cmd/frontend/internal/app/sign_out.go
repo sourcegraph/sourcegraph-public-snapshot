@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/saml"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
@@ -49,7 +48,7 @@ func serveSignOutHandler(logger log.Logger, db database.DB) http.HandlerFunc {
 			logger.Error("serveSignOutHandler", log.Error(err))
 		}
 
-		auth.SetSignOutCookie(w)
+		session.SetSignOutCookie(w)
 
 		ssoSignOutHandler(w, r)
 

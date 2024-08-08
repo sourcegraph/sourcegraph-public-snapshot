@@ -7,14 +7,12 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
@@ -59,13 +57,13 @@ func (r *permissionsInfoResolver) Unrestricted(_ context.Context) bool {
 
 var permissionsInfoRepositoryConnectionMaxPageSize = 100
 
-var permissionsInfoRepositoryConnectionOptions = &graphqlutil.ConnectionResolverOptions{
+var permissionsInfoRepositoryConnectionOptions = &gqlutil.ConnectionResolverOptions{
 	OrderBy:     database.OrderBy{{Field: "repo.id"}},
 	Ascending:   true,
 	MaxPageSize: permissionsInfoRepositoryConnectionMaxPageSize,
 }
 
-func (r *permissionsInfoResolver) Repositories(_ context.Context, args graphqlbackend.PermissionsInfoRepositoriesArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsInfoRepositoryResolver], error) {
+func (r *permissionsInfoResolver) Repositories(_ context.Context, args graphqlbackend.PermissionsInfoRepositoriesArgs) (*gqlutil.ConnectionResolver[graphqlbackend.PermissionsInfoRepositoryResolver], error) {
 	if r.userID == 0 {
 		return nil, nil
 	}
@@ -81,7 +79,7 @@ func (r *permissionsInfoResolver) Repositories(_ context.Context, args graphqlba
 		query:  query,
 	}
 
-	return graphqlutil.NewConnectionResolver[graphqlbackend.PermissionsInfoRepositoryResolver](connectionStore, &args.ConnectionResolverArgs, permissionsInfoRepositoryConnectionOptions)
+	return gqlutil.NewConnectionResolver[graphqlbackend.PermissionsInfoRepositoryResolver](connectionStore, &args.ConnectionResolverArgs, permissionsInfoRepositoryConnectionOptions)
 }
 
 type permissionsInfoRepositoriesStore struct {
@@ -157,13 +155,13 @@ func (r permissionsInfoRepositoryResolver) UpdatedAt() *gqlutil.DateTime {
 
 var permissionsInfoUserConnectionMaxPageSize = 100
 
-var permissionsInfoUserConnectionOptions = &graphqlutil.ConnectionResolverOptions{
+var permissionsInfoUserConnectionOptions = &gqlutil.ConnectionResolverOptions{
 	OrderBy:     database.OrderBy{{Field: "users.username"}},
 	Ascending:   true,
 	MaxPageSize: permissionsInfoUserConnectionMaxPageSize,
 }
 
-func (r *permissionsInfoResolver) Users(ctx context.Context, args graphqlbackend.PermissionsInfoUsersArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsInfoUserResolver], error) {
+func (r *permissionsInfoResolver) Users(ctx context.Context, args graphqlbackend.PermissionsInfoUsersArgs) (*gqlutil.ConnectionResolver[graphqlbackend.PermissionsInfoUserResolver], error) {
 	if r.repoID == 0 {
 		return nil, nil
 	}
@@ -180,7 +178,7 @@ func (r *permissionsInfoResolver) Users(ctx context.Context, args graphqlbackend
 		query:  query,
 	}
 
-	return graphqlutil.NewConnectionResolver[graphqlbackend.PermissionsInfoUserResolver](connectionStore, &args.ConnectionResolverArgs, permissionsInfoUserConnectionOptions)
+	return gqlutil.NewConnectionResolver[graphqlbackend.PermissionsInfoUserResolver](connectionStore, &args.ConnectionResolverArgs, permissionsInfoUserConnectionOptions)
 }
 
 type permissionsInfoUsersStore struct {

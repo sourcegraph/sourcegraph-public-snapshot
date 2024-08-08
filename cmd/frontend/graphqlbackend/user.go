@@ -7,22 +7,19 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/ssc"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
-
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -766,7 +763,7 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
-func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
+func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*gqlutil.ConnectionResolver[RoleResolver], error) {
 	// 🚨 SECURITY: In dotcom mode, only allow site admins to check roles.
 	if dotcom.SourcegraphDotComMode() && auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		return nil, errors.New("unauthorized")
@@ -776,16 +773,16 @@ func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlu
 		db:     r.db,
 		userID: userID,
 	}
-	return graphqlutil.NewConnectionResolver[RoleResolver](
+	return gqlutil.NewConnectionResolver[RoleResolver](
 		connectionStore,
 		&args.ConnectionResolverArgs,
-		&graphqlutil.ConnectionResolverOptions{
+		&gqlutil.ConnectionResolverOptions{
 			AllowNoLimit: true,
 		},
 	)
 }
 
-func (r *UserResolver) Permissions() (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
+func (r *UserResolver) Permissions() (*gqlutil.ConnectionResolver[PermissionResolver], error) {
 	userID := r.user.ID
 	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, userID); err != nil {
 		return nil, err
@@ -794,10 +791,10 @@ func (r *UserResolver) Permissions() (*graphqlutil.ConnectionResolver[Permission
 		db:     r.db,
 		userID: userID,
 	}
-	return graphqlutil.NewConnectionResolver[PermissionResolver](
+	return gqlutil.NewConnectionResolver[PermissionResolver](
 		connectionStore,
-		&graphqlutil.ConnectionResolverArgs{},
-		&graphqlutil.ConnectionResolverOptions{
+		&gqlutil.ConnectionResolverArgs{},
+		&gqlutil.ConnectionResolverOptions{
 			AllowNoLimit: true,
 		},
 	)

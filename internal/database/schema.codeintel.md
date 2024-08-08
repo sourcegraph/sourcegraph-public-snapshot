@@ -293,3 +293,26 @@ Indexes:
     "rockskip_symbols_repo_id_path_name" btree (repo_id, path, name)
 
 ```
+
+# Table "public.tenants"
+```
+   Column   |           Type           | Collation | Nullable | Default 
+------------+--------------------------+-----------+----------+---------
+ id         | bigint                   |           | not null | 
+ name       | text                     |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+ updated_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "tenants_pkey" PRIMARY KEY, btree (id)
+    "tenants_name_key" UNIQUE CONSTRAINT, btree (name)
+Check constraints:
+    "tenant_name_length" CHECK (char_length(name) <= 32 AND char_length(name) >= 3)
+    "tenant_name_valid_chars" CHECK (name ~ '^[a-z](?:[a-z0-9\_-])*[a-z0-9]$'::text)
+
+```
+
+The table that holds all tenants known to the instance. In enterprise instances, this table will only contain the &#34;default&#34; tenant.
+
+**id**: The ID of the tenant. To keep tenants globally addressable, and be able to move them aronud instances more easily, the ID is NOT a serial and has to be specified explicitly. The creator of the tenant is responsible for choosing a unique ID, if it cares.
+
+**name**: The name of the tenant. This may be displayed to the user and must be unique.

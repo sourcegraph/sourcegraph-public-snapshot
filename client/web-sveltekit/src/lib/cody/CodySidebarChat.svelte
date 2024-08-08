@@ -1,10 +1,10 @@
 <script context="module" lang="ts">
-    function getTelemetrySourceClient(): string {
-        if (window.context?.sourcegraphDotComMode) {
-            return 'dotcom.web'
-        }
-        return 'server.web'
-    }
+function getTelemetrySourceClient(): string {
+	if (window.context?.sourcegraphDotComMode) {
+		return "dotcom.web";
+	}
+	return "server.web";
+}
 </script>
 
 <script lang="ts">
@@ -96,15 +96,25 @@
         --mention-color-opacity: 100%;
 
         // LLM picker tokens
-        --vscode-quickInput-background: var(--dropdown-bg);
+        --vscode-quickInput-background: var(--body-bg);
         --vscode-dropdown-border: var(--border-color);
         --vscode-dropdown-foreground: var(--body-color);
         --vscode-foreground: var(--body-color);
+        --vscode-list-activeSelectionBackground: #e8f7ff;
+        --vscode-list-activeSelectionForeground: var(--primary);
+        --vscode-input-placeholderForeground: var(--body-color);
+        --vscode-button-foreground: var(--body-color);
+        --vscode-keybindingLabel-background: transparent;
+        --vscode-keybindingLabel-foreground: var(--body-color);
 
         line-height: 1.55;
         padding-bottom: 2rem;
         flex: 1;
         min-height: 0;
+
+        :global(button) {
+            opacity: 1;
+        }
 
         :global(h3),
         :global(h4) {
@@ -157,10 +167,71 @@
         :global([cmdk-root] input:focus-visible) {
             box-shadow: unset !important;
         }
+
+        // As of Cody Web 0.4.0 the buttons implemented in Cody does not satisfy
+        // the design requirements. Hence here we are overriding the button
+        // styles here to fix them.
+        :global(button:has(h4)),
+        :global([cmdk-root] a) {
+            background-color: transparent;
+            color: var(--body-color);
+            padding: 2px 4px;
+
+            &:hover {
+                color: #181b26;
+                background-color: #eff2f5;
+            }
+
+            &:active {
+                color: #1c7ed6;
+                background-color: #e8f7ff;
+            }
+
+            &:disabled {
+                color: #798baf;
+                background-color: #798baf;
+            }
+
+            &:focus {
+                color: #181b26;
+                background: transparent;
+                box-shadow: 0 0 0 2px #a3d0ff;
+            }
+        }
+        :global(.theme-dark) & {
+            --vscode-list-activeSelectionBackground: #031824;
+
+            // As of Cody Web 0.4.0 the buttons implemented in Cody does not satisfy
+            // the design requirements. Hence here we are overriding the button
+            // styles here to fix them.
+            :global(button:has(h4)),
+            :global([cmdk-root] a) {
+                &:hover {
+                    color: #e6ebf2;
+                    background-color: #14171f;
+                }
+
+                &:active {
+                    color: #1c7ed6;
+                    background-color: #031824;
+                }
+
+                &:disabled {
+                    color: #5e6e8c;
+                    background-color: #0f111a;
+                }
+
+                &:focus {
+                    color: #e6ebf2;
+                    background: transparent;
+                    box-shadow: 0 0 0 2px #0b4c90;
+                }
+            }
+        }
     }
 
     :global([data-floating-ui-portal]) {
-        --vscode-quickInput-background: var(--secondary-2);
+        --vscode-quickInput-background: var(--body-bg);
         --vscode-widget-border: var(--border-color);
         --vscode-list-activeSelectionBackground: var(--primary);
         --vscode-foreground: var(--body-color);
@@ -168,5 +239,14 @@
         // Turn off background color for picker popover element
         // Which causes glitch effect in Cody Web
         --vscode-sideBar-background: transparent;
+    }
+
+    :global([cmdk-root]) {
+        --vscode-list-activeSelectionBackground: #e8f7ff;
+        --vscode-list-activeSelectionForeground: var(--primary);
+
+        :global(.theme-dark) & {
+            --vscode-list-activeSelectionBackground: #031824;
+        }
     }
 </style>
