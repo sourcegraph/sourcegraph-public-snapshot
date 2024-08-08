@@ -8,14 +8,32 @@ import (
 
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/modelconfig"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	types "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func SetSiteConfig(t *testing.T, siteConfig schema.SiteConfiguration) {
+	conf.Mock(&conf.Unified{SiteConfiguration: siteConfig})
+	if err := modelconfig.ResetMock(); err != nil {
+		require.NoError(t, err)
+	}
+}
 
 func TestAPI(t *testing.T) {
 	c := newTest(t, "chat_completions")
+	chatModels := c.getChatModels()
+	assert.NoError(t, modelconfig.InitMock())
+	assert.NoError(t, modelconfig.ResetMockWithStaticData(&types.ModelConfiguration{
+		Models: chatModels,
+	}))
 
 	t.Run("/api/v1/chat/completions (400 stream=true)", func(t *testing.T) {
 		rr := c.chatCompletions(t, `{
-			    "model": "anthropic/claude-3-haiku-20240307",
+			    "model": "anthropic::unknown::claude-3-sonnet-20240229",
 			    "messages": [{"role": "user", "content": "Hello"}],
 				"stream": true
 			}`)
@@ -25,7 +43,7 @@ func TestAPI(t *testing.T) {
 
 	t.Run("/api/v1/chat/completions (400 N != 1)", func(t *testing.T) {
 		rr := c.chatCompletions(t, `{
-			    "model": "anthropic/claude-3-haiku-20240307",
+			    "model": "anthropic::unknown::claude-3-sonnet-20240229",
 			    "messages": [{"role": "user", "content": "Hello"}],
 				"n": 2
 			}`)
@@ -35,16 +53,28 @@ func TestAPI(t *testing.T) {
 
 	t.Run("/api/v1/chat/completions (400 role=system)", func(t *testing.T) {
 		rr := c.chatCompletions(t, `{
-			    "model": "anthropic/claude-3-haiku-20240307",
+			    "model": "anthropic::unknown::claude-3-sonnet-20240229",
 			    "messages": [{"role": "system", "content": "You are a helpful assistant."}]
 			}`)
 		// For now, we don't support overriding the system role.
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
-	t.Run("/api/v1/chat/completions (200 OK)", func(t *testing.T) {
+	t.Run("/api/v1/chat/completions (400 model is not modelref)", func(t *testing.T) {
 		rr := c.chatCompletions(t, `{
 			    "model": "anthropic/claude-3-haiku-20240307",
+			    "messages": [{"role": "user", "content": "Hello"}]
+			}`)
+		// For now, we reject requests when the model is not using the new ModelRef format.
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+		// Assert that we give a helpful error message nudging the user to use modelref instead of the old syntax.
+		assert.Equal(t, "model anthropic/claude-3-haiku-20240307 is not supported (similar to anthropic::unknown::claude-3-haiku-20240307)\n", rr.Body.String())
+	})
+
+	t.Run("/api/v1/chat/completions (200 OK)", func(t *testing.T) {
+		rr := c.chatCompletions(t, `{
+			    "model": "anthropic::unknown::claude-3-sonnet-20240229",
 			    "messages": [
 			        {
 			            "role": "user",
@@ -103,7 +133,7 @@ func TestAPI(t *testing.T) {
         }
     ],
     "created": 0,
-    "model": "anthropic/claude-3-haiku-20240307",
+    "model": "anthropic::unknown::claude-3-sonnet-20240229",
     "system_fingerprint": "",
     "object": "chat.completion",
     "usage": {
@@ -114,7 +144,7 @@ func TestAPI(t *testing.T) {
 }`).Equal(t, body)
 	})
 
-	for _, model := range c.getChatModels() {
+	for _, model := range chatModels {
 		if model.DisplayName == "starcoder" {
 			// Skip starcoder because it's not a chat model even if it has the "chat" capability
 			// per the /.api/modelconfig/supported-models.json endpoint. Context:

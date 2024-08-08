@@ -6,8 +6,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// The types in this file are generated from the OpenAI API spec:
+// https://github.com/openai/openai-openapi/blob/master/openapi.yaml
+// We intentionally don't customize the types because the main purpose
+// of this endpoint is to be compatible with OpenAI clients.
+// The structs and fields have no docs in this file but you can find the
+// descriptions in the OpenAPI spec. The goal is to document this API properly
+// on sourcegraph.com/docs using the same descriptions as in the OpenAPI spec.
+
 type CreateChatCompletionRequest struct {
-	Messages         []ChatCompletionRequestMessage          `json:"messages"`
+	Messages []ChatCompletionRequestMessage `json:"messages"`
+	// IMPORTANT: we only accept the ModelRef syntax here, see internal/modelconfig/types/refs.go
 	Model            string                                  `json:"model"`
 	FrequencyPenalty *float64                                `json:"frequency_penalty,omitempty"`
 	LogitBias        *map[string]int                         `json:"logit_bias,omitempty"`

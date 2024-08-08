@@ -14,9 +14,11 @@ import (
 	"github.com/sourcegraph/log"
 	sglog "github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/modelconfig"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	completions "github.com/sourcegraph/sourcegraph/internal/completions/types"
+	types "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 )
 
 // chatCompletionsHandler implements the REST endpoint /chat/completions
@@ -43,12 +45,24 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	decoder := json.NewDecoder(io.NopCloser(bytes.NewBuffer(body)))
 
+	modelConfigSvc := modelconfig.Get()
+	currentModelConfig, err := modelConfigSvc.Get()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("modelConfigSvc.Get: %v", err), http.StatusInternalServerError)
+		return
+	}
+
 	if err := decoder.Decode(&chatCompletionRequest); err != nil {
 		http.Error(w, fmt.Sprintf("decoder.Decode: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	if errorMsg := validateChatCompletionRequest(chatCompletionRequest); errorMsg != "" {
+		http.Error(w, errorMsg, http.StatusBadRequest)
+		return
+	}
+
+	if errorMsg := validateRequestedModel(chatCompletionRequest, currentModelConfig); errorMsg != "" {
 		http.Error(w, errorMsg, http.StatusBadRequest)
 		return
 	}
@@ -68,6 +82,29 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		h.logger.Error("writing /chat/completions response body", log.Error(err))
 	}
 
+}
+
+// validateRequestedModel checks that are only use the modelref syntax
+// (${ProviderID}::${APIVersionID}::${ModelID}).  If the user passes the old
+// syntax `${ProviderID}/${ModelID}`, then we try to return a helpful error
+// message suggesting to use the new modelref syntax.
+func validateRequestedModel(chatCompletionRequest CreateChatCompletionRequest, modelConfig *types.ModelConfiguration) string {
+	closestModelRef := ""
+	for _, model := range modelConfig.Models {
+		if string(model.ModelRef) == chatCompletionRequest.Model {
+			return ""
+		}
+		if model.DisplayName == chatCompletionRequest.Model || model.ModelName == chatCompletionRequest.Model {
+			closestModelRef = string(model.ModelRef)
+		} else if chatCompletionRequest.Model == fmt.Sprintf("%s/%s", model.ModelRef.ProviderID(), model.ModelRef.ModelID()) {
+			closestModelRef = string(model.ModelRef)
+		}
+	}
+	didYouMean := ""
+	if closestModelRef != "" {
+		didYouMean = fmt.Sprintf(" (similar to %s)", closestModelRef)
+	}
+	return fmt.Sprintf("model %s is not supported%s", chatCompletionRequest.Model, didYouMean)
 }
 
 func validateChatCompletionRequest(chatCompletionRequest CreateChatCompletionRequest) string {
@@ -105,10 +142,11 @@ func validateChatCompletionRequest(chatCompletionRequest CreateChatCompletionReq
 			return "system role is not supported"
 		}
 	}
+
 	return ""
 }
 
-func transformToSGRequest(openAIReq CreateChatCompletionRequest) completions.CompletionRequestParameters {
+func transformToSGRequest(openAIReq CreateChatCompletionRequest) completions.CodyCompletionRequestParameters {
 	maxTokens := 16 // Default in OpenAI openapi.yaml spec
 	if openAIReq.MaxTokens != nil {
 		maxTokens = *openAIReq.MaxTokens
@@ -124,14 +162,17 @@ func transformToSGRequest(openAIReq CreateChatCompletionRequest) completions.Com
 		topP = *openAIReq.TopP
 	}
 	stream := false // TODO: reject error when stream is true
-	return completions.CompletionRequestParameters{
-		MaxTokensToSample: maxTokens,
-		Messages:          transformMessages(openAIReq.Messages),
-		RequestedModel:    completions.TaintedModelRef(openAIReq.Model),
-		Temperature:       temperature,
-		TopP:              topP,
-		Stream:            &stream,
-		StopSequences:     openAIReq.Stop.Stop,
+	return completions.CodyCompletionRequestParameters{
+		CompletionRequestParameters: completions.CompletionRequestParameters{
+			MaxTokensToSample: maxTokens,
+			Messages:          transformMessages(openAIReq.Messages),
+			RequestedModel:    completions.TaintedModelRef(openAIReq.Model),
+			Temperature:       temperature,
+			TopP:              topP,
+			Stream:            &stream,
+			StopSequences:     openAIReq.Stop.Stop,
+		},
+		Fast: false,
 	}
 }
 
@@ -155,7 +196,7 @@ func transformMessages(messages []ChatCompletionRequestMessage) []completions.Me
 	return transformed
 }
 
-func (h *chatCompletionsHandler) forwardToAPIHandler(sgReq completions.CompletionRequestParameters, r *http.Request) (*completions.CompletionResponse, error) {
+func (h *chatCompletionsHandler) forwardToAPIHandler(sgReq completions.CodyCompletionRequestParameters, r *http.Request) (*completions.CompletionResponse, error) {
 	// Create a new request to /.api/completions
 	reqBody, err := json.Marshal(sgReq)
 	if err != nil {

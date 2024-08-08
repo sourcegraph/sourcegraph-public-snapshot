@@ -105,13 +105,13 @@ func (c *publicrestTest) chatCompletions(t *testing.T, body string) *httptest.Re
 	return rr
 }
 
-func (c *publicrestTest) getChatModels() []*types.Model {
+func (c *publicrestTest) getChatModels() []types.Model {
 	modelConfig := c.getModelConfig()
-	chatModels := []*types.Model{}
+	chatModels := []types.Model{}
 	for _, model := range modelConfig.Models {
 		for _, capability := range model.Capabilities {
 			if capability == "chat" {
-				chatModels = append(chatModels, &model)
+				chatModels = append(chatModels, model)
 			}
 		}
 	}
