@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
 import type { ConnectError } from '@connectrpc/connect'
-import { mdiPencil, mdiTrashCan } from '@mdi/js'
+import { mdiInformationOutline, mdiPencil, mdiTrashCan } from '@mdi/js'
 import type { UseQueryResult } from '@tanstack/react-query'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
@@ -159,7 +159,12 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                                 <thead>
                                     <tr>
                                         <th>Feature</th>
-                                        <th>Source</th>
+                                        <th>
+                                            Source{' '}
+                                            <Tooltip content="Where the displayed rate limit comes from - hover over each badge to learn more.">
+                                                <Icon aria-label="Show help text" svgPath={mdiInformationOutline} />
+                                            </Tooltip>
+                                        </th>
                                         <th>Rate limit</th>
                                         {viewerCanAdminister && <th>Actions</th>}
                                     </tr>
@@ -271,8 +276,8 @@ export const CodyGatewayRateLimitSourceBadge: React.FunctionComponent<{
     switch (source) {
         case CodyGatewayRateLimitSource.OVERRIDE: {
             return (
-                <Tooltip content="The limit has been specified by a custom override">
-                    <Badge variant="primary" className={className}>
+                <Tooltip content="The limit has been specified by a fixed, custom override. Removing this override will revert the limit to the value derived from the active license plan.">
+                    <Badge variant="warning" className={className}>
                         Override
                     </Badge>
                 </Tooltip>
@@ -280,7 +285,7 @@ export const CodyGatewayRateLimitSourceBadge: React.FunctionComponent<{
         }
         case CodyGatewayRateLimitSource.PLAN: {
             return (
-                <Tooltip content="The limit is derived from the current subscription plan">
+                <Tooltip content="The limit is derived from the actve license plan, which scales off of user count on the active license as well.">
                     <Badge variant="primary" className={className}>
                         Plan
                     </Badge>
@@ -405,7 +410,7 @@ const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
                                     <Icon aria-hidden={true} svgPath={mdiPencil} />
                                 </Button>
                                 {rateLimit.source === CodyGatewayRateLimitSource.OVERRIDE && (
-                                    <Tooltip content="Remove rate limit override">
+                                    <Tooltip content="Remove rate limit override, allowing the active-license-based defaults to take precedence.">
                                         <Button
                                             size="sm"
                                             variant="link"

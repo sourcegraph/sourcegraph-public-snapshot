@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { Duration } from '@bufbuild/protobuf'
 
 import { logger } from '@sourcegraph/common'
-import { Button, Modal, Input, H3, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
+import { Button, Modal, Input, H3, Text, ErrorAlert, Form, Alert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 
@@ -109,18 +109,22 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
             <H3 id={labelId}>
-                Configure{' '}
+                Configure custom{' '}
                 {mode === 'chat'
                     ? 'chat request'
                     : mode === 'code'
                     ? 'code completion request'
                     : 'embeddings generation'}{' '}
-                rate limit for Cody Gateway
+                rate limit override for Cody Gateway access
             </H3>
             <Text>
-                Cody Gateway is a Sourcegraph managed service that allows customer instances to talk to upstream LLMs
-                and generate embeddings under our negotiated terms with third party providers in a safe manner.
+                Overrides take precedence over the default rate limits, which are based on the active licence's plan and
+                user count.
             </Text>
+            <Alert variant="warning">
+                Rate limit overrides are static: for example, they must be updated manually, or removed, to accomodate
+                an increase in user count.
+            </Alert>
 
             {error && <ErrorAlert error={error} />}
 
