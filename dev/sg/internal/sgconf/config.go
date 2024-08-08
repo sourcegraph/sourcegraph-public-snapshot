@@ -83,6 +83,7 @@ type Commandset struct {
 	DockerCommands []string          `yaml:"dockerCommands"`
 	Checks         []string          `yaml:"checks"`
 	Env            map[string]string `yaml:"env"`
+	Deprecated     string            `yaml:"deprecated"`
 }
 
 // UnmarshalYAML implements the Unmarshaler interface.
@@ -103,6 +104,10 @@ func (c *Commandset) UnmarshalYAML(unmarshal func(any) error) error {
 	}
 
 	return nil
+}
+
+func (c *Commandset) IsDeprecated() bool {
+	return c.Deprecated != ""
 }
 
 func (c *Commandset) Merge(other *Commandset) *Commandset {
