@@ -27,7 +27,7 @@ type QueryConfig struct {
 	Snippet string
 	Name    string
 
-	// An unset interval defaults to 1m
+	// An unset interval defaults to 5m
 	Interval time.Duration
 
 	// An empty value for Protocols means "all"
