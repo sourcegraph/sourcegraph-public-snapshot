@@ -27,95 +27,142 @@
     interface RepoTreeEntry {
         type: 'repo'
         name: string
-        entries: PathTreeEntry[]
     }
 
-    interface PathTreeEntry {
-        type: 'path'
+    interface DirTreeEntry {
+        type: 'dir'
         repo: string
-        name: string
+        path: string // The full path
+        name: string // The path element for this dir
     }
 
-    type TreeEntry = RepoTreeEntry | PathTreeEntry
+    interface FileTreeEntry {
+        type: 'file'
+        repo: string
+        path: string // The full path
+        name: string // The file name
+    }
 
+    type TreeEntry = RepoTreeEntry | FileTreeEntry | DirTreeEntry
+
+    // A set of usages grouped by unique repository, revision, and path
     interface PathGroup {
+        repository: string
+        revision: string
         path: string
         usages: ExplorePanel_Usage[]
     }
 
-    interface RepoGroup {
-        repo: string
-        pathGroups: PathGroup[]
-    }
-
-    function groupUsages(usages: ExplorePanel_Usage[]): RepoGroup[] {
-        const seenRepos: Record<string, { index: number; seenPaths: Record<string, number> }> = {}
-        const repoGroups: RepoGroup[] = []
+    // Groups all usages into consecutive groups of matching repo/rev/path.
+    // Maintains input order so paging in new results doesn't cause weirdness.
+    function groupUsages(usages: ExplorePanel_Usage[]): PathGroup[] {
+        const groups: PathGroup[] = []
+        let current: PathGroup | undefined = undefined
 
         for (const usage of usages) {
-            const repo = usage.usageRange.repository
-            if (seenRepos[repo] === undefined) {
-                seenRepos[repo] = { index: repoGroups.length, seenPaths: {} }
-                repoGroups.push({ repo, pathGroups: [] })
+            const { repository, revision, path } = usage.usageRange
+            if (
+                current &&
+                current.repository === repository &&
+                current.revision === revision &&
+                current.path === path
+            ) {
+                current.usages.push(usage)
+            } else {
+                if (current) {
+                    groups.push(current)
+                }
+                current = {
+                    repository,
+                    revision,
+                    path,
+                    usages: [usage],
+                }
             }
-
-            const path = usage.usageRange.path
-            const seenPaths = seenRepos[repo].seenPaths
-            const pathGroups = repoGroups[seenRepos[repo].index].pathGroups
-
-            if (seenPaths[path] === undefined) {
-                seenPaths[path] = pathGroups.length
-                pathGroups.push({ path, usages: [] })
-            }
-
-            pathGroups[seenPaths[path]].usages.push(usage)
+        }
+        if (current) {
+            groups.push(current)
         }
 
-        return repoGroups
+        return groups
     }
 
-    function treeProviderForEntries(entries: TreeEntry[]): TreeProvider<TreeEntry> {
-        return {
-            getNodeID(entry) {
-                if (entry.type === 'repo') {
-                    return `repo-${entry.name}`
-                } else {
-                    return `path-${entry.repo}-${entry.name}`
+    function generateTree(pathGroups: PathGroup[]): TreeProvider<TreeEntry> {
+        type Tree = Map<string, { entry: TreeEntry; tree: Tree }>
+        const tree: Tree = new Map()
+        const addToTree = (repo: string, path: string) => {
+            if (!tree.get(repo)) {
+                tree.set(repo, { entry: { type: 'repo', name: repo }, tree: new Map() })
+            }
+            const repoEntry = tree.get(repo)!
+
+            const pathElements = path.split('/')
+            const dirs = pathElements.slice(0, -1)
+
+            let current = repoEntry
+            for (const [index, dir] of dirs.entries()) {
+                if (!current.tree.get(dir)) {
+                    current.tree.set(dir, {
+                        tree: new Map(),
+                        entry: {
+                            type: 'dir',
+                            repo,
+                            name: dir,
+                            path: pathElements.slice(0, index + 1).join('/') + '/',
+                        },
+                    })
                 }
-            },
-            getEntries(): TreeEntry[] {
-                return entries
-            },
-            isExpandable(entry) {
-                return entry.type === 'repo'
-            },
-            isSelectable() {
-                return true
-            },
-            fetchChildren(entry) {
-                if (entry.type === 'repo') {
-                    return Promise.resolve(treeProviderForEntries(entry.entries))
-                } else {
-                    throw new Error('path nodes are not expandable')
-                }
-            },
+                current = current.tree.get(dir)!
+            }
+
+            const fileName = pathElements.at(-1)! // splitting will always have at least one element
+            current.tree.set(fileName, {
+                tree: new Map(),
+                entry: {
+                    type: 'file',
+                    repo,
+                    path,
+                    name: fileName,
+                },
+            })
         }
+
+        for (const pathGroup of pathGroups) {
+            addToTree(pathGroup.repository, pathGroup.path)
+        }
+
+        function newTreeProvider(tree: Tree): TreeProvider<TreeEntry> {
+            return {
+                getNodeID(entry) {
+                    if (entry.type === 'repo') {
+                        return `repo-${entry.name}`
+                    } else {
+                        return `path-${entry.repo}-${entry.path}`
+                    }
+                },
+                getEntries(): TreeEntry[] {
+                    return Array.from(tree.entries()).map(([_name, entry]) => entry.entry)
+                },
+                isExpandable(entry) {
+                    return entry.type === 'repo' || entry.type === 'dir'
+                },
+                isSelectable() {
+                    return true
+                },
+                fetchChildren(entry) {
+                    if (entry.type === 'repo' || entry.type === 'dir') {
+                        return Promise.resolve(newTreeProvider(tree.get(entry.name)!.tree))
+                    } else {
+                        throw new Error('path nodes are not expandable')
+                    }
+                },
+            }
+        }
+
+        return newTreeProvider(tree)
     }
 
-    function generateOutlineTree(repoGroups: RepoGroup[]): TreeProvider<TreeEntry> {
-        const repoEntries: RepoTreeEntry[] = repoGroups.map(repoGroup => ({
-            type: 'repo',
-            name: repoGroup.repo,
-            entries: repoGroup.pathGroups.map(pathGroup => ({
-                type: 'path',
-                name: pathGroup.path,
-                repo: repoGroup.repo,
-            })),
-        }))
-        return treeProviderForEntries(repoEntries)
-    }
-
-    export function getUsagesStore(client: GraphQLClient, documentInfo: DocumentInfo, occurrence: Occurrence) {
+    function getUsagesStore(client: GraphQLClient, documentInfo: DocumentInfo, occurrence: Occurrence) {
         const baseVariables: ExplorePanel_UsagesVariables = {
             repoName: documentInfo.repoName,
             revspec: documentInfo.commitID,
@@ -153,6 +200,13 @@
 
     function matchesUsageKind(usageKindFilter: SymbolUsageKind | undefined): (usage: ExplorePanel_Usage) => boolean {
         return usage => usageKindFilter === undefined || usage.usageKind === usageKindFilter
+    }
+
+    function matchesTreeFilter(treeFilter: TreeFilter | undefined): (pathGroup: PathGroup) => boolean {
+        return pathGroup =>
+            treeFilter === undefined ||
+            (treeFilter.repository === pathGroup.repository &&
+                (treeFilter.path === undefined || pathGroup.path.startsWith(treeFilter.path)))
     }
 
     interface TreeFilter {
@@ -207,10 +261,11 @@
 
     // TODO: it would be really nice if the tree API emitted select events with tree elements, not HTML elements
     function handleSelect(target: HTMLElement) {
-        const selected = target.querySelector('[data-repo-name]') as HTMLElement
-        const repository = selected.dataset.repoName ?? ''
-        const path = selected.dataset.path
+        const selected = target.querySelector<HTMLElement>('[data-repo-name]')
+        const repository = selected?.dataset.repoName ?? ''
+        const path = selected?.dataset.path
         const deselect = treeFilter && treeFilter.repository === repository && treeFilter.path === path
+        console.log({ repository, path })
         treeFilter = deselect ? undefined : { repository, path }
     }
 
@@ -219,20 +274,12 @@
         : undefined
 
     $: loading = $connection?.fetching
-    $: usages = $connection?.data
-    $: kindFilteredUsages = usages?.filter(matchesUsageKind(usageKindFilter))
-    $: repoGroups = groupUsages(kindFilteredUsages ?? [])
-    $: outlineTree = generateOutlineTree(repoGroups)
-    $: displayGroups = repoGroups
-        .flatMap(repoGroup => repoGroup.pathGroups.map(pathGroup => ({ repo: repoGroup.repo, ...pathGroup })))
-        .filter(displayGroup => {
-            if (treeFilter === undefined) {
-                return true
-            } else if (treeFilter.repository !== displayGroup.repo) {
-                return false
-            }
-            return treeFilter.path === undefined || treeFilter.path === displayGroup.path
-        })
+    $: usages = $connection?.data ?? []
+    $: kindFilteredUsages = usages.filter(matchesUsageKind(usageKindFilter))
+    $: pathGroups = groupUsages(kindFilteredUsages)
+    $: outlineTree = generateTree(pathGroups)
+    $: displayGroups = pathGroups.filter(matchesTreeFilter(treeFilter))
+    $: console.log({ kindFilteredUsages, usages, pathGroups, outlineTree, displayGroups })
 
     let referencesScroller: HTMLElement | undefined
 </script>
@@ -263,7 +310,7 @@
                     {/each}
                 </fieldset>
                 <div class="outline">
-                    {#if repoGroups.length > 0}
+                    {#if pathGroups.length > 0}
                         <h4>Filter by location</h4>
                         <TreeView treeProvider={outlineTree} on:select={event => handleSelect(event.detail)}>
                             <svelte:fragment let:entry>
@@ -273,7 +320,7 @@
                                         {displayRepoName(entry.name)}
                                     </span>
                                 {:else}
-                                    <span class="path-entry" data-repo-name={entry.repo} data-path={entry.name}>
+                                    <span class="path-entry" data-repo-name={entry.repo} data-path={entry.path}>
                                         {entry.name}
                                     </span>
                                 {/if}
@@ -297,13 +344,15 @@
             {:else}
                 <Scroller bind:viewport={referencesScroller} margin={600} on:more={() => connection?.fetchMore()}>
                     {#if displayGroups.length > 0}
-                        <ul>
-                            {#each displayGroups as pathGroup}
-                                <li>
-                                    <ExplorePanelFileUsages scrollContainer={referencesScroller} {...pathGroup} />
-                                </li>
-                            {/each}
-                        </ul>
+                        {#key displayGroups}
+                            <ul>
+                                {#each displayGroups as pathGroup}
+                                    <li>
+                                        <ExplorePanelFileUsages scrollContainer={referencesScroller} {...pathGroup} />
+                                    </li>
+                                {/each}
+                            </ul>
+                        {/key}
                         {#if loading}
                             <LoadingSpinner center />
                         {/if}

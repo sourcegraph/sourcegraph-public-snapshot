@@ -98,7 +98,7 @@
     function openExploreTab(usageKindFilter: SymbolUsageKind, occurrence: ActiveOccurrence) {
         // Open the tab when we find references
         selectedTab = TabPanels.References
-        exploreProps = { activeOccurrence: occurrence, usageKindFilter }
+        exploreProps = { activeOccurrence: occurrence, usageKindFilter, treeFilter: undefined }
     }
     setExplorePanelContext({
         openReferences: openExploreTab.bind(null, SymbolUsageKind.REFERENCE),
