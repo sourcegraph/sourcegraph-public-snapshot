@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -67,21 +66,17 @@ func TestAllowSignup(t *testing.T) {
 			}
 			db := dbmocks.NewStrictMockDB()
 			_ = telemetrytest.AddDBMocks(db)
-			p := &Provider{
-				config: schema.OpenIDConnectAuthProvider{
+
+			_, _, _, err := getOrCreateUser(
+				context.Background(),
+				logtest.Scoped(t),
+				db,
+				schema.OpenIDConnectAuthProvider{
 					ClientID:           testClientID,
 					ClientSecret:       "aaaaaaaaaaaaaaaaaaaaaaaaa",
 					RequireEmailDomain: "example.com",
 					AllowSignup:        test.allowSignup,
 				},
-				oidc:       &oidcProvider{},
-				httpClient: httpcli.ExternalClient,
-			}
-			_, _, _, err := getOrCreateUser(
-				context.Background(),
-				logtest.Scoped(t),
-				db,
-				p,
 				&oauth2.Token{},
 				&oidc.IDToken{},
 				&oidc.UserInfo{

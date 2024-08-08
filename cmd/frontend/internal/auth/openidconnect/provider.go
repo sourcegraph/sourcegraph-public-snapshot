@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"path"
 	"strings"
-	"sync"
 
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
@@ -20,6 +19,8 @@ import (
 
 const providerType = "openidconnect"
 
+var _ providers.Provider = (*Provider)(nil)
+
 // Provider is an implementation of providers.Provider for the OpenID Connect
 // authentication.
 type Provider struct {
@@ -27,15 +28,11 @@ type Provider struct {
 	authPrefix  string
 	callbackUrl string
 	httpClient  *http.Client
-
-	mu         sync.Mutex
-	oidc       *oidcProvider
-	refreshErr error
 }
 
 // NewProvider creates and returns a new OpenID Connect authentication provider
 // using the given config.
-func NewProvider(config schema.OpenIDConnectAuthProvider, authPrefix string, callbackUrl string, httpClient *http.Client) providers.Provider {
+func NewProvider(config schema.OpenIDConnectAuthProvider, authPrefix string, callbackUrl string, httpClient *http.Client) *Provider {
 	return &Provider{
 		config:      config,
 		authPrefix:  authPrefix,
@@ -57,38 +54,12 @@ func (p *Provider) Config() schema.AuthProviders {
 	return schema.AuthProviders{Openidconnect: &p.config}
 }
 
-// Refresh implements providers.Provider.
-func (p *Provider) Refresh(context.Context) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.oidc, p.refreshErr = newOIDCProvider(p.config.Issuer, p.httpClient)
-	return p.refreshErr
-}
-
 func (p *Provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
 	return GetPublicExternalAccountData(ctx, &account.AccountData)
 }
 
-// oidcVerifier returns the token verifier of the underlying OIDC provider.
-func (p *Provider) oidcVerifier() *oidc.IDTokenVerifier {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return p.oidc.Verifier(
-		&oidc.Config{
-			ClientID: p.config.ClientID,
-		},
-	)
-}
-
-// oidcUserInfo returns the user info using the given token source from the
-// underlying OIDC provider.
-func (p *Provider) oidcUserInfo(ctx context.Context, tokenSource oauth2.TokenSource) (*oidc.UserInfo, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return p.oidc.UserInfo(ctx, tokenSource)
-}
-
-func (p *Provider) getCachedInfoAndError() (*providers.Info, error) {
+// CachedInfo implements providers.Provider.
+func (p *Provider) CachedInfo() *providers.Info {
 	info := providers.Info{
 		ServiceID:   p.config.Issuer,
 		ClientID:    p.config.ClientID,
@@ -101,26 +72,11 @@ func (p *Provider) getCachedInfoAndError() (*providers.Info, error) {
 	if info.DisplayName == "" {
 		info.DisplayName = "OpenID Connect"
 	}
-
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	err := p.refreshErr
-	if err != nil {
-		err = errors.WithMessage(err, "failed to initialize OpenID Connect auth provider")
-	} else if p.oidc == nil {
-		err = errors.New("OpenID Connect auth provider is not yet initialized")
-	}
-	return &info, err
-}
-
-// CachedInfo implements providers.Provider.
-func (p *Provider) CachedInfo() *providers.Info {
-	info, _ := p.getCachedInfoAndError()
-	return info
+	return &info
 }
 
 // oauth2Config constructs and returns an *oauth2.Config from the provider.
-func (p *Provider) oauth2Config() *oauth2.Config {
+func (p *Provider) oauth2Config(oidcClient *oidcProvider) *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     p.config.ClientID,
 		ClientSecret: p.config.ClientSecret,
@@ -132,7 +88,7 @@ func (p *Provider) oauth2Config() *oauth2.Config {
 			ResolveReference(&url.URL{Path: p.callbackUrl}).
 			String(),
 
-		Endpoint: p.oidc.Endpoint(),
+		Endpoint: oidcClient.Endpoint(),
 		Scopes:   []string{oidc.ScopeOpenID, "profile", "email"},
 	}
 }
@@ -157,13 +113,7 @@ type providerExtraClaims struct {
 	RevocationEndpoint string `json:"revocation_endpoint,omitempty"`
 }
 
-var mockNewProvider func(issuerURL string) (*oidcProvider, error)
-
 func newOIDCProvider(issuerURL string, httpClient *http.Client) (*oidcProvider, error) {
-	if mockNewProvider != nil {
-		return mockNewProvider(issuerURL)
-	}
-
 	bp, err := oidc.NewProvider(oidc.ClientContext(context.Background(), httpClient), issuerURL)
 	if err != nil {
 		return nil, err
@@ -177,7 +127,7 @@ func newOIDCProvider(issuerURL string, httpClient *http.Client) (*oidcProvider, 
 }
 
 // revokeToken implements Token Revocation. See https://tools.ietf.org/html/rfc7009.
-func revokeToken(ctx context.Context, p *Provider, accessToken, tokenType string) error {
+func revokeToken(ctx context.Context, p *Provider, revocationEndpoint, accessToken, tokenType string) error {
 	postData := url.Values{}
 	postData.Set("token", accessToken)
 	if tokenType != "" {
@@ -185,7 +135,7 @@ func revokeToken(ctx context.Context, p *Provider, accessToken, tokenType string
 	}
 	req, err := http.NewRequest(
 		"POST",
-		p.oidc.RevocationEndpoint,
+		revocationEndpoint,
 		strings.NewReader(postData.Encode()),
 	)
 	if err != nil {
@@ -203,7 +153,7 @@ func revokeToken(ctx context.Context, p *Provider, accessToken, tokenType string
 	if resp.StatusCode != http.StatusOK {
 		return errors.Errorf(
 			"non-200 HTTP response from token revocation endpoint %s: HTTP %d",
-			p.oidc.RevocationEndpoint,
+			revocationEndpoint,
 			resp.StatusCode,
 		)
 	}
