@@ -141,7 +141,18 @@
                     }
                 },
                 getEntries(): TreeEntry[] {
-                    return Array.from(tree.entries()).map(([_name, entry]) => entry.entry)
+                    return Array.from(tree.entries())
+                        .map(([_name, entry]) => entry.entry)
+                        .toSorted((a, b) => {
+                            if (a.type !== b.type) {
+                                if (a.type === 'dir') {
+                                    return -1
+                                } else {
+                                    return 1
+                                }
+                            }
+                            // TODO: finish this
+                        })
                 },
                 isExpandable(entry) {
                     return entry.type === 'repo' || entry.type === 'dir'
