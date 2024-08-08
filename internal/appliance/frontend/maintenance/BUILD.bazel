@@ -3,7 +3,7 @@ load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//internal/appliance/frontend/maintenance:tsconfig-to-swcconfig/package_json.bzl", tsconfig_to_swcconfig = "bin")
 load("@npm//internal/appliance/frontend/maintenance:vite/package_json.bzl", vite_bin = "bin")
-load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//dev:oci_defs.bzl", "pkg_tar")
 load("//wolfi-images:defs.bzl", "wolfi_base")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 
