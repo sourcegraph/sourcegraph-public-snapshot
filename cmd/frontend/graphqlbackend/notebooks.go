@@ -5,7 +5,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
@@ -33,7 +32,7 @@ type NotebooksResolver interface {
 type NotebookConnectionResolver interface {
 	Nodes(ctx context.Context) []NotebookResolver
 	TotalCount(ctx context.Context) int32
-	PageInfo(ctx context.Context) *graphqlutil.PageInfo
+	PageInfo(ctx context.Context) *gqlutil.PageInfo
 }
 
 type NotebookStarResolver interface {
@@ -44,7 +43,7 @@ type NotebookStarResolver interface {
 type NotebookStarConnectionResolver interface {
 	Nodes() []NotebookStarResolver
 	TotalCount() int32
-	PageInfo() *graphqlutil.PageInfo
+	PageInfo() *gqlutil.PageInfo
 }
 
 type NotebookResolver interface {

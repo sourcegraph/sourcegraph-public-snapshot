@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -123,16 +122,16 @@ func (r *outboundRequestConnectionResolver) TotalCount(ctx context.Context) (int
 	return int32(len(resolvers)), nil
 }
 
-func (r *outboundRequestConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *outboundRequestConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	resolvers, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if r.first != nil && *r.first > -1 && len(resolvers) > int(*r.first) {
-		return graphqlutil.NextPageCursor(string(resolvers[*r.first-1].ID())), nil
+		return gqlutil.NextPageCursor(string(resolvers[*r.first-1].ID())), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return gqlutil.HasNextPage(false), nil
 }
 
 func (r *outboundRequestConnectionResolver) compute(ctx context.Context) ([]*OutboundRequestResolver, error) {

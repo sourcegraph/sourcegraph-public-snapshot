@@ -42,7 +42,6 @@ go_library(
         "//cmd/frontend/enterprise",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/externallink",
-        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//cmd/frontend/internal/githubapp",
         "//internal/actor",
         "//internal/api",

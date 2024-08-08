@@ -13,7 +13,6 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
-        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/database",
         "//internal/dotcom",
         "//internal/errcode",

@@ -5,7 +5,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
@@ -37,7 +36,7 @@ type ExportedEventResolver interface {
 type ExportedEventsConnectionResolver interface {
 	Nodes() []ExportedEventResolver
 	TotalCount() (int32, error)
-	PageInfo() *graphqlutil.PageInfo
+	PageInfo() *gqlutil.PageInfo
 }
 
 type RecordEventArgs struct{ Event TelemetryEventInput }

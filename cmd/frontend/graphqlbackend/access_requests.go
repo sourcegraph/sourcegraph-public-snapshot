@@ -6,7 +6,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -16,10 +15,10 @@ import (
 
 type AccessRequestsArgs struct {
 	database.AccessRequestsFilterArgs
-	graphqlutil.ConnectionResolverArgs
+	gqlutil.ConnectionResolverArgs
 }
 
-func (r *schemaResolver) AccessRequests(ctx context.Context, args *AccessRequestsArgs) (*graphqlutil.ConnectionResolver[*accessRequestResolver], error) {
+func (r *schemaResolver) AccessRequests(ctx context.Context, args *AccessRequestsArgs) (*gqlutil.ConnectionResolver[*accessRequestResolver], error) {
 	// 🚨 SECURITY: Only site admins can see access requests.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -31,12 +30,12 @@ func (r *schemaResolver) AccessRequests(ctx context.Context, args *AccessRequest
 	}
 
 	reverse := false
-	connectionOptions := graphqlutil.ConnectionResolverOptions{
+	connectionOptions := gqlutil.ConnectionResolverOptions{
 		Reverse:   &reverse,
 		OrderBy:   database.OrderBy{{Field: string(database.AccessRequestListID)}},
 		Ascending: false,
 	}
-	return graphqlutil.NewConnectionResolver[*accessRequestResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
+	return gqlutil.NewConnectionResolver[*accessRequestResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
 }
 
 type accessRequestConnectionStore struct {

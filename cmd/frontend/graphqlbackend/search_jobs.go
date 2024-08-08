@@ -5,7 +5,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
@@ -16,7 +15,7 @@ type SearchJobsResolver interface {
 	DeleteSearchJob(ctx context.Context, args *DeleteSearchJobArgs) (*EmptyResponse, error)
 
 	// Queries
-	SearchJobs(ctx context.Context, args *SearchJobsArgs) (*graphqlutil.ConnectionResolver[SearchJobResolver], error)
+	SearchJobs(ctx context.Context, args *SearchJobsArgs) (*gqlutil.ConnectionResolver[SearchJobResolver], error)
 	ValidateSearchJob(ctx context.Context, args *CreateSearchJobArgs) (*EmptyResponse, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
@@ -83,7 +82,7 @@ type SearchJobArgs struct {
 }
 
 type SearchJobsArgs struct {
-	graphqlutil.ConnectionResolverArgs
+	gqlutil.ConnectionResolverArgs
 	Query      *string
 	States     *[]string
 	OrderBy    string
@@ -93,6 +92,6 @@ type SearchJobsArgs struct {
 
 type SearchJobsConnectionResolver interface {
 	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(ctx context.Context) (*gqlutil.PageInfo, error)
 	Nodes(ctx context.Context) ([]SearchJobResolver, error)
 }

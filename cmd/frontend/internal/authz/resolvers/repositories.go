@@ -7,11 +7,11 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -28,7 +28,7 @@ type repositoryConnectionResolver struct {
 	// cache results because they are used by multiple fields
 	once     sync.Once
 	repos    []*types.Repo
-	pageInfo *graphqlutil.PageInfo
+	pageInfo *gqlutil.PageInfo
 	err      error
 }
 
@@ -40,7 +40,7 @@ type repositoryConnectionResolver struct {
 //	r.ids - the full slice of sorted repo IDs
 //	r.after - (optional) the repo ID to start the paging after (does not include the after ID itself)
 //	r.first - the # of repo IDs to return
-func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Repo, *graphqlutil.PageInfo, error) {
+func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Repo, *gqlutil.PageInfo, error) {
 	r.once.Do(func() {
 		var idSubset []int32
 		if r.after == nil {
@@ -68,7 +68,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		// No IDs to find, return early
 		if len(idSubset) == 0 {
 			r.repos = []*types.Repo{}
-			r.pageInfo = graphqlutil.HasNextPage(false)
+			r.pageInfo = gqlutil.HasNextPage(false)
 			return
 		}
 		// If we have more ids than we need, trim them
@@ -90,10 +90,10 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 
 		// The last id in this page is the last id in r.ids, no more pages
 		if int32(repoIDs[len(repoIDs)-1]) == r.ids[len(r.ids)-1] {
-			r.pageInfo = graphqlutil.HasNextPage(false)
+			r.pageInfo = gqlutil.HasNextPage(false)
 		} else { // Additional repo IDs to paginate through.
 			endCursor := string(graphqlbackend.MarshalRepositoryID(repoIDs[len(repoIDs)-1]))
-			r.pageInfo = graphqlutil.NextPageCursor(endCursor)
+			r.pageInfo = gqlutil.NextPageCursor(endCursor)
 		}
 	})
 	return r.repos, r.pageInfo, r.err
@@ -127,7 +127,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *gra
 	return &count, nil
 }
 
-func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err

@@ -5,15 +5,15 @@ import (
 
 	logger "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 func (r *schemaResolver) Organizations(args *struct {
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 	Query *string
 }) *orgConnectionResolver {
 	var opt database.OrgsListOptions
@@ -74,6 +74,6 @@ type orgConnectionStaticResolver struct {
 
 func (r *orgConnectionStaticResolver) Nodes() []*OrgResolver { return r.nodes }
 func (r *orgConnectionStaticResolver) TotalCount() int32     { return int32(len(r.nodes)) }
-func (r *orgConnectionStaticResolver) PageInfo() *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(false)
+func (r *orgConnectionStaticResolver) PageInfo() *gqlutil.PageInfo {
+	return gqlutil.HasNextPage(false)
 }

@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-
 	"github.com/graph-gophers/graphql-go"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -32,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	ghstore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -2005,7 +2004,7 @@ func (r *Resolver) MaxUnlicensedChangesets(ctx context.Context) int32 {
 	}
 }
 
-func (r *Resolver) GetChangesetsByIDs(ctx context.Context, args *graphqlbackend.GetChangesetsByIDsArgs) (_ graphqlutil.SliceConnectionResolver[graphqlbackend.ChangesetResolver], err error) {
+func (r *Resolver) GetChangesetsByIDs(ctx context.Context, args *graphqlbackend.GetChangesetsByIDsArgs) (_ gqlutil.SliceConnectionResolver[graphqlbackend.ChangesetResolver], err error) {
 	tr, ctx := trace.New(ctx, "Resolver.GetChangesetsByIDs",
 		attribute.String("batchChange", string(args.BatchChange)),
 		attribute.Int("changesets.len", len(args.Changesets)))
@@ -2048,7 +2047,7 @@ func (r *Resolver) GetChangesetsByIDs(ctx context.Context, args *graphqlbackend.
 		cs[i] = NewChangesetResolver(r.store, r.gitserverClient, r.logger, changeset, repo)
 	}
 
-	return graphqlutil.NewSliceConnectionResolver(cs, len(cs), len(cs)), nil
+	return gqlutil.NewSliceConnectionResolver(cs, len(cs), len(cs)), nil
 }
 
 func parseBatchChangeStates(ss *[]string) ([]btypes.BatchChangeState, error) {
