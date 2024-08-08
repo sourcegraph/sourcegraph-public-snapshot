@@ -15,7 +15,7 @@ go_library(
     deps = [
         "//cmd/enterprise-portal/internal/database/internal/pgxerrors",
         "//cmd/enterprise-portal/internal/database/internal/upsert",
-        "//cmd/enterprise-portal/internal/database/internal/utctime",
+        "//cmd/enterprise-portal/internal/database/utctime",
         "//internal/license",
         "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "//lib/errors",
@@ -42,7 +42,7 @@ go_test(
         "//cmd/enterprise-portal/internal/database",
         "//cmd/enterprise-portal/internal/database/databasetest",
         "//cmd/enterprise-portal/internal/database/internal/tables",
-        "//cmd/enterprise-portal/internal/database/internal/utctime",
+        "//cmd/enterprise-portal/internal/database/utctime",
         "//internal/license",
         "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "//lib/pointers",

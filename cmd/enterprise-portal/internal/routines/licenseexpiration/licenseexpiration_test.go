@@ -8,6 +8,8 @@ import (
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	subscriptions "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
@@ -55,6 +57,7 @@ func TestHandle(t *testing.T) {
 	})
 
 	h := handler{
+		logger:                  logtest.Scoped(t),
 		store:                   store,
 		licenseCheckConcurrency: 1,
 	}
