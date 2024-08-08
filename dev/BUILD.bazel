@@ -130,5 +130,6 @@ write_source_files(
         "//cmd/frontend/internal/auth/userpasswd:generate_mocks",
         "//internal/codeintel/uploads/internal/storemocks:generate_mocks",
         "//cmd/frontend/internal/backend:generate_mocks",
+        "//cmd/enterprise-portal/internal/codyaccessservice:generate_mocks",
     ],
 )

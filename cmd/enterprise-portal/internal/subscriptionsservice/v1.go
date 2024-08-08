@@ -349,6 +349,8 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 					database.NewNullString(req.Msg.GetSubscription().GetInstanceDomain())
 				opts.DisplayName =
 					database.NewNullString(req.Msg.GetSubscription().GetDisplayName())
+			default:
+				return nil, connect.NewError(connect.CodeInvalidArgument, errors.Newf("unknown field path: %s", p))
 			}
 		}
 	}

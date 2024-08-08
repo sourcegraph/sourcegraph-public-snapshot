@@ -37,6 +37,9 @@ type StoreV1 interface {
 
 	// GetCodyGatewayAccessBySubscription retrieves Cody Gateway access by
 	// subscription ID.
+	//
+	// If the subscription does not exist, then ErrSubscriptionDoesNotExist is
+	// returned.
 	GetCodyGatewayAccessBySubscription(ctx context.Context, subscriptionID string) (*codyaccess.CodyGatewayAccessWithSubscriptionDetails, error)
 
 	// GetCodyGatewayAccessByAccessToken retrieves Cody Gateway access details
@@ -46,6 +49,13 @@ type StoreV1 interface {
 	// ListCodyGatewayAccesses retrieves all Cody Gateway accesses with their
 	// associated subscription details.
 	ListCodyGatewayAccesses(ctx context.Context) ([]*codyaccess.CodyGatewayAccessWithSubscriptionDetails, error)
+
+	// UpsertCodyGatewayAccess creates or updates a Cody Gateway access record
+	// for the given subscription ID.
+	//
+	// If the subscription does not exist, then ErrSubscriptionDoesNotExist is
+	// returned.
+	UpsertCodyGatewayAccess(ctx context.Context, subscriptionID string, opts codyaccess.UpsertCodyGatewayAccessOptions) (*codyaccess.CodyGatewayAccessWithSubscriptionDetails, error)
 }
 
 type storeV1 struct {
@@ -180,4 +190,11 @@ func (s *storeV1) GetCodyGatewayAccessByAccessToken(ctx context.Context, token s
 
 func (s *storeV1) ListCodyGatewayAccesses(ctx context.Context) ([]*codyaccess.CodyGatewayAccessWithSubscriptionDetails, error) {
 	return s.CodyAccess.CodyGateway().List(ctx)
+}
+
+func (s *storeV1) UpsertCodyGatewayAccess(ctx context.Context, subscriptionID string, opts codyaccess.UpsertCodyGatewayAccessOptions) (*codyaccess.CodyGatewayAccessWithSubscriptionDetails, error) {
+	return s.CodyAccess.CodyGateway().Upsert(
+		ctx,
+		strings.TrimPrefix(subscriptionID, subscriptionsv1.EnterpriseSubscriptionIDPrefix),
+		opts)
 }
