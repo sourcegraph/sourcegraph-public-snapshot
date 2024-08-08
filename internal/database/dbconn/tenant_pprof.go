@@ -5,14 +5,12 @@ import (
 	"runtime/pprof"
 	"sync/atomic"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 var pprofUniqID atomic.Int64
 var pprofTenantlessQueries = func() *pprof.Profile {
-	enabled := env.MustGetBool("SRC_PGSQL_PROFILE_TENANTLESS_QUERIES", false, "INTERNAL: Add pprof profile tenantless_queries for all stack traces which did not set tenant")
-	if !enabled {
+	if !tenant.ShouldLogNoTenant() {
 		return nil
 	}
 	return pprof.NewProfile("tenantless_queries")
