@@ -104,6 +104,14 @@ func NewConfig(now time.Time) Config {
 		}
 
 		commit = strings.TrimSpace(string(out))
+		var mergeBaseOut []byte
+		mergeBaseOut, err = execute.Git(context.Background(), "merge-base", "origin/main", commit)
+		if err != nil {
+			panic(fmt.Sprintf("failed to find merge base origin/main..%s: %v", commit, err))
+		}
+		if string(mergeBaseOut) == "" {
+			panic("no merge base was found for origin/main..%s - this typically means that git was unable to find a common ancestor between the current commit and the target branch. This can potentially be caused if the current repository has a limited depth or is a shallow clone")
+		}
 		changedFiles, err = gitops.GetBranchChangedFiles("main", commit)
 	}
 
