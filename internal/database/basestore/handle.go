@@ -125,7 +125,7 @@ func (h *txHandle) Transact(ctx context.Context) (TransactableHandle, error) {
 		return nil, err
 	}
 
-	return &savepointHandle{lockingTx: h.lockingTx, savepointID: savepointID}, nil
+	return &savepointHandle{lockingTx: h.lockingTx, savepointID: savepointID, ctx: context.WithoutCancel(ctx)}, nil
 }
 
 func (h *txHandle) Done(err error) error {
@@ -138,6 +138,7 @@ func (h *txHandle) Done(err error) error {
 type savepointHandle struct {
 	*lockingTx
 	savepointID string
+	ctx         context.Context
 }
 
 func (h *savepointHandle) InTransaction() bool {
@@ -150,16 +151,16 @@ func (h *savepointHandle) Transact(ctx context.Context) (TransactableHandle, err
 		return nil, err
 	}
 
-	return &savepointHandle{lockingTx: h.lockingTx, savepointID: savepointID}, nil
+	return &savepointHandle{lockingTx: h.lockingTx, savepointID: savepointID, ctx: context.WithoutCancel(ctx)}, nil
 }
 
 func (h *savepointHandle) Done(err error) error {
 	if err == nil {
-		_, execErr := h.ExecContext(context.Background(), fmt.Sprintf(commitSavepointQuery, h.savepointID))
+		_, execErr := h.ExecContext(h.ctx, fmt.Sprintf(commitSavepointQuery, h.savepointID))
 		return execErr
 	}
 
-	_, execErr := h.ExecContext(context.Background(), fmt.Sprintf(rollbackSavepointQuery, h.savepointID))
+	_, execErr := h.ExecContext(h.ctx, fmt.Sprintf(rollbackSavepointQuery, h.savepointID))
 	return errors.Append(err, execErr)
 }
 
