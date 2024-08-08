@@ -1449,6 +1449,35 @@ func TestToTextPatternInfo(t *testing.T) {
 	}
 }
 
+func TestToTextPatternInfoBoost(t *testing.T) {
+	basic := query.Basic{Pattern: query.Operator{
+		Kind: query.And,
+		Operands: []query.Node{
+			query.Pattern{
+				Value:      "lorem ipsum",
+				Annotation: query.Annotation{Labels: query.Boost | query.Literal},
+			},
+			query.Pattern{
+				Value:      "dolor sit",
+				Annotation: query.Annotation{Labels: query.Literal},
+			}},
+	}}
+
+	patternInfo, err := toTextPatternInfo(basic, defaultResultTypes, &search.Features{}, limits.DefaultMaxSearchResults)
+	require.NoError(t, err)
+
+	want := &protocol.AndNode{
+		Children: []protocol.QueryNode{
+			&protocol.PatternNode{Value: "lorem ipsum", Boost: true},
+			&protocol.PatternNode{Value: "dolor sit"},
+		},
+	}
+
+	if cmp.Diff(want, patternInfo.Query) != "" {
+		t.Fatalf("unexpected query: %v", patternInfo.Query)
+	}
+}
+
 func TestToSymbolSearchRequest(t *testing.T) {
 	cases := []struct {
 		input   string

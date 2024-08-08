@@ -12,6 +12,7 @@ import (
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
+	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -124,6 +125,7 @@ func toRegexpTree(node *protocol.PatternNode, isCaseSensitive bool) (matchTree, 
 		re:               re,
 		ignoreCase:       !isCaseSensitive,
 		isNegated:        node.IsNegated,
+		boost:            node.Boost,
 		literalSubstring: literalSubstring,
 	}, nil
 }
@@ -185,6 +187,9 @@ type regexMatchTree struct {
 	// isNegated indicates whether matches on the pattern should be negated (representing a 'NOT' in the query)
 	isNegated bool
 
+	// boost indicates whether the regexp should have its score boosted in Zoekt ranking
+	boost bool
+
 	// literalSubstring is used to test if a file is worth considering for
 	// matches. literalSubstring is guaranteed to appear in any match found by
 	// re. It is the output of the longestLiteral function. It is only set if
@@ -236,8 +241,9 @@ func (rm *regexMatchTree) ToZoektQuery(matchContent bool, matchPath bool) (zoekt
 	}
 	re = zoektquery.OptimizeRegexp(re, syntax.Perl)
 
+	var query zoektquery.Q
 	if matchContent && matchPath {
-		return zoektquery.NewOr(
+		query = zoektquery.NewOr(
 			rm.negateIfNeeded(
 				&zoektquery.Regexp{
 					Regexp:        re,
@@ -250,16 +256,21 @@ func (rm *regexMatchTree) ToZoektQuery(matchContent bool, matchPath bool) (zoekt
 					FileName:      true,
 					CaseSensitive: !rm.ignoreCase,
 				}),
-		), nil
+		)
+	} else {
+		query = rm.negateIfNeeded(
+			&zoektquery.Regexp{
+				Regexp:        re,
+				Content:       matchContent,
+				FileName:      matchPath,
+				CaseSensitive: !rm.ignoreCase,
+			})
 	}
 
-	return rm.negateIfNeeded(
-		&zoektquery.Regexp{
-			Regexp:        re,
-			Content:       matchContent,
-			FileName:      matchPath,
-			CaseSensitive: !rm.ignoreCase,
-		}), nil
+	if rm.boost {
+		query = &zoektquery.Boost{Child: query, Boost: zoekt.ScoreBoost}
+	}
+	return query, nil
 }
 
 func (rm *regexMatchTree) negateIfNeeded(q zoektquery.Q) zoektquery.Q {
