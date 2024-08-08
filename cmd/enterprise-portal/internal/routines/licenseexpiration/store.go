@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redislock"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Store interface {
@@ -72,7 +73,7 @@ func (s *storeHandle) TryAcquireJob(ctx context.Context) (acquired bool, release
 
 func (s *storeHandle) ListSubscriptions(ctx context.Context) ([]*subscriptions.SubscriptionWithConditions, error) {
 	return s.subscriptions.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{
-		IsArchived: false,
+		IsArchived: pointers.Ptr(false),
 	})
 }
 
