@@ -2,6 +2,7 @@ package codyaccess_test
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strconv"
 	"testing"
@@ -163,12 +164,12 @@ func CodyGatewayStoreListAndGet(t *testing.T, ctx context.Context, subscriptionI
 	for idx, sub := range subscriptionIDs[:len(subscriptionIDs)-1] {
 		_, err := s.Upsert(ctx, sub, codyaccess.UpsertCodyGatewayAccessOptions{
 			Enabled:                                 pointers.Ptr(idx%2 == 0), // even
-			ChatCompletionsRateLimit:                pointers.Ptr(int64(idx)),
-			ChatCompletionsRateLimitIntervalSeconds: pointers.Ptr(int32(idx)),
-			CodeCompletionsRateLimit:                pointers.Ptr(int64(idx)),
-			CodeCompletionsRateLimitIntervalSeconds: pointers.Ptr(int32(idx)),
-			EmbeddingsRateLimit:                     pointers.Ptr(int64(idx)),
-			EmbeddingsRateLimitIntervalSeconds:      pointers.Ptr(int32(idx)),
+			ChatCompletionsRateLimit:                database.NewNullInt64(idx),
+			ChatCompletionsRateLimitIntervalSeconds: database.NewNullInt32(idx),
+			CodeCompletionsRateLimit:                database.NewNullInt64(idx),
+			CodeCompletionsRateLimitIntervalSeconds: database.NewNullInt32(idx),
+			EmbeddingsRateLimit:                     database.NewNullInt64(idx),
+			EmbeddingsRateLimitIntervalSeconds:      database.NewNullInt32(idx),
 		})
 		require.NoError(t, err)
 	}
@@ -311,13 +312,32 @@ func CodyGatewayStoreUpsert(t *testing.T, ctx context.Context, subscriptionIDs [
 		t.Cleanup(func() { currentAccess = got })
 
 		got, err = s.Upsert(ctx, currentAccess.SubscriptionID, codyaccess.UpsertCodyGatewayAccessOptions{
-			ChatCompletionsRateLimit: pointers.Ptr(int64(1234)),
+			ChatCompletionsRateLimit: database.NewNullInt64(1234),
 		})
 		require.NoError(t, err)
 		assert.Equal(t, true, got.Enabled)
 		assert.Equal(t, currentAccess.DisplayName, got.DisplayName)
 		assert.Equal(t, currentAccess.CodeCompletionsRateLimit, got.CodeCompletionsRateLimit)
 		assert.EqualValues(t, 1234, got.ChatCompletionsRateLimit.Int64)
+	})
+
+	t.Run("remove chat completion overrides", func(t *testing.T) {
+		t.Cleanup(func() { currentAccess = got })
+
+		got, err = s.Upsert(ctx, currentAccess.SubscriptionID, codyaccess.UpsertCodyGatewayAccessOptions{
+			ChatCompletionsRateLimit:                &sql.NullInt64{},
+			ChatCompletionsRateLimitIntervalSeconds: &sql.NullInt32{},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, true, got.Enabled)
+		assert.Equal(t, currentAccess.DisplayName, got.DisplayName)
+
+		// unchanged
+		assert.Equal(t, currentAccess.CodeCompletionsRateLimit, got.CodeCompletionsRateLimit)
+
+		// changed
+		assert.False(t, got.ChatCompletionsRateLimit.Valid)
+		assert.False(t, got.ChatCompletionsRateLimitIntervalSeconds.Valid)
 	})
 
 	t.Run("force update to zero values", func(t *testing.T) {

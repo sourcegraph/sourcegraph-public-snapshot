@@ -12,3 +12,19 @@ func NewNullString(v string) *sql.NullString {
 		Valid:  v != "",
 	}
 }
+
+// NewNullInt32 is like NewNullString, but always produces a valid value.
+func NewNullInt32[T int | int32 | int64 | uint64](v T) *sql.NullInt32 {
+	return &sql.NullInt32{
+		Int32: int32(v),
+		Valid: true,
+	}
+}
+
+// NewNullInt32 is like NewNullString, but always produces a valid value.
+func NewNullInt64[T int | int32 | int64 | uint64](v T) *sql.NullInt64 {
+	return &sql.NullInt64{
+		Int64: int64(v),
+		Valid: true,
+	}
+}

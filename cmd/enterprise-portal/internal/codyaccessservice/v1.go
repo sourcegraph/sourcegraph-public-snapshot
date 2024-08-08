@@ -2,6 +2,7 @@ package codyaccessservice
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/connectutil"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/codyaccess"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/samsm2m"
@@ -173,34 +175,28 @@ func (s *HandlerV1) UpdateCodyGatewayAccess(ctx context.Context, req *connect.Re
 			opts.Enabled = pointers.Ptr(update.Enabled)
 		}
 		if update.GetChatCompletionsRateLimit().GetLimit() > 0 {
-			opts.ChatCompletionsRateLimit = pointers.Ptr(
-				int64(update.GetChatCompletionsRateLimit().Limit),
-			)
+			opts.ChatCompletionsRateLimit = database.NewNullInt64(
+				update.GetChatCompletionsRateLimit().Limit)
 		}
 		if update.GetChatCompletionsRateLimit().GetIntervalDuration().GetSeconds() > 0 {
-			opts.ChatCompletionsRateLimitIntervalSeconds = pointers.Ptr(
-				int32(update.GetChatCompletionsRateLimit().GetIntervalDuration().Seconds),
-			)
+			opts.ChatCompletionsRateLimitIntervalSeconds = database.NewNullInt32(
+				update.GetChatCompletionsRateLimit().GetIntervalDuration().Seconds)
 		}
 		if update.GetCodeCompletionsRateLimit().GetLimit() > 0 {
-			opts.CodeCompletionsRateLimit = pointers.Ptr(
-				int64(update.GetCodeCompletionsRateLimit().Limit),
-			)
+			opts.CodeCompletionsRateLimit = database.NewNullInt64(
+				update.GetCodeCompletionsRateLimit().Limit)
 		}
 		if update.GetCodeCompletionsRateLimit().GetIntervalDuration().GetSeconds() > 0 {
-			opts.CodeCompletionsRateLimitIntervalSeconds = pointers.Ptr(
-				int32(update.GetCodeCompletionsRateLimit().GetIntervalDuration().Seconds),
-			)
+			opts.CodeCompletionsRateLimitIntervalSeconds = database.NewNullInt32(
+				update.GetCodeCompletionsRateLimit().GetIntervalDuration().Seconds)
 		}
 		if update.GetEmbeddingsRateLimit().GetLimit() > 0 {
-			opts.EmbeddingsRateLimit = pointers.Ptr(
-				int64(update.GetEmbeddingsRateLimit().Limit),
-			)
+			opts.EmbeddingsRateLimit = database.NewNullInt64(
+				update.GetEmbeddingsRateLimit().Limit)
 		}
 		if update.GetEmbeddingsRateLimit().GetIntervalDuration().GetSeconds() > 0 {
-			opts.EmbeddingsRateLimitIntervalSeconds = pointers.Ptr(
-				int32(update.GetEmbeddingsRateLimit().GetIntervalDuration().Seconds),
-			)
+			opts.EmbeddingsRateLimitIntervalSeconds = database.NewNullInt32(
+				update.GetEmbeddingsRateLimit().GetIntervalDuration().Seconds)
 		}
 	} else {
 		for _, p := range fieldPaths {
@@ -215,39 +211,57 @@ func (s *HandlerV1) UpdateCodyGatewayAccess(ctx context.Context, req *connect.Re
 			}
 			if p == "chat_completions_rate_limit.limit" || p == "*" {
 				valid = true
-				opts.ChatCompletionsRateLimit = pointers.Ptr(
-					int64(update.GetChatCompletionsRateLimit().GetLimit()),
-				)
+				if update.ChatCompletionsRateLimit == nil {
+					opts.ChatCompletionsRateLimit = &sql.NullInt64{}
+				} else {
+					opts.ChatCompletionsRateLimit = database.NewNullInt64(
+						update.GetChatCompletionsRateLimit().GetLimit())
+				}
 			}
 			if p == "chat_completions_rate_limit.interval_duration" || p == "*" {
 				valid = true
-				opts.ChatCompletionsRateLimitIntervalSeconds = pointers.Ptr(
-					int32(update.GetChatCompletionsRateLimit().GetIntervalDuration().GetSeconds()),
-				)
+				if update.ChatCompletionsRateLimit == nil {
+					opts.ChatCompletionsRateLimitIntervalSeconds = &sql.NullInt32{}
+				} else {
+					opts.ChatCompletionsRateLimitIntervalSeconds = database.NewNullInt32(
+						update.GetChatCompletionsRateLimit().GetIntervalDuration().GetSeconds())
+				}
 			}
 			if p == "code_completions_rate_limit.limit" || p == "*" {
 				valid = true
-				opts.CodeCompletionsRateLimit = pointers.Ptr(
-					int64(update.GetCodeCompletionsRateLimit().GetLimit()),
-				)
+				if update.CodeCompletionsRateLimit == nil {
+					opts.CodeCompletionsRateLimit = &sql.NullInt64{}
+				} else {
+					opts.CodeCompletionsRateLimit = database.NewNullInt64(
+						update.GetCodeCompletionsRateLimit().GetLimit())
+				}
 			}
 			if p == "code_completions_rate_limit.interval_duration" || p == "*" {
 				valid = true
-				opts.CodeCompletionsRateLimitIntervalSeconds = pointers.Ptr(
-					int32(update.GetCodeCompletionsRateLimit().GetIntervalDuration().GetSeconds()),
-				)
+				if update.CodeCompletionsRateLimit == nil {
+					opts.CodeCompletionsRateLimitIntervalSeconds = &sql.NullInt32{}
+				} else {
+					opts.CodeCompletionsRateLimitIntervalSeconds = database.NewNullInt32(
+						update.GetCodeCompletionsRateLimit().GetIntervalDuration().GetSeconds())
+				}
 			}
 			if p == "embeddings_rate_limit.limit" || p == "*" {
 				valid = true
-				opts.EmbeddingsRateLimit = pointers.Ptr(
-					int64(update.GetEmbeddingsRateLimit().GetLimit()),
-				)
+				if update.EmbeddingsRateLimit == nil {
+					opts.EmbeddingsRateLimit = &sql.NullInt64{}
+				} else {
+					opts.EmbeddingsRateLimit = database.NewNullInt64(
+						update.GetEmbeddingsRateLimit().GetLimit())
+				}
 			}
 			if p == "embeddings_rate_limit.interval_duration" || p == "*" {
 				valid = true
-				opts.EmbeddingsRateLimitIntervalSeconds = pointers.Ptr(
-					int32(update.GetEmbeddingsRateLimit().GetIntervalDuration().GetSeconds()),
-				)
+				if update.EmbeddingsRateLimit == nil {
+					opts.EmbeddingsRateLimitIntervalSeconds = &sql.NullInt32{}
+				} else {
+					opts.EmbeddingsRateLimitIntervalSeconds = database.NewNullInt32(
+						update.GetEmbeddingsRateLimit().GetIntervalDuration().GetSeconds())
+				}
 			}
 			if !valid {
 				return nil, connect.NewError(connect.CodeInvalidArgument, errors.Newf("invalid field path %q", p))

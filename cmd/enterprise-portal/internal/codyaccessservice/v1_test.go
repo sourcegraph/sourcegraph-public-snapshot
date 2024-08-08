@@ -2,6 +2,7 @@ package codyaccessservice
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -76,9 +77,15 @@ func TestHandlerV1UpdateCodyGatewayAccess(t *testing.T) {
 			},
 			// All non-zero values should be included in update
 			wantUpdateOpts: autogold.Expect(codyaccess.UpsertCodyGatewayAccessOptions{
-				Enabled:                            valast.Ptr(true),
-				ChatCompletionsRateLimit:           valast.Ptr(int64(100)),
-				EmbeddingsRateLimitIntervalSeconds: valast.Ptr(int32(60)),
+				Enabled: valast.Ptr(true),
+				ChatCompletionsRateLimit: &sql.NullInt64{
+					Int64: 100,
+					Valid: true,
+				},
+				EmbeddingsRateLimitIntervalSeconds: &sql.NullInt32{
+					Int32: 60,
+					Valid: true,
+				},
 			}),
 		},
 		{
@@ -95,7 +102,40 @@ func TestHandlerV1UpdateCodyGatewayAccess(t *testing.T) {
 					Paths: []string{"chat_completions_rate_limit.limit"},
 				},
 			},
-			wantUpdateOpts: autogold.Expect(codyaccess.UpsertCodyGatewayAccessOptions{ChatCompletionsRateLimit: valast.Ptr(int64(100))}),
+			wantUpdateOpts: autogold.Expect(codyaccess.UpsertCodyGatewayAccessOptions{ChatCompletionsRateLimit: &sql.NullInt64{
+				Int64: 100,
+				Valid: true,
+			}}),
+		},
+		{
+			name: "specified field masks to reset limits",
+			update: &codyaccessv1.UpdateCodyGatewayAccessRequest{
+				Access: &codyaccessv1.CodyGatewayAccess{
+					SubscriptionId:           mockSubscriptionID,
+					Enabled:                  true,
+					ChatCompletionsRateLimit: nil,
+					CodeCompletionsRateLimit: nil,
+					EmbeddingsRateLimit:      nil,
+				},
+				UpdateMask: &fieldmaskpb.FieldMask{
+					Paths: []string{
+						"chat_completions_rate_limit.limit",
+						"chat_completions_rate_limit.interval_duration",
+						"code_completions_rate_limit.limit",
+						"code_completions_rate_limit.interval_duration",
+						"embeddings_rate_limit.limit",
+						"embeddings_rate_limit.interval_duration",
+					},
+				},
+			},
+			wantUpdateOpts: autogold.Expect(codyaccess.UpsertCodyGatewayAccessOptions{
+				ChatCompletionsRateLimit:                &sql.NullInt64{},
+				ChatCompletionsRateLimitIntervalSeconds: &sql.NullInt32{},
+				CodeCompletionsRateLimit:                &sql.NullInt64{},
+				CodeCompletionsRateLimitIntervalSeconds: &sql.NullInt32{},
+				EmbeddingsRateLimit:                     &sql.NullInt64{},
+				EmbeddingsRateLimitIntervalSeconds:      &sql.NullInt32{},
+			}),
 		},
 		{
 			name: "* update_mask",
