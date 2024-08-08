@@ -108,9 +108,9 @@ func TestInternalHTTPMiddleware(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			handler := InternalHTTPMiddleware(logtest.Scoped(t), http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-				got, ok := FromContext(r.Context())
+				got, err := FromContext(r.Context())
 				if tt.wantTenant == nil {
-					require.False(t, ok)
+					require.Error(t, err)
 				} else {
 					require.Equal(t, tt.wantTenant, got)
 				}

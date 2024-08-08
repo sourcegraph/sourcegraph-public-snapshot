@@ -15,8 +15,8 @@ func TestTenantPropagator(t *testing.T) {
 		tp := TenantPropagator{}
 		ctx, err := tp.InjectContext(context.Background(), metadata.New(map[string]string{}))
 		require.NoError(t, err)
-		_, ok := FromContext(ctx)
-		require.False(t, ok)
+		_, err = FromContext(ctx)
+		require.Error(t, err)
 	})
 
 	t.Run("no tenant", func(t *testing.T) {
@@ -24,8 +24,8 @@ func TestTenantPropagator(t *testing.T) {
 		md := tp.FromContext(context.Background())
 		ctx, err := tp.InjectContext(context.Background(), md)
 		require.NoError(t, err)
-		_, ok := FromContext(ctx)
-		require.False(t, ok)
+		_, err = FromContext(ctx)
+		require.Error(t, err)
 	})
 
 	t.Run("with tenant", func(t *testing.T) {
@@ -35,8 +35,8 @@ func TestTenantPropagator(t *testing.T) {
 		md := tp.FromContext(ctx1)
 		ctx2, err := tp.InjectContext(context.Background(), md)
 		require.NoError(t, err)
-		tenant, ok := FromContext(ctx2)
-		require.True(t, ok)
+		tenant, err := FromContext(ctx2)
+		require.NoError(t, err)
 		require.Equal(t, tenantID, tenant.ID())
 	})
 

@@ -18,8 +18,8 @@ func TestExternalTenantFromHostnameMiddleware(t *testing.T) {
 		}
 
 		handler := ExternalTenantFromHostnameMiddleware(mapper, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			tenant, ok := FromContext(r.Context())
-			require.True(t, ok)
+			tenant, err := FromContext(r.Context())
+			require.NoError(t, err)
 			require.Equal(t, 42, tenant.ID())
 		}))
 
@@ -74,8 +74,8 @@ func TestExternalTenantFromHostnameMiddleware(t *testing.T) {
 		}
 
 		handler := ExternalTenantFromHostnameMiddleware(mapper, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			tenant, ok := FromContext(r.Context())
-			require.True(t, ok)
+			tenant, err := FromContext(r.Context())
+			require.NoError(t, err)
 			require.Equal(t, 42, tenant.ID())
 		}))
 

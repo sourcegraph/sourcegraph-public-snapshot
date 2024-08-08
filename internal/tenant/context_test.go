@@ -10,14 +10,14 @@ import (
 func TestFromContext(t *testing.T) {
 	t.Run("no tenant", func(t *testing.T) {
 		ctx := context.Background()
-		_, ok := FromContext(ctx)
-		require.False(t, ok)
+		_, err := FromContext(ctx)
+		require.Error(t, err)
 	})
 
 	t.Run("with tenant", func(t *testing.T) {
 		ctx := withTenant(context.Background(), 42)
-		tenant, ok := FromContext(ctx)
-		require.True(t, ok)
+		tenant, err := FromContext(ctx)
+		require.NoError(t, err)
 		require.Equal(t, &Tenant{_id: 42}, tenant)
 	})
 }
@@ -28,8 +28,8 @@ func TestInherit(t *testing.T) {
 		to := context.Background()
 		ctx, err := Inherit(from, to)
 		require.NoError(t, err)
-		_, ok := FromContext(ctx)
-		require.False(t, ok)
+		_, err = FromContext(ctx)
+		require.Error(t, err)
 	})
 
 	t.Run("inherit from tenant to empty", func(t *testing.T) {
@@ -37,8 +37,8 @@ func TestInherit(t *testing.T) {
 		to := context.Background()
 		ctx, err := Inherit(from, to)
 		require.NoError(t, err)
-		tenant, ok := FromContext(ctx)
-		require.True(t, ok)
+		tenant, err := FromContext(ctx)
+		require.NoError(t, err)
 		require.Equal(t, 42, tenant.ID())
 	})
 
@@ -47,8 +47,8 @@ func TestInherit(t *testing.T) {
 		to := withTenant(context.Background(), 42)
 		ctx, err := Inherit(from, to)
 		require.NoError(t, err)
-		tenant, ok := FromContext(ctx)
-		require.True(t, ok)
+		tenant, err := FromContext(ctx)
+		require.NoError(t, err)
 		require.Equal(t, 42, tenant.ID())
 	})
 

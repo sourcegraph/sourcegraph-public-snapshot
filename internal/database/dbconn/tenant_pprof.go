@@ -21,7 +21,7 @@ func pprofCheckTenantlessQuery(ctx context.Context) {
 		return
 	}
 
-	if _, ok := tenant.FromContext(ctx); ok {
+	if _, err := tenant.FromContext(ctx); err == nil {
 		return
 	}
 
