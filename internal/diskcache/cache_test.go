@@ -92,6 +92,13 @@ func TestMultiKeyEviction(t *testing.T) {
 }
 
 func TestEvict(t *testing.T) {
+	// no tenant
+	doTestEvict(t, func() context.Context { return context.Background() })
+	// multi-tenant
+	doTestEvict(t, func() context.Context { return tenant.NewTestContext() })
+}
+
+func doTestEvict(t *testing.T, ctxFunc func() context.Context) {
 	dir := t.TempDir()
 
 	store := &store{
@@ -108,7 +115,7 @@ func TestEvict(t *testing.T) {
 		"key-fourth",
 	} {
 		if strings.HasPrefix(name, "key-") {
-			f, err := store.Open(context.Background(), []string{name}, func(ctx context.Context) (io.ReadCloser, error) {
+			f, err := store.Open(ctxFunc(), []string{name}, func(ctx context.Context) (io.ReadCloser, error) {
 				return io.NopCloser(bytes.NewReader([]byte("x"))), nil
 			})
 			if err != nil {
@@ -184,23 +191,46 @@ func TestTenantsHaveSeparateDirs(t *testing.T) {
 	ctx1 := tenant.NewTestContext()
 	ctx2 := tenant.NewTestContext()
 
+	key1 := "key1"
+	key2 := "key2"
+
 	store := &store{
 		dir:       dir,
 		component: "test",
 		observe:   newOperations(observation.TestContextTB(t), "test"),
 	}
 
-	f1, err := store.Open(ctx1, []string{"key"}, func(ctx context.Context) (io.ReadCloser, error) {
+	f1, err := store.Open(ctx1, []string{key1}, func(ctx context.Context) (io.ReadCloser, error) {
 		return io.NopCloser(bytes.NewReader([]byte("x"))), nil
 	})
 	require.NoError(t, err)
 	f1.Close()
 
-	f2, err := store.Open(ctx2, []string{"key"}, func(ctx context.Context) (io.ReadCloser, error) {
+	f2, err := store.Open(ctx2, []string{key2}, func(ctx context.Context) (io.ReadCloser, error) {
 		return io.NopCloser(bytes.NewReader([]byte("y"))), nil
 	})
 	require.NoError(t, err)
 	f2.Close()
 
 	require.NotEqual(t, filepath.Dir(f1.Path), filepath.Dir(f2.Path))
+
+	// Ensure that the cache is not shared between tenants
+	for _, c := range []struct {
+		ctx       context.Context
+		key       string
+		cacheMiss bool
+	}{
+		{ctx1, key1, false},
+		{ctx1, key2, true},
+		{ctx2, key1, true},
+		{ctx2, key2, false},
+	} {
+		cacheMiss := false
+		_, _ = store.Open(c.ctx, []string{c.key}, func(ctx context.Context) (io.ReadCloser, error) {
+			cacheMiss = true
+			return io.NopCloser(bytes.NewReader([]byte("z"))), nil
+		})
+
+		require.Equal(t, c.cacheMiss, cacheMiss)
+	}
 }

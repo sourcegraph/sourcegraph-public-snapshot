@@ -204,6 +204,11 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 
 // path returns the path for key.
 func (s *store) path(ctx context.Context, key []string) (string, error) {
+	if tenant.ShouldLogNoTenant() {
+		if _, ok := tenant.FromContext(ctx); !ok {
+			log.Printf("diskcache.store.path: no tenant in context")
+		}
+	}
 	if !tenant.EnforceTenant() {
 		return s.pathNoTenant(key), nil
 	}
