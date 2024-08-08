@@ -7,9 +7,9 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -149,6 +149,6 @@ func (r NamespaceResolver) ToUser() (*UserResolver, bool) {
 	return n, ok
 }
 
-func newNamespaceConnection(namespaces []*NamespaceResolver) graphqlutil.SliceConnectionResolver[*NamespaceResolver] {
-	return graphqlutil.NewSliceConnectionResolver(namespaces, len(namespaces), len(namespaces))
+func newNamespaceConnection(namespaces []*NamespaceResolver) gqlutil.SliceConnectionResolver[*NamespaceResolver] {
+	return gqlutil.NewSliceConnectionResolver(namespaces, len(namespaces), len(namespaces))
 }

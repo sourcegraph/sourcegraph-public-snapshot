@@ -7,9 +7,9 @@ import (
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -21,10 +21,10 @@ func (c *codeGraphDataResolver) Occurrences(ctx context.Context, args *resolvers
 	const maxPageSize = 100000
 	args = args.Normalize(maxPageSize)
 
-	impl, err := graphqlutil.NewConnectionResolver[resolverstubs.SCIPOccurrenceResolver](
+	impl, err := gqlutil.NewConnectionResolver[resolverstubs.SCIPOccurrenceResolver](
 		&occurrenceConnectionStore{c},
-		&graphqlutil.ConnectionResolverArgs{First: args.First, After: args.After},
-		&graphqlutil.ConnectionResolverOptions{MaxPageSize: maxPageSize, Reverse: pointers.Ptr(false)})
+		&gqlutil.ConnectionResolverArgs{First: args.First, After: args.After},
+		&gqlutil.ConnectionResolverOptions{MaxPageSize: maxPageSize, Reverse: pointers.Ptr(false)})
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (c *codeGraphDataResolver) Occurrences(ctx context.Context, args *resolvers
 }
 
 type occurrenceConnectionResolver struct {
-	impl *graphqlutil.ConnectionResolver[resolverstubs.SCIPOccurrenceResolver]
+	impl *gqlutil.ConnectionResolver[resolverstubs.SCIPOccurrenceResolver]
 
 	// Arguments
 	graphData *codeGraphDataResolver
@@ -45,11 +45,11 @@ func (o *occurrenceConnectionResolver) Nodes(ctx context.Context) ([]resolverstu
 	return o.impl.Nodes(ctx)
 }
 
-func (o *occurrenceConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.ConnectionPageInfo[resolverstubs.SCIPOccurrenceResolver], error) {
+func (o *occurrenceConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.ConnectionPageInfo[resolverstubs.SCIPOccurrenceResolver], error) {
 	return o.impl.PageInfo(ctx)
 }
 
-var _ graphqlutil.ConnectionResolverStore[resolverstubs.SCIPOccurrenceResolver] = &occurrenceConnectionStore{}
+var _ gqlutil.ConnectionResolverStore[resolverstubs.SCIPOccurrenceResolver] = &occurrenceConnectionStore{}
 
 type scipOccurrence struct {
 	impl *scip.Occurrence
@@ -78,7 +78,7 @@ type occurrenceConnectionStore struct {
 	graphData *codeGraphDataResolver
 }
 
-var _ graphqlutil.ConnectionResolverStore[resolverstubs.SCIPOccurrenceResolver] = &occurrenceConnectionStore{}
+var _ gqlutil.ConnectionResolverStore[resolverstubs.SCIPOccurrenceResolver] = &occurrenceConnectionStore{}
 
 func (o *occurrenceConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	doc, err := o.graphData.tryRetrieveDocument(ctx)

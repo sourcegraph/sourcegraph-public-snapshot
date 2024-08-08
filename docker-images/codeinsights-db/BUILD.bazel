@@ -1,6 +1,6 @@
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("@rules_pkg//:mappings.bzl", "pkg_attributes", "pkg_files")
-load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//dev:oci_defs.bzl", "pkg_tar")
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 load("//wolfi-images:defs.bzl", "wolfi_base")
 

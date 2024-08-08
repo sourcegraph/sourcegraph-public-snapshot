@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -419,12 +418,12 @@ func (r *externalServiceSyncJobConnectionResolver) TotalCount(ctx context.Contex
 	return int32(totalCount), err
 }
 
-func (r *externalServiceSyncJobConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *externalServiceSyncJobConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	jobs, totalCount, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(len(jobs) != int(totalCount)), nil
+	return gqlutil.HasNextPage(len(jobs) != int(totalCount)), nil
 }
 
 func (r *externalServiceSyncJobConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceSyncJob, int64, error) {

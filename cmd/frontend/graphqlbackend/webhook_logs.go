@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -25,7 +24,7 @@ import (
 // access to webhook logs: the webhookLogs method on the top level query, and on
 // the ExternalService type.
 type WebhookLogsArgs struct {
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 	After      *string
 	OnlyErrors *bool
 	Since      *time.Time
@@ -178,16 +177,16 @@ func (r *WebhookLogConnectionResolver) TotalCount(ctx context.Context) (int32, e
 	return int32(count), err
 }
 
-func (r *WebhookLogConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *WebhookLogConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if next == 0 {
-		return graphqlutil.HasNextPage(false), nil
+		return gqlutil.HasNextPage(false), nil
 	}
-	return graphqlutil.NextPageCursor(fmt.Sprint(next)), nil
+	return gqlutil.NextPageCursor(fmt.Sprint(next)), nil
 }
 
 func (r *WebhookLogConnectionResolver) compute(ctx context.Context) ([]*types.WebhookLog, int64, error) {

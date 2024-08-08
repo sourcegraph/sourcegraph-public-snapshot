@@ -86,18 +86,15 @@ Hello world example in go`, typeFile},
 
 	s := newStore(t, files)
 
-	// explictly remove FetchTar since we should only be using FetchTarByPath
-	s.FetchTar = nil
-
 	// Ensure we don't ask for unchanged
-	fetchTarPaths := s.FetchTarPaths
-	s.FetchTarPaths = func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
+	fetchTar := s.FetchTar
+	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
 		for _, p := range paths {
 			if strings.Contains(p, "unchanged") {
 				return nil, errors.Errorf("should not ask for unchanged path: %s", p)
 			}
 		}
-		return fetchTarPaths(ctx, repo, commit, paths)
+		return fetchTar(ctx, repo, commit, paths)
 	}
 
 	zoektURL := newZoekt(t, &zoekt.Repository{

@@ -12,7 +12,6 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
-        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/auth",
         "//internal/database",
         "//internal/gqlutil",
@@ -38,12 +37,12 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/graphqlbackend",
-        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/actor",
         "//internal/auth",
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",
+        "//internal/gqlutil",
         "//internal/types",
         "//lib/pointers",
         "@com_github_derision_test_go_mockgen_v2//testutil/require",

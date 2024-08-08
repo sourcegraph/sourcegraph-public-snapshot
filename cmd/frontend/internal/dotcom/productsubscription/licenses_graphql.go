@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -261,10 +260,10 @@ func (r *productLicenseConnection) TotalCount(ctx context.Context) (int32, error
 	return int32(count), err
 }
 
-func (r *productLicenseConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *productLicenseConnection) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	results, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(results) > r.opt.Limit), nil
+	return gqlutil.HasNextPage(r.opt.LimitOffset != nil && len(results) > r.opt.Limit), nil
 }

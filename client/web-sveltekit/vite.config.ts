@@ -13,9 +13,11 @@ import graphqlCodegen from './dev/vite-graphql-codegen'
 import { sgProxy } from './dev/vite-sg-proxy'
 
 const BAZEL = !!process.env.BAZEL
-const PLAYWRIGHT = !!process.env.PLAYWRIGHT
 
 export default defineConfig(({ mode }) => {
+    // Test mode is used by vitest and we don't want to run the proxy in that case.
+    const DISABLE_PROXY = mode === 'test' || !!process.env.SK_DISABLE_PROXY
+
     // Using & VitestUserConfig shouldn't be necessary but without it `svelte-check` complains when run
     // in bazel. It's not clear what needs to be done to make it work without it, just like it does
     // locally.
@@ -46,7 +48,7 @@ export default defineConfig(({ mode }) => {
             // This plugin proxies requests to resources that are not handled by the SvelteKit app
             // to a real Sourcegraph instance.
             // It also extracts the JS context object from the origin server and injects it into the local HTML page.
-            !PLAYWRIGHT &&
+            !DISABLE_PROXY &&
                 sgProxy({
                     target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.sourcegraph.com',
                 }),

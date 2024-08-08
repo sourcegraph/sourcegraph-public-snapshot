@@ -4,7 +4,11 @@ import (
 	"context"
 	"strconv"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ActorPropagator implements the (internal/grpc).Propagator interface
@@ -33,7 +37,7 @@ func (ActorPropagator) FromContext(ctx context.Context) metadata.MD {
 	return md
 }
 
-func (ActorPropagator) InjectContext(ctx context.Context, md metadata.MD) context.Context {
+func (ActorPropagator) InjectContext(ctx context.Context, md metadata.MD) (context.Context, error) {
 	var uidStr string
 	if vals := md.Get(headerKeyActorUID); len(vals) > 0 {
 		uidStr = vals[0]
@@ -41,14 +45,14 @@ func (ActorPropagator) InjectContext(ctx context.Context, md metadata.MD) contex
 
 	act := &Actor{}
 	switch uidStr {
+	case "", headerValueNoActor:
 	case headerValueInternalActor:
 		act = Internal()
 	default:
 		uid, err := strconv.Atoi(uidStr)
 		if err != nil {
-			// If the actor is invalid, ignore the error
-			// and do not set an actor on the context.
-			break
+			// The actor is invalid.
+			return ctx, status.New(codes.InvalidArgument, errors.Wrap(err, "bad actor value in metadata").Error()).Err()
 		}
 		act = FromUser(int32(uid))
 	}
@@ -59,5 +63,5 @@ func (ActorPropagator) InjectContext(ctx context.Context, md metadata.MD) contex
 	}
 
 	// FromContext always returns a non-nil Actor, so it's okay to always add it
-	return WithActor(ctx, act)
+	return WithActor(ctx, act), nil
 }

@@ -55,14 +55,8 @@ type Store struct {
 	// FetchTar returns an io.ReadCloser to a tar archive of repo at commit.
 	// If the error implements "BadRequest() bool", it will be used to
 	// determine if the error is a bad request (eg invalid repo).
-	FetchTar func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error)
-
-	// FetchTarPaths is the future version of FetchTar, but for now exists as
-	// its own function to minimize changes.
-	//
-	// If paths is non-empty, the archive will only contain files from paths.
 	// If a path is missing the first Read call will fail with an error.
-	FetchTarPaths func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error)
+	FetchTar func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error)
 
 	// FilterTar returns a FilterFunc that filters out files we don't want to write to disk
 	FilterTar func(ctx context.Context, repo api.RepoName, commit api.CommitID) (FilterFunc, error)
@@ -256,17 +250,9 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 		}
 	}()
 
-	var r io.ReadCloser
-	if len(paths) == 0 {
-		r, err = s.FetchTar(ctx, repo, commit)
-		if err != nil {
-			return nil, errors.Wrap(err, "fetching tar")
-		}
-	} else {
-		r, err = s.FetchTarPaths(ctx, repo, commit, paths)
-		if err != nil {
-			return nil, errors.Wrapf(err, "fetching tar paths: %v", paths)
-		}
+	r, err := s.FetchTar(ctx, repo, commit, paths)
+	if err != nil {
+		return nil, errors.Wrapf(err, "fetching tar")
 	}
 
 	filter.CommitIgnore, err = s.FilterTar(ctx, repo, commit)

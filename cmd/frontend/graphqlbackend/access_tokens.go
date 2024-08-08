@@ -11,14 +11,14 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -265,7 +265,7 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 }
 
 func (r *siteResolver) AccessTokens(ctx context.Context, args *struct {
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 }) (*accessTokenConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins can list all access tokens. This is safe as the
 	// token values themselves are not stored in our database.
@@ -279,7 +279,7 @@ func (r *siteResolver) AccessTokens(ctx context.Context, args *struct {
 }
 
 func (r *UserResolver) AccessTokens(ctx context.Context, args *struct {
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 }) (*accessTokenConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins and the user can list a user's access tokens.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
@@ -340,12 +340,12 @@ func (r *accessTokenConnectionResolver) TotalCount(ctx context.Context) (int32, 
 	return int32(count), err
 }
 
-func (r *accessTokenConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *accessTokenConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	accessTokens, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(accessTokens) > r.opt.Limit), nil
+	return gqlutil.HasNextPage(r.opt.LimitOffset != nil && len(accessTokens) > r.opt.Limit), nil
 }
 
 func getMaxExpiryDuration(allowedOptionsInDays []int) (int32, error) {

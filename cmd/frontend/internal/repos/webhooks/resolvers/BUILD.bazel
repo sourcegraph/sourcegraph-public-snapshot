@@ -8,9 +8,8 @@ go_library(
     tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/backend",
         "//cmd/frontend/graphqlbackend",
-        "//cmd/frontend/graphqlbackend/graphqlutil",
+        "//cmd/frontend/internal/backend",
         "//internal/auth",
         "//internal/conf",
         "//internal/database",

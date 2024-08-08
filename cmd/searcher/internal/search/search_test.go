@@ -697,15 +697,7 @@ func newStore(t *testing.T, files map[string]struct {
 	}
 
 	return &search.Store{
-		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-			r, w := io.Pipe()
-			go func() {
-				err := writeTar(w, nil)
-				w.CloseWithError(err)
-			}()
-			return r, nil
-		},
-		FetchTarPaths: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
+		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
 			r, w := io.Pipe()
 			go func() {
 				err := writeTar(w, paths)

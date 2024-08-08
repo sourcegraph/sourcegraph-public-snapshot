@@ -1,4 +1,4 @@
-package graphqlutil
+package gqlutil
 
 import "github.com/sourcegraph/sourcegraph/internal/database"
 

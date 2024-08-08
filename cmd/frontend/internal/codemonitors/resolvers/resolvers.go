@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/codemonitors/background"
@@ -733,11 +732,11 @@ func (m *monitorConnection) TotalCount() int32 {
 	return m.totalCount
 }
 
-func (m *monitorConnection) PageInfo() *graphqlutil.PageInfo {
+func (m *monitorConnection) PageInfo() *gqlutil.PageInfo {
 	if len(m.monitors) == 0 || !m.hasNextPage {
-		return graphqlutil.HasNextPage(false)
+		return gqlutil.HasNextPage(false)
 	}
-	return graphqlutil.NextPageCursor(string(m.monitors[len(m.monitors)-1].ID()))
+	return gqlutil.NextPageCursor(string(m.monitors[len(m.monitors)-1].ID()))
 }
 
 const (
@@ -954,11 +953,11 @@ func (a *monitorTriggerEventConnection) TotalCount() int32 {
 	return a.totalCount
 }
 
-func (a *monitorTriggerEventConnection) PageInfo() *graphqlutil.PageInfo {
+func (a *monitorTriggerEventConnection) PageInfo() *gqlutil.PageInfo {
 	if len(a.events) == 0 {
-		return graphqlutil.HasNextPage(false)
+		return gqlutil.HasNextPage(false)
 	}
-	return graphqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID()))
+	return gqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID()))
 }
 
 // MonitorTriggerEvent
@@ -1039,13 +1038,13 @@ func (a *monitorActionConnection) TotalCount() int32 {
 	return a.totalCount
 }
 
-func (a *monitorActionConnection) PageInfo() *graphqlutil.PageInfo {
+func (a *monitorActionConnection) PageInfo() *gqlutil.PageInfo {
 	if len(a.actions) == 0 {
-		return graphqlutil.HasNextPage(false)
+		return gqlutil.HasNextPage(false)
 	}
 	last := a.actions[len(a.actions)-1]
 	if email, ok := last.ToMonitorEmail(); ok {
-		return graphqlutil.NextPageCursor(string(email.ID()))
+		return gqlutil.NextPageCursor(string(email.ID()))
 	}
 	panic("found non-email monitor action")
 }
@@ -1320,11 +1319,11 @@ func (a *monitorActionEmailRecipientsConnection) TotalCount() int32 {
 	return a.totalCount
 }
 
-func (a *monitorActionEmailRecipientsConnection) PageInfo() *graphqlutil.PageInfo {
+func (a *monitorActionEmailRecipientsConnection) PageInfo() *gqlutil.PageInfo {
 	if len(a.recipients) == 0 {
-		return graphqlutil.HasNextPage(false)
+		return gqlutil.HasNextPage(false)
 	}
-	return graphqlutil.NextPageCursor(a.nextPageCursor)
+	return gqlutil.NextPageCursor(a.nextPageCursor)
 }
 
 // MonitorActionEventConnection
@@ -1341,11 +1340,11 @@ func (a *monitorActionEventConnection) TotalCount() int32 {
 	return a.totalCount
 }
 
-func (a *monitorActionEventConnection) PageInfo() *graphqlutil.PageInfo {
+func (a *monitorActionEventConnection) PageInfo() *gqlutil.PageInfo {
 	if len(a.events) == 0 {
-		return graphqlutil.HasNextPage(false)
+		return gqlutil.HasNextPage(false)
 	}
-	return graphqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID()))
+	return gqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID()))
 }
 
 // MonitorEvent

@@ -7,9 +7,9 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -26,7 +26,7 @@ type userConnectionResolver struct {
 	// cache results because they are used by multiple fields
 	once     sync.Once
 	users    []*types.User
-	pageInfo *graphqlutil.PageInfo
+	pageInfo *gqlutil.PageInfo
 	err      error
 }
 
@@ -38,7 +38,7 @@ type userConnectionResolver struct {
 //	r.ids - the full slice of sorted user IDs
 //	r.after - (optional) the user ID to start the paging after (does not include the after ID itself)
 //	r.first - the # of user IDs to return
-func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, *graphqlutil.PageInfo, error) {
+func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, *gqlutil.PageInfo, error) {
 	r.once.Do(func() {
 		var idSubset []int32
 		if r.after == nil {
@@ -66,7 +66,7 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, *g
 
 		if len(idSubset) == 0 {
 			r.users = []*types.User{}
-			r.pageInfo = graphqlutil.HasNextPage(false)
+			r.pageInfo = gqlutil.HasNextPage(false)
 			return
 		}
 
@@ -84,10 +84,10 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, *g
 
 		// No more user IDs to paginate through.
 		if idSubset[len(idSubset)-1] == r.ids[len(r.ids)-1] {
-			r.pageInfo = graphqlutil.HasNextPage(false)
+			r.pageInfo = gqlutil.HasNextPage(false)
 		} else { // Additional user IDs to paginate through.
 			endCursor := string(graphqlbackend.MarshalUserID(idSubset[len(idSubset)-1]))
-			r.pageInfo = graphqlutil.NextPageCursor(endCursor)
+			r.pageInfo = gqlutil.NextPageCursor(endCursor)
 		}
 	})
 	return r.users, r.pageInfo, r.err
@@ -119,7 +119,7 @@ func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) 
 	return int32(len(r.ids)), nil
 }
 
-func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *userConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err

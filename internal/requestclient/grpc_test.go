@@ -132,7 +132,8 @@ func TestPropagator(t *testing.T) {
 			propagator := &Propagator{}
 			md := propagator.FromContext(requestCtx)
 
-			resultCtx := propagator.InjectContext(requestCtx, md)
+			resultCtx, err := propagator.InjectContext(requestCtx, md)
+			require.NoError(t, err)
 
 			// Explicitly compare exported fields because cmp.Diff doesn't work
 			// when there are unexported fields

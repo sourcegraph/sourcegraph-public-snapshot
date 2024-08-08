@@ -30,6 +30,7 @@ go_library(
         "//internal/search",
         "//internal/searcher/v1:searcher",
         "//internal/service",
+        "//internal/tenant",
         "//internal/trace",
         "//lib/errors",
         "@com_github_keegancsmith_tmpfriend//:tmpfriend",

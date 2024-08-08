@@ -5,8 +5,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -26,7 +24,7 @@ type AuthzResolver interface {
 	UsersWithPendingPermissions(ctx context.Context) ([]string, error)
 	AuthorizedUsers(ctx context.Context, args *RepoAuthorizedUserArgs) (UserConnectionResolver, error)
 	BitbucketProjectPermissionJobs(ctx context.Context, args *BitbucketProjectPermissionJobsArgs) (BitbucketProjectsPermissionJobsResolver, error)
-	PermissionsSyncJobs(ctx context.Context, args ListPermissionsSyncJobsArgs) (*graphqlutil.ConnectionResolver[PermissionsSyncJobResolver], error)
+	PermissionsSyncJobs(ctx context.Context, args ListPermissionsSyncJobsArgs) (*gqlutil.ConnectionResolver[PermissionsSyncJobResolver], error)
 	PermissionsSyncingStats(ctx context.Context) (PermissionsSyncingStatsResolver, error)
 
 	// RepositoryPermissionsInfo and UserPermissionsInfo are helpers functions.
@@ -126,8 +124,8 @@ type PermissionsInfoResolver interface {
 	UpdatedAt() *gqlutil.DateTime
 	Source() *string
 	Unrestricted(ctx context.Context) bool
-	Repositories(ctx context.Context, args PermissionsInfoRepositoriesArgs) (*graphqlutil.ConnectionResolver[PermissionsInfoRepositoryResolver], error)
-	Users(ctx context.Context, args PermissionsInfoUsersArgs) (*graphqlutil.ConnectionResolver[PermissionsInfoUserResolver], error)
+	Repositories(ctx context.Context, args PermissionsInfoRepositoriesArgs) (*gqlutil.ConnectionResolver[PermissionsInfoRepositoryResolver], error)
+	Users(ctx context.Context, args PermissionsInfoUsersArgs) (*gqlutil.ConnectionResolver[PermissionsInfoUserResolver], error)
 }
 
 type PermissionsInfoRepositoryResolver interface {
@@ -138,7 +136,7 @@ type PermissionsInfoRepositoryResolver interface {
 }
 
 type PermissionsInfoRepositoriesArgs struct {
-	graphqlutil.ConnectionResolverArgs
+	gqlutil.ConnectionResolverArgs
 	Query *string
 }
 
@@ -150,7 +148,7 @@ type PermissionsInfoUserResolver interface {
 }
 
 type PermissionsInfoUsersArgs struct {
-	graphqlutil.ConnectionResolverArgs
+	gqlutil.ConnectionResolverArgs
 	Query *string
 }
 

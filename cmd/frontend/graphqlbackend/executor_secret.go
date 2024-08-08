@@ -9,7 +9,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -123,7 +122,7 @@ func (r *executorSecretResolver) AccessLogs(args ExecutorSecretAccessLogListArgs
 	// so access to the access logs is acceptable as well.
 	limit := &database.LimitOffset{Limit: int(args.First)}
 	if args.After != nil {
-		offset, err := graphqlutil.DecodeIntCursor(args.After)
+		offset, err := gqlutil.DecodeIntCursor(args.After)
 		if err != nil {
 			return nil, err
 		}

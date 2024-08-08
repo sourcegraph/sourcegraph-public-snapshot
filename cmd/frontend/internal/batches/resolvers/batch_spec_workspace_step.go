@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
@@ -440,12 +439,12 @@ func (r *batchSpecWorkspaceOutputLinesResolver) TotalCount() (int32, error) {
 	return totalCount, r.err
 }
 
-func (r *batchSpecWorkspaceOutputLinesResolver) PageInfo() (*graphqlutil.PageInfo, error) {
+func (r *batchSpecWorkspaceOutputLinesResolver) PageInfo() (*gqlutil.PageInfo, error) {
 	_, _, hasNextPage := r.compute()
 	if hasNextPage {
-		return graphqlutil.NextPageCursor(strconv.Itoa(int(r.endCursor))), r.err
+		return gqlutil.NextPageCursor(strconv.Itoa(int(r.endCursor))), r.err
 	}
-	return graphqlutil.HasNextPage(hasNextPage), r.err
+	return gqlutil.HasNextPage(hasNextPage), r.err
 }
 
 func (r *batchSpecWorkspaceOutputLinesResolver) Nodes() ([]string, error) {

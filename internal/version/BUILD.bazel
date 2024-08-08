@@ -1,6 +1,6 @@
 load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
-load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//dev:oci_defs.bzl", "pkg_tar")
 load("//dev:go_defs.bzl", "go_test")
 
 go_library(
