@@ -205,7 +205,7 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 // path returns the path for key.
 func (s *store) path(ctx context.Context, key []string) (string, error) {
 	if !tenant.EnforceTenant() {
-		return s.pathNoTenant(key)
+		return s.pathNoTenant(key), nil
 	}
 
 	// 🚨SECURITY: We use the tenant ID as part of the path for tenant isolation.
@@ -217,9 +217,9 @@ func (s *store) path(ctx context.Context, key []string) (string, error) {
 	return filepath.Join(encoded...) + ".zip", nil
 }
 
-func (s *store) pathNoTenant(key []string) (string, error) {
+func (s *store) pathNoTenant(key []string) string {
 	encoded := append([]string{s.dir}, EncodeKeyComponents(key)...)
-	return filepath.Join(encoded...) + ".zip", nil
+	return filepath.Join(encoded...) + ".zip"
 }
 
 // EncodeKeyComponents uses a sha256 hash of the key since we want to use it for the disk name.
