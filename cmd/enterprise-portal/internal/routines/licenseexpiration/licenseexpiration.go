@@ -19,9 +19,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
+// checkInterval is the interval at which the license expiration routine checks
+// if there is work to do via store.TryAcquireJob, which dictates the actual
+// frequency of the job via a shared lock.
+var checkInterval = 1 * time.Second
+
 func NewRoutine(ctx context.Context, logger log.Logger, store Store) background.Routine {
 	return goroutine.NewPeriodicGoroutine(ctx,
 		&handler{
+			logger:                  logger,
 			store:                   store,
 			licenseCheckConcurrency: 10,
 		},
@@ -31,11 +37,12 @@ func NewRoutine(ctx context.Context, logger log.Logger, store Store) background.
 					Name: "licenseexpiration",
 				})),
 		goroutine.WithName("licenseexpiration"),
-		goroutine.WithInterval(1*time.Hour))
+		goroutine.WithInterval(checkInterval))
 }
 
 type handler struct {
-	store Store
+	logger log.Logger
+	store  Store
 
 	licenseCheckConcurrency int
 }
@@ -51,6 +58,8 @@ func (i *handler) Handle(ctx context.Context) (err error) {
 	if !acquired {
 		return nil // nothing to do
 	}
+
+	i.logger.Info("checking for expired licenses")
 
 	// Only release if an error occurs, so that the job can be retried.
 	// Otherwise allow the lock to be held for the entire interval, effectively

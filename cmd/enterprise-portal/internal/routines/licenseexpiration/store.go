@@ -2,6 +2,7 @@ package licenseexpiration
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -10,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redislock"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Store interface {
@@ -59,12 +59,20 @@ func (s *storeHandle) TryAcquireJob(ctx context.Context) (acquired bool, release
 	if s.config.Interval == nil {
 		return false, nil, nil // never acquire job
 	}
-	return redislock.TryAcquire(s.redis, "enterpriseportal.licenseexpiration", *s.config.Interval)
+	interval := *s.config.Interval
+	return redislock.TryAcquire(
+		ctx,
+		s.redis,
+		// Use a different lock when the interval configuration is
+		// changed significantly, to avoid being blocked by an old
+		// configuration
+		fmt.Sprintf("enterpriseportal.licenseexpiration.%d", int(interval.Seconds())),
+		interval)
 }
 
 func (s *storeHandle) ListSubscriptions(ctx context.Context) ([]*subscriptions.SubscriptionWithConditions, error) {
 	return s.subscriptions.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{
-		IsArchived: pointers.Ptr(false),
+		IsArchived: false,
 	})
 }
 
