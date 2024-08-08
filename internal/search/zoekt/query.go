@@ -131,8 +131,6 @@ func QueryForFileContentArgs(opt query.RepoHasFileContentArgs, caseSensitive boo
 	return q
 }
 
-const ScoreBoost = 20
-
 func toZoektPattern(
 	expression query.Node, isCaseSensitive, patternMatchesContent, patternMatchesPath bool, typ search.IndexedRequestType) (zoekt.Q, error) {
 	var fold func(node query.Node) (zoekt.Q, error)
@@ -180,7 +178,7 @@ func toZoektPattern(
 			}
 
 			if n.Annotation.Labels.IsSet(query.Boost) {
-				q = &zoekt.Boost{Child: q, Boost: ScoreBoost}
+				q = &zoekt.Boost{Child: q, Boost: query.ZoektScoreBoost}
 			}
 
 			return q, nil
