@@ -66,8 +66,8 @@ oci_image(
         "--",
         "/search-blitz",
     ],
+    tars = [":tar_search_blitz"],
     user = "sourcegraph",
-    tars = [ ":tar_search_blitz" ]
 )
 
 oci_tarball(
