@@ -16,7 +16,6 @@ go_library(
     tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/backend",
         "//internal/actor",
         "//internal/api",
         "//internal/conf",
@@ -48,7 +47,6 @@ go_test(
     embed = [":auth"],
     tags = [TAG_PLATFORM_GRAPH],
     deps = [
-        "//cmd/frontend/backend",
         "//internal/actor",
         "//internal/conf",
         "//internal/database",

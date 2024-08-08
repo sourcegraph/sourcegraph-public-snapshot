@@ -388,12 +388,59 @@ const (
 	CursorTypeReferences      CursorType = "references"
 	CursorTypeSyntactic       CursorType = "syntactic"
 	CursorTypeSearchBased     CursorType = "searchBased"
+	CursorTypeDone            CursorType = "done"
 )
 
 type UsagesCursor struct {
 	CursorType      CursorType      `json:"ty"`
 	PreciseCursor   PreciseCursor   `json:"pc"`
 	SyntacticCursor SyntacticCursor `json:"sc"` // TODO(GRAPH-696)
+}
+
+func (c UsagesCursor) IsPrecise() bool {
+	switch c.CursorType {
+	case CursorTypeDefinitions, CursorTypeImplementations, CursorTypePrototypes, CursorTypeReferences:
+		return true
+	default:
+		return false
+	}
+}
+
+func (c UsagesCursor) IsSyntactic() bool {
+	return c.CursorType == CursorTypeSyntactic
+}
+
+func (c UsagesCursor) IsSearchBased() bool {
+	return c.CursorType == CursorTypeSearchBased
+}
+
+func (c UsagesCursor) IsDone() bool {
+	return c.CursorType == CursorTypeDone
+}
+
+func (c UsagesCursor) AdvanceCursor(nextCursor core.Option[UsagesCursor], provenances ForEachProvenance[bool]) UsagesCursor {
+	if next, isSome := nextCursor.Get(); isSome {
+		return next
+	}
+	if c.IsPrecise() && provenances.Syntactic {
+		return UsagesCursor{CursorType: CursorTypeSyntactic}
+	} else if (c.IsPrecise() || c.IsSyntactic()) && provenances.SearchBased {
+		return UsagesCursor{CursorType: CursorTypeSearchBased}
+	} else {
+		return UsagesCursor{CursorType: CursorTypeDone}
+	}
+}
+
+func InitialCursor(provenances ForEachProvenance[bool]) UsagesCursor {
+	if provenances.Precise {
+		return UsagesCursor{CursorType: CursorTypeDefinitions}
+	} else if provenances.Syntactic {
+		return UsagesCursor{CursorType: CursorTypeSyntactic}
+	} else if provenances.SearchBased {
+		return UsagesCursor{CursorType: CursorTypeSearchBased}
+	} else {
+		return UsagesCursor{CursorType: CursorTypeDone}
+	}
 }
 
 func (c UsagesCursor) Encode() string {

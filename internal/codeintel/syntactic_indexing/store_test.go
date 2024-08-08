@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	dbworker "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 func TestSyntacticIndexingStoreDequeue(t *testing.T) {
@@ -29,16 +30,15 @@ func TestSyntacticIndexingStoreDequeue(t *testing.T) {
 		schema/implementation drift.
 	*/
 	observationContext := observation.TestContextTB(t)
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(observationContext.Logger, sqlDB)
+	db := database.NewDB(observationContext.Logger, dbtest.NewDB(t))
 
-	jobStore, err := jobstore.NewStoreWithDB(observationContext, sqlDB)
+	jobStore, err := jobstore.NewStoreWithDB(observationContext, db)
 	require.NoError(t, err, "unexpected error creating dbworker stores")
 	store := jobStore.DBWorkerStore()
 
 	ctx := context.Background()
 
-	initCount, _ := store.QueuedCount(ctx, true)
+	initCount, _ := store.CountByState(ctx, dbworker.StateQueued|dbworker.StateErrored|dbworker.StateProcessing)
 
 	require.Equal(t, 0, initCount)
 
@@ -83,7 +83,7 @@ func TestSyntacticIndexingStoreDequeue(t *testing.T) {
 		},
 	)
 
-	afterCount, _ := store.QueuedCount(ctx, true)
+	afterCount, _ := store.CountByState(ctx, dbworker.StateQueued|dbworker.StateErrored|dbworker.StateProcessing)
 
 	require.Equal(t, 3, afterCount)
 
@@ -116,11 +116,10 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 		are valid from the point of view of the DB worker interface
 	*/
 	observationContext := observation.TestContextTB(t)
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(observationContext.Logger, sqlDB)
+	db := database.NewDB(observationContext.Logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
-	jobStore, err := jobstore.NewStoreWithDB(observationContext, sqlDB)
+	jobStore, err := jobstore.NewStoreWithDB(observationContext, db)
 	require.NoError(t, err, "unexpected error creating dbworker stores")
 	store := jobStore.DBWorkerStore()
 
@@ -166,7 +165,7 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 
 	// Assertions below verify that records inserted by InsertJobs are
 	// still visible by DB Worker interface
-	afterCount, _ := store.QueuedCount(ctx, true)
+	afterCount, _ := store.CountByState(ctx, dbworker.StateQueued|dbworker.StateErrored|dbworker.StateProcessing)
 
 	require.Equal(t, 2, afterCount)
 

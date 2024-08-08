@@ -61,10 +61,6 @@ func NewDeploymentSpec(name, version, license string) *DeploymentSpec {
 	}
 }
 
-func GetGCloudAccount(ctx context.Context) (string, error) {
-	return run.Cmd(ctx, "gcloud config get account").Run().String()
-}
-
 func NewClient(ctx context.Context, email, endpoint string) (*Client, error) {
 	// have to use IDENTITY token not ACCESS token!
 	token, err := run.Cmd(ctx, "gcloud auth print-identity-token").Run().String()

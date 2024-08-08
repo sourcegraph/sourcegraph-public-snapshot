@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
 
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/codyaccess"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 )
 
@@ -24,6 +25,10 @@ type DB struct {
 
 func (db *DB) Subscriptions() *subscriptions.Store {
 	return subscriptions.NewStore(db.db)
+}
+
+func (db *DB) CodyAccess() *codyaccess.Store {
+	return codyaccess.NewStore(db.db)
 }
 
 func databaseName(msp bool) string {

@@ -1,0 +1,6 @@
+# Sourcegraph uses CODENOTIFY to make individuals or groups aware of changes that are happening in code they care about,
+# without explicitly requiring those engineers to "own" the code.
+# This file is meant to protect critical code from accidental changes, and should be used sparsingly to prevent slowdowns
+# from code reviews.
+
+/internal/tenant/ @sourcegraph/multi-tenant

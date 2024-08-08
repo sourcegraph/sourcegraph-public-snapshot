@@ -109,8 +109,8 @@
   interfaces:
     - Store
     - DistributedStore
-- filename: cmd/frontend/backend/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/cmd/frontend/backend
+- filename: cmd/frontend/internal/backend/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend
   interfaces:
     - UserEmailsService
     - ReposService

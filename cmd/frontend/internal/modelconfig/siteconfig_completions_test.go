@@ -169,6 +169,8 @@ func TestConvertCompletionsConfig(t *testing.T) {
 			}
 			{
 				m := siteModelConfig.ModelOverrides[0]
+				// Notice how the model ID has been sanitized. (No colon.) But the model name is the same
+				// from the site config. (Since that's how the model is identified in its backing API.)
 				assert.EqualValues(t, "anthropic::unknown::anthropic.claude-3-opus-20240229-v1_0", m.ModelRef)
 				assert.EqualValues(t, "anthropic.claude-3-opus-20240229-v1_0", m.ModelRef.ModelID())
 				// Unlike the Model's ID, the Name is unchanged, as this is what AWS expects in the API call.

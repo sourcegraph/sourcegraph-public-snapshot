@@ -32,11 +32,11 @@ func TestLicensesStore(t *testing.T) {
 
 	subs := subscriptions.NewStore(db)
 	_, err := subs.Upsert(ctx, subscriptionID1, subscriptions.UpsertSubscriptionOptions{
-		DisplayName: pointers.Ptr(database.NewNullString("Acme, Inc. 1")),
+		DisplayName: database.NewNullString("Acme, Inc. 1"),
 	})
 	require.NoError(t, err)
 	_, err = subs.Upsert(ctx, subscriptionID2, subscriptions.UpsertSubscriptionOptions{
-		DisplayName: pointers.Ptr(database.NewNullString("Acme, Inc. 2")),
+		DisplayName: database.NewNullString("Acme, Inc. 2"),
 	})
 	require.NoError(t, err)
 

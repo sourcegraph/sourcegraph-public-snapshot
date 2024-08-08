@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hexops/autogold/v2"
 	pgxstdlibv4 "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
@@ -124,12 +125,12 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info licens
 	{
 		// Create a different subscription and license that's not a dev tag,
 		// created at the same time, to ensure we don't use it
-		u, err := dotcomdb.Users().Create(ctx, database.NewUser{Username: "not-dev"})
+		u, err := dotcomdb.Users().Create(ctx, database.NewUser{Username: "not-devlicense"})
 		require.NoError(t, err)
 		sub, err := subscriptionsdb.Create(ctx, u.ID, u.Username)
 		require.NoError(t, err)
 		result.createdSubscriptions += 1
-		_, err = licensesdb.Create(ctx, sub, t.Name()+"-not-dev", 2, license.Info{
+		_, err = licensesdb.Create(ctx, sub, t.Name()+"-not-devlicense", 2, license.Info{
 			CreatedAt: info.CreatedAt,
 			ExpiresAt: info.ExpiresAt,
 			Tags:      []string{},
@@ -491,6 +492,13 @@ func TestListEnterpriseSubscriptions(t *testing.T) {
 		// We expect 1 less subscription because one of the subscriptions does not
 		// have a dev/internal license
 		assert.Len(t, ss, mock.createdSubscriptions-mock.archivedSubscriptions-1)
+		for _, s := range ss {
+			s.CreatedAt = time.Time{} // zero time for autogold
+		}
+		autogold.Expect("foobar - 0001-01-01 00:00:00").Equal(t, ss[0].GenerateDisplayName())
+		autogold.Expect("user - 0001-01-01 00:00:00").Equal(t, ss[1].GenerateDisplayName())
+		autogold.Expect("barbaz - 0001-01-01 00:00:00").Equal(t, ss[2].GenerateDisplayName())
+
 		var found bool
 		for _, s := range ss {
 			if s.ID == mock.targetSubscriptionID {
@@ -512,12 +520,13 @@ func TestListEnterpriseSubscriptions(t *testing.T) {
 			UserCount: 321,
 			Tags:      []string{licensing.PlanEnterprise1.Tag(), licensing.DevTag},
 		}
-		_ = setupDBAndInsertMockLicense(t, db, info, nil)
+		mock := setupDBAndInsertMockLicense(t, db, info, nil)
 
 		ss, err := dotcomreader.ListEnterpriseSubscriptions(
 			context.Background(),
 			dotcomdb.ListEnterpriseSubscriptionsOptions{})
 		require.NoError(t, err)
-		assert.Len(t, ss, 1) // only 1 created without a dev tag
+		// all subscriptions included, minus the ones without any license
+		assert.Len(t, ss, mock.createdSubscriptions-1)
 	})
 }

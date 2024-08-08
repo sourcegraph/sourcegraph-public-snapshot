@@ -66,14 +66,15 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		// Set up mocks
-		mockRepoStore := defaultMockRepoStore()
+		const testRepoName = "yummy.com/cake"
+		fakeRepoStore := FakeMinimalRepoStore{data: map[api.RepoID]*types.Repo{repoID: {ID: repoID, Name: testRepoName}}}
 		mockLsifStore := lsifstoremocks.NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
 		mockSearchClient := client.NewMockSearchClient()
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
+		svc := newService(observation.TestContextTB(t), fakeRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		closestUploads := slices.Clone(testCase.closestUploads)
 		for i := range closestUploads {
@@ -81,10 +82,6 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 		}
 
 		mockUploadSvc.InferClosestUploadsFunc.SetDefaultReturn(closestUploads, nil)
-		const testRepoName = "yummy.com/cake"
-		mockRepoStore.GetReposSetByIDsFunc.PushReturn(map[api.RepoID]*types.Repo{
-			repoID: {ID: repoID, Name: testRepoName},
-		}, nil)
 
 		mockGitserverClient.GetCommitFunc.SetDefaultHook(func(_ context.Context, repoName api.RepoName, commitID api.CommitID) (*gitdomain.Commit, error) {
 			// C1 is deliberately missing from gitserver

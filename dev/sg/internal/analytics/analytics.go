@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"runtime"
 	"sync"
 	"time"
 
@@ -151,6 +152,14 @@ func (i invocation) GetArgs() []any {
 	return v.([]any)
 }
 
+func (i invocation) GetOS() string {
+	v, ok := i.metadata["os"]
+	if !ok {
+		return ""
+	}
+	return v.(string)
+}
+
 var store = sync.OnceValue(func() analyticsStore {
 	db, err := newDiskStore()
 	if err != nil {
@@ -191,7 +200,7 @@ type analyticsStore struct {
 	db Execer
 }
 
-func (s analyticsStore) NewInvocation(ctx context.Context, uuid uuid.UUID, version string, meta map[string]any) error {
+func (s analyticsStore) NewInvocation(_ context.Context, uuid uuid.UUID, version string, meta map[string]any) error {
 	if s.db == nil {
 		return ErrDBNotInitialized
 	}
@@ -199,6 +208,7 @@ func (s analyticsStore) NewInvocation(ctx context.Context, uuid uuid.UUID, versi
 	meta["user_id"] = getEmail()
 	meta["version"] = version
 	meta["start_time"] = time.Now()
+	meta["os"] = getOS()
 
 	b, err := json.Marshal(meta)
 	if err != nil {
@@ -213,7 +223,7 @@ func (s analyticsStore) NewInvocation(ctx context.Context, uuid uuid.UUID, versi
 	return nil
 }
 
-func (s analyticsStore) AddMetadata(ctx context.Context, uuid uuid.UUID, meta map[string]any) error {
+func (s analyticsStore) AddMetadata(_ context.Context, uuid uuid.UUID, meta map[string]any) error {
 	if s.db == nil {
 		return ErrDBNotInitialized
 	}
@@ -231,7 +241,7 @@ func (s analyticsStore) AddMetadata(ctx context.Context, uuid uuid.UUID, meta ma
 	return nil
 }
 
-func (s analyticsStore) DeleteInvocation(ctx context.Context, uuid string) error {
+func (s analyticsStore) DeleteInvocation(_ context.Context, uuid string) error {
 	if s.db == nil {
 		return ErrDBNotInitialized
 	}
@@ -244,7 +254,7 @@ func (s analyticsStore) DeleteInvocation(ctx context.Context, uuid string) error
 	return nil
 }
 
-func (s analyticsStore) ListCompleted(ctx context.Context) ([]invocation, error) {
+func (s analyticsStore) ListCompleted(_ context.Context) ([]invocation, error) {
 	if s.db == nil {
 		return nil, nil
 	}
@@ -303,6 +313,24 @@ func emailfunc() string {
 }
 
 var getEmail = sync.OnceValue[string](emailfunc)
+
+func osFunc() string {
+	userOS := runtime.GOOS
+	switch userOS {
+	case "windows":
+		return "Windows"
+	case "darwin":
+		return "macOS"
+	case "linux":
+		return "Linux"
+	default:
+		// weird case, but catching it instead of throwing an error
+		return userOS
+	}
+}
+
+// Dont invoke this function directly. Use the `getOS` function instead.
+var getOS = sync.OnceValue[string](osFunc)
 
 func NewInvocation(ctx context.Context, version string, meta map[string]any) (context.Context, error) {
 	// v7 for sortable property (not vital as we also store timestamps, but no harm to have)

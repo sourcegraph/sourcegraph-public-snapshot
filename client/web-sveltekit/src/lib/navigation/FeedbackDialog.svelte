@@ -13,13 +13,7 @@
         {/if}
     </div>
     <div class="section">
-        <p class="m0">
-            You're currently on the new, faster Code Search user experience. It's in beta, and is our effort to rebuild
-            the tool from the ground up for performance.
-        </p>
-    </div>
-    <div class="section">
-        <p>Got feedback for us on the beta? We'd love to hear from you.</p>
+        <p>Have feedback for us on the beta? We’d love to hear from you.</p>
         <a
             class={getButtonClassName({ variant: 'secondary' })}
             href="https://community.sourcegraph.com/c/code-search/9"

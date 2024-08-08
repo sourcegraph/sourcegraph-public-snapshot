@@ -40,6 +40,7 @@
         queryFromURL={data.queryFromURL}
         {queryState}
         selectedFilters={data.queryFilters}
+        searchJob={data.searchJob}
     />
 {:else}
     <SearchHome {queryState}>

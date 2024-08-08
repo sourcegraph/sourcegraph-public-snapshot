@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	dbworker "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 func Test_Handle(t *testing.T) {
@@ -35,21 +36,21 @@ func Test_Handle(t *testing.T) {
 
 	t.Run("verify signal that is enabled shows up in queue", func(t *testing.T) {
 		store := makeWorkerStore(db, obsCtx)
-		count, err := store.QueuedCount(ctx, false)
+		count, err := store.CountByState(ctx, dbworker.StateQueued|dbworker.StateErrored)
 		require.NoError(t, err)
 		assert.Equal(t, 1, count)
 
 	})
 	t.Run("verify signal that is disabled doesn't show up in queue", func(t *testing.T) {
 		store := makeWorkerStore(db, obsCtx)
-		count, err := store.QueuedCount(ctx, false)
+		count, err := store.CountByState(ctx, dbworker.StateQueued|dbworker.StateErrored)
 		require.NoError(t, err)
 		assert.Equal(t, 1, count)
 
 		err = db.OwnSignalConfigurations().UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{Name: config.Name, Enabled: false})
 		require.NoError(t, err)
 
-		count, err = store.QueuedCount(ctx, false)
+		count, err = store.CountByState(ctx, dbworker.StateQueued|dbworker.StateErrored)
 		require.NoError(t, err)
 		assert.Equal(t, 0, count)
 	})

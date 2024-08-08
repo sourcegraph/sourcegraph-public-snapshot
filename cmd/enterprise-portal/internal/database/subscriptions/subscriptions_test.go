@@ -59,7 +59,7 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		ctx,
 		uuid.New().String(),
 		subscriptions.UpsertSubscriptionOptions{
-			InstanceDomain: pointers.Ptr(database.NewNullString("s1.sourcegraph.com")),
+			InstanceDomain: database.NewNullString("s1.sourcegraph.com"),
 		},
 	)
 	require.NoError(t, err)
@@ -67,7 +67,7 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		ctx,
 		uuid.New().String(),
 		subscriptions.UpsertSubscriptionOptions{
-			InstanceDomain: pointers.Ptr(database.NewNullString("s2.sourcegraph.com")),
+			InstanceDomain: database.NewNullString("s2.sourcegraph.com"),
 		},
 	)
 	require.NoError(t, err)
@@ -75,7 +75,7 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		ctx,
 		uuid.New().String(),
 		subscriptions.UpsertSubscriptionOptions{
-			InstanceDomain: pointers.Ptr(database.NewNullString("s3.sourcegraph.com")),
+			InstanceDomain: database.NewNullString("s3.sourcegraph.com"),
 		},
 	)
 	require.NoError(t, err)
@@ -144,7 +144,7 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 		ctx,
 		uuid.New().String(),
 		subscriptions.UpsertSubscriptionOptions{
-			InstanceDomain: pointers.Ptr(database.NewNullString("s1.sourcegraph.com")),
+			InstanceDomain: database.NewNullString("s1.sourcegraph.com"),
 			CreatedAt:      created,
 		},
 		// Represent the creation of this subscription
@@ -185,7 +185,7 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 		t.Cleanup(func() { currentSubscription = got })
 
 		got, err = s.Upsert(ctx, currentSubscription.ID, subscriptions.UpsertSubscriptionOptions{
-			InstanceDomain: pointers.Ptr(database.NewNullString("s1-new.sourcegraph.com")),
+			InstanceDomain: database.NewNullString("s1-new.sourcegraph.com"),
 		})
 		require.NoError(t, err)
 		assert.Equal(t, "s1-new.sourcegraph.com", pointers.DerefZero(got.InstanceDomain))
@@ -196,7 +196,7 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 		t.Cleanup(func() { currentSubscription = got })
 
 		got, err = s.Upsert(ctx, currentSubscription.ID, subscriptions.UpsertSubscriptionOptions{
-			DisplayName: pointers.Ptr(database.NewNullString("My New Display Name")),
+			DisplayName: database.NewNullString("My New Display Name"),
 		})
 		require.NoError(t, err)
 		assert.Equal(t, *currentSubscription.InstanceDomain, *got.InstanceDomain)
@@ -255,7 +255,7 @@ func SubscriptionsStoreGet(t *testing.T, ctx context.Context, s *subscriptions.S
 		ctx,
 		uuid.New().String(),
 		subscriptions.UpsertSubscriptionOptions{
-			InstanceDomain: pointers.Ptr(database.NewNullString("s1.sourcegraph.com")),
+			InstanceDomain: database.NewNullString("s1.sourcegraph.com"),
 		},
 	)
 	require.NoError(t, err)

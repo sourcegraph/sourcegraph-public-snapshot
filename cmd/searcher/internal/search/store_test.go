@@ -32,7 +32,7 @@ func TestPrepareZip(t *testing.T) {
 	var gotRepo api.RepoName
 	var gotCommit api.CommitID
 	var fetchZipCalled int64
-	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
 		<-returnFetch
 		atomic.AddInt64(&fetchZipCalled, 1)
 		gotRepo = repo
@@ -89,7 +89,7 @@ func TestPrepareZip(t *testing.T) {
 func TestPrepareZip_fetchTarFail(t *testing.T) {
 	fetchErr := errors.New("test")
 	s := tmpStore(t)
-	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
 		return nil, fetchErr
 	}
 	_, err := s.PrepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", nil)
@@ -101,7 +101,7 @@ func TestPrepareZip_fetchTarFail(t *testing.T) {
 func TestPrepareZip_fetchTarReaderErr(t *testing.T) {
 	fetchErr := errors.New("test")
 	s := tmpStore(t)
-	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
 		r, w := io.Pipe()
 		w.CloseWithError(fetchErr)
 		return r, nil
@@ -114,7 +114,7 @@ func TestPrepareZip_fetchTarReaderErr(t *testing.T) {
 
 func TestPrepareZip_errHeader(t *testing.T) {
 	s := tmpStore(t)
-	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
 		buf := new(bytes.Buffer)
 		w := tar.NewWriter(buf)
 		w.Flush()

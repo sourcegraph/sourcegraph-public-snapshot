@@ -2,8 +2,8 @@ import type { FC } from 'react'
 
 import { Navigate } from 'react-router-dom'
 
-import { CodyWebHistory, CodyWebChatProvider } from '@sourcegraph/cody-web'
-import { ButtonLink, PageHeader, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
+import { CodyWebPanelProvider } from '@sourcegraph/cody-web'
+import { ButtonLink, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
@@ -12,9 +12,7 @@ import { getTelemetrySourceClient } from '../../../telemetry'
 import { CodyProRoutes } from '../../codyProRoutes'
 import { CodyColorIcon } from '../CodyPageIcon'
 
-import { ChatHistoryList } from './components/chat-history-list/ChatHistoryList'
 import { ChatUi } from './components/chat-ui/ChatUi'
-import { Skeleton } from './components/skeleton/Skeleton'
 
 import styles from './NewCodyChatPage.module.scss'
 
@@ -32,38 +30,14 @@ export const NewCodyChatPage: FC<NewCodyChatPageProps> = props => {
             <CodyPageHeader isSourcegraphDotCom={isSourcegraphDotCom} className={styles.pageHeader} />
 
             <div className={styles.chatContainer}>
-                <CodyWebChatProvider
+                <CodyWebPanelProvider
                     accessToken=""
                     serverEndpoint={window.location.origin}
                     customHeaders={window.context.xhrHeaders}
                     telemetryClientName={getTelemetrySourceClient()}
                 >
-                    <CodyWebHistory>
-                        {history => (
-                            <div className={styles.chatHistory}>
-                                {history.loading && (
-                                    <>
-                                        <Skeleton />
-                                        <Skeleton />
-                                        <Skeleton />
-                                    </>
-                                )}
-                                {history.error && <Text>Error: {history.error.message}</Text>}
-
-                                {!history.loading && !history.error && (
-                                    <ChatHistoryList
-                                        chats={history.chats}
-                                        isSelectedChat={history.isSelectedChat}
-                                        onChatSelect={history.selectChat}
-                                        onChatDelete={history.deleteChat}
-                                        onChatCreate={history.createNewChat}
-                                    />
-                                )}
-                            </div>
-                        )}
-                    </CodyWebHistory>
                     <ChatUi className={styles.chat} />
-                </CodyWebChatProvider>
+                </CodyWebPanelProvider>
             </div>
         </Page>
     )

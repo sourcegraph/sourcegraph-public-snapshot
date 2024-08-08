@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	dbworkermocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -19,7 +20,7 @@ func init() {
 }
 
 func TestDependencySyncSchedulerJVM(t *testing.T) {
-	mockWorkerStore := NewMockWorkerStore[dependencySyncingJob]()
+	mockWorkerStore := dbworkermocks.NewMockStore[dependencySyncingJob]()
 	mockUploadsSvc := NewMockUploadService()
 	mockDepedenciesSvc := NewMockDependenciesService()
 	mockStore := NewMockStore()
@@ -70,7 +71,7 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 
 func TestDependencySyncSchedulerGomod(t *testing.T) {
 	t.Skip()
-	mockWorkerStore := NewMockWorkerStore[dependencySyncingJob]()
+	mockWorkerStore := dbworkermocks.NewMockStore[dependencySyncingJob]()
 	mockUploadsSvc := NewMockUploadService()
 	mockDepedenciesSvc := NewMockDependenciesService()
 	mockStore := NewMockStore()

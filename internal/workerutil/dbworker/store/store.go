@@ -81,9 +81,24 @@ type Store[T workerutil.Record] interface {
 	// handle of the other ShareableStore.
 	With(other basestore.ShareableStore) Store[T]
 
-	// QueuedCount returns the number of queued and errored records. If includeProcessing
-	// is true it returns the number of queued _and_ processing records.
-	QueuedCount(ctx context.Context, includeProcessing bool) (int, error)
+	// CountByState returns the number of records for all the states in
+	// stateBitset. This method will trigger a full table scan due to
+	// Postgres MVCC, so avoid calling this method frequently, especially
+	// for potentially large queues.
+	//
+	// For example, when the auto-indexing queue on Sourcegraph.com
+	// goes over 100K+ records, this method can take 1s+ to run.
+	//
+	// If possible, prefer using Exists over this function.
+	//
+	// Pre-condition: stateBitset must be one or more RecordState values or-ed together.
+	CountByState(ctx context.Context, stateBitset RecordState) (int, error)
+
+	// Exists checks if there is at least one record in one of the given states
+	// in stateBitset.
+	//
+	// Pre-condition: stateBitset must be one or more RecordState values or-ed together.
+	Exists(ctx context.Context, stateBitset RecordState) (bool, error)
 
 	// MaxDurationInQueue returns the maximum age of queued records in this store. Returns 0 if there are no queued records.
 	MaxDurationInQueue(ctx context.Context) (time.Duration, error)
@@ -133,6 +148,28 @@ type Store[T workerutil.Record] interface {
 	// identifiers the age of the record's last heartbeat timestamp for each record reset to queued and failed states,
 	// respectively.
 	ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error)
+}
+
+type RecordState uint
+
+const (
+	StateQueued     RecordState = 1 << 0
+	StateErrored    RecordState = 1 << 1
+	StateProcessing RecordState = 1 << 2
+)
+
+func (bitset RecordState) toList() []*sqlf.Query {
+	fragments := []*sqlf.Query{}
+	if (bitset & StateQueued) != 0 {
+		fragments = append(fragments, sqlf.Sprintf("%s", "queued"))
+	}
+	if (bitset & StateErrored) != 0 {
+		fragments = append(fragments, sqlf.Sprintf("%s", "errored"))
+	}
+	if (bitset & StateProcessing) != 0 {
+		fragments = append(fragments, sqlf.Sprintf("%s", "processing"))
+	}
+	return fragments
 }
 
 type store[T workerutil.Record] struct {
@@ -343,32 +380,56 @@ var columnNames = []string{
 	"cancel",
 }
 
-// QueuedCount returns the number of queued records matching the given conditions.
-func (s *store[T]) QueuedCount(ctx context.Context, includeProcessing bool) (_ int, err error) {
-	ctx, _, endObservation := s.operations.queuedCount.With(ctx, &err, observation.Args{})
+var errAtLeastOneState = errors.New("pre-condition failure: statesBitset should contain at least one state")
+
+func (s *store[T]) CountByState(ctx context.Context, statesBitset RecordState) (_ int, err error) {
+	ctx, _, endObservation := s.operations.countByState.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	stateQueries := make([]*sqlf.Query, 0, 3)
-	stateQueries = append(stateQueries, sqlf.Sprintf("%s", "queued"), sqlf.Sprintf("%s", "errored"))
-	if includeProcessing {
-		stateQueries = append(stateQueries, sqlf.Sprintf("%s", "processing"))
+	fragments := statesBitset.toList()
+	if len(fragments) == 0 {
+		return 0, errAtLeastOneState
 	}
 
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
-		queuedCountQuery,
+		countByStateQuery,
 		quote(s.options.ViewName),
-		sqlf.Join(stateQueries, ","),
+		sqlf.Join(fragments, ","),
 	)))
 
 	return count, err
 }
 
-const queuedCountQuery = `
-SELECT
-	COUNT(*)
+const countByStateQuery = `
+SELECT COUNT(*)
 FROM %s
-WHERE
-	{state} IN (%s)
+WHERE {state} IN (%s)
+`
+
+func (s *store[T]) Exists(ctx context.Context, statesBitset RecordState) (_ bool, err error) {
+	ctx, _, endObservation := s.operations.exists.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	fragments := statesBitset.toList()
+	if len(fragments) == 0 {
+		return false, errAtLeastOneState
+	}
+
+	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, s.formatQuery(
+		existsQuery,
+		quote(s.options.ViewName),
+		sqlf.Join(fragments, ","),
+	)))
+
+	return exists, err
+}
+
+const existsQuery = `
+SELECT EXISTS (
+	SELECT *
+	FROM %s
+	WHERE {state} IN (%s)
+)
 `
 
 // MaxDurationInQueue returns the longest duration for which a job associated with this store instance has
@@ -730,13 +791,13 @@ func (s *store[T]) AddExecutionLogEntry(ctx context.Context, id int, entry execu
 	}})
 	defer endObservation(1, observation.Args{})
 
-	conds := []*sqlf.Query{
-		s.formatQuery("{id} = %s", id),
-	}
+	conds := []*sqlf.Query{sqlf.Sprintf("%s", true)}
 	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
 
 	entryID, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
 		addExecutionLogEntryQuery,
+		quote(s.options.TableName),
+		id,
 		quote(s.options.TableName),
 		entry,
 		sqlf.Join(conds, "AND"),
@@ -764,11 +825,15 @@ func (s *store[T]) AddExecutionLogEntry(ctx context.Context, id int, entry execu
 }
 
 const addExecutionLogEntryQuery = `
-UPDATE
-	%s
+WITH candidate AS (
+  -- Directly using id = blah in WHERE clause would sometimes
+  -- trigger use of the state index under high contention, so
+  -- try forcing the use of pkey on id
+  SELECT id FROM %s WHERE id = %s FOR UPDATE
+)
+UPDATE %s
 SET {execution_logs} = {execution_logs} || %s::json
-WHERE
-	%s
+WHERE id IN (SELECT id FROM candidate) AND %s
 RETURNING array_length({execution_logs}, 1)
 `
 

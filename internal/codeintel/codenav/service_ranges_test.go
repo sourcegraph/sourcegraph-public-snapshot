@@ -36,7 +36,7 @@ index deadbeef1..deadbeef2 100644
 
 func TestRanges(t *testing.T) {
 	// Set up mocks
-	mockRepoStore := defaultMockRepoStore()
+	fakeRepoStore := AllPresentFakeRepoStore{}
 	mockLsifStore := lsifstoremocks.NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
@@ -51,11 +51,11 @@ func TestRanges(t *testing.T) {
 	mockLsifStore.FindDocumentIDsFunc.SetDefaultHook(findDocumentIDsFuncAllowAny())
 
 	// Init service
-	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
+	svc := newService(observation.TestContextTB(t), fakeRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 	// Set up request state
 	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
+	mockRequestState.SetLocalCommitCache(fakeRepoStore, mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{})
 	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef1", Root: "sub1/", RepositoryID: 42},

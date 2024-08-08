@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -63,7 +64,7 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 		// Note: For instances that are conf.AuthPublic(), we don't redirect to sign-in automatically, as that would
 		// lock out unauthenticated access.
 		pc := getExactlyOneOAuthProvider(!r.URL.Query().Has("sourcegraph-operator"))
-		if !conf.AuthPublic() && pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && !auth.HasSignOutCookie(r) && isHuman(r) && !conf.IsAccessRequestEnabled() {
+		if !conf.AuthPublic() && pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && !session.HasSignOutCookie(r) && isHuman(r) && !conf.IsAccessRequestEnabled() {
 			span.AddEvent("redirect to signin")
 			v := make(url.Values)
 			v.Set("redirect", auth.SafeRedirectURL(r.URL.String()))

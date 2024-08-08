@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/object"
@@ -22,6 +23,7 @@ var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
 func newHandler(
 	observationCtx *observation.Context,
 	repoStore RepoStore,
+	gitserverClient gitserver.Client,
 	uploadStore object.Storage,
 	dbStore uploadhandler.DBStore[uploads.UploadMetadata],
 	operations *uploadhandler.Operations,
@@ -36,7 +38,7 @@ func newHandler(
 
 		// Ensure that the repository and commit given in the request are resolvable.
 		repositoryName := getQuery(r, "repository")
-		repositoryID, statusCode, err := ensureRepoAndCommitExist(ctx, repoStore, repositoryName, commit, logger)
+		repositoryID, statusCode, err := ensureRepoAndCommitExist(ctx, repoStore, gitserverClient, repositoryName, commit, logger)
 		if err != nil {
 			return uploads.UploadMetadata{}, statusCode, err
 		}
@@ -69,7 +71,7 @@ func newHandler(
 	return handler
 }
 
-func ensureRepoAndCommitExist(ctx context.Context, repoStore RepoStore, repoName, commit string, logger log.Logger) (int, int, error) {
+func ensureRepoAndCommitExist(ctx context.Context, repoStore RepoStore, gitserverClient gitserver.Client, repoName, commit string, logger log.Logger) (int, int, error) {
 	//
 	// 1. Resolve repository
 
@@ -85,7 +87,7 @@ func ensureRepoAndCommitExist(ctx context.Context, repoStore RepoStore, repoName
 	//
 	// 2. Resolve commit
 
-	if _, err := repoStore.ResolveRev(ctx, repo.Name, commit); err != nil {
+	if _, err := gitserverClient.ResolveRevision(ctx, repo.Name, commit, gitserver.ResolveRevisionOptions{EnsureRevision: true}); err != nil {
 		var reason string
 		if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 			reason = "commit not found"

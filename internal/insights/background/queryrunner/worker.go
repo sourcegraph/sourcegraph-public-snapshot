@@ -61,7 +61,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore *workerStoreE
 		Name: "src_query_runner_worker_total",
 		Help: "Total number of jobs in the queued state.",
 	}, func() float64 {
-		count, err := workerStore.QueuedCount(context.Background(), false)
+		count, err := workerStore.CountByState(context.Background(), dbworkerstore.StateQueued|dbworkerstore.StateErrored)
 		if err != nil {
 			logger.Error("Failed to get queued job count", log.Error(err))
 		}

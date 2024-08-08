@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -36,7 +35,6 @@ func TestUploadAuthMiddleware(t *testing.T) {
 	}
 
 	userStore := dbmocks.NewMockUserStore()
-	repoStore := backend.NewMockReposService()
 	authValidators := map[string]AuthValidator{}
 	operation := observation.TestContext.Operation(observation.Op{})
 
@@ -116,6 +114,7 @@ func TestUploadAuthMiddleware(t *testing.T) {
 				userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, database.ErrNoCurrentUser)
 			}
 
+			repoStore := dbmocks.NewMockRepoStore()
 			if testCase.hasRepoAccess {
 				repoStore.GetByNameFunc.SetDefaultReturn(nil, nil)
 			} else {
