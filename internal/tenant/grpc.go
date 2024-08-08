@@ -17,13 +17,12 @@ import (
 type TenantPropagator struct{}
 
 func (TenantPropagator) FromContext(ctx context.Context) metadata.MD {
-	tenant, ok := FromContext(ctx)
+	tenant, err := FromContext(ctx)
 	md := make(metadata.MD)
 
-	switch {
-	case !ok:
+	if err != nil {
 		md.Append(headerKeyTenantID, headerValueNoTenant)
-	default:
+	} else {
 		md.Append(headerKeyTenantID, strconv.Itoa(tenant.ID()))
 	}
 

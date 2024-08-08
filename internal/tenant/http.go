@@ -38,13 +38,12 @@ func (t *InternalHTTPTransport) RoundTrip(req *http.Request) (*http.Response, er
 	// below set a header, so we clone the request immediately.
 	req = req.Clone(req.Context())
 
-	tenant, ok := FromContext(req.Context())
+	tenant, err := FromContext(req.Context())
 
-	switch {
-	// no tenant set
-	case !ok:
+	if err != nil {
+		// No tenant set
 		req.Header.Set(headerKeyTenantID, headerValueNoTenant)
-	default:
+	} else {
 		req.Header.Set(headerKeyTenantID, strconv.Itoa(tenant.ID()))
 	}
 

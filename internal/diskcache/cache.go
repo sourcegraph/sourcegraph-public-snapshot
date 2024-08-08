@@ -206,8 +206,8 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 // path returns the path for key.
 func (s *store) path(ctx context.Context, key []string) (string, error) {
 	if tenant.ShouldLogNoTenant() {
-		if _, ok := tenant.FromContext(ctx); !ok {
-			log.Printf("diskcache: no tenant in context:\n%s\n", captureStackTrace())
+		if _, err := tenant.FromContext(ctx); err != nil {
+			log.Printf("diskcache: %s:\n%s\n", err, captureStackTrace())
 		}
 	}
 	if !tenant.EnforceTenant() {
@@ -215,9 +215,9 @@ func (s *store) path(ctx context.Context, key []string) (string, error) {
 	}
 
 	// 🚨SECURITY: We use the tenant ID as part of the path for tenant isolation.
-	tnt, ok := tenant.FromContext(ctx)
-	if !ok {
-		return "", tenant.ErrNoTenantInContext
+	tnt, err := tenant.FromContext(ctx)
+	if err != nil {
+		return "", err
 	}
 	encoded := append([]string{s.dir, "tenants", strconv.Itoa(tnt.ID())}, EncodeKeyComponents(key)...)
 	return filepath.Join(encoded...) + ".zip", nil

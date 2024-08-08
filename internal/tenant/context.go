@@ -15,11 +15,14 @@ const tenantKey contextKey = iota
 
 var ErrNoTenantInContext = errors.New("no tenant in context")
 
-// FromContext returns the tenant from a given context, or ok=false when no tenant
-// is set in the passed context.
-func FromContext(ctx context.Context) (tnt *Tenant, ok bool) {
-	tnt, ok = ctx.Value(tenantKey).(*Tenant)
-	return tnt, ok
+// FromContext returns the tenant from a given context. It returns
+// ErrNoTenantInContext if the context does not have a tenant.
+func FromContext(ctx context.Context) (*Tenant, error) {
+	tnt, ok := ctx.Value(tenantKey).(*Tenant)
+	if !ok {
+		return nil, ErrNoTenantInContext
+	}
+	return tnt, nil
 }
 
 // withTenant returns a new context for the given tenant.
@@ -34,14 +37,14 @@ func withTenant(ctx context.Context, tntID int) context.Context {
 //
 // It errors if the given context is already for another tenant.
 func Inherit(from, to context.Context) (context.Context, error) {
-	fromTenant, fromTenantOk := FromContext(from)
-	toTenant, toTenantOk := FromContext(to)
+	fromTenant, fromTenantErr := FromContext(from)
+	toTenant, toTenantErr := FromContext(to)
 
-	if toTenantOk && fromTenantOk && fromTenant.ID() != toTenant.ID() {
+	if toTenantErr == nil && fromTenantErr == nil && fromTenant.ID() != toTenant.ID() {
 		return nil, errors.New("cannot inherit into a context with a tenant")
 	}
 
-	if !fromTenantOk {
+	if fromTenantErr != nil {
 		return to, nil
 	}
 
