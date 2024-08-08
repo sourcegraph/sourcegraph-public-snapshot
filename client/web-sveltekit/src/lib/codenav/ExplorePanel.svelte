@@ -265,7 +265,6 @@
         const repository = selected?.dataset.repoName ?? ''
         const path = selected?.dataset.path
         const deselect = treeFilter && treeFilter.repository === repository && treeFilter.path === path
-        console.log({ repository, path })
         treeFilter = deselect ? undefined : { repository, path }
     }
 
@@ -279,7 +278,6 @@
     $: pathGroups = groupUsages(kindFilteredUsages)
     $: outlineTree = generateTree(pathGroups)
     $: displayGroups = pathGroups.filter(matchesTreeFilter(treeFilter))
-    $: console.log({ kindFilteredUsages, usages, pathGroups, outlineTree, displayGroups })
 
     let referencesScroller: HTMLElement | undefined
 </script>

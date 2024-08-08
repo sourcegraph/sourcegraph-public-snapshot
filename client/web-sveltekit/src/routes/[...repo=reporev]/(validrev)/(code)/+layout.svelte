@@ -73,12 +73,10 @@
             return {
                 selectedTab,
                 historyPanel: historyPanel?.capture(),
-                // TODO: capture explore panel
             }
         },
         restore(data) {
             selectedTab = data.selectedTab
-            // TODO: capture explore panel
             if (data.historyPanel) {
                 historyPanel?.restore(data.historyPanel)
             }
