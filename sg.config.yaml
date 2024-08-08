@@ -506,7 +506,7 @@ commands:
   caddy:
     ignoreStdout: true
     ignoreStderr: true
-    cmd: .bin/caddy_${CADDY_VERSION} run --watch --config=dev/Caddyfile
+    cmd: .bin/caddy_${CADDY_VERSION} run --watch --config=${CADDY_FILE:-dev/Caddyfile}
     install_func: installCaddy
     env:
       CADDY_VERSION: 2.7.3
@@ -524,9 +524,14 @@ commands:
 
   web-sveltekit:
     description: Enterprise version of the web sveltekit app
-    cmd: pnpm --filter @sourcegraph/web-sveltekit dev:enterprise
+    cmd: pnpm --filter @sourcegraph/web-sveltekit dev
     install: |
       pnpm install
+    env:
+      # The SvelteKit app uses this environment variable to determine where
+      # to store the generated assets. We don't need to store them in a different
+      # place in this mode.
+      DEPLOY_TYPE: ""
 
   web-standalone-http:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
@@ -550,26 +555,6 @@ commands:
     env:
       INTEGRATION_TESTS: true
       NODE_ENV: production
-
-  web-sveltekit-standalone:
-    description: Standalone SvelteKit web frontend (dev) with API proxy to a configurable URL
-    cmd: pnpm --filter @sourcegraph/web-sveltekit run dev
-    install: |
-      pnpm install
-      pnpm generate
-    env:
-      SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
-      # The SvelteKit app uses this environment variable to determine where
-      # to store the generated assets. We don't need to store them in a different
-      # place in standalone mode.
-      DEPLOY_TYPE: ""
-
-  web-sveltekit-prod-watch:
-    description: Builds the prod version of the SvelteKit web app and rebuilds on changes
-    cmd: pnpm --filter @sourcegraph/web-sveltekit run build --watch
-    install: |
-      pnpm install
-      pnpm generate
 
   docsite:
     description: Docsite instance serving the docs
@@ -1513,7 +1498,7 @@ commandsets:
       - zoekt-web-1
       - caddy
 
-  # If you modify this command set, please consider also updating the dotcom runset.
+  # If you modify this command set, please consider also updating the dotcom and enterprise-sveltekit runsets.
   enterprise: &enterprise_set
     checks:
       - docker
@@ -1541,6 +1526,38 @@ commandsets:
     env:
       DISABLE_CODE_INSIGHTS_HISTORICAL: false
       DISABLE_CODE_INSIGHTS: false
+
+  enterprise-sveltekit:
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+      - dev-private
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - web-sveltekit
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - caddy
+      - symbols
+      - syntax-highlighter
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+      - embeddings
+    env:
+      DISABLE_CODE_INSIGHTS_HISTORICAL: false
+      DISABLE_CODE_INSIGHTS: false
+      CADDY_FILE: dev/Caddyfile-sveltekit
+      # Proxy to the local server
+      SOURCEGRAPH_API_URL: http://localhost:3080
 
   enterprise-e2e:
     <<: *enterprise_set
@@ -1934,7 +1951,7 @@ commandsets:
 
   web-sveltekit-standalone:
     commands:
-      - web-sveltekit-standalone
+      - web-sveltekit
       - caddy
     env:
       SK_PORT: 3080
