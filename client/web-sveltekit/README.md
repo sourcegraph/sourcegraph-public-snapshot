@@ -123,6 +123,34 @@ This noise can be avoided by running the corresponding bazel command instead:
 bazel test //client/web-sveltekit:svelte-check
 ```
 
+### Icons
+
+We use [unplugin-icons](https://github.com/unplugin/unplugin-icons) together
+with [unplugin-auto-import](https://github.com/unplugin/unplugin-auto-import)
+to manage icons. This allows us to use icons from multiple icon sets without
+having to import them manually.
+
+For a list of currently available icon sets see the `@iconify-json/*` packages
+in the `package.json` file.
+
+Icon references have the form `I<IconSetName><IconName>`. For example the
+[corner down left arrow from Lucide](https://lucide.dev/icons/corner-down-left)
+can be referenced as `ILucideCornerDownLeft`.
+
+The icon reference is then used in the `Icon` component. Note that the icon
+doesn't have to be imported manually.
+
+```svelte
+<script lang="ts">
+  import { Icon } from '$lib/Icon.svelte';
+</script>
+
+<Icon icon={ILucideCornerDownLeft} />
+```
+
+When the development server is running, the icon will be automatically added to
+`auto-imports.d.ts` so TypeScript knows about it.
+
 ### Data loading with GraphQL
 
 This project makes use of query composition, i.e. components define their own
