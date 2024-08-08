@@ -522,11 +522,19 @@ commands:
       # Needed so that node can ping the caddy server
       NODE_TLS_REJECT_UNAUTHORIZED: 0
 
-  web-sveltekit:
-    description: Enterprise version of the web sveltekit app
+  web-sveltekit-prod:
+    description: Builds the production version of the SvelteKit app
+    cmd: pnpm --filter @sourcegraph/web-sveltekit build
+    install: |
+      pnpm install
+      pnpm run generate
+
+  web-sveltekit-server:
+    description: Starts the vite dev server for the SvelteKit app
     cmd: pnpm --filter @sourcegraph/web-sveltekit dev
     install: |
       pnpm install
+      pnpm run generate
     env:
       # The SvelteKit app uses this environment variable to determine where
       # to store the generated assets. We don't need to store them in a different
@@ -1545,6 +1553,7 @@ commandsets:
       - worker
       - repo-updater
       - web
+      - web-sveltekit-prod
       - gitserver-0
       - gitserver-1
       - searcher
@@ -1573,7 +1582,7 @@ commandsets:
       - worker
       - repo-updater
       - web
-      - web-sveltekit
+      - web-sveltekit-server
       - gitserver-0
       - gitserver-1
       - searcher
@@ -1985,7 +1994,7 @@ commandsets:
 
   web-sveltekit-standalone:
     commands:
-      - web-sveltekit
+      - web-sveltekit-server
       - caddy
     env:
       SK_PORT: 3080
