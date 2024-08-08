@@ -118,9 +118,7 @@ This extension contributes the following settings:
 
 ## Questions & Feedback
 
-Feedback and feature requests can be submitted to
-our [VS Code Extension Feedback Discussion Board](https://github.com/sourcegraph/sourcegraph/discussions/34821) on
-GitHub.
+Feedback and feature requests can be submitted to our [Code Search discussion community](https://community.sourcegraph.com/c/code-search/9).
 
 ## Uninstallation
 
