@@ -108,9 +108,7 @@
     let haveSetFocus = false // gets reset on query resubmission or filter changes
     afterUpdate(() => {
         if (!$isViewportMobile && !haveSetFocus && results.length > 0) {
-            const firstFocusableResult = $resultContainer?.querySelector<HTMLElement>(
-                '[data-focusable-search-result="true"]'
-            )
+            const firstFocusableResult = $resultContainer?.querySelector<HTMLElement>('[data-focusable-search-result]')
             if (firstFocusableResult) {
                 firstFocusableResult.focus()
                 haveSetFocus = true
@@ -355,7 +353,7 @@
                 list-style: none;
             }
 
-            :global([data-focusable-search-result='true']) {
+            :global([data-focusable-search-result]) {
                 // Set a scroll margin on the focused search results
                 // so that it doesn't underlay the sticky headers and
                 // so that there is a little bit of space between the

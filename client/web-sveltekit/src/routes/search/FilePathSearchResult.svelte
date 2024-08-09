@@ -36,7 +36,7 @@
 <style lang="scss">
     .header-container {
         display: contents;
-        :global([data-focusable-search-result='true']:focus) {
+        :global([data-focusable-search-result]:focus) {
             box-shadow: var(--focus-shadow);
         }
     }

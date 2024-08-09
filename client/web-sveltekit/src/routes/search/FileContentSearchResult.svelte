@@ -93,7 +93,7 @@
     >
         {#each matchesToShow as group, index}
             <div class="code">
-                <a href={getMatchURL(group.startLine + 1, group.endLine)} data-focusable-search-result="true">
+                <a href={getMatchURL(group.startLine + 1, group.endLine)} data-focusable-search-result>
                     <!--
                         We need to "post-slice" `highlightedHTMLRows` because we fetch highlighting for
                         the whole chunk.
@@ -125,7 +125,7 @@
                     userInteracted = true
                 }}
                 class:expanded
-                data-focusable-search-result="true"
+                data-focusable-search-result
             >
                 <Icon icon={expanded ? ILucideChevronUp : ILucideChevronDown} inline aria-hidden="true" />
                 <span>{expandButtonText}</span>
@@ -175,7 +175,7 @@
         }
     }
 
-    [data-focusable-search-result='true']:focus {
+    [data-focusable-search-result]:focus {
         box-shadow: var(--focus-shadow-inset);
     }
 </style>

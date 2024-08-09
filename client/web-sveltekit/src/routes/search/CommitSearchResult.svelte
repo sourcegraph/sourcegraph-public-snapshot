@@ -63,7 +63,7 @@
     <div slot="title" data-sveltekit-preload-data="tap">
         <RepoRev repoName={result.repository} rev={commitOid} />
         <span aria-hidden={true} class="interpunct">·</span>
-        <a href={commitURL} data-focusable-search-result="true">
+        <a href={commitURL} data-focusable-search-result>
             {result.authorName}: {subject}
         </a>
     </div>
@@ -101,7 +101,7 @@
         font-size: var(--code-font-size);
     }
 
-    [data-focusable-search-result='true']:focus {
+    [data-focusable-search-result]:focus {
         box-shadow: var(--focus-shadow);
     }
 </style>
