@@ -264,7 +264,6 @@
         const selected = target.querySelector('[data-repo-name]') as HTMLElement
         const repository = selected.dataset.repoName ?? ''
         const path = selected.dataset.path
-        console.log({ repository, path })
         inputs.update(old => {
             const deselect = old.treeFilter && old.treeFilter.repository === repository && old.treeFilter.path === path
             return {
