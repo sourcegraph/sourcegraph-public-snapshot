@@ -72,9 +72,7 @@ export const SiteAdminProductLicenseNode: React.FunctionComponent<
                 { licenseId: node.id, reason },
                 {
                     onSuccess: () => {
-                        if (onRevokeCompleted) {
-                            onRevokeCompleted()
-                        }
+                        onRevokeCompleted()
                     },
                 }
             )
