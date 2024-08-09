@@ -78,7 +78,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 func initCodeintelDB(observationCtx *observation.Context, name string) (*sql.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-		return serviceConnections.PostgresDSN
+		return serviceConnections.CodeIntelPostgresDSN
 	})
 
 	sqlDB, err := connections.EnsureNewCodeIntelDB(observationCtx, dsn, name)
