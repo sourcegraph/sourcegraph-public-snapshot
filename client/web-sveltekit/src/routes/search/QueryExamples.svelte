@@ -10,7 +10,7 @@
     import Tabs from '$lib/Tabs.svelte'
     import { defaultPatternTypeFromSettings } from '$lib/web'
     import ProductStatusBadge from '$lib/wildcard/ProductStatusBadge.svelte'
-    import { SearchPatternType } from '$root/client/shared/src/graphql-operations'
+    import { SearchPatternType } from '$lib/graphql-operations'
 
     import { basicSyntaxColumns, exampleQueryColumns, type QueryExample } from './queryExamples'
 
