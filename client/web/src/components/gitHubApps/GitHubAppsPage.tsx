@@ -39,9 +39,9 @@ export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled, telemetry
     const gitHubApps = useMemo(() => data?.gitHubApps?.nodes ?? [], [data])
 
     useEffect(() => {
-        EVENT_LOGGER.logPageView('SiteAdminGitHubApps')
-        telemetryRecorder.recordEvent('admin.GitHubApps', 'view')
-    }, [telemetryRecorder])
+        EVENT_LOGGER.logPageView(isSiteAdmin ? 'SiteAdminGitHubApps' : 'UserGitHubApps')
+        telemetryRecorder.recordEvent(isSiteAdmin ? 'admin.GitHubApps' : 'user.GitHubApps', 'view')
+    }, [telemetryRecorder, isSiteAdmin])
 
     const location = useLocation()
     const success = new URLSearchParams(location.search).get('success') === 'true'
