@@ -1,3 +1,4 @@
+import { redirect } from '@sveltejs/kit'
 import { BehaviorSubject, concatMap, from, map } from 'rxjs'
 
 import {
@@ -16,6 +17,8 @@ import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 import { assertNonNullable } from '$lib/utils'
 
+import { DepotChangelist } from '../../../../../layout.gql'
+
 import type { PageLoad, PageLoadEvent } from './$types'
 import type { FileViewCodeGraphData } from './FileView.gql'
 import {
@@ -26,8 +29,6 @@ import {
     BlobFileViewHighlightedFileQuery,
     BlobViewCodeGraphDataNextPage,
 } from './page.gql'
-import { redirect } from '@sveltejs/kit'
-import { DepotChangelist } from '../../../../../layout.gql'
 
 async function loadDiffView({ params, url }: PageLoadEvent) {
     const client = getGraphQLClient()
@@ -152,7 +153,7 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
         const changelistInfo = await client
             .query(DepotChangelist, {
                 depotName: repoName,
-                revision: revision
+                revision: revision,
             })
             .then(result => result.data?.repository?.commit?.perforceChangelist)
 
@@ -216,11 +217,11 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
         // We can ignore the error because if the revision doesn't exist, other queries will fail as well
         revisionOverride: revisionOverride
             ? await client
-                .query(BlobFileViewCommitQuery_revisionOverride, {
-                    repoName,
-                    revspec: revisionOverride,
-                })
-                .then(result => result.data?.repository?.commit)
+                  .query(BlobFileViewCommitQuery_revisionOverride, {
+                      repoName,
+                      revspec: revisionOverride,
+                  })
+                  .then(result => result.data?.repository?.commit)
             : null,
         externalServiceType: parent()
             .then(({ resolvedRevision }) => resolvedRevision.repo?.externalRepository?.serviceType)
@@ -232,7 +233,7 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
     }
 }
 
-export const load: PageLoad = (event) => {
+export const load: PageLoad = event => {
     const showDiff = event.url.searchParams.has('diff')
     const revisionOverride = event.url.searchParams.get('rev')
 
