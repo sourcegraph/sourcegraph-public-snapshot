@@ -95,7 +95,34 @@ pnpm dev
 pnpm test:dev
 ```
 
-Both vitest and playwright tests are run in CI.
+In CI, we run vitest and playwright via the `BUILD.bazel` file. You can run it locally with
+
+```sh
+sg bazel test //client/web-sveltekit:e2e_test
+```
+
+### Updating Playwright
+
+The Playwright version is defined in the `package.json` of this package. The browser versions are defined in `dev/tool_deps.bzl`.
+
+You may have to find the right combination for both tools to work nicely with each other. The easiest is to start with updating
+Playwright, pushing it to CI, and seeing what happens. We will first upgrade
+Playwright and install the new browsers, and then update `dev/tool_deps.bzl` based on the newly installed browsers.
+
+**1. Upgrade Playwright**
+
+To [update Playwright](https://playwright.dev/docs/intro#updating-playwright), navigate to `clients/web-sveltekit` and
+run `pnpm add @playwright/test@latest playwright@latest` followed by `pnpm exec playwright install --with-deps`.
+
+**3. Update Bazel**
+
+The `install` command from above may have downloaded new browsers. You may see a log message like (on macOS) `Chromium 128.0.6613.18 (playwright build v1129) downloaded to /Users/your-user/Library/Caches/ms-playwright/chromium-1129`.
+
+If you don't have the logs anymore, you can run `pnpm exec playwright install --dry-run` to get an overview.
+
+You'll need to download the zip files, and calculate the integrity sha for them.
+
+TODO: Describe what approach to use, when https://sourcegraph.slack.com/archives/C04MYFW01NV/p1723214497707019 has been resolved.
 
 ### Formatting and linting
 
