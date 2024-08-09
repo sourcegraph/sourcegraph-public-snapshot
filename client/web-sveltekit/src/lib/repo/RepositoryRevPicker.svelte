@@ -89,13 +89,15 @@
     export let getDepotChangelists: ((query: string) => PromiseLike<DepotChangelists>) | undefined = undefined
 
     function defaultHandleSelect(revision: string) {
-        goto(replaceRevisionInURL(location.pathname + location.search + location.hash, revision))
+        goto(replaceRevisionInURL(location.pathname + location.search + location.hash, revision, isPerforceDepot))
     }
 
     // Show specific short revision if it's presented in the URL
     // otherwise fallback on the default branch name
     $: revisionLabel = revision ? (revision === commitID ? commitID.slice(0, 7) : revision) : defaultBranch ?? ''
     $: isOnSpecificRev = revisionLabel !== defaultBranch
+
+    $: isPerforceDepot = getDepotChangelists !== undefined
 
     const buttonClass = getButtonClassName({ variant: 'secondary', outline: false, size: 'sm' })
 </script>
