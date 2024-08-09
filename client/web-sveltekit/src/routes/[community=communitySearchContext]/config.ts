@@ -1,14 +1,16 @@
 import { SearchPatternType } from '$lib/graphql-types'
 import type { Community } from '$lib/search/communityPages'
 
-interface ExampleQuery {
+// This needs to be exported so that TS type inference can work in SvelteKit generated files.
+export interface ExampleQuery {
     title: string
     description?: string
     query: string
     patternType: SearchPatternType
 }
 
-interface CommunitySearchContextMetadata {
+// This needs to be exported so that TS type inference can work in SvelteKit generated files.
+export interface CommunitySearchContextMetadata {
     /**
      * The title of the community search context. This is displayed on the search homepage, and is typically prose. E.g. Refactor python 2 to 3.
      */
