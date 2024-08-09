@@ -1,25 +1,36 @@
+<script context="module" lang="ts">
+    function getTelemetrySourceClient(): string {
+        if (window.context?.sourcegraphDotComMode) {
+            return 'dotcom.web'
+        }
+        return 'server.web'
+    }
+</script>
+
 <script lang="ts">
     import { createElement } from 'react'
 
-    import { CodyWebChat, CodyWebChatProvider } from 'cody-web-experimental'
+    import { CodyWebChat, CodyWebChatProvider } from '@sourcegraph/cody-web'
     import { createRoot, type Root } from 'react-dom/client'
     import { onDestroy } from 'svelte'
 
     import type { CodySidebar_ResolvedRevision } from './CodySidebar.gql'
 
-    import 'cody-web-experimental/dist/style.css'
+    import '@sourcegraph/cody-web/dist/style.css'
 
     import { createLocalWritable } from '$lib/stores'
+    import type { LineOrPositionOrRange } from '@sourcegraph/common';
 
     export let repository: CodySidebar_ResolvedRevision
     export let filePath: string
+    export let lineOrPosition: LineOrPositionOrRange | undefined = undefined
 
     const chatIDs = createLocalWritable<Record<string, string>>('cody.context-to-chat-ids', {})
     let container: HTMLDivElement
     let root: Root | null
 
     $: if (container) {
-        render(repository, filePath)
+        render(repository, filePath, lineOrPosition)
     }
 
     onDestroy(() => {
@@ -27,11 +38,14 @@
         root = null
     })
 
-    function render(repository: CodySidebar_ResolvedRevision, filePath: string) {
+    function render(repository: CodySidebar_ResolvedRevision, filePath: string, lineOrPosition?: LineOrPositionOrRange) {
         if (!root) {
             root = createRoot(container)
         }
+
         const chat = createElement(CodyWebChat)
+        const hasFileRangeSelection = lineOrPosition?.line
+
         const provider = createElement(
             CodyWebChatProvider,
             {
@@ -40,8 +54,15 @@
                 initialContext: {
                     repositories: [repository],
                     fileURL: filePath ? (!filePath.startsWith('/') ? `/${filePath}` : filePath) : undefined,
+                    // Line range - 1 because of Cody Web initial context file range bug
+                    fileRange: hasFileRangeSelection ? {
+                        startLine: lineOrPosition.line - 1,
+                        endLine: lineOrPosition.endLine ? lineOrPosition.endLine - 1 : lineOrPosition.line - 1
+                    } : undefined
                 },
                 serverEndpoint: window.location.origin,
+                customHeaders: window.context.xhrHeaders,
+                telemetryClientName: getTelemetrySourceClient(),
                 onNewChatCreated: (chatID: string) => {
                     chatIDs.update(ids => {
                         ids[`${repository.id}-${filePath}`] = chatID

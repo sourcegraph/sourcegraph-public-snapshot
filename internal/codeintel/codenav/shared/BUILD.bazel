@@ -9,6 +9,7 @@ go_library(
     deps = [
         "//internal/codeintel/core",
         "//internal/codeintel/uploads/shared",
+        "//internal/types",
         "//lib/codeintel/precise",
         "@com_github_life4_genesis//slices",
         "@com_github_sourcegraph_scip//bindings/go/scip",

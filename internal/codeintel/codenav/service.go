@@ -107,7 +107,7 @@ func (s *Service) GetHover(ctx context.Context, args PositionalRequestArgs, requ
 		}
 
 		// Adjust the highlighted range back to the appropriate range in the target commit
-		_, adjustedRange, _, err := s.getSourceRange(ctx,
+		_, adjustedRange, success, err := s.getSourceRange(ctx,
 			args.RequestArgs, requestState,
 			cachedUploads[i].RepositoryID, cachedUploads[i].Commit,
 			args.Path, rn)
@@ -118,8 +118,10 @@ func (s *Service) GetHover(ctx context.Context, args PositionalRequestArgs, requ
 			// Text attached to source range
 			return text, adjustedRange, true, nil
 		}
+		if success {
+			adjustedRanges = append(adjustedRanges, adjustedRange)
 
-		adjustedRanges = append(adjustedRanges, adjustedRange)
+		}
 	}
 
 	// The Slow path:
@@ -632,12 +634,13 @@ func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, re
 			// FIXME: change this at it expects an empty uploadsshared.CompletedUpload{}
 			cu := requestState.GetCacheUploadsAtIndex(i)
 			// Adjust the highlighted range back to the appropriate range in the target commit
-			_, adjustedRange, _, err := s.getSourceRange(ctx, args.RequestArgs, requestState, cu.RepositoryID, cu.Commit, args.Path, rn)
+			_, adjustedRange, success, err := s.getSourceRange(ctx, args.RequestArgs, requestState, cu.RepositoryID, cu.Commit, args.Path, rn)
 			if err != nil {
 				return nil, err
 			}
-
-			adjustedRanges = append(adjustedRanges, adjustedRange)
+			if success {
+				adjustedRanges = append(adjustedRanges, adjustedRange)
+			}
 		}
 	}
 	trace.AddEvent("TODO Domain Owner", attribute.Int("numRanges", len(adjustedRanges)))
@@ -824,7 +827,7 @@ func (s *Service) getVisibleUpload(ctx context.Context, sourceMatcher shared.Mat
 		if sym, sourceRange, ok := sourceMatcher.SymbolBased(); ok {
 			optTargetRange, err := r.GitTreeTranslator.TranslateRange(ctx, r.Commit, api.CommitID(upload.Commit), targetPath, sourceRange)
 			targetRange, ok := optTargetRange.Get()
-			return shared.NewSCIPBasedMatcher(targetRange, sym), ok, err
+			return shared.NewSCIPBasedMatcher(targetRange, sym.UnwrapOr("")), ok, err
 		} else if sourcePos, ok := sourceMatcher.PositionBased(); ok {
 			optTargetPos, err := r.GitTreeTranslator.TranslatePosition(ctx, r.Commit, api.CommitID(upload.Commit), targetPath, sourcePos)
 			targetPos, ok := optTargetPos.Get()

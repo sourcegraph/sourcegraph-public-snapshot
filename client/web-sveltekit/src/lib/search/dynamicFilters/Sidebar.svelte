@@ -328,7 +328,7 @@
                 margin: 0;
             }
             .reset {
-                font-size: var(--font-size-tiny);
+                font-size: var(--font-size-xs);
                 margin-left: auto;
             }
         }

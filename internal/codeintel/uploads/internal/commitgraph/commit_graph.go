@@ -195,6 +195,8 @@ func populateUploadsByTraversal(graph map[api.CommitID][]api.CommitID, order []a
 // smaller distance to the source commit will shadow the other. Similarly, If an ancestor and the
 // child commit define uploads for the same root and indexer pair, the upload defined on the commit
 // will shadow the upload defined on the ancestor.
+//
+// IMPORTANT: This logic should be kept in sync with store.makeVisibleUploadsQuery.
 func populateUploadsForCommit(uploads map[api.CommitID]map[string]UploadMeta, ancestors []api.CommitID, distance uint32, commitGraphView *CommitGraphView, commit api.CommitID) map[string]UploadMeta {
 	// The capacity chosen here is an underestimate, but seems to perform well in benchmarks using
 	// live user data. We have attempted to make this value more precise to minimize the number of
@@ -275,7 +277,9 @@ func adjustVisibleUploads(ancestorVisibleUploads map[string]UploadMeta, ancestor
 }
 
 // replaces returns true if upload1 has a smaller distance than upload2.
-// Ties are broken by the minimum upload identifier to remain determinstic.
+//
+// NOTE(id: upload-tie-breaking): Ties are broken by the maximum upload
+// identifier to remain determinstic, and to prefer newer uploads over older ones.
 func replaces(upload1, upload2 UploadMeta) bool {
-	return upload1.Distance < upload2.Distance || (upload1.Distance == upload2.Distance && upload1.UploadID < upload2.UploadID)
+	return upload1.Distance < upload2.Distance || (upload1.Distance == upload2.Distance && upload1.UploadID > upload2.UploadID)
 }

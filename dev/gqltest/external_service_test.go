@@ -173,26 +173,16 @@ func TestExternalService_Perforce(t *testing.T) {
 		{
 			name:       "p4 fusion",
 			depot:      "test-perms",
-			useFusion:  true,
 			blobPath:   "README.md",
 			headBranch: "main",
 			wantBlob: `This depot is used to test user and group permissions.
-`,
-		},
-		{
-			name:       "git p4",
-			depot:      "integration-test-depot",
-			useFusion:  false,
-			blobPath:   "path.txt",
-			headBranch: "master",
-			wantBlob: `./
 `,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			repoName := "perforce/" + tc.depot
 			checkPerforceEnvironment(t)
-			cleanup := createPerforceExternalService(t, tc.depot, tc.useFusion)
+			cleanup := createPerforceExternalService(t, tc.depot)
 			t.Cleanup(cleanup)
 
 			err := client.WaitForReposToBeCloned(repoName)
@@ -219,7 +209,7 @@ func checkPerforceEnvironment(t *testing.T) {
 // createPerforceExternalService creates an Perforce external service that
 // includes the supplied depot. It returns a function to cleanup after the test
 // which will delete the depot from disk and remove the external service.
-func createPerforceExternalService(t *testing.T, depot string, useP4Fusion bool) func() {
+func createPerforceExternalService(t *testing.T, depot string) func() {
 	t.Helper()
 
 	type Authorization = struct {
@@ -250,7 +240,6 @@ func createPerforceExternalService(t *testing.T, depot string, useP4Fusion bool)
 			Depots:                []string{"//" + depot + "/"},
 			RepositoryPathPattern: "perforce/{depot}",
 			FusionClient: FusionClient{
-				Enabled:   useP4Fusion,
 				LookAhead: 2000,
 			},
 			Authorization: Authorization{

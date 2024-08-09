@@ -1,4 +1,3 @@
-load("//dev:go_mockgen.bzl", "go_mockgen")
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
@@ -25,35 +24,15 @@ go_library(
 
 go_test(
     name = "backfiller_test",
-    srcs = [
-        "job_backfill_test.go",
-        "mocks_test.go",
-    ],
+    srcs = ["job_backfill_test.go"],
     embed = [":backfiller"],
     tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/api",
-        "//internal/codeintel/core",
-        "//internal/codeintel/uploads/internal/commitgraph",
         "//internal/codeintel/uploads/internal/store",
-        "//internal/codeintel/uploads/shared",
-        "//internal/database/basestore",
+        "//internal/codeintel/uploads/internal/storemocks",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
-        "//internal/observation",
-        "//internal/workerutil/dbworker/store",
-        "//lib/codeintel/precise",
         "@com_github_google_go_cmp//cmp",
     ],
-)
-
-go_mockgen(
-    name = "generate_mocks",
-    out = "mocks_test.go",
-    manifests = [
-        "//:mockgen.yaml",
-        "//:mockgen.test.yaml",
-        "//:mockgen.temp.yaml",
-    ],
-    deps = ["//internal/codeintel/uploads/internal/store"],
 )

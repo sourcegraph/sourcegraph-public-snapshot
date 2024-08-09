@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers/github"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -50,7 +49,7 @@ func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 
 	resolver := NewResolver(observation.TestContextTB(t), db)
-	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, resolver)
+	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, nil, resolver)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1170,44 +1169,6 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 	}
 }
 
-func TestResolver_AuthzProviderTypes(t *testing.T) {
-	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := dbmocks.NewStrictMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
-
-		db := dbmocks.NewStrictMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
-
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{db: db}).AuthzProviderTypes(ctx)
-		if want := auth.ErrMustBeSiteAdmin; err != want {
-			t.Errorf("err: want %q but got %v", want, err)
-		}
-		if result != nil {
-			t.Errorf("result: want nil but got %v", result)
-		}
-	})
-
-	t.Run("get authz provider types", func(t *testing.T) {
-		users := dbmocks.NewStrictMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{
-			SiteAdmin: true,
-		}, nil)
-
-		db := dbmocks.NewStrictMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
-
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-
-		ghProvider := github.NewProvider("https://github.com", github.ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
-		authz.SetProviders(false, []authz.Provider{ghProvider})
-		defer authz.SetProviders(true, nil)
-		result, err := (&Resolver{db: db}).AuthzProviderTypes(ctx)
-		assert.NoError(t, err)
-		assert.Equal(t, []string{"github"}, result)
-	})
-}
-
 func mustURL(t *testing.T, u string) *url.URL {
 	parsed, err := url.Parse(u)
 	if err != nil {
@@ -1471,7 +1432,6 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, repoID int32) ([]authz.Permission, error) {
 		return []authz.Permission{{RepoID: repoID, UserID: 42, UpdatedAt: clock()}}, nil
 	})
-	perms.IsRepoUnrestrictedFunc.SetDefaultReturn(false, nil)
 	perms.ListRepoPermissionsFunc.SetDefaultReturn([]*database.RepoPermission{{User: &types.User{ID: 42}}}, nil)
 
 	syncJobs := dbmocks.NewStrictMockPermissionSyncJobStore()
@@ -2139,7 +2099,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 	logger := logtest.NoOp(t)
 	r := &Resolver{logger: logger, db: db}
 
-	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, r)
+	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, nil, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2386,7 +2346,7 @@ func TestResolverPermissionsSyncJobsFiltering(t *testing.T) {
 	logger := logtest.NoOp(t)
 	r := &Resolver{logger: logger, db: db}
 
-	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, r)
+	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, nil, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2556,7 +2516,7 @@ func TestResolverPermissionsSyncJobsSearching(t *testing.T) {
 	// Creating a resolver and validating GraphQL schema.
 	logger := logtest.NoOp(t)
 	r := &Resolver{logger: logger, db: db}
-	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, r)
+	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, nil, r)
 	if err != nil {
 		t.Fatal(err)
 	}

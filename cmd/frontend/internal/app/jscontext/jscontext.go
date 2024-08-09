@@ -14,16 +14,16 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/webhooks"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	authzproviders "github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -43,9 +43,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-// BillingPublishableKey is the publishable (non-secret) API key for the billing system, if any.
-var BillingPublishableKey string
 
 type authProviderInfo struct {
 	IsBuiltin         bool    `json:"isBuiltin"`
@@ -184,8 +181,6 @@ type JSContext struct {
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
-	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
-
 	AccessTokensAllow                 conf.AccessTokenAllow `json:"accessTokensAllow"`
 	AccessTokensAllowNoExpiration     bool                  `json:"accessTokensAllowNoExpiration"`
 	AccessTokensDefaultExpirationDays int                   `json:"accessTokensExpirationDaysDefault"`
@@ -236,14 +231,16 @@ type JSContext struct {
 	CodeIntelAutoIndexingAllowGlobalPolicies       bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
 	CodeIntelRankingDocumentReferenceCountsEnabled bool `json:"codeIntelRankingDocumentReferenceCountsEnabled"`
 
-	CodeInsightsEnabled      bool `json:"codeInsightsEnabled"`
-	CodeIntelligenceEnabled  bool `json:"codeIntelligenceEnabled"`
-	SearchContextsEnabled    bool `json:"searchContextsEnabled"`
-	NotebooksEnabled         bool `json:"notebooksEnabled"`
-	CodeMonitoringEnabled    bool `json:"codeMonitoringEnabled"`
-	SearchAggregationEnabled bool `json:"searchAggregationEnabled"`
-	OwnEnabled               bool `json:"ownEnabled"`
-	SearchJobsEnabled        bool `json:"searchJobsEnabled"`
+	CodeInsightsEnabled      bool   `json:"codeInsightsEnabled"`
+	ApplianceUpdateTarget    string `json:"applianceUpdateTarget"`
+	ApplianceMenuTarget      string `json:"applianceMenuTarget"`
+	CodeIntelligenceEnabled  bool   `json:"codeIntelligenceEnabled"`
+	SearchContextsEnabled    bool   `json:"searchContextsEnabled"`
+	NotebooksEnabled         bool   `json:"notebooksEnabled"`
+	CodeMonitoringEnabled    bool   `json:"codeMonitoringEnabled"`
+	SearchAggregationEnabled bool   `json:"searchAggregationEnabled"`
+	OwnEnabled               bool   `json:"ownEnabled"`
+	SearchJobsEnabled        bool   `json:"searchJobsEnabled"`
 
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
 
@@ -275,12 +272,12 @@ type JSContext struct {
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
 // request.
-func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
+func NewJSContextFromRequest(req *http.Request, db database.DB, configurationServer *conf.Server) JSContext {
 	ctx := req.Context()
 	a := sgactor.FromContext(ctx)
 
 	headers := make(map[string]string)
-	headers["x-sourcegraph-client"] = globals.ExternalURL().String()
+	headers["x-sourcegraph-client"] = conf.ExternalURLParsed().String()
 	headers["X-Requested-With"] = "Sourcegraph" // required for httpapi to use cookie auth
 
 	// Propagate Cache-Control no-cache and max-age=0 directives
@@ -298,7 +295,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	// Auth providers
 	authProviders := []authProviderInfo{} // Explicitly initialise array, otherwise it gets marshalled to null instead of []
-	_, authzProviders := authz.GetProviders()
+
+	authzProviders, _, _, _ := authzproviders.ProvidersFromConfig(ctx, conf.Get(), db)
 	for _, p := range providers.SortedProviders() {
 		commonConfig := providers.GetAuthProviderCommon(p)
 		if commonConfig.Hidden {
@@ -384,7 +382,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	// authentication above, but do not include e.g. hard-coded secrets about
 	// the server instance here as they would be sent to anonymous users.
 	context := JSContext{
-		ExternalURL:         globals.ExternalURL().String(),
+		ExternalURL:         conf.ExternalURLParsed().String(),
 		XHRHeaders:          headers,
 		UserAgentIsBot:      isBot(req.UserAgent()),
 		AssetsRoot:          assetsutil.URL("").String(),
@@ -404,12 +402,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		NeedsSiteInit:     needsSiteInit,
 		EmailEnabled:      conf.CanSendEmail(),
 		Site:              publicSiteConfiguration(),
-		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
+		NeedServerRestart: configurationServer.NeedServerRestart(),
 		DeployType:        deploy.Type(),
 
 		SourcegraphDotComMode: isDotComMode,
-
-		BillingPublishableKey: BillingPublishableKey,
 
 		// Experiments. We pass these through explicitly, so we can
 		// do the default behavior only in Go land.
@@ -441,6 +437,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
 
 		CodeSearchEnabledOnInstance: codeSearchLicensed,
+		ApplianceUpdateTarget:       conf.ApplianceUpdateTarget(),
+		ApplianceMenuTarget:         conf.ApplianceMenuTarget(),
 
 		ExecutorsEnabled:                               conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:                   conf.CodeIntelAutoIndexingEnabled(),

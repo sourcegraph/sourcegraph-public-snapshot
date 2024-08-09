@@ -2,6 +2,8 @@ import { dirname } from 'path'
 
 import { readable, derived, type Readable } from 'svelte/store'
 
+import { SourcegraphURL } from '@sourcegraph/common'
+
 import { CodyContextFiltersSchema, getFiltersFromCodyContextFilters } from '$lib/cody/config'
 import { getGraphQLClient, infinityQuery, type GraphQLClient, IncrementalRestoreStrategy } from '$lib/graphql'
 import { ROOT_PATH, fetchSidebarFileTree } from '$lib/repo/api/tree'
@@ -13,7 +15,7 @@ import { CodyContextFiltersQuery, GitHistoryQuery, LastCommitQuery } from './lay
 
 const HISTORY_COMMITS_PER_PAGE = 20
 
-export const load: LayoutLoad = async ({ parent, params }) => {
+export const load: LayoutLoad = async ({ parent, params, url }) => {
     const client = getGraphQLClient()
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
     const filePath = params.path ? decodeURIComponent(params.path) : ''
@@ -37,6 +39,7 @@ export const load: LayoutLoad = async ({ parent, params }) => {
         fileTree,
         filePath,
         parentPath,
+        lineOrPosition: SourcegraphURL.from(url).lineRange,
         isCodyAvailable: createCodyAvailableStore(client, repoName),
         lastCommit: resolvedRevision
             .then(revspec =>

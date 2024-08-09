@@ -6,12 +6,10 @@ This is the quickstart guide for [developing Sourcegraph](../index.md).
 >
 > - [As an open source contributor](https://discord.com/servers/sourcegraph-969688426372825169)
 > - [As a Sourcegraph employee](https://sourcegraph.slack.com/archives/C04MYFW01NV)
->
-> You can also get help on our [developer experience discussion forum](https://github.com/sourcegraph/sourcegraph/discussions/categories/developer-experience).
 
 <span class="virtual-br"></span>
 
-> NOTE: Looking for how to deploy or use Sourcegraph? See our [getting started](../../index.md#getting-started) options.
+> NOTE: Looking for how to deploy or use Sourcegraph? See our [getting started](https://sourcegraph.com/docs#quickstart) options.
 
 <span class="virtual-br"></span>
 

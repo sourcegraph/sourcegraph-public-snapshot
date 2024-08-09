@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/storemocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -116,7 +117,7 @@ func setupMockPolicyService() *MockPolicyService {
 	return policySvc
 }
 
-func setupMockUploadService(now time.Time) *MockStore {
+func setupMockUploadService(now time.Time) *storemocks.MockStore {
 	uploads := []shared.Upload{
 		{ID: 11, State: "completed", RepositoryID: 50, Commit: "deadbeef01", UploadedAt: daysAgo(now, 1)}, // repo 50
 		{ID: 12, State: "completed", RepositoryID: 50, Commit: "deadbeef02", UploadedAt: daysAgo(now, 2)},
@@ -211,7 +212,7 @@ func setupMockUploadService(now time.Time) *MockStore {
 		return nil, nil, nil
 	}
 
-	uploadSvc := NewMockStore()
+	uploadSvc := storemocks.NewMockStore()
 	uploadSvc.SetRepositoriesForRetentionScanFunc.SetDefaultHook(setRepositoriesForRetentionScanFunc)
 	uploadSvc.GetUploadsFunc.SetDefaultHook(getUploads)
 	uploadSvc.UpdateUploadRetentionFunc.SetDefaultHook(updateUploadRetention)

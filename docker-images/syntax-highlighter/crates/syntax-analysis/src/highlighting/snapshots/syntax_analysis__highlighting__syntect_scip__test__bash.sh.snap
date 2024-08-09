@@ -3,6 +3,7 @@ source: crates/syntax-analysis/src/highlighting/syntect_scip.rs
 expression: "snapshot_sciptect_documents(&document, &contents)"
 ---
   #!/bin/sh
+//^ Comment punctuation.definition.comment.begin.shell
 // ^^^^^^^^ Comment comment.line.number-sign.shell
   set -eux
 //^^^ IdentifierFunction support.function.set.shell
@@ -31,13 +32,13 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //                     ^^^ IdentifierOperator keyword.operator.end-of-options.shell
 //                                   ^ IdentifierOperator keyword.operator.logical.pipe.shell
    # some comment
-// ^ Comment comment.line.number-sign.shell
+// ^ Comment punctuation.definition.comment.begin.shell
 //  ^^^^^^^^^^^^^ Comment comment.line.number-sign.shell
    grep ^+ |
 // ^^^^ IdentifierFunction variable.function.shell
 //         ^ IdentifierOperator keyword.operator.logical.pipe.shell
    # more sed
-// ^ Comment comment.line.number-sign.shell
+// ^ Comment punctuation.definition.comment.begin.shell
 //  ^^^^^^^^^ Comment comment.line.number-sign.shell
    sed 's/#readme//')
 // ^^^ IdentifierFunction variable.function.shell
@@ -77,4 +78,3 @@ expression: "snapshot_sciptect_documents(&document, &contents)"
 //     ^^^^^ StringLiteral string.quoted.single.shell
   fi
 //^^ Keyword keyword.control.conditional.end.shell
-

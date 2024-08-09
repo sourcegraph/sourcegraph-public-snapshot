@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
+	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -30,7 +30,7 @@ func oneClickExportHandler(db database.DB, logger log.Logger) http.HandlerFunc {
 			return
 		}
 
-		archive, err := oce.GlobalExporter.Export(ctx, request)
+		archive, err := oce.NewDataExporter(db, logger).Export(ctx, request)
 		if err != nil {
 			logger.Error("OneClickExport", log.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)

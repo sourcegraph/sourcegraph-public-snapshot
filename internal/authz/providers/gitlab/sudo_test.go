@@ -15,7 +15,6 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -37,9 +36,6 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 	}
 	type test struct {
 		description string
-
-		// authnProviders is the list of auth providers that are mocked
-		authnProviders []providers.Provider
 
 		// op configures the SudoProvider instance
 		op SudoProviderOp
@@ -76,60 +72,9 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 	// Test cases
 	tests := []test{
 		{
-			description: "1 authn provider, basic authz provider",
-			authnProviders: []providers.Provider{
-				mockAuthnProvider{
-					configID:  providers.ConfigID{ID: "okta.mine", Type: "saml"},
-					serviceID: "https://okta.mine/",
-				},
-			},
+			description: "0 authn providers, native username",
 			op: SudoProviderOp{
-				BaseURL:           mustURL(t, "https://gitlab.mine"),
-				AuthnConfigID:     providers.ConfigID{ID: "okta.mine", Type: "saml"},
-				GitLabProvider:    "okta.mine",
-				UseNativeUsername: false,
-			},
-			calls: []call{
-				{
-					description: "1 account, matches",
-					user:        &types.User{ID: 123},
-					current:     []*extsvc.Account{acct(t, 1, "saml", "https://okta.mine/", "bl")},
-					expMine:     acct(t, 123, extsvc.TypeGitLab, "https://gitlab.mine/", "101"),
-				},
-				{
-					description: "many accounts, none match",
-					user:        &types.User{ID: 123},
-					current: []*extsvc.Account{
-						acct(t, 1, "saml", "https://okta.mine/", "nomatch"),
-						acct(t, 1, "saml", "nomatch", "bl"),
-						acct(t, 1, "nomatch", "https://okta.mine/", "bl"),
-					},
-					expMine: nil,
-				},
-				{
-					description: "many accounts, 1 match",
-					user:        &types.User{ID: 123},
-					current: []*extsvc.Account{
-						acct(t, 1, "saml", "nomatch", "bl"),
-						acct(t, 1, "nomatch", "https://okta.mine/", "bl"),
-						acct(t, 1, "saml", "https://okta.mine/", "bl"),
-					},
-					expMine: acct(t, 123, extsvc.TypeGitLab, "https://gitlab.mine/", "101"),
-				},
-				{
-					description: "no user",
-					user:        nil,
-					current:     nil,
-					expMine:     nil,
-				},
-			},
-		},
-		{
-			description:    "0 authn providers, native username",
-			authnProviders: nil,
-			op: SudoProviderOp{
-				BaseURL:           mustURL(t, "https://gitlab.mine"),
-				UseNativeUsername: true,
+				BaseURL: mustURL(t, "https://gitlab.mine"),
 			},
 			calls: []call{
 				{
@@ -144,64 +89,11 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 				},
 			},
 		},
-		{
-			description:    "0 authn providers, basic authz provider",
-			authnProviders: nil,
-			op: SudoProviderOp{
-				BaseURL:           mustURL(t, "https://gitlab.mine"),
-				AuthnConfigID:     providers.ConfigID{ID: "okta.mine", Type: "saml"},
-				GitLabProvider:    "okta.mine",
-				UseNativeUsername: false,
-			},
-			calls: []call{
-				{
-					description: "no matches",
-					user:        &types.User{ID: 123, Username: "b.l"},
-					expMine:     nil,
-				},
-			},
-		},
-		{
-			description: "2 authn providers, basic authz provider",
-			authnProviders: []providers.Provider{
-				mockAuthnProvider{
-					configID:  providers.ConfigID{ID: "okta.mine", Type: "saml"},
-					serviceID: "https://okta.mine/",
-				},
-				mockAuthnProvider{
-					configID:  providers.ConfigID{ID: "onelogin.mine", Type: "openidconnect"},
-					serviceID: "https://onelogin.mine/",
-				},
-			},
-			op: SudoProviderOp{
-				BaseURL:           mustURL(t, "https://gitlab.mine"),
-				AuthnConfigID:     providers.ConfigID{ID: "onelogin.mine", Type: "openidconnect"},
-				GitLabProvider:    "onelogin.mine",
-				UseNativeUsername: false,
-			},
-			calls: []call{
-				{
-					description: "1 authn provider matches",
-					user:        &types.User{ID: 123},
-					current:     []*extsvc.Account{acct(t, 1, "openidconnect", "https://onelogin.mine/", "bl")},
-					expMine:     acct(t, 123, extsvc.TypeGitLab, "https://gitlab.mine/", "101"),
-				},
-				{
-					description: "0 authn providers match",
-					user:        &types.User{ID: 123},
-					current:     []*extsvc.Account{acct(t, 1, "openidconnect", "https://onelogin.mine/", "nomatch")},
-					expMine:     nil,
-				},
-			},
-		},
 	}
 
 	for _, test := range tests {
 		test := test
 		t.Run(test.description, func(t *testing.T) {
-			providers.MockProviders = test.authnProviders
-			defer func() { providers.MockProviders = nil }()
-
 			ctx := context.Background()
 			authzProvider := newSudoProvider(test.op, nil)
 			for _, c := range test.calls {

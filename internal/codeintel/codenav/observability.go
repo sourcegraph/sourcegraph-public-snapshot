@@ -23,6 +23,7 @@ type operations struct {
 	getClosestCompletedUploadsForBlob *observation.Operation
 	snapshotForDocument               *observation.Operation
 	visibleUploadsForPath             *observation.Operation
+	preciseUsages                     *observation.Operation
 	syntacticUsages                   *observation.Operation
 	searchBasedUsages                 *observation.Operation
 }
@@ -59,6 +60,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getClosestCompletedUploadsForBlob: op("GetClosestCompletedUploadsForBlob"),
 		snapshotForDocument:               op("SnapshotForDocument"),
 		visibleUploadsForPath:             op("VisibleUploadsForPath"),
+		preciseUsages:                     op("PreciseUsages"),
 		syntacticUsages:                   op("SyntacticUsages"),
 		searchBasedUsages:                 op("SearchBasedUsages"),
 	}

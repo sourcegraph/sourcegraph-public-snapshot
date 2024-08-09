@@ -1342,16 +1342,6 @@ bazelCommands:
       TMPDIR: $HOME/.sourcegraph/indexer-temp
 
 dockerCommands:
-  batcheshelper-builder:
-    # Nothing to run for this, we just want to re-run the install script every time.
-    cmd: exit 0
-    target: //cmd/batcheshelper:image_tarball
-    image: batcheshelper:candidate
-    env:
-      # TODO: This is required but should only be set on M1 Macs.
-      PLATFORM: linux/arm64
-    continueWatchOnExit: true
-
   grafana:
     target: //docker-images/grafana:image_tarball
     docker:
@@ -1512,7 +1502,6 @@ commandsets:
       - dev-private
     bazelCommands:
       - blobstore
-      - docsite
       - frontend
       - worker
       - repo-updater
@@ -1547,8 +1536,6 @@ commandsets:
       - searcher
       - caddy
       - symbols
-      # TODO https://github.com/sourcegraph/devx-support/issues/537
-      # - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1642,7 +1629,6 @@ commandsets:
       - codeintel-executor
     commands:
       - web
-      - docsite
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1687,7 +1673,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1718,7 +1703,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1749,7 +1733,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1782,7 +1765,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1816,7 +1798,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1865,7 +1846,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1892,7 +1872,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1

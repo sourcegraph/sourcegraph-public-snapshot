@@ -231,6 +231,8 @@ type startedCmd struct {
 
 	outEg  *pool.ErrorPool
 	result chan error
+
+	finished bool
 }
 
 type commandOptions struct {
@@ -428,6 +430,13 @@ func (sc *startedCmd) getOutputWriter(ctx context.Context, opts *outputOptions, 
 }
 
 func (sc *startedCmd) Exit() <-chan error {
+	// We track the state of a single process to avoid an infinite loop
+	// for short-running commands. When the command is done executing,
+	// we simply return an empty receiver channel instead.
+	if sc.finished {
+		fakeChan := make(<-chan error)
+		return fakeChan
+	}
 	if sc.result == nil {
 		sc.result = make(chan error)
 		go func() {
@@ -440,6 +449,8 @@ func (sc *startedCmd) Exit() <-chan error {
 
 func (sc *startedCmd) Wait() error {
 	err := sc.wait()
+	// We are certain that the command is done executing at this point.
+	sc.finished = true
 	var e *exec.ExitError
 	if errors.As(err, &e) {
 		err = runErr{
@@ -453,7 +464,12 @@ func (sc *startedCmd) Wait() error {
 	return err
 }
 
+var mockStartedCmdWaitFunc func() error
+
 func (sc *startedCmd) wait() error {
+	if mockStartedCmdWaitFunc != nil {
+		return mockStartedCmdWaitFunc()
+	}
 	if err := sc.outEg.Wait(); err != nil {
 		return err
 	}

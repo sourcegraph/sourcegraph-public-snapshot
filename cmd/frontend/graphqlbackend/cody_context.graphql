@@ -112,6 +112,11 @@ extend type Query {
         """
         resultsCount: Int
     ): ChatContextResult!
+
+    """
+    EXPERIMENTAL: Fetches the relevant context for a mentioned URL
+    """
+    urlMentionContext(url: String!): URLMentionContextResult!
 }
 
 """
@@ -155,6 +160,14 @@ type ChatIntentResponse {
     Confidence score as assigned by the intent detection model
     """
     score: Float!
+    """
+    Confidence score assigned by the "code search" intent detection model (the higher the score, the more likely it is that the query is about code search).
+    """
+    searchScore: Float!
+    """
+    Confidence score assigned by the "edit" intent detection model (the higher the score, the more likely it is that the query is about an edit command).
+    """
+    editScore: Float!
 }
 """
 EXPERIMENTAL: Representation of a context item used as API param (doesn't have to support full metadata available on the client).
@@ -205,13 +218,26 @@ type RankingResponse {
     """
     ranker: String!
     """
-    Indices of context items that were used by the ranker, ordered by decreasing relevance.
+    Items and scores that were used by the ranker, ordered by decreasing relevance.
     """
-    used: [Int!]!
+    used: [RankedItem!]!
     """
     Indices of context items that were ignored by the ranker. Order is undefined.
     """
-    ignored: [Int!]!
+    ignored: [RankedItem!]!
+}
+"""
+EXPERIMENTAL: Re-ranker output item.
+"""
+type RankedItem {
+    """
+    Index of the context item in the input list.
+    """
+    index: Int!
+    """
+    Score assigned by the ranker.
+    """
+    score: Float!
 }
 
 """
@@ -248,4 +274,19 @@ type RetrieverContextItem {
     Represents the content of the context item.
     """
     item: CodyContextResult!
+}
+
+"""
+EXPERIMENTAL: The result of fetching context for a URL mention
+"""
+type URLMentionContextResult {
+    """
+    The extracted title of the page, if it exists
+    """
+    title: String
+    """
+    The content of the page in its processed and truncated form.
+    Not guaranteed to be in any particular format.
+    """
+    content: String!
 }

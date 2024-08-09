@@ -124,7 +124,9 @@ func (s *searchClient) Plan(
 	}
 
 	if searchType == query.SearchTypeKeyword {
-		plan = query.MapPlan(plan, query.ExperimentalPhraseBoost)
+		plan = query.MapPlan(plan, func(basic query.Basic) query.Basic {
+			return query.ExperimentalPhraseBoost(searchQuery, basic)
+		})
 		tr.AddEvent("applied phrase boost")
 	}
 
@@ -241,12 +243,13 @@ func SearchTypeFromString(patternType string) (query.SearchType, error) {
 		return query.SearchTypeRegex, nil
 	case "structural":
 		return query.SearchTypeStructural, nil
-	case "lucky":
-		return query.SearchTypeLucky, nil
 	case "codycontext":
 		return query.SearchTypeCodyContext, nil
 	case "keyword":
 		return query.SearchTypeKeyword, nil
+	// NOTE: the lucky patterntype is deprecated. For now, we remap it to 'standard' to avoid breaks.
+	case "lucky":
+		return query.SearchTypeStandard, nil
 	default:
 		return -1, errors.Errorf("unrecognized patternType %q", patternType)
 	}
@@ -293,12 +296,13 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 			searchType = query.SearchTypeLiteral
 		case "structural":
 			searchType = query.SearchTypeStructural
-		case "lucky":
-			searchType = query.SearchTypeLucky
 		case "codycontext":
 			searchType = query.SearchTypeCodyContext
 		case "keyword":
 			searchType = query.SearchTypeKeyword
+		// NOTE: the lucky patterntype is deprecated. For now, we remap it to 'standard' to avoid breaks.
+		case "lucky":
+			searchType = query.SearchTypeStandard
 		}
 	})
 	return searchType

@@ -1,4 +1,0 @@
-{
-  "Input": "context:global fix commit",
-  "Query": "context:global type:commit fix"
-}

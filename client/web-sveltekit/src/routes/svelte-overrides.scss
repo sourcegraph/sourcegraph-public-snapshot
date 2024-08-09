@@ -15,10 +15,10 @@ body {
     --monospace-font-family: 'Roboto Mono Variable', monospace;
     --code-font-family: var(--monospace-font-family);
     --code-line-height: 1.54;
+    --font-size-lg: 1rem;
     --font-size-base: 0.9375rem;
     --font-size-small: 0.875rem;
-    --font-size-extra-small: 0.6875rem;
-    --font-size-tiny: 0.8125rem;
+    --font-size-xs: 0.8125rem;
     --code-font-size: 13px;
     --border-radius: 4px;
     --focus-shadow-inner: 0 0 0 2px var(--primary-2) inset;
@@ -26,6 +26,10 @@ body {
     input::placeholder {
         color: var(--text-muted);
     }
+}
+
+small {
+    font-size: var(--font-size-xs);
 }
 
 label {

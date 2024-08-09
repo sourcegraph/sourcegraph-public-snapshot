@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph/codegraphmocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/storemocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
@@ -32,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
+	dbworkermocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -48,8 +50,8 @@ func TestHandle(t *testing.T) {
 		ContentType:  "application/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
-	mockDBStore := NewMockStore()
+	mockWorkerStore := dbworkermocks.NewMockStore[shared.Upload]()
+	mockDBStore := storemocks.NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLSIFStore := codegraphmocks.NewMockDataStore()
 	mockUploadStore := objectmocks.NewMockStorage()
@@ -297,8 +299,8 @@ func TestHandleError(t *testing.T) {
 		ContentType:  "application/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
-	mockDBStore := NewMockStore()
+	mockWorkerStore := dbworkermocks.NewMockStore[shared.Upload]()
+	mockDBStore := storemocks.NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLSIFStore := codegraphmocks.NewMockDataStore()
 	mockUploadStore := objectmocks.NewMockStorage()
@@ -363,8 +365,8 @@ func TestHandleCloneInProgress(t *testing.T) {
 		ContentType:  "application/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
-	mockDBStore := NewMockStore()
+	mockWorkerStore := dbworkermocks.NewMockStore[shared.Upload]()
+	mockDBStore := storemocks.NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockUploadStore := objectmocks.NewMockStorage()
 	gitserverClient := gitserver.NewMockClient()

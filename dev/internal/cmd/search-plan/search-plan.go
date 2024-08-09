@@ -26,7 +26,6 @@ func run(w io.Writer, args []string) error {
 
 	version := fs.String("version", "V3", "the version of the search API to use")
 	patternType := fs.String("pattern_type", "", "optionally specify query.PatternType (regex, literal, ...)")
-	smartSearch := fs.Bool("smart_search", false, "enable smart search mode instead of precise")
 	dotCom := fs.Bool("dotcom", false, "enable sourcegraph.com parsing rules")
 
 	fs.Parse(args[1:])
@@ -37,9 +36,6 @@ func run(w io.Writer, args []string) error {
 	// Further argument parsing
 	query := fs.Arg(0)
 	mode := search.Precise
-	if *smartSearch {
-		mode = search.SmartSearch
-	}
 
 	// Sourcegraph infra we need
 	conf.Mock(&conf.Unified{})

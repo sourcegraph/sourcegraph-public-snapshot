@@ -1,6 +1,8 @@
 package codenav
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -137,12 +140,12 @@ type AdjustedCodeIntelligenceRange struct {
 	HoverText       string
 }
 
-// Cursor is a struct that holds the state necessary to resume a locations query from a second or
+// PreciseCursor is a struct that holds the state necessary to resume a locations query from a second or
 // subsequent request. This struct is used internally as a request-specific context object that is
 // mutated as the locations request is fulfilled. This struct is serialized to JSON then base64
 // encoded to make an opaque string that is handed to a future request to get the remainder of the
 // result set.
-type Cursor struct {
+type PreciseCursor struct {
 	// the following fields...
 	// track the current phase and offset within phase
 
@@ -190,7 +193,8 @@ func (m CursorMatcher) ToShared() shared.Matcher {
 func NewCursorMatcher(matcher shared.Matcher) CursorMatcher {
 	if sym, range_, ok := matcher.SymbolBased(); ok {
 		return CursorMatcher{
-			ExactSymbol: sym,
+			// OK to use "" here as lookups based on "" are not allowed
+			ExactSymbol: sym.UnwrapOr(""),
 			Start:       shared.TranslatePosition(range_.Start),
 			End:         shared.TranslatePosition(range_.End),
 			HasEnd:      true,
@@ -207,9 +211,17 @@ func NewCursorMatcher(matcher shared.Matcher) CursorMatcher {
 	panic(fmt.Sprintf("Unhandled case for matcher: %+v", matcher))
 }
 
-var exhaustedCursor = Cursor{Phase: "done"}
+var exhaustedCursor = PreciseCursor{Phase: "done"}
 
-func (c Cursor) BumpLocalLocationOffset(n, totalCount int) Cursor {
+func (c PreciseCursor) Encode() string {
+	return encodeViaJSON(c)
+}
+
+func DecodeCursor(rawEncoded string) (PreciseCursor, error) {
+	return decodeViaJSON[PreciseCursor](rawEncoded)
+}
+
+func (c PreciseCursor) BumpLocalLocationOffset(n, totalCount int) PreciseCursor {
 	c.LocalLocationOffset += n
 	if c.LocalLocationOffset >= totalCount {
 		// We've consumed this upload completely. Skip it the next time we find
@@ -222,7 +234,7 @@ func (c Cursor) BumpLocalLocationOffset(n, totalCount int) Cursor {
 	return c
 }
 
-func (c Cursor) BumpRemoteUploadOffset(n, totalCount int) Cursor {
+func (c PreciseCursor) BumpRemoteUploadOffset(n, totalCount int) PreciseCursor {
 	c.RemoteUploadOffset += n
 	if c.RemoteUploadOffset >= totalCount {
 		// We've consumed all upload batches
@@ -232,7 +244,7 @@ func (c Cursor) BumpRemoteUploadOffset(n, totalCount int) Cursor {
 	return c
 }
 
-func (c Cursor) BumpRemoteUsageOffset(n, totalCount int) Cursor {
+func (c PreciseCursor) BumpRemoteUsageOffset(n, totalCount int) PreciseCursor {
 	c.RemoteLocationOffset += n
 	if c.RemoteLocationOffset >= totalCount {
 		// We've consumed the locations for this set of uploads. Reset this slice value in the
@@ -288,4 +300,124 @@ type RemoteCursor struct {
 	UploadBatchIDs []int `json:"uploadBatchIDs"`
 	// The location offset within the associated batch of uploads.
 	LocationOffset int `json:"locationOffset"`
+}
+
+type SyntacticCursor struct {
+	SeenFiles []string `json:"files"`
+}
+
+type UsagesForSymbolResolvedArgs struct {
+	// Symbol is either nil or all the fields are populated for the equality check.
+	Symbol   *ResolvedSymbolComparator
+	Repo     types.Repo
+	CommitID api.CommitID
+	Path     core.RepoRelPath
+	Range    scip.Range
+	Filter   *ResolvedUsagesFilter
+
+	RemainingCount int32
+	Cursor         UsagesCursor
+}
+
+type ResolvedUsagesFilter struct {
+	Not        *ResolvedUsagesFilter
+	Repository *ResolvedRepositoryFilter
+}
+
+type ResolvedRepositoryFilter struct {
+	NameEquals string
+	// Resolved from above name
+	RepoEquals types.Repo
+}
+
+type ResolvedSymbolComparator struct {
+	EqualsName       string
+	EqualsProvenance CodeGraphDataProvenance
+	EqualsSymbol     *scip.Symbol
+}
+
+type ResolvedSymbolNameComparator struct {
+	Equals       string
+	EqualsSymbol scip.SymbolInformation
+}
+
+func (s *ResolvedSymbolComparator) ProvenancesForSCIPData() ForEachProvenance[bool] {
+	var out ForEachProvenance[bool]
+	if s == nil {
+		out.Precise = true
+		out.Syntactic = true
+		out.SearchBased = true
+	} else {
+		switch s.EqualsProvenance {
+		case ProvenancePrecise:
+			out.Precise = true
+		case ProvenanceSyntactic:
+			out.Syntactic = true
+		case ProvenanceSearchBased:
+			out.SearchBased = true
+		}
+	}
+	return out
+}
+
+// CodeGraphDataProvenance corresponds to the matching type in the GraphQL API.
+//
+// Make sure this type maintains its marshaling/unmarshaling behavior in
+// case the type definition is changed.
+type CodeGraphDataProvenance string
+
+const (
+	ProvenancePrecise     CodeGraphDataProvenance = "PRECISE"
+	ProvenanceSyntactic   CodeGraphDataProvenance = "SYNTACTIC"
+	ProvenanceSearchBased CodeGraphDataProvenance = "SEARCH_BASED"
+)
+
+type ForEachProvenance[T any] struct {
+	SearchBased T
+	Syntactic   T
+	Precise     T
+}
+
+// CursorType's string representation is used for debugging.
+type CursorType string
+
+const (
+	CursorTypeDefinitions     CursorType = "definitions"
+	CursorTypeImplementations CursorType = "implementations"
+	CursorTypePrototypes      CursorType = "prototypes"
+	CursorTypeReferences      CursorType = "references"
+	CursorTypeSyntactic       CursorType = "syntactic"
+	CursorTypeSearchBased     CursorType = "searchBased"
+)
+
+type UsagesCursor struct {
+	CursorType      CursorType      `json:"ty"`
+	PreciseCursor   PreciseCursor   `json:"pc"`
+	SyntacticCursor SyntacticCursor `json:"sc"` // TODO(GRAPH-696)
+}
+
+func (c UsagesCursor) Encode() string {
+	return encodeViaJSON(c)
+}
+
+func DecodeUsagesCursor(rawEncoded string) (UsagesCursor, error) {
+	return decodeViaJSON[UsagesCursor](rawEncoded)
+}
+
+func encodeViaJSON[T any](t T) string {
+	bytes, _ := json.Marshal(t)
+	return base64.RawURLEncoding.EncodeToString(bytes)
+}
+
+func decodeViaJSON[T any](rawEncoded string) (T, error) {
+	var val T
+	if rawEncoded == "" {
+		return val, nil
+	}
+	raw, err := base64.RawURLEncoding.DecodeString(rawEncoded)
+	if err != nil {
+		return val, err
+	}
+	err = json.Unmarshal(raw, &val)
+	return val, err
 }

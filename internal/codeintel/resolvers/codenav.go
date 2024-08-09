@@ -2,8 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"path"
 	"strings"
@@ -171,27 +169,15 @@ type DiagnosticResolver interface {
 type CodeGraphDataResolver interface {
 	// ID satisfies the Node interface.
 	ID() graphql.ID
-	Provenance(ctx context.Context) (CodeGraphDataProvenance, error)
+	Provenance(ctx context.Context) (codenav.CodeGraphDataProvenance, error)
 	Commit(ctx context.Context) (string, error)
 	ToolInfo(ctx context.Context) (*CodeGraphToolInfo, error)
 	// Pre-condition: args are Normalized.
 	Occurrences(ctx context.Context, args *OccurrencesArgs) (SCIPOccurrenceConnectionResolver, error)
 }
 
-// CodeGraphDataProvenance corresponds to the matching type in the GraphQL API.
-//
-// Make sure this type maintains its marshaling/unmarshaling behavior in
-// case the type definition is changed.
-type CodeGraphDataProvenance string
-
-const (
-	ProvenancePrecise     CodeGraphDataProvenance = "PRECISE"
-	ProvenanceSyntactic   CodeGraphDataProvenance = "SYNTACTIC"
-	ProvenanceSearchBased CodeGraphDataProvenance = "SEARCH_BASED"
-)
-
 type CodeGraphDataProvenanceComparator struct {
-	Equals *CodeGraphDataProvenance
+	Equals *codenav.CodeGraphDataProvenance
 }
 
 type CodeGraphDataFilter struct {
@@ -221,25 +207,19 @@ func (args *CodeGraphDataArgs) Attrs() []attribute.KeyValue {
 	return []attribute.KeyValue{attribute.String("args.filter", args.Filter.String())}
 }
 
-type ForEachProvenance[T any] struct {
-	SearchBased T
-	Syntactic   T
-	Precise     T
-}
-
-func (a *CodeGraphDataArgs) ProvenancesForSCIPData() ForEachProvenance[bool] {
-	var out ForEachProvenance[bool]
+func (a *CodeGraphDataArgs) ProvenancesForSCIPData() codenav.ForEachProvenance[bool] {
+	var out codenav.ForEachProvenance[bool]
 	if a == nil || a.Filter == nil || a.Filter.Provenance == nil || a.Filter.Provenance.Equals == nil {
 		out.Syntactic = true
 		out.Precise = true
 	} else {
 		p := *a.Filter.Provenance.Equals
 		switch p {
-		case ProvenancePrecise:
+		case codenav.ProvenancePrecise:
 			out.Precise = true
-		case ProvenanceSyntactic:
+		case codenav.ProvenanceSyntactic:
 			out.Syntactic = true
-		case ProvenanceSearchBased:
+		case codenav.ProvenanceSearchBased:
 		}
 	}
 	return out
@@ -276,15 +256,16 @@ type OccurrencesArgs struct {
 	After *string
 }
 
-// Normalize returns args for convenience of chaining
+// Normalize returns a normalized copy of args.
 func (args *OccurrencesArgs) Normalize(maxPageSize int32) *OccurrencesArgs {
-	if args == nil {
-		*args = OccurrencesArgs{}
+	var out OccurrencesArgs
+	if args != nil {
+		out = *args
 	}
-	if args.First == nil || *args.First > maxPageSize {
-		args.First = &maxPageSize
+	if out.First == nil || *out.First > maxPageSize {
+		out.First = &maxPageSize
 	}
-	return args
+	return &out
 }
 
 type SCIPOccurrenceConnectionResolver interface {
@@ -322,7 +303,7 @@ func (args *UsagesForSymbolArgs) Resolve(
 	repoStore database.RepoStore,
 	client gitserver.Client,
 	maxPageSize int32,
-) (out UsagesForSymbolResolvedArgs, err error) {
+) (out codenav.UsagesForSymbolResolvedArgs, err error) {
 	// Resolve filtering/matching arguments.
 	resolvedSymbol, err := args.Symbol.Resolve()
 	if err != nil {
@@ -358,17 +339,14 @@ func (args *UsagesForSymbolArgs) Resolve(
 	if args.First != nil {
 		remainingCount = min(max(*args.First, 0), maxPageSize)
 	}
-	var cursor UsagesCursor
+	var cursor codenav.UsagesCursor
 	if args.After != nil {
-		bytes, err := base64.StdEncoding.DecodeString(*args.After)
+		cursor, err = codenav.DecodeUsagesCursor(*args.After)
 		if err != nil {
 			return out, errors.Wrap(err, "invalid after: cursor")
 		}
-		if err = json.Unmarshal(bytes, &cursor); err != nil {
-			return out, errors.Wrap(err, "invalid after: cursor")
-		}
 	} else {
-		cursor.PreciseCursorType = DefinitionsCursor
+		cursor.CursorType = codenav.CursorTypeDefinitions
 	}
 
 	scipRange, err := scip.NewRange([]int32{
@@ -381,7 +359,7 @@ func (args *UsagesForSymbolArgs) Resolve(
 		return out, errors.Newf("invalid symbol range: %s", err)
 	}
 
-	return UsagesForSymbolResolvedArgs{
+	return codenav.UsagesForSymbolResolvedArgs{
 		resolvedSymbol,
 		*repo,
 		commitID,
@@ -394,33 +372,6 @@ func (args *UsagesForSymbolArgs) Resolve(
 		cursor,
 	}, nil
 }
-
-type UsagesForSymbolResolvedArgs struct {
-	// Symbol is either nil or all the fields are populated for the equality check.
-	Symbol   *ResolvedSymbolComparator
-	Repo     types.Repo
-	CommitID api.CommitID
-	Path     core.RepoRelPath
-	Range    scip.Range
-	Filter   *ResolvedUsagesFilter
-
-	RemainingCount int32
-	Cursor         UsagesCursor
-}
-
-type UsagesCursor struct {
-	PreciseCursorType `json:"ty"`
-	PreciseCursor     codenav.Cursor `json:"pc"`
-}
-
-type PreciseCursorType string
-
-const (
-	DefinitionsCursor     PreciseCursorType = "definitions"
-	ImplementationsCursor PreciseCursorType = "implementations"
-	PrototypesCursor      PreciseCursorType = "prototypes"
-	ReferencesCursor      PreciseCursorType = "references"
-)
 
 func (args *UsagesForSymbolArgs) Attrs() (out []attribute.KeyValue) {
 	out = append(append(args.Symbol.Attrs(), args.Range.Attrs()...), attribute.String("filter", args.Filter.DebugString()))
@@ -449,7 +400,7 @@ func (c *SymbolComparator) Attrs() (out []attribute.KeyValue) {
 	return out
 }
 
-func (c *SymbolComparator) Resolve() (*ResolvedSymbolComparator, error) {
+func (c *SymbolComparator) Resolve() (*codenav.ResolvedSymbolComparator, error) {
 	if c == nil {
 		return nil, nil
 	}
@@ -459,9 +410,9 @@ func (c *SymbolComparator) Resolve() (*ResolvedSymbolComparator, error) {
 		return nil, errors.New("name.equals and provenance.equals must be specified if SymbolComparator is provided")
 	}
 	switch *prov {
-	case ProvenancePrecise:
-	case ProvenanceSyntactic:
-	case ProvenanceSearchBased:
+	case codenav.ProvenancePrecise:
+	case codenav.ProvenanceSyntactic:
+	case codenav.ProvenanceSearchBased:
 	default:
 		return nil, errors.New("invalid provenance.equals")
 	}
@@ -472,41 +423,11 @@ func (c *SymbolComparator) Resolve() (*ResolvedSymbolComparator, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "invalid symbol name")
 	}
-	return &ResolvedSymbolComparator{
+	return &codenav.ResolvedSymbolComparator{
 		EqualsName:       *sym,
 		EqualsProvenance: *prov,
 		EqualsSymbol:     parsedSym,
 	}, nil
-}
-
-type ResolvedSymbolComparator struct {
-	EqualsName       string
-	EqualsProvenance CodeGraphDataProvenance
-	EqualsSymbol     *scip.Symbol
-}
-
-type ResolvedSymbolNameComparator struct {
-	Equals       string
-	EqualsSymbol scip.SymbolInformation
-}
-
-func (s *ResolvedSymbolComparator) ProvenancesForSCIPData() ForEachProvenance[bool] {
-	var out ForEachProvenance[bool]
-	if s == nil {
-		out.Precise = true
-		out.Syntactic = true
-		out.SearchBased = true
-	} else {
-		switch s.EqualsProvenance {
-		case ProvenancePrecise:
-			out.Precise = true
-		case ProvenanceSyntactic:
-			out.Syntactic = true
-		case ProvenanceSearchBased:
-			out.SearchBased = true
-		}
-	}
-	return out
 }
 
 type SymbolNameComparator struct {
@@ -560,17 +481,17 @@ func (f *UsagesFilter) DebugString() string {
 	return strings.Join(result, " and ")
 }
 
-func (f *UsagesFilter) Resolve(ctx context.Context, repoStore database.RepoStore) (*ResolvedUsagesFilter, error) {
+func (f *UsagesFilter) Resolve(ctx context.Context, repoStore database.RepoStore) (*codenav.ResolvedUsagesFilter, error) {
 	return resolveWithCache(ctx, repoStore, f, map[string]*types.Repo{})
 }
 
-func resolveWithCache(ctx context.Context, repoStore database.RepoStore, f *UsagesFilter, cache map[string]*types.Repo) (*ResolvedUsagesFilter, error) {
+func resolveWithCache(ctx context.Context, repoStore database.RepoStore, f *UsagesFilter, cache map[string]*types.Repo) (*codenav.ResolvedUsagesFilter, error) {
 	if f == nil {
 		return nil, nil
 	}
-	var repoFilter *ResolvedRepositoryFilter
+	var repoFilter *codenav.ResolvedRepositoryFilter
 	if f.Repository != nil && f.Repository.Name.Equals != nil {
-		repoFilter = &ResolvedRepositoryFilter{}
+		repoFilter = &codenav.ResolvedRepositoryFilter{}
 		repoName := *f.Repository.Name.Equals
 		if repoName == "" {
 			return nil, errors.New("repository.name.equals should be non-empty; for no filtering, remove the repository field")
@@ -591,18 +512,7 @@ func resolveWithCache(ctx context.Context, repoStore database.RepoStore, f *Usag
 	if err != nil {
 		return nil, err
 	}
-	return &ResolvedUsagesFilter{notFilter, repoFilter}, nil
-}
-
-type ResolvedUsagesFilter struct {
-	Not        *ResolvedUsagesFilter
-	Repository *ResolvedRepositoryFilter
-}
-
-type ResolvedRepositoryFilter struct {
-	NameEquals string
-	// Resolved from above name
-	RepoEquals types.Repo
+	return &codenav.ResolvedUsagesFilter{notFilter, repoFilter}, nil
 }
 
 type RepositoryFilter struct {
@@ -617,9 +527,9 @@ type UsageConnectionResolver = PagedConnectionResolver[UsageResolver]
 
 type UsageResolver interface {
 	Symbol(context.Context) (SymbolInformationResolver, error)
-	Provenance(context.Context) (CodeGraphDataProvenance, error)
+	Provenance(context.Context) (codenav.CodeGraphDataProvenance, error)
 	DataSource() *string
-	UsageRange(context.Context) (UsageRangeResolver, error)
+	UsageRange(context.Context) UsageRangeResolver
 	SurroundingContent(_ context.Context) string
 	UsageKind() SymbolUsageKind
 }

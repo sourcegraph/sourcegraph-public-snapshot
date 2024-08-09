@@ -3,7 +3,6 @@ package gitlaboauth
 import (
 	"bytes"
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -16,10 +15,11 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -32,8 +32,7 @@ import (
 // and `github.com/dghubble/gologin` which ensures the correctness of the `/callback` handler.
 func TestMiddleware(t *testing.T) {
 	logger := logtest.Scoped(t)
-	cleanup := session.ResetMockSessionStore(t)
-	defer cleanup()
+	session.ResetMockSessionStore(t)
 
 	const mockUserID = 123
 

@@ -36,7 +36,7 @@ func (ps *Proxy) updateAccessToken() {
 	for {
 		token, err := ps.getAccessToken()
 		if err != nil {
-			ps.logger.Fatal("Error getting access token: %v", log.Error(err))
+			ps.logger.Error("Error getting access token: %v", log.Error(err))
 		} else {
 			ps.tokenMutex.Lock()
 			ps.accessToken = token
@@ -124,23 +124,8 @@ func (ps *Proxy) getAccessToken() (string, error) {
 	return accessToken, nil
 }
 
-func (ps *Proxy) validateApiKey(req *http.Request) bool {
-	proxyAccessToken, err := ps.readSecretFile("/run/secrets/proxy_access_token")
-	if err != nil {
-		return false
-	}
-	incomingAccessToken := req.Header.Get("Api-Key")
-
-	// Compare the incoming Api-Key with the environment variable
-	return incomingAccessToken == proxyAccessToken
-}
-
 func (ps *Proxy) handleProxy(w http.ResponseWriter, req *http.Request) {
 	target := ps.azureEndpoint.ResolveReference(req.URL)
-	if !ps.validateApiKey(req) {
-		http.Error(w, "Invalid Proxy Password", http.StatusUnauthorized)
-		return
-	}
 	// Create a proxy request
 	proxyReq, err := http.NewRequest(req.Method, target.String(), req.Body)
 	if err != nil {
@@ -190,7 +175,7 @@ func (ps *Proxy) handleProxy(w http.ResponseWriter, req *http.Request) {
 			break
 		}
 		if _, writeErr := w.Write(buf[:n]); writeErr != nil {
-			ps.logger.Fatal("Error writing response: %v", log.Error(writeErr))
+			ps.logger.Error("Error writing response: %v", log.Error(writeErr))
 			break
 		}
 		if flusher, ok := w.(http.Flusher); ok {
@@ -212,8 +197,8 @@ func main() {
 	ps.initializeAzureEndpoint()
 	go ps.updateAccessToken()
 	http.HandleFunc("/", ps.handleProxy)
-	logger.Info("HTTPS Proxy server is running on port 8443")
-	if err := http.ListenAndServeTLS(":8443", "/run/secrets/cert.pem", "/run/secrets/key.pem", nil); err != nil {
-		logger.Fatal("Failed to start HTTPS server: %v", log.Error(err))
+	logger.Info("HTTP Proxy server is running on port 8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		logger.Fatal("Failed to start HTTP server: %v", log.Error(err))
 	}
 }

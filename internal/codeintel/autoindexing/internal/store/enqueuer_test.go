@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -234,9 +235,11 @@ func TestInsertIndexWithActor(t *testing.T) {
 	store := New(observation.TestContextTB(t), db)
 
 	insertRepo(t, db, 50, "")
+	u, err := db.Users().Create(context.Background(), database.NewUser{Username: "alice"})
+	require.NoError(t, err)
 
 	for i, ctx := range []context.Context{
-		actor.WithActor(context.Background(), actor.FromMockUser(100)),
+		actor.WithActor(context.Background(), actor.FromUser(u.ID)),
 		actor.WithInternalActor(context.Background()),
 		context.Background(),
 	} {

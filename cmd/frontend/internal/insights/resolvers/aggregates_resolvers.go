@@ -438,7 +438,7 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, *notAvai
 	if err != nil {
 		return false, &notAvailableReason{reason: cgInvalidQueryMsg, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, err
 	}
-	if !(searchType == query.SearchTypeRegex || searchType == query.SearchTypeStandard || searchType == query.SearchTypeLucky) {
+	if !(searchType == query.SearchTypeRegex || searchType == query.SearchTypeStandard) {
 		return false, &notAvailableReason{reason: cgInvalidQueryMsg, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
 	}
 

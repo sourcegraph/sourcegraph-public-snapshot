@@ -14,7 +14,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
@@ -305,7 +304,7 @@ func orgInvitationURLLegacy(org *types.Org, relative bool) string {
 	if relative {
 		return path
 	}
-	return globals.ExternalURL().ResolveReference(&url.URL{Path: path}).String()
+	return conf.ExternalURLParsed().ResolveReference(&url.URL{Path: path}).String()
 }
 
 func orgInvitationURL(invitation database.OrgInvitation, relative bool) (string, error) {
@@ -320,7 +319,7 @@ func orgInvitationURL(invitation database.OrgInvitation, relative bool) (string,
 	if relative {
 		return path, nil
 	}
-	return globals.ExternalURL().ResolveReference(&url.URL{Path: path}).String(), nil
+	return conf.ExternalURLParsed().ResolveReference(&url.URL{Path: path}).String(), nil
 }
 
 func createInvitationJWT(orgID int32, invitationID int64, senderID int32, expiryTime time.Time) (string, error) {
@@ -331,7 +330,7 @@ func createInvitationJWT(orgID int32, invitationID int64, senderID int32, expiry
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &orgInvitationClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    globals.ExternalURL().String(),
+			Issuer:    conf.ExternalURLParsed().String(),
 			ExpiresAt: jwt.NewNumericDate(expiryTime),
 			Subject:   strconv.FormatInt(int64(orgID), 10),
 		},

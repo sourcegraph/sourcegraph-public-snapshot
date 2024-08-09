@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -3926,9 +3925,6 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
-	// Set fake authz providers otherwise authz is bypassed
-	authz.SetProviders(false, []authz.Provider{&fakePermsProvider{}})
-	defer authz.SetProviders(true, nil)
 	// Set up some repositories and permissions
 	qs := []*sqlf.Query{
 		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(555, 'user555', FALSE)`),
@@ -4150,31 +4146,6 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			},
 		},
 		{
-			Name:             "TestPrivateRepoWithNoAuthzProviders",
-			RepoID:           1,
-			Args:             nil,
-			NoAuthzProviders: true,
-			// all users have access
-			WantResults: []*listRepoPermissionsResult{
-				{
-					UserID: 999,
-					Reason: UserRepoPermissionReasonUnrestricted,
-				},
-				{
-					UserID: 777,
-					Reason: UserRepoPermissionReasonUnrestricted,
-				},
-				{
-					UserID: 666,
-					Reason: UserRepoPermissionReasonUnrestricted,
-				},
-				{
-					UserID: 555,
-					Reason: UserRepoPermissionReasonUnrestricted,
-				},
-			},
-		},
-		{
 			Name:   "TestPaginationWithPrivateRepo",
 			RepoID: 1,
 			Args: &ListRepoPermissionsArgs{
@@ -4273,32 +4244,6 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			},
 		},
 		{
-			Name:                      "TestUnrestrictedViaExternalServiceRepoWithoutPermsMapping",
-			RepoID:                    4,
-			Args:                      nil,
-			NoAuthzProviders:          true,
-			UsePermissionsUserMapping: false,
-			// restricted access
-			WantResults: []*listRepoPermissionsResult{
-				{
-					UserID: 999,
-					Reason: UserRepoPermissionReasonUnrestricted,
-				},
-				{
-					UserID: 777,
-					Reason: UserRepoPermissionReasonUnrestricted,
-				},
-				{
-					UserID: 666,
-					Reason: UserRepoPermissionReasonUnrestricted,
-				},
-				{
-					UserID: 555,
-					Reason: UserRepoPermissionReasonUnrestricted,
-				},
-			},
-		},
-		{
 			Name:                      "TestPrivateRepoWithAuthzEnforceForSiteAdminsEnabled",
 			RepoID:                    1,
 			Args:                      nil,
@@ -4325,12 +4270,6 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			if !test.NoAuthzProviders {
-				// Set fake authz providers otherwise authz is bypassed
-				authz.SetProviders(false, []authz.Provider{&fakePermsProvider{}})
-				defer authz.SetProviders(true, nil)
-			}
-
 			conf.Mock(
 				&conf.Unified{
 					SiteConfiguration: schema.SiteConfiguration{
@@ -4372,7 +4311,6 @@ type listRepoPermissionsTest struct {
 	RepoID                    int
 	Args                      *ListRepoPermissionsArgs
 	WantResults               []*listRepoPermissionsResult
-	NoAuthzProviders          bool
 	UsePermissionsUserMapping bool
 	AuthzEnforceForSiteAdmins bool
 }
@@ -4380,29 +4318,6 @@ type listRepoPermissionsTest struct {
 type listRepoPermissionsResult struct {
 	UserID int32
 	Reason UserRepoPermissionReason
-}
-
-type fakePermsProvider struct {
-	codeHost *extsvc.CodeHost
-	extAcct  *extsvc.Account
-}
-
-func (p *fakePermsProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (mine *extsvc.Account, err error) {
-	return p.extAcct, nil
-}
-
-func (p *fakePermsProvider) ServiceType() string { return p.codeHost.ServiceType }
-func (p *fakePermsProvider) ServiceID() string   { return p.codeHost.ServiceID }
-func (p *fakePermsProvider) URN() string         { return extsvc.URN(p.codeHost.ServiceType, 0) }
-
-func (p *fakePermsProvider) ValidateConnection(context.Context) error { return nil }
-
-func (p *fakePermsProvider) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return nil, nil
-}
-
-func (p *fakePermsProvider) FetchRepoPerms(context.Context, *extsvc.Repository, authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
-	return nil, nil
 }
 
 func equal(t testing.TB, name string, want, have any) {

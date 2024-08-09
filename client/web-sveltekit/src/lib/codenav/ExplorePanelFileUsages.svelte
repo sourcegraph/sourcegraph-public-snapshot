@@ -16,12 +16,8 @@
     export let usages: ExplorePanel_Usage[]
     export let scrollContainer: HTMLElement | undefined
 
-    // TODO: remove all the usageRange! assertions once the backend is updated to
-    // use a non-nullable type in the API. I've already confirmed that it should always
-    // be non-null.
-    //
     // FIXME: Assumes that all usages for a repo/path combo are at the same revision.
-    $: revision = usages[0].usageRange!.revision
+    $: revision = usages[0].usageRange.revision
 
     let highlightedHTMLChunks: string[][] | undefined
     let visible = false
@@ -33,8 +29,8 @@
                 path: path,
             },
             ranges: usages.map(usage => ({
-                startLine: usage.usageRange!.range.start.line,
-                endLine: usage.usageRange!.range.end.line + 1,
+                startLine: usage.usageRange.range.start.line,
+                endLine: usage.usageRange.range.end.line + 1,
             })),
         })
             .then(result => {
@@ -44,7 +40,7 @@
     }
 
     function hrefForUsage(usage: ExplorePanel_Usage): string {
-        const { repository, revision, path, range } = usage.usageRange!
+        const { repository, revision, path, range } = usage.usageRange
         return SourcegraphURL.from(`${repository}@${revision}/-/blob/${path}`)
             .setLineRange({
                 line: range.start.line + 1,
@@ -56,13 +52,13 @@
     }
 
     $: usageExcerpts = usages.map((usage, index) => ({
-        startLine: usage.usageRange!.range.start.line,
+        startLine: usage.usageRange.range.start.line,
         matches: [
             {
-                startLine: usage.usageRange!.range.start.line,
-                startCharacter: usage.usageRange!.range.start.character,
-                endLine: usage.usageRange!.range.end.line,
-                endCharacter: usage.usageRange!.range.end.character,
+                startLine: usage.usageRange.range.start.line,
+                startCharacter: usage.usageRange.range.start.character,
+                endLine: usage.usageRange.range.end.line,
+                endCharacter: usage.usageRange.range.end.character,
             },
         ],
         plaintextLines: [usage.surroundingContent],

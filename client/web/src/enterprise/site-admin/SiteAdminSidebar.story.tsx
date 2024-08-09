@@ -34,6 +34,7 @@ export const AdminSidebarItems: StoryFn = () => (
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={true}
+                    applianceUpdateTarget=""
                     endUserOnboardingEnabled={false}
                 />
                 <SiteAdminSidebar
@@ -44,6 +45,7 @@ export const AdminSidebarItems: StoryFn = () => (
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={true}
+                    applianceUpdateTarget=""
                     endUserOnboardingEnabled={false}
                 />
                 <SiteAdminSidebar
@@ -54,6 +56,7 @@ export const AdminSidebarItems: StoryFn = () => (
                     batchChangesExecutionEnabled={false}
                     batchChangesWebhookLogsEnabled={false}
                     codeInsightsEnabled={true}
+                    applianceUpdateTarget=""
                     endUserOnboardingEnabled={false}
                 />
                 <SiteAdminSidebar
@@ -64,6 +67,7 @@ export const AdminSidebarItems: StoryFn = () => (
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={false}
+                    applianceUpdateTarget=""
                     endUserOnboardingEnabled={false}
                 />
             </Grid>

@@ -106,7 +106,7 @@ func TestOwnersOpsgenieTeam(t *testing.T) {
 	enc.SetIndent("    ", "  ")
 	assert.NoError(t, enc.Encode(observabilityAlertsConfig))
 	// The below can be copy-pasted into site-config 'observability.alerts':
-	// https://sourcegraph.sourcegraph.com/search?q=context:global+repo:github.com/sourcegraph/deploy-sourcegraph-cloud+file:overlays/prod/frontend/files/site.json+%22observability.alerts%22:+%5B...%5D&patternType=structural&sm=1&groupBy=repo
+	// https://sourcegraph.sourcegraph.com/search?q=context:global+repo:github.com/sourcegraph/deploy-sourcegraph-cloud+file:overlays/prod/frontend/files/site.json+%22observability.alerts%22:+%5B...%5D&patternType=structural&sm=0&groupBy=repo
 	autogold.Expect(`[
       {
         "level": "critical",

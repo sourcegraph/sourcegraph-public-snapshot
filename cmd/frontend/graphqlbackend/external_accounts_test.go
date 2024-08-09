@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -40,7 +39,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 		db := database.NewDB(logger, dbtest.NewDB(t))
 		act := actor.Actor{UID: 1}
 		ctx := actor.WithActor(context.Background(), &act)
-		sr := newSchemaResolver(db, gitserver.NewTestClient(t))
+		sr := newSchemaResolver(db, gitserver.NewTestClient(t), nil)
 
 		spec := extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitHub,
@@ -112,17 +111,6 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 			wantErr:        false,
 			accountDetails: `{"username": "alice", "password": "test"}`,
 		},
-		// OSS packages cannot import enterprise packages, but when we build the entire
-		// application this will be implemented.
-		//
-		// See cmd/frontend/internal/auth/sourcegraphoperator for more details
-		// and additional test coverage on the functionality.
-		"Sourcegraph operator unimplemented in OSS": {
-			user:            &types.User{ID: 1, SiteAdmin: true},
-			serviceType:     auth.SourcegraphOperatorProviderType,
-			wantErr:         true,
-			wantErrContains: "unimplemented in Sourcegraph OSS",
-		},
 	}
 
 	for name, tc := range testCases {
@@ -171,7 +159,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				ctx = actor.WithActor(ctx, &act)
 			}
 
-			sr := newSchemaResolver(db, gitserver.NewTestClient(t))
+			sr := newSchemaResolver(db, gitserver.NewTestClient(t), nil)
 
 			args := struct {
 				ServiceType    string

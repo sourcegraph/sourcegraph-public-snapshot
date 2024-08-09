@@ -121,16 +121,8 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, _ co
 	tryWrite(s.logger, progressWriter, "Perforce server connection succeeded\n")
 
 	var cmd *exec.Cmd
-	if s.fusionConfig.Enabled {
-		tryWrite(s.logger, progressWriter, "Converting depot using p4-fusion\n")
-		cmd = s.buildP4FusionCmd(ctx, depot, p4user, tmpPath, p4port)
-	} else {
-		tryWrite(s.logger, progressWriter, "Converting depot using git-p4\n")
-		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
-		args := append([]string{"p4", "clone", "--bare"}, s.p4CommandOptions()...)
-		args = append(args, depot+"@all", tmpPath)
-		cmd = exec.CommandContext(ctx, "git", args...)
-	}
+	tryWrite(s.logger, progressWriter, "Converting depot using p4-fusion\n")
+	cmd = s.buildP4FusionCmd(ctx, depot, p4user, tmpPath, p4port)
 	cmd.Env, err = s.p4CommandEnv(tmpPath, p4port, p4user, p4passwd)
 	if err != nil {
 		return errors.Wrap(err, "failed to build p4 command env")
@@ -200,6 +192,7 @@ func (s *perforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, usern
 		"--maxChanges", strconv.Itoa(s.fusionConfig.MaxChanges),
 		"--includeBinaries", strconv.FormatBool(s.fusionConfig.IncludeBinaries),
 		"--fsyncEnable", strconv.FormatBool(s.fusionConfig.FsyncEnable),
+		"--noConvertLabels", strconv.FormatBool(s.fusionConfig.NoConvertLabels),
 		"--noColor", "true",
 		// We don't want an empty commit for a sane merge base across branches,
 		// since we don't use them and the empty commit breaks changelist parsing.
@@ -234,16 +227,9 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, 
 		return errors.Wrap(err, "verifying connection to perforce server")
 	}
 
-	var cmd *wrexec.Cmd
-	if s.fusionConfig.Enabled {
-		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
-		root, _ := filepath.Split(string(dir))
-		cmd = wrexec.Wrap(ctx, nil, s.buildP4FusionCmd(ctx, depot, p4user, root+".git", p4port))
-	} else {
-		// Example: git p4 sync --max-changes 1000
-		args := append([]string{"p4", "sync"}, s.p4CommandOptions()...)
-		cmd = wrexec.CommandContext(ctx, nil, "git", args...)
-	}
+	// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
+	root, _ := filepath.Split(string(dir))
+	cmd := wrexec.Wrap(ctx, nil, s.buildP4FusionCmd(ctx, depot, p4user, root+".git", p4port))
 	cmd.Env, err = s.p4CommandEnv(string(dir), p4port, p4user, p4passwd)
 	if err != nil {
 		return errors.Wrap(err, "failed to build p4 command env")
@@ -257,26 +243,6 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, 
 	tryWrite(s.logger, progressWriter, urlredactor.New(remoteURL).Redact(string(output)))
 	if err != nil {
 		return errors.Wrapf(err, "failed to update")
-	}
-
-	if !s.fusionConfig.Enabled {
-		p4home, err := s.fs.P4HomeDir()
-		if err != nil {
-			return errors.Wrap(err, "failed to create p4home")
-		}
-
-		// Force update "master" to "refs/remotes/p4/master" where changes are synced into
-		cmd = wrexec.CommandContext(ctx, nil, "git", "branch", "-f", "master", "refs/remotes/p4/master")
-		cmd.Cmd.Env = append(os.Environ(),
-			"P4PORT="+p4port,
-			"P4USER="+p4user,
-			"P4PASSWD="+p4passwd,
-			"HOME="+p4home,
-		)
-		dir.Set(cmd.Cmd)
-		if output, err := cmd.CombinedOutput(); err != nil {
-			return errors.Wrapf(err, "failed to force update branch with output %q", string(output))
-		}
 	}
 
 	// The update was successful, after a git fetch it is expected that a repos
@@ -328,8 +294,6 @@ func (s *perforceDepotSyncer) p4CommandEnv(cmdCWD, p4port, p4user, p4passwd stri
 
 // fusionConfig allows configuration of the p4-fusion client.
 type fusionConfig struct {
-	// Enabled: Enable the p4-fusion client for cloning and fetching repos
-	Enabled bool
 	// Client: The client spec tht should be used
 	Client string
 	// LookAhead: How many CLs in the future, at most, shall we keep downloaded by
@@ -357,12 +321,13 @@ type fusionConfig struct {
 	// written to permanent storage immediately instead of being cached. This is to
 	// mitigate data loss in events of hardware failure.
 	FsyncEnable bool
+	// NoConvertLabels disables the conversion of Perforce labels to git tags.
+	NoConvertLabels bool
 }
 
 func configureFusionClient(conn *schema.PerforceConnection) fusionConfig {
 	// Set up default settings first
 	fc := fusionConfig{
-		Enabled:             false,
 		Client:              conn.P4Client,
 		LookAhead:           2000,
 		NetworkThreads:      12,
@@ -373,14 +338,12 @@ func configureFusionClient(conn *schema.PerforceConnection) fusionConfig {
 		MaxChanges:          -1,
 		IncludeBinaries:     false,
 		FsyncEnable:         false,
+		NoConvertLabels:     false,
 	}
 
 	if conn.FusionClient == nil {
 		return fc
 	}
-
-	// Required
-	fc.Enabled = conn.FusionClient.Enabled
 
 	// Optional
 	if conn.FusionClient.LookAhead > 0 {
@@ -406,6 +369,7 @@ func configureFusionClient(conn *schema.PerforceConnection) fusionConfig {
 	}
 	fc.IncludeBinaries = conn.FusionClient.IncludeBinaries
 	fc.FsyncEnable = conn.FusionClient.FsyncEnable
+	fc.NoConvertLabels = conn.FusionClient.NoConvertLabels
 
 	return fc
 }

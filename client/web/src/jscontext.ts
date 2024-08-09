@@ -197,6 +197,12 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     batchChangesWebhookLogsEnabled: boolean
 
     /**
+     * Whether this sourcegraph instance is managed by Appliance
+     */
+    applianceUpdateTarget: string
+    applianceMenuTarget: string
+
+    /**
      * Whether Cody is enabled on this instance. Check
      * {@link SourcegraphContext.codyEnabledForCurrentUser} to see whether Cody is enabled for the
      * current user.

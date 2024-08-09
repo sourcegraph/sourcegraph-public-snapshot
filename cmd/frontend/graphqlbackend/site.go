@@ -38,6 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -45,8 +46,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 )
 
 const singletonSiteGQLID = "site"
@@ -190,7 +189,7 @@ func (r *siteResolver) HasCodeIntelligence() bool {
 }
 
 func (r *siteResolver) ProductSubscription() *productSubscriptionStatus {
-	return &productSubscriptionStatus{}
+	return &productSubscriptionStatus{kv: redispool.Store}
 }
 
 func (r *siteResolver) AllowSiteSettingsEdits() bool {
@@ -337,8 +336,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 
 	prev.Site = unredacted
 
-	server := globals.ConfigurationServerFrontendOnly
-	if err := server.Write(ctx, prev, args.LastID, actor.FromContext(ctx).UID); err != nil {
+	if err := r.configurationServer.Write(ctx, prev, args.LastID, actor.FromContext(ctx).UID); err != nil {
 		return false, err
 	}
 
@@ -349,7 +347,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 			r.logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
-	return server.NeedServerRestart(), nil
+	return r.configurationServer.NeedServerRestart(), nil
 }
 
 var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS", "false", "When SITE_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))

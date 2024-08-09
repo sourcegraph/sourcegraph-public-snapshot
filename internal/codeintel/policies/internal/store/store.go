@@ -20,7 +20,7 @@ type Store interface {
 	GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error)
 	GetConfigurationPolicyByID(ctx context.Context, id int) (shared.ConfigurationPolicy, bool, error)
 	CreateConfigurationPolicy(ctx context.Context, configurationPolicy shared.ConfigurationPolicy) (shared.ConfigurationPolicy, error)
-	UpdateConfigurationPolicy(ctx context.Context, policy shared.ConfigurationPolicy) error
+	UpdateConfigurationPolicy(ctx context.Context, policy shared.ConfigurationPolicyPatch) error
 	DeleteConfigurationPolicyByID(ctx context.Context, id int) error
 
 	// Repository matches
