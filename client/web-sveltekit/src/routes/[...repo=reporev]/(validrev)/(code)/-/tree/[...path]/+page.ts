@@ -1,9 +1,11 @@
+import { redirect } from '@sveltejs/kit'
+
 import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
 import { fetchTreeEntries } from '$lib/repo/api/tree'
 import { findReadme } from '$lib/repo/tree'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
-import { redirect } from '@sveltejs/kit'
+
 import { DepotChangelist } from '../../../../../layout.gql'
 
 import type { PageLoad } from './$types'
@@ -20,7 +22,7 @@ export const load: PageLoad = async ({ parent, params, url }) => {
         const changelistInfo = await client
             .query(DepotChangelist, {
                 depotName: repoName,
-                revision: revision
+                revision: revision,
             })
             .then(result => result.data?.repository?.commit?.perforceChangelist)
 
@@ -30,7 +32,6 @@ export const load: PageLoad = async ({ parent, params, url }) => {
             redirectURL.pathname = `${repoName}@changelist/${changelistInfo?.cid}/-/tree/${filePath}`
             redirect(301, redirectURL)
         }
-
     }
 
     const treeEntries = resolvedRevision
