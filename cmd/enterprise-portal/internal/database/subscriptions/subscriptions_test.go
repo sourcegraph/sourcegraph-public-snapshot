@@ -199,6 +199,22 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		assert.Equal(t, s1.ID, ss[0].ID)
 	})
 
+	t.Run("list by not archived", func(t *testing.T) {
+		t.Parallel()
+
+		ss, err := s.List(
+			ctx,
+			subscriptions.ListEnterpriseSubscriptionsOptions{
+				IsArchived: pointers.Ptr(false),
+			},
+		)
+		require.NoError(t, err)
+		assert.NotEmpty(t, ss)
+		for _, s := range ss {
+			assert.Nil(t, s.ArchivedAt)
+		}
+	})
+
 	t.Run("list with page size", func(t *testing.T) {
 		t.Parallel()
 
