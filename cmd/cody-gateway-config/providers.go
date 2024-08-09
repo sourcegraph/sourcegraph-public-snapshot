@@ -5,6 +5,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func newProvider(id, name string) types.Provider {
+	return types.Provider{
+		ID:          types.ProviderID(id),
+		DisplayName: name,
+	}
+}
+
 // GetProviders returns all providers known by Cody Gateway.
 func GetProviders() ([]types.Provider, error) {
 	// ================================================
@@ -24,6 +31,8 @@ func GetProviders() ([]types.Provider, error) {
 	// Validate the Provider data.
 	for _, provider := range allProviders {
 		if provider.ClientSideConfig != nil || provider.ServerSideConfig != nil {
+			// This is because the raw LLM model data we share shouldn't contain any
+			// specific configuration details, such as API keys.
 			return nil, errors.Errorf("provider %q has configuration attached, but should not")
 		}
 	}

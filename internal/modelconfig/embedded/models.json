@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "revision": "0.0.0+dev",
+  "revision": "1.0.0-66b659dd",
   "providers": [
     {
       "id": "anthropic",
@@ -122,14 +122,27 @@
       "capabilities": ["autocomplete"],
       "category": "speed",
       "status": "stable",
-      "tier": "pro",
+      "tier": "free",
       "contextWindow": {
         "maxInputTokens": 2048,
         "maxOutputTokens": 256
       }
     },
     {
-      "modelRef": "google::v1::gemini-1.5-pro-latest",
+      "modelRef": "fireworks::v1::deepseek",
+      "displayName": "DeepSeek",
+      "modelName": "accounts/sourcegraph/models/deepseek-coder-7b-base",
+      "capabilities": ["autocomplete"],
+      "category": "speed",
+      "status": "stable",
+      "tier": "free",
+      "contextWindow": {
+        "maxInputTokens": 2048,
+        "maxOutputTokens": 256
+      }
+    },
+    {
+      "modelRef": "google::v1::gemini-1.5-pro",
       "displayName": "Gemini 1.5 Pro",
       "modelName": "gemini-1.5-pro-latest",
       "capabilities": ["autocomplete", "chat"],
@@ -142,7 +155,7 @@
       }
     },
     {
-      "modelRef": "google::v1::gemini-1.5-flash-latest",
+      "modelRef": "google::v1::gemini-1.5-flash",
       "displayName": "Gemini 1.5 Flash",
       "modelName": "gemini-1.5-flash-latest",
       "capabilities": ["autocomplete", "chat"],

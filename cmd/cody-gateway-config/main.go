@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"slices"
+	"time"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway-config/models"
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig"
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -66,17 +69,18 @@ func main() {
 }
 
 func GenerateModelConfigurationDoc() (*types.ModelConfiguration, error) {
-
 	providers, err := GetProviders()
 	if err != nil {
 		return nil, errors.Wrap(err, "getting providers")
 	}
 
-	dotcomModels, err := GetCodyFreeProModels()
-	if err != nil {
-		return nil, errors.Wrap(err, "getting Cody Free/Pro models")
-	}
-
+	allModels := slices.Concat(
+		models.AllAnthropicModels(),
+		models.AllFireworksModels(),
+		models.AllGoogleModels(),
+		models.AllMistralModels(),
+		models.AllOpenAIModels(),
+	)
 	modelCfg := types.ModelConfiguration{
 		SchemaVersion: types.CurrentModelSchemaVersion,
 
@@ -86,11 +90,11 @@ func GenerateModelConfigurationDoc() (*types.ModelConfiguration, error) {
 		// PR, which would have a different SHA than in main...
 		//
 		// See internal/version/version.go for reference.
-		Revision: "0.0.0+dev",
+		Revision: fmt.Sprintf("1.0.0-%x", time.Now().Unix()),
 
 		Providers: providers,
 		// There are no Cody Enterprise-only models at this time.
-		Models: dotcomModels,
+		Models: allModels,
 
 		DefaultModels: types.DefaultModels{
 			Chat:           types.ModelRef("anthropic::2023-06-01::claude-3.5-sonnet"),

@@ -132,10 +132,17 @@ func ValidateModelConfig(cfg *types.ModelConfiguration) error {
 		}
 	}
 
+	seenModels := make(map[types.ModelRef]bool)
 	for _, model := range cfg.Models {
 		if err := validateModel(model); err != nil {
 			return errors.Wrapf(err, "validating model %q", model.ModelRef)
 		}
+
+		// Check for dupes.
+		if seenModels[model.ModelRef] {
+			return errors.Errorf("duplicate model %q", model.ModelRef)
+		}
+		seenModels[model.ModelRef] = true
 
 		// Verify the model is referencing a known provider.
 		var forKnownProvider bool

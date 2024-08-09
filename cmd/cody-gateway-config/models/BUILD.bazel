@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "models",
+    srcs = [
+        "anthropic.go",
+        "fireworks.go",
+        "google.go",
+        "mistral.go",
+        "openai.go",
+        "util.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway-config/models",
+    visibility = ["//visibility:public"],
+    deps = ["//internal/modelconfig/types"],
+)

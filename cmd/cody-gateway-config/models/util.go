@@ -1,4 +1,4 @@
-package main
+package models
 
 import (
 	"fmt"
@@ -6,16 +6,38 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 )
 
+const (
+	// Maximum number of tokens Cody Gateway allows to be sent in responses.
+	// BEFORE you can change this value, you MUST first update Cody Gateway's
+	// abuse-configuration settings. Otherwise the calling user will be flagged
+	// and/or banned!
+	maxCodyGatewayOutputTokens = 4000
+)
+
+var (
+	chatAndEdit = []types.ModelCapability{
+		types.ModelCapabilityAutocomplete,
+		types.ModelCapabilityChat,
+	}
+	editOnly = []types.ModelCapability{
+		types.ModelCapabilityAutocomplete,
+	}
+
+	// Standard context window sizes.
+	standardCtxWindow = types.ContextWindow{
+		MaxInputTokens:  7_000,
+		MaxOutputTokens: maxCodyGatewayOutputTokens,
+	}
+	// Higher context window for newer LLMs.
+	expandedCtxWindow = types.ContextWindow{
+		MaxInputTokens:  30_000,
+		MaxOutputTokens: maxCodyGatewayOutputTokens,
+	}
+)
+
 func mRef(providerApiVerRef, modelID string) types.ModelRef {
 	raw := fmt.Sprintf("%s::%s", providerApiVerRef, modelID)
 	return types.ModelRef(raw)
-}
-
-func newProvider(id, name string) types.Provider {
-	return types.Provider{
-		ID:          types.ProviderID(id),
-		DisplayName: name,
-	}
 }
 
 type modelIdentity struct {

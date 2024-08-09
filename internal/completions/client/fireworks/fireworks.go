@@ -14,6 +14,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// NOTE: Here are all sorts of models that are "supported" right now. However,
+// many of these were for one-off experiments that are no longer running and
+// can be safely removed.
+//
+// When we update Sourcegraph.com to use the "modelConfiguration" feature, we
+// will start putting experiments
+// SEE: PRIME-470, AI-183.
+
 // Single-tenant model identifiers
 const Starcoder16bSingleTenant = "accounts/sourcegraph/models/starcoder-16b"
 
