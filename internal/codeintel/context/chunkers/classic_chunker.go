@@ -15,10 +15,10 @@ func NewClassicChunker(chunkOptions *ChunkOptions) *ClassicChunker {
 	return &ClassicChunker{chunkOptions: chunkOptions}
 }
 
-func (cc *ClassicChunker) Chunk(content, filename string) []context.EmbeddableChunk {
+func (cc *ClassicChunker) Chunk(content, filename string) ([]context.EmbeddableChunk, error) {
 	return context.SplitIntoEmbeddableChunks(content, filename, context.SplitOptions{
 		NoSplitTokensThreshold:         cc.chunkOptions.NoSplitTokensThreshold,
 		ChunkTokensThreshold:           cc.chunkOptions.ChunkTokensThreshold,
 		ChunkEarlySplitTokensThreshold: cc.chunkOptions.ChunkEarlySplitTokensThreshold,
-	})
+	}), nil
 }

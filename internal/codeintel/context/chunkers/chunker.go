@@ -3,7 +3,7 @@ package chunkers
 import "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
 
 type Chunker interface {
-	Chunk(content, filename string) []context.EmbeddableChunk
+	Chunk(content, filename string) ([]context.EmbeddableChunk, error)
 }
 
 type ChunkOptions struct {

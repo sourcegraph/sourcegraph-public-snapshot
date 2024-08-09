@@ -43,12 +43,12 @@ func (ts *TreeSitterChunkerSuite) TestTreeSitterChunker() {
 	ts.NoError(err)
 	printTree(node, content, "")
 
-	chunks := tsc.Chunk(content, "foo.js")
+	chunks, err := tsc.Chunk(content, "fib.js")
+	ts.NoError(err)
 	fmt.Println()
-
 	fmt.Println("\nchunks")
 	for _, chunk := range chunks {
-		fmt.Println(chunk)
+		fmt.Printf("chunk (len %d, start line %d, end line %d): ```\n%s```\n", len(chunk.Content), chunk.StartLine, chunk.EndLine, chunk.Content)
 	}
 
 	reconstructedContent := ""
@@ -97,13 +97,27 @@ func (ts *TreeSitterChunkerSuite) testTreeSitterChunker(filename string, expecte
 	ts.NoError(err)
 	content := string(fileBytes)
 
-	chunks := tsc.Chunk(content, filename)
+	chunks, err := tsc.Chunk(content, filename)
+	ts.NoError(err)
 	reconstructedContent := ""
-	for _, chunk := range chunks {
-		// ts.Equal(expectedChunks[i], chunk)
+	for i, chunk := range chunks {
+		if expectedChunks != nil {
+			ts.Equal(expectedChunks[i].StartLine, chunk.StartLine)
+			ts.Equal(expectedChunks[i].EndLine, chunk.EndLine)
+		}
+		if i > 0 {
+			ts.Equal(chunks[i-1].EndLine, chunk.StartLine)
+		}
+		ts.Equal(strings.Count(chunk.Content, "\n"), chunk.EndLine-chunk.StartLine)
+
 		reconstructedContent += chunk.Content
-		// fmt.Printf("chunk (len %d, start line %d, end line %d): ```\n%s```\n", len(chunk.Content), chunk.StartLine, chunk.EndLine, chunk.Content)
 	}
 
-	ts.Equal(strings.TrimSpace(content), strings.TrimSpace(reconstructedContent))
+	ts.Equal(strings.ReplaceAll(strings.TrimSpace(content), "\\n", ""), strings.ReplaceAll(strings.TrimSpace(reconstructedContent), "\\n", ""))
+
+	//for _, chunk := range chunks {
+	//	// ts.Equal(expectedChunks[i], chunk)
+	//	fmt.Println("#############################################")
+	//	fmt.Printf("chunk (len %d, start line %d, end line %d): ```\n%s```\n", len(chunk.Content), chunk.StartLine, chunk.EndLine, chunk.Content)
+	//}
 }

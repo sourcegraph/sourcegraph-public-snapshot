@@ -52,13 +52,17 @@ func NewTreeSitterChunker(chunkOptions *ChunkOptions) *TreeSitterChunker {
 	return &TreeSitterChunker{chunkOptions: chunkOptions}
 }
 
-func (tsc *TreeSitterChunker) Chunk(content, filename string) []ctxt.EmbeddableChunk {
+func (tsc *TreeSitterChunker) ChunkWithFallback(content, filename string) []ctxt.EmbeddableChunk {
 	chunks, err := tsc.doChunk(content, filename)
 	if err != nil {
 		// Fall back to classic chunker in case of error
-		return NewClassicChunker(tsc.chunkOptions).Chunk(content, filename)
+		chunks, _ = NewClassicChunker(tsc.chunkOptions).Chunk(content, filename)
 	}
 	return chunks
+}
+
+func (tsc *TreeSitterChunker) Chunk(content, filename string) ([]ctxt.EmbeddableChunk, error) {
+	return tsc.doChunk(content, filename)
 }
 
 func (tsc *TreeSitterChunker) doChunk(content, filename string) ([]ctxt.EmbeddableChunk, error) {
@@ -94,7 +98,7 @@ func (tsc *TreeSitterChunker) doChunk(content, filename string) ([]ctxt.Embeddab
 	for _, span := range spans {
 		curSpan = curSpan.Add(span)
 
-		if int(curSpan.Len()) > tsc.chunkOptions.CoalesceThreshold {
+		if int(curSpan.Len()) > tsc.chunkOptions.ChunkTokensThreshold*ctxt.CHARS_PER_TOKEN {
 			newSpans = append(newSpans, curSpan)
 			curSpan = Span{span.end, span.end}
 		}
@@ -107,7 +111,7 @@ func (tsc *TreeSitterChunker) doChunk(content, filename string) ([]ctxt.Embeddab
 
 	// Transform spans into chunks and filter out empty ones
 	chunks := make([]ctxt.EmbeddableChunk, 0)
-	line := 1
+	line := 0
 
 	for _, span := range spans {
 		if span.Len() < 1 {
@@ -166,6 +170,7 @@ func (tsc *TreeSitterChunker) chunkNode(node *sitter.Node) []Span {
 
 	return append(chunks, curSpan)
 }
+
 func detectLanguage(filename string) *sitter.Language {
 	lang, _ := enry.GetLanguageByExtension(path.Base(filename))
 	// TODO do we care about "safe"?
@@ -183,9 +188,9 @@ func detectLanguage(filename string) *sitter.Language {
 	switch lang {
 	case "Python":
 		return python.GetLanguage()
-	case "Javascript", "JSX":
+	case "JavaScript", "JSX":
 		return javascript.GetLanguage()
-	case "Typescript":
+	case "TypeScript":
 		return typescript.GetLanguage()
 	case "TSX":
 		return tsx.GetLanguage()
