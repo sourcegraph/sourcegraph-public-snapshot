@@ -154,7 +154,7 @@ func RedisKeyValue(pool *redis.Pool) KeyValue {
 	return &redisKeyValue{pool: pool}
 }
 
-func (r redisKeyValue) Get(key string) Value {
+func (r *redisKeyValue) Get(key string) Value {
 	return r.do("GET", r.prefix+key)
 }
 

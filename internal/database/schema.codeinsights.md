@@ -5,11 +5,9 @@
  insight_series_id | integer                  |           | not null | 
  recording_time    | timestamp with time zone |           | not null | 
  snapshot          | boolean                  |           | not null | 
- tenant_id         | integer                  |           |          | 
 Indexes:
     "archived_insight_series_recor_insight_series_id_recording_t_key" UNIQUE CONSTRAINT, btree (insight_series_id, recording_time)
 Foreign-key constraints:
-    "archived_insight_series_recording_times_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
     "insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
 
 ```
@@ -25,11 +23,9 @@ Foreign-key constraints:
  repo_name_id          | integer                  |           |          | 
  original_repo_name_id | integer                  |           |          | 
  capture               | text                     |           |          | 
- tenant_id             | integer                  |           |          | 
 Check constraints:
     "check_repo_fields_specifity" CHECK (repo_id IS NULL AND repo_name_id IS NULL AND original_repo_name_id IS NULL OR repo_id IS NOT NULL AND repo_name_id IS NOT NULL AND original_repo_name_id IS NOT NULL)
 Foreign-key constraints:
-    "archived_series_points_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
     "insight_series_series_id_fkey" FOREIGN KEY (series_id) REFERENCES insight_series(series_id) ON DELETE CASCADE
 
 ```
@@ -46,11 +42,8 @@ Foreign-key constraints:
  deleted_at         | timestamp without time zone |           |          | 
  save               | boolean                     |           | not null | false
  type               | text                        |           | not null | 'standard'::text
- tenant_id          | integer                     |           |          | 
 Indexes:
     "dashboard_pk" PRIMARY KEY, btree (id)
-Foreign-key constraints:
-    "dashboard_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 Referenced by:
     TABLE "dashboard_grants" CONSTRAINT "dashboard_grants_dashboard_id_fk" FOREIGN KEY (dashboard_id) REFERENCES dashboard(id) ON DELETE CASCADE
     TABLE "dashboard_insight_view" CONSTRAINT "dashboard_insight_view_dashboard_id_fk" FOREIGN KEY (dashboard_id) REFERENCES dashboard(id) ON DELETE CASCADE
@@ -80,7 +73,6 @@ Metadata for dashboards of insights
  user_id      | integer |           |          | 
  org_id       | integer |           |          | 
  global       | boolean |           |          | 
- tenant_id    | integer |           |          | 
 Indexes:
     "dashboard_grants_pk" PRIMARY KEY, btree (id)
     "dashboard_grants_dashboard_id_index" btree (dashboard_id)
@@ -89,7 +81,6 @@ Indexes:
     "dashboard_grants_user_id_idx" btree (user_id)
 Foreign-key constraints:
     "dashboard_grants_dashboard_id_fk" FOREIGN KEY (dashboard_id) REFERENCES dashboard(id) ON DELETE CASCADE
-    "dashboard_grants_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -108,7 +99,6 @@ Permission grants for dashboards. Each row should represent a unique principal (
  id              | integer |           | not null | nextval('dashboard_insight_view_id_seq'::regclass)
  dashboard_id    | integer |           | not null | 
  insight_view_id | integer |           | not null | 
- tenant_id       | integer |           |          | 
 Indexes:
     "dashboard_insight_view_pk" PRIMARY KEY, btree (id)
     "unique_dashboard_id_insight_view_id" UNIQUE CONSTRAINT, btree (dashboard_id, insight_view_id)
@@ -117,7 +107,6 @@ Indexes:
 Foreign-key constraints:
     "dashboard_insight_view_dashboard_id_fk" FOREIGN KEY (dashboard_id) REFERENCES dashboard(id) ON DELETE CASCADE
     "dashboard_insight_view_insight_view_id_fk" FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE
-    "dashboard_insight_view_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -149,14 +138,11 @@ Foreign-key constraints:
  supports_augmentation         | boolean                     |           | not null | true
  repository_criteria           | text                        |           |          | 
  query_old                     | text                        |           |          | 
- tenant_id                     | integer                     |           |          | 
 Indexes:
     "insight_series_pkey" PRIMARY KEY, btree (id)
     "insight_series_series_id_unique_idx" UNIQUE, btree (series_id)
     "insight_series_deleted_at_idx" btree (deleted_at)
     "insight_series_next_recording_after_idx" btree (next_recording_after)
-Foreign-key constraints:
-    "insight_series_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 Referenced by:
     TABLE "insight_series_backfill" CONSTRAINT "insight_series_backfill_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "archived_insight_series_recording_times" CONSTRAINT "insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
@@ -202,12 +188,10 @@ Data series that comprise code insights.
  repo_iterator_id | integer          |           |          | 
  estimated_cost   | double precision |           |          | 
  state            | text             |           | not null | 'new'::text
- tenant_id        | integer          |           |          | 
 Indexes:
     "insight_series_backfill_pk" PRIMARY KEY, btree (id)
 Foreign-key constraints:
     "insight_series_backfill_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
-    "insight_series_backfill_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 Referenced by:
     TABLE "insights_background_jobs" CONSTRAINT "insights_background_jobs_backfill_id_fkey" FOREIGN KEY (backfill_id) REFERENCES insight_series_backfill(id) ON DELETE CASCADE
 
@@ -222,13 +206,11 @@ Referenced by:
  reason    | text                        |           | not null | 
  time      | timestamp without time zone |           | not null | 
  repo_id   | integer                     |           |          | 
- tenant_id | integer                     |           |          | 
 Indexes:
     "insight_series_incomplete_points_pk" PRIMARY KEY, btree (id)
     "insight_series_incomplete_points_unique_idx" UNIQUE, btree (series_id, reason, "time", repo_id)
 Foreign-key constraints:
     "insight_series_incomplete_points_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
-    "insight_series_incomplete_points_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -239,12 +221,10 @@ Foreign-key constraints:
  insight_series_id | integer                  |           |          | 
  recording_time    | timestamp with time zone |           |          | 
  snapshot          | boolean                  |           |          | 
- tenant_id         | integer                  |           |          | 
 Indexes:
     "insight_series_recording_time_insight_series_id_recording_t_key" UNIQUE CONSTRAINT, btree (insight_series_id, recording_time)
 Foreign-key constraints:
     "insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
-    "insight_series_recording_times_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -266,12 +246,9 @@ Foreign-key constraints:
  series_sort_direction             | series_sort_direction_enum |           |          | 
  series_limit                      | integer                    |           |          | 
  series_num_samples                | integer                    |           |          | 
- tenant_id                         | integer                    |           |          | 
 Indexes:
     "insight_view_pkey" PRIMARY KEY, btree (id)
     "insight_view_unique_id_unique_idx" UNIQUE, btree (unique_id)
-Foreign-key constraints:
-    "insight_view_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 Referenced by:
     TABLE "dashboard_insight_view" CONSTRAINT "dashboard_insight_view_insight_view_id_fk" FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE
     TABLE "insight_view_grants" CONSTRAINT "insight_view_grants_insight_view_id_fk" FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE
@@ -302,7 +279,6 @@ Views for insight data series. An insight view is an abstraction on top of an in
  user_id         | integer |           |          | 
  org_id          | integer |           |          | 
  global          | boolean |           |          | 
- tenant_id       | integer |           |          | 
 Indexes:
     "insight_view_grants_pk" PRIMARY KEY, btree (id)
     "insight_view_grants_global_idx" btree (global) WHERE global IS TRUE
@@ -311,7 +287,6 @@ Indexes:
     "insight_view_grants_user_id_idx" btree (user_id)
 Foreign-key constraints:
     "insight_view_grants_insight_view_id_fk" FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE
-    "insight_view_grants_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -331,13 +306,11 @@ Permission grants for insight views. Each row should represent a unique principa
  insight_series_id | integer |           | not null | 
  label             | text    |           |          | 
  stroke            | text    |           |          | 
- tenant_id         | integer |           |          | 
 Indexes:
     "insight_view_series_pkey" PRIMARY KEY, btree (insight_view_id, insight_series_id)
 Foreign-key constraints:
     "insight_view_series_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id)
     "insight_view_series_insight_view_id_fkey" FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE
-    "insight_view_series_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -369,13 +342,11 @@ Join table to correlate data series with insight views
  worker_hostname   | text                     |           | not null | ''::text
  cancel            | boolean                  |           | not null | false
  backfill_id       | integer                  |           |          | 
- tenant_id         | integer                  |           |          | 
 Indexes:
     "insights_background_jobs_pkey" PRIMARY KEY, btree (id)
     "insights_jobs_state_idx" btree (state)
 Foreign-key constraints:
     "insights_background_jobs_backfill_id_fkey" FOREIGN KEY (backfill_id) REFERENCES insight_series_backfill(id) ON DELETE CASCADE
-    "insights_background_jobs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -398,27 +369,21 @@ Foreign-key constraints:
  cancel            | boolean                  |           | not null | false
  series_id         | integer                  |           | not null | 
  series_id_string  | text                     |           | not null | ''::text
- tenant_id         | integer                  |           |          | 
 Indexes:
     "insights_data_retention_jobs_pkey" PRIMARY KEY, btree (id)
-Foreign-key constraints:
-    "insights_data_retention_jobs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
 # Table "public.metadata"
 ```
-  Column   |  Type   | Collation | Nullable |               Default                
------------+---------+-----------+----------+--------------------------------------
- id        | bigint  |           | not null | nextval('metadata_id_seq'::regclass)
- metadata  | jsonb   |           | not null | 
- tenant_id | integer |           |          | 
+  Column  |  Type  | Collation | Nullable |               Default                
+----------+--------+-----------+----------+--------------------------------------
+ id       | bigint |           | not null | nextval('metadata_id_seq'::regclass)
+ metadata | jsonb  |           | not null | 
 Indexes:
     "metadata_pkey" PRIMARY KEY, btree (id)
     "metadata_metadata_unique_idx" UNIQUE, btree (metadata)
     "metadata_metadata_gin" gin (metadata)
-Foreign-key constraints:
-    "metadata_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 Referenced by:
     TABLE "series_points" CONSTRAINT "series_points_metadata_id_fkey" FOREIGN KEY (metadata_id) REFERENCES metadata(id) ON DELETE CASCADE DEFERRABLE
 
@@ -464,11 +429,8 @@ Indexes:
  success_count    | integer                     |           | not null | 0
  repos            | integer[]                   |           |          | 
  repo_cursor      | integer                     |           |          | 0
- tenant_id        | integer                     |           |          | 
 Indexes:
     "repo_iterator_pk" PRIMARY KEY, btree (id)
-Foreign-key constraints:
-    "repo_iterator_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 Referenced by:
     TABLE "repo_iterator_errors" CONSTRAINT "repo_iterator_fk" FOREIGN KEY (repo_iterator_id) REFERENCES repo_iterator(id)
 
@@ -483,31 +445,26 @@ Referenced by:
  repo_id          | integer |           | not null | 
  error_message    | text[]  |           | not null | 
  failure_count    | integer |           |          | 1
- tenant_id        | integer |           |          | 
 Indexes:
     "repo_iterator_errors_pk" PRIMARY KEY, btree (id)
     "repo_iterator_errors_fk_idx" btree (repo_iterator_id)
 Foreign-key constraints:
-    "repo_iterator_errors_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
     "repo_iterator_fk" FOREIGN KEY (repo_iterator_id) REFERENCES repo_iterator(id)
 
 ```
 
 # Table "public.repo_names"
 ```
-  Column   |  Type   | Collation | Nullable |                Default                 
------------+---------+-----------+----------+----------------------------------------
- id        | bigint  |           | not null | nextval('repo_names_id_seq'::regclass)
- name      | citext  |           | not null | 
- tenant_id | integer |           |          | 
+ Column |  Type  | Collation | Nullable |                Default                 
+--------+--------+-----------+----------+----------------------------------------
+ id     | bigint |           | not null | nextval('repo_names_id_seq'::regclass)
+ name   | citext |           | not null | 
 Indexes:
     "repo_names_pkey" PRIMARY KEY, btree (id)
     "repo_names_name_unique_idx" UNIQUE, btree (name)
     "repo_names_name_trgm" gin (lower(name::text) gin_trgm_ops)
 Check constraints:
     "check_name_nonempty" CHECK (name <> ''::citext)
-Foreign-key constraints:
-    "repo_names_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 Referenced by:
     TABLE "series_points" CONSTRAINT "series_points_original_repo_name_id_fkey" FOREIGN KEY (original_repo_name_id) REFERENCES repo_names(id) ON DELETE CASCADE DEFERRABLE
     TABLE "series_points" CONSTRAINT "series_points_repo_name_id_fkey" FOREIGN KEY (repo_name_id) REFERENCES repo_names(id) ON DELETE CASCADE DEFERRABLE
@@ -532,7 +489,6 @@ Records repository names, both historical and present, using a unique repository
  repo_name_id          | integer                  |           |          | 
  original_repo_name_id | integer                  |           |          | 
  capture               | text                     |           |          | 
- tenant_id             | integer                  |           |          | 
 Indexes:
     "series_points_original_repo_name_id_btree" btree (original_repo_name_id)
     "series_points_repo_id_btree" btree (repo_id)
@@ -545,7 +501,6 @@ Foreign-key constraints:
     "series_points_metadata_id_fkey" FOREIGN KEY (metadata_id) REFERENCES metadata(id) ON DELETE CASCADE DEFERRABLE
     "series_points_original_repo_name_id_fkey" FOREIGN KEY (original_repo_name_id) REFERENCES repo_names(id) ON DELETE CASCADE DEFERRABLE
     "series_points_repo_name_id_fkey" FOREIGN KEY (repo_name_id) REFERENCES repo_names(id) ON DELETE CASCADE DEFERRABLE
-    "series_points_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -577,7 +532,6 @@ Records events over time associated with a repository (or none, i.e. globally) w
  repo_name_id          | integer                  |           |          | 
  original_repo_name_id | integer                  |           |          | 
  capture               | text                     |           |          | 
- tenant_id             | integer                  |           |          | 
 Indexes:
     "series_points_snapshots_original_repo_name_id_idx" btree (original_repo_name_id)
     "series_points_snapshots_repo_id_idx" btree (repo_id)
@@ -586,8 +540,6 @@ Indexes:
     "series_points_snapshots_series_id_repo_id_time_idx" btree (series_id, repo_id, "time")
 Check constraints:
     "check_repo_fields_specifity" CHECK (repo_id IS NULL AND repo_name_id IS NULL AND original_repo_name_id IS NULL OR repo_id IS NOT NULL AND repo_name_id IS NOT NULL AND original_repo_name_id IS NOT NULL)
-Foreign-key constraints:
-    "series_points_snapshots_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -607,27 +559,6 @@ Indexes:
 Check constraints:
     "tenant_name_length" CHECK (char_length(name) <= 32 AND char_length(name) >= 3)
     "tenant_name_valid_chars" CHECK (name ~ '^[a-z](?:[a-z0-9\_-])*[a-z0-9]$'::text)
-Referenced by:
-    TABLE "archived_insight_series_recording_times" CONSTRAINT "archived_insight_series_recording_times_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "archived_series_points" CONSTRAINT "archived_series_points_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "dashboard_grants" CONSTRAINT "dashboard_grants_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "dashboard_insight_view" CONSTRAINT "dashboard_insight_view_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "dashboard" CONSTRAINT "dashboard_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "insight_series_backfill" CONSTRAINT "insight_series_backfill_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "insight_series_incomplete_points" CONSTRAINT "insight_series_incomplete_points_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "insight_series_recording_times" CONSTRAINT "insight_series_recording_times_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "insight_series" CONSTRAINT "insight_series_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "insight_view_grants" CONSTRAINT "insight_view_grants_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "insight_view_series" CONSTRAINT "insight_view_series_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "insight_view" CONSTRAINT "insight_view_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "insights_background_jobs" CONSTRAINT "insights_background_jobs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "insights_data_retention_jobs" CONSTRAINT "insights_data_retention_jobs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "metadata" CONSTRAINT "metadata_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "repo_iterator_errors" CONSTRAINT "repo_iterator_errors_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "repo_iterator" CONSTRAINT "repo_iterator_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "repo_names" CONSTRAINT "repo_names_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "series_points_snapshots" CONSTRAINT "series_points_snapshots_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "series_points" CONSTRAINT "series_points_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 

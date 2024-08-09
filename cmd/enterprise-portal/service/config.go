@@ -4,6 +4,7 @@ import (
 	"time"
 
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/routines/licenseexpiration"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayevents"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/cloudsql"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
@@ -26,6 +27,8 @@ type Config struct {
 	CodyGatewayEvents *codygatewayevents.ServiceBigQueryOptions
 
 	SAMS SAMSConfig
+
+	LicenseExpirationChecker licenseexpiration.Config
 }
 
 type SAMSConfig struct {
@@ -67,4 +70,12 @@ func (c *Config) Load(env *runtime.Env) {
 			EventsTable: codyGatewayEventsTable,
 		}
 	}
+
+	c.LicenseExpirationChecker.Interval = env.GetOptionalInterval(
+		"LICENSE_EXPIRATION_CHECKER_INTERVAL",
+		"Interval at which to run license expiration checks. If not set, checks are not run.")
+	c.LicenseExpirationChecker.SlackWebhookURL = env.GetOptional(
+		"LICENSE_EXPIRATION_CHECKER_SLACK_WEBHOOK_URL",
+		"Destination webhook for expired licenses. If not set, messages are logged.",
+	)
 }

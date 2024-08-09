@@ -12,8 +12,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/license"
@@ -246,7 +246,6 @@ func (i *Importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 				return pointers.Ptr(utctime.FromTime(*dotcomSub.ArchivedAt))
 			}(),
 			SalesforceSubscriptionID: activeLicense.SalesforceSubscriptionID,
-			SalesforceOpportunityID:  activeLicense.SalesforceOpportunityID,
 		},
 		conditions...,
 	); err != nil {

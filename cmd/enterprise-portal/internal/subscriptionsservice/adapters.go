@@ -40,7 +40,6 @@ func convertLicenseAttrsToProto(attrs *dotcomdb.LicenseAttributes) *subscription
 					SalesforceOpportunityId:  pointers.DerefZero(attrs.SalesforceOpportunityID),
 				},
 				LicenseKey: attrs.LicenseKey,
-				InstanceId: pointers.DerefZero(attrs.InstanceID),
 			},
 		},
 	}

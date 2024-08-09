@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/pgxerrors"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/upsert"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -60,8 +60,6 @@ type Subscription struct {
 
 	// SalesforceSubscriptionID associated with this Enterprise subscription.
 	SalesforceSubscriptionID *string
-	// SalesforceOpportunityID associated with this Enterprise subscription.
-	SalesforceOpportunityID *string
 }
 
 type SubscriptionWithConditions struct {
@@ -79,7 +77,6 @@ func subscriptionTableColumns() []string {
 		"updated_at",
 		"archived_at",
 		"salesforce_subscription_id",
-		"salesforce_opportunity_id",
 
 		subscriptionConditionJSONBAgg(),
 	}
@@ -96,7 +93,6 @@ func scanSubscription(row pgx.Row) (*SubscriptionWithConditions, error) {
 		&s.UpdatedAt,
 		&s.ArchivedAt,
 		&s.SalesforceSubscriptionID,
-		&s.SalesforceOpportunityID,
 		&s.Conditions,
 	)
 	if err != nil {
@@ -206,7 +202,6 @@ type UpsertSubscriptionOptions struct {
 	ArchivedAt *utctime.Time
 
 	SalesforceSubscriptionID *string
-	SalesforceOpportunityID  *string
 
 	// ForceUpdate indicates whether to force update all fields of the subscription
 	// record.
@@ -231,7 +226,6 @@ func (opts UpsertSubscriptionOptions) apply(ctx context.Context, db upsert.Exece
 		upsert.WithIgnoreZeroOnForceUpdate())
 
 	upsert.Field(b, "salesforce_subscription_id", opts.SalesforceSubscriptionID)
-	upsert.Field(b, "salesforce_opportunity_id", opts.SalesforceOpportunityID)
 	return b.Exec(ctx, db)
 }
 

@@ -204,7 +204,9 @@ playwright_test_bin.playwright_test(
         ],
     ) + [
         "playwright.config.ts",
+        "tsconfig.json",
         ":generate-graphql-types",
+        ":sveltekit-sync",
         ":test_app_assets",
         "//cmd/frontend/graphqlbackend:graphql_schema",
         "//dev/tools:chromium",
