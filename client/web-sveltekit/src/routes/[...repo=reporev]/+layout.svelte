@@ -62,6 +62,7 @@
         { path: '/-/stats/contributors', icon: ILucideUsers, label: 'Contributors', visibility: 'user' },
     ]
     const perforceNavEntries: MenuEntry[] = [
+        { path: '', icon: ILucideCode, label: 'Code', visibility: 'user', preserveRevision: true },
         {
             path: '/-/changelists',
             icon: ILucideGitCommitVertical,
