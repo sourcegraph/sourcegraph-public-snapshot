@@ -306,8 +306,48 @@ func TestApplySiteConfig(t *testing.T) {
 		})
 	})
 
+	t.Run("FilterOutDeprecatedModels", func(t *testing.T) {
+		// The source config contains four models, one with each status.
+		sourcegraphSuppliedConfig := types.ModelConfiguration{
+			Providers: []types.Provider{
+				{
+					ID: types.ProviderID("test-provider"),
+				},
+			},
+			Models: []types.Model{
+				validModelWith(types.ModelOverride{
+					Status: types.ModelStatusExperimental,
+				}),
+				validModelWith(types.ModelOverride{
+					Status: types.ModelStatusBeta,
+				}),
+				validModelWith(types.ModelOverride{
+					Status: types.ModelStatusStable,
+				}),
+				validModelWith(types.ModelOverride{
+					Status: types.ModelStatusDeprecated,
+				}),
+			},
+		}
+
+		// The default Cody configuration: use default settings with no customization.
+		siteConfig := types.SiteModelConfiguration{
+			SourcegraphModelConfig: &types.SourcegraphModelConfig{},
+		}
+
+		gotConfig, err := applySiteConfig(&sourcegraphSuppliedConfig, &siteConfig)
+		require.NoError(t, err)
+
+		assert.Equal(t, 3, len(gotConfig.Models))
+		for _, model := range gotConfig.Models {
+			if model.Status == types.ModelStatusDeprecated {
+				t.Error("Deprecated models must be filtered out")
+			}
+		}
+	})
+
 	// This test covers the situation where the the default models from the base configuration
-	// are removed due to model filter, but the site configut doesn't provide valid values.
+	// are removed due to model filter, but the site config doesn't provide valid values.
 	t.Run("ReplacedDefaultModels", func(t *testing.T) {
 		testModel := func(id string, capabilities []types.ModelCapability, category types.ModelCategory) types.Model {
 			m := validModelWith(types.ModelOverride{

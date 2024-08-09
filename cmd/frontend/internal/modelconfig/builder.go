@@ -119,6 +119,17 @@ func applySiteConfig(baseConfig *types.ModelConfiguration, siteConfig *types.Sit
 		}
 	}
 
+	// Filter out deprecated models from the merged configuration.
+	if models := mergedConfig.Models; models != nil {
+		var filteredModels []types.Model
+		for _, model := range models {
+			if model.Status != types.ModelStatusDeprecated {
+				filteredModels = append(filteredModels, model)
+			}
+		}
+		mergedConfig.Models = filteredModels
+	}
+
 	// Apply any ProviderOverrides from the site configuration to the mergedConfig object.
 	providerOverrideLookup := map[types.ProviderID]*types.ProviderOverride{}
 	for i := range siteConfig.ProviderOverrides {
