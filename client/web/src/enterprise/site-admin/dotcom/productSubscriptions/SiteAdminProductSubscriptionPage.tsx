@@ -159,9 +159,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
         setShowGenerate(false)
     }, [licenses])
 
-    if (isLoading || licenses.isLoading || subscriptionUpdating) {
-        return <LoadingSpinner />
-    }
+    const isAnythingLoading = isLoading || licenses.isLoading || subscriptionUpdating || archiveLoading
 
     const created = subscription?.conditions?.find(
         condition => condition.status === EnterpriseSubscriptionCondition_Status.CREATED
@@ -207,6 +205,8 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                 }
                 className="mb-3"
             />
+            {isAnythingLoading && <LoadingSpinner />}
+
             {archiveError && <ErrorAlert className="mt-2" error={archiveError} />}
             {subscriptionUpdateError && <ErrorAlert className="mt-2" error={subscriptionUpdateError} />}
             {error && <ErrorAlert className="mt-2" error={error} />}
@@ -215,7 +215,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
 
             {subscription && (
                 <>
-                    <H3>Details</H3>
+                    <H3 className="mt-2">Details</H3>
                     <Container className="mb-3">
                         <table className="table mb-0">
                             <tbody>
@@ -247,6 +247,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                                             <EditAttributeButton
                                                 label="Edit display name"
                                                 refetch={refetch}
+                                                disabled={isAnythingLoading}
                                                 onClick={async () => {
                                                     const displayName = window.prompt(
                                                         'Enter instance display name to assign:',
@@ -282,6 +283,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                                             <EditAttributeButton
                                                 label="Edit Salesforce subscription ID"
                                                 refetch={refetch}
+                                                disabled={isAnythingLoading}
                                                 onClick={async () => {
                                                     const salesforceSubscriptionID = window.prompt(
                                                         'Enter the Salesforce subscription ID to assign:',
@@ -333,6 +335,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                                             <EditAttributeButton
                                                 label="Edit instance domain"
                                                 refetch={refetch}
+                                                disabled={isAnythingLoading}
                                                 onClick={async () => {
                                                     const instanceDomain = window.prompt(
                                                         'Enter instance domain to assign (leave empty to unassign):',
@@ -377,6 +380,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                                             <EditAttributeButton
                                                 label="Edit instance type"
                                                 refetch={refetch}
+                                                disabled={isAnythingLoading}
                                                 onClick={async () => {
                                                     const types = [
                                                         EnterpriseSubscriptionInstanceType.PRIMARY,
@@ -678,14 +682,21 @@ interface EditAttributeButtonProps {
     label: string
     onClick: () => Promise<void>
     refetch: () => void
+    disabled?: boolean
 }
 
-const EditAttributeButton: React.FunctionComponent<EditAttributeButtonProps> = ({ label, onClick, refetch }) => (
+const EditAttributeButton: React.FunctionComponent<EditAttributeButtonProps> = ({
+    label,
+    onClick,
+    refetch,
+    disabled,
+}) => (
     <Button
         size="sm"
         variant="link"
         aria-label={label}
         className="ml-1"
+        disabled={disabled}
         onClick={async () => {
             await onClick()
             refetch()
