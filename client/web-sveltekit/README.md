@@ -95,7 +95,7 @@ pnpm dev
 pnpm test:dev
 ```
 
-In CI, we run vitest and playwright via the `BUILD.bazel` file. You can run it locally with
+In CI, we run vitest and playwright via the `BUILD.bazel` file. You can run e2e tests locally with
 
 ```sh
 sg bazel test //client/web-sveltekit:e2e_test
