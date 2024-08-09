@@ -403,6 +403,11 @@ var virutalizedModelRefLookup = map[string]string{
 	"claude-3-haiku":         "claude-3-haiku-20240307",
 	"mixtral-8x7b-instruct":  "accounts/fireworks/models/mixtral-8x7b-instruct",
 	"mixtral-8x22b-instruct": "accounts/fireworks/models/mixtral-8x22b-instruct",
+
+	"deepseek": "accounts/sourcegraph/models/deepseek-coder-7b-base",
+
+	"gemini-1.5-flash": "gemini-1.5-flash-latest",
+	"gemini-1.5-pro":   "gemini-1.5-pro-latest",
 }
 
 // resolveRequestedModel loads the provider and model configuration data for whatever model the user is requesting.
