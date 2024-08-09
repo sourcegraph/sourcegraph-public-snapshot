@@ -56,7 +56,7 @@ function* enumerate<T>(iter: Iterable<T>): Generator<[number, T]> {
 function getFocusedResult(): HTMLElement | null {
     return document.activeElement &&
         document.activeElement instanceof HTMLElement &&
-        document.activeElement.dataset.focusableSearchResult === 'true'
+        'focusableSearchResult' in document.activeElement.dataset
         ? document.activeElement
         : null
 }
