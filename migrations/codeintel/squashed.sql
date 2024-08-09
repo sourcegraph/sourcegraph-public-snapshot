@@ -84,8 +84,7 @@ END $$;
 
 CREATE TABLE codeintel_last_reconcile (
     dump_id integer NOT NULL,
-    last_reconcile_at timestamp with time zone NOT NULL,
-    tenant_id integer
+    last_reconcile_at timestamp with time zone NOT NULL
 );
 
 COMMENT ON TABLE codeintel_last_reconcile IS 'Stores the last time processed LSIF data was reconciled with the other database.';
@@ -94,8 +93,7 @@ CREATE TABLE codeintel_scip_document_lookup (
     id bigint NOT NULL,
     upload_id integer NOT NULL,
     document_path text NOT NULL,
-    document_id bigint NOT NULL,
-    tenant_id integer
+    document_id bigint NOT NULL
 );
 
 COMMENT ON TABLE codeintel_scip_document_lookup IS 'A mapping from file paths to document references within a particular SCIP index.';
@@ -120,8 +118,7 @@ ALTER SEQUENCE codeintel_scip_document_lookup_id_seq OWNED BY codeintel_scip_doc
 CREATE TABLE codeintel_scip_document_lookup_schema_versions (
     upload_id integer NOT NULL,
     min_schema_version integer,
-    max_schema_version integer,
-    tenant_id integer
+    max_schema_version integer
 );
 
 COMMENT ON TABLE codeintel_scip_document_lookup_schema_versions IS 'Tracks the range of `schema_versions` values associated with each SCIP index in the [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) table.';
@@ -136,8 +133,7 @@ CREATE TABLE codeintel_scip_documents (
     id bigint NOT NULL,
     payload_hash bytea NOT NULL,
     schema_version integer NOT NULL,
-    raw_scip_payload bytea NOT NULL,
-    tenant_id integer
+    raw_scip_payload bytea NOT NULL
 );
 
 COMMENT ON TABLE codeintel_scip_documents IS 'A lookup of SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Document&patternType=standard) payloads by their hash.';
@@ -153,8 +149,7 @@ COMMENT ON COLUMN codeintel_scip_documents.raw_scip_payload IS 'The raw, canonic
 CREATE TABLE codeintel_scip_documents_dereference_logs (
     id bigint NOT NULL,
     document_id bigint NOT NULL,
-    last_removal_time timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    last_removal_time timestamp with time zone DEFAULT now() NOT NULL
 );
 
 COMMENT ON TABLE codeintel_scip_documents_dereference_logs IS 'A list of document rows that were recently dereferenced by the deletion of an index.';
@@ -188,8 +183,7 @@ CREATE TABLE codeintel_scip_metadata (
     tool_version text NOT NULL,
     tool_arguments text[] NOT NULL,
     text_document_encoding text NOT NULL,
-    protocol_version integer NOT NULL,
-    tenant_id integer
+    protocol_version integer NOT NULL
 );
 
 COMMENT ON TABLE codeintel_scip_metadata IS 'Global metadatadata about a single processed upload.';
@@ -221,8 +215,7 @@ CREATE TABLE codeintel_scip_symbol_names (
     id integer NOT NULL,
     upload_id integer NOT NULL,
     name_segment text NOT NULL,
-    prefix_id integer,
-    tenant_id integer
+    prefix_id integer
 );
 
 COMMENT ON TABLE codeintel_scip_symbol_names IS 'Stores a prefix tree of symbol names within a particular upload.';
@@ -243,8 +236,7 @@ CREATE TABLE codeintel_scip_symbols (
     reference_ranges bytea,
     implementation_ranges bytea,
     type_definition_ranges bytea,
-    symbol_id integer NOT NULL,
-    tenant_id integer
+    symbol_id integer NOT NULL
 );
 
 COMMENT ON TABLE codeintel_scip_symbols IS 'A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Symbol&patternType=standard) to path and ranges where that symbol occurs within a particular SCIP index.';
@@ -268,8 +260,7 @@ COMMENT ON COLUMN codeintel_scip_symbols.symbol_id IS 'The identifier of the seg
 CREATE TABLE codeintel_scip_symbols_schema_versions (
     upload_id integer NOT NULL,
     min_schema_version integer,
-    max_schema_version integer,
-    tenant_id integer
+    max_schema_version integer
 );
 
 COMMENT ON TABLE codeintel_scip_symbols_schema_versions IS 'Tracks the range of `schema_versions` for each index in the [`codeintel_scip_symbols`](#table-publiccodeintel_scip_symbols) table.';
@@ -285,8 +276,7 @@ CREATE TABLE rockskip_ancestry (
     repo_id integer NOT NULL,
     commit_id character varying(40) NOT NULL,
     height integer NOT NULL,
-    ancestor integer NOT NULL,
-    tenant_id integer
+    ancestor integer NOT NULL
 );
 
 CREATE SEQUENCE rockskip_ancestry_id_seq
@@ -302,8 +292,7 @@ ALTER SEQUENCE rockskip_ancestry_id_seq OWNED BY rockskip_ancestry.id;
 CREATE TABLE rockskip_repos (
     id integer NOT NULL,
     repo text NOT NULL,
-    last_accessed_at timestamp with time zone NOT NULL,
-    tenant_id integer
+    last_accessed_at timestamp with time zone NOT NULL
 );
 
 CREATE SEQUENCE rockskip_repos_id_seq
@@ -322,8 +311,7 @@ CREATE TABLE rockskip_symbols (
     deleted integer[] NOT NULL,
     repo_id integer NOT NULL,
     path text NOT NULL,
-    name text NOT NULL,
-    tenant_id integer
+    name text NOT NULL
 );
 
 CREATE SEQUENCE rockskip_symbols_id_seq
@@ -449,44 +437,8 @@ CREATE TRIGGER codeintel_scip_documents_dereference_logs_insert AFTER DELETE ON 
 
 CREATE TRIGGER codeintel_scip_symbols_schema_versions_insert AFTER INSERT ON codeintel_scip_symbols REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_symbols_schema_versions_insert();
 
-ALTER TABLE ONLY codeintel_last_reconcile
-    ADD CONSTRAINT codeintel_last_reconcile_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY codeintel_scip_document_lookup
     ADD CONSTRAINT codeintel_scip_document_lookup_document_id_fk FOREIGN KEY (document_id) REFERENCES codeintel_scip_documents(id);
 
-ALTER TABLE ONLY codeintel_scip_document_lookup_schema_versions
-    ADD CONSTRAINT codeintel_scip_document_lookup_schema_versions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_scip_document_lookup
-    ADD CONSTRAINT codeintel_scip_document_lookup_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_scip_documents_dereference_logs
-    ADD CONSTRAINT codeintel_scip_documents_dereference_logs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_scip_documents
-    ADD CONSTRAINT codeintel_scip_documents_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_scip_metadata
-    ADD CONSTRAINT codeintel_scip_metadata_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_scip_symbol_names
-    ADD CONSTRAINT codeintel_scip_symbol_names_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY codeintel_scip_symbols
     ADD CONSTRAINT codeintel_scip_symbols_document_lookup_id_fk FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_scip_symbols_schema_versions
-    ADD CONSTRAINT codeintel_scip_symbols_schema_versions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_scip_symbols
-    ADD CONSTRAINT codeintel_scip_symbols_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY rockskip_ancestry
-    ADD CONSTRAINT rockskip_ancestry_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY rockskip_repos
-    ADD CONSTRAINT rockskip_repos_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY rockskip_symbols
-    ADD CONSTRAINT rockskip_symbols_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;

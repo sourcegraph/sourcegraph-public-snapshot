@@ -33,8 +33,7 @@ CREATE TYPE time_unit AS ENUM (
 CREATE TABLE archived_insight_series_recording_times (
     insight_series_id integer NOT NULL,
     recording_time timestamp with time zone NOT NULL,
-    snapshot boolean NOT NULL,
-    tenant_id integer
+    snapshot boolean NOT NULL
 );
 
 CREATE TABLE archived_series_points (
@@ -45,7 +44,6 @@ CREATE TABLE archived_series_points (
     repo_name_id integer,
     original_repo_name_id integer,
     capture text,
-    tenant_id integer,
     CONSTRAINT check_repo_fields_specifity CHECK ((((repo_id IS NULL) AND (repo_name_id IS NULL) AND (original_repo_name_id IS NULL)) OR ((repo_id IS NOT NULL) AND (repo_name_id IS NOT NULL) AND (original_repo_name_id IS NOT NULL))))
 );
 
@@ -57,8 +55,7 @@ CREATE TABLE dashboard (
     last_updated_at timestamp without time zone DEFAULT now() NOT NULL,
     deleted_at timestamp without time zone,
     save boolean DEFAULT false NOT NULL,
-    type text DEFAULT 'standard'::text NOT NULL,
-    tenant_id integer
+    type text DEFAULT 'standard'::text NOT NULL
 );
 
 COMMENT ON TABLE dashboard IS 'Metadata for dashboards of insights';
@@ -80,8 +77,7 @@ CREATE TABLE dashboard_grants (
     dashboard_id integer NOT NULL,
     user_id integer,
     org_id integer,
-    global boolean,
-    tenant_id integer
+    global boolean
 );
 
 COMMENT ON TABLE dashboard_grants IS 'Permission grants for dashboards. Each row should represent a unique principal (user, org, etc).';
@@ -115,8 +111,7 @@ ALTER SEQUENCE dashboard_id_seq OWNED BY dashboard.id;
 CREATE TABLE dashboard_insight_view (
     id integer NOT NULL,
     dashboard_id integer NOT NULL,
-    insight_view_id integer NOT NULL,
-    tenant_id integer
+    insight_view_id integer NOT NULL
 );
 
 CREATE SEQUENCE dashboard_insight_view_id_seq
@@ -153,8 +148,7 @@ CREATE TABLE insight_series (
     backfill_completed_at timestamp without time zone,
     supports_augmentation boolean DEFAULT true NOT NULL,
     repository_criteria text,
-    query_old text,
-    tenant_id integer
+    query_old text
 );
 
 COMMENT ON TABLE insight_series IS 'Data series that comprise code insights.';
@@ -188,8 +182,7 @@ CREATE TABLE insight_series_backfill (
     series_id integer NOT NULL,
     repo_iterator_id integer,
     estimated_cost double precision,
-    state text DEFAULT 'new'::text NOT NULL,
-    tenant_id integer
+    state text DEFAULT 'new'::text NOT NULL
 );
 
 CREATE SEQUENCE insight_series_backfill_id_seq
@@ -217,8 +210,7 @@ CREATE TABLE insight_series_incomplete_points (
     series_id integer NOT NULL,
     reason text NOT NULL,
     "time" timestamp without time zone NOT NULL,
-    repo_id integer,
-    tenant_id integer
+    repo_id integer
 );
 
 CREATE SEQUENCE insight_series_incomplete_points_id_seq
@@ -234,8 +226,7 @@ ALTER SEQUENCE insight_series_incomplete_points_id_seq OWNED BY insight_series_i
 CREATE TABLE insight_series_recording_times (
     insight_series_id integer,
     recording_time timestamp with time zone,
-    snapshot boolean,
-    tenant_id integer
+    snapshot boolean
 );
 
 CREATE TABLE insight_view (
@@ -252,8 +243,7 @@ CREATE TABLE insight_view (
     series_sort_mode series_sort_mode_enum,
     series_sort_direction series_sort_direction_enum,
     series_limit integer,
-    series_num_samples integer,
-    tenant_id integer
+    series_num_samples integer
 );
 
 COMMENT ON TABLE insight_view IS 'Views for insight data series. An insight view is an abstraction on top of an insight data series that allows for lightweight modifications to filters or metadata without regenerating the underlying series.';
@@ -275,8 +265,7 @@ CREATE TABLE insight_view_grants (
     insight_view_id integer NOT NULL,
     user_id integer,
     org_id integer,
-    global boolean,
-    tenant_id integer
+    global boolean
 );
 
 COMMENT ON TABLE insight_view_grants IS 'Permission grants for insight views. Each row should represent a unique principal (user, org, etc).';
@@ -311,8 +300,7 @@ CREATE TABLE insight_view_series (
     insight_view_id integer NOT NULL,
     insight_series_id integer NOT NULL,
     label text,
-    stroke text,
-    tenant_id integer
+    stroke text
 );
 
 COMMENT ON TABLE insight_view_series IS 'Join table to correlate data series with insight views';
@@ -339,8 +327,7 @@ CREATE TABLE insights_background_jobs (
     execution_logs json[],
     worker_hostname text DEFAULT ''::text NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
-    backfill_id integer,
-    tenant_id integer
+    backfill_id integer
 );
 
 CREATE SEQUENCE insights_background_jobs_id_seq
@@ -368,8 +355,7 @@ CREATE TABLE insights_data_retention_jobs (
     worker_hostname text DEFAULT ''::text NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
     series_id integer NOT NULL,
-    series_id_string text DEFAULT ''::text NOT NULL,
-    tenant_id integer
+    series_id_string text DEFAULT ''::text NOT NULL
 );
 
 CREATE SEQUENCE insights_data_retention_jobs_id_seq
@@ -427,8 +413,7 @@ CREATE VIEW insights_jobs_backfill_new AS
 
 CREATE TABLE metadata (
     id bigint NOT NULL,
-    metadata jsonb NOT NULL,
-    tenant_id integer
+    metadata jsonb NOT NULL
 );
 
 COMMENT ON TABLE metadata IS 'Records arbitrary metadata about events. Stored in a separate table as it is often repeated for multiple events.';
@@ -457,8 +442,7 @@ CREATE TABLE repo_iterator (
     total_count integer DEFAULT 0 NOT NULL,
     success_count integer DEFAULT 0 NOT NULL,
     repos integer[],
-    repo_cursor integer DEFAULT 0,
-    tenant_id integer
+    repo_cursor integer DEFAULT 0
 );
 
 CREATE TABLE repo_iterator_errors (
@@ -466,8 +450,7 @@ CREATE TABLE repo_iterator_errors (
     repo_iterator_id integer NOT NULL,
     repo_id integer NOT NULL,
     error_message text[] NOT NULL,
-    failure_count integer DEFAULT 1,
-    tenant_id integer
+    failure_count integer DEFAULT 1
 );
 
 CREATE SEQUENCE repo_iterator_errors_id_seq
@@ -493,7 +476,6 @@ ALTER SEQUENCE repo_iterator_id_seq OWNED BY repo_iterator.id;
 CREATE TABLE repo_names (
     id bigint NOT NULL,
     name citext NOT NULL,
-    tenant_id integer,
     CONSTRAINT check_name_nonempty CHECK ((name OPERATOR(<>) ''::citext))
 );
 
@@ -521,7 +503,6 @@ CREATE TABLE series_points (
     repo_name_id integer,
     original_repo_name_id integer,
     capture text,
-    tenant_id integer,
     CONSTRAINT check_repo_fields_specifity CHECK ((((repo_id IS NULL) AND (repo_name_id IS NULL) AND (original_repo_name_id IS NULL)) OR ((repo_id IS NOT NULL) AND (repo_name_id IS NOT NULL) AND (original_repo_name_id IS NOT NULL))))
 );
 
@@ -550,7 +531,6 @@ CREATE TABLE series_points_snapshots (
     repo_name_id integer,
     original_repo_name_id integer,
     capture text,
-    tenant_id integer,
     CONSTRAINT check_repo_fields_specifity CHECK ((((repo_id IS NULL) AND (repo_name_id IS NULL) AND (original_repo_name_id IS NULL)) OR ((repo_id IS NOT NULL) AND (repo_name_id IS NOT NULL) AND (original_repo_name_id IS NOT NULL))))
 );
 
@@ -721,17 +701,8 @@ CREATE INDEX series_points_snapshots_series_id_idx ON series_points_snapshots US
 
 CREATE INDEX series_points_snapshots_series_id_repo_id_time_idx ON series_points_snapshots USING btree (series_id, repo_id, "time");
 
-ALTER TABLE ONLY archived_insight_series_recording_times
-    ADD CONSTRAINT archived_insight_series_recording_times_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY archived_series_points
-    ADD CONSTRAINT archived_series_points_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY dashboard_grants
     ADD CONSTRAINT dashboard_grants_dashboard_id_fk FOREIGN KEY (dashboard_id) REFERENCES dashboard(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY dashboard_grants
-    ADD CONSTRAINT dashboard_grants_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY dashboard_insight_view
     ADD CONSTRAINT dashboard_insight_view_dashboard_id_fk FOREIGN KEY (dashboard_id) REFERENCES dashboard(id) ON DELETE CASCADE;
@@ -739,17 +710,8 @@ ALTER TABLE ONLY dashboard_insight_view
 ALTER TABLE ONLY dashboard_insight_view
     ADD CONSTRAINT dashboard_insight_view_insight_view_id_fk FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY dashboard_insight_view
-    ADD CONSTRAINT dashboard_insight_view_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY dashboard
-    ADD CONSTRAINT dashboard_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY insight_series_backfill
     ADD CONSTRAINT insight_series_backfill_series_id_fk FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY insight_series_backfill
-    ADD CONSTRAINT insight_series_backfill_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY insight_series_recording_times
     ADD CONSTRAINT insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
@@ -760,23 +722,11 @@ ALTER TABLE ONLY archived_insight_series_recording_times
 ALTER TABLE ONLY insight_series_incomplete_points
     ADD CONSTRAINT insight_series_incomplete_points_series_id_fk FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY insight_series_incomplete_points
-    ADD CONSTRAINT insight_series_incomplete_points_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY insight_series_recording_times
-    ADD CONSTRAINT insight_series_recording_times_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY archived_series_points
     ADD CONSTRAINT insight_series_series_id_fkey FOREIGN KEY (series_id) REFERENCES insight_series(series_id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY insight_series
-    ADD CONSTRAINT insight_series_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY insight_view_grants
     ADD CONSTRAINT insight_view_grants_insight_view_id_fk FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY insight_view_grants
-    ADD CONSTRAINT insight_view_grants_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY insight_view_series
     ADD CONSTRAINT insight_view_series_insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id);
@@ -784,35 +734,11 @@ ALTER TABLE ONLY insight_view_series
 ALTER TABLE ONLY insight_view_series
     ADD CONSTRAINT insight_view_series_insight_view_id_fkey FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY insight_view_series
-    ADD CONSTRAINT insight_view_series_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY insight_view
-    ADD CONSTRAINT insight_view_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY insights_background_jobs
     ADD CONSTRAINT insights_background_jobs_backfill_id_fkey FOREIGN KEY (backfill_id) REFERENCES insight_series_backfill(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY insights_background_jobs
-    ADD CONSTRAINT insights_background_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY insights_data_retention_jobs
-    ADD CONSTRAINT insights_data_retention_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY metadata
-    ADD CONSTRAINT metadata_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY repo_iterator_errors
-    ADD CONSTRAINT repo_iterator_errors_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY repo_iterator_errors
     ADD CONSTRAINT repo_iterator_fk FOREIGN KEY (repo_iterator_id) REFERENCES repo_iterator(id);
-
-ALTER TABLE ONLY repo_iterator
-    ADD CONSTRAINT repo_iterator_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY repo_names
-    ADD CONSTRAINT repo_names_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY series_points
     ADD CONSTRAINT series_points_metadata_id_fkey FOREIGN KEY (metadata_id) REFERENCES metadata(id) ON DELETE CASCADE DEFERRABLE;
@@ -822,9 +748,3 @@ ALTER TABLE ONLY series_points
 
 ALTER TABLE ONLY series_points
     ADD CONSTRAINT series_points_repo_name_id_fkey FOREIGN KEY (repo_name_id) REFERENCES repo_names(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY series_points_snapshots
-    ADD CONSTRAINT series_points_snapshots_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY series_points
-    ADD CONSTRAINT series_points_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
