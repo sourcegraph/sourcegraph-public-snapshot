@@ -3,7 +3,6 @@
 
     import { isDefined } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
-    import type { QueryState } from '$lib/search/state'
     import SyntaxHighlightedQuery from '$lib/search/SyntaxHighlightedQuery.svelte'
     import { buildSearchURLQuery } from '$lib/shared'
     import { settings } from '$lib/stores'
@@ -17,7 +16,6 @@
 
     export let showQueryPage = false
     export let queryExample: Readable<QueryExample | null>
-    export let queryState: QueryState
 
     const defaultPatternType = defaultPatternTypeFromSettings({ final: $settings, subjects: [] })
     const showQueryExamplesForKeywordSearch =
