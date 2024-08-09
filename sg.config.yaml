@@ -1288,7 +1288,7 @@ bazelCommands:
       QUIET: 'true'
   frontend:
     description: Enterprise frontend
-    target: //cmd/frontend:frontend_nobundle
+    target: //cmd/frontend
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
       # If EXTSVC_CONFIG_FILE is *unset*, set a default.
