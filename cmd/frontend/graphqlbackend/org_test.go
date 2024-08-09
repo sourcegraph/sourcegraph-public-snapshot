@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"testing"
 
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
@@ -38,10 +39,20 @@ func TestOrganization(t *testing.T) {
 	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
+	securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
+	securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
+	// securityLogEvents.LogSecurityEventFunc.SetDefaultHook(func(ctx context.Context, eventName database.SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) error {
+	// 	if want := database.SecurityEventNameOrgViewed; eventName != want {
+	// 		t.Errorf("got %q, want %q", eventName, want)
+	// 	}
+	// 	return nil
+	// })
+
 	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
 
 	t.Run("can access organizations", func(t *testing.T) {
 		RunTests(t, []*Test{
@@ -64,6 +75,8 @@ func TestOrganization(t *testing.T) {
 			},
 		})
 	})
+	mockrequire.CalledN(t, securityLogEvents.LogSecurityEventFunc, 1)
+
 }
 
 func TestOrganizationMembers(t *testing.T) {
@@ -85,10 +98,14 @@ func TestOrganizationMembers(t *testing.T) {
 	mockedOrg := types.Org{ID: 1, Name: "acme"}
 	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 
+	securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
+	securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
+
 	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
 
 	t.Run("org members can list members", func(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{Username: "alice", ID: 1}, nil)
@@ -120,6 +137,7 @@ func TestOrganizationMembers(t *testing.T) {
 				})
 			})
 		}
+		mockrequire.Called(t, securityLogEvents.LogSecurityEventFunc)
 	})
 
 	t.Run("non-members", func(t *testing.T) {
@@ -208,6 +226,8 @@ func TestOrganizationMembers(t *testing.T) {
 				},
 			})
 		})
+		mockrequire.Called(t, securityLogEvents.LogSecurityEventFunc)
+
 	})
 }
 
@@ -224,10 +244,14 @@ func TestCreateOrganization(t *testing.T) {
 	orgMembers := dbmocks.NewMockOrgMemberStore()
 	orgMembers.CreateFunc.SetDefaultReturn(&types.OrgMembership{OrgID: mockedOrg.ID, UserID: userID}, nil)
 
+	securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
+	securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
+
 	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: userID})
 
@@ -253,6 +277,7 @@ func TestCreateOrganization(t *testing.T) {
 				"name": "acme",
 			},
 		})
+		mockrequire.Called(t, securityLogEvents.LogSecurityEventFunc)
 	})
 
 	t.Run("Fails for unauthenticated user", func(t *testing.T) {
@@ -335,11 +360,15 @@ func TestAddOrganizationMember(t *testing.T) {
 	permssync.MockSchedulePermsSync = func(_ context.Context, logger log.Logger, _ database.DB, _ permssync.ScheduleSyncOpts) {}
 	defer func() { permssync.MockSchedulePermsSync = nil }()
 
+	securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
+	securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
+
 	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
