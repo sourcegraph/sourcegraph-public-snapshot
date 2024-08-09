@@ -1,6 +1,5 @@
 import type { ContentMatch } from '$lib/shared'
-
-import { test, expect, type Page, Sourcegraph, type Locator } from '../../testing/integration'
+import { test, expect, type Page, Sourcegraph, type Locator } from '$testing/integration'
 import {
     createDoneEvent,
     createProgressEvent,
@@ -8,7 +7,7 @@ import {
     createContentMatch,
     createPathMatch,
     createSymbolMatch,
-} from '../../testing/search-testdata'
+} from '$testing/search-testdata'
 
 const chunkMatch: ContentMatch = {
     type: 'content',

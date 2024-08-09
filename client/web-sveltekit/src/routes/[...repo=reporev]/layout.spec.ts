@@ -1,5 +1,5 @@
-import { ExternalServiceKind } from '../../testing/graphql-type-mocks'
-import { test, expect } from '../../testing/integration'
+import { ExternalServiceKind } from '$testing/graphql-type-mocks'
+import { test, expect } from '$testing/integration'
 
 const repoName = 'github.com/sourcegraph/sourcegraph'
 
