@@ -1,0 +1,4 @@
+export function addChangelistPath(pathname: string) {
+    const [before, after] = pathname.split("@", 2);
+    return `${before}@changelist/${after}`;
+}
