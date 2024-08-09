@@ -34,6 +34,10 @@
 
     // Groups all usages into consecutive groups of matching repo/rev/path.
     // Maintains input order so paging in new results doesn't cause weirdness.
+    //
+    // NOTE: this expects that usages are already ordered as contiguous
+    // blocks for the same repository and the same file, which is a guarantee
+    // provided by the usages API.
     function groupUsages(usages: ExplorePanel_Usage[]): PathGroup[] {
         const groups: PathGroup[] = []
         let current: PathGroup | undefined = undefined
