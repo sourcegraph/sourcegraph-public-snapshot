@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/databasetest"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )

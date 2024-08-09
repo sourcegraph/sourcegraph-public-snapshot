@@ -16,8 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/codyaccess"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/databasetest"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )

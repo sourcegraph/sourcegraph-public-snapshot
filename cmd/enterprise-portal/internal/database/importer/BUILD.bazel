@@ -7,8 +7,8 @@ go_library(
     visibility = ["//cmd/enterprise-portal:__subpackages__"],
     deps = [
         "//cmd/enterprise-portal/internal/database",
-        "//cmd/enterprise-portal/internal/database/internal/utctime",
         "//cmd/enterprise-portal/internal/database/subscriptions",
+        "//cmd/enterprise-portal/internal/database/utctime",
         "//cmd/enterprise-portal/internal/dotcomdb",
         "//internal/goroutine",
         "//internal/license",

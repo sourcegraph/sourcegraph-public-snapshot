@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/codyaccessservice"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/importer"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/routines/licenseexpiration"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -203,8 +204,17 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 				},
 			},
 		},
-		// Run importer in background
-		importer.NewPeriodicImporter(ctx, logger.Scoped("importer"), dotcomDB, dbHandle, redisKVClient, config.DotComDB.ImportInterval),
+		// Run background routines
+		background.CombinedRoutine{
+			importer.NewPeriodicImporter(ctx, logger.Scoped("importer"), dotcomDB, dbHandle, redisKVClient, config.DotComDB.ImportInterval),
+			licenseexpiration.NewRoutine(ctx, logger.Scoped("licenseexpiration"),
+				licenseexpiration.NewStore(
+					logger.Scoped("licenseexpiration.store"),
+					dbHandle.Subscriptions(),
+					redisKVClient,
+					config.LicenseExpirationChecker),
+			),
+		},
 		// Stop server first
 		server,
 	}, nil
