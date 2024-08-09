@@ -49,7 +49,7 @@ interface Props extends TelemetryProps, TelemetryV2Props {
      * The parent breadcrumb item to show for this page in the header.
      */
     headerParentBreadcrumb: BreadcrumbItem
-    isSiteAdmin: boolean
+    userOwned: boolean
     /** An optional annotation to show in the page header. */
     headerAnnotation?: React.ReactNode
 }
@@ -59,16 +59,16 @@ export const GitHubAppPage: FC<Props> = ({
     telemetryRecorder,
     headerParentBreadcrumb,
     headerAnnotation,
-    isSiteAdmin,
+    userOwned,
 }) => {
     const { appID } = useParams()
     const navigate = useNavigate()
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
 
     useEffect(() => {
-        telemetryService.logPageView('SiteAdminGitHubApp')
-        telemetryRecorder.recordEvent('admin.GitHubApp', 'view')
-    }, [telemetryService, telemetryRecorder])
+        telemetryService.logPageView(userOwned ? 'UserGitHubApp' : 'SiteAdminGitHubApp')
+        telemetryRecorder.recordEvent(userOwned ? 'user.GitHubApp' : 'admin.GitHubApp', 'view')
+    }, [telemetryService, telemetryRecorder, userOwned])
     const [fetchError, setError] = useState<ErrorLike>()
 
     const { data, loading, error } = useQuery<GitHubAppByIDResult, GitHubAppByIDVariables>(GITHUB_APP_BY_ID_QUERY, {
@@ -109,7 +109,7 @@ export const GitHubAppPage: FC<Props> = ({
                     {removeModalOpen && (
                         <RemoveGitHubAppModal
                             onCancel={() => setRemoveModalOpen(false)}
-                            afterDelete={() => navigate(`/${isSiteAdmin ? 'site-admin' : 'user/settings'}/github-apps`)}
+                            afterDelete={() => navigate(`/${userOwned ? 'user/settings' : 'site-admin'}/github-apps`)}
                             app={app}
                         />
                     )}

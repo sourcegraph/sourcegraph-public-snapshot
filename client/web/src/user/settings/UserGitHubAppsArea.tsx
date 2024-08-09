@@ -57,7 +57,7 @@ export const UserGitHubAppsArea: FC<Props> = props => {
                     <GitHubAppPage
                         headerParentBreadcrumb={{ to: '/user/github-apps', text: 'GitHub Apps' }}
                         telemetryRecorder={props.platformContext.telemetryRecorder}
-                        isSiteAdmin={false}
+                        userOwned={true}
                         {...props}
                     />
                 }

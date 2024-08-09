@@ -425,7 +425,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
                 headerAnnotation={<FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                 telemetryService={props.telemetryService}
                 telemetryRecorder={props.platformContext.telemetryRecorder}
-                isSiteAdmin={true}
+                userOwned={false}
             />
         ),
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
