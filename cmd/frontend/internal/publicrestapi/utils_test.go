@@ -15,12 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/golly"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
 )
-
-func init() {
-	txemail.DisableSilently()
-}
 
 type publicrestTest struct {
 	t           *testing.T
