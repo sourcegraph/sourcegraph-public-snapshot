@@ -24,95 +24,156 @@
         setContext(exploreContextKey, ctx)
     }
 
-    interface RepoTreeEntry {
-        type: 'repo'
-        name: string
-        entries: PathTreeEntry[]
-    }
-
-    interface PathTreeEntry {
-        type: 'path'
-        repo: string
-        name: string
-    }
-
-    type TreeEntry = RepoTreeEntry | PathTreeEntry
-
+    // A set of usages grouped by unique repository, revision, and path
     interface PathGroup {
+        repository: string
+        revision: string
         path: string
         usages: ExplorePanel_Usage[]
     }
 
-    interface RepoGroup {
-        repo: string
-        pathGroups: PathGroup[]
-    }
-
-    function groupUsages(usages: ExplorePanel_Usage[]): RepoGroup[] {
-        const seenRepos: Record<string, { index: number; seenPaths: Record<string, number> }> = {}
-        const repoGroups: RepoGroup[] = []
+    // Groups all usages into consecutive groups of matching repo/rev/path.
+    // Maintains input order so paging in new results doesn't cause weirdness.
+    //
+    // NOTE: this expects that usages are already ordered as contiguous
+    // blocks for the same repository and the same file, which is a guarantee
+    // provided by the usages API.
+    function groupUsages(usages: ExplorePanel_Usage[]): PathGroup[] {
+        const groups: PathGroup[] = []
+        let current: PathGroup | undefined = undefined
 
         for (const usage of usages) {
-            const repo = usage.usageRange.repository
-            if (seenRepos[repo] === undefined) {
-                seenRepos[repo] = { index: repoGroups.length, seenPaths: {} }
-                repoGroups.push({ repo, pathGroups: [] })
+            const { repository, revision, path } = usage.usageRange
+            if (
+                current &&
+                current.repository === repository &&
+                current.revision === revision &&
+                current.path === path
+            ) {
+                current.usages.push(usage)
+            } else {
+                if (current) {
+                    groups.push(current)
+                }
+                current = {
+                    repository,
+                    revision,
+                    path,
+                    usages: [usage],
+                }
             }
-
-            const path = usage.usageRange.path
-            const seenPaths = seenRepos[repo].seenPaths
-            const pathGroups = repoGroups[seenRepos[repo].index].pathGroups
-
-            if (seenPaths[path] === undefined) {
-                seenPaths[path] = pathGroups.length
-                pathGroups.push({ path, usages: [] })
-            }
-
-            pathGroups[seenPaths[path]].usages.push(usage)
+        }
+        if (current) {
+            groups.push(current)
         }
 
-        return repoGroups
+        return groups
     }
 
-    function treeProviderForEntries(entries: TreeEntry[]): TreeProvider<TreeEntry> {
-        return {
-            getNodeID(entry) {
-                if (entry.type === 'repo') {
-                    return `repo-${entry.name}`
-                } else {
-                    return `path-${entry.repo}-${entry.name}`
+    interface RepoTreeEntry {
+        type: 'repo'
+        name: string
+    }
+
+    interface DirTreeEntry {
+        type: 'dir'
+        repo: string
+        path: string // The full path
+        name: string // The path element for this dir
+    }
+
+    interface FileTreeEntry {
+        type: 'file'
+        repo: string
+        path: string // The full path
+        name: string // The file name
+    }
+
+    const typeRanks = { repo: 0, dir: 1, file: 2 }
+
+    type TreeEntry = RepoTreeEntry | FileTreeEntry | DirTreeEntry
+
+    function generateTree(pathGroups: PathGroup[]): TreeProvider<TreeEntry> {
+        type Tree = Map<string, { entry: TreeEntry; tree: Tree }>
+        const tree: Tree = new Map()
+        const addToTree = (repo: string, path: string) => {
+            if (!tree.get(repo)) {
+                tree.set(repo, { entry: { type: 'repo', name: repo }, tree: new Map() })
+            }
+            const repoEntry = tree.get(repo)!
+
+            const pathElements = path.split('/')
+            const dirs = pathElements.slice(0, -1)
+
+            let current = repoEntry
+            for (const [index, dir] of dirs.entries()) {
+                if (!current.tree.get(dir)) {
+                    current.tree.set(dir, {
+                        tree: new Map(),
+                        entry: {
+                            type: 'dir',
+                            repo,
+                            name: dir,
+                            path: pathElements.slice(0, index + 1).join('/') + '/',
+                        },
+                    })
                 }
-            },
-            getEntries(): TreeEntry[] {
-                return entries
-            },
-            isExpandable(entry) {
-                return entry.type === 'repo'
-            },
-            isSelectable() {
-                return true
-            },
-            fetchChildren(entry) {
-                if (entry.type === 'repo') {
-                    return Promise.resolve(treeProviderForEntries(entry.entries))
-                } else {
-                    throw new Error('path nodes are not expandable')
-                }
-            },
+                current = current.tree.get(dir)!
+            }
+
+            const fileName = pathElements.at(-1)! // splitting will always have at least one element
+            current.tree.set(fileName, {
+                tree: new Map(),
+                entry: {
+                    type: 'file',
+                    repo,
+                    path,
+                    name: fileName,
+                },
+            })
         }
-    }
 
-    function generateOutlineTree(repoGroups: RepoGroup[]): TreeProvider<TreeEntry> {
-        const repoEntries: RepoTreeEntry[] = repoGroups.map(repoGroup => ({
-            type: 'repo',
-            name: repoGroup.repo,
-            entries: repoGroup.pathGroups.map(pathGroup => ({
-                type: 'path',
-                name: pathGroup.path,
-                repo: repoGroup.repo,
-            })),
-        }))
-        return treeProviderForEntries(repoEntries)
+        for (const pathGroup of pathGroups) {
+            addToTree(pathGroup.repository, pathGroup.path)
+        }
+
+        function newTreeProvider(tree: Tree): TreeProvider<TreeEntry> {
+            return {
+                getNodeID(entry) {
+                    if (entry.type === 'repo') {
+                        return `repo-${entry.name}`
+                    } else {
+                        return `path-${entry.repo}-${entry.path}`
+                    }
+                },
+                getEntries(): TreeEntry[] {
+                    return Array.from(tree.entries())
+                        .map(([_name, entry]) => entry.entry)
+                        .toSorted((a, b) => {
+                            // Sort directories first, then sort alphabetically
+                            if (a.type !== b.type) {
+                                return typeRanks[a.type] - typeRanks[b.type]
+                            }
+                            return a.name.localeCompare(b.name)
+                        })
+                },
+                isExpandable(entry) {
+                    return entry.type === 'repo' || entry.type === 'dir'
+                },
+                isSelectable() {
+                    return true
+                },
+                fetchChildren(entry) {
+                    if (entry.type === 'repo' || entry.type === 'dir') {
+                        return Promise.resolve(newTreeProvider(tree.get(entry.name)!.tree))
+                    } else {
+                        throw new Error('path nodes are not expandable')
+                    }
+                },
+            }
+        }
+
+        return newTreeProvider(tree)
     }
 
     export function getUsagesStore(client: GraphQLClient, documentInfo: DocumentInfo, occurrence: Occurrence) {
@@ -158,6 +219,13 @@
     interface TreeFilter {
         repository: string
         path?: string
+    }
+
+    function matchesTreeFilter(treeFilter: TreeFilter | undefined): (pathGroup: PathGroup) => boolean {
+        return pathGroup =>
+            treeFilter === undefined ||
+            (treeFilter.repository === pathGroup.repository &&
+                (treeFilter.path === undefined || pathGroup.path.startsWith(treeFilter.path)))
     }
 
     export function entryIDForFilter(filter: TreeFilter): string {
@@ -212,20 +280,11 @@
     }
 
     $: loading = $connection?.fetching
-    $: usages = $connection?.data
-    $: kindFilteredUsages = usages?.filter(matchesUsageKind($inputs.usageKindFilter))
-    $: repoGroups = groupUsages(kindFilteredUsages ?? [])
-    $: outlineTree = generateOutlineTree(repoGroups)
-    $: displayGroups = repoGroups
-        .flatMap(repoGroup => repoGroup.pathGroups.map(pathGroup => ({ repo: repoGroup.repo, ...pathGroup })))
-        .filter(displayGroup => {
-            if ($inputs.treeFilter === undefined) {
-                return true
-            } else if ($inputs.treeFilter.repository !== displayGroup.repo) {
-                return false
-            }
-            return $inputs.treeFilter.path === undefined || $inputs.treeFilter.path === displayGroup.path
-        })
+    $: usages = $connection?.data ?? []
+    $: kindFilteredUsages = usages.filter(matchesUsageKind($inputs.usageKindFilter))
+    $: pathGroups = groupUsages(kindFilteredUsages)
+    $: outlineTree = generateTree(pathGroups)
+    $: displayGroups = pathGroups.filter(matchesTreeFilter($inputs.treeFilter))
 
     let referencesScroller: HTMLElement | undefined
 </script>
@@ -256,7 +315,7 @@
                     {/each}
                 </fieldset>
                 <div class="outline">
-                    {#if repoGroups.length > 0}
+                    {#if pathGroups.length > 0}
                         <h4>Filter by location</h4>
                         <TreeView treeProvider={outlineTree} on:select={event => handleSelect(event.detail)}>
                             <svelte:fragment let:entry>
@@ -266,7 +325,7 @@
                                         {displayRepoName(entry.name)}
                                     </span>
                                 {:else}
-                                    <span class="path-entry" data-repo-name={entry.repo} data-path={entry.name}>
+                                    <span class="path-entry" data-repo-name={entry.repo} data-path={entry.path}>
                                         {entry.name}
                                     </span>
                                 {/if}
