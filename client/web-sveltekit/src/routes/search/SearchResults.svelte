@@ -5,7 +5,7 @@
         // The search results scroll offset
         scroll: number
         // The currently focused search result (if any)
-        focused: number | null
+        focused: number | undefined
     }
     interface ResultStateCache {
         count: number
@@ -53,6 +53,7 @@
     import type { SearchJob } from './searchJob'
     import { getSearchResultComponent } from './searchResultFactory'
     import { setSearchResultsContext } from './searchResultsContext'
+    import { focusedResultIndex, nextResult, nthFocusableResult } from './searchResultsFocus'
     import StreamingProgress from './StreamingProgress.svelte'
 
     export let stream: Observable<AggregateStreamingSearchResults>
@@ -62,12 +63,9 @@
     export let searchJob: SearchJob | undefined = undefined
 
     export function capture(): SearchResultsCapture {
-        const focusedResult = getFocusedResult()
         return {
             scroll: $resultContainer?.scrollTop ?? 0,
-            focused: focusedResult
-                ? getFocusableResults().findIndex(selectable => selectable.isEqualNode(focusedResult))
-                : null,
+            focused: $resultContainer ? focusedResultIndex($resultContainer) : undefined,
         }
     }
 
@@ -75,41 +73,22 @@
         if ($resultContainer && capture) {
             $resultContainer.scrollTop = capture.scroll
             if (capture.focused) {
-                getFocusableResults()[capture.focused]?.focus({ preventScroll: true })
+                nthFocusableResult($resultContainer, capture.focused)?.focus({ preventScroll: true })
             }
         }
     }
 
     export function focusNextResult(direction: 'up' | 'down'): boolean {
-        const focusedResult = getFocusedResult()
-        const focusableResults = getFocusableResults()
-        if (!focusedResult || focusableResults.length === 0) {
-            return false
+        if ($resultContainer) {
+            const nextFocus = nextResult($resultContainer, direction)
+            if (!nextFocus) {
+                return false
+            }
+            nextFocus.focus({ preventScroll: true })
+            nextFocus.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+            return true
         }
-        const currentIndex = focusableResults.findIndex(selectable => selectable.isSameNode(focusedResult))
-        const nextIndex = direction === 'down' ? currentIndex + 1 : currentIndex - 1
-        const nextFocus = nextIndex >= 0 && nextIndex < focusableResults.length ? focusableResults[nextIndex] : null
-        if (!nextFocus) {
-            return false
-        }
-        nextFocus.focus({ preventScroll: true })
-        nextFocus.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-        return true
-    }
-
-    function getFocusableResults(): HTMLElement[] {
-        return Array.from(
-            $resultContainer?.querySelectorAll<HTMLElement>('[data-focusable-search-result="true"]') ?? []
-        )
-    }
-
-    function getFocusedResult(): HTMLElement | null {
-        return document.activeElement &&
-            document.activeElement instanceof HTMLElement &&
-            document.activeElement.dataset.focusableSearchResult === 'true' &&
-            $resultContainer?.contains(document.activeElement)
-            ? document.activeElement
-            : null
+        return false
     }
 
     const resultContainer = writable<HTMLElement | null>(null)
