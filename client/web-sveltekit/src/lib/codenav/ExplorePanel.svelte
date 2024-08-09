@@ -85,6 +85,8 @@
         name: string // The file name
     }
 
+    const typeRanks = { repo: 0, dir: 1, file: 2 }
+
     type TreeEntry = RepoTreeEntry | FileTreeEntry | DirTreeEntry
 
     function generateTree(pathGroups: PathGroup[]): TreeProvider<TreeEntry> {
@@ -144,11 +146,11 @@
                     return Array.from(tree.entries())
                         .map(([_name, entry]) => entry.entry)
                         .toSorted((a, b) => {
+                            // Sort directories first, then sort alphabetically
                             if (a.type !== b.type) {
-                                const typeRanks = { repo: 0, dir: 1, file: 2 }
-                                return typeRanks[a.type] < typeRanks[b.type] ? -1 : 1
+                                return typeRanks[a.type] - typeRanks[b.type]
                             }
-                            return a.name < b.name ? -1 : 1
+                            return a.name.localeCompare(b.name)
                         })
                 },
                 isExpandable(entry) {
