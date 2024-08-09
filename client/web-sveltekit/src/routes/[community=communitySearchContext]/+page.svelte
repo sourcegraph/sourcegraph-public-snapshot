@@ -143,7 +143,6 @@
 
 <style lang="scss">
     section {
-        margin-top: 5rem;
         width: 100%;
         max-width: var(--viewport-lg);
         margin-left: auto;
@@ -166,8 +165,16 @@
         }
     }
 
-    hgroup > * {
-        text-align: center;
+    hgroup {
+        margin-top: 3rem;
+
+        @media (--sm-breakpoint-down) {
+            margin-top: 1rem;
+        }
+
+        > * {
+            text-align: center;
+        }
     }
 
     .main {
