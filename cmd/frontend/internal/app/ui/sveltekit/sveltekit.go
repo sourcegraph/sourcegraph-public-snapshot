@@ -100,7 +100,7 @@ func RegisterSvelteKit(r *mux.Router, repoRootRoute *mux.Route) {
 			}
 
 			for i, skr := range svelteKitRoutes {
-				if skr.Tag&inclusionMask != 0 && skr.Tag&exclusionMask == 0{
+				if skr.Tag&inclusionMask != 0 && skr.Tag&exclusionMask == 0 {
 					enabledRoutes = append(enabledRoutes, i)
 
 					if !enabled {

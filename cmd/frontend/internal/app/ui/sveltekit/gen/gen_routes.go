@@ -183,7 +183,7 @@ var (
 	tagPattern           = regexp.MustCompile(`^\s*//\s+@sg\s+`)
 	groupPattern         = regexp.MustCompile(`^\([^)]+\)$`)
 	restParamPattern     = regexp.MustCompile(`^\[\.\.\.(\w+)(?:=(\w+))?\]$`)
-	paramPattern = regexp.MustCompile(`^\[(\w+)(?:=(\w+))?\]$`)
+	paramPattern         = regexp.MustCompile(`^\[(\w+)(?:=(\w+))?\]$`)
 	optionalParamPattern = regexp.MustCompile(`^\[\[(\w+)(?:=(\w+))?\]\]$`)
 )
 
@@ -227,7 +227,7 @@ func getRouteInfo(path string) (*routeInfo, error) {
 // Map SvelteKit specific parameter matchers to regular expressions. This is a "best effort" approach
 // because parameter matchers in SvelteKit are functions that can perform arbitrary logic.
 var paramMatchers = map[string]string{
-	"reporev": "/" + routevar.RepoPatternNonCapturing + `(?:@` + routevar.RevPatternNonCapturing + `)?`,
+	"reporev":                "/" + routevar.RepoPatternNonCapturing + `(?:@` + routevar.RevPatternNonCapturing + `)?`,
 	"communitySearchContext": "/(backstage|chakraui|cncf|julia|kubernetes|o3de|stackstorm|stanford|temporal)",
 }
 
