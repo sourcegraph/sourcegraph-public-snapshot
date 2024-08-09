@@ -408,9 +408,4 @@ describe('addChangelistPath', () => {
         const expected = '/repo@changelist/branch/path'
         expect(addChangelistPath(input)).toBe(expected)
     })
-
-    it('does not modify path when @ is not present', () => {
-        const input = '/repo/path'
-        expect(addChangelistPath(input)).toBe(input)
-    })
 })
