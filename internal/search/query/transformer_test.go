@@ -28,6 +28,7 @@ func TestExperimentalPhraseBoost(t *testing.T) {
 	autogold.Expect(`(or "* int func(" (and "*" "int" "func("))`).Equal(t, test("* int func(", SearchTypeKeyword))
 	autogold.Expect(`(or "\"foo bar\" bas qux" (and "foo bar" "bas" "qux"))`).Equal(t, test(`"foo bar" bas qux`, SearchTypeKeyword))
 	autogold.Expect(`(or "foo 'bar bas' qux" (and "foo" "bar bas" "qux"))`).Equal(t, test(`foo 'bar bas' qux`, SearchTypeKeyword))
+	autogold.Expect(`(and "type:file" (or "foo 'bar bas' qux" (and "foo" "bar bas" "qux")))`).Equal(t, test(`type:file foo 'bar bas' qux`, SearchTypeKeyword))
 
 	// expect no phrase query
 	autogold.Expect(`"foo bar bas"`).Equal(t, test("/foo bar bas/", SearchTypeKeyword))
@@ -38,6 +39,8 @@ func TestExperimentalPhraseBoost(t *testing.T) {
 	autogold.Expect(`(and "foo" "bar" (not "bas") "quz")`).Equal(t, test("foo bar not bas quz", SearchTypeKeyword))
 	autogold.Expect(`(or "foo" "bar" "bas")`).Equal(t, test("foo or bar or bas", SearchTypeKeyword))
 	autogold.Expect(`(or (and "foo" "bar") (and "quz" "biz"))`).Equal(t, test("foo and bar or (quz and biz)", SearchTypeKeyword))
+	autogold.Expect(`(and "type:repo" "sourcegraph")`).Equal(t, test("type:repo 'sourcegraph'", SearchTypeKeyword))
+	autogold.Expect(`(and "type:diff" "//" "varargs")`).Equal(t, test("type:diff // varargs", SearchTypeKeyword))
 
 	// cases that came up in user feedback
 	autogold.Expect(`(and "repo:golang/go" (or "// The vararg opts parameter can include functions to configure the" (and "//" "The" "vararg" "opts" "parameter" "can" "include" "functions" "to" "configure" "the")))`).Equal(t, test("repo:golang/go // The vararg opts parameter can include functions to configure the", SearchTypeKeyword))

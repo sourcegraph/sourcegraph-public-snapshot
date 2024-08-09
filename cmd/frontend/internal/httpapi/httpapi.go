@@ -435,8 +435,8 @@ func (h *ErrorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 	// No need to log, as SetRequestErrorCause is consumed and logged.
 }
 
-func JsonMiddleware(errorHandler *ErrorHandler) func(func(http.ResponseWriter, *http.Request) error) http.Handler {
-	return func(h func(http.ResponseWriter, *http.Request) error) http.Handler {
+func JsonMiddleware(errorHandler *ErrorHandler) handlerutil.HandlerWithErrorMiddleware {
+	return func(h handlerutil.HandlerWithErrorReturnFunc) http.Handler {
 		return handlerutil.HandlerWithErrorReturn{
 			Handler: func(w http.ResponseWriter, r *http.Request) error {
 				w.Header().Set("Content-Type", "application/json")
