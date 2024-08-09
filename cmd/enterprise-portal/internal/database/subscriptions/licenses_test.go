@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	"github.com/sourcegraph/sourcegraph/internal/license"
+	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -41,6 +42,8 @@ func TestLicensesStore(t *testing.T) {
 	require.NoError(t, err)
 
 	licenses := subscriptions.NewLicensesStore(db)
+
+	const signedKeyExample = "<signed-key-example>"
 
 	var createdLicenses []*subscriptions.LicenseWithConditions
 	getCreatedByLicenseID := func(t *testing.T, licenseID string) *subscriptions.LicenseWithConditions {
@@ -72,7 +75,7 @@ func TestLicensesStore(t *testing.T) {
 		}
 
 		got, err := licenses.CreateLicenseKey(ctx, subscriptionID1,
-			&subscriptions.LicenseKey{
+			&subscriptions.DataLicenseKey{
 				Info: license.Info{
 					Tags:      []string{"foo"},
 					CreatedAt: time.Time{}.Add(1 * time.Hour),
@@ -94,13 +97,13 @@ func TestLicensesStore(t *testing.T) {
 		createdLicenses = append(createdLicenses, got)
 
 		got, err = licenses.CreateLicenseKey(ctx, subscriptionID1,
-			&subscriptions.LicenseKey{
+			&subscriptions.DataLicenseKey{
 				Info: license.Info{
 					Tags:      []string{"baz"},
 					CreatedAt: time.Time{}.Add(24 * time.Hour),
 					ExpiresAt: time.Time{}.Add(48 * time.Hour),
 				},
-				SignedKey: "barasdf",
+				SignedKey: signedKeyExample,
 			},
 			subscriptions.CreateLicenseOpts{
 				Message:    t.Name() + " 1",
@@ -111,12 +114,12 @@ func TestLicensesStore(t *testing.T) {
 		testLicense(
 			got,
 			autogold.Expect(valast.Ptr("TestLicensesStore/CreateLicenseKey 1")),
-			autogold.Expect(`{"Info": {"c": "0001-01-02T00:00:00Z", "e": "0001-01-03T00:00:00Z", "t": ["baz"], "u": 0}, "SignedKey": "barasdf"}`),
+			autogold.Expect(`{"Info": {"c": "0001-01-02T00:00:00Z", "e": "0001-01-03T00:00:00Z", "t": ["baz"], "u": 0}, "SignedKey": "<signed-key-example>"}`),
 		)
 		createdLicenses = append(createdLicenses, got)
 
 		got, err = licenses.CreateLicenseKey(ctx, subscriptionID2,
-			&subscriptions.LicenseKey{
+			&subscriptions.DataLicenseKey{
 				Info: license.Info{
 					Tags:      []string{"tag"},
 					CreatedAt: time.Time{}.Add(24 * time.Hour),
@@ -139,7 +142,7 @@ func TestLicensesStore(t *testing.T) {
 
 		t.Run("createdAt does not match", func(t *testing.T) {
 			_, err = licenses.CreateLicenseKey(ctx, subscriptionID2,
-				&subscriptions.LicenseKey{
+				&subscriptions.DataLicenseKey{
 					Info: license.Info{
 						Tags:      []string{"tag"},
 						CreatedAt: time.Time{}.Add(24 * time.Hour),
@@ -155,7 +158,7 @@ func TestLicensesStore(t *testing.T) {
 		})
 		t.Run("expiresAt does not match", func(t *testing.T) {
 			_, err = licenses.CreateLicenseKey(ctx, subscriptionID2,
-				&subscriptions.LicenseKey{
+				&subscriptions.DataLicenseKey{
 					Info: license.Info{
 						Tags:      []string{"tag"},
 						CreatedAt: time.Time{},
@@ -208,6 +211,24 @@ func TestLicensesStore(t *testing.T) {
 				assert.Equal(t, subscriptionID2, l.SubscriptionID)
 				assert.Equal(t, *getCreatedByLicenseID(t, l.ID), *l)
 			}
+		})
+
+		t.Run("List by license key substring", func(t *testing.T) {
+			listedLicenses, err := licenses.List(ctx, subscriptions.ListLicensesOpts{
+				LicenseType:         subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY,
+				LicenseKeySubstring: signedKeyExample,
+			})
+			require.NoError(t, err)
+			require.Len(t, listedLicenses, 1)
+			assert.Equal(t, subscriptionID1, listedLicenses[0].SubscriptionID)
+
+			listedLicenses, err = licenses.List(ctx, subscriptions.ListLicensesOpts{
+				LicenseType:         subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY,
+				LicenseKeySubstring: signedKeyExample[2:5],
+			})
+			require.NoError(t, err)
+			require.Len(t, listedLicenses, 1)
+			assert.Equal(t, subscriptionID1, listedLicenses[0].SubscriptionID)
 		})
 	})
 

@@ -132,7 +132,9 @@ func NewLicensesStore(db *pgxpool.Pool) *LicensesStore {
 }
 
 type ListLicensesOpts struct {
-	SubscriptionID string
+	SubscriptionID      string
+	LicenseType         subscriptionsv1.EnterpriseSubscriptionLicenseType
+	LicenseKeySubstring string
 	// PageSize is the maximum number of licenses to return.
 	PageSize int
 }
@@ -143,6 +145,16 @@ func (opts ListLicensesOpts) toQueryConditions() (where, limitClause string, _ p
 	if opts.SubscriptionID != "" {
 		whereConds = append(whereConds, "subscription_id = @subscriptionID")
 		namedArgs["subscriptionID"] = opts.SubscriptionID
+	}
+	if opts.LicenseType > 0 {
+		whereConds = append(whereConds,
+			"license_type = @licenseType")
+		namedArgs["licenseType"] = opts.LicenseType.String()
+	}
+	if opts.LicenseKeySubstring != "" {
+		whereConds = append(whereConds,
+			"license_data->>'SignedKey' LIKE  '%' || @licenseKeySubstring || '%'")
+		namedArgs["licenseKeySubstring"] = opts.LicenseKeySubstring
 	}
 	where = strings.Join(whereConds, " AND ")
 
@@ -247,9 +259,9 @@ func (c CreateLicenseOpts) getLicenseID() (string, error) {
 	return licenseID.String(), nil
 }
 
-// LicenseKey corresponds to *subscriptionsv1.EnterpriseSubscriptionLicenseKey
+// DataLicenseKey corresponds to *subscriptionsv1.EnterpriseSubscriptionLicenseKey
 // and the 'ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY' license type.
-type LicenseKey struct {
+type DataLicenseKey struct {
 	Info internallicense.Info
 	// Signed license key with the license information in Info.
 	SignedKey string
@@ -259,7 +271,7 @@ type LicenseKey struct {
 func (s *LicensesStore) CreateLicenseKey(
 	ctx context.Context,
 	subscriptionID string,
-	license *LicenseKey,
+	license *DataLicenseKey,
 	opts CreateLicenseOpts,
 ) (_ *LicenseWithConditions, err error) {
 	// Special behaviour: the license key embeds the creation time, and it must

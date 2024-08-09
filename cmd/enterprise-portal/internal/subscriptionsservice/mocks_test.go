@@ -13,8 +13,6 @@ import (
 	sourcegraphaccountssdkgo "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	v1 "github.com/sourcegraph/sourcegraph-accounts-sdk-go/clients/v1"
 	subscriptions "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
-	dotcomdb "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
-	v11 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	iam "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/iam"
 )
 
@@ -38,14 +36,10 @@ type MockStoreV1 struct {
 	// IntrospectSAMSTokenFunc is an instance of a mock function object
 	// controlling the behavior of the method IntrospectSAMSToken.
 	IntrospectSAMSTokenFunc *StoreV1IntrospectSAMSTokenFunc
-	// ListDotcomEnterpriseSubscriptionLicensesFunc is an instance of a mock
+	// ListEnterpriseSubscriptionLicensesFunc is an instance of a mock
 	// function object controlling the behavior of the method
-	// ListDotcomEnterpriseSubscriptionLicenses.
-	ListDotcomEnterpriseSubscriptionLicensesFunc *StoreV1ListDotcomEnterpriseSubscriptionLicensesFunc
-	// ListDotcomEnterpriseSubscriptionsFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// ListDotcomEnterpriseSubscriptions.
-	ListDotcomEnterpriseSubscriptionsFunc *StoreV1ListDotcomEnterpriseSubscriptionsFunc
+	// ListEnterpriseSubscriptionLicenses.
+	ListEnterpriseSubscriptionLicensesFunc *StoreV1ListEnterpriseSubscriptionLicensesFunc
 	// ListEnterpriseSubscriptionsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// ListEnterpriseSubscriptions.
@@ -85,13 +79,8 @@ func NewMockStoreV1() *MockStoreV1 {
 				return
 			},
 		},
-		ListDotcomEnterpriseSubscriptionLicensesFunc: &StoreV1ListDotcomEnterpriseSubscriptionLicensesFunc{
-			defaultHook: func(context.Context, []*v11.ListEnterpriseSubscriptionLicensesFilter, int) (r0 []*dotcomdb.LicenseAttributes, r1 error) {
-				return
-			},
-		},
-		ListDotcomEnterpriseSubscriptionsFunc: &StoreV1ListDotcomEnterpriseSubscriptionsFunc{
-			defaultHook: func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) (r0 []*dotcomdb.SubscriptionAttributes, r1 error) {
+		ListEnterpriseSubscriptionLicensesFunc: &StoreV1ListEnterpriseSubscriptionLicensesFunc{
+			defaultHook: func(context.Context, subscriptions.ListLicensesOpts) (r0 []*subscriptions.LicenseWithConditions, r1 error) {
 				return
 			},
 		},
@@ -137,14 +126,9 @@ func NewStrictMockStoreV1() *MockStoreV1 {
 				panic("unexpected invocation of MockStoreV1.IntrospectSAMSToken")
 			},
 		},
-		ListDotcomEnterpriseSubscriptionLicensesFunc: &StoreV1ListDotcomEnterpriseSubscriptionLicensesFunc{
-			defaultHook: func(context.Context, []*v11.ListEnterpriseSubscriptionLicensesFilter, int) ([]*dotcomdb.LicenseAttributes, error) {
-				panic("unexpected invocation of MockStoreV1.ListDotcomEnterpriseSubscriptionLicenses")
-			},
-		},
-		ListDotcomEnterpriseSubscriptionsFunc: &StoreV1ListDotcomEnterpriseSubscriptionsFunc{
-			defaultHook: func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
-				panic("unexpected invocation of MockStoreV1.ListDotcomEnterpriseSubscriptions")
+		ListEnterpriseSubscriptionLicensesFunc: &StoreV1ListEnterpriseSubscriptionLicensesFunc{
+			defaultHook: func(context.Context, subscriptions.ListLicensesOpts) ([]*subscriptions.LicenseWithConditions, error) {
+				panic("unexpected invocation of MockStoreV1.ListEnterpriseSubscriptionLicenses")
 			},
 		},
 		ListEnterpriseSubscriptionsFunc: &StoreV1ListEnterpriseSubscriptionsFunc{
@@ -179,11 +163,8 @@ func NewMockStoreV1From(i StoreV1) *MockStoreV1 {
 		IntrospectSAMSTokenFunc: &StoreV1IntrospectSAMSTokenFunc{
 			defaultHook: i.IntrospectSAMSToken,
 		},
-		ListDotcomEnterpriseSubscriptionLicensesFunc: &StoreV1ListDotcomEnterpriseSubscriptionLicensesFunc{
-			defaultHook: i.ListDotcomEnterpriseSubscriptionLicenses,
-		},
-		ListDotcomEnterpriseSubscriptionsFunc: &StoreV1ListDotcomEnterpriseSubscriptionsFunc{
-			defaultHook: i.ListDotcomEnterpriseSubscriptions,
+		ListEnterpriseSubscriptionLicensesFunc: &StoreV1ListEnterpriseSubscriptionLicensesFunc{
+			defaultHook: i.ListEnterpriseSubscriptionLicenses,
 		},
 		ListEnterpriseSubscriptionsFunc: &StoreV1ListEnterpriseSubscriptionsFunc{
 			defaultHook: i.ListEnterpriseSubscriptions,
@@ -729,153 +710,37 @@ func (c StoreV1IntrospectSAMSTokenFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreV1ListDotcomEnterpriseSubscriptionLicensesFunc describes the
-// behavior when the ListDotcomEnterpriseSubscriptionLicenses method of the
-// parent MockStoreV1 instance is invoked.
-type StoreV1ListDotcomEnterpriseSubscriptionLicensesFunc struct {
-	defaultHook func(context.Context, []*v11.ListEnterpriseSubscriptionLicensesFilter, int) ([]*dotcomdb.LicenseAttributes, error)
-	hooks       []func(context.Context, []*v11.ListEnterpriseSubscriptionLicensesFilter, int) ([]*dotcomdb.LicenseAttributes, error)
-	history     []StoreV1ListDotcomEnterpriseSubscriptionLicensesFuncCall
-	mutex       sync.Mutex
-}
-
-// ListDotcomEnterpriseSubscriptionLicenses delegates to the next hook
-// function in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockStoreV1) ListDotcomEnterpriseSubscriptionLicenses(v0 context.Context, v1 []*v11.ListEnterpriseSubscriptionLicensesFilter, v2 int) ([]*dotcomdb.LicenseAttributes, error) {
-	r0, r1 := m.ListDotcomEnterpriseSubscriptionLicensesFunc.nextHook()(v0, v1, v2)
-	m.ListDotcomEnterpriseSubscriptionLicensesFunc.appendCall(StoreV1ListDotcomEnterpriseSubscriptionLicensesFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// ListDotcomEnterpriseSubscriptionLicenses method of the parent MockStoreV1
-// instance is invoked and the hook queue is empty.
-func (f *StoreV1ListDotcomEnterpriseSubscriptionLicensesFunc) SetDefaultHook(hook func(context.Context, []*v11.ListEnterpriseSubscriptionLicensesFilter, int) ([]*dotcomdb.LicenseAttributes, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ListDotcomEnterpriseSubscriptionLicenses method of the parent MockStoreV1
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *StoreV1ListDotcomEnterpriseSubscriptionLicensesFunc) PushHook(hook func(context.Context, []*v11.ListEnterpriseSubscriptionLicensesFilter, int) ([]*dotcomdb.LicenseAttributes, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreV1ListDotcomEnterpriseSubscriptionLicensesFunc) SetDefaultReturn(r0 []*dotcomdb.LicenseAttributes, r1 error) {
-	f.SetDefaultHook(func(context.Context, []*v11.ListEnterpriseSubscriptionLicensesFilter, int) ([]*dotcomdb.LicenseAttributes, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreV1ListDotcomEnterpriseSubscriptionLicensesFunc) PushReturn(r0 []*dotcomdb.LicenseAttributes, r1 error) {
-	f.PushHook(func(context.Context, []*v11.ListEnterpriseSubscriptionLicensesFilter, int) ([]*dotcomdb.LicenseAttributes, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreV1ListDotcomEnterpriseSubscriptionLicensesFunc) nextHook() func(context.Context, []*v11.ListEnterpriseSubscriptionLicensesFilter, int) ([]*dotcomdb.LicenseAttributes, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreV1ListDotcomEnterpriseSubscriptionLicensesFunc) appendCall(r0 StoreV1ListDotcomEnterpriseSubscriptionLicensesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// StoreV1ListDotcomEnterpriseSubscriptionLicensesFuncCall objects
-// describing the invocations of this function.
-func (f *StoreV1ListDotcomEnterpriseSubscriptionLicensesFunc) History() []StoreV1ListDotcomEnterpriseSubscriptionLicensesFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreV1ListDotcomEnterpriseSubscriptionLicensesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreV1ListDotcomEnterpriseSubscriptionLicensesFuncCall is an object that
-// describes an invocation of method
-// ListDotcomEnterpriseSubscriptionLicenses on an instance of MockStoreV1.
-type StoreV1ListDotcomEnterpriseSubscriptionLicensesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []*v11.ListEnterpriseSubscriptionLicensesFilter
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*dotcomdb.LicenseAttributes
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreV1ListDotcomEnterpriseSubscriptionLicensesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreV1ListDotcomEnterpriseSubscriptionLicensesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// StoreV1ListDotcomEnterpriseSubscriptionsFunc describes the behavior when
-// the ListDotcomEnterpriseSubscriptions method of the parent MockStoreV1
+// StoreV1ListEnterpriseSubscriptionLicensesFunc describes the behavior when
+// the ListEnterpriseSubscriptionLicenses method of the parent MockStoreV1
 // instance is invoked.
-type StoreV1ListDotcomEnterpriseSubscriptionsFunc struct {
-	defaultHook func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error)
-	hooks       []func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error)
-	history     []StoreV1ListDotcomEnterpriseSubscriptionsFuncCall
+type StoreV1ListEnterpriseSubscriptionLicensesFunc struct {
+	defaultHook func(context.Context, subscriptions.ListLicensesOpts) ([]*subscriptions.LicenseWithConditions, error)
+	hooks       []func(context.Context, subscriptions.ListLicensesOpts) ([]*subscriptions.LicenseWithConditions, error)
+	history     []StoreV1ListEnterpriseSubscriptionLicensesFuncCall
 	mutex       sync.Mutex
 }
 
-// ListDotcomEnterpriseSubscriptions delegates to the next hook function in
+// ListEnterpriseSubscriptionLicenses delegates to the next hook function in
 // the queue and stores the parameter and result values of this invocation.
-func (m *MockStoreV1) ListDotcomEnterpriseSubscriptions(v0 context.Context, v1 dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
-	r0, r1 := m.ListDotcomEnterpriseSubscriptionsFunc.nextHook()(v0, v1)
-	m.ListDotcomEnterpriseSubscriptionsFunc.appendCall(StoreV1ListDotcomEnterpriseSubscriptionsFuncCall{v0, v1, r0, r1})
+func (m *MockStoreV1) ListEnterpriseSubscriptionLicenses(v0 context.Context, v1 subscriptions.ListLicensesOpts) ([]*subscriptions.LicenseWithConditions, error) {
+	r0, r1 := m.ListEnterpriseSubscriptionLicensesFunc.nextHook()(v0, v1)
+	m.ListEnterpriseSubscriptionLicensesFunc.appendCall(StoreV1ListEnterpriseSubscriptionLicensesFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// ListDotcomEnterpriseSubscriptions method of the parent MockStoreV1
+// ListEnterpriseSubscriptionLicenses method of the parent MockStoreV1
 // instance is invoked and the hook queue is empty.
-func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) SetDefaultHook(hook func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error)) {
+func (f *StoreV1ListEnterpriseSubscriptionLicensesFunc) SetDefaultHook(hook func(context.Context, subscriptions.ListLicensesOpts) ([]*subscriptions.LicenseWithConditions, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ListDotcomEnterpriseSubscriptions method of the parent MockStoreV1
+// ListEnterpriseSubscriptionLicenses method of the parent MockStoreV1
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) PushHook(hook func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error)) {
+func (f *StoreV1ListEnterpriseSubscriptionLicensesFunc) PushHook(hook func(context.Context, subscriptions.ListLicensesOpts) ([]*subscriptions.LicenseWithConditions, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -883,20 +748,20 @@ func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) PushHook(hook func(contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) SetDefaultReturn(r0 []*dotcomdb.SubscriptionAttributes, r1 error) {
-	f.SetDefaultHook(func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
+func (f *StoreV1ListEnterpriseSubscriptionLicensesFunc) SetDefaultReturn(r0 []*subscriptions.LicenseWithConditions, r1 error) {
+	f.SetDefaultHook(func(context.Context, subscriptions.ListLicensesOpts) ([]*subscriptions.LicenseWithConditions, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) PushReturn(r0 []*dotcomdb.SubscriptionAttributes, r1 error) {
-	f.PushHook(func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
+func (f *StoreV1ListEnterpriseSubscriptionLicensesFunc) PushReturn(r0 []*subscriptions.LicenseWithConditions, r1 error) {
+	f.PushHook(func(context.Context, subscriptions.ListLicensesOpts) ([]*subscriptions.LicenseWithConditions, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) nextHook() func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
+func (f *StoreV1ListEnterpriseSubscriptionLicensesFunc) nextHook() func(context.Context, subscriptions.ListLicensesOpts) ([]*subscriptions.LicenseWithConditions, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -909,37 +774,37 @@ func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) nextHook() func(context.C
 	return hook
 }
 
-func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) appendCall(r0 StoreV1ListDotcomEnterpriseSubscriptionsFuncCall) {
+func (f *StoreV1ListEnterpriseSubscriptionLicensesFunc) appendCall(r0 StoreV1ListEnterpriseSubscriptionLicensesFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// StoreV1ListDotcomEnterpriseSubscriptionsFuncCall objects describing the
+// StoreV1ListEnterpriseSubscriptionLicensesFuncCall objects describing the
 // invocations of this function.
-func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) History() []StoreV1ListDotcomEnterpriseSubscriptionsFuncCall {
+func (f *StoreV1ListEnterpriseSubscriptionLicensesFunc) History() []StoreV1ListEnterpriseSubscriptionLicensesFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreV1ListDotcomEnterpriseSubscriptionsFuncCall, len(f.history))
+	history := make([]StoreV1ListEnterpriseSubscriptionLicensesFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreV1ListDotcomEnterpriseSubscriptionsFuncCall is an object that
-// describes an invocation of method ListDotcomEnterpriseSubscriptions on an
-// instance of MockStoreV1.
-type StoreV1ListDotcomEnterpriseSubscriptionsFuncCall struct {
+// StoreV1ListEnterpriseSubscriptionLicensesFuncCall is an object that
+// describes an invocation of method ListEnterpriseSubscriptionLicenses on
+// an instance of MockStoreV1.
+type StoreV1ListEnterpriseSubscriptionLicensesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 dotcomdb.ListEnterpriseSubscriptionsOptions
+	Arg1 subscriptions.ListLicensesOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*dotcomdb.SubscriptionAttributes
+	Result0 []*subscriptions.LicenseWithConditions
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -947,13 +812,13 @@ type StoreV1ListDotcomEnterpriseSubscriptionsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreV1ListDotcomEnterpriseSubscriptionsFuncCall) Args() []interface{} {
+func (c StoreV1ListEnterpriseSubscriptionLicensesFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreV1ListDotcomEnterpriseSubscriptionsFuncCall) Results() []interface{} {
+func (c StoreV1ListEnterpriseSubscriptionLicensesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

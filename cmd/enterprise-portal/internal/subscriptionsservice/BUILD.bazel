@@ -45,7 +45,6 @@ go_test(
     embed = [":subscriptionsservice"],
     deps = [
         "//cmd/enterprise-portal/internal/database/subscriptions",
-        "//cmd/enterprise-portal/internal/dotcomdb",
         "//cmd/enterprise-portal/internal/samsm2m",
         "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "//lib/managedservicesplatform/iam",
