@@ -132,12 +132,12 @@ export interface RenderModeSpec {
  */
 export interface ParsedRepoURI
     extends RepoSpec,
-        Partial<RevisionSpec>,
-        Partial<ResolvedRevisionSpec>,
-        Partial<FileSpec>,
-        Partial<ComparisonSpec>,
-        Partial<UIPositionSpec>,
-        Partial<UIRangeSpec> {}
+    Partial<RevisionSpec>,
+    Partial<ResolvedRevisionSpec>,
+    Partial<FileSpec>,
+    Partial<ComparisonSpec>,
+    Partial<UIPositionSpec>,
+    Partial<UIRangeSpec> { }
 
 /**
  * RepoURI is a URI identifing a repository resource, like
@@ -232,39 +232,39 @@ export function makeRepoGitURI(parsed: ParsedRepoURI): RepoURI {
 /**
  * A repo
  */
-export interface Repo extends RepoSpec {}
+export interface Repo extends RepoSpec { }
 
 /**
  * A repo with a (possibly unresolved) revspec.
  */
-export interface RepoRevision extends RepoSpec, RevisionSpec {}
+export interface RepoRevision extends RepoSpec, RevisionSpec { }
 
 /**
  * A repo resolved to an exact commit
  */
-export interface AbsoluteRepo extends RepoSpec, RevisionSpec, ResolvedRevisionSpec {}
+export interface AbsoluteRepo extends RepoSpec, RevisionSpec, ResolvedRevisionSpec { }
 
 /**
  * A file in a repo
  */
-export interface RepoFile extends RepoSpec, RevisionSpec, Partial<ResolvedRevisionSpec>, FileSpec {}
+export interface RepoFile extends RepoSpec, RevisionSpec, Partial<ResolvedRevisionSpec>, FileSpec { }
 
 /**
  * A file at an exact commit
  */
-export interface AbsoluteRepoFile extends RepoSpec, RevisionSpec, ResolvedRevisionSpec, FileSpec {}
+export interface AbsoluteRepoFile extends RepoSpec, RevisionSpec, ResolvedRevisionSpec, FileSpec { }
 
 /**
  * A position in file at an exact commit
  */
 export interface AbsoluteRepoFilePosition
     extends RepoSpec,
-        RevisionSpec,
-        ResolvedRevisionSpec,
-        FileSpec,
-        UIPositionSpec,
-        Partial<ViewStateSpec>,
-        Partial<RenderModeSpec> {}
+    RevisionSpec,
+    ResolvedRevisionSpec,
+    FileSpec,
+    UIPositionSpec,
+    Partial<ViewStateSpec>,
+    Partial<RenderModeSpec> { }
 
 /** Encodes a repository at a revspec for use in a URL. */
 export function encodeRepoRevision({ repoName, revision }: RepoSpec & Partial<RevisionSpec>): string {
@@ -287,14 +287,14 @@ export function toPrettyBlobURL(
         .setLineRange(
             target.range
                 ? {
-                      line: target.range.start.line,
-                      character: target.range.start.character,
-                      endLine: target.range.end.line,
-                      endCharacter: target.range.end.character,
-                  }
+                    line: target.range.start.line,
+                    character: target.range.start.character,
+                    endLine: target.range.end.line,
+                    endCharacter: target.range.end.character,
+                }
                 : target.position
-                ? { line: target.position.line, character: target.position.character }
-                : null
+                    ? { line: target.position.line, character: target.position.character }
+                    : null
         )
         .setViewState(target.viewState)
 
@@ -456,7 +456,7 @@ export function replaceRevisionInURL(href: string, newRevision: string, isPerfor
  * input: "repopath@86382/-/blob/file.ts"
  * output: "repopath@changelist/86382/-/blob/file.ts"
  */
-export function addChangelistPath(pathname: string) {
+export function addChangelistPath(pathname: string): string {
     const [before, after] = pathname.split('@', 2)
     return `${before}@changelist/${after}`
 }
