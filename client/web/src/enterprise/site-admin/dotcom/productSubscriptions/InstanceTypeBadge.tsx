@@ -9,9 +9,7 @@ export interface InstanceTypeBadgeProps {
 /**
  * Displays instance type in a cute badge with relevant tooltips.
  */
-export const InstanceTypeBadge: React.FunctionComponent<React.PropsWithChildren<InstanceTypeBadgeProps>> = ({
-    instanceType,
-}) => {
+export const InstanceTypeBadge: React.FunctionComponent<InstanceTypeBadgeProps> = ({ instanceType }) => {
     let variant: BadgeVariantType = 'outlineSecondary'
     let tooltip = ''
     switch (instanceType) {

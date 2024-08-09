@@ -49,6 +49,7 @@ import {
     type EnterprisePortalEnvironment,
 } from './enterpriseportal'
 import { EnterprisePortalEnvSelector, getDefaultEnterprisePortalEnv } from './EnterprisePortalEnvSelector'
+import { EnterprisePortalEnvWarning } from './EnterprisePortalEnvWarning'
 import {
     type EnterpriseSubscriptionCondition,
     type EnterpriseSubscriptionLicenseCondition,
@@ -217,6 +218,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                 <>
                     <H3 className="mt-2">Details</H3>
                     <Container className="mb-3">
+                        <EnterprisePortalEnvWarning env={env} actionText="managing a subscription" />
                         <table className="table mb-0">
                             <tbody>
                                 <tr>
@@ -482,6 +484,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                             <Icon aria-hidden={true} svgPath={mdiPlus} /> New license key
                         </Button>
                     </H3>
+                    <EnterprisePortalEnvWarning env={env} actionText="managing licenses" />
                     <LicenseGenerationKeyWarning className="mb-2" />
                     <Container className="mb-2">
                         <ProductSubscriptionLicensesConnection

@@ -28,6 +28,7 @@ import { PageTitle } from '../../../../components/PageTitle'
 
 import { type EnterprisePortalEnvironment, useCreateEnterpriseSubscription, queryClient } from './enterpriseportal'
 import { getDefaultEnterprisePortalEnv, EnterprisePortalEnvSelector } from './EnterprisePortalEnvSelector'
+import { EnterprisePortalEnvWarning } from './EnterprisePortalEnvWarning'
 import { EnterpriseSubscriptionInstanceType } from './enterpriseportalgen/subscriptions_pb'
 
 interface Props extends TelemetryV2Props {
@@ -196,11 +197,13 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
                         Customers with multiple Sourcegraph instances should have a separate subscription for each.{' '}
                         <strong>Each subscription should only have licenses for a SINGLE Sourcegraph instance.</strong>
                     </Text>
-                    <Text>
+                    <Text className="mb-0">
                         The Salesforce subscription ID can be set to link multiple Enterprise subscriptions
                         corresponding to a single customer.
                     </Text>
                 </Alert>
+                <EnterprisePortalEnvWarning env={env} actionText="creating a subscription" />
+
                 <Form ref={formRef} onSubmit={handleSubmit}>
                     <Label className="w-100 mt-2">
                         Display name

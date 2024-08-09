@@ -185,7 +185,7 @@ export const SiteAdminProductLicenseNode: React.FunctionComponent<
                                         {info?.salesforceOpportunityId ? (
                                             <span className="text-monospace">{info?.salesforceOpportunityId}</span>
                                         ) : (
-                                            <span className="text-muted">Uknown</span>
+                                            <span className="text-muted">Not set</span>
                                         )}
                                     </Text>
                                 </div>

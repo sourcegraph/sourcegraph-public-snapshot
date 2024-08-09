@@ -33,6 +33,7 @@ import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
 import { hasUnknownTags, ProductLicenseTags, UnknownTagWarning } from '../../../productSubscription/ProductLicenseTags'
 
 import { type EnterprisePortalEnvironment, useCreateEnterpriseSubscriptionLicense } from './enterpriseportal'
+import { EnterprisePortalEnvWarning } from './EnterprisePortalEnvWarning'
 import type { EnterpriseSubscription, EnterpriseSubscriptionLicense } from './enterpriseportalgen/subscriptions_pb'
 import {
     ALL_PLANS,
@@ -316,6 +317,12 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
 
             {!hasAcknowledgedInfo && (
                 <>
+                    <EnterprisePortalEnvWarning
+                        env={env}
+                        actionText="creating a license key"
+                        className="flex-shrink-0"
+                    />
+
                     <Alert variant="danger" className="flex-shrink-0">
                         Each subscription must map to exactly ONE Sourcegraph instance.{' '}
                         <strong>
