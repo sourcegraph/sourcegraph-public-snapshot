@@ -5,6 +5,7 @@ import (
 	"sort"
 	"testing"
 
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/hexops/autogold/v2"
@@ -30,6 +31,9 @@ func TestSiteConfiguration(t *testing.T) {
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
+			securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
+			securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
+			db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			_, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).Site().Configuration(ctx, &SiteConfigurationArgs{
@@ -39,6 +43,7 @@ func TestSiteConfiguration(t *testing.T) {
 			if err == nil || !errors.Is(err, auth.ErrMustBeSiteAdmin) {
 				t.Fatalf("err: want %q but got %v", auth.ErrMustBeSiteAdmin, err)
 			}
+			mockrequire.CalledN(t, securityLogEvents.LogSecurityEventFunc, 0)
 		})
 
 		t.Run("ReturnSafeConfigsOnly is true", func(t *testing.T) {
@@ -46,6 +51,9 @@ func TestSiteConfiguration(t *testing.T) {
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
+			securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
+			securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
+			db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			r, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).Site().Configuration(ctx, &SiteConfigurationArgs{
@@ -75,6 +83,8 @@ func TestSiteConfiguration(t *testing.T) {
 			if err != nil {
 				t.Fatalf("err: want nil but got %v", err)
 			}
+			mockrequire.Called(t, securityLogEvents.LogSecurityEventFunc)
+
 		})
 	})
 
@@ -97,7 +107,9 @@ func TestSiteConfiguration(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.ConfFunc.SetDefaultReturn(conf)
-
+		securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
+		securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
+		db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 		t.Run("ReturnSafeConfigsOnly is false", func(t *testing.T) {
@@ -160,12 +172,18 @@ func TestSiteConfiguration(t *testing.T) {
 				t.Fatalf("err: want nil but got %v", err)
 			}
 		})
+		mockrequire.Called(t, securityLogEvents.LogSecurityEventFunc)
+
 	})
+
 }
 
 func TestSiteConfigurationHistory(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
-
+	users := dbmocks.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+	db := dbmocks.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: stubs.users[0].ID})
 	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewTestClient(t), nil).Site().Configuration(ctx, &SiteConfigurationArgs{})
 	if err != nil {
