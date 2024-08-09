@@ -95,6 +95,7 @@ func TestEvict(t *testing.T) {
 	// no tenant
 	doTestEvict(t, func() context.Context { return context.Background() })
 	// multi-tenant
+	tenant.MockEnforceTenant(t)
 	doTestEvict(t, func() context.Context { return tenant.NewTestContext() })
 }
 
