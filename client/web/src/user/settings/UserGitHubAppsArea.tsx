@@ -46,7 +46,7 @@ export const UserGitHubAppsArea: FC<Props> = props => {
                     <GitHubAppsPage
                         batchChangesEnabled={props.batchChangesEnabled}
                         telemetryRecorder={props.platformContext.telemetryRecorder}
-                        isSiteAdmin={false}
+                        userOwned={true}
                     />
                 }
             />
