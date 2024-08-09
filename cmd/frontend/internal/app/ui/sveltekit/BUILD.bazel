@@ -11,6 +11,7 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/internal/app/ui/sveltekit/tags",
+        "//internal/dotcom",
         "//internal/env",
         "//internal/featureflag",
         "//lib/errors",
