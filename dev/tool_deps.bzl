@@ -357,7 +357,7 @@ def tool_deps():
     http_archive(
         name = "chromium-darwin-arm64",
         integrity = "sha256-5wj+iZyUU7WSAyA8Unriu9swRag3JyAxUUgGgVM+fTw=",
-        url = "https://playwright.azureedge.net/builds/chromium/1117/chromium-mac-arm64.zip",
+        url = "https://playwright.azureedge.net/builds/chromium/1129/chromium-mac-arm64.zip",
         build_file_content = CHROMIUM_BUILDFILE.format("chrome-mac/Chromium.app/Contents/MacOS/Chromium"),
     )
 

@@ -114,15 +114,19 @@ Playwright and install the new browsers, and then update `dev/tool_deps.bzl` bas
 To [update Playwright](https://playwright.dev/docs/intro#updating-playwright), navigate to `clients/web-sveltekit` and
 run `pnpm add @playwright/test@latest playwright@latest` followed by `pnpm exec playwright install --with-deps`.
 
-**3. Update Bazel**
+**2. Update Bazel**
 
 The `install` command from above may have downloaded new browsers. You may see a log message like (on macOS) `Chromium 128.0.6613.18 (playwright build v1129) downloaded to /Users/your-user/Library/Caches/ms-playwright/chromium-1129`.
 
 If you don't have the logs anymore, you can run `pnpm exec playwright install --dry-run` to get an overview.
 
-You'll need to download the zip files, and calculate the integrity sha for them.
+If your latest browser version is newer than what's listed in `dev/tool_deps.bzl`, you'll need to update `dev/tool_deps.bzl` to
+include the new browser version and the zip file's sha integrity. You can calculate it yourself, or
+run e.g. `bazel test //client/web-sveltekit:e2e_test` to see the new integrity sha. Example below:
 
-TODO: Describe what approach to use, when https://sourcegraph.slack.com/archives/C04MYFW01NV/p1723214497707019 has been resolved.
+```
+Error in download_and_extract: java.io.IOException: Error downloading [https://playwright.azureedge.net/builds/chromium/1129/chromium-mac-arm64.zip] to /private/var/tmp/_bazel_michael/680fb57cd51801cfe03bf19f9d7a0d3e/external/chromium-darwin-arm64/temp15834460500730224298/chromium-mac-arm64.zip: Checksum was sha256-WdF50K2a15LlHbga7y17zBZOb130NMCBiI+760VovQ4= but wanted sha256-5wj+iZyUU7WSAyA8Unriu9swRag3JyAxUUgGgVM+fTw=
+```
 
 ### Formatting and linting
 
