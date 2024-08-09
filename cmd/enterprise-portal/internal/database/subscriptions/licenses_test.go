@@ -270,20 +270,41 @@ func TestLicensesStore(t *testing.T) {
 		}
 	})
 
+	t.Run("SetDetectedInstance", func(t *testing.T) {
+		require.NoError(t, licenses.SetDetectedInstance(ctx, createdLicenses[0].ID, subscriptions.SetDetectedInstanceOpts{
+			InstanceID: "instance-id",
+			Message:    t.Name(),
+		}))
+		got, err := licenses.Get(ctx, createdLicenses[0].ID)
+		require.NoError(t, err)
+		assert.Equal(t, "instance-id", *got.DetectedInstanceID)
+	})
+
 	t.Run("Revoke", func(t *testing.T) {
 		for idx, license := range createdLicenses {
-			revokeTime := utctime.FromTime(time.Now().Add(-time.Second))
+			revokeTime := utctime.FromTime(time.Now())
 			got, err := licenses.Revoke(ctx, license.ID, subscriptions.RevokeLicenseOpts{
 				Message: fmt.Sprintf("%s %d", t.Name(), idx),
 				Time:    pointers.Ptr(revokeTime),
 			})
 			require.NoError(t, err)
 			assert.Equal(t, revokeTime.AsTime(), got.RevokedAt.AsTime())
-			require.Len(t, got.Conditions, 2)
-			// Most recent condition is sorted first, and should be the revocation
-			assert.Equal(t, "STATUS_REVOKED", got.Conditions[0].Status)
-			assert.Equal(t, revokeTime.AsTime(), got.Conditions[0].TransitionTime.AsTime())
-			assert.Equal(t, "STATUS_CREATED", got.Conditions[1].Status)
+			if idx > 0 {
+				require.Len(t, got.Conditions, 2)
+				// Most recent condition is sorted first, and should be the revocation
+				assert.Equal(t, "STATUS_REVOKED", got.Conditions[0].Status)
+				assert.Equal(t, revokeTime.AsTime(), got.Conditions[0].TransitionTime.AsTime())
+				assert.Equal(t, "STATUS_CREATED", got.Conditions[1].Status)
+			} else {
+				require.Len(t, got.Conditions, 3)
+				// Most recent condition is sorted first, and should be the revocation
+				assert.Equal(t, "STATUS_REVOKED", got.Conditions[0].Status)
+				assert.Equal(t, revokeTime.AsTime(), got.Conditions[0].TransitionTime.AsTime())
+				// Then, the condition from SetDetectedInstance test
+				assert.Equal(t, "STATUS_INSTANCE_USAGE_DETECTED", got.Conditions[1].Status)
+				// Finally, the subscription creation event
+				assert.Equal(t, "STATUS_CREATED", got.Conditions[2].Status)
+			}
 		}
 	})
 }

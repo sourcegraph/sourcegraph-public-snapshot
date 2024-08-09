@@ -172,6 +172,8 @@ message EnterpriseSubscriptionLicenseCondition {
     STATUS_CREATED = 1;
     // License revocation status, i.e. 'is_revoked'
     STATUS_REVOKED = 2;
+    // License usage from a Sourcegraph instance was detected.
+    STATUS_INSTANCE_USAGE_DETECTED = 3;
   }
 
   // The time this subscription transitioned into this status.
