@@ -132,9 +132,10 @@ func NewLicensesStore(db *pgxpool.Pool) *LicensesStore {
 }
 
 type ListLicensesOpts struct {
-	SubscriptionID      string
-	LicenseType         subscriptionsv1.EnterpriseSubscriptionLicenseType
-	LicenseKeySubstring string
+	SubscriptionID          string
+	LicenseType             subscriptionsv1.EnterpriseSubscriptionLicenseType
+	LicenseKeySubstring     string
+	SalesforceOpportunityID string
 	// PageSize is the maximum number of licenses to return.
 	PageSize int
 }
@@ -151,11 +152,21 @@ func (opts ListLicensesOpts) toQueryConditions() (where, limitClause string, _ p
 			"license_type = @licenseType")
 		namedArgs["licenseType"] = opts.LicenseType.String()
 	}
-	if opts.LicenseKeySubstring != "" {
-		whereConds = append(whereConds,
-			"license_data->>'SignedKey' LIKE  '%' || @licenseKeySubstring || '%'")
-		namedArgs["licenseKeySubstring"] = opts.LicenseKeySubstring
+
+	switch opts.LicenseType {
+	case subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY:
+		if opts.LicenseKeySubstring != "" {
+			whereConds = append(whereConds,
+				"license_data->>'SignedKey' LIKE  '%' || @licenseKeySubstring || '%'")
+			namedArgs["licenseKeySubstring"] = opts.LicenseKeySubstring
+		}
+		if opts.SalesforceOpportunityID != "" {
+			whereConds = append(whereConds,
+				"license_data->'Info'->>'sf_opp_id' = @salesforceOpportunityID")
+			namedArgs["salesforceOpportunityID"] = opts.SalesforceOpportunityID
+		}
 	}
+
 	where = strings.Join(whereConds, " AND ")
 
 	if opts.PageSize > 0 {

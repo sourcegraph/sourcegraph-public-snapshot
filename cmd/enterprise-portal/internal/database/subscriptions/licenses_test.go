@@ -124,6 +124,8 @@ func TestLicensesStore(t *testing.T) {
 					Tags:      []string{"tag"},
 					CreatedAt: time.Time{}.Add(24 * time.Hour),
 					ExpiresAt: time.Time{}.Add(48 * time.Hour),
+
+					SalesforceOpportunityID: pointers.Ptr("sf_opportunity"),
 				},
 				SignedKey: "asdffdsadf",
 			},
@@ -136,7 +138,7 @@ func TestLicensesStore(t *testing.T) {
 		testLicense(
 			got,
 			autogold.Expect(valast.Ptr("TestLicensesStore/CreateLicenseKey 2")),
-			autogold.Expect(`{"Info": {"c": "0001-01-02T00:00:00Z", "e": "0001-01-03T00:00:00Z", "t": ["tag"], "u": 0}, "SignedKey": "asdffdsadf"}`),
+			autogold.Expect(`{"Info": {"c": "0001-01-02T00:00:00Z", "e": "0001-01-03T00:00:00Z", "t": ["tag"], "u": 0, "sf_opp_id": "sf_opportunity"}, "SignedKey": "asdffdsadf"}`),
 		)
 		createdLicenses = append(createdLicenses, got)
 
@@ -229,6 +231,34 @@ func TestLicensesStore(t *testing.T) {
 			require.NoError(t, err)
 			require.Len(t, listedLicenses, 1)
 			assert.Equal(t, subscriptionID1, listedLicenses[0].SubscriptionID)
+
+			t.Run("no match", func(t *testing.T) {
+				listedLicenses, err = licenses.List(ctx, subscriptions.ListLicensesOpts{
+					LicenseType:         subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY,
+					LicenseKeySubstring: "no-match",
+				})
+				require.NoError(t, err)
+				assert.Len(t, listedLicenses, 0)
+			})
+		})
+
+		t.Run("List by salesforce opportunity ID", func(t *testing.T) {
+			listedLicenses, err := licenses.List(ctx, subscriptions.ListLicensesOpts{
+				LicenseType:             subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY,
+				SalesforceOpportunityID: "sf_opportunity",
+			})
+			require.NoError(t, err)
+			require.Len(t, listedLicenses, 1)
+			assert.Equal(t, subscriptionID2, listedLicenses[0].SubscriptionID)
+
+			t.Run("no match", func(t *testing.T) {
+				listedLicenses, err := licenses.List(ctx, subscriptions.ListLicensesOpts{
+					LicenseType:             subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY,
+					SalesforceOpportunityID: "no-match",
+				})
+				require.NoError(t, err)
+				assert.Len(t, listedLicenses, 0)
+			})
 		})
 	})
 

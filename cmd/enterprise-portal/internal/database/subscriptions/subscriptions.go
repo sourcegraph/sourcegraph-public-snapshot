@@ -125,7 +125,13 @@ type ListEnterpriseSubscriptionsOptions struct {
 	InstanceDomains []string
 	// IsArchived indicates whether to only list archived subscriptions, or only
 	// non-archived subscriptions.
-	IsArchived bool
+	IsArchived *bool
+	// DisplayNameSubstring is a substring match on display name.
+	DisplayNameSubstring string
+	// SalesforceSubscriptionIDs are exact matches on the Salesforce subscription
+	// ID.
+	SalesforceSubscriptionIDs []string
+
 	// PageSize is the maximum number of subscriptions to return.
 	PageSize int
 }
@@ -141,10 +147,24 @@ func (opts ListEnterpriseSubscriptionsOptions) toQueryConditions() (where, limit
 		whereConds = append(whereConds, "instance_domain = ANY(@instanceDomains)")
 		namedArgs["instanceDomains"] = opts.InstanceDomains
 	}
-	// Future: Uncomment the following block when the archived field is added to the table.
-	// if opts.OnlyArchived {
-	// whereConds = append(whereConds, "archived = TRUE")
-	// }
+	if opts.IsArchived != nil {
+		if *opts.IsArchived {
+			whereConds = append(whereConds, "archived_at IS NOT NULL")
+		} else {
+			whereConds = append(whereConds, "archived IS NUlL")
+		}
+	}
+	if len(opts.DisplayNameSubstring) > 0 {
+		whereConds = append(whereConds,
+			"LOWER(display_name) LIKE '%' || LOWER(@displayName) || '%'")
+		namedArgs["displayName"] = opts.DisplayNameSubstring
+	}
+	if len(opts.SalesforceSubscriptionIDs) > 0 {
+		whereConds = append(whereConds,
+			"salesforce_subscription_id = ANY(@salesforceSubscriptionIDs)")
+		namedArgs["salesforceSubscriptionIDs"] = opts.SalesforceSubscriptionIDs
+	}
+
 	where = strings.Join(whereConds, " AND ")
 
 	if opts.PageSize > 0 {

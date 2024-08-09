@@ -59,7 +59,9 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		ctx,
 		uuid.New().String(),
 		subscriptions.UpsertSubscriptionOptions{
-			InstanceDomain: database.NewNullString("s1.sourcegraph.com"),
+			DisplayName:              database.NewNullString("Subscription 1"),
+			InstanceDomain:           database.NewNullString("s1.sourcegraph.com"),
+			SalesforceSubscriptionID: pointers.Ptr("sf_sub_id"),
 		},
 	)
 	require.NoError(t, err)
@@ -67,20 +69,24 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		ctx,
 		uuid.New().String(),
 		subscriptions.UpsertSubscriptionOptions{
+			DisplayName:    database.NewNullString("Subscription 2"),
 			InstanceDomain: database.NewNullString("s2.sourcegraph.com"),
 		},
 	)
 	require.NoError(t, err)
-	_, err = s.Upsert(
+	s3, err := s.Upsert(
 		ctx,
 		uuid.New().String(),
 		subscriptions.UpsertSubscriptionOptions{
+			DisplayName:    database.NewNullString("Subscription 3"),
 			InstanceDomain: database.NewNullString("s3.sourcegraph.com"),
 		},
 	)
 	require.NoError(t, err)
 
 	t.Run("list by IDs", func(t *testing.T) {
+		t.Parallel()
+
 		ss, err := s.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{IDs: []string{s1.ID, s2.ID}})
 		require.NoError(t, err)
 		require.Len(t, ss, 2)
@@ -101,6 +107,8 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 	})
 
 	t.Run("list by instance domains", func(t *testing.T) {
+		t.Parallel()
+
 		ss, err := s.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{
 			InstanceDomains: []string{*s1.InstanceDomain, *s2.InstanceDomain}},
 		)
@@ -122,7 +130,78 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		})
 	})
 
+	t.Run("list by display name", func(t *testing.T) {
+		t.Parallel()
+
+		ss, err := s.List(
+			ctx,
+			subscriptions.ListEnterpriseSubscriptionsOptions{
+				DisplayNameSubstring: "Subscription",
+			},
+		)
+		require.NoError(t, err)
+		assert.Len(t, ss, 3) // all 3 are returned
+
+		t.Run("single match", func(t *testing.T) {
+			t.Parallel()
+
+			ss, err := s.List(
+				ctx,
+				subscriptions.ListEnterpriseSubscriptionsOptions{
+					DisplayNameSubstring: "tion 3",
+				},
+			)
+			require.NoError(t, err)
+			assert.Len(t, ss, 1)
+			assert.Equal(t, s3.ID, ss[0].ID)
+		})
+
+		t.Run("exact match", func(t *testing.T) {
+			t.Parallel()
+
+			ss, err := s.List(
+				ctx,
+				subscriptions.ListEnterpriseSubscriptionsOptions{
+					DisplayNameSubstring: "Subscription 2",
+				},
+			)
+			require.NoError(t, err)
+			assert.Len(t, ss, 1)
+			assert.Equal(t, s2.ID, ss[0].ID)
+		})
+
+		t.Run("case-insensitive match", func(t *testing.T) {
+			t.Parallel()
+
+			ss, err := s.List(
+				ctx,
+				subscriptions.ListEnterpriseSubscriptionsOptions{
+					DisplayNameSubstring: "subscription 2",
+				},
+			)
+			require.NoError(t, err)
+			assert.Len(t, ss, 1)
+			assert.Equal(t, s2.ID, ss[0].ID)
+		})
+	})
+
+	t.Run("list by Salesforce subscription ID", func(t *testing.T) {
+		t.Parallel()
+
+		ss, err := s.List(
+			ctx,
+			subscriptions.ListEnterpriseSubscriptionsOptions{
+				SalesforceSubscriptionIDs: []string{"sf_sub_id"},
+			},
+		)
+		require.NoError(t, err)
+		assert.Len(t, ss, 1)
+		assert.Equal(t, s1.ID, ss[0].ID)
+	})
+
 	t.Run("list with page size", func(t *testing.T) {
+		t.Parallel()
+
 		ss, err := s.List(
 			ctx,
 			subscriptions.ListEnterpriseSubscriptionsOptions{
