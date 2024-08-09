@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "v1connect",
+    srcs = ["subscriptionlicensechecks.connect.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptionlicensechecks/v1/v1connect",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/enterpriseportal/subscriptionlicensechecks/v1:subscriptionlicensechecks",
+        "@com_connectrpc_connect//:connect",
+    ],
+)
