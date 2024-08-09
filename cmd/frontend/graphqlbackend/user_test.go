@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
 
@@ -459,7 +460,9 @@ func TestUpdateUser(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(mockUser, nil)
 		users.UpdateFunc.SetDefaultReturn(nil)
 		db.UsersFunc.SetDefaultReturn(users)
-
+		securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
+		securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
+		db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
 		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
@@ -486,6 +489,7 @@ func TestUpdateUser(t *testing.T) {
 		`,
 			},
 		})
+		mockrequire.Called(t, securityLogEvents.LogSecurityEventFunc)
 	})
 
 	t.Run("scim controlled user cannot change display or username", func(t *testing.T) {
@@ -907,6 +911,11 @@ func TestSchema_SetUserCompletionsQuota(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(mockUser, nil)
 		users.UpdateFunc.SetDefaultReturn(nil)
 		db.UsersFunc.SetDefaultReturn(users)
+
+		securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
+		securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
+		db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
+
 		var quota *int
 		users.SetChatCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i1 int32, i2 *int) error {
 			quota = i2
@@ -941,6 +950,7 @@ func TestSchema_SetUserCompletionsQuota(t *testing.T) {
 		`,
 			},
 		})
+		mockrequire.Called(t, securityLogEvents.LogSecurityEventFunc)
 	})
 }
 
@@ -983,6 +993,11 @@ func TestSchema_SetUserCodeCompletionsQuota(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(mockUser, nil)
 		users.UpdateFunc.SetDefaultReturn(nil)
 		db.UsersFunc.SetDefaultReturn(users)
+
+		securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
+		securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
+		db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
+
 		var quota *int
 		users.SetCodeCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i1 int32, i2 *int) error {
 			quota = i2
@@ -1017,6 +1032,7 @@ func TestSchema_SetUserCodeCompletionsQuota(t *testing.T) {
 		`,
 			},
 		})
+		mockrequire.Called(t, securityLogEvents.LogSecurityEventFunc)
 	})
 }
 
