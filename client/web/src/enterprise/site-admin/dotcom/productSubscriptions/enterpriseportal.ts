@@ -173,7 +173,6 @@ export function useListEnterpriseSubscriptions(
     filters: PartialMessage<ListEnterpriseSubscriptionsFilter>[],
     options: {
         limit: number
-        shouldLoad: boolean
     }
 ): UseQueryResult<ListEnterpriseSubscriptionsResponse, ConnectError> {
     return useQuery(
@@ -184,7 +183,6 @@ export function useListEnterpriseSubscriptions(
         },
         {
             transport: mustGetEnvironment(env),
-            enabled: options.shouldLoad,
             placeholderData: keepPreviousData,
         }
     )

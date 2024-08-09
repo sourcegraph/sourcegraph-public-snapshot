@@ -15,6 +15,7 @@ import {
     ConnectionForm,
     ConnectionList,
     ConnectionLoading,
+    SummaryContainer,
 } from '../../../../components/FilteredConnection/ui'
 import { PageTitle } from '../../../../components/PageTitle'
 
@@ -44,7 +45,7 @@ const QUERY_PARAM_FILTER = 'filter'
 
 type FilterType = 'display_name' | 'sf_sub_id'
 
-const MAX_RESULTS = 100
+const MAX_RESULTS = 50
 
 const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemetryRecorder }) => {
     useEffect(() => telemetryRecorder.recordEvent('admin.productSubscriptions', 'view'), [telemetryRecorder])
@@ -68,34 +69,35 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
     const [debouncedQuery] = useDebounce(query, 200)
 
     let listFilters: PartialMessage<ListEnterpriseSubscriptionsFilter>[] = []
-    switch (filters.filter) {
-        case 'display_name': {
-            listFilters = [
-                {
-                    filter: {
-                        case: 'displayName',
-                        value: debouncedQuery,
+    // no filter without a query
+    if (debouncedQuery) {
+        switch (filters.filter) {
+            case 'display_name': {
+                listFilters = [
+                    {
+                        filter: {
+                            case: 'displayName',
+                            value: debouncedQuery,
+                        },
                     },
-                },
-            ]
-            break
-        }
-        case 'sf_sub_id': {
-            listFilters = [
-                {
-                    filter: {
-                        case: 'salesforce',
-                        value: { subscriptionId: debouncedQuery },
+                ]
+                break
+            }
+            case 'sf_sub_id': {
+                listFilters = [
+                    {
+                        filter: {
+                            case: 'salesforce',
+                            value: { subscriptionId: debouncedQuery },
+                        },
                     },
-                },
-            ]
-            break
+                ]
+                break
+            }
         }
     }
     const { error, isFetching, data } = useListEnterpriseSubscriptions(env, listFilters, {
         limit: MAX_RESULTS,
-        // Only load when we have a query, and at least one filter
-        shouldLoad: !!(debouncedQuery && listFilters.length > 0),
     })
 
     return (
@@ -104,7 +106,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
             <PageHeader
                 headingElement="h2"
                 path={[{ text: 'Enterprise subscriptions' }]}
-                description="List subscriptions for Enterprise Sourcegraph instances."
+                description="Manage subscriptions for Sourcegraph Enterprise instances."
                 actions={
                     <div className="align-items-end d-flex">
                         <EnterprisePortalEnvSelector env={env} setEnv={setEnv} />
@@ -155,35 +157,41 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                                 setFilters({ ...filters, [filter.id]: value as FilterType })
                             }
                         }}
-                        inputPlaceholder="Enter a query to list subscriptions"
+                        inputPlaceholder="Enter a query to find subscriptions"
                     />
                 </Container>
 
-                {debouncedQuery && filters.filter && (
-                    <>
-                        <Container className="mb-3">
-                            {error && <ConnectionError errors={[error.message]} />}
-                            {data?.subscriptions && data?.subscriptions.length >= MAX_RESULTS && (
-                                <ConnectionError
-                                    errors={[
-                                        `Only ${MAX_RESULTS} results are shown at a time - narrow your search for more accurate results.`,
-                                    ]}
-                                />
-                            )}
-                            {isFetching && <ConnectionLoading />}
-                            {data && (
-                                <ConnectionList as="table" aria-label="Enterprise subscriptions">
-                                    <SiteAdminProductSubscriptionNodeHeader />
-                                    <tbody>
-                                        {data?.subscriptions?.map(node => (
-                                            <SiteAdminProductSubscriptionNode key={node.id} node={node} env={env} />
-                                        ))}
-                                    </tbody>
-                                </ConnectionList>
-                            )}
-                        </Container>
-                    </>
-                )}
+                <Container className="mb-3">
+                    {error && <ConnectionError errors={[error.message]} />}
+
+                    {isFetching && <ConnectionLoading />}
+                    {data && (
+                        <ConnectionList as="table" aria-label="Enterprise subscriptions">
+                            <SiteAdminProductSubscriptionNodeHeader />
+                            <tbody>
+                                {data?.subscriptions?.map(node => (
+                                    <SiteAdminProductSubscriptionNode key={node.id} node={node} env={env} />
+                                ))}
+                            </tbody>
+                        </ConnectionList>
+                    )}
+                    <SummaryContainer className="mt-4" centered={true}>
+                        {data && data.subscriptions.length > 0 && (
+                            <span className="text-muted">Showing {data.subscriptions.length} subscriptions.</span>
+                        )}
+                        {data && data.subscriptions.length === 0 && (
+                            <span className="text-muted">No subscriptions found.</span>
+                        )}
+                        {data && data.subscriptions.length >= MAX_RESULTS && (
+                            <ConnectionError
+                                className="mt-2"
+                                errors={[
+                                    `Only ${MAX_RESULTS} results are shown at a time - narrow your search for more accurate results.`,
+                                ]}
+                            />
+                        )}
+                    </SummaryContainer>
+                </Container>
             </ConnectionContainer>
         </div>
     )
