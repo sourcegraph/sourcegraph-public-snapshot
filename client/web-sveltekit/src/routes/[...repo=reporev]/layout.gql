@@ -49,10 +49,14 @@ fragment ResolvedRepository on Repository {
         abbrevName
     }
     externalURLs {
-        url
-        serviceKind
+        ...RepositoryExternalLink
     }
     ...RepoPage_ResolvedRevision
     ...BlobPage_ResolvedRevision
     ...CodySidebar_ResolvedRevision
+}
+
+fragment RepositoryExternalLink on ExternalLink {
+    url
+    serviceKind
 }

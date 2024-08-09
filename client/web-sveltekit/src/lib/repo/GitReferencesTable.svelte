@@ -2,7 +2,7 @@
     import Avatar from '$lib/Avatar.svelte'
     import { numberWithCommas } from '$lib/common'
     import type { GitRefType } from '$lib/graphql-types'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import CodeHostIcon from '$lib/repo/codehost/CodeHostIcon.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
     import { Badge } from '$lib/wildcard'
@@ -103,7 +103,7 @@
                                     <a href={url}>
                                         View on
                                         {#if serviceKind}
-                                            <CodeHostIcon repository={serviceKind} disableTooltip />
+                                            <CodeHostIcon kind={serviceKind} inline />
                                             {getHumanNameForCodeHost(serviceKind)}
                                         {:else}
                                             code host

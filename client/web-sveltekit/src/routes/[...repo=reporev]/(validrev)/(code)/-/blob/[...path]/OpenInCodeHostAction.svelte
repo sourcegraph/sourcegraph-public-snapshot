@@ -1,8 +1,8 @@
 <script lang="ts">
     import type { LineOrPositionOrRange } from '$lib/common'
+    import CodeHostIcon from '$lib/repo/codehost/CodeHostIcon.svelte'
     import { getHumanNameForCodeHost } from '$lib/repo/shared/codehost'
     import { getExternalURL } from '$lib/repo/url'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import Tooltip from '$lib/Tooltip.svelte'
 
@@ -25,7 +25,7 @@
             on:click={handleOpenCodeHostClick}
         >
             {#if externalLink.serviceKind}
-                <CodeHostIcon repository={externalLink.serviceKind} disableTooltip />
+                <CodeHostIcon kind={externalLink.serviceKind} inline />
                 <span data-action-label>
                     {getHumanNameForCodeHost(externalLink.serviceKind)}
                 </span>

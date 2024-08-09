@@ -1,10 +1,11 @@
 <script lang="ts">
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import { reposHotkey } from '$lib/fuzzyfinder/keys'
+    import type { ExternalServiceKind } from '$lib/graphql-types'
     import Icon from '$lib/Icon.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
+    import DisplayRepoName from '$lib/repo/DisplayRepoName.svelte'
     import { getHumanNameForCodeHost } from '$lib/repo/shared/codehost'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { getButtonClassName } from '$lib/wildcard/Button'
     import DropdownMenu from '$lib/wildcard/menu/DropdownMenu.svelte'
     import MenuButton from '$lib/wildcard/menu/MenuButton.svelte'
@@ -12,24 +13,16 @@
     import MenuSeparator from '$lib/wildcard/menu/MenuSeparator.svelte'
 
     export let repoName: string
-    export let displayRepoName: string
     export let repoURL: string
 
     export let externalURL: string | undefined
-    export let externalServiceKind: string | undefined
+    export let externalServiceKind: ExternalServiceKind | undefined
 </script>
 
 <DropdownMenu triggerButtonClass="{getButtonClassName({ variant: 'text' })} triggerButton">
-    <svelte:fragment slot="trigger">
-        <div class="trigger">
-            <CodeHostIcon repository={repoName} codeHost={externalServiceKind} />
-            <h2>
-                {#each displayRepoName.split('/') as segment, i}
-                    {#if i > 0}<span class="slash">/</span>{/if}{segment}
-                {/each}
-            </h2>
-        </div>
-    </svelte:fragment>
+    <h2 slot="trigger">
+        <DisplayRepoName {repoName} kind={externalServiceKind} />
+    </h2>
 
     <MenuLink href={repoURL}>
         <div class="menu-item">
@@ -63,8 +56,7 @@
                     {/if}
                 </small>
                 <div class="repo-name">
-                    <CodeHostIcon repository={repoName} codeHost={externalServiceKind} />
-                    <span>{displayRepoName}</span>
+                    <DisplayRepoName {repoName} kind={externalServiceKind} />
                 </div>
                 <div class="external-link-icon">
                     <Icon icon={ILucideExternalLink} aria-hidden />
@@ -78,25 +70,14 @@
     :global(.triggerButton) {
         border-radius: 0;
     }
-    .trigger {
-        --icon-color: currentColor;
-
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        white-space: nowrap;
-
-        h2 {
-            font-size: var(--font-size-large);
+    h2 {
+        margin: 0;
+        font-size: var(--font-size-base);
+        :global([data-path-container]) {
             font-weight: 500;
-            margin: 0;
-
-            .slash {
-                font-weight: 400;
-                color: var(--text-muted);
-                margin: 0.25em;
-                letter-spacing: -0.25px;
-            }
+        }
+        :global([data-slash]) {
+            font-weight: 400;
         }
     }
 

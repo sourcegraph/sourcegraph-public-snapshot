@@ -3,7 +3,8 @@
 
     import { invalidate } from '$app/navigation'
     import HeroPage from '$lib/HeroPage.svelte'
-    import { displayRepoName, type CloneInProgressError } from '$lib/shared'
+    import { inferSplitCodeHost } from '$lib/repo/codehost'
+    import { type CloneInProgressError } from '$lib/shared'
 
     // TODO: Find a way to make this type stricter
     export let error: App.Error | null
@@ -19,7 +20,7 @@
     })
 </script>
 
-<HeroPage title={displayRepoName(repoName)} icon={ILucideFolderGit2}>
+<HeroPage title={inferSplitCodeHost(repoName, undefined).displayName} icon={ILucideFolderGit2}>
     <code><pre>{progress}</pre></code>
     <!--TODO add DirectImportRepoAlert -->
 </HeroPage>

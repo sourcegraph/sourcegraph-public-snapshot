@@ -14,13 +14,11 @@
 
 <script lang="ts">
     import Avatar from '$lib/Avatar.svelte'
-    import Icon from '$lib/Icon.svelte'
-    import { displayRepoName } from '$lib/shared'
     import Timestamp from '$lib/Timestamp.svelte'
     import Badge from '$lib/wildcard/Badge.svelte'
 
+    import DisplayRepoName from '../DisplayRepoName.svelte'
     import RepoStars from '../RepoStars.svelte'
-    import { getHumanNameForCodeHost, getIconForCodeHost } from '../shared/codehost'
 
     import type { RepoPopoverFragment } from './RepoPopover.gql'
 
@@ -34,21 +32,11 @@
 <div class="root">
     {#if withHeader}
         <div class="header">
-            <div class="left">
-                <Icon icon={ILucideGitMerge} aria-hidden --icon-color="var(--primary)" inline />
-                <h4>{displayRepoName(data.name)}</h4>
-                <Badge variant="outlineSecondary" small pill>
-                    {data.isPrivate ? 'Private' : 'Public'}
-                </Badge>
-            </div>
-            <div class="right">
-                <Icon
-                    icon={getIconForCodeHost(data.externalRepository.serviceType)}
-                    --icon-color="var(--text-body)"
-                    inline
-                />
-                <small>{getHumanNameForCodeHost(data.externalRepository.serviceType)}</small>
-            </div>
+            <!-- TODO: we should be able to get the service kind (not the service type) from the backend -->
+            <h4><DisplayRepoName repoName={data.name} kind={undefined} /></h4>
+            <Badge variant="outlineSecondary" small pill>
+                {data.isPrivate ? 'Private' : 'Public'}
+            </Badge>
         </div>
     {/if}
 
@@ -103,37 +91,13 @@
 
     .header {
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-start;
         align-items: center;
+        gap: 0.25rem;
 
-        .left {
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            gap: 0.25rem;
-
-            h4 {
-                color: var(--text-title);
-                margin: 0;
-            }
-
-            small {
-                border: 1px solid var(--text-muted);
-                color: var(--text-muted);
-                padding: 0rem 0.5rem;
-                border-radius: 1rem;
-            }
-        }
-
-        .right {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 0.25rem;
-
-            small {
-                color: var(--text-muted);
-            }
+        h4 {
+            color: var(--text-title);
+            margin: 0;
         }
     }
 

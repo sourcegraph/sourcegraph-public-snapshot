@@ -79,15 +79,14 @@
 </span>
 
 <style lang="scss">
-    [data-path-container] {
+    :where([data-path-container]) {
         display: inline-flex;
-        align-items: center;
+        align-items: baseline;
         gap: 0.125em;
 
         white-space: pre-wrap;
 
         font-weight: 400;
-        font-size: var(--code-font-size);
         font-family: var(--code-font-family);
 
         // Global so data-slash can be slotted in with the prefix
@@ -98,7 +97,7 @@
         }
     }
 
-    [data-path-item] {
+    :where([data-path-item]) {
         display: inline;
         white-space: nowrap;
         color: var(--text-body);

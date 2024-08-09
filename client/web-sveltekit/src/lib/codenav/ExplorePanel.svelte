@@ -244,10 +244,10 @@
     import { SymbolUsageKind } from '$lib/graphql-types'
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import DisplayRepoName from '$lib/repo/DisplayRepoName.svelte'
     import Scroller from '$lib/Scroller.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import LoadingSkeleton from '$lib/search/dynamicFilters/LoadingSkeleton.svelte'
-    import { displayRepoName, Occurrence } from '$lib/shared'
+    import { Occurrence } from '$lib/shared'
     import { type SingleSelectTreeState, type TreeProvider } from '$lib/TreeView'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
     import type { DocumentInfo } from '$lib/web'
@@ -321,8 +321,7 @@
                             <svelte:fragment let:entry>
                                 {#if entry.type === 'repo'}
                                     <span class="repo-entry" data-repo-name={entry.name}>
-                                        <CodeHostIcon repository={entry.name} />
-                                        {displayRepoName(entry.name)}
+                                        <DisplayRepoName repoName={entry.name} kind={undefined} />
                                     </span>
                                 {:else}
                                     <span class="path-entry" data-repo-name={entry.repo} data-path={entry.path}>

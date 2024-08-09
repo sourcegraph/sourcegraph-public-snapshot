@@ -174,7 +174,6 @@
 <nav aria-label="repository" use:sizeToFit={{ grow, shrink }}>
     <RepoMenu
         repoName={data.repoName}
-        displayRepoName={data.displayRepoName}
         repoURL={data.repoURL}
         externalURL={data.resolvedRepository.externalURLs[0]?.url}
         externalServiceKind={data.resolvedRepository.externalURLs[0]?.serviceKind ?? undefined}

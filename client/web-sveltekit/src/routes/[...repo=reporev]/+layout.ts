@@ -3,7 +3,8 @@ import { error, redirect } from '@sveltejs/kit'
 import { loadMarkdownSyntaxHighlighting } from '$lib/common'
 import { getGraphQLClient, mapOrThrow, type GraphQLClient } from '$lib/graphql'
 import { GitRefType } from '$lib/graphql-types'
-import { CloneInProgressError, RepoNotFoundError, displayRepoName, parseRepoRevision } from '$lib/shared'
+import { inferSplitCodeHost } from '$lib/repo/codehost'
+import { CloneInProgressError, RepoNotFoundError, parseRepoRevision } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
 import {
@@ -38,7 +39,7 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
         repoURL: '/' + params.repo,
         repoURLWithoutRevision: '/' + repoName,
         repoName,
-        displayRepoName: displayRepoName(repoName),
+        displayRepoName: inferSplitCodeHost(repoName, undefined).displayName,
         /**
          * Revision from URL
          */

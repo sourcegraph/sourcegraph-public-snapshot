@@ -5,6 +5,7 @@ query CommunitySearchPage_SearchContext($spec: String!) {
                 name
                 externalURLs {
                     url
+                    serviceKind
                 }
             }
         }

@@ -121,10 +121,11 @@
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LanguageIcon from '$lib/LanguageIcon.svelte'
     import Popover from '$lib/Popover.svelte'
+    import { inferSplitCodeHost } from '$lib/repo/codehost'
+    import CodeHostIcon from '$lib/repo/codehost/CodeHostIcon.svelte'
     import RepoPopover, { fetchRepoPopoverData } from '$lib/repo/RepoPopover/RepoPopover.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
-    import { TELEMETRY_FILTER_TYPES, displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
+    import { TELEMETRY_FILTER_TYPES, scanSearchQuery, type Filter } from '$lib/shared'
     import { settings } from '$lib/stores'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { delay } from '$lib/utils'
@@ -232,11 +233,12 @@
 
         <Section items={sectionItems.repo} title="By repository" filterPlaceholder="Filter repositories">
             <svelte:fragment slot="item" let:item>
+                {@const { kind: inferredKind, displayName } = inferSplitCodeHost(item.label, undefined)}
                 <Popover showOnHover let:registerTrigger placement="right-start">
                     <div use:registerTrigger>
                         <SectionItem {...item} on:select={() => handleFilterSelect('repo')}>
-                            <CodeHostIcon slot="icon" disableTooltip repository={item.label} />
-                            <span slot="label">{displayRepoName(item.label)}</span>
+                            <CodeHostIcon slot="icon" inline kind={inferredKind} />
+                            <span slot="label">{displayName}</span>
                         </SectionItem>
                     </div>
                     <svelte:fragment slot="content">

@@ -18,18 +18,18 @@
     import { nextSibling, onClickOutside, previousSibling } from '$lib/dom'
     import { getGraphQLClient } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
+    import { inferSplitCodeHost } from '$lib/repo/codehost'
+    import CodeHostIcon from '$lib/repo/codehost/CodeHostIcon.svelte'
     import FileIcon from '$lib/repo/FileIcon.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import EmphasizedLabel from '$lib/search/EmphasizedLabel.svelte'
     import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
-    import { displayRepoName } from '$lib/shared'
+    import { isViewportMobile } from '$lib/stores'
     import TabsHeader, { type Tab } from '$lib/TabsHeader.svelte'
     import { Alert, Input } from '$lib/wildcard'
     import Button from '$lib/wildcard/Button.svelte'
 
     import { allHotkey, filesHotkey, reposHotkey, symbolsHotkey } from './keys'
     import { type CompletionSource, createFuzzyFinderSource } from './sources'
-    import { isViewportMobile } from '$lib/stores'
 
     export let open = false
     export let scope = ''
@@ -281,14 +281,14 @@
                 {:else if $source.value?.results}
                     {#each $source.value.results as item, index (item)}
                         {@const repo = item.repository.name}
-                        {@const displayRepo = displayRepoName(repo)}
+                        {@const { kind, displayName } = inferSplitCodeHost(repo, undefined)}
                         <li role="option" aria-selected={selectedOption === index} data-index={index}>
                             {#if item.type === 'repo'}
-                                {@const matchOffset = repo.length - displayRepo.length}
+                                {@const matchOffset = repo.length - displayName.length}
                                 <a href="/{item.repository.name}" on:click={handleClick}>
-                                    <span class="icon"><CodeHostIcon repository={item.repository.name} /></span>
+                                    <span class="icon"><CodeHostIcon {kind} /></span>
                                     <span class="label"
-                                        ><EmphasizedLabel label={displayRepo} offset={matchOffset} /></span
+                                        ><EmphasizedLabel label={displayName} offset={matchOffset} /></span
                                     >
                                     <span class="info">{repo}</span>
                                 </a>
@@ -297,7 +297,7 @@
                                     <span class="icon"><SymbolKindIcon symbolKind={item.symbol.kind} /></span>
                                     <span class="label"><EmphasizedLabel label={item.symbol.name} /></span>
                                     <span class="info mono"
-                                        >{#if !useScope}{displayRepo} &middot; {/if}{item.file.path}</span
+                                        >{#if !useScope}{displayName} &middot; {/if}{item.file.path}</span
                                     >
                                 </a>
                             {:else if item.type == 'file'}
@@ -309,7 +309,7 @@
                                         ><EmphasizedLabel label={fileName} offset={folderName.length + 1} /></span
                                     >
                                     <span class="info mono">
-                                        {#if !useScope}{displayRepo} &middot; {/if}
+                                        {#if !useScope}{displayName} &middot; {/if}
                                         <EmphasizedLabel label={folderName} />
                                     </span>
                                 </a>

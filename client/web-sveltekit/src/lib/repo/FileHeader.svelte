@@ -5,6 +5,7 @@
     import ShrinkablePath from '$lib/path/ShrinkablePath.svelte'
     import { DropdownMenu } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
+
     import MobileFileSidePanelOpenButton from './MobileFileSidePanelOpenButton.svelte'
 
     export let repoName: string
@@ -89,6 +90,7 @@
         gap: 0.5rem;
         align-items: center;
         margin: 0;
+        font-size: var(--code-font-size);
 
         :global([data-path-container]) {
             gap: 0.375em !important;

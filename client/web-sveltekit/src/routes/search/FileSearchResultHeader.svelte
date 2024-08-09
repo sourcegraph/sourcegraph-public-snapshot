@@ -47,6 +47,7 @@
 
     .path {
         display: contents;
+        font-size: var(--code-font-size);
     }
 
     .interpunct {

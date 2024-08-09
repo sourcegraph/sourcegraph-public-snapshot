@@ -22,12 +22,13 @@
 
     import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
+    import { ExternalServiceKind } from '$lib/graphql-types'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import { inferSplitCodeHost } from '$lib/repo/codehost'
+    import CodeHostIcon from '$lib/repo/codehost/CodeHostIcon.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { queryStateStore } from '$lib/search/state'
     import SyntaxHighlightedQuery from '$lib/search/SyntaxHighlightedQuery.svelte'
-    import { displayRepoName } from '$lib/shared'
     import { settings } from '$lib/stores'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { Alert, Button, Markdown } from '$lib/wildcard'
@@ -123,11 +124,13 @@
                                             rel="noopener noreferrer"
                                             on:click={handleExternalRepoLinkClick}
                                         >
-                                            <CodeHostIcon repository={repo.name} />
+                                            <CodeHostIcon
+                                                kind={repo.externalURLs[0].serviceKind ?? ExternalServiceKind.OTHER}
+                                            />
                                         </a>
                                     {/if}
                                     <a href="/{repo.name}" on:click={handleRepoLinkClick}>
-                                        {displayRepoName(repo.name)}
+                                        {inferSplitCodeHost(repo.name, undefined).displayName}
                                     </a>
                                 </li>
                             {/each}

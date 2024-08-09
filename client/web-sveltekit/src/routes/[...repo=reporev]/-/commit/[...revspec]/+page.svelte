@@ -7,10 +7,10 @@
     import Commit from '$lib/Commit.svelte'
     import { pluralize } from '$lib/common'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import CodeHostIcon from '$lib/repo/codehost/CodeHostIcon.svelte'
     import FileDiff from '$lib/repo/FileDiff.svelte'
     import { getHumanNameForCodeHost } from '$lib/repo/shared/codehost'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { isViewportMobile } from '$lib/stores'
     import Alert from '$lib/wildcard/Alert.svelte'
     import Badge from '$lib/wildcard/Badge.svelte'
@@ -95,7 +95,7 @@
                             <a href={url}>
                                 View on
                                 {#if serviceKind}
-                                    <CodeHostIcon repository={serviceKind} disableTooltip />
+                                    <CodeHostIcon kind={serviceKind} inline />
                                     {getHumanNameForCodeHost(serviceKind)}
                                 {:else}
                                     code host

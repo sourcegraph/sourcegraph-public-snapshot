@@ -5,9 +5,8 @@
     import { observeIntersection } from '$lib/intersection-observer'
     import { pathHrefFactory } from '$lib/path'
     import DisplayPath from '$lib/path/DisplayPath.svelte'
+    import DisplayRepoName from '$lib/repo/DisplayRepoName.svelte'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
-    import { displayRepoName } from '$lib/shared'
 
     import type { ExplorePanel_Usage } from './ExplorePanel.gql'
 
@@ -73,8 +72,7 @@
     on:intersecting={event => (visible = visible || event.detail)}
 >
     <div class="header">
-        <CodeHostIcon {repository} />
-        <span class="repo-name"><DisplayPath path={displayRepoName(repository)} /></span>
+        <span class="repo-name"><DisplayRepoName repoName={repository} kind={undefined} /></span>
         <span class="interpunct">⋅</span>
         <span class="file-name">
             <DisplayPath
@@ -134,14 +132,7 @@
 
         .repo-name {
             :global([data-path-container]) {
-                font-family: var(--font-family-base);
                 font-weight: 500;
-                font-size: var(--font-size-small);
-                gap: 0.25rem;
-            }
-
-            :global([data-path-item]) {
-                color: var(--text-title);
             }
         }
 
@@ -150,6 +141,7 @@
         }
 
         .file-name {
+            font-size: var(--code-font-size);
             :global([data-path-container]) {
                 flex-wrap: wrap;
             }
