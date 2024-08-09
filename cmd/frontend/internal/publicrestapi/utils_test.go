@@ -30,9 +30,9 @@ type publicrestTest struct {
 	HttpClient  http.Handler
 }
 
-func newTest(t *testing.T, name string) *publicrestTest {
+func newTest(t *testing.T) *publicrestTest {
 	MockUUID = "mocked-publicrestapi-uuid"
-	gollyDoer := golly.NewGollyDoer(t, name, httpcli.TestExternalClient)
+	gollyDoer := golly.NewGollyDoer(t, httpcli.TestExternalClient)
 	recordReplayHandler := newRecordReplayHandler(gollyDoer, gollyDoer.DotcomCredentials())
 	publicrestHandler := NewHandler(recordReplayHandler)
 	return &publicrestTest{

@@ -23,8 +23,8 @@ func SetSiteConfig(t *testing.T, siteConfig schema.SiteConfiguration) {
 	}
 }
 
-func TestAPI(t *testing.T) {
-	c := newTest(t, "chat_completions")
+func TestChatCompletionsHandler(t *testing.T) {
+	c := newTest(t)
 	chatModels := c.getChatModels()
 	assert.NoError(t, modelconfig.InitMock())
 	assert.NoError(t, modelconfig.ResetMockWithStaticData(&types.ModelConfiguration{

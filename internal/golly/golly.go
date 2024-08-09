@@ -105,7 +105,7 @@ func (g *Golly) passthrough(r *http.Request) (*http.Response, error) {
 	return g.Doer.Do(r)
 }
 
-func NewGollyDoer(t *testing.T, recordingName string, doer httpcli.Doer) *Golly {
+func NewGollyDoer(t *testing.T, doer httpcli.Doer) *Golly {
 
 	var mode GollyRecordingMode
 	if RecordingMode == "replay" {
@@ -133,7 +133,7 @@ func NewGollyDoer(t *testing.T, recordingName string, doer httpcli.Doer) *Golly 
 
 	}
 
-	recordingFilePath := filepath.Join(RecordingDir, recordingName+".recording.yaml")
+	recordingFilePath := filepath.Join(RecordingDir, t.Name()+".recording.yaml")
 
 	recordings := readRecordings(t, recordingFilePath)
 	if recordings == nil {
@@ -145,7 +145,7 @@ func NewGollyDoer(t *testing.T, recordingName string, doer httpcli.Doer) *Golly 
 		Credentials: []TestingCredentials{
 			DotcomTestingCredentials(),
 		},
-		RecordingName:                 recordingName,
+		RecordingName:                 t.Name(),
 		RecordingFilePath:             recordingFilePath,
 		RecordingMode:                 mode,
 		Doer:                          doer,
