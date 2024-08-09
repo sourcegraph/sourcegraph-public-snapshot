@@ -78,13 +78,6 @@
                         <Badge variant="secondary"><code>{cid}</code></Badge>&nbsp;<CopyButton value={cid} />
                     </li>
                     <li>
-                        <span>{pluralize('Parent ID', data.changelist.commit.parents.length)}:</span>
-                        {#each data.changelist.commit.parents as parent}
-                            <Badge variant="link"><a href={parent.parent?.canonicalURL}>{parent.parent?.cid}</a></Badge
-                            >&nbsp;<CopyButton value={parent.parent?.cid ?? ''} />{' '}
-                        {/each}
-                    </li>
-                    <li>
                         <a href="/{data.repoName}@changelist/{cid}"
                             >Browse files at <Badge variant="link">{cid}</Badge></a
                         >
