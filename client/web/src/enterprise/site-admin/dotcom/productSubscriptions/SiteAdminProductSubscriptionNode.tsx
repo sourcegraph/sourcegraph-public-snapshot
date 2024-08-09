@@ -6,8 +6,8 @@ import type { EnterprisePortalEnvironment } from './enterpriseportal'
 import {
     type EnterpriseSubscription,
     EnterpriseSubscriptionCondition_Status,
-    EnterpriseSubscriptionInstanceType,
 } from './enterpriseportalgen/subscriptions_pb'
+import { InstanceTypeBadge } from './InstanceTypeBadge'
 
 import styles from './SiteAdminProductSubscriptionNode.module.scss'
 
@@ -58,7 +58,7 @@ export const SiteAdminProductSubscriptionNode: React.FunctionComponent<
             </td>
             <td className="text-nowrap">
                 {node?.instanceType ? (
-                    <span className="text-monospace">{EnterpriseSubscriptionInstanceType[node?.instanceType]}</span>
+                    <InstanceTypeBadge instanceType={node.instanceType} />
                 ) : (
                     <span className="text-muted">Not set</span>
                 )}

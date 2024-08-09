@@ -58,8 +58,9 @@ import {
     EnterpriseSubscriptionLicenseCondition_Status,
     type EnterpriseSubscriptionLicenseKey,
     EnterpriseSubscriptionInstanceType,
-    EnterpriseSubscriptionLicense,
+    type EnterpriseSubscriptionLicense,
 } from './enterpriseportalgen/subscriptions_pb'
+import { InstanceTypeBadge } from './InstanceTypeBadge'
 import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
 
@@ -368,9 +369,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                                     </th>
                                     <td className="w-100">
                                         {subscription?.instanceType ? (
-                                            <span className="text-monospace">
-                                                {EnterpriseSubscriptionInstanceType[subscription?.instanceType]}
-                                            </span>
+                                            <InstanceTypeBadge instanceType={subscription.instanceType} />
                                         ) : (
                                             <span className="text-muted">Not set</span>
                                         )}
