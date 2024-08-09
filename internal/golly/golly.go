@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -133,7 +134,9 @@ func NewGollyDoer(t *testing.T, doer httpcli.Doer) *Golly {
 
 	}
 
-	recordingFilePath := filepath.Join(RecordingDir, t.Name()+".recording.yaml")
+	recordingName := strings.ReplaceAll(t.Name(), "/", "-")
+
+	recordingFilePath := filepath.Join(RecordingDir, recordingName+".recording.yaml")
 
 	recordings := readRecordings(t, recordingFilePath)
 	if recordings == nil {
@@ -145,7 +148,7 @@ func NewGollyDoer(t *testing.T, doer httpcli.Doer) *Golly {
 		Credentials: []TestingCredentials{
 			DotcomTestingCredentials(),
 		},
-		RecordingName:                 t.Name(),
+		RecordingName:                 recordingName,
 		RecordingFilePath:             recordingFilePath,
 		RecordingMode:                 mode,
 		Doer:                          doer,
