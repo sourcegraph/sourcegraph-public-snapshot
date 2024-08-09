@@ -60,11 +60,5 @@
             "reason": "We remove constraints and the old tests checked that we were failing"
         }
     ],
-    "5.4.0": [
-        {
-            "path": "internal/insights/store",
-            "prefix": "TestCreateDashboard",
-            "reason": "Updates all tables to have tenant_id and the old query for GetDashboardGrants used SELECT *"
-        }
-    ]
+    "5.4.0": []
 }

@@ -877,8 +877,7 @@ CREATE TABLE access_requests (
     email text NOT NULL,
     additional_info text,
     status text NOT NULL,
-    decision_by_user_id integer,
-    tenant_id integer
+    decision_by_user_id integer
 );
 
 CREATE SEQUENCE access_requests_id_seq
@@ -902,8 +901,7 @@ CREATE TABLE access_tokens (
     creator_user_id integer NOT NULL,
     scopes text[] NOT NULL,
     internal boolean DEFAULT false,
-    expires_at timestamp with time zone,
-    tenant_id integer
+    expires_at timestamp with time zone
 );
 
 CREATE SEQUENCE access_tokens_id_seq
@@ -920,8 +918,7 @@ CREATE TABLE aggregated_user_statistics (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     user_last_active_at timestamp with time zone,
-    user_events_count bigint,
-    tenant_id integer
+    user_events_count bigint
 );
 
 CREATE TABLE assigned_owners (
@@ -929,8 +926,7 @@ CREATE TABLE assigned_owners (
     owner_user_id integer NOT NULL,
     file_path_id integer NOT NULL,
     who_assigned_user_id integer,
-    assigned_at timestamp without time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    assigned_at timestamp without time zone DEFAULT now() NOT NULL
 );
 
 COMMENT ON TABLE assigned_owners IS 'Table for ownership assignments, one entry contains an assigned user ID, which repo_path is assigned and the date and user who assigned the owner.';
@@ -950,8 +946,7 @@ CREATE TABLE assigned_teams (
     owner_team_id integer NOT NULL,
     file_path_id integer NOT NULL,
     who_assigned_team_id integer,
-    assigned_at timestamp without time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    assigned_at timestamp without time zone DEFAULT now() NOT NULL
 );
 
 COMMENT ON TABLE assigned_teams IS 'Table for team ownership assignments, one entry contains an assigned team ID, which repo_path is assigned and the date and user who assigned the owner team.';
@@ -979,7 +974,6 @@ CREATE TABLE batch_changes (
     batch_spec_id bigint NOT NULL,
     last_applier_id bigint,
     last_applied_at timestamp with time zone,
-    tenant_id integer,
     CONSTRAINT batch_change_name_is_valid CHECK ((name ~ '^[\w.-]+$'::text)),
     CONSTRAINT batch_changes_has_1_namespace CHECK (((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))),
     CONSTRAINT batch_changes_name_not_blank CHECK ((name <> ''::text))
@@ -1003,7 +997,6 @@ CREATE TABLE batch_changes_site_credentials (
     credential bytea NOT NULL,
     encryption_key_id text DEFAULT ''::text NOT NULL,
     github_app_id integer,
-    tenant_id integer,
     CONSTRAINT check_github_app_id_and_external_service_type_site_credentials CHECK (((github_app_id IS NULL) OR (external_service_type = 'github'::text)))
 );
 
@@ -1023,8 +1016,7 @@ CREATE TABLE batch_spec_execution_cache_entries (
     version integer NOT NULL,
     last_used_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    user_id integer NOT NULL,
-    tenant_id integer
+    user_id integer NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_execution_cache_entries_id_seq
@@ -1053,8 +1045,7 @@ CREATE TABLE batch_spec_resolution_jobs (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
     initiator_id integer NOT NULL,
-    cancel boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_resolution_jobs_id_seq
@@ -1084,8 +1075,7 @@ CREATE TABLE batch_spec_workspace_execution_jobs (
     cancel boolean DEFAULT false NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
     user_id integer NOT NULL,
-    version integer DEFAULT 1 NOT NULL,
-    tenant_id integer
+    version integer DEFAULT 1 NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_workspace_execution_jobs_id_seq
@@ -1099,8 +1089,7 @@ ALTER SEQUENCE batch_spec_workspace_execution_jobs_id_seq OWNED BY batch_spec_wo
 
 CREATE TABLE batch_spec_workspace_execution_last_dequeues (
     user_id integer NOT NULL,
-    latest_dequeue timestamp with time zone,
-    tenant_id integer
+    latest_dequeue timestamp with time zone
 );
 
 CREATE VIEW batch_spec_workspace_execution_queue AS
@@ -1151,8 +1140,7 @@ CREATE TABLE batch_spec_workspace_files (
     content bytea NOT NULL,
     modified_at timestamp with time zone NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_workspace_files_id_seq
@@ -1181,8 +1169,7 @@ CREATE TABLE batch_spec_workspaces (
     unsupported boolean DEFAULT false NOT NULL,
     skipped boolean DEFAULT false NOT NULL,
     cached_result_found boolean DEFAULT false NOT NULL,
-    step_cache_results jsonb DEFAULT '{}'::jsonb NOT NULL,
-    tenant_id integer
+    step_cache_results jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_workspaces_id_seq
@@ -1209,7 +1196,6 @@ CREATE TABLE batch_specs (
     allow_ignored boolean DEFAULT false NOT NULL,
     no_cache boolean DEFAULT false NOT NULL,
     batch_change_id bigint,
-    tenant_id integer,
     CONSTRAINT batch_specs_has_1_namespace CHECK (((namespace_user_id IS NULL) <> (namespace_org_id IS NULL)))
 );
 
@@ -1246,7 +1232,6 @@ CREATE TABLE changeset_specs (
     commit_author_name text,
     commit_author_email text,
     type text NOT NULL,
-    tenant_id integer,
     CONSTRAINT changeset_specs_published_valid_values CHECK (((published = 'true'::text) OR (published = 'false'::text) OR (published = '"draft"'::text) OR (published IS NULL)))
 );
 
@@ -1295,7 +1280,6 @@ CREATE TABLE changesets (
     external_fork_name citext,
     previous_failure_message text,
     commit_verification jsonb DEFAULT '{}'::jsonb NOT NULL,
-    tenant_id integer,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -1323,7 +1307,6 @@ CREATE TABLE repo (
     stars integer DEFAULT 0 NOT NULL,
     blocked jsonb,
     topics text[] GENERATED ALWAYS AS (extract_topics_from_metadata(external_service_type, metadata)) STORED,
-    tenant_id integer,
     CONSTRAINT check_name_nonempty CHECK ((name OPERATOR(<>) ''::citext)),
     CONSTRAINT repo_metadata_check CHECK ((jsonb_typeof(metadata) = 'object'::text))
 );
@@ -1351,8 +1334,7 @@ CREATE TABLE cached_available_indexers (
     id integer NOT NULL,
     repository_id integer NOT NULL,
     num_events integer NOT NULL,
-    available_indexers jsonb NOT NULL,
-    tenant_id integer
+    available_indexers jsonb NOT NULL
 );
 
 CREATE SEQUENCE cached_available_indexers_id_seq
@@ -1373,7 +1355,6 @@ CREATE TABLE changeset_events (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer,
     CONSTRAINT changeset_events_key_check CHECK ((key <> ''::text)),
     CONSTRAINT changeset_events_kind_check CHECK ((kind <> ''::text)),
     CONSTRAINT changeset_events_metadata_check CHECK ((jsonb_typeof(metadata) = 'object'::text))
@@ -1410,7 +1391,6 @@ CREATE TABLE changeset_jobs (
     last_heartbeat_at timestamp with time zone,
     queued_at timestamp with time zone DEFAULT now(),
     cancel boolean DEFAULT false NOT NULL,
-    tenant_id integer,
     CONSTRAINT changeset_jobs_payload_check CHECK ((jsonb_typeof(payload) = 'object'::text))
 );
 
@@ -1460,7 +1440,6 @@ CREATE TABLE cm_action_jobs (
     slack_webhook bigint,
     queued_at timestamp with time zone DEFAULT now(),
     cancel boolean DEFAULT false NOT NULL,
-    tenant_id integer,
     CONSTRAINT cm_action_jobs_only_one_action_type CHECK ((((
 CASE
     WHEN (email IS NULL) THEN 0
@@ -1504,8 +1483,7 @@ CREATE TABLE cm_emails (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     changed_by integer NOT NULL,
     changed_at timestamp with time zone DEFAULT now() NOT NULL,
-    include_results boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    include_results boolean DEFAULT false NOT NULL
 );
 
 CREATE SEQUENCE cm_emails_id_seq
@@ -1520,8 +1498,7 @@ ALTER SEQUENCE cm_emails_id_seq OWNED BY cm_emails.id;
 CREATE TABLE cm_last_searched (
     monitor_id bigint NOT NULL,
     commit_oids text[] NOT NULL,
-    repo_id integer NOT NULL,
-    tenant_id integer
+    repo_id integer NOT NULL
 );
 
 COMMENT ON TABLE cm_last_searched IS 'The last searched commit hashes for the given code monitor and unique set of search arguments';
@@ -1537,8 +1514,7 @@ CREATE TABLE cm_monitors (
     changed_by integer NOT NULL,
     enabled boolean DEFAULT true NOT NULL,
     namespace_user_id integer NOT NULL,
-    namespace_org_id integer,
-    tenant_id integer
+    namespace_org_id integer
 );
 
 COMMENT ON COLUMN cm_monitors.namespace_org_id IS 'DEPRECATED: code monitors cannot be owned by an org';
@@ -1561,8 +1537,7 @@ CREATE TABLE cm_queries (
     changed_by integer NOT NULL,
     changed_at timestamp with time zone DEFAULT now() NOT NULL,
     next_run timestamp with time zone DEFAULT now(),
-    latest_result timestamp with time zone,
-    tenant_id integer
+    latest_result timestamp with time zone
 );
 
 CREATE SEQUENCE cm_queries_id_seq
@@ -1578,8 +1553,7 @@ CREATE TABLE cm_recipients (
     id bigint NOT NULL,
     email bigint NOT NULL,
     namespace_user_id integer,
-    namespace_org_id integer,
-    tenant_id integer
+    namespace_org_id integer
 );
 
 CREATE SEQUENCE cm_recipients_id_seq
@@ -1600,8 +1574,7 @@ CREATE TABLE cm_slack_webhooks (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     changed_by integer NOT NULL,
     changed_at timestamp with time zone DEFAULT now() NOT NULL,
-    include_results boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    include_results boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE cm_slack_webhooks IS 'Slack webhook actions configured on code monitors';
@@ -1638,7 +1611,6 @@ CREATE TABLE cm_trigger_jobs (
     queued_at timestamp with time zone DEFAULT now(),
     cancel boolean DEFAULT false NOT NULL,
     logs json[],
-    tenant_id integer,
     CONSTRAINT search_results_is_array CHECK ((jsonb_typeof(search_results) = 'array'::text))
 );
 
@@ -1661,8 +1633,7 @@ CREATE TABLE cm_webhooks (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     changed_by integer NOT NULL,
     changed_at timestamp with time zone DEFAULT now() NOT NULL,
-    include_results boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    include_results boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE cm_webhooks IS 'Webhook actions configured on code monitors';
@@ -1691,8 +1662,7 @@ CREATE TABLE code_hosts (
     git_rate_limit_quota integer,
     git_rate_limit_interval_seconds integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE code_hosts_id_seq
@@ -1710,8 +1680,7 @@ CREATE TABLE codeintel_autoindex_queue (
     repository_id integer NOT NULL,
     rev text NOT NULL,
     queued_at timestamp with time zone DEFAULT now() NOT NULL,
-    processed_at timestamp with time zone,
-    tenant_id integer
+    processed_at timestamp with time zone
 );
 
 CREATE SEQUENCE codeintel_autoindex_queue_id_seq
@@ -1728,8 +1697,7 @@ CREATE TABLE codeintel_autoindexing_exceptions (
     id integer NOT NULL,
     repository_id integer NOT NULL,
     disable_scheduling boolean DEFAULT false NOT NULL,
-    disable_inference boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    disable_inference boolean DEFAULT false NOT NULL
 );
 
 CREATE SEQUENCE codeintel_autoindexing_exceptions_id_seq
@@ -1745,8 +1713,7 @@ ALTER SEQUENCE codeintel_autoindexing_exceptions_id_seq OWNED BY codeintel_autoi
 CREATE TABLE codeintel_commit_dates (
     repository_id integer NOT NULL,
     commit_bytea bytea NOT NULL,
-    committed_at timestamp with time zone,
-    tenant_id integer
+    committed_at timestamp with time zone
 );
 
 COMMENT ON TABLE codeintel_commit_dates IS 'Maps commits within a repository to the commit date as reported by gitserver.';
@@ -1773,8 +1740,7 @@ CREATE TABLE lsif_configuration_policies (
     repository_patterns text[],
     last_resolved_at timestamp with time zone,
     embeddings_enabled boolean DEFAULT false NOT NULL,
-    syntactic_indexing_enabled boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    syntactic_indexing_enabled boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON COLUMN lsif_configuration_policies.repository_id IS 'The identifier of the repository to which this configuration policy applies. If absent, this policy is applied globally.';
@@ -1819,8 +1785,7 @@ CREATE VIEW codeintel_configuration_policies AS
 
 CREATE TABLE lsif_configuration_policies_repository_pattern_lookup (
     policy_id integer NOT NULL,
-    repo_id integer NOT NULL,
-    tenant_id integer
+    repo_id integer NOT NULL
 );
 
 COMMENT ON TABLE lsif_configuration_policies_repository_pattern_lookup IS 'A lookup table to get all the repository patterns by repository id that apply to a configuration policy.';
@@ -1836,8 +1801,7 @@ CREATE VIEW codeintel_configuration_policies_repository_pattern_lookup AS
 
 CREATE TABLE codeintel_inference_scripts (
     insert_timestamp timestamp with time zone DEFAULT now() NOT NULL,
-    script text NOT NULL,
-    tenant_id integer
+    script text NOT NULL
 );
 
 COMMENT ON TABLE codeintel_inference_scripts IS 'Contains auto-index job inference Lua scripts as an alternative to setting via environment variables.';
@@ -1847,8 +1811,7 @@ CREATE TABLE codeintel_initial_path_ranks (
     document_path text DEFAULT ''::text NOT NULL,
     graph_key text NOT NULL,
     document_paths text[] DEFAULT '{}'::text[] NOT NULL,
-    exported_upload_id integer NOT NULL,
-    tenant_id integer
+    exported_upload_id integer NOT NULL
 );
 
 CREATE SEQUENCE codeintel_initial_path_ranks_id_seq
@@ -1863,8 +1826,7 @@ ALTER SEQUENCE codeintel_initial_path_ranks_id_seq OWNED BY codeintel_initial_pa
 CREATE TABLE codeintel_initial_path_ranks_processed (
     id bigint NOT NULL,
     graph_key text NOT NULL,
-    codeintel_initial_path_ranks_id bigint NOT NULL,
-    tenant_id integer
+    codeintel_initial_path_ranks_id bigint NOT NULL
 );
 
 CREATE SEQUENCE codeintel_initial_path_ranks_processed_id_seq
@@ -1879,8 +1841,7 @@ ALTER SEQUENCE codeintel_initial_path_ranks_processed_id_seq OWNED BY codeintel_
 CREATE TABLE codeintel_langugage_support_requests (
     id integer NOT NULL,
     user_id integer NOT NULL,
-    language_id text NOT NULL,
-    tenant_id integer
+    language_id text NOT NULL
 );
 
 CREATE SEQUENCE codeintel_langugage_support_requests_id_seq
@@ -1900,8 +1861,7 @@ CREATE TABLE codeintel_path_ranks (
     graph_key text NOT NULL,
     num_paths integer,
     refcount_logsum double precision,
-    id bigint NOT NULL,
-    tenant_id integer
+    id bigint NOT NULL
 );
 
 CREATE SEQUENCE codeintel_path_ranks_id_seq
@@ -1919,8 +1879,7 @@ CREATE TABLE codeintel_ranking_definitions (
     document_path text NOT NULL,
     graph_key text NOT NULL,
     exported_upload_id integer NOT NULL,
-    symbol_checksum bytea DEFAULT '\x'::bytea NOT NULL,
-    tenant_id integer
+    symbol_checksum bytea DEFAULT '\x'::bytea NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_definitions_id_seq
@@ -1939,8 +1898,7 @@ CREATE TABLE codeintel_ranking_exports (
     id integer NOT NULL,
     last_scanned_at timestamp with time zone,
     deleted_at timestamp with time zone,
-    upload_key text,
-    tenant_id integer
+    upload_key text
 );
 
 CREATE SEQUENCE codeintel_ranking_exports_id_seq
@@ -1956,8 +1914,7 @@ ALTER SEQUENCE codeintel_ranking_exports_id_seq OWNED BY codeintel_ranking_expor
 CREATE TABLE codeintel_ranking_graph_keys (
     id integer NOT NULL,
     graph_key text NOT NULL,
-    created_at timestamp with time zone DEFAULT now(),
-    tenant_id integer
+    created_at timestamp with time zone DEFAULT now()
 );
 
 CREATE SEQUENCE codeintel_ranking_graph_keys_id_seq
@@ -1975,8 +1932,7 @@ CREATE TABLE codeintel_ranking_path_counts_inputs (
     count integer NOT NULL,
     graph_key text NOT NULL,
     processed boolean DEFAULT false NOT NULL,
-    definition_id bigint,
-    tenant_id integer
+    definition_id bigint
 );
 
 CREATE SEQUENCE codeintel_ranking_path_counts_inputs_id_seq
@@ -2006,8 +1962,7 @@ CREATE TABLE codeintel_ranking_progress (
     reference_cursor_export_deleted_at timestamp with time zone,
     reference_cursor_export_id integer,
     path_cursor_deleted_export_at timestamp with time zone,
-    path_cursor_export_id integer,
-    tenant_id integer
+    path_cursor_export_id integer
 );
 
 CREATE SEQUENCE codeintel_ranking_progress_id_seq
@@ -2024,8 +1979,7 @@ CREATE TABLE codeintel_ranking_references (
     symbol_names text[] NOT NULL,
     graph_key text NOT NULL,
     exported_upload_id integer NOT NULL,
-    symbol_checksums bytea[] DEFAULT '{}'::bytea[] NOT NULL,
-    tenant_id integer
+    symbol_checksums bytea[] DEFAULT '{}'::bytea[] NOT NULL
 );
 
 COMMENT ON TABLE codeintel_ranking_references IS 'References for a given upload proceduced by background job consuming SCIP indexes.';
@@ -2042,8 +1996,7 @@ ALTER SEQUENCE codeintel_ranking_references_id_seq OWNED BY codeintel_ranking_re
 CREATE TABLE codeintel_ranking_references_processed (
     graph_key text NOT NULL,
     codeintel_ranking_reference_id integer NOT NULL,
-    id bigint NOT NULL,
-    tenant_id integer
+    id bigint NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_references_processed_id_seq
@@ -2061,8 +2014,7 @@ CREATE TABLE codeowners (
     contents_proto bytea NOT NULL,
     repo_id integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE codeowners_id_seq
@@ -2079,8 +2031,7 @@ CREATE TABLE codeowners_individual_stats (
     file_path_id integer NOT NULL,
     owner_id integer NOT NULL,
     tree_owned_files_count integer NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    tenant_id integer
+    updated_at timestamp without time zone NOT NULL
 );
 
 COMMENT ON TABLE codeowners_individual_stats IS 'Data on how many files in given tree are owned by given owner.
@@ -2095,8 +2046,7 @@ COMMENT ON COLUMN codeowners_individual_stats.updated_at IS 'When the last backg
 
 CREATE TABLE codeowners_owners (
     id integer NOT NULL,
-    reference text NOT NULL,
-    tenant_id integer
+    reference text NOT NULL
 );
 
 COMMENT ON TABLE codeowners_owners IS 'Text reference in CODEOWNERS entry to use in codeowners_individual_stats. Reference is either email or handle without @ in front.';
@@ -2117,8 +2067,7 @@ ALTER SEQUENCE codeowners_owners_id_seq OWNED BY codeowners_owners.id;
 CREATE TABLE commit_authors (
     id integer NOT NULL,
     email text NOT NULL,
-    name text NOT NULL,
-    tenant_id integer
+    name text NOT NULL
 );
 
 CREATE SEQUENCE commit_authors_id_seq
@@ -2137,8 +2086,7 @@ CREATE TABLE configuration_policies_audit_logs (
     policy_id integer NOT NULL,
     transition_columns hstore[],
     sequence bigint NOT NULL,
-    operation audit_log_operation NOT NULL,
-    tenant_id integer
+    operation audit_log_operation NOT NULL
 );
 
 COMMENT ON COLUMN configuration_policies_audit_logs.log_timestamp IS 'Timestamp for this log entry.';
@@ -2169,8 +2117,7 @@ CREATE TABLE context_detection_embedding_jobs (
     last_heartbeat_at timestamp with time zone,
     execution_logs json[],
     worker_hostname text DEFAULT ''::text NOT NULL,
-    cancel boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE SEQUENCE context_detection_embedding_jobs_id_seq
@@ -2214,8 +2161,7 @@ CREATE TABLE discussion_comments (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
-    reports text[] DEFAULT '{}'::text[] NOT NULL,
-    tenant_id integer
+    reports text[] DEFAULT '{}'::text[] NOT NULL
 );
 
 CREATE SEQUENCE discussion_comments_id_seq
@@ -2231,8 +2177,7 @@ CREATE TABLE discussion_mail_reply_tokens (
     token text NOT NULL,
     user_id integer NOT NULL,
     thread_id bigint NOT NULL,
-    deleted_at timestamp with time zone,
-    tenant_id integer
+    deleted_at timestamp with time zone
 );
 
 CREATE TABLE discussion_threads (
@@ -2243,8 +2188,7 @@ CREATE TABLE discussion_threads (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     archived_at timestamp with time zone,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    deleted_at timestamp with time zone,
-    tenant_id integer
+    deleted_at timestamp with time zone
 );
 
 CREATE SEQUENCE discussion_threads_id_seq
@@ -2269,8 +2213,7 @@ CREATE TABLE discussion_threads_target_repo (
     end_character integer,
     lines_before text,
     lines text,
-    lines_after text,
-    tenant_id integer
+    lines_after text
 );
 
 CREATE SEQUENCE discussion_threads_target_repo_id_seq
@@ -2303,7 +2246,6 @@ CREATE TABLE event_logs (
     billing_product_category text,
     billing_event_id text,
     client text,
-    tenant_id integer,
     CONSTRAINT event_logs_check_has_user CHECK ((((user_id = 0) AND (anonymous_user_id <> ''::text)) OR ((user_id <> 0) AND (anonymous_user_id = ''::text)) OR ((user_id <> 0) AND (anonymous_user_id <> ''::text)))),
     CONSTRAINT event_logs_check_name_not_empty CHECK ((name <> ''::text)),
     CONSTRAINT event_logs_check_source_not_empty CHECK ((source <> ''::text)),
@@ -2312,8 +2254,7 @@ CREATE TABLE event_logs (
 
 CREATE TABLE event_logs_export_allowlist (
     id integer NOT NULL,
-    event_name text NOT NULL,
-    tenant_id integer
+    event_name text NOT NULL
 );
 
 COMMENT ON TABLE event_logs_export_allowlist IS 'An allowlist of events that are approved for export if the scraping job is enabled';
@@ -2341,8 +2282,7 @@ ALTER SEQUENCE event_logs_id_seq OWNED BY event_logs.id;
 
 CREATE TABLE event_logs_scrape_state (
     id integer NOT NULL,
-    bookmark_id integer NOT NULL,
-    tenant_id integer
+    bookmark_id integer NOT NULL
 );
 
 COMMENT ON TABLE event_logs_scrape_state IS 'Contains state for the periodic telemetry job that scrapes events if enabled.';
@@ -2362,8 +2302,7 @@ ALTER SEQUENCE event_logs_scrape_state_id_seq OWNED BY event_logs_scrape_state.i
 CREATE TABLE event_logs_scrape_state_own (
     id integer NOT NULL,
     bookmark_id integer NOT NULL,
-    job_type integer NOT NULL,
-    tenant_id integer
+    job_type integer NOT NULL
 );
 
 COMMENT ON TABLE event_logs_scrape_state_own IS 'Contains state for own jobs that scrape events if enabled.';
@@ -2394,7 +2333,6 @@ CREATE TABLE executor_heartbeats (
     first_seen_at timestamp with time zone DEFAULT now() NOT NULL,
     last_seen_at timestamp with time zone DEFAULT now() NOT NULL,
     queue_names text[],
-    tenant_id integer,
     CONSTRAINT one_of_queue_name_queue_names CHECK ((((queue_name IS NOT NULL) AND (queue_names IS NULL)) OR ((queue_names IS NOT NULL) AND (queue_name IS NULL))))
 );
 
@@ -2441,8 +2379,7 @@ CREATE TABLE executor_job_tokens (
     queue text NOT NULL,
     repo_id bigint NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE executor_job_tokens_id_seq
@@ -2461,7 +2398,6 @@ CREATE TABLE executor_secret_access_logs (
     user_id integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     machine_user text DEFAULT ''::text NOT NULL,
-    tenant_id integer,
     CONSTRAINT user_id_or_machine_user CHECK ((((user_id IS NULL) AND (machine_user <> ''::text)) OR ((user_id IS NOT NULL) AND (machine_user = ''::text))))
 );
 
@@ -2485,8 +2421,7 @@ CREATE TABLE executor_secrets (
     namespace_org_id integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    creator_id integer,
-    tenant_id integer
+    creator_id integer
 );
 
 COMMENT ON COLUMN executor_secrets.creator_id IS 'NULL, if the user has been deleted.';
@@ -2519,8 +2454,7 @@ CREATE TABLE exhaustive_search_jobs (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
-    is_aggregated boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    is_aggregated boolean DEFAULT false NOT NULL
 );
 
 CREATE SEQUENCE exhaustive_search_jobs_id_seq
@@ -2551,8 +2485,7 @@ CREATE TABLE exhaustive_search_repo_jobs (
     cancel boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    queued_at timestamp with time zone DEFAULT now(),
-    tenant_id integer
+    queued_at timestamp with time zone DEFAULT now()
 );
 
 CREATE SEQUENCE exhaustive_search_repo_jobs_id_seq
@@ -2582,8 +2515,7 @@ CREATE TABLE exhaustive_search_repo_revision_jobs (
     cancel boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    queued_at timestamp with time zone DEFAULT now(),
-    tenant_id integer
+    queued_at timestamp with time zone DEFAULT now()
 );
 
 CREATE SEQUENCE exhaustive_search_repo_revision_jobs_id_seq
@@ -2614,7 +2546,6 @@ CREATE TABLE explicit_permissions_bitbucket_projects_jobs (
     permissions json[],
     unrestricted boolean DEFAULT false NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
-    tenant_id integer,
     CONSTRAINT explicit_permissions_bitbucket_projects_jobs_check CHECK ((((permissions IS NOT NULL) AND (unrestricted IS FALSE)) OR ((permissions IS NULL) AND (unrestricted IS TRUE))))
 );
 
@@ -2632,8 +2563,7 @@ CREATE TABLE external_service_repos (
     external_service_id bigint NOT NULL,
     repo_id integer NOT NULL,
     clone_url text NOT NULL,
-    created_at timestamp with time zone DEFAULT transaction_timestamp() NOT NULL,
-    tenant_id integer
+    created_at timestamp with time zone DEFAULT transaction_timestamp() NOT NULL
 );
 
 CREATE SEQUENCE external_service_sync_jobs_id_seq
@@ -2664,8 +2594,7 @@ CREATE TABLE external_service_sync_jobs (
     repos_added integer DEFAULT 0 NOT NULL,
     repos_deleted integer DEFAULT 0 NOT NULL,
     repos_modified integer DEFAULT 0 NOT NULL,
-    repos_unmodified integer DEFAULT 0 NOT NULL,
-    tenant_id integer
+    repos_unmodified integer DEFAULT 0 NOT NULL
 );
 
 COMMENT ON COLUMN external_service_sync_jobs.repos_synced IS 'The number of repos synced during this sync job.';
@@ -2698,7 +2627,6 @@ CREATE TABLE external_services (
     code_host_id integer,
     creator_id integer,
     last_updater_id integer,
-    tenant_id integer,
     CONSTRAINT check_non_empty_config CHECK ((btrim(config) <> ''::text))
 );
 
@@ -2735,7 +2663,6 @@ CREATE TABLE feature_flag_overrides (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
-    tenant_id integer,
     CONSTRAINT feature_flag_overrides_has_org_or_user_id CHECK (((namespace_org_id IS NOT NULL) OR (namespace_user_id IS NOT NULL)))
 );
 
@@ -2747,7 +2674,6 @@ CREATE TABLE feature_flags (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
-    tenant_id integer,
     CONSTRAINT feature_flags_rollout_check CHECK (((rollout >= 0) AND (rollout <= 10000))),
     CONSTRAINT required_bool_fields CHECK ((1 =
 CASE
@@ -2781,8 +2707,7 @@ CREATE TABLE github_app_installs (
     account_avatar_url text,
     account_url text,
     account_type text,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE github_app_installs_id_seq
@@ -2812,8 +2737,7 @@ CREATE TABLE github_apps (
     webhook_id integer,
     domain text DEFAULT 'repos'::text NOT NULL,
     kind github_app_kind DEFAULT 'REPO_SYNC'::github_app_kind NOT NULL,
-    creator_id bigint DEFAULT 0 NOT NULL,
-    tenant_id integer
+    creator_id bigint DEFAULT 0 NOT NULL
 );
 
 CREATE SEQUENCE github_apps_id_seq
@@ -2843,8 +2767,7 @@ CREATE TABLE gitserver_relocator_jobs (
     source_hostname text NOT NULL,
     dest_hostname text NOT NULL,
     delete_source boolean DEFAULT false NOT NULL,
-    cancel boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE SEQUENCE gitserver_relocator_jobs_id_seq
@@ -2889,8 +2812,7 @@ CREATE TABLE gitserver_repos (
     repo_size_bytes bigint,
     corrupted_at timestamp with time zone,
     corruption_logs jsonb DEFAULT '[]'::jsonb NOT NULL,
-    cloning_progress text DEFAULT ''::text,
-    tenant_id integer
+    cloning_progress text DEFAULT ''::text
 );
 
 COMMENT ON COLUMN gitserver_repos.corrupted_at IS 'Timestamp of when repo corruption was detected';
@@ -2904,8 +2826,7 @@ CREATE TABLE gitserver_repos_statistics (
     cloning bigint DEFAULT 0 NOT NULL,
     cloned bigint DEFAULT 0 NOT NULL,
     failed_fetch bigint DEFAULT 0 NOT NULL,
-    corrupted bigint DEFAULT 0 NOT NULL,
-    tenant_id integer
+    corrupted bigint DEFAULT 0 NOT NULL
 );
 
 COMMENT ON COLUMN gitserver_repos_statistics.shard_id IS 'ID of this gitserver shard. If an empty string then the repositories havent been assigned a shard.';
@@ -2925,16 +2846,14 @@ COMMENT ON COLUMN gitserver_repos_statistics.corrupted IS 'Number of repositorie
 CREATE TABLE gitserver_repos_sync_output (
     repo_id integer NOT NULL,
     last_output text DEFAULT ''::text NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 COMMENT ON TABLE gitserver_repos_sync_output IS 'Contains the most recent output from gitserver repository sync jobs.';
 
 CREATE TABLE global_state (
     site_id uuid NOT NULL,
-    initialized boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    initialized boolean DEFAULT false NOT NULL
 );
 
 CREATE TABLE insights_query_runner_jobs (
@@ -2957,8 +2876,7 @@ CREATE TABLE insights_query_runner_jobs (
     persist_mode persistmode DEFAULT 'record'::persistmode NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
     cancel boolean DEFAULT false NOT NULL,
-    trace_id text,
-    tenant_id integer
+    trace_id text
 );
 
 COMMENT ON TABLE insights_query_runner_jobs IS 'See [internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)';
@@ -2972,8 +2890,7 @@ COMMENT ON COLUMN insights_query_runner_jobs.persist_mode IS 'The persistence le
 CREATE TABLE insights_query_runner_jobs_dependencies (
     id integer NOT NULL,
     job_id integer NOT NULL,
-    recording_time timestamp without time zone NOT NULL,
-    tenant_id integer
+    recording_time timestamp without time zone NOT NULL
 );
 
 COMMENT ON TABLE insights_query_runner_jobs_dependencies IS 'Stores data points for a code insight that do not need to be queried directly, but depend on the result of a query at a different point';
@@ -3013,8 +2930,7 @@ CREATE TABLE insights_settings_migration_jobs (
     total_dashboards integer DEFAULT 0 NOT NULL,
     migrated_dashboards integer DEFAULT 0 NOT NULL,
     runs integer DEFAULT 0 NOT NULL,
-    completed_at timestamp without time zone,
-    tenant_id integer
+    completed_at timestamp without time zone
 );
 
 CREATE SEQUENCE insights_settings_migration_jobs_id_seq
@@ -3053,8 +2969,7 @@ CREATE TABLE lsif_dependency_indexing_jobs (
     upload_id integer,
     external_service_kind text DEFAULT ''::text NOT NULL,
     external_service_sync timestamp with time zone,
-    cancel boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    cancel boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON COLUMN lsif_dependency_indexing_jobs.external_service_kind IS 'Filter the external services for this kind to wait to have synced. If empty, external_service_sync is ignored and no external services are polled for their last sync time.';
@@ -3075,8 +2990,7 @@ CREATE TABLE lsif_dependency_syncing_jobs (
     upload_id integer,
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
-    cancel boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    cancel boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE lsif_dependency_syncing_jobs IS 'Tracks jobs that scan imports of indexes to schedule auto-index jobs.';
@@ -3108,8 +3022,7 @@ CREATE TABLE lsif_dependency_repos (
     name text NOT NULL,
     scheme text NOT NULL,
     blocked boolean DEFAULT false NOT NULL,
-    last_checked_at timestamp with time zone,
-    tenant_id integer
+    last_checked_at timestamp with time zone
 );
 
 CREATE SEQUENCE lsif_dependency_repos_id_seq
@@ -3126,8 +3039,7 @@ CREATE TABLE lsif_dirty_repositories (
     dirty_token integer NOT NULL,
     update_token integer NOT NULL,
     updated_at timestamp with time zone,
-    set_dirty_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    set_dirty_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 COMMENT ON TABLE lsif_dirty_repositories IS 'Stores whether or not the nearest upload data for a repository is out of date (when update_token > dirty_token).';
@@ -3174,7 +3086,6 @@ CREATE TABLE lsif_uploads (
     last_reconcile_at timestamp with time zone,
     content_type text DEFAULT 'application/x-ndjson+lsif'::text NOT NULL,
     should_reindex boolean DEFAULT false NOT NULL,
-    tenant_id integer,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -3277,8 +3188,7 @@ CREATE TABLE lsif_index_configuration (
     id bigint NOT NULL,
     repository_id integer NOT NULL,
     data bytea NOT NULL,
-    autoindex_enabled boolean DEFAULT true NOT NULL,
-    tenant_id integer
+    autoindex_enabled boolean DEFAULT true NOT NULL
 );
 
 COMMENT ON TABLE lsif_index_configuration IS 'Stores the configuration used for code intel index jobs for a repository.';
@@ -3323,7 +3233,6 @@ CREATE TABLE lsif_indexes (
     should_reindex boolean DEFAULT false NOT NULL,
     requested_envvars text[],
     enqueuer_user_id integer DEFAULT 0 NOT NULL,
-    tenant_id integer,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -3386,8 +3295,7 @@ CREATE VIEW lsif_indexes_with_repository_name AS
 
 CREATE TABLE lsif_last_index_scan (
     repository_id integer NOT NULL,
-    last_index_scan_at timestamp with time zone NOT NULL,
-    tenant_id integer
+    last_index_scan_at timestamp with time zone NOT NULL
 );
 
 COMMENT ON TABLE lsif_last_index_scan IS 'Tracks the last time repository was checked for auto-indexing job scheduling.';
@@ -3396,8 +3304,7 @@ COMMENT ON COLUMN lsif_last_index_scan.last_index_scan_at IS 'The last time uplo
 
 CREATE TABLE lsif_last_retention_scan (
     repository_id integer NOT NULL,
-    last_retention_scan_at timestamp with time zone NOT NULL,
-    tenant_id integer
+    last_retention_scan_at timestamp with time zone NOT NULL
 );
 
 COMMENT ON TABLE lsif_last_retention_scan IS 'Tracks the last time uploads a repository were checked against data retention policies.';
@@ -3407,8 +3314,7 @@ COMMENT ON COLUMN lsif_last_retention_scan.last_retention_scan_at IS 'The last t
 CREATE TABLE lsif_nearest_uploads (
     repository_id integer NOT NULL,
     commit_bytea bytea NOT NULL,
-    uploads jsonb NOT NULL,
-    tenant_id integer
+    uploads jsonb NOT NULL
 );
 
 COMMENT ON TABLE lsif_nearest_uploads IS 'Associates commits with the complete set of uploads visible from that commit. Every commit with upload data is present in this table.';
@@ -3421,8 +3327,7 @@ CREATE TABLE lsif_nearest_uploads_links (
     repository_id integer NOT NULL,
     commit_bytea bytea NOT NULL,
     ancestor_commit_bytea bytea NOT NULL,
-    distance integer NOT NULL,
-    tenant_id integer
+    distance integer NOT NULL
 );
 
 COMMENT ON TABLE lsif_nearest_uploads_links IS 'Associates commits with the closest ancestor commit with usable upload data. Together, this table and lsif_nearest_uploads cover all commits with resolvable code intelligence.';
@@ -3439,8 +3344,7 @@ CREATE TABLE lsif_packages (
     name text NOT NULL,
     version text,
     dump_id integer NOT NULL,
-    manager text DEFAULT ''::text NOT NULL,
-    tenant_id integer
+    manager text DEFAULT ''::text NOT NULL
 );
 
 COMMENT ON TABLE lsif_packages IS 'Associates an upload with the set of packages they provide within a given packages management scheme.';
@@ -3470,8 +3374,7 @@ CREATE TABLE lsif_references (
     name text NOT NULL,
     version text,
     dump_id integer NOT NULL,
-    manager text DEFAULT ''::text NOT NULL,
-    tenant_id integer
+    manager text DEFAULT ''::text NOT NULL
 );
 
 COMMENT ON TABLE lsif_references IS 'Associates an upload with the set of packages they require within a given packages management scheme.';
@@ -3499,8 +3402,7 @@ CREATE TABLE lsif_retention_configuration (
     id integer NOT NULL,
     repository_id integer NOT NULL,
     max_age_for_non_stale_branches_seconds integer NOT NULL,
-    max_age_for_non_stale_tags_seconds integer NOT NULL,
-    tenant_id integer
+    max_age_for_non_stale_tags_seconds integer NOT NULL
 );
 
 COMMENT ON TABLE lsif_retention_configuration IS 'Stores the retention policy of code intellience data for a repository.';
@@ -3535,8 +3437,7 @@ CREATE TABLE lsif_uploads_audit_logs (
     reason text DEFAULT ''::text,
     sequence bigint NOT NULL,
     operation audit_log_operation NOT NULL,
-    content_type text DEFAULT 'application/x-ndjson+lsif'::text NOT NULL,
-    tenant_id integer
+    content_type text DEFAULT 'application/x-ndjson+lsif'::text NOT NULL
 );
 
 COMMENT ON COLUMN lsif_uploads_audit_logs.log_timestamp IS 'Timestamp for this log entry.';
@@ -3558,8 +3459,7 @@ ALTER SEQUENCE lsif_uploads_audit_logs_seq OWNED BY lsif_uploads_audit_logs.sequ
 
 CREATE TABLE lsif_uploads_reference_counts (
     upload_id integer NOT NULL,
-    reference_count integer NOT NULL,
-    tenant_id integer
+    reference_count integer NOT NULL
 );
 
 COMMENT ON TABLE lsif_uploads_reference_counts IS 'A less hot-path reference count for upload records.';
@@ -3572,8 +3472,7 @@ CREATE TABLE lsif_uploads_visible_at_tip (
     repository_id integer NOT NULL,
     upload_id integer NOT NULL,
     branch_or_tag_name text DEFAULT ''::text NOT NULL,
-    is_default_branch boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    is_default_branch boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE lsif_uploads_visible_at_tip IS 'Associates a repository with the set of LSIF upload identifiers that can serve intelligence for the tip of the default branch.';
@@ -3587,8 +3486,7 @@ COMMENT ON COLUMN lsif_uploads_visible_at_tip.is_default_branch IS 'Whether the 
 CREATE TABLE lsif_uploads_vulnerability_scan (
     id bigint NOT NULL,
     upload_id integer NOT NULL,
-    last_scanned_at timestamp without time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    last_scanned_at timestamp without time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE lsif_uploads_vulnerability_scan_id_seq
@@ -3635,7 +3533,6 @@ CREATE TABLE names (
     user_id integer,
     org_id integer,
     team_id integer,
-    tenant_id integer,
     CONSTRAINT names_check CHECK (((user_id IS NOT NULL) OR (org_id IS NOT NULL) OR (team_id IS NOT NULL)))
 );
 
@@ -3645,7 +3542,6 @@ CREATE TABLE namespace_permissions (
     resource_id integer NOT NULL,
     user_id integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer,
     CONSTRAINT namespace_not_blank CHECK ((namespace <> ''::text))
 );
 
@@ -3662,8 +3558,7 @@ ALTER SEQUENCE namespace_permissions_id_seq OWNED BY namespace_permissions.id;
 CREATE TABLE notebook_stars (
     notebook_id integer NOT NULL,
     user_id integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE TABLE notebooks (
@@ -3679,7 +3574,6 @@ CREATE TABLE notebooks (
     namespace_org_id integer,
     updater_user_id integer,
     pattern_type pattern_type DEFAULT 'keyword'::pattern_type NOT NULL,
-    tenant_id integer,
     CONSTRAINT blocks_is_array CHECK ((jsonb_typeof(blocks) = 'array'::text)),
     CONSTRAINT notebooks_has_max_1_namespace CHECK ((((namespace_user_id IS NULL) AND (namespace_org_id IS NULL)) OR ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))))
 );
@@ -3706,7 +3600,6 @@ CREATE TABLE org_invitations (
     deleted_at timestamp with time zone,
     recipient_email citext,
     expires_at timestamp with time zone,
-    tenant_id integer,
     CONSTRAINT check_atomic_response CHECK (((responded_at IS NULL) = (response_type IS NULL))),
     CONSTRAINT check_single_use CHECK ((((responded_at IS NULL) AND (response_type IS NULL)) OR (revoked_at IS NULL))),
     CONSTRAINT either_user_id_or_email_defined CHECK (((recipient_user_id IS NULL) <> (recipient_email IS NULL)))
@@ -3726,8 +3619,7 @@ CREATE TABLE org_members (
     org_id integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    user_id integer NOT NULL,
-    tenant_id integer
+    user_id integer NOT NULL
 );
 
 CREATE SEQUENCE org_members_id_seq
@@ -3742,8 +3634,7 @@ ALTER SEQUENCE org_members_id_seq OWNED BY org_members.id;
 CREATE TABLE org_stats (
     org_id integer NOT NULL,
     code_host_repo_count integer DEFAULT 0,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 COMMENT ON TABLE org_stats IS 'Business statistics for organizations';
@@ -3760,7 +3651,6 @@ CREATE TABLE orgs (
     display_name text,
     slack_webhook_url text,
     deleted_at timestamp with time zone,
-    tenant_id integer,
     CONSTRAINT orgs_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT orgs_name_max_length CHECK ((char_length((name)::text) <= 255)),
     CONSTRAINT orgs_name_valid_chars CHECK ((name OPERATOR(~) '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext))
@@ -3780,8 +3670,7 @@ CREATE TABLE orgs_open_beta_stats (
     user_id integer,
     org_id integer,
     created_at timestamp with time zone DEFAULT now(),
-    data jsonb DEFAULT '{}'::jsonb NOT NULL,
-    tenant_id integer
+    data jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
 CREATE TABLE out_of_band_migrations (
@@ -3800,7 +3689,6 @@ CREATE TABLE out_of_band_migrations (
     deprecated_version_major integer,
     deprecated_version_minor integer,
     metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
-    tenant_id integer,
     CONSTRAINT out_of_band_migrations_component_nonempty CHECK ((component <> ''::text)),
     CONSTRAINT out_of_band_migrations_description_nonempty CHECK ((description <> ''::text)),
     CONSTRAINT out_of_band_migrations_progress_range CHECK (((progress >= (0)::double precision) AND (progress <= (1)::double precision))),
@@ -3842,7 +3730,6 @@ CREATE TABLE out_of_band_migrations_errors (
     migration_id integer NOT NULL,
     message text NOT NULL,
     created timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer,
     CONSTRAINT out_of_band_migrations_errors_message_nonempty CHECK ((message <> ''::text))
 );
 
@@ -3880,8 +3767,7 @@ CREATE TABLE outbound_webhook_event_types (
     id bigint NOT NULL,
     outbound_webhook_id bigint NOT NULL,
     event_type text NOT NULL,
-    scope text,
-    tenant_id integer
+    scope text
 );
 
 CREATE SEQUENCE outbound_webhook_event_types_id_seq
@@ -3910,8 +3796,7 @@ CREATE TABLE outbound_webhook_jobs (
     last_heartbeat_at timestamp with time zone,
     execution_logs json[],
     worker_hostname text DEFAULT ''::text NOT NULL,
-    cancel boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE SEQUENCE outbound_webhook_jobs_id_seq
@@ -3932,8 +3817,7 @@ CREATE TABLE outbound_webhook_logs (
     encryption_key_id text,
     request bytea NOT NULL,
     response bytea NOT NULL,
-    error bytea NOT NULL,
-    tenant_id integer
+    error bytea NOT NULL
 );
 
 CREATE SEQUENCE outbound_webhook_logs_id_seq
@@ -3953,8 +3837,7 @@ CREATE TABLE outbound_webhooks (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     encryption_key_id text,
     url bytea NOT NULL,
-    secret bytea NOT NULL,
-    tenant_id integer
+    secret bytea NOT NULL
 );
 
 CREATE SEQUENCE outbound_webhooks_id_seq
@@ -3984,8 +3867,7 @@ CREATE TABLE own_aggregate_recent_contribution (
     id integer NOT NULL,
     commit_author_id integer NOT NULL,
     changed_file_path_id integer NOT NULL,
-    contributions_count integer DEFAULT 0,
-    tenant_id integer
+    contributions_count integer DEFAULT 0
 );
 
 CREATE SEQUENCE own_aggregate_recent_contribution_id_seq
@@ -4002,8 +3884,7 @@ CREATE TABLE own_aggregate_recent_view (
     id integer NOT NULL,
     viewer_id integer NOT NULL,
     viewed_file_path_id integer NOT NULL,
-    views_count integer DEFAULT 0,
-    tenant_id integer
+    views_count integer DEFAULT 0
 );
 
 COMMENT ON TABLE own_aggregate_recent_view IS 'One entry contains a number of views of a single file by a given viewer.';
@@ -4033,8 +3914,7 @@ CREATE TABLE own_background_jobs (
     worker_hostname text DEFAULT ''::text NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
     repo_id integer NOT NULL,
-    job_type integer NOT NULL,
-    tenant_id integer
+    job_type integer NOT NULL
 );
 
 CREATE TABLE own_signal_configurations (
@@ -4042,8 +3922,7 @@ CREATE TABLE own_signal_configurations (
     name text NOT NULL,
     description text DEFAULT ''::text NOT NULL,
     excluded_repo_patterns text[],
-    enabled boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    enabled boolean DEFAULT false NOT NULL
 );
 
 CREATE VIEW own_background_jobs_config_aware AS
@@ -4092,8 +3971,7 @@ CREATE TABLE own_signal_recent_contribution (
     commit_author_id integer NOT NULL,
     changed_file_path_id integer NOT NULL,
     commit_timestamp timestamp without time zone NOT NULL,
-    commit_id bytea NOT NULL,
-    tenant_id integer
+    commit_id bytea NOT NULL
 );
 
 COMMENT ON TABLE own_signal_recent_contribution IS 'One entry per file changed in every commit that classifies as a contribution signal.';
@@ -4113,8 +3991,7 @@ CREATE TABLE ownership_path_stats (
     tree_codeowned_files_count integer,
     last_updated_at timestamp without time zone NOT NULL,
     tree_assigned_ownership_files_count integer,
-    tree_any_ownership_files_count integer,
-    tenant_id integer
+    tree_any_ownership_files_count integer
 );
 
 COMMENT ON TABLE ownership_path_stats IS 'Data on how many files in given tree are owned by anyone.
@@ -4133,7 +4010,6 @@ CREATE TABLE package_repo_filters (
     matcher jsonb NOT NULL,
     deleted_at timestamp with time zone,
     updated_at timestamp with time zone DEFAULT statement_timestamp() NOT NULL,
-    tenant_id integer,
     CONSTRAINT package_repo_filters_behaviour_is_allow_or_block CHECK ((behaviour = ANY ('{BLOCK,ALLOW}'::text[]))),
     CONSTRAINT package_repo_filters_is_pkgrepo_scheme CHECK ((scheme = ANY ('{semanticdb,npm,go,python,rust-analyzer,scip-ruby}'::text[]))),
     CONSTRAINT package_repo_filters_valid_oneof_glob CHECK ((((matcher ? 'VersionGlob'::text) AND ((matcher ->> 'VersionGlob'::text) <> ''::text) AND ((matcher ->> 'PackageName'::text) <> ''::text) AND (NOT (matcher ? 'PackageGlob'::text))) OR ((matcher ? 'PackageGlob'::text) AND ((matcher ->> 'PackageGlob'::text) <> ''::text) AND (NOT (matcher ? 'VersionGlob'::text)))))
@@ -4154,8 +4030,7 @@ CREATE TABLE package_repo_versions (
     package_id bigint NOT NULL,
     version text NOT NULL,
     blocked boolean DEFAULT false NOT NULL,
-    last_checked_at timestamp with time zone,
-    tenant_id integer
+    last_checked_at timestamp with time zone
 );
 
 CREATE SEQUENCE package_repo_versions_id_seq
@@ -4194,7 +4069,6 @@ CREATE TABLE permission_sync_jobs (
     permissions_found integer DEFAULT 0 NOT NULL,
     code_host_states json[],
     is_partial_success boolean DEFAULT false,
-    tenant_id integer,
     CONSTRAINT permission_sync_jobs_for_repo_or_user CHECK (((user_id IS NULL) <> (repository_id IS NULL)))
 );
 
@@ -4221,7 +4095,6 @@ CREATE TABLE permissions (
     namespace text NOT NULL,
     action text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer,
     CONSTRAINT action_not_blank CHECK ((action <> ''::text)),
     CONSTRAINT namespace_not_blank CHECK ((namespace <> ''::text))
 );
@@ -4243,8 +4116,7 @@ CREATE TABLE phabricator_repos (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
-    url text DEFAULT ''::text NOT NULL,
-    tenant_id integer
+    url text DEFAULT ''::text NOT NULL
 );
 
 CREATE SEQUENCE phabricator_repos_id_seq
@@ -4271,8 +4143,7 @@ CREATE TABLE product_licenses (
     revoked_at timestamp with time zone,
     salesforce_sub_id text,
     salesforce_opp_id text,
-    revoke_reason text,
-    tenant_id integer
+    revoke_reason text
 );
 
 COMMENT ON COLUMN product_licenses.access_token_enabled IS 'Whether this license key can be used as an access token to authenticate API requests';
@@ -4294,8 +4165,7 @@ CREATE TABLE product_subscriptions (
     cody_gateway_chat_rate_limit_allowed_models text[],
     cody_gateway_code_rate_limit bigint,
     cody_gateway_code_rate_interval_seconds integer,
-    cody_gateway_code_rate_limit_allowed_models text[],
-    tenant_id integer
+    cody_gateway_code_rate_limit_allowed_models text[]
 );
 
 COMMENT ON COLUMN product_subscriptions.cody_gateway_embeddings_api_rate_limit IS 'Custom requests per time interval allowed for embeddings';
@@ -4317,7 +4187,6 @@ CREATE TABLE prompts (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_by integer,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer,
     CONSTRAINT prompts_definition_text_max_length CHECK ((char_length(definition_text) <= (1024 * 100))),
     CONSTRAINT prompts_description_max_length CHECK ((char_length(description) <= (1024 * 50))),
     CONSTRAINT prompts_has_valid_owner CHECK ((((owner_user_id IS NOT NULL) AND (owner_org_id IS NULL)) OR ((owner_org_id IS NOT NULL) AND (owner_user_id IS NULL)))),
@@ -4357,7 +4226,6 @@ CREATE TABLE users (
     code_completions_quota integer,
     completed_post_signup boolean DEFAULT false NOT NULL,
     cody_pro_enabled_at timestamp with time zone,
-    tenant_id integer,
     CONSTRAINT users_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT users_username_max_length CHECK ((char_length((username)::text) <= 255)),
     CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^\w(?:\w|[-.](?=\w))*-?$'::citext))
@@ -4385,8 +4253,7 @@ CREATE TABLE query_runner_state (
     query text,
     last_executed timestamp with time zone,
     latest_result timestamp with time zone,
-    exec_duration_ns bigint,
-    tenant_id integer
+    exec_duration_ns bigint
 );
 
 CREATE VIEW reconciler_changesets AS
@@ -4444,8 +4311,7 @@ CREATE VIEW reconciler_changesets AS
 CREATE TABLE redis_key_value (
     namespace text NOT NULL,
     key text NOT NULL,
-    value bytea NOT NULL,
-    tenant_id integer
+    value bytea NOT NULL
 );
 
 CREATE TABLE registry_extension_releases (
@@ -4458,8 +4324,7 @@ CREATE TABLE registry_extension_releases (
     bundle text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
-    source_map text,
-    tenant_id integer
+    source_map text
 );
 
 CREATE SEQUENCE registry_extension_releases_id_seq
@@ -4481,7 +4346,6 @@ CREATE TABLE registry_extensions (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
-    tenant_id integer,
     CONSTRAINT registry_extensions_name_length CHECK (((char_length((name)::text) > 0) AND (char_length((name)::text) <= 128))),
     CONSTRAINT registry_extensions_name_valid_chars CHECK ((name OPERATOR(~) '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[_.-](?=[a-zA-Z0-9]))*$'::citext)),
     CONSTRAINT registry_extensions_single_publisher CHECK (((publisher_user_id IS NULL) <> (publisher_org_id IS NULL)))
@@ -4501,8 +4365,7 @@ CREATE TABLE repo_commits_changelists (
     repo_id integer NOT NULL,
     commit_sha bytea NOT NULL,
     perforce_changelist_id integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE repo_commits_changelists_id_seq
@@ -4529,8 +4392,7 @@ CREATE TABLE repo_embedding_job_stats (
     text_files_skipped jsonb DEFAULT '{}'::jsonb NOT NULL,
     text_bytes_embedded bigint DEFAULT 0 NOT NULL,
     code_chunks_excluded integer DEFAULT 0 NOT NULL,
-    text_chunks_excluded integer DEFAULT 0 NOT NULL,
-    tenant_id integer
+    text_chunks_excluded integer DEFAULT 0 NOT NULL
 );
 
 CREATE TABLE repo_embedding_jobs (
@@ -4548,8 +4410,7 @@ CREATE TABLE repo_embedding_jobs (
     worker_hostname text DEFAULT ''::text NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
     repo_id integer NOT NULL,
-    revision text NOT NULL,
-    tenant_id integer
+    revision text NOT NULL
 );
 
 CREATE SEQUENCE repo_embedding_jobs_id_seq
@@ -4574,8 +4435,7 @@ ALTER SEQUENCE repo_id_seq OWNED BY repo.id;
 CREATE TABLE repo_kvps (
     repo_id integer NOT NULL,
     key text NOT NULL,
-    value text,
-    tenant_id integer
+    value text
 );
 
 CREATE TABLE repo_paths (
@@ -4584,8 +4444,7 @@ CREATE TABLE repo_paths (
     absolute_path text NOT NULL,
     parent_id integer,
     tree_files_count integer,
-    tree_files_counts_updated_at timestamp without time zone,
-    tenant_id integer
+    tree_files_counts_updated_at timestamp without time zone
 );
 
 COMMENT ON COLUMN repo_paths.absolute_path IS 'Absolute path does not start or end with forward slash. Example: "a/b/c". Root directory is empty path "".';
@@ -4608,8 +4467,7 @@ CREATE TABLE repo_pending_permissions (
     repo_id integer NOT NULL,
     permission text NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    user_ids_ints bigint[] DEFAULT '{}'::integer[] NOT NULL,
-    tenant_id integer
+    user_ids_ints bigint[] DEFAULT '{}'::integer[] NOT NULL
 );
 
 CREATE TABLE repo_permissions (
@@ -4618,8 +4476,7 @@ CREATE TABLE repo_permissions (
     updated_at timestamp with time zone NOT NULL,
     synced_at timestamp with time zone,
     user_ids_ints integer[] DEFAULT '{}'::integer[] NOT NULL,
-    unrestricted boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    unrestricted boolean DEFAULT false NOT NULL
 );
 
 CREATE TABLE repo_statistics (
@@ -4629,8 +4486,7 @@ CREATE TABLE repo_statistics (
     cloning bigint DEFAULT 0 NOT NULL,
     cloned bigint DEFAULT 0 NOT NULL,
     failed_fetch bigint DEFAULT 0 NOT NULL,
-    corrupted bigint DEFAULT 0 NOT NULL,
-    tenant_id integer
+    corrupted bigint DEFAULT 0 NOT NULL
 );
 
 COMMENT ON COLUMN repo_statistics.total IS 'Number of repositories that are not soft-deleted and not blocked';
@@ -4650,16 +4506,14 @@ COMMENT ON COLUMN repo_statistics.corrupted IS 'Number of repositories that are 
 CREATE TABLE role_permissions (
     role_id integer NOT NULL,
     permission_id integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE TABLE roles (
     id integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     system boolean DEFAULT false NOT NULL,
-    name citext NOT NULL,
-    tenant_id integer
+    name citext NOT NULL
 );
 
 COMMENT ON COLUMN roles.system IS 'This is used to indicate whether a role is read-only or can be modified.';
@@ -4689,7 +4543,6 @@ CREATE TABLE saved_searches (
     updated_by integer,
     draft boolean DEFAULT false NOT NULL,
     visibility_secret boolean DEFAULT true NOT NULL,
-    tenant_id integer,
     CONSTRAINT saved_searches_notifications_disabled CHECK (((notify_owner = false) AND (notify_slack = false))),
     CONSTRAINT user_or_org_id_not_null CHECK ((((user_id IS NOT NULL) AND (org_id IS NULL)) OR ((org_id IS NOT NULL) AND (user_id IS NULL))))
 );
@@ -4705,8 +4558,7 @@ ALTER SEQUENCE saved_searches_id_seq OWNED BY saved_searches.id;
 
 CREATE TABLE search_context_default (
     user_id integer NOT NULL,
-    search_context_id bigint NOT NULL,
-    tenant_id integer
+    search_context_id bigint NOT NULL
 );
 
 COMMENT ON TABLE search_context_default IS 'When a user sets a search context as default, a row is inserted into this table. A user can only have one default search context. If the user has not set their default search context, it will fall back to `global`.';
@@ -4714,15 +4566,13 @@ COMMENT ON TABLE search_context_default IS 'When a user sets a search context as
 CREATE TABLE search_context_repos (
     search_context_id bigint NOT NULL,
     repo_id integer NOT NULL,
-    revision text NOT NULL,
-    tenant_id integer
+    revision text NOT NULL
 );
 
 CREATE TABLE search_context_stars (
     search_context_id bigint NOT NULL,
     user_id integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 COMMENT ON TABLE search_context_stars IS 'When a user stars a search context, a row is inserted into this table. If the user unstars the search context, the row is deleted. The global context is not in the database, and therefore cannot be starred.';
@@ -4738,7 +4588,6 @@ CREATE TABLE search_contexts (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
     query text,
-    tenant_id integer,
     CONSTRAINT search_contexts_has_one_or_no_namespace CHECK (((namespace_user_id IS NULL) OR (namespace_org_id IS NULL)))
 );
 
@@ -4763,7 +4612,6 @@ CREATE TABLE security_event_logs (
     argument jsonb NOT NULL,
     version text NOT NULL,
     "timestamp" timestamp with time zone NOT NULL,
-    tenant_id integer,
     CONSTRAINT security_event_logs_check_has_user CHECK ((((user_id = 0) AND (anonymous_user_id <> ''::text)) OR ((user_id <> 0) AND (anonymous_user_id = ''::text)) OR ((user_id <> 0) AND (anonymous_user_id <> ''::text)))),
     CONSTRAINT security_event_logs_check_name_not_empty CHECK ((name <> ''::text)),
     CONSTRAINT security_event_logs_check_source_not_empty CHECK ((source <> ''::text)),
@@ -4802,7 +4650,6 @@ CREATE TABLE settings (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     user_id integer,
     author_user_id integer,
-    tenant_id integer,
     CONSTRAINT settings_no_empty_contents CHECK ((contents <> ''::text))
 );
 
@@ -4827,7 +4674,6 @@ CREATE TABLE sub_repo_permissions (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     paths text[],
     ips text[],
-    tenant_id integer,
     CONSTRAINT ips_paths_length_check CHECK (((ips IS NULL) OR ((array_length(ips, 1) = array_length(paths, 1)) AND (NOT (''::text = ANY (ips))))))
 );
 
@@ -4846,8 +4692,7 @@ CREATE TABLE survey_responses (
     better text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     use_cases text[],
-    other_use_case text,
-    tenant_id integer
+    other_use_case text
 );
 
 CREATE SEQUENCE survey_responses_id_seq
@@ -4878,7 +4723,6 @@ CREATE TABLE syntactic_scip_indexing_jobs (
     cancel boolean DEFAULT false NOT NULL,
     should_reindex boolean DEFAULT false NOT NULL,
     enqueuer_user_id integer DEFAULT 0 NOT NULL,
-    tenant_id integer,
     CONSTRAINT syntactic_scip_indexing_jobs_commit_valid_chars CHECK ((commit ~ '^[a-f0-9]{40}$'::text))
 );
 
@@ -4921,8 +4765,7 @@ CREATE VIEW syntactic_scip_indexing_jobs_with_repository_name AS
 
 CREATE TABLE syntactic_scip_last_index_scan (
     repository_id integer NOT NULL,
-    last_index_scan_at timestamp with time zone NOT NULL,
-    tenant_id integer
+    last_index_scan_at timestamp with time zone NOT NULL
 );
 
 COMMENT ON TABLE syntactic_scip_last_index_scan IS 'Tracks the last time repository was checked for syntactic indexing job scheduling.';
@@ -4933,8 +4776,7 @@ CREATE TABLE team_members (
     team_id integer NOT NULL,
     user_id integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE TABLE teams (
@@ -4946,7 +4788,6 @@ CREATE TABLE teams (
     creator_id integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer,
     CONSTRAINT teams_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT teams_name_max_length CHECK ((char_length((name)::text) <= 255)),
     CONSTRAINT teams_name_valid_chars CHECK ((name OPERATOR(~) '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext))
@@ -4966,8 +4807,7 @@ CREATE TABLE telemetry_events_export_queue (
     id text NOT NULL,
     "timestamp" timestamp with time zone NOT NULL,
     payload_pb bytea NOT NULL,
-    exported_at timestamp with time zone,
-    tenant_id integer
+    exported_at timestamp with time zone
 );
 
 CREATE TABLE temporary_settings (
@@ -4975,8 +4815,7 @@ CREATE TABLE temporary_settings (
     user_id integer NOT NULL,
     contents jsonb,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 COMMENT ON TABLE temporary_settings IS 'Stores per-user temporary settings used in the UI, for example, which modals have been dimissed or what theme is preferred.';
@@ -5038,7 +4877,6 @@ CREATE TABLE user_credentials (
     ssh_migration_applied boolean DEFAULT false NOT NULL,
     encryption_key_id text DEFAULT ''::text NOT NULL,
     github_app_id integer,
-    tenant_id integer,
     CONSTRAINT check_github_app_id_and_external_service_type_user_credentials CHECK (((github_app_id IS NULL) OR (external_service_type = 'github'::text)))
 );
 
@@ -5058,8 +4896,7 @@ CREATE TABLE user_emails (
     verification_code text,
     verified_at timestamp with time zone,
     last_verification_sent_at timestamp with time zone,
-    is_primary boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    is_primary boolean DEFAULT false NOT NULL
 );
 
 CREATE TABLE user_external_accounts (
@@ -5076,8 +4913,7 @@ CREATE TABLE user_external_accounts (
     client_id text NOT NULL,
     expired_at timestamp with time zone,
     last_valid_at timestamp with time zone,
-    encryption_key_id text DEFAULT ''::text NOT NULL,
-    tenant_id integer
+    encryption_key_id text DEFAULT ''::text NOT NULL
 );
 
 CREATE SEQUENCE user_external_accounts_id_seq
@@ -5093,8 +4929,7 @@ CREATE TABLE user_onboarding_tour (
     id integer NOT NULL,
     raw_json text NOT NULL,
     created_at timestamp without time zone DEFAULT now() NOT NULL,
-    updated_by integer,
-    tenant_id integer
+    updated_by integer
 );
 
 CREATE SEQUENCE user_onboarding_tour_id_seq
@@ -5115,8 +4950,7 @@ CREATE TABLE user_pending_permissions (
     updated_at timestamp with time zone NOT NULL,
     service_type text NOT NULL,
     service_id text NOT NULL,
-    object_ids_ints integer[] DEFAULT '{}'::integer[] NOT NULL,
-    tenant_id integer
+    object_ids_ints integer[] DEFAULT '{}'::integer[] NOT NULL
 );
 
 CREATE SEQUENCE user_pending_permissions_id_seq
@@ -5135,15 +4969,13 @@ CREATE TABLE user_permissions (
     updated_at timestamp with time zone NOT NULL,
     synced_at timestamp with time zone,
     object_ids_ints integer[] DEFAULT '{}'::integer[] NOT NULL,
-    migrated boolean DEFAULT true,
-    tenant_id integer
+    migrated boolean DEFAULT true
 );
 
 CREATE TABLE user_public_repos (
     user_id integer NOT NULL,
     repo_uri text NOT NULL,
-    repo_id integer NOT NULL,
-    tenant_id integer
+    repo_id integer NOT NULL
 );
 
 CREATE TABLE user_repo_permissions (
@@ -5153,8 +4985,7 @@ CREATE TABLE user_repo_permissions (
     user_external_account_id integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    source text DEFAULT 'sync'::text NOT NULL,
-    tenant_id integer
+    source text DEFAULT 'sync'::text NOT NULL
 );
 
 CREATE SEQUENCE user_repo_permissions_id_seq
@@ -5169,8 +5000,7 @@ ALTER SEQUENCE user_repo_permissions_id_seq OWNED BY user_repo_permissions.id;
 CREATE TABLE user_roles (
     user_id integer NOT NULL,
     role_id integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE users_id_seq
@@ -5206,8 +5036,7 @@ CREATE TABLE vulnerabilities (
     cvss_score text NOT NULL,
     published_at timestamp with time zone NOT NULL,
     modified_at timestamp with time zone,
-    withdrawn_at timestamp with time zone,
-    tenant_id integer
+    withdrawn_at timestamp with time zone
 );
 
 CREATE SEQUENCE vulnerabilities_id_seq
@@ -5228,8 +5057,7 @@ CREATE TABLE vulnerability_affected_packages (
     namespace text NOT NULL,
     version_constraint text[] NOT NULL,
     fixed boolean NOT NULL,
-    fixed_in text,
-    tenant_id integer
+    fixed_in text
 );
 
 CREATE SEQUENCE vulnerability_affected_packages_id_seq
@@ -5246,8 +5074,7 @@ CREATE TABLE vulnerability_affected_symbols (
     id integer NOT NULL,
     vulnerability_affected_package_id integer NOT NULL,
     path text NOT NULL,
-    symbols text[] NOT NULL,
-    tenant_id integer
+    symbols text[] NOT NULL
 );
 
 CREATE SEQUENCE vulnerability_affected_symbols_id_seq
@@ -5263,8 +5090,7 @@ ALTER SEQUENCE vulnerability_affected_symbols_id_seq OWNED BY vulnerability_affe
 CREATE TABLE vulnerability_matches (
     id integer NOT NULL,
     upload_id integer NOT NULL,
-    vulnerability_affected_package_id integer NOT NULL,
-    tenant_id integer
+    vulnerability_affected_package_id integer NOT NULL
 );
 
 CREATE SEQUENCE vulnerability_matches_id_seq
@@ -5285,8 +5111,7 @@ CREATE TABLE webhook_logs (
     request bytea NOT NULL,
     response bytea NOT NULL,
     encryption_key_id text NOT NULL,
-    webhook_id integer,
-    tenant_id integer
+    webhook_id integer
 );
 
 CREATE SEQUENCE webhook_logs_id_seq
@@ -5309,8 +5134,7 @@ CREATE TABLE webhooks (
     uuid uuid DEFAULT gen_random_uuid() NOT NULL,
     created_by_user_id integer,
     updated_by_user_id integer,
-    name text NOT NULL,
-    tenant_id integer
+    name text NOT NULL
 );
 
 COMMENT ON TABLE webhooks IS 'Webhooks registered in Sourcegraph instance.';
@@ -5343,8 +5167,7 @@ CREATE TABLE zoekt_repos (
     index_status text DEFAULT 'not_indexed'::text NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    last_indexed_at timestamp with time zone,
-    tenant_id integer
+    last_indexed_at timestamp with time zone
 );
 
 ALTER TABLE ONLY access_requests ALTER COLUMN id SET DEFAULT nextval('access_requests_id_seq'::regclass);
@@ -6762,20 +6585,11 @@ CREATE TRIGGER versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FU
 ALTER TABLE ONLY access_requests
     ADD CONSTRAINT access_requests_decision_by_user_id_fkey FOREIGN KEY (decision_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
 
-ALTER TABLE ONLY access_requests
-    ADD CONSTRAINT access_requests_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY access_tokens
     ADD CONSTRAINT access_tokens_creator_user_id_fkey FOREIGN KEY (creator_user_id) REFERENCES users(id);
 
 ALTER TABLE ONLY access_tokens
     ADD CONSTRAINT access_tokens_subject_user_id_fkey FOREIGN KEY (subject_user_id) REFERENCES users(id);
-
-ALTER TABLE ONLY access_tokens
-    ADD CONSTRAINT access_tokens_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY aggregated_user_statistics
-    ADD CONSTRAINT aggregated_user_statistics_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY aggregated_user_statistics
     ADD CONSTRAINT aggregated_user_statistics_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
@@ -6787,9 +6601,6 @@ ALTER TABLE ONLY assigned_owners
     ADD CONSTRAINT assigned_owners_owner_user_id_fkey FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY assigned_owners
-    ADD CONSTRAINT assigned_owners_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY assigned_owners
     ADD CONSTRAINT assigned_owners_who_assigned_user_id_fkey FOREIGN KEY (who_assigned_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
 
 ALTER TABLE ONLY assigned_teams
@@ -6797,9 +6608,6 @@ ALTER TABLE ONLY assigned_teams
 
 ALTER TABLE ONLY assigned_teams
     ADD CONSTRAINT assigned_teams_owner_team_id_fkey FOREIGN KEY (owner_team_id) REFERENCES teams(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY assigned_teams
-    ADD CONSTRAINT assigned_teams_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY assigned_teams
     ADD CONSTRAINT assigned_teams_who_assigned_team_id_fkey FOREIGN KEY (who_assigned_team_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
@@ -6822,15 +6630,6 @@ ALTER TABLE ONLY batch_changes
 ALTER TABLE ONLY batch_changes_site_credentials
     ADD CONSTRAINT batch_changes_site_credentials_github_app_id_fkey FOREIGN KEY (github_app_id) REFERENCES github_apps(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY batch_changes_site_credentials
-    ADD CONSTRAINT batch_changes_site_credentials_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY batch_changes
-    ADD CONSTRAINT batch_changes_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY batch_spec_execution_cache_entries
-    ADD CONSTRAINT batch_spec_execution_cache_entries_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY batch_spec_execution_cache_entries
     ADD CONSTRAINT batch_spec_execution_cache_entries_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
@@ -6840,17 +6639,8 @@ ALTER TABLE ONLY batch_spec_resolution_jobs
 ALTER TABLE ONLY batch_spec_resolution_jobs
     ADD CONSTRAINT batch_spec_resolution_jobs_initiator_id_fkey FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE;
 
-ALTER TABLE ONLY batch_spec_resolution_jobs
-    ADD CONSTRAINT batch_spec_resolution_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY batch_spec_workspace_execution_jobs
     ADD CONSTRAINT batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY batch_spec_workspace_execution_jobs
-    ADD CONSTRAINT batch_spec_workspace_execution_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY batch_spec_workspace_execution_last_dequeues
-    ADD CONSTRAINT batch_spec_workspace_execution_last_dequeues_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY batch_spec_workspace_execution_last_dequeues
     ADD CONSTRAINT batch_spec_workspace_execution_last_dequeues_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
@@ -6858,44 +6648,26 @@ ALTER TABLE ONLY batch_spec_workspace_execution_last_dequeues
 ALTER TABLE ONLY batch_spec_workspace_files
     ADD CONSTRAINT batch_spec_workspace_files_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY batch_spec_workspace_files
-    ADD CONSTRAINT batch_spec_workspace_files_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE;
 
-ALTER TABLE ONLY batch_spec_workspaces
-    ADD CONSTRAINT batch_spec_workspaces_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY batch_specs
     ADD CONSTRAINT batch_specs_batch_change_id_fkey FOREIGN KEY (batch_change_id) REFERENCES batch_changes(id) ON DELETE SET NULL DEFERRABLE;
 
 ALTER TABLE ONLY batch_specs
-    ADD CONSTRAINT batch_specs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY batch_specs
     ADD CONSTRAINT batch_specs_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
-
-ALTER TABLE ONLY cached_available_indexers
-    ADD CONSTRAINT cached_available_indexers_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY changeset_events
     ADD CONSTRAINT changeset_events_changeset_id_fkey FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY changeset_events
-    ADD CONSTRAINT changeset_events_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY changeset_jobs
     ADD CONSTRAINT changeset_jobs_batch_change_id_fkey FOREIGN KEY (batch_change_id) REFERENCES batch_changes(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY changeset_jobs
     ADD CONSTRAINT changeset_jobs_changeset_id_fkey FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY changeset_jobs
-    ADD CONSTRAINT changeset_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY changeset_jobs
     ADD CONSTRAINT changeset_jobs_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
@@ -6905,9 +6677,6 @@ ALTER TABLE ONLY changeset_specs
 
 ALTER TABLE ONLY changeset_specs
     ADD CONSTRAINT changeset_specs_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE;
-
-ALTER TABLE ONLY changeset_specs
-    ADD CONSTRAINT changeset_specs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY changeset_specs
     ADD CONSTRAINT changeset_specs_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
@@ -6924,17 +6693,11 @@ ALTER TABLE ONLY changesets
 ALTER TABLE ONLY changesets
     ADD CONSTRAINT changesets_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
 
-ALTER TABLE ONLY changesets
-    ADD CONSTRAINT changesets_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY cm_action_jobs
     ADD CONSTRAINT cm_action_jobs_email_fk FOREIGN KEY (email) REFERENCES cm_emails(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY cm_action_jobs
     ADD CONSTRAINT cm_action_jobs_slack_webhook_fkey FOREIGN KEY (slack_webhook) REFERENCES cm_slack_webhooks(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY cm_action_jobs
-    ADD CONSTRAINT cm_action_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY cm_action_jobs
     ADD CONSTRAINT cm_action_jobs_trigger_event_fk FOREIGN KEY (trigger_event) REFERENCES cm_trigger_jobs(id) ON DELETE CASCADE;
@@ -6951,17 +6714,11 @@ ALTER TABLE ONLY cm_emails
 ALTER TABLE ONLY cm_emails
     ADD CONSTRAINT cm_emails_monitor FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY cm_emails
-    ADD CONSTRAINT cm_emails_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY cm_last_searched
     ADD CONSTRAINT cm_last_searched_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES cm_monitors(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY cm_last_searched
     ADD CONSTRAINT cm_last_searched_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY cm_last_searched
-    ADD CONSTRAINT cm_last_searched_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY cm_monitors
     ADD CONSTRAINT cm_monitors_changed_by_fk FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE;
@@ -6973,22 +6730,13 @@ ALTER TABLE ONLY cm_monitors
     ADD CONSTRAINT cm_monitors_org_id_fk FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY cm_monitors
-    ADD CONSTRAINT cm_monitors_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY cm_monitors
     ADD CONSTRAINT cm_monitors_user_id_fk FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY cm_queries
-    ADD CONSTRAINT cm_queries_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY cm_recipients
     ADD CONSTRAINT cm_recipients_emails FOREIGN KEY (email) REFERENCES cm_emails(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY cm_recipients
     ADD CONSTRAINT cm_recipients_org_id_fk FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY cm_recipients
-    ADD CONSTRAINT cm_recipients_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY cm_recipients
     ADD CONSTRAINT cm_recipients_user_id_fk FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
@@ -7002,14 +6750,8 @@ ALTER TABLE ONLY cm_slack_webhooks
 ALTER TABLE ONLY cm_slack_webhooks
     ADD CONSTRAINT cm_slack_webhooks_monitor_fkey FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY cm_slack_webhooks
-    ADD CONSTRAINT cm_slack_webhooks_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY cm_trigger_jobs
     ADD CONSTRAINT cm_trigger_jobs_query_fk FOREIGN KEY (query) REFERENCES cm_queries(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY cm_trigger_jobs
-    ADD CONSTRAINT cm_trigger_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY cm_queries
     ADD CONSTRAINT cm_triggers_changed_by_fk FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE;
@@ -7029,71 +6771,20 @@ ALTER TABLE ONLY cm_webhooks
 ALTER TABLE ONLY cm_webhooks
     ADD CONSTRAINT cm_webhooks_monitor_fkey FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY cm_webhooks
-    ADD CONSTRAINT cm_webhooks_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY code_hosts
-    ADD CONSTRAINT code_hosts_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_autoindex_queue
-    ADD CONSTRAINT codeintel_autoindex_queue_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY codeintel_autoindexing_exceptions
     ADD CONSTRAINT codeintel_autoindexing_exceptions_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_autoindexing_exceptions
-    ADD CONSTRAINT codeintel_autoindexing_exceptions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_commit_dates
-    ADD CONSTRAINT codeintel_commit_dates_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_inference_scripts
-    ADD CONSTRAINT codeintel_inference_scripts_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY codeintel_initial_path_ranks
     ADD CONSTRAINT codeintel_initial_path_ranks_exported_upload_id_fkey FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY codeintel_initial_path_ranks_processed
-    ADD CONSTRAINT codeintel_initial_path_ranks_processed_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_initial_path_ranks
-    ADD CONSTRAINT codeintel_initial_path_ranks_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_langugage_support_requests
-    ADD CONSTRAINT codeintel_langugage_support_requests_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_path_ranks
-    ADD CONSTRAINT codeintel_path_ranks_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY codeintel_ranking_definitions
     ADD CONSTRAINT codeintel_ranking_definitions_exported_upload_id_fkey FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_ranking_definitions
-    ADD CONSTRAINT codeintel_ranking_definitions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_ranking_exports
-    ADD CONSTRAINT codeintel_ranking_exports_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL;
 
-ALTER TABLE ONLY codeintel_ranking_graph_keys
-    ADD CONSTRAINT codeintel_ranking_graph_keys_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_ranking_path_counts_inputs
-    ADD CONSTRAINT codeintel_ranking_path_counts_inputs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_ranking_progress
-    ADD CONSTRAINT codeintel_ranking_progress_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY codeintel_ranking_references
     ADD CONSTRAINT codeintel_ranking_references_exported_upload_id_fkey FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_ranking_references_processed
-    ADD CONSTRAINT codeintel_ranking_references_processed_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeintel_ranking_references
-    ADD CONSTRAINT codeintel_ranking_references_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY codeowners_individual_stats
     ADD CONSTRAINT codeowners_individual_stats_file_path_id_fkey FOREIGN KEY (file_path_id) REFERENCES repo_paths(id);
@@ -7101,38 +6792,14 @@ ALTER TABLE ONLY codeowners_individual_stats
 ALTER TABLE ONLY codeowners_individual_stats
     ADD CONSTRAINT codeowners_individual_stats_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES codeowners_owners(id);
 
-ALTER TABLE ONLY codeowners_individual_stats
-    ADD CONSTRAINT codeowners_individual_stats_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeowners_owners
-    ADD CONSTRAINT codeowners_owners_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY codeowners
     ADD CONSTRAINT codeowners_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY codeowners
-    ADD CONSTRAINT codeowners_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY commit_authors
-    ADD CONSTRAINT commit_authors_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY configuration_policies_audit_logs
-    ADD CONSTRAINT configuration_policies_audit_logs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY context_detection_embedding_jobs
-    ADD CONSTRAINT context_detection_embedding_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY discussion_comments
     ADD CONSTRAINT discussion_comments_author_user_id_fkey FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT;
 
 ALTER TABLE ONLY discussion_comments
-    ADD CONSTRAINT discussion_comments_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY discussion_comments
     ADD CONSTRAINT discussion_comments_thread_id_fkey FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY discussion_mail_reply_tokens
-    ADD CONSTRAINT discussion_mail_reply_tokens_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY discussion_mail_reply_tokens
     ADD CONSTRAINT discussion_mail_reply_tokens_thread_id_fkey FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE;
@@ -7150,37 +6817,10 @@ ALTER TABLE ONLY discussion_threads_target_repo
     ADD CONSTRAINT discussion_threads_target_repo_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY discussion_threads_target_repo
-    ADD CONSTRAINT discussion_threads_target_repo_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY discussion_threads_target_repo
     ADD CONSTRAINT discussion_threads_target_repo_thread_id_fkey FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY discussion_threads
-    ADD CONSTRAINT discussion_threads_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY event_logs_export_allowlist
-    ADD CONSTRAINT event_logs_export_allowlist_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY event_logs_scrape_state_own
-    ADD CONSTRAINT event_logs_scrape_state_own_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY event_logs_scrape_state
-    ADD CONSTRAINT event_logs_scrape_state_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY event_logs
-    ADD CONSTRAINT event_logs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY executor_heartbeats
-    ADD CONSTRAINT executor_heartbeats_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY executor_job_tokens
-    ADD CONSTRAINT executor_job_tokens_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY executor_secret_access_logs
     ADD CONSTRAINT executor_secret_access_logs_executor_secret_id_fkey FOREIGN KEY (executor_secret_id) REFERENCES executor_secrets(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY executor_secret_access_logs
-    ADD CONSTRAINT executor_secret_access_logs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY executor_secret_access_logs
     ADD CONSTRAINT executor_secret_access_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
@@ -7194,14 +6834,8 @@ ALTER TABLE ONLY executor_secrets
 ALTER TABLE ONLY executor_secrets
     ADD CONSTRAINT executor_secrets_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY executor_secrets
-    ADD CONSTRAINT executor_secrets_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY exhaustive_search_jobs
     ADD CONSTRAINT exhaustive_search_jobs_initiator_id_fkey FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY exhaustive_search_jobs
-    ADD CONSTRAINT exhaustive_search_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY exhaustive_search_repo_jobs
     ADD CONSTRAINT exhaustive_search_repo_jobs_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
@@ -7209,29 +6843,14 @@ ALTER TABLE ONLY exhaustive_search_repo_jobs
 ALTER TABLE ONLY exhaustive_search_repo_jobs
     ADD CONSTRAINT exhaustive_search_repo_jobs_search_job_id_fkey FOREIGN KEY (search_job_id) REFERENCES exhaustive_search_jobs(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY exhaustive_search_repo_jobs
-    ADD CONSTRAINT exhaustive_search_repo_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY exhaustive_search_repo_revision_jobs
     ADD CONSTRAINT exhaustive_search_repo_revision_jobs_search_repo_job_id_fkey FOREIGN KEY (search_repo_job_id) REFERENCES exhaustive_search_repo_jobs(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY exhaustive_search_repo_revision_jobs
-    ADD CONSTRAINT exhaustive_search_repo_revision_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs
-    ADD CONSTRAINT explicit_permissions_bitbucket_projects_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY external_service_repos
     ADD CONSTRAINT external_service_repos_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY external_service_repos
     ADD CONSTRAINT external_service_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY external_service_repos
-    ADD CONSTRAINT external_service_repos_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY external_service_sync_jobs
-    ADD CONSTRAINT external_service_sync_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY external_services
     ADD CONSTRAINT external_services_code_host_id_fkey FOREIGN KEY (code_host_id) REFERENCES code_hosts(id) ON UPDATE CASCADE ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED;
@@ -7245,20 +6864,11 @@ ALTER TABLE ONLY external_service_sync_jobs
 ALTER TABLE ONLY external_services
     ADD CONSTRAINT external_services_last_updater_id_fkey FOREIGN KEY (last_updater_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
 
-ALTER TABLE ONLY external_services
-    ADD CONSTRAINT external_services_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY feature_flag_overrides
     ADD CONSTRAINT feature_flag_overrides_namespace_org_id_fkey FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY feature_flag_overrides
     ADD CONSTRAINT feature_flag_overrides_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY feature_flag_overrides
-    ADD CONSTRAINT feature_flag_overrides_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY feature_flags
-    ADD CONSTRAINT feature_flags_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY codeintel_initial_path_ranks_processed
     ADD CONSTRAINT fk_codeintel_initial_path_ranks FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE;
@@ -7284,56 +6894,17 @@ ALTER TABLE ONLY vulnerability_matches
 ALTER TABLE ONLY github_app_installs
     ADD CONSTRAINT github_app_installs_app_id_fkey FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY github_app_installs
-    ADD CONSTRAINT github_app_installs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY github_apps
-    ADD CONSTRAINT github_apps_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY github_apps
     ADD CONSTRAINT github_apps_webhook_id_fkey FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL;
-
-ALTER TABLE ONLY gitserver_relocator_jobs
-    ADD CONSTRAINT gitserver_relocator_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY gitserver_repos_statistics
-    ADD CONSTRAINT gitserver_repos_statistics_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY gitserver_repos_sync_output
     ADD CONSTRAINT gitserver_repos_sync_output_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY gitserver_repos_sync_output
-    ADD CONSTRAINT gitserver_repos_sync_output_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY gitserver_repos
-    ADD CONSTRAINT gitserver_repos_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY global_state
-    ADD CONSTRAINT global_state_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY insights_query_runner_jobs_dependencies
     ADD CONSTRAINT insights_query_runner_jobs_dependencies_fk_job_id FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY insights_query_runner_jobs_dependencies
-    ADD CONSTRAINT insights_query_runner_jobs_dependencies_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY insights_query_runner_jobs
-    ADD CONSTRAINT insights_query_runner_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY insights_settings_migration_jobs
-    ADD CONSTRAINT insights_settings_migration_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_configuration_policies_repository_pattern_lookup
-    ADD CONSTRAINT lsif_configuration_policies_repository_pattern_l_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_configuration_policies
-    ADD CONSTRAINT lsif_configuration_policies_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_dependency_indexing_jobs
-    ADD CONSTRAINT lsif_dependency_indexing_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY lsif_dependency_syncing_jobs
     ADD CONSTRAINT lsif_dependency_indexing_jobs_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
@@ -7341,71 +6912,20 @@ ALTER TABLE ONLY lsif_dependency_syncing_jobs
 ALTER TABLE ONLY lsif_dependency_indexing_jobs
     ADD CONSTRAINT lsif_dependency_indexing_jobs_upload_id_fkey1 FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY lsif_dependency_repos
-    ADD CONSTRAINT lsif_dependency_repos_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_dependency_syncing_jobs
-    ADD CONSTRAINT lsif_dependency_syncing_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_dirty_repositories
-    ADD CONSTRAINT lsif_dirty_repositories_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY lsif_index_configuration
     ADD CONSTRAINT lsif_index_configuration_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_index_configuration
-    ADD CONSTRAINT lsif_index_configuration_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_indexes
-    ADD CONSTRAINT lsif_indexes_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_last_index_scan
-    ADD CONSTRAINT lsif_last_index_scan_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_last_retention_scan
-    ADD CONSTRAINT lsif_last_retention_scan_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_nearest_uploads_links
-    ADD CONSTRAINT lsif_nearest_uploads_links_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_nearest_uploads
-    ADD CONSTRAINT lsif_nearest_uploads_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY lsif_packages
     ADD CONSTRAINT lsif_packages_dump_id_fkey FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY lsif_packages
-    ADD CONSTRAINT lsif_packages_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY lsif_references
     ADD CONSTRAINT lsif_references_dump_id_fkey FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_references
-    ADD CONSTRAINT lsif_references_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY lsif_retention_configuration
     ADD CONSTRAINT lsif_retention_configuration_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY lsif_retention_configuration
-    ADD CONSTRAINT lsif_retention_configuration_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_uploads_audit_logs
-    ADD CONSTRAINT lsif_uploads_audit_logs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_uploads_reference_counts
-    ADD CONSTRAINT lsif_uploads_reference_counts_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY lsif_uploads_reference_counts
     ADD CONSTRAINT lsif_uploads_reference_counts_upload_id_fk FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_uploads
-    ADD CONSTRAINT lsif_uploads_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_uploads_visible_at_tip
-    ADD CONSTRAINT lsif_uploads_visible_at_tip_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_uploads_vulnerability_scan
-    ADD CONSTRAINT lsif_uploads_vulnerability_scan_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY names
     ADD CONSTRAINT names_org_id_fkey FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE;
@@ -7414,22 +6934,13 @@ ALTER TABLE ONLY names
     ADD CONSTRAINT names_team_id_fkey FOREIGN KEY (team_id) REFERENCES teams(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY names
-    ADD CONSTRAINT names_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY names
     ADD CONSTRAINT names_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY namespace_permissions
-    ADD CONSTRAINT namespace_permissions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY namespace_permissions
     ADD CONSTRAINT namespace_permissions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY notebook_stars
     ADD CONSTRAINT notebook_stars_notebook_id_fkey FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY notebook_stars
-    ADD CONSTRAINT notebook_stars_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY notebook_stars
     ADD CONSTRAINT notebook_stars_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
@@ -7444,9 +6955,6 @@ ALTER TABLE ONLY notebooks
     ADD CONSTRAINT notebooks_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
 
 ALTER TABLE ONLY notebooks
-    ADD CONSTRAINT notebooks_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY notebooks
     ADD CONSTRAINT notebooks_updater_user_id_fkey FOREIGN KEY (updater_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
 
 ALTER TABLE ONLY org_invitations
@@ -7458,14 +6966,8 @@ ALTER TABLE ONLY org_invitations
 ALTER TABLE ONLY org_invitations
     ADD CONSTRAINT org_invitations_sender_user_id_fkey FOREIGN KEY (sender_user_id) REFERENCES users(id);
 
-ALTER TABLE ONLY org_invitations
-    ADD CONSTRAINT org_invitations_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY org_members
     ADD CONSTRAINT org_members_references_orgs FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT;
-
-ALTER TABLE ONLY org_members
-    ADD CONSTRAINT org_members_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY org_members
     ADD CONSTRAINT org_members_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT;
@@ -7473,32 +6975,11 @@ ALTER TABLE ONLY org_members
 ALTER TABLE ONLY org_stats
     ADD CONSTRAINT org_stats_org_id_fkey FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE;
 
-ALTER TABLE ONLY org_stats
-    ADD CONSTRAINT org_stats_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY orgs_open_beta_stats
-    ADD CONSTRAINT orgs_open_beta_stats_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY orgs
-    ADD CONSTRAINT orgs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY out_of_band_migrations_errors
     ADD CONSTRAINT out_of_band_migrations_errors_migration_id_fkey FOREIGN KEY (migration_id) REFERENCES out_of_band_migrations(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY out_of_band_migrations_errors
-    ADD CONSTRAINT out_of_band_migrations_errors_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY out_of_band_migrations
-    ADD CONSTRAINT out_of_band_migrations_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY outbound_webhook_event_types
     ADD CONSTRAINT outbound_webhook_event_types_outbound_webhook_id_fkey FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY outbound_webhook_event_types
-    ADD CONSTRAINT outbound_webhook_event_types_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY outbound_webhook_jobs
-    ADD CONSTRAINT outbound_webhook_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY outbound_webhook_logs
     ADD CONSTRAINT outbound_webhook_logs_job_id_fkey FOREIGN KEY (job_id) REFERENCES outbound_webhook_jobs(id) ON UPDATE CASCADE ON DELETE CASCADE;
@@ -7506,14 +6987,8 @@ ALTER TABLE ONLY outbound_webhook_logs
 ALTER TABLE ONLY outbound_webhook_logs
     ADD CONSTRAINT outbound_webhook_logs_outbound_webhook_id_fkey FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE ONLY outbound_webhook_logs
-    ADD CONSTRAINT outbound_webhook_logs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY outbound_webhooks
     ADD CONSTRAINT outbound_webhooks_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
-
-ALTER TABLE ONLY outbound_webhooks
-    ADD CONSTRAINT outbound_webhooks_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY outbound_webhooks
     ADD CONSTRAINT outbound_webhooks_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL;
@@ -7524,23 +6999,11 @@ ALTER TABLE ONLY own_aggregate_recent_contribution
 ALTER TABLE ONLY own_aggregate_recent_contribution
     ADD CONSTRAINT own_aggregate_recent_contribution_commit_author_id_fkey FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id);
 
-ALTER TABLE ONLY own_aggregate_recent_contribution
-    ADD CONSTRAINT own_aggregate_recent_contribution_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY own_aggregate_recent_view
-    ADD CONSTRAINT own_aggregate_recent_view_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY own_aggregate_recent_view
     ADD CONSTRAINT own_aggregate_recent_view_viewed_file_path_id_fkey FOREIGN KEY (viewed_file_path_id) REFERENCES repo_paths(id);
 
 ALTER TABLE ONLY own_aggregate_recent_view
     ADD CONSTRAINT own_aggregate_recent_view_viewer_id_fkey FOREIGN KEY (viewer_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY own_background_jobs
-    ADD CONSTRAINT own_background_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY own_signal_configurations
-    ADD CONSTRAINT own_signal_configurations_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY own_signal_recent_contribution
     ADD CONSTRAINT own_signal_recent_contribution_changed_file_path_id_fkey FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id);
@@ -7548,29 +7011,14 @@ ALTER TABLE ONLY own_signal_recent_contribution
 ALTER TABLE ONLY own_signal_recent_contribution
     ADD CONSTRAINT own_signal_recent_contribution_commit_author_id_fkey FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id);
 
-ALTER TABLE ONLY own_signal_recent_contribution
-    ADD CONSTRAINT own_signal_recent_contribution_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY ownership_path_stats
     ADD CONSTRAINT ownership_path_stats_file_path_id_fkey FOREIGN KEY (file_path_id) REFERENCES repo_paths(id);
-
-ALTER TABLE ONLY ownership_path_stats
-    ADD CONSTRAINT ownership_path_stats_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY package_repo_versions
     ADD CONSTRAINT package_id_fk FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY package_repo_filters
-    ADD CONSTRAINT package_repo_filters_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY package_repo_versions
-    ADD CONSTRAINT package_repo_versions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY permission_sync_jobs
     ADD CONSTRAINT permission_sync_jobs_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY permission_sync_jobs
-    ADD CONSTRAINT permission_sync_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY permission_sync_jobs
     ADD CONSTRAINT permission_sync_jobs_triggered_by_user_id_fkey FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
@@ -7578,20 +7026,8 @@ ALTER TABLE ONLY permission_sync_jobs
 ALTER TABLE ONLY permission_sync_jobs
     ADD CONSTRAINT permission_sync_jobs_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY permissions
-    ADD CONSTRAINT permissions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY phabricator_repos
-    ADD CONSTRAINT phabricator_repos_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY product_licenses
     ADD CONSTRAINT product_licenses_product_subscription_id_fkey FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id);
-
-ALTER TABLE ONLY product_licenses
-    ADD CONSTRAINT product_licenses_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY product_subscriptions
-    ADD CONSTRAINT product_subscriptions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY product_subscriptions
     ADD CONSTRAINT product_subscriptions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
@@ -7606,16 +7042,7 @@ ALTER TABLE ONLY prompts
     ADD CONSTRAINT prompts_owner_user_id_fkey FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY prompts
-    ADD CONSTRAINT prompts_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY prompts
     ADD CONSTRAINT prompts_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL;
-
-ALTER TABLE ONLY query_runner_state
-    ADD CONSTRAINT query_runner_state_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY redis_key_value
-    ADD CONSTRAINT redis_key_value_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY registry_extension_releases
     ADD CONSTRAINT registry_extension_releases_creator_user_id_fkey FOREIGN KEY (creator_user_id) REFERENCES users(id);
@@ -7623,38 +7050,20 @@ ALTER TABLE ONLY registry_extension_releases
 ALTER TABLE ONLY registry_extension_releases
     ADD CONSTRAINT registry_extension_releases_registry_extension_id_fkey FOREIGN KEY (registry_extension_id) REFERENCES registry_extensions(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE ONLY registry_extension_releases
-    ADD CONSTRAINT registry_extension_releases_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_publisher_org_id_fkey FOREIGN KEY (publisher_org_id) REFERENCES orgs(id);
 
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_publisher_user_id_fkey FOREIGN KEY (publisher_user_id) REFERENCES users(id);
 
-ALTER TABLE ONLY registry_extensions
-    ADD CONSTRAINT registry_extensions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY repo_commits_changelists
     ADD CONSTRAINT repo_commits_changelists_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY repo_commits_changelists
-    ADD CONSTRAINT repo_commits_changelists_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY repo_embedding_job_stats
     ADD CONSTRAINT repo_embedding_job_stats_job_id_fkey FOREIGN KEY (job_id) REFERENCES repo_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE;
 
-ALTER TABLE ONLY repo_embedding_job_stats
-    ADD CONSTRAINT repo_embedding_job_stats_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY repo_embedding_jobs
-    ADD CONSTRAINT repo_embedding_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY repo_kvps
     ADD CONSTRAINT repo_kvps_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY repo_kvps
-    ADD CONSTRAINT repo_kvps_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY repo_paths
     ADD CONSTRAINT repo_paths_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES repo_paths(id);
@@ -7662,41 +7071,17 @@ ALTER TABLE ONLY repo_paths
 ALTER TABLE ONLY repo_paths
     ADD CONSTRAINT repo_paths_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
 
-ALTER TABLE ONLY repo_paths
-    ADD CONSTRAINT repo_paths_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY repo_pending_permissions
-    ADD CONSTRAINT repo_pending_permissions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY repo_permissions
-    ADD CONSTRAINT repo_permissions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY repo_statistics
-    ADD CONSTRAINT repo_statistics_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY repo
-    ADD CONSTRAINT repo_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY role_permissions
     ADD CONSTRAINT role_permissions_permission_id_fkey FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY role_permissions
     ADD CONSTRAINT role_permissions_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE;
 
-ALTER TABLE ONLY role_permissions
-    ADD CONSTRAINT role_permissions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY roles
-    ADD CONSTRAINT roles_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY saved_searches
     ADD CONSTRAINT saved_searches_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
 
 ALTER TABLE ONLY saved_searches
     ADD CONSTRAINT saved_searches_org_id_fkey FOREIGN KEY (org_id) REFERENCES orgs(id);
-
-ALTER TABLE ONLY saved_searches
-    ADD CONSTRAINT saved_searches_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY saved_searches
     ADD CONSTRAINT saved_searches_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL;
@@ -7708,9 +7093,6 @@ ALTER TABLE ONLY search_context_default
     ADD CONSTRAINT search_context_default_search_context_id_fkey FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY search_context_default
-    ADD CONSTRAINT search_context_default_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY search_context_default
     ADD CONSTRAINT search_context_default_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY search_context_repos
@@ -7719,14 +7101,8 @@ ALTER TABLE ONLY search_context_repos
 ALTER TABLE ONLY search_context_repos
     ADD CONSTRAINT search_context_repos_search_context_id_fk FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY search_context_repos
-    ADD CONSTRAINT search_context_repos_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY search_context_stars
     ADD CONSTRAINT search_context_stars_search_context_id_fkey FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY search_context_stars
-    ADD CONSTRAINT search_context_stars_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY search_context_stars
     ADD CONSTRAINT search_context_stars_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
@@ -7737,20 +7113,11 @@ ALTER TABLE ONLY search_contexts
 ALTER TABLE ONLY search_contexts
     ADD CONSTRAINT search_contexts_namespace_user_id_fk FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY search_contexts
-    ADD CONSTRAINT search_contexts_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY security_event_logs
-    ADD CONSTRAINT security_event_logs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY settings
     ADD CONSTRAINT settings_author_user_id_fkey FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT;
 
 ALTER TABLE ONLY settings
     ADD CONSTRAINT settings_references_orgs FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT;
-
-ALTER TABLE ONLY settings
-    ADD CONSTRAINT settings_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY settings
     ADD CONSTRAINT settings_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT;
@@ -7759,28 +7126,13 @@ ALTER TABLE ONLY sub_repo_permissions
     ADD CONSTRAINT sub_repo_permissions_repo_id_fk FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY sub_repo_permissions
-    ADD CONSTRAINT sub_repo_permissions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY sub_repo_permissions
     ADD CONSTRAINT sub_repo_permissions_users_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY survey_responses
-    ADD CONSTRAINT survey_responses_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY survey_responses
     ADD CONSTRAINT survey_responses_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
 
-ALTER TABLE ONLY syntactic_scip_indexing_jobs
-    ADD CONSTRAINT syntactic_scip_indexing_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY syntactic_scip_last_index_scan
-    ADD CONSTRAINT syntactic_scip_last_index_scan_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY team_members
     ADD CONSTRAINT team_members_team_id_fkey FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY team_members
-    ADD CONSTRAINT team_members_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY team_members
     ADD CONSTRAINT team_members_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
@@ -7791,15 +7143,6 @@ ALTER TABLE ONLY teams
 ALTER TABLE ONLY teams
     ADD CONSTRAINT teams_parent_team_id_fkey FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY teams
-    ADD CONSTRAINT teams_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY telemetry_events_export_queue
-    ADD CONSTRAINT telemetry_events_export_queue_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY temporary_settings
-    ADD CONSTRAINT temporary_settings_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
@@ -7807,49 +7150,25 @@ ALTER TABLE ONLY user_credentials
     ADD CONSTRAINT user_credentials_github_app_id_fkey FOREIGN KEY (github_app_id) REFERENCES github_apps(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY user_credentials
-    ADD CONSTRAINT user_credentials_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY user_credentials
     ADD CONSTRAINT user_credentials_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY user_emails
-    ADD CONSTRAINT user_emails_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY user_emails
     ADD CONSTRAINT user_emails_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
 
 ALTER TABLE ONLY user_external_accounts
-    ADD CONSTRAINT user_external_accounts_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY user_external_accounts
     ADD CONSTRAINT user_external_accounts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
-
-ALTER TABLE ONLY user_onboarding_tour
-    ADD CONSTRAINT user_onboarding_tour_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY user_onboarding_tour
     ADD CONSTRAINT user_onboarding_tour_users_fk FOREIGN KEY (updated_by) REFERENCES users(id);
 
-ALTER TABLE ONLY user_pending_permissions
-    ADD CONSTRAINT user_pending_permissions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY user_permissions
-    ADD CONSTRAINT user_permissions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY user_public_repos
     ADD CONSTRAINT user_public_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY user_public_repos
-    ADD CONSTRAINT user_public_repos_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY user_public_repos
     ADD CONSTRAINT user_public_repos_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY user_repo_permissions
     ADD CONSTRAINT user_repo_permissions_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY user_repo_permissions
-    ADD CONSTRAINT user_repo_permissions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY user_repo_permissions
     ADD CONSTRAINT user_repo_permissions_user_external_account_id_fkey FOREIGN KEY (user_external_account_id) REFERENCES user_external_accounts(id) ON DELETE CASCADE;
@@ -7861,31 +7180,10 @@ ALTER TABLE ONLY user_roles
     ADD CONSTRAINT user_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY user_roles
-    ADD CONSTRAINT user_roles_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY user_roles
     ADD CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY users
-    ADD CONSTRAINT users_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY vulnerabilities
-    ADD CONSTRAINT vulnerabilities_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY vulnerability_affected_packages
-    ADD CONSTRAINT vulnerability_affected_packages_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY vulnerability_affected_symbols
-    ADD CONSTRAINT vulnerability_affected_symbols_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY vulnerability_matches
-    ADD CONSTRAINT vulnerability_matches_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY webhook_logs
-    ADD CONSTRAINT webhook_logs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_webhook_id_fkey FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE CASCADE;
@@ -7894,24 +7192,18 @@ ALTER TABLE ONLY webhooks
     ADD CONSTRAINT webhooks_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
 
 ALTER TABLE ONLY webhooks
-    ADD CONSTRAINT webhooks_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY webhooks
     ADD CONSTRAINT webhooks_updated_by_user_id_fkey FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
 
 ALTER TABLE ONLY zoekt_repos
     ADD CONSTRAINT zoekt_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY zoekt_repos
-    ADD CONSTRAINT zoekt_repos_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL, false, false, NULL);
-INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL, false, false, NULL);
-INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL, false, false, NULL);
+INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL, false, false);
+INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL, false, false);
+INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL, false, false);
 
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
 
-INSERT INTO roles VALUES (1, '2023-01-04 16:29:41.195966+00', true, 'USER', NULL);
-INSERT INTO roles VALUES (2, '2023-01-04 16:29:41.195966+00', true, 'SITE_ADMINISTRATOR', NULL);
+INSERT INTO roles VALUES (1, '2023-01-04 16:29:41.195966+00', true, 'USER');
+INSERT INTO roles VALUES (2, '2023-01-04 16:29:41.195966+00', true, 'SITE_ADMINISTRATOR');
 
 SELECT pg_catalog.setval('roles_id_seq', 3, true);

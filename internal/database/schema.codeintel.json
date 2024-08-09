@@ -139,19 +139,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 3,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -176,15 +163,7 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": [
-        {
-          "Name": "codeintel_last_reconcile_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -229,19 +208,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "An auto-generated identifier. This column is used as a foreign key target to reduce occurrences of the full document path value."
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 5,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         },
         {
           "Name": "upload_id",
@@ -296,13 +262,6 @@
           "RefTableName": "codeintel_scip_documents",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (document_id) REFERENCES codeintel_scip_documents(id)"
-        },
-        {
-          "Name": "codeintel_scip_document_lookup_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": [
@@ -347,19 +306,6 @@
           "Comment": "A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index."
         },
         {
-          "Name": "tenant_id",
-          "Index": 4,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "upload_id",
           "Index": 1,
           "TypeName": "integer",
@@ -385,15 +331,7 @@
           "ConstraintDefinition": "PRIMARY KEY (upload_id)"
         }
       ],
-      "Constraints": [
-        {
-          "Name": "codeintel_scip_document_lookup_schema_versions_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -451,19 +389,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The schema version of this row - used to determine presence and encoding of (future) denormalized data."
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 6,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -488,15 +413,7 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         }
       ],
-      "Constraints": [
-        {
-          "Name": "codeintel_scip_documents_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -541,19 +458,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The time that the log entry was inserted."
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 4,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -578,15 +482,7 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": [
-        {
-          "Name": "codeintel_scip_documents_dereference_logs_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -618,19 +514,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The version of the SCIP protocol used to encode this index."
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 8,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         },
         {
           "Name": "text_document_encoding",
@@ -720,15 +603,7 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": [
-        {
-          "Name": "codeintel_scip_metadata_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -773,19 +648,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The identifier of the segment that forms the prefix of this symbol, if any."
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 5,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         },
         {
           "Name": "upload_id",
@@ -833,15 +695,7 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": [
-        {
-          "Name": "codeintel_scip_symbol_names_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -927,19 +781,6 @@
           "Comment": "The identifier of the segment that terminates the name of this symbol. See the table [`codeintel_scip_symbol_names`](#table-publiccodeintel_scip_symbol_names) on how to reconstruct the full symbol name."
         },
         {
-          "Name": "tenant_id",
-          "Index": 10,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "type_definition_ranges",
           "Index": 8,
           "TypeName": "bytea",
@@ -995,13 +836,6 @@
           "RefTableName": "codeintel_scip_document_lookup",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE"
-        },
-        {
-          "Name": "codeintel_scip_symbols_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": [
@@ -1042,19 +876,6 @@
           "Comment": "A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_symbols`](#table-publiccodeintel_scip_symbols) where the `upload_id` column matches the associated SCIP index."
         },
         {
-          "Name": "tenant_id",
-          "Index": 4,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "upload_id",
           "Index": 1,
           "TypeName": "integer",
@@ -1080,15 +901,7 @@
           "ConstraintDefinition": "PRIMARY KEY (upload_id)"
         }
       ],
-      "Constraints": [
-        {
-          "Name": "codeintel_scip_symbols_schema_versions_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -1309,19 +1122,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 6,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -1356,15 +1156,7 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": [
-        {
-          "Name": "rockskip_ancestry_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -1402,19 +1194,6 @@
           "Index": 2,
           "TypeName": "text",
           "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 4,
-          "TypeName": "integer",
-          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -1466,15 +1245,7 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": [
-        {
-          "Name": "rockskip_repos_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -1558,19 +1329,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 7,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -1605,15 +1363,7 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": [
-        {
-          "Name": "rockskip_symbols_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {

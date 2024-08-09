@@ -218,19 +218,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 4,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -246,13 +233,6 @@
         }
       ],
       "Constraints": [
-        {
-          "Name": "archived_insight_series_recording_times_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        },
         {
           "Name": "insight_series_id_fkey",
           "ConstraintType": "f",
@@ -333,19 +313,6 @@
           "Comment": ""
         },
         {
-          "Name": "tenant_id",
-          "Index": 8,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "time",
           "Index": 2,
           "TypeName": "timestamp with time zone",
@@ -374,13 +341,6 @@
       ],
       "Indexes": [],
       "Constraints": [
-        {
-          "Name": "archived_series_points_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        },
         {
           "Name": "check_repo_fields_specifity",
           "ConstraintType": "c",
@@ -481,19 +441,6 @@
           "Comment": "TEMPORARY Do not delete this dashboard when migrating settings."
         },
         {
-          "Name": "tenant_id",
-          "Index": 9,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "title",
           "Index": 2,
           "TypeName": "text",
@@ -532,15 +479,7 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         }
       ],
-      "Constraints": [
-        {
-          "Name": "dashboard_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -598,19 +537,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "Org ID that that receives this grant."
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 6,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         },
         {
           "Name": "user_id",
@@ -685,13 +611,6 @@
           "RefTableName": "dashboard",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (dashboard_id) REFERENCES dashboard(id) ON DELETE CASCADE"
-        },
-        {
-          "Name": "dashboard_grants_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -731,19 +650,6 @@
           "Index": 3,
           "TypeName": "integer",
           "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 4,
-          "TypeName": "integer",
-          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -809,13 +715,6 @@
           "RefTableName": "insight_view",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE"
-        },
-        {
-          "Name": "dashboard_insight_view_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -1135,19 +1034,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 25,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -1192,15 +1078,7 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": [
-        {
-          "Name": "insight_series_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -1271,19 +1149,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 6,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -1305,13 +1170,6 @@
           "RefTableName": "insight_series",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE"
-        },
-        {
-          "Name": "insight_series_backfill_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -1373,19 +1231,6 @@
           "Comment": ""
         },
         {
-          "Name": "tenant_id",
-          "Index": 6,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "time",
           "Index": 4,
           "TypeName": "timestamp without time zone",
@@ -1428,13 +1273,6 @@
           "RefTableName": "insight_series",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE"
-        },
-        {
-          "Name": "insight_series_incomplete_points_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -1481,19 +1319,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 4,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -1515,13 +1340,6 @@
           "RefTableName": "insight_series",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE"
-        },
-        {
-          "Name": "insight_series_recording_times_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -1687,19 +1505,6 @@
           "Comment": ""
         },
         {
-          "Name": "tenant_id",
-          "Index": 15,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "title",
           "Index": 2,
           "TypeName": "text",
@@ -1748,15 +1553,7 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": [
-        {
-          "Name": "insight_view_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -1814,19 +1611,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "Org ID that that receives this grant."
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 6,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         },
         {
           "Name": "user_id",
@@ -1901,13 +1685,6 @@
           "RefTableName": "insight_view",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE"
-        },
-        {
-          "Name": "insight_view_grants_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -1967,19 +1744,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "Stroke color metadata for this data series. This may render in a chart depending on the view type."
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 5,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -2008,13 +1772,6 @@
           "RefTableName": "insight_view",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE"
-        },
-        {
-          "Name": "insight_view_series_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -2193,19 +1950,6 @@
           "Comment": ""
         },
         {
-          "Name": "tenant_id",
-          "Index": 15,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "worker_hostname",
           "Index": 12,
           "TypeName": "text",
@@ -2248,13 +1992,6 @@
           "RefTableName": "insight_series_backfill",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (backfill_id) REFERENCES insight_series_backfill(id) ON DELETE CASCADE"
-        },
-        {
-          "Name": "insights_background_jobs_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -2446,19 +2183,6 @@
           "Comment": ""
         },
         {
-          "Name": "tenant_id",
-          "Index": 16,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "worker_hostname",
           "Index": 12,
           "TypeName": "text",
@@ -2484,15 +2208,7 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         }
       ],
-      "Constraints": [
-        {
-          "Name": "insights_data_retention_jobs_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -2524,19 +2240,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "Metadata about some event, this can be any arbitrary JSON emtadata which will be returned when querying events, and can be filtered on and grouped using jsonb operators ?, ?\u0026, ?|, and @\u003e. This should be small data only."
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 3,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -2571,15 +2274,7 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": [
-        {
-          "Name": "metadata_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -2867,19 +2562,6 @@
           "Comment": ""
         },
         {
-          "Name": "tenant_id",
-          "Index": 12,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "total_count",
           "Index": 8,
           "TypeName": "integer",
@@ -2905,15 +2587,7 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         }
       ],
-      "Constraints": [
-        {
-          "Name": "repo_iterator_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -2984,19 +2658,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 6,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -3022,13 +2683,6 @@
         }
       ],
       "Constraints": [
-        {
-          "Name": "repo_iterator_errors_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        },
         {
           "Name": "repo_iterator_fk",
           "ConstraintType": "f",
@@ -3068,19 +2722,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The repository name string, with unique constraint for table entry deduplication and trigram index for e.g. regex filtering."
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 3,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -3122,13 +2763,6 @@
           "RefTableName": "",
           "IsDeferrable": false,
           "ConstraintDefinition": "CHECK (name \u003c\u003e ''::citext)"
-        },
-        {
-          "Name": "repo_names_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -3214,19 +2848,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "A unique identifier for the series of data being recorded. This is not an ID from another table, but rather just a unique identifier."
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 9,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         },
         {
           "Name": "time",
@@ -3335,13 +2956,6 @@
           "RefTableName": "repo_names",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (repo_name_id) REFERENCES repo_names(id) ON DELETE CASCADE DEFERRABLE"
-        },
-        {
-          "Name": "series_points_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -3420,19 +3034,6 @@
           "Index": 1,
           "TypeName": "text",
           "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 9,
-          "TypeName": "integer",
-          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -3527,13 +3128,6 @@
           "RefTableName": "",
           "IsDeferrable": false,
           "ConstraintDefinition": "CHECK (repo_id IS NULL AND repo_name_id IS NULL AND original_repo_name_id IS NULL OR repo_id IS NOT NULL AND repo_name_id IS NOT NULL AND original_repo_name_id IS NOT NULL)"
-        },
-        {
-          "Name": "series_points_snapshots_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []
