@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "publicrestapi",
+    srcs = [
+        "chat_completions_handler.go",
+        "chat_completions_models.go",
+        "httpapi.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/publicrestapi",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/internal/modelconfig",
+        "//internal/completions/types",
+        "//internal/modelconfig/types",
+        "//lib/errors",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_gorilla_mux//:mux",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "publicrestapi_test",
+    srcs = [
+        "chat_completions_handler_test.go",
+        "chat_completions_models_test.go",
+        "utils_test.go",
+    ],
+    data = glob(["golly-recordings/**"]),
+    embed = [":publicrestapi"],
+    deps = [
+        "//cmd/frontend/internal/modelconfig",
+        "//internal/conf",
+        "//internal/golly",
+        "//internal/httpcli",
+        "//internal/modelconfig/types",
+        "//schema",
+        "@com_github_gorilla_mux//:mux",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

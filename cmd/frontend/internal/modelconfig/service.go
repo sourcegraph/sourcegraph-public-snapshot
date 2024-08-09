@@ -67,6 +67,12 @@ func InitMock() error {
 // ResetMock will reset the mock modelconfig service to pick up any recent
 // site config changes.
 func ResetMock() error {
+	// We intentionally do not provide static or Cody Gateway data so tests
+	// can be deterministic.
+	return ResetMockWithStaticData(nil)
+}
+
+func ResetMockWithStaticData(staticConfig *types.ModelConfiguration) error {
 	if singletonConfigService == nil {
 		return errors.New("service not configured, call InitMock")
 	}
@@ -83,10 +89,8 @@ func ResetMock() error {
 	}
 
 	// Rebuild the modelconfig data.
-	// We intentionally do not provide static or Cody Gateway data so tests
-	// can be deterministic.
 	b := builder{
-		staticData:      nil,
+		staticData:      staticConfig,
 		codyGatewayData: nil,
 		siteConfigData:  siteModelConfig,
 	}
