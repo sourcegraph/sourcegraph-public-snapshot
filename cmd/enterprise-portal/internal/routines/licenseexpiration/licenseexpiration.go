@@ -17,6 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
+
+	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 )
 
 // checkInterval is the interval at which the license expiration routine checks
@@ -87,11 +89,12 @@ func (i *handler) Handle(ctx context.Context) (err error) {
 	var notifyCount atomic.Int64
 	for _, sub := range subs {
 		var (
-			subID       = sub.ID
-			displayName = pointers.DerefZero(sub.DisplayName)
+			subID         = sub.ID
+			externalSubID = subscriptionsv1.EnterpriseSubscriptionIDPrefix + subID
+			displayName   = pointers.DerefZero(sub.DisplayName)
 		)
 		if displayName == "" {
-			displayName = subID // fallback ugly value
+			displayName = externalSubID // fallback ugly value
 		}
 
 		wg.Go(func() error {
@@ -108,7 +111,7 @@ func (i *handler) Handle(ctx context.Context) (err error) {
 				notifyCount.Add(1)
 				err = i.store.PostToSlack(ctx, &slack.Payload{
 					Text: fmt.Sprintf("The license for subscription `%s` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in 7 days*>",
-						displayName, subID),
+						displayName, externalSubID),
 				})
 				if err != nil {
 					return errors.Wrap(err, "post week-away notice")
@@ -117,7 +120,7 @@ func (i *handler) Handle(ctx context.Context) (err error) {
 				notifyCount.Add(1)
 				err = i.store.PostToSlack(ctx, &slack.Payload{
 					Text: fmt.Sprintf("The license for subscription `%s` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in the next 24 hours*> :rotating_light:",
-						displayName, subID),
+						displayName, externalSubID),
 				})
 				if err != nil {
 					return errors.Wrap(err, "post day-away notice")

@@ -13,6 +13,7 @@ import (
 	subscriptions "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestHandle(t *testing.T) {
@@ -26,7 +27,8 @@ func TestHandle(t *testing.T) {
 				ID: "e9450fb2-87c7-47ae-a713-a376c4618faa",
 			}},
 			{Subscription: subscriptions.Subscription{
-				ID: "26136564-b319-4be4-98ff-7b8710abf4af",
+				ID:          "26136564-b319-4be4-98ff-7b8710abf4af",
+				DisplayName: pointers.Ptr("My Special Subscription"),
 			}},
 			{Subscription: subscriptions.Subscription{
 				ID: "32bda851-5761-4b18-81bf-d20f39bd5cb6",
@@ -71,8 +73,8 @@ func TestHandle(t *testing.T) {
 	}
 	autogold.Expect([]*slack.Payload{
 		{
-			Text: "The license for subscription `e9450fb2-87c7-47ae-a713-a376c4618faa` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/e9450fb2-87c7-47ae-a713-a376c4618faa|will expire *in the next 24 hours*> :rotating_light:",
+			Text: "The license for subscription `es_e9450fb2-87c7-47ae-a713-a376c4618faa` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/es_e9450fb2-87c7-47ae-a713-a376c4618faa|will expire *in the next 24 hours*> :rotating_light:",
 		},
-		{Text: "The license for subscription `26136564-b319-4be4-98ff-7b8710abf4af` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/26136564-b319-4be4-98ff-7b8710abf4af|will expire *in 7 days*>"},
+		{Text: "The license for subscription `My Special Subscription` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/es_26136564-b319-4be4-98ff-7b8710abf4af|will expire *in 7 days*>"},
 	}).Equal(t, payloads)
 }
