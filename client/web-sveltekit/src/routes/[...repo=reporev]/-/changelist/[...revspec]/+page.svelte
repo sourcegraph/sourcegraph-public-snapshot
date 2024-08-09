@@ -1,8 +1,6 @@
 <script lang="ts">
     import { get } from 'svelte/store'
 
-    import { pluralize } from '@sourcegraph/common'
-
     import { afterNavigate, beforeNavigate } from '$app/navigation'
     import { navigating } from '$app/stores'
     import Changelist from '$lib/Changelist.svelte'
@@ -70,7 +68,7 @@
         <Scroller bind:this={scroller} margin={600} on:more={diffQuery?.fetchMore}>
             <div class="header">
                 <div class="info">
-                    <Changelist changelist={data.changelist.commit} alwaysExpanded={!$isViewportMobile} />
+                    <Changelist changelist={data.changelist} alwaysExpanded={!$isViewportMobile} />
                 </div>
                 <ul class="actions">
                     <li>
