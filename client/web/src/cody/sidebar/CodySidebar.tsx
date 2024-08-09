@@ -1,39 +1,66 @@
-import type { FC } from 'react'
+import { Suspense, type FC } from 'react'
 
+import { mdiClose } from '@mdi/js'
+
+import { CodyLogo } from '@sourcegraph/cody-ui'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { Alert, Button, H4, Icon, LoadingSpinner, ProductStatusBadge } from '@sourcegraph/wildcard'
 
-import { NewCodySidebar, type Repository } from './new-cody-sidebar/NewCodySidebar'
-import { CodySidebar as OldCodySidebar } from './old-cody-sidebar/CodySidebar'
+import styles from './CodySidebar.module.scss'
 
-interface CodySidebarProps extends TelemetryV2Props {
+const LazyCodySidebarWebChat = lazyComponent(() => import('./CodySidebarWebChat'), 'CodySidebarWebChat')
+
+export interface Repository {
+    id: string
+    name: string
+}
+
+interface CodySidebarProps {
     filePath: string | undefined
     repository: Repository
     authenticatedUser: AuthenticatedUser | null
     onClose: () => void
 }
 
-/**
- * Cody sidebar component, it's used on repository and blob UI page.
- * Contains different version of the cody web chat.
- */
 export const CodySidebar: FC<CodySidebarProps> = props => {
-    const { filePath, repository, authenticatedUser, telemetryRecorder, onClose } = props
+    const { repository, filePath, authenticatedUser, onClose } = props
 
-    // We have two different version of Cody Web, first was created as original
-    // Cody Web chat, second version (NewCodyChatPage) is a port from VSCode
-    // cody extension.
-    const newCodyWeb = useExperimentalFeatures(features => features.newCodyWeb)
+    return (
+        <div className={styles.root}>
+            <div className={styles.header}>
+                <div />
+                <span className={styles.headerLogo}>
+                    <CodyLogo />
+                    Cody
+                    <div className="ml-2">
+                        <ProductStatusBadge status="beta" />
+                    </div>
+                </span>
 
-    return newCodyWeb ? (
-        <NewCodySidebar
-            filePath={filePath}
-            repository={repository}
-            isAuthorized={authenticatedUser !== null}
-            onClose={onClose}
-        />
-    ) : (
-        <OldCodySidebar telemetryRecorder={telemetryRecorder} authenticatedUser={authenticatedUser} onClose={onClose} />
+                <Button variant="icon" aria-label="Close" onClick={onClose}>
+                    <Icon aria-hidden={true} svgPath={mdiClose} />
+                </Button>
+            </div>
+
+            {authenticatedUser && (
+                <Suspense
+                    fallback={
+                        <div className="flex flex-1 align-items-center m-2">
+                            <LoadingSpinner className="mr-2" /> Loading Cody client
+                        </div>
+                    }
+                >
+                    <LazyCodySidebarWebChat filePath={filePath} repository={repository} />
+                </Suspense>
+            )}
+
+            {!authenticatedUser && (
+                <Alert variant="info" className="m-3">
+                    <H4>Cody is only available to signed-in users</H4>
+                    Sign in to get access to use Cody
+                </Alert>
+            )}
+        </div>
     )
 }

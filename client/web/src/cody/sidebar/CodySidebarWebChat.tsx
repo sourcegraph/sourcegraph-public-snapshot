@@ -5,20 +5,20 @@ import { useLocation } from 'react-router-dom'
 import { CodyWebPanelProvider, type InitialContext } from '@sourcegraph/cody-web'
 import { SourcegraphURL } from '@sourcegraph/common'
 
-import { getTelemetrySourceClient } from '../../../telemetry'
-import { ChatUi } from '../../chat/new-chat/components/chat-ui/ChatUi'
+import { getTelemetrySourceClient } from '../../telemetry'
+import { ChatUi } from '../components/ChatUi'
 
 interface Repository {
     id: string
     name: string
 }
 
-interface NewCodySidebarWebChatProps {
+interface CodySidebarWebChatProps {
     filePath?: string
     repository: Repository
 }
 
-export const NewCodySidebarWebChat: FC<NewCodySidebarWebChatProps> = memo(function CodyWebChat(props) {
+export const CodySidebarWebChat: FC<CodySidebarWebChatProps> = memo(function CodyWebChat(props) {
     const { filePath, repository } = props
 
     const location = useLocation()
