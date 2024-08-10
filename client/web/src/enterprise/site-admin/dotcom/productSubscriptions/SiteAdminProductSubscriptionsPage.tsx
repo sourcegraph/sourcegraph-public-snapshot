@@ -114,7 +114,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                         <div>
                             <Button to={`./new?env=${env}`} variant="primary" as={Link} display="block">
                                 <Icon aria-hidden={true} svgPath={mdiPlus} />
-                                Create Enterprise subscription
+                                Create subscription
                             </Button>
                         </div>
                     </div>

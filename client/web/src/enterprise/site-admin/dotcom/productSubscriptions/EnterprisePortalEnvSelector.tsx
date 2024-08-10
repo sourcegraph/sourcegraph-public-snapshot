@@ -25,17 +25,17 @@ export const EnterprisePortalEnvSelector: React.FunctionComponent<Props> = ({ en
         label={
             <>
                 Enterprise Portal{' '}
-                <Tooltip content="Selects the Enterprise Portal server to interact with.">
+                <Tooltip content="Selects the Enterprise Portal environment to interact with.">
                     <Icon aria-label="Show help text" svgPath={mdiInformationOutline} />
                 </Tooltip>
             </>
         }
     >
         {[
-            { label: 'Production', value: 'prod' },
-            { label: 'Development', value: 'dev' },
+            { label: '✅ Production', value: 'prod' },
+            { label: '🚧 Development', value: 'dev' },
         ]
-            .concat(window.context.deployType === 'dev' ? [{ label: 'Local', value: 'local' }] : [])
+            .concat(window.context.deployType === 'dev' ? [{ label: '👻 Local', value: 'local' }] : [])
             .map(opt => (
                 <option key={opt.value} value={opt.value} label={opt.label} />
             ))}
