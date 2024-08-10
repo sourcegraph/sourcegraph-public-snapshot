@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -82,6 +83,8 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 	a := actor.FromContext(ctx)
 	var errs error
 
+	ipSource := authz.NewRequestClientIPSource(requestclient.FromContext(ctx))
+
 	// Filter matches in place
 	filtered := matches[:0]
 
@@ -114,7 +117,7 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 				Repo: repo,
 				Path: matchedPath,
 			}
-			perms, err := authz.ActorPermissions(ctx, checker, a, content)
+			perms, err := authz.ActorPermissions(ctx, checker, a, ipSource, content)
 			if err != nil {
 				errs = errors.Append(errs, err)
 				continue
@@ -124,7 +127,7 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 				filtered = append(filtered, m)
 			}
 		case *result.CommitMatch:
-			allowed, err := authz.CanReadAnyPath(ctx, checker, mm.Repo.Name, mm.ModifiedFiles)
+			allowed, err := authz.CanReadAnyPath(ctx, checker, a, ipSource, mm.Repo.Name, mm.ModifiedFiles)
 			if err != nil {
 				errs = errors.Append(errs, err)
 				continue

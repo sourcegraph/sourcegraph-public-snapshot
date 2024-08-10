@@ -42,6 +42,7 @@ go_library(
         "//internal/gitserver",
         "//internal/metrics",
         "//internal/observation",
+        "//internal/requestclient",
         "//internal/types",
         "//lib/errors",
         "//lib/pointers",

@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -224,8 +225,9 @@ func getSubRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionCh
 		return nil
 	}
 	a := actor.FromContext(ctx)
+	ipSource := authz.NewRequestClientIPSource(requestclient.FromContext(ctx))
 	return func(filePath string) (bool, error) {
-		return authz.FilterActorPath(ctx, checker, a, repo, filePath)
+		return authz.FilterActorPath(ctx, checker, a, ipSource, repo, filePath)
 	}
 }
 

@@ -23,6 +23,7 @@ import (
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -135,8 +136,12 @@ func getFilterFunc(ctx context.Context, checker authz.SubRepoPermissionChecker, 
 	if !authz.SubRepoEnabled(checker) {
 		return nil
 	}
+
+	a := actor.FromContext(ctx)
+	ipSource := authz.NewRequestClientIPSource(requestclient.FromContext(ctx))
+
 	return func(fileName string) (bool, error) {
-		shouldFilter, err := authz.FilterActorPath(ctx, checker, actor.FromContext(ctx), repo, fileName)
+		shouldFilter, err := authz.FilterActorPath(ctx, checker, a, ipSource, repo, fileName)
 		if err != nil {
 			return false, err
 		}
@@ -430,9 +435,11 @@ func (i *readDirIterator) Next() (fs.FileInfo, error) {
 			for _, f := range chunk.GetFileInfo() {
 				fds = append(fds, gitdomain.ProtoFileInfoToFS(f))
 			}
+
 			if authz.SubRepoEnabled(i.subRepoPermsChecker) {
 				a := actor.FromContext(i.ctx)
-				filtered, filteringErr := authz.FilterActorFileInfos(i.ctx, i.subRepoPermsChecker, a, i.repo, fds)
+				ipSource := authz.NewRequestClientIPSource(requestclient.FromContext(i.ctx))
+				filtered, filteringErr := authz.FilterActorFileInfos(i.ctx, i.subRepoPermsChecker, a, ipSource, i.repo, fds)
 				if filteringErr != nil {
 					return nil, errors.Wrap(err, "filtering paths")
 				}
@@ -478,8 +485,11 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 		}, opt.Attrs()...),
 	})
 
+	a := actor.FromContext(ctx)
+	ipSource := authz.NewRequestClientIPSource(requestclient.FromContext(ctx))
+
 	// First, verify that the actor has access to the given path.
-	hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, actor.FromContext(ctx), repo, path)
+	hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, a, ipSource, repo, path)
 	if err != nil {
 		return nil, err
 	}
@@ -781,7 +791,8 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 
 	// First, verify the actor can see the path.
 	a := actor.FromContext(ctx)
-	if hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, a, repo, name); err != nil {
+	ipSource := authz.NewRequestClientIPSource(requestclient.FromContext(ctx))
+	if hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, a, ipSource, repo, name); err != nil {
 		return nil, err
 	} else if !hasAccess {
 		return nil, os.ErrNotExist
@@ -913,7 +924,9 @@ func (c *clientImplementor) Stat(ctx context.Context, repo api.RepoName, commit 
 
 	// Applying sub-repo permissions
 	a := actor.FromContext(ctx)
-	include, filteringErr := authz.FilterActorFileInfo(ctx, c.subRepoPermsChecker, a, repo, fi)
+	ipSource := authz.NewRequestClientIPSource(requestclient.FromContext(ctx))
+
+	include, filteringErr := authz.FilterActorFileInfo(ctx, c.subRepoPermsChecker, a, ipSource, repo, fi)
 	if include && filteringErr == nil {
 		return fi, nil
 	} else {
@@ -1116,11 +1129,12 @@ func unWrapCommits(wrappedCommits []*wrappedCommit) []*gitdomain.Commit {
 
 func hasAccessToCommit(ctx context.Context, commit *wrappedCommit, repoName api.RepoName, checker authz.SubRepoPermissionChecker) (bool, error) {
 	a := actor.FromContext(ctx)
+	ipSource := authz.NewRequestClientIPSource(requestclient.FromContext(ctx))
 	if commit.files == nil || len(commit.files) == 0 {
 		return true, nil // If commit has no files, assume user has access to view the commit.
 	}
 	for _, fileName := range commit.files {
-		if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repoName, fileName); err != nil {
+		if hasAccess, err := authz.FilterActorPath(ctx, checker, a, ipSource, repoName, fileName); err != nil {
 			return false, err
 		} else if hasAccess {
 			// if the user has access to one file modified in the commit, they have access to view the commit

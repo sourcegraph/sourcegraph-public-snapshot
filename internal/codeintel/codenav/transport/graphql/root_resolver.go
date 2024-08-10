@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -127,8 +128,9 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 	}
 
 	currentActor := actor.FromContext(ctx)
+	ipSource := authz.NewRequestClientIPSource(requestclient.FromContext(ctx))
 	hasAccess, err := authz.FilterActorPath(ctx, authz.DefaultSubRepoPermsChecker,
-		currentActor, opts.Repo.Name, opts.Path.RawValue())
+		currentActor, ipSource, opts.Repo.Name, opts.Path.RawValue())
 	if err != nil {
 		return nil, err
 	} else if !hasAccess {

@@ -3,6 +3,7 @@ package subrepoperms
 import (
 	"context"
 	"fmt"
+	"net/netip"
 	"sort"
 	"testing"
 	"time"
@@ -31,6 +32,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 	testCases := []struct {
 		name     string
 		userID   int32
+		ip       netip.Addr
 		content  authz.RepoContent
 		clientFn func() *SubRepoPermsClient
 		want     authz.Perms
@@ -38,6 +40,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 		{
 			name:   "Empty path",
 			userID: 1,
+			ip:     netip.MustParseAddr("1.2.3.4"),
 			content: authz.RepoContent{
 				Repo: "sample",
 				Path: "",
@@ -50,6 +53,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 		{
 			name:   "No rules",
 			userID: 1,
+			ip:     netip.MustParseAddr("1.2.3.4"),
 			content: authz.RepoContent{
 				Repo: "sample",
 				Path: "/dev/thing",
@@ -70,6 +74,8 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 		{
 			name:   "Exclude",
 			userID: 1,
+			ip:     netip.MustParseAddr("1.2.3.4"),
+
 			content: authz.RepoContent{
 				Repo: "sample",
 				Path: "/dev/thing",
@@ -95,6 +101,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 		{
 			name:   "Include",
 			userID: 1,
+			ip:     netip.MustParseAddr("1.2.3.4"),
 			content: authz.RepoContent{
 				Repo: "sample",
 				Path: "/dev/thing",
@@ -120,6 +127,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 		{
 			name:   "Last rule takes precedence (exclude)",
 			userID: 1,
+			ip:     netip.MustParseAddr("1.2.3.4"),
 			content: authz.RepoContent{
 				Repo: "sample",
 				Path: "/dev/thing",
@@ -149,6 +157,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 		{
 			name:   "Last rule takes precedence (include)",
 			userID: 1,
+			ip:     netip.MustParseAddr("1.2.3.4"),
 			content: authz.RepoContent{
 				Repo: "sample",
 				Path: "/dev/thing",
@@ -180,7 +189,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			client := tc.clientFn()
-			have, err := client.Permissions(context.Background(), tc.userID, tc.content)
+			have, err := client.Permissions(context.Background(), tc.userID, tc.ip, tc.content)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -270,12 +279,15 @@ func BenchmarkFilterActorPaths(b *testing.B) {
 		UID: 1,
 	}
 	ctx := actor.WithActor(context.Background(), a)
+	ipSource := authz.IPSourceFunc(func() (netip.Addr, error) {
+		return netip.MustParseAddr("1.2.3.4"), nil // TODO@ggilmore: replace me when we have real ip tests
+	})
 
 	b.ResetTimer()
 	start := time.Now()
 
 	for n := 0; n <= b.N; n++ {
-		filtered, err := authz.FilterActorPaths(ctx, checker, a, repo, paths)
+		filtered, err := authz.FilterActorPaths(ctx, checker, a, ipSource, repo, paths)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -305,25 +317,30 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 
 	testCases := []struct {
 		paths         []string
+		ip            netip.Addr
 		canReadAll    []string
 		cannotReadAny []string
 	}{
 		{
 			paths:         []string{"foo/bar/thing.txt"},
+			ip:            netip.MustParseAddr("1.2.3.4"),
 			canReadAll:    []string{"foo/", "foo/bar/"},
 			cannotReadAny: []string{"foo/thing.txt", "foo/bar/other.txt"},
 		},
 		{
 			paths:      []string{"foo/bar/**"},
+			ip:         netip.MustParseAddr("1.2.3.4"),
 			canReadAll: []string{"foo/", "foo/bar/", "foo/bar/baz/", "foo/bar/baz/fox/"},
 		},
 		{
 			paths:         []string{"foo/bar/"},
+			ip:            netip.MustParseAddr("1.2.3.4"),
 			canReadAll:    []string{"foo/", "foo/bar/"},
 			cannotReadAny: []string{"foo/thing.txt", "foo/bar/thing.txt"},
 		},
 		{
 			paths:         []string{"baz/*/foo/bar/thing.txt"},
+			ip:            netip.MustParseAddr("1.2.3.4"),
 			canReadAll:    []string{"baz/", "baz/x/", "baz/x/foo/bar/"},
 			cannotReadAny: []string{"baz/thing.txt"},
 		},
@@ -331,32 +348,39 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 		// explicitly excluded.
 		{
 			paths:      []string{"**/foo/bar/thing.txt"},
+			ip:         netip.MustParseAddr("1.2.3.4"),
 			canReadAll: []string{"foo/", "foo/bar/"},
 		},
 		{
 			paths:      []string{"*/foo/bar/thing.txt"},
+			ip:         netip.MustParseAddr("1.2.3.4"),
 			canReadAll: []string{"foo/", "foo/bar/"},
 		},
 		{
 			paths:      []string{"/**/foo/bar/thing.txt"},
+			ip:         netip.MustParseAddr("1.2.3.4"),
 			canReadAll: []string{"foo/", "foo/bar/"},
 		},
 		{
 			paths:      []string{"/*/foo/bar/thing.txt"},
+			ip:         netip.MustParseAddr("1.2.3.4"),
 			canReadAll: []string{"foo/", "foo/bar/"},
 		},
 		{
 			paths:      []string{"-/**", "/storage/redis/**"},
+			ip:         netip.MustParseAddr("1.2.3.4"),
 			canReadAll: []string{"storage/", "/storage/", "/storage/redis/"},
 		},
 		{
 			paths:      []string{"-/**", "-/storage/**", "/storage/redis/**"},
+			ip:         netip.MustParseAddr("1.2.3.4"),
 			canReadAll: []string{"storage/", "/storage/", "/storage/redis/"},
 		},
 		// Even with a wildcard include rule, we should still exclude directories that
 		// are explicitly excluded later
 		{
 			paths:         []string{"/**", "-/storage/**"},
+			ip:            netip.MustParseAddr("1.2.3.4"),
 			canReadAll:    []string{"/foo"},
 			cannotReadAny: []string{"storage/", "/storage/", "/storage/redis/"},
 		},
@@ -388,7 +412,7 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 					Repo: repoName,
 					Path: path,
 				}
-				perm, err := client.Permissions(ctx, 1, content)
+				perm, err := client.Permissions(ctx, 1, tc.ip, content)
 				if err != nil {
 					t.Error(err)
 				}
@@ -402,7 +426,7 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 					Repo: repoName,
 					Path: path,
 				}
-				perm, err := client.Permissions(ctx, 1, content)
+				perm, err := client.Permissions(ctx, 1, tc.ip, content)
 				if err != nil {
 					t.Error(err)
 				}
@@ -412,6 +436,56 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("uses ip matcher", func(t *testing.T) {
+		filePath := "foo/bar/thing.txt"
+
+		getter := NewMockSubRepoPermissionsGetter()
+		getter.GetByUserWithIPsFunc.SetDefaultHook(func(ctx context.Context, i int32, _ bool) (map[api.RepoName]authz.SubRepoPermissionsWithIPs, error) {
+			var paths = []authz.PathWithIP{
+				{
+					Path: filePath,
+					IP:   "*",
+				},
+			}
+
+			return map[api.RepoName]authz.SubRepoPermissionsWithIPs{
+				repoName: {
+					Paths: paths,
+				},
+			}, nil
+		})
+
+		client := NewSubRepoPermsClient(getter)
+
+		var observedIPAddress netip.Addr
+
+		client.makeIPMatcherFunc = func() ipMatcher {
+			return ipMatcherFunc(func(ip netip.Addr) bool {
+				observedIPAddress = ip
+
+				return true
+			})
+		}
+
+		inputIP := netip.MustParseAddr("1.2.3.4")
+
+		perm, err := client.Permissions(context.Background(), 1, inputIP, authz.RepoContent{
+			Repo: repoName,
+			Path: filePath,
+		})
+		if err != nil {
+			t.Error(err)
+		}
+
+		if !perm.Include(authz.Read) {
+			t.Errorf("Should be able to read %q, cannot", filePath)
+		}
+
+		if observedIPAddress != inputIP {
+			t.Errorf("Should have used the input IP address %q, got %q", inputIP, observedIPAddress)
+		}
+	})
 }
 
 func TestSubRepoPermsPermissionsCache(t *testing.T) {
@@ -435,9 +509,11 @@ func TestSubRepoPermsPermissionsCache(t *testing.T) {
 		Path: "/stuff",
 	}
 
+	fakeIP := netip.MustParseAddr("1.2.3.4")
+
 	// Should hit DB only once
 	for range 3 {
-		_, err := client.Permissions(ctx, 1, content)
+		_, err := client.Permissions(ctx, 1, fakeIP, content)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -453,7 +529,7 @@ func TestSubRepoPermsPermissionsCache(t *testing.T) {
 		return defaultCacheTTL + 1
 	}
 
-	_, err := client.Permissions(ctx, 1, content)
+	_, err := client.Permissions(ctx, 1, fakeIP, content)
 	if err != nil {
 		t.Fatal(err)
 	}

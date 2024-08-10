@@ -3,6 +3,7 @@ package subrepoperms
 import (
 	"context"
 	"fmt"
+	"net/netip"
 	"strconv"
 	"strings"
 	"sync"
@@ -41,10 +42,11 @@ type SubRepoPermsClient struct {
 	clock             func() time.Time
 	since             func(time.Time) time.Duration
 
-	group            *singleflight.Group
-	cache            *lru.Cache[int32, cachedRules]
-	enabled          *atomic.Bool
-	repoEnabledCache repoEnabledCache
+	group             *singleflight.Group
+	cache             *lru.Cache[int32, cachedRules]
+	enabled           *atomic.Bool
+	repoEnabledCache  repoEnabledCache
+	makeIPMatcherFunc func() ipMatcher
 }
 
 const (
@@ -73,17 +75,50 @@ type path struct {
 }
 
 type compiledRules struct {
-	paths []path
+	rules []rule
+}
+
+type rule struct {
+	path path
+	ip   ipMatcher
+}
+
+func (r *rule) Match(path string, ip netip.Addr) bool {
+	return r.path.globPath.Match(path) && r.ip.Match(ip)
+}
+
+type ipMatcher interface {
+	Match(ip netip.Addr) bool
+}
+
+type ipMatcherFunc func(ip netip.Addr) bool
+
+func (f ipMatcherFunc) Match(ip netip.Addr) bool {
+	return f(ip)
+}
+
+var _ ipMatcher = ipMatcherFunc(func(ip netip.Addr) bool {
+	return true
+})
+
+type alwaysTrueMatcher struct{}
+
+func (m alwaysTrueMatcher) Match(ip netip.Addr) bool {
+	// TODO@ggilmore: (Once IP configuration option is in place, don't hardcode true)
+
+	return true
 }
 
 // GetPermissionsForPath tries to match a given path to a list of rules.
 // Since the last applicable rule is the one that applies, the list is
 // traversed in reverse, and the function returns as soon as a match is found.
 // If no match is found, None is returned.
-func (rules compiledRules) GetPermissionsForPath(path string) authz.Perms {
-	for i := len(rules.paths) - 1; i >= 0; i-- {
-		if rules.paths[i].globPath.Match(path) {
-			if rules.paths[i].exclusion {
+func (rules compiledRules) GetPermissionsForPath(path string, ip netip.Addr) authz.Perms {
+	for i := len(rules.rules) - 1; i >= 0; i-- {
+		r := rules.rules[i]
+
+		if r.Match(path, ip) {
+			if r.path.exclusion {
 				return authz.None
 			}
 			return authz.Read
@@ -129,7 +164,12 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) *SubRepoP
 		}
 		cache.Resize(cacheSize)
 		enabled.Store(c.ExperimentalFeatures.SubRepoPermissions.Enabled)
+		// TODO@ggilmore: Add a watch that dumps the existing cache when IP permissions are toggled.
 	})
+
+	makeIPMatcherFunc := func() ipMatcher {
+		return alwaysTrueMatcher{}
+	}
 
 	return &SubRepoPermsClient{
 		permissionsGetter: permissionsGetter,
@@ -139,6 +179,7 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) *SubRepoP
 		cache:             cache,
 		enabled:           enabled,
 		repoEnabledCache:  newRepoEnabledCache(defaultRepoEnabledCacheTTL),
+		makeIPMatcherFunc: makeIPMatcherFunc,
 	}
 }
 
@@ -177,7 +218,7 @@ func init() {
 // Permissions return the current permissions granted to the given user on the
 // given content. If sub-repo permissions are disabled, it is a no-op that return
 // Read.
-func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, content authz.RepoContent) (perms authz.Perms, err error) {
+func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, ip netip.Addr, content authz.RepoContent) (perms authz.Perms, err error) {
 	// Are sub-repo permissions enabled at the site level
 	if !s.Enabled() {
 		return authz.Read, nil
@@ -197,12 +238,12 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	if err != nil {
 		return authz.None, err
 	}
-	return f(content.Path)
+	return f(content.Path, ip)
 }
 
 // filePermissionsFuncAllRead is a FilePermissionFunc which _always_ returns
 // Read. Only use in cases that sub repo permission checks should not be done.
-func filePermissionsFuncAllRead(_ string) (authz.Perms, error) {
+func filePermissionsFuncAllRead(_ string, _ netip.Addr) (authz.Perms, error) {
 	return authz.Read, nil
 }
 
@@ -234,7 +275,7 @@ func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int
 		return filePermissionsFuncAllRead, nil
 	}
 
-	return func(path string) (authz.Perms, error) {
+	return func(path string, ip netip.Addr) (authz.Perms, error) {
 		// An empty path is equivalent to repo permissions so we can assume it has
 		// already been checked at that level.
 		if path == "" {
@@ -248,7 +289,7 @@ func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int
 
 		// Iterate through all rules for the current path, and the final match takes
 		// preference.
-		return rules.GetPermissionsForPath(path), nil
+		return rules.GetPermissionsForPath(path, ip), nil
 	}, nil
 }
 
@@ -280,36 +321,44 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 			rules: make(map[api.RepoName]compiledRules, len(repoPerms)),
 		}
 		for repo, perms := range repoPerms {
-			paths := make([]path, 0, len(perms.Paths))
+			rules := make([]rule, 0, len(perms.Paths))
 			for _, p := range perms.Paths {
-				rule := p.Path // TODO@ggilmore: Adapt this logic to thread through ip information
-				exclusion := strings.HasPrefix(rule, "-")
-				rule = strings.TrimPrefix(rule, "-")
+				ipMatcher := s.makeIPMatcherFunc()
 
-				if !strings.HasPrefix(rule, "/") {
-					rule = "/" + rule
+				pathRule := p.Path
+				exclusion := strings.HasPrefix(pathRule, "-")
+				pathRule = strings.TrimPrefix(pathRule, "-")
+
+				if !strings.HasPrefix(pathRule, "/") {
+					pathRule = "/" + pathRule
 				}
 
-				g, err := glob.Compile(rule, '/')
+				g, err := glob.Compile(pathRule, '/')
 				if err != nil {
 					return nil, errors.Wrap(err, "building include matcher")
 				}
 
-				paths = append(paths, path{globPath: g, exclusion: exclusion, original: rule})
+				rules = append(rules, rule{
+					path: path{globPath: g, exclusion: exclusion, original: pathRule},
+					ip:   ipMatcher,
+				})
 
 				// Special case. Our glob package does not handle rules starting with a double
 				// wildcard correctly. For example, we would expect `/**/*.java` to match all
 				// java files, but it does not match files at the root, eg `/foo.java`. To get
 				// around this we add an extra rule to cover this case.
-				if strings.HasPrefix(rule, "/**/") {
-					trimmed := rule
+				if strings.HasPrefix(pathRule, "/**/") {
+					trimmed := pathRule
 					for ; strings.HasPrefix(trimmed, "/**/"); trimmed = strings.TrimPrefix(trimmed, "/**") {
 					}
 					g, err := glob.Compile(trimmed, '/')
 					if err != nil {
 						return nil, errors.Wrap(err, "building include matcher")
 					}
-					paths = append(paths, path{globPath: g, exclusion: exclusion, original: trimmed})
+					rules = append(rules, rule{
+						path: path{globPath: g, exclusion: exclusion, original: trimmed},
+						ip:   ipMatcher,
+					})
 				}
 
 				// We should include all directories above an include rule so that we can browse
@@ -319,18 +368,21 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 					continue
 				}
 
-				dirs := expandDirs(rule)
+				dirs := expandDirs(pathRule)
 				for _, dir := range dirs {
 					g, err := glob.Compile(dir, '/')
 					if err != nil {
 						return nil, errors.Wrap(err, "building include matcher for dir")
 					}
-					paths = append(paths, path{globPath: g, exclusion: false, original: dir})
+					rules = append(rules, rule{
+						path: path{globPath: g, exclusion: false, original: dir},
+						ip:   ipMatcher,
+					})
 				}
 			}
 
 			toCache.rules[repo] = compiledRules{
-				paths: paths,
+				rules: rules,
 			}
 		}
 		toCache.timestamp = s.clock()

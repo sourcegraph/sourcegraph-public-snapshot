@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
@@ -84,6 +85,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 	}
 
 	a := actor.FromContext(ctx)
+	ipSource := authz.NewRequestClientIPSource(requestclient.FromContext(ctx))
 	// Filter in place
 	filtered := symbols[:0]
 	for _, r := range symbols {
@@ -91,7 +93,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 			Repo: args.Repo,
 			Path: r.Path,
 		}
-		perm, err := authz.ActorPermissions(ctx, checker, a, rc)
+		perm, err := authz.ActorPermissions(ctx, checker, a, ipSource, rc)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "checking sub-repo permissions")
 		}
@@ -186,8 +188,11 @@ func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint)
 		return nil, errors.Wrap(err, "executing symbol info request")
 	}
 
+	a := actor.FromContext(ctx)
+	ipSource := authz.NewRequestClientIPSource(requestclient.FromContext(ctx))
+
 	// 🚨 SECURITY: We have a valid result, so we need to apply sub-repo permissions filtering.
-	ok, err := authz.FilterActorPath(ctx, c.SubRepoPermsChecker(), actor.FromContext(ctx), api.RepoName(args.Repo), args.Path)
+	ok, err := authz.FilterActorPath(ctx, c.SubRepoPermsChecker(), a, ipSource, api.RepoName(args.Repo), args.Path)
 	if err != nil {
 		return nil, errors.Wrap(err, "checking sub-repo permissions")
 	}
