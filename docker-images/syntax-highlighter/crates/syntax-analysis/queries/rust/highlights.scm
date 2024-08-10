@@ -1,8 +1,17 @@
+(identifier) @identifier
+(type_identifier) @type
+(primitive_type) @identifier.builtin
+(field_identifier) @identifier.constant
+
 ; Identifier conventions
 
 ; Assume all-caps names are constants
 ((identifier) @constant
  (#match? @constant "^[A-Z][A-Z\\d_]+$'"))
+
+; Assume other uppercase names are enum constructors
+((identifier) @constant
+ (#match? @constant "^[A-Z]"))
 
 ; Assume that uppercase names in paths are types
 ((scoped_identifier
@@ -19,10 +28,6 @@
   path: (scoped_identifier
          name: (identifier) @type))
  (#match? @type "^[A-Z]"))
-
-; Assume other uppercase names are enum constructors
-((identifier) @constant
- (#match? @constant "^[A-Z]"))
 
 ; Assume all qualified names in struct patterns are enum constructors. (They're
 ; either that, or struct names; highlighting both as constructors seems to be
@@ -66,10 +71,6 @@
 
 ; Other identifiers
 
-(type_identifier) @type
-(primitive_type) @identifier.builtin
-(field_identifier) @identifier.constant
-
 (line_comment) @comment
 (block_comment) @comment
 
@@ -98,8 +99,6 @@
 (parameter (identifier) @variable.parameter)
 
 (lifetime (identifier) @identifier.attribute)
-
-(identifier) @identifier
 
 [
   "as"

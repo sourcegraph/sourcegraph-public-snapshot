@@ -194,7 +194,7 @@ lazy_static::lazy_static! {
             // (Pod, "pod"),
             (Python, "python"),
             (Ruby, "ruby"),
-            // (Rust, "rust"),
+            (Rust, "rust"),
             (Scala, "scala")
             // (Sql, "sql"),
             // Skipping TypeScript and TSX here as they're handled

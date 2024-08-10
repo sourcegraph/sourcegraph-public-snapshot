@@ -3,6 +3,8 @@ source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
 expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
   #![allow(all)]
+//   ^^^^^ Identifier
+//         ^^^ Identifier
   #![allow(unreachable_patterns)]
 //   ^^^^^ Identifier
 //         ^^^^^^^^^^^^^^^^^^^^ Identifier
@@ -32,7 +34,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
       let option = Some(5);
 //    ^^^ Keyword
 //        ^^^^^^ Identifier
-//                 ^^^^ IdentifierConstant
+//                 ^^^^ IdentifierFunction
 //                      ^ NumericLiteral
       // Match arm
 //    ^^^^^^^^^^^^ Comment
@@ -307,7 +309,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //    ^^^ Keyword
 //        ^^^^^^ Identifier
 //                 ^^^^^^^ IdentifierType
-//                          ^^^^^^ IdentifierConstant
+//                          ^^^^^^ IdentifierFunction
 //                                 ^^^^^^^^ StringLiteral
 //                                          ^^^^^^^^^ IdentifierFunction
 //                                                       ^ NumericLiteral
