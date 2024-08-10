@@ -59,7 +59,8 @@ func (s *handlerV1) GetEnterpriseSubscription(ctx context.Context, req *connect.
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionRead)
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionRead)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -91,7 +92,8 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionRead)
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionRead)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -273,7 +275,8 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionRead)
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionRead)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -321,7 +324,7 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 			if opts.LicenseKeySubstring != "" {
 				return nil, connect.NewError(
 					connect.CodeInvalidArgument,
-					errors.New(`invalid filter: "license_key_substring"" provided multiple times`),
+					errors.New(`invalid filter: "license_key_substring" provided multiple times`),
 				)
 			}
 			opts.LicenseKeySubstring = f.LicenseKeySubstring
@@ -330,13 +333,13 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 			if f.SubscriptionId == "" {
 				return nil, connect.NewError(
 					connect.CodeInvalidArgument,
-					errors.New(`invalid filter: "subscription_id"" provided but is empty`),
+					errors.New(`invalid filter: "subscription_id" provided but is empty`),
 				)
 			}
 			if opts.SubscriptionID != "" {
 				return nil, connect.NewError(
 					connect.CodeInvalidArgument,
-					errors.New(`invalid filter: "subscription_id"" provided multiple times`),
+					errors.New(`invalid filter: "subscription_id" provided multiple times`),
 				)
 			}
 			opts.SubscriptionID = f.SubscriptionId
@@ -406,7 +409,8 @@ func (s *handlerV1) CreateEnterpriseSubscription(ctx context.Context, req *conne
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionWrite)
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionWrite)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -472,7 +476,8 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionWrite)
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionWrite)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -567,7 +572,8 @@ func (s *handlerV1) ArchiveEnterpriseSubscription(ctx context.Context, req *conn
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionWrite)
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionWrite)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -650,7 +656,8 @@ func (s *handlerV1) CreateEnterpriseSubscriptionLicense(ctx context.Context, req
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionWrite)
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionWrite)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -761,7 +768,8 @@ func (s *handlerV1) UpdateEnterpriseSubscriptionMembership(ctx context.Context, 
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("permission.subscription", scopes.ActionWrite)
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalSubscriptionPermission, scopes.ActionWrite)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
