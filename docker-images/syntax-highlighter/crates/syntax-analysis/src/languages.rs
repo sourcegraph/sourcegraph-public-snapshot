@@ -216,7 +216,7 @@ mod tags {
     create_tags_configuration!(c_sharp, ParserId::C_Sharp, "c_sharp");
     create_tags_configuration!(go, ParserId::Go, "go");
     create_tags_configuration!(java, ParserId::Java, "java");
-    // create_tags_configuration!(javascript, ParserId::Javascript, "javascript");
+    create_tags_configuration!(javascript, ParserId::Javascript, "javascript");
     // create_tags_configuration!(hack, ParserId::Hack, "hack");
     // create_tags_configuration!(kotlin, ParserId::Kotlin, "kotlin");
     // create_tags_configuration!(magik, ParserId::Magik, "magik");
@@ -224,7 +224,7 @@ mod tags {
     // create_tags_configuration!(ruby, ParserId::Ruby, "ruby");
     // create_tags_configuration!(rust, ParserId::Rust, "rust");
     // create_tags_configuration!(scala, ParserId::Scala, "scala");
-    // create_tags_configuration!(typescript, ParserId::Typescript, "typescript");
+    create_tags_configuration!(typescript, ParserId::Typescript, "typescript");
     // create_tags_configuration!(zig, ParserId::Zig, "zig");
 
     pub fn get_tag_configuration(parser: ParserId) -> Option<&'static TagConfiguration> {
@@ -234,7 +234,7 @@ mod tags {
             ParserId::C_Sharp => Some(c_sharp()),
             ParserId::Go => Some(go()),
             ParserId::Java => Some(java()),
-            // ParserId::Javascript => Some(javascript()),
+            ParserId::Javascript => Some(javascript()),
             // ParserId::Hack => Some(hack()),
             // ParserId::Kotlin => Some(kotlin()),
             // ParserId::Magik => Some(magik()),
@@ -242,7 +242,7 @@ mod tags {
             // ParserId::Ruby => Some(ruby()),
             // ParserId::Rust => Some(rust()),
             // ParserId::Scala => Some(scala()),
-            // ParserId::Typescript => Some(typescript()),
+            ParserId::Typescript => Some(typescript()),
             // ParserId::Zig => Some(zig()),
             _ => None,
         }

@@ -128,7 +128,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //          ^^^^ IdentifierBuiltin
       key3: `abc${d1.e2}`,
 //    ^^^^ IdentifierAttribute
-//          ^^^^ StringLiteral
+//          ^ StringLiteral
+//           ^^^ StringLiteral
 //              ^^ StringLiteralEscape
 //                ^^ Identifier
 //                  ^ StringLiteral
@@ -264,7 +265,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //        ^^^^^^ Identifier
 //                 ^^^ Keyword
 //                     ^^^^^^ Identifier
-//                            ^^ StringLiteral
+//                            ^ StringLiteral
+//                             ^ StringLiteral
 //                              ^^ StringLiteralEscape
 //                                ^^^^^^ Identifier
 //                                      ^ StringLiteral
@@ -482,7 +484,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
       console.log(`Value is a string: ${unionExample}`);
 //    ^^^^^^^ Identifier
 //            ^^^ IdentifierFunction
-//                ^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                ^ StringLiteral
+//                 ^^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                    ^^ StringLiteralEscape
 //                                      ^^^^^^^^^^^^ Identifier
 //                                                  ^ StringLiteralEscape

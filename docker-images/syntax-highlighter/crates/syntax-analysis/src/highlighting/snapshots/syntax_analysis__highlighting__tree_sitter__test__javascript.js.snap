@@ -244,7 +244,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                          ^^ StringLiteralEscape
 //                            ^^^ Identifier
 //                               ^ StringLiteralEscape
-//                                ^^^^^^^^^^^^ StringLiteral
+//                                ^^^^^^^^^^^ StringLiteral
+//                                           ^ StringLiteral
   } else {
 //  ^^^^ Keyword
     console.log(`${name} is a baby.`);
@@ -254,7 +255,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //               ^^ StringLiteralEscape
 //                 ^^^^ Identifier
 //                     ^ StringLiteralEscape
-//                      ^^^^^^^^^^^^ StringLiteral
+//                      ^^^^^^^^^^^ StringLiteral
+//                                 ^ StringLiteral
   }
   
   //4. Loop
@@ -283,11 +285,13 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //               ^^^^ Identifier
     return `Hello, ${name}!`;
 //  ^^^^^^ Keyword
-//         ^^^^^^^^ StringLiteral
+//         ^ StringLiteral
+//          ^^^^^^^ StringLiteral
 //                 ^^ StringLiteralEscape
 //                   ^^^^ Identifier
 //                       ^ StringLiteralEscape
-//                        ^^ StringLiteral
+//                        ^ StringLiteral
+//                         ^ StringLiteral
   }
   console.log(greet(name));
 //^^^^^^^ Identifier
@@ -329,13 +333,15 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
       console.log(`Hello, my name is ${this.name}.`);
 //    ^^^^^^^ Identifier
 //            ^^^ IdentifierFunction
-//                ^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                ^ StringLiteral
+//                 ^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                   ^^ StringLiteralEscape
 //                                     ^^^^ IdentifierBuiltin
 //                                         ^ StringLiteral
 //                                          ^^^^ Identifier
 //                                              ^ StringLiteralEscape
-//                                               ^^ StringLiteral
+//                                               ^ StringLiteral
+//                                                ^ StringLiteral
     }
   };
   person.sayHello();
@@ -427,7 +433,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
       console.log(`Hello, I am ${this.name} and I am a ${this.type}.`);
 //    ^^^^^^^ Identifier
 //            ^^^ IdentifierFunction
-//                ^^^^^^^^^^^^^ StringLiteral
+//                ^ StringLiteral
+//                 ^^^^^^^^^^^^ StringLiteral
 //                             ^^ StringLiteralEscape
 //                               ^^^^ IdentifierBuiltin
 //                                   ^ StringLiteral
@@ -439,7 +446,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                                           ^ StringLiteral
 //                                                            ^^^^ Identifier
 //                                                                ^ StringLiteralEscape
-//                                                                 ^^ StringLiteral
+//                                                                 ^ StringLiteral
+//                                                                  ^ StringLiteral
     }
   }
   const cat = new Animal("Tom", "cat");
@@ -484,7 +492,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
       console.log(`Hello, I am ${this.name} and I am a ${this.breed} breed ${this.type}.`);
 //    ^^^^^^^ Identifier
 //            ^^^ IdentifierFunction
-//                ^^^^^^^^^^^^^ StringLiteral
+//                ^ StringLiteral
+//                 ^^^^^^^^^^^^ StringLiteral
 //                             ^^ StringLiteralEscape
 //                               ^^^^ IdentifierBuiltin
 //                                   ^ StringLiteral
@@ -502,7 +511,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                                                               ^ StringLiteral
 //                                                                                ^^^^ Identifier
 //                                                                                    ^ StringLiteralEscape
-//                                                                                     ^^ StringLiteral
+//                                                                                     ^ StringLiteral
+//                                                                                      ^ StringLiteral
     }
   }
   const dog = new Dog("Max", "Labrador");
@@ -540,7 +550,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                                       ^ NumericLiteral
 //                                                        ^ StringLiteral
 //                                                         ^ StringLiteralEscape
-//                                                          ^^ StringLiteral
+//                                                          ^ StringLiteral
+//                                                           ^ StringLiteral
   console.log(message);
 //^^^^^^^ Identifier
 //        ^^^ IdentifierFunction

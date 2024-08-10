@@ -4,7 +4,7 @@
 
 (interface_declaration name: (_) @descriptor.type @kind.interface body: (_) @scope)
 (interface_declaration
-    (object_type
+    (interface_body
         [
             (method_signature (property_identifier) @descriptor.method @kind.method)
             (property_signature (property_identifier) @descriptor.term @kind.property)]))

@@ -17,19 +17,17 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //        ^ TagDelimiter
 //         ^^^ Tag
 //            ^ TagDelimiter
+//              TagDelimiter 3:13..4:13
               <p />
-//            ^ TagDelimiter
 //             ^ Tag
-//               ^ TagDelimiter
-//                ^ TagDelimiter
+//               ^^ TagDelimiter
+//                  TagDelimiter 4:17..5:13
               <h1 id={name}>My Component</h1>
-//            ^ TagDelimiter
 //             ^^ Tag
 //                ^^ TagAttribute
 //                    ^^^^ Identifier
 //                         ^ TagDelimiter
-//                                      ^ TagDelimiter
-//                                       ^ TagDelimiter
+//                                      ^^ TagDelimiter
 //                                        ^^ Tag
 //                                          ^ TagDelimiter
               {[1, 2, 3].map(item => (
@@ -45,15 +43,14 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                        ^^^^ Identifier
 //                             ^ TagDelimiter
 //                               ^^^^ Identifier
-//                                    ^ TagDelimiter
-//                                     ^ TagDelimiter
+//                                    ^^ TagDelimiter
 //                                      ^ Tag
 //                                       ^ TagDelimiter
               ))}
+//                TagDelimiter 8:15..9:10
           </div>
-//        ^ TagDelimiter
-//         ^ TagDelimiter
 //          ^^^ Tag
 //             ^ TagDelimiter
       )
   }
+

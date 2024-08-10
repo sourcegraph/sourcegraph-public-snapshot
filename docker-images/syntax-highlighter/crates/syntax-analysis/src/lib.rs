@@ -101,12 +101,12 @@ mod test {
     // generate_tags_and_snapshot!(All, test_tags_ruby, test_scip_ruby, "ruby-globals.rb");
     generate_tags_and_snapshot!(Scip, test_scip_java, "globals.java");
     generate_tags_and_snapshot!(Scip, test_scip_java_package_info, "package-info.java");
-    // generate_tags_and_snapshot!(
-    //     All,
-    //     test_tags_typescript,
-    //     test_scip_typescript,
-    //     "globals.ts"
-    // );
+    generate_tags_and_snapshot!(
+        All,
+        test_tags_typescript,
+        test_scip_typescript,
+        "globals.ts"
+    );
     generate_tags_and_snapshot!(All, test_tags_csharp, test_scip_csharp, "globals.cs");
     // generate_tags_and_snapshot!(Scip, test_scip_scala, "globals.scala");
     // generate_tags_and_snapshot!(All, test_tags_kotlin, test_scip_kotlin, "globals.kt");
@@ -116,8 +116,8 @@ mod test {
 
     // generate_tags_and_snapshot!(Scip, test_scip_rust_scopes, "scopes.rs");
 
-    // generate_tags_and_snapshot!(Scip, test_scip_javascript, "globals.js");
-    // generate_tags_and_snapshot!(Scip, test_scip_javascript_object, "javascript-object.js");
+    generate_tags_and_snapshot!(Scip, test_scip_javascript, "globals.js");
+    generate_tags_and_snapshot!(Scip, test_scip_javascript_object, "javascript-object.js");
 
     generate_tags_and_snapshot!(All, test_tags_c_example, test_scip_c_example, "example.c");
 

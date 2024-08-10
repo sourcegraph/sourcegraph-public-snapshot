@@ -116,56 +116,56 @@ macro_rules! create_configurations {
             }
         )*
 
-        // {
-        //     let highlights = vec![
-        //         include_scip_query!("typescript", "highlights"),
-        //         include_scip_query!("javascript", "highlights"),
-        //     ];
-        //     let mut lang = HighlightConfiguration::new(
-        //         ParserId::Typescript.language(),
-        //         "typescript",
-        //         &highlights.join("\n"),
-        //         include_scip_query!("typescript", "injections"),
-        //         include_scip_query!("typescript", "locals"),
-        //     ).expect("parser for 'typescript' must be compiled");
-        //     lang.configure(&highlight_names);
-        //     m.insert(ParserId::Typescript, lang);
-        // }
-        // {
-        //     let highlights = vec![
-        //         include_scip_query!("tsx", "highlights"),
-        //         include_scip_query!("typescript", "highlights"),
-        //         include_scip_query!("javascript", "highlights"),
-        //     ];
-        //     let mut lang = HighlightConfiguration::new(
-        //         ParserId::Tsx.language(),
-        //         "tsx",
-        //         &highlights.join("\n"),
-        //         include_scip_query!("tsx", "injections"),
-        //         include_scip_query!("tsx", "locals"),
-        //     ).expect("parser for 'tsx' must be compiled");
-        //     lang.configure(&highlight_names);
-        //     m.insert(ParserId::Tsx, lang);
-        // }
+        {
+            let highlights = vec![
+                include_scip_query!("typescript", "highlights"),
+                include_scip_query!("javascript", "highlights"),
+            ];
+            let mut lang = HighlightConfiguration::new(
+                ParserId::Typescript.language(),
+                "typescript",
+                &highlights.join("\n"),
+                include_scip_query!("typescript", "injections"),
+                include_scip_query!("typescript", "locals"),
+            ).expect("parser for 'typescript' must be compiled");
+            lang.configure(&highlight_names);
+            m.insert(ParserId::Typescript, lang);
+        }
+        {
+            let highlights = vec![
+                include_scip_query!("javascript", "highlights"),
+                include_scip_query!("typescript", "highlights"),
+                include_scip_query!("tsx", "highlights"),
+            ];
+            let mut lang = HighlightConfiguration::new(
+                ParserId::Tsx.language(),
+                "tsx",
+                &highlights.join("\n"),
+                include_scip_query!("tsx", "injections"),
+                include_scip_query!("tsx", "locals"),
+            ).expect("parser for 'tsx' must be compiled");
+            lang.configure(&highlight_names);
+            m.insert(ParserId::Tsx, lang);
+        }
 
-        // {
-        //     let highlights = vec![
-        //         // We have a separate file for jsx since TypeScript inherits the base javascript highlights
-        //         // and if we include the query for jsx attributes it would fail since it is not in the tree-sitter
-        //         // grammar for TypeScript.
-        //         include_scip_query!("javascript", "highlights-jsx"),
-        //         include_scip_query!("javascript", "highlights"),
-        //     ];
-        //     let mut lang = HighlightConfiguration::new(
-        //         ParserId::Javascript.language(),
-        //         "javascript",
-        //         &highlights.join("\n"),
-        //         include_scip_query!("javascript", "injections"),
-        //         include_scip_query!("javascript", "locals"),
-        //     ).expect("parser for 'javascript' must be compiled");
-        //     lang.configure(&highlight_names);
-        //     m.insert(ParserId::Javascript, lang);
-        // }
+        {
+            let highlights = vec![
+                // We have a separate file for jsx since TypeScript inherits the base javascript highlights
+                // and if we include the query for jsx attributes it would fail since it is not in the tree-sitter
+                // grammar for TypeScript.
+                include_scip_query!("javascript", "highlights"),
+                include_scip_query!("javascript", "highlights-jsx"),
+            ];
+            let mut lang = HighlightConfiguration::new(
+                ParserId::Javascript.language(),
+                "javascript",
+                &highlights.join("\n"),
+                include_scip_query!("javascript", "injections"),
+                include_scip_query!("javascript", "locals"),
+            ).expect("parser for 'javascript' must be compiled");
+            lang.configure(&highlight_names);
+            m.insert(ParserId::Javascript, lang);
+        }
 
         m
     }}

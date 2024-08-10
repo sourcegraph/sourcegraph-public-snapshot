@@ -17,13 +17,13 @@
 (object
   (pair
     key: (property_identifier) @descriptor.method @kind.function
-    value: [(function) (arrow_function)]))
+    value: [(function_expression) (arrow_function)]))
 
 ((object
    (pair
      key: (property_identifier) @descriptor.term @kind.property
      value: (_) @_value_type))
- (#filter! @_value_type "function" "arrow_function"))
+ (#filter! @_value_type "function_expression" "arrow_function"))
 ;; }}}
 
 ;; class X { ... }
