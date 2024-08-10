@@ -184,6 +184,8 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         telemetryRecorder.recordEvent('search.filePreview', 'close')
     }, [telemetryService, clearPreview, telemetryRecorder])
 
+    const queryExamplesForKeywordSearch = showQueryExamplesForKeywordSearch(useSettingsCascade())
+
     return (
         <div className={classNames(styles.root, { [styles.rootWithNewFilters]: newFiltersEnabled })}>
             {newFiltersEnabled && (
@@ -336,7 +338,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                         selectedSearchContextSpec={selectedSearchContextSpec}
                         logSearchResultClicked={onLogSearchResultClick}
                         showQueryExamplesOnNoResultsPage={true}
-                        showQueryExamplesForKeywordSearch={showQueryExamplesForKeywordSearch(useSettingsCascade())}
+                        showQueryExamplesForKeywordSearch={queryExamplesForKeywordSearch}
                     />
                 )}
             </div>
