@@ -21,6 +21,7 @@ import { PageTitle } from '../../../../components/PageTitle'
 
 import { queryClient, useListEnterpriseSubscriptions, type EnterprisePortalEnvironment } from './enterpriseportal'
 import { EnterprisePortalEnvSelector, getDefaultEnterprisePortalEnv } from './EnterprisePortalEnvSelector'
+import { EnterprisePortalEnvWarning } from './EnterprisePortalEnvWarning'
 import type { ListEnterpriseSubscriptionsFilter } from './enterpriseportalgen/subscriptions_pb'
 import {
     SiteAdminProductSubscriptionNode,
@@ -120,6 +121,8 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                 }
                 className="mb-3"
             />
+
+            <EnterprisePortalEnvWarning env={env} actionText="managing subscriptions" />
 
             <ConnectionContainer>
                 <Container className="mb-3">

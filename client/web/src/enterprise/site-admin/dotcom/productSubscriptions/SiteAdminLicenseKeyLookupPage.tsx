@@ -23,6 +23,7 @@ import {
     type EnterprisePortalEnvironment,
 } from './enterpriseportal'
 import { EnterprisePortalEnvSelector, getDefaultEnterprisePortalEnv } from './EnterprisePortalEnvSelector'
+import { EnterprisePortalEnvWarning } from './EnterprisePortalEnvWarning'
 import {
     type ListEnterpriseSubscriptionLicensesFilter,
     EnterpriseSubscriptionLicenseType,
@@ -126,6 +127,8 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                 className="mb-3"
                 actions={<EnterprisePortalEnvSelector env={env} setEnv={setEnv} />}
             />
+
+            <EnterprisePortalEnvWarning env={env} actionText="managing subscription license keys" />
 
             <ConnectionContainer>
                 <Container className="mb-3">
