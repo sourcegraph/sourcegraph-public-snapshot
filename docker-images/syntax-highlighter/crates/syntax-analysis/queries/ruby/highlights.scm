@@ -1,3 +1,10 @@
+; Identifiers
+
+(global_variable) @identifier ;; Should SCIP SyntaxKind support global variables?
+(identifier) @identifier
+(constant) @identifier
+
+
 ; Keywords
 
 [
@@ -44,11 +51,11 @@
 "defined?" @identifier.builtin
 
 (call
-  method: [(identifier) @type.builtin (block)]
-  (#eq? @type.builtin "sig"))
+  method: [(identifier) (constant)] @identifier.function)
 
 (call
-  method: [(identifier) (constant)] @identifier.function)
+  method: [(identifier) @type.builtin (block)]
+  (#eq? @type.builtin "sig"))
 
 ; Function definitions
 
@@ -56,12 +63,6 @@
 (setter (identifier) @identifier.function)
 (method name: [(identifier) (constant)] @identifier.function)
 (singleton_method name: [(identifier) (constant)] @identifier.function)
-
-; Identifiers
-
-(constant) @identifier ;; TODO: Figure out why ruby grammar uses "constant" for identifiers
-
-(global_variable) @identifier ;; Should SCIP SyntaxKind support global variables?
 
 [
   (class_variable)
@@ -79,11 +80,6 @@
   "**" @operator)
 @constant.builtin
 
-((constant) @constant
- (#match? @constant "^[A-Z\\d_]+$"))
-
-(constant) @constructor
-
 (self) @identifier.builtin
 (super) @identifier.builtin
 
@@ -97,10 +93,6 @@
 
 (keyword_parameter name: (identifier) @identifier.parameter)
 (optional_parameter name: (identifier) @identifier.parameter)
-
-;; ((identifier) @identifier.function
-;;  (#is-not? local)) ; TODO: support locals
-(identifier) @identifier
 
 ; Literals
 
@@ -151,4 +143,3 @@
  "=>"
  "->"]
 @operator
-

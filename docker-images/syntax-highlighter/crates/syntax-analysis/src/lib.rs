@@ -96,9 +96,9 @@ mod test {
 
     // But most tests should go here and just generate scip snapshots
     // generate_tags_and_snapshot!(Scip, test_scip_zig, "globals.zig");
-    // generate_tags_and_snapshot!(All, test_tags_ruby, test_scip_ruby, "ruby-globals.rb");
     generate_tags_and_snapshot!(All, test_tags_python, test_scip_python, "globals.py");
     generate_tags_and_snapshot!(Scip, test_scip_python_comp, "python-repo-comp.py");
+    generate_tags_and_snapshot!(All, test_tags_ruby, test_scip_ruby, "ruby-globals.rb");
     generate_tags_and_snapshot!(Scip, test_scip_java, "globals.java");
     generate_tags_and_snapshot!(Scip, test_scip_java_package_info, "package-info.java");
     generate_tags_and_snapshot!(
