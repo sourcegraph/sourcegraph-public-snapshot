@@ -1,3 +1,8 @@
+(identifier) @variable
+((identifier) @identifier.constant (#match? @identifier.constant "^[A-Z]"))
+(operator_identifier) @variable
+(type_identifier) @type
+
 (class_definition name: (identifier) @type)
 (trait_definition name: (identifier) @type)
 (function_definition name: (identifier) @identifier.function)
@@ -8,12 +13,7 @@
 (call_expression function: (field_expression field: (identifier) @identifier.function))
 (call_expression function: (identifier) @identifier.function)
 (type_parameters name: (identifier) @identifier.type)
-((identifier) @identifier.constant
- (#match? @identifier.constant "^[A-Z]"))
-(identifier) @variable
 (case_class_pattern type: (type_identifier) @variable)
-(operator_identifier) @variable
-(type_identifier) @type
 "this" @constant.builtin
 (interpolated_string) @string
 (string) @string

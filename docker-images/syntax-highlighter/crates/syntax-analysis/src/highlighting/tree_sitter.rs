@@ -178,7 +178,7 @@ lazy_static::lazy_static! {
             (Cpp, "cpp"),
             (C_Sharp, "c_sharp"),
             // (Dart, "dart"),
-            (Go, "go")
+            (Go, "go"),
             // (Hack, "hack"),
             (Java, "java"),
             // Skipping Javascript here as it is handled
@@ -195,7 +195,7 @@ lazy_static::lazy_static! {
             // (Python, "python"),
             // (Ruby, "ruby"),
             // (Rust, "rust"),
-            // (Scala, "scala"),
+            (Scala, "scala")
             // (Sql, "sql"),
             // Skipping TypeScript and TSX here as they're handled
             // specially inside the macro implementation.
