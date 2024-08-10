@@ -9,7 +9,7 @@ pub enum ParserId {
     #[allow(non_camel_case_types)]
     C_Sharp,
     // Dart,
-    // Go,
+    Go,
     // Hack,
     // Java,
     // Javascript,
@@ -42,7 +42,7 @@ impl ParserId {
             ParserId::Cpp => tree_sitter_cpp::language(),
             ParserId::C_Sharp => tree_sitter_c_sharp::language(),
             // ParserId::Dart => tree_sitter_dart::language(),
-            // ParserId::Go => tree_sitter_go::language(),
+            ParserId::Go => tree_sitter_go::language(),
             // ParserId::Hack => tree_sitter_hack::language(),
             // ParserId::Java => tree_sitter_java::language(),
             // ParserId::Javascript => tree_sitter_javascript::language(),
@@ -78,7 +78,7 @@ impl ParserId {
             "cpp" => Some(ParserId::Cpp),
             "c_sharp" => Some(ParserId::C_Sharp),
             // "dart" => Some(ParserId::Dart),
-            // "go" => Some(ParserId::Go),
+            "go" => Some(ParserId::Go),
             // "hack" => Some(ParserId::Hack),
             // "java" => Some(ParserId::Java),
             // "javascript" => Some(ParserId::Javascript),
@@ -109,7 +109,7 @@ impl ParserId {
             ParserId::Cpp => "cpp",
             ParserId::C_Sharp => "c_sharp",
             // ParserId::Dart => "dart",
-            // ParserId::Go => "go",
+            ParserId::Go => "go",
             // ParserId::Hack => "hack",
             // ParserId::Java => "java",
             // ParserId::Javascript => "javascript",
@@ -136,7 +136,7 @@ impl ParserId {
     pub fn language_extensions(&self) -> HashSet<&str> {
         let ar = {
             match self {
-                // ParserId::Go => vec!["go"],
+                ParserId::Go => vec!["go"],
                 // ParserId::Java => vec!["java"],
                 // ParserId::Javascript => vec!["js"],
                 // ParserId::Typescript => vec!["ts"],
@@ -155,7 +155,7 @@ impl ParserId {
             "cpp" => Some(ParserId::Cpp),
             "cs" => Some(ParserId::C_Sharp),
             // "dart" => Some(ParserId::Dart),
-            // "go" => Some(ParserId::Go),
+            "go" => Some(ParserId::Go),
             // "hack" => Some(ParserId::Hack),
             // "java" => Some(ParserId::Java),
             // "js" => Some(ParserId::Javascript),

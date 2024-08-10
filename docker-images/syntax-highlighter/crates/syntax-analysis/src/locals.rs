@@ -905,15 +905,15 @@ mod test {
         (doc, tree_output)
     }
 
-    // #[test]
-    // fn go() {
-    //     let config = crate::languages::get_local_configuration(ParserId::Go).unwrap();
-    //     let source_code = include_str!("../testdata/locals.go");
-    //     let (doc, scope_tree) = parse_file_for_lang(config, source_code, false);
-    //     let dumped = snapshot_syntax_document(&doc, source_code);
-    //     insta::assert_snapshot!("go_occurrences", dumped);
-    //     insta::assert_snapshot!("go_scopes", scope_tree);
-    // }
+    #[test]
+    fn go() {
+        let config = crate::languages::get_local_configuration(ParserId::Go).unwrap();
+        let source_code = include_str!("../testdata/locals.go");
+        let (doc, scope_tree) = parse_file_for_lang(config, source_code, false);
+        let dumped = snapshot_syntax_document(&doc, source_code);
+        insta::assert_snapshot!("go_occurrences", dumped);
+        insta::assert_snapshot!("go_scopes", scope_tree);
+    }
 
     // #[test]
     // fn perl() {

@@ -91,8 +91,8 @@ mod test {
     }
 
     // A few smoke tests to make sure that we're generating ctags files correctly
-    // generate_tags_and_snapshot!(All, test_tags_go, test_scip_go, "go-globals.go");
     // generate_tags_and_snapshot!(All, test_tags_rust, test_scip_rust, "ctags-empty-scope.rs");
+    generate_tags_and_snapshot!(All, test_tags_go, test_scip_go, "go-globals.go");
 
     // But most tests should go here and just generate scip snapshots
     // generate_tags_and_snapshot!(Scip, test_scip_zig, "globals.zig");
@@ -111,8 +111,8 @@ mod test {
     // generate_tags_and_snapshot!(Scip, test_scip_scala, "globals.scala");
     // generate_tags_and_snapshot!(All, test_tags_kotlin, test_scip_kotlin, "globals.kt");
 
-    // generate_tags_and_snapshot!(Scip, test_scip_go_internal, "internal_go.go");
-    // generate_tags_and_snapshot!(Scip, test_scip_go_example, "example.go");
+    generate_tags_and_snapshot!(Scip, test_scip_go_internal, "internal_go.go");
+    generate_tags_and_snapshot!(Scip, test_scip_go_example, "example.go");
 
     // generate_tags_and_snapshot!(Scip, test_scip_rust_scopes, "scopes.rs");
 
@@ -122,13 +122,13 @@ mod test {
     generate_tags_and_snapshot!(All, test_tags_c_example, test_scip_c_example, "example.c");
 
     // Test to make sure that kinds are the override behavior
-    // generate_tags_and_snapshot!(All, test_tags_go_diff, test_scip_go_diff, "go-diff.go");
-    // generate_tags_and_snapshot!(
-    //     All,
-    //     test_tags_go_constant,
-    //     test_scip_tags_go_constant,
-    //     "go-const.go"
-    // );
+    generate_tags_and_snapshot!(All, test_tags_go_diff, test_scip_go_diff, "go-diff.go");
+    generate_tags_and_snapshot!(
+        All,
+        test_tags_go_constant,
+        test_scip_tags_go_constant,
+        "go-const.go"
+    );
 
     // Test that errors are returned in expected format
     // generate_tags_and_snapshot!(Tags, test_tags_perl_example, "example.pl");

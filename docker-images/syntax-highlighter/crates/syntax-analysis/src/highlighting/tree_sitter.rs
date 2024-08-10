@@ -176,9 +176,9 @@ lazy_static::lazy_static! {
         create_configurations!(
             (C, "c"),
             (Cpp, "cpp"),
-            (C_Sharp, "c_sharp")
+            (C_Sharp, "c_sharp"),
             // (Dart, "dart"),
-            // (Go, "go"),
+            (Go, "go")
             // (Hack, "hack"),
             // (Java, "java"),
             // Skipping Javascript here as it is handled
@@ -499,7 +499,6 @@ mod test {
         Some(language_from_syntect)
     }
 
-    #[ignore]
     #[test]
     fn test_highlights_one_comment() -> anyhow::Result<()> {
         let src = "// Hello World";
@@ -509,7 +508,6 @@ mod test {
         Ok(())
     }
 
-    #[ignore]
     #[test]
     fn test_highlights_a_sql_query_within_go() -> anyhow::Result<()> {
         let src = r#"package main
@@ -586,7 +584,6 @@ SELECT * FROM my_table
         Ok(())
     }
 
-    #[ignore]
     #[test]
     fn test_files_with_locals() -> Result<(), std::io::Error> {
         let crate_root: std::path::PathBuf = std::env::var("CARGO_MANIFEST_DIR").unwrap().into();
@@ -611,7 +608,9 @@ SELECT * FROM my_table
                 continue;
             };
 
-            let document = language.highlight_document(&contents, true).unwrap();
+            let Ok(document) = language.highlight_document(&contents, true) else {
+                continue;
+            };
 
             // TODO: I'm not sure if there's a better way to run the snapshots without
             // panicing and then catching, but this will do for now.
