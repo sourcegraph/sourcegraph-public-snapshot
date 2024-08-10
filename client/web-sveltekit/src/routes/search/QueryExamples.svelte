@@ -2,25 +2,23 @@
     import type { Readable } from 'svelte/store'
 
     import { isDefined } from '$lib/common'
+    import { SearchPatternType } from '$lib/graphql-operations'
     import Icon from '$lib/Icon.svelte'
     import SyntaxHighlightedQuery from '$lib/search/SyntaxHighlightedQuery.svelte'
     import { buildSearchURLQuery } from '$lib/shared'
     import { settings } from '$lib/stores'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
-    import { defaultPatternTypeFromSettings } from '$lib/web'
+    import { showQueryExamplesForKeywordSearch } from '$lib/web'
     import ProductStatusBadge from '$lib/wildcard/ProductStatusBadge.svelte'
-    import { SearchPatternType } from '$lib/graphql-operations'
 
     import { basicSyntaxColumns, exampleQueryColumns, type QueryExample } from './queryExamples'
 
     export let showQueryPage = false
     export let queryExample: Readable<QueryExample | null>
 
-    const defaultPatternType = defaultPatternTypeFromSettings({ final: $settings, subjects: [] })
-    const showQueryExamplesForKeywordSearch =
-        defaultPatternType === SearchPatternType.keyword || defaultPatternType === SearchPatternType.regexp
-    const patternTypeForQueryLinks = showQueryExamplesForKeywordSearch
+    const queryExamplesForKeywordSearch = showQueryExamplesForKeywordSearch({ final: $settings, subjects: [] })
+    const patternTypeForQueryLinks = queryExamplesForKeywordSearch
         ? SearchPatternType.keyword
         : SearchPatternType.standard
 
@@ -32,7 +30,7 @@
                       $queryExample.fileName,
                       $queryExample.repoName,
                       $queryExample.orgName,
-                      showQueryExamplesForKeywordSearch
+                      queryExamplesForKeywordSearch
                   ),
               }
             : null,

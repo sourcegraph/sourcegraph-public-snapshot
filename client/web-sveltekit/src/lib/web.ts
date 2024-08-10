@@ -45,7 +45,11 @@ export {
 export { hideEmptyLastLine } from '@sourcegraph/web/src/repo/blob/codemirror/eof'
 export { isValidLineRange } from '@sourcegraph/web/src/repo/blob/codemirror/utils'
 export { blobPropsFacet } from '@sourcegraph/web/src/repo/blob/codemirror'
-export { defaultSearchModeFromSettings, defaultPatternTypeFromSettings } from '@sourcegraph/web/src/util/settings'
+export {
+    defaultSearchModeFromSettings,
+    defaultPatternTypeFromSettings,
+    showQueryExamplesForKeywordSearch,
+} from '@sourcegraph/web/src/util/settings'
 
 export type { FeatureFlagName } from '@sourcegraph/web/src/featureFlags/featureFlags'
 
