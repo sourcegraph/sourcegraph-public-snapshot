@@ -184,7 +184,7 @@ lazy_static::lazy_static! {
             // Skipping Javascript here as it is handled
             // specially inside the macro implementation
             // in order to include the jsx highlights.
-            // (Jsonnet, "jsonnet"),
+            (Jsonnet, "jsonnet"),
             // (Kotlin, "kotlin"),
             // (Magik, "magik"),
             // (Matlab, "matlab"),

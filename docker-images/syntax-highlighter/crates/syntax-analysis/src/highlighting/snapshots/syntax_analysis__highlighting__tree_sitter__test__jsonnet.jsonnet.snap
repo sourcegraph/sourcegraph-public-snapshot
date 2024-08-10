@@ -1,0 +1,349 @@
+---
+source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  // Example file with all(?) possible components from the syntax
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  
+  local object = {
+//^^^^^ Keyword
+//      ^^^^^^ Identifier
+    'null': null,
+//  ^ StringLiteral
+//   ^^^^ StringLiteral
+//       ^ StringLiteral
+    'true': true,
+//  ^ StringLiteral
+//   ^^^^ StringLiteral
+//       ^ StringLiteral
+//          ^^^^ BooleanLiteral
+    'false': false,
+//  ^ StringLiteral
+//   ^^^^^ StringLiteral
+//        ^ StringLiteral
+//           ^^^^^ BooleanLiteral
+    string: 'string',
+//  ^^^^^^ Identifier
+//          ^ StringLiteral
+//           ^^^^^^ StringLiteral
+//                 ^ StringLiteral
+    number: 5,
+//  ^^^^^^ Identifier
+//          ^ NumericLiteral
+    array: [
+//  ^^^^^ Identifier
+      null,
+      true,
+//    ^^^^ BooleanLiteral
+      false,
+//    ^^^^^ BooleanLiteral
+      'string',
+//    ^ StringLiteral
+//     ^^^^^^ StringLiteral
+//           ^ StringLiteral
+      1.5,
+//    ^^^ NumericLiteral
+    ],
+  
+    forloop: [
+//  ^^^^^^^ Identifier
+      i
+//    ^ Identifier
+      for i in std.range(0, 9)
+//    ^^^ Keyword
+//        ^ Identifier
+//          ^^ Keyword
+//             ^^^ Identifier
+//                 ^^^^^ Identifier
+//                       ^ NumericLiteral
+//                          ^ NumericLiteral
+    ],
+  
+    objforloop: {
+//  ^^^^^^^^^^ Identifier
+      ['index' + i]: i
+//     ^ StringLiteral
+//      ^^^^^ StringLiteral
+//           ^ StringLiteral
+//            ^ StringLiteral
+//             ^ IdentifierOperator
+//              ^ StringLiteral
+//               ^ Identifier
+//                   ^ Identifier
+      for i in std.range(0, 9)
+//    ^^^ Keyword
+//        ^ Identifier
+//          ^^ Keyword
+//             ^^^ Identifier
+//                 ^^^^^ Identifier
+//                       ^ NumericLiteral
+//                          ^ NumericLiteral
+      if (i % 2) == 0  // binaryop: multiplicative and equality
+//    ^^ Keyword
+//        ^ Identifier
+//          ^ IdentifierOperator
+//            ^ NumericLiteral
+//               ^^ IdentifierOperator
+//                  ^ NumericLiteral
+//                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+    },
+  
+    fieldaccess: self.string,
+//  ^^^^^^^^^^^ Identifier
+//               ^^^^ IdentifierBuiltin
+//                    ^^^^^^ Identifier
+    indexing: self.forloop[self.number],
+//  ^^^^^^^^ Identifier
+//            ^^^^ IdentifierBuiltin
+//                 ^^^^^^^ Identifier
+//                         ^^^^ IdentifierBuiltin
+//                              ^^^^^^ Identifier
+    indexing_obj: self.objforloop['index' + '0'],
+//  ^^^^^^^^^^^^ Identifier
+//                ^^^^ IdentifierBuiltin
+//                     ^^^^^^^^^^ Identifier
+//                                ^ StringLiteral
+//                                 ^^^^^ StringLiteral
+//                                      ^ StringLiteral
+//                                        ^ IdentifierOperator
+//                                          ^ StringLiteral
+//                                           ^ StringLiteral
+//                                            ^ StringLiteral
+    indexing_slice: self.forloop[2:8:2],
+//  ^^^^^^^^^^^^^^ Identifier
+//                  ^^^^ IdentifierBuiltin
+//                       ^^^^^^^ Identifier
+//                               ^ NumericLiteral
+//                                 ^ NumericLiteral
+//                                   ^ NumericLiteral
+  
+    binaryop_equality: self.string == 'string',
+//  ^^^^^^^^^^^^^^^^^ Identifier
+//                     ^^^^ IdentifierBuiltin
+//                          ^^^^^^ Identifier
+//                                 ^^ IdentifierOperator
+//                                    ^ StringLiteral
+//                                     ^^^^^^ StringLiteral
+//                                           ^ StringLiteral
+    conditional_in_parenthesis:
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+      (if self.binaryop_equality && true  // binaryop: AND
+//     ^^ Keyword
+//        ^^^^ IdentifierBuiltin
+//             ^^^^^^^^^^^^^^^^^ Identifier
+//                               ^^ IdentifierOperator
+//                                  ^^^^ BooleanLiteral
+//                                        ^^^^^^^^^^^^^^^^ Comment
+       then 'condition true'
+//     ^^^^ Keyword
+//          ^ StringLiteral
+//           ^^^^^^^^^^^^^^ StringLiteral
+//                         ^ StringLiteral
+       else 'condition false'),
+//     ^^^^ Keyword
+//          ^ StringLiteral
+//           ^^^^^^^^^^^^^^^ StringLiteral
+//                          ^ StringLiteral
+  
+    local objlocal = false || true,  // binaryop: OR
+//  ^^^^^ Keyword
+//        ^^^^^^^^ Identifier
+//                   ^^^^^ BooleanLiteral
+//                         ^^ IdentifierOperator
+//                            ^^^^ BooleanLiteral
+//                                   ^^^^^^^^^^^^^^^ Comment
+    unaryop: !objlocal,
+//  ^^^^^^^ Identifier
+//           ^ IdentifierOperator
+//            ^^^^^^^^ Identifier
+  
+    anonymous_function:: function(arg, default='v') arg + default,
+//  ^^^^^^^^^^^^^^^^^^ Identifier
+//                       ^^^^^^^^ Keyword
+//                                ^^^ IdentifierParameter
+//                                     ^^^^^^^ IdentifierParameter
+//                                             ^ StringLiteral
+//                                              ^ StringLiteral
+//                                               ^ StringLiteral
+//                                                  ^^^ Identifier
+//                                                      ^ IdentifierOperator
+//                                                        ^^^^^^^ Identifier
+    regular_func(arg):: $.string + ' ' + arg,
+//  ^^^^^^^^^^^^ Identifier
+//               ^^^ IdentifierParameter
+//                      ^ IdentifierBuiltin
+//                        ^^^^^^ Identifier
+//                               ^ IdentifierOperator
+//                                 ^ StringLiteral
+//                                  ^ StringLiteral
+//                                   ^ StringLiteral
+//                                     ^ IdentifierOperator
+//                                       ^^^ Identifier
+  
+    assert true : 'assert instide object',
+//  ^^^^^^ IdentifierFunction
+//         ^^^^ BooleanLiteral
+//                ^ StringLiteral
+//                 ^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                      ^ StringLiteral
+  
+    'import':: import 'file.json',
+//  ^ StringLiteral
+//   ^^^^^^ StringLiteral
+//         ^ StringLiteral
+//             ^^^^^^ Keyword
+//                   ^ IdentifierNamespace
+//                    ^ StringLiteral
+//                     ^^^^^^^^^ StringLiteral
+//                              ^ StringLiteral
+    'importstr':: import 'file.txt',
+//  ^ StringLiteral
+//   ^^^^^^^^^ StringLiteral
+//            ^ StringLiteral
+//                ^^^^^^ Keyword
+//                      ^ IdentifierNamespace
+//                       ^ StringLiteral
+//                        ^^^^^^^^ StringLiteral
+//                                ^ StringLiteral
+    err:: error 'message',
+//  ^^^ Identifier
+//        ^^^^^ IdentifierFunction
+//              ^ StringLiteral
+//               ^^^^^^^ StringLiteral
+//                      ^ StringLiteral
+  };
+  
+  assert true : 'assert outside object';
+//^^^^^^ IdentifierFunction
+//       ^^^^ BooleanLiteral
+//              ^ StringLiteral
+//               ^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                    ^ StringLiteral
+  
+  object + {
+//^^^^^^ Identifier
+//       ^ IdentifierOperator
+    fieldaccess_super: super.number,
+//  ^^^^^^^^^^^^^^^^^ Identifier
+//                     ^^^^^ Keyword
+//                           ^^^^^^ Identifier
+    indexing_super: super.array[2 * 2],  // binaryop: multiplicative
+//  ^^^^^^^^^^^^^^ Identifier
+//                  ^^^^^ Keyword
+//                        ^^^^^ Identifier
+//                              ^ NumericLiteral
+//                                ^ IdentifierOperator
+//                                  ^ NumericLiteral
+//                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  
+    functioncall_1: super.anonymous_function('echo 1'),
+//  ^^^^^^^^^^^^^^ Identifier
+//                  ^^^^^ Keyword
+//                        ^^^^^^^^^^^^^^^^^^ Identifier
+//                                           ^ StringLiteral
+//                                            ^^^^^^ StringLiteral
+//                                                  ^ StringLiteral
+  
+    functioncall_2: self.regular_func(arg='echo 2') tailstrict,
+//  ^^^^^^^^^^^^^^ Identifier
+//                  ^^^^ IdentifierBuiltin
+//                       ^^^^^^^^^^^^ Identifier
+//                                    ^^^ Identifier
+//                                        ^ StringLiteral
+//                                         ^^^^^^ StringLiteral
+//                                               ^ StringLiteral
+  
+    local localfunc(arg) = {
+//  ^^^^^ Keyword
+//        ^^^^^^^^^ IdentifierFunction
+//                  ^^^ IdentifierParameter
+      local notarg = 'value',
+//    ^^^^^ Keyword
+//          ^^^^^^ Identifier
+//                   ^ StringLiteral
+//                    ^^^^^ StringLiteral
+//                         ^ StringLiteral
+      a: notarg,  // not a parameter reference
+//    ^ Identifier
+//       ^^^^^^ Identifier
+//                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      b: arg,  // parameter reference
+//    ^ Identifier
+//       ^^^ Identifier
+//             ^^^^^^^^^^^^^^^^^^^^^^ Comment
+      [arg]: arg,  // parameter reference in fieldname
+//     ^^^ Identifier
+//           ^^^ Identifier
+//                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+    },
+    functioncall_3: localfunc('echo 3'),  // function reference
+//  ^^^^^^^^^^^^^^ Identifier
+//                  ^^^^^^^^^ Identifier
+//                            ^ StringLiteral
+//                             ^^^^^^ StringLiteral
+//                                   ^ StringLiteral
+//                                        ^^^^^^^^^^^^^^^^^^^^^ Comment
+  
+    in_super: 'keynotfound' in super,
+//  ^^^^^^^^ Identifier
+//            ^ StringLiteral
+//             ^^^^^^^^^^^ StringLiteral
+//                        ^ StringLiteral
+//                          ^^ Keyword
+//                             ^^^^^ Keyword
+  
+    array+: ['another item'],
+//  ^^^^^ Identifier
+//           ^ StringLiteral
+//            ^^^^^^^^^^^^ StringLiteral
+//                        ^ StringLiteral
+    objforloop+: { another: 'item' },
+//  ^^^^^^^^^^ Identifier
+//                 ^^^^^^^ Identifier
+//                          ^ StringLiteral
+//                           ^^^^ StringLiteral
+//                               ^ StringLiteral
+  
+    ['fieldname_expr' + (5 - object.objforloop.index2)]: 'value',
+//   ^ StringLiteral
+//    ^^^^^^^^^^^^^^ StringLiteral
+//                  ^ StringLiteral
+//                   ^ StringLiteral
+//                    ^ IdentifierOperator
+//                     ^^ StringLiteral
+//                       ^ NumericLiteral
+//                        ^ StringLiteral
+//                         ^ IdentifierOperator
+//                          ^ StringLiteral
+//                           ^^^^^^ Identifier
+//                                 ^ StringLiteral
+//                                  ^^^^^^^^^^ Identifier
+//                                            ^ StringLiteral
+//                                             ^^^^^^ Identifier
+//                                                   ^ StringLiteral
+//                                                       ^ StringLiteral
+//                                                        ^^^^^ StringLiteral
+//                                                             ^ StringLiteral
+    [if object.string == 'string' then 'conditional_key']: 'value',
+//   ^^ Keyword
+//     ^ StringLiteral
+//      ^^^^^^ Identifier
+//            ^ StringLiteral
+//             ^^^^^^ Identifier
+//                   ^ StringLiteral
+//                    ^^ IdentifierOperator
+//                      ^ StringLiteral
+//                       ^ StringLiteral
+//                        ^^^^^^ StringLiteral
+//                              ^ StringLiteral
+//                               ^ StringLiteral
+//                                ^^^^ Keyword
+//                                    ^ StringLiteral
+//                                     ^ StringLiteral
+//                                      ^^^^^^^^^^^^^^^ StringLiteral
+//                                                     ^ StringLiteral
+//                                                         ^ StringLiteral
+//                                                          ^^^^^ StringLiteral
+//                                                               ^ StringLiteral
+  }
+

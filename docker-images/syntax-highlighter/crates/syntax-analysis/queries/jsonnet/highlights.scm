@@ -33,8 +33,21 @@
 (number) @number
 [ (true) (false) ] @boolean
 [ (self) (dollar) ] @constant.builtin
-(binaryop) @operator
-(unaryop) @operator
+
+; Operators
+[
+  (multiplicative)
+  (additive)
+  (bitshift)
+  (comparison)
+  (equality)
+  (bitand)
+  (bitxor)
+  (bitor)
+  (and)
+  (or)
+  (unaryop)
+] @operator
 
 
 ; It's possible for us to give a "special" highlight to

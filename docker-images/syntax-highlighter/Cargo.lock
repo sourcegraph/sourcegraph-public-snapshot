@@ -2480,6 +2480,7 @@ dependencies = [
  "tree-sitter-go",
  "tree-sitter-java",
  "tree-sitter-javascript",
+ "tree-sitter-jsonnet",
  "tree-sitter-python",
  "tree-sitter-ruby",
  "tree-sitter-rust",
@@ -2563,6 +2564,15 @@ name = "tree-sitter-javascript"
 version = "0.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8710a71bc6779e33811a8067bdda3ed08bed1733296ff915e44faf60f8c533d7"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-jsonnet"
+version = "0.0.1"
+source = "git+https://github.com/kritzcreek/tree-sitter-jsonnet?rev=bc147652f72a14c9627deae5c9c33a81e452d391#bc147652f72a14c9627deae5c9c33a81e452d391"
 dependencies = [
  "cc",
  "tree-sitter",
