@@ -2,6 +2,7 @@ package subscriptionsservice
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strings"
@@ -426,6 +427,13 @@ func (s *handlerV1) CreateEnterpriseSubscription(ctx context.Context, req *conne
 	if strings.TrimSpace(sub.GetDisplayName()) == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("display_name is required"))
 	}
+	if sub.GetInstanceType() == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("instance_type is required"))
+	}
+	if _, ok := subscriptionsv1.EnterpriseSubscriptionInstanceType_name[int32(sub.GetInstanceType())]; !ok {
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			errors.Newf("invalid 'instance_type' %s", sub.GetInstanceType().String()))
+	}
 
 	// Generate a new ID for the subscription.
 	if sub.Id != "" {
@@ -450,6 +458,7 @@ func (s *handlerV1) CreateEnterpriseSubscription(ctx context.Context, req *conne
 			CreatedAt:                createdAt,
 			DisplayName:              database.NewNullString(sub.GetDisplayName()),
 			InstanceDomain:           database.NewNullString(sub.GetInstanceDomain()),
+			InstanceType:             database.NewNullString(sub.GetInstanceType().String()),
 			SalesforceSubscriptionID: database.NewNullString(sub.GetSalesforce().GetSubscriptionId()),
 		},
 		subscriptions.CreateSubscriptionConditionOptions{
@@ -507,6 +516,13 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 		if v := req.Msg.GetSubscription().GetInstanceDomain(); v != "" {
 			opts.InstanceDomain = database.NewNullString(v)
 		}
+		if v := req.Msg.GetSubscription().GetInstanceType(); v > 0 {
+			if _, ok := subscriptionsv1.EnterpriseSubscriptionInstanceType_name[int32(v)]; !ok {
+				return nil, connect.NewError(connect.CodeInvalidArgument,
+					errors.Newf("invalid 'instance_type' %s", v.String()))
+			}
+			opts.InstanceType = database.NewNullString(v.String())
+		}
 		if v := req.Msg.GetSubscription().GetDisplayName(); v != "" {
 			opts.DisplayName = database.NewNullString(v)
 		}
@@ -524,6 +540,19 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 				valid = true
 				opts.InstanceDomain =
 					database.NewNullString(req.Msg.GetSubscription().GetInstanceDomain())
+			}
+			if p == "instance_type" || p == "*" {
+				valid = true
+				t := req.Msg.GetSubscription().GetInstanceType()
+				if _, ok := subscriptionsv1.EnterpriseSubscriptionInstanceType_name[int32(t)]; !ok {
+					return nil, connect.NewError(connect.CodeInvalidArgument,
+						errors.Newf("invalid 'instance_type' %s", t.String()))
+				}
+				if t == 0 {
+					opts.InstanceType = &sql.NullString{} // unset if zero
+				} else {
+					opts.InstanceType = database.NewNullString(t.String())
+				}
 			}
 			if p == "display_name" || p == "*" {
 				valid = true
