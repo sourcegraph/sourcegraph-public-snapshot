@@ -502,7 +502,7 @@ func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 				Subscription: &subscriptionsv1.EnterpriseSubscription{
 					Id:           mockSubscriptionID,
 					InstanceType: subscriptionsv1.EnterpriseSubscriptionInstanceType_ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_INTERNAL,
-					// Should not be included, as only instance_domain is in
+					// Should not be included, as only instance_type is in
 					// the field mask.
 					DisplayName: "My Test Subscription",
 				},
@@ -512,6 +512,18 @@ func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 				String: "ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_INTERNAL",
 				Valid:  true,
 			}}),
+		},
+		{
+			name: "use update_mask to unset instance_type ",
+			update: &subscriptionsv1.UpdateEnterpriseSubscriptionRequest{
+				Subscription: &subscriptionsv1.EnterpriseSubscription{
+					Id: mockSubscriptionID,
+					// zero-value instance_type
+				},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"instance_type"}},
+			},
+			// All update-able values should be set to their defaults explicitly
+			wantUpdateOpts: autogold.Expect(subscriptions.UpsertSubscriptionOptions{InstanceType: &sql.NullString{}}),
 		},
 		{
 			name: "* update_mask",
@@ -527,11 +539,8 @@ func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 				InstanceDomain:           &sql.NullString{},
 				DisplayName:              &sql.NullString{},
 				SalesforceSubscriptionID: &sql.NullString{},
-				InstanceType: &sql.NullString{
-					String: "ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_UNSPECIFIED",
-					Valid:  true,
-				},
-				ForceUpdate: true,
+				InstanceType:             &sql.NullString{},
+				ForceUpdate:              true,
 			}),
 		},
 		{

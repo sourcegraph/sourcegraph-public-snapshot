@@ -2,6 +2,7 @@ package subscriptionsservice
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strings"
@@ -547,7 +548,11 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 					return nil, connect.NewError(connect.CodeInvalidArgument,
 						errors.Newf("invalid 'instance_type' %s", t.String()))
 				}
-				opts.InstanceType = database.NewNullString(t.String())
+				if t == 0 {
+					opts.InstanceType = &sql.NullString{} // unset if zero
+				} else {
+					opts.InstanceType = database.NewNullString(t.String())
+				}
 			}
 			if p == "display_name" || p == "*" {
 				valid = true

@@ -152,8 +152,9 @@ func TestConvertSubscriptionToProto(t *testing.T) {
 			Subscription: subscriptions.Subscription{
 				ID:             "subscription_id",
 				InstanceDomain: pointers.Ptr("sourcegraph.com"),
-				InstanceType:   pointers.Ptr("CATEGORY_PRIMARY"),
-				CreatedAt:      utctime.Time(created),
+				InstanceType: pointers.Ptr(
+					subscriptionsv1.EnterpriseSubscriptionInstanceType_ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_INTERNAL.String()),
+				CreatedAt: utctime.Time(created),
 			},
 			Conditions: []subscriptions.SubscriptionCondition{{
 				TransitionTime: utctime.Time(created),
@@ -168,7 +169,8 @@ func TestConvertSubscriptionToProto(t *testing.T) {
     }
   ],
   "id": "es_subscription_id",
-  "instanceDomain": "sourcegraph.com"
+  "instanceDomain": "sourcegraph.com",
+  "instanceType": "ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_INTERNAL"
 }`),
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
