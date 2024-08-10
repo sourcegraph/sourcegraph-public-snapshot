@@ -392,9 +392,18 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                                                     const instanceType = window.prompt(
                                                         `Enter an instance type to assign (one of: ${types
                                                             .map(type => EnterpriseSubscriptionInstanceType[type])
-                                                            .join(', ')})`
+                                                            .join(', ')}). Leave empty to unassign.`
                                                     )
                                                     if (instanceType === null) {
+                                                        return
+                                                    }
+                                                    if (instanceType === '') {
+                                                        await updateEnterpriseSubscription({
+                                                            subscription: {
+                                                                id: subscription?.id,
+                                                            },
+                                                            updateMask: { paths: ['instance_type'] },
+                                                        })
                                                         return
                                                     }
                                                     const type = types.find(
