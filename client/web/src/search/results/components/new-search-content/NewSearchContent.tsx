@@ -46,7 +46,7 @@ import type { SearchJobsProps } from '../../../../enterprise/search-jobs'
 import { fetchBlob } from '../../../../repo/blob/backend'
 import { buildSearchURLQueryFromQueryState } from '../../../../stores'
 import { GettingStartedTour } from '../../../../tour/GettingStartedTour'
-import { defaultPatternTypeFromSettings } from '../../../../util/settings'
+import { showQueryExamplesForKeywordSearch } from '../../../../util/settings'
 import { DidYouMean } from '../../../suggestion/DidYouMean'
 import { SmartSearch } from '../../../suggestion/SmartSearch'
 import { SearchFiltersSidebar } from '../../sidebar/SearchFiltersSidebar'
@@ -183,10 +183,6 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         telemetryService.log('SearchFilePreviewClose', {}, {})
         telemetryRecorder.recordEvent('search.filePreview', 'close')
     }, [telemetryService, clearPreview, telemetryRecorder])
-
-    const defaultPatternType = defaultPatternTypeFromSettings(useSettingsCascade())
-    const showQueryExamplesForKeywordSearch =
-        defaultPatternType === SearchPatternType.keyword || defaultPatternType === SearchPatternType.regexp
 
     return (
         <div className={classNames(styles.root, { [styles.rootWithNewFilters]: newFiltersEnabled })}>
@@ -340,7 +336,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                         selectedSearchContextSpec={selectedSearchContextSpec}
                         logSearchResultClicked={onLogSearchResultClick}
                         showQueryExamplesOnNoResultsPage={true}
-                        showQueryExamplesForKeywordSearch={showQueryExamplesForKeywordSearch}
+                        showQueryExamplesForKeywordSearch={showQueryExamplesForKeywordSearch(useSettingsCascade())}
                     />
                 )}
             </div>

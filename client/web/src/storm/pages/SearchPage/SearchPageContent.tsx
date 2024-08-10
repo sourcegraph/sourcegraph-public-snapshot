@@ -13,12 +13,11 @@ import { Label, Tooltip, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
-import { SearchPatternType } from '../../../graphql-operations'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { useV2QueryInput } from '../../../search/useV2QueryInput'
 import { GettingStartedTour } from '../../../tour/GettingStartedTour'
 import { useShowOnboardingTour } from '../../../tour/hooks'
-import { defaultPatternTypeFromSettings } from '../../../util/settings'
+import { showQueryExamplesForKeywordSearch } from '../../../util/settings'
 
 import { AddCodeHostWidget } from './AddCodeHostWidget'
 import { KeywordSearchCtaSection } from './KeywordSearchCtaSection'
@@ -75,9 +74,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
 
     const showOnboardingTour = useShowOnboardingTour({ authenticatedUser, isSourcegraphDotCom })
 
-    const defaultPatternType = defaultPatternTypeFromSettings(useSettingsCascade())
-    const showQueryExamplesForKeywordSearch =
-        defaultPatternType === SearchPatternType.keyword || defaultPatternType === SearchPatternType.regexp
+    const queryExamplesForKeywordSearch = showQueryExamplesForKeywordSearch(useSettingsCascade())
 
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
@@ -141,7 +138,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                                 authenticatedUser={authenticatedUser}
                             />
                         )}
-                        {showQueryExamplesForKeywordSearch ? <KeywordSearchCtaSection /> : <></>}
+                        {queryExamplesForKeywordSearch ? <KeywordSearchCtaSection /> : <></>}
                     </>
                 )}
             </div>
@@ -153,7 +150,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             telemetryService={telemetryService}
                             telemetryRecorder={telemetryRecorder}
                             isSourcegraphDotCom={isSourcegraphDotCom}
-                            showQueryExamplesForKeywordSearch={showQueryExamplesForKeywordSearch}
+                            showQueryExamplesForKeywordSearch={queryExamplesForKeywordSearch}
                         />
                     )}
                 </div>
