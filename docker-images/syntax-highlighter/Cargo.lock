@@ -2477,6 +2477,7 @@ dependencies = [
  "tree-sitter-c-sharp",
  "tree-sitter-cpp",
  "tree-sitter-go",
+ "tree-sitter-java",
 ]
 
 [[package]]
@@ -2528,6 +2529,16 @@ dependencies = [
  "lazy_static",
  "regex",
  "thiserror",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-java"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "33bc21adf831a773c075d9d00107ab43965e6a6ea7607b47fd9ec6f3db4b481b"
+dependencies = [
+ "cc",
  "tree-sitter",
 ]
 

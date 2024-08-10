@@ -56,7 +56,6 @@ fn snapshot_syntax_document(doc: &scip::types::Document, source: &str) -> String
     .expect("dump document")
 }
 
-#[ignore]
 #[test]
 fn java_e2e_evaluation() {
     let dir = BASE.join("testdata/java");
@@ -101,7 +100,6 @@ fn java_e2e_evaluation() {
     insta::assert_snapshot!("java_evaluation", String::from_utf8(str).unwrap());
 }
 
-#[ignore]
 #[test]
 fn java_files_indexing() {
     let out_dir = tempdir();
@@ -134,7 +132,6 @@ fn java_files_indexing() {
     insta::assert_snapshot!(index_snapshot);
 }
 
-#[ignore]
 #[test]
 fn java_workspace_indexing() {
     let out_dir = tempdir();
@@ -165,7 +162,6 @@ fn java_workspace_indexing() {
     insta::assert_snapshot!(index_snapshot);
 }
 
-#[ignore]
 #[test]
 fn java_tar_file_indexing() {
     let out_dir = tempdir();
@@ -200,7 +196,6 @@ fn java_tar_file_indexing() {
     insta::assert_snapshot!(index_snapshot);
 }
 
-#[ignore]
 #[test]
 fn java_tar_stream_indexing() {
     let out_dir = tempdir();

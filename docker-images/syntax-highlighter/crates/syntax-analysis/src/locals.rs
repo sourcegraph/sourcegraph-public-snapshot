@@ -935,13 +935,13 @@ mod test {
     //     insta::assert_snapshot!("matlab_scopes", scope_tree);
     // }
 
-    // #[test]
-    // fn java() {
-    //     let config = crate::languages::get_local_configuration(ParserId::Java).unwrap();
-    //     let source_code = include_str!("../testdata/locals.java");
-    //     let (doc, scope_tree) = parse_file_for_lang(config, source_code, true);
-    //     let dumped = snapshot_syntax_document(&doc, source_code);
-    //     insta::assert_snapshot!("java_scopes", scope_tree);
-    //     insta::assert_snapshot!("java_occurrences", dumped);
-    // }
+    #[test]
+    fn java() {
+        let config = crate::languages::get_local_configuration(ParserId::Java).unwrap();
+        let source_code = include_str!("../testdata/locals.java");
+        let (doc, scope_tree) = parse_file_for_lang(config, source_code, true);
+        let dumped = snapshot_syntax_document(&doc, source_code);
+        insta::assert_snapshot!("java_scopes", scope_tree);
+        insta::assert_snapshot!("java_occurrences", dumped);
+    }
 }

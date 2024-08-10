@@ -1,3 +1,13 @@
+; Variables
+
+(this) @identifier.builtin
+
+(identifier) @identifier
+
+((identifier) @constant
+ (#match? @constant "^_*[A-Z][A-Z\\d_]+$"))
+
+
 ; Methods
 
 (method_declaration
@@ -40,8 +50,7 @@
  (#match? @identifier.type "^[A-Z]"))
 
 (record_pattern
-  (identifier) @identifier.type
-)
+  (identifier) @identifier.type)
 
 (constructor_declaration
   name: (identifier) @identifier.type)
@@ -53,15 +62,6 @@
   (floating_point_type)
   (void_type)]
 @identifier.builtin
-
-; Variables
-
-((identifier) @constant
- (#match? @constant "^_*[A-Z][A-Z\\d_]+$"))
-
-(identifier) @identifier
-
-(this) @identifier.builtin
 
 ; Literals
 
