@@ -175,8 +175,8 @@ lazy_static::lazy_static! {
     pub static ref CONFIGURATIONS: HashMap<ParserId, HighlightConfiguration> = {
         create_configurations!(
             (C, "c"),
-            (Cpp, "cpp")
-            // (C_Sharp, "c_sharp"),
+            (Cpp, "cpp"),
+            (C_Sharp, "c_sharp")
             // (Dart, "dart"),
             // (Go, "go"),
             // (Hack, "hack"),
@@ -525,7 +525,6 @@ SELECT * FROM my_table
         Ok(())
     }
 
-    #[ignore]
     #[test]
     fn test_highlight_csharp_file() -> anyhow::Result<()> {
         let src = "using System;";

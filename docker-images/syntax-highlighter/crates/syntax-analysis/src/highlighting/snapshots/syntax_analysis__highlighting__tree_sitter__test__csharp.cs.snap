@@ -32,9 +32,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
           Name = "name";
 //        ^^^^ IdentifierAttribute
 //             ^ IdentifierOperator
-//               ^ StringLiteral
-//                ^^^^ StringLiteral
-//                    ^ StringLiteral
+//               ^^^^^^ StringLiteral
 //                     ^ PunctuationDelimiter
           Console.log(something);
 //        ^^^^^^^ Identifier
@@ -153,22 +151,20 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
       }
   
       void SunsetRestrictedTypes()
-//    ^^^^ IdentifierBuiltin
+//    ^^^^ IdentifierBuiltinType
 //         ^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
       {
           var g = "";
 //        ^^^ Keyword
 //            ^ Identifier
 //              ^ IdentifierOperator
-//                ^ StringLiteral
-//                 ^ StringLiteral
+//                ^^ StringLiteral
 //                  ^ PunctuationDelimiter
           var g = "";
 //        ^^^ Keyword
 //            ^ Identifier
 //              ^ IdentifierOperator
-//                ^ StringLiteral
-//                 ^ StringLiteral
+//                ^^ StringLiteral
 //                  ^ PunctuationDelimiter
           var reference = __makeref(g);
 //        ^^^ Keyword
@@ -236,27 +232,21 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                 ^ PunctuationDelimiter
           return $"a={a} b={b:0.00} c={c,24} d={d:g}";
 //        ^^^^^^ Keyword
-//               ^^ StringLiteral
-//                 ^^ StringLiteral
-//                   ^ StringLiteralEscape
+//               ^ StringLiteral
+//                ^^^ StringLiteral
 //                    ^ Identifier
-//                     ^ StringLiteralEscape
 //                      ^^^ StringLiteral
-//                         ^ StringLiteralEscape
 //                          ^ Identifier
 //                           ^ IdentifierOperator
-//                                ^ StringLiteralEscape
+//                            ^^^^ StringLiteral
 //                                 ^^^ StringLiteral
-//                                    ^ StringLiteralEscape
 //                                     ^ Identifier
 //                                      ^ PunctuationDelimiter
 //                                       ^^ NumericLiteral
-//                                         ^ StringLiteralEscape
 //                                          ^^^ StringLiteral
-//                                             ^ StringLiteralEscape
 //                                              ^ Identifier
 //                                               ^ IdentifierOperator
-//                                                 ^ StringLiteralEscape
+//                                                ^ StringLiteral
 //                                                  ^ StringLiteral
 //                                                   ^ PunctuationDelimiter
       }
@@ -395,46 +385,36 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //               ^^ IdentifierFunction
           {
       #if WIN32
-//     ^^ Keyword
-//       ^ Keyword
 //        ^^^^^ IdentifierConstant
               string os = "Win32";
 //            ^^^^^^ IdentifierBuiltinType
 //                   ^^ Identifier
 //                      ^ IdentifierOperator
-//                        ^ StringLiteral
-//                         ^^^^^ StringLiteral
-//                              ^ StringLiteral
+//                        ^^^^^^^ StringLiteral
 //                               ^ PunctuationDelimiter
       #warning This class is bad.
-//     ^^^^^^^ Keyword
-//            ^^^^^^^^^^^^^^^^^^^ StringLiteral
+//             ^^^^ IdentifierType
+//                  ^^^^^ Identifier
+//                        ^^ Keyword
+//                              ^ PunctuationDelimiter
       #error Okay, just stop.
-//     ^^^^^ Keyword
-//          ^^^^^^^^^^^^^^^^^ StringLiteral
+//           ^^^^^^^^^^^^^^^^ StringLiteral
       #elif MACOS
-//     ^^^^^ Keyword
 //          ^^^^^ IdentifierConstant
               string os = "MacOS";
 //            ^^^^^^ IdentifierBuiltinType
 //                   ^^ Identifier
 //                      ^ IdentifierOperator
-//                        ^ StringLiteral
-//                         ^^^^^ StringLiteral
-//                              ^ StringLiteral
+//                        ^^^^^^^ StringLiteral
 //                               ^ PunctuationDelimiter
       #else
-//     ^^^^ Keyword
               string os = "Unknown";
 //            ^^^^^^ IdentifierBuiltinType
 //                   ^^ Identifier
 //                      ^ IdentifierOperator
-//                        ^ StringLiteral
-//                         ^^^^^^^ StringLiteral
-//                                ^ StringLiteral
+//                        ^^^^^^^^^ StringLiteral
 //                                 ^ PunctuationDelimiter
       #endif
-//     ^^^^^ Keyword
               return os;
 //            ^^^^^^ Keyword
 //                   ^^ Identifier
@@ -443,7 +423,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
       }
   
       void Linq()
-//    ^^^^ IdentifierBuiltin
+//    ^^^^ IdentifierBuiltinType
 //         ^^^^ IdentifierFunction
       {
           var x = from a in sourceA

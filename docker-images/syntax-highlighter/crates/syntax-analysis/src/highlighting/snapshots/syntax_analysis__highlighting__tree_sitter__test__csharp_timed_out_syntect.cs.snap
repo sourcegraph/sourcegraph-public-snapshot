@@ -76,7 +76,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
       public class DataGridTests
 //    ^^^^^^ Keyword
 //           ^^^^^ Keyword
-//                 ^^^^^^^^^^^^^ IdentifierType
+//                 ^^^^^^^^^^^^^ Identifier
       {
   
           public event EventHandler<int> Event1
@@ -113,11 +113,9 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   
           [Required(ErrorMessage = "Message")]
 //         ^^^^^^^^ IdentifierType
-//                  ^^^^^^^^^^^^ IdentifierAttribute
+//                  ^^^^^^^^^^^^ Identifier
 //                               ^ IdentifierOperator
-//                                 ^ StringLiteral
-//                                  ^^^^^^^ StringLiteral
-//                                         ^ StringLiteral
+//                                 ^^^^^^^^^ StringLiteral
           public string RequiredProperty { get; set; }
 //        ^^^^^^ Keyword
 //               ^^^^^^ IdentifierBuiltinType
@@ -140,8 +138,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //         ^^^^ IdentifierType
           public void DataGrid_Renders_CssClass()
 //        ^^^^^^ Keyword
-//               ^^^^ IdentifierBuiltin
-//                    ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//               ^^^^ IdentifierBuiltinType
+//                    ^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
           {
               using var ctx = new TestContext();
 //            ^^^^^ Keyword
@@ -179,9 +177,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                ^^^^^^^^^ IdentifierAttribute
 //                         ^ PunctuationDelimiter
 //                          ^^^^^^^^^^^ IdentifierFunction
-//                                      ^ StringLiteral
-//                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
-//                                                                              ^ StringLiteral
+//                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                                                                ^ PunctuationDelimiter
               var component = ctx.RenderComponent<RadzenGrid<dynamic>>(parameterBuilder =>
 //            ^^^ Keyword
@@ -189,15 +185,14 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                          ^ IdentifierOperator
 //                            ^^^ Identifier
 //                               ^ PunctuationDelimiter
-//                                ^^^^^^^^^^^^^^^ IdentifierFunction
+//                                ^^^^^^^^^^^^^^^ IdentifierType
 //                                               ^ IdentifierOperator
 //                                                ^^^^^^^^^^ IdentifierType
 //                                                          ^ IdentifierOperator
 //                                                           ^^^^^^^ IdentifierType
 //                                                                  ^ IdentifierOperator
 //                                                                   ^ IdentifierOperator
-//                                                                     ^^^^^^^^^^^^^^^^ Identifier
-//                                                                                     ^ Identifier
+//                                                                     ^^^^^^^^^^^^^^^^^ Identifier
 //                                                                                      ^^ IdentifierOperator
 //                                                                                         Identifier 41:88..42:12
               {
@@ -205,15 +200,14 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
                   parameterBuilder.Add<IEnumerable<dynamic>>(p => p.Data, new[] { new { Id = 1 }, new { Id = 2 }, new { Id = 3 } });
 //                ^^^^^^^^^^^^^^^^ Identifier
 //                                ^ PunctuationDelimiter
-//                                 ^^^ IdentifierFunction
+//                                 ^^^ IdentifierType
 //                                    ^ IdentifierOperator
 //                                     ^^^^^^^^^^^ IdentifierType
 //                                                ^ IdentifierOperator
 //                                                 ^^^^^^^ IdentifierType
 //                                                        ^ IdentifierOperator
 //                                                         ^ IdentifierOperator
-//                                                           ^ Identifier
-//                                                            ^ Identifier
+//                                                           ^^ Identifier
 //                                                             ^^ IdentifierOperator
 //                                                               ^ Identifier
 //                                                                ^ Identifier
@@ -261,12 +255,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
                   parameterBuilder.Add<RenderFragment>(p => p.Columns, builder =>
 //                ^^^^^^^^^^^^^^^^ Identifier
 //                                ^ PunctuationDelimiter
-//                                 ^^^ IdentifierFunction
+//                                 ^^^ IdentifierType
 //                                    ^ IdentifierOperator
 //                                     ^^^^^^^^^^^^^^ IdentifierType
 //                                                   ^ IdentifierOperator
-//                                                     ^ Identifier
-//                                                      ^ Identifier
+//                                                     ^^ Identifier
 //                                                       ^^ IdentifierOperator
 //                                                         ^ Identifier
 //                                                          ^ Identifier
@@ -274,8 +267,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                                            ^^^^^^^ IdentifierAttribute
 //                                                                   ^ PunctuationDelimiter
 //                                                                    ^ Identifier
-//                                                                     ^^^^^^^ Identifier
-//                                                                            ^ Identifier
+//                                                                     ^^^^^^^^ Identifier
 //                                                                             ^^ IdentifierOperator
 //                                                                                Identifier 44:79..45:16
                   {
@@ -301,14 +293,10 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                         ^ NumericLiteral
 //                                          ^ PunctuationDelimiter
 //                                           ^ Identifier
-//                                            ^ StringLiteral
-//                                             ^^^^^^^^ StringLiteral
-//                                                     ^ StringLiteral
+//                                            ^^^^^^^^^^ StringLiteral
 //                                                      ^ PunctuationDelimiter
 //                                                       ^ Identifier
-//                                                        ^ StringLiteral
-//                                                         ^^ StringLiteral
-//                                                           ^ StringLiteral
+//                                                        ^^^^ StringLiteral
 //                                                             ^ PunctuationDelimiter
 //                                                               Identifier 47:62..48:20
                       builder.CloseComponent();
@@ -329,9 +317,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //            ^^^^^^ Identifier
 //                  ^ PunctuationDelimiter
 //                   ^^^^^^^^ IdentifierFunction
-//                            ^^^ StringLiteral
-//                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
-//                                                              ^ StringLiteral
+//                            ^^ StringLiteral
+//                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                                               ^ PunctuationDelimiter
 //                                                                 ^^^^^^^^^ Identifier
 //                                                                          ^ PunctuationDelimiter
@@ -341,9 +328,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //            ^^^^^^ Identifier
 //                  ^ PunctuationDelimiter
 //                   ^^^^^^^^ IdentifierFunction
-//                            ^^^ StringLiteral
-//                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
-//                                                           ^ StringLiteral
+//                            ^^ StringLiteral
+//                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                                            ^ PunctuationDelimiter
 //                                                              ^^^^^^^^^ Identifier
 //                                                                       ^ PunctuationDelimiter
@@ -356,15 +342,14 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                          ^ IdentifierOperator
 //                            ^^^ Identifier
 //                               ^ PunctuationDelimiter
-//                                ^^^^^^^^^^^^^^^ IdentifierFunction
+//                                ^^^^^^^^^^^^^^^ IdentifierType
 //                                               ^ IdentifierOperator
 //                                                ^^^^^^^^^^ IdentifierType
 //                                                          ^ IdentifierOperator
 //                                                           ^^^^^^^ IdentifierType
 //                                                                  ^ IdentifierOperator
 //                                                                   ^ IdentifierOperator
-//                                                                     ^^^^^^^^^^^^^^^^ Identifier
-//                                                                                     ^ Identifier
+//                                                                     ^^^^^^^^^^^^^^^^^ Identifier
 //                                                                                      ^^ IdentifierOperator
 //                                                                                         Identifier 56:88..57:12
               {
@@ -372,15 +357,14 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
                   parameterBuilder.Add<IEnumerable<dynamic>>(p => p.Data, new[] { new { Id = 1 }, new { Id = 2 }, new { Id = 3 } });
 //                ^^^^^^^^^^^^^^^^ Identifier
 //                                ^ PunctuationDelimiter
-//                                 ^^^ IdentifierFunction
+//                                 ^^^ IdentifierType
 //                                    ^ IdentifierOperator
 //                                     ^^^^^^^^^^^ IdentifierType
 //                                                ^ IdentifierOperator
 //                                                 ^^^^^^^ IdentifierType
 //                                                        ^ IdentifierOperator
 //                                                         ^ IdentifierOperator
-//                                                           ^ Identifier
-//                                                            ^ Identifier
+//                                                           ^^ Identifier
 //                                                             ^^ IdentifierOperator
 //                                                               ^ Identifier
 //                                                                ^ Identifier
@@ -428,12 +412,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
                   parameterBuilder.Add<RenderFragment>(p => p.Columns, builder =>
 //                ^^^^^^^^^^^^^^^^ Identifier
 //                                ^ PunctuationDelimiter
-//                                 ^^^ IdentifierFunction
+//                                 ^^^ IdentifierType
 //                                    ^ IdentifierOperator
 //                                     ^^^^^^^^^^^^^^ IdentifierType
 //                                                   ^ IdentifierOperator
-//                                                     ^ Identifier
-//                                                      ^ Identifier
+//                                                     ^^ Identifier
 //                                                       ^^ IdentifierOperator
 //                                                         ^ Identifier
 //                                                          ^ Identifier
@@ -441,8 +424,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                                            ^^^^^^^ IdentifierAttribute
 //                                                                   ^ PunctuationDelimiter
 //                                                                    ^ Identifier
-//                                                                     ^^^^^^^ Identifier
-//                                                                            ^ Identifier
+//                                                                     ^^^^^^^^ Identifier
 //                                                                             ^^ IdentifierOperator
 //                                                                                Identifier 59:79..60:16
                   {
@@ -468,14 +450,10 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                         ^ NumericLiteral
 //                                          ^ PunctuationDelimiter
 //                                           ^ Identifier
-//                                            ^ StringLiteral
-//                                             ^^^^^^^^ StringLiteral
-//                                                     ^ StringLiteral
+//                                            ^^^^^^^^^^ StringLiteral
 //                                                      ^ PunctuationDelimiter
 //                                                       ^ Identifier
-//                                                        ^ StringLiteral
-//                                                         ^^ StringLiteral
-//                                                           ^ StringLiteral
+//                                                        ^^^^ StringLiteral
 //                                                             ^ PunctuationDelimiter
 //                                                               Identifier 62:62..63:20
                       builder.CloseComponent();
@@ -503,8 +481,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                                              ^ PunctuationDelimiter
 //                                                               ^^^^^^ IdentifierAttribute
 //                                                                     ^ PunctuationDelimiter
-//                                                                       ^ StringLiteral
-//                                                                        ^ StringLiteral
+//                                                                       ^^ StringLiteral
 //                                                                          ^ PunctuationDelimiter
 //                                                                           ^^^^ IdentifierFunction
 //                                                                                 ^ PunctuationDelimiter
@@ -512,71 +489,39 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //            ^^^^^^ Identifier
 //                  ^ PunctuationDelimiter
 //                   ^^^^^^^^ IdentifierFunction
-//                            ^^^ StringLiteral
-//                               ^^ StringLiteral
-//                                 ^^^^^^^^^^^^ StringLiteral
-//                                             ^^ StringLiteral
-//                                               ^^ StringLiteral
-//                                                 ^ StringLiteral
-//                                                  ^ PunctuationDelimiter
-//                                                    ^^^^^^ Identifier
-//                                                           ^ PunctuationDelimiter
+//                            ^^ StringLiteral
+//                              ^^^ StringLiteral
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 68:33..69:30
               Assert.Contains(@$"""rz-cell-data"">2", markup);
-//            ^^^^^^ Identifier
-//                  ^ PunctuationDelimiter
-//                   ^^^^^^^^ IdentifierFunction
-//                            ^^^ StringLiteral
-//                               ^^ StringLiteral
-//                                 ^^^^^^^^^^^^ StringLiteral
-//                                             ^^ StringLiteral
-//                                               ^^ StringLiteral
-//                                                 ^ StringLiteral
+//                              ^^^ StringLiteral
+//                                   ^ IdentifierOperator
+//                                    ^^^^ Identifier
+//                                        ^ IdentifierOperator
+//                                              ^^^^ StringLiteral
 //                                                  ^ PunctuationDelimiter
 //                                                    ^^^^^^ Identifier
 //                                                           ^ PunctuationDelimiter
               Assert.Contains(@$"""rz-cell-data"">3", markup);
 //            ^^^^^^ Identifier
 //                  ^ PunctuationDelimiter
-//                   ^^^^^^^^ IdentifierFunction
-//                            ^^^ StringLiteral
-//                               ^^ StringLiteral
-//                                 ^^^^^^^^^^^^ StringLiteral
-//                                             ^^ StringLiteral
-//                                               ^^ StringLiteral
-//                                                 ^ StringLiteral
-//                                                  ^ PunctuationDelimiter
-//                                                    ^^^^^^ Identifier
-//                                                           ^ PunctuationDelimiter
+//                   ^^^^^^^^ IdentifierAttribute
+//                            ^^ StringLiteral
+//                              ^^^ StringLiteral
               Assert.Contains(@"
-//            ^^^^^^ Identifier
-//                  ^ PunctuationDelimiter
-//                   ^^^^^^^^ IdentifierFunction
-//                            ^^ StringLiteral 71:28..73:1
   Lorem Ipsum
   ", component.Markup);
-// ^ PunctuationDelimiter
-//   ^^^^^^^^^ Identifier
-//            ^ PunctuationDelimiter
-//             ^^^^^^ IdentifierAttribute
-//                    ^ PunctuationDelimiter
               var productTempateProductAttribute = new ProductTemplateProductAttribute
-//            ^^^ Keyword
-//                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
-//                                               ^ IdentifierOperator
-//                                                 ^^^ Keyword
-//                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType
               {
                   ProductTemplate = this,
-//                ^^^^^^^^^^^^^^^ IdentifierAttribute
+//                ^^^^^^^^^^^^^^^ Identifier
 //                                ^ IdentifierOperator
 //                                  ^^^^ Keyword
 //                                      ^ PunctuationDelimiter
                   ProductAttributeId = attributeId
-//                ^^^^^^^^^^^^^^^^^^ IdentifierAttribute
+//                ^^^^^^^^^^^^^^^^^^ Identifier
 //                                   ^ IdentifierOperator
 //                                     ^^^^^^^^^^^ Identifier
               };
-//             ^ PunctuationDelimiter
           }
       }
   }

@@ -6,8 +6,8 @@ use tree_sitter::Language;
 pub enum ParserId {
     C,
     Cpp,
-    // #[allow(non_camel_case_types)]
-    // C_Sharp,
+    #[allow(non_camel_case_types)]
+    C_Sharp,
     // Dart,
     // Go,
     // Hack,
@@ -40,7 +40,7 @@ impl ParserId {
         match self {
             ParserId::C => tree_sitter_c::language(),
             ParserId::Cpp => tree_sitter_cpp::language(),
-            // ParserId::C_Sharp => tree_sitter_c_sharp::language(),
+            ParserId::C_Sharp => tree_sitter_c_sharp::language(),
             // ParserId::Dart => tree_sitter_dart::language(),
             // ParserId::Go => tree_sitter_go::language(),
             // ParserId::Hack => tree_sitter_hack::language(),
@@ -76,7 +76,7 @@ impl ParserId {
         match name {
             "c" => Some(ParserId::C),
             "cpp" => Some(ParserId::Cpp),
-            // "c_sharp" => Some(ParserId::C_Sharp),
+            "c_sharp" => Some(ParserId::C_Sharp),
             // "dart" => Some(ParserId::Dart),
             // "go" => Some(ParserId::Go),
             // "hack" => Some(ParserId::Hack),
@@ -107,7 +107,7 @@ impl ParserId {
         match self {
             ParserId::C => "c",
             ParserId::Cpp => "cpp",
-            // ParserId::C_Sharp => "c_sharp",
+            ParserId::C_Sharp => "c_sharp",
             // ParserId::Dart => "dart",
             // ParserId::Go => "go",
             // ParserId::Hack => "hack",
@@ -153,7 +153,7 @@ impl ParserId {
         match extension {
             "c" => Some(ParserId::C),
             "cpp" => Some(ParserId::Cpp),
-            // "cs" => Some(ParserId::C_Sharp),
+            "cs" => Some(ParserId::C_Sharp),
             // "dart" => Some(ParserId::Dart),
             // "go" => Some(ParserId::Go),
             // "hack" => Some(ParserId::Hack),

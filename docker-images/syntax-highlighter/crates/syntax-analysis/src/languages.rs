@@ -213,7 +213,7 @@ mod tags {
 
     create_tags_configuration!(c, ParserId::C, "c");
     create_tags_configuration!(cpp, ParserId::Cpp, "cpp");
-    // create_tags_configuration!(c_sharp, ParserId::C_Sharp, "c_sharp");
+    create_tags_configuration!(c_sharp, ParserId::C_Sharp, "c_sharp");
     // create_tags_configuration!(go, ParserId::Go, "go");
     // create_tags_configuration!(java, ParserId::Java, "java");
     // create_tags_configuration!(javascript, ParserId::Javascript, "javascript");
@@ -231,7 +231,7 @@ mod tags {
         match parser {
             ParserId::C => Some(c()),
             ParserId::Cpp => Some(cpp()),
-            // ParserId::C_Sharp => Some(c_sharp()),
+            ParserId::C_Sharp => Some(c_sharp()),
             // ParserId::Go => Some(go()),
             // ParserId::Java => Some(java()),
             // ParserId::Javascript => Some(javascript()),
