@@ -45,8 +45,6 @@ type Subscription struct {
 	// subscription, e.g. 'TYPE_PRIMARY' or 'TYPE_SECONDARY'.
 	InstanceType *string
 
-	// WARNING: The below fields are not yet used in production.
-
 	// DisplayName is the human-friendly name of this subscription, e.g. "Acme, Inc."
 	//
 	// It must be unique across all currently un-archived subscriptions, unless
