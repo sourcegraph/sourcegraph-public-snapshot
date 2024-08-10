@@ -48,8 +48,7 @@ var (
 // SubscriptionLicenseChecksServiceClient is a client for the
 // enterpriseportal.subscriptionlicensechecks.v1.SubscriptionLicenseChecksService service.
 type SubscriptionLicenseChecksServiceClient interface {
-	// CheckLicenseKey returns the status of a license key. It expects bearer
-	// authorization with a token of the format 'slk_$hex($sha256(licenseKey))'.
+	// CheckLicenseKey returns the status of a license key.
 	CheckLicenseKey(context.Context, *connect.Request[v1.CheckLicenseKeyRequest]) (*connect.Response[v1.CheckLicenseKeyResponse], error)
 }
 
@@ -87,8 +86,7 @@ func (c *subscriptionLicenseChecksServiceClient) CheckLicenseKey(ctx context.Con
 // SubscriptionLicenseChecksServiceHandler is an implementation of the
 // enterpriseportal.subscriptionlicensechecks.v1.SubscriptionLicenseChecksService service.
 type SubscriptionLicenseChecksServiceHandler interface {
-	// CheckLicenseKey returns the status of a license key. It expects bearer
-	// authorization with a token of the format 'slk_$hex($sha256(licenseKey))'.
+	// CheckLicenseKey returns the status of a license key.
 	CheckLicenseKey(context.Context, *connect.Request[v1.CheckLicenseKeyRequest]) (*connect.Response[v1.CheckLicenseKeyResponse], error)
 }
 

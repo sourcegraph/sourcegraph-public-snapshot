@@ -10,14 +10,21 @@ option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/sub
 // Product implementations can use these endpoints to verify the status of a
 // license.
 service SubscriptionLicenseChecksService {
-  // CheckLicenseKey returns the status of a license key. It expects bearer
-  // authorization with a token of the format 'slk_$hex($sha256(licenseKey))'.
+  // CheckLicenseKey returns the status of a license key.
   rpc CheckLicenseKey(CheckLicenseKeyRequest) returns (CheckLicenseKeyResponse) {}
 }
 
 message CheckLicenseKeyRequest {
+  // The signed license key to validate. For backwards compatibility, this
+  // currently also accepts a token of the format 'slk_$hex($sha256(licenseKey))',
+  // but this is deprecated and will be removed in Sourcegraph 5.8 onwards.
+  //
+  // Required.
+  string license_key = 1;
   // Self-reported Sourcegraph instance identifier (also known as 'site ID').
-  string instance_id = 1;
+  //
+  // Required.
+  string instance_id = 2;
 }
 
 message CheckLicenseKeyResponse {
