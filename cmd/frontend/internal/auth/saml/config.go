@@ -108,8 +108,9 @@ func getProviders() []*provider {
 	}
 	multiple := len(cfgs) >= 2
 	ps := make([]*provider, 0, len(cfgs))
+	logger := log.Scoped("SAMLAuthProvider")
 	for _, cfg := range cfgs {
-		p := &provider{config: *cfg, multiple: multiple, httpClient: httpcli.ExternalClient}
+		p := &provider{config: *cfg, multiple: multiple, httpClient: httpcli.ExternalClient(logger)}
 		ps = append(ps, p)
 	}
 	return ps

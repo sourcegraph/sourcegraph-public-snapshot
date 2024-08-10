@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/url"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -60,14 +62,14 @@ func SetExternalAccountData(data *extsvc.AccountData, usr *Account, creds *Accou
 	return nil
 }
 
-var MockVerifyAccount func(context.Context, *url.URL, *AccountCredentials) (*Account, error)
+var MockVerifyAccount func(context.Context, log.Logger, *url.URL, *AccountCredentials) (*Account, error)
 
-func VerifyAccount(ctx context.Context, u *url.URL, creds *AccountCredentials) (*Account, error) {
+func VerifyAccount(ctx context.Context, logger log.Logger, u *url.URL, creds *AccountCredentials) (*Account, error) {
 	if MockVerifyAccount != nil {
-		return MockVerifyAccount(ctx, u, creds)
+		return MockVerifyAccount(ctx, logger, u, creds)
 	}
 
-	client, err := NewClient("", u, creds, nil)
+	client, err := NewClient("", u, creds, nil, logger)
 	if err != nil {
 		return nil, err
 	}

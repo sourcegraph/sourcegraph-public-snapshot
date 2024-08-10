@@ -1,6 +1,8 @@
 package bitbucketcloud
 
 import (
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -21,11 +23,11 @@ import (
 // This constructor does not and should not directly check connectivity to external services - if
 // desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
 // to connection issues.
-func NewAuthzProviders(db database.DB, conns []*types.BitbucketCloudConnection) *atypes.ProviderInitResult {
+func NewAuthzProviders(db database.DB, conns []*types.BitbucketCloudConnection, logger log.Logger) *atypes.ProviderInitResult {
 	initResults := &atypes.ProviderInitResult{}
 
 	for _, c := range conns {
-		p, err := newAuthzProvider(db, c)
+		p, err := newAuthzProvider(db, c, logger)
 		if err != nil {
 			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeBitbucketCloud)
 			initResults.Problems = append(initResults.Problems, err.Error())
@@ -43,6 +45,7 @@ func NewAuthzProviders(db database.DB, conns []*types.BitbucketCloudConnection) 
 func newAuthzProvider(
 	db database.DB,
 	c *types.BitbucketCloudConnection,
+	logger log.Logger,
 ) (authz.Provider, error) {
 	// If authorization is not set for this connection, we do not need an
 	// authz provider.
@@ -53,14 +56,14 @@ func newAuthzProvider(
 		return nil, err
 	}
 
-	bbClient, err := bitbucketcloud.NewClient(c.URN, c.BitbucketCloudConnection, nil)
+	bbClient, err := bitbucketcloud.NewClient(c.URN, c.BitbucketCloudConnection, nil, logger)
 	if err != nil {
 		return nil, err
 	}
 
 	return NewProvider(db, c, ProviderOptions{
 		BitbucketCloudClient: bbClient,
-	}), nil
+	}, logger), nil
 }
 
 // ValidateAuthz validates the authorization fields of the given Perforce

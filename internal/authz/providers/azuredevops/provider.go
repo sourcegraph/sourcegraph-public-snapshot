@@ -24,7 +24,7 @@ import (
 
 var mockServerURL string
 
-func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection, httpClient *http.Client) *authztypes.ProviderInitResult {
+func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection, httpClient *http.Client, logger log.Logger) *authztypes.ProviderInitResult {
 	orgs, projects := map[string]struct{}{}, map[string]struct{}{}
 
 	authorizedConnections := []*types.AzureDevOpsConnection{}
@@ -58,7 +58,7 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection, htt
 		return initResults
 	}
 
-	p, err := newAuthzProvider(db, authorizedConnections, orgs, projects, httpClient)
+	p, err := newAuthzProvider(db, authorizedConnections, orgs, projects, httpClient, logger)
 	if err != nil {
 		initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeAzureDevOps)
 		initResults.Problems = append(initResults.Problems, err.Error())
@@ -69,7 +69,7 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection, htt
 	return initResults
 }
 
-func newAuthzProvider(db database.DB, conns []*types.AzureDevOpsConnection, orgs, projects map[string]struct{}, httpClient *http.Client) (*Provider, error) {
+func newAuthzProvider(db database.DB, conns []*types.AzureDevOpsConnection, orgs, projects map[string]struct{}, httpClient *http.Client, logger log.Logger) (*Provider, error) {
 	if err := licensing.Check(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}
@@ -87,6 +87,7 @@ func newAuthzProvider(db database.DB, conns []*types.AzureDevOpsConnection, orgs
 		orgs:       orgs,
 		projects:   projects,
 		httpClient: httpClient,
+		logger:     logger.Scoped("AzureDevOpsAuthzProvider"),
 	}, nil
 }
 
@@ -103,6 +104,7 @@ type Provider struct {
 	// projects is the set of projects as configured across all the code host connections.
 	projects   map[string]struct{}
 	httpClient *http.Client
+	logger     log.Logger
 }
 
 func (p *Provider) FetchAccount(_ context.Context, _ *types.User, _ []*extsvc.Account, _ []string) (*extsvc.Account, error) {
@@ -148,6 +150,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		apiURL,
 		oauthToken,
 		p.httpClient,
+		logger,
 	)
 	if err != nil {
 		return nil, errors.Wrapf(
@@ -295,6 +298,7 @@ func (p *Provider) ValidateConnection(ctx context.Context) error {
 				Password: conn.Token,
 			},
 			p.httpClient,
+			p.logger,
 		)
 		if err != nil {
 			allErrors = append(allErrors, fmt.Sprintf("%s:%s", conn.URN, err.Error()))

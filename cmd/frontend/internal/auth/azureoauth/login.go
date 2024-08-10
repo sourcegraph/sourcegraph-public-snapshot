@@ -7,10 +7,11 @@ import (
 	"github.com/dghubble/gologin/v2"
 	oauth2Login "github.com/dghubble/gologin/v2/oauth2"
 	"github.com/sourcegraph/log"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/oauth2"
 )
 
 func loginHandler(c oauth2.Config) http.Handler {
@@ -33,6 +34,7 @@ func azureDevOpsHandler(logger log.Logger, config *oauth2.Config, success, failu
 			azuredevops.VisualStudioAppURL,
 			&auth.OAuthBearerToken{Token: token.AccessToken},
 			nil,
+			logger,
 		)
 		if err != nil {
 			logger.Error("failed to create azuredevops.Client", log.String("error", err.Error()))

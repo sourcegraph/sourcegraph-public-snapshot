@@ -113,7 +113,7 @@ func InitRouter(db database.DB, configurationServer *conf.Server) {
 	r.Path("/").Methods(http.MethodGet, http.MethodHead).Name(routeHome).Handler(handler(db, configurationServer, serveHome(db, configurationServer)))
 
 	r.Path("/sign-in").Methods(http.MethodGet, http.MethodHead).Name(uirouter.RouteSignIn).Handler(handler(db, configurationServer, serveSignIn(db, configurationServer)))
-	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted).Handler(handler(db, configurationServer, servePingFromSelfHosted))
+	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted).Handler(handler(db, configurationServer, servePingFromSelfHosted(logger)))
 
 	ghAppRouter := r.PathPrefix("/githubapp/").Subrouter()
 	githubapp.SetupGitHubAppRoutes(ghAppRouter, db)

@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -29,7 +30,7 @@ func TestGerritSource_ListRepos(t *testing.T) {
 		})
 
 		ctx := context.Background()
-		src, err := NewGerritSource(ctx, svc, cf)
+		src, err := NewGerritSource(ctx, svc, cf, logtest.Scoped(t))
 		require.NoError(t, err)
 
 		src.perPage = 25
@@ -52,7 +53,7 @@ func TestGerritSource_ListRepos(t *testing.T) {
 		})
 
 		ctx := context.Background()
-		src, err := NewGerritSource(ctx, svc, cf)
+		src, err := NewGerritSource(ctx, svc, cf, logtest.Scoped(t))
 		require.NoError(t, err)
 
 		repos, err := ListAll(ctx, src)
@@ -75,7 +76,7 @@ func TestGerritSource_ListRepos(t *testing.T) {
 		})
 
 		ctx := context.Background()
-		src, err := NewGerritSource(ctx, svc, cf)
+		src, err := NewGerritSource(ctx, svc, cf, logtest.Scoped(t))
 		require.NoError(t, err)
 
 		src.perPage = 25
@@ -105,7 +106,7 @@ func TestGerritSource_ListRepos(t *testing.T) {
 		})
 
 		ctx := context.Background()
-		src, err := NewGerritSource(ctx, svc, cf)
+		src, err := NewGerritSource(ctx, svc, cf, logtest.Scoped(t))
 		require.NoError(t, err)
 
 		src.perPage = 25
@@ -133,7 +134,7 @@ func TestGerritSource_ListRepos(t *testing.T) {
 		})
 
 		ctx := context.Background()
-		src, err := NewGerritSource(ctx, svc, cf)
+		src, err := NewGerritSource(ctx, svc, cf, logtest.Scoped(t))
 		require.NoError(t, err)
 
 		src.perPage = 25
@@ -156,7 +157,7 @@ func TestGerritSource_ListRepos(t *testing.T) {
 		})
 
 		ctx := context.Background()
-		src, err := NewGerritSource(ctx, svc, cf)
+		src, err := NewGerritSource(ctx, svc, cf, logtest.Scoped(t))
 		require.NoError(t, err)
 
 		src.perPage = 25

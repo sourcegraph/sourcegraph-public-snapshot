@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -49,12 +51,14 @@ type SudoProviderOp struct {
 	SyncInternalRepoPermissions bool
 }
 
-func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
+func newSudoProvider(op SudoProviderOp, cli httpcli.Doer, logger log.Logger) *SudoProvider {
+	logger = logger.Scoped("GitLabSudoAuthzProvider")
+
 	return &SudoProvider{
 		sudoToken: op.SudoToken,
 
 		urn:                         op.URN,
-		clientProvider:              gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
+		clientProvider:              gitlab.NewClientProvider(op.URN, op.BaseURL, cli, logger),
 		clientURL:                   op.BaseURL,
 		codeHost:                    extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 		syncInternalRepoPermissions: op.SyncInternalRepoPermissions,

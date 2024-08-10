@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/url"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -22,15 +24,19 @@ type Provider struct {
 	codeHost *extsvc.CodeHost
 }
 
-func NewProvider(conn *types.GerritConnection) (*Provider, error) {
+func NewProvider(conn *types.GerritConnection, logger log.Logger) (*Provider, error) {
 	baseURL, err := url.Parse(conn.Url)
 	if err != nil {
 		return nil, err
 	}
+
+	logger = logger.Scoped("GerritAuthzProvider").
+		With(log.String("url", baseURL.String()))
+
 	gClient, err := gerrit.NewClient(conn.URN, baseURL, &gerrit.AccountCredentials{
 		Username: conn.Username,
 		Password: conn.Password,
-	}, nil)
+	}, nil, logger)
 	if err != nil {
 		return nil, err
 	}

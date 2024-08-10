@@ -159,7 +159,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			CreateIfNotExist:    attempt.createIfNotExist,
 		})
 		if err == nil {
-			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, hubSpotProps)
+			go hubspotutil.SyncUser(s.logger, attempt.email, hubspotutil.SignupEventID, hubSpotProps)
 			return newUserCreated, actor.FromUser(userID), "", nil // success
 		}
 		lastSafeErrMsg, lastErr = safeErrMsg, err

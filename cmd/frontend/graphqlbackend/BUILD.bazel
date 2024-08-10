@@ -510,6 +510,7 @@ go_test(
         "//internal/gitserver/gitdomain",
         "//internal/gitserver/protocol",
         "//internal/gqlutil",
+        "//internal/httpcli",
         "//internal/observation",
         "//internal/oobmigration",
         "//internal/ratelimit",

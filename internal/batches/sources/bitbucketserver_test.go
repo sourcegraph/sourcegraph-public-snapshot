@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
@@ -81,7 +82,7 @@ func TestBitbucketServerSource_LoadChangeset(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf, logtest.Scoped(t))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -197,7 +198,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf, logtest.Scoped(t))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -283,7 +284,7 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf, logtest.Scoped(t))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -362,7 +363,7 @@ func TestBitbucketServerSource_CloseChangeset_DeleteSourceBranch(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf, logtest.Scoped(t))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -442,7 +443,7 @@ func TestBitbucketServerSource_ReopenChangeset(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf, logtest.Scoped(t))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -546,7 +547,7 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf, logtest.Scoped(t))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -626,7 +627,7 @@ func TestBitbucketServerSource_CreateComment(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf, logtest.Scoped(t))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -711,7 +712,7 @@ func TestBitbucketServerSource_MergeChangeset(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf, logtest.Scoped(t))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -749,7 +750,7 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	bbsSrc, err := NewBitbucketServerSource(ctx, svc, nil)
+	bbsSrc, err := NewBitbucketServerSource(ctx, svc, nil, logtest.Scoped(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -855,7 +856,7 @@ func TestBitbucketServerSource_GetFork(t *testing.T) {
 		svc := newExternalService(t, pointers.Ptr("invalid"))
 
 		ctx := context.Background()
-		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf, logtest.Scoped(t))
 		assert.Nil(t, err)
 
 		fork, err := bbsSrc.GetFork(ctx, newBitbucketServerRepo(urn, "SOUR", "read-only", 10103), nil, nil)
@@ -880,7 +881,7 @@ func TestBitbucketServerSource_GetFork(t *testing.T) {
 		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo", 0)
 
 		ctx := context.Background()
-		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf, logtest.Scoped(t))
 		assert.Nil(t, err)
 
 		fork, err := bbsSrc.GetFork(ctx, target, pointers.Ptr("~milton"), pointers.Ptr("vcr-fork-test-repo"))
@@ -906,7 +907,7 @@ func TestBitbucketServerSource_GetFork(t *testing.T) {
 		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo-already-forked", 0)
 
 		ctx := context.Background()
-		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf, logtest.Scoped(t))
 		assert.Nil(t, err)
 
 		fork, err := bbsSrc.GetFork(ctx, target, pointers.Ptr("~milton"), pointers.Ptr("BAT-vcr-fork-test-repo-already-forked"))
@@ -935,7 +936,7 @@ func TestBitbucketServerSource_GetFork(t *testing.T) {
 		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo-already-forked", 24378)
 
 		ctx := context.Background()
-		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf, logtest.Scoped(t))
 		assert.Nil(t, err)
 
 		username, err := bbsSrc.client.AuthenticatedUsername(ctx)
@@ -976,7 +977,7 @@ func TestBitbucketServerSource_GetFork(t *testing.T) {
 		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo-not-forked", 216974)
 
 		ctx := context.Background()
-		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf, logtest.Scoped(t))
 		assert.Nil(t, err)
 
 		username, err := bbsSrc.client.AuthenticatedUsername(ctx)
@@ -1011,7 +1012,7 @@ func TestBitbucketServerSource_GetFork(t *testing.T) {
 		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo-already-forked", 24378)
 
 		ctx := context.Background()
-		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf, logtest.Scoped(t))
 		assert.Nil(t, err)
 
 		username, err := bbsSrc.client.AuthenticatedUsername(ctx)
@@ -1052,7 +1053,7 @@ func TestBitbucketServerSource_GetFork(t *testing.T) {
 		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo-not-forked", 216974)
 
 		ctx := context.Background()
-		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf, logtest.Scoped(t))
 		assert.Nil(t, err)
 
 		username, err := bbsSrc.client.AuthenticatedUsername(ctx)

@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 
 	mockassert "github.com/derision-test/go-mockgen/v2/testutil/assert"
@@ -324,7 +326,7 @@ func TestGitserverPushConfig(t *testing.T) {
 				},
 			}
 
-			havePushConfig, haveErr := GitserverPushConfig(ctx, repo, tt.authenticator)
+			havePushConfig, haveErr := GitserverPushConfig(ctx, repo, tt.authenticator, logtest.Scoped(t))
 			if haveErr != tt.wantErr {
 				t.Fatalf("invalid error returned, want=%v have=%v", tt.wantErr, haveErr)
 			}
@@ -755,7 +757,7 @@ func TestGetRemoteRepo(t *testing.T) {
 }
 
 func newMockSourcer(css ChangesetSource) Sourcer {
-	return newSourcer(nil, func(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService) (ChangesetSource, error) {
+	return newSourcer(nil, func(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService, l log.Logger) (ChangesetSource, error) {
 		return css, nil
 	})
 }

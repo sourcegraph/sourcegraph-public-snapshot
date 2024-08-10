@@ -50,7 +50,7 @@ func (s *sender) Routines(_ context.Context, observationCtx *observation.Context
 
 	return []goroutine.BackgroundRoutine{
 		makeWorker(
-			ctx, observationCtx, workerStore, client,
+			ctx, observationCtx, workerStore, client(observationCtx.Logger),
 			database.OutboundWebhooksWith(db, key),
 			database.OutboundWebhookLogsWith(db, key),
 		),

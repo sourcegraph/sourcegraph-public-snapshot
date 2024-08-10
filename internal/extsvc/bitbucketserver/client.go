@@ -63,8 +63,8 @@ type Client struct {
 // NewClient returns an authenticated Bitbucket Server API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
-	client, err := newClient(urn, config, httpClient)
+func NewClient(urn string, config *schema.BitbucketServerConnection, httpClient httpcli.Doer, logger log.Logger) (*Client, error) {
+	client, err := newClient(urn, config, httpClient, logger.Scoped("BitbucketServerClient"))
 	if err != nil {
 		return nil, err
 	}
@@ -91,14 +91,16 @@ func NewClient(urn string, config *schema.BitbucketServerConnection, httpClient 
 	return client, nil
 }
 
-func newClient(urn string, config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
+func newClient(urn string, config *schema.BitbucketServerConnection, httpClient httpcli.Doer, logger log.Logger) (*Client, error) {
 	u, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
 	}
 
+	logger = logger.Scoped("BitbucketServerClient")
+
 	if httpClient == nil {
-		httpClient = httpcli.ExternalDoer
+		httpClient = httpcli.ExternalDoer(logger)
 	}
 	httpClient = requestCounter.Doer(httpClient, categorize)
 
@@ -106,7 +108,7 @@ func newClient(urn string, config *schema.BitbucketServerConnection, httpClient 
 		httpClient: httpClient,
 		URL:        u,
 		// Default limits are defined in extsvc.GetLimitFromConfig
-		rateLimit: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("BitbucketServerClient"), urn)),
+		rateLimit: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(logger, urn)),
 	}, nil
 }
 

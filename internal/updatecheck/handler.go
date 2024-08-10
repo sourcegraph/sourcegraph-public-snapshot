@@ -393,7 +393,7 @@ func logPing(logger log.Logger, pubsubClient pubsub.TopicPublisher, meter *Meter
 		now := time.Now().UTC()
 		rounded := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		millis := rounded.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
-		go hubspotutil.SyncUser(pr.InitialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true, LatestPing: millis, HasAgreedToToS: pr.TosAccepted})
+		go hubspotutil.SyncUser(logger, pr.InitialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true, LatestPing: millis, HasAgreedToToS: pr.TosAccepted})
 	}
 
 	var clientAddr string

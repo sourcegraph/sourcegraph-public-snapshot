@@ -73,7 +73,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return false, nil, fmt.Sprintf("Error normalizing the username %q. See https://sourcegraph.com/docs/admin/auth/#username-normalization.", login), err
 	}
 
-	provider := gitlab.NewClientProvider(extsvc.URNGitLabOAuth, s.BaseURL, nil)
+	provider := gitlab.NewClientProvider(extsvc.URNGitLabOAuth, s.BaseURL, nil, s.logger)
 	glClient := provider.GetOAuthClient(token.AccessToken)
 
 	// 🚨 SECURITY: Ensure that the user is part of one of the allowed groups or subgroups when the allowGroups option is set.
@@ -124,7 +124,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	// There is no need to send record if we know email is empty as it's a primary property
 	if gUser.Email != "" {
-		go hubspotutil.SyncUser(gUser.Email, hubspotutil.SignupEventID, hubSpotProps)
+		go hubspotutil.SyncUser(s.logger, gUser.Email, hubspotutil.SignupEventID, hubSpotProps)
 	}
 
 	return newUserCreated, actor.FromUser(userID), "", nil

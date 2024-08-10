@@ -311,12 +311,14 @@ func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externa
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
+	logger := r.logger.Scoped("externalServiceResolver.CheckConnection")
+
 	source, err := repos.NewSource(
 		ctx,
-		log.Scoped("externalServiceResolver.CheckConnection"),
+		logger,
 		r.db,
 		r.externalService,
-		httpcli.ExternalClientFactory,
+		httpcli.ExternalClientFactory(logger.Scoped("httpclient")),
 		gitserver.NewClient("graphql.check-connection"),
 	)
 	if err != nil {

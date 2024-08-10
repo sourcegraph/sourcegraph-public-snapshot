@@ -655,7 +655,7 @@ func TestExternalServiceStore_Delete_WithSyncJobs(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
-	store := &externalServiceStore{Store: basestore.NewWithHandle(db.Handle())}
+	store := &externalServiceStore{Store: basestore.NewWithHandle(db.Handle()), logger: logger}
 	ctx := context.Background()
 
 	// Create a new external service
@@ -1142,7 +1142,7 @@ func TestExternalServiceStore_HasRunningSyncJobs(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
-	store := &externalServiceStore{Store: basestore.NewWithHandle(db.Handle())}
+	store := &externalServiceStore{Store: basestore.NewWithHandle(db.Handle()), logger: logger}
 	ctx := context.Background()
 
 	// Create a new external service

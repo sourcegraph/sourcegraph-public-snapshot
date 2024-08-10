@@ -68,13 +68,18 @@ type V4Client struct {
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V4Client.apiURL.
-func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Client {
+func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer, logger log.Logger) *V4Client {
+	logger = logger.Scoped("github.v4").With(
+		log.String("urn", urn),
+		log.String("apiURL", apiURL.String()),
+	)
+
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
 	}
 	if cli == nil {
-		cli = httpcli.ExternalDoer
+		cli = httpcli.ExternalDoer(logger)
 	}
 
 	cli = requestCounter.Doer(cli, func(u *url.URL) string {
@@ -97,7 +102,7 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
-		log:                 log.Scoped("github.v4"),
+		log:                 logger,
 		urn:                 urn,
 		apiURL:              apiURL,
 		githubDotCom:        URLIsGitHubDotCom(apiURL),
@@ -114,7 +119,7 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 // the current V4Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
 func (c *V4Client) WithAuthenticator(a auth.Authenticator) *V4Client {
-	return NewV4Client(c.urn, c.apiURL, a, c.httpClient)
+	return NewV4Client(c.urn, c.apiURL, a, c.httpClient, c.log)
 }
 
 // ExternalRateLimiter exposes the rate limit monitor.

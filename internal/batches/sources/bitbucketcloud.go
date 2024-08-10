@@ -4,6 +4,8 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/sourcegraph/log"
+
 	bbcs "github.com/sourcegraph/sourcegraph/internal/batches/sources/bitbucketcloud"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -21,11 +23,13 @@ import (
 
 type BitbucketCloudSource struct {
 	client bitbucketcloud.Client
+	logger log.Logger
 }
 
-var _ ForkableChangesetSource = BitbucketCloudSource{}
+var _ ForkableChangesetSource = &BitbucketCloudSource{}
 
-func NewBitbucketCloudSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+func NewBitbucketCloudSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory, logger log.Logger) (*BitbucketCloudSource, error) {
+	logger = logger.Scoped("BitbucketCloudSource")
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -36,7 +40,7 @@ func NewBitbucketCloudSource(ctx context.Context, svc *types.ExternalService, cf
 	}
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternalClientFactory(logger)
 	}
 
 	// No options to provide here, since Bitbucket Cloud doesn't support custom
@@ -46,28 +50,28 @@ func NewBitbucketCloudSource(ctx context.Context, svc *types.ExternalService, cf
 		return nil, errors.Wrap(err, "creating external client")
 	}
 
-	client, err := bitbucketcloud.NewClient(svc.URN(), &c, cli)
+	client, err := bitbucketcloud.NewClient(svc.URN(), &c, cli, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating Bitbucket Cloud client")
 	}
 
-	return &BitbucketCloudSource{client: client}, nil
+	return &BitbucketCloudSource{client: client, logger: logger}, nil
 }
 
-func (s BitbucketCloudSource) AuthenticationStrategy() AuthenticationStrategy {
+func (s *BitbucketCloudSource) AuthenticationStrategy() AuthenticationStrategy {
 	return AuthenticationStrategyUserCredential
 }
 
 // GitserverPushConfig returns an authenticated push config used for pushing
 // commits to the code host.
-func (s BitbucketCloudSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(ctx, repo, s.client.Authenticator())
+func (s *BitbucketCloudSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(ctx, repo, s.client.Authenticator(), s.logger)
 }
 
 // WithAuthenticator returns a copy of the original Source configured to use the
 // given authenticator, provided that authenticator type is supported by the
 // code host.
-func (s BitbucketCloudSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
+func (s *BitbucketCloudSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
 	switch a.(type) {
 	case *auth.BasicAuth,
 		*auth.BasicAuthWithSSH:
@@ -82,14 +86,14 @@ func (s BitbucketCloudSource) WithAuthenticator(a auth.Authenticator) (Changeset
 
 // ValidateAuthenticator validates the currently set authenticator is usable.
 // Returns an error, when validating the Authenticator yielded an error.
-func (s BitbucketCloudSource) ValidateAuthenticator(ctx context.Context) error {
+func (s *BitbucketCloudSource) ValidateAuthenticator(ctx context.Context) error {
 	return s.client.Ping(ctx)
 }
 
 // LoadChangeset loads the given Changeset from the source and updates it. If
 // the Changeset could not be found on the source, a ChangesetNotFoundError is
 // returned.
-func (s BitbucketCloudSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
+func (s *BitbucketCloudSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 	repo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
 	number, err := strconv.Atoi(cs.ExternalID)
 	if err != nil {
@@ -109,7 +113,7 @@ func (s BitbucketCloudSource) LoadChangeset(ctx context.Context, cs *Changeset) 
 
 // CreateChangeset will create the Changeset on the source. If it already
 // exists, *Changeset will be populated and the return value will be true.
-func (s BitbucketCloudSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
+func (s *BitbucketCloudSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
 	opts := s.changesetToPullRequestInput(cs)
 	targetRepo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
 
@@ -132,7 +136,7 @@ func (s BitbucketCloudSource) CreateChangeset(ctx context.Context, cs *Changeset
 // CloseChangeset will close the Changeset on the source, where "close"
 // means the appropriate final state on the codehost (e.g. "declined" on
 // Bitbucket Server).
-func (s BitbucketCloudSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
+func (s *BitbucketCloudSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
 	repo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
 	pr := cs.Metadata.(*bbcs.AnnotatedPullRequest)
 	updated, err := s.client.DeclinePullRequest(ctx, repo, pr.ID)
@@ -144,7 +148,7 @@ func (s BitbucketCloudSource) CloseChangeset(ctx context.Context, cs *Changeset)
 }
 
 // UpdateChangeset can update Changesets.
-func (s BitbucketCloudSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
+func (s *BitbucketCloudSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
 	opts := s.changesetToPullRequestInput(cs)
 	targetRepo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
 
@@ -168,7 +172,7 @@ func (s BitbucketCloudSource) UpdateChangeset(ctx context.Context, cs *Changeset
 
 // ReopenChangeset will reopen the Changeset on the source, if it's closed.
 // If not, it's a noop.
-func (s BitbucketCloudSource) ReopenChangeset(ctx context.Context, cs *Changeset) error {
+func (s *BitbucketCloudSource) ReopenChangeset(ctx context.Context, cs *Changeset) error {
 	// Bitbucket Cloud is a bit special, and can't reopen a declined PR under
 	// any circumstances. (See https://jira.atlassian.com/browse/BCLOUD-4954 for
 	// more details.)
@@ -185,7 +189,7 @@ func (s BitbucketCloudSource) ReopenChangeset(ctx context.Context, cs *Changeset
 }
 
 // CreateComment posts a comment on the Changeset.
-func (s BitbucketCloudSource) CreateComment(ctx context.Context, cs *Changeset, comment string) error {
+func (s *BitbucketCloudSource) CreateComment(ctx context.Context, cs *Changeset, comment string) error {
 	repo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
 	pr := cs.Metadata.(*bbcs.AnnotatedPullRequest)
 
@@ -200,7 +204,7 @@ func (s BitbucketCloudSource) CreateComment(ctx context.Context, cs *Changeset, 
 // must attempt a squash merge. Otherwise, it is expected to perform a regular
 // merge. If the changeset cannot be merged, because it is in an unmergeable
 // state, ChangesetNotMergeableError must be returned.
-func (s BitbucketCloudSource) MergeChangeset(ctx context.Context, cs *Changeset, squash bool) error {
+func (s *BitbucketCloudSource) MergeChangeset(ctx context.Context, cs *Changeset, squash bool) error {
 	repo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
 	pr := cs.Metadata.(*bbcs.AnnotatedPullRequest)
 
@@ -227,7 +231,7 @@ func (s BitbucketCloudSource) MergeChangeset(ctx context.Context, cs *Changeset,
 // exists and creating it if it doesn't. If namespace is not provided, the fork will be in
 // the currently authenticated user's namespace. If name is not provided, the fork will be
 // named with the default Sourcegraph convention: "${original-namespace}-${original-name}"
-func (s BitbucketCloudSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns, n *string) (*types.Repo, error) {
+func (s *BitbucketCloudSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns, n *string) (*types.Repo, error) {
 	var namespace string
 	if ns != nil {
 		namespace = *ns
@@ -271,11 +275,11 @@ func (s BitbucketCloudSource) GetFork(ctx context.Context, targetRepo *types.Rep
 	return s.checkAndCopy(targetRepo, fork)
 }
 
-func (s BitbucketCloudSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+func (s *BitbucketCloudSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
 	return BuildCommitOptsCommon(repo, spec, pushOpts)
 }
 
-func (s BitbucketCloudSource) checkAndCopy(targetRepo *types.Repo, fork *bitbucketcloud.Repo) (*types.Repo, error) {
+func (s *BitbucketCloudSource) checkAndCopy(targetRepo *types.Repo, fork *bitbucketcloud.Repo) (*types.Repo, error) {
 	tr := targetRepo.Metadata.(*bitbucketcloud.Repo)
 
 	if fork.Parent == nil {
@@ -294,7 +298,7 @@ func (s BitbucketCloudSource) checkAndCopy(targetRepo *types.Repo, fork *bitbuck
 	return forkRepo, nil
 }
 
-func (s BitbucketCloudSource) annotatePullRequest(ctx context.Context, repo *bitbucketcloud.Repo, pr *bitbucketcloud.PullRequest) (*bbcs.AnnotatedPullRequest, error) {
+func (s *BitbucketCloudSource) annotatePullRequest(ctx context.Context, repo *bitbucketcloud.Repo, pr *bitbucketcloud.PullRequest) (*bbcs.AnnotatedPullRequest, error) {
 	srs, err := s.client.GetPullRequestStatuses(repo, pr.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting pull request statuses")
@@ -315,7 +319,7 @@ func (s BitbucketCloudSource) annotatePullRequest(ctx context.Context, repo *bit
 	}, nil
 }
 
-func (s BitbucketCloudSource) setChangesetMetadata(ctx context.Context, repo *bitbucketcloud.Repo, pr *bitbucketcloud.PullRequest, cs *Changeset) error {
+func (s *BitbucketCloudSource) setChangesetMetadata(ctx context.Context, repo *bitbucketcloud.Repo, pr *bitbucketcloud.PullRequest, cs *Changeset) error {
 	apr, err := s.annotatePullRequest(ctx, repo, pr)
 	if err != nil {
 		return errors.Wrap(err, "annotating pull request")
@@ -328,7 +332,7 @@ func (s BitbucketCloudSource) setChangesetMetadata(ctx context.Context, repo *bi
 	return nil
 }
 
-func (s BitbucketCloudSource) changesetToPullRequestInput(cs *Changeset) bitbucketcloud.PullRequestInput {
+func (s *BitbucketCloudSource) changesetToPullRequestInput(cs *Changeset) bitbucketcloud.PullRequestInput {
 	destBranch := gitdomain.AbbreviateRef(cs.BaseRef)
 	closeSourceBranch := conf.Get().BatchChangesAutoDeleteBranch
 

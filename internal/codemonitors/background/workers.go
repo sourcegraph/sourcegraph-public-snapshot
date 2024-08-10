@@ -103,7 +103,7 @@ func newActionRunner(ctx context.Context, observationCtx *observation.Context, s
 
 	store := createDBWorkerStoreForActionJobs(observationCtx, s)
 
-	worker := dbworker.NewWorker(ctx, store, &actionRunner{s}, options)
+	worker := dbworker.NewWorker(ctx, store, &actionRunner{CodeMonitorStore: s, logger: observationCtx.Logger.Scoped("CodeMonitorsActionJobsRunner")}, options)
 	return worker
 }
 
@@ -212,6 +212,7 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, triggerJob 
 
 type actionRunner struct {
 	database.CodeMonitorStore
+	logger log.Logger
 }
 
 func (r *actionRunner) Handle(ctx context.Context, logger log.Logger, j *database.ActionJob) (err error) {
@@ -319,7 +320,7 @@ func (r *actionRunner) handleWebhook(ctx context.Context, j *database.ActionJob)
 		IncludeResults:     w.IncludeResults,
 	}
 
-	return sendWebhookNotification(ctx, w.URL, args)
+	return sendWebhookNotification(ctx, w.URL, args, r.logger)
 }
 
 func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *database.ActionJob) error {
@@ -355,7 +356,7 @@ func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *database.Actio
 		IncludeResults:     w.IncludeResults,
 	}
 
-	return sendSlackNotification(ctx, w.URL, args)
+	return sendSlackNotification(ctx, r.logger, w.URL, args)
 }
 
 type StatusCodeError struct {

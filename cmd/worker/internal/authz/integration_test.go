@@ -524,7 +524,7 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 			DB:                          testDB,
 			CLI:                         doer,
 			SyncInternalRepoPermissions: true,
-		})
+		}, logtest.Scoped(t))
 
 		for _, repo := range testRepos {
 			err = reposStore.RepoStore().Create(ctx, &repo)

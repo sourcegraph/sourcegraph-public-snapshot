@@ -50,8 +50,9 @@ func NewBitbucketServerSource(ctx context.Context, logger log.Logger, svc *types
 }
 
 func newBitbucketServerSource(logger log.Logger, svc *types.ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+	logger = logger.Scoped("BitbucketServerSource")
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternalClientFactory(logger)
 	}
 
 	var opts []httpcli.Opt
@@ -80,7 +81,7 @@ func newBitbucketServerSource(logger log.Logger, svc *types.ExternalService, c *
 		return nil, err
 	}
 
-	client, err := bitbucketserver.NewClient(svc.URN(), c, cli)
+	client, err := bitbucketserver.NewClient(svc.URN(), c, cli, logger)
 	if err != nil {
 		return nil, err
 	}

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/dnaeon/go-vcr/cassette"
+	"github.com/sourcegraph/log"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -19,7 +20,7 @@ import (
 
 // NewTestClient returns a pagure.Client that records its interactions
 // to testdata/vcr/.
-func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
+func NewTestClient(t testing.TB, name string, update bool, logger log.Logger) (*Client, func()) {
 	t.Helper()
 
 	cassete := filepath.Join("testdata/vcr/", normalize(name))
@@ -44,7 +45,7 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 		Url:   instanceURL,
 	}
 
-	cli, err := NewClient("urn", c, hc)
+	cli, err := NewClient("urn", c, hc, logger.Scoped("pagure.testclient"))
 	if err != nil {
 		t.Fatal(err)
 	}

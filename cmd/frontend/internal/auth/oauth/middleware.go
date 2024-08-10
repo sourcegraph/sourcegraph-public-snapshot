@@ -125,11 +125,12 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 // golang.org/x/oauth2 package will use our http client which is configured
 // with proxy and TLS settings/etc.
 func withOAuthExternalClient(r *http.Request) *http.Request {
-	client := httpcli.ExternalClient
+	logger := log.Scoped("oauth_external.transport")
+	client := httpcli.ExternalClient(logger)
 	if traceLogEnabled {
 		loggingClient := *client
 		loggingClient.Transport = &loggingRoundTripper{
-			log:        log.Scoped("oauth_external.transport"),
+			log:        logger.Scoped("customLoggingRoundTripper"),
 			underlying: client.Transport,
 		}
 		client = &loggingClient

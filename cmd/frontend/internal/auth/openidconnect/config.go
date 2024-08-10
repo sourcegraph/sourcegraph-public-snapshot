@@ -99,8 +99,9 @@ func getProviders() []providers.Provider {
 		cfgs = append(cfgs, p.Openidconnect)
 	}
 	ps := make([]providers.Provider, 0, len(cfgs))
+	logger := log.Scoped("openidconnectProvider")
 	for _, cfg := range cfgs {
-		ps = append(ps, NewProvider(*cfg, authPrefix, path.Join(auth.AuthURLPrefix, "callback"), httpcli.ExternalClient))
+		ps = append(ps, NewProvider(*cfg, authPrefix, path.Join(auth.AuthURLPrefix, "callback"), httpcli.ExternalClient(logger)))
 	}
 	return ps
 }

@@ -169,11 +169,11 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 				}
 			}
 
-			hubspotutil.SyncUser(userPrimaryEmail, hubspotutil.CodyClientInstalledEventID, &hubspot.ContactProperties{
+			hubspotutil.SyncUser(r.logger, userPrimaryEmail, hubspotutil.CodyClientInstalledEventID, &hubspot.ContactProperties{
 				DatabaseID: userID,
 			})
 
-			hubspotutil.SyncUserWithV3Event(userPrimaryEmail, hubspotutil.CodyClientInstalledV3EventID,
+			hubspotutil.SyncUserWithV3Event(r.logger, userPrimaryEmail, hubspotutil.CodyClientInstalledV3EventID,
 				&hubspot.ContactProperties{
 					DatabaseID: userID,
 				},

@@ -60,7 +60,7 @@ type LazyDebugserverEndpoint struct {
 }
 
 func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, debugserverEndpoints *LazyDebugserverEndpoint, config *Config) error {
-	logger := observationCtx.Logger
+	logger := observationCtx.Logger.Scoped("gitserver")
 
 	// Load and validate configuration.
 	if err := config.Validate(); err != nil {
@@ -105,7 +105,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		config.CoursierCacheDir,
 		locker,
 		func(ctx context.Context, repo api.RepoName) (string, error) {
-			return getRemoteURLFunc(ctx, db, repo)
+			return getRemoteURLFunc(ctx, logger, db, repo)
 		},
 	)
 
@@ -204,12 +204,13 @@ func makeServer(
 	locker internal.RepositoryLocker,
 	getRemoteURLFunc func(ctx context.Context, repo api.RepoName) (string, error),
 ) *internal.Server {
+	logger := observationCtx.Logger
 	return server.NewServer(&server.ServerOpts{
-		Logger:           observationCtx.Logger,
+		Logger:           logger,
 		GitBackendSource: backendSource,
 		GetRemoteURLFunc: getRemoteURLFunc,
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewVCSSyncer(ctx, &vcssyncer.NewVCSSyncerOpts{
+			return vcssyncer.NewVCSSyncer(ctx, logger, &vcssyncer.NewVCSSyncerOpts{
 				ExternalServiceStore:    db.ExternalServices(),
 				RepoStore:               db.Repos(),
 				DepsSvc:                 dependencies.NewService(observationCtx, db),
@@ -307,6 +308,7 @@ func getDB(observationCtx *observation.Context) (*sql.DB, error) {
 // cloning successfully.
 func getRemoteURLFunc(
 	ctx context.Context,
+	logger log.Logger,
 	db database.DB,
 	repo api.RepoName,
 ) (string, error) {
@@ -314,6 +316,10 @@ func getRemoteURLFunc(
 	if err != nil {
 		return "", err
 	}
+
+	logger = logger.Scoped("getRemoteURLFunc").With(
+		log.String("repo", string(repo)),
+	)
 
 	for _, info := range r.Sources {
 		// build the clone url using the external service config instead of using
@@ -323,7 +329,7 @@ func getRemoteURLFunc(
 			return "", err
 		}
 
-		return cloneurl.ForEncryptableConfig(ctx, db, svc.Kind, svc.Config, r)
+		return cloneurl.ForEncryptableConfig(ctx, logger, db, svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
 }

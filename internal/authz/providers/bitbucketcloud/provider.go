@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -25,6 +27,7 @@ type Provider struct {
 	client   bitbucketcloud.Client
 	pageSize int // Page size to use in paginated requests.
 	db       database.DB
+	logger   log.Logger
 }
 
 type ProviderOptions struct {
@@ -37,14 +40,15 @@ var _ authz.Provider = (*Provider)(nil)
 // the given bitbucket.Client to talk to the Bitbucket Cloud API that is
 // the source of truth for permissions. Sourcegraph users will need a valid
 // Bitbucket Cloud external account for permissions to sync correctly.
-func NewProvider(db database.DB, conn *types.BitbucketCloudConnection, opts ProviderOptions) *Provider {
+func NewProvider(db database.DB, conn *types.BitbucketCloudConnection, opts ProviderOptions, logger log.Logger) *Provider {
 	baseURL, err := url.Parse(conn.Url)
 	if err != nil {
 		return nil
 	}
 
+	logger = logger.Scoped("BitbucketCloudAuthzProvider")
 	if opts.BitbucketCloudClient == nil {
-		opts.BitbucketCloudClient, err = bitbucketcloud.NewClient(conn.URN, conn.BitbucketCloudConnection, httpcli.ExternalClient)
+		opts.BitbucketCloudClient, err = bitbucketcloud.NewClient(conn.URN, conn.BitbucketCloudConnection, httpcli.ExternalClient(logger), logger)
 		if err != nil {
 			return nil
 		}
@@ -56,6 +60,7 @@ func NewProvider(db database.DB, conn *types.BitbucketCloudConnection, opts Prov
 		client:   opts.BitbucketCloudClient,
 		pageSize: 1000,
 		db:       db,
+		logger:   logger,
 	}
 }
 

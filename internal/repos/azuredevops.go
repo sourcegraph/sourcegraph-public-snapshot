@@ -32,6 +32,7 @@ type AzureDevOpsSource struct {
 
 // NewAzureDevOpsSource returns a new AzureDevOpsSource from the given external service.
 func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*AzureDevOpsSource, error) {
+	logger = logger.Scoped("AzureDevOpsSource")
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config", svc.ID)
@@ -42,7 +43,7 @@ func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.Ext
 	}
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternalClientFactory(logger)
 	}
 
 	httpCli, err := cf.Doer()
@@ -50,7 +51,7 @@ func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.Ext
 		return nil, err
 	}
 
-	cli, err := azuredevops.NewClient(svc.URN(), c.Url, &auth.BasicAuth{Username: c.Username, Password: c.Token}, httpCli)
+	cli, err := azuredevops.NewClient(svc.URN(), c.Url, &auth.BasicAuth{Username: c.Username, Password: c.Token}, httpCli, logger)
 	if err != nil {
 		return nil, err
 	}

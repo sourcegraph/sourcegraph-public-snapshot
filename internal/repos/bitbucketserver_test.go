@@ -472,7 +472,7 @@ func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := bitbucketserver.NewTestClient(t, name, Update(name))
+			cli := bitbucketserver.NewTestClient(t, logtest.Scoped(t), name, Update(name))
 			s.client = cli
 
 			// This project has 2 repositories in it. that's why we expect 2

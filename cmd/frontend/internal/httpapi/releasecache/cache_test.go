@@ -144,5 +144,5 @@ func newTestClient(t *testing.T) *github.V4Client {
 
 	a := auth.OAuthBearerToken{Token: os.Getenv("GITHUB_TOKEN")}
 
-	return github.NewV4Client("https://github.com", u, &a, doer)
+	return github.NewV4Client("https://github.com", u, &a, doer, logtest.Scoped(t))
 }

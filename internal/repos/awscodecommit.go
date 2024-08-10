@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	awscredentials "github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/codecommit"
+	"github.com/sourcegraph/log"
 	"golang.org/x/net/http2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -37,7 +38,7 @@ type AWSCodeCommitSource struct {
 }
 
 // NewAWSCodeCommitSource returns a new AWSCodeCommitSource from the given external service.
-func NewAWSCodeCommitSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*AWSCodeCommitSource, error) {
+func NewAWSCodeCommitSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory, logger log.Logger) (*AWSCodeCommitSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -46,12 +47,12 @@ func NewAWSCodeCommitSource(ctx context.Context, svc *types.ExternalService, cf 
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newAWSCodeCommitSource(svc, &c, cf)
+	return newAWSCodeCommitSource(svc, &c, cf, logger)
 }
 
-func newAWSCodeCommitSource(svc *types.ExternalService, c *schema.AWSCodeCommitConnection, cf *httpcli.Factory) (*AWSCodeCommitSource, error) {
+func newAWSCodeCommitSource(svc *types.ExternalService, c *schema.AWSCodeCommitConnection, cf *httpcli.Factory, logger log.Logger) (*AWSCodeCommitSource, error) {
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternalClientFactory(logger.Scoped("awscodecommit"))
 	}
 
 	cli, err := cf.Doer(func(c *http.Client) error {

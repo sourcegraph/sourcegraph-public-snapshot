@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 
@@ -22,7 +24,7 @@ func TestPagureSource_ListRepos(t *testing.T) {
 	svc := typestest.MakeExternalService(t, extsvc.VariantPagure, conf)
 
 	ctx := context.Background()
-	src, err := NewPagureSource(ctx, svc, cf)
+	src, err := NewPagureSource(ctx, svc, cf, logtest.Scoped(t))
 	if err != nil {
 		t.Fatal(err)
 	}

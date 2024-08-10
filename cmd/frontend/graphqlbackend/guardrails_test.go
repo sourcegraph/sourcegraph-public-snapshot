@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/log"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -194,7 +196,9 @@ func makeGatewayEndpoint(t *testing.T) string {
 
 func TestSnippetAttributionReactsToSiteConfigChanges(t *testing.T) {
 	// Use a regular HTTP client as default external doer cannot hit localhost.
-	guardrails.MockHttpClient = http.DefaultClient
+	guardrails.MockHttpClient = func(_ log.Logger) httpcli.Doer {
+		return http.DefaultClient
+	}
 	t.Cleanup(func() { guardrails.MockHttpClient = nil })
 	// Starting attribution configuration has no endpoints to use.
 	noAttributionConfigured := schema.SiteConfiguration{

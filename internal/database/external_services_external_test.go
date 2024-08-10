@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -115,7 +117,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			_, err := database.ValidateExternalServiceConfig(context.Background(), dbm, database.ValidateExternalServiceConfigOptions{
 				Kind:   test.kind,
 				Config: test.config,
-			})
+			}, logtest.Scoped(t))
 			gotErr := fmt.Sprintf("%v", err)
 			if gotErr != test.wantErr {
 				t.Errorf("error: want %q but got %q", test.wantErr, gotErr)

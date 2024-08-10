@@ -1,6 +1,8 @@
 package sourcegraphoperator
 
 import (
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -35,7 +37,7 @@ func Init() {
 
 	conf.ContributeValidator(validateConfig)
 
-	p := NewProvider(*cloudSiteConfig.AuthProviders.SourcegraphOperator, httpcli.ExternalClient)
+	p := NewProvider(*cloudSiteConfig.AuthProviders.SourcegraphOperator, httpcli.ExternalClient(log.Scoped("SourcegraphOperator")))
 	providers.Update(auth.SourcegraphOperatorProviderType, []providers.Provider{p})
 }
 

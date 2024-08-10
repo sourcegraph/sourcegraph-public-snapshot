@@ -349,7 +349,7 @@ func TestHandleRestricted(t *testing.T) {
 
 	h := bitbucketProjectPermissionsHandler{
 		db:     db,
-		client: bitbucketserver.NewTestClient(t, "client", false),
+		client: bitbucketserver.NewTestClient(t, logtest.Scoped(t), "client", false),
 	}
 
 	// set permissions for 3 users (2 existing, 1 pending) and 2 repos
@@ -472,7 +472,7 @@ func TestHandleUnrestricted(t *testing.T) {
 
 	h := bitbucketProjectPermissionsHandler{
 		db:     db,
-		client: bitbucketserver.NewTestClient(t, "client", false),
+		client: bitbucketserver.NewTestClient(t, logtest.Scoped(t), "client", false),
 	}
 
 	// set permissions for 3 users (2 existing, 1 pending) and 2 repos

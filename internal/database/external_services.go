@@ -160,8 +160,9 @@ type externalServiceStore struct {
 
 func (e *externalServiceStore) copy() *externalServiceStore {
 	return &externalServiceStore{
-		Store: e.Store,
-		key:   e.key,
+		Store:  e.Store,
+		key:    e.key,
+		logger: e.logger,
 	}
 }
 
@@ -305,17 +306,17 @@ type ValidateExternalServiceConfigOptions struct {
 	AuthProviders []schema.AuthProviders
 }
 
-type ValidateExternalServiceConfigFunc = func(ctx context.Context, db DB, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error)
+type ValidateExternalServiceConfigFunc = func(ctx context.Context, db DB, opt ValidateExternalServiceConfigOptions, logger log.Logger) (normalized []byte, err error)
 
 // ValidateExternalServiceConfig is the default non-enterprise version of our validation function
 var ValidateExternalServiceConfig = MakeValidateExternalServiceConfigFunc(nil, nil, nil, nil, nil)
 
 type (
 	GitHubValidatorFunc          func(DB, *types.GitHubConnection) error
-	GitLabValidatorFunc          func(*schema.GitLabConnection, []schema.AuthProviders) error
-	BitbucketServerValidatorFunc func(*schema.BitbucketServerConnection) error
+	GitLabValidatorFunc          func(*schema.GitLabConnection, []schema.AuthProviders, log.Logger) error
+	BitbucketServerValidatorFunc func(*schema.BitbucketServerConnection, log.Logger) error
 	PerforceValidatorFunc        func(*schema.PerforceConnection) error
-	AzureDevOpsValidatorFunc     func(connection *schema.AzureDevOpsConnection) error
+	AzureDevOpsValidatorFunc     func(connection *schema.AzureDevOpsConnection, logger log.Logger) error
 )
 
 func MakeValidateExternalServiceConfigFunc(
@@ -325,7 +326,9 @@ func MakeValidateExternalServiceConfigFunc(
 	perforceValidators []PerforceValidatorFunc,
 	azureDevOpsValidators []AzureDevOpsValidatorFunc,
 ) ValidateExternalServiceConfigFunc {
-	return func(ctx context.Context, db DB, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error) {
+	return func(ctx context.Context, db DB, opt ValidateExternalServiceConfigOptions, logger log.Logger) (normalized []byte, err error) {
+		logger = logger.Scoped("ValidateExternalServiceConfig")
+
 		ext, ok := ExternalServiceKinds[opt.Kind]
 		if !ok {
 			return nil, errors.Errorf("invalid external service kind: %s", opt.Kind)
@@ -388,14 +391,14 @@ func MakeValidateExternalServiceConfigFunc(
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validateGitLabConnection(gitLabValidators, opt.ExternalServiceID, &c, opt.AuthProviders)
+			err = validateGitLabConnection(gitLabValidators, opt.ExternalServiceID, &c, opt.AuthProviders, logger)
 
 		case extsvc.KindBitbucketServer:
 			var c schema.BitbucketServerConnection
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validateBitbucketServerConnection(bitbucketServerValidators, opt.ExternalServiceID, &c)
+			err = validateBitbucketServerConnection(bitbucketServerValidators, opt.ExternalServiceID, &c, logger)
 
 		case extsvc.KindBitbucketCloud:
 			var c schema.BitbucketCloudConnection
@@ -414,7 +417,7 @@ func MakeValidateExternalServiceConfigFunc(
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validateAzureDevOpsConnection(azureDevOpsValidators, opt.ExternalServiceID, &c)
+			err = validateAzureDevOpsConnection(azureDevOpsValidators, opt.ExternalServiceID, &c, logger)
 		case extsvc.KindOther:
 			var c schema.OtherExternalServiceConnection
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
@@ -480,18 +483,18 @@ func validateGitHubConnection(db DB, githubValidators []GitHubValidatorFunc, id 
 	return err
 }
 
-func validateGitLabConnection(gitLabValidators []GitLabValidatorFunc, _ int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
+func validateGitLabConnection(gitLabValidators []GitLabValidatorFunc, _ int64, c *schema.GitLabConnection, ps []schema.AuthProviders, logger log.Logger) error {
 	var err error
 	for _, validate := range gitLabValidators {
-		err = errors.Append(err, validate(c, ps))
+		err = errors.Append(err, validate(c, ps, logger))
 	}
 	return err
 }
 
-func validateAzureDevOpsConnection(azureDevOpsValidators []AzureDevOpsValidatorFunc, _ int64, c *schema.AzureDevOpsConnection) error {
+func validateAzureDevOpsConnection(azureDevOpsValidators []AzureDevOpsValidatorFunc, _ int64, c *schema.AzureDevOpsConnection, logger log.Logger) error {
 	var err error
 	for _, validate := range azureDevOpsValidators {
-		err = errors.Append(err, validate(c))
+		err = errors.Append(err, validate(c, logger))
 	}
 	if c.Projects == nil && c.Orgs == nil {
 		err = errors.Append(err, errors.New("either 'projects' or 'orgs' must be set"))
@@ -499,10 +502,10 @@ func validateAzureDevOpsConnection(azureDevOpsValidators []AzureDevOpsValidatorF
 	return err
 }
 
-func validateBitbucketServerConnection(bitbucketServerValidators []BitbucketServerValidatorFunc, _ int64, c *schema.BitbucketServerConnection) error {
+func validateBitbucketServerConnection(bitbucketServerValidators []BitbucketServerValidatorFunc, _ int64, c *schema.BitbucketServerConnection, logger log.Logger) error {
 	var err error
 	for _, validate := range bitbucketServerValidators {
-		err = errors.Append(err, validate(c))
+		err = errors.Append(err, validate(c, logger))
 	}
 
 	if c.Repos == nil && c.RepositoryQuery == nil && c.ProjectKeys == nil {
@@ -539,7 +542,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		Kind:          es.Kind,
 		Config:        rawConfig,
 		AuthProviders: confGet().AuthProviders,
-	})
+	}, e.logger)
 	if err != nil {
 		return err
 	}
@@ -627,7 +630,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			Kind:          s.Kind,
 			Config:        rawConfig,
 			AuthProviders: authProviders,
-		})
+		}, e.logger)
 		if err != nil {
 			return errors.Wrapf(err, "validating service of kind %q", s.Kind)
 		}
@@ -867,7 +870,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			Kind:              externalService.Kind,
 			Config:            unredactedConfig,
 			AuthProviders:     ps,
-		})
+		}, e.logger)
 		if err != nil {
 			return err
 		}

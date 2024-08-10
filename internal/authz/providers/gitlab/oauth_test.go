@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 
@@ -39,7 +40,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 	t.Run("nil account", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
-		}, nil)
+		}, nil, logtest.Scoped(t))
 		_, err := p.FetchUserPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
@@ -51,7 +52,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 	t.Run("not the code host of the account", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
-		}, nil)
+		}, nil, logtest.Scoped(t))
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -109,6 +110,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 					}, nil
 				},
 			},
+			logtest.Scoped(t),
 		)
 
 		gitlab.MockGetOAuthContext = func() *oauthutil.OAuthContext {
@@ -190,6 +192,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 					}, nil
 				},
 			},
+			logtest.Scoped(t),
 		)
 
 		gitlab.MockGetOAuthContext = func() *oauthutil.OAuthContext {
@@ -254,6 +257,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 				TokenType: gitlab.TokenTypePAT,
 			},
 			nil,
+			logtest.Scoped(t),
 		)
 
 		_, err := p.FetchRepoPerms(context.Background(),

@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/goware/urlx"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -27,7 +28,7 @@ type PagureSource struct {
 }
 
 // NewPagureSource returns a new PagureSource from the given external service.
-func NewPagureSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*PagureSource, error) {
+func NewPagureSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory, logger log.Logger) (*PagureSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -38,7 +39,7 @@ func NewPagureSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 	}
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternalClientFactory(logger.Scoped("pagure.source.httpclient"))
 	}
 
 	httpCli, err := cf.Doer()
@@ -46,7 +47,7 @@ func NewPagureSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 		return nil, err
 	}
 
-	cli, err := pagure.NewClient(svc.URN(), &c, httpCli)
+	cli, err := pagure.NewClient(svc.URN(), &c, httpCli, logger.Scoped("pagure.httpclient"))
 	if err != nil {
 		return nil, err
 	}

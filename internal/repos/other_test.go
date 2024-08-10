@@ -159,7 +159,7 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 		ID:     1,
 		Kind:   extsvc.KindOther,
 		Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`{"url": %q, "repos": ["%s"]}`, s.URL, "src-expose")),
-	}, httpcli.TestExternalClientFactory, nil)
+	}, httpcli.TestExternalClientFactory, logtest.Scoped(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,7 +188,7 @@ func TestOther_DotComConfig(t *testing.T) {
 			ID:     1,
 			Kind:   extsvc.KindOther,
 			Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`{"url": "somegit.com/repo", "repos": ["%s"], "makeReposPublicOnDotCom": true}`, "src-expose")),
-		}, nil, nil)
+		}, nil, logtest.Scoped(t))
 		require.NoError(t, err)
 		return source
 	}

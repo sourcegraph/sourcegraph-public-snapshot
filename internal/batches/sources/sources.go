@@ -133,7 +133,7 @@ func NewSourcer(cf *httpcli.Factory) Sourcer {
 	return newSourcer(cf, loadBatchesSource)
 }
 
-type changesetSourceFactory func(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService) (ChangesetSource, error)
+type changesetSourceFactory func(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService, l log.Logger) (ChangesetSource, error)
 
 type sourcer struct {
 	logger    log.Logger
@@ -167,7 +167,7 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 		return nil, ErrExternalServiceNotGitHub
 	}
 
-	css, err := s.newSource(ctx, tx, s.cf, extSvc)
+	css, err := s.newSource(ctx, tx, s.cf, extSvc, s.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func (s *sourcer) ForUser(ctx context.Context, tx SourcerStore, uid int32, repo 
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service")
 	}
-	css, err := s.newSource(ctx, tx, s.cf, extSvc)
+	css, err := s.newSource(ctx, tx, s.cf, extSvc, s.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +297,7 @@ func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au au
 		return nil, errors.Wrap(err, "loading external service")
 	}
 
-	css, err := s.newSource(ctx, tx, s.cf, extSvc)
+	css, err := s.newSource(ctx, tx, s.cf, extSvc, s.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -308,8 +308,8 @@ func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au au
 	return css.WithAuthenticator(au)
 }
 
-func loadBatchesSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService) (ChangesetSource, error) {
-	css, err := buildChangesetSource(ctx, tx, cf, extSvc)
+func loadBatchesSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService, logger log.Logger) (ChangesetSource, error) {
+	css, err := buildChangesetSource(ctx, logger, tx, cf, extSvc)
 	if err != nil {
 		return nil, errors.Wrap(err, "building changeset source")
 	}
@@ -319,7 +319,9 @@ func loadBatchesSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory
 // GitserverPushConfig creates a push configuration given a repo and an
 // authenticator. This function is only public for testing purposes, and should
 // not be used otherwise.
-func GitserverPushConfig(ctx context.Context, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
+func GitserverPushConfig(ctx context.Context, repo *types.Repo, au auth.Authenticator, logger log.Logger) (*protocol.PushConfig, error) {
+	logger = logger.Scoped("GitserverPushConfig")
+
 	// Empty authenticators are not allowed.
 	if au == nil {
 		return nil, ErrNoPushCredentials{}
@@ -365,7 +367,7 @@ func GitserverPushConfig(ctx context.Context, repo *types.Repo, au auth.Authenti
 		}
 	case *ghauth.InstallationAuthenticator:
 		if av.NeedsRefresh() {
-			if err := av.Refresh(ctx, httpcli.ExternalClient); err != nil {
+			if err := av.Refresh(ctx, httpcli.ExternalClient(logger.Scoped("GithubAuth.InstallationAuthenticator"))); err != nil {
 				return nil, err
 			}
 		}
@@ -532,20 +534,22 @@ func loadExternalService(ctx context.Context, s database.ExternalServiceStore, o
 
 // buildChangesetSource builds a ChangesetSource for the given repo to load the
 // changeset state from.
-func buildChangesetSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, externalService *types.ExternalService) (ChangesetSource, error) {
+func buildChangesetSource(ctx context.Context, logger log.Logger, tx SourcerStore, cf *httpcli.Factory, externalService *types.ExternalService) (ChangesetSource, error) {
+	logger = logger.Scoped("batches")
+
 	switch externalService.Kind {
 	case extsvc.KindGitHub:
-		return NewGitHubSource(ctx, tx.DatabaseDB(), externalService, cf)
+		return NewGitHubSource(ctx, tx.DatabaseDB(), externalService, cf, logger.Scoped("GithubSource"))
 	case extsvc.KindGitLab:
-		return NewGitLabSource(ctx, externalService, cf)
+		return NewGitLabSource(ctx, externalService, cf, logger.Scoped("GitLabSource"))
 	case extsvc.KindBitbucketServer:
-		return NewBitbucketServerSource(ctx, externalService, cf)
+		return NewBitbucketServerSource(ctx, externalService, cf, logger.Scoped("BitbucketServerSource"))
 	case extsvc.KindBitbucketCloud:
-		return NewBitbucketCloudSource(ctx, externalService, cf)
+		return NewBitbucketCloudSource(ctx, externalService, cf, logger.Scoped("BitbucketCloudSource"))
 	case extsvc.KindAzureDevOps:
-		return NewAzureDevOpsSource(ctx, externalService, cf)
+		return NewAzureDevOpsSource(ctx, externalService, cf, logger.Scoped("AzureDevOpsSource"))
 	case extsvc.KindGerrit:
-		return NewGerritSource(ctx, externalService, cf)
+		return NewGerritSource(ctx, externalService, cf, logger.Scoped("GerritSource"))
 	case extsvc.KindPerforce:
 		return NewPerforceSource(ctx, gitserver.NewClient("batches.perforcesource"), externalService, cf)
 	default:

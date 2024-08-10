@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -38,7 +40,7 @@ func TestAzureDevOpsSource_ListRepos(t *testing.T) {
 	})
 
 	ctx := context.Background()
-	src, err := NewAzureDevOpsSource(ctx, nil, svc, cf)
+	src, err := NewAzureDevOpsSource(ctx, logtest.Scoped(t), svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

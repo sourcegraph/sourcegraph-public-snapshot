@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	logger "github.com/sourcegraph/log"
+
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -24,11 +26,14 @@ import (
 
 type AzureDevOpsSource struct {
 	client azuredevops.Client
+	logger logger.Logger
 }
 
-var _ ForkableChangesetSource = AzureDevOpsSource{}
+var _ ForkableChangesetSource = &AzureDevOpsSource{}
 
-func NewAzureDevOpsSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*AzureDevOpsSource, error) {
+func NewAzureDevOpsSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory, logger logger.Logger) (*AzureDevOpsSource, error) {
+	logger = logger.Scoped("AzureDevOpsSource")
+
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -39,7 +44,7 @@ func NewAzureDevOpsSource(ctx context.Context, svc *types.ExternalService, cf *h
 	}
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternalClientFactory(logger)
 	}
 
 	cli, err := cf.Doer()
@@ -47,28 +52,28 @@ func NewAzureDevOpsSource(ctx context.Context, svc *types.ExternalService, cf *h
 		return nil, errors.Wrap(err, "creating external client")
 	}
 
-	client, err := azuredevops.NewClient(svc.URN(), c.Url, &auth.BasicAuth{Username: c.Username, Password: c.Token}, cli)
+	client, err := azuredevops.NewClient(svc.URN(), c.Url, &auth.BasicAuth{Username: c.Username, Password: c.Token}, cli, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating Azure DevOps client")
 	}
 
-	return &AzureDevOpsSource{client: client}, nil
+	return &AzureDevOpsSource{client: client, logger: logger}, nil
 }
 
 // GitserverPushConfig returns an authenticated push config used for pushing
 // commits to the code host.
-func (s AzureDevOpsSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(ctx, repo, s.client.Authenticator())
+func (s *AzureDevOpsSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(ctx, repo, s.client.Authenticator(), s.logger)
 }
 
-func (s AzureDevOpsSource) AuthenticationStrategy() AuthenticationStrategy {
+func (s *AzureDevOpsSource) AuthenticationStrategy() AuthenticationStrategy {
 	return AuthenticationStrategyUserCredential
 }
 
 // WithAuthenticator returns a copy of the original Source configured to use the
 // given authenticator, provided that authenticator type is supported by the
 // code host.
-func (s AzureDevOpsSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
+func (s *AzureDevOpsSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
 	client, err := s.client.WithAuthenticator(a)
 	if err != nil {
 		return nil, err
@@ -79,7 +84,7 @@ func (s AzureDevOpsSource) WithAuthenticator(a auth.Authenticator) (ChangesetSou
 
 // ValidateAuthenticator validates the currently set authenticator is usable.
 // Returns an error, when validating the Authenticator yielded an error.
-func (s AzureDevOpsSource) ValidateAuthenticator(ctx context.Context) error {
+func (s *AzureDevOpsSource) ValidateAuthenticator(ctx context.Context) error {
 	_, err := s.client.GetAuthorizedProfile(ctx)
 	return err
 }
@@ -87,7 +92,7 @@ func (s AzureDevOpsSource) ValidateAuthenticator(ctx context.Context) error {
 // LoadChangeset loads the given Changeset from the source and updates it. If
 // the Changeset could not be found on the source, a ChangesetNotFoundError is
 // returned.
-func (s AzureDevOpsSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
+func (s *AzureDevOpsSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 	repo := cs.TargetRepo.Metadata.(*azuredevops.Repository)
 	args, err := s.createCommonPullRequestArgs(*repo, *cs)
 	if err != nil {
@@ -107,19 +112,19 @@ func (s AzureDevOpsSource) LoadChangeset(ctx context.Context, cs *Changeset) err
 
 // CreateChangeset will create the Changeset on the source. If it already
 // exists, *Changeset will be populated and the return value will be true.
-func (s AzureDevOpsSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
+func (s *AzureDevOpsSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
 	input := s.changesetToPullRequestInput(cs)
 	return s.createChangeset(ctx, cs, input)
 }
 
 // CreateDraftChangeset creates the given changeset on the code host in draft mode.
-func (s AzureDevOpsSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (bool, error) {
+func (s *AzureDevOpsSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (bool, error) {
 	input := s.changesetToPullRequestInput(cs)
 	input.IsDraft = true
 	return s.createChangeset(ctx, cs, input)
 }
 
-func (s AzureDevOpsSource) createChangeset(ctx context.Context, cs *Changeset, input azuredevops.CreatePullRequestInput) (bool, error) {
+func (s *AzureDevOpsSource) createChangeset(ctx context.Context, cs *Changeset, input azuredevops.CreatePullRequestInput) (bool, error) {
 	repo := cs.TargetRepo.Metadata.(*azuredevops.Repository)
 	org, err := repo.GetOrganization()
 	if err != nil {
@@ -144,7 +149,7 @@ func (s AzureDevOpsSource) createChangeset(ctx context.Context, cs *Changeset, i
 }
 
 // UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
-func (s AzureDevOpsSource) UndraftChangeset(ctx context.Context, cs *Changeset) error {
+func (s *AzureDevOpsSource) UndraftChangeset(ctx context.Context, cs *Changeset) error {
 	input := s.changesetToUpdatePullRequestInput(cs, false)
 	isDraft := false
 	input.IsDraft = &isDraft
@@ -165,7 +170,7 @@ func (s AzureDevOpsSource) UndraftChangeset(ctx context.Context, cs *Changeset) 
 // CloseChangeset will close the Changeset on the source, where "close"
 // means the appropriate final state on the codehost (e.g. "abandoned" on
 // AzureDevOps).
-func (s AzureDevOpsSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
+func (s *AzureDevOpsSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
 	repo := cs.TargetRepo.Metadata.(*azuredevops.Repository)
 	args, err := s.createCommonPullRequestArgs(*repo, *cs)
 	if err != nil {
@@ -189,7 +194,7 @@ func (s AzureDevOpsSource) CloseChangeset(ctx context.Context, cs *Changeset) er
 }
 
 // UpdateChangeset can update Changesets.
-func (s AzureDevOpsSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
+func (s *AzureDevOpsSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
 	repo := cs.TargetRepo.Metadata.(*azuredevops.Repository)
 	args, err := s.createCommonPullRequestArgs(*repo, *cs)
 	if err != nil {
@@ -224,7 +229,7 @@ func (s AzureDevOpsSource) UpdateChangeset(ctx context.Context, cs *Changeset) e
 
 // ReopenChangeset will reopen the Changeset on the source, if it's closed.
 // If not, it's a noop.
-func (s AzureDevOpsSource) ReopenChangeset(ctx context.Context, cs *Changeset) error {
+func (s *AzureDevOpsSource) ReopenChangeset(ctx context.Context, cs *Changeset) error {
 	deleteSourceBranch := conf.Get().BatchChangesAutoDeleteBranch
 	input := azuredevops.PullRequestUpdateInput{
 		Status: &azuredevops.PullRequestStatusActive,
@@ -247,7 +252,7 @@ func (s AzureDevOpsSource) ReopenChangeset(ctx context.Context, cs *Changeset) e
 }
 
 // CreateComment posts a comment on the Changeset.
-func (s AzureDevOpsSource) CreateComment(ctx context.Context, cs *Changeset, comment string) error {
+func (s *AzureDevOpsSource) CreateComment(ctx context.Context, cs *Changeset, comment string) error {
 	repo := cs.TargetRepo.Metadata.(*azuredevops.Repository)
 	args, err := s.createCommonPullRequestArgs(*repo, *cs)
 	if err != nil {
@@ -271,7 +276,7 @@ func (s AzureDevOpsSource) CreateComment(ctx context.Context, cs *Changeset, com
 // must attempt a squash merge. Otherwise, it is expected to perform a regular
 // merge. If the changeset cannot be merged, because it is in an unmergeable
 // state, ChangesetNotMergeableError must be returned.
-func (s AzureDevOpsSource) MergeChangeset(ctx context.Context, cs *Changeset, squash bool) error {
+func (s *AzureDevOpsSource) MergeChangeset(ctx context.Context, cs *Changeset, squash bool) error {
 	repo := cs.TargetRepo.Metadata.(*azuredevops.Repository)
 	args, err := s.createCommonPullRequestArgs(*repo, *cs)
 	if err != nil {
@@ -304,7 +309,7 @@ func (s AzureDevOpsSource) MergeChangeset(ctx context.Context, cs *Changeset, sq
 // exists and creating it if it doesn't. If namespace is not provided, the original namespace is used.
 // If name is not provided, the fork will be named with the default Sourcegraph convention:
 // "${original-namespace}-${original-name}"
-func (s AzureDevOpsSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns, n *string) (*types.Repo, error) {
+func (s *AzureDevOpsSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns, n *string) (*types.Repo, error) {
 	tr := targetRepo.Metadata.(*azuredevops.Repository)
 
 	var namespace string
@@ -371,12 +376,12 @@ func (s AzureDevOpsSource) GetFork(ctx context.Context, targetRepo *types.Repo, 
 	return s.checkAndCopy(targetRepo, &fork)
 }
 
-func (s AzureDevOpsSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+func (s *AzureDevOpsSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
 	return BuildCommitOptsCommon(repo, spec, pushOpts)
 }
 
 // checkAndCopy creates a types.Repo representation of the forked repository useing the original repo (targetRepo).
-func (s AzureDevOpsSource) checkAndCopy(targetRepo *types.Repo, fork *azuredevops.Repository) (*types.Repo, error) {
+func (s *AzureDevOpsSource) checkAndCopy(targetRepo *types.Repo, fork *azuredevops.Repository) (*types.Repo, error) {
 	if !fork.IsFork {
 		return nil, errors.New("repo is not a fork")
 	}
@@ -392,7 +397,7 @@ func (s AzureDevOpsSource) checkAndCopy(targetRepo *types.Repo, fork *azuredevop
 	return forkRepo, nil
 }
 
-func (s AzureDevOpsSource) annotatePullRequest(ctx context.Context, repo *azuredevops.Repository, pr *azuredevops.PullRequest) (*adobatches.AnnotatedPullRequest, error) {
+func (s *AzureDevOpsSource) annotatePullRequest(ctx context.Context, repo *azuredevops.Repository, pr *azuredevops.PullRequest) (*adobatches.AnnotatedPullRequest, error) {
 	org, err := repo.GetOrganization()
 	if err != nil {
 		return nil, err
@@ -419,7 +424,7 @@ func (s AzureDevOpsSource) annotatePullRequest(ctx context.Context, repo *azured
 	}, nil
 }
 
-func (s AzureDevOpsSource) setChangesetMetadata(ctx context.Context, repo *azuredevops.Repository, pr *azuredevops.PullRequest, cs *Changeset) error {
+func (s *AzureDevOpsSource) setChangesetMetadata(ctx context.Context, repo *azuredevops.Repository, pr *azuredevops.PullRequest, cs *Changeset) error {
 	apr, err := s.annotatePullRequest(ctx, repo, pr)
 	if err != nil {
 		return errors.Wrap(err, "annotating pull request")
@@ -432,7 +437,7 @@ func (s AzureDevOpsSource) setChangesetMetadata(ctx context.Context, repo *azure
 	return nil
 }
 
-func (s AzureDevOpsSource) changesetToPullRequestInput(cs *Changeset) azuredevops.CreatePullRequestInput {
+func (s *AzureDevOpsSource) changesetToPullRequestInput(cs *Changeset) azuredevops.CreatePullRequestInput {
 	deleteSourceBranch := conf.Get().BatchChangesAutoDeleteBranch
 	input := azuredevops.CreatePullRequestInput{
 		Title:         cs.Title,
@@ -454,7 +459,7 @@ func (s AzureDevOpsSource) changesetToPullRequestInput(cs *Changeset) azuredevop
 	return input
 }
 
-func (s AzureDevOpsSource) changesetToUpdatePullRequestInput(cs *Changeset, targetRefChanged bool) azuredevops.PullRequestUpdateInput {
+func (s *AzureDevOpsSource) changesetToUpdatePullRequestInput(cs *Changeset, targetRefChanged bool) azuredevops.PullRequestUpdateInput {
 	targetRef := gitdomain.EnsureRefPrefix(cs.BaseRef)
 	if targetRefChanged {
 		return azuredevops.PullRequestUpdateInput{
@@ -472,7 +477,7 @@ func (s AzureDevOpsSource) changesetToUpdatePullRequestInput(cs *Changeset, targ
 	}
 }
 
-func (s AzureDevOpsSource) createCommonPullRequestArgs(repo azuredevops.Repository, cs Changeset) (azuredevops.PullRequestCommonArgs, error) {
+func (s *AzureDevOpsSource) createCommonPullRequestArgs(repo azuredevops.Repository, cs Changeset) (azuredevops.PullRequestCommonArgs, error) {
 	org, err := repo.GetOrganization()
 	if err != nil {
 		return azuredevops.PullRequestCommonArgs{}, errors.Wrap(err, "getting Azure DevOps organization from project")

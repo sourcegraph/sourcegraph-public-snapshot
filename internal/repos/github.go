@@ -93,6 +93,8 @@ func newGitHubSource(
 	c *schema.GitHubConnection,
 	cf *httpcli.Factory,
 ) (*GitHubSource, error) {
+	logger = logger.Scoped("GitHubSource")
+
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -103,7 +105,7 @@ func newGitHubSource(
 	apiURL, githubDotCom := github.APIRoot(baseURL)
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternalClientFactory(logger)
 	}
 
 	opts := []httpcli.Opt{
@@ -177,11 +179,11 @@ func newGitHubSource(
 	urn := svc.URN()
 
 	var (
-		v3ClientLogger = log.Scoped("source")
+		v3ClientLogger = logger.Scoped("source")
 		v3Client       = github.NewV3Client(v3ClientLogger, urn, apiURL, auther, cli)
-		v4Client       = github.NewV4Client(urn, apiURL, auther, cli)
+		v4Client       = github.NewV4Client(urn, apiURL, auther, cli, logger.Scoped("v4client"))
 
-		searchClientLogger = log.Scoped("search")
+		searchClientLogger = logger.Scoped("search")
 		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, auther, cli)
 	)
 

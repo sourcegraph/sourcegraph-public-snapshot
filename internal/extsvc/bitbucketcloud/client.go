@@ -79,13 +79,13 @@ type client struct {
 // NewClient creates a new Bitbucket Cloud API client from the given external
 // service configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (Client, error) {
-	return newClient(urn, config, httpClient)
+func NewClient(urn string, config *schema.BitbucketCloudConnection, httpClient httpcli.Doer, logger log.Logger) (Client, error) {
+	return newClient(urn, config, httpClient, logger)
 }
 
-func newClient(urn string, config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (*client, error) {
+func newClient(urn string, config *schema.BitbucketCloudConnection, httpClient httpcli.Doer, logger log.Logger) (*client, error) {
 	if httpClient == nil {
-		httpClient = httpcli.ExternalDoer
+		httpClient = httpcli.ExternalDoer(logger)
 	}
 
 	httpClient = requestCounter.Doer(httpClient, func(u *url.URL) string {

@@ -13,6 +13,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -95,7 +96,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 		test := test
 		t.Run(test.description, func(t *testing.T) {
 			ctx := context.Background()
-			authzProvider := newSudoProvider(test.op, nil)
+			authzProvider := newSudoProvider(test.op, nil, logtest.Scoped(t))
 			for _, c := range test.calls {
 				t.Run(c.description, func(t *testing.T) {
 					acct, err := authzProvider.FetchAccount(ctx, c.user, c.current, nil)
@@ -122,7 +123,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 	t.Run("nil account", func(t *testing.T) {
 		p := newSudoProvider(SudoProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
-		}, nil)
+		}, nil, logtest.Scoped(t))
 		_, err := p.FetchUserPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
@@ -134,7 +135,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 	t.Run("not the code host of the account", func(t *testing.T) {
 		p := newSudoProvider(SudoProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
-		}, nil)
+		}, nil, logtest.Scoped(t))
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -197,6 +198,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 					}, nil
 				},
 			},
+			logtest.Scoped(t),
 		)
 
 		accountData := json.RawMessage(`{"id": 999}`)
@@ -270,6 +272,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 					}, nil
 				},
 			},
+			logtest.Scoped(t),
 		)
 
 		accountData := json.RawMessage(`{"id": 999}`)
@@ -317,7 +320,7 @@ func TestSudoProvider_FetchRepoPerms(t *testing.T) {
 	t.Run("nil repository", func(t *testing.T) {
 		p := newSudoProvider(SudoProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
-		}, nil)
+		}, nil, logtest.Scoped(t))
 		_, err := p.FetchRepoPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no repository provided"
 		got := fmt.Sprintf("%v", err)
@@ -329,7 +332,7 @@ func TestSudoProvider_FetchRepoPerms(t *testing.T) {
 	t.Run("not the code host of the repository", func(t *testing.T) {
 		p := newSudoProvider(SudoProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
-		}, nil)
+		}, nil, logtest.Scoped(t))
 		_, err := p.FetchRepoPerms(context.Background(),
 			&extsvc.Repository{
 				URI: "https://github.com/user/repo",
@@ -383,6 +386,7 @@ func TestSudoProvider_FetchRepoPerms(t *testing.T) {
 				}, nil
 			},
 		},
+		logtest.Scoped(t),
 	)
 
 	accountIDs, err := p.FetchRepoPerms(context.Background(),

@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	gerritbatches "github.com/sourcegraph/sourcegraph/internal/batches/sources/gerrit"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -26,9 +28,12 @@ import (
 
 type GerritSource struct {
 	client gerrit.Client
+	logger log.Logger
 }
 
-func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GerritSource, error) {
+func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory, logger log.Logger) (*GerritSource, error) {
+	logger = logger.Scoped("GerritSource")
+
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -39,7 +44,7 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 	}
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternalClientFactory(logger)
 	}
 
 	cli, err := cf.Doer()
@@ -52,28 +57,28 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 		return nil, errors.Wrap(err, "parsing Gerrit CodeHostURL")
 	}
 
-	client, err := gerrit.NewClient(svc.URN(), gerritURL, &gerrit.AccountCredentials{Username: c.Username, Password: c.Password}, cli)
+	client, err := gerrit.NewClient(svc.URN(), gerritURL, &gerrit.AccountCredentials{Username: c.Username, Password: c.Password}, cli, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating Gerrit client")
 	}
 
-	return &GerritSource{client: client}, nil
+	return &GerritSource{client: client, logger: logger}, nil
 }
 
 // GitserverPushConfig returns an authenticated push config used for pushing
 // commits to the code host.
-func (s GerritSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(ctx, repo, s.client.Authenticator())
+func (s *GerritSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(ctx, repo, s.client.Authenticator(), s.logger)
 }
 
-func (s GerritSource) AuthenticationStrategy() AuthenticationStrategy {
+func (s *GerritSource) AuthenticationStrategy() AuthenticationStrategy {
 	return AuthenticationStrategyUserCredential
 }
 
 // WithAuthenticator returns a copy of the original Source configured to use the
 // given authenticator, provided that authenticator type is supported by the
 // code host.
-func (s GerritSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
+func (s *GerritSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
 	client, err := s.client.WithAuthenticator(a)
 	if err != nil {
 		return nil, err
@@ -84,7 +89,7 @@ func (s GerritSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, 
 
 // ValidateAuthenticator validates the currently set authenticator is usable.
 // Returns an error, when validating the Authenticator yielded an error.
-func (s GerritSource) ValidateAuthenticator(ctx context.Context) error {
+func (s *GerritSource) ValidateAuthenticator(ctx context.Context) error {
 	_, err := s.client.GetAuthenticatedUserAccount(ctx)
 	return err
 }
@@ -92,7 +97,7 @@ func (s GerritSource) ValidateAuthenticator(ctx context.Context) error {
 // LoadChangeset loads the given Changeset from the source and updates it. If
 // the Changeset could not be found on the source, a ChangesetNotFoundError is
 // returned.
-func (s GerritSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
+func (s *GerritSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 	pr, err := s.client.GetChange(ctx, cs.ExternalID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -105,7 +110,7 @@ func (s GerritSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 
 // CreateChangeset will create the Changeset on the source. If it already
 // exists, *Changeset will be populated and the return value will be true.
-func (s GerritSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
+func (s *GerritSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
 	changeID := GenerateGerritChangeID(*cs.Changeset)
 	// For Gerrit, the Change is created at `git push` time, so we just load it here to verify it
 	// was created successfully.
@@ -124,7 +129,7 @@ func (s GerritSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool,
 }
 
 // CreateDraftChangeset creates the given changeset on the code host in draft mode.
-func (s GerritSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (bool, error) {
+func (s *GerritSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (bool, error) {
 	changeID := GenerateGerritChangeID(*cs.Changeset)
 
 	// For Gerrit, the Change is created at `git push` time, so we just call the API to mark it as WIP.
@@ -149,7 +154,7 @@ func (s GerritSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (
 }
 
 // UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
-func (s GerritSource) UndraftChangeset(ctx context.Context, cs *Changeset) error {
+func (s *GerritSource) UndraftChangeset(ctx context.Context, cs *Changeset) error {
 	if err := s.client.SetReadyForReview(ctx, cs.ExternalID); err != nil {
 		if errcode.IsNotFound(err) {
 			return ChangesetNotFoundError{Changeset: cs}
@@ -166,7 +171,7 @@ func (s GerritSource) UndraftChangeset(ctx context.Context, cs *Changeset) error
 // CloseChangeset will close the Changeset on the source, where "close"
 // means the appropriate final state on the codehost (e.g. "abandoned" on
 // Gerrit).
-func (s GerritSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
+func (s *GerritSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
 	updated, err := s.client.AbandonChange(ctx, cs.ExternalID)
 	if err != nil {
 		return errors.Wrap(err, "abandoning change")
@@ -182,7 +187,7 @@ func (s GerritSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
 }
 
 // UpdateChangeset can update Changesets.
-func (s GerritSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
+func (s *GerritSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
 	pr, err := s.client.GetChange(ctx, cs.ExternalID)
 	if err != nil {
 		// Route 1
@@ -235,7 +240,7 @@ func (s GerritSource) UpdateChangeset(ctx context.Context, cs *Changeset) error 
 
 // ReopenChangeset will reopen the Changeset on the source, if it's closed.
 // If not, it's a noop.
-func (s GerritSource) ReopenChangeset(ctx context.Context, cs *Changeset) error {
+func (s *GerritSource) ReopenChangeset(ctx context.Context, cs *Changeset) error {
 	updated, err := s.client.RestoreChange(ctx, cs.ExternalID)
 	if err != nil {
 		return errors.Wrap(err, "restoring change")
@@ -245,7 +250,7 @@ func (s GerritSource) ReopenChangeset(ctx context.Context, cs *Changeset) error 
 }
 
 // CreateComment posts a comment on the Changeset.
-func (s GerritSource) CreateComment(ctx context.Context, cs *Changeset, comment string) error {
+func (s *GerritSource) CreateComment(ctx context.Context, cs *Changeset, comment string) error {
 	return s.client.WriteReviewComment(ctx, cs.ExternalID, gerrit.ChangeReviewComment{
 		Message: comment,
 	})
@@ -257,7 +262,7 @@ func (s GerritSource) CreateComment(ctx context.Context, cs *Changeset, comment 
 // merge. If the changeset cannot be merged, because it is in an unmergeable
 // state, ChangesetNotMergeableError must be returned.
 // Gerrit changes are always single commit, so squash does not matter.
-func (s GerritSource) MergeChangeset(ctx context.Context, cs *Changeset, _ bool) error {
+func (s *GerritSource) MergeChangeset(ctx context.Context, cs *Changeset, _ bool) error {
 	updated, err := s.client.SubmitChange(ctx, cs.ExternalID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -268,7 +273,7 @@ func (s GerritSource) MergeChangeset(ctx context.Context, cs *Changeset, _ bool)
 	return errors.Wrap(s.setChangesetMetadata(ctx, updated, cs), "setting Gerrit changeset metadata")
 }
 
-func (s GerritSource) BuildCommitOpts(repo *types.Repo, changeset *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+func (s *GerritSource) BuildCommitOpts(repo *types.Repo, changeset *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
 	opts := BuildCommitOptsCommon(repo, spec, pushOpts)
 	pushRef := strings.Replace(gitdomain.EnsureRefPrefix(spec.BaseRef), "refs/heads", "refs/for", 1) //Magical Gerrit ref for pushing changes.
 	opts.PushRef = &pushRef
@@ -283,7 +288,7 @@ func (s GerritSource) BuildCommitOpts(repo *types.Repo, changeset *btypes.Change
 	return opts
 }
 
-func (s GerritSource) setChangesetMetadata(ctx context.Context, change *gerrit.Change, cs *Changeset) error {
+func (s *GerritSource) setChangesetMetadata(ctx context.Context, change *gerrit.Change, cs *Changeset) error {
 	apr, err := s.annotateChange(ctx, change)
 	if err != nil {
 		return errors.Wrap(err, "annotating Change")
@@ -294,7 +299,7 @@ func (s GerritSource) setChangesetMetadata(ctx context.Context, change *gerrit.C
 	return nil
 }
 
-func (s GerritSource) annotateChange(ctx context.Context, change *gerrit.Change) (*gerritbatches.AnnotatedChange, error) {
+func (s *GerritSource) annotateChange(ctx context.Context, change *gerrit.Change) (*gerritbatches.AnnotatedChange, error) {
 	reviewers, err := s.client.GetChangeReviews(ctx, change.ChangeID)
 	if err != nil {
 		return nil, err

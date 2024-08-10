@@ -312,7 +312,7 @@ func TestGitlabSource_ListRepos(t *testing.T) {
 	svc := typestest.MakeExternalService(t, extsvc.VariantGitLab, conf)
 
 	ctx := context.Background()
-	src, err := NewGitLabSource(ctx, nil, svc, cf)
+	src, err := NewGitLabSource(ctx, logtest.Scoped(t), svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

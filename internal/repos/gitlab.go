@@ -69,6 +69,8 @@ var gitlabRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 }, []string{"resource", "name"})
 
 func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
+	logger = logger.Scoped("GitLabSource")
+
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -76,7 +78,7 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternalClientFactory(logger)
 	}
 
 	var opts []httpcli.Opt
@@ -120,7 +122,7 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 		return nil, err
 	}
 
-	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli)
+	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli, logger)
 
 	var client *gitlab.Client
 	switch gitlab.TokenType(c.TokenType) {

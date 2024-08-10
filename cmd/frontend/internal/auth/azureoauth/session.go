@@ -41,7 +41,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return false, nil, "failed to read Azure DevOps Profile from oauth2 callback request", errors.Wrap(err, "azureoauth.GetOrCreateUser: failed to read user from context of callback request")
 	}
 
-	if allow, err := s.verifyAllowOrgs(ctx, user, token, httpcli.ExternalDoer); err != nil {
+	if allow, err := s.verifyAllowOrgs(ctx, user, token, httpcli.ExternalDoer(s.logger)); err != nil {
 		return false, nil, "error in verifying authorized user organizations", err
 	} else if !allow {
 		msg := "User does not belong to any org from the allowed list of organizations. Please contact your site admin."
@@ -128,6 +128,7 @@ func (s *sessionIssuerHelper) verifyAllowOrgs(ctx context.Context, profile *azur
 			Token: token.AccessToken,
 		},
 		doer,
+		s.logger,
 	)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to create client for listing organizations of user")

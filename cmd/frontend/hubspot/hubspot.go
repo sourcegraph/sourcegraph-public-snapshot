@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/go-querystring/query"
+	"github.com/sourcegraph/log"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -25,13 +26,15 @@ type Client struct {
 
 	lastPing       atomic.Time
 	lastPingResult atomic.Error
+	logger         log.Logger
 }
 
 // New returns a new HubSpot client using the given Portal ID.
-func New(portalID, accessToken string) *Client {
+func New(portalID, accessToken string, logger log.Logger) *Client {
 	return &Client{
 		portalID:    portalID,
 		accessToken: accessToken,
+		logger:      logger.Scoped("HubSpotClient"),
 	}
 }
 
@@ -61,7 +64,7 @@ func (c *Client) postForm(methodName string, baseURL *url.URL, suffix string, bo
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	setAccessTokenAuthorizationHeader(req, c.accessToken)
 
-	resp, err := httpcli.ExternalDoer.Do(req)
+	resp, err := httpcli.ExternalDoer(c.logger).Do(req)
 	if err != nil {
 		return wrapError(methodName, err)
 	}
@@ -95,7 +98,7 @@ func (c *Client) postJSON(methodName string, baseURL *url.URL, reqPayload, respP
 	req.Header.Set("Content-Type", "application/json")
 	setAccessTokenAuthorizationHeader(req, c.accessToken)
 
-	resp, err := httpcli.ExternalDoer.Do(req.WithContext(ctx))
+	resp, err := httpcli.ExternalDoer(c.logger).Do(req.WithContext(ctx))
 	if err != nil {
 		return wrapError(methodName, err)
 	}
@@ -129,7 +132,7 @@ func (c *Client) get(ctx context.Context, methodName string, baseURL *url.URL, s
 	ctx, cancel := context.WithTimeout(req.Context(), time.Minute)
 	defer cancel()
 
-	resp, err := httpcli.ExternalDoer.Do(req.WithContext(ctx))
+	resp, err := httpcli.ExternalDoer(c.logger).Do(req.WithContext(ctx))
 	if err != nil {
 		return wrapError(methodName, err)
 	}

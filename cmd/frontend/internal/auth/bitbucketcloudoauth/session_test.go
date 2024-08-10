@@ -196,7 +196,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					Url:    server.URL,
 					ApiURL: server.URL,
 				}
-				bbClient, err := bitbucketcloud.NewClient(server.URL, conf, httpcli.TestExternalDoer)
+				bbClient, err := bitbucketcloud.NewClient(server.URL, conf, httpcli.TestExternalDoer, logtest.Scoped(t))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -278,7 +278,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		Url:    server.URL,
 		ApiURL: server.URL,
 	}
-	bbClient, err := bitbucketcloud.NewClient(server.URL, conf, httpcli.TestExternalDoer)
+	bbClient, err := bitbucketcloud.NewClient(server.URL, conf, httpcli.TestExternalDoer, logtest.Scoped(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -350,7 +350,7 @@ func TestGetOrCreateUser_NoPanicOnEmailSlice(t *testing.T) {
 		Url:    server.URL,
 		ApiURL: server.URL,
 	}
-	bbClient, err := bitbucketcloud.NewClient(server.URL, conf, httpcli.TestExternalDoer)
+	bbClient, err := bitbucketcloud.NewClient(server.URL, conf, httpcli.TestExternalDoer, logtest.Scoped(t))
 	if err != nil {
 		t.Fatalf("Failed to create Bitbucket Cloud client: %v", err)
 	}

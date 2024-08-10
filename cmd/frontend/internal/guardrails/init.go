@@ -23,7 +23,7 @@ import (
 
 // MockHttpClient is used to inject a test double, since the external client used
 // by default is prevented from hitting localhost, which is useful in testing.
-var MockHttpClient httpcli.Doer
+var MockHttpClient func(logger log.Logger) httpcli.Doer
 
 func Init(
 	_ context.Context,
@@ -45,6 +45,7 @@ func Init(
 		initLogic := &enterpriseInitialization{
 			observationCtx: observationCtx,
 			conf:           conf,
+			logger:         observationCtx.Logger.Scoped("enterpriseGuardrails"),
 		}
 		// conf.Watch will first call UpdateService synchronously before
 		// returning. So we can initialize with Unitialized at first.
@@ -67,6 +68,8 @@ type enterpriseInitialization struct {
 	client   codygateway.Client
 	endpoint string
 	token    string
+
+	logger log.Logger
 }
 
 // Service creates an attribution.Service. It tries to get gateway endpoint from site config
@@ -75,6 +78,7 @@ type enterpriseInitialization struct {
 func (e *enterpriseInitialization) Service() attribution.Service {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+
 	endpoint, token := confpkg.GetAttributionGateway(e.conf.SiteConfig())
 	if e.endpoint != endpoint || e.token != token {
 		e.endpoint = endpoint
@@ -86,7 +90,9 @@ func (e *enterpriseInitialization) Service() attribution.Service {
 			httpClient = MockHttpClient
 		}
 
-		e.client = codygateway.NewClient(httpClient, endpoint, token)
+		logger := e.logger.Scoped("CodyGatewayClient")
+
+		e.client = codygateway.NewClient(httpClient(logger), endpoint, token)
 	}
 	if e.endpoint == "" || e.token == "" {
 		return attribution.Uninitialized{}

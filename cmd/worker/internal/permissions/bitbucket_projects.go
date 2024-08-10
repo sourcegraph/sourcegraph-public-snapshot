@@ -157,7 +157,7 @@ func (h *bitbucketProjectPermissionsHandler) getBitbucketClient(ctx context.Cont
 		return nil, err
 	}
 
-	return bitbucketserver.NewClient(svc.URN(), &c, cli)
+	return bitbucketserver.NewClient(svc.URN(), &c, cli, logger)
 }
 
 func (h *bitbucketProjectPermissionsHandler) setReposUnrestricted(ctx context.Context, logger log.Logger, repoIDs []api.RepoID, projectKey string) error {

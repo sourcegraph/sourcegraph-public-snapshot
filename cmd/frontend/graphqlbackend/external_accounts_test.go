@@ -180,7 +180,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				}
 			}
 
-			gerrit.MockVerifyAccount = func(_ context.Context, _ *url.URL, _ *gerrit.AccountCredentials) (*gerrit.Account, error) {
+			gerrit.MockVerifyAccount = func(_ context.Context, _ log.Logger, _ *url.URL, _ *gerrit.AccountCredentials) (*gerrit.Account, error) {
 				return &gerrit.Account{
 					ID:       1234,
 					Username: "alice",

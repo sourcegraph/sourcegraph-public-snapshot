@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -28,11 +30,12 @@ import (
 type GitHubSource struct {
 	client *github.V4Client
 	au     auth.Authenticator
+	logger log.Logger
 }
 
-var _ ForkableChangesetSource = GitHubSource{}
+var _ ForkableChangesetSource = &GitHubSource{}
 
-func NewGitHubSource(ctx context.Context, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
+func NewGitHubSource(ctx context.Context, db database.DB, svc *types.ExternalService, cf *httpcli.Factory, logger log.Logger) (*GitHubSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -41,10 +44,12 @@ func NewGitHubSource(ctx context.Context, db database.DB, svc *types.ExternalSer
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitHubSource(ctx, db, svc.URN(), &c, cf)
+	return newGitHubSource(ctx, db, svc.URN(), &c, cf, logger)
 }
 
-func newGitHubSource(ctx context.Context, db database.DB, urn string, c *schema.GitHubConnection, cf *httpcli.Factory) (*GitHubSource, error) {
+func newGitHubSource(ctx context.Context, db database.DB, urn string, c *schema.GitHubConnection, cf *httpcli.Factory, logger log.Logger) (*GitHubSource, error) {
+	logger = logger.Scoped("GitHubSource")
+
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -54,7 +59,7 @@ func newGitHubSource(ctx context.Context, db database.DB, urn string, c *schema.
 	apiURL, _ := github.APIRoot(baseURL)
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternalClientFactory(logger)
 	}
 
 	opts := httpClientCertificateOptions([]httpcli.Opt{
@@ -75,11 +80,12 @@ func newGitHubSource(ctx context.Context, db database.DB, urn string, c *schema.
 
 	return &GitHubSource{
 		au:     auther,
-		client: github.NewV4Client(urn, apiURL, auther, cli),
+		client: github.NewV4Client(urn, apiURL, auther, cli, logger),
+		logger: logger,
 	}, nil
 }
 
-func (s GitHubSource) AuthenticationStrategy() AuthenticationStrategy {
+func (s *GitHubSource) AuthenticationStrategy() AuthenticationStrategy {
 	// If the authenticator isn't set, we default to user credentials.
 	if s.au == nil {
 		return AuthenticationStrategyUserCredential
@@ -93,19 +99,23 @@ func (s GitHubSource) AuthenticationStrategy() AuthenticationStrategy {
 	return AuthenticationStrategyUserCredential
 }
 
-func (s GitHubSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(ctx, repo, s.au)
+func (s *GitHubSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(ctx, repo, s.au, s.logger)
 }
 
-func (s GitHubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
-	sc := s
+func (s *GitHubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
+	sc := GitHubSource{}
+	if s != nil {
+		sc = *s
+	}
+
 	sc.au = a
 	sc.client = sc.client.WithAuthenticator(a)
 
 	return &sc, nil
 }
 
-func (s GitHubSource) ValidateAuthenticator(ctx context.Context) error {
+func (s *GitHubSource) ValidateAuthenticator(ctx context.Context) error {
 	_, err := s.client.GetAuthenticatedUser(ctx)
 	return err
 }
@@ -135,7 +145,7 @@ func (s GitHubSource) ValidateAuthenticator(ctx context.Context) error {
 // to sign commits with the GitHub App authenticating on behalf of the user, rather than
 // authenticating as the installation. See here for more details:
 // https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app
-func (s GitHubSource) DuplicateCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest, repo *types.Repo, rev string) (*github.RestCommit, error) {
+func (s *GitHubSource) DuplicateCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest, repo *types.Repo, rev string) (*github.RestCommit, error) {
 	message := strings.Join(opts.CommitInfo.Messages, "\n")
 	repoMetadata := repo.Metadata.(*github.Repository)
 	owner, repoName, err := github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
@@ -174,7 +184,7 @@ func (s GitHubSource) DuplicateCommit(ctx context.Context, opts protocol.CreateC
 }
 
 // CreateChangeset creates the given changeset on the code host.
-func (s GitHubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
+func (s *GitHubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
 	input, err := buildCreatePullRequestInput(c)
 	if err != nil {
 		return false, err
@@ -184,7 +194,7 @@ func (s GitHubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, 
 }
 
 // CreateDraftChangeset creates the given changeset on the code host in draft mode.
-func (s GitHubSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
+func (s *GitHubSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
 	input, err := buildCreatePullRequestInput(c)
 	if err != nil {
 		return false, err
@@ -214,7 +224,7 @@ func buildCreatePullRequestInput(c *Changeset) (*github.CreatePullRequestInput, 
 	}, nil
 }
 
-func (s GitHubSource) createChangeset(ctx context.Context, c *Changeset, prInput *github.CreatePullRequestInput) (bool, error) {
+func (s *GitHubSource) createChangeset(ctx context.Context, c *Changeset, prInput *github.CreatePullRequestInput) (bool, error) {
 	var exists bool
 	pr, err := s.client.CreatePullRequest(ctx, prInput)
 	if err != nil {
@@ -247,7 +257,7 @@ func (s GitHubSource) createChangeset(ctx context.Context, c *Changeset, prInput
 
 // CloseChangeset closes the given *Changeset on the code host and updates the
 // Metadata column in the *batches.Changeset to the newly closed pull request.
-func (s GitHubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+func (s *GitHubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitHub pull request")
@@ -273,7 +283,7 @@ func (s GitHubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 }
 
 // UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
-func (s GitHubSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
+func (s *GitHubSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitHub pull request")
@@ -288,7 +298,7 @@ func (s GitHubSource) UndraftChangeset(ctx context.Context, c *Changeset) error 
 }
 
 // LoadChangeset loads the latest state of the given Changeset from the codehost.
-func (s GitHubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
+func (s *GitHubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 	repo := cs.TargetRepo.Metadata.(*github.Repository)
 	number, err := strconv.ParseInt(cs.ExternalID, 10, 64)
 	if err != nil {
@@ -315,7 +325,7 @@ func (s GitHubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 }
 
 // UpdateChangeset updates the given *Changeset in the code host.
-func (s GitHubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
+func (s *GitHubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitHub pull request")
@@ -335,7 +345,7 @@ func (s GitHubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 }
 
 // ReopenChangeset reopens the given *Changeset on the code host.
-func (s GitHubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
+func (s *GitHubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitHub pull request")
@@ -350,7 +360,7 @@ func (s GitHubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
 }
 
 // CreateComment posts a comment on the Changeset.
-func (s GitHubSource) CreateComment(ctx context.Context, c *Changeset, text string) error {
+func (s *GitHubSource) CreateComment(ctx context.Context, c *Changeset, text string) error {
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitHub pull request")
@@ -361,7 +371,7 @@ func (s GitHubSource) CreateComment(ctx context.Context, c *Changeset, text stri
 
 // MergeChangeset merges a Changeset on the code host, if in a mergeable state.
 // If squash is true, a squash-then-merge merge will be performed.
-func (s GitHubSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
+func (s *GitHubSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitHub pull request")
@@ -392,11 +402,11 @@ func (GitHubSource) IsPushResponseArchived(s string) bool {
 	return strings.Contains(s, "This repository was archived so it is read-only.")
 }
 
-func (s GitHubSource) GetFork(ctx context.Context, targetRepo *types.Repo, namespace, n *string) (*types.Repo, error) {
+func (s *GitHubSource) GetFork(ctx context.Context, targetRepo *types.Repo, namespace, n *string) (*types.Repo, error) {
 	return getGitHubForkInternal(ctx, targetRepo, s.client, namespace, n)
 }
 
-func (s GitHubSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+func (s *GitHubSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
 	return BuildCommitOptsCommon(repo, spec, pushOpts)
 }
 

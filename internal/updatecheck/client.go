@@ -856,7 +856,7 @@ func check(logger log.Logger, db database.DB) {
 
 		var doer httpcli.Doer
 		if telemetryHTTPProxy == "" {
-			doer = httpcli.ExternalDoer
+			doer = httpcli.ExternalDoer(logger.Scoped("UpdateCheck"))
 		} else {
 			u, err := url.Parse(telemetryHTTPProxy)
 			if err != nil {

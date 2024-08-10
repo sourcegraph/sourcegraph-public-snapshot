@@ -156,12 +156,12 @@ func ProvidersFromConfig(
 	}
 
 	initResult := github.NewAuthzProviders(ctx, db, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
-	initResult.Append(gitlab.NewAuthzProviders(db, gitLabConns, cfg.SiteConfig().AuthProviders))
-	initResult.Append(bitbucketserver.NewAuthzProviders(bitbucketServerConns))
+	initResult.Append(gitlab.NewAuthzProviders(db, gitLabConns, cfg.SiteConfig().AuthProviders, logger))
+	initResult.Append(bitbucketserver.NewAuthzProviders(bitbucketServerConns, logger))
 	initResult.Append(perforce.NewAuthzProviders(perforceConns))
-	initResult.Append(bitbucketcloud.NewAuthzProviders(db, bitbucketCloudConns))
-	initResult.Append(gerrit.NewAuthzProviders(gerritConns))
-	initResult.Append(azuredevops.NewAuthzProviders(db, azuredevopsConns, httpcli.ExternalClient))
+	initResult.Append(bitbucketcloud.NewAuthzProviders(db, bitbucketCloudConns, logger))
+	initResult.Append(gerrit.NewAuthzProviders(gerritConns, logger))
+	initResult.Append(azuredevops.NewAuthzProviders(db, azuredevopsConns, httpcli.ExternalClient(logger), logger))
 
 	return initResult.Providers, initResult.Problems, initResult.Warnings, initResult.InvalidConnections
 }
@@ -171,5 +171,5 @@ var ValidateExternalServiceConfig = database.MakeValidateExternalServiceConfigFu
 	[]database.GitLabValidatorFunc{gitlab.ValidateAuthz},
 	[]database.BitbucketServerValidatorFunc{bitbucketserver.ValidateAuthz},
 	[]database.PerforceValidatorFunc{perforce.ValidateAuthz},
-	[]database.AzureDevOpsValidatorFunc{func(_ *schema.AzureDevOpsConnection) error { return nil }},
+	[]database.AzureDevOpsValidatorFunc{func(_ *schema.AzureDevOpsConnection, _ log.Logger) error { return nil }},
 ) // TODO: @varsanojidan switch this with actual authz once its implemented.

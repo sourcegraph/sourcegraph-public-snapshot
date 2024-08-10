@@ -90,7 +90,7 @@ func (s *serviceState) Healthy(ctx context.Context, query url.Values) error {
 	}
 
 	if hubspotutil.HasAPIKey() {
-		if err := hubspotutil.Client().Ping(ctx, 30*time.Second); err != nil {
+		if err := hubspotutil.Client(s.logger).Ping(ctx, 30*time.Second); err != nil {
 			status["hubspotClient"] = err.Error()
 			s.logger.Error("failed to ping HubSpot client", log.Error(err))
 		} else {

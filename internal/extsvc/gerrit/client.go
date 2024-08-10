@@ -59,9 +59,11 @@ type Client interface {
 // NewClient returns an authenticated Gerrit API client with
 // the provided configuration. If a nil httpClient is provided, httpcli.ExternalDoer
 // will be used.
-func NewClient(urn string, url *url.URL, creds *AccountCredentials, httpClient httpcli.Doer) (Client, error) {
+func NewClient(urn string, url *url.URL, creds *AccountCredentials, httpClient httpcli.Doer, logger log.Logger) (Client, error) {
+	logger = logger.Scoped("GerritClient")
+
 	if httpClient == nil {
-		httpClient = httpcli.ExternalDoer
+		httpClient = httpcli.ExternalDoer(logger)
 	}
 
 	auther := &auth.BasicAuth{
@@ -72,7 +74,7 @@ func NewClient(urn string, url *url.URL, creds *AccountCredentials, httpClient h
 	return &client{
 		httpClient: httpClient,
 		URL:        url,
-		rateLimit:  ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GerritClient"), urn)),
+		rateLimit:  ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(logger, urn)),
 		auther:     auther,
 	}, nil
 }

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -148,7 +149,7 @@ func TestGithubSource_CreateChangeset_CreationLimit(t *testing.T) {
 
 	apiURL, err := url.Parse("https://fake.api.github.com")
 	require.NoError(t, err)
-	client := github.NewV4Client("extsvc:github:0", apiURL, nil, cli)
+	client := github.NewV4Client("extsvc:github:0", apiURL, nil, cli, logtest.Scoped(t))
 	source := &GitHubSource{
 		client: client,
 	}
@@ -493,7 +494,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	githubSrc, err := NewGitHubSource(ctx, dbmocks.NewMockDB(), svc, nil)
+	githubSrc, err := NewGitHubSource(ctx, dbmocks.NewMockDB(), svc, nil, logtest.Scoped(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -898,7 +899,7 @@ func setup(t *testing.T, ctx context.Context, tName string) (src *GitHubSource, 
 		})),
 	}
 
-	src, err := NewGitHubSource(ctx, dbmocks.NewMockDB(), svc, cf)
+	src, err := NewGitHubSource(ctx, dbmocks.NewMockDB(), svc, cf, logtest.Scoped(t))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -57,7 +57,7 @@ func TestGetVCSSyncer(t *testing.T) {
 		}, nil
 	})
 
-	s, err := NewVCSSyncer(context.Background(), &NewVCSSyncerOpts{
+	s, err := NewVCSSyncer(context.Background(), logtest.Scoped(t), &NewVCSSyncerOpts{
 		ExternalServiceStore: extsvcStore,
 		RepoStore:            repoStore,
 		DepsSvc:              new(dependencies.Service),

@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -31,6 +33,8 @@ type OAuthProvider struct {
 	db             database.DB
 
 	syncInternalRepoPermissions bool
+
+	logger log.Logger
 }
 
 type OAuthProviderOp struct {
@@ -55,17 +59,19 @@ type OAuthProviderOp struct {
 	SyncInternalRepoPermissions bool
 }
 
-func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
+func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer, logger log.Logger) *OAuthProvider {
+	logger = logger.Scoped("GitLabAuthzProvider")
 	return &OAuthProvider{
 		token:     op.Token,
 		tokenType: op.TokenType,
 
 		urn:                         op.URN,
-		clientProvider:              gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
+		clientProvider:              gitlab.NewClientProvider(op.URN, op.BaseURL, cli, logger),
 		clientURL:                   op.BaseURL,
 		codeHost:                    extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 		db:                          op.DB,
 		syncInternalRepoPermissions: op.SyncInternalRepoPermissions,
+		logger:                      logger,
 	}
 }
 

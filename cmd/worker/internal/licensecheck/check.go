@@ -30,12 +30,14 @@ var (
 // from dotcom and stores the result in redis.
 // It re-runs the check if the license key changes.
 func newLicenseChecker(ctx context.Context, logger log.Logger, db database.DB, kv redispool.KeyValue) goroutine.BackgroundRoutine {
+	logger = logger.Scoped("licenseChecker")
+
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
 		&licenseChecker{
 			db:     db,
-			doer:   httpcli.ExternalDoer,
-			logger: logger.Scoped("licenseChecker"),
+			doer:   httpcli.ExternalDoer(logger),
+			logger: logger,
 			kv:     kv,
 		},
 		goroutine.WithName("licensing.check-license-validity"),

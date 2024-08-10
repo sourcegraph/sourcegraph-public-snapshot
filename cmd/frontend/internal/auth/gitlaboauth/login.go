@@ -63,13 +63,13 @@ func LoginHandler(config *oauth2.Config, failure http.Handler) http.Handler {
 	return oauth2Login.LoginHandler(config, failure)
 }
 
-func CallbackHandler(config *oauth2.Config, success, failure http.Handler) http.Handler {
-	success = gitlabHandler(config, success, failure)
+func CallbackHandler(config *oauth2.Config, logger log.Logger, success, failure http.Handler) http.Handler {
+	success = gitlabHandler(config, logger, success, failure)
 	return oauth2Login.CallbackHandler(config, success, failure)
 }
 
-func gitlabHandler(config *oauth2.Config, success, failure http.Handler) http.Handler {
-	logger := log.Scoped("GitlabOAuthHandler")
+func gitlabHandler(config *oauth2.Config, logger log.Logger, success, failure http.Handler) http.Handler {
+	logger = logger.Scoped("GitlabOAuthHandler")
 
 	if failure == nil {
 		failure = gologin.DefaultFailureHandler
@@ -83,7 +83,7 @@ func gitlabHandler(config *oauth2.Config, success, failure http.Handler) http.Ha
 			return
 		}
 
-		gitlabClient, err := gitlabClientFromAuthURL(config.Endpoint.AuthURL, token.AccessToken)
+		gitlabClient, err := gitlabClientFromAuthURL(config.Endpoint.AuthURL, token.AccessToken, logger)
 		if err != nil {
 			ctx = gologin.WithError(ctx, errors.Errorf("could not parse AuthURL %s", config.Endpoint.AuthURL))
 			failure.ServeHTTP(w, req.WithContext(ctx))
@@ -119,7 +119,7 @@ func validateResponse(user *gitlab.AuthUser, err error) error {
 	return nil
 }
 
-func gitlabClientFromAuthURL(authURL, oauthToken string) (*gitlab.Client, error) {
+func gitlabClientFromAuthURL(authURL, oauthToken string, logger log.Logger) (*gitlab.Client, error) {
 	baseURL, err := url.Parse(authURL)
 	if err != nil {
 		return nil, err
@@ -127,5 +127,5 @@ func gitlabClientFromAuthURL(authURL, oauthToken string) (*gitlab.Client, error)
 	baseURL.Path = ""
 	baseURL.RawQuery = ""
 	baseURL.Fragment = ""
-	return gitlab.NewClientProvider(extsvc.URNGitLabOAuth, baseURL, nil).GetOAuthClient(oauthToken), nil
+	return gitlab.NewClientProvider(extsvc.URNGitLabOAuth, baseURL, nil, logger).GetOAuthClient(oauthToken), nil
 }

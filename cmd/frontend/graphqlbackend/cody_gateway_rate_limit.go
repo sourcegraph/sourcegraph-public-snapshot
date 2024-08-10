@@ -24,7 +24,8 @@ func (r *siteResolver) CodyGatewayRateLimitStatus(ctx context.Context) (*[]RateL
 		return nil, err
 	}
 
-	cgc, ok := codygateway.NewClientFromSiteConfig(httpcli.ExternalDoer)
+	logger := r.logger.Scoped("CodyGatewayRateLimitStatus")
+	cgc, ok := codygateway.NewClientFromSiteConfig(httpcli.ExternalDoer(logger))
 	if !ok {
 		// Not configured for chat/autocomplete.
 		return nil, nil
