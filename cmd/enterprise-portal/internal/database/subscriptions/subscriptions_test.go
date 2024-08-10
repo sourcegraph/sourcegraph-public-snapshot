@@ -61,7 +61,7 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		subscriptions.UpsertSubscriptionOptions{
 			DisplayName:              database.NewNullString("Subscription 1"),
 			InstanceDomain:           database.NewNullString("s1.sourcegraph.com"),
-			SalesforceSubscriptionID: pointers.Ptr("sf_sub_id"),
+			SalesforceSubscriptionID: database.NewNullString("sf_sub_id"),
 		},
 	)
 	require.NoError(t, err)
@@ -197,6 +197,22 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		require.NoError(t, err)
 		assert.Len(t, ss, 1)
 		assert.Equal(t, s1.ID, ss[0].ID)
+	})
+
+	t.Run("list by not archived", func(t *testing.T) {
+		t.Parallel()
+
+		ss, err := s.List(
+			ctx,
+			subscriptions.ListEnterpriseSubscriptionsOptions{
+				IsArchived: pointers.Ptr(false),
+			},
+		)
+		require.NoError(t, err)
+		assert.NotEmpty(t, ss)
+		for _, s := range ss {
+			assert.Nil(t, s.ArchivedAt)
+		}
 	})
 
 	t.Run("list with page size", func(t *testing.T) {
