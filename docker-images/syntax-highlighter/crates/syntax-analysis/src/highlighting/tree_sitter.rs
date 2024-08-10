@@ -192,7 +192,7 @@ lazy_static::lazy_static! {
             // (Perl, "perl"),
             // (Pkl, "pkl"),
             // (Pod, "pod"),
-            // (Python, "python"),
+            (Python, "python"),
             // (Ruby, "ruby"),
             // (Rust, "rust"),
             (Scala, "scala")

@@ -145,7 +145,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                   ^^^^ Identifier
       self.name = name
 //    ^^^^ Identifier
-//         ^^^^ Identifier
+//         ^^^^ IdentifierAttribute
 //              ^ IdentifierOperator
 //                ^^^^ Identifier
   
@@ -162,7 +162,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                       ^^^^ Identifier
           self.name = name
 //        ^^^^ Identifier
-//             ^^^^ Identifier
+//             ^^^^ IdentifierAttribute
 //                  ^ IdentifierOperator
 //                    ^^^^ Identifier
       def eat(self):
@@ -175,7 +175,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                ^ StringLiteralEscape
 //                 ^^^^ Identifier
 //                     ^ StringLiteral
-//                      ^^^^ Identifier
+//                      ^^^^ IdentifierAttribute
 //                          ^ StringLiteralEscape
 //                           ^^^^^^^^^^^^ StringLiteral
   class Dog(Animal):
@@ -192,7 +192,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                ^ StringLiteralEscape
 //                 ^^^^ Identifier
 //                     ^ StringLiteral
-//                      ^^^^ Identifier
+//                      ^^^^ IdentifierAttribute
 //                          ^ StringLiteralEscape
 //                           ^^^^^^^^^^^^ StringLiteral
   dog = Dog("Rover")
@@ -394,12 +394,12 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                              ^^^^ Identifier
           self.firstname = first
 //        ^^^^ Identifier
-//             ^^^^^^^^^ Identifier
+//             ^^^^^^^^^ IdentifierAttribute
 //                       ^ IdentifierOperator
 //                         ^^^^^ Identifier
           self.lastname = last
 //        ^^^^ Identifier
-//             ^^^^^^^^ Identifier
+//             ^^^^^^^^ IdentifierAttribute
 //                      ^ IdentifierOperator
 //                        ^^^^ Identifier
       @property
@@ -415,13 +415,13 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                 ^ StringLiteralEscape
 //                  ^^^^ Identifier
 //                      ^ StringLiteral
-//                       ^^^^^^^^^ Identifier
+//                       ^^^^^^^^^ IdentifierAttribute
 //                                ^ StringLiteralEscape
 //                                 ^ StringLiteral
 //                                  ^ StringLiteralEscape
 //                                   ^^^^ Identifier
 //                                       ^ StringLiteral
-//                                        ^^^^^^^^ Identifier
+//                                        ^^^^^^^^ IdentifierAttribute
 //                                                ^ StringLiteralEscape
 //                                                 ^ StringLiteral
   
@@ -433,7 +433,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                   ^^^^^ StringLiteral
   p.name  # Calls the getter
 //^ Identifier
-//  ^^^^ Identifier
+//  ^^^^ IdentifierAttribute
 //        ^^^^^^^^^^^^^^^^^^ Comment
   # Magic methods:
 //^^^^^^^^^^^^^^^^ Comment
@@ -447,7 +447,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                       ^ Identifier
           self.n = n
 //        ^^^^ Identifier
-//             ^ Identifier
+//             ^ IdentifierAttribute
 //               ^ IdentifierOperator
 //                 ^ Identifier
       def __add__(self, other):
@@ -458,10 +458,10 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
           return self.n + other.n
 //        ^^^^^^ Keyword
 //               ^^^^ Identifier
-//                    ^ Identifier
+//                    ^ IdentifierAttribute
 //                      ^ IdentifierOperator
 //                        ^^^^^ Identifier
-//                              ^ Identifier
+//                              ^ IdentifierAttribute
   a = Adder(10)
 //^ Identifier
 //  ^ IdentifierOperator

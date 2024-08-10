@@ -1,7 +1,11 @@
+(identifier) @variable
+(type (identifier) @identifier.type)
+
+(attribute attribute: (identifier) @identifier.attribute)
+
 ; Function calls
 
 (decorator) @identifier.function
-
 (call
   function: (attribute attribute: (identifier) @identifier.function))
 (call
@@ -12,12 +16,8 @@
 (function_definition
   name: (identifier) @identifier.function)
 
-(identifier) @variable
-(attribute attribute: (identifier) @identifier.attribute)
-(type (identifier) @identifier.type)
-
 ; Literals
-
+;
 [
   (none)
   (true)
