@@ -17,31 +17,21 @@
 
 ; Types
 
+(identifier) @variable
 (clazz (identifier) @type)
 (typeAlias (identifier) @type)
-
-
-(annotation ("@" @identifier.attribute) (qualifiedIdentifier (identifier) @identifier.attribute))
-
-((identifier) @constant.builtin
- (#eq? @constant.builtin "Infinity"))
-
-((identifier) @constant.builtin
- (#eq? @constant.builtin "NaN"))
-
-
-((identifier) @type
- (#match? @type "^[A-Z]"))
-
-
-(typeArgumentList
-  "<" @punctuation.bracket
-  ">" @punctuation.bracket)
 
 ; Method calls
 
 (methodCallExpr
   (identifier) @function.method)
+
+((identifier) @type
+ (#match? @type "^[A-Z]"))
+((identifier) @constant.builtin
+ (#eq? @constant.builtin "NaN"))
+((identifier) @constant.builtin
+ (#eq? @constant.builtin "Infinity"))
 
 ; Method definitions
 
@@ -56,8 +46,6 @@
 
 (parameterList (typedIdentifier (identifier) @variable.parameter))
 (objectBodyParameters (typedIdentifier (identifier) @variable.parameter))
-
-(identifier) @variable
 
 ; Literals
 
@@ -168,3 +156,9 @@
 "typealias" @keyword
 "unknown" @type.builtin
 "when" @keyword
+
+(typeArgumentList
+  "<" @punctuation.bracket
+  ">" @punctuation.bracket)
+
+(annotation ("@" @identifier.attribute) (qualifiedIdentifier (identifier) @identifier.attribute))
