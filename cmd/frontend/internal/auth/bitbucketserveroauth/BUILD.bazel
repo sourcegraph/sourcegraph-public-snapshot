@@ -46,6 +46,7 @@ go_test(
         "session_test.go",
     ],
     embed = [":bitbucketserveroauth"],
+    tags = ["requires-network"],
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/internal/auth/oauth",
