@@ -38,7 +38,7 @@ is_code_scanning_enabled() {
 }
 
 FULL_REPO_NAME="${CI_REPO_OWNER}/${CI_REPO_NAME}"
-check_code_scanning "$FULL_REPO_NAME"
+is_code_scanning_enabled "$FULL_REPO_NAME"
 
 echo $CODE_SCANNING_ENABLED
 # run semgrep scan on changeset using CI subcommand
