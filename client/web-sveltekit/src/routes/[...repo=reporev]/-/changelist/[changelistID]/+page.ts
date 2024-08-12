@@ -11,9 +11,8 @@ const PAGE_SIZE = 20
 
 export const load: PageLoad = async ({ params }) => {
     const client = getGraphQLClient()
-    const { repoName, revision } = parseRepoRevision(params.repo + '@' + params.changelistID)
 
-    const result = await client.query(ChangelistPage_ChangelistQuery, { repoName: params.repo, cid: revision ?? '' })
+    const result = await client.query(ChangelistPage_ChangelistQuery, { repoName: params.repo, cid: params.changelistID })
 
     if (result.error) {
         error(500, `Unable to load commit data: ${result.error}`)
@@ -34,7 +33,7 @@ export const load: PageLoad = async ({ params }) => {
                 client,
                 query: ChangelistPage_DiffQuery,
                 variables: {
-                    repoName,
+                    repoName: params.repo,
                     base: changelist.commit.parents[0].oid,
                     head: changelist.commit.oid,
                     first: PAGE_SIZE,
