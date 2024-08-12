@@ -15,7 +15,7 @@
 
     $: expanded = alwaysExpanded
 
-    $: author = changelist.author
+    $: author = changelist.commit.author
     $: commitDate = new Date(author.date)
     $: authorAvatarTooltip = author.person.name + (author ? ' (author)' : '')
 </script>
@@ -28,8 +28,8 @@
     </div>
     <div class="title">
         <!-- TODO need subject-->
-        <a class="subject" href={changelist.perforceChangelist?.canonicalURL}>{changelist.subject}</a>
-        {#if !alwaysExpanded && changelist.body && !$isViewportMobile}
+        <a class="subject" href={changelist.canonicalURL}>{changelist.commit.subject}</a>
+        {#if !alwaysExpanded && changelist.commit.body && !$isViewportMobile}
             <Button
                 variant="secondary"
                 size="sm"
@@ -44,7 +44,7 @@
         submitted by <strong>{author.person.name}</strong>
         <Timestamp date={commitDate} />
     </div>
-    {#if changelist.body}
+    {#if changelist.commit.body}
         <div class="message" class:expanded>
             {#if $isViewportMobile}
                 {#if expanded}
@@ -58,7 +58,7 @@
                 {/if}
             {/if}
 
-            <pre>{changelist.body}</pre>
+            <pre>{changelist.commit.body}</pre>
         </div>
     {/if}
 </div>

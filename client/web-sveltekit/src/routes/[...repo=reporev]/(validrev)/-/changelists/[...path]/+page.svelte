@@ -3,7 +3,7 @@
     import { get } from 'svelte/store'
 
     import { navigating } from '$app/stores'
-    import Changelist from '$lib/Changelist.svelte'
+    import Commit from '$lib/Commit.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
@@ -81,7 +81,7 @@
                 {#each changelists as changelist (changelist.perforceChangelist?.canonicalURL)}
                     <li>
                         <div class="changelist">
-                            <Changelist {changelist} />
+                            <Commit commit={changelist} />
                         </div>
                         <ul class="actions">
                             <li>
