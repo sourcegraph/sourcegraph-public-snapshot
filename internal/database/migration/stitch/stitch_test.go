@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -220,7 +221,7 @@ func TestStitchAndApplyCodeinsightsDefinitions(t *testing.T) {
 // asserts that the resulting graph has the expected root, leaf, and version boundary values.
 func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoot int, expectedLeaves []int, expectedBoundsByRev map[string]shared.MigrationBounds) {
 	t.Run(fmt.Sprintf("stitch 3.%d -> 3.%d", from, to), func(t *testing.T) {
-		stitched, err := StitchDefinitions(NewLazyMigrationsReader(), schemaName, makeRange(from, to))
+		stitched, err := StitchDefinitions(testMigrationsReader, schemaName, makeRange(from, to))
 		if err != nil {
 			t.Fatalf("failed to stitch definitions: %s", err)
 		}
@@ -247,7 +248,7 @@ func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoo
 // compared against the target version's description (in the git-tree).
 func testStitchApplication(t *testing.T, schemaName string, from, to int) {
 	t.Run(fmt.Sprintf("upgrade 3.%d -> 3.%d", from, to), func(t *testing.T) {
-		stitched, err := StitchDefinitions(NewLazyMigrationsReader(), schemaName, makeRange(from, to))
+		stitched, err := StitchDefinitions(testMigrationsReader, schemaName, makeRange(from, to))
 		if err != nil {
 			t.Fatalf("failed to stitch definitions: %s", err)
 		}
@@ -362,4 +363,32 @@ func canonicalize(schemaDescription schemas.SchemaDescription) schemas.SchemaDes
 	schemaDescription.Tables = filtered
 
 	return schemaDescription
+}
+
+var testMigrationsReader MigrationsReader = &cachedMigrationsReader{
+	inner: NewLazyMigrationsReader(),
+	m:     make(map[string]func() (map[string]string, error)),
+}
+
+type cachedMigrationsReader struct {
+	inner MigrationsReader
+
+	mu sync.Mutex
+	m  map[string]func() (map[string]string, error)
+}
+
+func (c *cachedMigrationsReader) Get(version string) (map[string]string, error) {
+	c.mu.Lock()
+	get, ok := c.m[version]
+	if !ok {
+		// we haven't calculated the version, store it as a sync.OnceValues to
+		// singleflight requests.
+		get = sync.OnceValues(func() (map[string]string, error) {
+			return c.inner.Get(version)
+		})
+		c.m[version] = get
+	}
+	c.mu.Unlock()
+
+	return get()
 }
