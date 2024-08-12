@@ -29,11 +29,12 @@ tree-sitter-magik = { git = "https://github.com/kritzcreek/tree-sitter-magik", r
 tree-sitter-matlab = { git = "https://github.com/kritzcreek/tree-sitter-matlab", rev = "762d3ac3daf68cff04c376a42fd793b0f81ab9c1" }
 tree-sitter-nickel = { git = "https://github.com/kritzcreek/tree-sitter-nickel", rev = "46a808abaa3d0f460c859af3c3b9467641f13063" }
 # tree-sitter-perl = { git = "https://github.com/sourcegraph/tree-sitter-perl", rev = "e1b4844afd17b7dc019a436b1ac890568d79a1f2" }
+# tree-sitter-pod = { git = "https://github.com/sourcegraph/tree-sitter-pod", rev = "f422a0dca6847c692e811f06fd92c6a75d647222" }
+
 # Not PR-ed, as there is a more comprehensive PR in the upstream repo: https://github.com/apple/tree-sitter-pkl/pull/8
 # My personal fork contains the minimal changes to make things build with the latest tree-sitter.
 tree-sitter-pkl = { git = "https://github.com/kritzcreek/tree-sitter-pkl", rev = "372ce76dfae3395fcf083df23328c4eb67cc0119" }
-# tree-sitter-pod = { git = "https://github.com/sourcegraph/tree-sitter-pod", rev = "f422a0dca6847c692e811f06fd92c6a75d647222" }
-# tree-sitter-xlsg = { git = "https://github.com/sourcegraph/tree-sitter-xlsg", rev = "d956b54ea151b12f19c945f7be421c3dcd3a77ba" }
+tree-sitter-xlsg = { git = "https://github.com/sourcegraph/tree-sitter-xlsg", rev = "deb2a12e617ad5e3720a1464848949cc46b375be" }
 # tree-sitter-zig = { git = "https://github.com/maxxnino/tree-sitter-zig", rev = "2c7b6308d906d7aec4b3e1fafaaeca447a8a2c2f" }
 
 # As of 2022 Apr 06, the upstream crate seems to have paused development,

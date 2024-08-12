@@ -2491,6 +2491,7 @@ dependencies = [
  "tree-sitter-rust",
  "tree-sitter-scala",
  "tree-sitter-typescript",
+ "tree-sitter-xlsg",
 ]
 
 [[package]]
@@ -2674,6 +2675,15 @@ name = "tree-sitter-typescript"
 version = "0.21.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ecb35d98a688378e56c18c9c159824fd16f730ccbea19aacf4f206e5d5438ed9"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-xlsg"
+version = "0.0.1"
+source = "git+https://github.com/sourcegraph/tree-sitter-xlsg?rev=deb2a12e617ad5e3720a1464848949cc46b375be#deb2a12e617ad5e3720a1464848949cc46b375be"
 dependencies = [
  "cc",
  "tree-sitter",

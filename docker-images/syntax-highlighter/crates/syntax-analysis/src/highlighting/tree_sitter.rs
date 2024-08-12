@@ -195,11 +195,11 @@ lazy_static::lazy_static! {
             (Python, "python"),
             (Ruby, "ruby"),
             (Rust, "rust"),
-            (Scala, "scala")
+            (Scala, "scala"),
             // (Sql, "sql"),
             // Skipping TypeScript and TSX here as they're handled
             // specially inside the macro implementation.
-            // (Xlsg, "xlsg"),
+            (Xlsg, "xlsg")
             // (Zig, "zig")
         )
     };
