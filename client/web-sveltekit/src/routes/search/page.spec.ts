@@ -337,7 +337,7 @@ test.describe('search results', async () => {
             await expect(page.locator('*:focus')).toContainText(pathMatch.path.split('/').at(-1) ?? '')
             await page.keyboard.press('ArrowDown') // Check a down arrow too
 
-            await expect(page.locator('*:focus')).toContainText(repoMatch.repository.split('/').slice(1).join('/'))
+            await expect(page.getByRole('link', { name: repoMatch.repository })).toBeFocused()
             await page.keyboard.press('j')
 
             for (const symbol of symbolMatch.symbols) {
@@ -360,9 +360,7 @@ test.describe('search results', async () => {
             }
 
             await page.keyboard.press('k')
-            await expect(page.locator('*:focus')).toHaveText(repoMatch.repository.split('/').slice(1).join('/'), {
-                useInnerText: true,
-            })
+            await expect(page.getByRole('link', { name: repoMatch.repository })).toBeFocused()
 
             await page.keyboard.press('ArrowUp') // Check an up arrow too
             await expect(page.locator('*:focus')).toContainText(pathMatch.path.split('/').at(-1) ?? '')
