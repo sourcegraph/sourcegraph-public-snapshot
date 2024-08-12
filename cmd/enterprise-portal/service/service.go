@@ -119,12 +119,15 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		logger,
 		httpServer,
 		subscriptionsservice.NewStoreV1(
+			logger,
 			subscriptionsservice.NewStoreV1Options{
+				Contract:               contract.Contract,
 				DB:                     dbHandle,
 				SAMSClient:             samsClient,
 				IAMClient:              iamClient,
 				LicenseKeySigner:       config.LicenseKeys.Signer,
 				LicenseKeyRequiredTags: config.LicenseKeys.RequiredTags,
+				SlackWebhookURL:        config.SubscriptionsServiceSlackWebhookURL,
 			},
 		),
 		connect.WithInterceptors(otelConnctInterceptor),
