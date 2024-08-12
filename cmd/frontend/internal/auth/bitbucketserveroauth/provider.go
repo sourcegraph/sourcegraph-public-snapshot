@@ -20,23 +20,31 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const sessionKey = "bitbucketserveroauth@0"
-
-func bitbucketServerCallbackHandler(config *oauth2.Config, success, failure http.Handler) http.Handler {
-	return oauth2Login.CallbackHandler(config, success, failure)
-}
+const (
+	sessionKey    = "bitbucketserveroauth@0"
+	authorizePath = "/rest/oauth2/latest/authorize"
+	tokenPath     = "/rest/oauth2/latest/token"
+	redirectPath  = authPrefix + "/callback"
+)
 
 func parseProvider(logger log.Logger, p *schema.BitbucketServerAuthProvider, db database.DB, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
-	rawURL := p.Url
-	parsedURL, err := url.Parse(rawURL)
-	parsedURL = extsvc.NormalizeBaseURL(parsedURL)
+	parsedURL, err := url.Parse(p.Url)
 	if err != nil {
-		messages = append(messages, fmt.Sprintf("Could not parse Bitbucket Server URL %q. You will not be able to login via Bitbucket Server.", rawURL))
+		messages = append(messages, fmt.Sprintf("Could not parse Bitbucket Server URL %q. You will not be able to login via Bitbucket Server.", p.Url))
 		return nil, messages
 	}
 
-	externalURL := conf.ExternalURL()
-	extURL, _ := url.Parse(externalURL)
+	parsedURL = extsvc.NormalizeBaseURL(parsedURL)
+
+	extURL, err := url.Parse(conf.ExternalURL())
+	if err != nil {
+		messages = append(messages, fmt.Sprintf("Could not parse Sourcegraph external URL %q.", conf.ExternalURL()))
+		return nil, messages
+	}
+
+	authURL := parsedURL.ResolveReference(&url.URL{Path: authorizePath}).String()
+	tokenURL := parsedURL.ResolveReference(&url.URL{Path: tokenPath}).String()
+	redirectURL := extURL.ResolveReference(&url.URL{Path: redirectPath}).String()
 
 	return oauth.NewProvider(oauth.ProviderOp{
 		AuthPrefix: authPrefix,
@@ -45,11 +53,11 @@ func parseProvider(logger log.Logger, p *schema.BitbucketServerAuthProvider, db 
 				ClientID:     p.ClientID,
 				ClientSecret: p.ClientSecret,
 				Endpoint: oauth2.Endpoint{
-					AuthURL:  parsedURL.ResolveReference(&url.URL{Path: "/rest/oauth2/latest/authorize"}).String(),
-					TokenURL: parsedURL.ResolveReference(&url.URL{Path: "/rest/oauth2/latest/token"}).String(),
+					AuthURL:  authURL,
+					TokenURL: tokenURL,
 				},
 				Scopes:      []string{"REPO_READ"},
-				RedirectURL: extURL.ResolveReference(&url.URL{Path: "/.auth/bitbucketserver/callback"}).String(),
+				RedirectURL: redirectURL,
 			}
 		},
 		SourceConfig: sourceCfg,
@@ -59,7 +67,7 @@ func parseProvider(logger log.Logger, p *schema.BitbucketServerAuthProvider, db 
 			return bitbucket.LoginHandler(&oauth2Cfg, nil)
 		},
 		Callback: func(oauth2Cfg oauth2.Config) http.Handler {
-			return bitbucketServerCallbackHandler(
+			return oauth2Login.CallbackHandler(
 				&oauth2Cfg,
 				oauth.SessionIssuer(logger, db, &sessionIssuerHelper{
 					logger:      logger.Scoped("sessionIssuerHelper"),
