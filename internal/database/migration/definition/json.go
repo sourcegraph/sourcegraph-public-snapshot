@@ -34,7 +34,7 @@ type jsonDefinition struct {
 	NonIdempotent             bool
 	Parents                   []int
 	IsCreateIndexConcurrently bool
-	NoTransaction             bool
+	NoTransaction             bool `json:"NoTransaction,omitempty"`
 	IndexMetadata             *IndexMetadata
 }
 
