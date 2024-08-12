@@ -1,0 +1,4 @@
+additionalProperties:
+  packageName: models
+globalProperties:
+  models: true
