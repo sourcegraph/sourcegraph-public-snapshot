@@ -196,7 +196,7 @@ lazy_static::lazy_static! {
             (Ruby, "ruby"),
             (Rust, "rust"),
             (Scala, "scala"),
-            // (Sql, "sql"),
+            (Sql, "sql"),
             // Skipping TypeScript and TSX here as they're handled
             // specially inside the macro implementation.
             (Xlsg, "xlsg"),

@@ -22,6 +22,8 @@ tree-sitter-typescript = "0.21.2"
 
 # https://github.com/fwcd/tree-sitter-kotlin
 tree-sitter-kotlin = "0.3.8"
+# https://github.com/DerekStride/tree-sitter-sql
+tree-sitter-sequel = "0.3.5"
 
 tree-sitter-dart = { git = "https://github.com/kritzcreek/tree-sitter-dart", rev = "311a0093c6a70b8579ed8b1d3f69ffa78ab53bf5" }
 tree-sitter-jsonnet = { git = "https://github.com/kritzcreek/tree-sitter-jsonnet", rev = "bc147652f72a14c9627deae5c9c33a81e452d391" }
@@ -36,9 +38,4 @@ tree-sitter-nickel = { git = "https://github.com/kritzcreek/tree-sitter-nickel",
 tree-sitter-pkl = { git = "https://github.com/kritzcreek/tree-sitter-pkl", rev = "372ce76dfae3395fcf083df23328c4eb67cc0119" }
 tree-sitter-xlsg = { git = "https://github.com/sourcegraph/tree-sitter-xlsg", rev = "deb2a12e617ad5e3720a1464848949cc46b375be" }
 tree-sitter-zig = { git = "https://github.com/maxxnino/tree-sitter-zig", rev = "2bac4cc6c697d46a193905fef6d003bfa0bfabfd" }
-
-# As of 2022 Apr 06, the upstream crate seems to have paused development,
-# and it relies to tree-sitter 0.19.x creating a type mismatch. So depend
-# on our own fork.
-# tree-sitter-sql = { git = "https://github.com/sourcegraph/tree-sitter-sql", rev = "6ea62b8d33c9e39f6de8a398a6885d1873ed7e91" }
 tree-sitter-hack = { git = "https://github.com/kritzcreek/tree-sitter-hack", rev = "2a1f331c3b43a2262823f788a222e15a264d1062" }
