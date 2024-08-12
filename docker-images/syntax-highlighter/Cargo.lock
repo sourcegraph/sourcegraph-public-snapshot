@@ -2492,6 +2492,7 @@ dependencies = [
  "tree-sitter-scala",
  "tree-sitter-typescript",
  "tree-sitter-xlsg",
+ "tree-sitter-zig",
 ]
 
 [[package]]
@@ -2684,6 +2685,15 @@ dependencies = [
 name = "tree-sitter-xlsg"
 version = "0.0.1"
 source = "git+https://github.com/sourcegraph/tree-sitter-xlsg?rev=deb2a12e617ad5e3720a1464848949cc46b375be#deb2a12e617ad5e3720a1464848949cc46b375be"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-zig"
+version = "0.0.1"
+source = "git+https://github.com/maxxnino/tree-sitter-zig?rev=2bac4cc6c697d46a193905fef6d003bfa0bfabfd#2bac4cc6c697d46a193905fef6d003bfa0bfabfd"
 dependencies = [
  "cc",
  "tree-sitter",

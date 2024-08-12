@@ -15,3 +15,4 @@
 
 (Decl (FnProto function: (_) @descriptor.method)) @local
 (ContainerField field_member: (IDENTIFIER) @descriptor.term)
+(ContainerField (ErrorUnionExpr (SuffixExpr (IDENTIFIER) @descriptor.term)) )

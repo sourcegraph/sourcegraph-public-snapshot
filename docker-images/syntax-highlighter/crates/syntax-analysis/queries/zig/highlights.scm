@@ -115,10 +115,10 @@ field_constant: (IDENTIFIER) @constant
 
 ; Functions and builtins
 
-(BUILTINIDENTIFIER) @function.builtin
-
 ((BUILTINIDENTIFIER) @include
   (#any-of? @include "@import" "@cImport"))
+
+(BUILTINIDENTIFIER) @function.builtin
 
 parameter: (IDENTIFIER) @variable.parameter
 

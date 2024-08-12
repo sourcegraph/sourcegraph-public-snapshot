@@ -225,7 +225,7 @@ mod tags {
     create_tags_configuration!(rust, ParserId::Rust, "rust");
     create_tags_configuration!(scala, ParserId::Scala, "scala");
     create_tags_configuration!(typescript, ParserId::Typescript, "typescript");
-    // create_tags_configuration!(zig, ParserId::Zig, "zig");
+    create_tags_configuration!(zig, ParserId::Zig, "zig");
 
     pub fn get_tag_configuration(parser: ParserId) -> Option<&'static TagConfiguration> {
         match parser {
@@ -243,7 +243,7 @@ mod tags {
             ParserId::Rust => Some(rust()),
             ParserId::Scala => Some(scala()),
             ParserId::Typescript => Some(typescript()),
-            // ParserId::Zig => Some(zig()),
+            ParserId::Zig => Some(zig()),
             _ => None,
         }
     }

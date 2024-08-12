@@ -35,7 +35,7 @@ tree-sitter-nickel = { git = "https://github.com/kritzcreek/tree-sitter-nickel",
 # My personal fork contains the minimal changes to make things build with the latest tree-sitter.
 tree-sitter-pkl = { git = "https://github.com/kritzcreek/tree-sitter-pkl", rev = "372ce76dfae3395fcf083df23328c4eb67cc0119" }
 tree-sitter-xlsg = { git = "https://github.com/sourcegraph/tree-sitter-xlsg", rev = "deb2a12e617ad5e3720a1464848949cc46b375be" }
-# tree-sitter-zig = { git = "https://github.com/maxxnino/tree-sitter-zig", rev = "2c7b6308d906d7aec4b3e1fafaaeca447a8a2c2f" }
+tree-sitter-zig = { git = "https://github.com/maxxnino/tree-sitter-zig", rev = "2bac4cc6c697d46a193905fef6d003bfa0bfabfd" }
 
 # As of 2022 Apr 06, the upstream crate seems to have paused development,
 # and it relies to tree-sitter 0.19.x creating a type mismatch. So depend
