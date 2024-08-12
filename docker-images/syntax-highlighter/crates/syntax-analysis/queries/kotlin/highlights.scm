@@ -1,3 +1,16 @@
+; Basics
+(simple_identifier) @identifier
+((simple_identifier) @constant
+  (#match? @constant "^[A-Z][A-Z0-9_]*$"))
+(type_identifier) @identifier.type
+(interpolated_identifier) @identifier
+
+; `this` keyword inside classes
+(this_expression) @identifier.builtin
+
+; `super` keyword inside classes
+(super_expression) @identifier.builtin
+
 ;;; Annotations
 
 (annotation
@@ -58,11 +71,6 @@
 
 ;;; Function calls
 
-(call_expression
-	. (simple_identifier) @function.builtin
-    (#match? @function.builtin "^(arrayOf|arrayOfNulls|byteArrayOf|shortArrayOf|intArrayOf|longArrayOf|ubyteArrayOf|ushortArrayOf|uintArrayOf|ulongArrayOf|floatArrayOf|doubleArrayOf|booleanArrayOf|charArrayOf|emptyArray|mapOf|setOf|listOf|emptyMap|emptySet|emptyList|mutableMapOf|mutableSetOf|mutableListOf|print|println|error|TODO|run|runCatching|repeat|lazy|lazyOf|enumValues|enumValueOf|assert|check|checkNotNull|require|requireNotNull|with|suspend|synchronized)$"
-))
-
 ; function()
 (call_expression
 	. (simple_identifier) @identifier.function)
@@ -77,20 +85,13 @@
 		(navigation_suffix
 			(simple_identifier) @identifier.function) . ))
 
+(call_expression
+	. (simple_identifier) @function.builtin
+    (#match? @function.builtin "^(arrayOf|arrayOfNulls|byteArrayOf|shortArrayOf|intArrayOf|longArrayOf|ubyteArrayOf|ushortArrayOf|uintArrayOf|ulongArrayOf|floatArrayOf|doubleArrayOf|booleanArrayOf|charArrayOf|emptyArray|mapOf|setOf|listOf|emptyMap|emptySet|emptyList|mutableMapOf|mutableSetOf|mutableListOf|print|println|error|TODO|run|runCatching|repeat|lazy|lazyOf|enumValues|enumValueOf|assert|check|checkNotNull|require|requireNotNull|with|suspend|synchronized)$"
+))
+
 ;;; Identifiers
 
-; Basics
-((simple_identifier) @constant
-  (#match? @constant "^[A-Z][A-Z0-9_]*$"))
-
-(simple_identifier) @identifier
-(interpolated_identifier) @identifier
-
-; `this` keyword inside classes
-(this_expression) @identifier.builtin
-
-; `super` keyword inside classes
-(super_expression) @identifier.builtin
 
 (enum_entry
 	(simple_identifier) @constant)
@@ -100,7 +101,6 @@
 	(#match? @type.builtin "^(Byte|Short|Int|Long|UByte|UShort|UInt|ULong|Float|Double|Boolean|Char|String|Array|ByteArray|ShortArray|IntArray|LongArray|UByteArray|UShortArray|UIntArray|ULongArray|FloatArray|DoubleArray|BooleanArray|CharArray|Map|Set|List|EmptyMap|EmptySet|EmptyList|MutableMap|MutableSet|MutableList)$"
 ))
 
-(type_identifier) @identifier.type
 
 ;;; Keywords
 
@@ -165,18 +165,12 @@
 	(unsigned_literal)
 ] @number
 
-(boolean_literal) @boolean
-"null" @constant.null
-
-(string_literal) @string
-(string_literal
-	["$" "${" "}"] @string.escape
-)
-
-(character_literal) @character
-(character_literal (character_escape_seq) @string.escape)
-
 ;;; Operators and Punctuation
+[
+	"(" ")"
+	"[" "]"
+	"{" "}"
+] @punctuation.bracket
 
 [
 	"!"
@@ -220,15 +214,19 @@
 (nullable_type) @punctuation
 
 [
-	"(" ")"
-	"[" "]"
-	"{" "}"
-] @punctuation.bracket
-
-[
 	"."
 	","
 	";"
 	":"
 	"::"
 ] @punctuation.delimiter
+
+(boolean_literal) @boolean
+"null" @constant.null
+
+(string_literal) @string
+(string_literal
+	["$" "${" "}"] @string.escape)
+
+(character_literal) @character
+(character_literal (character_escape_seq) @string.escape)

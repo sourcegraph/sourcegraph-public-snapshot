@@ -185,7 +185,7 @@ lazy_static::lazy_static! {
             // specially inside the macro implementation
             // in order to include the jsx highlights.
             (Jsonnet, "jsonnet"),
-            // (Kotlin, "kotlin"),
+            (Kotlin, "kotlin"),
             // (Magik, "magik"),
             // (Matlab, "matlab"),
             // (Nickel, "nickel"),
