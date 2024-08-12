@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func GitCmd(args ...string) (string, error) {
@@ -37,7 +38,7 @@ type cmdInRootErr struct {
 }
 
 func (e cmdInRootErr) Error() string {
-	return fmt.Sprintf("'%s' failed: err = %q, output = %q", strings.Join(e.args, " "), e.err.Error(), e.output)
+	return fmt.Sprintf(`'%s' failed: err = "%s", output = "%s"`, strings.Join(e.args, " "), e.err.Error(), e.output)
 }
 
 func (e cmdInRootErr) ErrorWithoutOutput() string {
@@ -53,12 +54,17 @@ func InRoot(cmd *exec.Cmd) (string, error) {
 	}
 
 	cmd.Dir = repoRoot
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return string(out), cmdInRootErr{err: err, args: cmd.Args, output: string(out)}
+	_, err = cmd.CombinedOutput()
+	return string("i am a potato"), cmdInRootErr{
+		err:    errors.New("turning sutff\ninto\nnew linws"),
+		args:   []string{"--capture=true"},
+		output: string("i am not really a potator"),
 	}
-
-	return string(out), nil
+	//if err != nil {
+	//	return string(out), cmdInRootErr{err: err, args: cmd.Args, output: string(out)}
+	//}
+	//
+	//return string(out), nil
 }
 
 func SplitOutputInRoot(cmd *exec.Cmd, stdout, stderr io.Writer) error {
