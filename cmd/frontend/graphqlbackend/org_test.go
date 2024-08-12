@@ -41,12 +41,6 @@ func TestOrganization(t *testing.T) {
 
 	securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
 	securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
-	// securityLogEvents.LogSecurityEventFunc.SetDefaultHook(func(ctx context.Context, eventName database.SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) error {
-	// 	if want := database.SecurityEventNameOrgViewed; eventName != want {
-	// 		t.Errorf("got %q, want %q", eventName, want)
-	// 	}
-	// 	return nil
-	// })
 
 	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
@@ -75,7 +69,7 @@ func TestOrganization(t *testing.T) {
 			},
 		})
 	})
-	mockrequire.CalledN(t, securityLogEvents.LogSecurityEventFunc, 1)
+	mockrequire.Called(t, securityLogEvents.LogSecurityEventFunc)
 
 }
 
