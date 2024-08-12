@@ -303,12 +303,12 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			bitbucketServerConnections: []*schema.BitbucketServerConnection{
 				{
 					Authorization: &schema.BitbucketServerAuthorization{
-						IdentityProvider: schema.BitbucketServerIdentityProvider{
+						IdentityProvider: &schema.BitbucketServerIdentityProvider{
 							Username: &schema.BitbucketServerUsernameIdentity{
 								Type: "username",
 							},
 						},
-						Oauth: schema.BitbucketServerOAuth{
+						Oauth: &schema.BitbucketServerOAuth{
 							ConsumerKey: "sourcegraph",
 							SigningKey:  "Invalid Key",
 						},
@@ -326,12 +326,12 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			bitbucketServerConnections: []*schema.BitbucketServerConnection{
 				{
 					Authorization: &schema.BitbucketServerAuthorization{
-						IdentityProvider: schema.BitbucketServerIdentityProvider{
+						IdentityProvider: &schema.BitbucketServerIdentityProvider{
 							Username: &schema.BitbucketServerUsernameIdentity{
 								Type: "username",
 							},
 						},
-						Oauth: schema.BitbucketServerOAuth{
+						Oauth: &schema.BitbucketServerOAuth{
 							ConsumerKey: "sourcegraph",
 							SigningKey:  bogusKey,
 						},
@@ -540,12 +540,12 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 			bitbucketServerConnections: []*schema.BitbucketServerConnection{
 				{
 					Authorization: &schema.BitbucketServerAuthorization{
-						IdentityProvider: schema.BitbucketServerIdentityProvider{
+						IdentityProvider: &schema.BitbucketServerIdentityProvider{
 							Username: &schema.BitbucketServerUsernameIdentity{
 								Type: "username",
 							},
 						},
-						Oauth: schema.BitbucketServerOAuth{
+						Oauth: &schema.BitbucketServerOAuth{
 							ConsumerKey: "sourcegraph",
 							SigningKey:  bogusKey,
 						},
