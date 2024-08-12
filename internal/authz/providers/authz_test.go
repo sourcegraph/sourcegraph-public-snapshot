@@ -1283,7 +1283,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 				"authorization": {}
 			}
 			`,
-			assert: includes("authorization: oauth is required"),
+			assert: includes("authorization: Must validate one and only one schema (oneOf)"),
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
@@ -1296,8 +1296,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			}
 			`,
 			assert: includes(
-				"authorization.oauth: consumerKey is required",
-				"authorization.oauth: signingKey is required",
+				"authorization: Must validate one and only one schema (oneOf)",
 			),
 		},
 		{
@@ -1324,6 +1323,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			config: `
 			{
 				"authorization": {
+					"identityProvider": { "type": "username" },
 					"oauth": {
 						"consumerKey": "sourcegraph",
 						"signingKey": "not-base-64-encoded"

@@ -71,6 +71,10 @@ func newAuthzProvider(
 		return nil, nil
 	}
 
+	if !c.Authorization.Oauth2 && c.Authorization.IdentityProvider == nil {
+		return nil, errors.New("authorization is set without oauth2 or identityProvider")
+	}
+
 	if err := licensing.Check(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}
