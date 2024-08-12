@@ -35,7 +35,7 @@ type LazyMigrationsReader struct {
 
 func NewLazyMigrationsReader() *LazyMigrationsReader {
 	return &LazyMigrationsReader{
-		baseUrl: "https://storage.googleapis.com/schemas-migrations/migrations/",
+		baseUrl: "https://storage.googleapis.com/schemas-migrations/migrations",
 	}
 }
 
@@ -55,6 +55,9 @@ func (l *LazyMigrationsReader) Get(version string) (map[string]string, error) {
 		)
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return nil, errors.Errorf("unexpected status code (%d) for version %q from %q", resp.StatusCode, version, url)
+	}
 	contents, err := readFromTarball(resp.Body)
 	if err != nil {
 		return nil, errors.Wrapf(err, "faild to read migrations archive for version %q from tarball", version)

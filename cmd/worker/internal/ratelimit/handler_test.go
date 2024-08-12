@@ -41,13 +41,11 @@ func TestHandler_Handle(t *testing.T) {
 			return err
 		},
 	}
+
 	t.Cleanup(func() {
-		c := pool.Get()
-		err := redispool.DeleteAllKeysWithPrefix(c, prefix)
-		if err != nil {
+		if err := redispool.DeleteAllKeysWithPrefix(redispool.RedisKeyValue(pool), prefix); err != nil {
 			t.Logf("Failed to clear redis: %+v\n", err)
 		}
-		c.Close()
 	})
 
 	conf.Mock(&conf.Unified{

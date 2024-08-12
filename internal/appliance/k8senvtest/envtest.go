@@ -121,9 +121,27 @@ func kubebuilderAssetPathLocalDev() (string, error) {
 }
 
 func NewNoopReconciler(mgr ctrl.Manager) KubernetesController {
-	return noopReconicler{}
+	return noopReconciler{}
 }
 
-type noopReconicler struct{}
+type noopReconciler struct{}
 
-func (noopReconicler) SetupWithManager(_ ctrl.Manager) error { return nil }
+func (noopReconciler) SetupWithManager(_ ctrl.Manager) error { return nil }
+
+func isSetupEnvTestInstalled() bool {
+	_, err := exec.LookPath("setup-envtest")
+	return err == nil
+}
+
+// ShouldRunSetupEnvTests determines if test requiring setup-envtest should be run or not.
+// Generally we want to require these tests to run in CI but not locally unless the developer
+// has "setup-envtest" present on their machine.
+func ShouldRunSetupEnvTests() bool {
+	// Assume we are in CI, require tests to run.
+	if os.Getenv("BAZEL_TEST") != "" {
+		return true
+	}
+
+	// fall back to whether or not requirments are installed
+	return isSetupEnvTestInstalled()
+}
