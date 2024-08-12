@@ -12,7 +12,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/backend",
+        "//cmd/frontend/internal/backend",
         "//cmd/frontend/internal/routevar",
         "//internal/api",
         "//internal/database",
@@ -32,7 +32,7 @@ go_test(
     srcs = ["repo_test.go"],
     embed = [":handlerutil"],
     deps = [
-        "//cmd/frontend/backend",
+        "//cmd/frontend/internal/backend",
         "//internal/api",
         "//internal/database/dbmocks",
         "//internal/types",

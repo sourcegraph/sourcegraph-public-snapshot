@@ -4,12 +4,12 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type refsArgs struct {
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 	Query *string
 	Type  *string
 }
@@ -81,6 +81,6 @@ func (r *gitRefConnectionResolver) TotalCount() int32 {
 	return int32(len(r.refs))
 }
 
-func (r *gitRefConnectionResolver) PageInfo() *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(r.first != nil && int(*r.first) < len(r.refs))
+func (r *gitRefConnectionResolver) PageInfo() *gqlutil.PageInfo {
+	return gqlutil.HasNextPage(r.first != nil && int(*r.first) < len(r.refs))
 }

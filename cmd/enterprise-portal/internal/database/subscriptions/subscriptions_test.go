@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/databasetest"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -59,7 +59,9 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		ctx,
 		uuid.New().String(),
 		subscriptions.UpsertSubscriptionOptions{
-			InstanceDomain: pointers.Ptr(database.NewNullString("s1.sourcegraph.com")),
+			DisplayName:              database.NewNullString("Subscription 1"),
+			InstanceDomain:           database.NewNullString("s1.sourcegraph.com"),
+			SalesforceSubscriptionID: database.NewNullString("sf_sub_id"),
 		},
 	)
 	require.NoError(t, err)
@@ -67,20 +69,24 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		ctx,
 		uuid.New().String(),
 		subscriptions.UpsertSubscriptionOptions{
-			InstanceDomain: pointers.Ptr(database.NewNullString("s2.sourcegraph.com")),
+			DisplayName:    database.NewNullString("Subscription 2"),
+			InstanceDomain: database.NewNullString("s2.sourcegraph.com"),
 		},
 	)
 	require.NoError(t, err)
-	_, err = s.Upsert(
+	s3, err := s.Upsert(
 		ctx,
 		uuid.New().String(),
 		subscriptions.UpsertSubscriptionOptions{
-			InstanceDomain: pointers.Ptr(database.NewNullString("s3.sourcegraph.com")),
+			DisplayName:    database.NewNullString("Subscription 3"),
+			InstanceDomain: database.NewNullString("s3.sourcegraph.com"),
 		},
 	)
 	require.NoError(t, err)
 
 	t.Run("list by IDs", func(t *testing.T) {
+		t.Parallel()
+
 		ss, err := s.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{IDs: []string{s1.ID, s2.ID}})
 		require.NoError(t, err)
 		require.Len(t, ss, 2)
@@ -101,6 +107,8 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 	})
 
 	t.Run("list by instance domains", func(t *testing.T) {
+		t.Parallel()
+
 		ss, err := s.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{
 			InstanceDomains: []string{*s1.InstanceDomain, *s2.InstanceDomain}},
 		)
@@ -122,7 +130,94 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		})
 	})
 
+	t.Run("list by display name", func(t *testing.T) {
+		t.Parallel()
+
+		ss, err := s.List(
+			ctx,
+			subscriptions.ListEnterpriseSubscriptionsOptions{
+				DisplayNameSubstring: "Subscription",
+			},
+		)
+		require.NoError(t, err)
+		assert.Len(t, ss, 3) // all 3 are returned
+
+		t.Run("single match", func(t *testing.T) {
+			t.Parallel()
+
+			ss, err := s.List(
+				ctx,
+				subscriptions.ListEnterpriseSubscriptionsOptions{
+					DisplayNameSubstring: "tion 3",
+				},
+			)
+			require.NoError(t, err)
+			assert.Len(t, ss, 1)
+			assert.Equal(t, s3.ID, ss[0].ID)
+		})
+
+		t.Run("exact match", func(t *testing.T) {
+			t.Parallel()
+
+			ss, err := s.List(
+				ctx,
+				subscriptions.ListEnterpriseSubscriptionsOptions{
+					DisplayNameSubstring: "Subscription 2",
+				},
+			)
+			require.NoError(t, err)
+			assert.Len(t, ss, 1)
+			assert.Equal(t, s2.ID, ss[0].ID)
+		})
+
+		t.Run("case-insensitive match", func(t *testing.T) {
+			t.Parallel()
+
+			ss, err := s.List(
+				ctx,
+				subscriptions.ListEnterpriseSubscriptionsOptions{
+					DisplayNameSubstring: "subscription 2",
+				},
+			)
+			require.NoError(t, err)
+			assert.Len(t, ss, 1)
+			assert.Equal(t, s2.ID, ss[0].ID)
+		})
+	})
+
+	t.Run("list by Salesforce subscription ID", func(t *testing.T) {
+		t.Parallel()
+
+		ss, err := s.List(
+			ctx,
+			subscriptions.ListEnterpriseSubscriptionsOptions{
+				SalesforceSubscriptionIDs: []string{"sf_sub_id"},
+			},
+		)
+		require.NoError(t, err)
+		assert.Len(t, ss, 1)
+		assert.Equal(t, s1.ID, ss[0].ID)
+	})
+
+	t.Run("list by not archived", func(t *testing.T) {
+		t.Parallel()
+
+		ss, err := s.List(
+			ctx,
+			subscriptions.ListEnterpriseSubscriptionsOptions{
+				IsArchived: pointers.Ptr(false),
+			},
+		)
+		require.NoError(t, err)
+		assert.NotEmpty(t, ss)
+		for _, s := range ss {
+			assert.Nil(t, s.ArchivedAt)
+		}
+	})
+
 	t.Run("list with page size", func(t *testing.T) {
+		t.Parallel()
+
 		ss, err := s.List(
 			ctx,
 			subscriptions.ListEnterpriseSubscriptionsOptions{
@@ -144,7 +239,7 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 		ctx,
 		uuid.New().String(),
 		subscriptions.UpsertSubscriptionOptions{
-			InstanceDomain: pointers.Ptr(database.NewNullString("s1.sourcegraph.com")),
+			InstanceDomain: database.NewNullString("s1.sourcegraph.com"),
 			CreatedAt:      created,
 		},
 		// Represent the creation of this subscription
@@ -185,7 +280,7 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 		t.Cleanup(func() { currentSubscription = got })
 
 		got, err = s.Upsert(ctx, currentSubscription.ID, subscriptions.UpsertSubscriptionOptions{
-			InstanceDomain: pointers.Ptr(database.NewNullString("s1-new.sourcegraph.com")),
+			InstanceDomain: database.NewNullString("s1-new.sourcegraph.com"),
 		})
 		require.NoError(t, err)
 		assert.Equal(t, "s1-new.sourcegraph.com", pointers.DerefZero(got.InstanceDomain))
@@ -196,7 +291,7 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 		t.Cleanup(func() { currentSubscription = got })
 
 		got, err = s.Upsert(ctx, currentSubscription.ID, subscriptions.UpsertSubscriptionOptions{
-			DisplayName: pointers.Ptr(database.NewNullString("My New Display Name")),
+			DisplayName: database.NewNullString("My New Display Name"),
 		})
 		require.NoError(t, err)
 		assert.Equal(t, *currentSubscription.InstanceDomain, *got.InstanceDomain)
@@ -255,7 +350,10 @@ func SubscriptionsStoreGet(t *testing.T, ctx context.Context, s *subscriptions.S
 		ctx,
 		uuid.New().String(),
 		subscriptions.UpsertSubscriptionOptions{
-			InstanceDomain: pointers.Ptr(database.NewNullString("s1.sourcegraph.com")),
+			InstanceDomain: database.NewNullString("s1.sourcegraph.com"),
+			InstanceType: database.NewNullString(
+				subscriptionsv1.EnterpriseSubscriptionInstanceType_ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_PRIMARY.String(),
+			),
 		},
 	)
 	require.NoError(t, err)
@@ -269,6 +367,11 @@ func SubscriptionsStoreGet(t *testing.T, ctx context.Context, s *subscriptions.S
 		got, err := s.Get(ctx, s1.ID)
 		require.NoError(t, err)
 		assert.Equal(t, s1.ID, got.ID)
+
+		assert.NotEmpty(t, got.InstanceDomain)
 		assert.Equal(t, s1.InstanceDomain, got.InstanceDomain)
+
+		assert.NotEmpty(t, got.InstanceType)
+		assert.Equal(t, s1.InstanceType, got.InstanceType)
 	})
 }

@@ -953,6 +953,13 @@
 					1719914228
 				],
 				"PreCreation": false
+			},
+			"v5.6.0": {
+				"RootID": 1000000027,
+				"LeafIDs": [
+					1719914228
+				],
+				"PreCreation": false
 			}
 		}
 	},
@@ -1931,6 +1938,13 @@
 				"PreCreation": false
 			},
 			"v5.5.0": {
+				"RootID": 1000000033,
+				"LeafIDs": [
+					1686315964
+				],
+				"PreCreation": false
+			},
+			"v5.6.0": {
 				"RootID": 1000000033,
 				"LeafIDs": [
 					1686315964
@@ -11327,6 +11341,101 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1720651147,
+				"Name": "add ips to sub_repo_perms_table",
+				"UpQuery": "-- Add the new 'ips' column to the sub_repo_permissions table\nALTER TABLE IF EXISTS ONLY sub_repo_permissions\n    ADD COLUMN IF NOT EXISTS ips text[];\n\n-- Remove the check constraint to ensure ips is either NULL or has the same length as paths\nALTER TABLE IF EXISTS ONLY sub_repo_permissions\n    DROP CONSTRAINT IF EXISTS ips_paths_length_check;\n\n-- Add a check constraint to ensure ips is either NULL or has the same length as paths\nALTER TABLE IF EXISTS ONLY sub_repo_permissions\n    ADD CONSTRAINT ips_paths_length_check\n        CHECK (\n            ips IS NULL\n                OR (\n                    array_length(ips, 1) = array_length(paths, 1)\n                    AND NOT '' = ANY(ips) -- Don't allow empty strings\n                )\n            );\n\n-- Add a comment explaining the new column\nCOMMENT ON COLUMN sub_repo_permissions.ips IS 'IP addresses corresponding to each path. IP in slot 0 in the array corresponds to path the in slot 0 of the path array, etc. NULL if not yet migrated, empty array for no IP restrictions.';",
+				"DownQuery": "-- Remove the check constraint to ensure ips is either NULL or has the same length as paths\nALTER TABLE IF EXISTS ONLY sub_repo_permissions\n    DROP CONSTRAINT IF EXISTS ips_paths_length_check;\n\n-- Remove the new 'ips' column from the sub_repo_permissions table\nALTER TABLE IF EXISTS ONLY sub_repo_permissions\n    DROP COLUMN IF EXISTS ips;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1720165387
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1721281606,
+				"Name": "saved searches metadata",
+				"UpQuery": "ALTER TABLE saved_searches ADD COLUMN IF NOT EXISTS created_by integer REFERENCES users (id) ON DELETE SET NULL;\nALTER TABLE saved_searches ADD COLUMN IF NOT EXISTS updated_by integer REFERENCES users (id) ON DELETE SET NULL;\nALTER TABLE saved_searches ADD COLUMN IF NOT EXISTS draft boolean NOT NULL DEFAULT false;\nALTER TABLE saved_searches ADD COLUMN IF NOT EXISTS visibility_secret boolean NOT NULL DEFAULT true;",
+				"DownQuery": "ALTER TABLE saved_searches DROP COLUMN IF EXISTS created_by;\nALTER TABLE saved_searches DROP COLUMN IF EXISTS updated_by;\nALTER TABLE saved_searches DROP COLUMN IF EXISTS draft;\nALTER TABLE saved_searches DROP COLUMN IF EXISTS visibility_secret;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1720165387
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1719555230,
+				"Name": "deprecate_saved_searches_notifs",
+				"UpQuery": "ALTER TABLE saved_searches ALTER COLUMN notify_owner SET DEFAULT false;\nALTER TABLE saved_searches ALTER COLUMN notify_slack SET DEFAULT false;",
+				"DownQuery": "-- no default value\nALTER TABLE saved_searches ALTER COLUMN notify_owner DROP DEFAULT;\nALTER TABLE saved_searches ALTER COLUMN notify_slack DROP DEFAULT;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1717699555
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1719691538,
+				"Name": "add_prompts",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS prompts (\n    id serial PRIMARY KEY,\n\n    name citext NOT NULL CONSTRAINT prompts_name_max_length CHECK (char_length(name::text) \u003c= 255) CONSTRAINT prompts_name_valid_chars CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext),\n    description text NOT NULL CONSTRAINT prompts_description_max_length CHECK (char_length(description) \u003c= 1024*50),\n    definition_text text NOT NULL CONSTRAINT prompts_definition_text_max_length CHECK (char_length(definition_text) \u003c= 1024*100),\n    draft boolean NOT NULL DEFAULT false,\n    visibility_secret boolean NOT NULL DEFAULT true,\n\n    owner_user_id integer REFERENCES users(id) ON DELETE CASCADE,\n    owner_org_id integer REFERENCES orgs(id) ON DELETE CASCADE,\n\n    created_by integer NULL REFERENCES users (id) ON DELETE SET NULL,\n    created_at timestamp with time zone NOT NULL DEFAULT now(),\n    updated_by integer NULL REFERENCES users (id) ON DELETE SET NULL,\n    updated_at timestamp with time zone NOT NULL DEFAULT now(),\n\n    CONSTRAINT prompts_has_valid_owner CHECK ((((owner_user_id IS NOT NULL) AND (owner_org_id IS NULL)) OR ((owner_org_id IS NOT NULL) AND (owner_user_id IS NULL))))\n);\n\nCREATE UNIQUE INDEX IF NOT EXISTS prompts_name_is_unique_in_owner_user ON prompts (owner_user_id, name) WHERE owner_user_id IS NOT NULL;\nCREATE UNIQUE INDEX IF NOT EXISTS prompts_name_is_unique_in_owner_org ON prompts (owner_org_id, name) WHERE owner_org_id IS NOT NULL;\n\nCREATE OR REPLACE VIEW prompts_view AS\n    SELECT\n        prompts.*,\n        COALESCE(users.username, orgs.name) || '/' || prompts.name AS name_with_owner\n        FROM prompts\n        LEFT JOIN users ON users.id = prompts.owner_user_id\n        LEFT JOIN orgs ON orgs.id = prompts.owner_org_id;",
+				"DownQuery": "DROP VIEW IF EXISTS prompts_view;\n\nDROP INDEX IF EXISTS prompts_name_is_unique_in_owner_user;\nDROP INDEX IF EXISTS prompts_name_is_unique_in_owner_org;\n\nDROP TABLE IF EXISTS prompts;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1719555230
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1721251474,
+				"Name": "create gin index for regex kvps",
+				"UpQuery": "-- Perform migration here.\n--\n-- See /migrations/README.md. Highlights:\n--  * Make migrations idempotent (use IF EXISTS)\n--  * Make migrations backwards-compatible (old readers/writers must continue to work)\n--  * If you are using CREATE INDEX CONCURRENTLY, then make sure that only one statement\n--    is defined per file, and that each such statement is NOT wrapped in a transaction.\n--    Each such migration must also declare \"createIndexConcurrently: true\" in their\n--    associated metadata.yaml file.\n--  * If you are modifying Postgres extensions, you must also declare \"privileged: true\"\n--    in the associated metadata.yaml file.\n\nCREATE INDEX IF NOT EXISTS repo_kvps_trgm_idx ON repo_kvps\nUSING gin (key gin_trgm_ops, value gin_trgm_ops);",
+				"DownQuery": "DROP INDEX IF EXISTS repo_kvps_trgm_idx;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1719555230,
+					1720165387
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1721814902,
+				"Name": "github_app_creator_id",
+				"UpQuery": "ALTER TABLE IF EXISTS github_apps\n    ADD COLUMN IF NOT EXISTS creator_id BIGINT DEFAULT 0;\n\nALTER TABLE IF EXISTS github_apps\n    ALTER COLUMN creator_id SET NOT NULL;",
+				"DownQuery": "ALTER TABLE IF EXISTS github_apps DROP COLUMN IF EXISTS creator_id;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1719691538,
+					1720651147,
+					1721251474,
+					1721281606
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1722348497,
+				"Name": "exhaustive search jobs add column",
+				"UpQuery": "ALTER TABLE exhaustive_search_jobs ADD COLUMN IF NOT EXISTS is_aggregated boolean NOT NULL DEFAULT false;",
+				"DownQuery": "ALTER TABLE exhaustive_search_jobs DROP COLUMN IF EXISTS is_aggregated;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1721814902
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -11595,6 +11704,13 @@
 				"RootID": 1648051770,
 				"LeafIDs": [
 					1720165387
+				],
+				"PreCreation": false
+			},
+			"v5.6.0": {
+				"RootID": 1648051770,
+				"LeafIDs": [
+					1722348497
 				],
 				"PreCreation": false
 			}

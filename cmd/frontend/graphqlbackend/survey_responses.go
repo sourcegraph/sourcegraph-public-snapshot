@@ -3,9 +3,9 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type surveyResponseConnectionResolver struct {
@@ -14,7 +14,7 @@ type surveyResponseConnectionResolver struct {
 }
 
 func (r *schemaResolver) SurveyResponses(args *struct {
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 }) *surveyResponseConnectionResolver {
 	var opt database.SurveyResponseListOptions
 	args.ConnectionArgs.Set(&opt.LimitOffset)

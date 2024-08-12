@@ -8,8 +8,10 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/redispool",
+        "//internal/trace",
         "@com_github_gomodule_redigo//redis",
         "@com_github_google_uuid//:uuid",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 

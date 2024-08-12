@@ -39,9 +39,6 @@ type Provider interface {
 	// CachedInfo returns cached information about the provider.
 	CachedInfo() *Info
 
-	// Refresh refreshes the provider's information with an external service, if any.
-	Refresh(ctx context.Context) error
-
 	// ExternalAccountInfo provides basic external account from this auth provider
 	ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error)
 }

@@ -83,7 +83,7 @@ const typeDefs = glob
     .map(file => readFileSync(path.join(SCHEMA_DIR, file), 'utf8'))
     .join('\n')
 
-class Sourcegraph {
+export class Sourcegraph {
     private debugMode = false
     private dotcomModeEnabled = false
     private signedIn = false
@@ -107,7 +107,7 @@ class Sourcegraph {
             })
 
             // Intercept any asset calls and replace them with static files
-            await this.page.route(/.assets|_app/, route => {
+            await this.page.route(/\.assets|_app/, route => {
                 const assetPath = new URL(route.request().url()).pathname.replace('/.assets/', '')
                 const asset = joinDistinct(ASSETS_DIR, assetPath)
                 const contentType = mime.contentType(path.basename(asset)) || undefined
@@ -241,11 +241,13 @@ class Sourcegraph {
 
     public setWindowContext(context: Partial<Window['context']>): Promise<void> {
         return this.page.addInitScript(context => {
-            if (!window.context) {
+            // @ts-expect-error - Unclear how to type this correctly
+            if (!window.playwrightContext) {
                 // @ts-expect-error - Unclear how to type this correctly
-                window.context = {}
+                window.playwrightContext = {}
             }
-            Object.assign(window.context, context)
+            // @ts-expect-error - Unclear how to type this correctly
+            Object.assign(window.playwrightContext, context)
         }, context)
     }
 
@@ -287,7 +289,7 @@ class Sourcegraph {
      */
     public async dotcomMode(): Promise<void> {
         this.dotcomModeEnabled = true
-        await this.setWindowContext({
+        return this.setWindowContext({
             sourcegraphDotComMode: true,
             // These are enabled by default on sourcegraph.com
             codyEnabledOnInstance: true,

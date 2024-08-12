@@ -575,7 +575,6 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                             filePath={filePath}
                             onClose={() => setIsCodySidebarOpen(false)}
                             authenticatedUser={props.authenticatedUser}
-                            telemetryRecorder={props.platformContext.telemetryRecorder}
                         />
                     </Panel>
                 </RepoContainerRootPortal>

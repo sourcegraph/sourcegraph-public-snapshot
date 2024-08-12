@@ -1,0 +1,308 @@
+resources:
+  - apiVersion: apps/v1
+    kind: DaemonSet
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: c84ac276e60e85a888146303bb5d592cb42507dc290a515051c6ecedc03d6f4c
+        deprecated.daemonset.template.generation: "1"
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      generation: 1
+      labels:
+        app.kubernetes.io/component: node-exporter
+        app.kubernetes.io/name: sourcegraph
+        app.kubernetes.io/version: 5.3.9104
+        deploy: sourcegraph
+      name: node-exporter
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+    spec:
+      minReadySeconds: 10
+      revisionHistoryLimit: 10
+      selector:
+        matchLabels:
+          app: node-exporter
+      template:
+        metadata:
+          annotations:
+            kubectl.kubernetes.io/default-container: node-exporter
+          creationTimestamp: null
+          labels:
+            app: node-exporter
+            deploy: sourcegraph
+          name: node-exporter
+        spec:
+          containers:
+            - args:
+                - --web.listen-address=:9100
+                - --path.sysfs=/host/sys
+                - --path.rootfs=/host/root
+                - --path.procfs=/host/proc
+                - --no-collector.wifi
+                - --no-collector.hwmon
+                - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/pods/.+)($|/)
+                - --collector.netclass.ignored-devices=^(veth.*)$
+                - --collector.netdev.device-exclude=^(veth.*)$
+              image: index.docker.io/sourcegraph/node-exporter:5.3.9104
+              imagePullPolicy: IfNotPresent
+              livenessProbe:
+                failureThreshold: 3
+                httpGet:
+                  path: /
+                  port: metrics
+                  scheme: HTTP
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              name: node-exporter
+              ports:
+                - containerPort: 9100
+                  name: metrics
+                  protocol: TCP
+              readinessProbe:
+                failureThreshold: 3
+                httpGet:
+                  path: /
+                  port: metrics
+                  scheme: HTTP
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              resources:
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+                requests:
+                  cpu: 200m
+                  memory: 100Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsGroup: 65534
+                runAsUser: 65534
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: FallbackToLogsOnError
+              volumeMounts:
+                - mountPath: /host/root
+                  mountPropagation: HostToContainer
+                  name: rootfs
+                  readOnly: true
+                - mountPath: /host/sys
+                  mountPropagation: HostToContainer
+                  name: sys
+                  readOnly: true
+                - mountPath: /host/proc
+                  mountPropagation: HostToContainer
+                  name: proc
+                  readOnly: true
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext:
+            fsGroup: 65534
+            runAsGroup: 65534
+            runAsNonRoot: true
+            runAsUser: 65534
+          terminationGracePeriodSeconds: 30
+          volumes:
+            - hostPath:
+                path: /
+                type: ""
+              name: rootfs
+            - hostPath:
+                path: /sys
+                type: ""
+              name: sys
+            - hostPath:
+                path: /proc
+                type: ""
+              name: proc
+      updateStrategy:
+        rollingUpdate:
+          maxSurge: 0
+          maxUnavailable: 1
+        type: RollingUpdate
+    status:
+      currentNumberScheduled: 0
+      desiredNumberScheduled: 0
+      numberMisscheduled: 0
+      numberReady: 0
+  - apiVersion: v1
+    data:
+      spec: |
+        spec:
+          requestedVersion: "5.3.9104"
+
+          blobstore:
+            disabled: true
+
+          codeInsights:
+            disabled: true
+
+          codeIntel:
+            disabled: true
+
+          frontend:
+            disabled: true
+
+          grafana:
+            disabled: true
+
+          gitServer:
+            disabled: true
+
+          nodeExporter: {}
+
+          indexedSearch:
+            disabled: true
+
+          openTelemetryCollector:
+            disabled: true
+
+          openTelemetryAgent:
+            disabled: true
+
+          pgsql:
+            disabled: true
+
+          postgresExporter:
+            disabled: true
+
+          preciseCodeIntel:
+            disabled: true
+
+          redisCache:
+            disabled: true
+
+          redisStore:
+            disabled: true
+
+          repoUpdater:
+            disabled: true
+
+          searcher:
+            disabled: true
+
+          symbols:
+            disabled: true
+
+          syntectServer:
+            disabled: true
+
+          worker:
+            disabled: true
+
+          prometheus:
+            disabled: true
+    kind: ConfigMap
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/currentVersion: 5.3.9104
+        appliance.sourcegraph.com/managed: "true"
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      name: sg
+      namespace: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: Role
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: c84ac276e60e85a888146303bb5d592cb42507dc290a515051c6ecedc03d6f4c
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        deploy: sourcegraph
+      name: node-exporter
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+    rules:
+      - apiGroups:
+          - policy
+        resourceNames:
+          - node-exporter
+        resources:
+          - podsecuritypolicies
+        verbs:
+          - use
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: c84ac276e60e85a888146303bb5d592cb42507dc290a515051c6ecedc03d6f4c
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        deploy: sourcegraph
+      name: node-exporter
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: node-exporter
+    subjects:
+      - kind: ServiceAccount
+        name: node-exporter
+        namespace: NORMALIZED_FOR_TESTING
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: c84ac276e60e85a888146303bb5d592cb42507dc290a515051c6ecedc03d6f4c
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        app: node-exporter
+        app.kubernetes.io/component: node-exporter
+        deploy: sourcegraph
+      name: node-exporter
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+    spec:
+      clusterIP: NORMALIZED_FOR_TESTING
+      clusterIPs:
+        - NORMALIZED_FOR_TESTING
+      internalTrafficPolicy: Cluster
+      ipFamilies:
+        - IPv4
+      ipFamilyPolicy: SingleStack
+      ports:
+        - name: metrics
+          port: 9100
+          protocol: TCP
+          targetPort: metrics
+      selector:
+        app: node-exporter
+      sessionAffinity: None
+      type: ClusterIP
+    status:
+      loadBalancer: {}

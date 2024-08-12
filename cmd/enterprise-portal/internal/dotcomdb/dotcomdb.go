@@ -18,7 +18,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/productsubscription"
 	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -125,10 +124,10 @@ func (c CodyGatewayAccessAttributes) EvaluateRateLimits() CodyGatewayRateLimits 
 		Chat:       licensing.NewCodyGatewayChatRateLimit(p, c.ActiveLicenseUserCount),
 
 		CodeSource: codyaccessv1.CodyGatewayRateLimitSource_CODY_GATEWAY_RATE_LIMIT_SOURCE_PLAN,
-		Code:       licensing.NewCodyGatewayCodeRateLimit(p, c.ActiveLicenseUserCount, c.ActiveLicenseTags),
+		Code:       licensing.NewCodyGatewayCodeRateLimit(p, c.ActiveLicenseUserCount),
 
 		EmbeddingsSource: codyaccessv1.CodyGatewayRateLimitSource_CODY_GATEWAY_RATE_LIMIT_SOURCE_PLAN,
-		Embeddings:       licensing.NewCodyGatewayEmbeddingsRateLimit(p, c.ActiveLicenseUserCount, c.ActiveLicenseTags),
+		Embeddings:       licensing.NewCodyGatewayEmbeddingsRateLimit(p, c.ActiveLicenseUserCount),
 	}
 
 	// Chat
@@ -173,147 +172,6 @@ func (q *queryConditions) addWhere(cond string) {
 	} else {
 		q.whereClause = cond
 	}
-}
-
-func newCodyGatewayAccessQuery(conds queryConditions, opts ReaderOptions) string {
-	const rawClause = `
-SELECT
-	subscription.id,
-	subscription.cody_gateway_enabled,
-	-- ChatCompletionsRateLimit override
-	subscription.cody_gateway_chat_rate_limit,
-	subscription.cody_gateway_chat_rate_interval_seconds,
-	-- CodeCompletionsRateLimit override
-	subscription.cody_gateway_code_rate_limit,
-	subscription.cody_gateway_code_rate_interval_seconds,
-	-- EmbeddingsRateLimit override
-	subscription.cody_gateway_embeddings_api_rate_limit,
-	subscription.cody_gateway_embeddings_api_rate_interval_seconds,
-	-- "Active license": we aggregate for tokens below, so we need to apply MAX
-	-- here to make this look like an aggregated value. This is okay becuase
-	-- active_license uses 'SELECT DISTINCT ON' which returns exactly 1 row.
-	MAX(active_license.license_tags),
-	MAX(active_license.license_user_count),
-	-- All past license keys that can be used as "access tokens"
-	array_agg(tokens.license_key_hash) as license_key_hashes
-FROM product_subscriptions subscription
-	LEFT JOIN (
-		SELECT DISTINCT ON (licenses.product_subscription_id)
-			licenses.product_subscription_id,
-			licenses.license_tags,
-			licenses.license_user_count
-		FROM product_licenses AS licenses
-		-- Get most recently created license key as the "active license"
-		ORDER BY licenses.product_subscription_id, licenses.created_at DESC
-	) active_license ON active_license.product_subscription_id = subscription.id
-	LEFT JOIN (
-		SELECT
-			licenses.product_subscription_id,
-			digest(licenses.license_key, 'sha256') AS license_key_hash
-		FROM product_licenses as licenses
-		WHERE licenses.access_token_enabled IS TRUE
-	) tokens ON tokens.product_subscription_id = subscription.id`
-
-	clauses := []string{rawClause}
-	// Add WHERE clause, amending it to include a condition that the subscription
-	// must not be archived.
-	if conds.whereClause != "" {
-		clauses = append(clauses, "WHERE "+conds.whereClause+" AND subscription.archived_at IS NULL")
-	} else {
-		clauses = append(clauses, "WHERE subscription.archived_at IS NULL")
-	}
-	clauses = append(clauses, "GROUP BY subscription.id") // required, after WHERE clause
-	if conds.havingClause != "" {
-		clauses = append(clauses, "HAVING "+conds.havingClause)
-	}
-	if opts.DevOnly {
-		// '&&' operator: overlap (have elements in common)
-		c := fmt.Sprintf("ARRAY['%s'] && MAX(active_license.license_tags)",
-			licensing.DevTag)
-		if conds.havingClause != "" {
-			clauses = append(clauses, "AND "+c)
-		} else {
-			clauses = append(clauses, "HAVING "+c)
-		}
-	}
-	return strings.Join(clauses, "\n")
-}
-
-type GetCodyGatewayAccessAttributesOpts struct {
-	BySubscription *string
-	ByAccessToken  *string
-}
-
-func (r *Reader) GetCodyGatewayAccessAttributesBySubscription(ctx context.Context, subscriptionID string) (*CodyGatewayAccessAttributes, error) {
-	query := newCodyGatewayAccessQuery(queryConditions{
-		whereClause: "subscription.id = $1",
-	}, r.opts)
-	row := r.db.QueryRow(ctx, query,
-		strings.TrimPrefix(subscriptionID, subscriptionsv1.EnterpriseSubscriptionIDPrefix))
-	return scanCodyGatewayAccessAttributes(row)
-}
-
-func (r *Reader) GetCodyGatewayAccessAttributesByAccessToken(ctx context.Context, token string) (*CodyGatewayAccessAttributes, error) {
-	// Below is copied from 'func (t dbTokens) LookupProductSubscriptionIDByAccessToken'
-	// in 'cmd/frontend/internal/dotcom/productsubscription'.
-	if !strings.HasPrefix(token, productsubscription.AccessTokenPrefix) &&
-		!strings.HasPrefix(token, license.LicenseKeyBasedAccessTokenPrefix) {
-		return nil, errors.WithSafeDetails(ErrCodyGatewayAccessNotFound, "invalid token with unknown prefix")
-	}
-	tokenSansPrefix := token[len(license.LicenseKeyBasedAccessTokenPrefix):]
-	decoded, err := hex.DecodeString(tokenSansPrefix)
-	if err != nil {
-		return nil, errors.WithSafeDetails(ErrCodyGatewayAccessNotFound, "invalid token with unknown encoding")
-	}
-	// End copied code.
-
-	query := newCodyGatewayAccessQuery(queryConditions{
-		havingClause: "$1 = ANY(array_agg(tokens.license_key_hash))",
-	}, r.opts)
-	row := r.db.QueryRow(ctx, query, decoded)
-	return scanCodyGatewayAccessAttributes(row)
-}
-
-func scanCodyGatewayAccessAttributes(row pgx.Row) (*CodyGatewayAccessAttributes, error) {
-	var attrs CodyGatewayAccessAttributes
-	err := row.Scan(
-		&attrs.SubscriptionID,
-		&attrs.CodyGatewayEnabled,
-		&attrs.ChatCompletionsRateLimit,
-		&attrs.ChatCompletionsRateSeconds,
-		&attrs.CodeCompletionsRateLimit,
-		&attrs.CodeCompletionsRateSeconds,
-		&attrs.EmbeddingsRateLimit,
-		&attrs.EmbeddingsRateSeconds,
-		&attrs.ActiveLicenseTags,
-		&attrs.ActiveLicenseUserCount,
-		&attrs.LicenseKeyHashes,
-	)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, errors.WithStack(ErrCodyGatewayAccessNotFound)
-		}
-		return nil, errors.Wrap(err, "failed to get cody gateway access attributes")
-	}
-	return &attrs, nil
-}
-
-func (r *Reader) GetAllCodyGatewayAccessAttributes(ctx context.Context) ([]*CodyGatewayAccessAttributes, error) {
-	query := newCodyGatewayAccessQuery(queryConditions{}, r.opts)
-	rows, err := r.db.Query(ctx, query)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cody gateway access attributes")
-	}
-	defer rows.Close()
-	var attrs []*CodyGatewayAccessAttributes
-	for rows.Next() {
-		attr, err := scanCodyGatewayAccessAttributes(rows)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to scan cody gateway access attributes")
-		}
-		attrs = append(attrs, attr)
-	}
-	return attrs, rows.Err()
 }
 
 var ErrEnterpriseSubscriptionLicenseNotFound = errors.New("enterprise subscription license not found")
@@ -467,9 +325,23 @@ func (r *Reader) ListEnterpriseSubscriptionLicenses(
 }
 
 type SubscriptionAttributes struct {
-	ID         string
+	ID         string // UUID-format ID
 	CreatedAt  time.Time
 	ArchivedAt *time.Time
+
+	UserDisplayName string
+}
+
+func (s SubscriptionAttributes) GenerateDisplayName() string {
+	var parts []string
+	if s.UserDisplayName != "" {
+		parts = append(parts, s.UserDisplayName)
+	}
+	parts = append(parts,
+		// Stick a seconds-granularity component to the name to guarantee
+		// uniqueness during migration.
+		s.CreatedAt.Format(time.DateTime))
+	return strings.Join(parts, " - ")
 }
 
 type ListEnterpriseSubscriptionsOptions struct {
@@ -486,25 +358,29 @@ type ListEnterpriseSubscriptionsOptions struct {
 func (r *Reader) ListEnterpriseSubscriptions(ctx context.Context, opts ListEnterpriseSubscriptionsOptions) ([]*SubscriptionAttributes, error) {
 	query := `
 SELECT
-	id, created_at, archived_at
+	product_subscriptions.id,
+	product_subscriptions.created_at,
+	product_subscriptions.archived_at,
+	COALESCE( NULLIF(users.display_name, ''), users.username ) AS user_display_name
 FROM
 	product_subscriptions
+JOIN users ON users.id = product_subscriptions.user_id
 WHERE true`
 	namedArgs := pgx.NamedArgs{}
 	if len(opts.SubscriptionIDs) > 0 {
-		query += "\nAND id = ANY(@ids)"
+		query += "\nAND product_subscriptions.id = ANY(@ids)"
 		namedArgs["ids"] = opts.SubscriptionIDs
 	}
 	if opts.IsArchived {
-		query += "\nAND archived_at IS NOT NULL"
+		query += "\nAND product_subscriptions.archived_at IS NOT NULL"
 	} else {
-		query += "\nAND archived_at IS NULL"
+		query += "\nAND product_subscriptions.archived_at IS NULL"
 	}
 	var licenseCond string
 	if r.opts.DevOnly {
 		licenseCond = fmt.Sprintf("'%s' = ANY(product_licenses.license_tags)", licensing.DevTag)
 	} else {
-		licenseCond = fmt.Sprintf("NOT '%s' = ANY(product_licenses.license_tags)", licensing.DevTag)
+		licenseCond = "true"
 	}
 	query += fmt.Sprintf(`
 AND EXISTS (
@@ -517,7 +393,7 @@ AND EXISTS (
 )
 `, licenseCond)
 
-	rows, err := r.db.Query(ctx, query, namedArgs)
+	rows, err := r.db.Query(ctx, query+"ORDER BY product_subscriptions.created_at DESC", namedArgs)
 	if err != nil {
 		return nil, errors.Wrap(err, "query subscription attributes")
 	}
@@ -525,7 +401,7 @@ AND EXISTS (
 	var attrs []*SubscriptionAttributes
 	for rows.Next() {
 		var attr SubscriptionAttributes
-		err = rows.Scan(&attr.ID, &attr.CreatedAt, &attr.ArchivedAt)
+		err = rows.Scan(&attr.ID, &attr.CreatedAt, &attr.ArchivedAt, &attr.UserDisplayName)
 		if err != nil {
 			return nil, errors.Wrap(err, "scan subscription attributes")
 		}

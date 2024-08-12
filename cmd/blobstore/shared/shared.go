@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -66,6 +67,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, config *Con
 	// Set up handler middleware
 	handler := actor.HTTPMiddleware(logger, bsService)
 	handler = trace.HTTPMiddleware(logger, handler)
+	handler = tenant.InternalHTTPMiddleware(logger, handler)
 	handler = instrumentation.HTTPMiddleware("", handler)
 
 	ctx, cancel := context.WithCancel(ctx)

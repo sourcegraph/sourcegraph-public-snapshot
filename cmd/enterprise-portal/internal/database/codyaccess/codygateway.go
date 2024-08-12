@@ -95,7 +95,8 @@ func scanCodyGatewayAccess(row pgx.Row) (*CodyGatewayAccessWithSubscriptionDetai
 	// an active subscription exists, but explicit access is not configured. In
 	// this case we still need to return a valid CodyGatewayAccessWithSubscriptionDetails,
 	// just with empty fields.
-	var maybeEnabled *bool
+	var maybeEnabled sql.NullBool
+	var maybeDisplayName sql.NullString
 	err := row.Scan(
 		&a.SubscriptionID,
 		&maybeEnabled,
@@ -106,7 +107,7 @@ func scanCodyGatewayAccess(row pgx.Row) (*CodyGatewayAccessWithSubscriptionDetai
 		&a.EmbeddingsRateLimit,
 		&a.EmbeddingsRateLimitIntervalSeconds,
 		// Subscriptions fields
-		&a.DisplayName,
+		&maybeDisplayName,
 		// License fields
 		&a.ActiveLicenseInfo,
 		&a.LicenseKeyHashes,
@@ -114,9 +115,9 @@ func scanCodyGatewayAccess(row pgx.Row) (*CodyGatewayAccessWithSubscriptionDetai
 	if err != nil {
 		return nil, err
 	}
-	if maybeEnabled != nil {
-		a.Enabled = *maybeEnabled
-	}
+	a.Enabled = maybeEnabled.Bool
+	a.DisplayName = maybeDisplayName.String
+
 	return &a, nil
 }
 
@@ -139,6 +140,8 @@ LEFT JOIN
         WHERE
             enterprise_portal_subscription_licenses.license_type = 'ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY'
             AND access.subscription_id = enterprise_portal_subscription_licenses.subscription_id
+			AND enterprise_portal_subscription_licenses.expire_at > NOW()  -- expires in future
+			AND enterprise_portal_subscription_licenses.revoked_at IS NULL -- not revoked
         -- Get most recently created license key as the "active license"
         ORDER BY enterprise_portal_subscription_licenses.created_at DESC
         LIMIT 1
@@ -181,33 +184,61 @@ type CodyGatewayAccessWithSubscriptionDetails struct {
 	DisplayName string
 
 	ActiveLicenseInfo *license.Info
-	LicenseKeyHashes  [][]byte
+
+	// Used by GenerateAccessTokens
+	LicenseKeyHashes [][]byte
 }
 
-var ErrSubscriptionDoesNotExist = errors.New("subscription does not exist")
+var ErrSubscriptionNotFound = errors.New("subscription does not exist or is not valid for Cody Gateway access")
+
+type GetCodyGatewayAccessOptions struct {
+	SubscriptionID string
+	LicenseKeyHash []byte
+}
+
+func (opts GetCodyGatewayAccessOptions) buildConds() (string, pgx.NamedArgs, error) {
+	if opts.SubscriptionID == "" && len(opts.LicenseKeyHash) == 0 {
+		return "", nil, errors.New("must specify either SubscriptionID or LicenseKeyHash")
+	}
+
+	args := pgx.NamedArgs{}
+	conds := []string{"TRUE"}
+	if opts.SubscriptionID != "" {
+		conds = append(conds, "subscription.id = @subscriptionID")
+		args["subscriptionID"] = opts.SubscriptionID
+	}
+	if len(opts.LicenseKeyHash) > 0 {
+		conds = append(conds, "@licenseKeyHash = ANY(tokens.license_key_hashes)")
+		args["licenseKeyHash"] = opts.LicenseKeyHash
+	}
+	return strings.Join(conds, " AND "), args, nil
+}
 
 // Get returns the Cody Gateway access for the given subscription.
-func (s *CodyGatewayStore) Get(ctx context.Context, subscriptionID string) (*CodyGatewayAccessWithSubscriptionDetails, error) {
+func (s *CodyGatewayStore) Get(ctx context.Context, opts GetCodyGatewayAccessOptions) (*CodyGatewayAccessWithSubscriptionDetails, error) {
+	conds, args, err := opts.buildConds()
+	if err != nil {
+		return nil, err
+	}
 	query := fmt.Sprintf(`SELECT
 	%s
 FROM
 	enterprise_portal_cody_gateway_access AS access
 %s
 WHERE
-	subscription.id = @subscriptionID
+	%s
 	AND subscription.archived_at IS NULL`,
 		strings.Join(codyGatewayAccessTableColumns(), ", "),
-		codyGatewayAccessJoinClauses)
+		codyGatewayAccessJoinClauses,
+		conds)
 
-	sub, err := scanCodyGatewayAccess(s.db.QueryRow(ctx, query, pgx.NamedArgs{
-		"subscriptionID": subscriptionID,
-	}))
+	sub, err := scanCodyGatewayAccess(s.db.QueryRow(ctx, query, args))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			// RIGHT JOIN in query ensures that if we find no result, it's
 			// because the subscription does not exist or is archived.
 			return nil, errors.WithSafeDetails(
-				errors.WithStack(ErrSubscriptionDoesNotExist),
+				errors.WithStack(ErrSubscriptionNotFound),
 				err.Error())
 		}
 		return nil, err
@@ -250,16 +281,16 @@ type UpsertCodyGatewayAccessOptions struct {
 	Enabled *bool
 
 	// chat_completions_rate_limit
-	ChatCompletionsRateLimit                *int64
-	ChatCompletionsRateLimitIntervalSeconds *int
+	ChatCompletionsRateLimit                *sql.NullInt64
+	ChatCompletionsRateLimitIntervalSeconds *sql.NullInt32
 
 	// code_completions_rate_limit
-	CodeCompletionsRateLimit                *int64
-	CodeCompletionsRateLimitIntervalSeconds *int
+	CodeCompletionsRateLimit                *sql.NullInt64
+	CodeCompletionsRateLimitIntervalSeconds *sql.NullInt32
 
 	// embeddings_rate_limit
-	EmbeddingsRateLimit                *int64
-	EmbeddingsRateLimitIntervalSeconds *int
+	EmbeddingsRateLimit                *sql.NullInt64
+	EmbeddingsRateLimitIntervalSeconds *sql.NullInt32
 
 	// ForceUpdate indicates whether to force update all fields of the subscription
 	// record.
@@ -292,10 +323,10 @@ func (s *CodyGatewayStore) Upsert(ctx context.Context, subscriptionID string, op
 	if err := opts.Exec(ctx, s.db, subscriptionID); err != nil {
 		if pgxerrors.IsContraintError(err, "fk_enterprise_portal_cody_gateway_access_subscription") {
 			return nil, errors.WithSafeDetails(
-				errors.WithStack(ErrSubscriptionDoesNotExist),
+				errors.WithStack(ErrSubscriptionNotFound),
 				err.Error())
 		}
 		return nil, err
 	}
-	return s.Get(ctx, subscriptionID)
+	return s.Get(ctx, GetCodyGatewayAccessOptions{SubscriptionID: subscriptionID})
 }

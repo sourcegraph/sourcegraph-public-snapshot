@@ -1,6 +1,7 @@
 package redislock
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -8,8 +9,10 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // TryAcquire attempts to acquire a Redis-based lock with the given key in a
@@ -29,7 +32,16 @@ import (
 //
 // CAUTION: To avoid releasing someone else's lock, the duration of the entire
 // operation should be well-below the lock timeout.
-func TryAcquire(rs redispool.KeyValue, lockKey string, lockTimeout time.Duration) (acquired bool, release func(), _ error) {
+func TryAcquire(ctx context.Context, rs redispool.KeyValue, lockKey string, lockTimeout time.Duration) (acquired bool, release func(), err error) {
+	// Returned ctx is not yet used anywhere, discard to avoid the linter
+	tr, _ := trace.New(ctx, "redislock.TryAcquire",
+		attribute.String("lockKey", lockKey),
+		attribute.Float64("lockTimeoutSeconds", lockTimeout.Seconds()))
+	defer func() {
+		tr.SetAttributes(attribute.Bool("acquired", acquired))
+		tr.EndWithErr(&err)
+	}()
+
 	timeout := time.Now().Add(lockTimeout).UnixNano()
 	// Encode UUID as part of the token to eliminate the chance of multiple processes
 	// falsely believing they have the lock at the same time.
@@ -62,8 +74,12 @@ func TryAcquire(rs redispool.KeyValue, lockKey string, lockTimeout time.Duration
 		return false, nil, err
 	}
 
+	// Extract the lock deadline.
+	now := time.Now()
 	currentTimeout, _ := strconv.ParseInt(strings.SplitN(currentLockToken, ",", 2)[0], 10, 64)
-	if currentTimeout > time.Now().UnixNano() {
+	tr.SetAttributes(
+		attribute.Float64("secondsRemaining", time.Unix(0, currentTimeout).Sub(now).Seconds()))
+	if currentTimeout > now.UnixNano() {
 		// The lock is still valid.
 		return false, nil, nil
 	}

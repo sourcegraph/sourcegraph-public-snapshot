@@ -11,6 +11,7 @@ go_library(
     tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//cmd/enterprise-portal:__subpackages__"],
     deps = [
+        "//cmd/enterprise-portal/internal/database/codyaccess",
         "//cmd/enterprise-portal/internal/database/internal/tables",
         "//cmd/enterprise-portal/internal/database/internal/tables/custommigrator",
         "//cmd/enterprise-portal/internal/database/subscriptions",

@@ -146,8 +146,8 @@ importers:
         specifier: ^7.8.1
         version: 7.8.1
       '@sourcegraph/cody-web':
-        specifier: ^0.3.6
-        version: 0.3.6
+        specifier: ^0.4.0
+        version: 0.4.0
       '@sourcegraph/extension-api-classes':
         specifier: ^1.1.0
         version: 1.1.0(sourcegraph@client+extension-api)
@@ -1576,8 +1576,8 @@ importers:
         specifier: workspace:*
         version: link:../client-api
       '@sourcegraph/cody-web':
-        specifier: ^0.3.4
-        version: 0.3.4
+        specifier: ^0.4.0
+        version: 0.4.0
       '@sourcegraph/common':
         specifier: workspace:*
         version: link:../common
@@ -1664,8 +1664,8 @@ importers:
         specifier: ^1.1.104
         version: 1.1.104
       '@playwright/test':
-        specifier: 1.42.1
-        version: 1.42.1
+        specifier: 1.46.0
+        version: 1.46.0
       '@storybook/addon-essentials':
         specifier: ^8.0.5
         version: 8.0.5(@types/react@18.0.8)(react-dom@18.1.0)(react@18.1.0)
@@ -1718,8 +1718,8 @@ importers:
         specifier: ^1.10.0
         version: 1.10.0(msw@1.2.3)
       playwright:
-        specifier: 1.42.1
-        version: 1.42.1
+        specifier: 1.46.0
+        version: 1.46.0
       prettier:
         specifier: 2.8.1
         version: 2.8.1
@@ -7444,12 +7444,12 @@ packages:
     dev: true
     optional: true
 
-  /@playwright/test@1.42.1:
-    resolution: {integrity: sha512-Gq9rmS54mjBL/7/MvBaNOBwbfnh7beHvS6oS4srqXFcQHpQCV1+c8JXWE8VLPyRDhgS3H8x8A7hztqI9VnwrAQ==}
-    engines: {node: '>=16'}
+  /@playwright/test@1.46.0:
+    resolution: {integrity: sha512-/QYft5VArOrGRP5pgkrfKksqsKA6CEFyGQ/gjNe6q0y4tZ1aaPfq4gIjudr1s3D+pXyrPRdsy4opKDrjBabE5w==}
+    engines: {node: '>=18'}
     hasBin: true
     dependencies:
-      playwright: 1.42.1
+      playwright: 1.46.0
     dev: true
 
   /@polka/url@1.0.0-next.24:
@@ -9720,12 +9720,8 @@ packages:
     resolution: {integrity: sha512-Uf7wMo5Fu3+g03gl2jvU2qHMaDp0p9RK9U2ucmy6VxWaavxALCC8iy47JL5GdgR5qG3ekEd5mAQV0dIIfoKELA==}
     dev: true
 
-  /@sourcegraph/cody-web@0.3.4:
-    resolution: {integrity: sha512-g9wXZcQTrPBrxE3Pm6A3ip57diIEQAwBEqy16gCoN7DIwI9YYsP47svXxwgJmF6JS0XEA33Ah9k3RbRfoMadKg==}
-    dev: false
-
-  /@sourcegraph/cody-web@0.3.6:
-    resolution: {integrity: sha512-xFOjcdv7pITMg6AIN3VJxzXCdKk4nszQkuobbsqJeJwIA4sRljU+Zv6qLstzY5kQgCFu8KoYs9aAofAg3KFD0A==}
+  /@sourcegraph/cody-web@0.4.0:
+    resolution: {integrity: sha512-lEwDrFQ6JSUxmoWeatHpsW/6bQOvJVoJVxlAbXxPcK7qq/0fE1DBi65gTJvdGfe43z+3JaUQgITZvrI8zfR06Q==}
     dev: false
 
   /@sourcegraph/eslint-config@0.37.1(@testing-library/dom@8.13.0)(eslint@8.57.0)(typescript@5.4.2):
@@ -23333,18 +23329,18 @@ packages:
       pathe: 1.1.2
     dev: true
 
-  /playwright-core@1.42.1:
-    resolution: {integrity: sha512-mxz6zclokgrke9p1vtdy/COWBH+eOZgYUVVU34C73M+4j4HLlQJHtfcqiqqxpP0o8HhMkflvfbquLX5dg6wlfA==}
-    engines: {node: '>=16'}
+  /playwright-core@1.46.0:
+    resolution: {integrity: sha512-9Y/d5UIwuJk8t3+lhmMSAJyNP1BUC/DqP3cQJDQQL/oWqAiuPTLgy7Q5dzglmTLwcBRdetzgNM/gni7ckfTr6A==}
+    engines: {node: '>=18'}
     hasBin: true
     dev: true
 
-  /playwright@1.42.1:
-    resolution: {integrity: sha512-PgwB03s2DZBcNRoW+1w9E+VkLBxweib6KTXM0M3tkiT4jVxKSi6PmVJ591J+0u10LUrgxB7dLRbiJqO5s2QPMg==}
-    engines: {node: '>=16'}
+  /playwright@1.46.0:
+    resolution: {integrity: sha512-XYJ5WvfefWONh1uPAUAi0H2xXV5S3vrtcnXe6uAOgdGi3aSpqOSXX08IAjXW34xitfuOJsvXU5anXZxPSEQiJw==}
+    engines: {node: '>=18'}
     hasBin: true
     dependencies:
-      playwright-core: 1.42.1
+      playwright-core: 1.46.0
     optionalDependencies:
       fsevents: 2.3.2
     dev: true

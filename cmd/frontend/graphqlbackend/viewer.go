@@ -3,9 +3,9 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 func (r *schemaResolver) Viewer(ctx context.Context) (*viewerResolver, error) {
@@ -27,7 +27,7 @@ func (r *schemaResolver) Viewer(ctx context.Context) (*viewerResolver, error) {
 
 // viewer is the interface for the GraphQL viewer interface.
 type viewer interface {
-	AffiliatedNamespaces(ctx context.Context) (graphqlutil.SliceConnectionResolver[*NamespaceResolver], error)
+	AffiliatedNamespaces(ctx context.Context) (gqlutil.SliceConnectionResolver[*NamespaceResolver], error)
 }
 
 // viewerResolver resolves the GraphQL Viewer interface to a type.

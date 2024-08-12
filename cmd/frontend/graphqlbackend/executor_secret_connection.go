@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type executorSecretConnectionResolver struct {
@@ -40,7 +40,7 @@ func (r *executorSecretConnectionResolver) TotalCount(ctx context.Context) (int3
 	return int32(totalCount), err
 }
 
-func (r *executorSecretConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *executorSecretConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -48,9 +48,9 @@ func (r *executorSecretConnectionResolver) PageInfo(ctx context.Context) (*graph
 
 	if next != 0 {
 		n := int32(next)
-		return graphqlutil.EncodeIntCursor(&n), nil
+		return gqlutil.EncodeIntCursor(&n), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return gqlutil.HasNextPage(false), nil
 }
 
 func (r *executorSecretConnectionResolver) compute(ctx context.Context) ([]*database.ExecutorSecret, int, error) {

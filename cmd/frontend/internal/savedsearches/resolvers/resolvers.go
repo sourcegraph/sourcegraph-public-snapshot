@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -222,10 +221,10 @@ func (r *Resolver) SavedSearches(ctx context.Context, args graphqlbackend.SavedS
 		return nil, errors.New("invalid orderBy")
 	}
 
-	opts := graphqlutil.ConnectionResolverOptions{}
+	opts := gqlutil.ConnectionResolverOptions{}
 	opts.OrderBy, opts.Ascending = orderBy.ToOptions()
 
-	return graphqlutil.NewConnectionResolver(connectionStore, &args.ConnectionResolverArgs, &opts)
+	return gqlutil.NewConnectionResolver(connectionStore, &args.ConnectionResolverArgs, &opts)
 }
 
 func (r *Resolver) CreateSavedSearch(ctx context.Context, args *graphqlbackend.CreateSavedSearchArgs) (graphqlbackend.SavedSearchResolver, error) {

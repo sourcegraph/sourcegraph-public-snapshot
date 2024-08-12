@@ -5,13 +5,13 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (r *schemaResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
+func (r *schemaResolver) Roles(ctx context.Context, args *ListRoleArgs) (*gqlutil.ConnectionResolver[RoleResolver], error) {
 	connectionStore := roleConnectionStore{
 		db:     r.db,
 		system: args.System,
@@ -37,10 +37,10 @@ func (r *schemaResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphq
 		return nil, err
 	}
 
-	return graphqlutil.NewConnectionResolver[RoleResolver](
+	return gqlutil.NewConnectionResolver[RoleResolver](
 		&connectionStore,
 		&args.ConnectionResolverArgs,
-		&graphqlutil.ConnectionResolverOptions{
+		&gqlutil.ConnectionResolverOptions{
 			OrderBy: database.OrderBy{
 				{Field: "roles.system"},
 				{Field: "roles.created_at"},

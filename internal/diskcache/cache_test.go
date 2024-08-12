@@ -9,7 +9,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 func TestOpen(t *testing.T) {
@@ -89,6 +92,14 @@ func TestMultiKeyEviction(t *testing.T) {
 }
 
 func TestEvict(t *testing.T) {
+	// no tenant
+	doTestEvict(t, func() context.Context { return context.Background() })
+	// multi-tenant
+	tenant.MockEnforceTenant(t)
+	doTestEvict(t, func() context.Context { return tenant.NewTestContext() })
+}
+
+func doTestEvict(t *testing.T, ctxFunc func() context.Context) {
 	dir := t.TempDir()
 
 	store := &store{
@@ -105,7 +116,7 @@ func TestEvict(t *testing.T) {
 		"key-fourth",
 	} {
 		if strings.HasPrefix(name, "key-") {
-			f, err := store.Open(context.Background(), []string{name}, func(ctx context.Context) (io.ReadCloser, error) {
+			f, err := store.Open(ctxFunc(), []string{name}, func(ctx context.Context) (io.ReadCloser, error) {
 				return io.NopCloser(bytes.NewReader([]byte("x"))), nil
 			})
 			if err != nil {
@@ -152,6 +163,75 @@ func TestEvict(t *testing.T) {
 	expect(4, 4, 1)
 
 	// we have 4 files left, but 1 can't be evicted since it isn't managed by
-	// disckcache.
+	// diskcache.
 	expect(0, 1, 3)
+}
+
+func TestTenantRequired(t *testing.T) {
+	dir := t.TempDir()
+	tenant.MockEnforceTenant(t)
+
+	store := &store{
+		dir:       dir,
+		component: "test",
+		observe:   newOperations(observation.TestContextTB(t), "test"),
+	}
+
+	_, err := store.Open(context.Background(), []string{"key"}, func(ctx context.Context) (io.ReadCloser, error) {
+		return nil, nil
+	})
+	if err == nil {
+		t.Fatal("Expected error when no tenant is provided")
+	}
+}
+
+func TestTenantsHaveSeparateDirs(t *testing.T) {
+	dir := t.TempDir()
+	tenant.MockEnforceTenant(t)
+
+	ctx1 := tenant.NewTestContext()
+	ctx2 := tenant.NewTestContext()
+
+	key1 := "key1"
+	key2 := "key2"
+
+	store := &store{
+		dir:       dir,
+		component: "test",
+		observe:   newOperations(observation.TestContextTB(t), "test"),
+	}
+
+	f1, err := store.Open(ctx1, []string{key1}, func(ctx context.Context) (io.ReadCloser, error) {
+		return io.NopCloser(bytes.NewReader([]byte("x"))), nil
+	})
+	require.NoError(t, err)
+	f1.Close()
+
+	f2, err := store.Open(ctx2, []string{key2}, func(ctx context.Context) (io.ReadCloser, error) {
+		return io.NopCloser(bytes.NewReader([]byte("y"))), nil
+	})
+	require.NoError(t, err)
+	f2.Close()
+
+	require.NotEqual(t, filepath.Dir(f1.Path), filepath.Dir(f2.Path))
+
+	// Ensure that the cache is not shared between tenants
+	for _, c := range []struct {
+		ctx       context.Context
+		key       string
+		cacheMiss bool
+	}{
+		{ctx1, key1, false},
+		{ctx1, key2, true},
+		{ctx2, key1, true},
+		{ctx2, key2, false},
+	} {
+		cacheMiss := false
+		_, _ = store.Open(c.ctx, []string{c.key}, func(ctx context.Context) (io.ReadCloser, error) {
+			cacheMiss = true
+			return io.NopCloser(bytes.NewReader([]byte("z"))), nil
+		})
+
+		require.Equal(t, c.cacheMiss, cacheMiss)
+	}
 }

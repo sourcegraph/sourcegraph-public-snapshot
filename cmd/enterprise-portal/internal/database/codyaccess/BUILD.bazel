@@ -3,7 +3,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "codyaccess",
-    srcs = ["codygateway.go"],
+    srcs = [
+        "codyaccess.go",
+        "codygateway.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/codyaccess",
     visibility = ["//cmd/enterprise-portal:__subpackages__"],
     deps = [
@@ -30,8 +33,8 @@ go_test(
         "//cmd/enterprise-portal/internal/database",
         "//cmd/enterprise-portal/internal/database/databasetest",
         "//cmd/enterprise-portal/internal/database/internal/tables",
-        "//cmd/enterprise-portal/internal/database/internal/utctime",
         "//cmd/enterprise-portal/internal/database/subscriptions",
+        "//cmd/enterprise-portal/internal/database/utctime",
         "//internal/license",
         "//lib/pointers",
         "@com_github_google_uuid//:uuid",

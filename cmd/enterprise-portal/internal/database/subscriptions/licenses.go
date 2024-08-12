@@ -12,7 +12,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"gorm.io/gorm"
 
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/pgxerrors"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	internallicense "github.com/sourcegraph/sourcegraph/internal/license"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -131,7 +132,10 @@ func NewLicensesStore(db *pgxpool.Pool) *LicensesStore {
 }
 
 type ListLicensesOpts struct {
-	SubscriptionID string
+	SubscriptionID          string
+	LicenseType             subscriptionsv1.EnterpriseSubscriptionLicenseType
+	LicenseKeySubstring     string
+	SalesforceOpportunityID string
 	// PageSize is the maximum number of licenses to return.
 	PageSize int
 }
@@ -143,6 +147,26 @@ func (opts ListLicensesOpts) toQueryConditions() (where, limitClause string, _ p
 		whereConds = append(whereConds, "subscription_id = @subscriptionID")
 		namedArgs["subscriptionID"] = opts.SubscriptionID
 	}
+	if opts.LicenseType > 0 {
+		whereConds = append(whereConds,
+			"license_type = @licenseType")
+		namedArgs["licenseType"] = opts.LicenseType.String()
+	}
+
+	switch opts.LicenseType {
+	case subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY:
+		if opts.LicenseKeySubstring != "" {
+			whereConds = append(whereConds,
+				"license_data->>'SignedKey' LIKE  '%' || @licenseKeySubstring || '%'")
+			namedArgs["licenseKeySubstring"] = opts.LicenseKeySubstring
+		}
+		if opts.SalesforceOpportunityID != "" {
+			whereConds = append(whereConds,
+				"license_data->'Info'->>'sf_opp_id' = @salesforceOpportunityID")
+			namedArgs["salesforceOpportunityID"] = opts.SalesforceOpportunityID
+		}
+	}
+
 	where = strings.Join(whereConds, " AND ")
 
 	if opts.PageSize > 0 {
@@ -189,6 +213,8 @@ ORDER BY
 	return licenses, rows.Err()
 }
 
+var ErrSubscriptionLicenseNotFound = errors.New("subscription license not found")
+
 func (s *LicensesStore) Get(ctx context.Context, licenseID string) (*LicenseWithConditions, error) {
 	query := fmt.Sprintf(`
 SELECT
@@ -210,6 +236,9 @@ GROUP BY
 		}),
 	)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.WithStack(ErrSubscriptionLicenseNotFound)
+		}
 		return nil, errors.Wrap(err, "query rows")
 	}
 	return license, nil
@@ -221,11 +250,29 @@ type CreateLicenseOpts struct {
 	Time *utctime.Time
 	// Expiration time of the license.
 	ExpireTime utctime.Time
+
+	// ImportLicenseID can be provided to avoid generating a new license ID. Should
+	// only be used on import.
+	ImportLicenseID string
 }
 
-// LicenseKey corresponds to *subscriptionsv1.EnterpriseSubscriptionLicenseKey
+func (c CreateLicenseOpts) getLicenseID() (string, error) {
+	if c.ImportLicenseID != "" {
+		if _, err := uuid.Parse(c.ImportLicenseID); err != nil {
+			return "", errors.Wrap(err, "invalid license ID")
+		}
+		return c.ImportLicenseID, nil
+	}
+	licenseID, err := uuid.NewV7()
+	if err != nil {
+		return "", errors.Wrap(err, "generate uuid")
+	}
+	return licenseID.String(), nil
+}
+
+// DataLicenseKey corresponds to *subscriptionsv1.EnterpriseSubscriptionLicenseKey
 // and the 'ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY' license type.
-type LicenseKey struct {
+type DataLicenseKey struct {
 	Info internallicense.Info
 	// Signed license key with the license information in Info.
 	SignedKey string
@@ -235,7 +282,7 @@ type LicenseKey struct {
 func (s *LicensesStore) CreateLicenseKey(
 	ctx context.Context,
 	subscriptionID string,
-	license *LicenseKey,
+	license *DataLicenseKey,
 	opts CreateLicenseOpts,
 ) (_ *LicenseWithConditions, err error) {
 	// Special behaviour: the license key embeds the creation time, and it must
@@ -277,9 +324,9 @@ func (s *LicensesStore) create(
 		return nil, errors.New("license type must be specified")
 	}
 
-	licenseID, err := uuid.NewV7()
+	licenseID, err := opts.getLicenseID()
 	if err != nil {
-		return nil, errors.Wrap(err, "generate uuid")
+		return nil, err
 	}
 	licenseData, err := json.Marshal(license)
 	if err != nil {
@@ -313,17 +360,22 @@ VALUES (
 	@expireAt
 )
 `, pgx.NamedArgs{
-		"licenseID":      licenseID.String(),
+		"licenseID":      licenseID,
 		"subscriptionID": subscriptionID,
-		"licenseType":    subscriptionsv1.EnterpriseSubscriptionLicenseType_name[int32(licenseType)],
+		"licenseType":    licenseType.String(),
 		"licenseData":    licenseData,
 		"createdAt":      opts.Time,
 		"expireAt":       opts.ExpireTime,
 	}); err != nil {
+		if pgxerrors.IsContraintError(err, "fk_enterprise_portal_subscriptions_licenses") {
+			return nil, errors.WithSafeDetails(
+				errors.WithStack(ErrSubscriptionNotFound),
+				"subscription %s: %+v", subscriptionID, err)
+		}
 		return nil, errors.Wrap(err, "create license")
 	}
 
-	if err := newLicenseConditionsStore(tx).createLicenseCondition(ctx, licenseID.String(), createLicenseConditionOpts{
+	if err := newLicenseConditionsStore(tx).createLicenseCondition(ctx, licenseID, createLicenseConditionOpts{
 		Status:         subscriptionsv1.EnterpriseSubscriptionLicenseCondition_STATUS_CREATED,
 		Message:        opts.Message,
 		TransitionTime: *opts.Time,
@@ -335,7 +387,7 @@ VALUES (
 		return nil, errors.Wrap(err, "commit transaction")
 	}
 
-	return s.Get(ctx, licenseID.String())
+	return s.Get(ctx, licenseID)
 }
 
 type RevokeLicenseOpts struct {
@@ -370,6 +422,9 @@ WHERE id = @licenseID
 		"revokedAt": opts.Time,
 		"licenseID": licenseID,
 	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrSubscriptionLicenseNotFound
+		}
 		return nil, errors.Wrap(err, "revoke license")
 	}
 

@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type ExternalAccountData struct {
@@ -35,7 +36,7 @@ func getOrCreateUser(
 	ctx context.Context,
 	logger log.Logger,
 	db database.DB,
-	p *Provider,
+	p schema.OpenIDConnectAuthProvider,
 	token *oauth2.Token,
 	idToken *oidc.IDToken,
 	userInfo *oidc.UserInfo,
@@ -51,11 +52,6 @@ func getOrCreateUser(
 		// If the OP explicitly reports `"email_verified": false`, then reject the authentication
 		// attempt. If undefined or true, then it will be allowed.
 		return false, nil, fmt.Sprintf("Only users with verified email addresses may authenticate to Sourcegraph. The email address %q is not verified on the external authentication provider.", userInfo.Email), errors.Errorf("refusing unverified user email address %q", userInfo.Email)
-	}
-
-	pi, err := p.getCachedInfoAndError()
-	if err != nil {
-		return false, nil, "", err
 	}
 
 	login := getLogin(claims, userInfo)
@@ -99,15 +95,15 @@ func getOrCreateUser(
 			AvatarURL:       claims.Picture,
 		},
 		ExternalAccount: extsvc.AccountSpec{
-			ServiceType: p.config.Type,
-			ServiceID:   pi.ServiceID,
-			ClientID:    pi.ClientID,
+			ServiceType: p.Type,
+			ServiceID:   p.Issuer,
+			ClientID:    p.ClientID,
 			AccountID:   idToken.Subject,
 		},
 		UserCreateEventProperties: userCreateEventProperties,
 		ExternalAccountData:       data,
-		CreateIfNotExist:          p.config.AllowSignup == nil || *p.config.AllowSignup,
-		SingleIdentityPerUser:     p.config.SingleIdentityPerUser,
+		CreateIfNotExist:          p.AllowSignup == nil || *p.AllowSignup,
+		SingleIdentityPerUser:     p.SingleIdentityPerUser,
 	})
 	if err != nil {
 		return false, nil, safeErrMsg, err

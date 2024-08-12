@@ -84,19 +84,21 @@ func Init() {
 				return
 			}
 
+			psp := make([]providers.Provider, 0, len(ps))
 			for _, p := range ps {
+				psp = append(psp, p)
 				go func() {
 					if err := p.Refresh(context.Background()); err != nil {
 						logger.Error("Error prefetching SAML service provider metadata.", log.Error(err))
 					}
 				}()
 			}
-			providers.Update(pkgName, ps)
+			providers.Update(pkgName, psp)
 		})
 	}()
 }
 
-func getProviders() []providers.Provider {
+func getProviders() []*provider {
 	var cfgs []*schema.SAMLAuthProvider
 	for _, p := range conf.Get().AuthProviders {
 		if p.Saml == nil {
@@ -105,7 +107,7 @@ func getProviders() []providers.Provider {
 		cfgs = append(cfgs, withConfigDefaults(p.Saml))
 	}
 	multiple := len(cfgs) >= 2
-	ps := make([]providers.Provider, 0, len(cfgs))
+	ps := make([]*provider, 0, len(cfgs))
 	for _, cfg := range cfgs {
 		p := &provider{config: *cfg, multiple: multiple, httpClient: httpcli.ExternalClient}
 		ps = append(ps, p)

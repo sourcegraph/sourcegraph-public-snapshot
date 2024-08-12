@@ -8,10 +8,10 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type batchChangesCodeHostConnectionResolver struct {
@@ -40,7 +40,7 @@ func (c *batchChangesCodeHostConnectionResolver) TotalCount(ctx context.Context)
 	return int32(len(chs)), err
 }
 
-func (c *batchChangesCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (c *batchChangesCodeHostConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	chs, _, _, err := c.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -48,10 +48,10 @@ func (c *batchChangesCodeHostConnectionResolver) PageInfo(ctx context.Context) (
 
 	idx := c.limitOffset.Limit + c.limitOffset.Offset
 	if idx < len(chs) {
-		return graphqlutil.NextPageCursor(strconv.Itoa(idx)), nil
+		return gqlutil.NextPageCursor(strconv.Itoa(idx)), nil
 	}
 
-	return graphqlutil.HasNextPage(false), nil
+	return gqlutil.HasNextPage(false), nil
 }
 
 func (c *batchChangesCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchChangesCodeHostResolver, error) {
@@ -169,8 +169,8 @@ func (c *emptyBatchChangesCodeHostConnectionResolver) TotalCount(ctx context.Con
 	return 0, nil
 }
 
-func (c *emptyBatchChangesCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
+func (c *emptyBatchChangesCodeHostConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
+	return gqlutil.HasNextPage(false), nil
 }
 
 func (c *emptyBatchChangesCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchChangesCodeHostResolver, error) {

@@ -142,6 +142,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err := r.reconcileOtel(ctx, &sourcegraph, &applianceSpec); err != nil {
 		return ctrl.Result{}, errors.Newf("failed to reconcile OpenTelemetry Collector: %w", err)
 	}
+	if err := r.reconcileNodeExporter(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile NodeExporter: %w", err)
+	}
 
 	// Set the current version annotation in case migration logic depends on it.
 	applianceSpec.Annotations[config.AnnotationKeyCurrentVersion] = sourcegraph.Spec.RequestedVersion

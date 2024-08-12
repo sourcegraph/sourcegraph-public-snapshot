@@ -12,7 +12,8 @@ const config: PlaywrightTestConfig = {
               port: PORT,
               reuseExistingServer: true,
               env: {
-                  PLAYWRIGHT: '1',
+                  // Disable proxying to a real Sourcegraph instance in local testing
+                  SK_DISABLE_PROXY: 'true',
               },
               timeout: 5 * 60_000,
           }

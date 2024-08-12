@@ -16,6 +16,7 @@
     export let hoverDelay: number = 500
     export let hoverCloseDelay: number = 150
     export let closeOnEsc: boolean = true
+    export let flip: boolean = true
     export let trigger: HTMLElement | null = null
     export let target: HTMLElement | undefined = undefined
 
@@ -156,9 +157,9 @@
                 placement,
                 offset,
                 shift: { padding: 4 },
-                flip: {
+                flip: flip ? {
                     fallbackAxisSideDirection: 'start',
-                },
+                } : undefined,
             },
         }}
         on:click-outside={handleClickOutside}

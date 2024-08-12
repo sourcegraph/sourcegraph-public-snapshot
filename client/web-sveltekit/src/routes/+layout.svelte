@@ -83,17 +83,11 @@
     $: handleOptOut = currentUserID
         ? async (): Promise<void> => {
               // Show departure message after switching off
-              $temporarySettingsStorage.set('webNext.departureMessage.dismissed', false)
+              $temporarySettingsStorage.set('webNext.departureMessage.show', true)
               await data.disableSvelteFeatureFlags(currentUserID)
               window.location.reload()
           }
         : undefined
-
-    $: welcomeOverlayDismissed = $temporarySettingsStorage.get('webNext.welcomeOverlay.dismissed', false)
-    $: showWelcomeOverlay = !($welcomeOverlayDismissed ?? true)
-    function handleDismissWelcomeOverlay() {
-        $temporarySettingsStorage.set('webNext.welcomeOverlay.dismissed', true)
-    }
 </script>
 
 <svelte:head>
@@ -112,7 +106,7 @@
     <slot />
 </main>
 
-<WelcomeOverlay show={showWelcomeOverlay} handleDismiss={handleDismissWelcomeOverlay} />
+<WelcomeOverlay />
 
 <FuzzyFinderContainer />
 

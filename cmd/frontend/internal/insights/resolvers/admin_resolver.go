@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -394,7 +393,7 @@ func (r *insightViewDebugResolver) Raw(ctx context.Context) ([]string, error) {
 	return viewDebug, nil
 }
 
-func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlbackend.AdminBackfillQueueArgs) (*graphqlutil.ConnectionResolver[*graphqlbackend.BackfillQueueItemResolver], error) {
+func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlbackend.AdminBackfillQueueArgs) (*gqlutil.ConnectionResolver[*graphqlbackend.BackfillQueueItemResolver], error) {
 	// 🚨 SECURITY
 	// only admin users can access this resolver
 	actr := actor.FromContext(ctx)
@@ -414,10 +413,10 @@ func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlb
 		orderBy = args.OrderBy
 	}
 
-	resolver, err := graphqlutil.NewConnectionResolver[*graphqlbackend.BackfillQueueItemResolver](
+	resolver, err := gqlutil.NewConnectionResolver[*graphqlbackend.BackfillQueueItemResolver](
 		store,
 		&args.ConnectionResolverArgs,
-		&graphqlutil.ConnectionResolverOptions{
+		&gqlutil.ConnectionResolverOptions{
 			OrderBy: database.OrderBy{
 				{Field: string(orderByToDBBackfillColumn(orderBy))}, // user selected or default
 				{Field: string(scheduler.BackfillID)},               // key field to support paging

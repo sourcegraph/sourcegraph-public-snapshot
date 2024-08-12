@@ -25,9 +25,11 @@ type provider struct {
 	*openidconnect.Provider
 }
 
+var _ providers.Provider = (*provider)(nil)
+
 // NewProvider creates and returns a new Sourcegraph Operator authentication
 // provider using the given config.
-func NewProvider(config cloud.SchemaAuthProviderSourcegraphOperator, httpClient *http.Client) providers.Provider {
+func NewProvider(config cloud.SchemaAuthProviderSourcegraphOperator, httpClient *http.Client) *provider {
 	allowSignUp := true
 	return &provider{
 		config: config,
@@ -45,7 +47,7 @@ func NewProvider(config cloud.SchemaAuthProviderSourcegraphOperator, httpClient 
 			authPrefix,
 			path.Join(feAuth.AuthURLPrefix, "sourcegraph-operator", "callback"),
 			httpClient,
-		).(*openidconnect.Provider),
+		),
 	}
 }
 

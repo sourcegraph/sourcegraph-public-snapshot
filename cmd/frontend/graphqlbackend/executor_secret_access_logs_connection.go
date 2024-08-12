@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -54,7 +54,7 @@ func (r *executorSecretAccessLogConnectionResolver) TotalCount(ctx context.Conte
 	return int32(totalCount), err
 }
 
-func (r *executorSecretAccessLogConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *executorSecretAccessLogConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	_, _, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -62,9 +62,9 @@ func (r *executorSecretAccessLogConnectionResolver) PageInfo(ctx context.Context
 
 	if next != 0 {
 		n := int32(next)
-		return graphqlutil.EncodeIntCursor(&n), nil
+		return gqlutil.EncodeIntCursor(&n), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return gqlutil.HasNextPage(false), nil
 }
 
 func (r *executorSecretAccessLogConnectionResolver) compute(ctx context.Context) (_ []*database.ExecutorSecretAccessLog, _ []*types.User, next int, err error) {

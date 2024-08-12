@@ -8,10 +8,10 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -106,7 +106,7 @@ func (r *schemaResolver) indexedSearchInstanceByID(ctx context.Context, id graph
 	return &indexedSearchInstance{address: address}, nil
 }
 
-func (r *schemaResolver) IndexedSearchInstances(ctx context.Context) (graphqlutil.SliceConnectionResolver[*indexedSearchInstance], error) {
+func (r *schemaResolver) IndexedSearchInstances(ctx context.Context) (gqlutil.SliceConnectionResolver[*indexedSearchInstance], error) {
 	// 🚨 SECURITY: Site admins only.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -126,5 +126,5 @@ func (r *schemaResolver) IndexedSearchInstances(ctx context.Context) (graphqluti
 	}
 	n := len(resolvers)
 
-	return graphqlutil.NewSliceConnectionResolver(resolvers, n, n), nil
+	return gqlutil.NewSliceConnectionResolver(resolvers, n, n), nil
 }

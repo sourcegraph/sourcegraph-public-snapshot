@@ -35,7 +35,7 @@ func (Propagator) FromContext(ctx context.Context) metadata.MD {
 	)
 }
 
-func (Propagator) InjectContext(ctx context.Context, md metadata.MD) context.Context {
+func (Propagator) InjectContext(ctx context.Context, md metadata.MD) (context.Context, error) {
 	var ip, forwardedFor, forwardedForUserAgent, currentUserAgent string
 
 	if vals := md.Get(headerKeyClientIP); len(vals) > 0 {
@@ -69,7 +69,7 @@ func (Propagator) InjectContext(ctx context.Context, md metadata.MD) context.Con
 		UserAgent:             currentUserAgent,
 		ForwardedForUserAgent: forwardedForUserAgent,
 	}
-	return WithClient(ctx, &c)
+	return WithClient(ctx, &c), nil
 }
 
 var _ internalgrpc.Propagator = Propagator{}

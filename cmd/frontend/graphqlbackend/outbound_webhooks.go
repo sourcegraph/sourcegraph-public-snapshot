@@ -9,11 +9,11 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/webhooks/outbound"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -24,7 +24,7 @@ const outboundWebhookIDKind = "OutboundWebhook"
 type OutboundWebhookConnectionResolver interface {
 	Nodes() ([]OutboundWebhookResolver, error)
 	TotalCount() (int32, error)
-	PageInfo() (*graphqlutil.PageInfo, error)
+	PageInfo() (*gqlutil.PageInfo, error)
 }
 
 type OutboundWebhookEventTypeResolver interface {
@@ -293,16 +293,16 @@ func (r *outboundWebhookConnectionResolver) TotalCount() (int32, error) {
 	return r.totalCount()
 }
 
-func (r *outboundWebhookConnectionResolver) PageInfo() (*graphqlutil.PageInfo, error) {
+func (r *outboundWebhookConnectionResolver) PageInfo() (*gqlutil.PageInfo, error) {
 	nodes, err := r.nodes()
 	if err != nil {
 		return nil, err
 	}
 
 	if len(nodes) > r.first {
-		return graphqlutil.NextPageCursor(strconv.Itoa(r.first + r.offset)), nil
+		return gqlutil.NextPageCursor(strconv.Itoa(r.first + r.offset)), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return gqlutil.HasNextPage(false), nil
 }
 
 type outboundWebhookEventTypeResolver struct {

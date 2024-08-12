@@ -33,8 +33,20 @@ export function sgProxy(options: Options): Plugin {
     const contextPlaceholder = '// ---window.context---'
 
     // Additional endpoints that should be proxied to the real Sourcegraph instance.
-    // These are not part of the known routes, but are required for the SvelteKit app to work.
-    const additionalEndpoints = ['/.api/', '/.assets/', '/.auth/']
+    const additionalEndpoints = [
+        // These are not part of the known routes list, but are required for the SvelteKit app to work
+        // in development mode.
+        '^/.api/',
+        '^/.assets/',
+        '^/.auth/',
+        // Repo sub pages are also not part of the known routes list. They are listed here so that we
+        // proxy them to the real Sourcegraph instance, for consistency with the production setup.
+        '/-/raw/',
+        '/-/batch-changes/?',
+        '/-/settings/?',
+        '/-/code-graph/?',
+        '/-/own/?',
+    ]
 
     // Routes known by the server that need to (potentially) be proxied to the real Sourcegraph instance.
     let knownServerRoutes: string[] = []
@@ -90,15 +102,23 @@ export function sgProxy(options: Options): Plugin {
             // At startup we fetch the sign-in page from the real Sourcegraph instance to extract the `knownRoutes` array
             // from the JS context object. This is used to determine which requests should be proxied to the real Sourcegraph
             // instance.
-            try {
-                // The /sign-in endpoint is always available on dotcom and enterprise instances.
-                context = await fetch(`${options.target}/sign-in`)
-                    .then(response => response.text())
-                    .then(extractContext)
-            } catch (error) {
-                console.error(error)
-                logger.error(`Failed to fetch JS context: ${(error as Error).message}`, { timestamp: true })
-                return
+            // We keep trying to connect to the origin server in case it is not yet available (e.g. when just starting up a
+            // local Sourcegraph instance).
+            let backoff = 1
+            while (true) {
+                try {
+                    logger.info(`Fetching JS context from ${options.target}`, { timestamp: true })
+                    // The /sign-in endpoint is always available on dotcom and enterprise instances.
+                    context = await fetch(`${options.target}/sign-in`)
+                        .then(response => response.text())
+                        .then(extractContext)
+                    break
+                } catch (error) {
+                    logger.error(`Failed to fetch JS context: ${(error as Error).message}`, { timestamp: true })
+                    logger.info(`Retrying in ${backoff} second(s)...`, { timestamp: true })
+                    await new Promise(resolve => setTimeout(resolve, backoff * 1000))
+                    backoff = Math.min(backoff * 2, 10)
+                }
             }
 
             if (!context) {
@@ -125,7 +145,7 @@ export function sgProxy(options: Options): Plugin {
 
             const proxyConfig: Record<string, ProxyOptions> = {
                 // Proxy requests to specific endpoints to a real Sourcegraph instance.
-                [`^(${additionalEndpoints.join('|')})`]: baseOptions,
+                [`${additionalEndpoints.join('|')}`]: baseOptions,
             }
 
             const dynamicOptions: ProxyOptions = {
@@ -196,7 +216,8 @@ export function sgProxy(options: Options): Plugin {
                                 })
                                 .catch(error => {
                                     logger.error(`Error fetching JS context: ${error.message}`, { timestamp: true })
-                                    callback(error, chunk)
+                                    // We explicitly pass null to not cause the proxy to terminate
+                                    callback(null, chunk)
                                 })
                         },
                     })

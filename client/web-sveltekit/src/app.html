@@ -18,12 +18,14 @@
 
             window.context = Object.assign(
                 {},
-                // Injected window.context (via proxy or playwright) if available
+                // Injected window.context (via proxy) if available
                 window.context,
                 // Dev specific overwrites
                 {
-                    sentryDNS: undefined,
+                    sentryDSN: undefined,
                 },
+                // Playwright specific overwrites
+                window.playwrightContext
             )
             window.pageError = undefined
         </script>

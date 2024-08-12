@@ -3,9 +3,9 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -43,7 +43,7 @@ func (r *externalRepositoryResolver) ServiceID(ctx context.Context) (string, err
 }
 
 func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct {
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 }) (*ComputedExternalServiceConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may read external services (they have secrets).
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {

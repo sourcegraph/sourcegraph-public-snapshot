@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -35,8 +34,8 @@ func (r *organizationMembershipConnectionResolver) Nodes() []*organizationMember
 	return r.nodes
 }
 func (r *organizationMembershipConnectionResolver) TotalCount() int32 { return int32(len(r.nodes)) }
-func (r *organizationMembershipConnectionResolver) PageInfo() *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(false)
+func (r *organizationMembershipConnectionResolver) PageInfo() *gqlutil.PageInfo {
+	return gqlutil.HasNextPage(false)
 }
 
 type organizationMembershipResolver struct {

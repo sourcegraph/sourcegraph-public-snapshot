@@ -1140,7 +1140,9 @@ func (s SyntacticMatch) GetSurroundingContent() string {
 }
 
 type SyntacticUsagesResult struct {
-	Matches []SyntacticMatch
+	Matches                 []SyntacticMatch
+	PreviousSyntacticSearch PreviousSyntacticSearch
+	NextCursor              core.Option[UsagesCursor]
 }
 
 type UsagesForSymbolArgs struct {
@@ -1154,7 +1156,7 @@ func (s *Service) SyntacticUsages(
 	ctx context.Context,
 	gitTreeTranslator GitTreeTranslator,
 	args UsagesForSymbolArgs,
-) (SyntacticUsagesResult, PreviousSyntacticSearch, *SyntacticUsagesError) {
+) (SyntacticUsagesResult, *SyntacticUsagesError) {
 	// The `nil` in the second argument is here, because `With` does not work with custom error types.
 	ctx, trace, endObservation := s.operations.syntacticUsages.With(ctx, nil, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoId", int(args.Repo.ID)),
@@ -1166,7 +1168,7 @@ func (s *Service) SyntacticUsages(
 
 	upload, err := s.getSyntacticUpload(ctx, trace, args)
 	if err != nil {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, err
+		return SyntacticUsagesResult{}, err
 	}
 	index := NewMappedIndexFromTranslator(s.lsifstore, gitTreeTranslator, upload, args.Commit)
 	return syntacticUsagesImpl(ctx, trace, s.searchClient, index, args)
@@ -1216,12 +1218,17 @@ func languageFromFilepath(trace observation.TraceLogger, path core.RepoRelPath) 
 	return langs[0], nil
 }
 
+type SearchBasedUsagesResult struct {
+	Matches    []SearchBasedMatch
+	NextCursor core.Option[UsagesCursor]
+}
+
 func (s *Service) SearchBasedUsages(
 	ctx context.Context,
 	gitTreeTranslator GitTreeTranslator,
 	args UsagesForSymbolArgs,
 	previousSyntacticSearch core.Option[PreviousSyntacticSearch],
-) (matches []SearchBasedMatch, err error) {
+) (_ SearchBasedUsagesResult, err error) {
 	ctx, trace, endObservation := s.operations.searchBasedUsages.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoId", int(args.Repo.ID)),
 		attribute.String("commit", string(args.Commit)),
@@ -1241,12 +1248,12 @@ func (s *Service) SearchBasedUsages(
 	} else {
 		language, err = languageFromFilepath(trace, args.Path)
 		if err != nil {
-			return nil, err
+			return SearchBasedUsagesResult{}, err
 		}
 
 		nameFromGit, err := s.symbolNameFromGit(ctx, args)
 		if err != nil {
-			return nil, err
+			return SearchBasedUsagesResult{}, err
 		}
 		symbolName = nameFromGit
 

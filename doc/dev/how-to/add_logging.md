@@ -17,7 +17,7 @@ The recommended logger at Sourcegraph is [`github.com/sourcegraph/log`](https://
 
 Logging is also available via the all-in-one `internal/observation` package: [How to add observability](add_observability.md)
 
-> NOTE: Sourcegraph's new logging standards are still a work in progress—please leave a comment in [this discussion](https://github.com/sourcegraph/sourcegraph/discussions/33248) if you have any feedback or ideas!
+> NOTE: Sourcegraph's new logging standards are still a work in progress — please [join our community](https://community.sourcegraph.com) if you have any feedback or ideas!
 
 ## Core concepts
 
@@ -37,7 +37,7 @@ For example, a typical initialization process looks like this:
 ```go
 import (
   "github.com/sourcegraph/log"
-  
+
   "github.com/sourcegraph/sourcegraph/internal/env"
   "github.com/sourcegraph/sourcegraph/internal/version"
   "github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -244,7 +244,7 @@ See [observability: logs](../../admin/observability/logs.md) in the administrati
 ### Automatic error reporting with Sentry
 
 If the optional sink [`log.NewSentrySink()`](https://doctree.org/github.com/sourcegraph/log/-/go/-//?id=NewSentrySink) is passed when initializing the logger, when an error is passed in a field to the logger with `log.Error(err)`, it will be reported to Sentry automatically if and only if the log level is above or equal to `Warn`.
-The log message and all fields will be used to annotate the error report and the logger scope will be used as a tag, which being indexed by Sentry, enables to group reports. 
+The log message and all fields will be used to annotate the error report and the logger scope will be used as a tag, which being indexed by Sentry, enables to group reports.
 
 For example, the Sentry search query `is:unresolved scope:*codeintel*` will surface all error reports coming from errors that were logged by loggers whose scope includes `codeintel`.
 

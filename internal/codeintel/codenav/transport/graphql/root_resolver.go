@@ -266,115 +266,144 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 		log.String("path", args.Path.RawValue()),
 		log.String("range", args.Range.String()))
 
+	// TODO: We should make precise use this translator
+	gitTreeTranslator := r.MakeGitTreeTranslator(&args.Repo)
 	remainingCount := int(args.RemainingCount)
 	provsForSCIPData := args.Symbol.ProvenancesForSCIPData()
 	usageResolvers := []resolverstubs.UsageResolver{}
 
-	nextCursor := core.None[codenav.UsagesCursor]()
-	if provsForSCIPData.Precise {
-		func() {
-			optRequestState, err := r.makeRequestState(ctx, &args.Repo, shared.UploadMatchingOptions{
-				RepositoryID:       args.Repo.ID,
-				Commit:             args.CommitID,
-				Path:               args.Path,
-				RootToPathMatching: shared.RootMustEnclosePath,
-				Indexer:            "", // any precise indexer is OK
-			})
-			if err != nil {
-				trace.Error("failed to construct request state", log.Error(err))
-				return
-			}
-			requestState, ok := optRequestState.Get()
-			if !ok {
-				if args.Symbol != nil && args.Symbol.EqualsProvenance == codenav.ProvenancePrecise {
-					trace.Warn("expected precise matches for symbol but didn't find any matching uploads",
-						log.String("symbol", args.Symbol.EqualsName))
-				}
-				return
-			}
-			preciseUsages, nextPreciseCursor, err := r.svc.PreciseUsages(ctx, requestState, args)
-			if err != nil {
-				trace.Error("CodeNavService.PreciseUsages", log.Error(err))
-				return
-			}
-			if len(preciseUsages) > remainingCount {
-				trace.Warn("number of precise usages exceeded limit", log.Int("limit", remainingCount), log.Int("numPreciseUsages", len(preciseUsages)))
-			}
-			preciseUsageResolvers, err := NewPreciseUsageResolvers(ctx, r.gitserverClient, preciseUsages)
-			numPreciseResults = len(preciseUsageResolvers)
-			if err != nil {
-				trace.Warn("errors when constructing precise resolvers", log.Error(err))
-			}
-			trace.AddEvent("PreciseUsages", attribute.Int("count", numPreciseResults))
-			usageResolvers = append(usageResolvers, preciseUsageResolvers...)
-			remainingCount -= min(remainingCount, numPreciseResults)
-			nextCursor = nextPreciseCursor // write to captured value
-		}()
+	cursor := args.Cursor
+	if cursor.IsPrecise() {
+		nextPreciseCursor, preciseUsageResolvers := r.preciseUsages(ctx, trace, args, remainingCount)
+		usageResolvers = append(usageResolvers, preciseUsageResolvers...)
+		numPreciseResults = len(preciseUsageResolvers)
+		remainingCount -= min(remainingCount, numPreciseResults)
+		cursor = cursor.AdvanceCursor(nextPreciseCursor, provsForSCIPData)
 	}
 
-	usagesForSymbolArgs := codenav.UsagesForSymbolArgs{
-		Repo:        args.Repo,
-		Commit:      args.CommitID,
-		Path:        args.Path,
-		SymbolRange: args.Range,
-	}
-
-	gitTreeTranslator := r.MakeGitTreeTranslator(&args.Repo)
-
-	var previousSyntacticSearch core.Option[codenav.PreviousSyntacticSearch]
-	if remainingCount > 0 && provsForSCIPData.Syntactic {
-		syntacticResult, prevSearch, err := r.svc.SyntacticUsages(ctx, gitTreeTranslator, usagesForSymbolArgs)
-		if err != nil {
-			switch err.Code {
-			case codenav.SU_Fatal:
-				return nil, err
-			case codenav.SU_NoSymbolAtRequestedRange:
-			case codenav.SU_NoSyntacticIndex:
-			case codenav.SU_FailedToSearch:
-			default:
-				// None of these errors should cause the whole request to fail
-				// TODO: We might want to log some of them in the future
-			}
-		} else {
-			for _, result := range syntacticResult.Matches {
-				usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo.Name, args.CommitID))
-			}
-			numSyntacticResults = len(syntacticResult.Matches)
-			remainingCount = remainingCount - numSyntacticResults
-			previousSyntacticSearch = core.Some(prevSearch)
+	previousSyntacticSearch := core.None[codenav.PreviousSyntacticSearch]()
+	if cursor.IsSyntactic() && remainingCount > 0 {
+		usagesForSymbolArgs := codenav.UsagesForSymbolArgs{
+			Repo:        args.Repo,
+			Commit:      args.CommitID,
+			Path:        args.Path,
+			SymbolRange: args.Range,
 		}
+		nextSyntacticCursor, syntacticUsageResolvers, prevSearch := r.syntacticUsages(ctx, trace, gitTreeTranslator, usagesForSymbolArgs)
+		previousSyntacticSearch = prevSearch
+		usageResolvers = append(usageResolvers, syntacticUsageResolvers...)
+		numSyntacticResults = len(syntacticUsageResolvers)
+		remainingCount -= min(remainingCount, numSyntacticResults)
+		cursor = cursor.AdvanceCursor(nextSyntacticCursor, provsForSCIPData)
 	}
 
-	if remainingCount > 0 && provsForSCIPData.SearchBased {
-		results, err := r.svc.SearchBasedUsages(ctx, gitTreeTranslator, usagesForSymbolArgs, previousSyntacticSearch)
-		if err != nil {
-			// We only want to fail the request on an error here if we didn't get any precise or syntactic results before
-			if len(usageResolvers) == 0 {
-				return nil, err
-			} else {
-				// TODO: We might want to log some of these errors in the future
-				_ = "shut up nogo linter"
-			}
-		} else {
-			for _, result := range results {
-				usageResolvers = append(usageResolvers, NewSearchBasedUsageResolver(result, args.Repo.Name, args.CommitID))
-			}
+	if cursor.IsSearchBased() && remainingCount > 0 {
+		usagesForSymbolArgs := codenav.UsagesForSymbolArgs{
+			Repo:        args.Repo,
+			Commit:      args.CommitID,
+			Path:        args.Path,
+			SymbolRange: args.Range,
 		}
+		nextSearchBasedCursor, searchBasedUsageResolvers := r.searchBasedUsages(
+			ctx, trace, gitTreeTranslator, usagesForSymbolArgs, previousSyntacticSearch,
+		)
+		usageResolvers = append(usageResolvers, searchBasedUsageResolvers...)
+		numSearchBasedResults = len(searchBasedUsageResolvers)
+		cursor = cursor.AdvanceCursor(nextSearchBasedCursor, provsForSCIPData)
 	}
 
 	pageInfo := resolverstubs.NewSimplePageInfo(false)
-	if nextCursorVal, ok := nextCursor.Get(); ok {
+	if !cursor.IsDone() {
 		if len(usageResolvers) > 0 {
-			pageInfo = resolverstubs.NewPageInfoFromCursor(nextCursorVal.Encode())
+			pageInfo = resolverstubs.NewPageInfoFromCursor(cursor.Encode())
 		} else {
-			trace.Error("cursor should be None if no usageResolvers were found",
-				log.String("UsagesCursor", nextCursorVal.Encode()))
+			trace.Error("cursor should be done if no usageResolvers were found",
+				log.String("UsagesCursor", cursor.Encode()))
 		}
 	}
 	return &usageConnectionResolver{
 		nodes:    usageResolvers,
 		pageInfo: pageInfo,
 	}, nil
+}
+
+func (r *rootResolver) preciseUsages(
+	ctx context.Context, trace observation.TraceLogger, args codenav.UsagesForSymbolResolvedArgs, remainingCount int,
+) (core.Option[codenav.UsagesCursor], []resolverstubs.UsageResolver) {
+	optRequestState, err := r.makeRequestState(ctx, &args.Repo, shared.UploadMatchingOptions{
+		RepositoryID:       args.Repo.ID,
+		Commit:             args.CommitID,
+		Path:               args.Path,
+		RootToPathMatching: shared.RootMustEnclosePath,
+		Indexer:            "", // any precise indexer is OK
+	})
+	if err != nil {
+		trace.Error("failed to construct request state", log.Error(err))
+		return core.None[codenav.UsagesCursor](), nil
+	}
+	requestState, ok := optRequestState.Get()
+	if !ok {
+		if args.Symbol != nil && args.Symbol.EqualsProvenance == codenav.ProvenancePrecise {
+			trace.Warn("expected precise matches for symbol but didn't find any matching uploads",
+				log.String("symbol", args.Symbol.EqualsName))
+		}
+		return core.None[codenav.UsagesCursor](), nil
+	}
+	preciseUsages, nextCursor, err := r.svc.PreciseUsages(ctx, requestState, args)
+	if err != nil {
+		trace.Error("CodeNavService.PreciseUsages", log.Error(err))
+		return core.None[codenav.UsagesCursor](), nil
+	}
+	if len(preciseUsages) > remainingCount {
+		trace.Warn("number of precise usages exceeded limit",
+			log.Int("limit", remainingCount),
+			log.Int("numPreciseUsages", len(preciseUsages)))
+	}
+	usageResolvers, err := NewPreciseUsageResolvers(ctx, r.gitserverClient, preciseUsages)
+	if err != nil {
+		trace.Warn("errors when constructing precise resolvers", log.Error(err))
+	}
+	trace.AddEvent("PreciseUsages", attribute.Int("count", len(usageResolvers)))
+	return nextCursor, usageResolvers
+}
+
+func (r *rootResolver) syntacticUsages(
+	ctx context.Context, trace observation.TraceLogger, gitTreeTranslator codenav.GitTreeTranslator, args codenav.UsagesForSymbolArgs,
+) (core.Option[codenav.UsagesCursor], []resolverstubs.UsageResolver, core.Option[codenav.PreviousSyntacticSearch]) {
+	syntacticResult, err := r.svc.SyntacticUsages(ctx, gitTreeTranslator, args)
+	if err != nil {
+		switch err.Code {
+		case codenav.SU_Fatal:
+			trace.Error("CodeNavService.SyntacticUsages", log.String("error", err.Error()))
+		case codenav.SU_NoSymbolAtRequestedRange:
+		case codenav.SU_NoSyntacticIndex:
+		case codenav.SU_FailedToSearch:
+		default:
+			trace.Info("CodeNavService.SyntacticUsages", log.String("error", err.Error()))
+		}
+		return core.None[codenav.UsagesCursor](), nil, core.None[codenav.PreviousSyntacticSearch]()
+	}
+	usageResolvers := make([]resolverstubs.UsageResolver, 0, len(syntacticResult.Matches))
+	for _, result := range syntacticResult.Matches {
+		usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo.Name, args.Commit))
+	}
+	return syntacticResult.NextCursor, usageResolvers, core.Some(syntacticResult.PreviousSyntacticSearch)
+}
+
+func (r *rootResolver) searchBasedUsages(
+	ctx context.Context, trace observation.TraceLogger, gitTreeTranslator codenav.GitTreeTranslator,
+	args codenav.UsagesForSymbolArgs, previousSyntacticSearch core.Option[codenav.PreviousSyntacticSearch],
+) (core.Option[codenav.UsagesCursor], []resolverstubs.UsageResolver) {
+	result, err := r.svc.SearchBasedUsages(ctx, gitTreeTranslator, args, previousSyntacticSearch)
+	if err != nil {
+		trace.Error("CodeNavService.SearchBasedUsages", log.Error(err))
+		return core.None[codenav.UsagesCursor](), nil
+	}
+	usageResolvers := make([]resolverstubs.UsageResolver, 0, len(result.Matches))
+	for _, match := range result.Matches {
+		usageResolvers = append(usageResolvers, NewSearchBasedUsageResolver(match, args.Repo.Name, args.Commit))
+	}
+	return result.NextCursor, usageResolvers
 }
 
 func (r *rootResolver) MakeGitTreeTranslator(repo *sgtypes.Repo) codenav.GitTreeTranslator {

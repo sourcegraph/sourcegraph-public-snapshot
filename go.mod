@@ -43,6 +43,8 @@ replace (
 	github.com/gomodule/redigo => github.com/gomodule/redigo v1.8.9
 	// Pending: Renamed to github.com/google/gnostic. Transitive deps still use the old name (kubernetes/kubernetes).
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.5
+	// Pending: https://github.com/hexops/valast/pull/27
+	github.com/hexops/valast => github.com/bobheadxi/valast v0.0.0-20240724215614-eb5cb82e0c6f
 	// Pending: https://github.com/openfga/openfga/pull/1688
 	github.com/openfga/openfga => github.com/sourcegraph/openfga v0.0.0-20240614204729-de6b563022de
 	// We need to wait for https://github.com/prometheus/alertmanager to cut a
@@ -674,7 +676,7 @@ require (
 	github.com/scim2/filter-parser/v2 v2.2.0
 	github.com/sourcegraph/conc v0.3.1-0.20240108182409-4afefce20f9b
 	github.com/sourcegraph/mountinfo v0.0.0-20240201124957-b314c0befab1
-	github.com/sourcegraph/zoekt v0.0.0-20240802100004-acacc5eda188
+	github.com/sourcegraph/zoekt v0.0.0-20240808144359-20c496e3680f
 	github.com/spf13/cobra v1.8.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect

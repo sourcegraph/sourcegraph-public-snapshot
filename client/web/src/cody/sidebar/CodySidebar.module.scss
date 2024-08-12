@@ -1,0 +1,29 @@
+.root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    filter: drop-shadow(0 0 4px rgba(36, 41, 54, 0.1));
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    background-color: var(--input-bg);
+    border-bottom: 1px solid var(--border-color-2);
+
+    &--main {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        gap: 0.5rem;
+    }
+
+    &--logo {
+        display: flex;
+        align-items: center;
+    }
+}

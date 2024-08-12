@@ -146,7 +146,7 @@
             box-shadow: none;
 
             > .label {
-                box-shadow: var(--focus-shadow-inner);
+                box-shadow: var(--focus-shadow-inset);
             }
         }
 
@@ -175,6 +175,7 @@
                 display: inherit;
                 gap: inherit;
                 margin-left: var(--indent-size);
+                width: 100%;
             }
         }
 

@@ -8,7 +8,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -27,7 +26,7 @@ type OutboundWebhookLogStatsResolver interface {
 type OutboundWebhookLogConnectionResolver interface {
 	Nodes() ([]OutboundWebhookLogResolver, error)
 	TotalCount() (int32, error)
-	PageInfo() (*graphqlutil.PageInfo, error)
+	PageInfo() (*gqlutil.PageInfo, error)
 }
 
 type OutboundWebhookLogResolver interface {
@@ -121,16 +120,16 @@ func (r *outboundWebhookLogConnectionResolver) TotalCount() (int32, error) {
 	return r.totalCount()
 }
 
-func (r *outboundWebhookLogConnectionResolver) PageInfo() (*graphqlutil.PageInfo, error) {
+func (r *outboundWebhookLogConnectionResolver) PageInfo() (*gqlutil.PageInfo, error) {
 	nodes, err := r.nodes()
 	if err != nil {
 		return nil, err
 	}
 
 	if len(nodes) > r.first {
-		return graphqlutil.NextPageCursor(strconv.Itoa(r.first + r.offset)), nil
+		return gqlutil.NextPageCursor(strconv.Itoa(r.first + r.offset)), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return gqlutil.HasNextPage(false), nil
 }
 
 type outboundWebhookLogResolver struct {

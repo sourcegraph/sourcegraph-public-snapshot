@@ -7,10 +7,10 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -56,20 +56,20 @@ func TestSavedSearchesConnectionStore(t *testing.T) {
 	}
 
 	t.Run("no orderBy", func(t *testing.T) {
-		graphqlutil.TestConnectionResolverStoreSuite(t, connectionStore, nil)
+		gqlutil.TestConnectionResolverStoreSuite(t, connectionStore, nil)
 	})
 
 	t.Run("orderBy updated_at", func(t *testing.T) {
-		var pgArgs graphqlutil.TestPaginationArgs
+		var pgArgs gqlutil.TestPaginationArgs
 		pgArgs.OrderBy, pgArgs.Ascending = database.SavedSearchesOrderByUpdatedAt.ToOptions()
-		graphqlutil.TestConnectionResolverStoreSuite(t, connectionStore, &pgArgs)
+		gqlutil.TestConnectionResolverStoreSuite(t, connectionStore, &pgArgs)
 	})
 
 	t.Run("orderBy description", func(t *testing.T) {
-		var pgArgs graphqlutil.TestPaginationArgs
+		var pgArgs gqlutil.TestPaginationArgs
 		pgArgs.OrderBy, pgArgs.Ascending = database.SavedSearchesOrderByDescription.ToOptions()
-		graphqlutil.TestConnectionResolverStoreSuite(t, connectionStore, &pgArgs)
+		gqlutil.TestConnectionResolverStoreSuite(t, connectionStore, &pgArgs)
 	})
 }
 
-var dummyConnectionResolverArgs = graphqlutil.ConnectionResolverArgs{First: pointers.Ptr[int32](1)}
+var dummyConnectionResolverArgs = gqlutil.ConnectionResolverArgs{First: pointers.Ptr[int32](1)}

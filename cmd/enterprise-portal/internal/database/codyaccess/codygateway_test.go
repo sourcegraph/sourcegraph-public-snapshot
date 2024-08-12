@@ -2,6 +2,7 @@ package codyaccess_test
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strconv"
 	"testing"
@@ -15,8 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/codyaccess"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/databasetest"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -36,8 +37,8 @@ func TestCodyGatewayStore(t *testing.T) {
 	for idx := range subscriptionIDs {
 		subscriptionID := uuid.NewString()
 		_, err := subscriptions.NewStore(db).Upsert(ctx, subscriptionID, subscriptions.UpsertSubscriptionOptions{
-			DisplayName:    pointers.Ptr(database.NewNullString(mockSubscriptionDisplayName(idx))),
-			InstanceDomain: pointers.Ptr(database.NewNullString(fmt.Sprintf("s%d.sourcegraph.com", idx))),
+			DisplayName:    database.NewNullString(mockSubscriptionDisplayName(idx)),
+			InstanceDomain: database.NewNullString(fmt.Sprintf("s%d.sourcegraph.com", idx)),
 		})
 		require.NoError(t, err)
 		subscriptionIDs[idx] = subscriptionID
@@ -71,7 +72,7 @@ func TestCodyGatewayStore(t *testing.T) {
 		} {
 			l, err := subscriptions.NewLicensesStore(db).CreateLicenseKey(ctx,
 				subscriptionID,
-				&subscriptions.LicenseKey{
+				&subscriptions.DataLicenseKey{
 					Info: license.Info{
 						// Set properties that are easy to assert on later
 						Tags: []string{
@@ -119,8 +120,8 @@ func TestCodyGatewayStore(t *testing.T) {
 		t.Run("already archived", func(t *testing.T) {
 			subscriptionID := uuid.NewString()
 			_, err := subscriptions.NewStore(db).Upsert(ctx, subscriptionID, subscriptions.UpsertSubscriptionOptions{
-				DisplayName:    pointers.Ptr(database.NewNullString("Archived subscription")),
-				InstanceDomain: pointers.Ptr(database.NewNullString("archived.sourcegraph.com")),
+				DisplayName:    database.NewNullString("Archived subscription"),
+				InstanceDomain: database.NewNullString("archived.sourcegraph.com"),
 				ArchivedAt:     pointers.Ptr(utctime.Now()),
 			})
 			require.NoError(t, err)
@@ -128,14 +129,14 @@ func TestCodyGatewayStore(t *testing.T) {
 			_, err = codyaccess.NewCodyGatewayStore(db).Upsert(ctx, subscriptionID, codyaccess.UpsertCodyGatewayAccessOptions{
 				Enabled: pointers.Ptr(true),
 			})
-			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionDoesNotExist)
+			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionNotFound)
 		})
 
 		t.Run("set then archive", func(t *testing.T) {
 			subscriptionID := uuid.NewString()
 			_, err := subscriptions.NewStore(db).Upsert(ctx, subscriptionID, subscriptions.UpsertSubscriptionOptions{
-				DisplayName:    pointers.Ptr(database.NewNullString("Soon-to-be-archived subscription")),
-				InstanceDomain: pointers.Ptr(database.NewNullString("not-yet-archived.sourcegraph.com")),
+				DisplayName:    database.NewNullString("Soon-to-be-archived subscription"),
+				InstanceDomain: database.NewNullString("not-yet-archived.sourcegraph.com"),
 			})
 			require.NoError(t, err)
 
@@ -149,8 +150,10 @@ func TestCodyGatewayStore(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			_, err = codyaccess.NewCodyGatewayStore(db).Get(ctx, subscriptionID)
-			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionDoesNotExist)
+			_, err = codyaccess.NewCodyGatewayStore(db).Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
+				SubscriptionID: subscriptionID,
+			})
+			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionNotFound)
 		})
 	})
 }
@@ -161,12 +164,12 @@ func CodyGatewayStoreListAndGet(t *testing.T, ctx context.Context, subscriptionI
 	for idx, sub := range subscriptionIDs[:len(subscriptionIDs)-1] {
 		_, err := s.Upsert(ctx, sub, codyaccess.UpsertCodyGatewayAccessOptions{
 			Enabled:                                 pointers.Ptr(idx%2 == 0), // even
-			ChatCompletionsRateLimit:                pointers.Ptr(int64(idx)),
-			ChatCompletionsRateLimitIntervalSeconds: pointers.Ptr(int(idx)),
-			CodeCompletionsRateLimit:                pointers.Ptr(int64(idx)),
-			CodeCompletionsRateLimitIntervalSeconds: pointers.Ptr(int(idx)),
-			EmbeddingsRateLimit:                     pointers.Ptr(int64(idx)),
-			EmbeddingsRateLimitIntervalSeconds:      pointers.Ptr(int(idx)),
+			ChatCompletionsRateLimit:                database.NewNullInt64(idx),
+			ChatCompletionsRateLimitIntervalSeconds: database.NewNullInt32(idx),
+			CodeCompletionsRateLimit:                database.NewNullInt64(idx),
+			CodeCompletionsRateLimitIntervalSeconds: database.NewNullInt32(idx),
+			EmbeddingsRateLimit:                     database.NewNullInt64(idx),
+			EmbeddingsRateLimitIntervalSeconds:      database.NewNullInt32(idx),
 		})
 		require.NoError(t, err)
 	}
@@ -214,16 +217,37 @@ func CodyGatewayStoreListAndGet(t *testing.T, ctx context.Context, subscriptionI
 	t.Run("Get", func(t *testing.T) {
 		for idx, sub := range subscriptionIDs {
 			t.Run(fmt.Sprintf("idx=%d", idx), func(t *testing.T) {
-				got, err := s.Get(ctx, sub)
+				got, err := s.Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
+					SubscriptionID: sub,
+				})
 				require.NoError(t, err)
 
 				assertAccess(idx, got)
+
+				// Reverse lookup by license key hash
+				for _, hash := range got.LicenseKeyHashes {
+					got2, err := s.Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
+						LicenseKeyHash: hash,
+					})
+					require.NoError(t, err)
+					assert.Len(t, got2.LicenseKeyHashes, 2) // 2 valid licenses
+					assert.Equal(t, got, got2)
+				}
 			})
 		}
 
 		t.Run("ErrSubscriptionDoesNotExist", func(t *testing.T) {
-			_, err := s.Get(ctx, uuid.NewString())
-			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionDoesNotExist)
+			_, err := s.Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
+				SubscriptionID: uuid.NewString(),
+			})
+			assert.Error(t, err)
+			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionNotFound)
+
+			_, err = s.Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
+				LicenseKeyHash: []byte(uuid.NewString()),
+			})
+			assert.Error(t, err)
+			assert.ErrorIs(t, err, codyaccess.ErrSubscriptionNotFound)
 		})
 	})
 }
@@ -241,7 +265,9 @@ func CodyGatewayStoreUpsert(t *testing.T, ctx context.Context, subscriptionIDs [
 	)
 	require.NoError(t, err)
 
-	got, err := s.Get(ctx, currentAccess.SubscriptionID)
+	got, err := s.Get(ctx, codyaccess.GetCodyGatewayAccessOptions{
+		SubscriptionID: currentAccess.SubscriptionID,
+	})
 	require.NoError(t, err)
 	assert.False(t, got.Enabled)
 	assert.Equal(t, currentAccess.SubscriptionID, got.SubscriptionID)
@@ -266,7 +292,7 @@ func CodyGatewayStoreUpsert(t *testing.T, ctx context.Context, subscriptionIDs [
 		_, err = s.Upsert(ctx, subscriptionID, codyaccess.UpsertCodyGatewayAccessOptions{
 			Enabled: pointers.Ptr(false),
 		})
-		assert.ErrorIs(t, err, codyaccess.ErrSubscriptionDoesNotExist)
+		assert.ErrorIs(t, err, codyaccess.ErrSubscriptionNotFound)
 	})
 
 	t.Run("update only enabled", func(t *testing.T) {
@@ -286,13 +312,32 @@ func CodyGatewayStoreUpsert(t *testing.T, ctx context.Context, subscriptionIDs [
 		t.Cleanup(func() { currentAccess = got })
 
 		got, err = s.Upsert(ctx, currentAccess.SubscriptionID, codyaccess.UpsertCodyGatewayAccessOptions{
-			ChatCompletionsRateLimit: pointers.Ptr(int64(1234)),
+			ChatCompletionsRateLimit: database.NewNullInt64(1234),
 		})
 		require.NoError(t, err)
 		assert.Equal(t, true, got.Enabled)
 		assert.Equal(t, currentAccess.DisplayName, got.DisplayName)
 		assert.Equal(t, currentAccess.CodeCompletionsRateLimit, got.CodeCompletionsRateLimit)
 		assert.EqualValues(t, 1234, got.ChatCompletionsRateLimit.Int64)
+	})
+
+	t.Run("remove chat completion overrides", func(t *testing.T) {
+		t.Cleanup(func() { currentAccess = got })
+
+		got, err = s.Upsert(ctx, currentAccess.SubscriptionID, codyaccess.UpsertCodyGatewayAccessOptions{
+			ChatCompletionsRateLimit:                &sql.NullInt64{},
+			ChatCompletionsRateLimitIntervalSeconds: &sql.NullInt32{},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, true, got.Enabled)
+		assert.Equal(t, currentAccess.DisplayName, got.DisplayName)
+
+		// unchanged
+		assert.Equal(t, currentAccess.CodeCompletionsRateLimit, got.CodeCompletionsRateLimit)
+
+		// changed
+		assert.False(t, got.ChatCompletionsRateLimit.Valid)
+		assert.False(t, got.ChatCompletionsRateLimitIntervalSeconds.Valid)
 	})
 
 	t.Run("force update to zero values", func(t *testing.T) {

@@ -18,6 +18,9 @@ var (
 		types.ModelCapabilityAutocomplete,
 		types.ModelCapabilityChat,
 	}
+	editOnly = []types.ModelCapability{
+		types.ModelCapabilityAutocomplete,
+	}
 
 	// Standard context window sizes.
 	standardCtxWindow = types.ContextWindow{
@@ -142,6 +145,42 @@ func getAnthropicModels() []types.Model {
 				Tier:         types.ModelTierFree,
 			},
 			standardCtxWindow),
+	}
+}
+
+func getFireworksModels() []types.Model {
+	// https://docs.fireworks.ai/api-reference/post-completions
+	const fireworksV1 = "fireworks::v1"
+
+	return []types.Model{
+		// https://huggingface.co/blog/starcoder
+		newModel(
+			modelIdentity{
+				MRef: mRef(fireworksV1, "starcoder"),
+				// NOTE: This model name is virtualized.
+				//
+				// When Cody Gateway receives a request using model
+				// "fireworks/starcoder", it will then pick a specialized
+				// model name such as "starcoder2-15b" or "starcoder-7b".
+				Name:        "starcoder",
+				DisplayName: "StarCoder",
+			},
+			modelMetadata{
+				Capabilities: editOnly,
+				Category:     types.ModelCategorySpeed,
+				Status:       types.ModelStatusStable,
+				Tier:         types.ModelTierPro,
+			},
+			types.ContextWindow{
+				// These values are much lower than other, text-centric models. We are
+				// erring on the side of matching the token limits defined on the client
+				// today. (And maybe the StarCoder is able to use a more efficient
+				// tokenizer, because it's not processing many languages.)
+				// https://github.com/sourcegraph/cody/blob/066d9c6ff48beb96a834f17021affc4e62094415/vscode/src/completions/providers/fireworks.ts#L132
+				// https://github.com/sourcegraph/cody/blob/066d9c6ff48beb96a834f17021affc4e62094415/vscode/src/completions/providers/get-completion-params.ts#L5
+				MaxInputTokens:  2048,
+				MaxOutputTokens: 256,
+			}),
 	}
 }
 
@@ -279,6 +318,7 @@ func GetCodyFreeProModels() ([]types.Model, error) {
 	// ================================================
 	var allModels []types.Model
 	allModels = append(allModels, getAnthropicModels()...)
+	allModels = append(allModels, getFireworksModels()...)
 	allModels = append(allModels, getGoogleModels()...)
 	allModels = append(allModels, getMistralModels()...)
 	allModels = append(allModels, getOpenAIModels()...)

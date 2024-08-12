@@ -70,7 +70,7 @@ func (r *Reconciler) reconcileOtelAgentDaemonset(ctx context.Context, sg *config
 
 	probe := &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{Path: "/", Port: intstr.FromInt(13133)},
+			HTTPGet: &corev1.HTTPGetAction{Path: "/", Port: intstr.FromInt32(13133)},
 		},
 	}
 	ctr.ReadinessProbe = probe

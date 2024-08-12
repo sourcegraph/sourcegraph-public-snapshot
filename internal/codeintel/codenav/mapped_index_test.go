@@ -131,7 +131,7 @@ func TestMappedIndex_GetOccurrencesAtRangeAfterGetOccurrences(t *testing.T) {
 
 func TestMappedIndex_GetDocumentsFiltersFailedTranslation(t *testing.T) {
 	targetCommit, upload, lsifStore := setupSimpleUpload()
-	translator := fakeTranslator(upload.GetCommit(), targetCommit, 0, func(path core.RepoRelPath, rg scip.Range) bool {
+	translator := NewFakeTranslator(upload.GetCommit(), targetCommit, 0, func(path core.RepoRelPath, rg scip.Range) bool {
 		return rg.CompareStrict(testRange(1)) == 0
 	})
 	mappedIndex := NewMappedIndexFromTranslator(lsifStore, translator, upload, targetCommit)
@@ -147,7 +147,7 @@ func TestMappedIndex_GetDocumentsFiltersFailedTranslation(t *testing.T) {
 
 func TestMappedIndex_GetDocumentFailedTranslation(t *testing.T) {
 	targetCommit, upload, lsifStore := setupSimpleUpload()
-	translator := fakeTranslator(upload.GetCommit(), targetCommit, 0, func(path core.RepoRelPath, rg scip.Range) bool {
+	translator := NewFakeTranslator(upload.GetCommit(), targetCommit, 0, func(path core.RepoRelPath, rg scip.Range) bool {
 		return path.RawValue() == "indexRoot/b.go" || rg.CompareStrict(testRange(1)) == 0
 	})
 	mappedIndex := NewMappedIndexFromTranslator(lsifStore, translator, upload, targetCommit)

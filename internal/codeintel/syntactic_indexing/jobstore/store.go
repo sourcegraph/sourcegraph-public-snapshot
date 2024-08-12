@@ -2,7 +2,6 @@ package jobstore
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 	"go.opentelemetry.io/otel/attribute"
@@ -37,7 +36,7 @@ func (s *syntacticIndexingJobStoreImpl) DBWorkerStore() dbworkerstore.Store[*Syn
 	return s.store
 }
 
-func NewStoreWithDB(observationCtx *observation.Context, db *sql.DB) (SyntacticIndexingJobStore, error) {
+func NewStoreWithDB(observationCtx *observation.Context, db database.DB) (SyntacticIndexingJobStore, error) {
 	// Make sure this is in sync with the columns of the
 	// syntactic_scip_indexing_jobs_with_repository_name view
 	var columnExpressions = []*sqlf.Query{
@@ -67,10 +66,9 @@ func NewStoreWithDB(observationCtx *observation.Context, db *sql.DB) (SyntacticI
 		Scan:              dbworkerstore.BuildWorkerScan(ScanSyntacticIndexRecord),
 	}
 
-	handle := basestore.NewHandleWithDB(observationCtx.Logger, db, sql.TxOptions{})
 	return &syntacticIndexingJobStoreImpl{
-		store:      dbworkerstore.New(observationCtx, handle, storeOptions),
-		db:         basestore.NewWithHandle(handle),
+		store:      dbworkerstore.New(observationCtx, db.Handle(), storeOptions),
+		db:         basestore.NewWithHandle(db.Handle()),
 		operations: newOperations(observationCtx),
 		logger:     observationCtx.Logger.Scoped("syntactic_indexing.store"),
 	}, nil

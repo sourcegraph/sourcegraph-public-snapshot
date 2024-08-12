@@ -71,6 +71,7 @@ func calcLeaseEnd(currentLeaseTime time.Time, extension, reduction time.Duration
 func leaseCloudEphemeral(ctx *cli.Context) error {
 	email, err := GetGCloudAccount(ctx.Context)
 	if err != nil {
+		writeGCloudErrorSuggestion()
 		return err
 	}
 

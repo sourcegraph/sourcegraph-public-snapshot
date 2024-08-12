@@ -6,10 +6,10 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 func unmarshalExecutorID(id graphql.ID) (executorID int64, err error) {
@@ -30,7 +30,7 @@ func (r *schemaResolver) Executors(ctx context.Context, args ExecutorsListArgs) 
 		return nil, err
 	}
 
-	offset, err := graphqlutil.DecodeIntCursor(args.After)
+	offset, err := gqlutil.DecodeIntCursor(args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (r *schemaResolver) Executors(ctx context.Context, args ExecutorsListArgs) 
 			resolvers = append(resolvers, &ExecutorResolver{executor: executor})
 		}
 
-		nextOffset := graphqlutil.NextOffset(offset, len(execs), totalCount)
+		nextOffset := gqlutil.NextOffset(offset, len(execs), totalCount)
 
 		executorConnection = &executorConnectionResolver{
 			resolvers:  resolvers,

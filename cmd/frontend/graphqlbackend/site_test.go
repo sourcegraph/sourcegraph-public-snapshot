@@ -12,12 +12,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -192,42 +192,42 @@ func TestSiteConfigurationHistory(t *testing.T) {
 
 	testCases := []struct {
 		name                  string
-		args                  *graphqlutil.ConnectionResolverArgs
+		args                  *gqlutil.ConnectionResolverArgs
 		expectedSiteConfigIDs []int32
 	}{
 		{
 			name:                  "first: 2",
-			args:                  &graphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(2))},
+			args:                  &gqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(2))},
 			expectedSiteConfigIDs: []int32{6, 4},
 		},
 		{
 			name:                  "first: 6 (exact number of items that exist in the database)",
-			args:                  &graphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(6))},
+			args:                  &gqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(6))},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
 			name:                  "first: 20 (more items than what exists in the database)",
-			args:                  &graphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(20))},
+			args:                  &gqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(20))},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
 			name:                  "last: 2",
-			args:                  &graphqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(2))},
+			args:                  &gqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(2))},
 			expectedSiteConfigIDs: []int32{2, 1},
 		},
 		{
 			name:                  "last: 6 (exact number of items that exist in the database)",
-			args:                  &graphqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(6))},
+			args:                  &gqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(6))},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
 			name:                  "last: 20 (more items than what exists in the database)",
-			args:                  &graphqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(20))},
+			args:                  &gqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(20))},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
 			name: "first: 2, after: 4",
-			args: &graphqlutil.ConnectionResolverArgs{
+			args: &gqlutil.ConnectionResolverArgs{
 				First: pointers.Ptr(int32(2)),
 				After: pointers.Ptr(string(marshalSiteConfigurationChangeID(4))),
 			},
@@ -235,7 +235,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 		},
 		{
 			name: "first: 10, after: 4 (overflow)",
-			args: &graphqlutil.ConnectionResolverArgs{
+			args: &gqlutil.ConnectionResolverArgs{
 				First: pointers.Ptr(int32(10)),
 				After: pointers.Ptr(string(marshalSiteConfigurationChangeID(4))),
 			},
@@ -243,7 +243,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 		},
 		{
 			name: "first: 10, after: 7 (same as get all items, but latest ID in DB is 6)",
-			args: &graphqlutil.ConnectionResolverArgs{
+			args: &gqlutil.ConnectionResolverArgs{
 				First: pointers.Ptr(int32(10)),
 				After: pointers.Ptr(string(marshalSiteConfigurationChangeID(7))),
 			},
@@ -251,7 +251,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 		},
 		{
 			name: "first: 10, after: 1 (beyond the last cursor in DB which is 1)",
-			args: &graphqlutil.ConnectionResolverArgs{
+			args: &gqlutil.ConnectionResolverArgs{
 				First: pointers.Ptr(int32(10)),
 				After: pointers.Ptr(string(marshalSiteConfigurationChangeID(1))),
 			},
@@ -259,7 +259,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 		},
 		{
 			name: "last: 2, before: 1",
-			args: &graphqlutil.ConnectionResolverArgs{
+			args: &gqlutil.ConnectionResolverArgs{
 				Last:   pointers.Ptr(int32(2)),
 				Before: pointers.Ptr(string(marshalSiteConfigurationChangeID(1))),
 			},
@@ -267,7 +267,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 		},
 		{
 			name: "last: 10, before: 1 (overflow)",
-			args: &graphqlutil.ConnectionResolverArgs{
+			args: &gqlutil.ConnectionResolverArgs{
 				Last:   pointers.Ptr(int32(10)),
 				Before: pointers.Ptr(string(marshalSiteConfigurationChangeID(1))),
 			},
@@ -275,7 +275,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 		},
 		{
 			name: "last: 10, before: 0 (same as get all items, but oldest ID in DB is 1)",
-			args: &graphqlutil.ConnectionResolverArgs{
+			args: &gqlutil.ConnectionResolverArgs{
 				Last:   pointers.Ptr(int32(10)),
 				Before: pointers.Ptr(string(marshalSiteConfigurationChangeID(0))),
 			},
@@ -283,7 +283,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 		},
 		{
 			name: "last: 10, before: 7 (beyond the latest cursor in DB which is 6)",
-			args: &graphqlutil.ConnectionResolverArgs{
+			args: &gqlutil.ConnectionResolverArgs{
 				Last:   pointers.Ptr(int32(10)),
 				Before: pointers.Ptr(string(marshalSiteConfigurationChangeID(7))),
 			},

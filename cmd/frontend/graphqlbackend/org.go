@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
@@ -96,10 +95,10 @@ func (o *OrgResolver) SettingsURL() *string { return strptr(o.URL() + "/settings
 func (o *OrgResolver) CreatedAt() gqlutil.DateTime { return gqlutil.DateTime{Time: o.org.CreatedAt} }
 
 func (o *OrgResolver) Members(ctx context.Context, args struct {
-	graphqlutil.ConnectionResolverArgs
+	gqlutil.ConnectionResolverArgs
 	Query *string
 },
-) (*graphqlutil.ConnectionResolver[*UserResolver], error) {
+) (*gqlutil.ConnectionResolver[*UserResolver], error) {
 	// 🚨 SECURITY: On dotcom, only an org's members can list its members.
 	if dotcom.SourcegraphDotComMode() {
 		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
@@ -113,7 +112,7 @@ func (o *OrgResolver) Members(ctx context.Context, args struct {
 		query: args.Query,
 	}
 
-	return graphqlutil.NewConnectionResolver[*UserResolver](connectionStore, &args.ConnectionResolverArgs, &graphqlutil.ConnectionResolverOptions{
+	return gqlutil.NewConnectionResolver[*UserResolver](connectionStore, &args.ConnectionResolverArgs, &gqlutil.ConnectionResolverOptions{
 		AllowNoLimit: true,
 	})
 }

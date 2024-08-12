@@ -14,6 +14,20 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+type contextKey int
+
+const contextKeyWithoutTrace contextKey = iota
+
+// WithoutTrace disables CloudSQL connection tracing for child contexts.
+func WithoutTrace(ctx context.Context) context.Context {
+	return context.WithValue(ctx, contextKeyWithoutTrace, true)
+}
+
+func shouldNotTrace(ctx context.Context) bool {
+	withoutTrace, ok := ctx.Value(contextKeyWithoutTrace).(bool)
+	return ok && withoutTrace
+}
+
 var tracer = otel.GetTracerProvider().Tracer("msp/cloudsql/pgx")
 
 type pgxTracer struct{}
@@ -31,6 +45,10 @@ var (
 // TraceQueryStart is called at the beginning of Query, QueryRow, and Exec calls. The returned context is used for the
 // rest of the call and will be passed to TraceQueryEnd.
 func (pgxTracer) TraceQueryStart(ctx context.Context, _ *pgx.Conn, data pgx.TraceQueryStartData) context.Context {
+	if shouldNotTrace(ctx) {
+		return ctx // do nothing
+	}
+
 	ctx, _ = tracer.Start(ctx, "pgx.Query",
 		trace.WithAttributes(
 			attribute.String("query", data.SQL),
@@ -40,7 +58,11 @@ func (pgxTracer) TraceQueryStart(ctx context.Context, _ *pgx.Conn, data pgx.Trac
 	return ctx
 }
 
-func (pgxTracer) TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryEndData) {
+func (pgxTracer) TraceQueryEnd(ctx context.Context, _ *pgx.Conn, data pgx.TraceQueryEndData) {
+	if shouldNotTrace(ctx) {
+		return // do nothing
+	}
+
 	span := trace.SpanFromContext(ctx)
 	defer span.End()
 
@@ -48,16 +70,7 @@ func (pgxTracer) TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pgx.Tra
 		attribute.String("command_tag", data.CommandTag.String()),
 		attribute.Int64("rows_affected", data.CommandTag.RowsAffected()),
 	)
-	switch {
-	case data.CommandTag.Insert():
-		span.SetName("pgx.Query: INSERT")
-	case data.CommandTag.Update():
-		span.SetName("pgx.Query: UPDATE")
-	case data.CommandTag.Delete():
-		span.SetName("pgx.Query: DELETE")
-	case data.CommandTag.Select():
-		span.SetName("pgx.Query: SELECT")
-	}
+	span.SetName("pgx.Query: " + data.CommandTag.String())
 
 	if data.Err != nil {
 		span.SetStatus(codes.Error, data.Err.Error())
@@ -65,6 +78,10 @@ func (pgxTracer) TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pgx.Tra
 }
 
 func (pgxTracer) TraceConnectStart(ctx context.Context, data pgx.TraceConnectStartData) context.Context {
+	if shouldNotTrace(ctx) {
+		return ctx // do nothing
+	}
+
 	ctx, _ = tracer.Start(ctx, "pgx.Connect", trace.WithAttributes(
 		attribute.String("database", data.ConnConfig.Database),
 		attribute.String("instance", fmt.Sprintf("%s:%d", data.ConnConfig.Host, data.ConnConfig.Port)),
@@ -73,6 +90,10 @@ func (pgxTracer) TraceConnectStart(ctx context.Context, data pgx.TraceConnectSta
 }
 
 func (pgxTracer) TraceConnectEnd(ctx context.Context, data pgx.TraceConnectEndData) {
+	if shouldNotTrace(ctx) {
+		return // do nothing
+	}
+
 	span := trace.SpanFromContext(ctx)
 	defer span.End()
 
@@ -120,6 +141,9 @@ func argsAsAttributes(args []any) []attribute.KeyValue {
 			attrs[i] = attribute.String(key, truncateStringValue(v))
 		case time.Time:
 			attrs[i] = attribute.String(key, v.String())
+
+		case pgx.NamedArgs:
+			attrs[i] = attribute.String(key, truncateStringValue(fmt.Sprintf("%+v", v)))
 
 		default: // in case we miss anything
 			attrs[i] = attribute.String(key, fmt.Sprintf("unhandled type %T", v))

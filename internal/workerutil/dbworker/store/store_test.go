@@ -32,7 +32,7 @@ func TestStoreQueuedCount(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	count, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).QueuedCount(context.Background(), false)
+	count, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).CountByState(context.Background(), StateQueued|StateErrored)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}
@@ -56,7 +56,7 @@ func TestStoreQueuedCountIncludeProcessing(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	count, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).QueuedCount(context.Background(), true)
+	count, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).CountByState(context.Background(), StateQueued|StateErrored|StateProcessing)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}
@@ -116,7 +116,7 @@ func TestStoreQueuedCountFailed(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	count, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).QueuedCount(context.Background(), false)
+	count, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).CountByState(context.Background(), StateQueued|StateErrored)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}

@@ -6,9 +6,9 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -39,7 +39,7 @@ func (r *filterMatchingResolver) ToPackageRepoReferenceVersionConnection() (*pac
 func (r *schemaResolver) PackageRepoReferencesMatchingFilter(ctx context.Context, args struct {
 	Kind   string
 	Filter inputPackageFilter
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 	After *string
 },
 ) (_ *filterMatchingResolver, err error) {

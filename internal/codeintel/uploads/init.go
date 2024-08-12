@@ -3,7 +3,6 @@ package uploads
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background"
@@ -27,13 +26,12 @@ func NewService(
 	gitserverClient gitserver.Client,
 ) *Service {
 	store := uploadsstore.New(scopedContext("uploadsstore", observationCtx), db)
-	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserverClient)
 	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
 
 	svc := newService(
 		scopedContext("service", observationCtx),
 		store,
-		repoStore,
+		db.Repos(),
 		lsifStore,
 		gitserverClient,
 	)

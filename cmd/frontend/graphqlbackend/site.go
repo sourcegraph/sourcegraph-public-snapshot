@@ -15,7 +15,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -271,7 +270,7 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 	return conf.ValidateSite(string(contents))
 }
 
-func (r *siteConfigurationResolver) History(ctx context.Context, args *graphqlutil.ConnectionResolverArgs) (*graphqlutil.ConnectionResolver[*SiteConfigurationChangeResolver], error) {
+func (r *siteConfigurationResolver) History(ctx context.Context, args *gqlutil.ConnectionResolverArgs) (*gqlutil.ConnectionResolver[*SiteConfigurationChangeResolver], error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view the history.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -280,7 +279,7 @@ func (r *siteConfigurationResolver) History(ctx context.Context, args *graphqlut
 
 	connectionStore := SiteConfigurationChangeConnectionStore{db: r.db}
 
-	return graphqlutil.NewConnectionResolver[*SiteConfigurationChangeResolver](
+	return gqlutil.NewConnectionResolver[*SiteConfigurationChangeResolver](
 		&connectionStore,
 		args,
 		nil,

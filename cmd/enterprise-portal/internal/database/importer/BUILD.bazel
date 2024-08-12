@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "importer",
+    srcs = ["importer.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/importer",
+    visibility = ["//cmd/enterprise-portal:__subpackages__"],
+    deps = [
+        "//cmd/enterprise-portal/internal/database",
+        "//cmd/enterprise-portal/internal/database/subscriptions",
+        "//cmd/enterprise-portal/internal/database/utctime",
+        "//cmd/enterprise-portal/internal/dotcomdb",
+        "//internal/goroutine",
+        "//internal/license",
+        "//internal/observation",
+        "//internal/redislock",
+        "//internal/redispool",
+        "//internal/trace",
+        "//lib/background",
+        "//lib/enterpriseportal/subscriptions/v1:subscriptions",
+        "//lib/errors",
+        "//lib/managedservicesplatform/cloudsql",
+        "//lib/pointers",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
