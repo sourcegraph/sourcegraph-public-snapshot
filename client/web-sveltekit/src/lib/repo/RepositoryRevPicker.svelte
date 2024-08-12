@@ -304,6 +304,12 @@
             }
         }
 
+        .changelist-subject,
+        .commit-subject {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         // Local override for commits picker abbreviatedOID badge
         :global([data-tab-panel='Commits']) :global([data-badge]) {
             flex-shrink: 0;
