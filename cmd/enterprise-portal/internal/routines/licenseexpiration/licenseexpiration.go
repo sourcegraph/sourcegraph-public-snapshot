@@ -89,9 +89,10 @@ func (i *handler) Handle(ctx context.Context) (err error) {
 	var notifyCount atomic.Int64
 	for _, sub := range subs {
 		var (
-			subID         = sub.ID
-			externalSubID = subscriptionsv1.EnterpriseSubscriptionIDPrefix + subID
-			displayName   = pointers.DerefZero(sub.DisplayName)
+			subID                  = sub.ID
+			externalSubID          = subscriptionsv1.EnterpriseSubscriptionIDPrefix + subID
+			salesforceSusbcription = pointers.Deref(sub.SalesforceSubscriptionID, "unknown")
+			displayName            = pointers.DerefZero(sub.DisplayName)
 		)
 		if displayName == "" {
 			displayName = externalSubID // fallback ugly value
@@ -110,8 +111,8 @@ func (i *handler) Handle(ctx context.Context) (err error) {
 			if expireAt.After(weekAway) && expireAt.Before(weekAway.Add(24*time.Hour)) {
 				notifyCount.Add(1)
 				err = i.store.PostToSlack(ctx, &slack.Payload{
-					Text: fmt.Sprintf("The active license for subscription `%s` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in 7 days*>",
-						displayName, externalSubID),
+					Text: fmt.Sprintf("The active license for subscription *%s* (Salesforce subscription: `%s`) <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in 7 days*>",
+						displayName, salesforceSusbcription, externalSubID),
 				})
 				if err != nil {
 					return errors.Wrap(err, "post week-away notice")
@@ -119,8 +120,8 @@ func (i *handler) Handle(ctx context.Context) (err error) {
 			} else if expireAt.After(dayAway) && expireAt.Before(dayAway.Add(24*time.Hour)) {
 				notifyCount.Add(1)
 				err = i.store.PostToSlack(ctx, &slack.Payload{
-					Text: fmt.Sprintf("The active license for subscription `%s` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in the next 24 hours*> :rotating_light:",
-						displayName, externalSubID),
+					Text: fmt.Sprintf("The active license for subscription *%s* (Salesforce subscription: `%s`) <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in the next 24 hours*> :rotating_light:",
+						displayName, salesforceSusbcription, externalSubID),
 				})
 				if err != nil {
 					return errors.Wrap(err, "post day-away notice")
