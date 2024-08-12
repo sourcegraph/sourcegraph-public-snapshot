@@ -58,6 +58,7 @@
         defaultBranch: string
         display?: ComponentProps<ButtonGroup>['display']
         placement?: Placement
+        latestChangelistID?: string
         onSelect?: (revision: string) => void
     } & (
             | {
@@ -76,6 +77,7 @@
     export let defaultBranch: $$Props['defaultBranch']
     export let placement: $$Props['placement'] = 'right-start'
     export let display: $$Props['display'] = undefined
+    export let latestChangelistID: $$Props['latestChangelistID'] = undefined
     /**
      * Optional handler for revision selection.
      * If not provided, the default handler will replace the revision in the current URL.
@@ -106,7 +108,13 @@
     <span use:registerTarget data-repo-rev-picker-trigger>
         <ButtonGroup {display}>
             <button use:registerTrigger class="{buttonClass} rev-name" on:click={() => toggle()} {...$$restProps}>
-                @{revisionLabel}
+                <!--
+                Perforce does not have a "main" or "master" branch concept like Git.
+                When scoped to a Perforce depot, the revision picker will default to
+                the ID of the most recent changelist. For Git repositories, it will
+                default to the name of the main branch.
+                -->
+                @{isPerforceDepot && latestChangelistID ? `changelist/${latestChangelistID}` : revisionLabel}
             </button>
 
             <CopyButton value={revisionLabel}>

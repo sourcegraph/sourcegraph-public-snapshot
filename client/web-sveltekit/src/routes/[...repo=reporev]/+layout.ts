@@ -7,6 +7,7 @@ import { CloneInProgressError, RepoNotFoundError, displayRepoName, parseRepoRevi
 
 import type { LayoutLoad } from './$types'
 import {
+    DepotChangelist,
     DepotChangelists,
     RepositoryGitCommits,
     RepositoryGitRefs,
@@ -35,6 +36,13 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
         url,
     })
 
+    const latestChangelistID = await client
+        .query(DepotChangelist, {
+            depotName: repoName,
+            revision: revision,
+        })
+        .then(res => res.data?.repository?.commit?.perforceChangelist?.cid)
+
     return {
         repoURL: '/' + params.repo,
         repoURLWithoutRevision: '/' + repoName,
@@ -54,6 +62,7 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
         defaultBranch: resolvedRepository.defaultBranch?.abbrevName || 'HEAD',
         resolvedRepository: resolvedRepository,
         isPerforceDepot: resolvedRepository.externalRepository.serviceType === 'perforce',
+        latestChangelistID,
 
         // Repository pickers queries (branch, tags and commits)
         getRepoBranches: (searchTerm: string) =>

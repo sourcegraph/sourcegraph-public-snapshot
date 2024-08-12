@@ -12,6 +12,7 @@
 
     export let commit: Commit
     export let alwaysExpanded: boolean = false
+    export let isPerforceChangelist: boolean = false
 
     function getCommitter({ committer }: Commit): NonNullable<Commit['committer']> | null {
         if (!committer) {
@@ -59,7 +60,7 @@
     </div>
     <div class="author">
         {#if !committerIsAuthor}authored by <strong>{author.person.name}</strong> and{/if}
-        committed by <strong>{committer.person.name}</strong>
+        {isPerforceChangelist ? 'submitted' : 'committed'} by <strong>{committer.person.name}</strong>
         <Timestamp date={commitDate} />
     </div>
     {#if commit.body}

@@ -70,6 +70,7 @@
             commitID={data.resolvedRevision.commitID}
             defaultBranch={data.defaultBranch}
             placement="bottom-start"
+            latestChangelistID={data.latestChangelistID}
             getDepotChangelists={data.getDepotChangelists}
         />
     </div>
@@ -81,7 +82,12 @@
                 {#each changelists as changelist (changelist.perforceChangelist?.canonicalURL)}
                     <li>
                         <div class="changelist">
-                            <Commit commit={changelist} />
+                            <!--
+                            @TODO (jasonhawkharris): We need to use the Commit component here since "changelists"
+                            is actually a group of commits. We should fix this so that any changelist(s) page uses the
+                            Changelist component and any commit(s) page uses the Commit component.
+                            -->
+                            <Commit commit={changelist} isPerforceChangelist={data.isPerforceDepot} />
                         </div>
                         <ul class="actions">
                             <li>
