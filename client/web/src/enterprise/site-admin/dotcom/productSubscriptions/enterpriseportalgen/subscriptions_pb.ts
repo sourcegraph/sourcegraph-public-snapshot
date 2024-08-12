@@ -221,12 +221,21 @@ export enum EnterpriseSubscriptionCondition_Status {
    * @generated from enum value: STATUS_ARCHIVED = 2;
    */
   ARCHIVED = 2,
+
+  /**
+   * Subscription import status, from the one-time migration from the
+   * predecessor in-dotcom database to Enterprise Portal.
+   *
+   * @generated from enum value: STATUS_IMPORTED = 3;
+   */
+  IMPORTED = 3,
 }
 // Retrieve enum metadata with: proto3.getEnumType(EnterpriseSubscriptionCondition_Status)
 proto3.util.setEnumType(EnterpriseSubscriptionCondition_Status, "enterpriseportal.subscriptions.v1.EnterpriseSubscriptionCondition.Status", [
   { no: 0, name: "STATUS_UNSPECIFIED" },
   { no: 1, name: "STATUS_CREATED" },
   { no: 2, name: "STATUS_ARCHIVED" },
+  { no: 3, name: "STATUS_IMPORTED" },
 ]);
 
 /**

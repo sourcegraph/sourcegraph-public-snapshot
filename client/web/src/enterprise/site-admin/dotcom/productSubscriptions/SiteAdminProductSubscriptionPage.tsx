@@ -654,9 +654,12 @@ const ConditionsTimeline: React.FunctionComponent<ConditionsTimelineProps> = ({
         .concat(
             ...licensesConditions.map(({ licenseID, license, condition }) => ({
                 lastTransitionTime: condition.lastTransitionTime!.toDate(),
-                summary: `License ${EnterpriseSubscriptionLicenseCondition_Status[
-                    condition.status
-                ].toLowerCase()}: ${productSubscriptionLabel(license?.planDisplayName, license?.info?.userCount)}`,
+                summary: `License ${EnterpriseSubscriptionLicenseCondition_Status[condition.status]
+                    .toLowerCase()
+                    .replaceAll('_', ' ')}: ${productSubscriptionLabel(
+                    license?.planDisplayName,
+                    license?.info?.userCount
+                )}`,
                 details: (
                     <>
                         {condition.message ? (

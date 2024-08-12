@@ -324,18 +324,36 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                     />
 
                     <Alert variant="danger" className="flex-shrink-0">
-                        Each subscription must map to exactly ONE Sourcegraph instance.{' '}
-                        <strong>
-                            DO NOT create licenses used by multiple Sourcegraph instances within a single subscription
-                        </strong>{' '}
-                        - instead, create a NEW subscription with the appropriate Salesforce subscription ID and a
-                        relevant display name.
+                        <Text>
+                            Each subscription must map to exactly ONE Sourcegraph instance.{' '}
+                            <strong>
+                                DO NOT create licenses used by multiple Sourcegraph instances within a single
+                                subscription
+                            </strong>{' '}
+                            - instead, create a NEW subscription with the appropriate Salesforce subscription ID and a
+                            relevant display name.
+                        </Text>
+                        <Text className="mb-0">
+                            Existing licenses can be re-linked to a new subscription by reaching out to{' '}
+                            <Link
+                                rel="noopener"
+                                target="_blank"
+                                to="https://sourcegraph.slack.com/archives/C05GJPTSZCZ"
+                            >
+                                #discuss-core-services
+                            </Link>
+                            .
+                        </Text>
                     </Alert>
 
-                    <Alert variant="info" className="flex-shrink-0">
-                        Existing licenses can be re-linked to a new subscription by reaching out to{' '}
-                        <Link rel="noopener" target="_blank" to="https://sourcegraph.slack.com/archives/C05GJPTSZCZ">
-                            #discuss-core-services
+                    <Alert variant="note" className="flex-shrink-0">
+                        More documentation can be found in the{' '}
+                        <Link
+                            rel="noopener"
+                            target="_blank"
+                            to="https://www.notion.so/sourcegraph/Customer-License-Key-Management-f44f84e295f84f2482ee9e15a038c987?pvs=4"
+                        >
+                            "Customer License Key Management" Notion page
                         </Link>
                         .
                     </Alert>

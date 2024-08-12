@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import { QueryClientProvider } from '@tanstack/react-query'
-import { useSearchParams } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
@@ -89,7 +89,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
         setSearchParams(searchParams)
     }, [env, setSearchParams, searchParams])
 
-    const { mutateAsync: createSubscription, error } = useCreateEnterpriseSubscription(env)
+    const { mutateAsync: createSubscription, error, data: createdSubscription } = useCreateEnterpriseSubscription(env)
 
     const {
         formAPI,
@@ -111,7 +111,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
             instanceType,
         }: FormData) => {
             props.telemetryRecorder.recordEvent('admin.productSubscriptions', 'create')
-            const { subscription } = await createSubscription({
+            await createSubscription({
                 message,
                 subscription: {
                     displayName,
@@ -124,10 +124,6 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
                         : undefined,
                 },
             })
-            // Redirect to the newly created subscription
-            if (subscription) {
-                window.location.replace(`/site-admin/dotcom/product/subscriptions/${subscription.id}?env=${env}`)
-            }
         },
     })
 
@@ -176,6 +172,15 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
         name: 'instanceDomain',
         formApi: formAPI,
     })
+
+    // A subscription was created, navigate to the management page
+    if (createdSubscription?.subscription) {
+        return (
+            <Navigate
+                to={`/site-admin/dotcom/product/subscriptions/${createdSubscription.subscription?.id}?env=${env}`}
+            />
+        )
+    }
 
     return (
         <div className="site-admin-create-product-subscription-page">
