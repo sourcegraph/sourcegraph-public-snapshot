@@ -37,7 +37,7 @@ type GitTreeTranslator interface {
 	Prefetch(ctx context.Context, from api.CommitID, to api.CommitID, paths []core.RepoRelPath)
 }
 
-func NewGitTreeTranslator(client gitserver.Client, repo sgtypes.Repo) GitTreeTranslator {
+func NewGitTreeTranslator(client minimalGitserver, repo sgtypes.Repo) GitTreeTranslator {
 	return &newTranslator{
 		client:    client,
 		repo:      repo,
@@ -52,7 +52,7 @@ type hunkCacheKey struct {
 }
 
 type newTranslator struct {
-	client    gitserver.Client
+	client    minimalGitserver
 	repo      sgtypes.Repo
 	cacheLock sync.RWMutex
 	hunkCache map[hunkCacheKey]func() ([]compactHunk, error)
