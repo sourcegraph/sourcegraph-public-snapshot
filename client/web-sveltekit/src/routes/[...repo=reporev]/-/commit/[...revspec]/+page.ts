@@ -19,13 +19,11 @@ export const load: PageLoad = async ({ url, params }) => {
     }
 
     const commit = result.data?.repository?.commit
-    const isPerforceDepot = commit?.perforceChangelist !== null
-
     if (!commit) {
         error(404, 'Commit not found')
     }
 
-    if (isPerforceDepot) {
+    if (commit.perforceChangelist !== null) {
         const redirectURL = new URL(url)
         redirectURL.pathname = `${params.repo}/-/changelist/${commit.perforceChangelist?.cid}`
         redirect(301, redirectURL)
