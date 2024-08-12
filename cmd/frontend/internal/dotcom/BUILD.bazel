@@ -15,7 +15,9 @@ go_library(
         "//internal/database",
         "//internal/dotcom",
         "//internal/env",
+        "//internal/httpcli",
         "//internal/observation",
+        "//lib/enterpriseportal/subscriptionlicensechecks/v1/v1connect",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
     ],
 )

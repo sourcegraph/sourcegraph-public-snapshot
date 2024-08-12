@@ -3,21 +3,18 @@ package productsubscription
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
-	"net/url"
-	"strings"
-	"time"
 
-	"github.com/google/uuid"
+	"connectrpc.com/connect"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/slack"
+
+	subscriptionlicensechecksv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptionlicensechecks/v1"
+	subscriptionlicensechecksv1connect "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptionlicensechecks/v1/v1connect"
 )
 
 var (
@@ -34,75 +31,6 @@ var (
 	EventNameSuccess  = "license.check.api.success"
 	EventNameAssigned = "license.check.api.assigned"
 )
-
-func logEvent(ctx context.Context, db database.DB, name string, siteID string, licenseID string) {
-	logger := log.Scoped("LicenseCheckHandler logEvent")
-	eArg, err := json.Marshal(struct {
-		SiteID    string `json:"site_id,omitempty"`
-		LicenseID string `json:"license_id,omitempty"`
-	}{
-		SiteID:    siteID,
-		LicenseID: licenseID,
-	})
-	if err != nil {
-		logger.Warn("error marshalling json body", log.Error(err))
-		return // it does not make sense to continue on this failure
-	}
-	e := &database.Event{
-		Name:            name,
-		URL:             "",
-		AnonymousUserID: "backend",
-		Argument:        eArg,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
-	}
-
-	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
-	_ = db.EventLogs().Insert(ctx, e)
-}
-
-const multipleInstancesSameKeySlackFmt = `
-The site ID for ` + "`%s`" + `'s license key ID <%s/site-admin/dotcom/product/subscriptions/%s#%s|%s> is registered as ` + "`%s`, but is attempting to be used by the site ID `%s`." + `
-
-This could mean that the license key is attempting to be used on multiple Sourcegraph instances.
-
-To fix it, <https://app.golinks.io/internal-licensing-faq-slack-multiple|follow the guide to update the siteID and license key for all customer instances>.
-`
-
-func multipleInstancesSameKeySlackMessage(externalURL *url.URL, license *dbLicense, customerName string, oldSiteID string) string {
-	return fmt.Sprintf(
-		multipleInstancesSameKeySlackFmt,
-		customerName,
-		externalURL.String(),
-		url.QueryEscape(license.ProductSubscriptionID),
-		url.QueryEscape(license.ID),
-		license.ID,
-		oldSiteID,
-		*license.SiteID)
-}
-
-func sendSlackMessage(logger log.Logger, license *dbLicense, customerName string, oldSiteID string) {
-	externalURL, err := url.Parse(conf.Get().ExternalURL)
-	if err != nil {
-		logger.Error("parsing external URL from site config", log.Error(err))
-		return
-	}
-
-	dotcom := conf.Get().Dotcom
-	if dotcom == nil {
-		logger.Error("cannot parse dotcom site settings")
-		return
-	}
-
-	client := slack.New(dotcom.SlackLicenseAnomallyWebhook)
-	err = client.Post(context.Background(), &slack.Payload{
-		Text: multipleInstancesSameKeySlackMessage(externalURL, license, customerName, oldSiteID),
-	})
-	if err != nil {
-		logger.Error("error sending Slack message", log.Error(err))
-		return
-	}
-}
 
 func getCustomerNameFromLicense(ctx context.Context, logger log.Logger, db database.DB, license *dbLicense) string {
 	// Best effort fetch of customer name for slack message
@@ -130,7 +58,11 @@ func getCustomerNameFromLicense(ctx context.Context, logger log.Logger, db datab
 // validity.
 //
 // TODO(@bobheadxi): Migrate to Enterprise Portal https://linear.app/sourcegraph/issue/CORE-227
-func NewLicenseCheckHandler(db database.DB, enabled bool) http.Handler {
+func NewLicenseCheckHandler(
+	db database.DB,
+	enabled bool,
+	enterprisePortal subscriptionlicensechecksv1connect.SubscriptionLicenseChecksServiceClient,
+) http.Handler {
 	baseLogger := log.Scoped("LicenseCheckHandler")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !enabled {
@@ -161,87 +93,52 @@ func NewLicenseCheckHandler(db database.DB, enabled bool) http.Handler {
 			})
 			return
 		}
-		siteUUID, err := uuid.Parse(args.ClientSiteID)
+
+		resp, err := enterprisePortal.CheckLicenseKey(ctx, connect.NewRequest(&subscriptionlicensechecksv1.CheckLicenseKeyRequest{
+			LicenseKey: token,
+			InstanceId: args.ClientSiteID,
+		}))
 		if err != nil {
-			replyWithJSON(w, http.StatusBadRequest, licensing.LicenseCheckResponse{
-				Error: ErrInvalidSiteIDMsg,
-			})
-			return
-		}
-
-		siteID := siteUUID.String()
-		logger := baseLogger.With(log.String("siteID", siteID))
-		logger.Debug("starting license validity check")
-
-		lStore := dbLicenses{db: db}
-		license, err := lStore.GetByAccessToken(ctx, token)
-		if err != nil || license == nil {
-			logger.Warn("could not find license for provided token", log.String("siteID", siteID))
-			replyWithJSON(w, http.StatusUnauthorized, licensing.LicenseCheckResponse{
-				Error: ErrInvalidAccessTokenMsg,
-			})
-			return
-		}
-
-		now := time.Now()
-		if license.LicenseExpiresAt != nil && license.LicenseExpiresAt.Before(now) {
-			logger.Warn("license is expired")
-			replyWithJSON(w, http.StatusForbidden, licensing.LicenseCheckResponse{
-				Data: &licensing.LicenseCheckResponseData{
-					IsValid: false,
-					Reason:  ReasonLicenseExpired,
-				},
-			})
-			return
-		}
-
-		if license.RevokedAt != nil && license.RevokedAt.Before(now) {
-			logger.Warn("license is revoked")
-			replyWithJSON(w, http.StatusForbidden, licensing.LicenseCheckResponse{
-				Data: &licensing.LicenseCheckResponseData{
-					IsValid: false,
-					Reason:  ReasonLicenseRevokedMsg,
-				},
-			})
-			return
-		}
-
-		if license.SiteID == nil {
-			if _, err = lStore.AssignSiteID(r.Context(), license, siteID); err != nil {
-				logger.Warn("failed to assign site ID to license")
-				replyWithJSON(w, http.StatusInternalServerError, licensing.LicenseCheckResponse{
-					Error: ErrFailedToAssignSiteIDMsg,
-				})
-				return
+			var connectErr *connect.Error
+			if errors.As(err, &connectErr) {
+				switch connectErr.Code() {
+				case connect.CodeNotFound:
+					replyWithJSON(w, http.StatusNotFound, licensing.LicenseCheckResponse{
+						Error: err.Error(),
+					})
+					return
+				case connect.CodeInvalidArgument:
+					replyWithJSON(w, http.StatusBadRequest, licensing.LicenseCheckResponse{
+						Error: err.Error(),
+					})
+					return
+				}
 			}
-			logEvent(ctx, db, EventNameAssigned, siteID, license.ID)
-		} else if !strings.EqualFold(*license.SiteID, siteID) {
-			logger.Warn("license being used with multiple site IDs", log.String("previousSiteID", *license.SiteID), log.String("licenseKeyID", license.ID), log.String("subscriptionID", license.ProductSubscriptionID))
 
-			flags := featureflag.FromContext(ctx)
-			// This feature flag allows us to temporarily allow conflicting Site IDs
-			conflictingSiteIDsValid := flags.GetBoolOr("markConflictingSiteIDsAsValid", false)
+			baseLogger.Error("got unexpected error from Enterprise Portal",
+				log.Error(err))
+			replyWithJSON(w, http.StatusInternalServerError, licensing.LicenseCheckResponse{
+				Error: err.Error(),
+			})
+			return
+		}
 
+		valid := resp.Msg.GetValid()
+		if valid {
 			replyWithJSON(w, http.StatusOK, licensing.LicenseCheckResponse{
 				Data: &licensing.LicenseCheckResponseData{
-					IsValid: conflictingSiteIDsValid,
-					Reason:  ReasonLicenseIsAlreadyInUseMsg,
+					IsValid: valid,
+					Reason:  resp.Msg.GetReason(),
 				},
 			})
-
-			customerName := getCustomerNameFromLicense(r.Context(), logger, db, license)
-
-			sendSlackMessage(logger, license, customerName, *license.SiteID)
-			return
+		} else {
+			replyWithJSON(w, http.StatusForbidden, licensing.LicenseCheckResponse{
+				Data: &licensing.LicenseCheckResponseData{
+					IsValid: valid,
+					Reason:  resp.Msg.GetReason(),
+				},
+			})
 		}
-
-		logger.Debug("finished license validity check")
-		replyWithJSON(w, http.StatusOK, licensing.LicenseCheckResponse{
-			Data: &licensing.LicenseCheckResponseData{
-				IsValid: true,
-			},
-		})
-		logEvent(ctx, db, EventNameSuccess, siteID, license.ID)
 	})
 }
 

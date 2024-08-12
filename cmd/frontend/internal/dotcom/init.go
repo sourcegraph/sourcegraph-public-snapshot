@@ -14,7 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	subscriptionlicensechecksv1connect "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptionlicensechecks/v1/v1connect"
 )
 
 var (
@@ -66,7 +68,11 @@ func Init(
 			},
 		}
 		enterpriseServices.NewDotcomLicenseCheckHandler = func() http.Handler {
-			return productsubscription.NewLicenseCheckHandler(db, enableOnlineLicenseChecks)
+			return productsubscription.NewLicenseCheckHandler(db, enableOnlineLicenseChecks,
+				subscriptionlicensechecksv1connect.NewSubscriptionLicenseChecksServiceClient(
+					httpcli.ExternalDoer,
+					"https://enterprise-portal.sourcegraph.com",
+				))
 		}
 	}
 	return nil
