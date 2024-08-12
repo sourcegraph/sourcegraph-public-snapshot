@@ -186,7 +186,7 @@ lazy_static::lazy_static! {
             // in order to include the jsx highlights.
             (Jsonnet, "jsonnet"),
             (Kotlin, "kotlin"),
-            // (Magik, "magik"),
+            (Magik, "magik"),
             // (Matlab, "matlab"),
             // (Nickel, "nickel"),
             // (Perl, "perl"),

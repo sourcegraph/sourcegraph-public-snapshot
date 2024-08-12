@@ -2482,6 +2482,7 @@ dependencies = [
  "tree-sitter-javascript",
  "tree-sitter-jsonnet",
  "tree-sitter-kotlin",
+ "tree-sitter-magik",
  "tree-sitter-python",
  "tree-sitter-ruby",
  "tree-sitter-rust",
@@ -2584,6 +2585,15 @@ name = "tree-sitter-kotlin"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "54ff60aeb036f5762515ceb31404512ea4f9599764bcd3857074bb82867bdd34"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-magik"
+version = "0.0.1"
+source = "git+https://github.com/kritzcreek/tree-sitter-magik?rev=d7614f9820563598b0e1e009b3e4707f60af405f#d7614f9820563598b0e1e009b3e4707f60af405f"
 dependencies = [
  "cc",
  "tree-sitter",

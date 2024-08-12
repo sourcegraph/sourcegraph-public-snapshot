@@ -1,5 +1,47 @@
 ; Based on https://github.com/krn-robin/tree-sitter-magik/blob/main/queries/highlights.scm
 
+[
+ (self)
+ (super)
+ (clone)
+] @variable.builtin
+
+[
+ (variable)
+ (dynamic_variable)
+ (global_variable)
+ (global_reference)
+ (identifier)
+ (slot_accessor)
+ (label)
+] @variable
+
+(regex_literal) @string.special
+
+; NOTE(issues: https://github.com/krn-robin/tree-sitter-magik/issues/49): Grammar does not support traversing to the children in the pragma
+(pragma) @identifier.attribute
+
+(argument) @identifier.parameter
+
+; Literals
+(number) @number
+
+[
+  (string_literal)
+  (symbol)
+] @string
+
+(character_literal) @character
+
+[
+  (true)
+  (false)
+] @boolean
+
+(maybe) @constant.builtin
+
+(unset) @constant.null
+
 ; Methods
 (method
   exemplarname: (identifier) @type)
@@ -66,6 +108,9 @@
     operator: _ @operator)
 
 (invoke
+  receiver: (_) @function)
+
+(invoke
   receiver: (variable) @function.builtin
   (#eq? @function.builtin "def_slotted_exemplar"))
 
@@ -73,8 +118,6 @@
   receiver: (variable) @function.builtin
   (#eq? @function.builtin "def_mixin"))
 
-(invoke
-  receiver: (_) @function)
 (call
   operator: "." @operator)
 (call
@@ -135,46 +178,3 @@
   "_while"
   "_with"
 ] @keyword
-
-
-(regex_literal) @string.special
-
-; NOTE(issues: https://github.com/krn-robin/tree-sitter-magik/issues/49): Grammar does not support traversing to the children in the pragma
-(pragma) @identifier.attribute
-
-(argument) @identifier.parameter
-
-; Literals
-(number) @number
-
-[
-  (string_literal)
-  (symbol)
-] @string
-
-(character_literal) @character
-
-[
-  (true)
-  (false)
-] @boolean
-
-(maybe) @constant.builtin
-
-(unset) @constant.null
-
-[
- (self)
- (super)
- (clone)
-] @variable.builtin
-
-[
- (variable)
- (dynamic_variable)
- (global_variable)
- (global_reference)
- (identifier)
- (slot_accessor)
- (label)
-] @variable

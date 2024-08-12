@@ -219,7 +219,7 @@ mod tags {
     create_tags_configuration!(javascript, ParserId::Javascript, "javascript");
     // create_tags_configuration!(hack, ParserId::Hack, "hack");
     create_tags_configuration!(kotlin, ParserId::Kotlin, "kotlin");
-    // create_tags_configuration!(magik, ParserId::Magik, "magik");
+    create_tags_configuration!(magik, ParserId::Magik, "magik");
     create_tags_configuration!(python, ParserId::Python, "python");
     create_tags_configuration!(ruby, ParserId::Ruby, "ruby");
     create_tags_configuration!(rust, ParserId::Rust, "rust");
@@ -237,7 +237,7 @@ mod tags {
             ParserId::Javascript => Some(javascript()),
             // ParserId::Hack => Some(hack()),
             ParserId::Kotlin => Some(kotlin()),
-            // ParserId::Magik => Some(magik()),
+            ParserId::Magik => Some(magik()),
             ParserId::Python => Some(python()),
             ParserId::Ruby => Some(ruby()),
             ParserId::Rust => Some(rust()),
