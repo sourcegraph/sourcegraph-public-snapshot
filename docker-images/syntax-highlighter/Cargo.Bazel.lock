@@ -1,5 +1,5 @@
 {
-  "checksum": "ff2c36de653530e0525fa93207bfa1381d434f2e99df6b8a198b57143537b4b6",
+  "checksum": "5ce51c072f471835fd7f4d2b3dacde06732783c0d603c45b17969e39aa6944c5",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -172,7 +172,6 @@
         ],
         "crate_features": {
           "common": [
-            "default",
             "perf-literal",
             "std"
           ],
@@ -181,7 +180,7 @@
         "deps": {
           "common": [
             {
-              "id": "memchr 2.5.0",
+              "id": "memchr 2.7.4",
               "target": "memchr"
             }
           ],
@@ -956,7 +955,7 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
             }
           ],
@@ -1285,7 +1284,7 @@
         "deps": {
           "common": [
             {
-              "id": "memchr 2.5.0",
+              "id": "memchr 2.7.4",
               "target": "memchr"
             },
             {
@@ -1456,13 +1455,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "cc 1.0.83": {
+    "cc 1.0.106": {
       "name": "cc",
-      "version": "1.0.83",
+      "version": "1.0.106",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/cc/1.0.83/download",
-          "sha256": "f1174fb0b6ec23863f8b971027804a42614e347eafb0a95bf0b12cdae21fc4d0"
+          "url": "https://static.crates.io/crates/cc/1.0.106/download",
+          "sha256": "066fce287b1d4eafef758e89e09d724a24808a9196fe9756b8ca90e86d0719a2"
         }
       },
       "targets": [
@@ -1481,19 +1480,8 @@
         "compile_data_glob": [
           "**"
         ],
-        "deps": {
-          "common": [],
-          "selects": {
-            "cfg(unix)": [
-              {
-                "id": "libc 0.2.155",
-                "target": "libc"
-              }
-            ]
-          }
-        },
         "edition": "2018",
-        "version": "1.0.83"
+        "version": "1.0.106"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -2398,7 +2386,7 @@
               "target": "rayon"
             },
             {
-              "id": "regex 1.9.3",
+              "id": "regex 1.10.6",
               "target": "regex"
             },
             {
@@ -4188,7 +4176,7 @@
               "target": "build_script_build"
             },
             {
-              "id": "memchr 2.5.0",
+              "id": "memchr 2.7.4",
               "target": "memchr"
             },
             {
@@ -4286,7 +4274,7 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
             }
           ],
@@ -6202,13 +6190,13 @@
       },
       "license": "MIT"
     },
-    "memchr 2.5.0": {
+    "memchr 2.7.4": {
       "name": "memchr",
-      "version": "2.5.0",
+      "version": "2.7.4",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/memchr/2.5.0/download",
-          "sha256": "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
+          "url": "https://static.crates.io/crates/memchr/2.7.4/download",
+          "sha256": "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
         }
       },
       "targets": [
@@ -6216,15 +6204,6 @@
           "Library": {
             "crate_name": "memchr",
             "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        },
-        {
-          "BuildScript": {
-            "crate_name": "build_script_build",
-            "crate_root": "build.rs",
             "srcs": [
               "**/*.rs"
             ]
@@ -6238,29 +6217,16 @@
         ],
         "crate_features": {
           "common": [
+            "alloc",
             "default",
             "std"
           ],
           "selects": {}
         },
-        "deps": {
-          "common": [
-            {
-              "id": "memchr 2.5.0",
-              "target": "build_script_build"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "2.5.0"
+        "edition": "2021",
+        "version": "2.7.4"
       },
-      "build_script_attrs": {
-        "data_glob": [
-          "**"
-        ]
-      },
-      "license": "Unlicense/MIT"
+      "license": "Unlicense OR MIT"
     },
     "memoffset 0.6.5": {
       "name": "memoffset",
@@ -6644,7 +6610,7 @@
               "target": "log"
             },
             {
-              "id": "memchr 2.5.0",
+              "id": "memchr 2.7.4",
               "target": "memchr"
             },
             {
@@ -6818,7 +6784,7 @@
         "deps": {
           "common": [
             {
-              "id": "memchr 2.5.0",
+              "id": "memchr 2.7.4",
               "target": "memchr"
             },
             {
@@ -7090,7 +7056,7 @@
         "deps": {
           "common": [
             {
-              "id": "memchr 2.5.0",
+              "id": "memchr 2.7.4",
               "target": "memchr"
             }
           ],
@@ -7247,7 +7213,7 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
             },
             {
@@ -8200,7 +8166,7 @@
               "target": "predicates_core"
             },
             {
-              "id": "regex 1.9.3",
+              "id": "regex 1.10.6",
               "target": "regex"
             }
           ],
@@ -8539,7 +8505,7 @@
               "target": "protobuf_support"
             },
             {
-              "id": "thiserror 1.0.47",
+              "id": "thiserror 1.0.63",
               "target": "thiserror"
             }
           ],
@@ -8583,7 +8549,7 @@
         "deps": {
           "common": [
             {
-              "id": "thiserror 1.0.47",
+              "id": "thiserror 1.0.63",
               "target": "thiserror"
             }
           ],
@@ -8628,7 +8594,7 @@
         "deps": {
           "common": [
             {
-              "id": "memchr 2.5.0",
+              "id": "memchr 2.7.4",
               "target": "memchr"
             }
           ],
@@ -9197,7 +9163,7 @@
               "target": "syscall"
             },
             {
-              "id": "thiserror 1.0.47",
+              "id": "thiserror 1.0.63",
               "target": "thiserror"
             }
           ],
@@ -9317,13 +9283,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "regex 1.9.3": {
+    "regex 1.10.6": {
       "name": "regex",
-      "version": "1.9.3",
+      "version": "1.10.6",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/regex/1.9.3/download",
-          "sha256": "81bc1d4caf89fac26a70747fe603c130093b53c773888797a6329091246d651a"
+          "url": "https://static.crates.io/crates/regex/1.10.6/download",
+          "sha256": "4219d74c6b67a3654a9fbebc4b419e22126d13d2f3c4a07ee0cb61ff79a79619"
         }
       },
       "targets": [
@@ -9371,22 +9337,22 @@
               "target": "aho_corasick"
             },
             {
-              "id": "memchr 2.5.0",
+              "id": "memchr 2.7.4",
               "target": "memchr"
             },
             {
-              "id": "regex-automata 0.3.6",
+              "id": "regex-automata 0.4.7",
               "target": "regex_automata"
             },
             {
-              "id": "regex-syntax 0.7.4",
+              "id": "regex-syntax 0.8.4",
               "target": "regex_syntax"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.9.3"
+        "version": "1.10.6"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -9456,9 +9422,44 @@
         ],
         "crate_features": {
           "common": [
+            "dfa-search"
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "version": "0.3.6"
+      },
+      "license": "MIT OR Apache-2.0"
+    },
+    "regex-automata 0.4.7": {
+      "name": "regex-automata",
+      "version": "0.4.7",
+      "repository": {
+        "Http": {
+          "url": "https://static.crates.io/crates/regex-automata/0.4.7/download",
+          "sha256": "38caf58cc5ef2fed281f89292ef23f6365465ed9a41b7a7754eb4e26496c92df"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "regex_automata",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "regex_automata",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
             "alloc",
             "dfa-onepass",
-            "dfa-search",
             "hybrid",
             "meta",
             "nfa-backtrack",
@@ -9489,18 +9490,18 @@
               "target": "aho_corasick"
             },
             {
-              "id": "memchr 2.5.0",
+              "id": "memchr 2.7.4",
               "target": "memchr"
             },
             {
-              "id": "regex-syntax 0.7.4",
+              "id": "regex-syntax 0.8.4",
               "target": "regex_syntax"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.3.6"
+        "version": "0.4.7"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -9548,13 +9549,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "regex-syntax 0.7.4": {
+    "regex-syntax 0.8.4": {
       "name": "regex-syntax",
-      "version": "0.7.4",
+      "version": "0.8.4",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/regex-syntax/0.7.4/download",
-          "sha256": "e5ea92a5b6195c6ef2a0295ea818b312502c6fc94dde986c5553242e18fd4ce2"
+          "url": "https://static.crates.io/crates/regex-syntax/0.8.4/download",
+          "sha256": "7a66a03ae7c801facd77a29370b4faec201768915ac14a721ba36f20bc9c209b"
         }
       },
       "targets": [
@@ -9589,7 +9590,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.7.4"
+        "version": "0.8.4"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -9679,7 +9680,7 @@
               "target": "log"
             },
             {
-              "id": "memchr 2.5.0",
+              "id": "memchr 2.7.4",
               "target": "memchr"
             },
             {
@@ -9921,7 +9922,7 @@
               "target": "log"
             },
             {
-              "id": "memchr 2.5.0",
+              "id": "memchr 2.7.4",
               "target": "memchr"
             },
             {
@@ -10387,7 +10388,7 @@
               "target": "log"
             },
             {
-              "id": "memchr 2.5.0",
+              "id": "memchr 2.7.4",
               "target": "memchr"
             },
             {
@@ -10681,7 +10682,7 @@
               "target": "tar"
             },
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
@@ -11430,7 +11431,7 @@
         "deps": {
           "common": [
             {
-              "id": "memchr 2.5.0",
+              "id": "memchr 2.7.4",
               "target": "memchr"
             }
           ],
@@ -11734,7 +11735,7 @@
               "target": "protobuf"
             },
             {
-              "id": "regex 1.9.3",
+              "id": "regex 1.10.6",
               "target": "regex"
             },
             {
@@ -11762,11 +11763,11 @@
               "target": "syntect"
             },
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-highlight 0.20.1",
+              "id": "tree-sitter-highlight 0.22.6",
               "target": "tree_sitter_highlight"
             },
             {
@@ -11998,7 +11999,7 @@
               "target": "syntect"
             },
             {
-              "id": "tree-sitter-highlight 0.20.1",
+              "id": "tree-sitter-highlight 0.22.6",
               "target": "tree_sitter_highlight"
             }
           ],
@@ -12225,13 +12226,13 @@
       },
       "license": "MIT"
     },
-    "thiserror 1.0.47": {
+    "thiserror 1.0.63": {
       "name": "thiserror",
-      "version": "1.0.47",
+      "version": "1.0.63",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/thiserror/1.0.47/download",
-          "sha256": "97a802ec30afc17eee47b2855fc72e0c4cd62be9b4efe6591edde0ec5bd68d8f"
+          "url": "https://static.crates.io/crates/thiserror/1.0.63/download",
+          "sha256": "c0342370b38b6a11b6cc11d6a805569958d54cfa061a29969c3b5ce2ea405724"
         }
       },
       "targets": [
@@ -12262,7 +12263,7 @@
         "deps": {
           "common": [
             {
-              "id": "thiserror 1.0.47",
+              "id": "thiserror 1.0.63",
               "target": "build_script_build"
             }
           ],
@@ -12272,13 +12273,13 @@
         "proc_macro_deps": {
           "common": [
             {
-              "id": "thiserror-impl 1.0.47",
+              "id": "thiserror-impl 1.0.63",
               "target": "thiserror_impl"
             }
           ],
           "selects": {}
         },
-        "version": "1.0.47"
+        "version": "1.0.63"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -12287,13 +12288,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "thiserror-impl 1.0.47": {
+    "thiserror-impl 1.0.63": {
       "name": "thiserror-impl",
-      "version": "1.0.47",
+      "version": "1.0.63",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/thiserror-impl/1.0.47/download",
-          "sha256": "6bb623b56e39ab7dcd4b1b98bb6c8f8d907ed255b18de254088016b27a8ee19b"
+          "url": "https://static.crates.io/crates/thiserror-impl/1.0.63/download",
+          "sha256": "a4558b58466b9ad7ca0f102865eccc95938dca1a74a856f2b57b6629050da261"
         }
       },
       "targets": [
@@ -12330,7 +12331,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.0.47"
+        "version": "1.0.63"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -13304,7 +13305,7 @@
               "target": "once_cell"
             },
             {
-              "id": "regex 1.9.3",
+              "id": "regex 1.10.6",
               "target": "regex"
             },
             {
@@ -13339,13 +13340,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter 0.20.10": {
+    "tree-sitter 0.22.6": {
       "name": "tree-sitter",
-      "version": "0.20.10",
+      "version": "0.22.6",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/tree-sitter/0.20.10/download",
-          "sha256": "e747b1f9b7b931ed39a548c1fae149101497de3c1fc8d9e18c62c1a66c683d3d"
+          "url": "https://static.crates.io/crates/tree-sitter/0.22.6/download",
+          "sha256": "df7cc499ceadd4dcdf7ec6d4cbc34ece92c3fa07821e287aedecd4416c516dca"
         }
       },
       "targets": [
@@ -13376,18 +13377,18 @@
         "deps": {
           "common": [
             {
-              "id": "regex 1.9.3",
+              "id": "regex 1.10.6",
               "target": "regex"
             },
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.20.10"
+        "version": "0.22.6"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -13396,12 +13397,13 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
             }
           ],
           "selects": {}
-        }
+        },
+        "links": "tree-sitter"
       },
       "license": "MIT"
     },
@@ -13428,19 +13430,19 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-c 0.20.6",
+              "id": "tree-sitter-c 0.21.4",
               "target": "tree_sitter_c"
             },
             {
-              "id": "tree-sitter-c-sharp 0.20.0",
+              "id": "tree-sitter-c-sharp 0.21.3",
               "target": "tree_sitter_c_sharp"
             },
             {
-              "id": "tree-sitter-cpp 0.20.3",
+              "id": "tree-sitter-cpp 0.22.3",
               "target": "tree_sitter_cpp"
             },
             {
@@ -13448,7 +13450,7 @@
               "target": "tree_sitter_dart"
             },
             {
-              "id": "tree-sitter-go 0.20.0",
+              "id": "tree-sitter-go 0.21.0",
               "target": "tree_sitter_go"
             },
             {
@@ -13456,11 +13458,11 @@
               "target": "tree_sitter_hack"
             },
             {
-              "id": "tree-sitter-java 0.20.2",
+              "id": "tree-sitter-java 0.21.0",
               "target": "tree_sitter_java"
             },
             {
-              "id": "tree-sitter-javascript 0.20.0",
+              "id": "tree-sitter-javascript 0.21.4",
               "target": "tree_sitter_javascript"
             },
             {
@@ -13468,7 +13470,7 @@
               "target": "tree_sitter_jsonnet"
             },
             {
-              "id": "tree-sitter-kotlin 0.2.11",
+              "id": "tree-sitter-kotlin 0.3.8",
               "target": "tree_sitter_kotlin"
             },
             {
@@ -13480,7 +13482,7 @@
               "target": "tree_sitter_matlab"
             },
             {
-              "id": "tree-sitter-nickel 0.0.1",
+              "id": "tree-sitter-nickel 0.2.0",
               "target": "tree_sitter_nickel"
             },
             {
@@ -13496,27 +13498,27 @@
               "target": "tree_sitter_pod"
             },
             {
-              "id": "tree-sitter-python 0.20.4",
+              "id": "tree-sitter-python 0.21.0",
               "target": "tree_sitter_python"
             },
             {
-              "id": "tree-sitter-ruby 0.20.0",
+              "id": "tree-sitter-ruby 0.21.0",
               "target": "tree_sitter_ruby"
             },
             {
-              "id": "tree-sitter-rust 0.20.4",
+              "id": "tree-sitter-rust 0.21.2",
               "target": "tree_sitter_rust"
             },
             {
-              "id": "tree-sitter-scala 0.20.2",
+              "id": "tree-sitter-scala 0.22.1",
               "target": "tree_sitter_scala"
             },
             {
-              "id": "tree-sitter-sql 0.0.2",
-              "target": "tree_sitter_sql"
+              "id": "tree-sitter-sequel 0.3.5",
+              "target": "tree_sitter_sequel"
             },
             {
-              "id": "tree-sitter-typescript 0.20.2",
+              "id": "tree-sitter-typescript 0.21.2",
               "target": "tree_sitter_typescript"
             },
             {
@@ -13535,13 +13537,13 @@
       },
       "license": null
     },
-    "tree-sitter-c 0.20.6": {
+    "tree-sitter-c 0.21.4": {
       "name": "tree-sitter-c",
-      "version": "0.20.6",
+      "version": "0.21.4",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/tree-sitter-c/0.20.6/download",
-          "sha256": "30b03bdf218020057abee831581a74bff8c298323d6c6cd1a70556430ded9f4b"
+          "url": "https://static.crates.io/crates/tree-sitter-c/0.21.4/download",
+          "sha256": "f956d5351d62652864a4ff3ae861747e7a1940dc96c9998ae400ac0d3ce30427"
         }
       },
       "targets": [
@@ -13572,18 +13574,18 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-c 0.20.6",
+              "id": "tree-sitter-c 0.21.4",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.20.6"
+        "version": "0.21.4"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -13592,8 +13594,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -13601,13 +13612,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-c-sharp 0.20.0": {
+    "tree-sitter-c-sharp 0.21.3": {
       "name": "tree-sitter-c-sharp",
-      "version": "0.20.0",
+      "version": "0.21.3",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/tree-sitter-c-sharp/0.20.0/download",
-          "sha256": "b9ab3dc608f34924fa9e10533a95f62dbc14b6de0ddd7107722eba66fe19ae31"
+          "url": "https://static.crates.io/crates/tree-sitter-c-sharp/0.21.3/download",
+          "sha256": "8997ad04502208449025114e434c9024a33a74e700513c702a9d2cac6522a771"
         }
       },
       "targets": [
@@ -13638,18 +13649,18 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-c-sharp 0.20.0",
+              "id": "tree-sitter-c-sharp 0.21.3",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
-        "edition": "2018",
-        "version": "0.20.0"
+        "edition": "2021",
+        "version": "0.21.3"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -13658,8 +13669,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -13667,13 +13687,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-cpp 0.20.3": {
+    "tree-sitter-cpp 0.22.3": {
       "name": "tree-sitter-cpp",
-      "version": "0.20.3",
+      "version": "0.22.3",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/tree-sitter-cpp/0.20.3/download",
-          "sha256": "23b4b625f46a7370544b9cf0545532c26712ae49bfc02eb09825db358b9f79e1"
+          "url": "https://static.crates.io/crates/tree-sitter-cpp/0.22.3/download",
+          "sha256": "1d509a22a992790d38f2c291961ff8a1ff016c437c7ec6befc9220b8eec8918c"
         }
       },
       "targets": [
@@ -13704,18 +13724,18 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-cpp 0.20.3",
+              "id": "tree-sitter-cpp 0.22.3",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.20.3"
+        "version": "0.22.3"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -13724,8 +13744,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -13738,9 +13767,9 @@
       "version": "0.0.1",
       "repository": {
         "Git": {
-          "remote": "https://github.com/UserNobody14/tree-sitter-dart",
+          "remote": "https://github.com/kritzcreek/tree-sitter-dart",
           "commitish": {
-            "Rev": "923fbe0d3e62340ea78422551166ce946bc05222"
+            "Rev": "311a0093c6a70b8579ed8b1d3f69ffa78ab53bf5"
           }
         }
       },
@@ -13772,7 +13801,7 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
@@ -13792,8 +13821,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -13801,13 +13839,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-go 0.20.0": {
+    "tree-sitter-go 0.21.0": {
       "name": "tree-sitter-go",
-      "version": "0.20.0",
+      "version": "0.21.0",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/tree-sitter-go/0.20.0/download",
-          "sha256": "1ad6d11f19441b961af2fda7f12f5d0dac325f6d6de83836a1d3750018cc5114"
+          "url": "https://static.crates.io/crates/tree-sitter-go/0.21.0/download",
+          "sha256": "55cb318be5ccf75f44e054acf6898a5c95d59b53443eed578e16be0cd7ec037f"
         }
       },
       "targets": [
@@ -13838,18 +13876,18 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-go 0.20.0",
+              "id": "tree-sitter-go 0.21.0",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
-        "edition": "2018",
-        "version": "0.20.0"
+        "edition": "2021",
+        "version": "0.21.0"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -13858,8 +13896,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -13872,9 +13919,9 @@
       "version": "0.0.4",
       "repository": {
         "Git": {
-          "remote": "https://github.com/slackhq/tree-sitter-hack",
+          "remote": "https://github.com/kritzcreek/tree-sitter-hack",
           "commitish": {
-            "Rev": "fca1e294f6dce8ec5659233a6a21f5bd0ed5b4f2"
+            "Rev": "2a1f331c3b43a2262823f788a222e15a264d1062"
           }
         }
       },
@@ -13906,7 +13953,7 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
@@ -13926,8 +13973,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -13935,13 +13991,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-highlight 0.20.1": {
+    "tree-sitter-highlight 0.22.6": {
       "name": "tree-sitter-highlight",
-      "version": "0.20.1",
+      "version": "0.22.6",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/tree-sitter-highlight/0.20.1/download",
-          "sha256": "042342584c5a7a0b833d9fc4e2bdab3f9868ddc6c4b339a1e01451c6720868bc"
+          "url": "https://static.crates.io/crates/tree-sitter-highlight/0.22.6/download",
+          "sha256": "eaca0fe34fa96eec6aaa8e63308dbe1bafe65a6317487c287f93938959b21907"
         }
       },
       "targets": [
@@ -13963,32 +14019,36 @@
         "deps": {
           "common": [
             {
-              "id": "regex 1.9.3",
+              "id": "lazy_static 1.4.0",
+              "target": "lazy_static"
+            },
+            {
+              "id": "regex 1.10.6",
               "target": "regex"
             },
             {
-              "id": "thiserror 1.0.47",
+              "id": "thiserror 1.0.63",
               "target": "thiserror"
             },
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             }
           ],
           "selects": {}
         },
-        "edition": "2018",
-        "version": "0.20.1"
+        "edition": "2021",
+        "version": "0.22.6"
       },
       "license": "MIT"
     },
-    "tree-sitter-java 0.20.2": {
+    "tree-sitter-java 0.21.0": {
       "name": "tree-sitter-java",
-      "version": "0.20.2",
+      "version": "0.21.0",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/tree-sitter-java/0.20.2/download",
-          "sha256": "2adc5696bf5abf761081d7457d2bb82d0e3b28964f4214f63fd7e720ef462653"
+          "url": "https://static.crates.io/crates/tree-sitter-java/0.21.0/download",
+          "sha256": "33bc21adf831a773c075d9d00107ab43965e6a6ea7607b47fd9ec6f3db4b481b"
         }
       },
       "targets": [
@@ -14019,18 +14079,18 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-java 0.20.2",
+              "id": "tree-sitter-java 0.21.0",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
-        "edition": "2018",
-        "version": "0.20.2"
+        "edition": "2021",
+        "version": "0.21.0"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -14039,8 +14099,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -14048,13 +14117,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-javascript 0.20.0": {
+    "tree-sitter-javascript 0.21.4": {
       "name": "tree-sitter-javascript",
-      "version": "0.20.0",
+      "version": "0.21.4",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/tree-sitter-javascript/0.20.0/download",
-          "sha256": "2490fab08630b2c8943c320f7b63473cbf65511c8d83aec551beb9b4375906ed"
+          "url": "https://static.crates.io/crates/tree-sitter-javascript/0.21.4/download",
+          "sha256": "8710a71bc6779e33811a8067bdda3ed08bed1733296ff915e44faf60f8c533d7"
         }
       },
       "targets": [
@@ -14085,18 +14154,18 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-javascript 0.20.0",
+              "id": "tree-sitter-javascript 0.21.4",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
-        "edition": "2018",
-        "version": "0.20.0"
+        "edition": "2021",
+        "version": "0.21.4"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -14105,8 +14174,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -14119,9 +14197,9 @@
       "version": "0.0.1",
       "repository": {
         "Git": {
-          "remote": "https://github.com/sourcegraph/tree-sitter-jsonnet",
+          "remote": "https://github.com/kritzcreek/tree-sitter-jsonnet",
           "commitish": {
-            "Rev": "009e6f06266f46ae07077dd6c8026ded56ab7dd8"
+            "Rev": "bc147652f72a14c9627deae5c9c33a81e452d391"
           }
         }
       },
@@ -14153,7 +14231,7 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
@@ -14173,8 +14251,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -14182,15 +14269,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-kotlin 0.2.11": {
+    "tree-sitter-kotlin 0.3.8": {
       "name": "tree-sitter-kotlin",
-      "version": "0.2.11",
+      "version": "0.3.8",
       "repository": {
-        "Git": {
-          "remote": "https://github.com/fwcd/tree-sitter-kotlin",
-          "commitish": {
-            "Rev": "100d79fd96b56a1b99099a8d2f3c114b8687acfb"
-          }
+        "Http": {
+          "url": "https://static.crates.io/crates/tree-sitter-kotlin/0.3.8/download",
+          "sha256": "54ff60aeb036f5762515ceb31404512ea4f9599764bcd3857074bb82867bdd34"
         }
       },
       "targets": [
@@ -14221,18 +14306,18 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-kotlin 0.2.11",
+              "id": "tree-sitter-kotlin 0.3.8",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.2.11"
+        "version": "0.3.8"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -14241,8 +14326,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -14255,9 +14349,9 @@
       "version": "0.0.1",
       "repository": {
         "Git": {
-          "remote": "https://github.com/sourcegraph/tree-sitter-magik",
+          "remote": "https://github.com/kritzcreek/tree-sitter-magik",
           "commitish": {
-            "Rev": "dfabbd4e70ff311939cf48fdf90d340f07758d37"
+            "Rev": "d7614f9820563598b0e1e009b3e4707f60af405f"
           }
         }
       },
@@ -14289,7 +14383,7 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
@@ -14309,8 +14403,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -14323,9 +14426,9 @@
       "version": "1.0.2",
       "repository": {
         "Git": {
-          "remote": "https://github.com/acristoffers/tree-sitter-matlab",
+          "remote": "https://github.com/kritzcreek/tree-sitter-matlab",
           "commitish": {
-            "Rev": "6071891a8c39600203eba20513666cf93b4d650a"
+            "Rev": "762d3ac3daf68cff04c376a42fd793b0f81ab9c1"
           }
         }
       },
@@ -14357,7 +14460,7 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
@@ -14377,8 +14480,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -14386,14 +14498,14 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-nickel 0.0.1": {
+    "tree-sitter-nickel 0.2.0": {
       "name": "tree-sitter-nickel",
-      "version": "0.0.1",
+      "version": "0.2.0",
       "repository": {
         "Git": {
-          "remote": "https://github.com/nickel-lang/tree-sitter-nickel",
+          "remote": "https://github.com/kritzcreek/tree-sitter-nickel",
           "commitish": {
-            "Rev": "d6c7eeb751038f934b5b1aa7ff236376d0235c56"
+            "Rev": "46a808abaa3d0f460c859af3c3b9467641f13063"
           }
         }
       },
@@ -14425,18 +14537,18 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-nickel 0.0.1",
+              "id": "tree-sitter-nickel 0.2.0",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
-        "edition": "2018",
-        "version": "0.0.1"
+        "edition": "2021",
+        "version": "0.2.0"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -14445,8 +14557,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -14461,7 +14582,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/tree-sitter-perl",
           "commitish": {
-            "Rev": "e1b4844afd17b7dc019a436b1ac890568d79a1f2"
+            "Rev": "fa0118e558b788c7ebd8646d3d1eea42dcf321ee"
           }
         }
       },
@@ -14493,7 +14614,7 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
@@ -14513,8 +14634,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -14527,9 +14657,9 @@
       "version": "0.16.0",
       "repository": {
         "Git": {
-          "remote": "https://github.com/apple/tree-sitter-pkl",
+          "remote": "https://github.com/kritzcreek/tree-sitter-pkl",
           "commitish": {
-            "Rev": "b79c8c4d2419e82324d9aca31e9de47ed8304f1f"
+            "Rev": "372ce76dfae3395fcf083df23328c4eb67cc0119"
           }
         }
       },
@@ -14561,7 +14691,7 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
@@ -14581,8 +14711,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -14597,7 +14736,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/tree-sitter-pod",
           "commitish": {
-            "Rev": "f422a0dca6847c692e811f06fd92c6a75d647222"
+            "Rev": "b99354aaa6b11c6d9edda3285567d94ed02c0e34"
           }
         }
       },
@@ -14629,7 +14768,7 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
@@ -14649,8 +14788,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -14658,13 +14806,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-python 0.20.4": {
+    "tree-sitter-python 0.21.0": {
       "name": "tree-sitter-python",
-      "version": "0.20.4",
+      "version": "0.21.0",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/tree-sitter-python/0.20.4/download",
-          "sha256": "e6c93b1b1fbd0d399db3445f51fd3058e43d0b4dcff62ddbdb46e66550978aa5"
+          "url": "https://static.crates.io/crates/tree-sitter-python/0.21.0/download",
+          "sha256": "b4066c6cf678f962f8c2c4561f205945c84834cce73d981e71392624fdc390a9"
         }
       },
       "targets": [
@@ -14695,18 +14843,18 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-python 0.20.4",
+              "id": "tree-sitter-python 0.21.0",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.20.4"
+        "version": "0.21.0"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -14715,8 +14863,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -14724,13 +14881,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-ruby 0.20.0": {
+    "tree-sitter-ruby 0.21.0": {
       "name": "tree-sitter-ruby",
-      "version": "0.20.0",
+      "version": "0.21.0",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/tree-sitter-ruby/0.20.0/download",
-          "sha256": "0ac30cbb1560363ae76e1ccde543d6d99087421e228cc47afcec004b86bb711a"
+          "url": "https://static.crates.io/crates/tree-sitter-ruby/0.21.0/download",
+          "sha256": "c0031f687c0772f2dad7b77104c43428611099a1804c81244ada21560f41f0b1"
         }
       },
       "targets": [
@@ -14761,18 +14918,18 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-ruby 0.20.0",
+              "id": "tree-sitter-ruby 0.21.0",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
-        "edition": "2018",
-        "version": "0.20.0"
+        "edition": "2021",
+        "version": "0.21.0"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -14781,8 +14938,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -14790,13 +14956,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-rust 0.20.4": {
+    "tree-sitter-rust 0.21.2": {
       "name": "tree-sitter-rust",
-      "version": "0.20.4",
+      "version": "0.21.2",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/tree-sitter-rust/0.20.4/download",
-          "sha256": "b0832309b0b2b6d33760ce5c0e818cb47e1d72b468516bfe4134408926fa7594"
+          "url": "https://static.crates.io/crates/tree-sitter-rust/0.21.2/download",
+          "sha256": "277690f420bf90741dea984f3da038ace46c4fe6047cba57a66822226cde1c93"
         }
       },
       "targets": [
@@ -14827,18 +14993,18 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-rust 0.20.4",
+              "id": "tree-sitter-rust 0.21.2",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.20.4"
+        "version": "0.21.2"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -14847,8 +15013,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -14856,13 +15031,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-scala 0.20.2": {
+    "tree-sitter-scala 0.22.1": {
       "name": "tree-sitter-scala",
-      "version": "0.20.2",
+      "version": "0.22.1",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/tree-sitter-scala/0.20.2/download",
-          "sha256": "93df43ab4f2b3299fe97e73eb9b946bbca453b402bea8debf1fa69ab4e28412b"
+          "url": "https://static.crates.io/crates/tree-sitter-scala/0.22.1/download",
+          "sha256": "a464d8e2e1837cf20b34204c51c369da3483e55c3ea013c6db81a04439e17895"
         }
       },
       "targets": [
@@ -14893,18 +15068,18 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-scala 0.20.2",
+              "id": "tree-sitter-scala 0.22.1",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
-        "edition": "2018",
-        "version": "0.20.2"
+        "edition": "2021",
+        "version": "0.22.1"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -14913,8 +15088,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -14922,21 +15106,19 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-sql 0.0.2": {
-      "name": "tree-sitter-sql",
-      "version": "0.0.2",
+    "tree-sitter-sequel 0.3.5": {
+      "name": "tree-sitter-sequel",
+      "version": "0.3.5",
       "repository": {
-        "Git": {
-          "remote": "https://github.com/sourcegraph/tree-sitter-sql",
-          "commitish": {
-            "Rev": "6ea62b8d33c9e39f6de8a398a6885d1873ed7e91"
-          }
+        "Http": {
+          "url": "https://static.crates.io/crates/tree-sitter-sequel/0.3.5/download",
+          "sha256": "8e39194c44ad71033d8b09d225c03e154dee9b788c6a113bce7feb809f39480f"
         }
       },
       "targets": [
         {
           "Library": {
-            "crate_name": "tree_sitter_sql",
+            "crate_name": "tree_sitter_sequel",
             "crate_root": "bindings/rust/lib.rs",
             "srcs": [
               "**/*.rs"
@@ -14953,7 +15135,7 @@
           }
         }
       ],
-      "library_target_name": "tree_sitter_sql",
+      "library_target_name": "tree_sitter_sequel",
       "common_attrs": {
         "compile_data_glob": [
           "**"
@@ -14961,18 +15143,18 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-sql 0.0.2",
+              "id": "tree-sitter-sequel 0.3.5",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.0.2"
+        "version": "0.3.5"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -14981,8 +15163,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -14990,13 +15181,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-typescript 0.20.2": {
+    "tree-sitter-typescript 0.21.2": {
       "name": "tree-sitter-typescript",
-      "version": "0.20.2",
+      "version": "0.21.2",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/tree-sitter-typescript/0.20.2/download",
-          "sha256": "079c695c32d39ad089101c66393aeaca30e967fba3486a91f573d2f0e12d290a"
+          "url": "https://static.crates.io/crates/tree-sitter-typescript/0.21.2/download",
+          "sha256": "ecb35d98a688378e56c18c9c159824fd16f730ccbea19aacf4f206e5d5438ed9"
         }
       },
       "targets": [
@@ -15027,18 +15218,18 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-typescript 0.20.2",
+              "id": "tree-sitter-typescript 0.21.2",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
-        "edition": "2018",
-        "version": "0.20.2"
+        "edition": "2021",
+        "version": "0.21.2"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -15047,8 +15238,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -15063,7 +15263,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/tree-sitter-xlsg",
           "commitish": {
-            "Rev": "d956b54ea151b12f19c945f7be421c3dcd3a77ba"
+            "Rev": "deb2a12e617ad5e3720a1464848949cc46b375be"
           }
         }
       },
@@ -15095,7 +15295,7 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
@@ -15115,8 +15315,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -15131,7 +15340,7 @@
         "Git": {
           "remote": "https://github.com/maxxnino/tree-sitter-zig",
           "commitish": {
-            "Rev": "2c7b6308d906d7aec4b3e1fafaaeca447a8a2c2f"
+            "Rev": "2bac4cc6c697d46a193905fef6d003bfa0bfabfd"
           }
         }
       },
@@ -15163,7 +15372,7 @@
         "deps": {
           "common": [
             {
-              "id": "tree-sitter 0.20.10",
+              "id": "tree-sitter 0.22.6",
               "target": "tree_sitter"
             },
             {
@@ -15183,8 +15392,17 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.0.83",
+              "id": "cc 1.0.106",
               "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "link_deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.22.6",
+              "target": "tree_sitter"
             }
           ],
           "selects": {}
@@ -18803,7 +19021,7 @@
     "predicates 3.0.4",
     "protobuf 3.2.0",
     "rayon 1.10.0",
-    "regex 1.9.3",
+    "regex 1.10.6",
     "rocket 0.5.0-rc.3",
     "rustc-hash 1.1.0",
     "rustix 0.38.34",
@@ -18814,30 +19032,30 @@
     "string-interner 0.14.0",
     "syntect 4.7.0",
     "tar 0.4.41",
-    "tree-sitter 0.20.10",
-    "tree-sitter-c 0.20.6",
-    "tree-sitter-c-sharp 0.20.0",
-    "tree-sitter-cpp 0.20.3",
+    "tree-sitter 0.22.6",
+    "tree-sitter-c 0.21.4",
+    "tree-sitter-c-sharp 0.21.3",
+    "tree-sitter-cpp 0.22.3",
     "tree-sitter-dart 0.0.1",
-    "tree-sitter-go 0.20.0",
+    "tree-sitter-go 0.21.0",
     "tree-sitter-hack 0.0.4",
-    "tree-sitter-highlight 0.20.1",
-    "tree-sitter-java 0.20.2",
-    "tree-sitter-javascript 0.20.0",
+    "tree-sitter-highlight 0.22.6",
+    "tree-sitter-java 0.21.0",
+    "tree-sitter-javascript 0.21.4",
     "tree-sitter-jsonnet 0.0.1",
-    "tree-sitter-kotlin 0.2.11",
+    "tree-sitter-kotlin 0.3.8",
     "tree-sitter-magik 0.0.1",
     "tree-sitter-matlab 1.0.2",
-    "tree-sitter-nickel 0.0.1",
+    "tree-sitter-nickel 0.2.0",
     "tree-sitter-perl 0.0.1",
     "tree-sitter-pkl 0.16.0",
     "tree-sitter-pod 0.0.1",
-    "tree-sitter-python 0.20.4",
-    "tree-sitter-ruby 0.20.0",
-    "tree-sitter-rust 0.20.4",
-    "tree-sitter-scala 0.20.2",
-    "tree-sitter-sql 0.0.2",
-    "tree-sitter-typescript 0.20.2",
+    "tree-sitter-python 0.21.0",
+    "tree-sitter-ruby 0.21.0",
+    "tree-sitter-rust 0.21.2",
+    "tree-sitter-scala 0.22.1",
+    "tree-sitter-sequel 0.3.5",
+    "tree-sitter-typescript 0.21.2",
     "tree-sitter-xlsg 0.0.1",
     "tree-sitter-zig 0.0.1",
     "walkdir 2.3.3"
