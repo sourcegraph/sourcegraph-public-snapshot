@@ -8,7 +8,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dev/linters/nolint",
-        "@com_github_go_critic_go_critic//framework/linter:go_default_library",  #keep
+        "@com_github_go_critic_go_critic//linter:go_default_library",  #keep
         "@org_golang_x_tools//go/analysis",
     ],
 )
