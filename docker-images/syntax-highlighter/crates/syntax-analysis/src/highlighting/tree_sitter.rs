@@ -187,7 +187,7 @@ lazy_static::lazy_static! {
             (Jsonnet, "jsonnet"),
             (Kotlin, "kotlin"),
             (Magik, "magik"),
-            // (Matlab, "matlab"),
+            (Matlab, "matlab"),
             // (Nickel, "nickel"),
             // (Perl, "perl"),
             // (Pkl, "pkl"),

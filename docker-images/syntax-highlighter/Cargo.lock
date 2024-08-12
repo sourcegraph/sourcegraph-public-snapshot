@@ -2483,6 +2483,7 @@ dependencies = [
  "tree-sitter-jsonnet",
  "tree-sitter-kotlin",
  "tree-sitter-magik",
+ "tree-sitter-matlab",
  "tree-sitter-python",
  "tree-sitter-ruby",
  "tree-sitter-rust",
@@ -2594,6 +2595,15 @@ dependencies = [
 name = "tree-sitter-magik"
 version = "0.0.1"
 source = "git+https://github.com/kritzcreek/tree-sitter-magik?rev=d7614f9820563598b0e1e009b3e4707f60af405f#d7614f9820563598b0e1e009b3e4707f60af405f"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-matlab"
+version = "1.0.2"
+source = "git+https://github.com/kritzcreek/tree-sitter-matlab?rev=762d3ac3daf68cff04c376a42fd793b0f81ab9c1#762d3ac3daf68cff04c376a42fd793b0f81ab9c1"
 dependencies = [
  "cc",
  "tree-sitter",

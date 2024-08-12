@@ -272,14 +272,14 @@ mod locals {
 
     create_locals_configuration!(go, ParserId::Go, "go");
     // create_locals_configuration!(perl, ParserId::Perl, "perl");
-    // create_locals_configuration!(matlab, ParserId::Matlab, "matlab");
+    create_locals_configuration!(matlab, ParserId::Matlab, "matlab");
     create_locals_configuration!(java, ParserId::Java, "java");
 
     pub fn get_local_configuration(parser: ParserId) -> Option<&'static LocalConfiguration> {
         match parser {
             ParserId::Go => Some(go()),
             // ParserId::Perl => Some(perl()),
-            // ParserId::Matlab => Some(matlab()),
+            ParserId::Matlab => Some(matlab()),
             ParserId::Java => Some(java()),
             _ => None,
         }

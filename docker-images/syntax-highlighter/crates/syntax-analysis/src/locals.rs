@@ -925,15 +925,15 @@ mod test {
     //     insta::assert_snapshot!("perl_scopes", scope_tree);
     // }
 
-    // #[test]
-    // fn matlab() {
-    //     let config = crate::languages::get_local_configuration(ParserId::Matlab).unwrap();
-    //     let source_code = include_str!("../testdata/locals.m");
-    //     let (doc, scope_tree) = parse_file_for_lang(config, source_code, false);
-    //     let dumped = snapshot_syntax_document(&doc, source_code);
-    //     insta::assert_snapshot!("matlab_occurrences", dumped);
-    //     insta::assert_snapshot!("matlab_scopes", scope_tree);
-    // }
+    #[test]
+    fn matlab() {
+        let config = crate::languages::get_local_configuration(ParserId::Matlab).unwrap();
+        let source_code = include_str!("../testdata/locals.m");
+        let (doc, scope_tree) = parse_file_for_lang(config, source_code, false);
+        let dumped = snapshot_syntax_document(&doc, source_code);
+        insta::assert_snapshot!("matlab_occurrences", dumped);
+        insta::assert_snapshot!("matlab_scopes", scope_tree);
+    }
 
     #[test]
     fn java() {

@@ -26,7 +26,7 @@ tree-sitter-kotlin = "0.3.8"
 tree-sitter-dart = { git = "https://github.com/kritzcreek/tree-sitter-dart", rev = "311a0093c6a70b8579ed8b1d3f69ffa78ab53bf5" }
 tree-sitter-jsonnet = { git = "https://github.com/kritzcreek/tree-sitter-jsonnet", rev = "bc147652f72a14c9627deae5c9c33a81e452d391" }
 tree-sitter-magik = { git = "https://github.com/kritzcreek/tree-sitter-magik", rev = "d7614f9820563598b0e1e009b3e4707f60af405f" }
-# tree-sitter-matlab = { git = "https://github.com/acristoffers/tree-sitter-matlab", rev = "6071891a8c39600203eba20513666cf93b4d650a" }
+tree-sitter-matlab = { git = "https://github.com/kritzcreek/tree-sitter-matlab", rev = "762d3ac3daf68cff04c376a42fd793b0f81ab9c1" }
 # tree-sitter-nickel = { git = "https://github.com/nickel-lang/tree-sitter-nickel", rev = "d6c7eeb751038f934b5b1aa7ff236376d0235c56" }
 # tree-sitter-perl = { git = "https://github.com/sourcegraph/tree-sitter-perl", rev = "e1b4844afd17b7dc019a436b1ac890568d79a1f2" }
 # tree-sitter-pkl = { git = "https://github.com/apple/tree-sitter-pkl", rev = "b79c8c4d2419e82324d9aca31e9de47ed8304f1f" }
