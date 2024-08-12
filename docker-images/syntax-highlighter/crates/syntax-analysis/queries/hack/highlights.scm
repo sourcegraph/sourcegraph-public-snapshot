@@ -4,35 +4,39 @@
 ; > docker run  -v /local/path:/mount/path --tty --interactive hhvm/hhvm:latest /bin/bash -l
 ; > hhvm --version
 
+(variable) @variable
 ((variable) @variable.builtin
   (#eq? @variable.builtin "$this"))
+(identifier) @variable
+(pipe_variable) @variable
+
+[
+  (array_type)
+  "arraykey"
+  "bool"
+  "dynamic"
+  "float"
+  "int"
+  "mixed"
+  "nonnull"
+  "noreturn"
+  "nothing"
+  "num"
+  "shape" ; also a keyword, but prefer highlighting as a type
+  "string"
+  "tuple" ; also a keyword, but prefer highlighting as a type
+  "void"
+] @type.builtin
+(type_specifier) @type
+(type_specifier (qualified_identifier (identifier) @type))
 
 [
   (comment)
   (xhp_comment)
 ] @comment
 
-(scope_identifier) @keyword
-(visibility_modifier) @keyword
-
-(xhp_open
-  [
-    "<"
-    ">"
-  ] @tag.delimiter)
-
-(xhp_close
-  [
-    "</"
-    ">"
-  ] @tag.delimiter)
-
-
-(xhp_open_close
-  [
-    "<"
-    "/>"
-  ] @tag.delimiter)
+(new_expression
+  . (_) @type)
 
 [
   (abstract_modifier)
@@ -42,6 +46,8 @@
   (xhp_modifier)
   (inout_modifier)
   (reify_modifier)
+  (scope_identifier)
+  (visibility_modifier)
   "?as"
   "as"
   "as"
@@ -95,8 +101,13 @@
   "yield"
 ] @keyword
 
-(new_expression
-  . (_) @type)
+[
+  "."
+  ";"
+  "::"
+  ":"
+  ","
+] @punctuation.delimiter
 
 (new_expression
   (qualified_identifier
@@ -109,24 +120,6 @@
 (xhp_class_attribute
     name: (xhp_identifier) @variable
 )
-
-[
-  (array_type)
-  "arraykey"
-  "bool"
-  "dynamic"
-  "float"
-  "int"
-  "mixed"
-  "nonnull"
-  "noreturn"
-  "nothing"
-  "num"
-  "shape" ; also a keyword, but prefer highlighting as a type
-  "string"
-  "tuple" ; also a keyword, but prefer highlighting as a type
-  "void"
-] @type.builtin
 
 (shape_type_specifier (open_modifier)) @type.builtin
 
@@ -171,75 +164,6 @@
 ] @identifier.attribute
 
 [
-  "="
-  "??="
-  ".="
-  "|="
-  "^="
-  "&="
-  "<<="
-  ">>="
-  "+="
-  "-="
-  "*="
-  "/="
-  "%="
-  "**="
-  "==>"
-  "|>"
-  "??"
-  "||"
-  "&&"
-  "|"
-  "^"
-  "&"
-  "=="
-  "!="
-  "==="
-  "!=="
-  "<"
-  ">"
-  "<="
-  ">="
-  "<=>"
-  "<<"
-  ">>"
-  "->"
-  "+"
-  "-"
-  "."
-  "*"
-  "/"
-  "%"
-  "**"
-  "++"
-  "--"
-  "!"
-  "?:"
-  "="
-  "??="
-  ".="
-  "|="
-  "^="
-  "&="
-  "<<="
-  ">>="
-  "+="
-  "-="
-  "*="
-  "/="
-  "%="
-  "**="
-  "=>"
-  ; type modifiers
-  "@"
-  "?"
-  "~"
-  "?->"
-  "->"
-] @operator
-
-[
   (integer)
   (float)
 ] @number
@@ -248,9 +172,12 @@
   (variable) @variable.parameter)
 
 (call_expression
+  function: (scoped_identifier
+    (identifier) @function.call .))
+
+(call_expression
   function: (qualified_identifier
-    (identifier) @keyword .)
-    (#match? @keyword "(invariant|exit)"))
+    (identifier) @function.call .))
 
 (call_expression
   function: (qualified_identifier
@@ -259,11 +186,9 @@
 
 (call_expression
   function: (qualified_identifier
-    (identifier) @function.call .))
+    (identifier) @keyword .)
+    (#match? @keyword "(invariant|exit)"))
 
-(call_expression
-  function: (scoped_identifier
-    (identifier) @function.call .))
 
 (call_expression
   function: (selection_expression
@@ -387,14 +312,6 @@
     ":"
   ] @identifier.operator)
 
-[
-  "."
-  ";"
-  "::"
-  ":"
-  ","
-] @punctuation.delimiter
-
 (qualified_identifier
   "\\" @punctuation.delimiter)
 
@@ -404,13 +321,92 @@
   (heredoc)
 ] @string
 
+[
+  "="
+  "??="
+  ".="
+  "|="
+  "^="
+  "&="
+  "<<="
+  ">>="
+  "+="
+  "-="
+  "*="
+  "/="
+  "%="
+  "**="
+  "==>"
+  "|>"
+  "??"
+  "||"
+  "&&"
+  "|"
+  "^"
+  "&"
+  "=="
+  "!="
+  "==="
+  "!=="
+  "<"
+  ">"
+  "<="
+  ">="
+  "<=>"
+  "<<"
+  ">>"
+  "->"
+  "+"
+  "-"
+  "."
+  "*"
+  "/"
+  "%"
+  "**"
+  "++"
+  "--"
+  "!"
+  "?:"
+  "="
+  "??="
+  ".="
+  "|="
+  "^="
+  "&="
+  "<<="
+  ">>="
+  "+="
+  "-="
+  "*="
+  "/="
+  "%="
+  "**="
+  "=>"
+  ; type modifiers
+  "@"
+  "?"
+  "~"
+  "?->"
+  "->"
+] @operator
+
+(xhp_open
+  [
+    "<"
+    ">"
+  ] @tag.delimiter)
+
+(xhp_close
+  [
+    "</"
+    ">"
+  ] @tag.delimiter)
+
+(xhp_open_close
+  [
+    "<"
+    "/>"
+  ] @tag.delimiter)
 (xhp_open (xhp_identifier) @tag  (xhp_attribute)? @tag.attribute)
 (xhp_close (xhp_identifier) @tag  (xhp_attribute)? @tag.attribute)
 (xhp_open_close (xhp_identifier) @tag  (xhp_attribute)? @tag.attribute)
-
-(type_specifier (qualified_identifier (identifier) @type))
-(type_specifier) @type
-
-(variable) @variable
-(identifier) @variable
-(pipe_variable) @variable

@@ -179,7 +179,7 @@ lazy_static::lazy_static! {
             (C_Sharp, "c_sharp"),
             (Dart, "dart"),
             (Go, "go"),
-            // (Hack, "hack"),
+            (Hack, "hack"),
             (Java, "java"),
             // Skipping Javascript here as it is handled
             // specially inside the macro implementation

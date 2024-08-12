@@ -135,5 +135,5 @@ mod test {
 
     generate_tags_and_snapshot!(All, test_tags_magik, test_scip_magik, "globals.magik");
 
-    // generate_tags_and_snapshot!(All, test_tags_hack, test_scip_hack, "globals.hack");
+    generate_tags_and_snapshot!(All, test_tags_hack, test_scip_hack, "globals.hack");
 }

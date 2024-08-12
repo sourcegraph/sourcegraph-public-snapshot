@@ -2478,6 +2478,7 @@ dependencies = [
  "tree-sitter-cpp",
  "tree-sitter-dart",
  "tree-sitter-go",
+ "tree-sitter-hack",
  "tree-sitter-java",
  "tree-sitter-javascript",
  "tree-sitter-jsonnet",
@@ -2539,6 +2540,15 @@ name = "tree-sitter-go"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55cb318be5ccf75f44e054acf6898a5c95d59b53443eed578e16be0cd7ec037f"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-hack"
+version = "0.0.4"
+source = "git+https://github.com/kritzcreek/tree-sitter-hack?rev=2a1f331c3b43a2262823f788a222e15a264d1062#2a1f331c3b43a2262823f788a222e15a264d1062"
 dependencies = [
  "cc",
  "tree-sitter",
