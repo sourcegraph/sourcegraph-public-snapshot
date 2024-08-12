@@ -26,6 +26,7 @@ client/web/node_modules
 client/web-sveltekit/node_modules
 client/wildcard/node_modules
 internal/appliance/frontend/maintenance/node_modules
+internal/openapi/node_modules
 
 cmd/symbols/internal/squirrel/test_repos/starlark
 

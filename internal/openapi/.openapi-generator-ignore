@@ -1,0 +1,17 @@
+# OpenAPI Generator Ignore
+# Use this file to prevent files from being overwritten by the generator.
+# The patterns follow closely to .gitignore or .dockerignore.
+
+go/logger.go
+go/impl.go
+go/helpers.go
+go/api_default.go
+go/api_default_service.go
+go/api.go
+go/error.go
+go/routers.go
+go/api_default_service.go
+go.mod
+main.go
+Dockerfile
+README.md

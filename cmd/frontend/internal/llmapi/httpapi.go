@@ -15,4 +15,12 @@ func RegisterHandlers(m *mux.Router, apiHandler http.Handler, getModelConfigFunc
 		apiHandler:     apiHandler,
 		GetModelConfig: getModelConfigFunc,
 	})
+	m.Path("/models").Methods("GET").Handler(&modelsHandler{
+		logger:         logger,
+		GetModelConfig: getModelConfigFunc,
+	})
+	m.Path("/models/{modelId}").Methods("GET").Handler(&modelsModelIDHandler{
+		logger:         logger,
+		GetModelConfig: getModelConfigFunc,
+	})
 }
