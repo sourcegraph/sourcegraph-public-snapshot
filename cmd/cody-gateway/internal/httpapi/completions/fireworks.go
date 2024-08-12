@@ -138,6 +138,8 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 		body.LanguageID = ""
 	}
 
+	// NOTE: Here we possibly replace the LLM model used for experimental, or
+	// using a better, fine-tuned model instead.
 	body.Model = pickStarCoderModel(body.Model, f.config)
 	body.Model = pickFineTunedModel(body.Model, modelLanguageId)
 }

@@ -43,10 +43,46 @@ func AllFireworksModels() []types.Model {
 			metadata,
 			contextWindow),
 
+		// StarCoder variants that are expected from the client, via
+		// `vscode/src/completions/providers/fireworks.ts`.
+		newModel(
+			modelIdentity{
+				MRef:        mRef(fireworksV1, "starcoder-7b"),
+				Name:        "starcoder-7b",
+				DisplayName: "StarCoder 7B",
+			},
+			metadata,
+			contextWindow),
+		newModel(
+			modelIdentity{
+				MRef:        mRef(fireworksV1, "starcoder-16b"),
+				Name:        "starcoder-16b",
+				DisplayName: "StarCoder 16B",
+			},
+			metadata,
+			contextWindow),
+		newModel(
+			modelIdentity{
+				MRef:        mRef(fireworksV1, "starcoder2-7b"),
+				Name:        "starcoder2-7b",
+				DisplayName: "StarCoder2 7B",
+			},
+			metadata,
+			contextWindow),
+		newModel(
+			modelIdentity{
+				MRef:        mRef(fireworksV1, "starcoder2-15b"),
+				Name:        "starcoder2-15b",
+				DisplayName: "StarCoder2 15B",
+			},
+			metadata,
+			contextWindow),
+
+		// Deepseek models.
 		newModel(
 			modelIdentity{
 				MRef:        mRef(fireworksV1, "deepseek"),
-				Name:        "accounts/sourcegraph/models/deepseek-coder-7b-base",
+				Name:        "accounts/sourcegraph/models/deepseek-coder-v2-lite-base",
 				DisplayName: "DeepSeek",
 			},
 			metadata,

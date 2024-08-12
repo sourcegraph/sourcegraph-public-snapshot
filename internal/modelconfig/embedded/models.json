@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "revision": "1.0.0-66b659dd",
+  "revision": "1.0.0-66ba4de0",
   "providers": [
     {
       "id": "anthropic",
@@ -129,9 +129,61 @@
       }
     },
     {
+      "modelRef": "fireworks::v1::starcoder-7b",
+      "displayName": "StarCoder 7B",
+      "modelName": "starcoder-7b",
+      "capabilities": ["autocomplete"],
+      "category": "speed",
+      "status": "stable",
+      "tier": "free",
+      "contextWindow": {
+        "maxInputTokens": 2048,
+        "maxOutputTokens": 256
+      }
+    },
+    {
+      "modelRef": "fireworks::v1::starcoder-16b",
+      "displayName": "StarCoder 16B",
+      "modelName": "starcoder-16b",
+      "capabilities": ["autocomplete"],
+      "category": "speed",
+      "status": "stable",
+      "tier": "free",
+      "contextWindow": {
+        "maxInputTokens": 2048,
+        "maxOutputTokens": 256
+      }
+    },
+    {
+      "modelRef": "fireworks::v1::starcoder2-7b",
+      "displayName": "StarCoder2 7B",
+      "modelName": "starcoder2-7b",
+      "capabilities": ["autocomplete"],
+      "category": "speed",
+      "status": "stable",
+      "tier": "free",
+      "contextWindow": {
+        "maxInputTokens": 2048,
+        "maxOutputTokens": 256
+      }
+    },
+    {
+      "modelRef": "fireworks::v1::starcoder2-15b",
+      "displayName": "StarCoder2 15B",
+      "modelName": "starcoder2-15b",
+      "capabilities": ["autocomplete"],
+      "category": "speed",
+      "status": "stable",
+      "tier": "free",
+      "contextWindow": {
+        "maxInputTokens": 2048,
+        "maxOutputTokens": 256
+      }
+    },
+    {
       "modelRef": "fireworks::v1::deepseek",
       "displayName": "DeepSeek",
-      "modelName": "accounts/sourcegraph/models/deepseek-coder-7b-base",
+      "modelName": "accounts/sourcegraph/models/deepseek-coder-v2-lite-base",
       "capabilities": ["autocomplete"],
       "category": "speed",
       "status": "stable",
