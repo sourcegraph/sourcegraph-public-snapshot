@@ -189,7 +189,7 @@ lazy_static::lazy_static! {
             (Magik, "magik"),
             (Matlab, "matlab"),
             (Nickel, "nickel"),
-            // (Perl, "perl"),
+            (Perl, "perl"),
             (Pkl, "pkl"),
             // (Pod, "pod"),
             (Python, "python"),

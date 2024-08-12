@@ -2486,6 +2486,7 @@ dependencies = [
  "tree-sitter-magik",
  "tree-sitter-matlab",
  "tree-sitter-nickel",
+ "tree-sitter-perl",
  "tree-sitter-pkl",
  "tree-sitter-python",
  "tree-sitter-ruby",
@@ -2628,6 +2629,15 @@ dependencies = [
 name = "tree-sitter-nickel"
 version = "0.2.0"
 source = "git+https://github.com/kritzcreek/tree-sitter-nickel?rev=46a808abaa3d0f460c859af3c3b9467641f13063#46a808abaa3d0f460c859af3c3b9467641f13063"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-perl"
+version = "0.0.1"
+source = "git+https://github.com/sourcegraph/tree-sitter-perl?rev=fa0118e558b788c7ebd8646d3d1eea42dcf321ee#fa0118e558b788c7ebd8646d3d1eea42dcf321ee"
 dependencies = [
  "cc",
  "tree-sitter",

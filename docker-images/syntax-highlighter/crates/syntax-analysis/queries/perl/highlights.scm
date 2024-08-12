@@ -1,3 +1,6 @@
+;; TODO: This may not be the best way to do it.
+(bareword) @keyword
+
 [
   ; Our keywords
   "return"
@@ -35,8 +38,6 @@
 (equality_expression operator: (_) @operator)
 (relational_expression operator: (_) @operator)
 "=>" @operator
-
-(comment) @comment
 
 (number) @number
 (version) @number
@@ -76,9 +77,7 @@
 (func0op_call_expression function: _ @function.builtin)
 (func1op_call_expression function: _ @function.builtin)
 
-;; TODO: This may not be the best way to do it.
-(bareword) @keyword
-
+(comment) @comment
 (data_section) @comment
 
 ; (attrlist (attribute) @decorator)

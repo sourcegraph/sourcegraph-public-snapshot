@@ -30,7 +30,7 @@ tree-sitter-jsonnet = { git = "https://github.com/kritzcreek/tree-sitter-jsonnet
 tree-sitter-magik = { git = "https://github.com/kritzcreek/tree-sitter-magik", rev = "d7614f9820563598b0e1e009b3e4707f60af405f" }
 tree-sitter-matlab = { git = "https://github.com/kritzcreek/tree-sitter-matlab", rev = "762d3ac3daf68cff04c376a42fd793b0f81ab9c1" }
 tree-sitter-nickel = { git = "https://github.com/kritzcreek/tree-sitter-nickel", rev = "46a808abaa3d0f460c859af3c3b9467641f13063" }
-# tree-sitter-perl = { git = "https://github.com/sourcegraph/tree-sitter-perl", rev = "e1b4844afd17b7dc019a436b1ac890568d79a1f2" }
+tree-sitter-perl = { git = "https://github.com/sourcegraph/tree-sitter-perl", rev = "fa0118e558b788c7ebd8646d3d1eea42dcf321ee" }
 # tree-sitter-pod = { git = "https://github.com/sourcegraph/tree-sitter-pod", rev = "f422a0dca6847c692e811f06fd92c6a75d647222" }
 
 # Not PR-ed, as there is a more comprehensive PR in the upstream repo: https://github.com/apple/tree-sitter-pkl/pull/8
