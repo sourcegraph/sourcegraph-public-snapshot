@@ -14,6 +14,7 @@ go_library(
         "observability.go",
         "request_state.go",
         "service.go",
+        "service_deps.go",
         "service_new.go",
         "syntactic.go",
         "types.go",
