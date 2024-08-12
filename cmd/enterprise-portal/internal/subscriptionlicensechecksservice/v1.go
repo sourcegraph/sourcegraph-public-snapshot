@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	subscriptionlicensechecksv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptionlicensechecks/v1"
 	subscriptionlicensechecksv1connect "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptionlicensechecks/v1/v1connect"
+	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -125,6 +126,26 @@ func (h *handlerV1) CheckLicenseKey(ctx context.Context, req *connect.Request[su
 		}), nil
 	}
 
+	sub, err := h.store.GetSubscription(ctx, lc.SubscriptionID)
+	if err != nil {
+		if errors.Is(err, subscriptions.ErrSubscriptionNotFound) {
+			return connect.NewResponse(&subscriptionlicensechecksv1.CheckLicenseKeyResponse{
+				Valid:  false,
+				Reason: "subscription not found",
+			}), nil
+		}
+		return nil, connectutil.InternalError(ctx, h.logger, err,
+			"failed to find associated subscription")
+	}
+
+	// Allow internal instance keys to be used more liberally.
+	if sub.InstanceType != nil &&
+		*sub.InstanceType == subscriptionsv1.EnterpriseSubscriptionInstanceType_ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_INTERNAL.String() {
+		return connect.NewResponse(&subscriptionlicensechecksv1.CheckLicenseKeyResponse{
+			Valid: true,
+		}), nil
+	}
+
 	if lc.DetectedInstanceID == nil {
 		// No instance has been detected to be using this license yet, so we
 		// can go ahead and set it.
@@ -140,22 +161,15 @@ func (h *handlerV1) CheckLicenseKey(ctx context.Context, req *connect.Request[su
 	}
 
 	if !strings.EqualFold(*lc.DetectedInstanceID, instanceID) {
+		// The submitted instance does not match the previously recorded
+		// instance, something fishy may be going on.
 		logger.Info("detected usage of license by multiple instance")
 		tr.SetAttributes(attribute.Bool("used_by_multiple_instances", true))
-
-		var subscriptionDisplayName string
-		if sub, err := h.store.GetSubscription(ctx, lc.SubscriptionID); err != nil {
-			logger.Error("failed to get subscription, using subscription ID for notification",
-				log.Error(err))
-			subscriptionDisplayName = lc.SubscriptionID
-		} else {
-			subscriptionDisplayName = pointers.Deref(sub.DisplayName, lc.SubscriptionID)
-		}
 
 		if err := h.store.PostToSlack(context.WithoutCancel(ctx),
 			newMultipleInstancesUsageNotification(multipleInstancesUsageNotificationOpts{
 				subscriptionID:          lc.SubscriptionID,
-				subscriptionDisplayName: subscriptionDisplayName,
+				subscriptionDisplayName: pointers.Deref(sub.DisplayName, lc.SubscriptionID),
 				licenseID:               lc.ID,
 				instanceIDs: []string{
 					*lc.DetectedInstanceID,
