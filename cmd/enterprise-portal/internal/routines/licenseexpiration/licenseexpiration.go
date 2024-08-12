@@ -49,8 +49,8 @@ type handler struct {
 	licenseCheckConcurrency int
 }
 
-func (i *handler) Handle(ctx context.Context) (err error) {
-	acquired, release, err := i.store.TryAcquireJob(ctx)
+func (h *handler) Handle(ctx context.Context) (err error) {
+	acquired, release, err := h.store.TryAcquireJob(ctx)
 	if err != nil {
 		return errors.Wrap(err, "acquire job")
 	}
@@ -61,7 +61,7 @@ func (i *handler) Handle(ctx context.Context) (err error) {
 		return nil // nothing to do
 	}
 
-	i.logger.Info("checking for expired licenses")
+	h.logger.Info("checking for expired licenses")
 
 	// Only release if an error occurs, so that the job can be retried.
 	// Otherwise allow the lock to be held for the entire interval, effectively
@@ -73,7 +73,7 @@ func (i *handler) Handle(ctx context.Context) (err error) {
 		}
 	}()
 
-	subs, err := i.store.ListSubscriptions(ctx)
+	subs, err := h.store.ListSubscriptions(ctx)
 	if err != nil {
 		return errors.Wrap(err, "list subscriptions")
 	}
@@ -81,11 +81,11 @@ func (i *handler) Handle(ctx context.Context) (err error) {
 		return nil
 	}
 
-	weekAway := i.store.Now().UTC().Add(7 * 24 * time.Hour)
-	dayAway := i.store.Now().UTC().Add(24 * time.Hour)
+	weekAway := h.store.Now().UTC().Add(7 * 24 * time.Hour)
+	dayAway := h.store.Now().UTC().Add(24 * time.Hour)
 
 	wg := pool.New().WithErrors().
-		WithMaxGoroutines(i.licenseCheckConcurrency)
+		WithMaxGoroutines(h.licenseCheckConcurrency)
 	var notifyCount atomic.Int64
 	for _, sub := range subs {
 		var (
@@ -99,7 +99,7 @@ func (i *handler) Handle(ctx context.Context) (err error) {
 		}
 
 		wg.Go(func() error {
-			lc, err := i.store.GetActiveLicense(ctx, subID)
+			lc, err := h.store.GetActiveLicense(ctx, subID)
 			if err != nil {
 				return errors.Wrapf(err,
 					"get active license for subscription %q", errors.Safe(subID))
@@ -110,18 +110,18 @@ func (i *handler) Handle(ctx context.Context) (err error) {
 			expireAt := lc.ExpireAt.AsTime()
 			if expireAt.After(weekAway) && expireAt.Before(weekAway.Add(24*time.Hour)) {
 				notifyCount.Add(1)
-				err = i.store.PostToSlack(ctx, &slack.Payload{
-					Text: fmt.Sprintf("The active license for subscription *%s* (Salesforce subscription: `%s`) <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in 7 days*>",
-						displayName, salesforceSusbcription, externalSubID),
+				err = h.store.PostToSlack(ctx, &slack.Payload{
+					Text: fmt.Sprintf("The active license for subscription *%s* (Salesforce subscription: `%s`) <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s?env=%s|will expire *in 7 days*>",
+						displayName, salesforceSusbcription, externalSubID, h.store.Env()),
 				})
 				if err != nil {
 					return errors.Wrap(err, "post week-away notice")
 				}
 			} else if expireAt.After(dayAway) && expireAt.Before(dayAway.Add(24*time.Hour)) {
 				notifyCount.Add(1)
-				err = i.store.PostToSlack(ctx, &slack.Payload{
-					Text: fmt.Sprintf("The active license for subscription *%s* (Salesforce subscription: `%s`) <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in the next 24 hours*> :rotating_light:",
-						displayName, salesforceSusbcription, externalSubID),
+				err = h.store.PostToSlack(ctx, &slack.Payload{
+					Text: fmt.Sprintf("The active license for subscription *%s* (Salesforce subscription: `%s`) <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s?env=%s|will expire *in the next 24 hours*> :rotating_light:",
+						displayName, salesforceSusbcription, externalSubID, h.store.Env()),
 				})
 				if err != nil {
 					return errors.Wrap(err, "post day-away notice")

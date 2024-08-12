@@ -21,6 +21,7 @@ func TestHandle(t *testing.T) {
 
 	store := NewMockStore()
 	store.NowFunc.SetDefaultReturn(mockTime)
+	store.EnvFunc.SetDefaultReturn("dev")
 	store.TryAcquireJobFunc.SetDefaultReturn(true, nil, nil)
 	store.ListSubscriptionsFunc.SetDefaultReturn(
 		[]*subscriptions.SubscriptionWithConditions{
@@ -75,8 +76,8 @@ func TestHandle(t *testing.T) {
 	}
 	autogold.Expect([]*slack.Payload{
 		{
-			Text: "The active license for subscription *es_e9450fb2-87c7-47ae-a713-a376c4618faa* (Salesforce subscription: `sf-sub-id`) <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/es_e9450fb2-87c7-47ae-a713-a376c4618faa|will expire *in the next 24 hours*> :rotating_light:",
+			Text: "The active license for subscription *es_e9450fb2-87c7-47ae-a713-a376c4618faa* (Salesforce subscription: `sf-sub-id`) <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/es_e9450fb2-87c7-47ae-a713-a376c4618faa?env=dev|will expire *in the next 24 hours*> :rotating_light:",
 		},
-		{Text: "The active license for subscription *My Special Subscription* (Salesforce subscription: `unknown`) <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/es_26136564-b319-4be4-98ff-7b8710abf4af|will expire *in 7 days*>"},
+		{Text: "The active license for subscription *My Special Subscription* (Salesforce subscription: `unknown`) <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/es_26136564-b319-4be4-98ff-7b8710abf4af?env=dev|will expire *in 7 days*>"},
 	}).Equal(t, payloads)
 }

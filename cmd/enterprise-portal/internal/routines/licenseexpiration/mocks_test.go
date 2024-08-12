@@ -20,6 +20,9 @@ import (
 // github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/routines/licenseexpiration)
 // used for unit testing.
 type MockStore struct {
+	// EnvFunc is an instance of a mock function object controlling the
+	// behavior of the method Env.
+	EnvFunc *StoreEnvFunc
 	// GetActiveLicenseFunc is an instance of a mock function object
 	// controlling the behavior of the method GetActiveLicense.
 	GetActiveLicenseFunc *StoreGetActiveLicenseFunc
@@ -41,6 +44,11 @@ type MockStore struct {
 // return zero values for all results, unless overwritten.
 func NewMockStore() *MockStore {
 	return &MockStore{
+		EnvFunc: &StoreEnvFunc{
+			defaultHook: func() (r0 string) {
+				return
+			},
+		},
 		GetActiveLicenseFunc: &StoreGetActiveLicenseFunc{
 			defaultHook: func(context.Context, string) (r0 *subscriptions.LicenseWithConditions, r1 error) {
 				return
@@ -73,6 +81,11 @@ func NewMockStore() *MockStore {
 // panic on invocation, unless overwritten.
 func NewStrictMockStore() *MockStore {
 	return &MockStore{
+		EnvFunc: &StoreEnvFunc{
+			defaultHook: func() string {
+				panic("unexpected invocation of MockStore.Env")
+			},
+		},
 		GetActiveLicenseFunc: &StoreGetActiveLicenseFunc{
 			defaultHook: func(context.Context, string) (*subscriptions.LicenseWithConditions, error) {
 				panic("unexpected invocation of MockStore.GetActiveLicense")
@@ -105,6 +118,9 @@ func NewStrictMockStore() *MockStore {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockStoreFrom(i Store) *MockStore {
 	return &MockStore{
+		EnvFunc: &StoreEnvFunc{
+			defaultHook: i.Env,
+		},
 		GetActiveLicenseFunc: &StoreGetActiveLicenseFunc{
 			defaultHook: i.GetActiveLicense,
 		},
@@ -121,6 +137,104 @@ func NewMockStoreFrom(i Store) *MockStore {
 			defaultHook: i.TryAcquireJob,
 		},
 	}
+}
+
+// StoreEnvFunc describes the behavior when the Env method of the parent
+// MockStore instance is invoked.
+type StoreEnvFunc struct {
+	defaultHook func() string
+	hooks       []func() string
+	history     []StoreEnvFuncCall
+	mutex       sync.Mutex
+}
+
+// Env delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockStore) Env() string {
+	r0 := m.EnvFunc.nextHook()()
+	m.EnvFunc.appendCall(StoreEnvFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Env method of the
+// parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreEnvFunc) SetDefaultHook(hook func() string) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Env method of the parent MockStore instance invokes the hook at the front
+// of the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *StoreEnvFunc) PushHook(hook func() string) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreEnvFunc) SetDefaultReturn(r0 string) {
+	f.SetDefaultHook(func() string {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreEnvFunc) PushReturn(r0 string) {
+	f.PushHook(func() string {
+		return r0
+	})
+}
+
+func (f *StoreEnvFunc) nextHook() func() string {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreEnvFunc) appendCall(r0 StoreEnvFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreEnvFuncCall objects describing the
+// invocations of this function.
+func (f *StoreEnvFunc) History() []StoreEnvFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreEnvFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreEnvFuncCall is an object that describes an invocation of method Env
+// on an instance of MockStore.
+type StoreEnvFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreEnvFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreEnvFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // StoreGetActiveLicenseFunc describes the behavior when the

@@ -11,11 +11,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redislock"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
+	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/contract"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Store interface {
 	Now() time.Time
+	Env() string
 	TryAcquireJob(ctx context.Context) (acquired bool, release func(), _ error)
 
 	ListSubscriptions(ctx context.Context) ([]*subscriptions.SubscriptionWithConditions, error)
@@ -26,6 +28,7 @@ type Store interface {
 
 type storeHandle struct {
 	logger        log.Logger
+	env           string
 	config        Config
 	now           func() time.Time
 	redis         redispool.KeyValue
@@ -40,12 +43,14 @@ type Config struct {
 
 func NewStore(
 	logger log.Logger,
+	ctr contract.Contract,
 	store *subscriptions.Store,
 	redis redispool.KeyValue,
 	config Config,
 ) Store {
 	return &storeHandle{
 		logger:        logger,
+		env:           ctr.EnvironmentID,
 		config:        config,
 		now:           time.Now,
 		redis:         redis,
@@ -55,6 +60,8 @@ func NewStore(
 }
 
 func (s *storeHandle) Now() time.Time { return s.now() }
+
+func (s *storeHandle) Env() string { return s.env }
 
 func (s *storeHandle) TryAcquireJob(ctx context.Context) (acquired bool, release func(), _ error) {
 	if s.config.Interval == nil {
