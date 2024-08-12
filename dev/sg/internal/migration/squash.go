@@ -327,13 +327,13 @@ func setupLocalDatabase(databaseName string) (_ func(error) error, err error) {
 
 	createLocalDatabase := func() error {
 		cmd := exec.Command("createdb", databaseName)
-		_, err := run.InRoot(cmd)
+		_, err := run.InRoot(cmd, run.InRootArgs{})
 		return err
 	}
 
 	dropLocalDatabase := func() error {
 		cmd := exec.Command("dropdb", databaseName)
-		_, err := run.InRoot(cmd)
+		_, err := run.InRoot(cmd, run.InRootArgs{})
 		return err
 	}
 

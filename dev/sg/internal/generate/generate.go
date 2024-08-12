@@ -37,7 +37,9 @@ type Target struct {
 func RunScript(command string) Runner {
 	return func(ctx context.Context, args []string) *Report {
 		start := time.Now()
-		out, err := run.BashInRoot(ctx, command, nil)
+		out, err := run.BashInRoot(ctx, command, run.BashInRootArgs{
+			ExtractBazelError: true,
+		})
 		return &Report{
 			Output:   out,
 			Err:      err,
