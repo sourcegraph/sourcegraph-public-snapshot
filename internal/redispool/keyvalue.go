@@ -42,7 +42,10 @@ type KeyValue interface {
 	LLen(key string) (int, error)
 	LRange(key string, start, stop int) Values
 
-	Keys(prefix string) ([]string, error)
+	// Keys returns all keys matching the glob pattern. NOTE: this command takes time
+	// linear in the number of keys, and should not be run over large keyspaces.
+	Keys(pattern string) ([]string, error)
+
 	// WithContext will return a KeyValue that should respect ctx for all
 	// blocking operations.
 	WithContext(ctx context.Context) KeyValue
@@ -155,23 +158,23 @@ func RedisKeyValue(pool *redis.Pool) KeyValue {
 }
 
 func (r *redisKeyValue) Get(key string) Value {
-	return r.do("GET", r.prefix+key)
+	return r.do("GET", key)
 }
 
 func (r *redisKeyValue) GetSet(key string, val any) Value {
-	return r.do("GETSET", r.prefix+key, val)
+	return r.do("GETSET", key, val)
 }
 
 func (r *redisKeyValue) Set(key string, val any) error {
-	return r.do("SET", r.prefix+key, val).err
+	return r.do("SET", key, val).err
 }
 
 func (r *redisKeyValue) SetEx(key string, ttlSeconds int, val any) error {
-	return r.do("SETEX", r.prefix+key, ttlSeconds, val).err
+	return r.do("SETEX", key, ttlSeconds, val).err
 }
 
 func (r *redisKeyValue) SetNx(key string, val any) (bool, error) {
-	_, err := r.do("SET", r.prefix+key, val, "NX").String()
+	_, err := r.do("SET", key, val, "NX").String()
 	if err == redis.ErrNil {
 		return false, nil
 	}
@@ -179,61 +182,61 @@ func (r *redisKeyValue) SetNx(key string, val any) (bool, error) {
 }
 
 func (r *redisKeyValue) Incr(key string) (int, error) {
-	return r.do("INCR", r.prefix+key).Int()
+	return r.do("INCR", key).Int()
 }
 
 func (r *redisKeyValue) Incrby(key string, value int) (int, error) {
-	return r.do("INCRBY", r.prefix+key, value).Int()
+	return r.do("INCRBY", key, value).Int()
 }
 
 func (r *redisKeyValue) IncrByInt64(key string, value int64) (int64, error) {
-	return r.do("INCRBY", r.prefix+key, value).Int64()
+	return r.do("INCRBY", key, value).Int64()
 }
 
 func (r *redisKeyValue) DecrByInt64(key string, value int64) (int64, error) {
-	return r.do("DECRBY", r.prefix+key, value).Int64()
+	return r.do("DECRBY", key, value).Int64()
 }
 
 func (r *redisKeyValue) Del(key string) error {
-	return r.do("DEL", r.prefix+key).err
+	return r.do("DEL", key).err
 }
 
 func (r *redisKeyValue) TTL(key string) (int, error) {
-	return r.do("TTL", r.prefix+key).Int()
+	return r.do("TTL", key).Int()
 }
 
 func (r *redisKeyValue) Expire(key string, ttlSeconds int) error {
-	return r.do("EXPIRE", r.prefix+key, ttlSeconds).err
+	return r.do("EXPIRE", key, ttlSeconds).err
 }
 
 func (r *redisKeyValue) HGet(key, field string) Value {
-	return r.do("HGET", r.prefix+key, field)
+	return r.do("HGET", key, field)
 }
 
 func (r *redisKeyValue) HGetAll(key string) Values {
-	return Values(r.do("HGETALL", r.prefix+key))
+	return Values(r.do("HGETALL", key))
 }
 
 func (r *redisKeyValue) HSet(key, field string, val any) error {
-	return r.do("HSET", r.prefix+key, field, val).err
+	return r.do("HSET", key, field, val).err
 }
 
 func (r *redisKeyValue) HDel(key, field string) Value {
-	return r.do("HDEL", r.prefix+key, field)
+	return r.do("HDEL", key, field)
 }
 
 func (r *redisKeyValue) LPush(key string, value any) error {
-	return r.do("LPUSH", r.prefix+key, value).err
+	return r.do("LPUSH", key, value).err
 }
 func (r *redisKeyValue) LTrim(key string, start, stop int) error {
-	return r.do("LTRIM", r.prefix+key, start, stop).err
+	return r.do("LTRIM", key, start, stop).err
 }
 func (r *redisKeyValue) LLen(key string) (int, error) {
-	raw := r.do("LLEN", r.prefix+key)
+	raw := r.do("LLEN", key)
 	return redis.Int(raw.reply, raw.err)
 }
 func (r *redisKeyValue) LRange(key string, start, stop int) Values {
-	return Values(r.do("LRANGE", r.prefix+key, start, stop))
+	return Values(r.do("LRANGE", key, start, stop))
 }
 
 func (r *redisKeyValue) WithContext(ctx context.Context) KeyValue {
@@ -253,8 +256,7 @@ func (r *redisKeyValue) WithLatencyRecorder(rec LatencyRecorder) KeyValue {
 	}
 }
 
-// WithPrefix wraps r to return a RedisKeyValue that prefixes all keys with
-// prefix + ":".
+// WithPrefix wraps r to return a RedisKeyValue that prefixes all keys with 'prefix:'
 func (r *redisKeyValue) WithPrefix(prefix string) KeyValue {
 	return &redisKeyValue{
 		pool:   r.pool,
@@ -263,15 +265,15 @@ func (r *redisKeyValue) WithPrefix(prefix string) KeyValue {
 	}
 }
 
-func (r *redisKeyValue) Keys(prefix string) ([]string, error) {
-	return Values(r.do("KEYS", prefix)).Strings()
+func (r *redisKeyValue) Keys(pattern string) ([]string, error) {
+	return Values(r.do("KEYS", pattern)).Strings()
 }
 
 func (r *redisKeyValue) Pool() *redis.Pool {
 	return r.pool
 }
 
-func (r *redisKeyValue) do(commandName string, args ...any) Value {
+func (r *redisKeyValue) do(commandName string, key string, args ...any) Value {
 	var c redis.Conn
 	if r.ctx != nil {
 		var err error
@@ -288,7 +290,11 @@ func (r *redisKeyValue) do(commandName string, args ...any) Value {
 	if r.recorder != nil {
 		start = time.Now()
 	}
+
+	prefixedKey := r.prefix + key
+	args = append([]any{prefixedKey}, args...)
 	reply, err := c.Do(commandName, args...)
+
 	if r.recorder != nil {
 		elapsed := time.Since(start)
 		(*r.recorder)(commandName, elapsed, err)
