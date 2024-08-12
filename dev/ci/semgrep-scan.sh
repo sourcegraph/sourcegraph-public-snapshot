@@ -30,6 +30,9 @@ export LATEST_COMMIT_SHA=$BUILDKITE_COMMIT
 export GITHUB_PULL_REQUEST_NUMBER=$BUILDKITE_PULL_REQUEST
 export GITHUB_REPOSITORY=$CI_REPO_NAME
 
+# encode SARIF results to code scanning API
+encoded_sarif=$(gzip -c results.sarif | base64 -w0)
+
 cp result.json security-semgrep-rules/scripts
 cd security-semgrep-rules/scripts
 go mod download
@@ -37,9 +40,6 @@ go mod download
 go run main.go
 
 echo -e "--- :rocket: reporting scan results to GitHub\n"
-
-# upload SARIF results to code scanning API
-encoded_sarif=$(gzip -c results.sarif | base64 -w0)
 
 # upload SARIF results to code scanning API
 if [ "$BUILDKITE_PULL_REQUEST" = "false" ]; then
