@@ -8,7 +8,11 @@
   "default"
   "doc"
   "rec"
- @keyword]
+  "optional"
+  "priority"
+  "force"
+  "not_exported"
+] @keyword
 
 "fun" @keyword.function
 
@@ -40,7 +44,7 @@
  "{" "}"
  "(" ")"
  "[|" "|]"
- @punctuation.bracket]
+] @punctuation.bracket
 
 [
  ","
@@ -52,7 +56,7 @@
  "+"
  "-"
  "*"
- @punctuation.delimiter]
+] @punctuation.delimiter
 
 (multstr_start) @punctuation.bracket
 (multstr_end) @punctuation.bracket
@@ -64,17 +68,17 @@
 (builtin) @function.builtin
 
 (fun_expr pats:
-  (pattern id:
-    (ident) @parameter))
-
-
+  (pattern_fun
+    (ident) @parameter
+  )
+)
 
 ; application where the head terms is an identifier: function arg1 arg2 arg3
 (applicative t1:
-  (applicative (record_operand (atom (ident))) @function))
-
+  (applicative (record_operand (atom (ident))) @function)
+)
 
 ; application where the head terms is a record field path: foo.bar.function arg1 arg2 arg3
 (applicative t1:
-  (applicative (record_operand (record_operation_chain)) @function))
-
+  (applicative (record_operand (record_operation_chain)) @function)
+)

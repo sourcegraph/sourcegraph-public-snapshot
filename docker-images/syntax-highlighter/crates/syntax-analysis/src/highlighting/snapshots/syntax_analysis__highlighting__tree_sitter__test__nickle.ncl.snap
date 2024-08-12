@@ -3,13 +3,26 @@ source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
 expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
   let range
+//^^^ Keyword
     | doc "Generate an array of integers in the range [`start`, `end`)."
+//  ^ PunctuationDelimiter
+//    ^^^ Keyword
 //         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
     | Number -> Number -> Array Number
-//    ^^^^^^^^^^^^^^^^^^^^ IdentifierType
+//  ^ PunctuationDelimiter
+//    ^^^^^^ IdentifierType
+//          ^ IdentifierType
+//           ^^ PunctuationDelimiter
+//             ^ IdentifierType
+//              ^^^^^^ IdentifierType
+//                    ^ IdentifierType
+//                     ^^ PunctuationDelimiter
+//                       ^ IdentifierType
 //                        ^^^^^ IdentifierBuiltinType
-//                             ^^^^^^^ IdentifierType
+//                             ^ IdentifierType
+//                              ^^^^^^ IdentifierType
     = fun start end =>
+//  ^ PunctuationDelimiter
 //    ^^^ Keyword
       if end <= start then
 //    ^^ Keyword
@@ -18,62 +31,111 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
       else
 //    ^^^^ Keyword
         array.generate (fun x => x + start) (end - start)
-//      ^^^^^^^^^^^^^^ IdentifierFunction
+//      ^^^^^ IdentifierFunction
+//           ^ PunctuationDelimiter
+//            ^^^^^^^^ IdentifierFunction
 //                      ^^^ Keyword
+//                                 ^ PunctuationDelimiter
+//                                               ^ PunctuationDelimiter
   in
+//^^ Keyword
   
   let is_prime
+//^^^ Keyword
     | doc "Returns true if the argument is a prime number."
+//  ^ PunctuationDelimiter
+//    ^^^ Keyword
 //         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
     = fun x => x > 1 && array.all (fun d => x % d != 0) (range 2 (x - 1))
+//  ^ PunctuationDelimiter
 //    ^^^ Keyword
 //                 ^ NumericLiteral
-//                      ^^^^^^^^^ IdentifierFunction
+//                      ^^^^^ IdentifierFunction
+//                           ^ PunctuationDelimiter
+//                            ^^^ IdentifierFunction
 //                                 ^^^ Keyword
 //                                                   ^ NumericLiteral
 //                                                       ^^^^^ IdentifierFunction
 //                                                             ^ NumericLiteral
+//                                                                  ^ PunctuationDelimiter
 //                                                                    ^ NumericLiteral
   in
+//^^ Keyword
   
   let Prime = contract.from_predicate is_prime in
-//            ^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//^^^ Keyword
+//          ^ PunctuationDelimiter
+//            ^^^^^^^^ IdentifierFunction
+//                    ^ PunctuationDelimiter
+//                     ^^^^^^^^^^^^^^ IdentifierFunction
+//                                             ^^ Keyword
   
   let primes
+//^^^ Keyword
     | doc "Generate `max` primes using Sieve of Eratosthenes."
+//  ^ PunctuationDelimiter
+//    ^^^ Keyword
 //         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
     | Number -> Array Prime
-//    ^^^^^^^^^^ IdentifierType
+//  ^ PunctuationDelimiter
+//    ^^^^^^ IdentifierType
+//          ^ IdentifierType
+//           ^^ PunctuationDelimiter
+//             ^ IdentifierType
 //              ^^^^^ IdentifierBuiltinType
 //                   ^^^^^^ IdentifierType
     = fun max =>
+//  ^ PunctuationDelimiter
 //    ^^^ Keyword
       let limit = number.pow max (1 / 2) in # sqrt(max)
-//                ^^^^^^^^^^ IdentifierFunction
+//    ^^^ Keyword
+//              ^ PunctuationDelimiter
+//                ^^^^^^ IdentifierFunction
+//                      ^ PunctuationDelimiter
+//                       ^^^ IdentifierFunction
 //                           ^^^ IdentifierFunction
 //                                ^ NumericLiteral
 //                                    ^ NumericLiteral
-//                                          ^^^^^^^^^^^ Comment
+//                                       ^^ Keyword
       let drop_multiples = fun x xs =>
+//    ^^^ Keyword
+//                       ^ PunctuationDelimiter
 //                         ^^^ Keyword
         let to_drop = max
+//      ^^^ Keyword
+//                  ^ PunctuationDelimiter
           |> array.generate (fun y => (y + 2) * x)
-//           ^^^^^^^^^^^^^^ IdentifierFunction
+//           ^^^^^ IdentifierFunction
+//                ^ PunctuationDelimiter
+//                 ^^^^^^^^ IdentifierFunction
 //                           ^^^ Keyword
+//                                       ^ PunctuationDelimiter
 //                                         ^ NumericLiteral
 //                                            ^ PunctuationDelimiter
           |> array.filter (fun y => y <= max) in
-//           ^^^^^^^^^^^^ IdentifierFunction
+//           ^^^^^ IdentifierFunction
+//                ^ PunctuationDelimiter
+//                 ^^^^^^ IdentifierFunction
 //                         ^^^ Keyword
+//                                            ^^ Keyword
           |> array.flatten
-//           ^^^^^^^^^^^^^ IdentifierFunction
+//           ^^^^^ IdentifierFunction
+//                ^ PunctuationDelimiter
+//                 ^^^^^^^ IdentifierFunction
         array.filter (fun y => array.all ((!=) y) to_drop) xs in
-//      ^^^^^^^^^^^^ IdentifierFunction
+//      ^^^^^ IdentifierFunction
+//           ^ PunctuationDelimiter
+//            ^^^^^^ IdentifierFunction
 //                    ^^^ Keyword
-//                             ^^^^^^^^^ IdentifierFunction
+//                             ^^^^^ IdentifierFunction
+//                                  ^ PunctuationDelimiter
+//                                   ^^^ IdentifierFunction
 //                                         ^^ IdentifierOperator
+//                                                            ^^ Keyword
       let rec loop = fun x xs =>
+//    ^^^ Keyword
 //        ^^^ Keyword
+//                 ^ PunctuationDelimiter
 //                   ^^^ Keyword
         if x > limit then
 //      ^^ Keyword
@@ -83,16 +145,20 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //      ^^^^ Keyword
           loop (x + 1) (drop_multiples x xs) in
 //        ^^^^ IdentifierFunction
+//                ^ PunctuationDelimiter
 //                  ^ NumericLiteral
 //                      ^^^^^^^^^^^^^^ IdentifierFunction
 //                                     ^ IdentifierFunction
+//                                           ^^ Keyword
       loop 2 (range 2 max) in
 //    ^^^^ IdentifierFunction
 //         ^ NumericLiteral
 //            ^^^^^ IdentifierFunction
 //                  ^ NumericLiteral
+//                         ^^ Keyword
   
   {
     run = primes
+//      ^ PunctuationDelimiter
   }
 
