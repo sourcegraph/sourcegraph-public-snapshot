@@ -417,7 +417,7 @@ WHERE div.dashboard_id = %s AND iv.unique_id = %s
 `
 
 const getDashboardGrantsSql = `
-SELECT * FROM dashboard_grants where dashboard_id = %s
+SELECT id, dashboard_id, user_id, org_id, global FROM dashboard_grants where dashboard_id = %s
 `
 
 const getDashboardGrantsByPermissionsSql = `
