@@ -1,7 +1,7 @@
 # Search-Blitz
 
 The purpose of Search-Blitz is to provide a baseline for our search performance.
-Search-Blitz calls the stream and GraphQL API of Sourcegraph.com for typical
+Search-Blitz calls the stream and GraphQL APIs for typical
 queries in regular intervals. Sourcegraph recognizes the Search-Blitz's
 `User-Agent` and sends metrics to Prometheus.
 
@@ -17,6 +17,8 @@ deployed with a dedicated instance of Prometheus and Grafana.
 Add the query to [`queries.txt`](https://github.com/sourcegraph/sourcegraph/blob/main/internal/cmd/search-blitz/queries.txt).
 
 For attribution search add a `.txt` file to the attribution directory.
+
+A custom set of queries can be provided at runtime by pointing to a query file with the `SEARCH_BLITZ_QUERY_FILE` env var.
 
 ## How to deploy
 
