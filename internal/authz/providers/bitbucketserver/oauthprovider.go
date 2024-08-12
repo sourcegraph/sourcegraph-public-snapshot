@@ -51,11 +51,11 @@ func NewOAuthProvider(db database.DB, conn *types.BitbucketServerConnection, opt
 	}
 
 	return &OAuthProvider{
-		urn:      conn.URN,
-		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeBitbucketServer),
-		client:   opts.BitbucketServerClient,
-		pageSize: 1000,
-		db:       db,
+		urn:        conn.URN,
+		codeHost:   extsvc.NewCodeHost(baseURL, extsvc.TypeBitbucketServer),
+		client:     opts.BitbucketServerClient,
+		pageSize:   1000,
+		db:         db,
 		pluginPerm: pluginPerm,
 	}
 }
