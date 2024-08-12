@@ -1,2 +1,3 @@
 name: add tenant id to most tables
+noTransaction: true
 parents: [1686315964]
