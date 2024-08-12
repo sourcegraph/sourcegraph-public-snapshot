@@ -22,6 +22,9 @@ spec:
   indexedSearch:
     replicas: 7
 
+  nodeExporter:
+    disabled: true
+
   openTelemetryCollector:
     disabled: true
 
