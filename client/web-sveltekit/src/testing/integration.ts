@@ -107,7 +107,7 @@ export class Sourcegraph {
             })
 
             // Intercept any asset calls and replace them with static files
-            await this.page.route(/.assets|_app/, route => {
+            await this.page.route(/\.assets|_app/, route => {
                 const assetPath = new URL(route.request().url()).pathname.replace('/.assets/', '')
                 const asset = joinDistinct(ASSETS_DIR, assetPath)
                 const contentType = mime.contentType(path.basename(asset)) || undefined

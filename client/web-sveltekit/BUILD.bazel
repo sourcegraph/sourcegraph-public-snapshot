@@ -199,12 +199,14 @@ playwright_test_bin.playwright_test(
     ],
     data = glob(
         [
-            "src/**/*.spec.ts",
+            "src/**/*.ts",
             "src/testing/*.ts",
         ],
     ) + [
         "playwright.config.ts",
+        "tsconfig.json",
         ":generate-graphql-types",
+        ":sveltekit-sync",
         ":test_app_assets",
         "//cmd/frontend/graphqlbackend:graphql_schema",
         "//dev/tools:chromium",

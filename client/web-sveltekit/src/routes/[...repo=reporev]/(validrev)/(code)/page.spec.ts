@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '../../../../testing/integration'
+import { test, expect, type Page } from '$testing/integration'
 
 const repoName = 'github.com/sourcegraph/sourcegraph'
 

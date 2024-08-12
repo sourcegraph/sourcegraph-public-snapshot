@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/pgxerrors"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/upsert"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -41,8 +41,9 @@ type Subscription struct {
 	//
 	// It must be unique across all currently un-archived subscriptions.
 	InstanceDomain *string `gorm:"uniqueIndex:,where:archived_at IS NULL"`
-
-	// WARNING: The below fields are not yet used in production.
+	// InstanceType is the category of the instance associated with this
+	// subscription, e.g. 'TYPE_PRIMARY' or 'TYPE_SECONDARY'.
+	InstanceType *string
 
 	// DisplayName is the human-friendly name of this subscription, e.g. "Acme, Inc."
 	//
@@ -60,8 +61,6 @@ type Subscription struct {
 
 	// SalesforceSubscriptionID associated with this Enterprise subscription.
 	SalesforceSubscriptionID *string
-	// SalesforceOpportunityID associated with this Enterprise subscription.
-	SalesforceOpportunityID *string
 }
 
 type SubscriptionWithConditions struct {
@@ -74,12 +73,12 @@ func subscriptionTableColumns() []string {
 	return []string{
 		"id",
 		"instance_domain",
+		"instance_type",
 		"display_name",
 		"created_at",
 		"updated_at",
 		"archived_at",
 		"salesforce_subscription_id",
-		"salesforce_opportunity_id",
 
 		subscriptionConditionJSONBAgg(),
 	}
@@ -91,12 +90,12 @@ func scanSubscription(row pgx.Row) (*SubscriptionWithConditions, error) {
 	err := row.Scan(
 		&s.ID,
 		&s.InstanceDomain,
+		&s.InstanceType,
 		&s.DisplayName,
 		&s.CreatedAt,
 		&s.UpdatedAt,
 		&s.ArchivedAt,
 		&s.SalesforceSubscriptionID,
-		&s.SalesforceOpportunityID,
 		&s.Conditions,
 	)
 	if err != nil {
@@ -129,7 +128,13 @@ type ListEnterpriseSubscriptionsOptions struct {
 	InstanceDomains []string
 	// IsArchived indicates whether to only list archived subscriptions, or only
 	// non-archived subscriptions.
-	IsArchived bool
+	IsArchived *bool
+	// DisplayNameSubstring is a substring match on display name.
+	DisplayNameSubstring string
+	// SalesforceSubscriptionIDs are exact matches on the Salesforce subscription
+	// ID.
+	SalesforceSubscriptionIDs []string
+
 	// PageSize is the maximum number of subscriptions to return.
 	PageSize int
 }
@@ -145,10 +150,24 @@ func (opts ListEnterpriseSubscriptionsOptions) toQueryConditions() (where, limit
 		whereConds = append(whereConds, "instance_domain = ANY(@instanceDomains)")
 		namedArgs["instanceDomains"] = opts.InstanceDomains
 	}
-	// Future: Uncomment the following block when the archived field is added to the table.
-	// if opts.OnlyArchived {
-	// whereConds = append(whereConds, "archived = TRUE")
-	// }
+	if opts.IsArchived != nil {
+		if *opts.IsArchived {
+			whereConds = append(whereConds, "archived_at IS NOT NULL")
+		} else {
+			whereConds = append(whereConds, "archived_at IS NUlL")
+		}
+	}
+	if len(opts.DisplayNameSubstring) > 0 {
+		whereConds = append(whereConds,
+			"LOWER(display_name) LIKE '%' || LOWER(@displayName) || '%'")
+		namedArgs["displayName"] = opts.DisplayNameSubstring
+	}
+	if len(opts.SalesforceSubscriptionIDs) > 0 {
+		whereConds = append(whereConds,
+			"salesforce_subscription_id = ANY(@salesforceSubscriptionIDs)")
+		namedArgs["salesforceSubscriptionIDs"] = opts.SalesforceSubscriptionIDs
+	}
+
 	where = strings.Join(whereConds, " AND ")
 
 	if opts.PageSize > 0 {
@@ -205,8 +224,9 @@ type UpsertSubscriptionOptions struct {
 	CreatedAt  utctime.Time
 	ArchivedAt *utctime.Time
 
-	SalesforceSubscriptionID *string
-	SalesforceOpportunityID  *string
+	SalesforceSubscriptionID *sql.NullString
+
+	InstanceType *sql.NullString
 
 	// ForceUpdate indicates whether to force update all fields of the subscription
 	// record.
@@ -218,7 +238,10 @@ type UpsertSubscriptionOptions struct {
 func (opts UpsertSubscriptionOptions) apply(ctx context.Context, db upsert.Execer, id string) error {
 	b := upsert.New("enterprise_portal_subscriptions", "id", opts.ForceUpdate)
 	upsert.Field(b, "id", id)
+
 	upsert.Field(b, "instance_domain", opts.InstanceDomain)
+	upsert.Field(b, "instance_type", opts.InstanceType)
+
 	upsert.Field(b, "display_name", opts.DisplayName)
 
 	upsert.Field(b, "created_at", opts.CreatedAt,
@@ -231,13 +254,18 @@ func (opts UpsertSubscriptionOptions) apply(ctx context.Context, db upsert.Exece
 		upsert.WithIgnoreZeroOnForceUpdate())
 
 	upsert.Field(b, "salesforce_subscription_id", opts.SalesforceSubscriptionID)
-	upsert.Field(b, "salesforce_opportunity_id", opts.SalesforceOpportunityID)
+
 	return b.Exec(ctx, db)
 }
+
+var ErrInvalidArgument = errors.New("invalid argument")
 
 // Upsert upserts a subscription record based on the given options. If the
 // operation has additional application meaning, conditions can be provided
 // for insert as well.
+//
+// Constraint errors are returned as a human-friendly error that wraps
+// ErrInvalidArgument.
 func (s *Store) Upsert(
 	ctx context.Context,
 	subscriptionID string,
@@ -267,7 +295,12 @@ func (s *Store) Upsert(
 	if err := opts.apply(ctx, tx, subscriptionID); err != nil {
 		if pgxerrors.IsContraintError(err, "idx_enterprise_portal_subscriptions_display_name") {
 			return nil, errors.WithSafeDetails(
-				errors.Newf("display_name %q is already in use", opts.DisplayName.String),
+				errors.Wrapf(ErrInvalidArgument, "display_name %q is already in use", opts.DisplayName.String),
+				"%+v", err)
+		}
+		if pgxerrors.IsContraintError(err, "idx_enterprise_portal_subscriptions_instance_domain") {
+			return nil, errors.WithSafeDetails(
+				errors.Wrapf(ErrInvalidArgument, "instance_domain %q is assigned to another subscription", opts.DisplayName.String),
 				"%+v", err)
 		}
 		return nil, errors.Wrap(err, "upsert")

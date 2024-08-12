@@ -12,8 +12,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/license"
@@ -245,8 +245,7 @@ func (i *Importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 				}
 				return pointers.Ptr(utctime.FromTime(*dotcomSub.ArchivedAt))
 			}(),
-			SalesforceSubscriptionID: activeLicense.SalesforceSubscriptionID,
-			SalesforceOpportunityID:  activeLicense.SalesforceOpportunityID,
+			SalesforceSubscriptionID: database.NewNullStringPtr(activeLicense.SalesforceSubscriptionID),
 		},
 		conditions...,
 	); err != nil {
@@ -306,7 +305,7 @@ func (i *Importer) importLicense(ctx context.Context, subscriptionID string, dot
 	tr.SetAttributes(attribute.Bool("already_imported", false))
 
 	if _, err := i.licenses.CreateLicenseKey(ctx, subscriptionID,
-		&subscriptions.LicenseKey{
+		&subscriptions.DataLicenseKey{
 			Info: license.Info{
 				Tags:                     dotcomLicense.Tags,
 				UserCount:                uint(pointers.DerefZero(dotcomLicense.UserCount)),

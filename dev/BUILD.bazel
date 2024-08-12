@@ -131,5 +131,6 @@ write_source_files(
         "//internal/codeintel/uploads/internal/storemocks:generate_mocks",
         "//cmd/frontend/internal/backend:generate_mocks",
         "//cmd/enterprise-portal/internal/codyaccessservice:generate_mocks",
+        "//cmd/enterprise-portal/internal/routines/licenseexpiration:generate_mocks",
     ],
 )
