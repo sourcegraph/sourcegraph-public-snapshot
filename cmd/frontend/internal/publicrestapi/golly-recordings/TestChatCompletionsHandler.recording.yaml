@@ -1,0 +1,162 @@
+recordings:
+- hash: d6d9aaaf5bd9242c2f8d25ead69a79495b00a944635231ad00ff78ceaaa4988f
+  request:
+    recording_date: "2024-08-07T17:00:31+02:00"
+    url: https://sourcegraph.com/.api/modelconfig/supported-models.json
+    method: GET
+    headers:
+    - key: Authorization
+      value: token REDACTED_51c20f884ac371e6e12fe635336ac83af942ddc816c96d99dd3e49b3f8dfeb26
+    body: ""
+  response:
+    status_code: 200
+    body: |
+      {
+          "schemaVersion": "1.0",
+          "revision": "-",
+          "providers": [
+              {
+                  "id": "anthropic",
+                  "displayName": "Provider \"anthropic\""
+              },
+              {
+                  "id": "fireworks",
+                  "displayName": "Provider \"fireworks\""
+              }
+          ],
+          "models": [
+              {
+                  "modelRef": "anthropic::unknown::claude-3-haiku-20240307",
+                  "displayName": "claude-3-haiku-20240307",
+                  "modelName": "claude-3-haiku-20240307",
+                  "capabilities": [
+                      "autocomplete",
+                      "chat"
+                  ],
+                  "category": "balanced",
+                  "status": "stable",
+                  "tier": "enterprise",
+                  "contextWindow": {
+                      "maxInputTokens": 12000,
+                      "maxOutputTokens": 4000
+                  }
+              },
+              {
+                  "modelRef": "anthropic::unknown::claude-3-sonnet-20240229",
+                  "displayName": "claude-3-sonnet-20240229",
+                  "modelName": "claude-3-sonnet-20240229",
+                  "capabilities": [
+                      "autocomplete",
+                      "chat"
+                  ],
+                  "category": "balanced",
+                  "status": "stable",
+                  "tier": "enterprise",
+                  "contextWindow": {
+                      "maxInputTokens": 12000,
+                      "maxOutputTokens": 4000
+                  }
+              },
+              {
+                  "modelRef": "fireworks::unknown::starcoder",
+                  "displayName": "starcoder",
+                  "modelName": "starcoder",
+                  "capabilities": [
+                      "autocomplete",
+                      "chat"
+                  ],
+                  "category": "balanced",
+                  "status": "stable",
+                  "tier": "enterprise",
+                  "contextWindow": {
+                      "maxInputTokens": 9000,
+                      "maxOutputTokens": 4000
+                  }
+              }
+          ],
+          "defaultModels": {
+              "chat": "anthropic::unknown::claude-3-sonnet-20240229",
+              "fastChat": "anthropic::unknown::claude-3-haiku-20240307",
+              "codeCompletion": "fireworks::unknown::starcoder"
+          }
+      }
+    headers:
+    - key: Content-Type
+      value: text/plain; charset=utf-8
+- hash: 6693e52d3141d1d4c26103ebfd12dc7e8ce0aaa9bd5956482dadc9f2cb3eb935
+  request:
+    recording_date: "2024-08-08T15:15:23+02:00"
+    url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=openai-rest-api&client-version=6.0.0
+    method: POST
+    headers:
+    - key: Content-Type
+      value: application/json
+    - key: Authorization
+      value: token REDACTED_51c20f884ac371e6e12fe635336ac83af942ddc816c96d99dd3e49b3f8dfeb26
+    body: |
+      Fast: false
+      logprobs: null
+      maxTokensToSample: 16
+      messages:
+      - speaker: human
+        text: respond with 'yes' in all-lowercase and nothing else
+      model: anthropic::unknown::claude-3-haiku-20240307
+      stream: false
+  response:
+    status_code: 200
+    body: '{"completion":"yes","stopReason":"end_turn"}'
+    headers:
+    - key: Content-Type
+      value: text/plain; charset=utf-8
+- hash: 44372445ae2f4fc5714c8311c370ecf68d5b16b23cc45b5f8a1c9f5e376f4f70
+  request:
+    recording_date: "2024-08-08T15:15:24+02:00"
+    url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=openai-rest-api&client-version=6.0.0
+    method: POST
+    headers:
+    - key: Content-Type
+      value: application/json
+    - key: Authorization
+      value: token REDACTED_51c20f884ac371e6e12fe635336ac83af942ddc816c96d99dd3e49b3f8dfeb26
+    body: |
+      Fast: false
+      logprobs: null
+      maxTokensToSample: 16
+      messages:
+      - speaker: human
+        text: respond with 'yes' in all-lowercase and nothing else
+      model: anthropic::unknown::claude-3-sonnet-20240229
+      stream: false
+  response:
+    status_code: 200
+    body: '{"completion":"yes","stopReason":"end_turn"}'
+    headers:
+    - key: Content-Type
+      value: text/plain; charset=utf-8
+- hash: 645da16509353b6d2a6b0e616b755b144c6fcf1eb4d1e9096d67f49f503fbc0e
+  request:
+    recording_date: "2024-08-08T14:41:01Z"
+    url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=openai-rest-api&client-version=6.0.0
+    method: POST
+    headers:
+    - key: Content-Type
+      value: application/json
+    - key: Authorization
+      value: token REDACTED_51c20f884ac371e6e12fe635336ac83af942ddc816c96d99dd3e49b3f8dfeb26
+    body: |
+      Fast: false
+      logprobs: null
+      maxTokensToSample: 16
+      messages:
+      - speaker: human
+        text: respond with 'yes' in all-lowercase and nothing else
+      model: anthropic::unknown::claude-3-sonnet-20240229
+      stream: false
+      temperature: 0.5
+      topP: 1
+  response:
+    status_code: 200
+    body: '{"completion":"yes","stopReason":"end_turn"}'
+    headers:
+    - key: Content-Type
+      value: text/plain; charset=utf-8

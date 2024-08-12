@@ -28,7 +28,7 @@
 [`sg`](https://github.com/sourcegraph/sourcegraph/tree/main/dev/sg) is the CLI tool that Sourcegraph developers can use to develop Sourcegraph.
 Learn more about the tool's overall vision in [`sg` Vision](./vision.md), and how to use it in the [usage section](#usage).
 
-> NOTE: Have feedback or ideas? Feel free to [open a discussion](https://github.com/sourcegraph/sourcegraph/discussions/categories/developer-experience)! Sourcegraph teammates can also leave a message in [#discuss-dev-infra](https://sourcegraph.slack.com/archives/C04MYFW01NV).
+> NOTE: Have feedback or ideas? Feel free to [join our community](https://community.sourcegraph.com)! Sourcegraph teammates can also leave a message in [#discuss-dev-infra](https://sourcegraph.slack.com/archives/C04MYFW01NV).
 
 ## Quickstart
 
@@ -186,8 +186,7 @@ env:
 commands:
   gitserver:
     install: |
-      bazel build //cmd/gitserver:image_tarball && \
-      docker load --input $(bazel cquery //cmd/gitserver:image_tarball --output=files)
+      bazel run //cmd/gitserver:image_tarball
   gitserver-0:
     cmd: |
       docker inspect gitserver-${GITSERVER_INDEX} >/dev/null 2>&1 && docker stop gitserver-${GITSERVER_INDEX}
@@ -310,7 +309,7 @@ go run . -config ../../sg.config.yaml start
 
 The `-config` can be anything you want, of course.
 
-Have questions or need help? Feel free to [open a discussion](https://github.com/sourcegraph/sourcegraph/discussions/categories/developer-experience)! Sourcegraph teammates can also leave a message in [#discuss-dev-infra](https://sourcegraph.slack.com/archives/C04MYFW01NV).
+Have questions or need help? Feel free to [join our community](https://community.sourcegraph.com)! Sourcegraph teammates can also leave a message in [#discuss-dev-infra](https://sourcegraph.slack.com/archives/C04MYFW01NV).
 
 > NOTE: For Sourcegraph teammates, we have a weekly [`sg` hack hour](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#sg-hack-hour) you can hop in to if you're interested in contributing!
 

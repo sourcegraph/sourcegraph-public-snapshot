@@ -36,13 +36,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	name := "syntactic-codeintel-worker"
 
-	frontendSqlDB, err := initDB(observationCtx, name)
+	db, err := initDB(observationCtx, name)
 	if err != nil {
 		return errors.Wrap(err, "initializing frontend db")
 	}
-	db := database.NewDB(logger, frontendSqlDB)
 
-	jobStore, err := jobstore.NewStoreWithDB(observationCtx, frontendSqlDB)
+	jobStore, err := jobstore.NewStoreWithDB(observationCtx, db)
 	if err != nil {
 		return errors.Wrap(err, "initializing worker store")
 	}
@@ -79,7 +78,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 func initCodeintelDB(observationCtx *observation.Context, name string) (*sql.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-		return serviceConnections.PostgresDSN
+		return serviceConnections.CodeIntelPostgresDSN
 	})
 
 	sqlDB, err := connections.EnsureNewCodeIntelDB(observationCtx, dsn, name)
@@ -92,7 +91,7 @@ func initCodeintelDB(observationCtx *observation.Context, name string) (*sql.DB,
 	return sqlDB, nil
 }
 
-func initDB(observationCtx *observation.Context, name string) (*sql.DB, error) {
+func initDB(observationCtx *observation.Context, name string) (database.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
@@ -104,5 +103,5 @@ func initDB(observationCtx *observation.Context, name string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	return sqlDB, nil
+	return database.NewDB(observationCtx.Logger, sqlDB), nil
 }

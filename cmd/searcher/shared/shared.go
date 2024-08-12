@@ -28,6 +28,7 @@ import (
 	sharedsearch "github.com/sourcegraph/sourcegraph/internal/search"
 	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -73,13 +74,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	// Explicitly don't scope Store logger under the parent logger
 	storeObservationCtx := observation.NewContext(log.Scoped("Store"))
 	store := &search.Store{
-		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-			return git.ArchiveReader(ctx, repo, gitserver.ArchiveOptions{
-				Treeish: string(commit),
-				Format:  gitserver.ArchiveFormatTar,
-			})
-		},
-		FetchTarPaths: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
+		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
 			return git.ArchiveReader(ctx, repo, gitserver.ArchiveOptions{
 				Treeish: string(commit),
 				Format:  gitserver.ArchiveFormatTar,
@@ -131,6 +126,7 @@ func makeHTTPServer(logger log.Logger, grpcServer *grpc.Server, listenAddress st
 		http.NotFoundHandler().ServeHTTP(w, r)
 	})
 	handler = actor.HTTPMiddleware(logger, handler)
+	handler = tenant.InternalHTTPMiddleware(logger, handler)
 	handler = requestclient.InternalHTTPMiddleware(handler)
 	handler = requestinteraction.HTTPMiddleware(handler)
 	handler = trace.HTTPMiddleware(logger, handler)

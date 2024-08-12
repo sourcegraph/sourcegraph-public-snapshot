@@ -10,13 +10,16 @@ import (
 	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	internaltrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -145,7 +148,10 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 		return nil, errors.New("diskcache.store.Dir must be set")
 	}
 
-	path := s.path(key)
+	path, err := s.path(ctx, key)
+	if err != nil {
+		return nil, err
+	}
 	trace.AddEvent("TODO Domain Owner", attribute.String("key", fmt.Sprint(key)), attribute.String("path", path))
 
 	err = os.MkdirAll(filepath.Dir(path), os.ModePerm)
@@ -198,7 +204,26 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 }
 
 // path returns the path for key.
-func (s *store) path(key []string) string {
+func (s *store) path(ctx context.Context, key []string) (string, error) {
+	if tenant.ShouldLogNoTenant() {
+		if _, err := tenant.FromContext(ctx); err != nil {
+			log.Printf("diskcache: %s:\n%s\n", err, captureStackTrace())
+		}
+	}
+	if !tenant.EnforceTenant() {
+		return s.pathNoTenant(key), nil
+	}
+
+	// 🚨SECURITY: We use the tenant ID as part of the path for tenant isolation.
+	tnt, err := tenant.FromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	encoded := append([]string{s.dir, "tenants", strconv.Itoa(tnt.ID())}, EncodeKeyComponents(key)...)
+	return filepath.Join(encoded...) + ".zip", nil
+}
+
+func (s *store) pathNoTenant(key []string) string {
 	encoded := append([]string{s.dir}, EncodeKeyComponents(key)...)
 	return filepath.Join(encoded...) + ".zip"
 }
@@ -408,4 +433,16 @@ func fsync(path string) error {
 		err = err1
 	}
 	return err
+}
+
+func captureStackTrace() string {
+	// Allocate a large enough buffer to capture the stack trace
+	buf := make([]byte, 1024)
+	for {
+		n := runtime.Stack(buf, false)
+		if n < len(buf) {
+			return string(buf[:n])
+		}
+		buf = make([]byte, len(buf)*2)
+	}
 }

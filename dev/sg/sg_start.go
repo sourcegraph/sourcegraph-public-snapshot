@@ -346,6 +346,10 @@ func (args StartArgs) toCommands(conf *sgconf.Config) (*Commands, error) {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: extracting commandset failed %q :(", err))
 			return nil, flag.ErrHelp
 		}
+		if set.IsDeprecated() {
+			std.Out.WriteLine(output.Styledf(output.StyleBold, set.Deprecated))
+			return nil, errors.Newf("commandset %q is deprecated", args.CommandSet)
+		}
 
 		return commandSetToCommands(conf, set)
 	}

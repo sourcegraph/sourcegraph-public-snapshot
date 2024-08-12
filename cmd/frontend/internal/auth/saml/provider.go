@@ -29,6 +29,8 @@ import (
 
 const providerType = "saml"
 
+var _ providers.Provider = (*provider)(nil)
+
 type provider struct {
 	config     schema.SAMLAuthProvider
 	multiple   bool // whether there are multiple SAML auth providers
@@ -52,7 +54,6 @@ func (p *provider) Config() schema.AuthProviders {
 	return schema.AuthProviders{Saml: &p.config}
 }
 
-// Refresh implements providers.Provider.
 func (p *provider) Refresh(ctx context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()

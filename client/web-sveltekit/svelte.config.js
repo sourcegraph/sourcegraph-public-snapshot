@@ -55,9 +55,6 @@ if (process.env.BAZEL || process.env.DEPLOY_TYPE === 'dev') {
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-  // Consult https://github.com/sveltejs/svelte-preprocess
-  // for more information about preprocessors
-  //preprocess: preprocess(),
   // Consult https://kit.svelte.dev/docs/integrations#preprocessors
   // for more information about preprocessors
   preprocess: vitePreprocess(),
@@ -67,6 +64,17 @@ const config = {
       showToggleButton: 'always',
       toggleButtonPos: 'bottom-right',
     },
+  },
+
+  onwarn: (warning, defaultHandler) => {
+    // When run as part of sg, don't show any warnings to keep the noise down
+    if (process.env.DEPLOY_TYPE === 'dev') return
+
+    // The Svelte compiler doesn't seem to respect ambient declarations, and thus
+    // emits warnings about missing declarations for our icon variables.
+    // We can safely ignore these warnings, TypeScript will catch any actual errors.
+    if (warning.code === 'missing-declaration') return
+    defaultHandler(warning)
   },
 
   kit: {

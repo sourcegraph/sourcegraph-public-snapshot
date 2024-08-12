@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
@@ -94,7 +93,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("unauthenticated homepage visit, sign-out cookie present, access requests enabled -> sg sign-in", func(t *testing.T) {
-		cookie := &http.Cookie{Name: auth.SignOutCookie, Value: "true"}
+		cookie := &http.Cookie{Name: session.SignOutCookie, Value: "true"}
 
 		resp := doRequest("GET", "http://example.com/", "", "", []*http.Cookie{cookie}, false)
 		if want := http.StatusOK; resp.StatusCode != want {

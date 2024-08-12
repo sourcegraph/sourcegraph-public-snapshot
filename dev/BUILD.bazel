@@ -54,7 +54,6 @@ write_source_files(
         "//cmd/executor/internal/worker/runtime:generate_mocks",
         "//cmd/executor/internal/worker/workspace:generate_mocks",
         "//cmd/executor/internal/worker:generate_mocks",
-        "//cmd/frontend/backend:generate_mocks",
         "//cmd/frontend/internal/executorqueue/queues/batches:generate_mocks",
         "//cmd/frontend/internal/executorqueue:generate_mocks",
         "//cmd/frontend/internal/httpapi/releasecache:generate_mocks",
@@ -130,5 +129,8 @@ write_source_files(
         "//internal/codeintel/codenav/internal/lsifstore/mocks:generate_mocks",
         "//cmd/frontend/internal/auth/userpasswd:generate_mocks",
         "//internal/codeintel/uploads/internal/storemocks:generate_mocks",
+        "//cmd/frontend/internal/backend:generate_mocks",
+        "//cmd/enterprise-portal/internal/codyaccessservice:generate_mocks",
+        "//cmd/enterprise-portal/internal/routines/licenseexpiration:generate_mocks",
     ],
 )

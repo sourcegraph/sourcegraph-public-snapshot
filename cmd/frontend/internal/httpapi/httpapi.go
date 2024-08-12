@@ -16,9 +16,9 @@ import (
 	zoektProto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 
 	samssdk "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/clientconfig"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/enterpriseportal"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
@@ -435,8 +435,8 @@ func (h *ErrorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 	// No need to log, as SetRequestErrorCause is consumed and logged.
 }
 
-func JsonMiddleware(errorHandler *ErrorHandler) func(func(http.ResponseWriter, *http.Request) error) http.Handler {
-	return func(h func(http.ResponseWriter, *http.Request) error) http.Handler {
+func JsonMiddleware(errorHandler *ErrorHandler) handlerutil.HandlerWithErrorMiddleware {
+	return func(h handlerutil.HandlerWithErrorReturnFunc) http.Handler {
 		return handlerutil.HandlerWithErrorReturn{
 			Handler: func(w http.ResponseWriter, r *http.Request) error {
 				w.Header().Set("Content-Type", "application/json")

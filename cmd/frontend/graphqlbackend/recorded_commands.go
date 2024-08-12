@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -32,7 +31,7 @@ type RecordedCommandsArgs struct {
 	Offset int32
 }
 
-func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *RecordedCommandsArgs) (graphqlutil.SliceConnectionResolver[RecordedCommandResolver], error) {
+func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *RecordedCommandsArgs) (gqlutil.SliceConnectionResolver[RecordedCommandResolver], error) {
 	// 🚨 SECURITY: Only site admins are allowed to view recorded commands
 	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 	if err != nil {
@@ -49,7 +48,7 @@ func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *Recorde
 
 	recordingConf := conf.Get().SiteConfig().GitRecorder
 	if recordingConf == nil {
-		return graphqlutil.NewSliceConnectionResolver([]RecordedCommandResolver{}, 0, currentEnd), nil
+		return gqlutil.NewSliceConnectionResolver([]RecordedCommandResolver{}, 0, currentEnd), nil
 	}
 	store := rcache.NewFIFOList(redispool.Cache, wrexec.GetFIFOListKey(r.Name()), recordingConf.Size)
 	empty, err := store.IsEmpty()
@@ -57,7 +56,7 @@ func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *Recorde
 		return nil, err
 	}
 	if empty {
-		return graphqlutil.NewSliceConnectionResolver([]RecordedCommandResolver{}, 0, currentEnd), nil
+		return gqlutil.NewSliceConnectionResolver([]RecordedCommandResolver{}, 0, currentEnd), nil
 	}
 
 	// the FIFO list is zero-indexed, so we need to deduct one from the limit
@@ -82,7 +81,7 @@ func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *Recorde
 		resolvers[i] = NewRecordedCommandResolver(command)
 	}
 
-	return graphqlutil.NewSliceConnectionResolver(resolvers, size, currentEnd), nil
+	return gqlutil.NewSliceConnectionResolver(resolvers, size, currentEnd), nil
 }
 
 type RecordedCommandResolver interface {

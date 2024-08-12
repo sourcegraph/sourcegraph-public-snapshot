@@ -38,10 +38,6 @@ func (m mockAuthnProvider) CachedInfo() *providers.Info {
 	// return &providers.Info{ServiceID: m.serviceID}
 }
 
-func (m mockAuthnProvider) Refresh(ctx context.Context) error {
-	panic("should not be called")
-}
-
 type mockAuthnProviderUser struct {
 	Username string `json:"username,omitempty"`
 	ID       int32  `json:"id,omitempty"`

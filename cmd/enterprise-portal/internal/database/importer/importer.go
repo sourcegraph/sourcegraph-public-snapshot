@@ -12,9 +12,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/codyaccess"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/license"
@@ -29,26 +28,41 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-type importer struct {
+type Importer struct {
 	logger log.Logger
 
 	dotcom *dotcomdb.Reader
 
-	subscriptions     *subscriptions.Store
-	licenses          *subscriptions.LicensesStore
-	codyGatewayAccess *codyaccess.CodyGatewayStore
+	subscriptions *subscriptions.Store
+	licenses      *subscriptions.LicensesStore
 
 	tryAcquireFn func(context.Context) (acquired bool, release func(), _ error)
 }
 
-var _ goroutine.Handler = (*importer)(nil)
+func NewHandler(
+	ctx context.Context,
+	logger log.Logger,
+	dotcom *dotcomdb.Reader,
+	enterprisePortal *database.DB,
+	tryAcquireFn func(context.Context) (acquired bool, release func(), _ error),
+) *Importer {
+	return &Importer{
+		logger:        logger,
+		dotcom:        dotcom,
+		subscriptions: enterprisePortal.Subscriptions(),
+		licenses:      enterprisePortal.Subscriptions().Licenses(),
+		tryAcquireFn:  tryAcquireFn,
+	}
+}
 
-// New returns a periodic goroutine that runs an importer that reconciles
-// subscriptions, licenses, and Cody Gateway access from dotcom into the
-// Enterprise Portal database.
+var _ goroutine.Handler = (*Importer)(nil)
+
+// NewPeriodicImporter returns a periodic goroutine that runs an importer that
+// reconciles subscriptions, licenses, and Cody Gateway access from dotcom into
+// the Enterprise Portal database.
 //
 // If interval is 0, the importer is disabled.
-func New(
+func NewPeriodicImporter(
 	ctx context.Context,
 	logger log.Logger,
 	dotcom *dotcomdb.Reader,
@@ -62,13 +76,8 @@ func New(
 	}
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
-		&importer{
-			logger:            logger,
-			dotcom:            dotcom,
-			subscriptions:     enterprisePortal.Subscriptions(),
-			licenses:          enterprisePortal.Subscriptions().Licenses(),
-			codyGatewayAccess: enterprisePortal.CodyAccess().CodyGateway(),
-			tryAcquireFn: func(ctx context.Context) (acquired bool, release func(), _ error) {
+		NewHandler(ctx, logger, dotcom, enterprisePortal,
+			func(ctx context.Context) (acquired bool, release func(), _ error) {
 				if interval <= time.Second {
 					return true, func() {}, nil
 				}
@@ -81,8 +90,7 @@ func New(
 					fmt.Sprintf("enterpriseportal.dotcomimporter.%d", int(interval.Seconds())),
 					// Ensure lock is free by the time the next interval occurs
 					interval-time.Second)
-			},
-		},
+			}),
 		goroutine.WithOperation(
 			observation.NewContext(logger, observation.Tracer(trace.GetTracer())).
 				Operation(observation.Op{
@@ -92,7 +100,7 @@ func New(
 		goroutine.WithInterval(interval))
 }
 
-func (i *importer) Handle(ctx context.Context) (err error) {
+func (i *Importer) Handle(ctx context.Context) (err error) {
 	if i.tryAcquireFn != nil {
 		acquired, release, err := i.tryAcquireFn(ctx)
 		if err != nil {
@@ -116,7 +124,7 @@ func (i *importer) Handle(ctx context.Context) (err error) {
 	return i.ImportSubscriptions(cloudsql.WithoutTrace(ctx))
 }
 
-func (i *importer) ImportSubscriptions(ctx context.Context) error {
+func (i *Importer) ImportSubscriptions(ctx context.Context) error {
 	l := trace.Logger(ctx, i.logger)
 
 	dotcomSubscriptions, err := i.dotcom.ListEnterpriseSubscriptions(ctx, dotcomdb.ListEnterpriseSubscriptionsOptions{})
@@ -145,7 +153,7 @@ func (i *importer) ImportSubscriptions(ctx context.Context) error {
 	return nil
 }
 
-func (i *importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.SubscriptionAttributes) (err error) {
+func (i *Importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.SubscriptionAttributes) (err error) {
 	tr, ctx := trace.New(ctx, "importSubscription",
 		attribute.String("dotcomSub.ID", dotcomSub.ID))
 	defer tr.EndWithErr(&err)
@@ -237,8 +245,7 @@ func (i *importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 				}
 				return pointers.Ptr(utctime.FromTime(*dotcomSub.ArchivedAt))
 			}(),
-			SalesforceSubscriptionID: activeLicense.SalesforceSubscriptionID,
-			SalesforceOpportunityID:  activeLicense.SalesforceOpportunityID,
+			SalesforceSubscriptionID: database.NewNullStringPtr(activeLicense.SalesforceSubscriptionID),
 		},
 		conditions...,
 	); err != nil {
@@ -252,33 +259,24 @@ func (i *importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 		}
 	}
 
-	// Import Cody Gateway access configured for this subscription
-	dotcomCGAccess, err := i.dotcom.GetCodyGatewayAccessAttributesBySubscription(ctx, dotcomSub.ID)
-	if err != nil {
-		if errors.Is(err, dotcomdb.ErrCodyGatewayAccessNotFound) {
-			return nil // nothing to do
-		}
-		return errors.Wrap(err, "dotcom: get cody gateway access")
-	}
-	if _, err := i.codyGatewayAccess.Upsert(ctx, dotcomSub.ID, codyaccess.UpsertCodyGatewayAccessOptions{
-		Enabled: pointers.Ptr(dotcomCGAccess.CodyGatewayEnabled),
-
-		ChatCompletionsRateLimit:                dotcomCGAccess.ChatCompletionsRateLimit,
-		ChatCompletionsRateLimitIntervalSeconds: dotcomCGAccess.ChatCompletionsRateSeconds,
-
-		CodeCompletionsRateLimit:                dotcomCGAccess.CodeCompletionsRateLimit,
-		CodeCompletionsRateLimitIntervalSeconds: dotcomCGAccess.CodeCompletionsRateSeconds,
-
-		EmbeddingsRateLimit:                dotcomCGAccess.EmbeddingsRateLimit,
-		EmbeddingsRateLimitIntervalSeconds: dotcomCGAccess.EmbeddingsRateSeconds,
-	}); err != nil {
-		return errors.Wrap(err, "upsert cody gateway access")
-	}
-
 	return nil
 }
 
-func (i *importer) importLicense(ctx context.Context, subscriptionID string, dotcomLicense *dotcomdb.LicenseAttributes) (err error) {
+func nullInt64IfValid(v *int64) *sql.NullInt64 {
+	if v == nil {
+		return &sql.NullInt64{}
+	}
+	return database.NewNullInt64(*v)
+}
+
+func nullInt32IfValid(v *int32) *sql.NullInt32 {
+	if v == nil {
+		return &sql.NullInt32{}
+	}
+	return database.NewNullInt32(*v)
+}
+
+func (i *Importer) importLicense(ctx context.Context, subscriptionID string, dotcomLicense *dotcomdb.LicenseAttributes) (err error) {
 	tr, ctx := trace.New(ctx, "importLicense",
 		attribute.String("dotcomSub.ID", subscriptionID),
 		attribute.String("dotcomLicense.ID", dotcomLicense.ID))
@@ -307,7 +305,7 @@ func (i *importer) importLicense(ctx context.Context, subscriptionID string, dot
 	tr.SetAttributes(attribute.Bool("already_imported", false))
 
 	if _, err := i.licenses.CreateLicenseKey(ctx, subscriptionID,
-		&subscriptions.LicenseKey{
+		&subscriptions.DataLicenseKey{
 			Info: license.Info{
 				Tags:                     dotcomLicense.Tags,
 				UserCount:                uint(pointers.DerefZero(dotcomLicense.UserCount)),

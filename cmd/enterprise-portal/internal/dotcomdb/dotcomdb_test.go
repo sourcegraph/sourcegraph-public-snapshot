@@ -2,7 +2,6 @@ package dotcomdb_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -17,16 +16,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/dotcomproductsubscriptiontest"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	sgdatabase "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	v1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 )
 
-func newTestDotcomReader(t *testing.T, opts dotcomdb.ReaderOptions) (database.DB, *dotcomdb.Reader) {
+func newTestDotcomReader(t *testing.T, opts dotcomdb.ReaderOptions) (sgdatabase.DB, *dotcomdb.Reader) {
 	ctx := context.Background()
 
 	// Set up a Sourcegraph test database.
@@ -66,7 +64,7 @@ func newTestDotcomReader(t *testing.T, opts dotcomdb.ReaderOptions) (database.DB
 	r := dotcomdb.NewReader(conn, opts)
 	require.NoError(t, r.Ping(ctx))
 
-	return database.NewDB(logtest.Scoped(t), sgtestdb), r
+	return sgdatabase.NewDB(logtest.Scoped(t), sgtestdb), r
 }
 
 type mockedData struct {
@@ -77,7 +75,7 @@ type mockedData struct {
 	archivedSubscriptions int
 }
 
-func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info license.Info, cgAccess *graphqlbackend.UpdateCodyGatewayAccessInput) mockedData {
+func setupDBAndInsertMockLicense(t *testing.T, dotcomdb sgdatabase.DB, info license.Info, cgAccess *graphqlbackend.UpdateCodyGatewayAccessInput) mockedData {
 	start := time.Now()
 
 	ctx := context.Background()
@@ -88,7 +86,7 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info licens
 	{
 		// Create a different subscription and license that's rubbish,
 		// created at the same time, to ensure we don't use it
-		u, err := dotcomdb.Users().Create(ctx, database.NewUser{Username: "barbaz"})
+		u, err := dotcomdb.Users().Create(ctx, sgdatabase.NewUser{Username: "barbaz"})
 		require.NoError(t, err)
 		sub, err := subscriptionsdb.Create(ctx, u.ID, u.Username)
 		require.NoError(t, err)
@@ -105,7 +103,7 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info licens
 	{
 		// Create a different subscription and license that's archived,
 		// created at the same time, to ensure we don't use it
-		u, err := dotcomdb.Users().Create(ctx, database.NewUser{Username: "archived"})
+		u, err := dotcomdb.Users().Create(ctx, sgdatabase.NewUser{Username: "archived"})
 		require.NoError(t, err)
 		sub, err := subscriptionsdb.Create(ctx, u.ID, u.Username)
 		require.NoError(t, err)
@@ -125,7 +123,7 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info licens
 	{
 		// Create a different subscription and license that's not a dev tag,
 		// created at the same time, to ensure we don't use it
-		u, err := dotcomdb.Users().Create(ctx, database.NewUser{Username: "not-devlicense"})
+		u, err := dotcomdb.Users().Create(ctx, sgdatabase.NewUser{Username: "not-devlicense"})
 		require.NoError(t, err)
 		sub, err := subscriptionsdb.Create(ctx, u.ID, u.Username)
 		require.NoError(t, err)
@@ -139,7 +137,7 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info licens
 	}
 
 	// Create the subscription we will assert against
-	u, err := dotcomdb.Users().Create(ctx, database.NewUser{Username: "user"})
+	u, err := dotcomdb.Users().Create(ctx, sgdatabase.NewUser{Username: "user"})
 	require.NoError(t, err)
 	subid, err := subscriptionsdb.Create(ctx, u.ID, u.Username)
 	require.NoError(t, err)
@@ -151,7 +149,7 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info licens
 	result.accessTokens = append(result.accessTokens, license.GenerateLicenseKeyBasedAccessToken(key1))
 	_, err = licensesdb.Create(ctx, subid, key1, 2, license.Info{
 		CreatedAt: info.CreatedAt.Add(-time.Hour),
-		ExpiresAt: info.ExpiresAt.Add(-time.Hour),
+		ExpiresAt: info.ExpiresAt.Add(-time.Minute), // should expire first, but not be expired
 		Tags:      []string{licensing.DevTag},
 	})
 	require.NoError(t, err)
@@ -171,7 +169,7 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info licens
 	{
 		// Create another different subscription and license that's also rubbish,
 		// created at the same time, to ensure we don't use it
-		u, err := dotcomdb.Users().Create(ctx, database.NewUser{Username: "foobar"})
+		u, err := dotcomdb.Users().Create(ctx, sgdatabase.NewUser{Username: "foobar"})
 		require.NoError(t, err)
 		sub, err := subscriptionsdb.Create(ctx, u.ID, u.Username)
 		require.NoError(t, err)
@@ -187,169 +185,6 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info licens
 
 	t.Logf("Setup complete in %s", time.Since(start).String())
 	return result
-}
-
-func mustWithCtx[T any](t *testing.T, fn func(context.Context) (T, error)) T {
-	v, err := fn(context.Background())
-	require.NoError(t, err)
-	return v
-}
-
-func TestGetCodyGatewayAccessAttributes(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	for _, tc := range []struct {
-		name     string
-		info     license.Info
-		cgAccess graphqlbackend.UpdateCodyGatewayAccessInput
-	}{{
-		name: "disabled",
-		info: license.Info{
-			CreatedAt: time.Now().Add(-30 * time.Minute),
-			ExpiresAt: time.Now().Add(30 * time.Minute),
-			UserCount: 10,
-			Tags:      []string{licensing.DevTag},
-		},
-		cgAccess: graphqlbackend.UpdateCodyGatewayAccessInput{
-			Enabled: pointers.Ptr(false),
-		},
-	}, {
-		name: "user and tags",
-		info: license.Info{
-			CreatedAt: time.Now().Add(-30 * time.Minute),
-			ExpiresAt: time.Now().Add(30 * time.Minute),
-			UserCount: 321,
-			Tags:      []string{licensing.PlanEnterprise1.Tag(), licensing.DevTag},
-		},
-		cgAccess: graphqlbackend.UpdateCodyGatewayAccessInput{Enabled: pointers.Ptr(true)},
-	}, {
-		name: "overrides",
-		info: license.Info{
-			CreatedAt: time.Now().Add(-30 * time.Minute),
-			ExpiresAt: time.Now().Add(30 * time.Minute),
-			UserCount: 10,
-			Tags:      []string{licensing.DevTag},
-		},
-		cgAccess: graphqlbackend.UpdateCodyGatewayAccessInput{
-			Enabled:                                 pointers.Ptr(true),
-			ChatCompletionsRateLimit:                pointers.Ptr[graphqlbackend.BigInt](123),
-			CodeCompletionsRateLimitIntervalSeconds: pointers.Ptr[int32](456),
-			EmbeddingsRateLimit:                     pointers.Ptr[graphqlbackend.BigInt](789),
-		},
-	}} {
-		t.Run(tc.name, func(t *testing.T) {
-			tc := tc
-			t.Parallel()
-
-			dotcomdb, dotcomreader := newTestDotcomReader(t, dotcomdb.ReaderOptions{
-				DevOnly: true,
-			})
-			// First, set up a subscription and license and some other rubbish
-			// data to ensure we only get the license we want.
-			mock := setupDBAndInsertMockLicense(t, dotcomdb, tc.info, &tc.cgAccess)
-
-			t.Run("by subscription ID", func(t *testing.T) {
-				t.Parallel()
-
-				attr, err := dotcomreader.GetCodyGatewayAccessAttributesBySubscription(ctx, mock.targetSubscriptionID)
-				require.NoError(t, err)
-				validateAccessAttributes(t, dotcomdb, mock, attr, tc.info)
-			})
-
-			t.Run("by access token", func(t *testing.T) {
-				t.Parallel()
-
-				for i, token := range mock.accessTokens {
-					t.Run(fmt.Sprintf("token %d", i), func(t *testing.T) {
-						token := token
-						t.Parallel()
-
-						attr, err := dotcomreader.GetCodyGatewayAccessAttributesByAccessToken(ctx, token)
-						require.NoError(t, err)
-						validateAccessAttributes(t, dotcomdb, mock, attr, tc.info)
-
-						t.Run("compare with dotcom tokens DB", func(t *testing.T) {
-							subID, err := dotcomproductsubscriptiontest.NewTokensDB(t, dotcomdb).
-								LookupProductSubscriptionIDByAccessToken(ctx, token)
-							require.NoError(t, err)
-							assert.Equal(t, subID, attr.SubscriptionID)
-						})
-					})
-				}
-			})
-		})
-	}
-}
-
-func validateAccessAttributes(t *testing.T, dotcomdb database.DB, mock mockedData, attr *dotcomdb.CodyGatewayAccessAttributes, info license.Info) {
-	assert.Equal(t, mock.targetSubscriptionID, attr.SubscriptionID)
-	assert.Equal(t, int(info.UserCount), *attr.ActiveLicenseUserCount)
-	assert.Len(t, attr.LicenseKeyHashes, 2)
-	assert.Equal(t, attr.GenerateAccessTokens(), mock.accessTokens)
-	limits := attr.EvaluateRateLimits()
-
-	// Validate against the expected values as produced by existing resolvers
-	expected := dotcomproductsubscriptiontest.NewCodyGatewayAccessResolver(t, dotcomdb, mock.targetSubscriptionID)
-	assert.Equal(t, expected.Enabled(), attr.CodyGatewayEnabled)
-	if !expected.Enabled() {
-		// We don't care about the rest of the attributes if access is disabled,
-		// the resolver returns nil for everything
-		return
-	}
-	for _, compare := range []struct {
-		name     string
-		expected graphqlbackend.CodyGatewayRateLimit
-		got      licensing.CodyGatewayRateLimit
-	}{{
-		name:     "Chat",
-		expected: mustWithCtx(t, expected.ChatCompletionsRateLimit),
-		got:      limits.Chat,
-	}, {
-		name:     "Code",
-		expected: mustWithCtx(t, expected.CodeCompletionsRateLimit),
-		got:      limits.Code,
-	}, {
-		name:     "Embeddings",
-		expected: mustWithCtx(t, expected.EmbeddingsRateLimit),
-		got:      limits.Embeddings,
-	}} {
-		t.Run(compare.name, func(t *testing.T) {
-			// We only care about limit and interval now
-			assert.Equal(t, int64(compare.expected.Limit()), compare.got.Limit, "Limit")
-			assert.Equal(t, compare.expected.IntervalSeconds(), compare.got.IntervalSeconds, "IntervalSeconds")
-		})
-	}
-}
-
-func TestGetAllCodyGatewayAccessAttributes(t *testing.T) {
-	t.Parallel()
-	dotcomdb, dotcomreader := newTestDotcomReader(t, dotcomdb.ReaderOptions{
-		DevOnly: true,
-	})
-
-	info := license.Info{
-		CreatedAt: time.Now().Add(-30 * time.Minute),
-		ExpiresAt: time.Now().Add(30 * time.Minute),
-		UserCount: 321,
-		Tags:      []string{licensing.PlanEnterprise1.Tag(), licensing.DevTag},
-	}
-	cgAccess := graphqlbackend.UpdateCodyGatewayAccessInput{Enabled: pointers.Ptr(true)}
-	mock := setupDBAndInsertMockLicense(t, dotcomdb, info, &cgAccess)
-
-	attrs, err := dotcomreader.GetAllCodyGatewayAccessAttributes(context.Background())
-	require.NoError(t, err)
-	assert.Len(t, attrs, 3) // 3 subscriptions created in setupDBAndInsertMockLicense
-	var found bool
-	for _, attr := range attrs {
-		if attr.SubscriptionID == mock.targetSubscriptionID {
-			found = true
-			validateAccessAttributes(t, dotcomdb, mock, attr, info)
-		} else {
-			assert.False(t, attr.CodyGatewayEnabled)
-		}
-	}
-	assert.True(t, found)
 }
 
 func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
@@ -379,7 +214,7 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 	ctx := context.Background()
 	for _, tc := range []struct {
 		name     string
-		filters  []*v1.ListEnterpriseSubscriptionLicensesFilter
+		filters  []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter
 		pageSize int
 		expect   func(t *testing.T, licenses []*dotcomdb.LicenseAttributes)
 	}{{
@@ -391,8 +226,8 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 		},
 	}, {
 		name: "filter by subscription ID",
-		filters: []*v1.ListEnterpriseSubscriptionLicensesFilter{{
-			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_SubscriptionId{
+		filters: []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter{{
+			Filter: &subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_SubscriptionId{
 				SubscriptionId: mock.targetSubscriptionID,
 			},
 		}},
@@ -404,8 +239,8 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 		},
 	}, {
 		name: "filter by subscription ID and limit 1",
-		filters: []*v1.ListEnterpriseSubscriptionLicensesFilter{{
-			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_SubscriptionId{
+		filters: []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter{{
+			Filter: &subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_SubscriptionId{
 				SubscriptionId: mock.targetSubscriptionID,
 			},
 		}},
@@ -416,12 +251,12 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 		},
 	}, {
 		name: "filter by subscription ID and not archived",
-		filters: []*v1.ListEnterpriseSubscriptionLicensesFilter{{
-			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_SubscriptionId{
+		filters: []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter{{
+			Filter: &subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_SubscriptionId{
 				SubscriptionId: mock.targetSubscriptionID,
 			},
 		}, {
-			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_IsRevoked{
+			Filter: &subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsRevoked{
 				IsRevoked: false,
 			},
 		}},
@@ -435,8 +270,8 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 		},
 	}, {
 		name: "filter by is archived",
-		filters: []*v1.ListEnterpriseSubscriptionLicensesFilter{{
-			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_IsRevoked{
+		filters: []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter{{
+			Filter: &subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsRevoked{
 				IsRevoked: true,
 			},
 		}},
@@ -445,8 +280,8 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 		},
 	}, {
 		name: "filter by not archived",
-		filters: []*v1.ListEnterpriseSubscriptionLicensesFilter{{
-			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_IsRevoked{
+		filters: []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter{{
+			Filter: &subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsRevoked{
 				IsRevoked: false,
 			},
 		}},

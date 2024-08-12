@@ -15,7 +15,6 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
-        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/actor",
         "//internal/api",
         "//internal/auth",
@@ -53,7 +52,6 @@ go_test(
     tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//cmd/frontend/graphqlbackend",
-        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/actor",
         "//internal/api",
         "//internal/auth",
@@ -65,6 +63,7 @@ go_test(
         "//internal/dotcom",
         "//internal/executor",
         "//internal/extsvc",
+        "//internal/gqlutil",
         "//internal/licensing",
         "//internal/observation",
         "//internal/timeutil",

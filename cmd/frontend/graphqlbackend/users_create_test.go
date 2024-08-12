@@ -8,8 +8,8 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"

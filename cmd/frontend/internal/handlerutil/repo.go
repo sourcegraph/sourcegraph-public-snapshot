@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"

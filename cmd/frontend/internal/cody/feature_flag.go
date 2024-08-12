@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"

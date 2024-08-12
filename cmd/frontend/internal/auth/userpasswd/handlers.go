@@ -18,10 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrystore/teestore"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"

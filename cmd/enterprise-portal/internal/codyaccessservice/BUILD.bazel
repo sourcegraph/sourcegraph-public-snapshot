@@ -1,3 +1,4 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
@@ -13,16 +14,22 @@ go_library(
     visibility = ["//cmd/enterprise-portal:__subpackages__"],
     deps = [
         "//cmd/enterprise-portal/internal/connectutil",
+        "//cmd/enterprise-portal/internal/database",
+        "//cmd/enterprise-portal/internal/database/codyaccess",
         "//cmd/enterprise-portal/internal/dotcomdb",
         "//cmd/enterprise-portal/internal/samsm2m",
         "//internal/codygateway/codygatewayactor",
         "//internal/codygateway/codygatewayevents",
         "//internal/completions/types",
+        "//internal/license",
+        "//internal/licensing",
+        "//internal/productsubscription",
         "//internal/trace",
         "//lib/enterpriseportal/codyaccess/v1:codyaccess",
         "//lib/enterpriseportal/codyaccess/v1/v1connect",
         "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "//lib/errors",
+        "//lib/pointers",
         "@com_connectrpc_connect//:connect",
         "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
@@ -35,11 +42,37 @@ go_library(
 
 go_test(
     name = "codyaccessservice_test",
-    srcs = ["adapters_test.go"],
+    srcs = [
+        "adapters_test.go",
+        "mocks_test.go",
+        "v1_test.go",
+    ],
     embed = [":codyaccessservice"],
     deps = [
-        "//cmd/enterprise-portal/internal/dotcomdb",
+        "//cmd/enterprise-portal/internal/database/codyaccess",
+        "//cmd/enterprise-portal/internal/samsm2m",
+        "//lib/enterpriseportal/codyaccess/v1:codyaccess",
+        "@com_connectrpc_connect//:connect",
+        "@com_github_derision_test_go_mockgen_v2//testutil/require",
         "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_hexops_valast//:valast",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//:sourcegraph-accounts-sdk-go",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//scopes",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_protobuf//types/known/durationpb",
+        "@org_golang_google_protobuf//types/known/fieldmaskpb",
     ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [":codyaccessservice"],
 )

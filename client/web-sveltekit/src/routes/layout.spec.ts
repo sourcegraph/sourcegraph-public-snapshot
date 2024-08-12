@@ -1,4 +1,4 @@
-import { test, expect, defineConfig } from '../testing/integration'
+import { test, expect, defineConfig } from '$testing/integration'
 
 export default defineConfig({
     name: 'Root layout',

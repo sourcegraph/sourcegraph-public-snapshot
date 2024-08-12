@@ -1,0 +1,26 @@
+{
+	http_port 3081
+	auto_https disable_redirects
+}
+
+# A bit of monstrosity, since we need to reverse proxy via the vite dev server which then
+# reverse proxies to the esbuild dev server which reverse proxies to us on HTTP.
+#
+# Caddy (tls :3443) -> vite dev server (:5173) -> esbuild dev server (:3080) -> Caddy (:3081) -> sourcegraph-frontend (:3082)
+{$SOURCEGRAPH_HTTPS_DOMAIN}:{$SOURCEGRAPH_HTTPS_PORT} {
+	tls internal
+	reverse_proxy localhost:5173 {
+		lb_try_duration 60s
+	}
+}
+
+# Caddy (:3081) -> sourcegraph-frontend (:3082)
+:3081 {
+	reverse_proxy 127.0.0.1:3082
+}
+
+# Caddy (:3083) -> Cody Gateway (:9992)
+{$SOURCEGRAPH_HTTPS_DOMAIN}:3083 {
+    tls internal
+	reverse_proxy 127.0.0.1:9992
+}

@@ -8,11 +8,11 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/sourcegraph/log"
 
-	workerCodeInsights "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeinsights"
-	workerCodeIntel "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	internalinsights "github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/insights"
 	insightsBackfiller "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/insights/backfillv2"
 	insightsrecordingtimes "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/insights/recording_times"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func RegisterOSSMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
@@ -90,14 +91,14 @@ func RegisterAll(runner *oobmigration.Runner, noDelay bool, migrators []TaggedMi
 }
 
 func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
-	codeIntelDB, err := workerCodeIntel.InitRawDB(&observation.TestContext)
+	codeIntelDB, err := initCodeintelDB(&observation.TestContext)
 	if err != nil {
 		return err
 	}
 
 	var insightsStore *basestore.Store
 	if internalinsights.IsEnabled() {
-		insightsDB, err := workerCodeInsights.InitRawDB(&observation.TestContext)
+		insightsDB, err := initCodeInsightsDB(&observation.TestContext)
 		if err != nil {
 			return err
 		}
@@ -176,4 +177,30 @@ func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps
 		)
 	}
 	return RegisterAll(runner, noDelay, migrators)
+}
+
+func initCodeintelDB(observationCtx *observation.Context) (*sql.DB, error) {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.CodeIntelPostgresDSN
+	})
+
+	db, err := connections.EnsureNewCodeIntelDB(observationCtx, dsn, "oobmigration")
+	if err != nil {
+		return nil, errors.Errorf("failed to connect to codeintel database: %s", err)
+	}
+
+	return db, nil
+}
+
+func initCodeInsightsDB(observationCtx *observation.Context) (*sql.DB, error) {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.CodeInsightsDSN
+	})
+
+	db, err := connections.EnsureNewCodeInsightsDB(observationCtx, dsn, "oobmigration")
+	if err != nil {
+		return nil, errors.Errorf("failed to connect to codeinsights database: %s", err)
+	}
+
+	return db, nil
 }

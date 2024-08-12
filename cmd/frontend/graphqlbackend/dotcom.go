@@ -5,7 +5,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
@@ -42,7 +41,7 @@ type ProductSubscription interface {
 	Name() string
 	Account(context.Context) (*UserResolver, error)
 	ActiveLicense(context.Context) (ProductLicense, error)
-	ProductLicenses(context.Context, *graphqlutil.ConnectionArgs) (ProductLicenseConnection, error)
+	ProductLicenses(context.Context, *gqlutil.ConnectionArgs) (ProductLicenseConnection, error)
 	CodyGatewayAccess() CodyGatewayAccess
 	CreatedAt() gqlutil.DateTime
 	IsArchived() bool
@@ -77,7 +76,7 @@ type ProductSubscriptionArgs struct {
 }
 
 type ProductSubscriptionsArgs struct {
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 	Account *graphql.ID
 	Query   *string
 }
@@ -87,7 +86,7 @@ type ProductSubscriptionsArgs struct {
 type ProductSubscriptionConnection interface {
 	Nodes(context.Context) ([]ProductSubscription, error)
 	TotalCount(context.Context) (int32, error)
-	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(context.Context) (*gqlutil.PageInfo, error)
 }
 
 // ProductLicense is the interface for the GraphQL type ProductLicense.
@@ -113,7 +112,7 @@ type ProductLicenseInput struct {
 }
 
 type ProductLicensesArgs struct {
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 	LicenseKeySubstring   *string
 	ProductSubscriptionID *graphql.ID
 }
@@ -122,7 +121,7 @@ type ProductLicensesArgs struct {
 type ProductLicenseConnection interface {
 	Nodes(context.Context) ([]ProductLicense, error)
 	TotalCount(context.Context) (int32, error)
-	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(context.Context) (*gqlutil.PageInfo, error)
 }
 
 type ProductSubscriptionByAccessTokenArgs struct {

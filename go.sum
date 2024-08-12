@@ -910,6 +910,8 @@ github.com/bmatcuk/doublestar v1.3.4 h1:gPypJ5xD31uhX6Tf54sDPUOBXTqKH4c9aPY66CyQ
 github.com/bmatcuk/doublestar v1.3.4/go.mod h1:wiQtGV+rzVYxB7WIlirSN++5HPtPlXEo9MEoZQC/PmE=
 github.com/bmatcuk/doublestar/v4 v4.6.1 h1:FH9SifrbvJhnlQpztAx++wlkk70QBf0iBWDwNy7PA4I=
 github.com/bmatcuk/doublestar/v4 v4.6.1/go.mod h1:xBQ8jztBU6kakFMg+8WGxn0c6z1fTSPVIjEY1Wr7jzc=
+github.com/bobheadxi/valast v0.0.0-20240724215614-eb5cb82e0c6f h1:cK/ixaJaSyXAKglOrY2CLE0pM9C+m2LbijsVW5k675E=
+github.com/bobheadxi/valast v0.0.0-20240724215614-eb5cb82e0c6f/go.mod h1:Jcy1pNH7LNraVaAZDLyv21hHg2WBv9Nf9FL6fGxU7o4=
 github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff h1:RmdPFa+slIr4SCBg4st/l/vZWVe9QJKMXGO60Bxbe04=
 github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff/go.mod h1:+RTT1BOk5P97fT2CiHkbFQwkK3mjsFAP6zCYV2aXtjw=
 github.com/boombuler/barcode v1.0.0/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
@@ -1652,9 +1654,6 @@ github.com/hexops/autogold/v2 v2.2.1 h1:JPUXuZQGkcQMv7eeDXuNMovjfoRYaa0yVcm+F3vo
 github.com/hexops/autogold/v2 v2.2.1/go.mod h1:IJwxtUfj1BGLm0YsR/k+dIxYi6xbeLjqGke2bzcOTMI=
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
 github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSow5/V2vxeg=
-github.com/hexops/valast v1.4.3/go.mod h1:Iqx2kLj3Jn47wuXpj3wX40xn6F93QNFBHuiKBerkTGA=
-github.com/hexops/valast v1.4.4 h1:rETyycw+/L2ZVJHHNxEBgh8KUn+87WugH9MxcEv9PGs=
-github.com/hexops/valast v1.4.4/go.mod h1:Jcy1pNH7LNraVaAZDLyv21hHg2WBv9Nf9FL6fGxU7o4=
 github.com/hjson/hjson-go/v4 v4.0.0/go.mod h1:KaYt3bTw3zhBjYqnXkYywcYctk0A2nxeEFTse3rH13E=
 github.com/honeycombio/libhoney-go v1.15.8 h1:TECEltZ48K6J4NG1JVYqmi0vCJNnHYooFor83fgKesA=
 github.com/honeycombio/libhoney-go v1.15.8/go.mod h1:+tnL2etFnJmVx30yqmoUkVyQjp7uRJw0a2QGu48lSyY=
@@ -2331,8 +2330,8 @@ github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240702160611-15589d6
 github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240702160611-15589d6d8eac/go.mod h1:0bD4781hPFlS2tTcoUERY8aSu/UTA6YQV7Iv2TJvtm8=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20240802100004-acacc5eda188 h1:+7iTfVMbApfEmcYxQqCrzwBNoQmWu1ujwxP9G94N/M4=
-github.com/sourcegraph/zoekt v0.0.0-20240802100004-acacc5eda188/go.mod h1:bFy43xoeqXhM4vJhIn+w+ehjF/H4iuB/js4cP717jg0=
+github.com/sourcegraph/zoekt v0.0.0-20240808144359-20c496e3680f h1:b1Fjp3Ju2Pgy9OGZfsqn0gfDbAj7vmeWrevhqg1sI8o=
+github.com/sourcegraph/zoekt v0.0.0-20240808144359-20c496e3680f/go.mod h1:bFy43xoeqXhM4vJhIn+w+ehjF/H4iuB/js4cP717jg0=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v0.0.0-20170901052352-ee1bd8ee15a1/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=

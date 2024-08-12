@@ -2,6 +2,8 @@ package subscriptionsservice
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -16,10 +18,12 @@ import (
 	subscriptionsv1connect "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1/v1connect"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/iam"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/connectutil"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/samsm2m"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
@@ -46,19 +50,51 @@ func RegisterV1(
 }
 
 type handlerV1 struct {
-	subscriptionsv1connect.UnimplementedSubscriptionsServiceHandler
-
 	logger log.Logger
 	store  StoreV1
 }
 
 var _ subscriptionsv1connect.SubscriptionsServiceHandler = (*handlerV1)(nil)
 
+func (s *handlerV1) GetEnterpriseSubscription(ctx context.Context, req *connect.Request[subscriptionsv1.GetEnterpriseSubscriptionRequest]) (*connect.Response[subscriptionsv1.GetEnterpriseSubscriptionResponse], error) {
+	logger := trace.Logger(ctx, s.logger)
+
+	// 🚨 SECURITY: Require appropriate M2M scope.
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionRead)
+	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
+	if err != nil {
+		return nil, err
+	}
+	logger = logger.With(clientAttrs...)
+
+	subscriptionID := req.Msg.GetId()
+	if subscriptionID == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("subscription_id is required"))
+	}
+
+	sub, err := s.store.GetEnterpriseSubscription(ctx, subscriptionID)
+	if err != nil {
+		if errors.Is(err, subscriptions.ErrSubscriptionNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
+		return nil, connectutil.InternalError(ctx, logger, err, "failed to find subscription")
+	}
+
+	proto := convertSubscriptionToProto(sub)
+	logger.Scoped("audit").Info("GetEnterpriseSubscription",
+		log.String("subscription", proto.Id))
+	return connect.NewResponse(&subscriptionsv1.GetEnterpriseSubscriptionResponse{
+		Subscription: proto,
+	}), nil
+}
+
 func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connect.Request[subscriptionsv1.ListEnterpriseSubscriptionsRequest]) (*connect.Response[subscriptionsv1.ListEnterpriseSubscriptionsResponse], error) {
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionRead)
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionRead)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -74,8 +110,13 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 
 	// Validate and process filters.
 	filters := req.Msg.GetFilters()
-	isArchived := false
-	subscriptionIDs := make(collections.Set[string], len(filters))
+	var (
+		isArchived                *bool
+		internalSubscriptionIDs   = make(collections.Set[string], len(filters))
+		displayNameSubstring      string
+		salesforceSubscriptionIDs []string
+		instanceDomains           []string
+	)
 	var iamListObjectOptions *iam.ListObjectsOptions
 	for _, filter := range filters {
 		switch f := filter.GetFilter().(type) {
@@ -86,10 +127,10 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 					errors.New(`invalid filter: "subscription_id" provided but is empty`),
 				)
 			}
-			subscriptionIDs.Add(
+			internalSubscriptionIDs.Add(
 				strings.TrimPrefix(f.SubscriptionId, subscriptionsv1.EnterpriseSubscriptionIDPrefix))
 		case *subscriptionsv1.ListEnterpriseSubscriptionsFilter_IsArchived:
-			isArchived = f.IsArchived
+			isArchived = &f.IsArchived
 		case *subscriptionsv1.ListEnterpriseSubscriptionsFilter_Permission:
 			if f.Permission == nil {
 				return nil, connect.NewError(
@@ -130,6 +171,39 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 					errors.Wrap(err, `invalid filter: "permission" provided but invalid`),
 				)
 			}
+		case *subscriptionsv1.ListEnterpriseSubscriptionsFilter_DisplayName:
+			if displayNameSubstring != "" {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.Newf(`invalid filter: "display_name" provided more than once`),
+				)
+			}
+			const minLength = 3
+			if len(f.DisplayName) < minLength {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.Newf(`invalid filter: "display_name" must be longer than %d characters`, minLength),
+				)
+			}
+			displayNameSubstring = f.DisplayName
+		case *subscriptionsv1.ListEnterpriseSubscriptionsFilter_Salesforce:
+			if f.Salesforce.SubscriptionId == "" {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.Newf(`invalid filter: "salesforce.subscription_id" is empty`),
+				)
+			}
+			salesforceSubscriptionIDs = append(salesforceSubscriptionIDs,
+				f.Salesforce.SubscriptionId)
+		case *subscriptionsv1.ListEnterpriseSubscriptionsFilter_InstanceDomain:
+			domain, err := subscriptionsv1.NormalizeInstanceDomain(f.InstanceDomain)
+			if err != nil {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.Wrap(err, `invalid filter: "domain" provided but invalid`),
+				)
+			}
+			instanceDomains = append(instanceDomains, domain)
 		}
 	}
 
@@ -146,18 +220,18 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 			allowedSubscriptionIDs.Add(strings.TrimPrefix(objectID, "subscription_cody_analytics:"))
 		}
 
-		if !subscriptionIDs.IsEmpty() {
+		if !internalSubscriptionIDs.IsEmpty() {
 			// If subscription IDs were provided, we only want to return the
 			// subscriptions that are part of the provided IDs.
-			subscriptionIDs = collections.Intersection(subscriptionIDs, allowedSubscriptionIDs)
+			internalSubscriptionIDs = collections.Intersection(internalSubscriptionIDs, allowedSubscriptionIDs)
 		} else {
 			// Otherwise, only return the allowed subscriptions.
-			subscriptionIDs = allowedSubscriptionIDs
+			internalSubscriptionIDs = allowedSubscriptionIDs
 		}
 
 		// 🚨 SECURITY: If permissions are used as filter, but we found no results, we
 		// should directly return an empty response to not mistaken as list all.
-		if len(subscriptionIDs) == 0 {
+		if len(internalSubscriptionIDs) == 0 {
 			return connect.NewResponse(&subscriptionsv1.ListEnterpriseSubscriptionsResponse{}), nil
 		}
 	}
@@ -165,51 +239,24 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 	subs, err := s.store.ListEnterpriseSubscriptions(
 		ctx,
 		subscriptions.ListEnterpriseSubscriptionsOptions{
-			IDs:        subscriptionIDs.Values(),
-			IsArchived: isArchived,
-			PageSize:   int(req.Msg.GetPageSize()),
+			IDs:                       internalSubscriptionIDs.Values(),
+			IsArchived:                isArchived,
+			InstanceDomains:           instanceDomains,
+			DisplayNameSubstring:      displayNameSubstring,
+			SalesforceSubscriptionIDs: salesforceSubscriptionIDs,
+
+			PageSize: int(req.Msg.GetPageSize()),
 		},
 	)
 	if err != nil {
 		return nil, connectutil.InternalError(ctx, logger, err, "list subscriptions")
 	}
 
-	// List from dotcom DB and merge attributes.
-	dotcomSubscriptions, err := s.store.ListDotcomEnterpriseSubscriptions(ctx, dotcomdb.ListEnterpriseSubscriptionsOptions{
-		SubscriptionIDs: subscriptionIDs.Values(),
-		IsArchived:      isArchived,
-	})
-	if err != nil {
-		return nil, connectutil.InternalError(ctx, logger, err, "list subscriptions from dotcom DB")
-	}
-	dotcomSubscriptionsSet := make(map[string]*dotcomdb.SubscriptionAttributes, len(dotcomSubscriptions))
-	for _, s := range dotcomSubscriptions {
-		dotcomSubscriptionsSet[s.ID] = s
-	}
-
-	// Add the "real" subscriptions we already track to the results
-	respSubscriptions := make([]*subscriptionsv1.EnterpriseSubscription, 0, len(subs))
-	for _, s := range subs {
-		respSubscriptions = append(
-			respSubscriptions,
-			convertSubscriptionToProto(&s.Subscription, dotcomSubscriptionsSet[s.ID]),
-		)
-		delete(dotcomSubscriptionsSet, s.ID)
-	}
-
-	// Add any remaining dotcom subscriptions to the results set
-	for _, s := range dotcomSubscriptionsSet {
-		respSubscriptions = append(
-			respSubscriptions,
-			convertSubscriptionToProto(&subscriptions.Subscription{
-				ID: subscriptionsv1.EnterpriseSubscriptionIDPrefix + s.ID,
-			}, s),
-		)
-	}
-
 	accessedSubscriptions := map[string]struct{}{}
-	for _, s := range respSubscriptions {
-		accessedSubscriptions[s.GetId()] = struct{}{}
+	protoSubscriptions := make([]*subscriptionsv1.EnterpriseSubscription, len(subs))
+	for i, s := range subs {
+		protoSubscriptions[i] = convertSubscriptionToProto(s)
+		accessedSubscriptions[s.ID] = struct{}{}
 	}
 	logger.Scoped("audit").Info("ListEnterpriseSubscriptions",
 		log.Strings("accessedSubscriptions", maps.Keys(accessedSubscriptions)),
@@ -220,7 +267,7 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 			// Never a next page, pagination is not implemented yet:
 			// https://linear.app/sourcegraph/issue/CORE-134
 			NextPageToken: "",
-			Subscriptions: respSubscriptions,
+			Subscriptions: protoSubscriptions,
 		},
 	), nil
 }
@@ -229,7 +276,8 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionRead)
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionRead)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -243,31 +291,87 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pagination not implemented"))
 	}
 
+	opts := subscriptions.ListLicensesOpts{
+		PageSize: int(req.Msg.GetPageSize()),
+	}
+
 	// Validate filters
 	filters := req.Msg.GetFilters()
 	for _, filter := range filters {
-		// TODO: Implement additional filtering as needed
 		switch f := filter.GetFilter().(type) {
 		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_Type:
-			return nil, connect.NewError(connect.CodeUnimplemented,
-				errors.New("filtering by type is not implemented"))
+			if f.Type == 0 {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.New(`invalid filter: "type" is not valid`),
+				)
+			}
+			if opts.LicenseType != 0 {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.New(`invalid filter: "type" provided more than once`),
+				)
+			}
+			opts.LicenseType = f.Type
+
 		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_LicenseKeySubstring:
-			return nil, connect.NewError(connect.CodeUnimplemented,
-				errors.New("filtering by license key substring is not implemented"))
+			const minLength = 3
+			if len(f.LicenseKeySubstring) < minLength {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.Newf(`invalid filter: "license_key_substring" must be longer than %d characters`, minLength),
+				)
+			}
+			if opts.LicenseKeySubstring != "" {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.New(`invalid filter: "license_key_substring" provided multiple times`),
+				)
+			}
+			opts.LicenseKeySubstring = f.LicenseKeySubstring
+
 		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_SubscriptionId:
 			if f.SubscriptionId == "" {
 				return nil, connect.NewError(
 					connect.CodeInvalidArgument,
-					errors.New(`invalid filter: "subscription_id"" provided but is empty`),
+					errors.New(`invalid filter: "subscription_id" provided but is empty`),
 				)
 			}
+			if opts.SubscriptionID != "" {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.New(`invalid filter: "subscription_id" provided multiple times`),
+				)
+			}
+			opts.SubscriptionID = f.SubscriptionId
+
+		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_SalesforceOpportunityId:
+			if f.SalesforceOpportunityId == "" {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.New(`invalid filter: "salesforce_opportunity_id" provided but is empty`),
+				)
+			}
+			opts.SalesforceOpportunityID = f.SalesforceOpportunityId
 		}
 	}
 
-	licenses, err := s.store.ListDotcomEnterpriseSubscriptionLicenses(ctx, filters,
-		// Provide page size to allow "active license" functionality, by only
-		// retrieving the most recently created result.
-		int(req.Msg.GetPageSize()))
+	if opts.LicenseType != subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY {
+		if opts.LicenseKeySubstring != "" {
+			return nil, connect.NewError(
+				connect.CodeInvalidArgument,
+				errors.New(`invalid filters: "license_type" must be 'ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY' to use the "license_key_substring" filter`),
+			)
+		}
+		if opts.SalesforceOpportunityID != "" {
+			return nil, connect.NewError(
+				connect.CodeInvalidArgument,
+				errors.New(`invalid filters: "license_type" must be 'ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY' to use the "salesforce_opportunity_id" filter`),
+			)
+		}
+	}
+
+	licenses, err := s.store.ListEnterpriseSubscriptionLicenses(ctx, opts)
 	if err != nil {
 		if errors.Is(err, dotcomdb.ErrCodyGatewayAccessNotFound) {
 			return nil, connect.NewError(connect.CodeNotFound, err)
@@ -286,41 +390,122 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 	accessedSubscriptions := map[string]struct{}{}
 	accessedLicenses := make([]string, len(licenses))
 	for i, l := range licenses {
-		resp.Licenses[i] = convertLicenseAttrsToProto(l)
+		resp.Licenses[i], err = convertLicenseToProto(l)
+		if err != nil {
+			return nil, connectutil.InternalError(ctx, logger,
+				errors.Wrap(err, l.ID),
+				"failed to read Enterprise Subscription license")
+		}
 		accessedSubscriptions[resp.Licenses[i].GetSubscriptionId()] = struct{}{}
 		accessedLicenses[i] = resp.Licenses[i].GetId()
 	}
+
 	logger.Scoped("audit").Info("ListEnterpriseSubscriptionLicenses",
 		log.Strings("accessedSubscriptions", maps.Keys(accessedSubscriptions)),
 		log.Strings("accessedLicenses", accessedLicenses))
 	return connect.NewResponse(&resp), nil
 }
 
-func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *connect.Request[subscriptionsv1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[subscriptionsv1.UpdateEnterpriseSubscriptionResponse], error) {
+func (s *handlerV1) CreateEnterpriseSubscription(ctx context.Context, req *connect.Request[subscriptionsv1.CreateEnterpriseSubscriptionRequest]) (*connect.Response[subscriptionsv1.CreateEnterpriseSubscriptionResponse], error) {
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionWrite)
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionWrite)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
 	}
 	logger = logger.With(clientAttrs...)
 
-	subscriptionID := strings.TrimPrefix(req.Msg.GetSubscription().GetId(), subscriptionsv1.EnterpriseSubscriptionIDPrefix)
+	sub := req.Msg.GetSubscription()
+	if sub == nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("subscription details are required"))
+	}
+
+	// Validate required arguments.
+	if strings.TrimSpace(sub.GetDisplayName()) == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("display_name is required"))
+	}
+	if sub.GetInstanceType() == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("instance_type is required"))
+	}
+	if _, ok := subscriptionsv1.EnterpriseSubscriptionInstanceType_name[int32(sub.GetInstanceType())]; !ok {
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			errors.Newf("invalid 'instance_type' %s", sub.GetInstanceType().String()))
+	}
+
+	// Generate a new ID for the subscription.
+	if sub.Id != "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("subscription_id can not be set"))
+	}
+	sub.Id, err = s.store.GenerateSubscriptionID()
+	if err != nil {
+		return nil, connectutil.InternalError(ctx, s.logger, err, "failed to generate new subscription ID")
+	}
+
+	// Check for an existing subscription, just in case.
+	if _, err := s.store.GetEnterpriseSubscription(ctx, sub.Id); err == nil {
+		return nil, connect.NewError(connect.CodeAlreadyExists, err)
+	} else if !errors.Is(err, subscriptions.ErrSubscriptionNotFound) {
+		return nil, connectutil.InternalError(ctx, logger, err,
+			"failed to check for existing subscription")
+	}
+
+	createdAt := s.store.Now()
+	createdSub, err := s.store.UpsertEnterpriseSubscription(ctx, sub.Id,
+		subscriptions.UpsertSubscriptionOptions{
+			CreatedAt:                createdAt,
+			DisplayName:              database.NewNullString(sub.GetDisplayName()),
+			InstanceDomain:           database.NewNullString(sub.GetInstanceDomain()),
+			InstanceType:             database.NewNullString(sub.GetInstanceType().String()),
+			SalesforceSubscriptionID: database.NewNullString(sub.GetSalesforce().GetSubscriptionId()),
+		},
+		subscriptions.CreateSubscriptionConditionOptions{
+			Status:         subscriptionsv1.EnterpriseSubscriptionCondition_STATUS_CREATED,
+			TransitionTime: createdAt,
+			Message:        req.Msg.GetMessage(),
+		})
+	if err != nil {
+		if errors.Is(err, subscriptions.ErrInvalidArgument) {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
+		return nil, connectutil.InternalError(ctx, logger, err, "failed to create subscription")
+	}
+
+	protoSub := convertSubscriptionToProto(createdSub)
+	logger.Scoped("audit").Info("CreateEnterpriseSubscription",
+		log.String("createdSubscription", protoSub.GetId()))
+	return connect.NewResponse(&subscriptionsv1.CreateEnterpriseSubscriptionResponse{
+		Subscription: protoSub,
+	}), nil
+}
+
+func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *connect.Request[subscriptionsv1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[subscriptionsv1.UpdateEnterpriseSubscriptionResponse], error) {
+	logger := trace.Logger(ctx, s.logger)
+
+	// 🚨 SECURITY: Require appropriate M2M scope.
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionWrite)
+	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
+	if err != nil {
+		return nil, err
+	}
+	logger = logger.With(clientAttrs...)
+
+	subscriptionID := req.Msg.GetSubscription().GetId()
 	if subscriptionID == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("subscription.id is required"))
 	}
 
-	// TEMPORARY: Double check with the dotcom DB that the subscription ID is valid.
-	// This currently ensures we never actually create new subscriptions.
-	subscriptionAttrs, err := s.store.ListDotcomEnterpriseSubscriptions(ctx, dotcomdb.ListEnterpriseSubscriptionsOptions{
-		SubscriptionIDs: []string{subscriptionID},
-	})
-	if err != nil {
-		return nil, connectutil.InternalError(ctx, logger, err, "get dotcom enterprise subscription")
-	} else if len(subscriptionAttrs) != 1 {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("subscription not found"))
+	if existing, err := s.store.GetEnterpriseSubscription(ctx, subscriptionID); err != nil {
+		if errors.Is(err, subscriptions.ErrSubscriptionNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
+		return nil, connectutil.InternalError(ctx, logger, err, "failed to find subscription")
+	} else if existing.ArchivedAt != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			errors.New("archived subscriptions cannot be updated"))
 	}
 
 	var opts subscriptions.UpsertSubscriptionOptions
@@ -331,24 +516,57 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 		if v := req.Msg.GetSubscription().GetInstanceDomain(); v != "" {
 			opts.InstanceDomain = database.NewNullString(v)
 		}
+		if v := req.Msg.GetSubscription().GetInstanceType(); v > 0 {
+			if _, ok := subscriptionsv1.EnterpriseSubscriptionInstanceType_name[int32(v)]; !ok {
+				return nil, connect.NewError(connect.CodeInvalidArgument,
+					errors.Newf("invalid 'instance_type' %s", v.String()))
+			}
+			opts.InstanceType = database.NewNullString(v.String())
+		}
 		if v := req.Msg.GetSubscription().GetDisplayName(); v != "" {
 			opts.DisplayName = database.NewNullString(v)
 		}
+		if v := req.Msg.GetSubscription().GetSalesforce().GetSubscriptionId(); v != "" {
+			opts.SalesforceSubscriptionID = database.NewNullString(v)
+		}
 	} else {
 		for _, p := range fieldPaths {
-			switch p {
-			case "instance_domain":
-				opts.InstanceDomain =
-					database.NewNullString(req.Msg.GetSubscription().GetInstanceDomain())
-			case "display_name":
-				opts.DisplayName =
-					database.NewNullString(req.Msg.GetSubscription().GetDisplayName())
-			case "*":
+			var valid bool
+			if p == "*" {
+				valid = true
 				opts.ForceUpdate = true
+			}
+			if p == "instance_domain" || p == "*" {
+				valid = true
 				opts.InstanceDomain =
 					database.NewNullString(req.Msg.GetSubscription().GetInstanceDomain())
+			}
+			if p == "instance_type" || p == "*" {
+				valid = true
+				t := req.Msg.GetSubscription().GetInstanceType()
+				if _, ok := subscriptionsv1.EnterpriseSubscriptionInstanceType_name[int32(t)]; !ok {
+					return nil, connect.NewError(connect.CodeInvalidArgument,
+						errors.Newf("invalid 'instance_type' %s", t.String()))
+				}
+				if t == 0 {
+					opts.InstanceType = &sql.NullString{} // unset if zero
+				} else {
+					opts.InstanceType = database.NewNullString(t.String())
+				}
+			}
+			if p == "display_name" || p == "*" {
+				valid = true
 				opts.DisplayName =
 					database.NewNullString(req.Msg.GetSubscription().GetDisplayName())
+			}
+			if p == "salesforce.subscription_id" || p == "*" {
+				valid = true
+				opts.SalesforceSubscriptionID =
+					database.NewNullString(req.Msg.GetSubscription().GetSalesforce().GetSubscriptionId())
+			}
+
+			if !valid {
+				return nil, connect.NewError(connect.CodeInvalidArgument, errors.Newf("unknown field path: %s", p))
 			}
 		}
 	}
@@ -367,7 +585,7 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 		return nil, connectutil.InternalError(ctx, logger, err, "upsert subscription")
 	}
 
-	respSubscription := convertSubscriptionToProto(&subscription.Subscription, subscriptionAttrs[0])
+	respSubscription := convertSubscriptionToProto(subscription)
 	logger.Scoped("audit").Info("UpdateEnterpriseSubscription",
 		log.String("updatedSubscription", respSubscription.GetId()),
 	)
@@ -379,11 +597,208 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 	), nil
 }
 
+func (s *handlerV1) ArchiveEnterpriseSubscription(ctx context.Context, req *connect.Request[subscriptionsv1.ArchiveEnterpriseSubscriptionRequest]) (*connect.Response[subscriptionsv1.ArchiveEnterpriseSubscriptionResponse], error) {
+	logger := trace.Logger(ctx, s.logger)
+
+	// 🚨 SECURITY: Require appropriate M2M scope.
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionWrite)
+	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
+	if err != nil {
+		return nil, err
+	}
+	logger = logger.With(clientAttrs...)
+
+	subscriptionID := req.Msg.GetSubscriptionId()
+	if subscriptionID == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("subscription_id is required"))
+	}
+
+	if _, err := s.store.GetEnterpriseSubscription(ctx, subscriptionID); err != nil {
+		if errors.Is(err, subscriptions.ErrSubscriptionNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
+		return nil, connectutil.InternalError(ctx, logger, err, "failed to find subscription")
+	}
+
+	archivedAt := s.store.Now()
+
+	// First, revoke all licenses associated with this subscription
+	licenses, err := s.store.ListEnterpriseSubscriptionLicenses(ctx, subscriptions.ListLicensesOpts{
+		SubscriptionID: subscriptionID,
+	})
+	if err != nil {
+		return nil, connectutil.InternalError(ctx, logger, err, "failed to list licenses for subscription")
+	}
+	revokedLicenses := make([]string, 0, len(licenses))
+	for _, lc := range licenses {
+		// Already revoked - nothing to do
+		if lc.RevokedAt != nil {
+			continue
+		}
+
+		licenseRevokeReason := "Subscription archival"
+		if reason := req.Msg.GetReason(); reason != "" {
+			licenseRevokeReason = fmt.Sprintf("Subscription archival: %s", reason)
+		}
+		_, err := s.store.RevokeEnterpriseSubscriptionLicense(ctx, lc.ID, subscriptions.RevokeLicenseOpts{
+			Message: licenseRevokeReason,
+			Time:    &archivedAt,
+		})
+		if err != nil {
+			// Audit-log the licenses we did manage to revoke
+			logger.Scoped("audit").Info("ArchiveEnterpriseSubscription",
+				log.Strings("revokedLicenses", revokedLicenses))
+
+			return nil, connectutil.InternalError(ctx, logger, err,
+				fmt.Sprintf("failed to revoke license %q", lc.ID))
+		}
+
+		revokedLicenses = append(revokedLicenses, lc.ID)
+	}
+
+	// Then, archive the parent subscription
+	createdSub, err := s.store.UpsertEnterpriseSubscription(ctx, subscriptionID,
+		subscriptions.UpsertSubscriptionOptions{
+			ArchivedAt: pointers.Ptr(archivedAt),
+		},
+		subscriptions.CreateSubscriptionConditionOptions{
+			Status:         subscriptionsv1.EnterpriseSubscriptionCondition_STATUS_ARCHIVED,
+			TransitionTime: archivedAt,
+			Message:        req.Msg.GetReason(),
+		})
+	if err != nil {
+		if errors.Is(err, subscriptions.ErrInvalidArgument) {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
+		return nil, connectutil.InternalError(ctx, logger, err, "failed to create subscription")
+	}
+
+	protoSub := convertSubscriptionToProto(createdSub)
+	logger.Scoped("audit").Info("ArchiveEnterpriseSubscription",
+		log.String("archivedSubscription", protoSub.GetId()),
+		log.Strings("revokedLicenses", revokedLicenses))
+	return connect.NewResponse(&subscriptionsv1.ArchiveEnterpriseSubscriptionResponse{}), nil
+}
+
+func (s *handlerV1) CreateEnterpriseSubscriptionLicense(ctx context.Context, req *connect.Request[subscriptionsv1.CreateEnterpriseSubscriptionLicenseRequest]) (*connect.Response[subscriptionsv1.CreateEnterpriseSubscriptionLicenseResponse], error) {
+	logger := trace.Logger(ctx, s.logger)
+
+	// 🚨 SECURITY: Require appropriate M2M scope.
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionWrite)
+	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
+	if err != nil {
+		return nil, err
+	}
+	logger = logger.With(clientAttrs...)
+
+	create := req.Msg.GetLicense()
+	if create.GetId() != "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("license.id cannot be set"))
+	}
+	subscriptionID := create.GetSubscriptionId()
+	if subscriptionID == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("license.subscription_id is required"))
+	}
+	sub, err := s.store.GetEnterpriseSubscription(ctx, subscriptionID)
+	if err != nil {
+		if errors.Is(err, subscriptions.ErrSubscriptionNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
+		return nil, connectutil.InternalError(ctx, logger, err, "failed to find subscription")
+	}
+	if sub.ArchivedAt != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			errors.New("target subscription is archived"))
+	}
+
+	createdAt := s.store.Now()
+
+	var createdLicense *subscriptions.LicenseWithConditions
+	switch data := create.License.(type) {
+	case *subscriptionsv1.EnterpriseSubscriptionLicense_Key:
+		licenseKey, err := convertLicenseKeyToLicenseKeyData(
+			createdAt,
+			&sub.Subscription,
+			data.Key,
+			s.store.GetRequiredEnterpriseSubscriptionLicenseKeyTags(),
+			s.store.SignEnterpriseSubscriptionLicenseKey)
+		if err != nil {
+			var connectErr *connect.Error
+			if errors.As(err, &connectErr) {
+				return nil, err
+			}
+			return nil, connectutil.InternalError(ctx, logger, err, "failed to initialize license key from inputs")
+		}
+		createdLicense, err = s.store.CreateEnterpriseSubscriptionLicenseKey(ctx, subscriptionID,
+			licenseKey,
+			subscriptions.CreateLicenseOpts{
+				Message:    req.Msg.GetMessage(),
+				Time:       &createdAt,
+				ExpireTime: utctime.FromTime(licenseKey.Info.ExpiresAt),
+			})
+		if err != nil {
+			return nil, connectutil.InternalError(ctx, logger, err, "failed to create license key")
+		}
+
+	default:
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.Newf("unsupported licnese type %T", data))
+	}
+
+	proto, err := convertLicenseToProto(createdLicense)
+	if err != nil {
+		return nil, connectutil.InternalError(ctx, logger,
+			errors.Wrap(err, createdLicense.ID),
+			"failed to parse license")
+	}
+	logger.Scoped("audit").Info("CreateEnterpriseSubscriptionLicense",
+		log.String("subscription", subscriptionID),
+		log.String("createdLicense", proto.GetId()))
+	return connect.NewResponse(&subscriptionsv1.CreateEnterpriseSubscriptionLicenseResponse{
+		License: proto,
+	}), nil
+}
+
+func (s *handlerV1) RevokeEnterpriseSubscriptionLicense(ctx context.Context, req *connect.Request[subscriptionsv1.RevokeEnterpriseSubscriptionLicenseRequest]) (*connect.Response[subscriptionsv1.RevokeEnterpriseSubscriptionLicenseResponse], error) {
+	logger := trace.Logger(ctx, s.logger)
+
+	// 🚨 SECURITY: Require appropriate M2M scope.
+	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionWrite)
+	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
+	if err != nil {
+		return nil, err
+	}
+	logger = logger.With(clientAttrs...)
+
+	licenseID := req.Msg.LicenseId
+	if licenseID == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("license_id is required"))
+	}
+
+	license, err := s.store.RevokeEnterpriseSubscriptionLicense(ctx, licenseID, subscriptions.RevokeLicenseOpts{
+		Message: req.Msg.GetReason(),
+		Time:    pointers.Ptr(s.store.Now()),
+	})
+	if err != nil {
+		if errors.Is(err, subscriptions.ErrSubscriptionLicenseNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
+		return nil, connectutil.InternalError(ctx, logger, err, "failed to revoked license")
+	}
+
+	logger.Scoped("audit").Info("RevokeEnterpriseSubscriptionLicense",
+		log.String("subscription", license.SubscriptionID),
+		log.String("revokedLicense", license.ID))
+	return connect.NewResponse(&subscriptionsv1.RevokeEnterpriseSubscriptionLicenseResponse{}), nil
+}
+
 func (s *handlerV1) UpdateEnterpriseSubscriptionMembership(ctx context.Context, req *connect.Request[subscriptionsv1.UpdateEnterpriseSubscriptionMembershipRequest]) (*connect.Response[subscriptionsv1.UpdateEnterpriseSubscriptionMembershipResponse], error) {
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("permission.subscription", scopes.ActionWrite)
+	requiredScope := samsm2m.EnterprisePortalScope(
+		scopes.PermissionEnterprisePortalSubscriptionPermission, scopes.ActionWrite)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -413,14 +828,12 @@ func (s *handlerV1) UpdateEnterpriseSubscriptionMembership(ctx context.Context, 
 	}
 
 	if subscriptionID != "" {
-		// Double check with the dotcom DB that the subscription ID is valid.
-		subscriptionAttrs, err := s.store.ListDotcomEnterpriseSubscriptions(ctx, dotcomdb.ListEnterpriseSubscriptionsOptions{
-			SubscriptionIDs: []string{subscriptionID},
-		})
-		if err != nil {
-			return nil, connectutil.InternalError(ctx, logger, err, "get dotcom enterprise subscription")
-		} else if len(subscriptionAttrs) != 1 {
-			return nil, connect.NewError(connect.CodeNotFound, errors.New("subscription not found"))
+		// Double check that the subscription ID is valid.
+		if _, err := s.store.GetEnterpriseSubscription(ctx, subscriptionID); err != nil {
+			if errors.Is(err, subscriptions.ErrSubscriptionNotFound) {
+				return nil, connect.NewError(connect.CodeNotFound, errors.New("subscription not found"))
+			}
+			return nil, connectutil.InternalError(ctx, logger, err, "get enterprise subscription")
 		}
 	} else if instanceDomain != "" {
 		// Validate and normalize the domain
@@ -432,7 +845,7 @@ func (s *handlerV1) UpdateEnterpriseSubscriptionMembership(ctx context.Context, 
 			ctx,
 			subscriptions.ListEnterpriseSubscriptionsOptions{
 				InstanceDomains: []string{instanceDomain},
-				PageSize:        1,
+				PageSize:        1, // instanceDomain should be globally unique
 			},
 		)
 		if err != nil {

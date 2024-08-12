@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -257,28 +257,28 @@ func TestGitTree_Entries(t *testing.T) {
 	})
 
 	t.Run("Pagination", func(t *testing.T) {
-		entries, err := gitTree.Entries(context.Background(), &gitTreeEntryConnectionArgs{ConnectionArgs: graphqlutil.ConnectionArgs{First: pointers.Ptr(int32(1))}})
+		entries, err := gitTree.Entries(context.Background(), &gitTreeEntryConnectionArgs{ConnectionArgs: gqlutil.ConnectionArgs{First: pointers.Ptr(int32(1))}})
 		require.NoError(t, err)
 		assertEntries(t, []fs.FileInfo{
 			CreateFileInfo(".aspect/", true),
 		}, entries)
-		entries, err = gitTree.Files(context.Background(), &gitTreeEntryConnectionArgs{ConnectionArgs: graphqlutil.ConnectionArgs{First: pointers.Ptr(int32(1))}})
+		entries, err = gitTree.Files(context.Background(), &gitTreeEntryConnectionArgs{ConnectionArgs: gqlutil.ConnectionArgs{First: pointers.Ptr(int32(1))}})
 		require.NoError(t, err)
 		assertEntries(t, []fs.FileInfo{
 			CreateFileInfo("file", false),
 		}, entries)
-		entries, err = gitTree.Directories(context.Background(), &gitTreeEntryConnectionArgs{ConnectionArgs: graphqlutil.ConnectionArgs{First: pointers.Ptr(int32(1))}})
+		entries, err = gitTree.Directories(context.Background(), &gitTreeEntryConnectionArgs{ConnectionArgs: gqlutil.ConnectionArgs{First: pointers.Ptr(int32(1))}})
 		require.NoError(t, err)
 		assertEntries(t, []fs.FileInfo{
 			CreateFileInfo(".aspect/", true),
 		}, entries)
 
 		// Invalid first.
-		_, err = gitTree.Entries(context.Background(), &gitTreeEntryConnectionArgs{ConnectionArgs: graphqlutil.ConnectionArgs{First: pointers.Ptr(int32(-1))}})
+		_, err = gitTree.Entries(context.Background(), &gitTreeEntryConnectionArgs{ConnectionArgs: gqlutil.ConnectionArgs{First: pointers.Ptr(int32(-1))}})
 		require.Error(t, err)
 
 		// First is bigger than the number of entries.
-		entries, err = gitTree.Entries(context.Background(), &gitTreeEntryConnectionArgs{ConnectionArgs: graphqlutil.ConnectionArgs{First: pointers.Ptr(int32(100))}})
+		entries, err = gitTree.Entries(context.Background(), &gitTreeEntryConnectionArgs{ConnectionArgs: gqlutil.ConnectionArgs{First: pointers.Ptr(int32(100))}})
 		require.NoError(t, err)
 		assertEntries(t, []fs.FileInfo{
 			CreateFileInfo(".aspect/", true),

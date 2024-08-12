@@ -7,10 +7,10 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -90,15 +90,15 @@ func (r *codeHostConnectionResolver) TotalCount(ctx context.Context) (int32, err
 	return r.db.CodeHosts().Count(ctx, opt)
 }
 
-func (r *codeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *codeHostConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if next != 0 {
-		return graphqlutil.NextPageCursor(string(MarshalCodeHostID(next))), nil
+		return gqlutil.NextPageCursor(string(MarshalCodeHostID(next))), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return gqlutil.HasNextPage(false), nil
 
 }
 

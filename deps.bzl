@@ -3430,8 +3430,9 @@ def go_dependencies():
         name = "com_github_hexops_valast",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/hexops/valast",
-        sum = "h1:rETyycw+/L2ZVJHHNxEBgh8KUn+87WugH9MxcEv9PGs=",
-        version = "v1.4.4",
+        replace = "github.com/bobheadxi/valast",
+        sum = "h1:cK/ixaJaSyXAKglOrY2CLE0pM9C+m2LbijsVW5k675E=",
+        version = "v0.0.0-20240724215614-eb5cb82e0c6f",
     )
     go_repository(
         name = "com_github_hhatto_gocloc",
@@ -6133,8 +6134,8 @@ def go_dependencies():
         patches = [
             "//third_party/com_github_sourcegraph_zoekt:x_defs_version.patch",
         ],
-        sum = "h1:+7iTfVMbApfEmcYxQqCrzwBNoQmWu1ujwxP9G94N/M4=",
-        version = "v0.0.0-20240802100004-acacc5eda188",
+        sum = "h1:b1Fjp3Ju2Pgy9OGZfsqn0gfDbAj7vmeWrevhqg1sI8o=",
+        version = "v0.0.0-20240808144359-20c496e3680f",
     )
     go_repository(
         name = "com_github_spaolacci_murmur3",

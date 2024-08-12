@@ -6,7 +6,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"gorm.io/gorm"
 
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/utctime"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -96,7 +96,7 @@ VALUES (
 )`, pgx.NamedArgs{
 		"licenseID": licenseID,
 		// Convert to string representation of EnterpriseSubscriptionLicenseCondition
-		"status":         subscriptionsv1.EnterpriseSubscriptionLicenseCondition_Status_name[int32(opts.Status)],
+		"status":         opts.Status.String(),
 		"message":        pointers.NilIfZero(opts.Message),
 		"transitionTime": opts.TransitionTime,
 	})

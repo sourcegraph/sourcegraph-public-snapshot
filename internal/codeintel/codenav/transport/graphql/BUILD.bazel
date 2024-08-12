@@ -25,7 +25,6 @@ go_library(
     tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
@@ -40,6 +39,7 @@ go_library(
         "//internal/conf",
         "//internal/database",
         "//internal/gitserver",
+        "//internal/gqlutil",
         "//internal/metrics",
         "//internal/observation",
         "//internal/types",

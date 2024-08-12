@@ -11,7 +11,7 @@
 
     import type { ExplorePanel_Usage } from './ExplorePanel.gql'
 
-    export let repo: string
+    export let repository: string
     export let path: string
     export let usages: ExplorePanel_Usage[]
     export let scrollContainer: HTMLElement | undefined
@@ -24,7 +24,7 @@
     $: if (visible) {
         fetchFileRangeMatches({
             result: {
-                repository: repo,
+                repository,
                 commit: revision,
                 path: path,
             },
@@ -73,14 +73,14 @@
     on:intersecting={event => (visible = visible || event.detail)}
 >
     <div class="header">
-        <CodeHostIcon repository={repo} />
-        <span class="repo-name"><DisplayPath path={displayRepoName(repo)} /></span>
+        <CodeHostIcon {repository} />
+        <span class="repo-name"><DisplayPath path={displayRepoName(repository)} /></span>
         <span class="interpunct">⋅</span>
         <span class="file-name">
             <DisplayPath
                 {path}
                 pathHref={pathHrefFactory({
-                    repoName: repo,
+                    repoName: repository,
                     revision: revision,
                     fullPath: path,
                     fullPathType: 'blob',

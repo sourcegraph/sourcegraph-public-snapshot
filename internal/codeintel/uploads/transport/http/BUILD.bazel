@@ -15,7 +15,6 @@ go_library(
     tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/backend",
         "//internal/api",
         "//internal/codeintel/uploads",
         "//internal/codeintel/uploads/transport/http/auth",
@@ -48,7 +47,6 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//cmd/frontend/backend",
         "//internal/actor",
         "//internal/api",
         "//internal/codeintel/uploads",
@@ -65,6 +63,7 @@ go_test(
         "//schema",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
     ],
 )
 

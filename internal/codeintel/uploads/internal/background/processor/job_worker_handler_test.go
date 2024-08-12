@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph/codegraphmocks"
@@ -39,8 +38,6 @@ import (
 )
 
 func TestHandle(t *testing.T) {
-	setupRepoMocks(t)
-
 	upload := shared.Upload{
 		ID:           42,
 		Root:         "",
@@ -56,6 +53,12 @@ func TestHandle(t *testing.T) {
 	mockLSIFStore := codegraphmocks.NewMockDataStore()
 	mockUploadStore := objectmocks.NewMockStorage()
 	gitserverClient := gitserver.NewMockClient()
+	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		if commit != "deadbeef" {
+			t.Errorf("unexpected commit. want=%s have=%s", "deadbeef", commit)
+		}
+		return "", nil
+	})
 
 	// Set default transaction behavior
 	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s store.Store) error) error { return f(mockDBStore) })
@@ -288,8 +291,6 @@ func TestHandle(t *testing.T) {
 }
 
 func TestHandleError(t *testing.T) {
-	setupRepoMocks(t)
-
 	upload := shared.Upload{
 		ID:           42,
 		Root:         "root/",
@@ -430,27 +431,6 @@ var scipDirectoryChildren = map[string][]string{
 		"template/src/util/uri.test.ts",
 		"template/src/util/uri.ts",
 	},
-}
-
-func setupRepoMocks(t *testing.T) {
-	t.Cleanup(func() {
-		backend.Mocks.Repos.Get = nil
-		backend.Mocks.Repos.ResolveRev = nil
-	})
-
-	backend.Mocks.Repos.Get = func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
-		if repoID != api.RepoID(50) {
-			t.Errorf("unexpected repository name. want=%d have=%d", 50, repoID)
-		}
-		return &types.Repo{ID: repoID}, nil
-	}
-
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
-		if rev != "deadbeef" {
-			t.Errorf("unexpected commit. want=%s have=%s", "deadbeef", rev)
-		}
-		return "", nil
-	}
 }
 
 func defaultMockRepoStore() *dbmocks.MockRepoStore {

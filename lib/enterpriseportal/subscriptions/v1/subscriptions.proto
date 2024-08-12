@@ -95,6 +95,23 @@ message EnterpriseSubscriptionCondition {
   string message = 3;
 }
 
+message EnterpriseSubscriptionSalesforceMetadata {
+  // The Salesforce subscription ID associated with this Enterprise subscription.
+  string subscription_id = 1;
+}
+
+// EnterpriseSubscriptionInstanceType describes what kind of Sourcegraph
+// instance an Enterprise Subscription is designated for.
+enum EnterpriseSubscriptionInstanceType {
+  ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_UNSPECIFIED = 0;
+  // Represents a primary, production instance.
+  ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_PRIMARY = 1;
+  // Represents a secondary (e.g. dev or testing) instance.
+  ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_SECONDARY = 2;
+  // Represents a Sourcegraph-internal instance.
+  ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_INTERNAL = 3;
+}
+
 // EnterpriseSubscription represents a Sourcegraph Enterprise subscription.
 message EnterpriseSubscription {
   // ID is the external, prefixed UUID-format identifier for this subscription
@@ -107,20 +124,17 @@ message EnterpriseSubscription {
   // The instance domain associated with this subscription, e.g. "acme.sourcegraphcloud.com".
   string instance_domain = 4;
 
-  message SalesforceMetadata {
-    // The Salesforce subscription ID associated with this Enterprise subscription.
-    string subscription_id = 1;
-    // The Salesforce opportunity ID associated with this Enterprise subscription.
-    string opportunity_id = 2;
-  }
   // Salesforce details associated with this subscription.
-  SalesforceMetadata salesforce = 5;
+  EnterpriseSubscriptionSalesforceMetadata salesforce = 5;
+
+  // The use case for the instance used in this Enterprise subscription.
+  EnterpriseSubscriptionInstanceType instance_type = 6;
 }
 
 // EnterpriseSubscriptionLicenseKey is the classic offline Sourcegraph license
 // key, and corresponds to ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY.
 message EnterpriseSubscriptionLicenseKey {
-  // Information embedded into the license key.
+  // Read-only information embedded into ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY.
   message Info {
     // The tags that indicate which features are activated by this license.
     repeated string tags = 1;
@@ -129,9 +143,12 @@ message EnterpriseSubscriptionLicenseKey {
     // The expiration date of this product license. In license data, this is
     // called 'expires_at', expressed as the number of seconds since the epoch.
     google.protobuf.Timestamp expire_time = 3;
-    // The Salesforce subscription ID associated with this product license.
+    // The Salesforce subscription ID associated with this license's parent
+    // Enterprise Subscription.
     string salesforce_subscription_id = 4;
-    // The Salesforce opportunity ID associated with this product license.
+    // The Salesforce opportunity ID associated with this product license's
+    // creation. Opportunities in Salesforce generally lead to the creation of a
+    // new license key.
     string salesforce_opportunity_id = 5;
   }
 
@@ -139,13 +156,13 @@ message EnterpriseSubscriptionLicenseKey {
   // whenever a major change is made to the shape of Info to indicate what
   // fields can be expected from the information embedded in the license key.
   uint32 info_version = 1;
-  // Information embedded into the license key.
+  // Read-only information embedded into ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY.
   Info info = 2;
-  // The license key.
+  // The signed license key.
   string license_key = 3;
-  // UUID of the known instance using this license key, self-reported from
-  // online license checks and pings. Also known as 'site ID'.
-  string instance_id = 4;
+  // Generated display name representing the plan and some high-level attributes
+  // about the plan.
+  string plan_display_name = 4;
 }
 
 message EnterpriseSubscriptionLicenseCondition {
@@ -210,12 +227,20 @@ enum EnterpriseSubscriptionLicenseType {
 
 message ListEnterpriseSubscriptionsFilter {
   oneof filter {
-    // Return only product subscriptions has the given subscription ID.
+    // Filter by exact match on the Enterprise Subscription ID.
     string subscription_id = 1;
     // Return only product subscriptions with the given archival status.
     bool is_archived = 2;
     // Return only product subscriptions that satisfies the given permission.
     Permission permission = 3;
+    // Filter by partial match on display name. The query must be at least 3
+    // characters long.
+    string display_name = 4;
+    // Filter by exact match on Salesforce metadata.
+    EnterpriseSubscriptionSalesforceMetadata salesforce = 5;
+    // Filter by partial match on instance domain. The query must be a valid
+    // domain.
+    string instance_domain = 6;
   }
 }
 
@@ -254,9 +279,15 @@ message ListEnterpriseSubscriptionLicensesFilter {
     EnterpriseSubscriptionLicenseType type = 2;
     // Return only licenses that are active.
     bool is_revoked = 3;
-    // Return only product subscriptions whose license key contains this
-    // substring.
+    // Return only licenses where the signed license key contains this substring.
+    // Query must be at least 3 characters.
+    //
+    // MUST be used in conjunction with the type = 'ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY'
+    // filter.
     string license_key_substring = 4;
+    // Return only licenses associated with this Salesforce opportunity ID.
+    // MUST be used in conjunction with the 'type' filter.
+    string salesforce_opportunity_id = 5;
   }
 }
 
@@ -298,12 +329,17 @@ message CreateEnterpriseSubscriptionLicenseRequest {
   // - license
   //
   // `license` supports the following types. At least one must be provided:
+  //
   // - license.key, which requires:
   //   - license.key.info_version
   //   - license.key.info.tags
   //   - license.key.info.user_count
   //   - license.key.info.expire_time
+  //   - license.key.info.salesforce_opportunity_id
   EnterpriseSubscriptionLicense license = 1;
+
+  // Message to associate with the license creation event.
+  string message = 2;
 }
 
 message CreateEnterpriseSubscriptionLicenseResponse {
@@ -330,7 +366,9 @@ message UpdateEnterpriseSubscriptionRequest {
   // The list of fields to update, fields are specified relative to the EnterpriseSubscription.
   // Updatable fields are:
   //  - instance_domain
+  //  - instance_type
   //  - display_name
+  //  - salesforce.subscription_id
   google.protobuf.FieldMask update_mask = 2;
 }
 
@@ -353,12 +391,15 @@ message CreateEnterpriseSubscriptionRequest {
   //
   // Required attributes:
   // - display_name
+  // - instance_type
   //
   // Optional attributes:
   // - instance_domain
   // - salesforce.subscription_id
-  // - salesforce.opportunity_id
   EnterpriseSubscription subscription = 1;
+
+  // Message to associate with the subscription creation event.
+  string message = 2;
 }
 
 message CreateEnterpriseSubscriptionResponse {

@@ -5,7 +5,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
@@ -46,7 +45,7 @@ func (v PromptVisibility) IsSecret() bool {
 	return v != PromptVisibilityPublic
 }
 
-type PromptConnectionResolver = graphqlutil.ConnectionResolver[PromptResolver]
+type PromptConnectionResolver = gqlutil.ConnectionResolver[PromptResolver]
 
 type PromptResolver interface {
 	ID() graphql.ID
@@ -74,7 +73,7 @@ func (r PromptDefinitionResolver) Text() string {
 }
 
 type PromptsArgs struct {
-	graphqlutil.ConnectionResolverArgs
+	gqlutil.ConnectionResolverArgs
 	Query              *string
 	Owner              *graphql.ID
 	ViewerIsAffiliated *bool

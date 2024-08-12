@@ -9,9 +9,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -197,16 +196,16 @@ func (c *webhooksConnectionResolver) TotalCount(ctx context.Context) (int32, err
 	return int32(count), nil
 }
 
-func (c *webhooksConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (c *webhooksConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	_, next, err := c.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if next == 0 {
-		return graphqlutil.HasNextPage(false), nil
+		return gqlutil.HasNextPage(false), nil
 	}
 
-	return graphqlutil.NextPageCursor(MarshalWebhookCursor(
+	return gqlutil.NextPageCursor(MarshalWebhookCursor(
 		&types.Cursor{
 			Column:    c.opt.Cursor.Column,
 			Value:     fmt.Sprintf("%d", next),

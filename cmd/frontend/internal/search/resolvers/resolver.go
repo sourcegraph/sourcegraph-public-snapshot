@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -66,7 +66,7 @@ func (r *Resolver) DeleteSearchJob(ctx context.Context, args *graphqlbackend.Del
 	return &graphqlbackend.EmptyResponse{}, r.svc.DeleteSearchJob(ctx, jobID)
 }
 
-func newSearchJobConnectionResolver(ctx context.Context, db database.DB, service *service.Service, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
+func newSearchJobConnectionResolver(ctx context.Context, db database.DB, service *service.Service, args *graphqlbackend.SearchJobsArgs) (*gqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
 	var states []string
 	if args.States != nil {
 		states = *args.States
@@ -96,10 +96,10 @@ func newSearchJobConnectionResolver(ctx context.Context, db database.DB, service
 		query:   query,
 		userIDs: ids,
 	}
-	return graphqlutil.NewConnectionResolver[graphqlbackend.SearchJobResolver](
+	return gqlutil.NewConnectionResolver[graphqlbackend.SearchJobResolver](
 		s,
 		&args.ConnectionResolverArgs,
-		&graphqlutil.ConnectionResolverOptions{
+		&gqlutil.ConnectionResolverOptions{
 			Ascending: !args.Descending,
 			OrderBy:   database.OrderBy{{Field: normalize(args.OrderBy)}, {Field: "id"}}},
 	)
@@ -219,7 +219,7 @@ func (s *searchJobsConnectionStore) UnmarshalCursor(cursor string, orderBy datab
 	}
 }
 
-func (r *Resolver) SearchJobs(ctx context.Context, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
+func (r *Resolver) SearchJobs(ctx context.Context, args *graphqlbackend.SearchJobsArgs) (*gqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
 	return newSearchJobConnectionResolver(ctx, r.db, r.svc, args)
 }
 

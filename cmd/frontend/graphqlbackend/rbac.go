@@ -5,7 +5,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
@@ -14,7 +13,7 @@ type RoleResolver interface {
 	Name() string
 	System() bool
 	CreatedAt() gqlutil.DateTime
-	Permissions(context.Context, *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error)
+	Permissions(context.Context, *ListPermissionArgs) (*gqlutil.ConnectionResolver[PermissionResolver], error)
 }
 
 type PermissionResolver interface {
@@ -43,14 +42,14 @@ type CreateRoleArgs struct {
 }
 
 type ListRoleArgs struct {
-	graphqlutil.ConnectionResolverArgs
+	gqlutil.ConnectionResolverArgs
 
 	System bool
 	User   *graphql.ID
 }
 
 type ListPermissionArgs struct {
-	graphqlutil.ConnectionResolverArgs
+	gqlutil.ConnectionResolverArgs
 
 	Role *graphql.ID
 	User *graphql.ID

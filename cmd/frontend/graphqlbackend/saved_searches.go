@@ -5,7 +5,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
@@ -46,7 +45,7 @@ func (v SavedSearchVisibility) IsSecret() bool {
 	return v != SavedSearchVisibilityPublic
 }
 
-type SavedSearchConnectionResolver = graphqlutil.ConnectionResolver[SavedSearchResolver]
+type SavedSearchConnectionResolver = gqlutil.ConnectionResolver[SavedSearchResolver]
 
 type SavedSearchResolver interface {
 	ID() graphql.ID
@@ -64,7 +63,7 @@ type SavedSearchResolver interface {
 }
 
 type SavedSearchesArgs struct {
-	graphqlutil.ConnectionResolverArgs
+	gqlutil.ConnectionResolverArgs
 	Query              *string
 	Owner              *graphql.ID
 	ViewerIsAffiliated *bool
