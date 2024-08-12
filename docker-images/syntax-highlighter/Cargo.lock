@@ -2488,6 +2488,7 @@ dependencies = [
  "tree-sitter-nickel",
  "tree-sitter-perl",
  "tree-sitter-pkl",
+ "tree-sitter-pod",
  "tree-sitter-python",
  "tree-sitter-ruby",
  "tree-sitter-rust",
@@ -2647,6 +2648,15 @@ dependencies = [
 name = "tree-sitter-pkl"
 version = "0.16.0"
 source = "git+https://github.com/kritzcreek/tree-sitter-pkl?rev=372ce76dfae3395fcf083df23328c4eb67cc0119#372ce76dfae3395fcf083df23328c4eb67cc0119"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-pod"
+version = "0.0.1"
+source = "git+https://github.com/sourcegraph/tree-sitter-pod?rev=b99354aaa6b11c6d9edda3285567d94ed02c0e34#b99354aaa6b11c6d9edda3285567d94ed02c0e34"
 dependencies = [
  "cc",
  "tree-sitter",

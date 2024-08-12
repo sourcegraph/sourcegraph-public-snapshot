@@ -191,7 +191,7 @@ lazy_static::lazy_static! {
             (Nickel, "nickel"),
             (Perl, "perl"),
             (Pkl, "pkl"),
-            // (Pod, "pod"),
+            (Pod, "pod"),
             (Python, "python"),
             (Ruby, "ruby"),
             (Rust, "rust"),
