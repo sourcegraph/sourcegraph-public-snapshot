@@ -21,11 +21,25 @@ fi
 # reference: https://semgrep.dev/docs/semgrep-ci/configuring-blocking-and-errors-in-ci/#configuration-options-for-blocking-findings-and-errors
 semgrep ci -f 'security-semgrep-rules/semgrep-rules/' --metrics=off --oss-only --sarif -o results.sarif --exclude='semgrep-rules' --baseline-commit "$(git merge-base main HEAD)" || true
 
+semgrep ci -f 'security-semgrep-rules/semgrep-rules/' --metrics=off --oss-only --json -o result.json --exclude='semgrep-rules' --baseline-commit "$(git merge-base main HEAD)" || true
+
+echo -e "--- :lock::semgrep: processing semgrep results\n"
+
+# set environment variables to support post-processing script
+export LATEST_COMMIT_SHA=$BUILDKITE_COMMIT
+export GITHUB_PULL_REQUEST_NUMBER=$BUILDKITE_PULL_REQUEST
+export GITHUB_REPOSITORY=$CI_REPO_NAME
+
+cp result.json security-semgrep-rules/scripts
+cd security-semgrep-rules/scripts
+go mod download
+# this script is located in security-semgrep-rules/scripts repo
+go run main.go
+
 echo -e "--- :rocket: reporting scan results to GitHub\n"
 
 # upload SARIF results to code scanning API
 encoded_sarif=$(gzip -c results.sarif | base64 -w0)
-
 
 # upload SARIF results to code scanning API
 if [ "$BUILDKITE_PULL_REQUEST" = "false" ]; then
