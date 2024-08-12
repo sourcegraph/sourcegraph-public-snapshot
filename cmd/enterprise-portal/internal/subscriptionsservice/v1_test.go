@@ -1194,7 +1194,7 @@ func TestHandlerV1_UpdateEnterpriseSubscriptionMembership(t *testing.T) {
 }
 
 func TestRenderLicenseKeyCreationSlackMessage(t *testing.T) {
-	mockTime := utctime.FromTime(time.Date(2024, 7, 8, 16, 39, 16, 0, time.Local))
+	mockTime := utctime.FromTime(time.Date(2024, 7, 8, 16, 39, 16, 0, time.UTC))
 
 	text := renderLicenseKeyCreationSlackMessage(
 		mockTime,
