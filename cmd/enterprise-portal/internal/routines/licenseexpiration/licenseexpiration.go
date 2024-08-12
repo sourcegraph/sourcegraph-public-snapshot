@@ -24,7 +24,7 @@ import (
 // checkInterval is the interval at which the license expiration routine checks
 // if there is work to do via store.TryAcquireJob, which dictates the actual
 // frequency of the job via a shared lock.
-var checkInterval = 1 * time.Second
+var checkInterval = 30 * time.Minute
 
 func NewRoutine(ctx context.Context, logger log.Logger, store Store) background.Routine {
 	return goroutine.NewPeriodicGoroutine(ctx,
@@ -81,8 +81,8 @@ func (i *handler) Handle(ctx context.Context) (err error) {
 		return nil
 	}
 
-	weekAway := i.store.Now().Add(7 * 24 * time.Hour)
-	dayAway := i.store.Now().Add(24 * time.Hour)
+	weekAway := i.store.Now().UTC().Add(7 * 24 * time.Hour)
+	dayAway := i.store.Now().UTC().Add(24 * time.Hour)
 
 	wg := pool.New().WithErrors().
 		WithMaxGoroutines(i.licenseCheckConcurrency)
@@ -110,7 +110,7 @@ func (i *handler) Handle(ctx context.Context) (err error) {
 			if expireAt.After(weekAway) && expireAt.Before(weekAway.Add(24*time.Hour)) {
 				notifyCount.Add(1)
 				err = i.store.PostToSlack(ctx, &slack.Payload{
-					Text: fmt.Sprintf("The license for subscription `%s` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in 7 days*>",
+					Text: fmt.Sprintf("The active license for subscription `%s` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in 7 days*>",
 						displayName, externalSubID),
 				})
 				if err != nil {
@@ -119,7 +119,7 @@ func (i *handler) Handle(ctx context.Context) (err error) {
 			} else if expireAt.After(dayAway) && expireAt.Before(dayAway.Add(24*time.Hour)) {
 				notifyCount.Add(1)
 				err = i.store.PostToSlack(ctx, &slack.Payload{
-					Text: fmt.Sprintf("The license for subscription `%s` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in the next 24 hours*> :rotating_light:",
+					Text: fmt.Sprintf("The active license for subscription `%s` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in the next 24 hours*> :rotating_light:",
 						displayName, externalSubID),
 				})
 				if err != nil {
