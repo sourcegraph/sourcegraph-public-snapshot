@@ -540,9 +540,8 @@ func SetupForTest(t TB) {
 		}
 	}
 
-	err := redispool.DeleteAllKeysWithPrefix(c, tokenBucketGlobalPrefix)
-	if err != nil {
-		t.Fatalf("cold not clear test prefix: &v", err)
+	if err := redispool.DeleteAllKeysWithPrefix(redispool.RedisKeyValue(pool), tokenBucketGlobalPrefix); err != nil {
+		t.Fatalf("could not clear test prefix: &v", err)
 	}
 }
 

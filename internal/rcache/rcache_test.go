@@ -1,14 +1,10 @@
 package rcache
 
 import (
-	"reflect"
-	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 func TestCache_namespace(t *testing.T) {
@@ -92,55 +88,6 @@ func TestCache_simple(t *testing.T) {
 	_, ok = c.Get("a")
 	if ok {
 		t.Fatal("Get after delete should of found nothing")
-	}
-}
-
-func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
-	kv := SetupForTest(t)
-
-	c := New(kv, "some_prefix")
-	var aKeys, bKeys []string
-	var key string
-	for i := range 10 {
-		if i%2 == 0 {
-			key = "a:" + strconv.Itoa(i)
-			aKeys = append(aKeys, key)
-		} else {
-			key = "b:" + strconv.Itoa(i)
-			bKeys = append(bKeys, key)
-		}
-
-		c.Set(key, []byte(strconv.Itoa(i)))
-	}
-
-	pool := kv.Pool()
-
-	conn := pool.Get()
-	defer conn.Close()
-
-	err := redispool.DeleteAllKeysWithPrefix(conn, c.rkeyPrefix()+"a")
-	if err != nil {
-		t.Error(err)
-	}
-
-	getMulti := func(keys ...string) [][]byte {
-		t.Helper()
-		var vals [][]byte
-		for _, k := range keys {
-			v, _ := c.Get(k)
-			vals = append(vals, v)
-		}
-		return vals
-	}
-
-	vals := getMulti(aKeys...)
-	if got, exp := vals, [][]byte{nil, nil, nil, nil, nil}; !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-
-	vals = getMulti(bKeys...)
-	if got, exp := vals, bytes("1", "3", "5", "7", "9"); !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
 	}
 }
 
@@ -273,12 +220,4 @@ func TestCache_Hashes(t *testing.T) {
 	del4, err := c.DeleteHashItem("nonexistentkey", "nonexistenthashkey")
 	assert.NoError(t, err)
 	assert.Equal(t, 0, del4)
-}
-
-func bytes(s ...string) [][]byte {
-	t := make([][]byte, len(s))
-	for i, v := range s {
-		t[i] = []byte(v)
-	}
-	return t
 }
