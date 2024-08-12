@@ -106,12 +106,12 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		ExternalAccountData: data,
 		CreateIfNotExist:    s.allowSignup,
 	})
-	if err == nil {
-		go hubspotutil.SyncUser(bbUser.EmailAddress, hubspotutil.SignupEventID, hubSpotProps)
-		return newUserCreated, actor.FromUser(userID), "", nil
+	if err != nil {
+		return false, nil, fmt.Sprintf("No Sourcegraph user exists matching the email: %s.\n\nError was: %s", bbUser.EmailAddress, err), err
 	}
 
-	return false, nil, fmt.Sprintf("No Sourcegraph user exists matching the email: %s.\n\nError was: %s", bbUser.EmailAddress, err), err
+	go hubspotutil.SyncUser(bbUser.EmailAddress, hubspotutil.SignupEventID, hubSpotProps)
+	return newUserCreated, actor.FromUser(userID), "", nil
 }
 
 func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData {
