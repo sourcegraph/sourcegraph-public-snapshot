@@ -73,4 +73,5 @@ export const V2AuthProviderTypes: { [k in AuthProvider['serviceType']]: number }
     builtin: 7,
     gerrit: 8,
     azuredevops: 9,
+    bitbucketServer: 10,
 }
