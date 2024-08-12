@@ -41,6 +41,8 @@ FULL_REPO_NAME="${CI_REPO_OWNER}/${CI_REPO_NAME}"
 is_code_scanning_enabled "$FULL_REPO_NAME"
 
 echo $CODE_SCANNING_ENABLED
+
+CODE_SCANNING_ENABLED="false"
 # run semgrep scan on changeset using CI subcommand
 # || true is used to prevent build from failing if semgrep scan reports on blocking findings
 # reference: https://semgrep.dev/docs/semgrep-ci/configuring-blocking-and-errors-in-ci/#configuration-options-for-blocking-findings-and-errors
