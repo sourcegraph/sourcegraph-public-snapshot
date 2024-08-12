@@ -107,7 +107,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		CreateIfNotExist:    s.allowSignup,
 	})
 	if err != nil {
-		return false, nil, fmt.Sprintf("No Sourcegraph user exists matching the email: %s.\n\nError was: %s", bbUser.EmailAddress, err), err
+		return false, nil, fmt.Sprintf("No Sourcegraph user exists matching the email: %s.\n\nError was: %s", bbUser.EmailAddress, safeErrMsg), err
 	}
 
 	go hubspotutil.SyncUser(bbUser.EmailAddress, hubspotutil.SignupEventID, hubSpotProps)
