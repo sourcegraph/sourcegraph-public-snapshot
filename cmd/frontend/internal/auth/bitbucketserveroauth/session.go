@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -90,75 +89,29 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return false, nil, "", err
 	}
 
-	attempts, err := buildUserFetchAttempts(bbUser.EmailAddress, s.allowSignup)
-	if err != nil {
-		return false, nil, "Could not find verified email address for Bitbucket user.", err
-	}
-
-	var (
-		firstSafeErrMsg string
-		firstErr        error
-	)
-
 	recorder := telemetryrecorder.New(s.db)
-	for i, attempt := range attempts {
-		newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.logger, s.db, recorder, auth.GetAndSaveUserOp{
-			UserProps: database.NewUser{
-				Username:        bbUser.Name,
-				Email:           attempt.email,
-				EmailIsVerified: true,
-				DisplayName:     bbUser.DisplayName,
-			},
-			ExternalAccount: extsvc.AccountSpec{
-				ServiceType: extsvc.TypeBitbucketServer,
-				ServiceID:   s.baseURL.String(),
-				ClientID:    s.clientKey,
-				AccountID:   strconv.Itoa(bbUser.ID),
-			},
-			ExternalAccountData: data,
-			CreateIfNotExist:    attempt.createIfNotExist,
-		})
-		if err == nil {
-			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, hubSpotProps)
-			return newUserCreated, actor.FromUser(userID), "", nil
-		}
-		if i == 0 {
-			firstSafeErrMsg, firstErr = safeErrMsg, err
-		}
-	}
-
-	// On failure, return the first error
-	verifiedEmails := make([]string, 0, len(attempts))
-	for _, attempt := range attempts {
-		verifiedEmails = append(verifiedEmails, attempt.email)
-	}
-	return false, nil, fmt.Sprintf("No Sourcegraph user exists matching any of the verified emails: %s.\n\nFirst error was: %s", strings.Join(verifiedEmails, ", "), firstSafeErrMsg), firstErr
-}
-
-type attempt struct {
-	email            string
-	createIfNotExist bool
-}
-
-func buildUserFetchAttempts(email string, allowSignup bool) ([]attempt, error) {
-	attempts := []attempt{}
-	attempts = append(attempts, attempt{
-		email:            email,
-		createIfNotExist: false,
+	newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.logger, s.db, recorder, auth.GetAndSaveUserOp{
+		UserProps: database.NewUser{
+			Username:        bbUser.Name,
+			Email:           bbUser.EmailAddress,
+			EmailIsVerified: true,
+			DisplayName:     bbUser.DisplayName,
+		},
+		ExternalAccount: extsvc.AccountSpec{
+			ServiceType: extsvc.TypeBitbucketServer,
+			ServiceID:   s.baseURL.String(),
+			ClientID:    s.clientKey,
+			AccountID:   strconv.Itoa(bbUser.ID),
+		},
+		ExternalAccountData: data,
+		CreateIfNotExist:    s.allowSignup,
 	})
-
-	// If allowSignup is true, we will create an account using the first verified
-	// email address from Bitbucket which we expect to be their primary address. Note
-	// that the order of attempts is important. If we manage to connect with an
-	// existing account we return early and don't attempt to create a new account.
-	if allowSignup {
-		attempts = append(attempts, attempt{
-			email:            attempts[0].email,
-			createIfNotExist: true,
-		})
+	if err == nil {
+		go hubspotutil.SyncUser(bbUser.EmailAddress, hubspotutil.SignupEventID, hubSpotProps)
+		return newUserCreated, actor.FromUser(userID), "", nil
 	}
 
-	return attempts, nil
+	return false, nil, fmt.Sprintf("No Sourcegraph user exists matching the email: %s.\n\nError was: %s", bbUser.EmailAddress, err), err
 }
 
 func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData {
@@ -169,6 +122,5 @@ func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData
 		},
 		AccessToken: token.AccessToken,
 		TokenType:   token.Type(),
-		// TODO(pjlast): investigate exactly where and how we use this SessionData
 	}
 }
