@@ -17,7 +17,6 @@ go_library(
         "//lib/errors",
         "//lib/pointers",
         "@com_github_buildkite_go_buildkite_v3//buildkite",
-        "@com_github_go_redsync_redsync_v4//:redsync",
         "@com_github_redis_go_redis_v9//:go-redis",
         "@com_github_sourcegraph_log//:log",
     ],
