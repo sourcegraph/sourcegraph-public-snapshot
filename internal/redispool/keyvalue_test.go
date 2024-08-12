@@ -389,14 +389,15 @@ func redisKeyValueForTest(t *testing.T) redispool.KeyValue {
 		}
 	}
 
-	if err := redispool.DeleteAllKeysWithPrefix(c, prefix); err != nil {
+	kv := redispool.RedisKeyValue(pool)
+	if err := redispool.DeleteAllKeysWithPrefix(kv, prefix); err != nil {
 		t.Logf("Could not clear test prefix name=%q prefix=%q error=%v", t.Name(), prefix, err)
 	}
 
-	kv := redispool.RedisKeyValue(pool).(interface {
+	redisKv := kv.(interface {
 		WithPrefix(string) redispool.KeyValue
 	})
-	return kv.WithPrefix(prefix)
+	return redisKv.WithPrefix(prefix)
 }
 
 func bytes(ss ...string) [][]byte {

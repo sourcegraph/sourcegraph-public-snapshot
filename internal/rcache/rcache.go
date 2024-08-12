@@ -272,8 +272,7 @@ func SetupForTest(t testing.TB) redispool.KeyValue {
 		}
 	}
 
-	err := redispool.DeleteAllKeysWithPrefix(c, globalPrefix)
-	if err != nil {
+	if err := redispool.DeleteAllKeysWithPrefix(kvMock, globalPrefix); err != nil {
 		log15.Error("Could not clear test prefix", "name", t.Name(), "globalPrefix", globalPrefix, "error", err)
 	}
 
