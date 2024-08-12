@@ -58,6 +58,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":authz"],
+    shard_count = 2,
     tags = [
         TAG_PLATFORM_SOURCE,
         # Test requires localhost for database
