@@ -37,7 +37,7 @@ func createTestServer() *httptest.Server {
 		if strings.HasPrefix(r.URL.Path, "/rest/api/1.0/users/") {
 			json.NewEncoder(w).Encode(struct {
 				Name         string `json:"name"`
-				ID           int `json:"id"`
+				ID           int    `json:"id"`
 				EmailAddress string `json:"emailAddress"`
 			}{
 				Name:         returnUsername,
