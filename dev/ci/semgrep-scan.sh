@@ -50,20 +50,7 @@ else
   semgrep ci -f 'security-semgrep-rules/semgrep-rules/' --metrics=off --oss-only --json -o result.json --exclude='semgrep-rules' --baseline-commit "$(git merge-base main HEAD)" || true
 fi
 
-echo -e "--- :lock::semgrep: processing semgrep results\n"
-
 if [ "$CODE_SCANNING_ENABLED" = "true" ]; then
-  # set environment variables to support post-processing script
-  export LATEST_COMMIT_SHA=$BUILDKITE_COMMIT
-  export GITHUB_PULL_REQUEST_NUMBER=$BUILDKITE_PULL_REQUEST
-  export GITHUB_REPOSITORY=$CI_REPO_NAME
-
-  cp result.json security-semgrep-rules/scripts
-  cd security-semgrep-rules/scripts
-  go mod download
-  # this script is located in security-semgrep-rules/scripts repo
-  go run main.go
-else
   echo -e "--- :rocket: reporting scan results to GitHub\n"
 
   # encode SARIF results to code scanning API
@@ -96,6 +83,18 @@ else
       -f sarif="$encoded_sarif" \
       -f tool_name="ci semgrep"
   fi
+else
+  echo -e "--- :lock::semgrep: processing semgrep results\n"
+  # set environment variables to support post-processing script
+  export LATEST_COMMIT_SHA=$BUILDKITE_COMMIT
+  export GITHUB_PULL_REQUEST_NUMBER=$BUILDKITE_PULL_REQUEST
+  export GITHUB_REPOSITORY=$CI_REPO_NAME
+
+  cp result.json security-semgrep-rules/scripts
+  cd security-semgrep-rules/scripts
+  go mod download
+  # this script is located in security-semgrep-rules/scripts repo
+  go run main.go
 fi
 
 echo -e "--- :white_check_mark::semgrep: Semgrep scan job is complete\n"
