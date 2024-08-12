@@ -251,7 +251,7 @@ test.describe('file header', () => {
             // We specifically check the textContent here because this is what is
             // used to apply highlights. It must exactly equal the path (no additional
             // whitespace) or the highlights will be incorrectly offset.
-            const pathContainer = page.locator('css=[data-path-container]').first()
+            const pathContainer = page.getByText('src/readme.md')
             await expect(pathContainer).toHaveText(/^src\/readme.md$/)
         })
 
@@ -271,7 +271,7 @@ test.describe('repo menu', () => {
         const url = `/${repoName}/-/blob/src/large-file-1.js`
         await page.goto(url)
 
-        await page.getByRole('heading', { name: 'sourcegraph/sourcegraph' }).click()
+        await page.getByRole('button', { name: 'github.com/sourcegraph/sourcegraph' }).click()
         await page.getByRole('menuitem', { name: 'Go to repository root' }).click()
         await page.waitForURL(`/${repoName}`)
     })

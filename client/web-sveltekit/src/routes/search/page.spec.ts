@@ -360,7 +360,7 @@ test.describe('search results', async () => {
             }
 
             await page.keyboard.press('k')
-            await expect(page.locator('*:focus')).toContainText(repoMatch.repository.split('/').slice(1).join('/'), {
+            await expect(page.locator('*:focus')).toHaveText(repoMatch.repository.split('/').slice(1).join('/'), {
                 useInnerText: true,
             })
 

@@ -20,7 +20,7 @@
     whitespace in the DOM. This is necessary for correctly highlighting
     matches inside a repo name by offset.
 -->
-<span
+<span aria-label={repoName}
     ><!--
     --><Tooltip tooltip={codeHost}
         ><!--
