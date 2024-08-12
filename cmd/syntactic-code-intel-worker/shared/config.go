@@ -42,10 +42,11 @@ func (c *IndexingWorkerConfig) Load() {
 func (c *Config) Load() {
 	c.IndexingWorkerConfig = &IndexingWorkerConfig{}
 	c.IndexingWorkerConfig.Load()
-	c.ListenAddress = c.GetOptional("SYNTACTIC_CODE_INTEL_WORKER_ADDR", "The address under which the syntactic codeintel worker API listens. Can include a port.")
+	port := c.GetInt("SYNTACTIC_CODE_INTEL_WORKER_PORT", strconv.Itoa(DefaultPort), "The port to which syntactic codeintel worker API should bind.")
+	c.ListenAddress = c.GetOptional("SYNTACTIC_CODE_INTEL_WORKER_ADDR", "The address under which the syntactic codeintel worker API listens. Can include a port. Setting this value causes SYNTACTIC_CODE_INTEL_WORKER_PORT to be ignored entirely")
 	// Fall back to a reasonable default.
 	if c.ListenAddress == "" {
-		port := strconv.Itoa(DefaultPort)
+		port := strconv.Itoa(port)
 		host := ""
 		if env.InsecureDev {
 			host = "127.0.0.1"
