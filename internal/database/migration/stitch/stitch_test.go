@@ -248,8 +248,6 @@ func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoo
 // compared against the target version's description (in the git-tree).
 func testStitchApplication(t *testing.T, schemaName string, from, to int) {
 	t.Run(fmt.Sprintf("upgrade 3.%d -> 3.%d", from, to), func(t *testing.T) {
-		t.Parallel()
-
 		stitched, err := StitchDefinitions(testMigrationsReader, schemaName, makeRange(from, to))
 		if err != nil {
 			t.Fatalf("failed to stitch definitions: %s", err)
