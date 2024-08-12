@@ -37,6 +37,8 @@ fragment ResolvedRepository on Repository {
         oid
     }
     changelist(cid: $revision) {
+        cid
+        canonicalURL
         commit {
             oid
         }
