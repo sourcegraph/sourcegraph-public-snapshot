@@ -40,14 +40,27 @@ go_library(
 
 go_test(
     name = "bitbucketserveroauth_test",
-    srcs = ["config_test.go"],
+    srcs = [
+        "config_test.go",
+        "middleware_test.go",
+        "session_test.go",
+    ],
     embed = [":bitbucketserveroauth"],
     deps = [
+        "//cmd/frontend/auth",
         "//cmd/frontend/internal/auth/oauth",
+        "//cmd/frontend/internal/auth/providers",
+        "//cmd/frontend/internal/auth/session",
+        "//internal/actor",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/extsvc",
+        "//internal/extsvc/bitbucketserver",
+        "//internal/httpcli",
+        "//internal/ratelimit",
+        "//lib/errors",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
