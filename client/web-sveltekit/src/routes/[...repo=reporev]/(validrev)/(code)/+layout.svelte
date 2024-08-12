@@ -219,6 +219,7 @@
                         revision={data.revision}
                         commitID={data.resolvedRevision.commitID}
                         defaultBranch={data.defaultBranch}
+                        latestChangelistID={data.latestChangelistID}
                         getDepotChangelists={data.getDepotChangelists}
                     />
                 {:else}

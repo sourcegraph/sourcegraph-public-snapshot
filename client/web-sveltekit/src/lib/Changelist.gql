@@ -23,7 +23,7 @@ fragment Changelist on PerforceChangelist {
         }
         perforceChangelist {
             cid
-                canonicalURL
+            canonicalURL
         }
     }
 }
