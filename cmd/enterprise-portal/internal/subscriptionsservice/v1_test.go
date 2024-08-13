@@ -1232,6 +1232,7 @@ func TestRenderLicenseKeyCreationSlackMessage(t *testing.T) {
 				ExpiresAt:               mockTime.AsTime().Add(30 * time.Hour),
 			},
 		},
+		"Testing license creation",
 	)
 	autogold.ExpectFile(t, autogold.Raw(text))
 }
