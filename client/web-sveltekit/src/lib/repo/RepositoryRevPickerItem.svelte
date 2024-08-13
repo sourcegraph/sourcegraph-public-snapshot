@@ -87,4 +87,10 @@
         justify-content: flex-end;
         color: var(--text-muted);
     }
+
+    // Branch name badge
+    :global([data-badge]) {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 </style>
