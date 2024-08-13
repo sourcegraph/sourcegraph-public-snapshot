@@ -437,7 +437,7 @@ export function parseRepoRevision(repoRevision: string): ParsedRepoRevision {
  *
  * @param href The URL whose revision should be replaced.
  */
-export function replaceRevisionInURL(href: string, newRevision: string, isPerforceDepot: boolean = false): string {
+export function replaceRevisionInURL(href: string, newRevision: string): string {
     const parsed = parseBrowserRepoURL(href)
     const repoRevision = `/${encodeRepoRevision(parsed)}`
 
@@ -446,7 +446,7 @@ export function replaceRevisionInURL(href: string, newRevision: string, isPerfor
         repoRevision.length
     )}`
 
-    return `${isPerforceDepot ? addChangelistPath(url.pathname) : url.pathname}${url.search}${url.hash}`
+    return `${url.pathname}${url.search}${url.hash}`
 }
 
 /**
