@@ -81,20 +81,22 @@
             <ul class="changelists">
                 {#each changelists as changelistCommit (changelistCommit.perforceChangelist?.canonicalURL)}
                     {@const changelist = changelistCommit.perforceChangelist}
-                    <li>
-                        <div class="changelist">
-                            <Changelist {changelist} />
-                        </div>
-                        <ul class="actions">
-                            <li>
-                                Changelist ID:
-                                <Badge variant="link">
-                                    <a href={changelist?.canonicalURL} title="View changelist">{changelist?.cid}</a>
-                                </Badge>
-                            </li>
-                            <li> <a href="/{data.repoName}@changelist/{changelist?.cid}">Browse files</a></li>
-                        </ul>
-                    </li>
+                    {#if changelist !== null}
+                        <li>
+                            <div class="changelist">
+                                <Changelist {changelist} />
+                            </div>
+                            <ul class="actions">
+                                <li>
+                                    Changelist ID:
+                                    <Badge variant="link">
+                                        <a href={changelist?.canonicalURL} title="View changelist">{changelist?.cid}</a>
+                                    </Badge>
+                                </li>
+                                <li> <a href="/{data.repoName}@changelist/{changelist?.cid}">Browse files</a></li>
+                            </ul>
+                        </li>
+                    {/if}
                 {:else}
                     <li>
                         <Alert variant="info">No changelists found</Alert>

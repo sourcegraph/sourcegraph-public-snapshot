@@ -92,11 +92,6 @@
 
     function defaultHandleSelect(revision: string) {
         const urlToReplace = location.pathname + location.search + location.hash
-
-        if (isPerforceDepot) {
-            revision = 'changelist/' + revision
-        }
-
         goto(replaceRevisionInURL(urlToReplace, revision))
     }
 
@@ -105,8 +100,6 @@
     $: revisionLabel = revision ? (revision === commitID ? commitID.slice(0, 7) : revision) : defaultBranch ?? ''
     $: isOnSpecificRev = revisionLabel !== defaultBranch
 
-    $: isPerforceDepot = getDepotChangelists !== undefined
-
     const buttonClass = getButtonClassName({ variant: 'secondary', outline: false, size: 'sm' })
 </script>
 
@@ -114,13 +107,7 @@
     <span use:registerTarget data-repo-rev-picker-trigger>
         <ButtonGroup {display}>
             <button use:registerTrigger class="{buttonClass} rev-name" on:click={() => toggle()} {...$$restProps}>
-                <!--
-                Perforce does not have a "main" or "master" branch concept like Git.
-                When scoped to a Perforce depot, the revision picker will default to
-                the ID of the most recent changelist. For Git repositories, it will
-                default to the name of the main branch.
-                -->
-                @{isPerforceDepot && latestChangelistID ? `changelist/${latestChangelistID}` : revisionLabel}
+                @{revisionLabel}
             </button>
 
             <CopyButton value={revisionLabel}>
@@ -135,7 +122,7 @@
             </CopyButton>
 
             {#if isOnSpecificRev}
-                <Tooltip tooltip="Go to default branch">
+                <Tooltip tooltip={getDepotChangelists ? 'Go to most recent changelist' : 'Go to default branch'}>
                     <button
                         class="{buttonClass} close-button hoverable-button"
                         on:click={() => onSelect(defaultBranch)}
@@ -226,7 +213,7 @@
                         toOption={changelist => ({ value: changelist.id, label: changelist.perforceChangelist?.cid })}
                         onSelect={changelist => {
                             toggle(false)
-                            onSelect(changelist.perforceChangelist?.cid ?? '')
+                            onSelect(`changelist/${changelist.perforceChangelist?.cid}` ?? '')
                         }}
                         let:value
                     >

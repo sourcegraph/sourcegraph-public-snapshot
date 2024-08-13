@@ -41,6 +41,8 @@ fragment ResolvedRepository on Repository {
         }
     }
     changelist(cid: $revision) {
+        cid
+        canonicalURL
         commit {
             oid
         }
@@ -52,6 +54,14 @@ fragment ResolvedRepository on Repository {
     }
     defaultBranch {
         abbrevName
+        target {
+            commit {
+                perforceChangelist {
+                    cid
+                    canonicalURL
+                }
+            }
+        }
     }
     externalURLs {
         url
