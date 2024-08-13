@@ -88,6 +88,15 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
         (searchParams.get(QUERY_PARAM_ENV) as EnterprisePortalEnvironment) || getDefaultEnterprisePortalEnv()
     )
     useEffect(() => {
+        // HACK: env state doesn't propagate to hooks correctly, so conditionally
+        // set params and reload the page.
+        // Required until we fix https://linear.app/sourcegraph/issue/CORE-245
+        if (env !== (searchParams.get(QUERY_PARAM_ENV) as EnterprisePortalEnvironment)) {
+            searchParams.set(QUERY_PARAM_ENV, env)
+            setSearchParams(searchParams)
+            window.location.reload()
+            return
+        }
         searchParams.set(QUERY_PARAM_ENV, env)
         setSearchParams(searchParams)
     }, [env, setSearchParams, searchParams])

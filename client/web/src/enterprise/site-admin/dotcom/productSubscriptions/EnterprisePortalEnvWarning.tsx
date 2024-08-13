@@ -33,10 +33,7 @@ export const EnterprisePortalEnvWarning: React.FunctionComponent<EnterprisePorta
             </Text>
             <Text className="mb-0">
                 If you are {actionText} for a customer, select <strong>Production</strong> from the "Enterprise Portal"
-                dropdown in the top right, <strong>and refresh the page</strong>.
-                {/**
-                 * Refresh page is required until we fix https://linear.app/sourcegraph/issue/CORE-245
-                 */}
+                dropdown in the top right
             </Text>
         </Alert>
     )
