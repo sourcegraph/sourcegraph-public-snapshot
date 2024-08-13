@@ -23,7 +23,7 @@ import { parseRepoGitURI } from '../util/url'
 import type { DocumentSelector, TextDocument, DocumentHighlight } from './legacy-extensions/api'
 import * as sourcegraph from './legacy-extensions/api'
 import type { LanguageSpec } from './legacy-extensions/language-specs/language-spec'
-import { languageSpecs } from './legacy-extensions/language-specs/languages'
+import { findLanguageSpec, languageSpecs } from './legacy-extensions/language-specs/languages'
 import { RedactingLogger } from './legacy-extensions/logging'
 import { createProviders, emptySourcegraphProviders, type SourcegraphProviders } from './legacy-extensions/providers'
 import { SymbolRole, Occurrence } from './scip'
@@ -172,12 +172,7 @@ const languages: Language[] = languageSpecs.map(spec => ({
 
 // Returns true if the provided language supports "Find implementations"
 export function hasFindImplementationsSupport(language: string): boolean {
-    for (const spec of languageSpecs) {
-        if (spec.languageID === language) {
-            return spec.textDocumentImplemenationSupport ?? false
-        }
-    }
-    return false
+    return findLanguageSpec(language)?.textDocumentImplemenationSupport ?? false
 }
 
 function selectorForSpec(languageSpec: LanguageSpec): DocumentSelector {

@@ -17,14 +17,17 @@ import (
 )
 
 func TestHandle(t *testing.T) {
-	now := time.Time{}
+	mockTime := time.Date(2024, 7, 8, 16, 39, 16, 4277000, time.Local)
+
 	store := NewMockStore()
-	store.NowFunc.SetDefaultReturn(now)
+	store.NowFunc.SetDefaultReturn(mockTime)
+	store.EnvFunc.SetDefaultReturn("dev")
 	store.TryAcquireJobFunc.SetDefaultReturn(true, nil, nil)
 	store.ListSubscriptionsFunc.SetDefaultReturn(
 		[]*subscriptions.SubscriptionWithConditions{
 			{Subscription: subscriptions.Subscription{
-				ID: "e9450fb2-87c7-47ae-a713-a376c4618faa",
+				ID:                       "e9450fb2-87c7-47ae-a713-a376c4618faa",
+				SalesforceSubscriptionID: pointers.Ptr("sf-sub-id"),
 			}},
 			{Subscription: subscriptions.Subscription{
 				ID:          "26136564-b319-4be4-98ff-7b8710abf4af",
@@ -40,19 +43,19 @@ func TestHandle(t *testing.T) {
 		case "e9450fb2-87c7-47ae-a713-a376c4618faa":
 			return &subscriptions.LicenseWithConditions{
 				SubscriptionLicense: subscriptions.SubscriptionLicense{
-					ExpireAt: utctime.FromTime(now.Add((24 + 1) * time.Hour)), // day away
+					ExpireAt: utctime.FromTime(mockTime.Add((24 + 1) * time.Hour)), // day away
 				},
 			}, nil
 		case "26136564-b319-4be4-98ff-7b8710abf4af":
 			return &subscriptions.LicenseWithConditions{
 				SubscriptionLicense: subscriptions.SubscriptionLicense{
-					ExpireAt: utctime.FromTime(now.Add((7*24 + 1) * time.Hour)), // week away
+					ExpireAt: utctime.FromTime(mockTime.Add((7*24 + 1) * time.Hour)), // week away
 				},
 			}, nil
 		default:
 			return &subscriptions.LicenseWithConditions{
 				SubscriptionLicense: subscriptions.SubscriptionLicense{
-					ExpireAt: utctime.FromTime(now.Add((99 * 24) * time.Hour)), // far away time
+					ExpireAt: utctime.FromTime(mockTime.Add((99 * 24) * time.Hour)), // far away time
 				},
 			}, nil
 		}
@@ -73,8 +76,8 @@ func TestHandle(t *testing.T) {
 	}
 	autogold.Expect([]*slack.Payload{
 		{
-			Text: "The license for subscription `es_e9450fb2-87c7-47ae-a713-a376c4618faa` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/es_e9450fb2-87c7-47ae-a713-a376c4618faa|will expire *in the next 24 hours*> :rotating_light:",
+			Text: "The active license for subscription *es_e9450fb2-87c7-47ae-a713-a376c4618faa* (Salesforce subscription: `sf-sub-id`) <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/es_e9450fb2-87c7-47ae-a713-a376c4618faa?env=dev|will expire *in the next 24 hours*> :rotating_light:",
 		},
-		{Text: "The license for subscription `My Special Subscription` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/es_26136564-b319-4be4-98ff-7b8710abf4af|will expire *in 7 days*>"},
+		{Text: "The active license for subscription *My Special Subscription* (Salesforce subscription: `unknown`) <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/es_26136564-b319-4be4-98ff-7b8710abf4af?env=dev|will expire *in 7 days*>"},
 	}).Equal(t, payloads)
 }

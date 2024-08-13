@@ -560,6 +560,13 @@ func AllowDependencyFailure() StepOpt {
 	}
 }
 
+// TimeoutInMinutes sets the timeout in minutes of the step to the given value
+func TimeoutInMinutes(min int) StepOpt {
+	return func(step *Step) {
+		step.TimeoutInMinutes = fmt.Sprintf("%d", min)
+	}
+}
+
 // flattenStepOpts conveniently turns a list of StepOpt into a single StepOpt.
 // It is useful to build helpers that can then be used when defining operations,
 // when the helper wraps multiple stepOpts at once.

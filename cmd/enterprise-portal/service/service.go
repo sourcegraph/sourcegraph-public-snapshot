@@ -211,6 +211,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 			licenseexpiration.NewRoutine(ctx, logger.Scoped("licenseexpiration"),
 				licenseexpiration.NewStore(
 					logger.Scoped("licenseexpiration.store"),
+					contract.Contract,
 					dbHandle.Subscriptions(),
 					redisKVClient,
 					config.LicenseExpirationChecker),

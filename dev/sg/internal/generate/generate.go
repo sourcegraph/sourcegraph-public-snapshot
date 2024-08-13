@@ -34,10 +34,12 @@ type Target struct {
 // RunScript runs the given script from the root of sourcegraph/sourcegraph.
 // If arguments are to be to passed down the script, they should be incorporated
 // in the script variable.
-func RunScript(command string) Runner {
+func RunScript(command string, extractBazelError bool) Runner {
 	return func(ctx context.Context, args []string) *Report {
 		start := time.Now()
-		out, err := run.BashInRoot(ctx, command, nil)
+		out, err := run.BashInRoot(ctx, command, run.BashInRootArgs{
+			ExtractBazelError: extractBazelError,
+		})
 		return &Report{
 			Output:   out,
 			Err:      err,

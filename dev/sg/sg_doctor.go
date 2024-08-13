@@ -103,7 +103,9 @@ func (d *diagnosticRunner) Run(ctx context.Context) DiagnosticReport {
 	for group, diagnostics := range d.diagnostics.Diagnostic {
 		d.reporter.WriteLine(output.Emojif("💊", "Running %s diagnostics", group))
 		for _, diagnostic := range diagnostics {
-			out, err := run.BashInRoot(ctx, diagnostic.Cmd, env)
+			out, err := run.BashInRoot(ctx, diagnostic.Cmd, run.BashInRootArgs{
+				Env: env,
+			})
 			diag := diagnostic
 			report.Add(group, &DiagnosticResult{
 				&diag,

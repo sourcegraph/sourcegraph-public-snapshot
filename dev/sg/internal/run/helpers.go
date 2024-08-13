@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 func GitCmd(args ...string) (string, error) {
@@ -19,11 +20,11 @@ func GitCmd(args ...string) (string, error) {
 		// And also not any other, because they can mess up output, change defaults, .. which can do unexpected things.
 		"GIT_CONFIG=/dev/null")
 
-	return InRoot(cmd)
+	return InRoot(cmd, InRootArgs{})
 }
 
 func DockerCmd(args ...string) (string, error) {
-	return InRoot(exec.Command("docker", args...))
+	return InRoot(exec.Command("docker", args...), InRootArgs{})
 }
 
 type errorWithoutOutputer interface {
@@ -37,7 +38,8 @@ type cmdInRootErr struct {
 }
 
 func (e cmdInRootErr) Error() string {
-	return fmt.Sprintf("'%s' failed: err = %q, output = %q", strings.Join(e.args, " "), e.err.Error(), e.output)
+	return fmt.Sprintf(`'%s' failed: err = "%s", output = "%s"`, strings.Join(e.args, " "), e.err.Error(), e.output)
+
 }
 
 func (e cmdInRootErr) ErrorWithoutOutput() string {
@@ -46,7 +48,11 @@ func (e cmdInRootErr) ErrorWithoutOutput() string {
 
 func (e cmdInRootErr) Unwrap() error { return e.err }
 
-func InRoot(cmd *exec.Cmd) (string, error) {
+type InRootArgs struct {
+	ExtractBazelError bool
+}
+
+func InRoot(cmd *exec.Cmd, args InRootArgs) (string, error) {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return "", err
@@ -55,10 +61,31 @@ func InRoot(cmd *exec.Cmd) (string, error) {
 	cmd.Dir = repoRoot
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return string(out), cmdInRootErr{err: err, args: cmd.Args, output: string(out)}
+		output := string(out)
+		if args.ExtractBazelError {
+			// this is still experimental and currently only works for bazel errors
+			output = bazelErrorExtractor(out)
+		}
+		return string(out), cmdInRootErr{err: err, args: cmd.Args, output: output}
 	}
 
 	return string(out), nil
+}
+
+// `(?m)` enables multiline mode, `^` matches the start of each line
+var errorRegex = lazyregexp.New(`(?m)^ERROR:.*$`)
+
+func bazelErrorExtractor(input []byte) string {
+	// Find all matches
+	matches := errorRegex.FindAll(input, -1)
+
+	// Convert [][]byte to string
+	var errorLines string
+	for _, match := range matches {
+		errorLines += string(match) + "\n"
+	}
+
+	return errorLines
 }
 
 func SplitOutputInRoot(cmd *exec.Cmd, stdout, stderr io.Writer) error {
@@ -72,10 +99,17 @@ func SplitOutputInRoot(cmd *exec.Cmd, stdout, stderr io.Writer) error {
 	return cmd.Run()
 }
 
-func BashInRoot(ctx context.Context, cmd string, env []string) (string, error) {
+type BashInRootArgs struct {
+	Env               []string
+	ExtractBazelError bool
+}
+
+func BashInRoot(ctx context.Context, cmd string, args BashInRootArgs) (string, error) {
 	c := exec.CommandContext(ctx, "bash", "-c", cmd)
-	c.Env = env
-	return InRoot(c)
+	c.Env = args.Env
+	return InRoot(c, InRootArgs{
+		ExtractBazelError: args.ExtractBazelError,
+	})
 }
 
 func TrimResult(s string, err error) (string, error) {
