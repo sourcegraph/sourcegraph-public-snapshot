@@ -11,11 +11,8 @@
     import Tooltip from '$lib/Tooltip.svelte'
     import { parseBrowserRepoURL } from '$lib/web'
 
-    const REPO_TOOLTIP = 'Permalink (with full git commit SHA)'
-    const DEPOT_TOOLTIP = 'Permalink (with full changelist ID)'
-
     export let revID: string
-    export let isPerforceDepot: boolean = false
+    export let tooltip: string
 
     const hotkey = createHotkey({
         keys: { key: 'y' },
@@ -40,7 +37,7 @@
 </script>
 
 {#if href}
-    <Tooltip tooltip={isPerforceDepot ? DEPOT_TOOLTIP : REPO_TOOLTIP}>
+    <Tooltip {tooltip}>
         <a {href}><Icon icon={ILucideLink} inline aria-hidden /> <span data-action-label>Permalink</span></a>
     </Tooltip>
 {/if}
