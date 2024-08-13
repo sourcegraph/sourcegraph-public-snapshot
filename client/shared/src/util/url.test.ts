@@ -13,7 +13,6 @@ import {
     toAbsoluteBlobURL,
     type RepoFile,
     toRepoURL,
-    addChangelistPath,
 } from './url'
 
 /**
@@ -399,13 +398,5 @@ describe('toRepoURL', () => {
         expect(toRepoURL({ repoName: 'sourcegraph/sourcegraph', revision: 'main' })).toBe(
             '/sourcegraph/sourcegraph@main'
         )
-    })
-})
-
-describe('addChangelistPath', () => {
-    it('adds changelist path when @ is present', () => {
-        const input = '/repo@branch/path'
-        const expected = '/repo@changelist/branch/path'
-        expect(addChangelistPath(input)).toBe(expected)
     })
 })

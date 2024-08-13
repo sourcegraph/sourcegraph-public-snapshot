@@ -68,6 +68,12 @@
                 color: var(--icon-color);
             }
         }
+
+        // Branch name badge
+        :global([data-badge]) {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     }
 
     .author {
@@ -86,11 +92,5 @@
 
         justify-content: flex-end;
         color: var(--text-muted);
-    }
-
-    // Branch name badge
-    :global([data-badge]) {
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 </style>

@@ -28,8 +28,7 @@ fragment ChangelistsPage_GitCommitConnection on GitCommitConnection {
             }
         }
         perforceChangelist {
-            canonicalURL
-            cid
+            ...Changelist
         }
     }
     pageInfo {

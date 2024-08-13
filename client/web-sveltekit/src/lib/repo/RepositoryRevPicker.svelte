@@ -212,7 +212,7 @@
                             <svelte:fragment slot="title">
                                 <Icon icon={ILucideGitCommitVertical} inline aria-hidden="true" />
                                 <Badge variant="link">{value.abbreviatedOID}</Badge>
-                                <span class="commit-subject">{value.subject}</span>
+                                <span class="subject">{value.subject}</span>
                             </svelte:fragment>
                         </RepositoryRevPickerItem>
                     </Picker>
@@ -234,7 +234,7 @@
                             <svelte:fragment slot="title">
                                 <Icon icon={ILucideGitCommitVertical} inline aria-hidden="true" />
                                 <Badge variant="link">{value.perforceChangelist?.cid}</Badge>
-                                <span class="changelist-subject">{value.subject}</span>
+                                <span class="subject">{value.subject}</span>
                             </svelte:fragment>
                         </RepositoryRevPickerItem>
                     </Picker>
@@ -310,8 +310,7 @@
             }
         }
 
-        .changelist-subject,
-        .commit-subject {
+        .subject {
             overflow: hidden;
             text-overflow: ellipsis;
         }
