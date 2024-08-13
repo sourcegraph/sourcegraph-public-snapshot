@@ -59,6 +59,7 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
          * - a symbolic revision (e.g. a branch or tag name)
          */
         displayRevision: displayRevision(revision, resolvedRepository),
+        // TODO: make this work for perforce
         defaultBranch: resolvedRepository.defaultBranch?.abbrevName || 'HEAD',
         resolvedRepository: resolvedRepository,
         isPerforceDepot: resolvedRepository.externalRepository.serviceType === 'perforce',
