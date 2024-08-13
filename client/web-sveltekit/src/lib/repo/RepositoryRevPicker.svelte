@@ -91,7 +91,13 @@
     export let getDepotChangelists: ((query: string) => PromiseLike<DepotChangelists>) | undefined = undefined
 
     function defaultHandleSelect(revision: string) {
-        goto(replaceRevisionInURL(location.pathname + location.search + location.hash, revision, isPerforceDepot))
+        const urlToReplace = location.pathname + location.search + location.hash
+
+        if (isPerforceDepot) {
+            revision = 'changelist/' + revision
+        }
+
+        goto(replaceRevisionInURL(urlToReplace, revision))
     }
 
     // Show specific short revision if it's presented in the URL
