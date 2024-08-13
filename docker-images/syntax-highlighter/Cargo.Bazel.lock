@@ -1,5 +1,5 @@
 {
-  "checksum": "5ce51c072f471835fd7f4d2b3dacde06732783c0d603c45b17969e39aa6944c5",
+  "checksum": "9094a5213b07fa9722b5690f65df43a3a3a776254b046755f3dd0a21db410101",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -13344,9 +13344,12 @@
       "name": "tree-sitter",
       "version": "0.22.6",
       "repository": {
-        "Http": {
-          "url": "https://static.crates.io/crates/tree-sitter/0.22.6/download",
-          "sha256": "df7cc499ceadd4dcdf7ec6d4cbc34ece92c3fa07821e287aedecd4416c516dca"
+        "Git": {
+          "remote": "https://github.com/tree-sitter/tree-sitter",
+          "commitish": {
+            "Rev": "d35e40185a8972cf7ce2b3cebdea8b1369d3789a"
+          },
+          "strip_prefix": "lib"
         }
       },
       "targets": [
@@ -13995,9 +13998,12 @@
       "name": "tree-sitter-highlight",
       "version": "0.22.6",
       "repository": {
-        "Http": {
-          "url": "https://static.crates.io/crates/tree-sitter-highlight/0.22.6/download",
-          "sha256": "eaca0fe34fa96eec6aaa8e63308dbe1bafe65a6317487c287f93938959b21907"
+        "Git": {
+          "remote": "https://github.com/tree-sitter/tree-sitter",
+          "commitish": {
+            "Rev": "d35e40185a8972cf7ce2b3cebdea8b1369d3789a"
+          },
+          "strip_prefix": "highlight"
         }
       },
       "targets": [

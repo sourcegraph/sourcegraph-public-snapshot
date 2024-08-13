@@ -47,6 +47,10 @@ members = [
     "crates/scip-syntax",
 ]
 
+[patch.crates-io]
+tree-sitter = { git = "https://github.com/tree-sitter/tree-sitter", rev = "d35e40185a8972cf7ce2b3cebdea8b1369d3789a" }
+tree-sitter-highlight = { git = "https://github.com/tree-sitter/tree-sitter", rev = "d35e40185a8972cf7ce2b3cebdea8b1369d3789a" }
+
 [workspace.dependencies]
 anyhow = "1"
 # "cargo" feature is enabled for using the `crate_version` macro
