@@ -94,7 +94,7 @@ index 18938f332c6..8880ec58259 100644
 +	}
 +	var queryRunner execer = db
 +
-+	if !definition.IsCreateIndexConcurrently && !definition.NoTransaction {
++	if !definition.IsCreateIndexConcurrently {
 +		tx, err := db.BeginTx(context.Background(), &sql.TxOptions{})
 +		if err != nil {
 +			return err
