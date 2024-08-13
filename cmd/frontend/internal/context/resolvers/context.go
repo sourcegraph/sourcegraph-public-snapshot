@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -13,9 +14,11 @@ import (
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/idf"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -191,6 +194,15 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 		}
 
 		repoNameIDs[i] = types.RepoIDName{ID: repoID, Name: repo.Name}
+	}
+
+	for _, repoID := range repoIDs {
+		val, err := idf.Get(ctx, repoID)
+		if err != nil {
+			fmt.Printf("Unexpected error getting idf index value for repo %v: %v\n", repoID, err)
+			continue
+		}
+		fmt.Printf("# Got idf index value for repo %v: %v\n", repoID, string(val))
 	}
 
 	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
