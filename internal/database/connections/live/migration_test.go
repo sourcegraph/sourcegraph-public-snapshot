@@ -2,6 +2,7 @@ package connections
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -129,7 +131,7 @@ func testMigrationIdempotency(t *testing.T, name string, schema *schemas.Schema)
 
 	t.Run("idempotent up", func(t *testing.T) {
 		for _, definition := range all {
-			if _, err := db.Exec(definition.UpQuery.Query(sqlf.PostgresBindVar)); err != nil {
+			if err := applyMigration(db, definition, true); err != nil {
 				t.Fatalf("failed to perform upgrade of migration %d: %s", definition.ID, err)
 			}
 
@@ -139,7 +141,7 @@ func testMigrationIdempotency(t *testing.T, name string, schema *schemas.Schema)
 				continue
 			}
 
-			if _, err := db.Exec(definition.UpQuery.Query(sqlf.PostgresBindVar)); err != nil {
+			if err := applyMigration(db, definition, true); err != nil {
 				t.Fatalf("migration %d is not idempotent%s: %s", definition.ID, formatHint(err), err)
 			}
 		}
@@ -149,7 +151,7 @@ func testMigrationIdempotency(t *testing.T, name string, schema *schemas.Schema)
 		for i := len(all) - 1; i >= 0; i-- {
 			definition := all[i]
 
-			if _, err := db.Exec(definition.DownQuery.Query(sqlf.PostgresBindVar)); err != nil {
+			if err := applyMigration(db, definition, false); err != nil {
 				t.Fatalf("failed to perform downgrade of migration %d: %s", definition.ID, err)
 			}
 
@@ -159,7 +161,7 @@ func testMigrationIdempotency(t *testing.T, name string, schema *schemas.Schema)
 				continue
 			}
 
-			if _, err := db.Exec(definition.DownQuery.Query(sqlf.PostgresBindVar)); err != nil {
+			if err := applyMigration(db, definition, false); err != nil {
 				t.Fatalf("migration %d is not idempotent%s: %s", definition.ID, formatHint(err), err)
 			}
 		}
@@ -183,7 +185,7 @@ func testDownMigrationsDoNotCreateDrift(t *testing.T, name string, schema *schem
 		expectedDescription := expectedDescriptions["public"]
 
 		// Run query up
-		if _, err := db.Exec(definition.UpQuery.Query(sqlf.PostgresBindVar)); err != nil {
+		if err := applyMigration(db, definition, true); err != nil {
 			t.Fatalf("failed to perform upgrade of migration %d: %s", definition.ID, err)
 		}
 
@@ -194,7 +196,7 @@ func testDownMigrationsDoNotCreateDrift(t *testing.T, name string, schema *schem
 		}
 
 		// Run query down (should restore previous state)
-		if _, err := db.Exec(definition.DownQuery.Query(sqlf.PostgresBindVar)); err != nil {
+		if err := applyMigration(db, definition, false); err != nil {
 			t.Fatalf("failed to perform downgrade of migration %d: %s", definition.ID, err)
 		}
 
@@ -232,7 +234,7 @@ func testDownMigrationsDoNotCreateDrift(t *testing.T, name string, schema *schem
 		}
 
 		// Re-run query up to prepare for next round
-		if _, err := db.Exec(definition.UpQuery.Query(sqlf.PostgresBindVar)); err != nil {
+		if err := applyMigration(db, definition, true); err != nil {
 			t.Fatalf("failed to re-perform upgrade of migration %d: %s", definition.ID, err)
 		}
 	}
@@ -263,4 +265,39 @@ func formatHint(err error) string {
 	}
 
 	return ""
+}
+
+// applyMigration applies migrations for testing. In real-world, they run inside of a
+// transaction, sp we mimic that in this helper as well.
+func applyMigration(db *sql.DB, definition definition.Definition, up bool) (err error) {
+	type execer interface {
+		Exec(query string, args ...any) (sql.Result, error)
+	}
+	var queryRunner execer = db
+
+	if !definition.IsCreateIndexConcurrently && !definition.NoTransaction {
+		tx, err := db.BeginTx(context.Background(), &sql.TxOptions{})
+		if err != nil {
+			return err
+		}
+		queryRunner = tx
+		defer func() {
+			if err != nil {
+				err = errors.Append(err, tx.Rollback())
+			}
+			err = tx.Commit()
+		}()
+	}
+
+	if up {
+		if _, err := queryRunner.Exec(definition.UpQuery.Query(sqlf.PostgresBindVar)); err != nil {
+			return errors.Wrapf(err, "failed to apply migration %d:\n```\n%s\n```\n", definition.ID, definition.UpQuery.Query(sqlf.PostgresBindVar))
+		}
+	} else {
+		if _, err := queryRunner.Exec(definition.DownQuery.Query(sqlf.PostgresBindVar)); err != nil {
+			return errors.Wrapf(err, "failed to apply migration %d:\n```\n%s\n```\n", definition.ID, definition.DownQuery.Query(sqlf.PostgresBindVar))
+		}
+	}
+
+	return nil
 }
