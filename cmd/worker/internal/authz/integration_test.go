@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	authzBitbucketServer "github.com/sourcegraph/sourcegraph/internal/authz/providers/bitbucketserver"
 	authzGitHub "github.com/sourcegraph/sourcegraph/internal/authz/providers/github"
 	authzGitLab "github.com/sourcegraph/sourcegraph/internal/authz/providers/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -26,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	extsvcGitHub "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -579,5 +581,131 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 		require.NoError(t, err, "feature flag creation failed")
 
 		assertUserPermissions(t, []int32{1, 2})
+	})
+}
+
+func TestIntegration_BitbucketServerPermissions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	token := os.Getenv("BITBUCKETSERVER_TOKEN")
+
+	spec := extsvc.AccountSpec{
+		ServiceType: extsvc.TypeBitbucketServer,
+		ServiceID:   "https://bitbucket.sgdev.org/",
+		AccountID:   "603",
+	}
+	svc := types.ExternalService{
+		Kind:   extsvc.KindBitbucketServer,
+		Config: extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.sgdev.org", "authorization": {"oauth2": true}, "token": "abc", "repos": [ "PRIVATE/test-repo" ], "username": "whatever"}`),
+	}
+
+	newUser := database.NewUser{
+		Email:           "sourcegraph-vcr@sourcegraph.com",
+		Username:        "sourcegraph-vcr",
+		EmailIsVerified: true,
+	}
+
+	// This test requires the "PRIVATE/test-repo" repo to be set up
+	testRepos := []types.Repo{
+		{
+			Name:    "bitbucket.sgdev.org/PRIVATE/test-repo",
+			Private: true,
+			URI:     "bitbucket.sgdev.org/PRIVATE/test-repo",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "10093",
+				ServiceType: extsvc.TypeBitbucketServer,
+				ServiceID:   "https://bitbucket.sgdev.org/",
+			},
+			Sources: map[string]*types.SourceInfo{
+				svc.URN(): {
+					ID: svc.URN(),
+				},
+			},
+		},
+	}
+
+	authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
+	accountData := json.RawMessage(`{"name":"pjlast","emailAddress":"petri.last@sourcegraph.com","id":603,"displayName":"Petri-Johan Last","active":true,"slug":"pjlast","type":"NORMAL"}`)
+
+	t.Run("test bitbucket server oauth permissions", func(t *testing.T) {
+		name := t.Name()
+
+		cf, save := httptestutil.NewRecorderFactory(t, update(name), name)
+		defer save()
+		doer, err := cf.Doer()
+		require.NoError(t, err)
+
+		testDB := database.NewDB(logger, dbtest.NewDB(t))
+
+		ctx := actor.WithInternalActor(context.Background())
+
+		reposStore := repos.NewStore(logtest.Scoped(t), testDB)
+
+		err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
+		require.NoError(t, err)
+
+		cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
+		require.NoError(t, err)
+
+		conn := &types.BitbucketServerConnection{
+			URN:                       svc.URN(),
+			BitbucketServerConnection: cfg.(*schema.BitbucketServerConnection),
+		}
+
+		cli, err := bitbucketserver.NewClient("https://bitbucket.sgdev.org", conn.BitbucketServerConnection, doer)
+		require.NoError(t, err)
+
+		provider := authzBitbucketServer.NewOAuthProvider(testDB, conn, authzBitbucketServer.ProviderOptions{BitbucketServerClient: cli}, false)
+
+		for _, repo := range testRepos {
+			err = reposStore.RepoStore().Create(ctx, &repo)
+			require.NoError(t, err)
+		}
+
+		user, err := testDB.Users().CreateWithExternalAccount(ctx, newUser, &extsvc.Account{
+			AccountSpec: spec,
+			AccountData: extsvc.AccountData{
+				AuthData: extsvc.NewUnencryptedData(authData),
+				Data:     extsvc.NewUnencryptedData(accountData),
+			},
+		})
+		require.NoError(t, err)
+
+		permsStore := database.Perms(logger, testDB, timeutil.Now)
+		syncer := newPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
+
+		syncer.providerFactory = func(context.Context) []authz.Provider {
+			return []authz.Provider{provider}
+		}
+
+		assertUserPermissions := func(t *testing.T, wantIDs []int32) {
+			t.Helper()
+			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
+			require.NoError(t, err)
+
+			assert.Equal(t, database.CodeHostStatusesSet{{
+				ProviderID:   "https://bitbucket.sgdev.org/",
+				ProviderType: "bitbucketServer",
+				Status:       database.CodeHostStatusSuccess,
+				Message:      "FetchUserPerms",
+			}}, providerStates)
+
+			p, err := permsStore.LoadUserPermissions(ctx, user.ID)
+			require.NoError(t, err)
+
+			gotIDs := make([]int32, len(p))
+			for i, perm := range p {
+				gotIDs[i] = perm.RepoID
+			}
+
+			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
+				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			}
+		}
+
+		assertUserPermissions(t, []int32{1})
 	})
 }
