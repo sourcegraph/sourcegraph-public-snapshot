@@ -15,6 +15,7 @@ import (
 	subscriptions "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 	utctime "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	license "github.com/sourcegraph/sourcegraph/internal/license"
+	slack "github.com/sourcegraph/sourcegraph/internal/slack"
 	iam "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/iam"
 )
 
@@ -27,6 +28,9 @@ type MockStoreV1 struct {
 	// function object controlling the behavior of the method
 	// CreateEnterpriseSubscriptionLicenseKey.
 	CreateEnterpriseSubscriptionLicenseKeyFunc *StoreV1CreateEnterpriseSubscriptionLicenseKeyFunc
+	// EnvFunc is an instance of a mock function object controlling the
+	// behavior of the method Env.
+	EnvFunc *StoreV1EnvFunc
 	// GenerateSubscriptionIDFunc is an instance of a mock function object
 	// controlling the behavior of the method GenerateSubscriptionID.
 	GenerateSubscriptionIDFunc *StoreV1GenerateSubscriptionIDFunc
@@ -64,6 +68,9 @@ type MockStoreV1 struct {
 	// NowFunc is an instance of a mock function object controlling the
 	// behavior of the method Now.
 	NowFunc *StoreV1NowFunc
+	// PostToSlackFunc is an instance of a mock function object controlling
+	// the behavior of the method PostToSlack.
+	PostToSlackFunc *StoreV1PostToSlackFunc
 	// RevokeEnterpriseSubscriptionLicenseFunc is an instance of a mock
 	// function object controlling the behavior of the method
 	// RevokeEnterpriseSubscriptionLicense.
@@ -84,6 +91,11 @@ func NewMockStoreV1() *MockStoreV1 {
 	return &MockStoreV1{
 		CreateEnterpriseSubscriptionLicenseKeyFunc: &StoreV1CreateEnterpriseSubscriptionLicenseKeyFunc{
 			defaultHook: func(context.Context, string, *subscriptions.DataLicenseKey, subscriptions.CreateLicenseOpts) (r0 *subscriptions.LicenseWithConditions, r1 error) {
+				return
+			},
+		},
+		EnvFunc: &StoreV1EnvFunc{
+			defaultHook: func() (r0 string) {
 				return
 			},
 		},
@@ -142,6 +154,11 @@ func NewMockStoreV1() *MockStoreV1 {
 				return
 			},
 		},
+		PostToSlackFunc: &StoreV1PostToSlackFunc{
+			defaultHook: func(context.Context, *slack.Payload) (r0 error) {
+				return
+			},
+		},
 		RevokeEnterpriseSubscriptionLicenseFunc: &StoreV1RevokeEnterpriseSubscriptionLicenseFunc{
 			defaultHook: func(context.Context, string, subscriptions.RevokeLicenseOpts) (r0 *subscriptions.LicenseWithConditions, r1 error) {
 				return
@@ -167,6 +184,11 @@ func NewStrictMockStoreV1() *MockStoreV1 {
 		CreateEnterpriseSubscriptionLicenseKeyFunc: &StoreV1CreateEnterpriseSubscriptionLicenseKeyFunc{
 			defaultHook: func(context.Context, string, *subscriptions.DataLicenseKey, subscriptions.CreateLicenseOpts) (*subscriptions.LicenseWithConditions, error) {
 				panic("unexpected invocation of MockStoreV1.CreateEnterpriseSubscriptionLicenseKey")
+			},
+		},
+		EnvFunc: &StoreV1EnvFunc{
+			defaultHook: func() string {
+				panic("unexpected invocation of MockStoreV1.Env")
 			},
 		},
 		GenerateSubscriptionIDFunc: &StoreV1GenerateSubscriptionIDFunc{
@@ -224,6 +246,11 @@ func NewStrictMockStoreV1() *MockStoreV1 {
 				panic("unexpected invocation of MockStoreV1.Now")
 			},
 		},
+		PostToSlackFunc: &StoreV1PostToSlackFunc{
+			defaultHook: func(context.Context, *slack.Payload) error {
+				panic("unexpected invocation of MockStoreV1.PostToSlack")
+			},
+		},
 		RevokeEnterpriseSubscriptionLicenseFunc: &StoreV1RevokeEnterpriseSubscriptionLicenseFunc{
 			defaultHook: func(context.Context, string, subscriptions.RevokeLicenseOpts) (*subscriptions.LicenseWithConditions, error) {
 				panic("unexpected invocation of MockStoreV1.RevokeEnterpriseSubscriptionLicense")
@@ -248,6 +275,9 @@ func NewMockStoreV1From(i StoreV1) *MockStoreV1 {
 	return &MockStoreV1{
 		CreateEnterpriseSubscriptionLicenseKeyFunc: &StoreV1CreateEnterpriseSubscriptionLicenseKeyFunc{
 			defaultHook: i.CreateEnterpriseSubscriptionLicenseKey,
+		},
+		EnvFunc: &StoreV1EnvFunc{
+			defaultHook: i.Env,
 		},
 		GenerateSubscriptionIDFunc: &StoreV1GenerateSubscriptionIDFunc{
 			defaultHook: i.GenerateSubscriptionID,
@@ -281,6 +311,9 @@ func NewMockStoreV1From(i StoreV1) *MockStoreV1 {
 		},
 		NowFunc: &StoreV1NowFunc{
 			defaultHook: i.Now,
+		},
+		PostToSlackFunc: &StoreV1PostToSlackFunc{
+			defaultHook: i.PostToSlack,
 		},
 		RevokeEnterpriseSubscriptionLicenseFunc: &StoreV1RevokeEnterpriseSubscriptionLicenseFunc{
 			defaultHook: i.RevokeEnterpriseSubscriptionLicense,
@@ -411,6 +444,104 @@ func (c StoreV1CreateEnterpriseSubscriptionLicenseKeyFuncCall) Args() []interfac
 // invocation.
 func (c StoreV1CreateEnterpriseSubscriptionLicenseKeyFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreV1EnvFunc describes the behavior when the Env method of the parent
+// MockStoreV1 instance is invoked.
+type StoreV1EnvFunc struct {
+	defaultHook func() string
+	hooks       []func() string
+	history     []StoreV1EnvFuncCall
+	mutex       sync.Mutex
+}
+
+// Env delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockStoreV1) Env() string {
+	r0 := m.EnvFunc.nextHook()()
+	m.EnvFunc.appendCall(StoreV1EnvFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Env method of the
+// parent MockStoreV1 instance is invoked and the hook queue is empty.
+func (f *StoreV1EnvFunc) SetDefaultHook(hook func() string) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Env method of the parent MockStoreV1 instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *StoreV1EnvFunc) PushHook(hook func() string) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreV1EnvFunc) SetDefaultReturn(r0 string) {
+	f.SetDefaultHook(func() string {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreV1EnvFunc) PushReturn(r0 string) {
+	f.PushHook(func() string {
+		return r0
+	})
+}
+
+func (f *StoreV1EnvFunc) nextHook() func() string {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreV1EnvFunc) appendCall(r0 StoreV1EnvFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreV1EnvFuncCall objects describing the
+// invocations of this function.
+func (f *StoreV1EnvFunc) History() []StoreV1EnvFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreV1EnvFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreV1EnvFuncCall is an object that describes an invocation of method
+// Env on an instance of MockStoreV1.
+type StoreV1EnvFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreV1EnvFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreV1EnvFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // StoreV1GenerateSubscriptionIDFunc describes the behavior when the
@@ -1586,6 +1717,111 @@ func (c StoreV1NowFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreV1NowFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// StoreV1PostToSlackFunc describes the behavior when the PostToSlack method
+// of the parent MockStoreV1 instance is invoked.
+type StoreV1PostToSlackFunc struct {
+	defaultHook func(context.Context, *slack.Payload) error
+	hooks       []func(context.Context, *slack.Payload) error
+	history     []StoreV1PostToSlackFuncCall
+	mutex       sync.Mutex
+}
+
+// PostToSlack delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockStoreV1) PostToSlack(v0 context.Context, v1 *slack.Payload) error {
+	r0 := m.PostToSlackFunc.nextHook()(v0, v1)
+	m.PostToSlackFunc.appendCall(StoreV1PostToSlackFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the PostToSlack method
+// of the parent MockStoreV1 instance is invoked and the hook queue is
+// empty.
+func (f *StoreV1PostToSlackFunc) SetDefaultHook(hook func(context.Context, *slack.Payload) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PostToSlack method of the parent MockStoreV1 instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreV1PostToSlackFunc) PushHook(hook func(context.Context, *slack.Payload) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreV1PostToSlackFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *slack.Payload) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreV1PostToSlackFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *slack.Payload) error {
+		return r0
+	})
+}
+
+func (f *StoreV1PostToSlackFunc) nextHook() func(context.Context, *slack.Payload) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreV1PostToSlackFunc) appendCall(r0 StoreV1PostToSlackFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreV1PostToSlackFuncCall objects
+// describing the invocations of this function.
+func (f *StoreV1PostToSlackFunc) History() []StoreV1PostToSlackFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreV1PostToSlackFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreV1PostToSlackFuncCall is an object that describes an invocation of
+// method PostToSlack on an instance of MockStoreV1.
+type StoreV1PostToSlackFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *slack.Payload
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreV1PostToSlackFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreV1PostToSlackFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
