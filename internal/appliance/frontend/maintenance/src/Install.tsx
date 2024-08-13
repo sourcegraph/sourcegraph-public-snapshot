@@ -21,6 +21,7 @@ import {
     Tabs,
 } from '@mui/material'
 
+import { call } from './api'
 import { changeStage } from './state'
 
 export const Install: React.FC = () => {
@@ -43,13 +44,7 @@ export const Install: React.FC = () => {
     useEffect(() => {
         const fetchVersions = async () => {
             try {
-                const response = await fetch('https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph', {
-                    headers: {
-                        Authorization: `Bearer token`,
-                        'Content-Type': 'application/json',
-                    },
-                    mode: 'cors',
-                })
+                const response = await call('/api/v1/releases/sourcegraph')
                 const data = await response.json()
                 setVersions(data)
                 if (data.length > 0) {

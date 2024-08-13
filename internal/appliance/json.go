@@ -167,6 +167,23 @@ func (a *Appliance) getMaintenanceStatusHandler() http.Handler {
 	})
 }
 
+func (a *Appliance) getReleasesHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// simple proxy to release releaseRegistry
+		resp, err := http.Get("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph")
+		if err != nil {
+			a.serverErrorResponse(w, r, err)
+			return
+		}
+		defer resp.Body.Close()
+		if _, err := io.Copy(w, resp.Body); err != nil {
+			// There's nothing else we can do, we've already sent the status
+			// code
+			a.logger.Error("error proxying release registry to appliance frontend", log.Error(err))
+		}
+	})
+}
+
 func (a *Appliance) postStatusJSONHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
