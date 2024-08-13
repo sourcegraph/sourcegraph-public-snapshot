@@ -52,6 +52,10 @@ func (p *Provider) ConfigID() providers.ConfigID {
 	}
 }
 
+func (p *Provider) Type() providers.ProviderType {
+	return providers.ProviderTypeOAuth
+}
+
 func (p *Provider) Config() schema.AuthProviders {
 	return p.SourceConfig
 }

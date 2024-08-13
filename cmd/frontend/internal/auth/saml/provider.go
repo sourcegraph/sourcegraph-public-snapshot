@@ -54,6 +54,10 @@ func (p *provider) Config() schema.AuthProviders {
 	return schema.AuthProviders{Saml: &p.config}
 }
 
+func (p *provider) Type() providers.ProviderType {
+	return providers.ProviderTypeSAML
+}
+
 func (p *provider) Refresh(ctx context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()

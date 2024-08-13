@@ -49,6 +49,10 @@ func (p *Provider) ConfigID() providers.ConfigID {
 	}
 }
 
+func (p *Provider) Type() providers.ProviderType {
+	return providers.ProviderTypeOpenIDConnect
+}
+
 // Config implements providers.Provider.
 func (p *Provider) Config() schema.AuthProviders {
 	return schema.AuthProviders{Openidconnect: &p.config}

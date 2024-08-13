@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
@@ -222,25 +221,10 @@ func getExactlyOneOAuthProvider(skipSoap bool) *Provider {
 	if !ok {
 		return nil
 	}
-	if !isOAuth(p.Config()) {
+	if ps[0].Type() != providers.ProviderTypeOAuth {
 		return nil
 	}
 	return p
-}
-
-var isOAuths []func(p schema.AuthProviders) bool
-
-func AddIsOAuth(f func(p schema.AuthProviders) bool) {
-	isOAuths = append(isOAuths, f)
-}
-
-func isOAuth(p schema.AuthProviders) bool {
-	for _, f := range isOAuths {
-		if f(p) {
-			return true
-		}
-	}
-	return false
 }
 
 // isHuman returns true if the request probably came from a human, rather than a bot. Used to
