@@ -88,6 +88,10 @@ type IndexedSearchSpec struct {
 	Replicas int32 `json:"replicas,omitempty"`
 }
 
+type NodeExporterSpec struct {
+	StandardConfig
+}
+
 type OtelAgentSpec struct {
 	StandardConfig
 }
@@ -230,7 +234,11 @@ type SourcegraphSpec struct {
 	// IndexedSearch defines the desired state of the Indexed Search service.
 	IndexedSearch IndexedSearchSpec `json:"indexedSearch,omitempty"`
 
+	// Jaeger defines the desired state of the Jaeger service.
 	Jaeger JaegerSpec `json:"jaeger,omitempty"`
+
+	// NodeExporter defines the desired state of the NodeExporter service.
+	NodeExporter NodeExporterSpec `json:"nodeExporter,omitempty"`
 
 	OtelAgent     OtelAgentSpec     `json:"openTelemetryAgent,omitempty"`
 	OtelCollector OtelCollectorSpec `json:"openTelemetryCollector,omitempty"`
@@ -272,24 +280,25 @@ type SourcegraphSpec struct {
 // SourcegraphServicesToReconcile is a list of all Sourcegraph services that will be reconciled by appliance.
 var SourcegraphServicesToReconcile = []string{
 	"blobstore",
-	"repo-updater",
-	"symbols",
-	"gitserver",
-	"redis",
-	"pgsql",
-	"syntect",
-	"precise-code-intel",
+	"cadvisor",
 	"code-insights-db",
 	"code-intel-db",
-	"prometheus",
-	"cadvisor",
-	"worker",
 	"frontend",
-	"searcher",
-	"indexed-searcher",
+	"gitserver",
 	"grafana",
+	"indexed-searcher",
 	"jaeger",
+	"nodeexporter",
 	"otel",
+	"pgsql",
+	"precise-code-intel",
+	"prometheus",
+	"redis",
+	"repo-updater",
+	"searcher",
+	"symbols",
+	"syntect",
+	"worker",
 }
 
 // SourcegraphStatus defines the observed state of Sourcegraph

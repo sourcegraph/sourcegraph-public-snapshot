@@ -526,7 +526,6 @@ func SetupForTest(t TB) {
 			return err
 		},
 	}
-	kvMock = redispool.RedisKeyValue(pool)
 
 	tokenBucketGlobalPrefix = "__test__" + t.Name()
 	c := pool.Get()
@@ -540,9 +539,9 @@ func SetupForTest(t TB) {
 		}
 	}
 
-	err := redispool.DeleteAllKeysWithPrefix(c, tokenBucketGlobalPrefix)
-	if err != nil {
-		t.Fatalf("cold not clear test prefix: &v", err)
+	kvMock = redispool.RedisKeyValue(pool)
+	if err := redispool.DeleteAllKeysWithPrefix(kvMock, tokenBucketGlobalPrefix); err != nil {
+		t.Fatalf("could not clear test prefix: &v", err)
 	}
 }
 

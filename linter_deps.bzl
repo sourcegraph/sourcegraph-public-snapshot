@@ -45,8 +45,8 @@ def linter_dependencies():
         name = "com_github_go_critic_go_critic",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/go-critic/go-critic",
-        version = "v0.6.7",
-        sum = "h1:1evPrElnLQ2LZtJfmNDzlieDhjnq36SLgNzisx06oPM=",
+        version = "v0.11.4",
+        sum = "h1:O7kGOCx0NDIni4czrkRIXTnit0mkyKOCePh3My6OyEU=",
     )
 
     go_repository(
@@ -144,8 +144,8 @@ def linter_dependencies():
     go_repository(
         name = "org_golang_x_exp_typeparams",
         importpath = "golang.org/x/exp/typeparams",
-        version = "v0.0.0-20230203172020-98cc5a0785f9",
-        sum = "h1:6WHiuFL9FNjg8RljAaT7FNUuKDbvMqS1i5cr2OE2sLQ=",
+        version = "v0.0.0-20240213143201-ec583247a57a",
+        sum = "h1:rrd/FiSCWtI24jk057yBSfEfHrzzjXva1VkDNWRXMag=",
     )
 
     go_repository(

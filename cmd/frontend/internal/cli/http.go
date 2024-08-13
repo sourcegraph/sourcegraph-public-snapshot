@@ -101,8 +101,14 @@ func newExternalHTTPHandler(
 	}
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
+
+	// Internal-facing HTTP endpoints. Use /.api for endpoints that are not documented on
+	// https://sourcegraph.com/docs.
 	sm.Handle("/.api/", secureHeadersMiddleware(apiHandler, crossOriginPolicyAPI))
-	sm.Handle("/api/", secureHeadersMiddleware(publicrestHandler, crossOriginPolicyAPI))
+	// Public-facing HTTP endpoints. These must not have breaking changes and each endpoint
+	// must be documented https://sourcegraph.com/docs
+	sm.Handle("/api/v1/", secureHeadersMiddleware(publicrestHandler, crossOriginPolicyAPI))
+
 	sm.Handle("/.executors/", secureHeadersMiddleware(executorProxyHandler, crossOriginPolicyNever))
 	sm.Handle("/", secureHeadersMiddleware(appHandler, crossOriginPolicyNever))
 	const urlPathPrefix = "/.assets"

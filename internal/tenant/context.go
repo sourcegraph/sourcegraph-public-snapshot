@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"runtime/pprof"
 
 	"go.uber.org/atomic"
 
@@ -20,6 +21,14 @@ var ErrNoTenantInContext = errors.New("no tenant in context")
 func FromContext(ctx context.Context) (*Tenant, error) {
 	tnt, ok := ctx.Value(tenantKey).(*Tenant)
 	if !ok {
+		if pprofMissingTenant != nil {
+			// We want to track every stack trace, so need a unique value for the event
+			eventValue := pprofUniqID.Add(1)
+
+			// skip stack for Add and this function (2).
+			pprofMissingTenant.Add(eventValue, 2)
+		}
+
 		return nil, ErrNoTenantInContext
 	}
 	return tnt, nil
@@ -73,3 +82,11 @@ func NewTestContext() context.Context {
 	}
 	return withTenant(context.Background(), int(tenantCounter.Inc()))
 }
+
+var pprofUniqID atomic.Int64
+var pprofMissingTenant = func() *pprof.Profile {
+	if !shouldLogNoTenant() {
+		return nil
+	}
+	return pprof.NewProfile("missing_tenant")
+}()
