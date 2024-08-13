@@ -19,7 +19,10 @@ export const load: LayoutLoad = async ({ parent, url }) => {
     }
 
     if (isPerforceDepot && !revision.includes('changelist')) {
-        const redirectURL = replaceRevisionInURL(url.toString(), "changelist/" + resolvedRepository.commit?.perforceChangelist?.cid)
+        const redirectURL = replaceRevisionInURL(
+            url.toString(),
+            'changelist/' + resolvedRepository.commit?.perforceChangelist?.cid
+        )
         redirect(301, redirectURL)
     }
 

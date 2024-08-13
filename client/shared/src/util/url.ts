@@ -449,18 +449,6 @@ export function replaceRevisionInURL(href: string, newRevision: string): string 
     return `${url.pathname}${url.search}${url.hash}`
 }
 
-/**
- * Adds a changelist path to the given pathname.
- *
- * Example input/output
- * input: "repopath@86382/-/blob/file.ts"
- * output: "repopath@changelist/86382/-/blob/file.ts"
- */
-export function addChangelistPath(pathname: string): string {
-    const [before, after] = pathname.split('@', 2)
-    return `${before}@changelist/${after}`
-}
-
 export function parseBrowserRepoURL(href: string): ParsedRepoURI & Pick<ParsedRepoRevision, 'rawRevision'> {
     const url = SourcegraphURL.from(href)
     let pathname = url.pathname.slice(1) // trim leading '/'

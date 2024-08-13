@@ -3,7 +3,7 @@
     import { get } from 'svelte/store'
 
     import { navigating } from '$app/stores'
-    import Commit from '$lib/Commit.svelte'
+    import Changelist from '$lib/Changelist.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
@@ -79,30 +79,20 @@
     <Scroller bind:this={scroller} margin={600} on:more={fetchMore}>
         {#if changelists}
             <ul class="changelists">
-                {#each changelists as changelist (changelist.perforceChangelist?.canonicalURL)}
+                {#each changelists as changelistCommit (changelistCommit.perforceChangelist?.canonicalURL)}
+                    {@const changelist = changelistCommit.perforceChangelist}
                     <li>
                         <div class="changelist">
-                            <!--
-                            @TODO (jasonhawkharris): We need to use the Commit component here since "changelists"
-                            is actually a group of commits. We should fix this so that any changelist(s) page uses the
-                            Changelist component and any commit(s) page uses the Commit component.
-                            -->
-                            <Commit commit={changelist} isPerforceChangelist={data.isPerforceDepot} />
+                            <Changelist {changelist} />
                         </div>
                         <ul class="actions">
                             <li>
                                 Changelist ID:
                                 <Badge variant="link">
-                                    <a href={changelist.perforceChangelist?.canonicalURL} title="View changelist"
-                                        >{changelist.perforceChangelist?.cid}</a
-                                    >
+                                    <a href={changelist?.canonicalURL} title="View changelist">{changelist?.cid}</a>
                                 </Badge>
                             </li>
-                            <li>
-                                <a href="/{data.repoName}@changelist/{changelist.perforceChangelist?.cid}"
-                                    >Browse files</a
-                                ></li
-                            >
+                            <li> <a href="/{data.repoName}@changelist/{changelist?.cid}">Browse files</a></li>
                         </ul>
                     </li>
                 {:else}
