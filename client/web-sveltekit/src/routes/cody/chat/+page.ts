@@ -1,10 +1,9 @@
-import { redirect } from "@sveltejs/kit";
+import { redirect } from '@sveltejs/kit'
 
-import type { PageLoad } from "./$types";
+import type { PageLoad } from './$types'
 
-export const load: PageLoad = async ({parent}) => {
-    const dashboardRoute = window.context.sourcegraphDotComMode ?
-        '/cody/manage' : '/cody/dashboard'
+export const load: PageLoad = async ({ parent }) => {
+    const dashboardRoute = window.context.sourcegraphDotComMode ? '/cody/manage' : '/cody/dashboard'
     const data = await parent()
 
     if (!data.user) {
@@ -16,6 +15,6 @@ export const load: PageLoad = async ({parent}) => {
     }
 
     return {
-        dashboardRoute
+        dashboardRoute,
     }
 }

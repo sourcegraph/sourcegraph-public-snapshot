@@ -38,11 +38,6 @@
     {:catch}
         <Alert variant="warning">Failed to load Cody Chat</Alert>
     {/await}
-
-    <style lang="scss">
-        header {
-        }
-    </style>
 </section>
 
 <style lang="scss">
