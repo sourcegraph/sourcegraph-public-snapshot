@@ -41,7 +41,20 @@ type Provider interface {
 
 	// ExternalAccountInfo provides basic external account from this auth provider
 	ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error)
+
+	Type() ProviderType
 }
+
+type ProviderType = string
+
+const (
+	ProviderTypeOAuth         ProviderType = "oauth"
+	ProviderTypeSAML          ProviderType = "saml"
+	ProviderTypeOpenIDConnect ProviderType = "openidconnect"
+	ProviderTypeHTTPHeader    ProviderType = "httpheader"
+	ProviderTypeBuiltin       ProviderType = "builtin"
+	ProviderTypeGerrit        ProviderType = "gerrit"
+)
 
 // ConfigID identifies a provider config object in the auth.providers site configuration
 // array.

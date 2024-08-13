@@ -12,10 +12,15 @@ type MockAuthProvider struct {
 	MockConfig              schema.AuthProviderCommon
 	MockAuthProvidersConfig *schema.AuthProviders
 	MockPublicAccountData   *extsvc.PublicAccountData
+	MockType                ProviderType
 }
 
 func (m MockAuthProvider) ConfigID() ConfigID {
 	return m.MockConfigID
+}
+
+func (m MockAuthProvider) Type() ProviderType {
+	return m.MockType
 }
 
 func (m MockAuthProvider) Config() schema.AuthProviders {
