@@ -12,7 +12,6 @@ import (
 	"cloud.google.com/go/bigquery"
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/gorilla/mux"
-	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,7 +29,7 @@ func TestGetBuild(t *testing.T) {
 	req, _ := http.NewRequest(http.MethodGet, "/-/debug/1234", nil)
 	req = mux.SetURLVars(req, map[string]string{"buildNumber": "1234"})
 	t.Run("401 Unauthorized when in production mode and incorrect credentials", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{Production: true, DebugPassword: "this is a test"}, nil, nil, nil)
+		server := NewServer(":8080", logger, config.Config{Production: true, DebugPassword: "this is a test"}, nil)
 		rec := httptest.NewRecorder()
 		server.handleGetBuild(rec, req)
 
@@ -43,7 +42,7 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("404 for build that does not exist", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{}, nil, mockRedisClient(), build.NewMockLocker())
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		rec := httptest.NewRecorder()
 		server.handleGetBuild(rec, req)
 
@@ -51,7 +50,7 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("get marshalled json for build", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{}, nil, mockRedisClient(), build.NewMockLocker())
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		rec := httptest.NewRecorder()
 
 		num := 1234
@@ -91,7 +90,7 @@ func TestGetBuild(t *testing.T) {
 		expected := event.WrappedBuild()
 		expected.AddJob(event.WrappedJob())
 
-		server.store.Add(context.Background(), &event)
+		server.store.Add(&event)
 
 		server.handleGetBuild(rec, req)
 
@@ -104,14 +103,12 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("200 with valid credentials in production mode", func(t *testing.T) {
-		rclient := build.NewMockRedisClient()
-		rclient.GetFunc.SetDefaultReturn(redis.NewStringResult("", redis.Nil))
-		server := NewServer(":8080", logger, config.Config{Production: true, DebugPassword: "this is a test"}, nil, rclient, build.NewMockLocker())
+		server := NewServer(":8080", logger, config.Config{Production: true, DebugPassword: "this is a test"}, nil)
 		rec := httptest.NewRecorder()
 
 		req.SetBasicAuth("devx", server.config.DebugPassword)
 		num := 1234
-		server.store.Add(context.Background(), &build.Event{
+		server.store.Add(&build.Event{
 			Name: "Fake",
 			Build: buildkite.Build{
 				Number: &num,
@@ -119,7 +116,6 @@ func TestGetBuild(t *testing.T) {
 			Pipeline: buildkite.Pipeline{},
 			Job:      buildkite.Job{},
 		})
-		rclient.GetFunc.PushReturn(redis.NewStringResult("{}", nil))
 		server.handleGetBuild(rec, req)
 
 		require.Equal(t, http.StatusOK, rec.Result().StatusCode)
@@ -139,15 +135,15 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 	}
 
 	t.Run("All old builds get removed", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{}, nil, mockRedisClient(), build.NewMockLocker())
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		b := finishedBuild(1, "passed", time.Now().AddDate(-1, 0, 0))
-		server.store.Set(context.Background(), b)
+		server.store.Set(b)
 
 		b = finishedBuild(2, "canceled", time.Now().AddDate(0, -1, 0))
-		server.store.Set(context.Background(), b)
+		server.store.Set(b)
 
 		b = finishedBuild(3, "failed", time.Now().AddDate(0, 0, -1))
-		server.store.Set(context.Background(), b)
+		server.store.Set(b)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		go func() {
@@ -160,22 +156,22 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 		cancel()
 
-		builds := server.store.FinishedBuilds(context.Background())
+		builds := server.store.FinishedBuilds()
 
 		if len(builds) != 0 {
 			t.Errorf("Not all old builds removed. Got %d, wanted %d", len(builds), 0)
 		}
 	})
 	t.Run("1 build left after old builds are removed", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{}, nil, mockRedisClient(), build.NewMockLocker())
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		b := finishedBuild(1, "canceled", time.Now().AddDate(-1, 0, 0))
-		server.store.Set(context.Background(), b)
+		server.store.Set(b)
 
 		b = finishedBuild(2, "passed", time.Now().AddDate(0, -1, 0))
-		server.store.Set(context.Background(), b)
+		server.store.Set(b)
 
 		b = finishedBuild(3, "failed", time.Now())
-		server.store.Set(context.Background(), b)
+		server.store.Set(b)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		go func() {
@@ -188,7 +184,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 		cancel()
 
-		builds := server.store.FinishedBuilds(context.Background())
+		builds := server.store.FinishedBuilds()
 
 		if len(builds) != 1 {
 			t.Errorf("Expected one build to be left over. Got %d, wanted %d", len(builds), 1)
@@ -256,75 +252,74 @@ func TestProcessEvent(t *testing.T) {
 		return &build.Event{Name: build.EventBuildFinished, Build: buildkite.Build{State: &state, Branch: &branch, Number: &buildNumber, Pipeline: pipeline}, Job: job.Job, Pipeline: *pipeline}
 	}
 	t.Run("no send notification on unfinished builds", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{}, nil, mockRedisClient(), build.NewMockLocker())
-
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
 		buildStartedEvent := newBuildEvent("test 2", buildNumber, "failed", "main", 1)
 		buildStartedEvent.Name = "build.started"
-		server.processEvent(context.Background(), buildStartedEvent)
+		server.processEvent(buildStartedEvent)
 		require.Equal(t, 0, mockNotifyClient.sendCalled)
-		server.processEvent(context.Background(), newJobEvent("test", buildNumber, 0))
+		server.processEvent(newJobEvent("test", buildNumber, 0))
 		// build is not finished so we should send nothing
 		require.Equal(t, 0, mockNotifyClient.sendCalled)
 
-		builds := server.store.FinishedBuilds(context.Background())
+		builds := server.store.FinishedBuilds()
 		require.Equal(t, 1, len(builds))
 	})
 
 	t.Run("failed build sends notification", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{}, nil, mockRedisClient(), build.NewMockLocker())
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
-		server.processEvent(context.Background(), newJobEvent("test", buildNumber, 0))
-		server.processEvent(context.Background(), newBuildEvent("test 2", buildNumber, "failed", "main", 1))
+		server.processEvent(newJobEvent("test", buildNumber, 0))
+		server.processEvent(newBuildEvent("test 2", buildNumber, "failed", "main", 1))
 
 		require.Equal(t, 1, mockNotifyClient.sendCalled)
 
-		builds := server.store.FinishedBuilds(context.Background())
+		builds := server.store.FinishedBuilds()
 		require.Equal(t, 1, len(builds))
 		require.Equal(t, 1234, *builds[0].Number)
 		require.Equal(t, "failed", *builds[0].State)
 	})
 
 	t.Run("passed build sends notification", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{}, nil, mockRedisClient(), build.NewMockLocker())
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
-		server.processEvent(context.Background(), newJobEvent("test", buildNumber, 0))
-		server.processEvent(context.Background(), newBuildEvent("test 2", buildNumber, "passed", "main", 0))
+		server.processEvent(newJobEvent("test", buildNumber, 0))
+		server.processEvent(newBuildEvent("test 2", buildNumber, "passed", "main", 0))
 
 		require.Equal(t, 0, mockNotifyClient.sendCalled)
 
-		builds := server.store.FinishedBuilds(context.Background())
+		builds := server.store.FinishedBuilds()
 		require.Equal(t, 1, len(builds))
 		require.Equal(t, 1234, *builds[0].Number)
 		require.Equal(t, "passed", *builds[0].State)
 	})
 
 	t.Run("failed build, then passed build sends fixed notification", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{}, nil, mockRedisClient(), build.NewMockLocker())
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
 
-		server.processEvent(context.Background(), newJobEvent("test 1", buildNumber, 1))
-		server.processEvent(context.Background(), newBuildEvent("test 2", buildNumber, "failed", "main", 1))
+		server.processEvent(newJobEvent("test 1", buildNumber, 1))
+		server.processEvent(newBuildEvent("test 2", buildNumber, "failed", "main", 1))
 
 		require.Equal(t, 1, mockNotifyClient.sendCalled)
 
-		builds := server.store.FinishedBuilds(context.Background())
+		builds := server.store.FinishedBuilds()
 		require.Equal(t, 1, len(builds))
 		require.Equal(t, 1234, *builds[0].Number)
 		require.Equal(t, "failed", *builds[0].State)
 
-		server.processEvent(context.Background(), newJobEvent("test 1", buildNumber, 0))
-		server.processEvent(context.Background(), newBuildEvent("test 2", buildNumber, "passed", "main", 0))
+		server.processEvent(newJobEvent("test 1", buildNumber, 0))
+		server.processEvent(newBuildEvent("test 2", buildNumber, "passed", "main", 0))
 
-		builds = server.store.FinishedBuilds(context.Background())
+		builds = server.store.FinishedBuilds()
 		require.Equal(t, 1, len(builds))
 		require.Equal(t, 1234, *builds[0].Number)
 		require.Equal(t, "passed", *builds[0].State)
@@ -346,7 +341,7 @@ func TestProcessEvent(t *testing.T) {
 
 		server := NewServer(":8080", logger, config.Config{
 			BuildkiteWebhookToken: "asdf",
-		}, mockBq, nil, nil)
+		}, mockBq)
 
 		rw := httptest.NewRecorder()
 		body := bytes.NewBufferString(`{
