@@ -3,6 +3,7 @@
     import { get } from 'svelte/store'
 
     import { navigating } from '$app/stores'
+    import Changelist from '$lib/Changelist.svelte'
     import Commit from '$lib/Commit.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
@@ -79,7 +80,8 @@
     <Scroller bind:this={scroller} margin={600} on:more={fetchMore}>
         {#if changelists}
             <ul class="changelists">
-                {#each changelists as changelist (changelist.perforceChangelist?.canonicalURL)}
+                {#each changelists as changelistCommit (changelistCommit.perforceChangelist?.canonicalURL)}
+                    {@const changelist = changelistCommit.perforceChangelist}
                     <li>
                         <div class="changelist">
                             <!--
@@ -87,7 +89,7 @@
                             is actually a group of commits. We should fix this so that any changelist(s) page uses the
                             Changelist component and any commit(s) page uses the Commit component.
                             -->
-                            <Commit commit={changelist} isPerforceChangelist={data.isPerforceDepot} />
+                            <Changelist {changelist} />
                         </div>
                         <ul class="actions">
                             <li>
