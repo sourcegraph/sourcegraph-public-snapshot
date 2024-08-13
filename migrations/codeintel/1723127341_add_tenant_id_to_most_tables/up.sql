@@ -1,6 +1,11 @@
 -- This migration adds the tenant_id column in a way which doesn't require
 -- updating every row. The value is null and an out of band migration will set
 -- it to the default. A later migration will enforce tenant_id to be set.
+--
+-- We wrap each call with its own transaction. This is since mutliple
+-- statements in a single call to postgres is run in its own transaction by
+-- default. We want to run each alter without joining the table locks with
+-- eachother to avoid deadlock.
 
 -- Temporary function to deduplicate the logic required for each table:
 CREATE OR REPLACE FUNCTION migrate_add_tenant_id_codeintel(table_name text)
@@ -10,18 +15,18 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-SELECT migrate_add_tenant_id_codeintel('codeintel_last_reconcile');
-SELECT migrate_add_tenant_id_codeintel('codeintel_scip_document_lookup');
-SELECT migrate_add_tenant_id_codeintel('codeintel_scip_document_lookup_schema_versions');
-SELECT migrate_add_tenant_id_codeintel('codeintel_scip_documents');
-SELECT migrate_add_tenant_id_codeintel('codeintel_scip_documents_dereference_logs');
-SELECT migrate_add_tenant_id_codeintel('codeintel_scip_metadata');
-SELECT migrate_add_tenant_id_codeintel('codeintel_scip_symbol_names');
-SELECT migrate_add_tenant_id_codeintel('codeintel_scip_symbols');
-SELECT migrate_add_tenant_id_codeintel('codeintel_scip_symbols_schema_versions');
-SELECT migrate_add_tenant_id_codeintel('rockskip_ancestry');
-SELECT migrate_add_tenant_id_codeintel('rockskip_repos');
-SELECT migrate_add_tenant_id_codeintel('rockskip_symbols');
+BEGIN; SELECT migrate_add_tenant_id_codeintel('codeintel_last_reconcile'); COMMIT;
+BEGIN; SELECT migrate_add_tenant_id_codeintel('codeintel_scip_document_lookup'); COMMIT;
+BEGIN; SELECT migrate_add_tenant_id_codeintel('codeintel_scip_document_lookup_schema_versions'); COMMIT;
+BEGIN; SELECT migrate_add_tenant_id_codeintel('codeintel_scip_documents'); COMMIT;
+BEGIN; SELECT migrate_add_tenant_id_codeintel('codeintel_scip_documents_dereference_logs'); COMMIT;
+BEGIN; SELECT migrate_add_tenant_id_codeintel('codeintel_scip_metadata'); COMMIT;
+BEGIN; SELECT migrate_add_tenant_id_codeintel('codeintel_scip_symbol_names'); COMMIT;
+BEGIN; SELECT migrate_add_tenant_id_codeintel('codeintel_scip_symbols'); COMMIT;
+BEGIN; SELECT migrate_add_tenant_id_codeintel('codeintel_scip_symbols_schema_versions'); COMMIT;
+BEGIN; SELECT migrate_add_tenant_id_codeintel('rockskip_ancestry'); COMMIT;
+BEGIN; SELECT migrate_add_tenant_id_codeintel('rockskip_repos'); COMMIT;
+BEGIN; SELECT migrate_add_tenant_id_codeintel('rockskip_symbols'); COMMIT;
 
 -- Explicitly excluded tables
 -- migration_logs :: about DB
