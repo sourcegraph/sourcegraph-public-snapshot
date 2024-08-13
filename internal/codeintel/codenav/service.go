@@ -1211,8 +1211,12 @@ func languageFromFilepath(trace observation.TraceLogger, path core.RepoRelPath) 
 type SearchBasedSyntacticFilterTag int
 
 const (
+	// There was a previous syntactic search in this request, reuse some of the data it resolved to filter out
+	// syntactic results
 	SBSFilterSyntacticPrevious SearchBasedSyntacticFilterTag = iota
+	// There wasn't a previous syntactic search in this request, but we should still filter out syntactic results
 	SBSFilterSyntacticNoPrevious
+	// Do not filter out syntactic results
 	SBSFilterSyntacticDont
 )
 
