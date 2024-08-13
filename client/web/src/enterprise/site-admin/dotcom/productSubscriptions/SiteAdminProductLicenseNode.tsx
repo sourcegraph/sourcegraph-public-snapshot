@@ -181,7 +181,11 @@ export const SiteAdminProductLicenseNode: React.FunctionComponent<
                                     <Label>Salesforce Opportunity ID</Label>
                                     <Text className="ml-3">
                                         {info?.salesforceOpportunityId ? (
-                                            <span className="text-monospace">{info?.salesforceOpportunityId}</span>
+                                            <Link
+                                                to={`https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/${info.salesforceOpportunityId}/view`}
+                                            >
+                                                <span className="text-monospace">{info.salesforceOpportunityId}</span>
+                                            </Link>
                                         ) : (
                                             <span className="text-muted">Not set</span>
                                         )}
