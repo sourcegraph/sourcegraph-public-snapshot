@@ -445,7 +445,6 @@ export function replaceRevisionInURL(href: string, newRevision: string): string 
     url.pathname = `/${encodeRepoRevision({ ...parsed, revision: newRevision })}${url.pathname.slice(
         repoRevision.length
     )}`
-
     return `${url.pathname}${url.search}${url.hash}`
 }
 

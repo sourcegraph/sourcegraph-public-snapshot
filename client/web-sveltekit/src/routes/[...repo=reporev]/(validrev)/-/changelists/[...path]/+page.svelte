@@ -70,7 +70,6 @@
             commitID={data.resolvedRevision.commitID}
             defaultBranch={data.defaultBranch}
             placement="bottom-start"
-            latestChangelistID={data.latestChangelistID}
             getDepotChangelists={data.getDepotChangelists}
         />
     </div>

@@ -58,7 +58,6 @@
         defaultBranch: string
         display?: ComponentProps<ButtonGroup>['display']
         placement?: Placement
-        latestChangelistID?: string
         onSelect?: (revision: string) => void
     } & (
             | {
@@ -77,7 +76,6 @@
     export let defaultBranch: $$Props['defaultBranch']
     export let placement: $$Props['placement'] = 'right-start'
     export let display: $$Props['display'] = undefined
-    export let latestChangelistID: $$Props['latestChangelistID'] = undefined
     /**
      * Optional handler for revision selection.
      * If not provided, the default handler will replace the revision in the current URL.

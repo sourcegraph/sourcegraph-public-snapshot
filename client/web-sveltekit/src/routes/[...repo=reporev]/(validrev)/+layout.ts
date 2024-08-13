@@ -10,13 +10,14 @@ export const load: LayoutLoad = async ({ parent, url }) => {
     // subpages that if they load the requested revision exists. This
     // relieves subpages from testing whether the revision is valid.
     const { revision, defaultBranch, resolvedRepository } = await parent()
-    const isPerforceDepot = resolvedRepository.commit?.perforceChangelist !== null
 
     const commit = resolvedRepository.commit || resolvedRepository.changelist?.commit
 
     if (!commit) {
         error(404, new RevisionNotFoundError(revision))
     }
+
+    const isPerforceDepot = resolvedRepository.commit?.perforceChangelist !== null
 
     if (isPerforceDepot && !revision.includes('changelist')) {
         const redirectURL = replaceRevisionInURL(
