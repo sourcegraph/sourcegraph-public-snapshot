@@ -44,7 +44,7 @@ export const CODY_SIDEBAR_ID = uniqueID("cody-sidebar");
         </Tooltip>
     </div>
     {#if $user}
-        {#await import('./CodySidebarChat.svelte')}
+        {#await import('./CodyChat.svelte')}
             <LoadingSpinner />
         {:then module}
             <svelte:component this={module.default} {repository} {filePath} {lineOrPosition} />
