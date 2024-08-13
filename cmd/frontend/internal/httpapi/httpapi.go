@@ -267,7 +267,7 @@ func NewHandler(
 						enterpriseportal.SAMSConfig{
 							ClientID:     dotcomConf.SamsClientID,
 							ClientSecret: dotcomConf.SamsClientSecret,
-							Scopes:       enterpriseportal.ReadScopes(), // WIP: enable write access to prod later
+							Scopes:       append(enterpriseportal.ReadScopes(), enterpriseportal.WriteScopes()...),
 							ConnConfig: samssdk.ConnConfig{
 								ExternalURL: dotcomConf.SamsServer,
 							},
