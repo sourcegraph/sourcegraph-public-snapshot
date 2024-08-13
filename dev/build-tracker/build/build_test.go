@@ -117,34 +117,34 @@ func TestBuildStoreAdd(t *testing.T) {
 	store := NewBuildStore(logtest.Scoped(t), mockredis, NewMockLocker())
 
 	t.Run("subsequent failures should increment ConsecutiveFailure", func(t *testing.T) {
-		store.Add(eventFailed(1))
-		build := store.GetByBuildNumber(1)
+		store.Add(context.Background(), eventFailed(1))
+		build := store.GetByBuildNumber(context.Background(), 1)
 		assert.Equal(t, build.ConsecutiveFailure, 1)
 
-		store.Add(eventFailed(2))
-		build = store.GetByBuildNumber(2)
+		store.Add(context.Background(), eventFailed(2))
+		build = store.GetByBuildNumber(context.Background(), 2)
 		assert.Equal(t, build.ConsecutiveFailure, 2)
 
-		store.Add(eventFailed(3))
-		build = store.GetByBuildNumber(3)
+		store.Add(context.Background(), eventFailed(3))
+		build = store.GetByBuildNumber(context.Background(), 3)
 		assert.Equal(t, build.ConsecutiveFailure, 3)
 	})
 
 	t.Run("a pass should reset ConsecutiveFailure", func(t *testing.T) {
-		store.Add(eventFailed(4))
-		build := store.GetByBuildNumber(4)
+		store.Add(context.Background(), eventFailed(4))
+		build := store.GetByBuildNumber(context.Background(), 4)
 		assert.Equal(t, build.ConsecutiveFailure, 4)
 
-		store.Add(eventSucceeded(5))
-		build = store.GetByBuildNumber(5)
+		store.Add(context.Background(), eventSucceeded(5))
+		build = store.GetByBuildNumber(context.Background(), 5)
 		assert.Equal(t, build.ConsecutiveFailure, 0)
 
-		store.Add(eventFailed(6))
-		build = store.GetByBuildNumber(6)
+		store.Add(context.Background(), eventFailed(6))
+		build = store.GetByBuildNumber(context.Background(), 6)
 		assert.Equal(t, build.ConsecutiveFailure, 1)
 
-		store.Add(eventSucceeded(7))
-		build = store.GetByBuildNumber(7)
+		store.Add(context.Background(), eventSucceeded(7))
+		build = store.GetByBuildNumber(context.Background(), 7)
 		assert.Equal(t, build.ConsecutiveFailure, 0)
 	})
 }
@@ -181,11 +181,11 @@ func TestBuildFailedJobs(t *testing.T) {
 	store := NewBuildStore(logtest.Scoped(t), mockredis, NewMockLocker())
 
 	t.Run("failed jobs should contain different jobs", func(t *testing.T) {
-		store.Add(eventFailed("Test 1", 1))
-		store.Add(eventFailed("Test 2", 1))
-		store.Add(eventFailed("Test 3", 1))
+		store.Add(context.Background(), eventFailed("Test 1", 1))
+		store.Add(context.Background(), eventFailed("Test 2", 1))
+		store.Add(context.Background(), eventFailed("Test 3", 1))
 
-		build := store.GetByBuildNumber(1)
+		build := store.GetByBuildNumber(context.Background(), 1)
 
 		unique := make(map[string]int)
 		for _, s := range FindFailedSteps(build.Steps) {

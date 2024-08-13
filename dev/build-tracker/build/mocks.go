@@ -18,9 +18,9 @@ import (
 // package github.com/sourcegraph/sourcegraph/dev/build-tracker/build) used
 // for unit testing.
 type MockLocker struct {
-	// LockFunc is an instance of a mock function object controlling the
-	// behavior of the method Lock.
-	LockFunc *LockerLockFunc
+	// LockContextFunc is an instance of a mock function object controlling
+	// the behavior of the method LockContext.
+	LockContextFunc *LockerLockContextFunc
 	// UnlockFunc is an instance of a mock function object controlling the
 	// behavior of the method Unlock.
 	UnlockFunc *LockerUnlockFunc
@@ -30,8 +30,8 @@ type MockLocker struct {
 // return zero values for all results, unless overwritten.
 func NewMockLocker() *MockLocker {
 	return &MockLocker{
-		LockFunc: &LockerLockFunc{
-			defaultHook: func() (r0 error) {
+		LockContextFunc: &LockerLockContextFunc{
+			defaultHook: func(context.Context) (r0 error) {
 				return
 			},
 		},
@@ -47,9 +47,9 @@ func NewMockLocker() *MockLocker {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockLocker() *MockLocker {
 	return &MockLocker{
-		LockFunc: &LockerLockFunc{
-			defaultHook: func() error {
-				panic("unexpected invocation of MockLocker.Lock")
+		LockContextFunc: &LockerLockContextFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockLocker.LockContext")
 			},
 		},
 		UnlockFunc: &LockerUnlockFunc{
@@ -64,8 +64,8 @@ func NewStrictMockLocker() *MockLocker {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockLockerFrom(i Locker) *MockLocker {
 	return &MockLocker{
-		LockFunc: &LockerLockFunc{
-			defaultHook: i.Lock,
+		LockContextFunc: &LockerLockContextFunc{
+			defaultHook: i.LockContext,
 		},
 		UnlockFunc: &LockerUnlockFunc{
 			defaultHook: i.Unlock,
@@ -73,34 +73,34 @@ func NewMockLockerFrom(i Locker) *MockLocker {
 	}
 }
 
-// LockerLockFunc describes the behavior when the Lock method of the parent
-// MockLocker instance is invoked.
-type LockerLockFunc struct {
-	defaultHook func() error
-	hooks       []func() error
-	history     []LockerLockFuncCall
+// LockerLockContextFunc describes the behavior when the LockContext method
+// of the parent MockLocker instance is invoked.
+type LockerLockContextFunc struct {
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
+	history     []LockerLockContextFuncCall
 	mutex       sync.Mutex
 }
 
-// Lock delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockLocker) Lock() error {
-	r0 := m.LockFunc.nextHook()()
-	m.LockFunc.appendCall(LockerLockFuncCall{r0})
+// LockContext delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockLocker) LockContext(v0 context.Context) error {
+	r0 := m.LockContextFunc.nextHook()(v0)
+	m.LockContextFunc.appendCall(LockerLockContextFuncCall{v0, r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the Lock method of the
-// parent MockLocker instance is invoked and the hook queue is empty.
-func (f *LockerLockFunc) SetDefaultHook(hook func() error) {
+// SetDefaultHook sets function that is called when the LockContext method
+// of the parent MockLocker instance is invoked and the hook queue is empty.
+func (f *LockerLockContextFunc) SetDefaultHook(hook func(context.Context) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Lock method of the parent MockLocker instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *LockerLockFunc) PushHook(hook func() error) {
+// LockContext method of the parent MockLocker instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *LockerLockContextFunc) PushHook(hook func(context.Context) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -108,20 +108,20 @@ func (f *LockerLockFunc) PushHook(hook func() error) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LockerLockFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func() error {
+func (f *LockerLockContextFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LockerLockFunc) PushReturn(r0 error) {
-	f.PushHook(func() error {
+func (f *LockerLockContextFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context) error {
 		return r0
 	})
 }
 
-func (f *LockerLockFunc) nextHook() func() error {
+func (f *LockerLockContextFunc) nextHook() func(context.Context) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -134,26 +134,29 @@ func (f *LockerLockFunc) nextHook() func() error {
 	return hook
 }
 
-func (f *LockerLockFunc) appendCall(r0 LockerLockFuncCall) {
+func (f *LockerLockContextFunc) appendCall(r0 LockerLockContextFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of LockerLockFuncCall objects describing the
-// invocations of this function.
-func (f *LockerLockFunc) History() []LockerLockFuncCall {
+// History returns a sequence of LockerLockContextFuncCall objects
+// describing the invocations of this function.
+func (f *LockerLockContextFunc) History() []LockerLockContextFuncCall {
 	f.mutex.Lock()
-	history := make([]LockerLockFuncCall, len(f.history))
+	history := make([]LockerLockContextFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// LockerLockFuncCall is an object that describes an invocation of method
-// Lock on an instance of MockLocker.
-type LockerLockFuncCall struct {
+// LockerLockContextFuncCall is an object that describes an invocation of
+// method LockContext on an instance of MockLocker.
+type LockerLockContextFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -161,13 +164,13 @@ type LockerLockFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c LockerLockFuncCall) Args() []interface{} {
-	return []interface{}{}
+func (c LockerLockContextFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c LockerLockFuncCall) Results() []interface{} {
+func (c LockerLockContextFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

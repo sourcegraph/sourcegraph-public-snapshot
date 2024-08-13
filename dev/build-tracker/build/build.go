@@ -231,7 +231,7 @@ type Store struct {
 }
 
 type Locker interface {
-	Lock() error
+	LockContext(context.Context) error
 	Unlock() (bool, error)
 }
 
@@ -249,8 +249,8 @@ func NewBuildStore(logger log.Logger, rclient RedisClient, lock Locker) *Store {
 	}
 }
 
-func (s *Store) lock() (func(), error) {
-	err := s.m1.Lock()
+func (s *Store) lock(ctx context.Context) (func(), error) {
+	err := s.m1.LockContext(ctx)
 	if err != nil {
 		s.logger.Error("failed to acquire lock", log.Error(err))
 		return nil, err
@@ -262,14 +262,14 @@ func (s *Store) lock() (func(), error) {
 	}, nil
 }
 
-func (s *Store) Add(event *Event) {
-	unlock, err := s.lock()
+func (s *Store) Add(ctx context.Context, event *Event) {
+	unlock, err := s.lock(ctx)
 	if err != nil {
 		return
 	}
 	defer unlock()
 
-	buildb, err := s.r.Get(context.Background(), "build/"+strconv.Itoa(event.GetBuildNumber())).Bytes()
+	buildb, err := s.r.Get(ctx, "build/"+strconv.Itoa(event.GetBuildNumber())).Bytes()
 	if err != nil && err != redis.Nil {
 		s.logger.Error("failed to get build from redis", log.Error(err))
 		return
@@ -291,7 +291,7 @@ func (s *Store) Add(event *Event) {
 	// write out the build to redis at the end, once all mutations are applied
 	defer func() {
 		buildb, _ = json.Marshal(build)
-		s.r.Set(context.Background(), "build/"+strconv.Itoa(event.GetBuildNumber()), buildb, 0)
+		s.r.Set(ctx, "build/"+strconv.Itoa(event.GetBuildNumber()), buildb, 0)
 	}()
 
 	// if the build is finished replace the original build with the replaced one since it
@@ -309,7 +309,7 @@ func (s *Store) Add(event *Event) {
 		// We do this because we do not rely on the state of the build to determine if a build is "successful" or not.
 		// We instead depend on the state of the jobs associated with said build.
 		if event.Build.TriggeredFrom != nil {
-			parentBuildb, err := s.r.Get(context.Background(), "build/"+strconv.Itoa(*event.Build.TriggeredFrom.BuildNumber)).Bytes()
+			parentBuildb, err := s.r.Get(ctx, "build/"+strconv.Itoa(*event.Build.TriggeredFrom.BuildNumber)).Bytes()
 			switch err {
 			case nil:
 				var parentBuild *Build
@@ -319,7 +319,7 @@ func (s *Store) Add(event *Event) {
 				}
 				parentBuild.AppendSteps(build.Steps)
 				buildb, _ = json.Marshal(parentBuild)
-				s.r.Set(context.Background(), "build/"+strconv.Itoa(event.GetBuildNumber()), buildb, 0)
+				s.r.Set(ctx, "build/"+strconv.Itoa(event.GetBuildNumber()), buildb, 0)
 			case redis.Nil:
 				// If the triggered build doesn't exist, we'll just leave log a message
 				s.logger.Warn(
@@ -336,11 +336,11 @@ func (s *Store) Add(event *Event) {
 		// if we get a pass, we reset the global count of consecutiveFailures
 		failuresKey := fmt.Sprintf("%s/%s", build.Pipeline.GetName(), build.GetBranch())
 		if build.IsFailed() {
-			i, _ := s.r.Incr(context.Background(), failuresKey).Result()
+			i, _ := s.r.Incr(ctx, failuresKey).Result()
 			build.ConsecutiveFailure = int(i)
 		} else {
 			// We got a pass, reset the global count
-			if _, err := s.r.Set(context.Background(), failuresKey, 0, 0).Result(); err != nil {
+			if _, err := s.r.Set(ctx, failuresKey, 0, 0).Result(); err != nil {
 				s.logger.Error("failed to reset consecutive failures count", log.Error(err))
 			}
 		}
@@ -375,25 +375,25 @@ func (s *Store) Add(event *Event) {
 	}
 }
 
-func (s *Store) Set(build *Build) {
-	unlock, err := s.lock()
+func (s *Store) Set(ctx context.Context, build *Build) {
+	unlock, err := s.lock(ctx)
 	if err != nil {
 		return
 	}
 	defer unlock()
 
 	buildb, _ := json.Marshal(build)
-	s.r.Set(context.Background(), "build/"+strconv.Itoa(*build.Number), buildb, 0)
+	s.r.Set(ctx, "build/"+strconv.Itoa(*build.Number), buildb, 0)
 }
 
-func (s *Store) GetByBuildNumber(num int) *Build {
-	unlock, err := s.lock()
+func (s *Store) GetByBuildNumber(ctx context.Context, num int) *Build {
+	unlock, err := s.lock(ctx)
 	if err != nil {
 		return nil
 	}
 	defer unlock()
 
-	buildb, err := s.r.Get(context.Background(), "build/"+strconv.Itoa(num)).Bytes()
+	buildb, err := s.r.Get(ctx, "build/"+strconv.Itoa(num)).Bytes()
 	if err != nil && err != redis.Nil {
 		s.logger.Error("failed to get build from redis", log.Error(err))
 		return nil
@@ -409,8 +409,8 @@ func (s *Store) GetByBuildNumber(num int) *Build {
 	return build
 }
 
-func (s *Store) DelByBuildNumber(buildNumbers ...int) {
-	unlock, err := s.lock()
+func (s *Store) DelByBuildNumber(ctx context.Context, buildNumbers ...int) {
+	unlock, err := s.lock(ctx)
 	if err != nil {
 		return
 	}
@@ -421,19 +421,19 @@ func (s *Store) DelByBuildNumber(buildNumbers ...int) {
 		nums = append(nums, "build/"+strconv.Itoa(num))
 	}
 
-	s.r.Del(context.Background(), nums...)
+	s.r.Del(ctx, nums...)
 
 	s.logger.Info("deleted builds", log.Int("totalBuilds", len(buildNumbers)))
 }
 
-func (s *Store) FinishedBuilds() []*Build {
-	unlock, err := s.lock()
+func (s *Store) FinishedBuilds(ctx context.Context) []*Build {
+	unlock, err := s.lock(ctx)
 	if err != nil {
 		return nil
 	}
 	defer unlock()
 
-	buildKeys, err := s.r.Keys(context.Background(), "build/*").Result()
+	buildKeys, err := s.r.Keys(ctx, "build/*").Result()
 	if err != nil {
 		s.logger.Error("failed to get build keys", log.Error(err))
 		return nil
@@ -441,7 +441,7 @@ func (s *Store) FinishedBuilds() []*Build {
 
 	builds := make([]*Build, 0, len(buildKeys))
 
-	values, err := s.r.MGet(context.Background(), buildKeys...).Result()
+	values, err := s.r.MGet(ctx, buildKeys...).Result()
 	if err != nil {
 		s.logger.Error("failed to get build values", log.Error(err))
 		return nil

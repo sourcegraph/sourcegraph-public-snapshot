@@ -12,9 +12,12 @@ import (
 
 func deleteOldBuilds(logger log.Logger, store *build.Store, every, window time.Duration) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), goroutine.HandlerFunc(func(ctx context.Context) error {
+		ctx, cancel := context.WithTimeout(ctx, time.Second*30)
+		defer cancel()
+
 		oldBuilds := make([]int, 0)
 		now := time.Now()
-		for _, b := range store.FinishedBuilds() {
+		for _, b := range store.FinishedBuilds(ctx) {
 			finishedAt := *b.FinishedAt
 			delta := now.Sub(finishedAt.Time)
 			if delta >= window {
@@ -23,7 +26,7 @@ func deleteOldBuilds(logger log.Logger, store *build.Store, every, window time.D
 			}
 		}
 		logger.Info("deleting old builds", log.Int("oldBuildCount", len(oldBuilds)))
-		store.DelByBuildNumber(oldBuilds...)
+		store.DelByBuildNumber(ctx, oldBuilds...)
 		return nil
 	}), goroutine.WithInterval(every), goroutine.WithName("old-build-purger"))
 }

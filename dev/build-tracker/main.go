@@ -108,6 +108,9 @@ func (s *Server) Stop(ctx context.Context) error {
 }
 
 func (s *Server) handleGetBuild(w http.ResponseWriter, req *http.Request) {
+	ctx, cancel := context.WithTimeout(req.Context(), time.Second*30)
+	defer cancel()
+
 	if s.config.Production {
 		user, pass, ok := req.BasicAuth()
 		if !ok {
@@ -140,7 +143,7 @@ func (s *Server) handleGetBuild(w http.ResponseWriter, req *http.Request) {
 	}
 
 	s.logger.Info("retrieving build", log.Int("buildNumber", buildNum))
-	build := s.store.GetByBuildNumber(buildNum)
+	build := s.store.GetByBuildNumber(ctx, buildNum)
 	if build == nil {
 		s.logger.Debug("no build found", log.Int("buildNumber", buildNum))
 		w.WriteHeader(http.StatusNotFound)
@@ -161,6 +164,9 @@ func (s *Server) handleGetBuild(w http.ResponseWriter, req *http.Request) {
 // Note that if we received an unwanted event ie. the event is not "job.finished" or "build.finished" we respond with a 200 OK regardless.
 // Once all the conditions are met, the event is processed in a go routine with `processEvent`
 func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
+	ctx, cancel := context.WithTimeout(req.Context(), time.Second*30)
+	defer cancel()
+
 	h, ok := req.Header["X-Buildkite-Token"]
 	if !ok || len(h) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
@@ -196,9 +202,9 @@ func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if testutil.IsTest {
-		s.processEvent(&event)
+		s.processEvent(ctx, &event)
 	} else {
-		go s.processEvent(&event)
+		go s.processEvent(ctx, &event)
 	}
 	w.WriteHeader(http.StatusOK)
 }
@@ -294,11 +300,11 @@ func (s *Server) triggerMetricsPipeline(b *build.Build) error {
 // processEvent processes a BuildEvent received from Buildkite. If the event is for a `build.finished` event we get the
 // full build which includes all recorded jobs for the build and send a notification.
 // processEvent delegates the decision to actually send a notifcation
-func (s *Server) processEvent(event *build.Event) {
+func (s *Server) processEvent(ctx context.Context, event *build.Event) {
 	if event.Build.Number != nil {
 		s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.GetBuildNumber()), log.String("jobName", event.GetJobName()))
-		s.store.Add(event)
-		b := s.store.GetByBuildNumber(event.GetBuildNumber())
+		s.store.Add(ctx, event)
+		b := s.store.GetByBuildNumber(ctx, event.GetBuildNumber())
 		if event.IsBuildFinished() {
 			if *event.Build.Branch == "main" {
 				if err := s.notifyIfFailed(b); err != nil {

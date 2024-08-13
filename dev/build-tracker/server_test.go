@@ -91,7 +91,7 @@ func TestGetBuild(t *testing.T) {
 		expected := event.WrappedBuild()
 		expected.AddJob(event.WrappedJob())
 
-		server.store.Add(&event)
+		server.store.Add(context.Background(), &event)
 
 		server.handleGetBuild(rec, req)
 
@@ -111,7 +111,7 @@ func TestGetBuild(t *testing.T) {
 
 		req.SetBasicAuth("devx", server.config.DebugPassword)
 		num := 1234
-		server.store.Add(&build.Event{
+		server.store.Add(context.Background(), &build.Event{
 			Name: "Fake",
 			Build: buildkite.Build{
 				Number: &num,
@@ -141,13 +141,13 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 	t.Run("All old builds get removed", func(t *testing.T) {
 		server := NewServer(":8080", logger, config.Config{}, nil, mockRedisClient(), build.NewMockLocker())
 		b := finishedBuild(1, "passed", time.Now().AddDate(-1, 0, 0))
-		server.store.Set(b)
+		server.store.Set(context.Background(), b)
 
 		b = finishedBuild(2, "canceled", time.Now().AddDate(0, -1, 0))
-		server.store.Set(b)
+		server.store.Set(context.Background(), b)
 
 		b = finishedBuild(3, "failed", time.Now().AddDate(0, 0, -1))
-		server.store.Set(b)
+		server.store.Set(context.Background(), b)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		go func() {
@@ -160,7 +160,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 		cancel()
 
-		builds := server.store.FinishedBuilds()
+		builds := server.store.FinishedBuilds(context.Background())
 
 		if len(builds) != 0 {
 			t.Errorf("Not all old builds removed. Got %d, wanted %d", len(builds), 0)
@@ -169,13 +169,13 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 	t.Run("1 build left after old builds are removed", func(t *testing.T) {
 		server := NewServer(":8080", logger, config.Config{}, nil, mockRedisClient(), build.NewMockLocker())
 		b := finishedBuild(1, "canceled", time.Now().AddDate(-1, 0, 0))
-		server.store.Set(b)
+		server.store.Set(context.Background(), b)
 
 		b = finishedBuild(2, "passed", time.Now().AddDate(0, -1, 0))
-		server.store.Set(b)
+		server.store.Set(context.Background(), b)
 
 		b = finishedBuild(3, "failed", time.Now())
-		server.store.Set(b)
+		server.store.Set(context.Background(), b)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		go func() {
@@ -188,7 +188,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 		cancel()
 
-		builds := server.store.FinishedBuilds()
+		builds := server.store.FinishedBuilds(context.Background())
 
 		if len(builds) != 1 {
 			t.Errorf("Expected one build to be left over. Got %d, wanted %d", len(builds), 1)
@@ -263,13 +263,13 @@ func TestProcessEvent(t *testing.T) {
 		buildNumber := 1234
 		buildStartedEvent := newBuildEvent("test 2", buildNumber, "failed", "main", 1)
 		buildStartedEvent.Name = "build.started"
-		server.processEvent(buildStartedEvent)
+		server.processEvent(context.Background(), buildStartedEvent)
 		require.Equal(t, 0, mockNotifyClient.sendCalled)
-		server.processEvent(newJobEvent("test", buildNumber, 0))
+		server.processEvent(context.Background(), newJobEvent("test", buildNumber, 0))
 		// build is not finished so we should send nothing
 		require.Equal(t, 0, mockNotifyClient.sendCalled)
 
-		builds := server.store.FinishedBuilds()
+		builds := server.store.FinishedBuilds(context.Background())
 		require.Equal(t, 1, len(builds))
 	})
 
@@ -278,12 +278,12 @@ func TestProcessEvent(t *testing.T) {
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
-		server.processEvent(newJobEvent("test", buildNumber, 0))
-		server.processEvent(newBuildEvent("test 2", buildNumber, "failed", "main", 1))
+		server.processEvent(context.Background(), newJobEvent("test", buildNumber, 0))
+		server.processEvent(context.Background(), newBuildEvent("test 2", buildNumber, "failed", "main", 1))
 
 		require.Equal(t, 1, mockNotifyClient.sendCalled)
 
-		builds := server.store.FinishedBuilds()
+		builds := server.store.FinishedBuilds(context.Background())
 		require.Equal(t, 1, len(builds))
 		require.Equal(t, 1234, *builds[0].Number)
 		require.Equal(t, "failed", *builds[0].State)
@@ -294,12 +294,12 @@ func TestProcessEvent(t *testing.T) {
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
-		server.processEvent(newJobEvent("test", buildNumber, 0))
-		server.processEvent(newBuildEvent("test 2", buildNumber, "passed", "main", 0))
+		server.processEvent(context.Background(), newJobEvent("test", buildNumber, 0))
+		server.processEvent(context.Background(), newBuildEvent("test 2", buildNumber, "passed", "main", 0))
 
 		require.Equal(t, 0, mockNotifyClient.sendCalled)
 
-		builds := server.store.FinishedBuilds()
+		builds := server.store.FinishedBuilds(context.Background())
 		require.Equal(t, 1, len(builds))
 		require.Equal(t, 1234, *builds[0].Number)
 		require.Equal(t, "passed", *builds[0].State)
@@ -311,20 +311,20 @@ func TestProcessEvent(t *testing.T) {
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
 
-		server.processEvent(newJobEvent("test 1", buildNumber, 1))
-		server.processEvent(newBuildEvent("test 2", buildNumber, "failed", "main", 1))
+		server.processEvent(context.Background(), newJobEvent("test 1", buildNumber, 1))
+		server.processEvent(context.Background(), newBuildEvent("test 2", buildNumber, "failed", "main", 1))
 
 		require.Equal(t, 1, mockNotifyClient.sendCalled)
 
-		builds := server.store.FinishedBuilds()
+		builds := server.store.FinishedBuilds(context.Background())
 		require.Equal(t, 1, len(builds))
 		require.Equal(t, 1234, *builds[0].Number)
 		require.Equal(t, "failed", *builds[0].State)
 
-		server.processEvent(newJobEvent("test 1", buildNumber, 0))
-		server.processEvent(newBuildEvent("test 2", buildNumber, "passed", "main", 0))
+		server.processEvent(context.Background(), newJobEvent("test 1", buildNumber, 0))
+		server.processEvent(context.Background(), newBuildEvent("test 2", buildNumber, "passed", "main", 0))
 
-		builds = server.store.FinishedBuilds()
+		builds = server.store.FinishedBuilds(context.Background())
 		require.Equal(t, 1, len(builds))
 		require.Equal(t, 1234, *builds[0].Number)
 		require.Equal(t, "passed", *builds[0].State)

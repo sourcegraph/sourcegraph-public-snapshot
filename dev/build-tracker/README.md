@@ -1,27 +1,21 @@
 # BUILD TRACKER
 
-Build Tracker is a server that listens for build events from Buildkite and stores them in memory and sends notifications about builds if they've failed.
+Build Tracker is a server that listens for build events from Buildkite, stores them in Redis and sends notifications about builds if they've failed.
 
 The server currently listens for two events:
 
 - `build.finished`
 - `job.finished`
 
-For each `job.finished` event that is received, the corresponding `build` is updated with the job that has finished. On receipt of a `build.finished` event, the server will determine if the build has failed by going through all the contained jobs of the build. If one or more jobs have indeed failed, a notification will be sent over slack.
+For each `job.finished` event that is received, the corresponding `build` is updated with the job that has finished. On receipt of a `build.finished` event, the server will determine if the build has failed by going through all the contained jobs of the build. If one or more jobs have indeed failed, a notification will be sent over slack. As well as this, the server will trigger a Buildkite job to process CI and Bazel data for the build for analytics purposes.
 
 ## Deployment infrastructure
 
-Build Tracker is deployed in the Buildkite kubernetes cluster of the Sourcegraph CI project on GCP. For more information on the deployment see [infrastructure](https://github.com/sourcegraph/infrastructure/tree/main/buildkite/kubernetes)
+Build Tracker is deployed in MSP. See the auto-generated [Notion doc](https://www.notion.so/sourcegraph/Build-Tracker-infrastructure-operations-bd66bf25d65d41b4875874a6f4d350cc#711a335bc7554738823293334221a18b) for details around accessing the environment and observability systems.
 
-## Build
+It is fine to wipe Redis if there are any issues stemming from data inconsistencies, redsync lock problems etc.
 
-Execute the `build.sh` script which will build the docker container and push it to correct GCP registry. Once the image has been pushed the pod needs to be restarted so that it can pick up the new image!
-
-## Test
-
-To run the tests execute `go test .`
-
-### Notification testing
+## Notification testing
 
 To test the notifications that get sent over slack you can pass the flag `-RunSlackIntegrationTest` as part of your test invocation, with some required configuration:
 
