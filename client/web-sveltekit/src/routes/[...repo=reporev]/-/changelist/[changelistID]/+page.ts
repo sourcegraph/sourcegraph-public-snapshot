@@ -1,7 +1,5 @@
 import { error } from '@sveltejs/kit'
 
-import { parseRepoRevision } from '@sourcegraph/shared/src/util/url'
-
 import { IncrementalRestoreStrategy, getGraphQLClient, infinityQuery } from '$lib/graphql'
 
 import type { PageLoad } from './$types'
@@ -12,7 +10,10 @@ const PAGE_SIZE = 20
 export const load: PageLoad = async ({ params }) => {
     const client = getGraphQLClient()
 
-    const result = await client.query(ChangelistPage_ChangelistQuery, { repoName: params.repo, cid: params.changelistID })
+    const result = await client.query(ChangelistPage_ChangelistQuery, {
+        repoName: params.repo,
+        cid: params.changelistID,
+    })
 
     if (result.error) {
         error(500, `Unable to load commit data: ${result.error}`)
@@ -30,31 +31,31 @@ export const load: PageLoad = async ({ params }) => {
     const diff =
         changelist.cid && changelist?.commit.parents[0]?.parent?.cid
             ? infinityQuery({
-                client,
-                query: ChangelistPage_DiffQuery,
-                variables: {
-                    repoName: params.repo,
-                    base: changelist.commit.parents[0].oid,
-                    head: changelist.commit.oid,
-                    first: PAGE_SIZE,
-                    after: null as string | null,
-                },
-                map: result => {
-                    const diffs = result.data?.repository?.comparison.fileDiffs
-                    return {
-                        nextVariables: diffs?.pageInfo.hasNextPage ? { after: diffs?.pageInfo.endCursor } : undefined,
-                        data: diffs?.nodes,
-                        error: result.error,
-                    }
-                },
-                merge: (previous, next) => (previous ?? []).concat(next ?? []),
-                createRestoreStrategy: api =>
-                    new IncrementalRestoreStrategy(
-                        api,
-                        n => n.length,
-                        n => ({ first: n.length })
-                    ),
-            })
+                  client,
+                  query: ChangelistPage_DiffQuery,
+                  variables: {
+                      repoName: params.repo,
+                      base: changelist.commit.parents[0].oid,
+                      head: changelist.commit.oid,
+                      first: PAGE_SIZE,
+                      after: null as string | null,
+                  },
+                  map: result => {
+                      const diffs = result.data?.repository?.comparison.fileDiffs
+                      return {
+                          nextVariables: diffs?.pageInfo.hasNextPage ? { after: diffs?.pageInfo.endCursor } : undefined,
+                          data: diffs?.nodes,
+                          error: result.error,
+                      }
+                  },
+                  merge: (previous, next) => (previous ?? []).concat(next ?? []),
+                  createRestoreStrategy: api =>
+                      new IncrementalRestoreStrategy(
+                          api,
+                          n => n.length,
+                          n => ({ first: n.length })
+                      ),
+              })
             : null
 
     return {
