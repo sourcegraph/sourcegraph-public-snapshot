@@ -76,18 +76,20 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
     })
 
     useEffect(() => {
+        const currentEnv = searchParams.get(QUERY_PARAM_ENV) as EnterprisePortalEnvironment
+
         searchParams.set(QUERY_PARAM_KEY, query?.trim() ?? '')
         searchParams.set(QUERY_PARAM_FILTER, filters.filter)
+        searchParams.set(QUERY_PARAM_ENV, env)
+        setSearchParams(searchParams)
+
         // HACK: env state doesn't propagate to hooks correctly, so conditionally
-        // set params and reload the page.
+        // reload the page.
         // Required until we fix https://linear.app/sourcegraph/issue/CORE-245
-        if (env !== (searchParams.get(QUERY_PARAM_ENV) as EnterprisePortalEnvironment)) {
-            searchParams.set(QUERY_PARAM_ENV, env)
-            setSearchParams(searchParams)
+        if (env !== currentEnv) {
             window.location.reload()
             return
         }
-        setSearchParams(searchParams)
     }, [query, searchParams, setSearchParams, filters, env])
 
     let listFilters: PartialMessage<ListEnterpriseSubscriptionLicensesFilter>[] = []

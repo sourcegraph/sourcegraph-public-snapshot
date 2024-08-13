@@ -4,12 +4,13 @@ import { EnterpriseSubscriptionInstanceType } from './enterpriseportalgen/subscr
 
 export interface InstanceTypeBadgeProps {
     instanceType: EnterpriseSubscriptionInstanceType
+    className?: string
 }
 
 /**
  * Displays instance type in a cute badge with relevant tooltips.
  */
-export const InstanceTypeBadge: React.FunctionComponent<InstanceTypeBadgeProps> = ({ instanceType }) => {
+export const InstanceTypeBadge: React.FunctionComponent<InstanceTypeBadgeProps> = ({ instanceType, className }) => {
     let variant: BadgeVariantType = 'outlineSecondary'
     let tooltip = ''
     switch (instanceType) {
@@ -30,7 +31,7 @@ export const InstanceTypeBadge: React.FunctionComponent<InstanceTypeBadgeProps> 
         }
     }
     return (
-        <Badge variant={variant} small={true} tooltip={tooltip}>
+        <Badge variant={variant} small={true} tooltip={tooltip} className={className}>
             {EnterpriseSubscriptionInstanceType[instanceType]}
         </Badge>
     )

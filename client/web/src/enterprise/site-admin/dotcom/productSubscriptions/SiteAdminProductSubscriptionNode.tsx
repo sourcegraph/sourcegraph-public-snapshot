@@ -45,29 +45,29 @@ export const SiteAdminProductSubscriptionNode: React.FunctionComponent<
                         Archived
                     </Badge>
                 )}
-                <LinkOrSpan to={`/site-admin/dotcom/product/subscriptions/${node.id}?env=${env}`}>
+                <LinkOrSpan to={`/site-admin/dotcom/product/subscriptions/${node.id}?env=${env}`} className="mr-2">
                     <strong>{node.displayName}</strong>
                 </LinkOrSpan>
             </td>
             <td className="text-nowrap">
                 {node?.salesforce?.subscriptionId ? (
-                    <span className="text-monospace">{node?.salesforce?.subscriptionId}</span>
+                    <span className="text-monospace mr-2">{node?.salesforce?.subscriptionId}</span>
                 ) : (
-                    <span className="text-muted">Not set</span>
+                    <span className="text-muted mr-2">Not set</span>
                 )}
             </td>
             <td className="text-nowrap">
                 {node?.instanceType ? (
-                    <InstanceTypeBadge instanceType={node.instanceType} />
+                    <InstanceTypeBadge instanceType={node.instanceType} className="mr-2" />
                 ) : (
-                    <span className="text-muted">Not set</span>
+                    <span className="text-muted mr-2">Not set</span>
                 )}
             </td>
             <td className="text-nowrap">
                 {node?.instanceDomain ? (
                     <small>{node?.instanceDomain}</small>
                 ) : (
-                    <span className="text-muted">Not set</span>
+                    <span className="text-muted mr-2">Not set</span>
                 )}
             </td>
         </tr>
