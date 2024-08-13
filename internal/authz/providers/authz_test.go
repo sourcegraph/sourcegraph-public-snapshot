@@ -1323,6 +1323,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			config: `
 			{
 				"authorization": {
+					"identityProvider": { "type": "username" },
 					"oauth": {
 						"consumerKey": "sourcegraph",
 						"signingKey": "not-base-64-encoded"
