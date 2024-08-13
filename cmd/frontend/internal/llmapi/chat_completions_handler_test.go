@@ -1,4 +1,4 @@
-package publicrestapi
+package llmapi
 
 import (
 	"encoding/json"
@@ -31,7 +31,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 		Models: chatModels,
 	}))
 
-	t.Run("/api/v1/chat/completions (400 stream=true)", func(t *testing.T) {
+	t.Run("/.api/llm/chat/completions (400 stream=true)", func(t *testing.T) {
 		rr := c.chatCompletions(t, `{
 			    "model": "anthropic::unknown::claude-3-sonnet-20240229",
 			    "messages": [{"role": "user", "content": "Hello"}],
@@ -41,7 +41,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
-	t.Run("/api/v1/chat/completions (400 N != 1)", func(t *testing.T) {
+	t.Run("/.api/llm/chat/completions (400 N != 1)", func(t *testing.T) {
 		rr := c.chatCompletions(t, `{
 			    "model": "anthropic::unknown::claude-3-sonnet-20240229",
 			    "messages": [{"role": "user", "content": "Hello"}],
@@ -51,7 +51,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
-	t.Run("/api/v1/chat/completions (400 role=system)", func(t *testing.T) {
+	t.Run("/.api/llm/chat/completions (400 role=system)", func(t *testing.T) {
 		rr := c.chatCompletions(t, `{
 			    "model": "anthropic::unknown::claude-3-sonnet-20240229",
 			    "messages": [{"role": "system", "content": "You are a helpful assistant."}]
@@ -60,7 +60,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
-	t.Run("/api/v1/chat/completions (400 model is not modelref)", func(t *testing.T) {
+	t.Run("/.api/llm/chat/completions (400 model is not modelref)", func(t *testing.T) {
 		rr := c.chatCompletions(t, `{
 			    "model": "anthropic/claude-3-haiku-20240307",
 			    "messages": [{"role": "user", "content": "Hello"}]
@@ -72,7 +72,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 		assert.Equal(t, "model anthropic/claude-3-haiku-20240307 is not supported (similar to anthropic::unknown::claude-3-haiku-20240307)\n", rr.Body.String())
 	})
 
-	t.Run("/api/v1/chat/completions (200 OK)", func(t *testing.T) {
+	t.Run("/.api/llm/chat/completions (200 OK)", func(t *testing.T) {
 		rr := c.chatCompletions(t, `{
 			    "model": "anthropic::unknown::claude-3-sonnet-20240229",
 			    "messages": [
@@ -121,7 +121,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 		assert.Equal(t, "application/json", rr.Header().Get("Content-Type"))
 
 		autogold.Expect(`{
-    "id": "chat-mocked-publicrestapi-uuid",
+    "id": "chat-mocked-llmapi-uuid",
     "choices": [
         {
             "finish_reason": "end_turn",
@@ -151,7 +151,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 			// https://sourcegraph.slack.com/archives/C04MSD3DP5L/p1723041114247759
 			continue
 		}
-		t.Run(fmt.Sprintf("/api/v1/chat/completions (200 OK, %s)", model.DisplayName), func(t *testing.T) {
+		t.Run(fmt.Sprintf("/.api/llm/chat/completions (200 OK, %s)", model.DisplayName), func(t *testing.T) {
 			rr := c.chatCompletions(t, fmt.Sprintf(`{
 			"model": "%s",
 			"messages": [{"role": "user", "content": "respond with 'yes' in all-lowercase and nothing else"}]

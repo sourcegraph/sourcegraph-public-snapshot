@@ -1,4 +1,4 @@
-package publicrestapi
+package llmapi
 
 import (
 	"bytes"
