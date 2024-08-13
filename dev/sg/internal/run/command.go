@@ -108,9 +108,11 @@ func (cmd Command) hasBashInstaller() bool {
 }
 
 func (cmd Command) bashInstall(ctx context.Context, parentEnv map[string]string) error {
-	output, err := BashInRoot(ctx, cmd.Install, makeEnv(parentEnv, cmd.Config.Env))
+	out, err := BashInRoot(ctx, cmd.Install, BashInRootArgs{
+		Env: makeEnv(parentEnv, cmd.Config.Env),
+	})
 	if err != nil {
-		return installErr{cmdName: cmd.Config.Name, output: output, originalErr: err}
+		return installErr{cmdName: cmd.Config.Name, output: out, originalErr: err}
 	}
 	return nil
 }

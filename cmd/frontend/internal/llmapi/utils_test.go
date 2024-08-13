@@ -1,4 +1,4 @@
-package publicrestapi
+package llmapi
 
 import (
 	"encoding/json"
@@ -25,14 +25,17 @@ type publicrestTest struct {
 	HttpClient  http.Handler
 }
 
-func newTest(t *testing.T) *publicrestTest {
-	MockUUID = "mocked-publicrestapi-uuid"
+func newTest(t *testing.T, getModelConfigFunc GetModelConfigurationFunc) *publicrestTest {
+	MockUUID = "mocked-llmapi-uuid"
 	gollyDoer := golly.NewGollyDoer(t, httpcli.TestExternalClient)
 	recordReplayHandler := newRecordReplayHandler(gollyDoer, gollyDoer.DotcomCredentials())
-	publicrestHandler := NewHandler(recordReplayHandler)
+	apiHandler := mux.NewRouter().PathPrefix("/.api/llm/").Subrouter()
+
+	RegisterHandlers(apiHandler, recordReplayHandler, getModelConfigFunc)
+
 	return &publicrestTest{
 		t:           t,
-		Handler:     publicrestHandler,
+		Handler:     apiHandler,
 		Golly:       gollyDoer,
 		Credentials: gollyDoer.DotcomCredentials(),
 		HttpClient:  recordReplayHandler,
@@ -89,7 +92,7 @@ func dotcomProxyHandlerFunc(doer httpcli.Doer, credentials *golly.TestingCredent
 
 func (c *publicrestTest) chatCompletions(t *testing.T, body string) *httptest.ResponseRecorder {
 	req, err := http.NewRequest("POST",
-		"/api/v1/chat/completions",
+		"/.api/llm/chat/completions",
 		strings.NewReader(body))
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")

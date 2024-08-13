@@ -14,13 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestRedisKeyValue(t *testing.T) {
-	testKeyValue(t, redisKeyValueForTest(t))
-}
-
-func testKeyValue(t *testing.T, kv redispool.KeyValue) {
-	t.Parallel()
-
+func TestKeyValue(t *testing.T) {
+	kv := redisKeyValueForTest(t)
 	errWrongType := errors.New("WRONGTYPE")
 
 	// "strings" is the name of the classic group of commands in redis (get, set, ttl, etc). We call it classic since that is less confusing.
@@ -360,7 +355,43 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 	})
 }
 
-// Mostly copy-pasta from rache. Will clean up later as the relationship
+func TestKeyValueWithPrefix(t *testing.T) {
+	kv := redisKeyValueForTest(t)
+	rkv := kv.(interface {
+		WithPrefix(string) redispool.KeyValue
+	})
+
+	kv1 := rkv.WithPrefix("prefix1")
+	kv2 := rkv.WithPrefix("prefix2")
+
+	t.Parallel()
+
+	require := require{TB: t}
+
+	require.Works(kv1.Set("simple", "1"))
+	require.Equal(kv1.Get("simple"), "1")
+	require.Equal(kv2.Get("simple"), nil)
+
+	require.Works(kv2.Set("simple", "2"))
+	require.Equal(kv2.Get("simple"), "2")
+	require.Equal(kv1.Get("simple"), "1")
+
+	require.Works(kv1.Set("other", "a"))
+
+	keys1, err := kv1.Keys("*")
+	require.Works(err)
+	if len(keys1) != 2 {
+		t.Fatalf("expected 2 keys, got %v", keys1)
+	}
+
+	keys2, err := kv2.Keys("*")
+	require.Works(err)
+	if len(keys2) != 1 {
+		t.Fatalf("expected 1 key, got %v", keys1)
+	}
+}
+
+// Mostly copy-pasta from rcache. Will clean up later as the relationship
 // between the two packages becomes cleaner.
 func redisKeyValueForTest(t *testing.T) redispool.KeyValue {
 	t.Helper()
@@ -465,6 +496,7 @@ func (t require) Equal(got redispool.Value, want any) {
 		t.Fatalf("unsupported want type for %q: %T", want, want)
 	}
 }
+
 func (t require) AllEqual(got redispool.Values, want any) {
 	t.Helper()
 	switch wantV := want.(type) {
