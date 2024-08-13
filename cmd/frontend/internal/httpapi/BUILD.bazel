@@ -58,6 +58,7 @@ go_library(
         "//internal/gitserver/gitdomain",
         "//internal/httpcli",
         "//internal/licensing",
+        "//internal/modelconfig/types",
         "//internal/opencodegraph",
         "//internal/repoupdater",
         "//internal/sams",

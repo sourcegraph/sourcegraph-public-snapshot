@@ -8,28 +8,16 @@ import (
 
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/modelconfig"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	types "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func SetSiteConfig(t *testing.T, siteConfig schema.SiteConfiguration) {
-	conf.Mock(&conf.Unified{SiteConfiguration: siteConfig})
-	if err := modelconfig.ResetMock(); err != nil {
-		require.NoError(t, err)
-	}
-}
-
 func TestChatCompletionsHandler(t *testing.T) {
-	c := newTest(t)
-	chatModels := c.getChatModels()
-	assert.NoError(t, modelconfig.InitMock())
-	assert.NoError(t, modelconfig.ResetMockWithStaticData(&types.ModelConfiguration{
-		Models: chatModels,
-	}))
+	var c *publicrestTest
+	c = newTest(t, func() (*types.ModelConfiguration, error) {
+		chatModels := c.getChatModels()
+		return &types.ModelConfiguration{Models: chatModels}, nil
+	})
 
 	t.Run("/.api/llm/chat/completions (400 stream=true)", func(t *testing.T) {
 		rr := c.chatCompletions(t, `{
@@ -144,7 +132,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 }`).Equal(t, body)
 	})
 
-	for _, model := range chatModels {
+	for _, model := range c.getChatModels() {
 		if model.DisplayName == "starcoder" {
 			// Skip starcoder because it's not a chat model even if it has the "chat" capability
 			// per the /.api/modelconfig/supported-models.json endpoint. Context:

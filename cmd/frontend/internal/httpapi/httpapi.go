@@ -39,6 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/internal/sams"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
@@ -322,7 +323,7 @@ func NewHandler(
 	repo.Path("/refresh").Methods("POST").Handler(jsonHandler(serveRepoRefresh(db)))
 
 	llm := m.PathPrefix("/llm/").Subrouter()
-	llmapi.RegisterHandlers(llm, m)
+	llmapi.RegisterHandlers(llm, m, func() (*types.ModelConfiguration, error) { return modelconfig.Get().Get() })
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
