@@ -4416,7 +4416,7 @@
         "url": {
           "type": "string",
           "description": "URL of the Bitbucket Server instance.",
-          "default": "https://bitbucket.example.org/"
+          "example": "https://bitbucket.example.org/"
         },
         "clientID": {
           "type": "string",

@@ -69,7 +69,7 @@ func NewClient(urn string, config *schema.BitbucketServerConnection, httpClient 
 		return nil, err
 	}
 
-	if config.Authorization == nil || config.Authorization.Oauth == nil {
+	if config.Authorization == nil {
 		if config.Token != "" {
 			client.Auth = &auth.OAuthBearerToken{Token: config.Token}
 		} else {
@@ -78,7 +78,7 @@ func NewClient(urn string, config *schema.BitbucketServerConnection, httpClient 
 				Password: config.Password,
 			}
 		}
-	} else {
+	} else if config.Authorization.Oauth != nil {
 		err := client.SetOAuth(
 			config.Authorization.Oauth.ConsumerKey,
 			config.Authorization.Oauth.SigningKey,

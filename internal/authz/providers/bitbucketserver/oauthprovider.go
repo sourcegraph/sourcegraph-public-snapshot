@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type OAuthProvider struct {
+type OAuth2Provider struct {
 	urn        string
 	codeHost   *extsvc.CodeHost
 	client     *bitbucketserver.Client
@@ -30,13 +30,13 @@ type ProviderOptions struct {
 	BitbucketServerClient *bitbucketserver.Client
 }
 
-var _ authz.Provider = (*OAuthProvider)(nil)
+var _ authz.Provider = (*OAuth2Provider)(nil)
 
 // NewProvider returns a new Bitbucket Server authorization provider that uses
 // the given bitbucket.Client to talk to the Bitbucket Server API that is
 // the source of truth for permissions. Sourcegraph users will need a valid
 // Bitbucket Server external account for permissions to sync correctly.
-func NewOAuthProvider(db database.DB, conn *types.BitbucketServerConnection, opts ProviderOptions, pluginPerm bool) *OAuthProvider {
+func NewOAuthProvider(db database.DB, conn *types.BitbucketServerConnection, opts ProviderOptions, pluginPerm bool) *OAuth2Provider {
 	baseURL, err := url.Parse(conn.Url)
 	if err != nil {
 		return nil
@@ -50,7 +50,7 @@ func NewOAuthProvider(db database.DB, conn *types.BitbucketServerConnection, opt
 		}
 	}
 
-	return &OAuthProvider{
+	return &OAuth2Provider{
 		urn:        conn.URN,
 		codeHost:   extsvc.NewCodeHost(baseURL, extsvc.TypeBitbucketServer),
 		client:     opts.BitbucketServerClient,
@@ -65,25 +65,26 @@ func NewOAuthProvider(db database.DB, conn *types.BitbucketServerConnection, opt
 //
 // Credentials are verified by querying the "rest/api/1.0/repositories" endpoint.
 // This validates that the credentials have the `REPO_READ` scope.
-func (p *OAuthProvider) ValidateConnection(ctx context.Context) error {
+func (p *OAuth2Provider) ValidateConnection(ctx context.Context) error {
 	// We don't care about the contents returned, only whether or not an error occurred
 	_, _, err := p.client.Repos(ctx, nil)
 	return err
 }
 
-func (p *OAuthProvider) URN() string {
+func (p *OAuth2Provider) URN() string {
 	return p.urn
 }
 
 // ServiceID returns the absolute URL that identifies the Bitbucket Server instance
 // this provider is configured with.
-func (p *OAuthProvider) ServiceID() string { return p.codeHost.ServiceID }
+func (p *OAuth2Provider) ServiceID() string { return p.codeHost.ServiceID }
 
 // ServiceType returns the type of this Provider, namely, "bitbucketServer".
-func (p *OAuthProvider) ServiceType() string { return p.codeHost.ServiceType }
+func (p *OAuth2Provider) ServiceType() string { return p.codeHost.ServiceType }
 
 // FetchAccount satisfies the authz.Provider interface.
-func (p *OAuthProvider) FetchAccount(ctx context.Context, user *types.User, _ []*extsvc.Account, _ []string) (acct *extsvc.Account, err error) {
+func (p *OAuth2Provider) FetchAccount(ctx context.Context, user *types.User, _ []*extsvc.Account, _ []string) (acct *extsvc.Account, err error) {
+	// FetchAccount is not implemented for OAuth2, since accounts are fetched when the user signs in via OAuth2.
 	return nil, nil
 }
 
@@ -95,7 +96,7 @@ func (p *OAuthProvider) FetchAccount(ctx context.Context, user *types.User, _ []
 // callers to decide whether to discard.
 //
 // API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8296923984
-func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *OAuth2Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	switch {
 	case account == nil:
 		return nil, errors.New("no account provided")
@@ -132,14 +133,14 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 	}, err
 }
 
-func (p *OAuthProvider) repoIDs(ctx context.Context, client *bitbucketserver.Client) ([]uint32, error) {
+func (p *OAuth2Provider) repoIDs(ctx context.Context, client *bitbucketserver.Client) ([]uint32, error) {
 	if p.pluginPerm {
 		return p.repoIDsFromPlugin(ctx, client)
 	}
 	return repoIDsFromAPI(ctx, p.pageSize, client)
 }
 
-func (p *OAuthProvider) repoIDsFromPlugin(ctx context.Context, client *bitbucketserver.Client) (ids []uint32, err error) {
+func (p *OAuth2Provider) repoIDsFromPlugin(ctx context.Context, client *bitbucketserver.Client) (ids []uint32, err error) {
 	return client.RepoIDs(ctx, "read")
 }
 
@@ -180,7 +181,7 @@ func repoIDsFromAPI(ctx context.Context, pageSize int, client *bitbucketserver.C
 // callers to decide whether to discard.
 //
 // API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8283203728
-func (p *OAuthProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+func (p *OAuth2Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	switch {
 	case repo == nil:
 		return nil, errors.New("no repo provided")
@@ -199,7 +200,7 @@ func (p *OAuthProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Reposit
 	return extIDs, err
 }
 
-func (p *OAuthProvider) userIDs(ctx context.Context, repoID string) (ids []int, err error) {
+func (p *OAuth2Provider) userIDs(ctx context.Context, repoID string) (ids []int, err error) {
 	t := &bitbucketserver.PageToken{Limit: p.pageSize}
 	f := bitbucketserver.UserFilter{Permission: bitbucketserver.PermissionFilter{
 		Root:         "REPO_READ",
