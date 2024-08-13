@@ -35,10 +35,12 @@ fragment ResolvedRepository on Repository {
     id
     commit(rev: $revision) {
         oid
+        perforceChangelist {
+            cid
+            canonicalURL
+        }
     }
     changelist(cid: $revision) {
-        cid
-        canonicalURL
         commit {
             oid
         }
