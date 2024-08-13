@@ -223,7 +223,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
                     <Select
                         id="instance-type"
                         label="Instance type"
-                        message="Select the type of instance this subscription is used for. A production instance might be a PRIMARY instance, while a dev or staging instance would be a SECONDARY instance. INTERNAL instances are used internally at Sourcegraph."
+                        message="Select the type of instance this subscription is used for. A production instance might be a PRIMARY instance, while a testing or staging instance would be a SECONDARY instance. INTERNAL instances are used internally at Sourcegraph."
                         value={instanceType.input.value}
                         disabled={formAPI.submitted}
                         onChange={event => {
