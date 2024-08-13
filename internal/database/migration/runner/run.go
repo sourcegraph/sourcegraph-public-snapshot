@@ -364,7 +364,7 @@ func (r *Runner) applyMigration(
 	applyMigration := func() (err error) {
 		tx := schemaContext.store
 
-		if !definition.IsCreateIndexConcurrently && !definition.NoTransaction {
+		if !definition.IsCreateIndexConcurrently {
 			tx, err = schemaContext.store.Transact(ctx)
 			if err != nil {
 				return err
