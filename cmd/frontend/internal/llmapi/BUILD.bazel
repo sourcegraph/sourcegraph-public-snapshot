@@ -2,13 +2,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("//dev:go_defs.bzl", "go_test")
 
 go_library(
-    name = "publicrestapi",
+    name = "llmapi",
     srcs = [
         "chat_completions_handler.go",
         "chat_completions_models.go",
         "httpapi.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/publicrestapi",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/llmapi",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/internal/modelconfig",
@@ -22,14 +22,14 @@ go_library(
 )
 
 go_test(
-    name = "publicrestapi_test",
+    name = "llmapi_test",
     srcs = [
         "chat_completions_handler_test.go",
         "chat_completions_models_test.go",
         "utils_test.go",
     ],
     data = glob(["golly-recordings/**"]),
-    embed = [":publicrestapi"],
+    embed = [":llmapi"],
     deps = [
         "//cmd/frontend/internal/modelconfig",
         "//internal/conf",
