@@ -182,7 +182,10 @@
             {#if blob}
                 <OpenInCodeHostAction data={blob} lineOrPosition={data.lineOrPosition} />
             {/if}
-            <Permalink revID={commitID} {isPerforceDepot} />
+            <Permalink
+                revID={commitID}
+                tooltip={isPerforceDepot ? 'Permalink (with full changelist ID)' : 'Permalink (with full commit SHA)'}
+            />
             {#if $isCodyAvailable}
                 <OpenCodyAction />
             {/if}

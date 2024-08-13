@@ -316,8 +316,9 @@
             text-overflow: ellipsis;
         }
 
-        // Local override for commits picker abbreviatedOID badge
-        :global([data-tab-panel='Commits']) :global([data-badge]) {
+        // Local override for commits/changelists picker abbreviatedOID/ChangelistID badge
+        :global([data-tab-panel='Commits']) :global([data-badge]),
+        :global([data-tab-panel='Changelists']) :global([data-badge]) {
             flex-shrink: 0;
         }
     }
