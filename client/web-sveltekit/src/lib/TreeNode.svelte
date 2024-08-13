@@ -130,10 +130,9 @@
 <style lang="scss">
     $shiftWidth: 1.25rem;
     $gap: 0.25rem;
+    $indentSize: calc(var(--tree-node-nested-level) * #{$shiftWidth});
 
     li[role='treeitem'] {
-        --indent-size: calc(var(--tree-node-nested-level) * #{$shiftWidth});
-
         --scope-size: calc(var(--icon-inline-size) + #{$gap} - 1px);
         &.disable-scope {
             --scope-size: 0px;
@@ -174,26 +173,29 @@
             .indented {
                 display: inherit;
                 gap: inherit;
-                margin-left: var(--indent-size);
+                margin-left: $indentSize;
                 width: 100%;
             }
         }
 
         .loading {
             // Indent with two rem since loading represents next nested level
-            margin-left: calc(var(--scope-size) + var(--indent-size) + 2 * #{$gap});
+            margin-left: calc(var(--scope-size) + #{$indentSize} + 2 * #{$gap});
             margin-top: 0.25rem;
         }
 
         ul {
             position: relative;
             isolation: isolate;
+            // The visual guide line for expanded subtrees
             &::before {
                 position: absolute;
                 content: '';
                 border-left: 1px solid var(--secondary);
                 height: 100%;
-                transform: translateX(calc(#{$gap} + var(--scope-size) + var(--icon-inline-size) / 2 - 1px));
+                transform: translateX(
+                    calc(#{$gap} + var(--scope-size) + #{$indentSize} + var(--icon-inline-size) / 2 - 1px)
+                );
                 z-index: 1;
             }
         }
