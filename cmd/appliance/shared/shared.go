@@ -108,12 +108,13 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	grpcServer := makeGRPCServer(logger, app)
 
 	selfUpdater := &selfupdate.SelfUpdate{
-		Interval:        time.Hour,
-		Logger:          logger.Scoped("SelfUpdate"),
-		K8sClient:       k8sClient,
-		RelregClient:    relregClient,
-		DeploymentNames: config.selfDeploymentName,
-		Namespace:       config.namespace,
+		Interval:           time.Hour,
+		Logger:             logger.Scoped("SelfUpdate"),
+		K8sClient:          k8sClient,
+		RelregClient:       relregClient,
+		PinnedReleasesFile: config.pinnedReleasesFile,
+		DeploymentNames:    config.selfDeploymentName,
+		Namespace:          config.namespace,
 	}
 
 	probe := &healthchecker.PodProbe{K8sClient: k8sClient}

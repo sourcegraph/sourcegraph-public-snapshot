@@ -2,6 +2,7 @@ package selfupdate
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -41,4 +42,15 @@ func TestGetLatestTag_ReturnsLatestSupportedPublicVersion(t *testing.T) {
 	latest, err := selfUpdater.getLatestTag(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, "4.5.5", latest)
+}
+
+func TestGetLatestTag_ReturnsLatestSupportedPublicVersion_FromFileWhenSpecified(t *testing.T) {
+	selfUpdater := &SelfUpdate{
+		Logger:             logtest.Scoped(t),
+		PinnedReleasesFile: filepath.Join("testdata", "releases.json"),
+	}
+
+	latest, err := selfUpdater.getLatestTag(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, "5.6.185", latest)
 }
