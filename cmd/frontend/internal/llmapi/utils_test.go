@@ -25,13 +25,13 @@ type publicrestTest struct {
 	HttpClient  http.Handler
 }
 
-func newTest(t *testing.T) *publicrestTest {
+func newTest(t *testing.T, getModelConfigFunc GetModelConfigurationFunc) *publicrestTest {
 	MockUUID = "mocked-llmapi-uuid"
 	gollyDoer := golly.NewGollyDoer(t, httpcli.TestExternalClient)
 	recordReplayHandler := newRecordReplayHandler(gollyDoer, gollyDoer.DotcomCredentials())
 	apiHandler := mux.NewRouter().PathPrefix("/.api/llm/").Subrouter()
 
-	RegisterHandlers(apiHandler, recordReplayHandler)
+	RegisterHandlers(apiHandler, recordReplayHandler, getModelConfigFunc)
 
 	return &publicrestTest{
 		t:           t,

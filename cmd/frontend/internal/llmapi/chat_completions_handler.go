@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/log"
 	sglog "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/modelconfig"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	completions "github.com/sourcegraph/sourcegraph/internal/completions/types"
@@ -31,7 +30,11 @@ type chatCompletionsHandler struct {
 	// would have an in-house service we can use instead of going via HTTP but using HTTP
 	// simplifies a lof of things (including testing).
 	apiHandler http.Handler
+
+	GetModelConfig GetModelConfigurationFunc
 }
+
+type GetModelConfigurationFunc func() (*types.ModelConfiguration, error)
 
 var _ http.Handler = (*chatCompletionsHandler)(nil)
 
@@ -45,8 +48,7 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	decoder := json.NewDecoder(io.NopCloser(bytes.NewBuffer(body)))
 
-	modelConfigSvc := modelconfig.Get()
-	currentModelConfig, err := modelConfigSvc.Get()
+	currentModelConfig, err := h.GetModelConfig()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("modelConfigSvc.Get: %v", err), http.StatusInternalServerError)
 		return

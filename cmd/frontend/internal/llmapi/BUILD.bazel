@@ -11,7 +11,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/llmapi",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/internal/modelconfig",
         "//internal/completions/types",
         "//internal/modelconfig/types",
         "//lib/errors",
@@ -31,15 +30,11 @@ go_test(
     data = glob(["golly-recordings/**"]),
     embed = [":llmapi"],
     deps = [
-        "//cmd/frontend/internal/modelconfig",
-        "//internal/conf",
         "//internal/golly",
         "//internal/httpcli",
         "//internal/modelconfig/types",
-        "//schema",
         "@com_github_gorilla_mux//:mux",
         "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
     ],
 )
