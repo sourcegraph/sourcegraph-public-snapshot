@@ -1,9 +1,13 @@
 package build
 
 import (
+	"context"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
+	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -86,37 +90,61 @@ func TestBuildStoreAdd(t *testing.T) {
 		return &Event{Name: EventBuildFinished, Build: buildkite.Build{State: nil, Number: &n}, Pipeline: buildkite.Pipeline{Name: &pipeline}}
 	}
 
-	store := NewBuildStore(logtest.Scoped(t))
+	failureCounter := 0
+	builds := make(map[string][]byte)
+	mockredis := NewMockRedisClient()
+	mockredis.IncrFunc.SetDefaultHook(func(ctx context.Context, key string) *redis.IntCmd {
+		failureCounter++
+		return redis.NewIntResult(int64(failureCounter), nil)
+	})
+	mockredis.SetFunc.SetDefaultHook(func(ctx context.Context, s string, i interface{}, d time.Duration) *redis.StatusCmd {
+		if strings.HasPrefix(s, pipeline) {
+			failureCounter = 0
+		} else {
+			builds[s] = i.([]byte)
+		}
+		return redis.NewStatusCmd(ctx)
+	})
+	mockredis.GetFunc.SetDefaultHook(func(ctx context.Context, s string) *redis.StringCmd {
+		if strings.HasPrefix(s, "build/") {
+			if b, ok := builds[s]; ok {
+				return redis.NewStringResult(string(b), nil)
+			}
+			return redis.NewStringResult("", redis.Nil)
+		}
+		return redis.NewStringCmd(ctx)
+	})
+	store := NewBuildStore(logtest.Scoped(t), mockredis, NewMockLocker())
 
 	t.Run("subsequent failures should increment ConsecutiveFailure", func(t *testing.T) {
-		store.Add(eventFailed(1))
-		build := store.GetByBuildNumber(1)
+		store.Add(context.Background(), eventFailed(1))
+		build := store.GetByBuildNumber(context.Background(), 1)
 		assert.Equal(t, build.ConsecutiveFailure, 1)
 
-		store.Add(eventFailed(2))
-		build = store.GetByBuildNumber(2)
+		store.Add(context.Background(), eventFailed(2))
+		build = store.GetByBuildNumber(context.Background(), 2)
 		assert.Equal(t, build.ConsecutiveFailure, 2)
 
-		store.Add(eventFailed(3))
-		build = store.GetByBuildNumber(3)
+		store.Add(context.Background(), eventFailed(3))
+		build = store.GetByBuildNumber(context.Background(), 3)
 		assert.Equal(t, build.ConsecutiveFailure, 3)
 	})
 
 	t.Run("a pass should reset ConsecutiveFailure", func(t *testing.T) {
-		store.Add(eventFailed(4))
-		build := store.GetByBuildNumber(4)
+		store.Add(context.Background(), eventFailed(4))
+		build := store.GetByBuildNumber(context.Background(), 4)
 		assert.Equal(t, build.ConsecutiveFailure, 4)
 
-		store.Add(eventSucceeded(5))
-		build = store.GetByBuildNumber(5)
+		store.Add(context.Background(), eventSucceeded(5))
+		build = store.GetByBuildNumber(context.Background(), 5)
 		assert.Equal(t, build.ConsecutiveFailure, 0)
 
-		store.Add(eventFailed(6))
-		build = store.GetByBuildNumber(6)
+		store.Add(context.Background(), eventFailed(6))
+		build = store.GetByBuildNumber(context.Background(), 6)
 		assert.Equal(t, build.ConsecutiveFailure, 1)
 
-		store.Add(eventSucceeded(7))
-		build = store.GetByBuildNumber(7)
+		store.Add(context.Background(), eventSucceeded(7))
+		build = store.GetByBuildNumber(context.Background(), 7)
 		assert.Equal(t, build.ConsecutiveFailure, 0)
 	})
 }
@@ -131,17 +159,33 @@ func TestBuildFailedJobs(t *testing.T) {
 			Name:     EventJobFinished,
 			Build:    buildkite.Build{State: &buildState, Number: &buildNumber},
 			Pipeline: buildkite.Pipeline{Name: &pipeline},
-			Job:      buildkite.Job{Name: &name, ExitStatus: &exitCode, State: &jobState}}
+			Job:      buildkite.Job{Name: &name, ExitStatus: &exitCode, State: &jobState},
+		}
 	}
 
-	store := NewBuildStore(logtest.Scoped(t))
+	builds := make(map[string][]byte)
+	mockredis := NewMockRedisClient()
+	mockredis.SetFunc.SetDefaultHook(func(ctx context.Context, s string, i interface{}, d time.Duration) *redis.StatusCmd {
+		builds[s] = i.([]byte)
+		return redis.NewStatusCmd(ctx)
+	})
+	mockredis.GetFunc.SetDefaultHook(func(ctx context.Context, s string) *redis.StringCmd {
+		if strings.HasPrefix(s, "build/") {
+			if b, ok := builds[s]; ok {
+				return redis.NewStringResult(string(b), nil)
+			}
+			return redis.NewStringResult("", redis.Nil)
+		}
+		return redis.NewStringCmd(ctx)
+	})
+	store := NewBuildStore(logtest.Scoped(t), mockredis, NewMockLocker())
 
 	t.Run("failed jobs should contain different jobs", func(t *testing.T) {
-		store.Add(eventFailed("Test 1", 1))
-		store.Add(eventFailed("Test 2", 1))
-		store.Add(eventFailed("Test 3", 1))
+		store.Add(context.Background(), eventFailed("Test 1", 1))
+		store.Add(context.Background(), eventFailed("Test 2", 1))
+		store.Add(context.Background(), eventFailed("Test 3", 1))
 
-		build := store.GetByBuildNumber(1)
+		build := store.GetByBuildNumber(context.Background(), 1)
 
 		unique := make(map[string]int)
 		for _, s := range FindFailedSteps(build.Steps) {

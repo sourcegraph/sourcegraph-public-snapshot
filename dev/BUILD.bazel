@@ -132,5 +132,6 @@ write_source_files(
         "//cmd/frontend/internal/backend:generate_mocks",
         "//cmd/enterprise-portal/internal/codyaccessservice:generate_mocks",
         "//cmd/enterprise-portal/internal/routines/licenseexpiration:generate_mocks",
+        "//dev/build-tracker/build:generate_mocks",
     ],
 )
