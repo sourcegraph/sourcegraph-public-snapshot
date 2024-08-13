@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -169,14 +170,28 @@ func (a *Appliance) getMaintenanceStatusHandler() http.Handler {
 
 func (a *Appliance) getReleasesHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// simple proxy to release releaseRegistry
-		resp, err := http.Get("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph")
-		if err != nil {
-			a.serverErrorResponse(w, r, err)
-			return
+		var relregResp io.ReadCloser
+		if a.pinnedReleasesFile == "" {
+			// simple proxy to release releaseRegistry
+			resp, err := http.Get("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph")
+			if err != nil {
+				a.serverErrorResponse(w, r, err)
+				return
+			}
+			defer resp.Body.Close()
+			relregResp = resp.Body
+		} else {
+			// airgap fallback
+			var err error
+			relregResp, err = os.Open(a.pinnedReleasesFile)
+			if err != nil {
+				a.serverErrorResponse(w, r, err)
+				return
+			}
+			defer relregResp.Close()
 		}
-		defer resp.Body.Close()
-		if _, err := io.Copy(w, resp.Body); err != nil {
+
+		if _, err := io.Copy(w, relregResp); err != nil {
 			// There's nothing else we can do, we've already sent the status
 			// code
 			a.logger.Error("error proxying release registry to appliance frontend", log.Error(err))

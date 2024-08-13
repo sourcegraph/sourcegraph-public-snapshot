@@ -56,7 +56,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		return err
 	}
 
-	app, err := appliance.NewAppliance(k8sClient, relregClient, config.applianceVersion, config.namespace, noResourceRestrictions, logger)
+	app, err := appliance.NewAppliance(k8sClient, relregClient, config.pinnedReleasesFile, config.applianceVersion, config.namespace, noResourceRestrictions, logger)
 	if err != nil {
 		logger.Error("failed to create appliance", log.Error(err))
 		return err
