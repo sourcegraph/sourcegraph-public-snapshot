@@ -275,7 +275,7 @@ func applyMigration(db *sql.DB, definition definition.Definition, up bool) (err 
 	}
 	var queryRunner execer = db
 
-	if !definition.IsCreateIndexConcurrently && !definition.NoTransaction {
+	if !definition.IsCreateIndexConcurrently {
 		tx, err := db.BeginTx(context.Background(), &sql.TxOptions{})
 		if err != nil {
 			return err
