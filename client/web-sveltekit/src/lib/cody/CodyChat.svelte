@@ -21,8 +21,8 @@ function getTelemetrySourceClient(): string {
 
     import type { LineOrPositionOrRange } from '@sourcegraph/common'
 
-    export let repository: CodySidebar_ResolvedRevision
-    export let filePath: string
+    export let repository: CodySidebar_ResolvedRevision | undefined = undefined
+    export let filePath: string | undefined = undefined
     export let lineOrPosition: LineOrPositionOrRange | undefined = undefined
 
     let container: HTMLDivElement
@@ -38,8 +38,8 @@ function getTelemetrySourceClient(): string {
     })
 
     function render(
-        repository: CodySidebar_ResolvedRevision,
-        filePath: string,
+        repository?: CodySidebar_ResolvedRevision,
+        filePath?: string,
         lineOrPosition?: LineOrPositionOrRange
     ) {
         if (!root) {
@@ -54,7 +54,7 @@ function getTelemetrySourceClient(): string {
             {
                 accessToken: '',
                 initialContext: {
-                    repositories: [repository],
+                    repositories: repository ? [repository] : [],
                     fileURL: filePath ? (!filePath.startsWith('/') ? `/${filePath}` : filePath) : undefined,
                     // Line range - 1 because of Cody Web initial context file range bug
                     fileRange: hasFileRangeSelection
@@ -108,7 +108,6 @@ function getTelemetrySourceClient(): string {
         --vscode-keybindingLabel-foreground: var(--body-color);
 
         line-height: 1.55;
-        padding-bottom: 2rem;
         flex: 1;
         min-height: 0;
 
@@ -248,5 +247,15 @@ function getTelemetrySourceClient(): string {
         :global(.theme-dark) & {
             --vscode-list-activeSelectionBackground: #031824;
         }
+    }
+
+    :global([data-cody-web-chat]) {
+        height: 100%;
+        overflow: auto;
+        background-color: var(--vscode-editor-background);
+        font-size: var(--vscode-font-size);
+        font-family: var(--vscode-font-family);
+        color: var(--vscode-editor-foreground);
+        padding-bottom: 2rem;
     }
 </style>

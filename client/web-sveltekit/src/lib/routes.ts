@@ -67,6 +67,11 @@ export const svelteKitRoutes: SvelteKitRoute[] = [
         isRepoRoot: false,
     },
     {
+        id: '/cody/chat',
+        pattern: new RegExp('^/cody/chat/?$'),
+        isRepoRoot: false,
+    },
+    {
         id: '/search',
         pattern: new RegExp('^/search/?$'),
         isRepoRoot: false,
