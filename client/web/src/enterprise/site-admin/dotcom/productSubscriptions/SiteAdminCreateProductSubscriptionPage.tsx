@@ -188,7 +188,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
             <PageHeader
                 headingElement="h2"
                 path={[
-                    { text: 'Enterprise subscriptions', to: '/site-admin/dotcom/product/subscriptions' },
+                    { text: 'Enterprise subscriptions', to: `/site-admin/dotcom/product/subscriptions?env=${env}` },
                     { text: 'Create Enterprise subscription' },
                 ]}
                 className="mb-2"

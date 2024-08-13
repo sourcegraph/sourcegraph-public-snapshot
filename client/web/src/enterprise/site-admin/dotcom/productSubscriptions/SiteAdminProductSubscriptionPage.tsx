@@ -177,7 +177,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
             <PageHeader
                 headingElement="h2"
                 path={[
-                    { text: 'Enterprise subscriptions', to: '/site-admin/dotcom/product/subscriptions' },
+                    { text: 'Enterprise subscriptions', to: `/site-admin/dotcom/product/subscriptions?env=${env}` },
                     { text: subscription?.displayName || subscription?.id || paramSubscriptionUUID },
                 ]}
                 description="This subscription tracks a single Enterprise Sourcegraph instance."
