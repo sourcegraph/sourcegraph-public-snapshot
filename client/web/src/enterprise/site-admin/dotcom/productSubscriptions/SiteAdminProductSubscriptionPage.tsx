@@ -327,7 +327,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                                     </th>
                                     <td className="w-100">
                                         {subscription?.instanceDomain ? (
-                                            <Link to={subscription?.instanceDomain}>
+                                            <Link to={`https://${subscription?.instanceDomain}`}>
                                                 {subscription?.instanceDomain}
                                             </Link>
                                         ) : (

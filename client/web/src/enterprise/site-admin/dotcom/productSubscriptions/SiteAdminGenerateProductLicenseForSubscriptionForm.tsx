@@ -2,7 +2,6 @@ import React, { useState, useCallback } from 'react'
 
 import { Timestamp } from '@bufbuild/protobuf'
 import { UTCDate } from '@date-fns/utc'
-import { mdiChatQuestionOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { addDays, endOfDay } from 'date-fns'
 import { noop } from 'lodash'
@@ -22,9 +21,8 @@ import {
     Text,
     Checkbox,
     H4,
-    Icon,
-    Tooltip,
     Label,
+    Container,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
@@ -294,6 +292,40 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
 
     const selectedPlan = formData.plan ? ALL_PLANS.find(plan => plan.label === formData.plan) : undefined
 
+    const infoAlerts = (
+        <>
+            <Alert variant="warning" className="flex-shrink-0">
+                <Text>
+                    Each subscription must map to exactly ONE Sourcegraph instance.{' '}
+                    <strong>
+                        DO NOT create licenses used by multiple Sourcegraph instances within a single subscription
+                    </strong>{' '}
+                    - instead, create a NEW subscription with the appropriate Salesforce subscription ID and a relevant
+                    display name.
+                </Text>
+                <Text className="mb-0">
+                    Existing licenses can be re-linked to a new subscription by reaching out to{' '}
+                    <Link rel="noopener" target="_blank" to="https://sourcegraph.slack.com/archives/C05GJPTSZCZ">
+                        #discuss-core-services
+                    </Link>
+                    .
+                </Text>
+            </Alert>
+
+            <Alert variant="info" className="flex-shrink-0">
+                More documentation can be found in the{' '}
+                <Link
+                    rel="noopener"
+                    target="_blank"
+                    to="https://www.notion.so/sourcegraph/Customer-License-Key-Management-f44f84e295f84f2482ee9e15a038c987?pvs=4"
+                >
+                    "Customer License Key Management" Notion page
+                </Link>
+                .
+            </Alert>
+        </>
+    )
+
     return (
         <Modal
             position="center"
@@ -304,13 +336,6 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
         >
             <H3 className="flex-shrink-0" id={labelId}>
                 Generate new Sourcegraph license
-                {hasAcknowledgedInfo && (
-                    <Button variant="icon" onClick={() => setHasAcknowledgedInfo(false)}>
-                        <Tooltip content="Show additional information on the license issuance process">
-                            <Icon aria-label="Show handbook page" svgPath={mdiChatQuestionOutline} />
-                        </Tooltip>
-                    </Button>
-                )}
             </H3>
 
             {error && <ErrorAlert error={error} />}
@@ -322,42 +347,7 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                         actionText="creating a license key"
                         className="flex-shrink-0"
                     />
-
-                    <Alert variant="danger" className="flex-shrink-0">
-                        <Text>
-                            Each subscription must map to exactly ONE Sourcegraph instance.{' '}
-                            <strong>
-                                DO NOT create licenses used by multiple Sourcegraph instances within a single
-                                subscription
-                            </strong>{' '}
-                            - instead, create a NEW subscription with the appropriate Salesforce subscription ID and a
-                            relevant display name.
-                        </Text>
-                        <Text className="mb-0">
-                            Existing licenses can be re-linked to a new subscription by reaching out to{' '}
-                            <Link
-                                rel="noopener"
-                                target="_blank"
-                                to="https://sourcegraph.slack.com/archives/C05GJPTSZCZ"
-                            >
-                                #discuss-core-services
-                            </Link>
-                            .
-                        </Text>
-                    </Alert>
-
-                    <Alert variant="note" className="flex-shrink-0">
-                        More documentation can be found in the{' '}
-                        <Link
-                            rel="noopener"
-                            target="_blank"
-                            to="https://www.notion.so/sourcegraph/Customer-License-Key-Management-f44f84e295f84f2482ee9e15a038c987?pvs=4"
-                        >
-                            "Customer License Key Management" Notion page
-                        </Link>
-                        .
-                    </Alert>
-
+                    {infoAlerts}
                     <Button variant="secondary" onClick={() => setHasAcknowledgedInfo(true)}>
                         Acknowledge information
                     </Button>
@@ -366,6 +356,7 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
 
             {hasAcknowledgedInfo && (
                 <>
+                    {infoAlerts}
                     <div
                         className={classNames(
                             styles.modalContainer,
@@ -603,7 +594,7 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                                             </>
                                         }
                                     />
-                                    <Collapsible titleAtStart={true} title="Additional Information">
+                                    <Collapsible titleAtStart={true} title={<H4>Additional information</H4>}>
                                         <Input
                                             type="text"
                                             label="Tags"
@@ -635,18 +626,24 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                                             ))}
                                         </datalist>
                                     </Collapsible>
-                                    <hr className="mb-3" />
-                                    <H4>Final License Details</H4>
-                                    <Text>
-                                        Please double check that the license tags and user count are correct before
-                                        generating the license. The license cannot be modified once generated.
-                                    </Text>
-                                    <div>
-                                        {hasUnknownTags(tags) && <UnknownTagWarning className="mb-2" />}
+                                    <Container className="mt-3 mb-3">
+                                        <H4>Final License Details</H4>
                                         <Text>
-                                            <ProductLicenseTags tags={getTagsFromFormData(formData)} />
+                                            Please double check that the license tags and user count are correct before
+                                            generating the license. The license cannot be modified once generated.
                                         </Text>
-                                    </div>
+                                        <div>
+                                            {hasUnknownTags(tags) && <UnknownTagWarning className="mb-2" />}
+                                            <Text>
+                                                <ProductLicenseTags
+                                                    tags={getTagsFromFormData(formData).concat([
+                                                        // Currently added by the backend
+                                                        `customer:${subscription?.displayName}`,
+                                                    ])}
+                                                />
+                                            </Text>
+                                        </div>
+                                    </Container>
                                 </>
                             )}
 
