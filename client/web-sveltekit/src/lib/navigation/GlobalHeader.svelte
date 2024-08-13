@@ -13,6 +13,7 @@
 </script>
 
 <script lang="ts">
+    import { beforeNavigate } from '$app/navigation'
     import { page } from '$app/stores'
     import { onClickOutside } from '$lib/dom'
     import Icon from '$lib/Icon.svelte'
@@ -50,6 +51,10 @@
             openedMenu = ''
         }, 500)
     }
+    beforeNavigate(() => {
+        // Always close the sidebar when navigating to a new page
+        sidebarNavigationOpen = false
+    })
 </script>
 
 <header class="root" data-global-header class:withCustomContent class:sidebarMode>
@@ -58,8 +63,8 @@
             <Icon icon={ILucideMenu} aria-label="Navigation menu" />
         </button>
 
-        <a href="/search">
-            <Icon icon={ISgMark} aria-label="Sourcegraph" aria-hidden="true" --icon-color="initial" />
+        <a class="home-link" href="/search" aria-label="Got to search home">
+            <Icon icon={ISgMark} aria-label="Sourcegraph" aria-hidden="true" />
         </a>
     </div>
 
@@ -82,7 +87,7 @@
             </div>
             <ul class="top-navigation">
                 {#each entries as entry (entry.label)}
-                    {@const open = openedMenu === entry.label}
+                    {@const open = sidebarMode || openedMenu === entry.label}
                     <li class:open on:mouseenter={() => openMenu(entry.label)} on:mouseleave={closeMenu}>
                         {#if isNavigationMenu(entry)}
                             <span>
@@ -91,12 +96,13 @@
                                     on:click={() => (openedMenu = open ? '' : entry.label)}
                                     aria-label="{open ? 'Close' : 'Open'} '{entry.label}' submenu"
                                     aria-expanded={open}
+                                    disabled={sidebarMode}
                                 >
                                     {#if entry.icon}
                                         <Icon icon={entry.icon} aria-hidden="true" inline />&nbsp;
                                     {/if}
                                     {entry.label}&nbsp;
-                                    <Icon icon={ILucideChevronDown} inline aria-hidden />
+                                    <span class="chevron"><Icon icon={ILucideChevronDown} inline aria-hidden /></span>
                                 </Button>
                             </span>
 
@@ -174,18 +180,22 @@
             margin-left: 0;
         }
 
-        :global([data-icon]):hover {
-            @keyframes spin {
-                50% {
-                    transform: rotate(180deg) scale(1.2);
-                }
-                100% {
-                    transform: rotate(180deg) scale(1);
-                }
-            }
+        .home-link {
+            --icon-color: initial;
 
-            @media (prefers-reduced-motion: no-preference) {
-                animation: spin 0.5s ease-in-out 1;
+            &:hover {
+                @keyframes spin {
+                    50% {
+                        transform: rotate(180deg) scale(1.2);
+                    }
+                    100% {
+                        transform: rotate(180deg) scale(1);
+                    }
+                }
+
+                @media (prefers-reduced-motion: no-preference) {
+                    animation: spin 0.5s ease-in-out 1;
+                }
             }
         }
     }
@@ -206,6 +216,10 @@
             list-style: none;
             padding: 0;
             margin: 0;
+        }
+
+        :global(button) {
+            font-weight: normal;
         }
     }
 
@@ -375,10 +389,9 @@
             margin: 0;
             background-color: var(--color-bg-1);
 
-            :global(button) {
-                display: none;
-            }
-
+            // Menu buttons (have not function in sidebar mode)
+            :global(button),
+            // Nav entries
             :global(a) {
                 display: flex;
                 flex-wrap: wrap;
@@ -386,10 +399,17 @@
                 gap: 0.25rem;
                 padding: 0.375rem 0.75rem;
                 font-size: 1rem;
+                // Overwrites disabled button style
+                color: var(--body-color);
+            }
 
-                &:hover {
-                    background-color: var(--secondary-2);
-                }
+            :global(a):hover {
+                background-color: var(--secondary-2);
+            }
+
+            // Don't show chevron in sidebar mode because the menu is always open
+            .chevron {
+                display: none;
             }
         }
 
