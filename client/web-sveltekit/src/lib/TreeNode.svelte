@@ -187,6 +187,7 @@
         ul {
             position: relative;
             isolation: isolate;
+            // The visual guide line for expanded subtrees
             &::before {
                 position: absolute;
                 content: '';
