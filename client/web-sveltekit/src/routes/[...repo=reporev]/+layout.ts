@@ -29,6 +29,7 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
 
     // An empty revision means we are at the default branch
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
+
     const resolvedRepository = await resolveRepoRevision({
         client,
         repoName,
@@ -43,6 +44,9 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
         })
         .then(res => res.data?.repository?.commit?.perforceChangelist?.cid)
 
+    const hi = resolvedRepository.defaultBranch?.target.commit?.perforceChangelist?.cid
+        ? `changelist/${resolvedRepository.defaultBranch?.target.commit?.perforceChangelist?.cid}`
+        : resolvedRepository.defaultBranch?.abbrevName || 'HEAD'
     return {
         repoURL: '/' + params.repo,
         repoURLWithoutRevision: '/' + repoName,
@@ -59,7 +63,9 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
          * - a symbolic revision (e.g. a branch or tag name)
          */
         displayRevision: displayRevision(revision, resolvedRepository),
-        defaultBranch: resolvedRepository.defaultBranch?.abbrevName || 'HEAD',
+        defaultBranch: resolvedRepository.defaultBranch?.target.commit?.perforceChangelist?.cid
+            ? `changelist/${resolvedRepository.defaultBranch?.target.commit?.perforceChangelist?.cid}`
+            : resolvedRepository.defaultBranch?.abbrevName || 'HEAD',
         resolvedRepository: resolvedRepository,
         isPerforceDepot: resolvedRepository.externalRepository.serviceType === 'perforce',
         latestChangelistID,
