@@ -19,8 +19,8 @@ var buildEphemeralCommand = cli.Command{
 
 func writeAdditionalBuildCommandsSuggestion(version string) {
 	versionLine := fmt.Sprintf("The build will push images with the following tag/version: `%s`", version)
-	deployLine := fmt.Sprintf("create a deployment with this build by running `sg cloud deploy --version %s`", version)
-	upgradeLine := fmt.Sprintf("upgrade the existing deployment with this build by running `sg cloud upgrade --version %s`", version)
+	deployLine := fmt.Sprintf("create a deployment with this build by running `sg cloud eph deploy --version %s`", version)
+	upgradeLine := fmt.Sprintf("upgrade the existing deployment with this build by running `sg cloud eph upgrade --version %s`", version)
 	markdown := `%s
 Once this build completes, you can:
 * %s
