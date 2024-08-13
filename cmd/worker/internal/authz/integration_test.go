@@ -590,6 +590,7 @@ func TestIntegration_BitbucketServerPermissions(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
+	// BITBUCKETSERVER_TOKEN should be a valid OAuth2 token for the bitbucket server instance
 	token := os.Getenv("BITBUCKETSERVER_TOKEN")
 
 	spec := extsvc.AccountSpec{
