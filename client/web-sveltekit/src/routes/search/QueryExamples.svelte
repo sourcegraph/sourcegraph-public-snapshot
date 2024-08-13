@@ -137,6 +137,12 @@
         user-select: none;
         border: 1px solid transparent;
 
+        // We use box-shadow for focus styles. Since we set our own
+        // box-shadow we have to explicitly combine it with the focus box-shadow.
+        &:focus-visible {
+            box-shadow: var(--focus-shadow-inset), var(--search-input-shadow);
+        }
+
         &:hover {
             border-color: var(--border-color);
             text-decoration: none;
