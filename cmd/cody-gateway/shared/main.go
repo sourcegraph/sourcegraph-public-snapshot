@@ -241,7 +241,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		return errors.Wrap(err, "httpapi.NewHandler")
 	}
 	// Diagnostic and Maintenance layers, exposing additional APIs and endpoints.
-	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, redisCache.Pool(), cfg.DiagnosticsSecret, sources)
+	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, redisCache, cfg.DiagnosticsSecret, sources)
 	handler = httpapi.NewMaintenanceHandler(obctx.Logger, handler, cfg, redisCache)
 
 	// Collect request client for downstream handlers. Outside of dev, we always set up

@@ -40,13 +40,9 @@ func TestDeleteAllKeysWithPrefix(t *testing.T) {
 
 	kv := NewTestKeyValue()
 
-	c := kv.Pool().Get()
-	defer c.Close()
-
 	// If we are not on CI, skip the test if our redis connection fails.
 	if os.Getenv("CI") == "" {
-		_, err := c.Do("PING")
-		if err != nil {
+		if err := kv.Ping(); err != nil {
 			t.Skip("could not connect to redis", err)
 		}
 	}
