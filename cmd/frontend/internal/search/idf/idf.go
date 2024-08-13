@@ -1,3 +1,5 @@
+// Package idf computes and stores the inverse document frequency (IDF) of a set of repositories.
+//
 // TODO(beyang): should probably move this elsewhere
 package idf
 
