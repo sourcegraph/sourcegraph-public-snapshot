@@ -29,6 +29,7 @@ go_test(
     timeout = "long",
     srcs = ["migration_test.go"],
     embed = [":live"],
+    shard_count = 4,
     tags = [
         # Test requires localhost database
         "requires-network",
