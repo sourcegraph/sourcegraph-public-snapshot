@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	hashstructure "github.com/mitchellh/hashstructure/v2"
+	"github.com/mitchellh/hashstructure/v2"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 

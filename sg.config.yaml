@@ -179,6 +179,16 @@ commands:
       - internal
       - cmd/frontend
 
+  boolaji:
+    description: "testing testing"
+    cmd: |
+      echo "ISDEVELIPMENT:" $IS_DEVELOPMENT
+      echo "TRANSIENT_NUMBER:" TRANSIENT_NUMBER
+      echo "hello world in base"
+    env:
+      IS_DEVELOPMENT: 'true'
+      TRANSIENT_NUMBER: 2048
+
   gitserver-template: &gitserver_template
     cmd: .bin/gitserver
     install: |
@@ -1641,6 +1651,13 @@ commandsets:
       - enterprise-portal # required by Cody Gateway
     env:
       SOURCEGRAPHDOTCOM_MODE: true
+
+  dj:
+    commands:
+      - boolaji
+    env:
+      MASOC: redis
+      DOTCOM: true
 
   dotcom-cody-e2e:
     <<: *dotcom-defaults

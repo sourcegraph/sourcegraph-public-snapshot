@@ -1,10 +1,12 @@
 package sgconf
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/env"
 	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
@@ -83,7 +85,8 @@ type Commandset struct {
 	DockerCommands []string          `yaml:"dockerCommands"`
 	Checks         []string          `yaml:"checks"`
 	Env            map[string]string `yaml:"env"`
-	Deprecated     string            `yaml:"deprecated"`
+	NewEnv         map[string]env.EnvVar
+	Deprecated     string `yaml:"deprecated"`
 }
 
 // UnmarshalYAML implements the Unmarshaler interface.
@@ -137,18 +140,64 @@ func (c *Commandset) Merge(other *Commandset) *Commandset {
 		merged.Env[k] = v
 	}
 
+	for k, v := range other.NewEnv {
+		mv, exists := merged.NewEnv[k]
+		if exists {
+			merged.NewEnv[k] = env.CompareByPriority(mv, v)
+		}
+		merged.NewEnv[k] = v
+	}
+
 	return merged
 }
 
 // If you add an entry here, remember to add it to the merge function.
 type Config struct {
-	Env               map[string]string             `yaml:"env"`
+	Env               map[string]string `yaml:"env"`
+	NewEnv            map[string]env.EnvVar
 	Commands          map[string]*run.Command       `yaml:"commands"`
 	BazelCommands     map[string]*run.BazelCommand  `yaml:"bazelCommands"`
 	DockerCommands    map[string]*run.DockerCommand `yaml:"dockerCommands"`
 	Commandsets       map[string]*Commandset        `yaml:"commandsets"`
 	DefaultCommandset string                        `yaml:"defaultCommandset"`
 	Tests             map[string]*run.Command       `yaml:"tests"`
+
+	populated bool
+}
+
+func (c *Config) PopulateNewEnv(isBaseConfig bool) {
+	c.populated = true
+	gep := env.GlobalEnvPriority
+	cep := env.BaseCommandEnvPriority
+	csep := env.BaseCommandsetEnvPriority
+	if !isBaseConfig {
+		gep = env.OverrideGlobalEnvPriority
+		cep = env.OverrideCommandEnvPriority
+		csep = env.OverrideCommandsetEnvPriority
+	}
+
+	c.NewEnv = env.ConvertEnvMap(c.Env, gep)
+
+	for name, cmd := range c.Commands {
+		cmd.Config.NewEnv = env.ConvertEnvMap(cmd.Config.Env, cep)
+		c.Commands[name] = cmd
+	}
+
+	for _, dcmd := range c.DockerCommands {
+		dcmd.Config.NewEnv = env.ConvertEnvMap(dcmd.Config.Env, cep)
+	}
+
+	for _, bcmd := range c.BazelCommands {
+		bcmd.Config.NewEnv = env.ConvertEnvMap(bcmd.Config.Env, cep)
+	}
+
+	for _, cmds := range c.Commandsets {
+		cmds.NewEnv = env.ConvertEnvMap(cmds.Env, csep)
+	}
+
+	for _, ts := range c.Tests {
+		ts.Config.NewEnv = env.ConvertEnvMap(ts.Config.Env, cep)
+	}
 }
 
 // Merge merges the top-level entries of two Config objects, using the
@@ -159,10 +208,19 @@ func (c *Config) Merge(other *Config) *Config {
 		merged.Env[k] = v
 	}
 
+	for k, v := range other.NewEnv {
+		mv, exists := merged.NewEnv[k]
+		if exists {
+			merged.NewEnv[k] = env.CompareByPriority(mv, v)
+		}
+		merged.NewEnv[k] = v
+	}
+
 	for name, override := range other.Commands {
 		if original, ok := merged.Commands[name]; ok {
 			merged.Commands[name] = pointers.Ptr(original.Merge(*override))
 		} else {
+			fmt.Println("not ok")
 			merged.Commands[name] = override
 		}
 	}
@@ -214,13 +272,13 @@ func (c *Config) GetEnv(key string) string {
 		return val
 	}
 	// Otherwise check in globalConf.Env and *expand* the key, because a value might refer to another env var.
-	return os.Expand(c.Env[key], func(lookup string) string {
+	return os.Expand(c.NewEnv[key].Value, func(lookup string) string {
 		if lookup == key {
 			return os.Getenv(lookup)
 		}
 
-		if e, ok := c.Env[lookup]; ok {
-			return e
+		if e, ok := c.NewEnv[lookup]; ok {
+			return e.Value
 		}
 		return os.Getenv(lookup)
 	})

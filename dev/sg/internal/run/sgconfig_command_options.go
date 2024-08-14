@@ -1,6 +1,9 @@
 package run
 
-import "github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
+import (
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/env"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
+)
 
 // Common sg command parameters shared by all command types
 type SGConfigCommandOptions struct {
@@ -11,8 +14,9 @@ type SGConfigCommandOptions struct {
 	// A list of additional arguments to be passed to the command
 	Args         string            `yaml:"args"`
 	Env          map[string]string `yaml:"env"`
-	IgnoreStdout bool              `yaml:"ignoreStdout"`
-	IgnoreStderr bool              `yaml:"ignoreStderr"`
+	NewEnv       map[string]env.EnvVar
+	IgnoreStdout bool `yaml:"ignoreStdout"`
+	IgnoreStderr bool `yaml:"ignoreStderr"`
 	// If true, the runner will continue watching this commands dependencies
 	// if the command's last execution was successful (i.e exitCode = 0)
 	ContinueWatchOnExitZero bool `yaml:"continueWatchOnExit"`
@@ -40,6 +44,7 @@ func (opts SGConfigCommandOptions) Merge(other SGConfigCommandOptions) SGConfigC
 	merged.Logfile = mergeStrings(merged.Logfile, other.Logfile)
 	merged.RepositoryRoot = mergeStrings(merged.RepositoryRoot, other.RepositoryRoot)
 	merged.Env = mergeMaps(merged.Env, other.Env)
+	merged.NewEnv = env.Merge(merged.NewEnv, other.NewEnv)
 	merged.ExternalSecrets = mergeMaps(merged.ExternalSecrets, other.ExternalSecrets)
 
 	return merged

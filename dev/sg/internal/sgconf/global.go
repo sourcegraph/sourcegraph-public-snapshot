@@ -84,6 +84,7 @@ func parseConf(confFile, overwriteFile string, noOverwrite bool) (*Config, error
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to parse %q as configuration file", confFile)
 	}
+	conf.PopulateNewEnv(true)
 
 	if !noOverwrite {
 		if overwriteFile == DefaultOverwriteFile {
@@ -94,6 +95,7 @@ func parseConf(confFile, overwriteFile string, noOverwrite bool) (*Config, error
 			if err != nil {
 				return nil, errors.Wrapf(err, "Failed to parse %q as configuration overwrite file", confFile)
 			}
+			overwriteConf.PopulateNewEnv(false)
 			conf = conf.Merge(overwriteConf)
 		}
 	}
