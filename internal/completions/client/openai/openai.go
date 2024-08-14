@@ -74,7 +74,7 @@ func (c *openAIChatCompletionStreamClient) Complete(
 		logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 	}
 	return &types.CompletionResponse{
-		Completion: response.Choices[0].Text,
+		Completion: response.Choices[0].Message.Content,
 		StopReason: response.Choices[0].FinishReason,
 	}, nil
 }
@@ -138,7 +138,7 @@ func (c *openAIChatCompletionStreamClient) Stream(
 
 		if len(event.Choices) > 0 {
 			if request.Feature == types.CompletionsFeatureCode {
-				content += event.Choices[0].Text
+				content += event.Choices[0].Message.Content
 			} else {
 				content += event.Choices[0].Delta.Content
 			}

@@ -50,10 +50,14 @@ type openaiChoiceDelta struct {
 	Content string `json:"content"`
 }
 
+type openaiMessage struct {
+	Content string `json:"content"`
+}
+
 type openaiChoice struct {
 	Delta        openaiChoiceDelta `json:"delta"`
+	Message      openaiMessage     `json:"message"`
 	Role         string            `json:"role"`
-	Text         string            `json:"text"`
 	FinishReason string            `json:"finish_reason"`
 }
 
