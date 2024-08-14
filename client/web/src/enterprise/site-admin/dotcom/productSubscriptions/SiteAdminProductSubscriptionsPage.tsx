@@ -49,8 +49,6 @@ type FilterType = 'display_name' | 'sf_sub_id'
 const MAX_RESULTS = 50
 
 const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemetryRecorder }) => {
-    useEffect(() => telemetryRecorder.recordEvent('admin.productSubscriptions', 'view'), [telemetryRecorder])
-
     const [searchParams, setSearchParams] = useSearchParams()
     const [env, setEnv] = useState<EnterprisePortalEnvironment>(
         (searchParams.get(QUERY_PARAM_ENV) as EnterprisePortalEnvironment) || getDefaultEnterprisePortalEnv()
@@ -75,7 +73,12 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
             window.location.reload()
             return
         }
-    }, [query, searchParams, setSearchParams, filters, env])
+
+        telemetryRecorder.recordEvent('admin.productSubscriptions', 'view', {
+            version: 2,
+            privateMetadata: { env, filters },
+        })
+    }, [telemetryRecorder, query, searchParams, setSearchParams, filters, env])
 
     const [debouncedQuery] = useDebounce(query, 200)
 

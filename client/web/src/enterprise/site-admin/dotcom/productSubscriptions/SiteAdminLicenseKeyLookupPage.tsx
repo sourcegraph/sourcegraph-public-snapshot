@@ -60,8 +60,6 @@ const baseFilters: PartialMessage<ListEnterpriseSubscriptionLicensesFilter>[] = 
 ]
 
 const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemetryRecorder }) => {
-    useEffect(() => telemetryRecorder.recordEvent('admin.licenseKeyLookup', 'view'), [telemetryRecorder])
-
     const [searchParams, setSearchParams] = useSearchParams()
     const [env, setEnv] = useState<EnterprisePortalEnvironment>(
         (searchParams.get(QUERY_PARAM_ENV) as EnterprisePortalEnvironment) || getDefaultEnterprisePortalEnv()
@@ -90,7 +88,12 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
             window.location.reload()
             return
         }
-    }, [query, searchParams, setSearchParams, filters, env])
+
+        telemetryRecorder.recordEvent('admin.licenseKeyLookup', 'view', {
+            version: 2,
+            privateMetadata: { env, filters },
+        })
+    }, [telemetryRecorder, query, searchParams, setSearchParams, filters, env])
 
     let listFilters: PartialMessage<ListEnterpriseSubscriptionLicensesFilter>[] = []
     switch (filters.filter) {

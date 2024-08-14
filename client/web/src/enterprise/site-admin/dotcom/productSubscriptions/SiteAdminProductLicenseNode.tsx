@@ -147,6 +147,7 @@ export const SiteAdminProductLicenseNode: React.FunctionComponent<
                                 <Text className="mb-2">
                                     <small className="text-muted">
                                         Created <Timestamp date={created?.lastTransitionTime.toDate()} />
+                                        {created?.message && `: ${created.message}`}
                                     </small>
                                 </Text>
                             )}

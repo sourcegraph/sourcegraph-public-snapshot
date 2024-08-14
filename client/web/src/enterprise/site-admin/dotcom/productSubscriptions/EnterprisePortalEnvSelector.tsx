@@ -11,6 +11,12 @@ interface Props {
     setEnv: (env: EnterprisePortalEnvironment) => void
 }
 
+const helpText = `Select the Enterprise Portal environment to interact with. Each Enterprise Portal environment is completely isolated from each other.
+
+In general, there is no reason to select anything other than "Production".
+
+The "Development" environment can be used for testing changes, but subscriptions and licenses there are not visible to production integrations against Enterprise Portal.`
+
 export const EnterprisePortalEnvSelector: React.FunctionComponent<Props> = ({ env, setEnv }) => (
     <Select
         id="enterprise-portal-env"
@@ -25,7 +31,7 @@ export const EnterprisePortalEnvSelector: React.FunctionComponent<Props> = ({ en
         label={
             <>
                 Enterprise Portal{' '}
-                <Tooltip content="Selects the Enterprise Portal environment to interact with.">
+                <Tooltip content={helpText}>
                     <Icon aria-label="Show help text" svgPath={mdiInformationOutline} />
                 </Tooltip>
             </>
