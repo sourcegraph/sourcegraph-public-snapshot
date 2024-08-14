@@ -1,0 +1,2 @@
+emit:
+  - "@typespec/openapi3"

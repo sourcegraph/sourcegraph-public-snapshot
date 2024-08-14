@@ -4,8 +4,9 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "llmapi",
     srcs = [
-        "chat_completions_handler.go",
-        "chat_completions_models.go",
+        "handler_chat_completions.go",
+        "handler_models.go",
+        "handler_models_modelid.go",
         "httpapi.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/llmapi",
@@ -13,6 +14,7 @@ go_library(
     deps = [
         "//internal/completions/types",
         "//internal/modelconfig/types",
+        "//internal/openapi/goapi",
         "//lib/errors",
         "@com_github_google_uuid//:uuid",
         "@com_github_gorilla_mux//:mux",
@@ -23,8 +25,9 @@ go_library(
 go_test(
     name = "llmapi_test",
     srcs = [
-        "chat_completions_handler_test.go",
-        "chat_completions_models_test.go",
+        "handler_chat_completions_test.go",
+        "handler_models_modelid_test.go",
+        "handler_models_test.go",
         "utils_test.go",
     ],
     data = glob(["golly-recordings/**"]),
@@ -33,8 +36,10 @@ go_test(
         "//internal/golly",
         "//internal/httpcli",
         "//internal/modelconfig/types",
+        "//internal/openapi/goapi",
         "@com_github_gorilla_mux//:mux",
         "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

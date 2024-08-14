@@ -1,4 +1,4 @@
-package llmapi
+package goapi
 
 import (
 	"encoding/json"

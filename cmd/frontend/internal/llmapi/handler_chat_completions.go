@@ -11,13 +11,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sourcegraph/log"
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	completions "github.com/sourcegraph/sourcegraph/internal/completions/types"
 	types "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
+	"github.com/sourcegraph/sourcegraph/internal/openapi/goapi"
 )
 
 // chatCompletionsHandler implements the REST endpoint /chat/completions
@@ -34,12 +34,10 @@ type chatCompletionsHandler struct {
 	GetModelConfig GetModelConfigurationFunc
 }
 
-type GetModelConfigurationFunc func() (*types.ModelConfiguration, error)
-
 var _ http.Handler = (*chatCompletionsHandler)(nil)
 
 func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var chatCompletionRequest CreateChatCompletionRequest
+	var chatCompletionRequest goapi.CreateChatCompletionRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("io.ReadAll: %v", err), http.StatusInternalServerError)
@@ -78,19 +76,14 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	chatCompletionResponse := transformToOpenAIResponse(sgResp, chatCompletionRequest)
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	if err = json.NewEncoder(w).Encode(chatCompletionResponse); err != nil {
-		h.logger.Error("writing /chat/completions response body", log.Error(err))
-	}
-
+	serveJSON(w, r, h.logger, chatCompletionResponse)
 }
 
 // validateRequestedModel checks that are only use the modelref syntax
 // (${ProviderID}::${APIVersionID}::${ModelID}).  If the user passes the old
 // syntax `${ProviderID}/${ModelID}`, then we try to return a helpful error
 // message suggesting to use the new modelref syntax.
-func validateRequestedModel(chatCompletionRequest CreateChatCompletionRequest, modelConfig *types.ModelConfiguration) string {
+func validateRequestedModel(chatCompletionRequest goapi.CreateChatCompletionRequest, modelConfig *types.ModelConfiguration) string {
 	closestModelRef := ""
 	for _, model := range modelConfig.Models {
 		if string(model.ModelRef) == chatCompletionRequest.Model {
@@ -109,7 +102,7 @@ func validateRequestedModel(chatCompletionRequest CreateChatCompletionRequest, m
 	return fmt.Sprintf("model %s is not supported%s", chatCompletionRequest.Model, didYouMean)
 }
 
-func validateChatCompletionRequest(chatCompletionRequest CreateChatCompletionRequest) string {
+func validateChatCompletionRequest(chatCompletionRequest goapi.CreateChatCompletionRequest) string {
 
 	if chatCompletionRequest.N != nil && *chatCompletionRequest.N != 1 {
 		return "n must be nil or 1"
@@ -148,7 +141,7 @@ func validateChatCompletionRequest(chatCompletionRequest CreateChatCompletionReq
 	return ""
 }
 
-func transformToSGRequest(openAIReq CreateChatCompletionRequest) completions.CodyCompletionRequestParameters {
+func transformToSGRequest(openAIReq goapi.CreateChatCompletionRequest) completions.CodyCompletionRequestParameters {
 	maxTokens := 16 // Default in OpenAI openapi.yaml spec
 	if openAIReq.MaxTokens != nil {
 		maxTokens = *openAIReq.MaxTokens
@@ -178,7 +171,7 @@ func transformToSGRequest(openAIReq CreateChatCompletionRequest) completions.Cod
 	}
 }
 
-func transformMessages(messages []ChatCompletionRequestMessage) []completions.Message {
+func transformMessages(messages []goapi.ChatCompletionRequestMessage) []completions.Message {
 	// Transform OpenAI messages to Sourcegraph format
 	transformed := make([]completions.Message, len(messages))
 	for i, msg := range messages {
@@ -248,23 +241,23 @@ func (h *chatCompletionsHandler) forwardToAPIHandler(sgReq completions.CodyCompl
 	return &sgResp, nil
 }
 
-func transformToOpenAIResponse(sgResp *completions.CompletionResponse, openAIReq CreateChatCompletionRequest) CreateChatCompletionResponse {
-	return CreateChatCompletionResponse{
+func transformToOpenAIResponse(sgResp *completions.CompletionResponse, openAIReq goapi.CreateChatCompletionRequest) goapi.CreateChatCompletionResponse {
+	return goapi.CreateChatCompletionResponse{
 		ID:      "chat-" + generateUUID(),
 		Object:  "chat.completion",
 		Created: time.Now().Unix(),
 		Model:   openAIReq.Model,
-		Choices: []ChatCompletionChoice{
+		Choices: []goapi.ChatCompletionChoice{
 			{
 				Index: 0,
-				Message: ChatCompletionResponseMessage{
+				Message: goapi.ChatCompletionResponseMessage{
 					Role:    "assistant",
 					Content: sgResp.Completion,
 				},
 				FinishReason: sgResp.StopReason,
 			},
 		},
-		Usage: CompletionUsage{},
+		Usage: goapi.CompletionUsage{},
 	}
 }
 

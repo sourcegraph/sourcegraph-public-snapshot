@@ -4,3 +4,4 @@ packages:
   - '!client/cody-context-filters-test-dataset'
   - 'schema'
   - 'internal/appliance/frontend/maintenance'
+  - 'internal/openapi'
