@@ -1848,6 +1848,19 @@ importers:
 
   schema: {}
 
+  testing/e2e:
+    dependencies:
+      playwright:
+        specifier: 1.46.0
+        version: 1.46.0
+    devDependencies:
+      '@playwright/test':
+        specifier: 1.46.0
+        version: 1.46.0
+      '@types/node':
+        specifier: 20.11.19
+        version: 20.11.19
+
 packages:
 
   /@0no-co/graphql.web@1.0.4(graphql@15.4.0):
@@ -18301,7 +18314,6 @@ packages:
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
     requiresBuild: true
-    dev: true
     optional: true
 
   /fsevents@2.3.3:
@@ -23333,7 +23345,6 @@ packages:
     resolution: {integrity: sha512-9Y/d5UIwuJk8t3+lhmMSAJyNP1BUC/DqP3cQJDQQL/oWqAiuPTLgy7Q5dzglmTLwcBRdetzgNM/gni7ckfTr6A==}
     engines: {node: '>=18'}
     hasBin: true
-    dev: true
 
   /playwright@1.46.0:
     resolution: {integrity: sha512-XYJ5WvfefWONh1uPAUAi0H2xXV5S3vrtcnXe6uAOgdGi3aSpqOSXX08IAjXW34xitfuOJsvXU5anXZxPSEQiJw==}
@@ -23343,7 +23354,6 @@ packages:
       playwright-core: 1.46.0
     optionalDependencies:
       fsevents: 2.3.2
-    dev: true
 
   /plur@4.0.0:
     resolution: {integrity: sha512-4UGewrYgqDFw9vV6zNV+ADmPAUAfJPKtGvb/VdpQAx25X5f3xXdGdyOEVFwkl8Hl/tl7+xbeHqSEM+D5/TirUg==}
