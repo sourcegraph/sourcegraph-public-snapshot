@@ -214,7 +214,11 @@ echo "--- :bazel::docker: Pushing images..."
 log_file=$(mktemp)
 # shellcheck disable=SC2064
 trap "rm -rf $log_file" EXIT
-parallel --jobs=8 --line-buffer --joblog "$log_file" -v <"$job_file"
+
+# See dev/ci/internal/ci/images_operations.go
+JOBS="${PUSH_CONCURRENT_JOBS:-4}"
+
+parallel --jobs="$JOBS" --line-buffer --joblog "$log_file" -v <"$job_file"
 
 # Pretty print the output from gnu parallel
 while read -r line; do
