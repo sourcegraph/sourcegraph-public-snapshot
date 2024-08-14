@@ -1,11 +1,9 @@
 package llmapi
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
-	"github.com/sourcegraph/log"
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/openapi/goapi"
@@ -33,20 +31,11 @@ func (m *modelsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			OwnedBy: string(model.ModelRef.ProviderID()),
 		})
 	}
-	rawJSON, err := json.MarshalIndent(goapi.ListModelsResponse{
+
+	response := goapi.ListModelsResponse{
 		Object: "list",
 		Data:   data,
-	}, "", "    ")
-	if err != nil {
-		m.logger.Error("marshalling ListModelsReponse", log.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	if _, err := w.Write(rawJSON); err != nil {
-		http.Error(w, "writing response", http.StatusInternalServerError)
-		return
-	}
+	serveJSON(w, r, m.logger, response)
 }

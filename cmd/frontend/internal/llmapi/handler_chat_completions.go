@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sourcegraph/log"
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -77,12 +76,7 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	chatCompletionResponse := transformToOpenAIResponse(sgResp, chatCompletionRequest)
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	if err = json.NewEncoder(w).Encode(chatCompletionResponse); err != nil {
-		h.logger.Error("writing /chat/completions response body", log.Error(err))
-	}
-
+	serveJSON(w, r, h.logger, chatCompletionResponse)
 }
 
 // validateRequestedModel checks that are only use the modelref syntax
