@@ -161,12 +161,9 @@ type Config struct {
 	Commandsets       map[string]*Commandset        `yaml:"commandsets"`
 	DefaultCommandset string                        `yaml:"defaultCommandset"`
 	Tests             map[string]*run.Command       `yaml:"tests"`
-
-	populated bool
 }
 
 func (c *Config) PopulateNewEnv(isBaseConfig bool) {
-	c.populated = true
 	gep := env.GlobalEnvPriority
 	cep := env.BaseCommandEnvPriority
 	csep := env.BaseCommandsetEnvPriority

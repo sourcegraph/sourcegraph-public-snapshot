@@ -11,6 +11,7 @@ go_library(
     tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
+        "//dev/sg/internal/env",
         "//dev/sg/internal/run",
         "//dev/sg/root",
         "//lib/errors",
