@@ -11,13 +11,14 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func listSize(t *testing.T, store *rcache.FIFOList) int {
 	t.Helper()
-	size, err := store.Size()
+	size, err := store.Size(tenant.TestContext())
 	if err != nil {
 		t.Fatalf("failed to get size of FIFOList: %s", err)
 	}

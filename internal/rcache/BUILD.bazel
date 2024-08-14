@@ -11,6 +11,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/redispool",
+        "//internal/tenant",
         "//lib/errors",
         "@com_github_gomodule_redigo//redis",
         "@com_github_inconshreveable_log15//:log15",
@@ -30,6 +31,7 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//internal/tenant",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

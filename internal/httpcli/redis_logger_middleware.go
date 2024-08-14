@@ -118,7 +118,7 @@ func redisLoggerMiddleware() Middleware {
 
 			go func() {
 				// Save new item
-				if err := outboundRequestsRedisFIFOList.Insert(logItemJson); err != nil {
+				if err := outboundRequestsRedisFIFOList.Insert(req.Context(), logItemJson); err != nil {
 					// Log would get upset if we created a logger at init time → create logger on the fly
 					log.Scoped("redisLoggerMiddleware").Error("insert log item", log.Error(err))
 				}

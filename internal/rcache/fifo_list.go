@@ -37,7 +37,7 @@ func NewFIFOListDynamic(kv redispool.KeyValue, key string, size func() int) *FIF
 }
 
 // Insert b in the cache and drops the oldest inserted item if the size exceeds the configured limit.
-func (l *FIFOList) Insert(b []byte) error {
+func (l *FIFOList) Insert(ctx context.Context, b []byte) error {
 	if !utf8.Valid(b) {
 		return errors.Newf("rcache: keys must be valid utf8", "key", b)
 	}
@@ -47,28 +47,28 @@ func (l *FIFOList) Insert(b []byte) error {
 	// disabling.
 	maxSize := l.MaxSize()
 	if maxSize == 0 {
-		if err := l.kv().LTrim(key, 0, 0); err != nil {
+		if err := l.kv().LTrim(ctx, key, 0, 0); err != nil {
 			return errors.Wrap(err, "failed to execute redis command LTRIM")
 		}
 		return nil
 	}
 
 	// O(1) because we're just adding a single element.
-	if err := l.kv().LPush(key, b); err != nil {
+	if err := l.kv().LPush(ctx, key, b); err != nil {
 		return errors.Wrap(err, "failed to execute redis command LPUSH")
 	}
 
 	// O(1) because the average case if just about dropping the last element.
-	if err := l.kv().LTrim(key, 0, maxSize-1); err != nil {
+	if err := l.kv().LTrim(ctx, key, 0, maxSize-1); err != nil {
 		return errors.Wrap(err, "failed to execute redis command LTRIM")
 	}
 	return nil
 }
 
 // Size returns the number of elements in the list.
-func (l *FIFOList) Size() (int, error) {
+func (l *FIFOList) Size(ctx context.Context) (int, error) {
 	key := l.globalPrefixKey()
-	n, err := l.kv().LLen(key)
+	n, err := l.kv().LLen(ctx, key)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to execute redis command LLEN")
 	}
@@ -76,8 +76,8 @@ func (l *FIFOList) Size() (int, error) {
 }
 
 // IsEmpty returns true if the number of elements in the list is 0.
-func (l *FIFOList) IsEmpty() (bool, error) {
-	size, err := l.Size()
+func (l *FIFOList) IsEmpty(ctx context.Context) (bool, error) {
+	size, err := l.Size(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -110,7 +110,7 @@ func (l *FIFOList) Slice(ctx context.Context, from, to int) ([][]byte, error) {
 	}
 
 	key := l.globalPrefixKey()
-	bs, err := l.kv().WithContext(ctx).LRange(key, from, to).ByteSlices()
+	bs, err := l.kv().LRange(ctx, key, from, to).ByteSlices()
 	if err != nil {
 		// Return ctx error if it expired
 		if ctx.Err() != nil {

@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -498,11 +499,12 @@ type TB interface {
 func SetupForTest(t TB) {
 	t.Helper()
 
+	ctx := tenant.TestContext()
 	testStore = redispool.NewTestKeyValue()
 
 	// If we are not on CI, skip the test if our redis connection fails.
 	if os.Getenv("CI") == "" {
-		if err := testStore.Ping(); err != nil {
+		if err := testStore.Ping(ctx); err != nil {
 			t.Skip("could not connect to redis", err)
 		}
 	}

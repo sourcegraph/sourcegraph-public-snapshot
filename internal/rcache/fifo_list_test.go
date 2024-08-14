@@ -8,9 +8,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 func Test_FIFOList_All_OK(t *testing.T) {
+	ctx := tenant.TestContext()
 	kv := SetupForTest(t)
 
 	type testcase struct {
@@ -57,7 +60,7 @@ func Test_FIFOList_All_OK(t *testing.T) {
 		r := NewFIFOList(kv, c.key, c.size)
 		t.Run(fmt.Sprintf("size %d with %d entries", c.size, len(c.inserts)), func(t *testing.T) {
 			for _, b := range c.inserts {
-				if err := r.Insert(b); err != nil {
+				if err := r.Insert(ctx, b); err != nil {
 					t.Errorf("expected no error, got %q", err)
 				}
 			}
@@ -65,7 +68,7 @@ func Test_FIFOList_All_OK(t *testing.T) {
 			if err != nil {
 				t.Errorf("expected no error, got %q", err)
 			}
-			s, err := r.Size()
+			s, err := r.Size(ctx)
 			if err != nil {
 				t.Errorf("expected no error, got %q", err)
 			}
@@ -80,6 +83,7 @@ func Test_FIFOList_All_OK(t *testing.T) {
 }
 
 func Test_FIFOList_Slice_OK(t *testing.T) {
+	ctx := tenant.TestContext()
 	kv := SetupForTest(t)
 
 	type testcase struct {
@@ -146,7 +150,7 @@ func Test_FIFOList_Slice_OK(t *testing.T) {
 		r := NewFIFOList(kv, c.key, c.size)
 		t.Run(fmt.Sprintf("size %d with %d entries, [%d,%d]", c.size, len(c.inserts), c.from, c.to), func(t *testing.T) {
 			for _, b := range c.inserts {
-				if err := r.Insert(b); err != nil {
+				if err := r.Insert(ctx, b); err != nil {
 					t.Errorf("expected no error, got %q", err)
 				}
 			}
@@ -162,11 +166,12 @@ func Test_FIFOList_Slice_OK(t *testing.T) {
 }
 
 func Test_NewFIFOListDynamic(t *testing.T) {
+	ctx := tenant.TestContext()
 	kv := SetupForTest(t)
 	maxSize := 3
 	r := NewFIFOListDynamic(kv, "a", func() int { return maxSize })
 	for range 10 {
-		err := r.Insert([]byte("a"))
+		err := r.Insert(ctx, []byte("a"))
 		if err != nil {
 			t.Errorf("expected no error, got %q", err)
 		}
@@ -182,7 +187,7 @@ func Test_NewFIFOListDynamic(t *testing.T) {
 
 	maxSize = 2
 	for range 10 {
-		err := r.Insert([]byte("b"))
+		err := r.Insert(ctx, []byte("b"))
 		if err != nil {
 			t.Errorf("expected no error, got %q", err)
 		}
@@ -198,9 +203,10 @@ func Test_NewFIFOListDynamic(t *testing.T) {
 }
 
 func Test_FIFOListContextCancellation(t *testing.T) {
+	ctx := tenant.TestContext()
 	kv := SetupForTest(t)
 	r := NewFIFOList(kv, "a", 3)
-	err := r.Insert([]byte("a"))
+	err := r.Insert(ctx, []byte("a"))
 	if err != nil {
 		t.Errorf("expected no error, got %q", err)
 	}
@@ -213,14 +219,15 @@ func Test_FIFOListContextCancellation(t *testing.T) {
 }
 
 func Test_FIFOListIsEmpty(t *testing.T) {
+	ctx := tenant.TestContext()
 	kv := SetupForTest(t)
 	r := NewFIFOList(kv, "a", 3)
-	empty, err := r.IsEmpty()
+	empty, err := r.IsEmpty(ctx)
 	require.NoError(t, err)
 	assert.True(t, empty)
-	err = r.Insert([]byte("a"))
+	err = r.Insert(ctx, []byte("a"))
 	require.NoError(t, err)
-	empty, err = r.IsEmpty()
+	empty, err = r.IsEmpty(ctx)
 	require.NoError(t, err)
 	assert.False(t, empty)
 }

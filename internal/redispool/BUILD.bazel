@@ -35,6 +35,7 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//internal/tenant",
         "//lib/errors",
         "@com_github_gomodule_redigo//redis",
         "@com_github_sourcegraph_log//logtest",

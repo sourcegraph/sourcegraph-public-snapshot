@@ -35,7 +35,8 @@ func captureSlowRequest(logger log.Logger, req *types.SlowRequest) {
 		logger.Warn("failed to marshal slowRequest", log.Error(err))
 		return
 	}
-	if err := slowRequestRedisFIFOList.Insert(b); err != nil {
+	// TODO(multi-tenant): Remove context.Background()
+	if err := slowRequestRedisFIFOList.Insert(context.Background(), b); err != nil {
 		logger.Warn("failed to capture slowRequest", log.Error(err))
 	}
 }
@@ -111,7 +112,7 @@ func (r *slowRequestConnectionResolver) fetch(ctx context.Context) ([]*types.Slo
 			r.err = err
 		}
 		r.reqs, r.err = getSlowRequestsAfter(ctx, slowRequestRedisFIFOList, n, r.perPage)
-		size, err := slowRequestRedisFIFOList.Size()
+		size, err := slowRequestRedisFIFOList.Size(ctx)
 		if err != nil {
 			r.err = errors.Append(r.err, err)
 		} else {

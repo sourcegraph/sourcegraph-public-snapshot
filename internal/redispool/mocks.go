@@ -170,22 +170,22 @@ func NewMockKeyValue() *MockKeyValue {
 			},
 		},
 		LLenFunc: &KeyValueLLenFunc{
-			defaultHook: func(string) (r0 int, r1 error) {
+			defaultHook: func(context.Context, string) (r0 int, r1 error) {
 				return
 			},
 		},
 		LPushFunc: &KeyValueLPushFunc{
-			defaultHook: func(string, interface{}) (r0 error) {
+			defaultHook: func(context.Context, string, interface{}) (r0 error) {
 				return
 			},
 		},
 		LRangeFunc: &KeyValueLRangeFunc{
-			defaultHook: func(string, int, int) (r0 Values) {
+			defaultHook: func(context.Context, string, int, int) (r0 Values) {
 				return
 			},
 		},
 		LTrimFunc: &KeyValueLTrimFunc{
-			defaultHook: func(string, int, int) (r0 error) {
+			defaultHook: func(context.Context, string, int, int) (r0 error) {
 				return
 			},
 		},
@@ -195,7 +195,7 @@ func NewMockKeyValue() *MockKeyValue {
 			},
 		},
 		PingFunc: &KeyValuePingFunc{
-			defaultHook: func() (r0 error) {
+			defaultHook: func(context.Context) (r0 error) {
 				return
 			},
 		},
@@ -312,22 +312,22 @@ func NewStrictMockKeyValue() *MockKeyValue {
 			},
 		},
 		LLenFunc: &KeyValueLLenFunc{
-			defaultHook: func(string) (int, error) {
+			defaultHook: func(context.Context, string) (int, error) {
 				panic("unexpected invocation of MockKeyValue.LLen")
 			},
 		},
 		LPushFunc: &KeyValueLPushFunc{
-			defaultHook: func(string, interface{}) error {
+			defaultHook: func(context.Context, string, interface{}) error {
 				panic("unexpected invocation of MockKeyValue.LPush")
 			},
 		},
 		LRangeFunc: &KeyValueLRangeFunc{
-			defaultHook: func(string, int, int) Values {
+			defaultHook: func(context.Context, string, int, int) Values {
 				panic("unexpected invocation of MockKeyValue.LRange")
 			},
 		},
 		LTrimFunc: &KeyValueLTrimFunc{
-			defaultHook: func(string, int, int) error {
+			defaultHook: func(context.Context, string, int, int) error {
 				panic("unexpected invocation of MockKeyValue.LTrim")
 			},
 		},
@@ -337,7 +337,7 @@ func NewStrictMockKeyValue() *MockKeyValue {
 			},
 		},
 		PingFunc: &KeyValuePingFunc{
-			defaultHook: func() error {
+			defaultHook: func(context.Context) error {
 				panic("unexpected invocation of MockKeyValue.Ping")
 			},
 		},
@@ -1832,23 +1832,23 @@ func (c KeyValueKeysFuncCall) Results() []interface{} {
 // KeyValueLLenFunc describes the behavior when the LLen method of the
 // parent MockKeyValue instance is invoked.
 type KeyValueLLenFunc struct {
-	defaultHook func(string) (int, error)
-	hooks       []func(string) (int, error)
+	defaultHook func(context.Context, string) (int, error)
+	hooks       []func(context.Context, string) (int, error)
 	history     []KeyValueLLenFuncCall
 	mutex       sync.Mutex
 }
 
 // LLen delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockKeyValue) LLen(v0 string) (int, error) {
-	r0, r1 := m.LLenFunc.nextHook()(v0)
-	m.LLenFunc.appendCall(KeyValueLLenFuncCall{v0, r0, r1})
+func (m *MockKeyValue) LLen(v0 context.Context, v1 string) (int, error) {
+	r0, r1 := m.LLenFunc.nextHook()(v0, v1)
+	m.LLenFunc.appendCall(KeyValueLLenFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the LLen method of the
 // parent MockKeyValue instance is invoked and the hook queue is empty.
-func (f *KeyValueLLenFunc) SetDefaultHook(hook func(string) (int, error)) {
+func (f *KeyValueLLenFunc) SetDefaultHook(hook func(context.Context, string) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1856,7 +1856,7 @@ func (f *KeyValueLLenFunc) SetDefaultHook(hook func(string) (int, error)) {
 // LLen method of the parent MockKeyValue instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *KeyValueLLenFunc) PushHook(hook func(string) (int, error)) {
+func (f *KeyValueLLenFunc) PushHook(hook func(context.Context, string) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1865,19 +1865,19 @@ func (f *KeyValueLLenFunc) PushHook(hook func(string) (int, error)) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *KeyValueLLenFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(string) (int, error) {
+	f.SetDefaultHook(func(context.Context, string) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *KeyValueLLenFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(string) (int, error) {
+	f.PushHook(func(context.Context, string) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *KeyValueLLenFunc) nextHook() func(string) (int, error) {
+func (f *KeyValueLLenFunc) nextHook() func(context.Context, string) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1912,7 +1912,10 @@ func (f *KeyValueLLenFunc) History() []KeyValueLLenFuncCall {
 type KeyValueLLenFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 string
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -1924,7 +1927,7 @@ type KeyValueLLenFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c KeyValueLLenFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -1936,23 +1939,23 @@ func (c KeyValueLLenFuncCall) Results() []interface{} {
 // KeyValueLPushFunc describes the behavior when the LPush method of the
 // parent MockKeyValue instance is invoked.
 type KeyValueLPushFunc struct {
-	defaultHook func(string, interface{}) error
-	hooks       []func(string, interface{}) error
+	defaultHook func(context.Context, string, interface{}) error
+	hooks       []func(context.Context, string, interface{}) error
 	history     []KeyValueLPushFuncCall
 	mutex       sync.Mutex
 }
 
 // LPush delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockKeyValue) LPush(v0 string, v1 interface{}) error {
-	r0 := m.LPushFunc.nextHook()(v0, v1)
-	m.LPushFunc.appendCall(KeyValueLPushFuncCall{v0, v1, r0})
+func (m *MockKeyValue) LPush(v0 context.Context, v1 string, v2 interface{}) error {
+	r0 := m.LPushFunc.nextHook()(v0, v1, v2)
+	m.LPushFunc.appendCall(KeyValueLPushFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the LPush method of the
 // parent MockKeyValue instance is invoked and the hook queue is empty.
-func (f *KeyValueLPushFunc) SetDefaultHook(hook func(string, interface{}) error) {
+func (f *KeyValueLPushFunc) SetDefaultHook(hook func(context.Context, string, interface{}) error) {
 	f.defaultHook = hook
 }
 
@@ -1960,7 +1963,7 @@ func (f *KeyValueLPushFunc) SetDefaultHook(hook func(string, interface{}) error)
 // LPush method of the parent MockKeyValue instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *KeyValueLPushFunc) PushHook(hook func(string, interface{}) error) {
+func (f *KeyValueLPushFunc) PushHook(hook func(context.Context, string, interface{}) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1969,19 +1972,19 @@ func (f *KeyValueLPushFunc) PushHook(hook func(string, interface{}) error) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *KeyValueLPushFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(string, interface{}) error {
+	f.SetDefaultHook(func(context.Context, string, interface{}) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *KeyValueLPushFunc) PushReturn(r0 error) {
-	f.PushHook(func(string, interface{}) error {
+	f.PushHook(func(context.Context, string, interface{}) error {
 		return r0
 	})
 }
 
-func (f *KeyValueLPushFunc) nextHook() func(string, interface{}) error {
+func (f *KeyValueLPushFunc) nextHook() func(context.Context, string, interface{}) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2016,10 +2019,13 @@ func (f *KeyValueLPushFunc) History() []KeyValueLPushFuncCall {
 type KeyValueLPushFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 string
+	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 interface{}
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 interface{}
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -2028,7 +2034,7 @@ type KeyValueLPushFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c KeyValueLPushFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -2040,23 +2046,23 @@ func (c KeyValueLPushFuncCall) Results() []interface{} {
 // KeyValueLRangeFunc describes the behavior when the LRange method of the
 // parent MockKeyValue instance is invoked.
 type KeyValueLRangeFunc struct {
-	defaultHook func(string, int, int) Values
-	hooks       []func(string, int, int) Values
+	defaultHook func(context.Context, string, int, int) Values
+	hooks       []func(context.Context, string, int, int) Values
 	history     []KeyValueLRangeFuncCall
 	mutex       sync.Mutex
 }
 
 // LRange delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockKeyValue) LRange(v0 string, v1 int, v2 int) Values {
-	r0 := m.LRangeFunc.nextHook()(v0, v1, v2)
-	m.LRangeFunc.appendCall(KeyValueLRangeFuncCall{v0, v1, v2, r0})
+func (m *MockKeyValue) LRange(v0 context.Context, v1 string, v2 int, v3 int) Values {
+	r0 := m.LRangeFunc.nextHook()(v0, v1, v2, v3)
+	m.LRangeFunc.appendCall(KeyValueLRangeFuncCall{v0, v1, v2, v3, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the LRange method of the
 // parent MockKeyValue instance is invoked and the hook queue is empty.
-func (f *KeyValueLRangeFunc) SetDefaultHook(hook func(string, int, int) Values) {
+func (f *KeyValueLRangeFunc) SetDefaultHook(hook func(context.Context, string, int, int) Values) {
 	f.defaultHook = hook
 }
 
@@ -2064,7 +2070,7 @@ func (f *KeyValueLRangeFunc) SetDefaultHook(hook func(string, int, int) Values) 
 // LRange method of the parent MockKeyValue instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *KeyValueLRangeFunc) PushHook(hook func(string, int, int) Values) {
+func (f *KeyValueLRangeFunc) PushHook(hook func(context.Context, string, int, int) Values) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2073,19 +2079,19 @@ func (f *KeyValueLRangeFunc) PushHook(hook func(string, int, int) Values) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *KeyValueLRangeFunc) SetDefaultReturn(r0 Values) {
-	f.SetDefaultHook(func(string, int, int) Values {
+	f.SetDefaultHook(func(context.Context, string, int, int) Values {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *KeyValueLRangeFunc) PushReturn(r0 Values) {
-	f.PushHook(func(string, int, int) Values {
+	f.PushHook(func(context.Context, string, int, int) Values {
 		return r0
 	})
 }
 
-func (f *KeyValueLRangeFunc) nextHook() func(string, int, int) Values {
+func (f *KeyValueLRangeFunc) nextHook() func(context.Context, string, int, int) Values {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2120,13 +2126,16 @@ func (f *KeyValueLRangeFunc) History() []KeyValueLRangeFuncCall {
 type KeyValueLRangeFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 string
+	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 Values
@@ -2135,7 +2144,7 @@ type KeyValueLRangeFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c KeyValueLRangeFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -2147,23 +2156,23 @@ func (c KeyValueLRangeFuncCall) Results() []interface{} {
 // KeyValueLTrimFunc describes the behavior when the LTrim method of the
 // parent MockKeyValue instance is invoked.
 type KeyValueLTrimFunc struct {
-	defaultHook func(string, int, int) error
-	hooks       []func(string, int, int) error
+	defaultHook func(context.Context, string, int, int) error
+	hooks       []func(context.Context, string, int, int) error
 	history     []KeyValueLTrimFuncCall
 	mutex       sync.Mutex
 }
 
 // LTrim delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockKeyValue) LTrim(v0 string, v1 int, v2 int) error {
-	r0 := m.LTrimFunc.nextHook()(v0, v1, v2)
-	m.LTrimFunc.appendCall(KeyValueLTrimFuncCall{v0, v1, v2, r0})
+func (m *MockKeyValue) LTrim(v0 context.Context, v1 string, v2 int, v3 int) error {
+	r0 := m.LTrimFunc.nextHook()(v0, v1, v2, v3)
+	m.LTrimFunc.appendCall(KeyValueLTrimFuncCall{v0, v1, v2, v3, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the LTrim method of the
 // parent MockKeyValue instance is invoked and the hook queue is empty.
-func (f *KeyValueLTrimFunc) SetDefaultHook(hook func(string, int, int) error) {
+func (f *KeyValueLTrimFunc) SetDefaultHook(hook func(context.Context, string, int, int) error) {
 	f.defaultHook = hook
 }
 
@@ -2171,7 +2180,7 @@ func (f *KeyValueLTrimFunc) SetDefaultHook(hook func(string, int, int) error) {
 // LTrim method of the parent MockKeyValue instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *KeyValueLTrimFunc) PushHook(hook func(string, int, int) error) {
+func (f *KeyValueLTrimFunc) PushHook(hook func(context.Context, string, int, int) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2180,19 +2189,19 @@ func (f *KeyValueLTrimFunc) PushHook(hook func(string, int, int) error) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *KeyValueLTrimFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(string, int, int) error {
+	f.SetDefaultHook(func(context.Context, string, int, int) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *KeyValueLTrimFunc) PushReturn(r0 error) {
-	f.PushHook(func(string, int, int) error {
+	f.PushHook(func(context.Context, string, int, int) error {
 		return r0
 	})
 }
 
-func (f *KeyValueLTrimFunc) nextHook() func(string, int, int) error {
+func (f *KeyValueLTrimFunc) nextHook() func(context.Context, string, int, int) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2227,13 +2236,16 @@ func (f *KeyValueLTrimFunc) History() []KeyValueLTrimFuncCall {
 type KeyValueLTrimFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 string
+	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -2242,7 +2254,7 @@ type KeyValueLTrimFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c KeyValueLTrimFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -2355,23 +2367,23 @@ func (c KeyValueMGetFuncCall) Results() []interface{} {
 // KeyValuePingFunc describes the behavior when the Ping method of the
 // parent MockKeyValue instance is invoked.
 type KeyValuePingFunc struct {
-	defaultHook func() error
-	hooks       []func() error
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
 	history     []KeyValuePingFuncCall
 	mutex       sync.Mutex
 }
 
 // Ping delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockKeyValue) Ping() error {
-	r0 := m.PingFunc.nextHook()()
-	m.PingFunc.appendCall(KeyValuePingFuncCall{r0})
+func (m *MockKeyValue) Ping(v0 context.Context) error {
+	r0 := m.PingFunc.nextHook()(v0)
+	m.PingFunc.appendCall(KeyValuePingFuncCall{v0, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the Ping method of the
 // parent MockKeyValue instance is invoked and the hook queue is empty.
-func (f *KeyValuePingFunc) SetDefaultHook(hook func() error) {
+func (f *KeyValuePingFunc) SetDefaultHook(hook func(context.Context) error) {
 	f.defaultHook = hook
 }
 
@@ -2379,7 +2391,7 @@ func (f *KeyValuePingFunc) SetDefaultHook(hook func() error) {
 // Ping method of the parent MockKeyValue instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *KeyValuePingFunc) PushHook(hook func() error) {
+func (f *KeyValuePingFunc) PushHook(hook func(context.Context) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2388,19 +2400,19 @@ func (f *KeyValuePingFunc) PushHook(hook func() error) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *KeyValuePingFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func() error {
+	f.SetDefaultHook(func(context.Context) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *KeyValuePingFunc) PushReturn(r0 error) {
-	f.PushHook(func() error {
+	f.PushHook(func(context.Context) error {
 		return r0
 	})
 }
 
-func (f *KeyValuePingFunc) nextHook() func() error {
+func (f *KeyValuePingFunc) nextHook() func(context.Context) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2433,6 +2445,9 @@ func (f *KeyValuePingFunc) History() []KeyValuePingFuncCall {
 // KeyValuePingFuncCall is an object that describes an invocation of method
 // Ping on an instance of MockKeyValue.
 type KeyValuePingFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -2441,7 +2456,7 @@ type KeyValuePingFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c KeyValuePingFuncCall) Args() []interface{} {
-	return []interface{}{}
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this

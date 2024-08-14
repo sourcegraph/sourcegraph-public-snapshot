@@ -12,6 +12,7 @@ import (
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -243,6 +244,7 @@ const testAddr = "127.0.0.1:6379"
 func SetupForTest(t testing.TB) redispool.KeyValue {
 	t.Helper()
 
+	ctx := tenant.TestContext()
 	testStore = redispool.NewTestKeyValue()
 	t.Cleanup(func() {
 		testStore.Pool().Close()
@@ -251,7 +253,7 @@ func SetupForTest(t testing.TB) redispool.KeyValue {
 
 	// If we are not on CI, skip the test if our redis connection fails.
 	if os.Getenv("CI") == "" {
-		if err := testStore.Ping(); err != nil {
+		if err := testStore.Ping(ctx); err != nil {
 			t.Skip("could not connect to redis", err)
 		}
 	}

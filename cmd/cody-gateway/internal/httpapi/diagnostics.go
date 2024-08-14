@@ -110,5 +110,5 @@ func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, redisCache 
 }
 
 func healthz(ctx context.Context, cache redispool.KeyValue) error {
-	return cache.WithContext(ctx).Ping()
+	return cache.Ping(ctx)
 }

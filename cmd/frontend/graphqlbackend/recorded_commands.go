@@ -51,7 +51,7 @@ func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *Recorde
 		return gqlutil.NewSliceConnectionResolver([]RecordedCommandResolver{}, 0, currentEnd), nil
 	}
 	store := rcache.NewFIFOList(redispool.Cache, wrexec.GetFIFOListKey(r.Name()), recordingConf.Size)
-	empty, err := store.IsEmpty()
+	empty, err := store.IsEmpty(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *Recorde
 		return nil, err
 	}
 
-	size, err := store.Size()
+	size, err := store.Size(ctx)
 	if err != nil {
 		return nil, err
 	}

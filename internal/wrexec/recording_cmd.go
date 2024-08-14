@@ -113,7 +113,7 @@ func (rc *RecordingCmd) WithRedactorFunc(f RedactorFunc) *RecordingCmd {
 	return rc
 }
 
-func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cmd) {
+func (rc *RecordingCmd) after(ctx context.Context, logger log.Logger, cmd *exec.Cmd) {
 	// ensure we don't record ourselves twice if the caller calls Wait() twice for example.
 	defer func() { rc.done = true }()
 	if rc.done {
@@ -163,7 +163,7 @@ func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cm
 		return
 	}
 
-	_ = rc.store.Insert(data)
+	_ = rc.store.Insert(ctx, data)
 }
 
 // RecordingCommandFactory stores a ShouldRecord that will be used to create a new RecordingCommand

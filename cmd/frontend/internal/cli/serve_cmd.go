@@ -460,7 +460,7 @@ func waitForRedis(logger sglog.Logger, kv redispool.KeyValue) {
 	var err error
 	for {
 		time.Sleep(150 * time.Millisecond)
-		err = kv.Ping()
+		err = kv.Ping(context.Background())
 		if err == nil {
 			return
 		}

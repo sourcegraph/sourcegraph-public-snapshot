@@ -145,7 +145,7 @@ func TestRecordedCommandsResolver(t *testing.T) {
 			Dir:      "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
 			Path:     "/opt/homebrew/bin/git",
 		}
-		err = r.Insert(marshalCmd(t, cmd1))
+		err = r.Insert(ctx, marshalCmd(t, cmd1))
 		require.NoError(t, err)
 
 		RunTest(t, &Test{
@@ -227,11 +227,11 @@ func TestRecordedCommandsResolver(t *testing.T) {
 
 		r := rcache.NewFIFOList(kv, wrexec.GetFIFOListKey(repoName), 3)
 
-		err = r.Insert(marshalCmd(t, cmd1))
+		err = r.Insert(ctx, marshalCmd(t, cmd1))
 		require.NoError(t, err)
-		err = r.Insert(marshalCmd(t, cmd2))
+		err = r.Insert(ctx, marshalCmd(t, cmd2))
 		require.NoError(t, err)
-		err = r.Insert(marshalCmd(t, cmd3))
+		err = r.Insert(ctx, marshalCmd(t, cmd3))
 		require.NoError(t, err)
 
 		t.Run("limit within bounds", func(t *testing.T) {
@@ -525,7 +525,7 @@ func TestRecordedCommandsResolver(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "must be site admin",
-					Path:    []any{string("repository"), string("recordedCommands")},
+					Path:    []any{"repository", "recordedCommands"},
 				},
 			},
 		})

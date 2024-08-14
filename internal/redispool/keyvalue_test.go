@@ -11,11 +11,13 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestKeyValue(t *testing.T) {
 	kv := redisKeyValueForTest(t)
+	ctx := tenant.TestContext()
 	errWrongType := errors.New("WRONGTYPE")
 
 	// "strings" is the name of the classic group of commands in redis (get, set, ttl, etc). We call it classic since that is less confusing.
@@ -127,53 +129,53 @@ func TestKeyValue(t *testing.T) {
 
 		// Redis behaviour on unset lists
 		require.ListLen(kv, "list-unset-0", 0)
-		require.AllEqual(kv.LRange("list-unset-1", 0, 10), bytes())
-		require.Works(kv.LTrim("list-unset-2", 0, 10))
+		require.AllEqual(kv.LRange(ctx, "list-unset-1", 0, 10), bytes())
+		require.Works(kv.LTrim(ctx, "list-unset-2", 0, 10))
 
-		require.Works(kv.LPush("list", "4"))
-		require.Works(kv.LPush("list", "3"))
-		require.Works(kv.LPush("list", "2"))
-		require.Works(kv.LPush("list", "1"))
-		require.Works(kv.LPush("list", "0"))
+		require.Works(kv.LPush(ctx, "list", "4"))
+		require.Works(kv.LPush(ctx, "list", "3"))
+		require.Works(kv.LPush(ctx, "list", "2"))
+		require.Works(kv.LPush(ctx, "list", "1"))
+		require.Works(kv.LPush(ctx, "list", "0"))
 
 		// Different ways we get the full list back
-		require.AllEqual(kv.LRange("list", 0, 10), []string{"0", "1", "2", "3", "4"})
-		require.AllEqual(kv.LRange("list", 0, 10), bytes("0", "1", "2", "3", "4"))
-		require.AllEqual(kv.LRange("list", 0, -1), bytes("0", "1", "2", "3", "4"))
-		require.AllEqual(kv.LRange("list", -5, -1), bytes("0", "1", "2", "3", "4"))
-		require.AllEqual(kv.LRange("list", 0, 4), bytes("0", "1", "2", "3", "4"))
+		require.AllEqual(kv.LRange(ctx, "list", 0, 10), []string{"0", "1", "2", "3", "4"})
+		require.AllEqual(kv.LRange(ctx, "list", 0, 10), bytes("0", "1", "2", "3", "4"))
+		require.AllEqual(kv.LRange(ctx, "list", 0, -1), bytes("0", "1", "2", "3", "4"))
+		require.AllEqual(kv.LRange(ctx, "list", -5, -1), bytes("0", "1", "2", "3", "4"))
+		require.AllEqual(kv.LRange(ctx, "list", 0, 4), bytes("0", "1", "2", "3", "4"))
 
 		// If stop < start we return nothing
-		require.AllEqual(kv.LRange("list", -1, 0), bytes())
+		require.AllEqual(kv.LRange(ctx, "list", -1, 0), bytes())
 
 		// Subsets
-		require.AllEqual(kv.LRange("list", 1, 3), bytes("1", "2", "3"))
-		require.AllEqual(kv.LRange("list", 1, -2), bytes("1", "2", "3"))
-		require.AllEqual(kv.LRange("list", -4, 3), bytes("1", "2", "3"))
-		require.AllEqual(kv.LRange("list", -4, -2), bytes("1", "2", "3"))
+		require.AllEqual(kv.LRange(ctx, "list", 1, 3), bytes("1", "2", "3"))
+		require.AllEqual(kv.LRange(ctx, "list", 1, -2), bytes("1", "2", "3"))
+		require.AllEqual(kv.LRange(ctx, "list", -4, 3), bytes("1", "2", "3"))
+		require.AllEqual(kv.LRange(ctx, "list", -4, -2), bytes("1", "2", "3"))
 
 		// Trim noop
-		require.Works(kv.LTrim("list", 0, 10))
-		require.AllEqual(kv.LRange("list", 0, 4), bytes("0", "1", "2", "3", "4"))
+		require.Works(kv.LTrim(ctx, "list", 0, 10))
+		require.AllEqual(kv.LRange(ctx, "list", 0, 4), bytes("0", "1", "2", "3", "4"))
 
 		// Trim popback
-		require.Works(kv.LTrim("list", 0, -2))
-		require.AllEqual(kv.LRange("list", 0, 4), bytes("0", "1", "2", "3"))
+		require.Works(kv.LTrim(ctx, "list", 0, -2))
+		require.AllEqual(kv.LRange(ctx, "list", 0, 4), bytes("0", "1", "2", "3"))
 		require.ListLen(kv, "list", 4)
 
 		// Trim popfront
-		require.Works(kv.LTrim("list", 1, 10))
-		require.AllEqual(kv.LRange("list", 0, 4), bytes("1", "2", "3"))
+		require.Works(kv.LTrim(ctx, "list", 1, 10))
+		require.AllEqual(kv.LRange(ctx, "list", 0, 4), bytes("1", "2", "3"))
 		require.ListLen(kv, "list", 3)
 
 		// Trim all
-		require.Works(kv.LTrim("list", -1, -2))
-		require.AllEqual(kv.LRange("list", 0, 4), bytes())
+		require.Works(kv.LTrim(ctx, "list", -1, -2))
+		require.AllEqual(kv.LRange(ctx, "list", 0, 4), bytes())
 		require.ListLen(kv, "list", 0)
 
-		require.Works(kv.LPush("funky2D", []byte{100, 255}))
-		require.Works(kv.LPush("funky2D", []byte{0, 10}))
-		require.AllEqual(kv.LRange("funky2D", 0, -1), [][]byte{{0, 10}, {100, 255}})
+		require.Works(kv.LPush(ctx, "funky2D", []byte{100, 255}))
+		require.Works(kv.LPush(ctx, "funky2D", []byte{0, 10}))
+		require.AllEqual(kv.LRange(ctx, "funky2D", 0, -1), [][]byte{{0, 10}, {100, 255}})
 	})
 
 	t.Run("empty", func(t *testing.T) {
@@ -191,9 +193,9 @@ func TestKeyValue(t *testing.T) {
 
 		// List group. Once empty we should be able to doSimple a Get without a
 		// wrongtype error.
-		require.Works(kv.LPush("empty-list", "here today gone tomorrow"))
+		require.Works(kv.LPush(ctx, "empty-list", "here today gone tomorrow"))
 		require.Equal(kv.Get("empty-list"), errWrongType)
-		require.Works(kv.LTrim("empty-list", -1, -2))
+		require.Works(kv.LTrim(ctx, "empty-list", -1, -2))
 		require.Equal(kv.Get("empty-list"), nil)
 	})
 
@@ -285,20 +287,20 @@ func TestKeyValue(t *testing.T) {
 		require := require{TB: t}
 
 		// Hash mutations keep expire
-		require.Works(kv.LPush("expires-unset-list", "1"))
-		require.Works(kv.LPush("expires-set-list", "1"))
+		require.Works(kv.LPush(ctx, "expires-unset-list", "1"))
+		require.Works(kv.LPush(ctx, "expires-set-list", "1"))
 		require.Works(kv.Expire("expires-set-list", 60))
 		require.TTL(kv, "expires-unset-list", -1)
 		require.TTL(kv, "expires-set-list", 60)
-		require.AllEqual(kv.LRange("expires-unset-list", 0, -1), []string{"1"})
-		require.AllEqual(kv.LRange("expires-set-list", 0, -1), []string{"1"})
+		require.AllEqual(kv.LRange(ctx, "expires-unset-list", 0, -1), []string{"1"})
+		require.AllEqual(kv.LRange(ctx, "expires-set-list", 0, -1), []string{"1"})
 
-		require.Works(kv.LPush("expires-unset-list", "2"))
-		require.Works(kv.LPush("expires-set-list", "2"))
+		require.Works(kv.LPush(ctx, "expires-unset-list", "2"))
+		require.Works(kv.LPush(ctx, "expires-set-list", "2"))
 		require.TTL(kv, "expires-unset-list", -1)
 		require.TTL(kv, "expires-set-list", 60)
-		require.AllEqual(kv.LRange("expires-unset-list", 0, -1), []string{"2", "1"})
-		require.AllEqual(kv.LRange("expires-set-list", 0, -1), []string{"2", "1"})
+		require.AllEqual(kv.LRange(ctx, "expires-unset-list", 0, -1), []string{"2", "1"})
+		require.AllEqual(kv.LRange(ctx, "expires-set-list", 0, -1), []string{"2", "1"})
 
 		// Check expiration happens on hashes
 		require.Works(kv.Expire("expires-set-list", 1))
@@ -320,7 +322,7 @@ func TestKeyValue(t *testing.T) {
 
 		require.Works(kv.Set("wrongtype-string", "1"))
 		require.Works(kv.HSet("wrongtype-hash", "1", "1"))
-		require.Works(kv.LPush("wrongtype-list", "1"))
+		require.Works(kv.LPush(ctx, "wrongtype-list", "1"))
 
 		for _, k := range []string{"wrongtype-string", "wrongtype-hash", "wrongtype-list"} {
 			// Ensure we fail Get when used against non string group
@@ -341,11 +343,11 @@ func TestKeyValue(t *testing.T) {
 
 			// Ensure we fail lists when used against non lists.
 			if k != "wrongtype-list" {
-				_, err := kv.LLen(k)
+				_, err := kv.LLen(ctx, k)
 				requireWrongType(err)
-				requireWrongType(kv.LPush(k, "1"))
-				requireWrongType(kv.LTrim(k, 1, 2))
-				require.Equal(redispool.Value(kv.LRange(k, 1, 2)), errWrongType)
+				requireWrongType(kv.LPush(ctx, k, "1"))
+				requireWrongType(kv.LTrim(ctx, k, 1, 2))
+				require.Equal(redispool.Value(kv.LRange(ctx, k, 1, 2)), errWrongType)
 			}
 
 			// Ensure we can always override values with set
@@ -357,13 +359,13 @@ func TestKeyValue(t *testing.T) {
 	t.Run("ping", func(t *testing.T) {
 		t.Parallel()
 		require := require{TB: t}
-		require.Works(kv.Ping())
+		require.Works(kv.Ping(ctx))
 
 		brokenKv := redispool.NewKeyValue("nonexistent-redis-server:6379", &redis.Pool{
 			MaxIdle:     3,
 			IdleTimeout: 5 * time.Second,
 		})
-		if brokenKv.Ping() == nil {
+		if brokenKv.Ping(ctx) == nil {
 			t.Fatalf("ping: expected error, but did not receive one")
 		}
 	})
@@ -416,12 +418,13 @@ func TestKeyValueWithPrefix(t *testing.T) {
 func redisKeyValueForTest(t *testing.T) redispool.KeyValue {
 	t.Helper()
 
+	ctx := tenant.TestContext()
 	kv := redispool.NewTestKeyValue()
 	prefix := "__test__" + t.Name()
 
 	// If we are not on CI, skip the test if our redis connection fails.
 	if os.Getenv("CI") == "" {
-		if err := kv.Ping(); err != nil {
+		if err := kv.Ping(ctx); err != nil {
 			t.Skip("could not connect to redis", err)
 		}
 	}
@@ -526,7 +529,7 @@ func (t require) AllEqual(got redispool.Values, want any) {
 }
 func (t require) ListLen(kv redispool.KeyValue, key string, want int) {
 	t.Helper()
-	got, err := kv.LLen(key)
+	got, err := kv.LLen(tenant.TestContext(), key)
 	if err != nil {
 		t.Fatal("LLen returned error", err)
 	}

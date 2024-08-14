@@ -173,7 +173,8 @@ func (m *Recorder) saveRun(jobName string, routineName string, hostName string, 
 	}
 
 	// Save run
-	err = getRecentRuns(m.rcache, jobName, routineName, hostName).Insert(runJson)
+	// TODO(multi-tenant): Remove context.Background()
+	err = getRecentRuns(m.rcache, jobName, routineName, hostName).Insert(context.Background(), runJson)
 	if err != nil {
 		return errors.Wrap(err, "save run")
 	}

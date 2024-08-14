@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 func TestSchemeMatcher(t *testing.T) {
@@ -38,11 +40,12 @@ func TestMain(m *testing.M) {
 func TestDeleteAllKeysWithPrefix(t *testing.T) {
 	t.Helper()
 
+	ctx := tenant.TestContext()
 	kv := NewTestKeyValue()
 
 	// If we are not on CI, skip the test if our redis connection fails.
 	if os.Getenv("CI") == "" {
-		if err := kv.Ping(); err != nil {
+		if err := kv.Ping(ctx); err != nil {
 			t.Skip("could not connect to redis", err)
 		}
 	}
