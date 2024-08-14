@@ -1,4 +1,4 @@
-package azureoauth
+package bitbucketserveroauth
 
 import (
 	"net/http"
@@ -9,13 +9,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
+const authPrefix = auth.AuthURLPrefix + "/bitbucketserver"
+
 func Middleware(db database.DB) *auth.Middleware {
 	return &auth.Middleware{
 		API: func(next http.Handler) http.Handler {
-			return oauth.NewMiddleware(db, extsvc.TypeAzureDevOps, authPrefix, true, next)
+			return oauth.NewMiddleware(db, extsvc.TypeBitbucketServer, authPrefix, true, next)
 		},
 		App: func(next http.Handler) http.Handler {
-			return oauth.NewMiddleware(db, extsvc.TypeAzureDevOps, authPrefix, false, next)
+			return oauth.NewMiddleware(db, extsvc.TypeBitbucketServer, authPrefix, false, next)
 		},
 	}
 }

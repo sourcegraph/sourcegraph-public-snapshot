@@ -1150,7 +1150,7 @@ func TestAuth(t *testing.T) {
 			if _, err := NewClient("urn", &schema.BitbucketServerConnection{
 				Url: "http://example.com/",
 				Authorization: &schema.BitbucketServerAuthorization{
-					Oauth: schema.BitbucketServerOAuth{
+					Oauth: &schema.BitbucketServerOAuth{
 						ConsumerKey: "foo",
 						SigningKey:  "this is an invalid key",
 					},
@@ -1174,7 +1174,7 @@ func TestAuth(t *testing.T) {
 			client, err := NewClient("urn", &schema.BitbucketServerConnection{
 				Url: "http://example.com/",
 				Authorization: &schema.BitbucketServerAuthorization{
-					Oauth: schema.BitbucketServerOAuth{
+					Oauth: &schema.BitbucketServerOAuth{
 						ConsumerKey: "foo",
 						SigningKey:  signingKey,
 					},

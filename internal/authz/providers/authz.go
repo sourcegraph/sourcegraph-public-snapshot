@@ -157,8 +157,8 @@ func ProvidersFromConfig(
 
 	initResult := github.NewAuthzProviders(ctx, db, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
 	initResult.Append(gitlab.NewAuthzProviders(db, gitLabConns, cfg.SiteConfig().AuthProviders))
-	initResult.Append(bitbucketserver.NewAuthzProviders(bitbucketServerConns))
-	initResult.Append(perforce.NewAuthzProviders(perforceConns))
+	initResult.Append(bitbucketserver.NewAuthzProviders(db, bitbucketServerConns, cfg.SiteConfig().AuthProviders))
+	initResult.Append(perforce.NewAuthzProviders(db, perforceConns))
 	initResult.Append(bitbucketcloud.NewAuthzProviders(db, bitbucketCloudConns))
 	initResult.Append(gerrit.NewAuthzProviders(gerritConns))
 	initResult.Append(azuredevops.NewAuthzProviders(db, azuredevopsConns, httpcli.ExternalClient))

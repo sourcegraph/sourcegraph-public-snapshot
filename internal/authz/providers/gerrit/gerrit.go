@@ -43,7 +43,7 @@ func NewProvider(conn *types.GerritConnection) (*Provider, error) {
 
 // FetchAccount is unused for Gerrit. Users need to provide their own account
 // credentials instead.
-func (p Provider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, verifiedEmails []string) (*extsvc.Account, error) {
+func (p Provider) FetchAccount(context.Context, *types.User) (*extsvc.Account, error) {
 	return nil, nil
 }
 

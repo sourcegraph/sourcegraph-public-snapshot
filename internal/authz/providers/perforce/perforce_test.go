@@ -12,6 +12,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
@@ -30,6 +32,10 @@ func TestProvider_FetchAccount(t *testing.T) {
 		Username: "alice",
 	}
 
+	db := dbmocks.NewMockDB()
+	mockUserEmails := dbmocks.NewMockUserEmailsStore()
+	db.UserEmailsFunc.SetDefaultReturn(mockUserEmails)
+
 	gitserverClient := gitserver.NewStrictMockClient()
 	gitserverClient.PerforceUsersFunc.SetDefaultReturn([]*p4types.User{
 		{Username: "alice", Email: "Alice@Example.com"},
@@ -37,8 +43,9 @@ func TestProvider_FetchAccount(t *testing.T) {
 	}, nil)
 
 	t.Run("no matching account", func(t *testing.T) {
-		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
-		got, err := p.FetchAccount(ctx, user, nil, []string{"bob@example.com"})
+		mockUserEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: "bob@example.com"}}, nil)
+		p := NewProvider(logger, db, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		got, err := p.FetchAccount(ctx, user)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -49,8 +56,9 @@ func TestProvider_FetchAccount(t *testing.T) {
 	})
 
 	t.Run("found matching account", func(t *testing.T) {
-		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
-		got, err := p.FetchAccount(ctx, user, nil, []string{"alice@example.com"})
+		p := NewProvider(logger, db, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		mockUserEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: "alice@example.com"}}, nil)
+		got, err := p.FetchAccount(ctx, user)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -82,8 +90,9 @@ func TestProvider_FetchAccount(t *testing.T) {
 	})
 
 	t.Run("found matching account case insensitive", func(t *testing.T) {
-		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
-		got, err := p.FetchAccount(ctx, user, nil, []string{"Alice@Example.com"})
+		p := NewProvider(logger, db, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		mockUserEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: "Alice@example.com"}}, nil)
+		got, err := p.FetchAccount(ctx, user)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -118,9 +127,11 @@ func TestProvider_FetchAccount(t *testing.T) {
 func TestProvider_FetchUserPerms(t *testing.T) {
 	ctx := context.Background()
 
+	db := dbmocks.NewMockDB()
+
 	t.Run("nil account", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		p := NewProvider(logger, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		p := NewProvider(logger, db, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		_, err := p.FetchUserPerms(ctx, nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
@@ -131,7 +142,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("not the code host of the account", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		p := NewProvider(logger, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		p := NewProvider(logger, db, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -150,7 +161,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("no user found in account data", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		p := NewProvider(logger, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		p := NewProvider(logger, db, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		_, err := p.FetchUserPerms(ctx,
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -300,7 +311,7 @@ read user alice * //Sourcegraph/Security/... 						 ## give access to alice agai
 			gc := gitserver.NewStrictMockClient()
 			gc.PerforceProtectsForUserFunc.SetDefaultReturn(test.protects, nil)
 
-			p := NewProvider(logger, gc, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+			p := NewProvider(logger, db, gc, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 			got, err := p.FetchUserPerms(ctx,
 				&extsvc.Account{
 					AccountSpec: extsvc.AccountSpec{
@@ -376,7 +387,7 @@ read user alice * //Sourcegraph/Security/... 						 ## give access to alice agai
 				gitserverClient.PerforceProtectsForDepotFunc.SetDefaultReturn(test.input, nil)
 				gitserverClient.PerforceProtectsForUserFunc.SetDefaultReturn(test.input, nil)
 
-				p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+				p := NewProvider(logger, db, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 				p.depots = append(p.depots, "//Sourcegraph/")
 
 				got, err := p.FetchUserPerms(ctx,
@@ -406,9 +417,10 @@ read user alice * //Sourcegraph/Security/... 						 ## give access to alice agai
 func TestProvider_FetchRepoPerms(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
+	db := dbmocks.NewMockDB()
 
 	t.Run("nil repository", func(t *testing.T) {
-		p := NewProvider(logger, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		p := NewProvider(logger, db, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		_, err := p.FetchRepoPerms(ctx, nil, authz.FetchPermsOptions{})
 		want := "no repository provided"
 		got := fmt.Sprintf("%v", err)
@@ -418,7 +430,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 	})
 
 	t.Run("not the code host of the repository", func(t *testing.T) {
-		p := NewProvider(logger, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		p := NewProvider(logger, db, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		_, err := p.FetchRepoPerms(ctx,
 			&extsvc.Repository{
 				URI: "gitlab.com/user/repo",
@@ -464,7 +476,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		{Level: "list", EntityType: "user", EntityName: "david", Host: "*", Match: "//Sourcegraph/..."}, // "list" can't grant read access
 	}, nil)
 
-	p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	p := NewProvider(logger, db, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	got, err := p.FetchRepoPerms(ctx,
 		&extsvc.Repository{
 			URI: "gitlab.com/user/repo",

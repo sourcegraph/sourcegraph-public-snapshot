@@ -87,6 +87,10 @@ func (p *Provider) CachedInfo() *providers.Info {
 	}
 }
 
+func (p *Provider) Type() providers.ProviderType {
+	return providers.ProviderTypeGerrit
+}
+
 func (p *Provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
 	return gerrit.GetPublicExternalAccountData(ctx, &account.AccountData)
 }

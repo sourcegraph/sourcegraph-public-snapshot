@@ -64,3 +64,7 @@ func (p *provider) Config() schema.AuthProviders {
 		},
 	}
 }
+
+func (p *provider) Type() providers.ProviderType {
+	return providers.ProviderTypeOpenIDConnect
+}
