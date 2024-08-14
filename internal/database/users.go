@@ -658,7 +658,8 @@ func (u *userStore) DeleteList(ctx context.Context, ids []int32) (err error) {
 
 	idsCond := sqlf.Join(userIDs, ",")
 
-	res, err := tx.ExecResult(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=now() WHERE id IN (%s) AND deleted_at IS NULL", idsCond))
+	// Mark the account as deleted and invalidate sessions.
+	res, err := tx.ExecResult(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=now(), invalidated_sessions_at=now() WHERE id IN (%s) AND deleted_at IS NULL", idsCond))
 	if err != nil {
 		return err
 	}
