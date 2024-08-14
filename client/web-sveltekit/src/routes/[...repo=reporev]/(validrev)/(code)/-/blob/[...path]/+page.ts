@@ -1,4 +1,3 @@
-import { redirect } from '@sveltejs/kit'
 import { BehaviorSubject, concatMap, from, map } from 'rxjs'
 
 import {
@@ -16,8 +15,6 @@ import { SymbolRole as GraphQLSymbolRole } from '$lib/graphql-types'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 import { assertNonNullable } from '$lib/utils'
-
-import { DepotChangelist } from '../../../../../layout.gql'
 
 import type { PageLoad, PageLoadEvent } from './$types'
 import type { FileViewCodeGraphData } from './FileView.gql'
@@ -147,23 +144,6 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
     const resolvedRevision = revisionOverride ? Promise.resolve(revisionOverride) : resolveRevision(parent, revision)
     const filePath = decodeURIComponent(params.path)
-    const isPerforceDepot = await parent().then(parent => parent.isPerforceDepot)
-
-    if (isPerforceDepot) {
-        const changelistInfo = await client
-            .query(DepotChangelist, {
-                depotName: repoName,
-                revision: revision,
-            })
-            .then(result => result.data?.repository?.commit?.perforceChangelist)
-
-        if (changelistInfo?.cid) {
-            const redirectURL = new URL(url)
-
-            redirectURL.pathname = `${repoName}@changelist/${changelistInfo?.cid}/-/blob/${filePath}`
-            redirect(301, redirectURL)
-        }
-    }
 
     // Create a BehaviorSubject so preloading does not create a subscriberless observable
     const blameData = new BehaviorSubject<BlameHunkData>({ current: undefined, externalURLs: undefined })
