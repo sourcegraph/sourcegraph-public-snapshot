@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	types "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
-	models "github.com/sourcegraph/sourcegraph/internal/openapi/go"
+	"github.com/sourcegraph/sourcegraph/internal/openapi/goapi"
 )
 
 func TestModelsHandler(t *testing.T) {
@@ -40,10 +40,10 @@ func TestModelsHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.Equal(t, "application/json", rr.Header().Get("Content-Type"))
 
-	var response models.ListModelsResponse
+	var response goapi.ListModelsResponse
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(t, err)
-	autogold.Expect(models.ListModelsResponse{Object: "list", Data: []models.Model{
+	autogold.Expect(goapi.ListModelsResponse{Object: "list", Data: []goapi.Model{
 		{
 			Id:      "anthropic::unknown::claude-3-sonnet-20240229",
 			Object:  "model",

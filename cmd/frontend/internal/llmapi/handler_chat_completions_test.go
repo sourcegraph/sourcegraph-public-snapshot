@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	types "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
-	models "github.com/sourcegraph/sourcegraph/internal/openapi/go"
+	"github.com/sourcegraph/sourcegraph/internal/openapi/goapi"
 )
 
 func TestChatCompletionsHandler(t *testing.T) {
@@ -90,7 +90,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 			t.Fatalf("Expected status code %d, got %d. Body: %s%s", http.StatusOK, rr.Code, rr.Body.String(), extraMessage)
 		}
 
-		var resp models.CreateChatCompletionResponse
+		var resp goapi.CreateChatCompletionResponse
 		responseBytes := rr.Body.Bytes()
 		err := json.Unmarshal(responseBytes, &resp)
 		if err != nil {

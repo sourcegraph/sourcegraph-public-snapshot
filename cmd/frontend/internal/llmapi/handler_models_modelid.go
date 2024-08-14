@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/log"
 	sglog "github.com/sourcegraph/log"
 
-	models "github.com/sourcegraph/sourcegraph/internal/openapi/go"
+	"github.com/sourcegraph/sourcegraph/internal/openapi/goapi"
 )
 
 type modelsModelIDHandler struct {
@@ -36,7 +36,7 @@ func (m *modelsModelIDHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 
 	for _, model := range currentModelConfig.Models {
 		if string(model.ModelRef) == modelId {
-			rawJSON, err := json.MarshalIndent(models.Model{
+			rawJSON, err := json.MarshalIndent(goapi.Model{
 				Object:  "model",
 				Id:      string(model.ModelRef),
 				OwnedBy: string(model.ModelRef.ProviderID()),

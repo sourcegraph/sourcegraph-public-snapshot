@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	types "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
-	models "github.com/sourcegraph/sourcegraph/internal/openapi/go"
+	"github.com/sourcegraph/sourcegraph/internal/openapi/goapi"
 )
 
 func TestModelsModelIDHandler(t *testing.T) {
@@ -33,13 +33,13 @@ func TestModelsModelIDHandler(t *testing.T) {
 		name           string
 		modelID        string
 		expectedStatus int
-		expectedModel  *models.Model
+		expectedModel  *goapi.Model
 	}{
 		{
 			name:           "Existing model",
 			modelID:        "anthropic::unknown::claude-3-sonnet-20240229",
 			expectedStatus: http.StatusOK,
-			expectedModel: &models.Model{
+			expectedModel: &goapi.Model{
 				Id:      "anthropic::unknown::claude-3-sonnet-20240229",
 				Object:  "model",
 				OwnedBy: "anthropic",
@@ -68,7 +68,7 @@ func TestModelsModelIDHandler(t *testing.T) {
 			}
 
 			if tc.expectedModel != nil {
-				var response models.Model
+				var response goapi.Model
 				err = json.Unmarshal(rr.Body.Bytes(), &response)
 				require.NoError(t, err)
 				assert.Equal(t, response, *tc.expectedModel)

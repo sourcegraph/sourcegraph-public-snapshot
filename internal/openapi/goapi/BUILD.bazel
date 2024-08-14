@@ -25,3 +25,28 @@ go_test(
         "@com_github_stretchr_testify//assert",
     ],
 )
+
+go_library(
+    name = "goapi",
+    srcs = [
+        "error.go",
+        "helpers.go",
+        "model_chat_completions.go",
+        "model_error.go",
+        "model_list_models_response.go",
+        "model_model.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/openapi/goapi",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/errors"],
+)
+
+go_test(
+    name = "goapi_test",
+    srcs = ["model_chat_completions_test.go"],
+    embed = [":goapi"],
+    deps = [
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//assert",
+    ],
+)
