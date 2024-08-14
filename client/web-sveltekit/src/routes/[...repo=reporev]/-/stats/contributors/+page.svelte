@@ -7,6 +7,7 @@
     import Timestamp from '$lib/Timestamp.svelte'
     import { createPromiseStore } from '$lib/utils'
     import { Alert, Button, ButtonGroup } from '$lib/wildcard'
+    import { pluralize } from '$lib/common'
 
     import type { PageData } from './$types'
     import type { ContributorConnection } from './page.gql'
@@ -87,7 +88,7 @@
                                 ><Timestamp date={new Date(commit.author.date)} strict />:
                                 <a href={commit.canonicalURL}>{commit.subject}</a></td
                             >
-                            <td>{contributor.count}&nbsp;commits</td>
+                            <td>{contributor.count}&nbsp;{pluralize(data.isPerforceDepot ? 'changelist' : 'commit', contributor.count)}</td>
                         </tr>
                     {:else}
                         <tr>
