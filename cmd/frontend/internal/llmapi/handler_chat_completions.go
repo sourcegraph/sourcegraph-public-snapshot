@@ -1,12 +1,14 @@
 package llmapi
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"time"
 
@@ -14,9 +16,9 @@ import (
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	completions "github.com/sourcegraph/sourcegraph/internal/completions/types"
-	types "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/internal/openapi/goapi"
 )
 
@@ -30,8 +32,6 @@ type chatCompletionsHandler struct {
 	// would have an in-house service we can use instead of going via HTTP but using HTTP
 	// simplifies a lof of things (including testing).
 	apiHandler http.Handler
-
-	GetModelConfig GetModelConfigurationFunc
 }
 
 var _ http.Handler = (*chatCompletionsHandler)(nil)
@@ -46,12 +46,6 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	decoder := json.NewDecoder(io.NopCloser(bytes.NewBuffer(body)))
 
-	currentModelConfig, err := h.GetModelConfig()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("modelConfigSvc.Get: %v", err), http.StatusInternalServerError)
-		return
-	}
-
 	if err := decoder.Decode(&chatCompletionRequest); err != nil {
 		http.Error(w, fmt.Sprintf("decoder.Decode: %v", err), http.StatusInternalServerError)
 		return
@@ -62,7 +56,7 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if errorMsg := validateRequestedModel(chatCompletionRequest, currentModelConfig); errorMsg != "" {
+	if errorMsg := validateRequestedModel(chatCompletionRequest); errorMsg != "" {
 		http.Error(w, errorMsg, http.StatusBadRequest)
 		return
 	}
@@ -79,27 +73,16 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	serveJSON(w, r, h.logger, chatCompletionResponse)
 }
 
+var modelFormatRegex = regexp.MustCompile(`.+::.+::.+`)
+
 // validateRequestedModel checks that are only use the modelref syntax
-// (${ProviderID}::${APIVersionID}::${ModelID}).  If the user passes the old
-// syntax `${ProviderID}/${ModelID}`, then we try to return a helpful error
-// message suggesting to use the new modelref syntax.
-func validateRequestedModel(chatCompletionRequest goapi.CreateChatCompletionRequest, modelConfig *types.ModelConfiguration) string {
-	closestModelRef := ""
-	for _, model := range modelConfig.Models {
-		if string(model.ModelRef) == chatCompletionRequest.Model {
-			return ""
-		}
-		if model.DisplayName == chatCompletionRequest.Model || model.ModelName == chatCompletionRequest.Model {
-			closestModelRef = string(model.ModelRef)
-		} else if chatCompletionRequest.Model == fmt.Sprintf("%s/%s", model.ModelRef.ProviderID(), model.ModelRef.ModelID()) {
-			closestModelRef = string(model.ModelRef)
-		}
+// (${ProviderID}::${APIVersionID}::${ModelID}). We don't validate that the
+// actual model exists because
+func validateRequestedModel(chatCompletionRequest goapi.CreateChatCompletionRequest) string {
+	if !modelFormatRegex.MatchString(chatCompletionRequest.Model) {
+		return fmt.Sprintf("model %s is not in the correct format. Expected format: ${ProviderID}::${APIVersionID}::${ModelID}", chatCompletionRequest.Model)
 	}
-	didYouMean := ""
-	if closestModelRef != "" {
-		didYouMean = fmt.Sprintf(" (similar to %s)", closestModelRef)
-	}
-	return fmt.Sprintf("model %s is not supported%s", chatCompletionRequest.Model, didYouMean)
+	return ""
 }
 
 func validateChatCompletionRequest(chatCompletionRequest goapi.CreateChatCompletionRequest) string {
@@ -156,7 +139,6 @@ func transformToSGRequest(openAIReq goapi.CreateChatCompletionRequest) completio
 	if openAIReq.TopP != nil {
 		topP = *openAIReq.TopP
 	}
-	stream := false // TODO: reject error when stream is true
 	return completions.CodyCompletionRequestParameters{
 		CompletionRequestParameters: completions.CompletionRequestParameters{
 			MaxTokensToSample: maxTokens,
@@ -164,8 +146,13 @@ func transformToSGRequest(openAIReq goapi.CreateChatCompletionRequest) completio
 			RequestedModel:    completions.TaintedModelRef(openAIReq.Model),
 			Temperature:       temperature,
 			TopP:              topP,
-			Stream:            &stream,
-			StopSequences:     openAIReq.Stop.Stop,
+			// Always force `stream: true` because some providers like OpenAI
+			// have bugs when `stream: false`. For clients of this handler, we
+			// still don't support `stream: true` because it requires doing more
+			// advanced handling that is out of scope right now. The
+			// non-streaming response just needs to be non-buggy.
+			Stream:        pointers.Ptr(true),
+			StopSequences: openAIReq.Stop.Stop,
 		},
 		Fast: false,
 	}
@@ -233,6 +220,21 @@ func (h *chatCompletionsHandler) forwardToAPIHandler(sgReq completions.CodyCompl
 	// Parse the response body
 	var sgResp completions.CompletionResponse
 	responseBytes := rr.Body.Bytes()
+	scanner := bufio.NewScanner(bytes.NewReader(responseBytes))
+	var lastDataJSON string
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "data: {}" {
+			continue
+		}
+		if strings.HasPrefix(line, "data: {") {
+			lastDataJSON = strings.TrimPrefix(line, "data: ")
+		}
+	}
+	if lastDataJSON == "" {
+		return nil, errors.New("no valid data JSON found in response")
+	}
+	responseBytes = []byte(lastDataJSON)
 	err = json.Unmarshal(responseBytes, &sgResp)
 	if err != nil {
 		return nil, errors.Newf("failed to unmarshal response body %s: %v", string(responseBytes), err)

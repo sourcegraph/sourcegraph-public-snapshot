@@ -58,7 +58,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 
 		// Assert that we give a helpful error message nudging the user to use modelref instead of the old syntax.
-		assert.Equal(t, "model anthropic/claude-3-haiku-20240307 is not supported (similar to anthropic::unknown::claude-3-haiku-20240307)\n", rr.Body.String())
+		assert.Equal(t, "model anthropic/claude-3-haiku-20240307 is not in the correct format. Expected format: ${ProviderID}::${APIVersionID}::${ModelID}\n", rr.Body.String())
 	})
 
 	t.Run("/.api/llm/chat/completions (200 OK)", func(t *testing.T) {
