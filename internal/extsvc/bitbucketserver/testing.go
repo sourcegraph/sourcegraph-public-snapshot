@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/dnaeon/go-vcr/cassette"
+	"github.com/sourcegraph/log"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -19,7 +20,7 @@ import (
 
 // NewTestClient returns a bitbucketserver.Client that records its interactions
 // to testdata/vcr/.
-func NewTestClient(t testing.TB, name string, update bool) *Client {
+func NewTestClient(t testing.TB, logger log.Logger, name string, update bool) *Client {
 	t.Helper()
 
 	cassete := filepath.Join("testdata/vcr/", normalize(name))
@@ -49,7 +50,7 @@ func NewTestClient(t testing.TB, name string, update bool) *Client {
 		Url:   instanceURL,
 	}
 
-	cli, err := NewClient("urn", c, hc)
+	cli, err := NewClient("urn", c, hc, logger)
 	if err != nil {
 		t.Fatal(err)
 	}

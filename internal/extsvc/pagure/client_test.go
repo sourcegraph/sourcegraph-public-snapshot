@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
@@ -14,7 +15,7 @@ import (
 var update = flag.Bool("update", false, "update testdata")
 
 func TestClient_ListProjects(t *testing.T) {
-	cli, save := NewTestClient(t, "ListRepos", *update)
+	cli, save := NewTestClient(t, "ListRepos", *update, logtest.Scoped(t))
 	defer save()
 
 	ctx := context.Background()

@@ -38,14 +38,14 @@ type Client struct {
 // NewClient returns an authenticated Pagure API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, config *schema.PagureConnection, httpClient httpcli.Doer) (*Client, error) {
+func NewClient(urn string, config *schema.PagureConnection, httpClient httpcli.Doer, logger log.Logger) (*Client, error) {
 	u, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
 	}
 
 	if httpClient == nil {
-		httpClient = httpcli.ExternalDoer
+		httpClient = httpcli.ExternalDoer(logger.Scoped("httpclient"))
 	}
 
 	return &Client{

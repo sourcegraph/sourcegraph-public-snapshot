@@ -3,6 +3,7 @@ package bitbucketcloud
 import (
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -23,6 +24,7 @@ func TestNewAuthzProviders(t *testing.T) {
 					Url: schema.DefaultBitbucketCloudURL,
 				},
 			}},
+			logtest.Scoped(t),
 		)
 
 		assertion := assert.New(t)
@@ -45,6 +47,7 @@ func TestNewAuthzProviders(t *testing.T) {
 					},
 				},
 			},
+			logtest.Scoped(t),
 		)
 
 		require.Len(t, initResults.Providers, 1, "expect exactly one provider")
@@ -67,6 +70,7 @@ func TestNewAuthzProviders(t *testing.T) {
 					},
 				},
 			},
+			logtest.Scoped(t),
 		)
 
 		expectedError := []string{"failed"}

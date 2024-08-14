@@ -6,12 +6,14 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 )
 
-func AddGerritExternalAccount(ctx context.Context, db database.DB, userID int32, serviceID string, accountDetails string) (err error) {
+func AddGerritExternalAccount(ctx context.Context, db database.DB, logger log.Logger, userID int32, serviceID string, accountDetails string) (err error) {
 	var accountCredentials gerrit.AccountCredentials
 	err = json.Unmarshal([]byte(accountDetails), &accountCredentials)
 	if err != nil {
@@ -24,7 +26,7 @@ func AddGerritExternalAccount(ctx context.Context, db database.DB, userID int32,
 	}
 	serviceURL = extsvc.NormalizeBaseURL(serviceURL)
 
-	gerritAccount, err := gerrit.VerifyAccount(ctx, serviceURL, &accountCredentials)
+	gerritAccount, err := gerrit.VerifyAccount(ctx, logger, serviceURL, &accountCredentials)
 	if err != nil {
 		return err
 	}

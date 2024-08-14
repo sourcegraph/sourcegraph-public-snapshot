@@ -12,6 +12,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/kr/pretty"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -70,10 +72,10 @@ func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repos
 
 func TestAuthzProvidersFromConfig(t *testing.T) {
 	t.Cleanup(licensing.TestingSkipFeatureChecks())
-	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp) authz.Provider {
+	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp, _ log.Logger) authz.Provider {
 		return gitlabAuthzProviderParams{OAuthOp: op}
 	}
-	gitlab.NewSudoProvider = func(op gitlab.SudoProviderOp) authz.Provider {
+	gitlab.NewSudoProvider = func(op gitlab.SudoProviderOp, _ log.Logger) authz.Provider {
 		return gitlabAuthzProviderParams{SudoOp: op}
 	}
 
@@ -1911,7 +1913,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 				Kind:          tc.kind,
 				Config:        tc.config,
 				AuthProviders: tc.ps,
-			})
+			}, logtest.Scoped(t))
 			if err == nil {
 				have = append(have, "<nil>")
 			} else {

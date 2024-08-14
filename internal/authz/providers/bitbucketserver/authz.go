@@ -1,6 +1,8 @@
 package bitbucketserver
 
 import (
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	atypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -22,12 +24,13 @@ import (
 // to connection issues.
 func NewAuthzProviders(
 	conns []*types.BitbucketServerConnection,
+	logger log.Logger,
 ) *atypes.ProviderInitResult {
 	initResults := &atypes.ProviderInitResult{}
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
 		pluginPerm := c.Plugin != nil && c.Plugin.Permissions == "enabled"
-		p, err := newAuthzProvider(c, pluginPerm)
+		p, err := newAuthzProvider(c, pluginPerm, logger)
 		if err != nil {
 			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeBitbucketServer)
 			initResults.Problems = append(initResults.Problems, err.Error())
@@ -42,6 +45,7 @@ func NewAuthzProviders(
 func newAuthzProvider(
 	c *types.BitbucketServerConnection,
 	pluginPerm bool,
+	logger log.Logger,
 ) (authz.Provider, error) {
 	if c.Authorization == nil {
 		return nil, nil
@@ -53,7 +57,8 @@ func newAuthzProvider(
 
 	var errs error
 
-	cli, err := bitbucketserver.NewClient(c.URN, c.BitbucketServerConnection, nil)
+	logger = logger.Scoped("BitbucketServerAuthzProvider")
+	cli, err := bitbucketserver.NewClient(c.URN, c.BitbucketServerConnection, nil, logger)
 	if err != nil {
 		errs = errors.Append(errs, err)
 		return nil, errs
@@ -72,7 +77,7 @@ func newAuthzProvider(
 
 // ValidateAuthz validates the authorization fields of the given BitbucketServer external
 // service config.
-func ValidateAuthz(c *schema.BitbucketServerConnection) error {
-	_, err := newAuthzProvider(&types.BitbucketServerConnection{BitbucketServerConnection: c}, false)
+func ValidateAuthz(c *schema.BitbucketServerConnection, logger log.Logger) error {
+	_, err := newAuthzProvider(&types.BitbucketServerConnection{BitbucketServerConnection: c}, false, logger)
 	return err
 }

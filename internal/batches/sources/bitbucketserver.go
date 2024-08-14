@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
+	logger "github.com/sourcegraph/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 
@@ -24,12 +25,15 @@ import (
 type BitbucketServerSource struct {
 	client *bitbucketserver.Client
 	au     auth.Authenticator
+	logger logger.Logger
 }
 
-var _ ForkableChangesetSource = BitbucketServerSource{}
+var _ ForkableChangesetSource = &BitbucketServerSource{}
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
-func NewBitbucketServerSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+func NewBitbucketServerSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory, logger logger.Logger) (*BitbucketServerSource, error) {
+	logger = logger.Scoped("BitbucketServerSource")
+
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -40,7 +44,7 @@ func NewBitbucketServerSource(ctx context.Context, svc *types.ExternalService, c
 	}
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternalClientFactory(logger)
 	}
 
 	opts := httpClientCertificateOptions(nil, c.Certificate)
@@ -50,7 +54,7 @@ func NewBitbucketServerSource(ctx context.Context, svc *types.ExternalService, c
 		return nil, err
 	}
 
-	client, err := bitbucketserver.NewClient(svc.URN(), &c, cli)
+	client, err := bitbucketserver.NewClient(svc.URN(), &c, cli, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -58,18 +62,19 @@ func NewBitbucketServerSource(ctx context.Context, svc *types.ExternalService, c
 	return &BitbucketServerSource{
 		au:     client.Auth,
 		client: client,
+		logger: logger,
 	}, nil
 }
 
-func (s BitbucketServerSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(ctx, repo, s.au)
+func (s *BitbucketServerSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(ctx, repo, s.au, s.logger)
 }
 
-func (s BitbucketServerSource) AuthenticationStrategy() AuthenticationStrategy {
+func (s *BitbucketServerSource) AuthenticationStrategy() AuthenticationStrategy {
 	return AuthenticationStrategyUserCredential
 }
 
-func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
+func (s *BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
 	switch a.(type) {
 	case *auth.OAuthBearerToken,
 		*auth.OAuthBearerTokenWithSSH,
@@ -91,17 +96,17 @@ func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (Changese
 // AuthenticatedUsername uses the underlying bitbucketserver.Client to get the
 // username belonging to the credentials associated with the
 // BitbucketServerSource.
-func (s BitbucketServerSource) AuthenticatedUsername(ctx context.Context) (string, error) {
+func (s *BitbucketServerSource) AuthenticatedUsername(ctx context.Context) (string, error) {
 	return s.client.AuthenticatedUsername(ctx)
 }
 
-func (s BitbucketServerSource) ValidateAuthenticator(ctx context.Context) error {
+func (s *BitbucketServerSource) ValidateAuthenticator(ctx context.Context) error {
 	_, err := s.client.AuthenticatedUsername(ctx)
 	return err
 }
 
 // CreateChangeset creates the given *Changeset in the code host.
-func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
+func (s *BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
 	var exists bool
 
 	remoteRepo := c.RemoteRepo.Metadata.(*bitbucketserver.Repo)
@@ -146,7 +151,7 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 
 // CloseChangeset closes the given *Changeset on the code host and updates the
 // Metadata column in the *batches.Changeset to the newly closed pull request.
-func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+func (s *BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a Bitbucket Server pull request")
@@ -169,7 +174,7 @@ func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset)
 }
 
 // LoadChangeset loads the latest state of the given Changeset from the codehost.
-func (s BitbucketServerSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
+func (s *BitbucketServerSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 	repo := cs.TargetRepo.Metadata.(*bitbucketserver.Repo)
 	number, err := strconv.Atoi(cs.ExternalID)
 	if err != nil {
@@ -200,7 +205,7 @@ func (s BitbucketServerSource) LoadChangeset(ctx context.Context, cs *Changeset)
 	return nil
 }
 
-func (s BitbucketServerSource) loadPullRequestData(ctx context.Context, pr *bitbucketserver.PullRequest) error {
+func (s *BitbucketServerSource) loadPullRequestData(ctx context.Context, pr *bitbucketserver.PullRequest) error {
 	if err := s.client.LoadPullRequestActivities(ctx, pr); err != nil {
 		return errors.Wrap(err, "loading pr activities")
 	}
@@ -216,7 +221,7 @@ func (s BitbucketServerSource) loadPullRequestData(ctx context.Context, pr *bitb
 	return nil
 }
 
-func (s BitbucketServerSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
+func (s *BitbucketServerSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a Bitbucket Server pull request")
@@ -265,7 +270,7 @@ func (s BitbucketServerSource) UpdateChangeset(ctx context.Context, c *Changeset
 
 // ReopenChangeset reopens the *Changeset on the code host and updates the
 // Metadata column in the *batches.Changeset.
-func (s BitbucketServerSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
+func (s *BitbucketServerSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
 	reopened, err := s.callAndRetryIfOutdated(ctx, c, s.client.ReopenPullRequest)
 	if err != nil {
 		return err
@@ -276,7 +281,7 @@ func (s BitbucketServerSource) ReopenChangeset(ctx context.Context, c *Changeset
 }
 
 // CreateComment posts a comment on the Changeset.
-func (s BitbucketServerSource) CreateComment(ctx context.Context, c *Changeset, text string) error {
+func (s *BitbucketServerSource) CreateComment(ctx context.Context, c *Changeset, text string) error {
 	// Bitbucket Server seems to ignore version conflicts when commenting, but
 	// we use this here anyway.
 	_, err := s.callAndRetryIfOutdated(ctx, c, func(ctx context.Context, pr *bitbucketserver.PullRequest) error {
@@ -288,7 +293,7 @@ func (s BitbucketServerSource) CreateComment(ctx context.Context, c *Changeset, 
 // MergeChangeset merges a Changeset on the code host, if in a mergeable state.
 // The squash parameter is ignored, as Bitbucket Server does not support
 // squash merges.
-func (s BitbucketServerSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
+func (s *BitbucketServerSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
 	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a Bitbucket Server pull request")
@@ -315,7 +320,7 @@ func (s BitbucketServerSource) MergeChangeset(ctx context.Context, c *Changeset,
 
 type bitbucketClientFunc func(context.Context, *bitbucketserver.PullRequest) error
 
-func (s BitbucketServerSource) callAndRetryIfOutdated(ctx context.Context, c *Changeset, fn bitbucketClientFunc) (*bitbucketserver.PullRequest, error) {
+func (s *BitbucketServerSource) callAndRetryIfOutdated(ctx context.Context, c *Changeset, fn bitbucketClientFunc) (*bitbucketserver.PullRequest, error) {
 	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
 	if !ok {
 		return nil, errors.New("Changeset is not a Bitbucket Server pull request")
@@ -352,7 +357,7 @@ func (s BitbucketServerSource) callAndRetryIfOutdated(ctx context.Context, c *Ch
 // exists and creating it if it doesn't. If namespace is not provided, the fork will be in
 // the currently authenticated user's namespace. If name is not provided, the fork will be
 // named with the default Sourcegraph convention: "${original-namespace}-${original-name}"
-func (s BitbucketServerSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns, n *string) (*types.Repo, error) {
+func (s *BitbucketServerSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns, n *string) (*types.Repo, error) {
 	var namespace string
 	if ns != nil {
 		namespace = *ns
@@ -394,11 +399,11 @@ func (s BitbucketServerSource) GetFork(ctx context.Context, targetRepo *types.Re
 	return s.checkAndCopy(targetRepo, fork, namespace)
 }
 
-func (s BitbucketServerSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+func (s *BitbucketServerSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
 	return BuildCommitOptsCommon(repo, spec, pushOpts)
 }
 
-func (s BitbucketServerSource) checkAndCopy(targetRepo *types.Repo, fork *bitbucketserver.Repo, forkNamespace string) (*types.Repo, error) {
+func (s *BitbucketServerSource) checkAndCopy(targetRepo *types.Repo, fork *bitbucketserver.Repo, forkNamespace string) (*types.Repo, error) {
 	tr := targetRepo.Metadata.(*bitbucketserver.Repo)
 
 	if fork.Origin == nil {

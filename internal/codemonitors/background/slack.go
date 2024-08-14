@@ -10,14 +10,16 @@ import (
 	"strings"
 
 	"github.com/slack-go/slack"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func sendSlackNotification(ctx context.Context, url string, args actionArgs) error {
-	return postSlackWebhook(ctx, httpcli.ExternalDoer, url, slackPayload(args))
+func sendSlackNotification(ctx context.Context, logger log.Logger, url string, args actionArgs) error {
+	logger = logger.Scoped("sendSlackNotification")
+	return postSlackWebhook(ctx, httpcli.ExternalDoer(logger), url, slackPayload(args))
 }
 
 func slackPayload(args actionArgs) *slack.WebhookMessage {

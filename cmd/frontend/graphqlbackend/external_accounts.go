@@ -173,7 +173,7 @@ func (r *schemaResolver) AddExternalAccount(ctx context.Context, args *struct {
 
 	switch args.ServiceType {
 	case extsvc.TypeGerrit:
-		err := gext.AddGerritExternalAccount(ctx, r.db, a.UID, args.ServiceID, args.AccountDetails)
+		err := gext.AddGerritExternalAccount(ctx, r.db, r.logger, a.UID, args.ServiceID, args.AccountDetails)
 		if err != nil {
 			return nil, err
 		}

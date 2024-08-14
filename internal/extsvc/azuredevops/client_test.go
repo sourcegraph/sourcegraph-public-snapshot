@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/dnaeon/go-vcr/cassette"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
@@ -52,6 +53,7 @@ func NewTestClient(t testing.TB, name string, update bool) (Client, func()) {
 			Password: os.Getenv("AZURE_DEV_OPS_TOKEN"),
 		},
 		hc,
+		logtest.Scoped(t),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -139,7 +141,7 @@ func TestRateLimitRetry(t *testing.T) {
 				MockVisualStudioAppURL = ""
 			})
 			a := &auth.BasicAuth{Username: "test", Password: "test"}
-			c, err := NewClient("test", srv.URL, a, httpcli.TestExternalDoer)
+			c, err := NewClient("test", srv.URL, a, httpcli.TestExternalDoer, logtest.Scoped(t))
 			c.(*client).internalRateLimiter = ratelimit.NewInstrumentedLimiter("azuredevops", rate.NewLimiter(100, 10))
 			require.NoError(t, err)
 			c.SetWaitForRateLimit(tt.waitForRateLimit)

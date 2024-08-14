@@ -57,10 +57,11 @@ type srcCliVersionHandler struct {
 }
 
 func newSrcCliVersionHandler(logger log.Logger) http.Handler {
+	logger = logger.Scoped("srcCliVersionHandler")
 	return &srcCliVersionHandler{
 		clock:    glock.NewRealClock(),
-		doer:     httpcli.ExternalClient,
-		logger:   logger.Scoped("srcCliVersionHandler"),
+		doer:     httpcli.ExternalClient(logger),
+		logger:   logger,
 		maxStale: srcCliCacheLifetime,
 	}
 }

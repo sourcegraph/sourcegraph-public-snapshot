@@ -43,6 +43,7 @@ func NewSourcer(logger log.Logger, db database.DB, cf *httpcli.Factory, gc gitse
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
 func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, cf *httpcli.Factory, gc gitserver.Client) (Source, error) {
+
 	if gc == nil {
 		gc = gitserver.NewClient("repos.sourcer")
 	}
@@ -54,7 +55,7 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 	case extsvc.KindAzureDevOps:
 		return NewAzureDevOpsSource(ctx, logger.Scoped("AzureDevOpsSource"), svc, cf)
 	case extsvc.KindGerrit:
-		return NewGerritSource(ctx, svc, cf)
+		return NewGerritSource(ctx, svc, cf, logger.Scoped("GerritSource"))
 	case extsvc.KindBitbucketServer:
 		return NewBitbucketServerSource(ctx, logger.Scoped("BitbucketServerSource"), svc, cf)
 	case extsvc.KindBitbucketCloud:
@@ -64,7 +65,7 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 	case extsvc.KindPhabricator:
 		return NewPhabricatorSource(ctx, logger.Scoped("PhabricatorSource"), svc, cf)
 	case extsvc.KindAWSCodeCommit:
-		return NewAWSCodeCommitSource(ctx, svc, cf)
+		return NewAWSCodeCommitSource(ctx, svc, cf, logger.Scoped("AWSCodeCommitSource"))
 	case extsvc.KindPerforce:
 		return NewPerforceSource(ctx, svc)
 	case extsvc.KindGoPackages:
@@ -73,7 +74,7 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 		// JVM doesn't need a client factory because we use coursier.
 		return NewJVMPackagesSource(ctx, svc)
 	case extsvc.KindPagure:
-		return NewPagureSource(ctx, svc, cf)
+		return NewPagureSource(ctx, svc, cf, logger.Scoped("PagureSource"))
 	case extsvc.KindNpmPackages:
 		return NewNpmPackagesSource(ctx, svc, cf)
 	case extsvc.KindPythonPackages:

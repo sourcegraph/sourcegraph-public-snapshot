@@ -3,6 +3,8 @@ package testing
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -293,7 +295,8 @@ func (s *FakeChangesetSource) CreateComment(ctx context.Context, c *sources.Chan
 }
 
 func (s *FakeChangesetSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
-	return sources.GitserverPushConfig(ctx, repo, s.CurrentAuthenticator)
+	logger := log.NoOp() // Note: This is fine since this is only used in tests.
+	return sources.GitserverPushConfig(ctx, repo, s.CurrentAuthenticator, logger)
 }
 
 func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (sources.ChangesetSource, error) {

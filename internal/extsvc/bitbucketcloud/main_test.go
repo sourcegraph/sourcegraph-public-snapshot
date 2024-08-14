@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/grafana/regexp"
+	"github.com/sourcegraph/log/logtest"
 	"golang.org/x/time/rate"
 
 	bbtest "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud/testing"
@@ -68,7 +69,7 @@ func newTestClient(t testing.TB) *client {
 		ApiURL:      "https://api.bitbucket.org",
 		Username:    bbtest.GetenvTestBitbucketCloudUsername(),
 		AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
-	}, hc)
+	}, hc, logtest.Scoped(t))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -7,6 +7,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -29,16 +31,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func ForEncryptableConfig(ctx context.Context, db database.DB, kind string, config *extsvc.EncryptableConfig, repo *types.Repo) (string, error) {
+func ForEncryptableConfig(ctx context.Context, logger log.Logger, db database.DB, kind string, config *extsvc.EncryptableConfig, repo *types.Repo) (string, error) {
 	parsed, err := extsvc.ParseEncryptableConfig(ctx, kind, config)
 	if err != nil {
 		return "", errors.Wrap(err, "loading service configuration")
 	}
 
-	return cloneURL(ctx, db, kind, parsed, repo)
+	return cloneURL(ctx, logger, db, kind, parsed, repo)
 }
 
-func cloneURL(ctx context.Context, db database.DB, kind string, parsed any, repo *types.Repo) (string, error) {
+func cloneURL(ctx context.Context, logger log.Logger, db database.DB, kind string, parsed any, repo *types.Repo) (string, error) {
 	switch t := parsed.(type) {
 	case *schema.AWSCodeCommitConnection:
 		if r, ok := repo.Metadata.(*awscodecommit.Repository); ok {
@@ -62,7 +64,7 @@ func cloneURL(ctx context.Context, db database.DB, kind string, parsed any, repo
 		}
 	case *schema.GitHubConnection:
 		if r, ok := repo.Metadata.(*github.Repository); ok {
-			return githubCloneURL(ctx, db, r, t)
+			return githubCloneURL(ctx, logger, db, r, t)
 		}
 	case *schema.GitLabConnection:
 		if r, ok := repo.Metadata.(*gitlab.Project); ok {
@@ -199,7 +201,7 @@ func bitbucketCloudCloneURL(repo *bitbucketcloud.Repo, cfg *schema.BitbucketClou
 	return u.String(), nil
 }
 
-func githubCloneURL(ctx context.Context, db database.DB, repo *github.Repository, cfg *schema.GitHubConnection) (string, error) {
+func githubCloneURL(ctx context.Context, logger log.Logger, db database.DB, repo *github.Repository, cfg *schema.GitHubConnection) (string, error) {
 	if cfg.GitURLType == "ssh" {
 		baseURL, err := url.Parse(cfg.Url)
 		if err != nil {
@@ -226,8 +228,10 @@ func githubCloneURL(ctx context.Context, db database.DB, repo *github.Repository
 	if err != nil {
 		return "", err
 	}
+
+	logger = logger.Scoped("githubCloneURL.auther")
 	if auther.NeedsRefresh() {
-		if err := auther.Refresh(ctx, httpcli.ExternalClient); err != nil {
+		if err := auther.Refresh(ctx, httpcli.ExternalClient(logger)); err != nil {
 			return "", err
 		}
 	}

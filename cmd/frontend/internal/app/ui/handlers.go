@@ -563,68 +563,72 @@ func searchBadgeHandler() *httputil.ReverseProxy {
 	}
 }
 
-func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
-	// CORS to allow request from anywhere
-	u, err := url.Parse(r.Referer())
-	if err != nil {
-		return err
-	}
-	w.Header().Add("Access-Control-Allow-Origin", u.Host)
-	w.Header().Add("Access-Control-Allow-Credentials", "true")
-	if r.Method == http.MethodOptions {
-		// CORS preflight request, respond 204 and allow origin header
-		w.WriteHeader(http.StatusNoContent)
+func servePingFromSelfHosted(l log.Logger) func(w http.ResponseWriter, r *http.Request) error {
+	l = l.Scoped("servePingFromSelfHosted")
+
+	return func(w http.ResponseWriter, r *http.Request) error {
+		// CORS to allow request from anywhere
+		u, err := url.Parse(r.Referer())
+		if err != nil {
+			return err
+		}
+		w.Header().Add("Access-Control-Allow-Origin", u.Host)
+		w.Header().Add("Access-Control-Allow-Credentials", "true")
+		if r.Method == http.MethodOptions {
+			// CORS preflight request, respond 204 and allow origin header
+			w.WriteHeader(http.StatusNoContent)
+			return nil
+		}
+		email := r.URL.Query().Get("email")
+		tosAccepted := r.URL.Query().Get("tos_accepted")
+
+		getCookie := func(name string) string {
+			c, err := r.Cookie(name)
+			if err != nil || c == nil {
+				return ""
+			}
+			return c.Value
+		}
+
+		anonymousUserId, _ := cookie.AnonymousUID(r)
+
+		hubspotutil.SyncUser(l, email, hubspotutil.SelfHostedSiteInitEventID, &hubspot.ContactProperties{
+			IsServerAdmin:              true,
+			AnonymousUserID:            anonymousUserId,
+			FirstSourceURL:             getCookie("first_page_seen_url"),
+			LastSourceURL:              getCookie("last_page_seen_url"),
+			LastPageSeenShort:          getCookie("last_page_seen_url_short"),
+			LastPageSeenMid:            getCookie("last_page_seen_url_mid"),
+			LastPageSeenLong:           getCookie("last_page_seen_url_long"),
+			MostRecentReferrerUrl:      getCookie("most_recent_referrer_url"),
+			MostRecentReferrerUrlShort: getCookie("most_recent_referrer_url_short"),
+			MostRecentReferrerUrlLong:  getCookie("most_recent_referrer_url_long"),
+			SignupSessionSourceURL:     getCookie("sourcegraphSignupSourceUrl"),
+			SignupSessionReferrer:      getCookie("sourcegraphSignupReferrer"),
+			SessionUTMCampaign:         getCookie("utm_campaign"),
+			SessionUTMSource:           getCookie("utm_source"),
+			SessionUTMMedium:           getCookie("utm_medium"),
+			SessionUTMContent:          getCookie("utm_content"),
+			SessionUTMTerm:             getCookie("utm_term"),
+			UtmCampaignShort:           getCookie("utm_campaign_short"),
+			UtmCampaignMid:             getCookie("utm_campaign_mid"),
+			UtmCampaignLong:            getCookie("utm_campaign_long"),
+			UtmSourceShort:             getCookie("utm_source_short"),
+			UtmSourceMid:               getCookie("utm_source_mid"),
+			UtmSourceLong:              getCookie("utm_source_long"),
+			UtmMediumShort:             getCookie("utm_medium_short"),
+			UtmMediumMid:               getCookie("utm_medium_mid"),
+			UtmMediumLong:              getCookie("utm_medium_long"),
+			UtmContentShort:            getCookie("utm_content_short"),
+			UtmContentMid:              getCookie("utm_content_mid"),
+			UtmContentLong:             getCookie("utm_content_long"),
+			UtmTermShort:               getCookie("utm_term_short"),
+			UtmTermMid:                 getCookie("utm_term_mid"),
+			UtmTermLong:                getCookie("utm_term_long"),
+			GoogleClickID:              getCookie("gclid"),
+			MicrosoftClickID:           getCookie("msclkid"),
+			HasAgreedToToS:             tosAccepted == "true",
+		})
 		return nil
 	}
-	email := r.URL.Query().Get("email")
-	tosAccepted := r.URL.Query().Get("tos_accepted")
-
-	getCookie := func(name string) string {
-		c, err := r.Cookie(name)
-		if err != nil || c == nil {
-			return ""
-		}
-		return c.Value
-	}
-
-	anonymousUserId, _ := cookie.AnonymousUID(r)
-
-	hubspotutil.SyncUser(email, hubspotutil.SelfHostedSiteInitEventID, &hubspot.ContactProperties{
-		IsServerAdmin:              true,
-		AnonymousUserID:            anonymousUserId,
-		FirstSourceURL:             getCookie("first_page_seen_url"),
-		LastSourceURL:              getCookie("last_page_seen_url"),
-		LastPageSeenShort:          getCookie("last_page_seen_url_short"),
-		LastPageSeenMid:            getCookie("last_page_seen_url_mid"),
-		LastPageSeenLong:           getCookie("last_page_seen_url_long"),
-		MostRecentReferrerUrl:      getCookie("most_recent_referrer_url"),
-		MostRecentReferrerUrlShort: getCookie("most_recent_referrer_url_short"),
-		MostRecentReferrerUrlLong:  getCookie("most_recent_referrer_url_long"),
-		SignupSessionSourceURL:     getCookie("sourcegraphSignupSourceUrl"),
-		SignupSessionReferrer:      getCookie("sourcegraphSignupReferrer"),
-		SessionUTMCampaign:         getCookie("utm_campaign"),
-		SessionUTMSource:           getCookie("utm_source"),
-		SessionUTMMedium:           getCookie("utm_medium"),
-		SessionUTMContent:          getCookie("utm_content"),
-		SessionUTMTerm:             getCookie("utm_term"),
-		UtmCampaignShort:           getCookie("utm_campaign_short"),
-		UtmCampaignMid:             getCookie("utm_campaign_mid"),
-		UtmCampaignLong:            getCookie("utm_campaign_long"),
-		UtmSourceShort:             getCookie("utm_source_short"),
-		UtmSourceMid:               getCookie("utm_source_mid"),
-		UtmSourceLong:              getCookie("utm_source_long"),
-		UtmMediumShort:             getCookie("utm_medium_short"),
-		UtmMediumMid:               getCookie("utm_medium_mid"),
-		UtmMediumLong:              getCookie("utm_medium_long"),
-		UtmContentShort:            getCookie("utm_content_short"),
-		UtmContentMid:              getCookie("utm_content_mid"),
-		UtmContentLong:             getCookie("utm_content_long"),
-		UtmTermShort:               getCookie("utm_term_short"),
-		UtmTermMid:                 getCookie("utm_term_mid"),
-		UtmTermLong:                getCookie("utm_term_long"),
-		GoogleClickID:              getCookie("gclid"),
-		MicrosoftClickID:           getCookie("msclkid"),
-		HasAgreedToToS:             tosAccepted == "true",
-	})
-	return nil
 }

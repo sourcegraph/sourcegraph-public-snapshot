@@ -34,5 +34,6 @@ go_test(
     deps = [
         "//internal/testutil",
         "@com_github_inconshreveable_log15//:log15",
+        "@com_github_sourcegraph_log//logtest",
     ],
 )

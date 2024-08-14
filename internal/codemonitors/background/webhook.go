@@ -8,13 +8,15 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func sendWebhookNotification(ctx context.Context, url string, args actionArgs) error {
-	return postWebhook(ctx, httpcli.ExternalDoer, url, generateWebhookPayload(args))
+func sendWebhookNotification(ctx context.Context, url string, args actionArgs, logger log.Logger) error {
+	return postWebhook(ctx, httpcli.ExternalDoer(logger), url, generateWebhookPayload(args))
 }
 
 func postWebhook(ctx context.Context, doer httpcli.Doer, url string, payload webhookPayload) error {

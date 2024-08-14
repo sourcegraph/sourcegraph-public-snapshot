@@ -143,7 +143,7 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 			return c.Value
 		}
 
-		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
+		go hubspotutil.SyncUser(logger, creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
 			DatabaseID:                 usr.ID,
 			AnonymousUserID:            creds.AnonymousUserID,
 			FirstSourceURL:             creds.FirstSourceURL,

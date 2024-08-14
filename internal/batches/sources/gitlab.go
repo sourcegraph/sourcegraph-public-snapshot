@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
+	"github.com/sourcegraph/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 
@@ -27,6 +28,7 @@ import (
 type GitLabSource struct {
 	client *gitlab.Client
 	au     auth.Authenticator
+	logger log.Logger
 }
 
 var _ ChangesetSource = &GitLabSource{}
@@ -34,7 +36,7 @@ var _ DraftChangesetSource = &GitLabSource{}
 var _ ForkableChangesetSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
-func NewGitLabSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
+func NewGitLabSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory, logger log.Logger) (*GitLabSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -43,10 +45,12 @@ func NewGitLabSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitLabSource(svc.URN(), &c, cf)
+	return newGitLabSource(svc.URN(), &c, cf, logger)
 }
 
-func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
+func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory, logger log.Logger) (*GitLabSource, error) {
+	logger = logger.Scoped("GitLabSource")
+
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -54,7 +58,7 @@ func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternalClientFactory(logger)
 	}
 
 	opts := httpClientCertificateOptions(nil, c.Certificate)
@@ -75,22 +79,23 @@ func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory
 		}
 	}
 
-	provider := gitlab.NewClientProvider(urn, baseURL, cli)
+	provider := gitlab.NewClientProvider(urn, baseURL, cli, logger)
 	return &GitLabSource{
 		au:     authr,
 		client: provider.GetAuthenticatorClient(authr),
+		logger: logger,
 	}, nil
 }
 
-func (s GitLabSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(ctx, repo, s.au)
+func (s *GitLabSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(ctx, repo, s.au, s.logger)
 }
 
-func (s GitLabSource) AuthenticationStrategy() AuthenticationStrategy {
+func (s *GitLabSource) AuthenticationStrategy() AuthenticationStrategy {
 	return AuthenticationStrategyUserCredential
 }
 
-func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
+func (s *GitLabSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
 	switch a.(type) {
 	case *auth.OAuthBearerToken,
 		*auth.OAuthBearerTokenWithSSH:
@@ -100,14 +105,18 @@ func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, 
 		return nil, newUnsupportedAuthenticatorError("GitLabSource", a)
 	}
 
-	sc := s
+	sc := GitLabSource{}
+	if s != nil {
+		sc = *s
+	}
+
 	sc.au = a
 	sc.client = sc.client.WithAuthenticator(a)
 
 	return &sc, nil
 }
 
-func (s GitLabSource) ValidateAuthenticator(ctx context.Context) error {
+func (s *GitLabSource) ValidateAuthenticator(ctx context.Context) error {
 	return s.client.ValidateToken(ctx)
 }
 
@@ -572,11 +581,11 @@ func (*GitLabSource) IsPushResponseArchived(s string) bool {
 	return strings.Contains(s, "ERROR: You are not allowed to push code to this project")
 }
 
-func (s GitLabSource) GetFork(ctx context.Context, targetRepo *types.Repo, namespace, n *string) (*types.Repo, error) {
+func (s *GitLabSource) GetFork(ctx context.Context, targetRepo *types.Repo, namespace, n *string) (*types.Repo, error) {
 	return getGitLabForkInternal(ctx, targetRepo, s.client, namespace, n)
 }
 
-func (s GitLabSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+func (s *GitLabSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
 	return BuildCommitOptsCommon(repo, spec, pushOpts)
 }
 

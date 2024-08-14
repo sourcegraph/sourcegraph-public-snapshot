@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/dnaeon/go-vcr/cassette"
+	"github.com/sourcegraph/log/logtest"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -49,7 +50,7 @@ func NewTestClient(t testing.TB, name string, update bool) (Client, func()) {
 	cli, err := NewClient("urn", u, &AccountCredentials{
 		Username: os.Getenv("GERRIT_USERNAME"),
 		Password: os.Getenv("GERRIT_PASSWORD"),
-	}, hc)
+	}, hc, logtest.Scoped(t))
 	if err != nil {
 		t.Fatal(err)
 	}

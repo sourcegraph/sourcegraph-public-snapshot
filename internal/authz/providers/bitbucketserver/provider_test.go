@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -489,7 +490,7 @@ func (h codeHost) externalAccount(userID int32, u *bitbucketserver.User) *extsvc
 }
 
 func newClient(t *testing.T, name string) *bitbucketserver.Client {
-	cli := bitbucketserver.NewTestClient(t, name, *update)
+	cli := bitbucketserver.NewTestClient(t, logtest.Scoped(t), name, *update)
 
 	signingKey := os.Getenv("BITBUCKET_SERVER_SIGNING_KEY")
 	if signingKey == "" {

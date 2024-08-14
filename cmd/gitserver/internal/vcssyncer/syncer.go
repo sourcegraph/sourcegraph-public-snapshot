@@ -79,7 +79,8 @@ type NewVCSSyncerOpts struct {
 	GetRemoteURLSource      func(ctx context.Context, repo api.RepoName) (RemoteURLSource, error)
 }
 
-func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error) {
+func NewVCSSyncer(ctx context.Context, logger log.Logger, opts *NewVCSSyncerOpts) (VCSSyncer, error) {
+	logger = logger.Scoped("vcssyncer")
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
 	// it's safe.
@@ -131,7 +132,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 			if err != nil {
 				return nil, err
 			}
-			cli, err := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalClientFactory)
+			cli, err := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalClientFactory(logger.Scoped("npm")))
 			if err != nil {
 				return nil, err
 			}
@@ -142,7 +143,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 			if err != nil {
 				return nil, err
 			}
-			cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
+			cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory(logger.Scoped("gomodules")))
 			return NewGoModulesSyncer(&c, opts.DepsSvc, cli, opts.FS, opts.GetRemoteURLSource), nil
 		case extsvc.TypePythonPackages:
 			var c schema.PythonPackagesConnection
@@ -150,7 +151,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 			if err != nil {
 				return nil, err
 			}
-			cli, err := pypi.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
+			cli, err := pypi.NewClient(urn, c.Urls, httpcli.ExternalClientFactory(logger.Scoped("python")))
 			if err != nil {
 				return nil, err
 			}
@@ -161,7 +162,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 			if err != nil {
 				return nil, err
 			}
-			cli, err := crates.NewClient(urn, httpcli.ExternalClientFactory)
+			cli, err := crates.NewClient(urn, httpcli.ExternalClientFactory(logger.Scoped("rust")))
 			if err != nil {
 				return nil, err
 			}
@@ -172,7 +173,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 			if err != nil {
 				return nil, err
 			}
-			cli, err := rubygems.NewClient(urn, c.Repository, httpcli.ExternalClientFactory)
+			cli, err := rubygems.NewClient(urn, c.Repository, httpcli.ExternalClientFactory(logger.Scoped("ruby")))
 			if err != nil {
 				return nil, err
 			}

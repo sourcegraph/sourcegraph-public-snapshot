@@ -30,6 +30,8 @@ func parseProvider(logger log.Logger, db database.DB, callbackURL string, p *sch
 	}
 	codeHost := extsvc.NewCodeHost(parsedURL, extsvc.TypeGitLab)
 
+	logger = logger.Scoped("GitLabOAuth")
+
 	return oauth.NewProvider(oauth.ProviderOp{
 		AuthPrefix: authPrefix,
 		OAuth2Config: func() oauth2.Config {
@@ -59,6 +61,7 @@ func parseProvider(logger log.Logger, db database.DB, callbackURL string, p *sch
 		Callback: func(oauth2Cfg oauth2.Config) http.Handler {
 			return CallbackHandler(
 				&oauth2Cfg,
+				logger,
 				oauth.SessionIssuer(logger, db, &sessionIssuerHelper{
 					logger:      logger.Scoped("sessionIssuerHelper"),
 					db:          db,

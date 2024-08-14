@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log/logtest"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -78,7 +79,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					ApiURL: "https://bitbucket.org",
 					Url:    "https://bitbucket.org",
 				},
-			}, ProviderOptions{})
+			}, ProviderOptions{}, logtest.Scoped(t))
 		_, err := p.FetchUserPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
@@ -94,7 +95,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					ApiURL: "https://bitbucket.org",
 					Url:    "https://bitbucket.org",
 				},
-			}, ProviderOptions{})
+			}, ProviderOptions{}, logtest.Scoped(t))
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -118,7 +119,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					ApiURL: "https://bitbucket.org",
 					Url:    "https://bitbucket.org",
 				},
-			}, ProviderOptions{})
+			}, ProviderOptions{}, logtest.Scoped(t))
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -143,7 +144,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			ApiURL: server.URL,
 			Url:    server.URL,
 		}
-		client, err := bitbucketcloud.NewClient(server.URL, conn, http.DefaultClient)
+		client, err := bitbucketcloud.NewClient(server.URL, conn, http.DefaultClient, logtest.Scoped(t))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -151,7 +152,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		p := NewProvider(db,
 			&types.BitbucketCloudConnection{
 				BitbucketCloudConnection: conn,
-			}, ProviderOptions{BitbucketCloudClient: client})
+			}, ProviderOptions{BitbucketCloudClient: client}, logtest.Scoped(t))
 
 		var acctData extsvc.AccountData
 		err = bitbucketcloud.SetExternalAccountData(&acctData, &bitbucketcloud.Account{}, &oauth2.Token{AccessToken: "my-access-token"})
@@ -189,7 +190,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		ApiURL: server.URL,
 		Url:    server.URL,
 	}
-	client, err := bitbucketcloud.NewClient(server.URL, conn, http.DefaultClient)
+	client, err := bitbucketcloud.NewClient(server.URL, conn, http.DefaultClient, logtest.Scoped(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,7 +198,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 	p := NewProvider(db,
 		&types.BitbucketCloudConnection{
 			BitbucketCloudConnection: conn,
-		}, ProviderOptions{BitbucketCloudClient: client})
+		}, ProviderOptions{BitbucketCloudClient: client}, logtest.Scoped(t))
 
 	perms, err := p.FetchRepoPerms(context.Background(), &extsvc.Repository{
 		URI: "bitbucket.org/user/repo",

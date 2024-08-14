@@ -93,7 +93,7 @@ func parseSiteConfig(conf *conf.Unified) (*config, error) {
 
 // NewReleaseCache builds a new VersionCache based on the current site config.
 func (c *config) NewReleaseCache(logger log.Logger) ReleaseCache {
-	client := github.NewV4Client(c.urn, c.api, &auth.OAuthBearerToken{Token: c.token}, nil)
+	client := github.NewV4Client(c.urn, c.api, &auth.OAuthBearerToken{Token: c.token}, nil, logger)
 
 	return newReleaseCache(logger, client, c.owner, c.name)
 }

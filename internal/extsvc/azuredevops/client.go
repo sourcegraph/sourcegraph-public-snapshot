@@ -66,30 +66,34 @@ type client struct {
 	auth                auth.Authenticator
 	waitForRateLimit    bool
 	maxRateLimitRetries int
+	logger              log.Logger
 }
 
 // NewClient returns an authenticated AzureDevOps API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpcli.Doer) (Client, error) {
+func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpcli.Doer, logger log.Logger) (Client, error) {
+	logger = logger.Scoped("AzureDevOpsClient")
+
 	u, err := urlx.Parse(url)
 	if err != nil {
 		return nil, err
 	}
 
 	if httpClient == nil {
-		httpClient = httpcli.ExternalDoer
+		httpClient = httpcli.ExternalDoer(logger)
 	}
 
 	return &client{
 		httpClient:          httpClient,
 		URL:                 u,
-		internalRateLimiter: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("AzureDevOpsClient"), urn)),
+		internalRateLimiter: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(logger, urn)),
 		externalRateLimiter: ratelimit.DefaultMonitorRegistry.GetOrSet(url, auth.Hash(), "rest", &ratelimit.Monitor{HeaderPrefix: "X-"}),
 		auth:                auth,
 		urn:                 urn,
 		waitForRateLimit:    true,
 		maxRateLimitRetries: 2,
+		logger:              logger,
 	}, nil
 }
 
@@ -186,7 +190,7 @@ func (c *client) WithAuthenticator(a auth.Authenticator) (Client, error) {
 		return nil, errors.Errorf("authenticator type unsupported for Azure DevOps clients: %s", a)
 	}
 
-	return NewClient(c.urn, c.URL.String(), a, c.httpClient)
+	return NewClient(c.urn, c.URL.String(), a, c.httpClient, c.logger)
 }
 
 func (c *client) SetWaitForRateLimit(wait bool) {

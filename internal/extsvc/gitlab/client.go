@@ -65,9 +65,14 @@ type CommonOp struct {
 	NoCache bool
 }
 
-func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
+func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer, logger log.Logger) *ClientProvider {
+	logger = logger.Scoped("GitLabClientProvider").With(
+		log.String("urn", urn),
+		log.String("baseURL", baseURL.String()),
+	)
+
 	if cli == nil {
-		cli = httpcli.ExternalDoer
+		cli = httpcli.ExternalDoer(logger)
 	}
 	cli = requestCounter.Doer(cli, func(u *url.URL) string {
 		// The 3rd component of the Path (/api/v4/XYZ) mostly maps to the type of API

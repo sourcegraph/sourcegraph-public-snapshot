@@ -48,8 +48,9 @@ func NewBitbucketCloudSource(ctx context.Context, logger log.Logger, svc *types.
 }
 
 func newBitbucketCloudSource(logger log.Logger, svc *types.ExternalService, c *schema.BitbucketCloudConnection, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+	logger = logger.Scoped("BitbucketCloudSource")
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternalClientFactory(logger)
 	}
 
 	cli, err := cf.Doer()
@@ -69,7 +70,7 @@ func newBitbucketCloudSource(logger log.Logger, svc *types.ExternalService, c *s
 		return nil, err
 	}
 
-	client, err := bitbucketcloud.NewClient(svc.URN(), c, cli)
+	client, err := bitbucketcloud.NewClient(svc.URN(), c, cli, logger)
 	if err != nil {
 		return nil, err
 	}

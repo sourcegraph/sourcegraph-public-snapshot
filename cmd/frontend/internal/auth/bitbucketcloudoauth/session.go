@@ -56,7 +56,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		conf := &schema.BitbucketCloudConnection{
 			Url: s.baseURL.String(),
 		}
-		client, err = bitbucketcloud.NewClient(s.baseURL.String(), conf, nil)
+		client, err = bitbucketcloud.NewClient(s.baseURL.String(), conf, nil, s.logger)
 		if err != nil {
 			return false, nil, "Could not initialize Bitbucket Cloud client", err
 		}
@@ -113,7 +113,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			CreateIfNotExist:    attempt.createIfNotExist,
 		})
 		if err == nil {
-			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, hubSpotProps)
+			go hubspotutil.SyncUser(s.logger, attempt.email, hubspotutil.SignupEventID, hubSpotProps)
 			return newUserCreated, actor.FromUser(userID), "", nil
 		}
 		if i == 0 {

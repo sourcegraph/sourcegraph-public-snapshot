@@ -117,7 +117,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	}
 
 	// Submit form to HubSpot
-	if err := hubspotutil.Client().SubmitForm(hubspotutil.SurveyFormID, &surveySubmissionForHubSpot{
+	if err := hubspotutil.Client(r.logger).SubmitForm(hubspotutil.SurveyFormID, &surveySubmissionForHubSpot{
 		Email:           email,
 		Score:           args.Input.Score,
 		OtherUseCase:    args.Input.OtherUseCase,
@@ -181,7 +181,7 @@ func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *stru
 	}
 
 	// Submit form to HubSpot
-	if err := hubspotutil.Client().SubmitForm(hubspotutil.HappinessFeedbackFormID, &data); err != nil {
+	if err := hubspotutil.Client(r.logger).SubmitForm(hubspotutil.HappinessFeedbackFormID, &data); err != nil {
 		// Log an error, but don't return one if the only failure was in submitting feedback results to HubSpot.
 		log15.Error("Unable to submit happiness feedback results to Sourcegraph remote", "error", err)
 	}

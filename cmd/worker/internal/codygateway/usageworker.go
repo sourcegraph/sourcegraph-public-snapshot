@@ -40,7 +40,10 @@ func (j *usageJob) Routines(_ context.Context, observationCtx *observation.Conte
 
 func newCodyGatewayUsageRoutine(observationCtx *observation.Context) goroutine.BackgroundRoutine {
 	handler := goroutine.HandlerFunc(func(ctx context.Context) error {
-		cgc, ok := codygateway.NewClientFromSiteConfig(httpcli.ExternalDoer)
+		logger := observationCtx.Logger.With(
+			log.String("routine", "codygateway-usage"),
+		)
+		cgc, ok := codygateway.NewClientFromSiteConfig(httpcli.ExternalDoer(logger))
 		if !ok {
 			// If no client is configured, skip this iteration.
 			observationCtx.Logger.Info("Not checking Cody Gateway usage, disabled")

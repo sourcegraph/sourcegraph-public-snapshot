@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -39,7 +40,7 @@ func TestAzureDevOpsSource_GitserverPushConfig(t *testing.T) {
 	// So, cue the boilerplate:
 	au := auth.BasicAuth{Username: "user", Password: "pass"}
 
-	s, client := mockAzureDevOpsSource()
+	s, client := mockAzureDevOpsSource(t)
 	client.AuthenticatorFunc.SetDefaultReturn(&au)
 
 	repo := &types.Repo{
@@ -73,7 +74,7 @@ func TestAzureDevOpsSource_WithAuthenticator(t *testing.T) {
 	t.Run("supports BasicAuth", func(t *testing.T) {
 		newClient := NewStrictMockAzureDevOpsClient()
 		au := &auth.BasicAuth{}
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		client.WithAuthenticatorFunc.SetDefaultHook(func(a auth.Authenticator) (azuredevops.Client, error) {
 			assert.Same(t, au, a)
 			return newClient, nil
@@ -93,7 +94,7 @@ func TestAzureDevOpsSource_ValidateAuthenticator(t *testing.T) {
 		"error": errors.New("error"),
 	} {
 		t.Run(name, func(t *testing.T) {
-			s, client := mockAzureDevOpsSource()
+			s, client := mockAzureDevOpsSource(t)
 			client.GetAuthorizedProfileFunc.SetDefaultReturn(azuredevops.Profile{}, want)
 
 			assert.Equal(t, want, s.ValidateAuthenticator(ctx))
@@ -106,7 +107,7 @@ func TestAzureDevOpsSource_LoadChangeset(t *testing.T) {
 
 	t.Run("error getting pull request", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		want := errors.New("error")
 		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
 			assert.Equal(t, testCommonPullRequestArgs, r)
@@ -120,7 +121,7 @@ func TestAzureDevOpsSource_LoadChangeset(t *testing.T) {
 
 	t.Run("pull request not found", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
 			assert.Equal(t, testCommonPullRequestArgs, r)
 			return azuredevops.PullRequest{}, &notFoundError{}
@@ -135,7 +136,7 @@ func TestAzureDevOpsSource_LoadChangeset(t *testing.T) {
 
 	t.Run("error setting changeset metadata", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		want := mockAzureDevOpsAnnotatePullRequestError(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
@@ -151,7 +152,7 @@ func TestAzureDevOpsSource_LoadChangeset(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		mockAzureDevOpsAnnotatePullRequestSuccess(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
@@ -171,7 +172,7 @@ func TestAzureDevOpsSource_CreateChangeset(t *testing.T) {
 
 	t.Run("error creating pull request", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 
 		want := errors.New("error")
 		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.OrgProjectRepoArgs, pri azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
@@ -188,7 +189,7 @@ func TestAzureDevOpsSource_CreateChangeset(t *testing.T) {
 
 	t.Run("error setting changeset metadata", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		want := mockAzureDevOpsAnnotatePullRequestError(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
@@ -206,7 +207,7 @@ func TestAzureDevOpsSource_CreateChangeset(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		mockAzureDevOpsAnnotatePullRequestSuccess(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
@@ -225,7 +226,7 @@ func TestAzureDevOpsSource_CreateChangeset(t *testing.T) {
 
 	t.Run("success with fork", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		mockAzureDevOpsAnnotatePullRequestSuccess(client)
 
 		fork := &azuredevops.Repository{
@@ -256,7 +257,7 @@ func TestAzureDevOpsSource_CreateDraftChangeset(t *testing.T) {
 
 	t.Run("error creating pull request", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 
 		want := errors.New("error")
 		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.OrgProjectRepoArgs, pri azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
@@ -273,7 +274,7 @@ func TestAzureDevOpsSource_CreateDraftChangeset(t *testing.T) {
 
 	t.Run("error setting changeset metadata", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		want := mockAzureDevOpsAnnotatePullRequestError(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
@@ -291,7 +292,7 @@ func TestAzureDevOpsSource_CreateDraftChangeset(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		mockAzureDevOpsAnnotatePullRequestSuccess(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
@@ -311,7 +312,7 @@ func TestAzureDevOpsSource_CreateDraftChangeset(t *testing.T) {
 
 	t.Run("success with fork", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		mockAzureDevOpsAnnotatePullRequestSuccess(client)
 
 		fork := &azuredevops.Repository{
@@ -343,7 +344,7 @@ func TestAzureDevOpsSource_CloseChangeset(t *testing.T) {
 
 	t.Run("error declining pull request", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
 		want := errors.New("error")
@@ -360,7 +361,7 @@ func TestAzureDevOpsSource_CloseChangeset(t *testing.T) {
 
 	t.Run("error setting changeset metadata", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		want := mockAzureDevOpsAnnotatePullRequestError(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
@@ -377,7 +378,7 @@ func TestAzureDevOpsSource_CloseChangeset(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		mockAzureDevOpsAnnotatePullRequestSuccess(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
@@ -398,7 +399,7 @@ func TestAzureDevOpsSource_UpdateChangeset(t *testing.T) {
 
 	t.Run("error getting pull request", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		want := errors.New("error")
 		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
 			assert.Equal(t, testCommonPullRequestArgs, r)
@@ -412,7 +413,7 @@ func TestAzureDevOpsSource_UpdateChangeset(t *testing.T) {
 
 	t.Run("error updating pull request", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		want := errors.New("error")
 		pr := mockAzureDevOpsPullRequest(&testRepository)
 		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
@@ -433,7 +434,7 @@ func TestAzureDevOpsSource_UpdateChangeset(t *testing.T) {
 
 	t.Run("error setting changeset metadata", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		want := mockAzureDevOpsAnnotatePullRequestError(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
@@ -455,7 +456,7 @@ func TestAzureDevOpsSource_UpdateChangeset(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		mockAzureDevOpsAnnotatePullRequestSuccess(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
@@ -481,7 +482,7 @@ func TestAzureDevOpsSource_UndraftChangeset(t *testing.T) {
 
 	t.Run("error updating pull request", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		want := errors.New("error")
 		pr := mockAzureDevOpsPullRequest(&testRepository)
 		client.UpdatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, pri azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
@@ -498,7 +499,7 @@ func TestAzureDevOpsSource_UndraftChangeset(t *testing.T) {
 
 	t.Run("error setting changeset metadata", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		want := mockAzureDevOpsAnnotatePullRequestError(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
@@ -516,7 +517,7 @@ func TestAzureDevOpsSource_UndraftChangeset(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		mockAzureDevOpsAnnotatePullRequestSuccess(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
@@ -539,7 +540,7 @@ func TestAzureDevOpsSource_CreateComment(t *testing.T) {
 
 	t.Run("error creating comment", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
 		want := errors.New("error")
@@ -557,7 +558,7 @@ func TestAzureDevOpsSource_CreateComment(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
 		client.CreatePullRequestCommentThreadFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, ci azuredevops.PullRequestCommentInput) (azuredevops.PullRequestCommentResponse, error) {
@@ -577,7 +578,7 @@ func TestAzureDevOpsSource_MergeChangeset(t *testing.T) {
 
 	t.Run("error merging pull request", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
 		want := errors.New("error")
@@ -597,7 +598,7 @@ func TestAzureDevOpsSource_MergeChangeset(t *testing.T) {
 
 	t.Run("pull request not found", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
 		want := &notFoundError{}
@@ -615,7 +616,7 @@ func TestAzureDevOpsSource_MergeChangeset(t *testing.T) {
 
 	t.Run("error setting changeset metadata", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		want := mockAzureDevOpsAnnotatePullRequestError(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
@@ -642,7 +643,7 @@ func TestAzureDevOpsSource_MergeChangeset(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				cs, _ := mockAzureDevOpsChangeset()
-				s, client := mockAzureDevOpsSource()
+				s, client := mockAzureDevOpsSource(t)
 				mockAzureDevOpsAnnotatePullRequestSuccess(client)
 
 				pr := mockAzureDevOpsPullRequest(&testRepository)
@@ -703,7 +704,7 @@ func TestAzureDevOpsSource_GetFork(t *testing.T) {
 	}
 
 	t.Run("error checking for repo", func(t *testing.T) {
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 
 		want := errors.New("error")
 		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
@@ -718,7 +719,7 @@ func TestAzureDevOpsSource_GetFork(t *testing.T) {
 	})
 
 	t.Run("forked repo already exists", func(t *testing.T) {
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 
 		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
 			assert.Equal(t, args, a)
@@ -734,7 +735,7 @@ func TestAzureDevOpsSource_GetFork(t *testing.T) {
 	})
 
 	t.Run("get project error", func(t *testing.T) {
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 
 		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
 			assert.Equal(t, args, a)
@@ -754,7 +755,7 @@ func TestAzureDevOpsSource_GetFork(t *testing.T) {
 	})
 
 	t.Run("fork error", func(t *testing.T) {
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 
 		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
 			assert.Equal(t, args, a)
@@ -781,7 +782,7 @@ func TestAzureDevOpsSource_GetFork(t *testing.T) {
 	})
 
 	t.Run("success with default namespace, name", func(t *testing.T) {
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 
 		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
 			argsNew := args
@@ -797,7 +798,7 @@ func TestAzureDevOpsSource_GetFork(t *testing.T) {
 	})
 
 	t.Run("success with default name", func(t *testing.T) {
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 
 		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
 			assert.Equal(t, args, a)
@@ -825,7 +826,7 @@ func TestAzureDevOpsSource_GetFork(t *testing.T) {
 	})
 
 	t.Run("success with set namespace, name", func(t *testing.T) {
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 
 		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
 			newArgs := args
@@ -865,7 +866,7 @@ func TestAzureDevOpsSource_annotatePullRequest(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("error getting all statuses", func(t *testing.T) {
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		pr := mockAzureDevOpsPullRequest(&testRepository)
 
 		want := errors.New("error")
@@ -881,7 +882,7 @@ func TestAzureDevOpsSource_annotatePullRequest(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		s, client := mockAzureDevOpsSource()
+		s, client := mockAzureDevOpsSource(t)
 		pr := mockAzureDevOpsPullRequest(&testRepository)
 
 		want := []*azuredevops.PullRequestBuildStatus{
@@ -960,9 +961,9 @@ func annotateChangesetWithPullRequest(cs *Changeset, pr *azuredevops.PullRequest
 	}
 }
 
-func mockAzureDevOpsSource() (*AzureDevOpsSource, *MockAzureDevOpsClient) {
+func mockAzureDevOpsSource(t *testing.T) (*AzureDevOpsSource, *MockAzureDevOpsClient) {
 	client := NewStrictMockAzureDevOpsClient()
-	s := &AzureDevOpsSource{client: client}
+	s := &AzureDevOpsSource{client: client, logger: logtest.Scoped(t)}
 
 	return s, client
 }

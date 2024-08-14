@@ -1,6 +1,8 @@
 package gerrit
 
 import (
+	"github.com/sourcegraph/log"
+
 	atypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -8,8 +10,10 @@ import (
 )
 
 // NewAuthzProviders returns the set of Gerrit authz providers derived from the connections.
-func NewAuthzProviders(conns []*types.GerritConnection) *atypes.ProviderInitResult {
+func NewAuthzProviders(conns []*types.GerritConnection, logger log.Logger) *atypes.ProviderInitResult {
 	initResults := &atypes.ProviderInitResult{}
+
+	logger = logger.Scoped("GerritAuthzProvider")
 
 	for _, c := range conns {
 		if c.Authorization == nil {
@@ -23,7 +27,7 @@ func NewAuthzProviders(conns []*types.GerritConnection) *atypes.ProviderInitResu
 			continue
 		}
 
-		p, err := NewProvider(c)
+		p, err := NewProvider(c, logger)
 		if err != nil {
 			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeGerrit)
 			initResults.Problems = append(initResults.Problems, err.Error())

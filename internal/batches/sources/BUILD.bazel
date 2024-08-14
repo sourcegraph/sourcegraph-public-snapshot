@@ -124,6 +124,8 @@ go_test(
         "@com_github_grafana_regexp//:regexp",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_masterminds_semver//:semver",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//mock",
         "@com_github_stretchr_testify//require",

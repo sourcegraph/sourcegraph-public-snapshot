@@ -12,6 +12,7 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
@@ -274,7 +275,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 					}
 
 					ctx := context.Background()
-					gitlabSource, err := NewGitLabSource(ctx, svc, cf)
+					gitlabSource, err := NewGitLabSource(ctx, svc, cf, logtest.Scoped(t))
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -594,7 +595,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 					}
 
 					ctx := context.Background()
-					gitlabSource, err := NewGitLabSource(ctx, svc, cf)
+					gitlabSource, err := NewGitLabSource(ctx, svc, cf, logtest.Scoped(t))
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -941,7 +942,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 				}
 
 				ctx := context.Background()
-				gitlabSource, err := NewGitLabSource(ctx, svc, cf)
+				gitlabSource, err := NewGitLabSource(ctx, svc, cf, logtest.Scoped(t))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -1076,7 +1077,7 @@ type gitLabChangesetSourceTestProvider struct {
 // objects, along with a handful of methods to mock underlying
 // internal/extsvc/gitlab functions.
 func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTestProvider {
-	prov := gitlab.NewClientProvider("Test", &url.URL{}, &panicDoer{})
+	prov := gitlab.NewClientProvider("Test", &url.URL{}, &panicDoer{}, logtest.Scoped(t))
 	repo := &types.Repo{Metadata: &gitlab.Project{}}
 	p := &gitLabChangesetSourceTestProvider{
 		changeset: &Changeset{
@@ -1343,7 +1344,7 @@ func paginatedPipelineIterator(pipelines []*gitlab.Pipeline, pageSize int) func(
 func TestGitLabSource_WithAuthenticator(t *testing.T) {
 	t.Run("supported", func(t *testing.T) {
 		var src ChangesetSource
-		src, err := newGitLabSource("Test", &schema.GitLabConnection{}, nil)
+		src, err := newGitLabSource("Test", &schema.GitLabConnection{}, nil, logtest.Scoped(t))
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -1367,7 +1368,7 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				var src ChangesetSource
-				src, err := newGitLabSource("Test", &schema.GitLabConnection{}, nil)
+				src, err := newGitLabSource("Test", &schema.GitLabConnection{}, nil, logtest.Scoped(t))
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}
@@ -1561,7 +1562,7 @@ func TestDecorateMergeRequestData(t *testing.T) {
 				Url:   "https://gitlab.com",
 				Token: os.Getenv("GITLAB_TOKEN"),
 			},
-			cf,
+			cf, logtest.Scoped(t),
 		)
 
 		assert.Nil(t, err)

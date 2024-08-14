@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -38,7 +40,7 @@ type GerritSource struct {
 }
 
 // NewGerritSource returns a new GerritSource from the given external service.
-func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GerritSource, error) {
+func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory, logger log.Logger) (*GerritSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -48,8 +50,10 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
 
+	logger = logger.Scoped("GerritSource")
+
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternalClientFactory(logger)
 	}
 
 	httpCli, err := cf.Doer()
@@ -65,7 +69,7 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 	cli, err := gerrit.NewClient(svc.URN(), u, &gerrit.AccountCredentials{
 		Username: c.Username,
 		Password: c.Password,
-	}, httpCli)
+	}, httpCli, logger)
 	if err != nil {
 		return nil, err
 	}

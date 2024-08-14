@@ -15,6 +15,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
@@ -53,7 +54,7 @@ func createTestProvider(t *testing.T) *ClientProvider {
 		t.Fatal(err)
 	}
 	baseURL, _ := url.Parse("https://gitlab.com/")
-	provider := NewClientProvider("Test", baseURL, doer)
+	provider := NewClientProvider("Test", baseURL, doer, logtest.Scoped(t))
 	return provider
 }
 
@@ -108,7 +109,7 @@ func TestClient_doWithBaseURL(t *testing.T) {
 
 	ctx := context.Background()
 
-	provider := NewClientProvider("Test", baseURL, doer)
+	provider := NewClientProvider("Test", baseURL, doer, logtest.Scoped(t))
 
 	client := provider.getClient(&auth.OAuthBearerToken{Token: "bad token", RefreshToken: "refresh token", RefreshFunc: func(ctx context.Context, cli httpcli.Doer, obt *auth.OAuthBearerToken) (string, string, time.Time, error) {
 		obt.Token = "refreshed-token"
@@ -197,7 +198,7 @@ func TestRateLimitRetry(t *testing.T) {
 			srvURL, err := url.Parse(srv.URL)
 			require.NoError(t, err)
 
-			provider := NewClientProvider("Test", srvURL, httpcli.TestExternalDoer)
+			provider := NewClientProvider("Test", srvURL, httpcli.TestExternalDoer, logtest.Scoped(t))
 			client := provider.getClient(nil)
 			client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("gitlab", rate.NewLimiter(100, 10))
 			client.waitForRateLimit = tt.waitForRateLimit

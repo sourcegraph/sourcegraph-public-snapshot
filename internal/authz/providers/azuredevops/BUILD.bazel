@@ -46,5 +46,6 @@ go_test(
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_goware_urlx//:urlx",
+        "@com_github_sourcegraph_log//logtest",
     ],
 )

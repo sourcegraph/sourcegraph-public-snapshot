@@ -88,12 +88,18 @@ func NewV3SearchClient(logger log.Logger, urn string, apiURL *url.URL, a auth.Au
 }
 
 func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer) *V3Client {
+	logger = logger.Scoped("github.v3").
+		With(
+			log.String("urn", urn),
+			log.String("resource", resource),
+		)
+
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
 	}
 	if cli == nil {
-		cli = httpcli.ExternalDoer
+		cli = httpcli.ExternalDoer(logger)
 	}
 
 	cli = requestCounter.Doer(cli, func(u *url.URL) string {
@@ -116,11 +122,7 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, resource, &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V3Client{
-		log: logger.Scoped("github.v3").
-			With(
-				log.String("urn", urn),
-				log.String("resource", resource),
-			),
+		log:                 logger,
 		urn:                 urn,
 		apiURL:              apiURL,
 		githubDotCom:        URLIsGitHubDotCom(apiURL),

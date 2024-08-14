@@ -108,7 +108,7 @@ func getOrCreateUser(
 	if err != nil {
 		return false, nil, safeErrMsg, err
 	}
-	go hubspotutil.SyncUser(email, hubspotutil.SignupEventID, hubSpotProps)
+	go hubspotutil.SyncUser(logger, email, hubspotutil.SignupEventID, hubSpotProps)
 	return newUserCreated, actor.FromUser(userID), "", nil
 }
 

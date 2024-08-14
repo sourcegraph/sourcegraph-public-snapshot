@@ -43,6 +43,8 @@ type (
 
 // NewOtherSource returns a new OtherSource from the given external service.
 func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory, logger log.Logger) (*OtherSource, error) {
+	logger = logger.Scoped("OtherSource")
+
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -53,7 +55,7 @@ func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli
 	}
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternalClientFactory(logger)
 	}
 
 	cli, err := cf.Doer()

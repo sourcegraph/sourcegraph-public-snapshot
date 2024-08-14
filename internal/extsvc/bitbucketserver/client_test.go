@@ -22,6 +22,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
@@ -92,7 +93,7 @@ func TestClientKeepsBaseURLPath(t *testing.T) {
 	srvURL, err := url.JoinPath(srv.URL, "/testpath")
 	require.NoError(t, err)
 	bbConf := &schema.BitbucketServerConnection{Url: srvURL}
-	client, err := NewClient("test", bbConf, httpcli.TestExternalDoer)
+	client, err := NewClient("test", bbConf, httpcli.TestExternalDoer, logtest.Scoped(t))
 	require.NoError(t, err)
 	client.rateLimit = ratelimit.NewInstrumentedLimiter("bitbucket", rate.NewLimiter(100, 10))
 
@@ -162,7 +163,7 @@ func TestUserFilters(t *testing.T) {
 }
 
 func TestClient_Users(t *testing.T) {
-	cli := NewTestClient(t, "Users", *update)
+	cli := NewTestClient(t, logtest.Scoped(t), "Users", *update)
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer cancel()
@@ -338,7 +339,7 @@ func TestClient_Users(t *testing.T) {
 }
 
 func TestClient_LabeledRepos(t *testing.T) {
-	cli := NewTestClient(t, "LabeledRepos", *update)
+	cli := NewTestClient(t, logtest.Scoped(t), "LabeledRepos", *update)
 
 	// We have archived label on bitbucket.sgdev.org with a repo in it.
 	repos, _, err := cli.LabeledRepos(context.Background(), nil, "archived")
@@ -424,7 +425,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			name := "PullRequests-" + strings.ReplaceAll(tc.name, " ", "-")
-			cli := NewTestClient(t, name, *update)
+			cli := NewTestClient(t, logtest.Scoped(t), name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -573,7 +574,7 @@ func TestClient_CreatePullRequest(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			name := "CreatePullRequest-" + strings.ReplaceAll(tc.name, " ", "-")
-			cli := NewTestClient(t, name, *update)
+			cli := NewTestClient(t, logtest.Scoped(t), name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -716,7 +717,7 @@ func TestClient_FetchDefaultReviewers(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			name := "FetchDefaultReviewers-" + strings.ReplaceAll(tc.name, " ", "-")
-			cli := NewTestClient(t, name, *update)
+			cli := NewTestClient(t, logtest.Scoped(t), name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -798,7 +799,7 @@ func TestClient_DeclinePullRequest(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			name := "DeclinePullRequest-" + strings.ReplaceAll(tc.name, " ", "-")
-			cli := NewTestClient(t, name, *update)
+			cli := NewTestClient(t, logtest.Scoped(t), name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -830,7 +831,7 @@ func TestClient_LoadPullRequestActivities(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	cli := NewTestClient(t, "PullRequestActivities", *update)
+	cli := NewTestClient(t, logtest.Scoped(t), "PullRequestActivities", *update)
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer cancel()
@@ -952,7 +953,7 @@ func TestClient_CreatePullRequestComment(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			name := "CreatePullRequestComment-" + strings.ReplaceAll(tc.name, " ", "-")
-			cli := NewTestClient(t, name, *update)
+			cli := NewTestClient(t, logtest.Scoped(t), name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -1039,7 +1040,7 @@ func TestClient_MergePullRequest(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			name := "MergePullRequest-" + strings.ReplaceAll(tc.name, " ", "-")
 
-			cli := NewTestClient(t, name, *update)
+			cli := NewTestClient(t, logtest.Scoped(t), name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -1070,7 +1071,7 @@ func TestClient_MergePullRequest(t *testing.T) {
 // dependent on the user token supplied. The current golden files are generated
 // from using the account zoom@sourcegraph.com on bitbucket.sgdev.org.
 func TestClient_RepoIDs(t *testing.T) {
-	cli := NewTestClient(t, "RepoIDs", *update)
+	cli := NewTestClient(t, logtest.Scoped(t), "RepoIDs", *update)
 
 	ids, err := cli.RepoIDs(context.Background(), "READ")
 	if err != nil {
@@ -1115,7 +1116,7 @@ func TestAuth(t *testing.T) {
 			client, err := NewClient("urn", &schema.BitbucketServerConnection{
 				Url:   "http://example.com/",
 				Token: "foo",
-			}, nil)
+			}, nil, logtest.Scoped(t))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1133,7 +1134,7 @@ func TestAuth(t *testing.T) {
 				Url:      "http://example.com/",
 				Username: "foo",
 				Password: "bar",
-			}, nil)
+			}, nil, logtest.Scoped(t))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1155,7 +1156,7 @@ func TestAuth(t *testing.T) {
 						SigningKey:  "this is an invalid key",
 					},
 				},
-			}, nil); err == nil {
+			}, nil, logtest.Scoped(t)); err == nil {
 				t.Error("unexpected nil error")
 			}
 		})
@@ -1179,7 +1180,7 @@ func TestAuth(t *testing.T) {
 						SigningKey:  signingKey,
 					},
 				},
-			}, nil)
+			}, nil, logtest.Scoped(t))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1275,7 +1276,7 @@ func TestClient_WithAuthenticator(t *testing.T) {
 
 func TestClient_GetVersion(t *testing.T) {
 	fixture := "GetVersion"
-	cli := NewTestClient(t, fixture, *update)
+	cli := NewTestClient(t, logtest.Scoped(t), fixture, *update)
 
 	have, err := cli.GetVersion(context.Background())
 	if err != nil {
@@ -1291,7 +1292,7 @@ func TestClient_CreateFork(t *testing.T) {
 	ctx := context.Background()
 
 	fixture := "CreateFork"
-	cli := NewTestClient(t, fixture, *update)
+	cli := NewTestClient(t, logtest.Scoped(t), fixture, *update)
 
 	have, err := cli.Fork(ctx, "SGDEMO", "go", CreateForkInput{})
 	assert.Nil(t, err)
@@ -1303,7 +1304,7 @@ func TestClient_CreateFork(t *testing.T) {
 }
 
 func TestClient_ProjectRepos(t *testing.T) {
-	cli := NewTestClient(t, "ProjectRepos", *update)
+	cli := NewTestClient(t, logtest.Scoped(t), "ProjectRepos", *update)
 
 	// Empty project key should cause an error
 	_, err := cli.ProjectRepos(context.Background(), "")

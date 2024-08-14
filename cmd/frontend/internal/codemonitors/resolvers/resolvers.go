@@ -412,7 +412,9 @@ func (r *Resolver) TriggerTestWebhookAction(ctx context.Context, args *graphqlba
 		return nil, err
 	}
 
-	if err := background.SendTestWebhook(ctx, httpcli.ExternalDoer, args.Description, args.Webhook.URL); err != nil {
+	logger := r.logger.Scoped("TriggerTestWebhookAction")
+
+	if err := background.SendTestWebhook(ctx, httpcli.ExternalDoer(logger), args.Description, args.Webhook.URL); err != nil {
 		return nil, err
 	}
 
@@ -425,7 +427,8 @@ func (r *Resolver) TriggerTestSlackWebhookAction(ctx context.Context, args *grap
 		return nil, err
 	}
 
-	if err := background.SendTestSlackWebhook(ctx, httpcli.ExternalDoer, args.Description, args.SlackWebhook.URL); err != nil {
+	logger := r.logger.Scoped("TriggerTestSlackWebhookAction")
+	if err := background.SendTestSlackWebhook(ctx, httpcli.ExternalDoer(logger), args.Description, args.SlackWebhook.URL); err != nil {
 		return nil, err
 	}
 
