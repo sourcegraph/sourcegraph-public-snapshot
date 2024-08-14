@@ -38,7 +38,7 @@ func (m gitlabAuthzProviderParams) Repos(ctx context.Context, repos []*types.Rep
 	panic("should never be called")
 }
 
-func (m gitlabAuthzProviderParams) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, verifiedEmails []string) (mine *extsvc.Account, err error) {
+func (m gitlabAuthzProviderParams) FetchAccount(ctx context.Context, user *types.User, verifiedEmails []string) (mine *extsvc.Account, err error) {
 	panic("should never be called")
 }
 

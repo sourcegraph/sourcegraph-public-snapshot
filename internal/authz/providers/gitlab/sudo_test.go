@@ -29,8 +29,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 	type call struct {
 		description string
 
-		user    *types.User
-		current []*extsvc.Account
+		user *types.User
 
 		expMine *extsvc.Account
 	}
@@ -98,7 +97,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 			authzProvider := newSudoProvider(test.op, nil)
 			for _, c := range test.calls {
 				t.Run(c.description, func(t *testing.T) {
-					acct, err := authzProvider.FetchAccount(ctx, c.user, c.current, nil)
+					acct, err := authzProvider.FetchAccount(ctx, c.user, nil)
 					if err != nil {
 						t.Fatalf("unexpected error: %v", err)
 					}

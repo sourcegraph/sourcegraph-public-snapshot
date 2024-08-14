@@ -38,7 +38,7 @@ func TestProvider_FetchAccount(t *testing.T) {
 
 	t.Run("no matching account", func(t *testing.T) {
 		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
-		got, err := p.FetchAccount(ctx, user, nil, []string{"bob@example.com"})
+		got, err := p.FetchAccount(ctx, user, []string{"bob@example.com"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -50,7 +50,7 @@ func TestProvider_FetchAccount(t *testing.T) {
 
 	t.Run("found matching account", func(t *testing.T) {
 		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
-		got, err := p.FetchAccount(ctx, user, nil, []string{"alice@example.com"})
+		got, err := p.FetchAccount(ctx, user, []string{"alice@example.com"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -83,7 +83,7 @@ func TestProvider_FetchAccount(t *testing.T) {
 
 	t.Run("found matching account case insensitive", func(t *testing.T) {
 		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
-		got, err := p.FetchAccount(ctx, user, nil, []string{"Alice@Example.com"})
+		got, err := p.FetchAccount(ctx, user, []string{"Alice@Example.com"})
 		if err != nil {
 			t.Fatal(err)
 		}

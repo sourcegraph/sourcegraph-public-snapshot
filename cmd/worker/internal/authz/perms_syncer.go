@@ -477,7 +477,7 @@ func (s *permsSyncerImpl) fetchUserPermsViaExternalAccounts(ctx context.Context,
 			continue
 		}
 
-		acct, err := provider.FetchAccount(ctx, user, accts, emails)
+		acct, err := provider.FetchAccount(ctx, user, emails)
 		if err != nil {
 			results.providerStates = append(results.providerStates, database.NewProviderStatus(provider, err, "FetchAccount"))
 			providerLogger.Error("could not fetch account from authz provider", log.Error(err))

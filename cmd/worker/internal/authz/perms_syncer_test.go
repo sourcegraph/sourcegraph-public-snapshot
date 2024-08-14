@@ -33,12 +33,12 @@ type mockProvider struct {
 	fetchUserPerms        func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error)
 	fetchUserPermsByToken func(ctx context.Context, token string) (*authz.ExternalUserPermissions, error)
 	fetchRepoPerms        func(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error)
-	fetchAccount          func(ctx context.Context, user *types.User, accounts []*extsvc.Account, emails []string) (*extsvc.Account, error)
+	fetchAccount          func(ctx context.Context, user *types.User, emails []string) (*extsvc.Account, error)
 }
 
-func (p *mockProvider) FetchAccount(ctx context.Context, user *types.User, accounts []*extsvc.Account, emails []string) (*extsvc.Account, error) {
+func (p *mockProvider) FetchAccount(ctx context.Context, user *types.User, emails []string) (*extsvc.Account, error) {
 	if p.fetchAccount != nil {
-		return p.fetchAccount(ctx, user, accounts, emails)
+		return p.fetchAccount(ctx, user, emails)
 	}
 	return nil, nil
 }
@@ -363,7 +363,7 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if test.fetchAccountError != nil {
-				p2.fetchAccount = func(context.Context, *types.User, []*extsvc.Account, []string) (*extsvc.Account, error) {
+				p2.fetchAccount = func(context.Context, *types.User, []string) (*extsvc.Account, error) {
 					return nil, test.fetchAccountError
 				}
 			}
@@ -727,7 +727,6 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 		// Verify that the UpsertWithSpec (non IP version) was called once
 		assert.Equal(t, 1, upsertCallCount, "UpsertWithSpec should have been called once")
 	})
-
 }
 
 func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
@@ -1093,7 +1092,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 			},
 		}, nil
 	}
-	p.fetchAccount = func(ctx context.Context, user *types.User, accounts []*extsvc.Account, emails []string) (*extsvc.Account, error) {
+	p.fetchAccount = func(ctx context.Context, user *types.User, emails []string) (*extsvc.Account, error) {
 		return &extsvc.Account{
 			AccountSpec: extsvc.AccountSpec{
 				ServiceType: p.ServiceType(),

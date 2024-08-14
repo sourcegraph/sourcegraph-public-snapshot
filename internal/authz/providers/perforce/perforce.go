@@ -76,7 +76,7 @@ func NewProvider(logger log.Logger, gitserverClient gitserver.Client, urn, host,
 // FetchAccount uses given user's verified emails to match users on the Perforce
 // Server. It returns when any of the verified email has matched and the match
 // result is not deterministic.
-func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*extsvc.Account, verifiedEmails []string) (_ *extsvc.Account, err error) {
+func (p *Provider) FetchAccount(ctx context.Context, user *types.User, verifiedEmails []string) (_ *extsvc.Account, err error) {
 	if user == nil {
 		return nil, nil
 	}

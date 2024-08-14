@@ -83,9 +83,19 @@ func (p *OAuth2Provider) ServiceID() string { return p.codeHost.ServiceID }
 func (p *OAuth2Provider) ServiceType() string { return p.codeHost.ServiceType }
 
 // FetchAccount satisfies the authz.Provider interface.
-func (p *OAuth2Provider) FetchAccount(ctx context.Context, user *types.User, _ []*extsvc.Account, _ []string) (acct *extsvc.Account, err error) {
-	// FetchAccount is not implemented for OAuth2, since accounts are fetched when the user signs in via OAuth2.
+func (p *OAuth2Provider) FetchAccount(ctx context.Context, user *types.User, _ []string) (acct *extsvc.Account, err error) {
+	// OAuth2 accounts are created via user sign-in
 	return nil, nil
+}
+
+type accountSuspendedError struct{}
+
+func (e accountSuspendedError) Error() string {
+	return "account suspended"
+}
+
+func (e accountSuspendedError) AccountSuspended() bool {
+	return true
 }
 
 // FetchUserPerms returns a list of repository IDs (on code host) that the given account
@@ -110,6 +120,11 @@ func (p *OAuth2Provider) FetchUserPerms(ctx context.Context, account *extsvc.Acc
 	_, tok, err := bitbucketserver.GetExternalAccountData(ctx, &account.AccountData)
 	if err != nil {
 		return nil, err
+	}
+	// if tok is nil, this is most likely an OAuth1 account and should no
+	// longer be used.
+	if tok == nil {
+		return nil, accountSuspendedError{}
 	}
 	oauthToken := &auth.OAuthBearerToken{
 		Token:              tok.AccessToken,
