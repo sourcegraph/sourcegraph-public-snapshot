@@ -117,6 +117,7 @@
     $: selectedCodeGraphDataOccurrences = codeGraphData?.find(datum =>
         datum.commit.startsWith($selectedCodeGraphDataDebugOption)
     )?.occurrences // TODO: we should probably use the nonoverlapping occurrences here
+    $: isPerforceDepot = data.isPerforceDepot
 
     function viewModeURL(viewMode: CodeViewMode) {
         switch (viewMode) {
@@ -181,7 +182,10 @@
             {#if blob}
                 <OpenInCodeHostAction data={blob} lineOrPosition={data.lineOrPosition} />
             {/if}
-            <Permalink {commitID} />
+            <Permalink
+                revID={commitID}
+                tooltip={isPerforceDepot ? 'Permalink (with full changelist ID)' : 'Permalink (with full commit SHA)'}
+            />
             {#if $isCodyAvailable}
                 <OpenCodyAction />
             {/if}

@@ -63,6 +63,7 @@ const defaultMocks: TypeMocks = {
     GitCommit: () => ({
         abbreviatedOID: faker.git.commitSha({ length: 7 }),
         subject: faker.git.commitMessage(),
+        perforceChangelist: null,
     }),
     JSONCString: () => '{}',
 }

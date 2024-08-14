@@ -1,45 +1,42 @@
-import { error, redirect } from '@sveltejs/kit'
+import { error } from '@sveltejs/kit'
 
 import { IncrementalRestoreStrategy, getGraphQLClient, infinityQuery } from '$lib/graphql'
-import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
-import { CommitPage_CommitQuery, CommitPage_DiffQuery } from './page.gql'
+import { ChangelistPage_ChangelistQuery, ChangelistPage_DiffQuery } from './page.gql'
 
 const PAGE_SIZE = 20
 
-export const load: PageLoad = async ({ url, params }) => {
+export const load: PageLoad = async ({ params }) => {
     const client = getGraphQLClient()
-    const { repoName } = parseRepoRevision(params.repo)
 
-    const result = await client.query(CommitPage_CommitQuery, { repoName, revspec: params.revspec })
+    const result = await client.query(ChangelistPage_ChangelistQuery, {
+        repoName: params.repo,
+        cid: params.changelistID,
+    })
 
     if (result.error) {
         error(500, `Unable to load commit data: ${result.error}`)
     }
 
-    const commit = result.data?.repository?.commit
-    if (!commit) {
-        error(404, 'Commit not found')
-    }
+    const changelist = result.data?.repository?.changelist
 
-    if (commit.perforceChangelist !== null) {
-        const redirectURL = new URL(url)
-        redirectURL.pathname = `${params.repo}/-/changelist/${commit.perforceChangelist?.cid}`
-        redirect(301, redirectURL)
+    if (!changelist) {
+        error(404, 'Changelist not found')
     }
 
     // parents is an empty array for the initial commit
     // We currently don't support diffs for the initial commit on the backend
+
     const diff =
-        commit?.oid && commit?.parents[0]?.oid
+        changelist.cid && changelist?.commit.parents[0]?.parent?.cid
             ? infinityQuery({
                   client,
-                  query: CommitPage_DiffQuery,
+                  query: ChangelistPage_DiffQuery,
                   variables: {
-                      repoName,
-                      base: commit.parents[0].oid,
-                      head: commit.oid,
+                      repoName: params.repo,
+                      base: changelist.commit.parents[0].oid,
+                      head: changelist.commit.oid,
                       first: PAGE_SIZE,
                       after: null as string | null,
                   },
@@ -62,7 +59,7 @@ export const load: PageLoad = async ({ url, params }) => {
             : null
 
     return {
-        commit,
+        changelist,
         diff,
     }
 }

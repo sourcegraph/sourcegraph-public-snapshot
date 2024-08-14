@@ -40,3 +40,14 @@ fragment RepositoryGitRevAuthor on GitCommit {
         }
     }
 }
+
+fragment RevPickerChangelist on GitCommit {
+    __typename
+    id
+    subject
+    perforceChangelist {
+        cid
+        canonicalURL
+    }
+    ...DepotChangelistAuthor
+}

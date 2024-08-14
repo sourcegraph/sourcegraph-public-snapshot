@@ -7,6 +7,7 @@ import { CloneInProgressError, RepoNotFoundError, displayRepoName, parseRepoRevi
 
 import type { LayoutLoad } from './$types'
 import {
+    DepotChangelists,
     RepositoryGitCommits,
     RepositoryGitRefs,
     ResolveRepoRevision,
@@ -27,6 +28,7 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
 
     // An empty revision means we are at the default branch
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
+
     const resolvedRepository = await resolveRepoRevision({
         client,
         repoName,
@@ -50,8 +52,11 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
          * - a symbolic revision (e.g. a branch or tag name)
          */
         displayRevision: displayRevision(revision, resolvedRepository),
-        defaultBranch: resolvedRepository.defaultBranch?.abbrevName || 'HEAD',
+        defaultBranch: resolvedRepository.defaultBranch?.target.commit?.perforceChangelist?.cid
+            ? `changelist/${resolvedRepository.defaultBranch?.target.commit?.perforceChangelist?.cid}`
+            : resolvedRepository.defaultBranch?.abbrevName || 'HEAD',
         resolvedRepository: resolvedRepository,
+        isPerforceDepot: resolvedRepository.externalRepository.serviceType === 'perforce',
 
         // Repository pickers queries (branch, tags and commits)
         getRepoBranches: (searchTerm: string) =>
@@ -108,6 +113,26 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
                         ) {
                             nodes = [commitByHash, ...nodes]
                         }
+                        return { nodes }
+                    })
+                ),
+
+        // Depot pickers queries (changelists, @TODO: labels)
+        getDepotChangelists: (searchTerm: string) =>
+            client
+                .query(DepotChangelists, {
+                    depotName: repoName,
+                    query: searchTerm,
+                    revision: resolvedRepository.commit?.oid || '',
+                })
+                .then(
+                    mapOrThrow(({ data, error }) => {
+                        let nodes = data?.repository?.ancestorChangelists?.ancestors.nodes ?? []
+
+                        if (error) {
+                            throw new Error('Could not load depot changelists:', error)
+                        }
+
                         return { nodes }
                     })
                 ),
