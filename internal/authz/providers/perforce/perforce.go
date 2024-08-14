@@ -102,6 +102,9 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User) (_ *extsv
 			UserID:       user.ID,
 			OnlyVerified: true,
 		})
+	if err != nil {
+		return nil, errors.Wrap(err, "could not fetch user emails")
+	}
 
 	emailSet := make(map[string]struct{}, len(userEmails))
 	for _, email := range userEmails {
