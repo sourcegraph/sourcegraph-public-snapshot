@@ -75,6 +75,7 @@ func dotcomProxyHandlerFunc(doer httpcli.Doer, credentials *golly.TestingCredent
 		}
 		defer resp.Body.Close()
 
+		// Copy headers
 		for name, values := range resp.Header {
 			for _, value := range values {
 				w.Header().Add(name, value)
@@ -83,9 +84,30 @@ func dotcomProxyHandlerFunc(doer httpcli.Doer, credentials *golly.TestingCredent
 
 		w.WriteHeader(resp.StatusCode)
 
-		if _, err := io.Copy(w, resp.Body); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		// Use a flusher if the writer supports it
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
 			return
+		}
+
+		// Stream the body
+		buf := make([]byte, 1024)
+		for {
+			n, err := resp.Body.Read(buf)
+			if n > 0 {
+				_, writeErr := w.Write(buf[:n])
+				if writeErr != nil {
+					return
+				}
+				flusher.Flush()
+			}
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return
+			}
 		}
 	})
 }

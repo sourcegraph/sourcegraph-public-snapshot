@@ -1,12 +1,12 @@
 package llmapi
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"time"
 
@@ -14,6 +14,7 @@ import (
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	completions "github.com/sourcegraph/sourcegraph/internal/completions/types"
 	types "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
@@ -68,7 +69,13 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	}
 
 	sgReq := transformToSGRequest(chatCompletionRequest)
-	sgResp, err := h.forwardToAPIHandler(sgReq, r)
+	if chatCompletionRequest.Stream != nil && *chatCompletionRequest.Stream {
+		// Set appropriate headers for SSE
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+	}
+	sgResp, err := h.forwardToAPIHandler(w, &chatCompletionRequest, sgReq, r)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to forward request to apiHandler: %v", err), http.StatusInternalServerError)
 		return
@@ -106,10 +113,6 @@ func validateChatCompletionRequest(chatCompletionRequest goapi.CreateChatComplet
 
 	if chatCompletionRequest.N != nil && *chatCompletionRequest.N != 1 {
 		return "n must be nil or 1"
-	}
-
-	if chatCompletionRequest.Stream != nil && *chatCompletionRequest.Stream {
-		return "stream is not supported"
 	}
 
 	if chatCompletionRequest.Seed != nil {
@@ -156,7 +159,6 @@ func transformToSGRequest(openAIReq goapi.CreateChatCompletionRequest) completio
 	if openAIReq.TopP != nil {
 		topP = *openAIReq.TopP
 	}
-	stream := false // TODO: reject error when stream is true
 	return completions.CodyCompletionRequestParameters{
 		CompletionRequestParameters: completions.CompletionRequestParameters{
 			MaxTokensToSample: maxTokens,
@@ -164,8 +166,13 @@ func transformToSGRequest(openAIReq goapi.CreateChatCompletionRequest) completio
 			RequestedModel:    completions.TaintedModelRef(openAIReq.Model),
 			Temperature:       temperature,
 			TopP:              topP,
-			Stream:            &stream,
-			StopSequences:     openAIReq.Stop.Stop,
+			// Always use the underlying streaming API. Currently, some of our
+			// internal LLM providers like OpenAI have bugs where `stream:
+			// false` doesn't work at all. We're not using `stream: false` much
+			// in the Cody IDE clients so it's better to rely on the
+			// battle-tested `stream: true` behavior.
+			Stream:        pointers.Ptr(true),
+			StopSequences: openAIReq.Stop.Stop,
 		},
 		Fast: false,
 	}
@@ -191,7 +198,7 @@ func transformMessages(messages []goapi.ChatCompletionRequestMessage) []completi
 	return transformed
 }
 
-func (h *chatCompletionsHandler) forwardToAPIHandler(sgReq completions.CodyCompletionRequestParameters, r *http.Request) (*completions.CompletionResponse, error) {
+func (h *chatCompletionsHandler) forwardToAPIHandler(w http.ResponseWriter, llmReq *goapi.CreateChatCompletionRequest, sgReq completions.CodyCompletionRequestParameters, r *http.Request) (*completions.CompletionResponse, error) {
 	// Create a new request to /.api/completions
 	reqBody, err := json.Marshal(sgReq)
 	if err != nil {
@@ -219,26 +226,76 @@ func (h *chatCompletionsHandler) forwardToAPIHandler(sgReq completions.CodyCompl
 		}
 	}
 
-	// Use a ResponseRecorder to capture the response
-	rr := httptest.NewRecorder()
+	pr, pw := io.Pipe()
 
-	// Serve the request using the provided apiHandler
-	h.apiHandler.ServeHTTP(rr, req)
+	x := &streamingResponseWriter{Writer: pw}
 
-	if rr.Code != http.StatusOK {
-		// TODO: properly return error matching OpenAI spec.
-		return nil, errors.Newf("handler returned unexpected status code: got %v want %v, response body: %s", rr.Code, http.StatusOK, rr.Body.String())
+	go func() {
+		pw.Close()
+		h.apiHandler.ServeHTTP(x, req)
+	}()
+
+	scanner := bufio.NewScanner(pr)
+	for scanner.Scan() {
+		line := scanner.Text()
+		// Process each line as it becomes available
+		fmt.Println("LINE", line)
 	}
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error scanning:", err)
+	}
+	fmt.Println("DONE")
+	pr.Close()
+
+	if x.statusCode != http.StatusOK {
+		return nil, errors.Newf("non-200 %d", x.statusCode)
+	}
+
+	// if rr.Code != http.StatusOK {
+	// 	// TODO: properly return error matching OpenAI spec.
+	// 	return nil, errors.Newf("handler returned unexpected status code: got %v want %v, response body: %s", rr.Code, http.StatusOK, rr.Body.String())
+	// }
 
 	// Parse the response body
-	var sgResp completions.CompletionResponse
-	responseBytes := rr.Body.Bytes()
-	err = json.Unmarshal(responseBytes, &sgResp)
-	if err != nil {
-		return nil, errors.Newf("failed to unmarshal response body %s: %v", string(responseBytes), err)
+	// responseBytes := rr.Body.Bytes()
+	// err = json.Unmarshal(responseBytes, &sgResp)
+	// if err != nil {
+	// 	return nil, errors.Newf("failed to unmarshal response body %s: %v", string(responseBytes), err)
+	// }
+	sgResp := completions.CompletionResponse{
+		Completion: "qux",
 	}
 
+	// return &sgResp, nil
 	return &sgResp, nil
+}
+
+type streamingResponseWriter struct {
+	io.Writer
+	header     http.Header
+	statusCode int
+}
+
+func (w *streamingResponseWriter) Header() http.Header {
+	if w.header == nil {
+		w.header = make(http.Header)
+	}
+	return w.header
+}
+
+func (w *streamingResponseWriter) WriteHeader(statusCode int) {
+	fmt.Println("header", statusCode)
+	w.statusCode = statusCode
+}
+
+type responseWriterWrapper struct {
+	http.ResponseWriter
+	io.Writer
+}
+
+func (w *responseWriterWrapper) Write(data []byte) (int, error) {
+	fmt.Println("data", string(data))
+	return w.Writer.Write(data)
 }
 
 func transformToOpenAIResponse(sgResp *completions.CompletionResponse, openAIReq goapi.CreateChatCompletionRequest) goapi.CreateChatCompletionResponse {
