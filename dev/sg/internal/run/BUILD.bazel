@@ -26,6 +26,7 @@ go_library(
         "//dev/sg/interrupt",
         "//dev/sg/root",
         "//internal/download",
+        "//internal/lazyregexp",
         "//lib/errors",
         "//lib/output",
         "//lib/process",

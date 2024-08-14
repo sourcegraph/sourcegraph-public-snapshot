@@ -7,6 +7,8 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/ssh"
 
+	"github.com/sourcegraph/log"
+
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	clientsv1 "github.com/sourcegraph/sourcegraph-accounts-sdk-go/clients/v1"
 
@@ -14,9 +16,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
 	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/slack"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/iam"
+	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/contract"
 )
 
 // StoreV1 is the data layer carrier for subscriptions service v1. This interface
@@ -26,6 +30,8 @@ type StoreV1 interface {
 	// Now provides the current time. It should always be used instead of
 	// utctime.Now() or time.Now() for ease of mocking in tests.
 	Now() utctime.Time
+	// Env provides the current Enterprise Portal environment.
+	Env() string
 
 	// GenerateSubscriptionID generates a new subscription ID for subscription
 	// creation.
@@ -73,6 +79,10 @@ type StoreV1 interface {
 	// IAMCheck checks whether a relationship exists (thus permission allowed) using
 	// the given tuple key as the check condition.
 	IAMCheck(ctx context.Context, opts iam.CheckOptions) (allowed bool, _ error)
+
+	// PostToSlack sends a Slack message to the destination configured for
+	// subscription API events, such as license creation.
+	PostToSlack(ctx context.Context, payload *slack.Payload) error
 }
 
 // licenseKeysStore groups mechanisms specific to the license type
@@ -91,38 +101,52 @@ type licenseKeysStore interface {
 }
 
 type storeV1 struct {
+	logger     log.Logger
+	env        string
 	db         *database.DB
 	SAMSClient *sams.ClientV1
 	IAMClient  *iam.ClientV1
 	// LicenseKeySigner may be nil if not configured for key signing.
 	LicenseKeySigner       ssh.Signer
 	LicenseKeyRequiredTags []string
+
+	SlackWebhookURL *string
 }
 
 type NewStoreV1Options struct {
+	Contract contract.Contract
+
 	DB         *database.DB
 	SAMSClient *sams.ClientV1
 	IAMClient  *iam.ClientV1
 
 	LicenseKeySigner       ssh.Signer
 	LicenseKeyRequiredTags []string
+
+	SlackWebhookURL *string
 }
 
 var errStoreUnimplemented = errors.New("unimplemented")
 
 // NewStoreV1 returns a new StoreV1 using the given resource handles.
-func NewStoreV1(opts NewStoreV1Options) StoreV1 {
+func NewStoreV1(logger log.Logger, opts NewStoreV1Options) StoreV1 {
 	return &storeV1{
+		logger:     logger.Scoped("subscriptions.v1.store"),
+		env:        opts.Contract.EnvironmentID,
 		db:         opts.DB,
 		SAMSClient: opts.SAMSClient,
 		IAMClient:  opts.IAMClient,
 
 		LicenseKeySigner:       opts.LicenseKeySigner,
 		LicenseKeyRequiredTags: opts.LicenseKeyRequiredTags,
+
+		SlackWebhookURL: opts.SlackWebhookURL,
 	}
 }
 
 func (s *storeV1) Now() utctime.Time { return utctime.Now() }
+
+func (s *storeV1) Env() string { return s.env }
 
 func (s *storeV1) GenerateSubscriptionID() (string, error) {
 	id, err := uuid.NewRandom()
@@ -211,4 +235,13 @@ func (s *storeV1) IAMWrite(ctx context.Context, opts iam.WriteOptions) error {
 
 func (s *storeV1) IAMCheck(ctx context.Context, opts iam.CheckOptions) (allowed bool, _ error) {
 	return s.IAMClient.Check(ctx, opts)
+}
+
+func (s *storeV1) PostToSlack(ctx context.Context, payload *slack.Payload) error {
+	if s.SlackWebhookURL == nil {
+		s.logger.Info("PostToSlack",
+			log.String("text", payload.Text))
+		return nil
+	}
+	return slack.New(*s.SlackWebhookURL).Post(ctx, payload)
 }

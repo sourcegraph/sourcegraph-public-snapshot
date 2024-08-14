@@ -30,9 +30,6 @@ func TestRun(t *testing.T) {
 
 		mockassert.CalledN(t, store.UpFunc, 4)
 		mockassert.NotCalled(t, store.DownFunc)
-
-		// Migration 10004 specifies NoTransaction
-		mockassert.CalledN(t, store.TransactFunc, 3)
 	})
 
 	t.Run("upgrade (partially applied)", func(t *testing.T) {

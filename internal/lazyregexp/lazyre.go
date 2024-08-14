@@ -85,6 +85,10 @@ func (r *Regexp) FindAllIndex(b []byte, n int) [][]int {
 	return r.Re().FindAllIndex(b, n)
 }
 
+func (r *Regexp) FindAll(b []byte, n int) [][]byte {
+	return r.Re().FindAll(b, n)
+}
+
 func (r *Regexp) Match(b []byte) bool {
 	return r.Re().Match(b)
 }

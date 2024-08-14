@@ -26,6 +26,8 @@ func bazelGoModTidy() func(*bk.Pipeline) {
 		bk.Agent("queue", AspectWorkflows.QueueSmall),
 		bk.Key("bazel-go-mod"),
 		bk.Cmd("./dev/ci/bazel-gomodtidy.sh"),
+		bk.AutomaticRetry(1),
+		bk.TimeoutInMinutes(5),
 	}
 
 	return func(pipeline *bk.Pipeline) {

@@ -74,6 +74,11 @@ var svelteKitRoutes = []svelteKitRoute{
 		Tag:     tags.EnableOptIn | tags.EnableRollout | tags.Dotcom,
 	},
 	{
+		Id:      "/cody/chat",
+		Pattern: regexp.MustCompile("^/cody/chat/?$"),
+		Tag:     tags.EnableOptIn | tags.EnableRollout,
+	},
+	{
 		Id:      "/search",
 		Pattern: regexp.MustCompile("^/search/?$"),
 		Tag:     tags.EnableOptIn | tags.EnableRollout,

@@ -34,7 +34,6 @@ type jsonDefinition struct {
 	NonIdempotent             bool
 	Parents                   []int
 	IsCreateIndexConcurrently bool
-	NoTransaction             bool `json:"NoTransaction,omitempty"`
 	IndexMetadata             *IndexMetadata
 }
 
@@ -48,7 +47,6 @@ func (d *Definition) MarshalJSON() ([]byte, error) {
 		NonIdempotent:             d.NonIdempotent,
 		Parents:                   d.Parents,
 		IsCreateIndexConcurrently: d.IsCreateIndexConcurrently,
-		NoTransaction:             d.NoTransaction,
 		IndexMetadata:             d.IndexMetadata,
 	})
 }
@@ -67,7 +65,6 @@ func (d *Definition) UnmarshalJSON(data []byte) error {
 	d.NonIdempotent = jsonDefinition.NonIdempotent
 	d.Parents = jsonDefinition.Parents
 	d.IsCreateIndexConcurrently = jsonDefinition.IsCreateIndexConcurrently
-	d.NoTransaction = jsonDefinition.NoTransaction
 	d.IndexMetadata = jsonDefinition.IndexMetadata
 	return nil
 }

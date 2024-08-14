@@ -113,7 +113,6 @@ func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, upFilename, metadataFilen
 		Parent                  int    `yaml:"parent"`
 		Parents                 []int  `yaml:"parents"`
 		CreateIndexConcurrently bool   `yaml:"createIndexConcurrently"`
-		NoTransaction           bool   `yaml:"noTransaction"`
 		Privileged              bool   `yaml:"privileged"`
 		NonIdempotent           bool   `yaml:"nonIdempotent"`
 	}
@@ -124,7 +123,6 @@ func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, upFilename, metadataFilen
 	definition.Name = payload.Name
 	definition.Privileged = payload.Privileged
 	definition.NonIdempotent = payload.NonIdempotent
-	definition.NoTransaction = payload.NoTransaction
 
 	parents := payload.Parents
 	if payload.Parent != 0 {

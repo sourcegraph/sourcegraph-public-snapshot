@@ -29,6 +29,7 @@ type Appliance struct {
 	status                 config.Status
 	sourcegraph            *config.Sourcegraph
 	releaseRegistryClient  *releaseregistry.Client
+	pinnedReleasesFile     string
 	latestSupportedVersion string
 	noResourceRestrictions bool
 	logger                 log.Logger
@@ -50,6 +51,7 @@ const (
 func NewAppliance(
 	client client.Client,
 	relregClient *releaseregistry.Client,
+	pinnedReleasesFile string,
 	latestSupportedVersion string,
 	namespace string,
 	noResourceRestrictions bool,
@@ -58,6 +60,7 @@ func NewAppliance(
 	app := &Appliance{
 		client:                 client,
 		releaseRegistryClient:  relregClient,
+		pinnedReleasesFile:     pinnedReleasesFile,
 		latestSupportedVersion: latestSupportedVersion,
 		namespace:              namespace,
 		status:                 config.StatusInstall,

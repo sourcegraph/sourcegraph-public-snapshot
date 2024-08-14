@@ -15,7 +15,6 @@ type Definition struct {
 	NonIdempotent             bool
 	Parents                   []int
 	IsCreateIndexConcurrently bool
-	NoTransaction             bool
 	IndexMetadata             *IndexMetadata
 }
 

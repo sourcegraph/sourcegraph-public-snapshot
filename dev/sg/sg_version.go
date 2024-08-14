@@ -93,7 +93,7 @@ func changelogExec(ctx *cli.Context) error {
 
 	gitLog := exec.Command("git", append(logArgs, "--", "./dev/sg")...)
 	gitLog.Env = os.Environ()
-	out, err := run.InRoot(gitLog)
+	out, err := run.InRoot(gitLog, run.InRootArgs{})
 	if err != nil {
 		return err
 	}
