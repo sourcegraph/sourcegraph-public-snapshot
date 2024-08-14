@@ -86,5 +86,5 @@ export const svelteKitRoutes: SvelteKitRoute[] = [
         pattern: new RegExp('^/search/?$'),
         isRepoRoot: false,
     },
-
+    
 ]
