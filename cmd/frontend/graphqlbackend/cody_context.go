@@ -18,6 +18,7 @@ type CodyContextResolver interface {
 
 type GetContextArgs struct {
 	Repos            []graphql.ID
+	FilePatterns     *[]string
 	Query            string
 	CodeResultsCount int32
 	TextResultsCount int32

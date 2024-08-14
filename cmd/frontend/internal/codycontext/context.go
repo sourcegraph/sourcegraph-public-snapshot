@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/cast"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
@@ -82,6 +83,7 @@ type CodyContextClient struct {
 
 type GetContextArgs struct {
 	Repos            []types.RepoIDName
+	FilePatterns     []types.RegexpPattern
 	Query            string
 	CodeResultsCount int32
 	TextResultsCount int32
@@ -138,13 +140,15 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 
 	embeddingsArgs := GetContextArgs{
 		Repos:            embeddingRepos,
+		FilePatterns:     nil, // Not supported for embeddings context (which is currently not in use)
 		Query:            args.Query,
 		CodeResultsCount: int32(float32(args.CodeResultsCount) * embeddingsResultRatio),
 		TextResultsCount: int32(float32(args.TextResultsCount) * embeddingsResultRatio),
 	}
 	keywordArgs := GetContextArgs{
-		Repos: keywordRepos,
-		Query: args.Query,
+		Repos:        keywordRepos,
+		Query:        args.Query,
+		FilePatterns: args.FilePatterns,
 		// Assign the remaining result budget to keyword search
 		CodeResultsCount: args.CodeResultsCount - embeddingsArgs.CodeResultsCount,
 		TextResultsCount: args.TextResultsCount - embeddingsArgs.TextResultsCount,
@@ -277,7 +281,13 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	// mini-HACK: pass in the scope using repo: filters. In an ideal world, we
 	// would not be using query text manipulation for this and would be using
 	// the job structs directly.
-	keywordQuery := fmt.Sprintf(`repo:%s %s %s`, reposAsRegexp(args.Repos), getKeywordContextExcludeFilePathsQuery(), args.Query)
+	keywordQuery := fmt.Sprintf(
+		`repo:%s file:%s %s %s`,
+		reposAsRegexp(args.Repos),
+		"(?:"+strings.Join(cast.ToStrings(args.FilePatterns), "|")+")",
+		getKeywordContextExcludeFilePathsQuery(),
+		args.Query,
+	)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

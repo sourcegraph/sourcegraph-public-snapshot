@@ -177,6 +177,18 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 		return nil, err
 	}
 
+	var validatedFilePatterns []types.RegexpPattern
+	if args.FilePatterns != nil {
+		validatedFilePatterns = make([]types.RegexpPattern, 0, len(*args.FilePatterns))
+		for _, filePattern := range *args.FilePatterns {
+			validatedFilePattern, err := types.NewRegexpPattern(filePattern)
+			if err != nil {
+				return nil, errors.Wrapf(err, "invalid file pattern %q", filePattern)
+			}
+			validatedFilePatterns = append(validatedFilePatterns, validatedFilePattern)
+		}
+	}
+
 	repos, err := r.db.Repos().GetReposSetByIDs(ctx, repoIDs...)
 	if err != nil {
 		return nil, err
@@ -195,6 +207,7 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 
 	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
 		Repos:            repoNameIDs,
+		FilePatterns:     validatedFilePatterns,
 		Query:            args.Query,
 		CodeResultsCount: args.CodeResultsCount,
 		TextResultsCount: args.TextResultsCount,
@@ -407,8 +420,9 @@ func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextAr
 func (r *Resolver) fetchZoekt(ctx context.Context, query string, repo *types.Repo) ([]graphqlbackend.RetrieverContextItemResolver, []error, error) {
 	var res []graphqlbackend.RetrieverContextItemResolver
 	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
-		Repos: []types.RepoIDName{{ID: repo.ID, Name: repo.Name}},
-		Query: query,
+		Repos:        []types.RepoIDName{{ID: repo.ID, Name: repo.Name}},
+		FilePatterns: nil, // Not suppported in ChatContext
+		Query:        query,
 	})
 	if err != nil {
 		return nil, nil, err
