@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
@@ -137,10 +138,11 @@ func safeRename(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
-	if err != nil {
+	// create the target directory if it does not exist
+	if err := os.MkdirAll(path.Dir(dst), 0755); err != nil {
 		return err
 	}
+	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
 	if err != nil {
 		closeErr := in.Close()
 		return errors.Append(err, closeErr)
