@@ -28,7 +28,7 @@
     import { isLightTheme, settings } from '$lib/stores'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { createPromiseStore, formatBytes } from '$lib/utils'
-    import { Alert, Badge, MenuButton, MenuLink } from '$lib/wildcard'
+    import { Alert, Badge, MenuButton, MenuLink, Panel, PanelGroup } from '$lib/wildcard'
     import markdownStyles from '$lib/wildcard/Markdown.module.scss'
     import MenuRadioGroup from '$lib/wildcard/menu/MenuRadioGroup.svelte'
     import MenuSeparator from '$lib/wildcard/menu/MenuSeparator.svelte'
@@ -253,77 +253,81 @@
     </div>
 {/if}
 
-<div
-    class="content"
-    class:loading={$blobLoader.pending}
-    class:center={fileLoadingError || fileNotFound || isBinaryFile}
->
-    {#if fileLoadingError}
-        <Alert variant="danger">
-            Unable to load file data: {fileLoadingError.message}
-        </Alert>
-    {:else if fileNotFound}
-        <div class="circle">
-            <Icon icon={ILucideSearchX} --icon-size="80px" />
-        </div>
-        <h2>File not found</h2>
-    {:else if isBinaryFile}
-        <Alert variant="info">
-            This is a binary file and cannot be displayed.
-            <br />
-            <a href="{repoURL}/-/raw/{filePath}" target="_blank" download>Download file</a>
-        </Alert>
-    {:else if blob && showFormattedView}
-        <!-- key on the HTML content so renderMermaid gets re-run -->
-        {#key blob.richHTML}
-            <!-- jupyter is a global style -->
-            <div
-                use:renderMermaid={{ selector: 'pre:has(code.language-mermaid)', isLightTheme: $isLightTheme }}
-                class={`rich jupyter ${markdownStyles.markdown}`}
-            >
-                {@html blob.richHTML}
-            </div>
-        {/key}
-    {:else if blob}
-        <!--
+<PanelGroup>
+    <Panel id="content-panel">
+        <div
+            class="content"
+            class:loading={$blobLoader.pending}
+            class:center={fileLoadingError || fileNotFound || isBinaryFile}
+        >
+            {#if fileLoadingError}
+                <Alert variant="danger">
+                    Unable to load file data: {fileLoadingError.message}
+                </Alert>
+            {:else if fileNotFound}
+                <div class="circle">
+                    <Icon icon={ILucideSearchX} --icon-size="80px" />
+                </div>
+                <h2>File not found</h2>
+            {:else if isBinaryFile}
+                <Alert variant="info">
+                    This is a binary file and cannot be displayed.
+                    <br />
+                    <a href="{repoURL}/-/raw/{filePath}" target="_blank" download>Download file</a>
+                </Alert>
+            {:else if blob && showFormattedView}
+                <!-- key on the HTML content so renderMermaid gets re-run -->
+                {#key blob.richHTML}
+                    <!-- jupyter is a global style -->
+                    <div
+                        use:renderMermaid={{ selector: 'pre:has(code.language-mermaid)', isLightTheme: $isLightTheme }}
+                        class={`rich jupyter ${markdownStyles.markdown}`}
+                    >
+                        {@html blob.richHTML}
+                    </div>
+                {/key}
+            {:else if blob}
+                <!--
             This ensures that a new CodeMirror instance is created when the file changes.
             This makes the CodeMirror behavior more predictable and avoids issues with
             carrying over state from the previous file.
             Specifically this will make it so that the scroll position is reset to
             `initialScrollPosition` when the file changes.
         -->
-        {#key blob.canonicalURL}
-            <CodeMirrorBlob
-                bind:this={cmblob}
-                {initialScrollPosition}
-                blobInfo={{
-                    ...blob,
-                    repoName,
-                    commitID,
-                    revision: revision ?? '',
-                    filePath,
-                }}
-                highlights={highlights?.lsif ?? ''}
-                codeGraphData={codeGraphData ?? undefined}
-                debugOccurrences={selectedCodeGraphDataOccurrences}
-                showBlame={showBlameView}
-                blameData={$blameData}
-                wrapLines={$lineWrap}
-                selectedLines={selectedPosition?.line ? selectedPosition : null}
-                on:selectline={({ detail: range }) => {
-                    goto(
-                        SourcegraphURL.from(embedded ? `${repoURL}/-/blob/${filePath}` : $page.url.searchParams)
-                            .setLineRange(range ? { line: range.line, endLine: range.endLine } : null)
-                            .deleteSearchParameter('popover')
-                            .toString()
-                    )
-                }}
-                {codeIntelAPI}
-                onCopy={handleCopy}
-            />
-        {/key}
-    {/if}
-</div>
+                {#key blob.canonicalURL}
+                    <CodeMirrorBlob
+                        bind:this={cmblob}
+                        {initialScrollPosition}
+                        blobInfo={{
+                            ...blob,
+                            repoName,
+                            commitID,
+                            revision: revision ?? '',
+                            filePath,
+                        }}
+                        highlights={highlights?.lsif ?? ''}
+                        codeGraphData={codeGraphData ?? undefined}
+                        debugOccurrences={selectedCodeGraphDataOccurrences}
+                        showBlame={showBlameView}
+                        blameData={$blameData}
+                        wrapLines={$lineWrap}
+                        selectedLines={selectedPosition?.line ? selectedPosition : null}
+                        on:selectline={({ detail: range }) => {
+                            goto(
+                                SourcegraphURL.from(embedded ? `${repoURL}/-/blob/${filePath}` : $page.url.searchParams)
+                                    .setLineRange(range ? { line: range.line, endLine: range.endLine } : null)
+                                    .deleteSearchParameter('popover')
+                                    .toString()
+                            )
+                        }}
+                        {codeIntelAPI}
+                        onCopy={handleCopy}
+                    />
+                {/key}
+            {/if}
+        </div>
+    </Panel>
+</PanelGroup>
 
 <style lang="scss">
     .content {
