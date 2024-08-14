@@ -498,26 +498,26 @@ type TB interface {
 func SetupForTest(t TB) {
 	t.Helper()
 
-	kvMock = redispool.NewTestKeyValue()
-	tokenBucketGlobalPrefix = "__test__" + t.Name()
+	testStore = redispool.NewTestKeyValue()
 
 	// If we are not on CI, skip the test if our redis connection fails.
 	if os.Getenv("CI") == "" {
-		if err := kvMock.Ping(); err != nil {
+		if err := testStore.Ping(); err != nil {
 			t.Skip("could not connect to redis", err)
 		}
 	}
 
-	if err := redispool.DeleteAllKeysWithPrefix(kvMock, tokenBucketGlobalPrefix); err != nil {
+	tokenBucketGlobalPrefix = "__test__" + t.Name()
+	if err := redispool.DeleteAllKeysWithPrefix(testStore, tokenBucketGlobalPrefix); err != nil {
 		t.Fatalf("could not clear test prefix: &v", err)
 	}
 }
 
-var kvMock redispool.KeyValue
+var testStore redispool.KeyValue
 
 func kv() redispool.KeyValue {
-	if kvMock != nil {
-		return kvMock
+	if testStore != nil {
+		return testStore
 	}
 	return redispool.Store
 }

@@ -430,10 +430,7 @@ func redisKeyValueForTest(t *testing.T) redispool.KeyValue {
 		t.Logf("Could not clear test prefix name=%q prefix=%q error=%v", t.Name(), prefix, err)
 	}
 
-	redisKv := kv.(interface {
-		WithPrefix(string) redispool.KeyValue
-	})
-	return redisKv.WithPrefix(prefix)
+	return kv.WithPrefix(prefix)
 }
 
 func bytes(ss ...string) [][]byte {
