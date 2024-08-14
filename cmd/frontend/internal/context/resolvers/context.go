@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
+	lg "log"
 	"net/http"
 	"time"
 
@@ -186,6 +186,7 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 	}
 
 	repoNameIDs := make([]types.RepoIDName, len(repoIDs))
+	repoStats := make(map[api.RepoName]*idf.StatsProvider)
 	for i, repoID := range repoIDs {
 		repo, ok := repos[repoID]
 		if !ok {
@@ -194,19 +195,18 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 		}
 
 		repoNameIDs[i] = types.RepoIDName{ID: repoID, Name: repo.Name}
-	}
 
-	for _, repoID := range repoIDs {
-		val, err := idf.Get(ctx, repoID)
+		stats, err := idf.Get(ctx, repo.Name)
 		if err != nil {
-			fmt.Printf("Unexpected error getting idf index value for repo %v: %v\n", repoID, err)
+			lg.Printf("Unexpected error getting idf index value for repo %v: %v", repoID, err)
 			continue
 		}
-		fmt.Printf("# Got idf index value for repo %v: %v\n", repoID, string(val))
+		repoStats[repo.Name] = stats
 	}
 
 	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
 		Repos:            repoNameIDs,
+		RepoStats:        repoStats,
 		Query:            args.Query,
 		CodeResultsCount: args.CodeResultsCount,
 		TextResultsCount: args.TextResultsCount,

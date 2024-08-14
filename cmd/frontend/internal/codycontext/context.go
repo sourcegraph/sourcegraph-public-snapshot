@@ -6,12 +6,15 @@ import (
 	"strings"
 	"sync"
 
+	lg "log"
+
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/idf"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -82,6 +85,7 @@ type CodyContextClient struct {
 
 type GetContextArgs struct {
 	Repos            []types.RepoIDName
+	RepoStats        map[api.RepoName]*idf.StatsProvider
 	Query            string
 	CodeResultsCount int32
 	TextResultsCount int32
@@ -138,13 +142,15 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 
 	embeddingsArgs := GetContextArgs{
 		Repos:            embeddingRepos,
+		RepoStats:        args.RepoStats,
 		Query:            args.Query,
 		CodeResultsCount: int32(float32(args.CodeResultsCount) * embeddingsResultRatio),
 		TextResultsCount: int32(float32(args.TextResultsCount) * embeddingsResultRatio),
 	}
 	keywordArgs := GetContextArgs{
-		Repos: keywordRepos,
-		Query: args.Query,
+		Repos:     keywordRepos,
+		RepoStats: args.RepoStats,
+		Query:     args.Query,
 		// Assign the remaining result budget to keyword search
 		CodeResultsCount: args.CodeResultsCount - embeddingsArgs.CodeResultsCount,
 		TextResultsCount: args.TextResultsCount - embeddingsArgs.TextResultsCount,
@@ -277,7 +283,9 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	// mini-HACK: pass in the scope using repo: filters. In an ideal world, we
 	// would not be using query text manipulation for this and would be using
 	// the job structs directly.
-	keywordQuery := fmt.Sprintf(`repo:%s %s %s`, reposAsRegexp(args.Repos), getKeywordContextExcludeFilePathsQuery(), args.Query)
+	transformedQuery := getTransformedQuery(args)
+	lg.Printf("# userQuery -> transformedQuery: %q -> %q", args.Query, transformedQuery)
+	keywordQuery := fmt.Sprintf(`repo:%s %s %s`, reposAsRegexp(args.Repos), getKeywordContextExcludeFilePathsQuery(), transformedQuery)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -370,4 +378,37 @@ func fileMatchToContextMatch(fm *result.FileMatch) FileChunkContext {
 		Path:      fm.Path,
 		StartLine: startLine,
 	}
+}
+
+func getTransformedQuery(args GetContextArgs) string {
+	if args.RepoStats == nil {
+		lg.Printf("# no stats set")
+		return args.Query
+	}
+
+	for _, repo := range args.Repos {
+		if _, ok := args.RepoStats[repo.Name]; !ok {
+			// Don't transform query if one of the repositories lacks an IDF table
+			lg.Printf("# didn't find stats for repo %s", repo.Name)
+			return args.Query
+		}
+	}
+
+	// TODO(beyang): the semantics of what we want to do here aren't super clear.
+	// Do we want to preserve the wholeness of the "words" the user types in (the tokens are camelcased tokenized).
+	// Probably, otherwise the transformed query will yield noisier results.
+	queryToks := idf.Tokenize(args.Query)
+	var filteredToks []string
+
+	const idfThresh = 0.2
+	for _, qtok := range queryToks {
+
+		for _, stats := range args.RepoStats {
+			if stats.GetIDF(qtok) < idfThresh {
+				continue
+			}
+			filteredToks = append(filteredToks, qtok)
+		}
+	}
+	return strings.Join(filteredToks, " ")
 }

@@ -23,17 +23,12 @@ func (r *schemaResolver) ReindexRepository(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	repoID, err := UnmarshalRepositoryID(args.Repository)
+	repo, err := r.repositoryByID(ctx, args.Repository)
 	if err != nil {
-		return nil, err
-	}
-	fmt.Printf("# schemaResolver.ReindexRepository repoID %s -> repoID %d\n", args.Repository, repoID)
-	if err := idf.Update(ctx, repoID, "foobar"); err != nil {
 		return nil, err
 	}
 
-	repo, err := r.repositoryByID(ctx, args.Repository)
-	if err != nil {
+	if err := idf.Update(ctx, repo.RepoName()); err != nil {
 		return nil, err
 	}
 
