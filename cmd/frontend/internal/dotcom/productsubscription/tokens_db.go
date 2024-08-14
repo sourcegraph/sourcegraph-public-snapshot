@@ -22,9 +22,7 @@ type dbTokens struct {
 	store *basestore.Store
 }
 
-// For package dotcomproductsubscriptiontest only; DO NOT USE from outside this
-// package.
-func NewTokensDB(db database.DB) dbTokens {
+func newTokensDB(db database.DB) dbTokens {
 	return dbTokens{store: basestore.NewWithHandle(db.Handle())}
 }
 

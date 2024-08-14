@@ -16,7 +16,6 @@ go_library(
         "//cmd/enterprise-portal/internal/connectutil",
         "//cmd/enterprise-portal/internal/database",
         "//cmd/enterprise-portal/internal/database/codyaccess",
-        "//cmd/enterprise-portal/internal/dotcomdb",
         "//cmd/enterprise-portal/internal/samsm2m",
         "//internal/codygateway/codygatewayactor",
         "//internal/codygateway/codygatewayevents",

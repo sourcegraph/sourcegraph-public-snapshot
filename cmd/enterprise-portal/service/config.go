@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"golang.org/x/crypto/ssh"
 
@@ -12,23 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayevents"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/cloudsql"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Config is the configuration for the Enterprise Portal.
 type Config struct {
-	DotComDB struct {
-		cloudsql.ConnConfig
-
-		PGDSNOverride *string
-
-		IncludeProductionLicenses bool
-
-		ImportInterval time.Duration
-	}
-
 	// If nil, no connection was configured.
 	CodyGatewayEvents *codygatewayevents.ServiceBigQueryOptions
 
@@ -57,19 +45,6 @@ type SAMSConfig struct {
 }
 
 func (c *Config) Load(env *runtime.Env) {
-	c.DotComDB.ConnConfig = cloudsql.ConnConfig{
-		ConnectionName: env.GetOptional("DOTCOM_CLOUDSQL_CONNECTION_NAME",
-			"Sourcegraph.com Cloud SQL connection name"),
-		User:     env.GetOptional("DOTCOM_CLOUDSQL_USER", "Sourcegraph.com Cloud SQL user"),
-		Database: env.Get("DOTCOM_CLOUDSQL_DATABASE", "sourcegraph", "Sourcegraph.com database"),
-	}
-	c.DotComDB.PGDSNOverride = env.GetOptional("DOTCOM_PGDSN_OVERRIDE",
-		"For local dev: custom PostgreSQL DSN, overrides DOTCOM_CLOUDSQL_* options")
-	c.DotComDB.IncludeProductionLicenses = env.GetBool("DOTCOM_INCLUDE_PRODUCTION_LICENSES", "false",
-		"Include production licenses in API results")
-	c.DotComDB.ImportInterval = env.GetInterval("DOTCOM_IMPORT_INTERVAL", "0s", // disable by default
-		"Interval at which to import data from Sourcegraph.com")
-
 	c.SAMS.ConnConfig = sams.NewConnConfigFromEnv(env)
 	c.SAMS.ClientID = env.Get("ENTERPRISE_PORTAL_SAMS_CLIENT_ID", "",
 		"Sourcegraph Accounts Management System client ID")

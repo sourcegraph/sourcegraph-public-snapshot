@@ -17,7 +17,6 @@ go_library(
         "//cmd/enterprise-portal/internal/database",
         "//cmd/enterprise-portal/internal/database/subscriptions",
         "//cmd/enterprise-portal/internal/database/utctime",
-        "//cmd/enterprise-portal/internal/dotcomdb",
         "//cmd/enterprise-portal/internal/samsm2m",
         "//internal/collections",
         "//internal/license",

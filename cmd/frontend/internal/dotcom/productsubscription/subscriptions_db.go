@@ -64,11 +64,6 @@ type dbSubscriptions struct {
 	db database.DB
 }
 
-// For package dotcomproductsubscriptiontest only; DO NOT USE.
-func NewSubscriptionsDB(db database.DB) *dbSubscriptions {
-	return &dbSubscriptions{db: db}
-}
-
 // Create creates a new product subscription entry for the given user. It also
 // attempts to extract the Salesforce account number from the username following
 // the format "<name>-<account number>".

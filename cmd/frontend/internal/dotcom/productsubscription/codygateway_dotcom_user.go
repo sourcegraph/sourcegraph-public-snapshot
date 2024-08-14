@@ -61,7 +61,7 @@ func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.
 		return nil, err
 	}
 
-	dbTokens := NewTokensDB(r.DB)
+	dbTokens := newTokensDB(r.DB)
 	userID, err := dbTokens.LookupDotcomUserIDByAccessToken(ctx, args.Token)
 	if err != nil {
 		if errcode.IsNotFound(err) {

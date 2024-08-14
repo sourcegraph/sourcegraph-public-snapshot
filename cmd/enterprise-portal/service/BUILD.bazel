@@ -5,7 +5,6 @@ go_library(
     srcs = [
         "codygatewayevents.go",
         "config.go",
-        "dotcomdb.go",
         "iam.go",
         "redis.go",
         "service.go",
@@ -18,8 +17,6 @@ go_library(
     deps = [
         "//cmd/enterprise-portal/internal/codyaccessservice",
         "//cmd/enterprise-portal/internal/database",
-        "//cmd/enterprise-portal/internal/database/importer",
-        "//cmd/enterprise-portal/internal/dotcomdb",
         "//cmd/enterprise-portal/internal/routines/licenseexpiration",
         "//cmd/enterprise-portal/internal/subscriptionlicensechecksservice",
         "//cmd/enterprise-portal/internal/subscriptionsservice",
@@ -32,7 +29,6 @@ go_library(
         "//internal/version",
         "//lib/background",
         "//lib/errors",
-        "//lib/managedservicesplatform/cloudsql",
         "//lib/managedservicesplatform/iam",
         "//lib/managedservicesplatform/runtime",
         "//lib/pointers",
@@ -40,7 +36,6 @@ go_library(
         "@com_connectrpc_grpcreflect//:grpcreflect",
         "@com_connectrpc_otelconnect//:otelconnect",
         "@com_github_gomodule_redigo//redis",
-        "@com_github_jackc_pgx_v5//pgxpool",
         "@com_github_redis_go_redis_extra_redisotel_v9//:redisotel",
         "@com_github_redis_go_redis_v9//:go-redis",
         "@com_github_sourcegraph_log//:log",

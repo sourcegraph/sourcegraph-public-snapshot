@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/utctime"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/samsm2m"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
@@ -376,9 +375,6 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 
 	licenses, err := s.store.ListEnterpriseSubscriptionLicenses(ctx, opts)
 	if err != nil {
-		if errors.Is(err, dotcomdb.ErrCodyGatewayAccessNotFound) {
-			return nil, connect.NewError(connect.CodeNotFound, err)
-		}
 		return nil, connectutil.InternalError(ctx, logger, err,
 			"failed to get Enterprise Subscription licenses")
 	}

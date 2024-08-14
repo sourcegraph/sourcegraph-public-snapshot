@@ -4,13 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayevents"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -18,18 +15,6 @@ import (
 
 type codyGatewayAccessResolver struct {
 	sub *productSubscription
-}
-
-// NewCodyGatewayAccessResolver returns a new CodyGatewayAccessResolver for the
-// given product subscription. ONLY FOR TESTING, DO NOT USE - see package
-// 'dotcomproductsubscriptionstest', this should be removed when that package
-// is removed.
-func NewCodyGatewayAccessResolver(ctx context.Context, logger log.Logger, db database.DB, subID string) (*codyGatewayAccessResolver, error) {
-	sub, err := productSubscriptionByDBID(ctx, logger, db, subID, "access")
-	if err != nil {
-		return nil, err
-	}
-	return &codyGatewayAccessResolver{sub: sub}, nil
 }
 
 func (r codyGatewayAccessResolver) Enabled() bool { return r.sub.v.CodyGatewayAccess.Enabled }

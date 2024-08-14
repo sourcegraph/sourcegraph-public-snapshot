@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/connectutil"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/codyaccess"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/samsm2m"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
@@ -126,7 +125,7 @@ func (s *HandlerV1) ListCodyGatewayAccesses(ctx context.Context, req *connect.Re
 
 	attrs, err := s.store.ListCodyGatewayAccesses(ctx)
 	if err != nil {
-		if err == dotcomdb.ErrCodyGatewayAccessNotFound {
+		if errors.Is(err, codyaccess.ErrSubscriptionNotFound) {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
 		return nil, connectutil.InternalError(ctx, logger, err,

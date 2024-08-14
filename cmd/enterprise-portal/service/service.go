@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/codyaccessservice"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/importer"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/routines/licenseexpiration"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionlicensechecksservice"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice"
@@ -55,11 +54,6 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		return nil, errors.Wrap(err, "initialize database handle")
 	}
 
-	dotcomDB, err := newDotComDBConn(ctx, config)
-	if err != nil {
-		return nil, errors.Wrap(err, "initialize dotcom database handle")
-	}
-
 	// Prepare SAMS client, so that we can enforce SAMS-based M2M authz/authn
 	logger.Debug("using SAMS client",
 		log.String("samsExternalURL", config.SAMS.ExternalURL),
@@ -88,9 +82,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	httpServer := http.NewServeMux()
 
 	// Register MSP endpoints
-	contract.Diagnostics.RegisterDiagnosticsHandlers(httpServer, serviceState{
-		dotcomDB: dotcomDB,
-	})
+	contract.Diagnostics.RegisterDiagnosticsHandlers(httpServer, serviceState{})
 
 	// Prepare instrumentation middleware for ConnectRPC handlers
 	otelConnectInterceptor, err := otelconnect.NewInterceptor(
@@ -210,21 +202,9 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 					return nil
 				},
 			},
-			background.CallbackRoutine{
-				NameFunc: func() string { return "close dotcom database connection pool" },
-				StopFunc: func(context.Context) error {
-					start := time.Now()
-					// NOTE: If we simply shut down, some in-fly requests may be dropped as the
-					// service exits, so we attempt to gracefully shutdown first.
-					dotcomDB.Close()
-					logger.Info("dotcom database connection pool closed", log.Duration("elapsed", time.Since(start)))
-					return nil
-				},
-			},
 		},
 		// Run background routines
 		background.CombinedRoutine{
-			importer.NewPeriodicImporter(ctx, logger.Scoped("importer"), dotcomDB, dbHandle, redisKVClient, config.DotComDB.ImportInterval),
 			licenseexpiration.NewRoutine(ctx, logger.Scoped("licenseexpiration"),
 				licenseexpiration.NewStore(
 					logger.Scoped("licenseexpiration.store"),
