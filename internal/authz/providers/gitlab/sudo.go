@@ -88,7 +88,7 @@ func (p *SudoProvider) ServiceType() string {
 }
 
 // FetchAccount satisfies the authz.Provider interface.
-func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, _ []string) (mine *extsvc.Account, err error) {
+func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User) (mine *extsvc.Account, err error) {
 	if user == nil {
 		return nil, nil
 	}

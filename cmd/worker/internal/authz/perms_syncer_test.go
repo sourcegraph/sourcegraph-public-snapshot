@@ -33,12 +33,12 @@ type mockProvider struct {
 	fetchUserPerms        func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error)
 	fetchUserPermsByToken func(ctx context.Context, token string) (*authz.ExternalUserPermissions, error)
 	fetchRepoPerms        func(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error)
-	fetchAccount          func(ctx context.Context, user *types.User, emails []string) (*extsvc.Account, error)
+	fetchAccount          func(ctx context.Context, user *types.User) (*extsvc.Account, error)
 }
 
-func (p *mockProvider) FetchAccount(ctx context.Context, user *types.User, emails []string) (*extsvc.Account, error) {
+func (p *mockProvider) FetchAccount(ctx context.Context, user *types.User) (*extsvc.Account, error) {
 	if p.fetchAccount != nil {
-		return p.fetchAccount(ctx, user, emails)
+		return p.fetchAccount(ctx, user)
 	}
 	return nil, nil
 }
@@ -363,7 +363,7 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if test.fetchAccountError != nil {
-				p2.fetchAccount = func(context.Context, *types.User, []string) (*extsvc.Account, error) {
+				p2.fetchAccount = func(context.Context, *types.User) (*extsvc.Account, error) {
 					return nil, test.fetchAccountError
 				}
 			}
@@ -1092,7 +1092,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 			},
 		}, nil
 	}
-	p.fetchAccount = func(ctx context.Context, user *types.User, emails []string) (*extsvc.Account, error) {
+	p.fetchAccount = func(ctx context.Context, user *types.User) (*extsvc.Account, error) {
 		return &extsvc.Account{
 			AccountSpec: extsvc.AccountSpec{
 				ServiceType: p.ServiceType(),

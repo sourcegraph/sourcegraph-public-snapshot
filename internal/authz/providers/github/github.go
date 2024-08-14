@@ -93,7 +93,7 @@ var _ authz.Provider = (*Provider)(nil)
 
 // FetchAccount implements the authz.Provider interface. It always returns nil, because the GitHub
 // API doesn't currently provide a way to fetch user by external SSO account.
-func (p *Provider) FetchAccount(context.Context, *types.User, []string) (mine *extsvc.Account, err error) {
+func (p *Provider) FetchAccount(context.Context, *types.User) (mine *extsvc.Account, err error) {
 	return nil, nil
 }
 

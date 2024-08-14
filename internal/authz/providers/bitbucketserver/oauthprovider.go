@@ -83,7 +83,7 @@ func (p *OAuth2Provider) ServiceID() string { return p.codeHost.ServiceID }
 func (p *OAuth2Provider) ServiceType() string { return p.codeHost.ServiceType }
 
 // FetchAccount satisfies the authz.Provider interface.
-func (p *OAuth2Provider) FetchAccount(ctx context.Context, user *types.User, _ []string) (acct *extsvc.Account, err error) {
+func (p *OAuth2Provider) FetchAccount(ctx context.Context, user *types.User) (acct *extsvc.Account, err error) {
 	// OAuth2 accounts are created via user sign-in
 	return nil, nil
 }

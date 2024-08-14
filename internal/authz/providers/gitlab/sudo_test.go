@@ -97,7 +97,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 			authzProvider := newSudoProvider(test.op, nil)
 			for _, c := range test.calls {
 				t.Run(c.description, func(t *testing.T) {
-					acct, err := authzProvider.FetchAccount(ctx, c.user, nil)
+					acct, err := authzProvider.FetchAccount(ctx, c.user)
 					if err != nil {
 						t.Fatalf("unexpected error: %v", err)
 					}
