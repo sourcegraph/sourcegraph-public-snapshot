@@ -499,15 +499,11 @@ func SetupForTest(t TB) {
 	t.Helper()
 
 	kvMock = redispool.NewTestKeyValue()
-
 	tokenBucketGlobalPrefix = "__test__" + t.Name()
-	c := kvMock.Pool().Get()
-	defer c.Close()
 
 	// If we are not on CI, skip the test if our redis connection fails.
 	if os.Getenv("CI") == "" {
-		_, err := c.Do("PING")
-		if err != nil {
+		if err := kvMock.Ping(); err != nil {
 			t.Skip("could not connect to redis", err)
 		}
 	}

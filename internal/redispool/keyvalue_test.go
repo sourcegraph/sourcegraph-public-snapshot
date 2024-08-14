@@ -189,7 +189,7 @@ func TestKeyValue(t *testing.T) {
 		require.Equal(kv.Get("empty-string"), "")
 		require.Equal(kv.Get("empty-bytes"), "")
 
-		// List group. Once empty we should be able to do a Get without a
+		// List group. Once empty we should be able to doSimple a Get without a
 		// wrongtype error.
 		require.Works(kv.LPush("empty-list", "here today gone tomorrow"))
 		require.Equal(kv.Get("empty-list"), errWrongType)
@@ -353,6 +353,20 @@ func TestKeyValue(t *testing.T) {
 			require.Equal(kv.Get(k), "2")
 		}
 	})
+
+	t.Run("ping", func(t *testing.T) {
+		t.Parallel()
+		require := require{TB: t}
+		require.Works(kv.Ping())
+
+		brokenKv := redispool.NewKeyValue("nonexistent-redis-server:6379", &redis.Pool{
+			MaxIdle:     3,
+			IdleTimeout: 5 * time.Second,
+		})
+		if brokenKv.Ping() == nil {
+			t.Fatalf("ping: expected error, but did not receive one")
+		}
+	})
 }
 
 func TestKeyValueWithPrefix(t *testing.T) {
@@ -378,16 +392,22 @@ func TestKeyValueWithPrefix(t *testing.T) {
 
 	require.Works(kv1.Set("other", "a"))
 
+	mget1, err := kv1.MGet([]string{"simple", "other"}).Strings()
+	require.Works(err)
+	if !reflect.DeepEqual(mget1, []string{"1", "a"}) {
+		t.Fatalf("mget mismatch: expected [1 a], got %v", mget1)
+	}
+
 	keys1, err := kv1.Keys("*")
 	require.Works(err)
 	if len(keys1) != 2 {
-		t.Fatalf("expected 2 keys, got %v", keys1)
+		t.Fatalf("keys mismatch: expected 2 keys, got %v", keys1)
 	}
 
-	keys2, err := kv2.Keys("*")
+	keys2, err := kv2.Keys("s*")
 	require.Works(err)
 	if len(keys2) != 1 {
-		t.Fatalf("expected 1 key, got %v", keys1)
+		t.Fatalf("keys mismatch: expected 1 key, got %v", keys1)
 	}
 }
 
@@ -399,13 +419,9 @@ func redisKeyValueForTest(t *testing.T) redispool.KeyValue {
 	kv := redispool.NewTestKeyValue()
 	prefix := "__test__" + t.Name()
 
-	c := kv.Pool().Get()
-	defer c.Close()
-
 	// If we are not on CI, skip the test if our redis connection fails.
 	if os.Getenv("CI") == "" {
-		_, err := c.Do("PING")
-		if err != nil {
+		if err := kv.Ping(); err != nil {
 			t.Skip("could not connect to redis", err)
 		}
 	}
