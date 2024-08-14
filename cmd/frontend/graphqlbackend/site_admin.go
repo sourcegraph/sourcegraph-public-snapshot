@@ -44,13 +44,37 @@ func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverUsersReq
 		ids[index] = id
 	}
 
-	users, err := r.db.Users().RecoverUsersList(ctx, ids)
+	existing, err := r.db.Users().List(ctx, &database.UsersListOptions{
+		UserIDs: ids,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	if len(users) != len(ids) {
-		missingUserIds := missingUserIds(ids, users)
+	existingIDs := map[int32]struct{}{}
+	for _, user := range existing {
+		existingIDs[user.ID] = struct{}{}
+	}
+
+	idsToRecover := make([]int32, 0, len(ids))
+	for _, id := range ids {
+		if _, ok := existingIDs[id]; ok {
+			continue
+		}
+		idsToRecover = append(idsToRecover, id)
+	}
+
+	if len(idsToRecover) == 0 {
+		return &EmptyResponse{}, nil
+	}
+
+	users, err := r.db.Users().RecoverUsersList(ctx, idsToRecover)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(users) != len(idsToRecover) {
+		missingUserIds := missingUserIds(idsToRecover, users)
 		return nil, errors.Errorf("some users were not found, expected to recover %d users, but found only %d users. Missing user IDs: %s", len(ids), len(users), missingUserIds)
 	}
 

@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -460,4 +461,103 @@ func TestSetIsSiteAdmin(t *testing.T) {
 			mockrequire.CalledN(t, users.SetIsSiteAdminFunc, tc.setIsSiteAdminCalls)
 		})
 	}
+}
+
+func TestRecoverUsers(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		users := dbmocks.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := dbmocks.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).RecoverUsers(ctx, &RecoverUsersRequest{
+			UserIDs: []graphql.ID{MarshalUserID(1)},
+		})
+		if want := auth.ErrMustBeSiteAdmin; err != want {
+			t.Errorf("err: want %q but got %v", want, err)
+		}
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+
+	t.Run("recover current user", func(t *testing.T) {
+		users := dbmocks.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+		db := dbmocks.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		_, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).RecoverUsers(ctx, &RecoverUsersRequest{
+			UserIDs: []graphql.ID{MarshalUserID(1)},
+		})
+		want := "unable to recover current user"
+		if err == nil || err.Error() != want {
+			t.Fatalf("err: want %q but got %v", want, err)
+		}
+	})
+
+	t.Run("recover users", func(t *testing.T) {
+		users := dbmocks.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		users.RecoverUsersListFunc.SetDefaultReturn([]int32{2}, nil)
+		users.ListFunc.SetDefaultReturn([]*types.User{
+			// Note: Does not contain user 2, they are soft deleted.
+			{ID: 1},
+		}, nil)
+
+		db := dbmocks.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		_, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).RecoverUsers(ctx, &RecoverUsersRequest{
+			UserIDs: []graphql.ID{MarshalUserID(2)},
+		})
+		require.NoError(t, err)
+		mockrequire.Called(t, users.RecoverUsersListFunc)
+	})
+
+	t.Run("didn't find some of the users", func(t *testing.T) {
+		users := dbmocks.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		users.ListFunc.SetDefaultReturn([]*types.User{
+			// Note: Does not contain user 2.
+			{ID: 1},
+		}, nil)
+		// Not found.
+		users.RecoverUsersListFunc.SetDefaultReturn([]int32{}, nil)
+
+		db := dbmocks.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		_, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).RecoverUsers(ctx, &RecoverUsersRequest{
+			UserIDs: []graphql.ID{MarshalUserID(2)},
+		})
+		require.Error(t, err)
+		mockrequire.Called(t, users.RecoverUsersListFunc)
+		require.ErrorContains(t, err, "some users were not found, expected to recover 1 users, but found only 0 users. Missing user IDs: [VXNlcjoy]")
+	})
+
+	t.Run("idempotent for active users", func(t *testing.T) {
+		users := dbmocks.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		users.ListFunc.SetDefaultReturn([]*types.User{
+			{ID: 1},
+			{ID: 2},
+		}, nil)
+
+		db := dbmocks.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		_, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).RecoverUsers(ctx, &RecoverUsersRequest{
+			UserIDs: []graphql.ID{MarshalUserID(2)},
+		})
+		require.NoError(t, err)
+		mockrequire.NotCalled(t, users.RecoverUsersListFunc)
+	})
 }
