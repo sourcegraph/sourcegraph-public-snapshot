@@ -116,15 +116,11 @@ func updateToPrebuiltSG(ctx context.Context, release string) (bool, error) {
 	return download.Executable(ctx, downloadURL, currentExecPath, false)
 }
 
-func checkSgVersionAndUpdate(ctx context.Context, delayedOut *std.Output, skipUpdate bool) error {
-	// because this is run as a background job, output from the *std.Output param is buffered and only displayed
-	// when the job is done. Instead, we want to display that updating is happening in the background immediately.
-	instantOut := std.NewOutput(os.Stdout, false)
-
+func checkSgVersionAndUpdate(ctx context.Context, out *std.Output, skipUpdate bool) error {
 	if BuildCommit == "dev" {
 		// If `sg` was built with a dirty `./dev/sg` directory it's a dev build
 		// and we don't need to display this message.
-		delayedOut.Verbose("Skipping update check on dev build")
+		out.Verbose("Skipping update check on dev build")
 		return nil
 	}
 
@@ -140,7 +136,7 @@ func checkSgVersionAndUpdate(ctx context.Context, delayedOut *std.Output, skipUp
 	// If the revision of sg is not found locally, the user has likely not run 'git fetch'
 	// recently, and we can skip the version check for now.
 	if !repo.HasCommit(ctx, rev) {
-		delayedOut.VerboseLine(output.Styledf(output.StyleWarning,
+		out.VerboseLine(output.Styledf(output.StyleWarning,
 			"current sg version %s not found locally - you may want to run 'git fetch origin main'.", rev))
 		return nil
 	}
@@ -158,15 +154,15 @@ func checkSgVersionAndUpdate(ctx context.Context, delayedOut *std.Output, skipUp
 	}
 
 	if skipUpdate {
-		delayedOut.WriteLine(output.Styled(output.StyleSearchMatch, "╭───────────────────────────────────────────────────────────────────────╮"))
-		delayedOut.WriteLine(output.Styled(output.StyleSearchMatch, "│ HEY! A new version of sg is available. Run 'sg update' to install it. │"))
-		delayedOut.WriteLine(output.Styled(output.StyleSearchMatch, "│         To see what's new, run 'sg version changelog -next'.          │"))
-		delayedOut.WriteLine(output.Styled(output.StyleSearchMatch, "╰───────────────────────────────────────────────────────────────────────╯"))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "╭───────────────────────────────────────────────────────────────────────╮"))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "│ HEY! A new version of sg is available. Run 'sg update' to install it. │"))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "│         To see what's new, run 'sg version changelog -next'.          │"))
+		out.WriteLine(output.Styled(output.StyleSearchMatch, "╰───────────────────────────────────────────────────────────────────────╯"))
 
 		return nil
 	}
 
-	instantOut.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
+	out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
 	updated, err := updateToPrebuiltSG(ctx, "latest") // always install latest when auto-updating
 	if err != nil {
 		return errors.Newf("failed to install update: %s", err)
@@ -175,7 +171,7 @@ func checkSgVersionAndUpdate(ctx context.Context, delayedOut *std.Output, skipUp
 		return nil
 	}
 
-	delayedOut.WriteSuccessf("sg has been updated!")
-	delayedOut.Write("To see what's new, run 'sg version changelog'.")
+	out.WriteSuccessf("sg has been updated!")
+	out.Write("To see what's new, run 'sg version changelog'.")
 	return nil
 }
