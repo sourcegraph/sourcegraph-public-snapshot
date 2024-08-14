@@ -44,6 +44,8 @@ type Config struct {
 	}
 
 	LicenseExpirationChecker licenseexpiration.Config
+
+	SubscriptionsServiceSlackWebhookURL *string
 }
 
 type SAMSConfig struct {
@@ -118,6 +120,10 @@ func (c *Config) Load(env *runtime.Env) {
 		"Interval at which to run license expiration checks. If not set, checks are not run.")
 	c.LicenseExpirationChecker.SlackWebhookURL = env.GetOptional(
 		"LICENSE_EXPIRATION_CHECKER_SLACK_WEBHOOK_URL",
-		"Destination webhook for expired licenses. If not set, messages are logged.",
+		"Destination webhook for expiring licenses. If not set, messages are logged.",
 	)
+
+	c.SubscriptionsServiceSlackWebhookURL = env.GetOptional(
+		"SUBSCRIPTIONS_SERVICE_SLACK_WEBHOOK_URL",
+		"Destination webhook for subscription API events, such as license creation. If not set, messages are logged.")
 }

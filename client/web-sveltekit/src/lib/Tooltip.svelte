@@ -5,7 +5,9 @@
 </script>
 
 <script lang="ts">
-    import { popover, portal, uniqueID } from './dom'
+    import { onMount, tick } from 'svelte'
+
+    import { type PopoverOptions, popover, portal, uniqueID } from './dom'
 
     /**
      * The content of the tooltip.
@@ -41,8 +43,24 @@
         shift: {
             padding: 4,
         },
+        onSize(element, { availableWidth, availableHeight }) {
+            Object.assign(element.style, {
+                maxWidth: `min(var(--tooltip-max-width), ${availableWidth}px)`,
+                maxHeight: `${availableHeight}px`,
+            })
+        },
+    } satisfies PopoverOptions
+
+    $: if (target && tooltip) {
+        target.setAttribute('aria-label', tooltip)
     }
-    $: {
+
+    onMount(async () => {
+        // We need to wait for the element to be rendered before we can check whether it
+        // is part of the layout.
+        // (this fixes and issue where the tooltip would not show up in hovercards)
+        await tick()
+
         let node = wrapper?.firstElementChild
         // Use `getClientRects` to check if the element is part of the layout.
         // For example, an element with `display: contents` will not be part of the layout.
@@ -54,10 +72,7 @@
         if (node) {
             target = node
         }
-    }
-    $: if (target && tooltip) {
-        target.setAttribute('aria-label', tooltip)
-    }
+    })
 </script>
 
 <!-- TODO: close tooltip on escape -->

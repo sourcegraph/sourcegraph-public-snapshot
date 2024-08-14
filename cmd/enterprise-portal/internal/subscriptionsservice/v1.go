@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 	"github.com/sourcegraph/log"
@@ -27,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/samsm2m"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
+	"github.com/sourcegraph/sourcegraph/internal/slack"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -411,7 +414,7 @@ func (s *handlerV1) CreateEnterpriseSubscription(ctx context.Context, req *conne
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
 	requiredScope := samsm2m.EnterprisePortalScope(
-		scopes.PermissionEnterprisePortalSubscription, scopes.ActionWrite)
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionRead)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -486,7 +489,7 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
 	requiredScope := samsm2m.EnterprisePortalScope(
-		scopes.PermissionEnterprisePortalSubscription, scopes.ActionWrite)
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionRead)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -602,7 +605,7 @@ func (s *handlerV1) ArchiveEnterpriseSubscription(ctx context.Context, req *conn
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
 	requiredScope := samsm2m.EnterprisePortalScope(
-		scopes.PermissionEnterprisePortalSubscription, scopes.ActionWrite)
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionRead)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -686,7 +689,7 @@ func (s *handlerV1) CreateEnterpriseSubscriptionLicense(ctx context.Context, req
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
 	requiredScope := samsm2m.EnterprisePortalScope(
-		scopes.PermissionEnterprisePortalSubscription, scopes.ActionWrite)
+		scopes.PermissionEnterprisePortalSubscription, scopes.ActionRead)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -742,6 +745,18 @@ func (s *handlerV1) CreateEnterpriseSubscriptionLicense(ctx context.Context, req
 			return nil, connectutil.InternalError(ctx, logger, err, "failed to create license key")
 		}
 
+		if err := s.store.PostToSlack(
+			context.WithoutCancel(ctx),
+			&slack.Payload{
+				Text: renderLicenseKeyCreationSlackMessage(
+					s.store.Now(),
+					s.store.Env(),
+					sub.Subscription,
+					licenseKey),
+			},
+		); err != nil {
+			logger.Info("failed to post license creation to Slack", log.Error(err))
+		}
 	default:
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.Newf("unsupported licnese type %T", data))
 	}
@@ -764,7 +779,7 @@ func (s *handlerV1) RevokeEnterpriseSubscriptionLicense(ctx context.Context, req
 	logger := trace.Logger(ctx, s.logger)
 
 	// 🚨 SECURITY: Require appropriate M2M scope.
-	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionWrite)
+	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionRead)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
@@ -960,4 +975,44 @@ func (s *handlerV1) UpdateEnterpriseSubscriptionMembership(ctx context.Context, 
 		return nil, connectutil.InternalError(ctx, logger, err, "write relation tuples to IAM")
 	}
 	return connect.NewResponse(&subscriptionsv1.UpdateEnterpriseSubscriptionMembershipResponse{}), nil
+}
+
+const slackLicenseKeyCreationMessageFmt = `
+A new license was created for subscription <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%[1]s?env=%[2]s|%[3]s>:
+
+• *Expiration (UTC)*: %[4]s (%[5]s days remaining)
+• *Expiration (PT)*: %[6]s
+• *User count*: %[7]s
+• *License tags*: %[8]s
+• *Salesforce subscription*: %[9]s
+• *Salesforce opportunity*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/%[10]s/view|%[10]s>
+`
+
+func renderLicenseKeyCreationSlackMessage(
+	now utctime.Time,
+	env string,
+	sub subscriptions.Subscription,
+	key *subscriptions.DataLicenseKey,
+) string {
+	pacificLoc, _ := time.LoadLocation("America/Los_Angeles")
+
+	// Prefix internal ID for external usage
+	externalSubID := subscriptionsv1.EnterpriseSubscriptionIDPrefix + sub.ID
+
+	// Safely dereference optional properties
+	sfSubscriptionID := pointers.Deref(sub.SalesforceSubscriptionID, "unknown")
+	sfOpportunityID := pointers.Deref(key.Info.SalesforceOpportunityID, "unknown")
+
+	return strings.TrimSpace(fmt.Sprintf(slackLicenseKeyCreationMessageFmt,
+		externalSubID,
+		env,
+		pointers.Deref(sub.DisplayName, externalSubID),
+		key.Info.ExpiresAt.UTC().Format("Jan 2, 2006 3:04pm MST"),
+		strconv.FormatFloat(key.Info.ExpiresAt.UTC().Sub(now.AsTime()).Hours()/24, 'f', 1, 64),
+		key.Info.ExpiresAt.In(pacificLoc).Format("Jan 2, 2006 3:04pm MST"),
+		strconv.FormatUint(uint64(key.Info.UserCount), 10),
+		"`"+strings.Join(key.Info.Tags, "`, `")+"`",
+		sfSubscriptionID,
+		sfOpportunityID,
+	))
 }
