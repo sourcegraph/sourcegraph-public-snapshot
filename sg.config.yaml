@@ -2184,11 +2184,9 @@ tests:
     cmd: pnpm test-integration:debug
 
   enterprise-portal-e2e:
-    # After EP stops requiring dotcomdb, we can update this to just require
-    # `sg start -cmd enterprise-portal`
     preamble:
       An Enterprise Portal instance must be already running for these tests to
-      work, most commonly with `sg start dotcom`.
+      work, most commonly with `sg start -cmd enterprise-portal`.
 
       This will leave a lot of data behind in your local database - you can
       delete everything using `psql -d sourcegraph -c TRUNCATE TABLE enterprise_portal_subscriptions CASCADE;`.
