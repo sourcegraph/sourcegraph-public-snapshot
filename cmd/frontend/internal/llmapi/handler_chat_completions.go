@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	completions "github.com/sourcegraph/sourcegraph/internal/completions/types"
-	types "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/internal/openapi/goapi"
 )
 
@@ -30,8 +30,6 @@ type chatCompletionsHandler struct {
 	// would have an in-house service we can use instead of going via HTTP but using HTTP
 	// simplifies a lof of things (including testing).
 	apiHandler http.Handler
-
-	GetModelConfig GetModelConfigurationFunc
 }
 
 var _ http.Handler = (*chatCompletionsHandler)(nil)
@@ -46,12 +44,6 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	decoder := json.NewDecoder(io.NopCloser(bytes.NewBuffer(body)))
 
-	currentModelConfig, err := h.GetModelConfig()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("modelConfigSvc.Get: %v", err), http.StatusInternalServerError)
-		return
-	}
-
 	if err := decoder.Decode(&chatCompletionRequest); err != nil {
 		http.Error(w, fmt.Sprintf("decoder.Decode: %v", err), http.StatusInternalServerError)
 		return
@@ -62,7 +54,7 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if errorMsg := validateRequestedModel(chatCompletionRequest, currentModelConfig); errorMsg != "" {
+	if errorMsg := validateRequestedModel(chatCompletionRequest); errorMsg != "" {
 		http.Error(w, errorMsg, http.StatusBadRequest)
 		return
 	}
@@ -79,27 +71,18 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	serveJSON(w, r, h.logger, chatCompletionResponse)
 }
 
-// validateRequestedModel checks that are only use the modelref syntax
-// (${ProviderID}::${APIVersionID}::${ModelID}).  If the user passes the old
-// syntax `${ProviderID}/${ModelID}`, then we try to return a helpful error
-// message suggesting to use the new modelref syntax.
-func validateRequestedModel(chatCompletionRequest goapi.CreateChatCompletionRequest, modelConfig *types.ModelConfiguration) string {
-	closestModelRef := ""
-	for _, model := range modelConfig.Models {
-		if string(model.ModelRef) == chatCompletionRequest.Model {
-			return ""
-		}
-		if model.DisplayName == chatCompletionRequest.Model || model.ModelName == chatCompletionRequest.Model {
-			closestModelRef = string(model.ModelRef)
-		} else if chatCompletionRequest.Model == fmt.Sprintf("%s/%s", model.ModelRef.ProviderID(), model.ModelRef.ModelID()) {
-			closestModelRef = string(model.ModelRef)
-		}
+var modelFormatRegex = regexp.MustCompile(`.+::.+::.+`)
+
+// (${ProviderID}::${APIVersionID}::${ModelID}). We don't validate that the
+// actual model exists because the underlying `/.api/completions/stream`
+// endpoint already does this validation and reports helpful error messages. We
+// just want to reject requests for models using the old non-modelref syntax
+// (example: anthropic/claude-3-haiku).
+func validateRequestedModel(chatCompletionRequest goapi.CreateChatCompletionRequest) string {
+	if !modelFormatRegex.MatchString(chatCompletionRequest.Model) {
+		return fmt.Sprintf("model %s is not in the correct format. Expected format: ${ProviderID}::${APIVersionID}::${ModelID}", chatCompletionRequest.Model)
 	}
-	didYouMean := ""
-	if closestModelRef != "" {
-		didYouMean = fmt.Sprintf(" (similar to %s)", closestModelRef)
-	}
-	return fmt.Sprintf("model %s is not supported%s", chatCompletionRequest.Model, didYouMean)
+	return ""
 }
 
 func validateChatCompletionRequest(chatCompletionRequest goapi.CreateChatCompletionRequest) string {

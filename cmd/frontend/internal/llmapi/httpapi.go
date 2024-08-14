@@ -18,9 +18,8 @@ func RegisterHandlers(m *mux.Router, apiHandler http.Handler, getModelConfigFunc
 	logger := sglog.Scoped("llmapi")
 
 	m.Path("/chat/completions").Methods("POST").Handler(&chatCompletionsHandler{
-		logger:         logger,
-		apiHandler:     apiHandler,
-		GetModelConfig: getModelConfigFunc,
+		logger:     logger,
+		apiHandler: apiHandler,
 	})
 	m.Path("/models").Methods("GET").Handler(&modelsHandler{
 		logger:         logger,
