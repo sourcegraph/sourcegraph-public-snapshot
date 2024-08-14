@@ -10,7 +10,9 @@ jobs:
     # Skip running on forks
     if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
-    container: sourcegraph/scip-go
+    # Temporarily pin to v0.1.15 as v0.1.16 has a regression
+    # https://github.com/sourcegraph/scip-go/issues/119
+    container: sourcegraph/scip-go:v0.1.15
     strategy:
       matrix:
         root:
