@@ -5,7 +5,11 @@ import (
 
 	"github.com/gorilla/mux"
 	sglog "github.com/sourcegraph/log"
+
+	types "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 )
+
+type GetModelConfigurationFunc func() (*types.ModelConfiguration, error)
 
 func RegisterHandlers(m *mux.Router, apiHandler http.Handler, getModelConfigFunc GetModelConfigurationFunc) {
 	logger := sglog.Scoped("llmapi")

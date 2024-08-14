@@ -8,7 +8,7 @@
  * API version: 0.0.0
  */
 
-package models
+package goapi
 
 type ListModelsResponse struct {
 	Object string `json:"object"`

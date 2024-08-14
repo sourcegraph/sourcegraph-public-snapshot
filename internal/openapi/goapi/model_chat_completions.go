@@ -1,4 +1,4 @@
-package models
+package goapi
 
 import (
 	"encoding/json"

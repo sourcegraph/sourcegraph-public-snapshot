@@ -2,12 +2,13 @@ package llmapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/sourcegraph/log"
 	sglog "github.com/sourcegraph/log"
 
-	models "github.com/sourcegraph/sourcegraph/internal/openapi/go"
+	"github.com/sourcegraph/sourcegraph/internal/openapi/goapi"
 )
 
 type modelsHandler struct {
@@ -18,20 +19,21 @@ type modelsHandler struct {
 var _ http.Handler = (*modelsHandler)(nil)
 
 func (m *modelsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	currentModelConfig, shouldReturn := modelConfigOr500Error(w, m.GetModelConfig)
-	if shouldReturn {
+	currentModelConfig, err := m.GetModelConfig()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("modelConfigSvc.Get: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	var data []models.Model
+	var data []goapi.Model
 	for _, model := range currentModelConfig.Models {
-		data = append(data, models.Model{
+		data = append(data, goapi.Model{
 			Object:  "model",
 			Id:      string(model.ModelRef),
 			OwnedBy: string(model.ModelRef.ProviderID()),
 		})
 	}
-	rawJSON, err := json.MarshalIndent(models.ListModelsResponse{
+	rawJSON, err := json.MarshalIndent(goapi.ListModelsResponse{
 		Object: "list",
 		Data:   data,
 	}, "", "    ")

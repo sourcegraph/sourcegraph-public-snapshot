@@ -1,4 +1,4 @@
 additionalProperties:
-  packageName: models
+  packageName: goapi
 globalProperties:
   models: true

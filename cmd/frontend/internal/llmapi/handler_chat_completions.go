@@ -14,11 +14,11 @@ import (
 	"github.com/sourcegraph/log"
 	sglog "github.com/sourcegraph/log"
 
-	models "github.com/sourcegraph/sourcegraph/internal/openapi/go"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	completions "github.com/sourcegraph/sourcegraph/internal/completions/types"
 	types "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
+	"github.com/sourcegraph/sourcegraph/internal/openapi/goapi"
 )
 
 // chatCompletionsHandler implements the REST endpoint /chat/completions
@@ -38,7 +38,7 @@ type chatCompletionsHandler struct {
 var _ http.Handler = (*chatCompletionsHandler)(nil)
 
 func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var chatCompletionRequest models.CreateChatCompletionRequest
+	var chatCompletionRequest goapi.CreateChatCompletionRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("io.ReadAll: %v", err), http.StatusInternalServerError)
@@ -89,7 +89,7 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 // (${ProviderID}::${APIVersionID}::${ModelID}).  If the user passes the old
 // syntax `${ProviderID}/${ModelID}`, then we try to return a helpful error
 // message suggesting to use the new modelref syntax.
-func validateRequestedModel(chatCompletionRequest models.CreateChatCompletionRequest, modelConfig *types.ModelConfiguration) string {
+func validateRequestedModel(chatCompletionRequest goapi.CreateChatCompletionRequest, modelConfig *types.ModelConfiguration) string {
 	closestModelRef := ""
 	for _, model := range modelConfig.Models {
 		if string(model.ModelRef) == chatCompletionRequest.Model {
@@ -108,7 +108,7 @@ func validateRequestedModel(chatCompletionRequest models.CreateChatCompletionReq
 	return fmt.Sprintf("model %s is not supported%s", chatCompletionRequest.Model, didYouMean)
 }
 
-func validateChatCompletionRequest(chatCompletionRequest models.CreateChatCompletionRequest) string {
+func validateChatCompletionRequest(chatCompletionRequest goapi.CreateChatCompletionRequest) string {
 
 	if chatCompletionRequest.N != nil && *chatCompletionRequest.N != 1 {
 		return "n must be nil or 1"
@@ -147,7 +147,7 @@ func validateChatCompletionRequest(chatCompletionRequest models.CreateChatComple
 	return ""
 }
 
-func transformToSGRequest(openAIReq models.CreateChatCompletionRequest) completions.CodyCompletionRequestParameters {
+func transformToSGRequest(openAIReq goapi.CreateChatCompletionRequest) completions.CodyCompletionRequestParameters {
 	maxTokens := 16 // Default in OpenAI openapi.yaml spec
 	if openAIReq.MaxTokens != nil {
 		maxTokens = *openAIReq.MaxTokens
@@ -177,7 +177,7 @@ func transformToSGRequest(openAIReq models.CreateChatCompletionRequest) completi
 	}
 }
 
-func transformMessages(messages []models.ChatCompletionRequestMessage) []completions.Message {
+func transformMessages(messages []goapi.ChatCompletionRequestMessage) []completions.Message {
 	// Transform OpenAI messages to Sourcegraph format
 	transformed := make([]completions.Message, len(messages))
 	for i, msg := range messages {
@@ -247,23 +247,23 @@ func (h *chatCompletionsHandler) forwardToAPIHandler(sgReq completions.CodyCompl
 	return &sgResp, nil
 }
 
-func transformToOpenAIResponse(sgResp *completions.CompletionResponse, openAIReq models.CreateChatCompletionRequest) models.CreateChatCompletionResponse {
-	return models.CreateChatCompletionResponse{
+func transformToOpenAIResponse(sgResp *completions.CompletionResponse, openAIReq goapi.CreateChatCompletionRequest) goapi.CreateChatCompletionResponse {
+	return goapi.CreateChatCompletionResponse{
 		ID:      "chat-" + generateUUID(),
 		Object:  "chat.completion",
 		Created: time.Now().Unix(),
 		Model:   openAIReq.Model,
-		Choices: []models.ChatCompletionChoice{
+		Choices: []goapi.ChatCompletionChoice{
 			{
 				Index: 0,
-				Message: models.ChatCompletionResponseMessage{
+				Message: goapi.ChatCompletionResponseMessage{
 					Role:    "assistant",
 					Content: sgResp.Completion,
 				},
 				FinishReason: sgResp.StopReason,
 			},
 		},
-		Usage: models.CompletionUsage{},
+		Usage: goapi.CompletionUsage{},
 	}
 }
 

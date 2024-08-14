@@ -8,7 +8,7 @@
  * API version: 0.0.0
  */
 
-package models
+package goapi
 
 // Model - Describes an OpenAI model offering that can be used with the API.
 type Model struct {

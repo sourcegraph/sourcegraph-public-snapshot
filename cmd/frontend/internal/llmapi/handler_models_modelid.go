@@ -2,6 +2,7 @@ package llmapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -27,8 +28,9 @@ func (m *modelsModelIDHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	currentModelConfig, shouldReturn := modelConfigOr500Error(w, m.GetModelConfig)
-	if shouldReturn {
+	currentModelConfig, err := m.GetModelConfig()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("modelConfigSvc.Get: %v", err), http.StatusInternalServerError)
 		return
 	}
 
