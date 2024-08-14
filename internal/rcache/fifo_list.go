@@ -129,8 +129,8 @@ func (l *FIFOList) globalPrefixKey() string {
 }
 
 func (l *FIFOList) kv() redispool.KeyValue {
-	if kvMock != nil {
-		return kvMock
+	if testStore != nil {
+		return testStore
 	}
 	return l._kv
 }

@@ -95,6 +95,9 @@ type MockKeyValue struct {
 	// WithLatencyRecorderFunc is an instance of a mock function object
 	// controlling the behavior of the method WithLatencyRecorder.
 	WithLatencyRecorderFunc *KeyValueWithLatencyRecorderFunc
+	// WithPrefixFunc is an instance of a mock function object controlling
+	// the behavior of the method WithPrefix.
+	WithPrefixFunc *KeyValueWithPrefixFunc
 }
 
 // NewMockKeyValue creates a new mock of the KeyValue interface. All methods
@@ -228,6 +231,11 @@ func NewMockKeyValue() *MockKeyValue {
 		},
 		WithLatencyRecorderFunc: &KeyValueWithLatencyRecorderFunc{
 			defaultHook: func(LatencyRecorder) (r0 KeyValue) {
+				return
+			},
+		},
+		WithPrefixFunc: &KeyValueWithPrefixFunc{
+			defaultHook: func(string) (r0 KeyValue) {
 				return
 			},
 		},
@@ -368,6 +376,11 @@ func NewStrictMockKeyValue() *MockKeyValue {
 				panic("unexpected invocation of MockKeyValue.WithLatencyRecorder")
 			},
 		},
+		WithPrefixFunc: &KeyValueWithPrefixFunc{
+			defaultHook: func(string) KeyValue {
+				panic("unexpected invocation of MockKeyValue.WithPrefix")
+			},
+		},
 	}
 }
 
@@ -452,6 +465,9 @@ func NewMockKeyValueFrom(i KeyValue) *MockKeyValue {
 		},
 		WithLatencyRecorderFunc: &KeyValueWithLatencyRecorderFunc{
 			defaultHook: i.WithLatencyRecorder,
+		},
+		WithPrefixFunc: &KeyValueWithPrefixFunc{
+			defaultHook: i.WithPrefix,
 		},
 	}
 }
@@ -3156,5 +3172,106 @@ func (c KeyValueWithLatencyRecorderFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c KeyValueWithLatencyRecorderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// KeyValueWithPrefixFunc describes the behavior when the WithPrefix method
+// of the parent MockKeyValue instance is invoked.
+type KeyValueWithPrefixFunc struct {
+	defaultHook func(string) KeyValue
+	hooks       []func(string) KeyValue
+	history     []KeyValueWithPrefixFuncCall
+	mutex       sync.Mutex
+}
+
+// WithPrefix delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockKeyValue) WithPrefix(v0 string) KeyValue {
+	r0 := m.WithPrefixFunc.nextHook()(v0)
+	m.WithPrefixFunc.appendCall(KeyValueWithPrefixFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithPrefix method of
+// the parent MockKeyValue instance is invoked and the hook queue is empty.
+func (f *KeyValueWithPrefixFunc) SetDefaultHook(hook func(string) KeyValue) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithPrefix method of the parent MockKeyValue instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *KeyValueWithPrefixFunc) PushHook(hook func(string) KeyValue) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *KeyValueWithPrefixFunc) SetDefaultReturn(r0 KeyValue) {
+	f.SetDefaultHook(func(string) KeyValue {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *KeyValueWithPrefixFunc) PushReturn(r0 KeyValue) {
+	f.PushHook(func(string) KeyValue {
+		return r0
+	})
+}
+
+func (f *KeyValueWithPrefixFunc) nextHook() func(string) KeyValue {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *KeyValueWithPrefixFunc) appendCall(r0 KeyValueWithPrefixFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of KeyValueWithPrefixFuncCall objects
+// describing the invocations of this function.
+func (f *KeyValueWithPrefixFunc) History() []KeyValueWithPrefixFuncCall {
+	f.mutex.Lock()
+	history := make([]KeyValueWithPrefixFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// KeyValueWithPrefixFuncCall is an object that describes an invocation of
+// method WithPrefix on an instance of MockKeyValue.
+type KeyValueWithPrefixFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 KeyValue
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c KeyValueWithPrefixFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c KeyValueWithPrefixFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }

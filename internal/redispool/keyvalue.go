@@ -56,6 +56,9 @@ type KeyValue interface {
 	WithContext(ctx context.Context) KeyValue
 	WithLatencyRecorder(r LatencyRecorder) KeyValue
 
+	// WithPrefix wraps r to return a RedisKeyValue that prefixes all keys with 'prefix:'
+	WithPrefix(prefix string) KeyValue
+
 	// Pool returns the underlying redis pool.
 	// The intention of this API is Pool is only for advanced use cases and the caller
 	// should consider if they need to use it. Pool is very hard to mock, while
@@ -159,14 +162,6 @@ func NewTestKeyValue() KeyValue {
 }
 
 // redisKeyValue is a KeyValue backed by pool
-//
-// Note: redisKeyValue additionally implements
-//
-//	interface {
-//	  // WithPrefix wraps r to return a RedisKeyValue that prefixes all keys with
-//	  // prefix + ":".
-//	  WithPrefix(prefix string) KeyValue
-//	}
 type redisKeyValue struct {
 	pool     *redis.Pool
 	ctx      context.Context
@@ -282,7 +277,6 @@ func (r *redisKeyValue) WithLatencyRecorder(rec LatencyRecorder) KeyValue {
 	}
 }
 
-// WithPrefix wraps r to return a RedisKeyValue that prefixes all keys with 'prefix:'
 func (r *redisKeyValue) WithPrefix(prefix string) KeyValue {
 	return &redisKeyValue{
 		pool:   r.pool,
