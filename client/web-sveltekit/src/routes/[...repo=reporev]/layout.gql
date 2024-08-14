@@ -98,17 +98,6 @@ query DepotChangelist($depotName: String!, $revision: String!) {
     }
 }
 
-fragment RevPickerChangelist on GitCommit {
-    __typename
-    id
-    subject
-    perforceChangelist {
-        cid
-        canonicalURL
-    }
-    ...DepotChangelistAuthor
-}
-
 fragment DepotChangelistAuthor on GitCommit {
     author {
         date

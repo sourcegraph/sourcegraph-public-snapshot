@@ -17,7 +17,7 @@ export const load: LayoutLoad = async ({ parent, url }) => {
         error(404, new RevisionNotFoundError(revision))
     }
 
-    const isPerforceDepot = resolvedRepository.commit?.perforceChangelist !== null
+    const isPerforceDepot = !!resolvedRepository.commit?.perforceChangelist
 
     if (isPerforceDepot && !revision.includes('changelist')) {
         const redirectURL = replaceRevisionInURL(

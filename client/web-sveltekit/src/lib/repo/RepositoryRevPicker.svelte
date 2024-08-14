@@ -1,7 +1,7 @@
 <script context="module" lang="ts">
     import type { Keys } from '$lib/Hotkey'
 
-    import type { RepositoryGitRefs, RevPickerGitCommit } from './RepositoryRevPicker.gql'
+    import type { RepositoryGitRefs, RevPickerChangelist, RevPickerGitCommit } from './RepositoryRevPicker.gql'
 
     export type RepositoryBranches = RepositoryGitRefs['gitRefs']
     export type RepositoryBranch = RepositoryBranches['nodes'][number]
@@ -46,8 +46,6 @@
     import ButtonGroup from '$lib/wildcard/ButtonGroup.svelte'
     import CopyButton from '$lib/wildcard/CopyButton.svelte'
 
-    import { RevPickerChangelist } from '../../routes/[...repo=reporev]/layout.gql'
-
     import Picker from './Picker.svelte'
     import RepositoryRevPickerItem from './RepositoryRevPickerItem.svelte'
 
@@ -89,8 +87,7 @@
     export let getDepotChangelists: ((query: string) => PromiseLike<DepotChangelists>) | undefined = undefined
 
     function defaultHandleSelect(revision: string) {
-        const urlToReplace = location.pathname + location.search + location.hash
-        goto(replaceRevisionInURL(urlToReplace, revision))
+        goto(replaceRevisionInURL(location.pathname + location.search + location.hash, revision))
     }
 
     // Show specific short revision if it's presented in the URL
