@@ -10,7 +10,17 @@
 CREATE OR REPLACE FUNCTION migrate_add_tenant_id_codeinsights(table_name text)
 RETURNS void AS $$
 BEGIN
-    EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS tenant_id integer REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;', table_name);
+    -- ALTER TABLE with a foreign key constraint will _always_ add the
+    -- constraint, which means we always require a table lock even if this
+    -- migration has run. So we check if the column exists first.
+    IF NOT EXISTS (SELECT true
+        FROM   pg_attribute
+        WHERE  attrelid = quote_ident(table_name)::regclass
+        AND    attname = 'tenant_id'
+        AND    NOT attisdropped
+    ) THEN
+        EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS tenant_id integer REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;', table_name);
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 

@@ -2323,12 +2323,9 @@ Foreign-key constraints:
  last_resolved_at            | timestamp with time zone |           |          | 
  embeddings_enabled          | boolean                  |           | not null | false
  syntactic_indexing_enabled  | boolean                  |           | not null | false
- tenant_id                   | integer                  |           |          | 
 Indexes:
     "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
     "lsif_configuration_policies_repository_id" btree (repository_id)
-Foreign-key constraints:
-    "lsif_configuration_policies_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 Triggers:
     trigger_configuration_policies_delete AFTER DELETE ON lsif_configuration_policies REFERENCING OLD TABLE AS old FOR EACH STATEMENT EXECUTE FUNCTION func_configuration_policies_delete()
     trigger_configuration_policies_insert AFTER INSERT ON lsif_configuration_policies FOR EACH ROW EXECUTE FUNCTION func_configuration_policies_insert()
@@ -2364,11 +2361,8 @@ Triggers:
 -----------+---------+-----------+----------+---------
  policy_id | integer |           | not null | 
  repo_id   | integer |           | not null | 
- tenant_id | integer |           |          | 
 Indexes:
     "lsif_configuration_policies_repository_pattern_lookup_pkey" PRIMARY KEY, btree (policy_id, repo_id)
-Foreign-key constraints:
-    "lsif_configuration_policies_repository_pattern_l_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2398,12 +2392,10 @@ A lookup table to get all the repository patterns by repository id that apply to
  external_service_kind | text                     |           | not null | ''::text
  external_service_sync | timestamp with time zone |           |          | 
  cancel                | boolean                  |           | not null | false
- tenant_id             | integer                  |           |          | 
 Indexes:
     "lsif_dependency_indexing_jobs_pkey1" PRIMARY KEY, btree (id)
     "lsif_dependency_indexing_jobs_state" btree (state)
 Foreign-key constraints:
-    "lsif_dependency_indexing_jobs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
     "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
 ```
@@ -2421,7 +2413,6 @@ Foreign-key constraints:
  scheme          | text                     |           | not null | 
  blocked         | boolean                  |           | not null | false
  last_checked_at | timestamp with time zone |           |          | 
- tenant_id       | integer                  |           |          | 
 Indexes:
     "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
     "lsif_dependency_repos_unique_scheme_name" UNIQUE, btree (scheme, name)
@@ -2430,8 +2421,6 @@ Indexes:
     "lsif_dependency_repos_name_gin" gin (name gin_trgm_ops)
     "lsif_dependency_repos_name_id" btree (name, id)
     "lsif_dependency_repos_scheme_id" btree (scheme, id)
-Foreign-key constraints:
-    "lsif_dependency_repos_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 Referenced by:
     TABLE "package_repo_versions" CONSTRAINT "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
 
@@ -2455,14 +2444,12 @@ Referenced by:
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
  cancel            | boolean                  |           | not null | false
- tenant_id         | integer                  |           |          | 
 Indexes:
     "lsif_dependency_indexing_jobs_pkey" PRIMARY KEY, btree (id)
     "lsif_dependency_indexing_jobs_upload_id" btree (upload_id)
     "lsif_dependency_syncing_jobs_state" btree (state)
 Foreign-key constraints:
     "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
-    "lsif_dependency_syncing_jobs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2479,11 +2466,8 @@ Tracks jobs that scan imports of indexes to schedule auto-index jobs.
  update_token  | integer                  |           | not null | 
  updated_at    | timestamp with time zone |           |          | 
  set_dirty_at  | timestamp with time zone |           | not null | now()
- tenant_id     | integer                  |           |          | 
 Indexes:
     "lsif_dirty_repositories_pkey" PRIMARY KEY, btree (repository_id)
-Foreign-key constraints:
-    "lsif_dirty_repositories_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2503,13 +2487,11 @@ Stores whether or not the nearest upload data for a repository is out of date (w
  repository_id     | integer |           | not null | 
  data              | bytea   |           | not null | 
  autoindex_enabled | boolean |           | not null | true
- tenant_id         | integer |           |          | 
 Indexes:
     "lsif_index_configuration_pkey" PRIMARY KEY, btree (id)
     "lsif_index_configuration_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
 Foreign-key constraints:
     "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
-    "lsif_index_configuration_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2549,7 +2531,6 @@ Stores the configuration used for code intel index jobs for a repository.
  should_reindex         | boolean                  |           | not null | false
  requested_envvars      | text[]                   |           |          | 
  enqueuer_user_id       | integer                  |           | not null | 0
- tenant_id              | integer                  |           |          | 
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
@@ -2560,8 +2541,6 @@ Indexes:
     "lsif_indexes_state" btree (state)
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
-Foreign-key constraints:
-    "lsif_indexes_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2591,11 +2570,8 @@ Stores metadata about a code intel index job.
 --------------------+--------------------------+-----------+----------+---------
  repository_id      | integer                  |           | not null | 
  last_index_scan_at | timestamp with time zone |           | not null | 
- tenant_id          | integer                  |           |          | 
 Indexes:
     "lsif_last_index_scan_pkey" PRIMARY KEY, btree (repository_id)
-Foreign-key constraints:
-    "lsif_last_index_scan_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2609,11 +2585,8 @@ Tracks the last time repository was checked for auto-indexing job scheduling.
 ------------------------+--------------------------+-----------+----------+---------
  repository_id          | integer                  |           | not null | 
  last_retention_scan_at | timestamp with time zone |           | not null | 
- tenant_id              | integer                  |           |          | 
 Indexes:
     "lsif_last_retention_scan_pkey" PRIMARY KEY, btree (repository_id)
-Foreign-key constraints:
-    "lsif_last_retention_scan_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2628,12 +2601,9 @@ Tracks the last time uploads a repository were checked against data retention po
  repository_id | integer |           | not null | 
  commit_bytea  | bytea   |           | not null | 
  uploads       | jsonb   |           | not null | 
- tenant_id     | integer |           |          | 
 Indexes:
     "lsif_nearest_uploads_repository_id_commit_bytea" btree (repository_id, commit_bytea)
     "lsif_nearest_uploads_uploads" gin (uploads)
-Foreign-key constraints:
-    "lsif_nearest_uploads_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2651,12 +2621,9 @@ Associates commits with the complete set of uploads visible from that commit. Ev
  commit_bytea          | bytea   |           | not null | 
  ancestor_commit_bytea | bytea   |           | not null | 
  distance              | integer |           | not null | 
- tenant_id             | integer |           |          | 
 Indexes:
     "lsif_nearest_uploads_links_repository_id_ancestor_commit_bytea" btree (repository_id, ancestor_commit_bytea)
     "lsif_nearest_uploads_links_repository_id_commit_bytea" btree (repository_id, commit_bytea)
-Foreign-key constraints:
-    "lsif_nearest_uploads_links_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2670,22 +2637,20 @@ Associates commits with the closest ancestor commit with usable upload data. Tog
 
 # Table "public.lsif_packages"
 ```
-  Column   |  Type   | Collation | Nullable |                  Default                  
------------+---------+-----------+----------+-------------------------------------------
- id        | integer |           | not null | nextval('lsif_packages_id_seq'::regclass)
- scheme    | text    |           | not null | 
- name      | text    |           | not null | 
- version   | text    |           |          | 
- dump_id   | integer |           | not null | 
- manager   | text    |           | not null | ''::text
- tenant_id | integer |           |          | 
+ Column  |  Type   | Collation | Nullable |                  Default                  
+---------+---------+-----------+----------+-------------------------------------------
+ id      | integer |           | not null | nextval('lsif_packages_id_seq'::regclass)
+ scheme  | text    |           | not null | 
+ name    | text    |           | not null | 
+ version | text    |           |          | 
+ dump_id | integer |           | not null | 
+ manager | text    |           | not null | ''::text
 Indexes:
     "lsif_packages_pkey" PRIMARY KEY, btree (id)
     "lsif_packages_dump_id" btree (dump_id)
     "lsif_packages_scheme_name_version_dump_id" btree (scheme, name, version, dump_id)
 Foreign-key constraints:
     "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
-    "lsif_packages_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2703,22 +2668,20 @@ Associates an upload with the set of packages they provide within a given packag
 
 # Table "public.lsif_references"
 ```
-  Column   |  Type   | Collation | Nullable |                   Default                   
------------+---------+-----------+----------+---------------------------------------------
- id        | integer |           | not null | nextval('lsif_references_id_seq'::regclass)
- scheme    | text    |           | not null | 
- name      | text    |           | not null | 
- version   | text    |           |          | 
- dump_id   | integer |           | not null | 
- manager   | text    |           | not null | ''::text
- tenant_id | integer |           |          | 
+ Column  |  Type   | Collation | Nullable |                   Default                   
+---------+---------+-----------+----------+---------------------------------------------
+ id      | integer |           | not null | nextval('lsif_references_id_seq'::regclass)
+ scheme  | text    |           | not null | 
+ name    | text    |           | not null | 
+ version | text    |           |          | 
+ dump_id | integer |           | not null | 
+ manager | text    |           | not null | ''::text
 Indexes:
     "lsif_references_pkey" PRIMARY KEY, btree (id)
     "lsif_references_dump_id" btree (dump_id)
     "lsif_references_scheme_name_version_dump_id" btree (scheme, name, version, dump_id)
 Foreign-key constraints:
     "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
-    "lsif_references_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2742,13 +2705,11 @@ Associates an upload with the set of packages they require within a given packag
  repository_id                          | integer |           | not null | 
  max_age_for_non_stale_branches_seconds | integer |           | not null | 
  max_age_for_non_stale_tags_seconds     | integer |           | not null | 
- tenant_id                              | integer |           |          | 
 Indexes:
     "lsif_retention_configuration_pkey" PRIMARY KEY, btree (id)
     "lsif_retention_configuration_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
 Foreign-key constraints:
     "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
-    "lsif_retention_configuration_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2797,7 +2758,6 @@ Stores the retention policy of code intellience data for a repository.
  last_reconcile_at       | timestamp with time zone |           |          | 
  content_type            | text                     |           | not null | 'application/x-ndjson+lsif'::text
  should_reindex          | boolean                  |           | not null | false
- tenant_id               | integer                  |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -2811,8 +2771,6 @@ Indexes:
     "lsif_uploads_uploaded_at_id" btree (uploaded_at DESC, id) WHERE state <> 'deleted'::text
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
-Foreign-key constraints:
-    "lsif_uploads_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 Referenced by:
     TABLE "codeintel_ranking_exports" CONSTRAINT "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
     TABLE "vulnerability_matches" CONSTRAINT "fk_upload" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
@@ -2881,12 +2839,9 @@ Stores metadata about an LSIF index uploaded by a user.
  sequence            | bigint                   |           | not null | nextval('lsif_uploads_audit_logs_seq'::regclass)
  operation           | audit_log_operation      |           | not null | 
  content_type        | text                     |           | not null | 'application/x-ndjson+lsif'::text
- tenant_id           | integer                  |           |          | 
 Indexes:
     "lsif_uploads_audit_logs_timestamp" brin (log_timestamp)
     "lsif_uploads_audit_logs_upload_id" btree (upload_id)
-Foreign-key constraints:
-    "lsif_uploads_audit_logs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2904,11 +2859,9 @@ Foreign-key constraints:
 -----------------+---------+-----------+----------+---------
  upload_id       | integer |           | not null | 
  reference_count | integer |           | not null | 
- tenant_id       | integer |           |          | 
 Indexes:
     "lsif_uploads_reference_counts_upload_id_key" UNIQUE CONSTRAINT, btree (upload_id)
 Foreign-key constraints:
-    "lsif_uploads_reference_counts_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
     "lsif_uploads_reference_counts_upload_id_fk" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
 ```
@@ -2927,12 +2880,9 @@ A less hot-path reference count for upload records.
  upload_id          | integer |           | not null | 
  branch_or_tag_name | text    |           | not null | ''::text
  is_default_branch  | boolean |           | not null | false
- tenant_id          | integer |           |          | 
 Indexes:
     "lsif_uploads_visible_at_tip_is_default_branch" btree (upload_id) WHERE is_default_branch
     "lsif_uploads_visible_at_tip_repository_id_upload_id" btree (repository_id, upload_id)
-Foreign-key constraints:
-    "lsif_uploads_visible_at_tip_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2951,13 +2901,11 @@ Associates a repository with the set of LSIF upload identifiers that can serve i
  id              | bigint                      |           | not null | nextval('lsif_uploads_vulnerability_scan_id_seq'::regclass)
  upload_id       | integer                     |           | not null | 
  last_scanned_at | timestamp without time zone |           | not null | now()
- tenant_id       | integer                     |           |          | 
 Indexes:
     "lsif_uploads_vulnerability_scan_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_vulnerability_scan_upload_id" UNIQUE, btree (upload_id)
 Foreign-key constraints:
     "fk_upload_id" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
-    "lsif_uploads_vulnerability_scan_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -4685,26 +4633,6 @@ Referenced by:
     TABLE "insights_query_runner_jobs_dependencies" CONSTRAINT "insights_query_runner_jobs_dependencies_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "insights_query_runner_jobs" CONSTRAINT "insights_query_runner_jobs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "insights_settings_migration_jobs" CONSTRAINT "insights_settings_migration_jobs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_configuration_policies_repository_pattern_lookup" CONSTRAINT "lsif_configuration_policies_repository_pattern_l_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_configuration_policies" CONSTRAINT "lsif_configuration_policies_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_dependency_repos" CONSTRAINT "lsif_dependency_repos_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_dependency_syncing_jobs" CONSTRAINT "lsif_dependency_syncing_jobs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_dirty_repositories" CONSTRAINT "lsif_dirty_repositories_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_indexes" CONSTRAINT "lsif_indexes_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_last_index_scan" CONSTRAINT "lsif_last_index_scan_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_last_retention_scan" CONSTRAINT "lsif_last_retention_scan_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_nearest_uploads_links" CONSTRAINT "lsif_nearest_uploads_links_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_nearest_uploads" CONSTRAINT "lsif_nearest_uploads_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_packages" CONSTRAINT "lsif_packages_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_references" CONSTRAINT "lsif_references_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_uploads_audit_logs" CONSTRAINT "lsif_uploads_audit_logs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_uploads_reference_counts" CONSTRAINT "lsif_uploads_reference_counts_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_uploads" CONSTRAINT "lsif_uploads_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_uploads_visible_at_tip" CONSTRAINT "lsif_uploads_visible_at_tip_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
-    TABLE "lsif_uploads_vulnerability_scan" CONSTRAINT "lsif_uploads_vulnerability_scan_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "namespace_permissions" CONSTRAINT "namespace_permissions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "notebook_stars" CONSTRAINT "notebook_stars_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE

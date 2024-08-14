@@ -1773,8 +1773,7 @@ CREATE TABLE lsif_configuration_policies (
     repository_patterns text[],
     last_resolved_at timestamp with time zone,
     embeddings_enabled boolean DEFAULT false NOT NULL,
-    syntactic_indexing_enabled boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    syntactic_indexing_enabled boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON COLUMN lsif_configuration_policies.repository_id IS 'The identifier of the repository to which this configuration policy applies. If absent, this policy is applied globally.';
@@ -1819,8 +1818,7 @@ CREATE VIEW codeintel_configuration_policies AS
 
 CREATE TABLE lsif_configuration_policies_repository_pattern_lookup (
     policy_id integer NOT NULL,
-    repo_id integer NOT NULL,
-    tenant_id integer
+    repo_id integer NOT NULL
 );
 
 COMMENT ON TABLE lsif_configuration_policies_repository_pattern_lookup IS 'A lookup table to get all the repository patterns by repository id that apply to a configuration policy.';
@@ -3053,8 +3051,7 @@ CREATE TABLE lsif_dependency_indexing_jobs (
     upload_id integer,
     external_service_kind text DEFAULT ''::text NOT NULL,
     external_service_sync timestamp with time zone,
-    cancel boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    cancel boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON COLUMN lsif_dependency_indexing_jobs.external_service_kind IS 'Filter the external services for this kind to wait to have synced. If empty, external_service_sync is ignored and no external services are polled for their last sync time.';
@@ -3075,8 +3072,7 @@ CREATE TABLE lsif_dependency_syncing_jobs (
     upload_id integer,
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
-    cancel boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    cancel boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE lsif_dependency_syncing_jobs IS 'Tracks jobs that scan imports of indexes to schedule auto-index jobs.';
@@ -3108,8 +3104,7 @@ CREATE TABLE lsif_dependency_repos (
     name text NOT NULL,
     scheme text NOT NULL,
     blocked boolean DEFAULT false NOT NULL,
-    last_checked_at timestamp with time zone,
-    tenant_id integer
+    last_checked_at timestamp with time zone
 );
 
 CREATE SEQUENCE lsif_dependency_repos_id_seq
@@ -3126,8 +3121,7 @@ CREATE TABLE lsif_dirty_repositories (
     dirty_token integer NOT NULL,
     update_token integer NOT NULL,
     updated_at timestamp with time zone,
-    set_dirty_at timestamp with time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    set_dirty_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 COMMENT ON TABLE lsif_dirty_repositories IS 'Stores whether or not the nearest upload data for a repository is out of date (when update_token > dirty_token).';
@@ -3174,7 +3168,6 @@ CREATE TABLE lsif_uploads (
     last_reconcile_at timestamp with time zone,
     content_type text DEFAULT 'application/x-ndjson+lsif'::text NOT NULL,
     should_reindex boolean DEFAULT false NOT NULL,
-    tenant_id integer,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -3277,8 +3270,7 @@ CREATE TABLE lsif_index_configuration (
     id bigint NOT NULL,
     repository_id integer NOT NULL,
     data bytea NOT NULL,
-    autoindex_enabled boolean DEFAULT true NOT NULL,
-    tenant_id integer
+    autoindex_enabled boolean DEFAULT true NOT NULL
 );
 
 COMMENT ON TABLE lsif_index_configuration IS 'Stores the configuration used for code intel index jobs for a repository.';
@@ -3323,7 +3315,6 @@ CREATE TABLE lsif_indexes (
     should_reindex boolean DEFAULT false NOT NULL,
     requested_envvars text[],
     enqueuer_user_id integer DEFAULT 0 NOT NULL,
-    tenant_id integer,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -3386,8 +3377,7 @@ CREATE VIEW lsif_indexes_with_repository_name AS
 
 CREATE TABLE lsif_last_index_scan (
     repository_id integer NOT NULL,
-    last_index_scan_at timestamp with time zone NOT NULL,
-    tenant_id integer
+    last_index_scan_at timestamp with time zone NOT NULL
 );
 
 COMMENT ON TABLE lsif_last_index_scan IS 'Tracks the last time repository was checked for auto-indexing job scheduling.';
@@ -3396,8 +3386,7 @@ COMMENT ON COLUMN lsif_last_index_scan.last_index_scan_at IS 'The last time uplo
 
 CREATE TABLE lsif_last_retention_scan (
     repository_id integer NOT NULL,
-    last_retention_scan_at timestamp with time zone NOT NULL,
-    tenant_id integer
+    last_retention_scan_at timestamp with time zone NOT NULL
 );
 
 COMMENT ON TABLE lsif_last_retention_scan IS 'Tracks the last time uploads a repository were checked against data retention policies.';
@@ -3407,8 +3396,7 @@ COMMENT ON COLUMN lsif_last_retention_scan.last_retention_scan_at IS 'The last t
 CREATE TABLE lsif_nearest_uploads (
     repository_id integer NOT NULL,
     commit_bytea bytea NOT NULL,
-    uploads jsonb NOT NULL,
-    tenant_id integer
+    uploads jsonb NOT NULL
 );
 
 COMMENT ON TABLE lsif_nearest_uploads IS 'Associates commits with the complete set of uploads visible from that commit. Every commit with upload data is present in this table.';
@@ -3421,8 +3409,7 @@ CREATE TABLE lsif_nearest_uploads_links (
     repository_id integer NOT NULL,
     commit_bytea bytea NOT NULL,
     ancestor_commit_bytea bytea NOT NULL,
-    distance integer NOT NULL,
-    tenant_id integer
+    distance integer NOT NULL
 );
 
 COMMENT ON TABLE lsif_nearest_uploads_links IS 'Associates commits with the closest ancestor commit with usable upload data. Together, this table and lsif_nearest_uploads cover all commits with resolvable code intelligence.';
@@ -3439,8 +3426,7 @@ CREATE TABLE lsif_packages (
     name text NOT NULL,
     version text,
     dump_id integer NOT NULL,
-    manager text DEFAULT ''::text NOT NULL,
-    tenant_id integer
+    manager text DEFAULT ''::text NOT NULL
 );
 
 COMMENT ON TABLE lsif_packages IS 'Associates an upload with the set of packages they provide within a given packages management scheme.';
@@ -3470,8 +3456,7 @@ CREATE TABLE lsif_references (
     name text NOT NULL,
     version text,
     dump_id integer NOT NULL,
-    manager text DEFAULT ''::text NOT NULL,
-    tenant_id integer
+    manager text DEFAULT ''::text NOT NULL
 );
 
 COMMENT ON TABLE lsif_references IS 'Associates an upload with the set of packages they require within a given packages management scheme.';
@@ -3499,8 +3484,7 @@ CREATE TABLE lsif_retention_configuration (
     id integer NOT NULL,
     repository_id integer NOT NULL,
     max_age_for_non_stale_branches_seconds integer NOT NULL,
-    max_age_for_non_stale_tags_seconds integer NOT NULL,
-    tenant_id integer
+    max_age_for_non_stale_tags_seconds integer NOT NULL
 );
 
 COMMENT ON TABLE lsif_retention_configuration IS 'Stores the retention policy of code intellience data for a repository.';
@@ -3535,8 +3519,7 @@ CREATE TABLE lsif_uploads_audit_logs (
     reason text DEFAULT ''::text,
     sequence bigint NOT NULL,
     operation audit_log_operation NOT NULL,
-    content_type text DEFAULT 'application/x-ndjson+lsif'::text NOT NULL,
-    tenant_id integer
+    content_type text DEFAULT 'application/x-ndjson+lsif'::text NOT NULL
 );
 
 COMMENT ON COLUMN lsif_uploads_audit_logs.log_timestamp IS 'Timestamp for this log entry.';
@@ -3558,8 +3541,7 @@ ALTER SEQUENCE lsif_uploads_audit_logs_seq OWNED BY lsif_uploads_audit_logs.sequ
 
 CREATE TABLE lsif_uploads_reference_counts (
     upload_id integer NOT NULL,
-    reference_count integer NOT NULL,
-    tenant_id integer
+    reference_count integer NOT NULL
 );
 
 COMMENT ON TABLE lsif_uploads_reference_counts IS 'A less hot-path reference count for upload records.';
@@ -3572,8 +3554,7 @@ CREATE TABLE lsif_uploads_visible_at_tip (
     repository_id integer NOT NULL,
     upload_id integer NOT NULL,
     branch_or_tag_name text DEFAULT ''::text NOT NULL,
-    is_default_branch boolean DEFAULT false NOT NULL,
-    tenant_id integer
+    is_default_branch boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE lsif_uploads_visible_at_tip IS 'Associates a repository with the set of LSIF upload identifiers that can serve intelligence for the tip of the default branch.';
@@ -3587,8 +3568,7 @@ COMMENT ON COLUMN lsif_uploads_visible_at_tip.is_default_branch IS 'Whether the 
 CREATE TABLE lsif_uploads_vulnerability_scan (
     id bigint NOT NULL,
     upload_id integer NOT NULL,
-    last_scanned_at timestamp without time zone DEFAULT now() NOT NULL,
-    tenant_id integer
+    last_scanned_at timestamp without time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE lsif_uploads_vulnerability_scan_id_seq
@@ -7326,86 +7306,26 @@ ALTER TABLE ONLY insights_query_runner_jobs
 ALTER TABLE ONLY insights_settings_migration_jobs
     ADD CONSTRAINT insights_settings_migration_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE ONLY lsif_configuration_policies_repository_pattern_lookup
-    ADD CONSTRAINT lsif_configuration_policies_repository_pattern_l_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_configuration_policies
-    ADD CONSTRAINT lsif_configuration_policies_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_dependency_indexing_jobs
-    ADD CONSTRAINT lsif_dependency_indexing_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY lsif_dependency_syncing_jobs
     ADD CONSTRAINT lsif_dependency_indexing_jobs_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY lsif_dependency_indexing_jobs
     ADD CONSTRAINT lsif_dependency_indexing_jobs_upload_id_fkey1 FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY lsif_dependency_repos
-    ADD CONSTRAINT lsif_dependency_repos_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_dependency_syncing_jobs
-    ADD CONSTRAINT lsif_dependency_syncing_jobs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_dirty_repositories
-    ADD CONSTRAINT lsif_dirty_repositories_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY lsif_index_configuration
     ADD CONSTRAINT lsif_index_configuration_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_index_configuration
-    ADD CONSTRAINT lsif_index_configuration_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_indexes
-    ADD CONSTRAINT lsif_indexes_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_last_index_scan
-    ADD CONSTRAINT lsif_last_index_scan_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_last_retention_scan
-    ADD CONSTRAINT lsif_last_retention_scan_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_nearest_uploads_links
-    ADD CONSTRAINT lsif_nearest_uploads_links_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_nearest_uploads
-    ADD CONSTRAINT lsif_nearest_uploads_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY lsif_packages
     ADD CONSTRAINT lsif_packages_dump_id_fkey FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY lsif_packages
-    ADD CONSTRAINT lsif_packages_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY lsif_references
     ADD CONSTRAINT lsif_references_dump_id_fkey FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_references
-    ADD CONSTRAINT lsif_references_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY lsif_retention_configuration
     ADD CONSTRAINT lsif_retention_configuration_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY lsif_retention_configuration
-    ADD CONSTRAINT lsif_retention_configuration_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_uploads_audit_logs
-    ADD CONSTRAINT lsif_uploads_audit_logs_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_uploads_reference_counts
-    ADD CONSTRAINT lsif_uploads_reference_counts_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 ALTER TABLE ONLY lsif_uploads_reference_counts
     ADD CONSTRAINT lsif_uploads_reference_counts_upload_id_fk FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_uploads
-    ADD CONSTRAINT lsif_uploads_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_uploads_visible_at_tip
-    ADD CONSTRAINT lsif_uploads_visible_at_tip_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY lsif_uploads_vulnerability_scan
-    ADD CONSTRAINT lsif_uploads_vulnerability_scan_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY names
     ADD CONSTRAINT names_org_id_fkey FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE;
@@ -7905,9 +7825,9 @@ ALTER TABLE ONLY zoekt_repos
 ALTER TABLE ONLY zoekt_repos
     ADD CONSTRAINT zoekt_repos_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
-INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL, false, false, NULL);
-INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL, false, false, NULL);
-INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL, false, false, NULL);
+INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL, false, false);
+INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL, false, false);
+INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL, false, false);
 
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
 
