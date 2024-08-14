@@ -122,13 +122,6 @@ func (v Values) StringMap() (map[string]string, error) {
 
 type LatencyRecorder func(call string, latency time.Duration, err error)
 
-type redisKeyValue struct {
-	pool     *redis.Pool
-	ctx      context.Context
-	prefix   string
-	recorder *LatencyRecorder
-}
-
 // NewKeyValue returns a KeyValue for addr.
 //
 // poolOpts is a required argument which sets defaults in the case we connect
@@ -141,20 +134,39 @@ func NewKeyValue(addr string, poolOpts *redis.Pool) KeyValue {
 	poolOpts.Dial = func() (redis.Conn, error) {
 		return dialRedis(addr)
 	}
-	return RedisKeyValue(poolOpts)
+	return &redisKeyValue{pool: poolOpts}
 }
 
-// RedisKeyValue returns a KeyValue backed by pool.
+// NewTestKeyValue returns a KeyValue connected to a local Redis server for integration tests.
+func NewTestKeyValue() KeyValue {
+	pool := &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial: func() (redis.Conn, error) {
+			return redis.Dial("tcp", "127.0.0.1:6379")
+		},
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
+	}
+	return &redisKeyValue{pool: pool}
+}
+
+// redisKeyValue is a KeyValue backed by pool
 //
-// Note: RedisKeyValue additionally implements
+// Note: redisKeyValue additionally implements
 //
 //	interface {
 //	  // WithPrefix wraps r to return a RedisKeyValue that prefixes all keys with
 //	  // prefix + ":".
 //	  WithPrefix(prefix string) KeyValue
 //	}
-func RedisKeyValue(pool *redis.Pool) KeyValue {
-	return &redisKeyValue{pool: pool}
+type redisKeyValue struct {
+	pool     *redis.Pool
+	ctx      context.Context
+	prefix   string
+	recorder *LatencyRecorder
 }
 
 func (r *redisKeyValue) Get(key string) Value {

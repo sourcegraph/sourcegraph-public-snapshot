@@ -243,25 +243,14 @@ const testAddr = "127.0.0.1:6379"
 func SetupForTest(t testing.TB) redispool.KeyValue {
 	t.Helper()
 
-	pool := &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", testAddr)
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}
-	kvMock = redispool.RedisKeyValue(pool)
+	kvMock = redispool.NewTestKeyValue()
 	t.Cleanup(func() {
-		pool.Close()
+		kvMock.Pool().Close()
 		kvMock = nil
 	})
 
 	globalPrefix = "__test__" + t.Name()
-	c := pool.Get()
+	c := kvMock.Pool().Get()
 	defer c.Close()
 
 	// If we are not on CI, skip the test if our redis connection fails.

@@ -98,8 +98,6 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		}
 	}
 
-	redisPool := connectToRedis(cfg.RedisEndpoint)
-
 	// Create an uncached external doer, we never want to cache any responses.
 	// Not only is the cache hit rate going to be really low and requests large-ish,
 	// but also do we not want to retain any data.
@@ -115,7 +113,10 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		return errors.Wrap(err, "init metric 'redis_latency'")
 	}
 
-	redisCache := redispool.RedisKeyValue(redisPool).WithLatencyRecorder(func(call string, latency time.Duration, err error) {
+	redisCache := redispool.NewKeyValue(cfg.RedisEndpoint, &redis.Pool{
+		MaxIdle:     10,
+		IdleTimeout: 240 * time.Second,
+	}).WithLatencyRecorder(func(call string, latency time.Duration, err error) {
 		redisLatency.Record(context.Background(), latency.Milliseconds(), metric.WithAttributeSet(attribute.NewSet(
 			attribute.Bool("error", err != nil),
 			attribute.String("command", call))))
@@ -240,7 +241,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		return errors.Wrap(err, "httpapi.NewHandler")
 	}
 	// Diagnostic and Maintenance layers, exposing additional APIs and endpoints.
-	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, redisPool, cfg.DiagnosticsSecret, sources)
+	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, redisCache.Pool(), cfg.DiagnosticsSecret, sources)
 	handler = httpapi.NewMaintenanceHandler(obctx.Logger, handler, cfg, redisCache)
 
 	// Collect request client for downstream handlers. Outside of dev, we always set up
@@ -257,7 +258,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	})
 
 	// Set up redis-based distributed mutex for the source syncer worker
-	sourceWorkerMutex := redsync.New(redigo.NewPool(redisPool)).NewMutex("source-syncer-worker",
+	sourceWorkerMutex := redsync.New(redigo.NewPool(redisCache.Pool())).NewMutex("source-syncer-worker",
 		// Do not retry endlessly becuase it's very likely that someone else has
 		// a long-standing hold on the mutex. We will try again on the next periodic
 		// goroutine run.

@@ -396,20 +396,10 @@ func TestKeyValueWithPrefix(t *testing.T) {
 func redisKeyValueForTest(t *testing.T) redispool.KeyValue {
 	t.Helper()
 
-	pool := &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", "127.0.0.1:6379")
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}
-
+	kv := redispool.NewTestKeyValue()
 	prefix := "__test__" + t.Name()
-	c := pool.Get()
+
+	c := kv.Pool().Get()
 	defer c.Close()
 
 	// If we are not on CI, skip the test if our redis connection fails.
@@ -420,7 +410,6 @@ func redisKeyValueForTest(t *testing.T) redispool.KeyValue {
 		}
 	}
 
-	kv := redispool.RedisKeyValue(pool)
 	if err := redispool.DeleteAllKeysWithPrefix(kv, prefix); err != nil {
 		t.Logf("Could not clear test prefix name=%q prefix=%q error=%v", t.Name(), prefix, err)
 	}
