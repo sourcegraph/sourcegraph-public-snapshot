@@ -36,24 +36,24 @@ func parseConfig(data []byte) (*Config, error) {
 		return nil, err
 	}
 
-	root, err := root.RepositoryRoot()
+	rr, err := root.RepositoryRoot()
 	if err != nil {
 		return nil, err
 	}
 
 	for name, cmd := range conf.BazelCommands {
 		cmd.Config.Name = name
-		cmd.Config.RepositoryRoot = root
+		cmd.Config.RepositoryRoot = rr
 	}
 
 	for name, cmd := range conf.DockerCommands {
 		cmd.Config.Name = name
-		cmd.Config.RepositoryRoot = root
+		cmd.Config.RepositoryRoot = rr
 	}
 
 	for name, cmd := range conf.Commands {
 		cmd.Config.Name = name
-		cmd.Config.RepositoryRoot = root
+		cmd.Config.RepositoryRoot = rr
 		normalizeCmd(cmd)
 	}
 
@@ -64,7 +64,7 @@ func parseConfig(data []byte) (*Config, error) {
 
 	for name, cmd := range conf.Tests {
 		cmd.Config.Name = name
-		cmd.Config.RepositoryRoot = root
+		cmd.Config.RepositoryRoot = rr
 		normalizeCmd(cmd)
 		conf.Tests[name] = cmd
 	}
