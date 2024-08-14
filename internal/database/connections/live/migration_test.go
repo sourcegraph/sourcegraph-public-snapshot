@@ -62,6 +62,30 @@ var tablesWithoutTenant = map[string]map[string]struct{}{
 		"migration_logs":           {}, // Maintained by migrator and not part of Sourcegraph proper.
 		"versions":                 {}, // Maintained by migrator and not part of Sourcegraph proper.
 		"critical_and_site_config": {}, // Site config is global to the instance so it does not have a tenant.
+
+		// Excluding lsif_* since we are not targetting code-intel initially
+		// and they cause issues since its hard to get a table lock with the
+		// many long running transactions against them from worker.
+		"lsif_configuration_policies":                           {},
+		"lsif_configuration_policies_repository_pattern_lookup": {},
+		"lsif_dependency_indexing_jobs":                         {},
+		"lsif_dependency_repos":                                 {},
+		"lsif_dependency_syncing_jobs":                          {},
+		"lsif_dirty_repositories":                               {},
+		"lsif_index_configuration":                              {},
+		"lsif_indexes":                                          {},
+		"lsif_last_index_scan":                                  {},
+		"lsif_last_retention_scan":                              {},
+		"lsif_nearest_uploads":                                  {},
+		"lsif_nearest_uploads_links":                            {},
+		"lsif_packages":                                         {},
+		"lsif_references":                                       {},
+		"lsif_retention_configuration":                          {},
+		"lsif_uploads":                                          {},
+		"lsif_uploads_audit_logs":                               {},
+		"lsif_uploads_reference_counts":                         {},
+		"lsif_uploads_visible_at_tip":                           {},
+		"lsif_uploads_vulnerability_scan":                       {},
 	},
 	"codeintel": {
 		"tenants":        {}, // The tenant table itself, it cannot link to itself.

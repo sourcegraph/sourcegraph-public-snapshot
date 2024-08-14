@@ -17334,19 +17334,6 @@
           "Comment": ""
         },
         {
-          "Name": "tenant_id",
-          "Index": 18,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "type",
           "Index": 4,
           "TypeName": "text",
@@ -17382,15 +17369,7 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": [
-        {
-          "Name": "lsif_configuration_policies_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": [
         {
           "Name": "trigger_configuration_policies_delete",
@@ -17435,19 +17414,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The repository identifier associated with the policy."
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 3,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -17462,15 +17428,7 @@
           "ConstraintDefinition": "PRIMARY KEY (policy_id, repo_id)"
         }
       ],
-      "Constraints": [
-        {
-          "Name": "lsif_configuration_policies_repository_pattern_l_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -17660,19 +17618,6 @@
           "Comment": ""
         },
         {
-          "Name": "tenant_id",
-          "Index": 17,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "upload_id",
           "Index": 13,
           "TypeName": "integer",
@@ -17722,13 +17667,6 @@
         }
       ],
       "Constraints": [
-        {
-          "Name": "lsif_dependency_indexing_jobs_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        },
         {
           "Name": "lsif_dependency_indexing_jobs_upload_id_fkey1",
           "ConstraintType": "f",
@@ -17800,19 +17738,6 @@
           "Index": 4,
           "TypeName": "text",
           "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 7,
-          "TypeName": "integer",
-          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -17894,15 +17819,7 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": [
-        {
-          "Name": "lsif_dependency_repos_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -18066,19 +17983,6 @@
           "Comment": ""
         },
         {
-          "Name": "tenant_id",
-          "Index": 15,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "upload_id",
           "Index": 11,
           "TypeName": "integer",
@@ -18144,13 +18048,6 @@
           "RefTableName": "lsif_uploads",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE"
-        },
-        {
-          "Name": "lsif_dependency_syncing_jobs_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -18199,19 +18096,6 @@
           "Comment": ""
         },
         {
-          "Name": "tenant_id",
-          "Index": 6,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "update_token",
           "Index": 3,
           "TypeName": "integer",
@@ -18250,15 +18134,7 @@
           "ConstraintDefinition": "PRIMARY KEY (repository_id)"
         }
       ],
-      "Constraints": [
-        {
-          "Name": "lsif_dirty_repositories_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -18316,19 +18192,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 5,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -18360,13 +18223,6 @@
           "RefTableName": "repo",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE"
-        },
-        {
-          "Name": "lsif_index_configuration_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -18701,19 +18557,6 @@
           "Comment": ""
         },
         {
-          "Name": "tenant_id",
-          "Index": 27,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "worker_hostname",
           "Index": 21,
           "TypeName": "text",
@@ -18801,13 +18644,6 @@
       ],
       "Constraints": [
         {
-          "Name": "lsif_indexes_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        },
-        {
           "Name": "lsif_uploads_commit_valid_chars",
           "ConstraintType": "c",
           "RefTableName": "",
@@ -18846,19 +18682,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 3,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -18873,15 +18696,7 @@
           "ConstraintDefinition": "PRIMARY KEY (repository_id)"
         }
       ],
-      "Constraints": [
-        {
-          "Name": "lsif_last_index_scan_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -18913,19 +18728,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 3,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -18940,15 +18742,7 @@
           "ConstraintDefinition": "PRIMARY KEY (repository_id)"
         }
       ],
-      "Constraints": [
-        {
-          "Name": "lsif_last_retention_scan_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -18973,19 +18767,6 @@
           "Index": 1,
           "TypeName": "integer",
           "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 4,
-          "TypeName": "integer",
-          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -19030,15 +18811,7 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": [
-        {
-          "Name": "lsif_nearest_uploads_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -19096,19 +18869,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 5,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -19133,15 +18893,7 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": [
-        {
-          "Name": "lsif_nearest_uploads_links_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -19214,19 +18966,6 @@
           "Comment": "The (export) moniker scheme."
         },
         {
-          "Name": "tenant_id",
-          "Index": 7,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "version",
           "Index": 4,
           "TypeName": "text",
@@ -19279,13 +19018,6 @@
           "RefTableName": "lsif_uploads",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE"
-        },
-        {
-          "Name": "lsif_packages_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -19360,19 +19092,6 @@
           "Comment": "The (import) moniker scheme."
         },
         {
-          "Name": "tenant_id",
-          "Index": 8,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "version",
           "Index": 4,
           "TypeName": "text",
@@ -19425,13 +19144,6 @@
           "RefTableName": "lsif_uploads",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE"
-        },
-        {
-          "Name": "lsif_references_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -19491,19 +19203,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 5,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -19535,13 +19234,6 @@
           "RefTableName": "repo",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE"
-        },
-        {
-          "Name": "lsif_retention_configuration_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -19941,19 +19633,6 @@
           "Comment": ""
         },
         {
-          "Name": "tenant_id",
-          "Index": 36,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "uncompressed_size",
           "Index": 30,
           "TypeName": "bigint",
@@ -20128,13 +19807,6 @@
           "RefTableName": "",
           "IsDeferrable": false,
           "ConstraintDefinition": "CHECK (commit ~ '^[a-z0-9]{40}$'::text)"
-        },
-        {
-          "Name": "lsif_uploads_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": [
@@ -20313,19 +19985,6 @@
           "Comment": ""
         },
         {
-          "Name": "tenant_id",
-          "Index": 18,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "transition_columns",
           "Index": 13,
           "TypeName": "USER-DEFINED[]",
@@ -20400,15 +20059,7 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": [
-        {
-          "Name": "lsif_uploads_audit_logs_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -20427,19 +20078,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The number of references to the associated upload from other records (via lsif_references)."
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 3,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         },
         {
           "Name": "upload_id",
@@ -20468,13 +20106,6 @@
         }
       ],
       "Constraints": [
-        {
-          "Name": "lsif_uploads_reference_counts_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        },
         {
           "Name": "lsif_uploads_reference_counts_upload_id_fk",
           "ConstraintType": "f",
@@ -20529,19 +20160,6 @@
           "Comment": ""
         },
         {
-          "Name": "tenant_id",
-          "Index": 5,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "upload_id",
           "Index": 2,
           "TypeName": "integer",
@@ -20577,15 +20195,7 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": [
-        {
-          "Name": "lsif_uploads_visible_at_tip_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
-        }
-      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -20611,19 +20221,6 @@
           "TypeName": "timestamp without time zone",
           "IsNullable": false,
           "Default": "now()",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "tenant_id",
-          "Index": 4,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -20674,13 +20271,6 @@
           "RefTableName": "lsif_uploads",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE"
-        },
-        {
-          "Name": "lsif_uploads_vulnerability_scan_tenant_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "tenants",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE"
         }
       ],
       "Triggers": []

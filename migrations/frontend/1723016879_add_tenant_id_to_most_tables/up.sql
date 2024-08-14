@@ -10,7 +10,17 @@
 CREATE OR REPLACE FUNCTION migrate_add_tenant_id_frontend(table_name text)
 RETURNS void AS $$
 BEGIN
-    EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS tenant_id integer REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;', table_name);
+    -- ALTER TABLE with a foreign key constraint will _always_ add the
+    -- constraint, which means we always require a table lock even if this
+    -- migration has run. So we check if the column exists first.
+    IF NOT EXISTS (SELECT true
+        FROM   pg_attribute
+        WHERE  attrelid = quote_ident(table_name)::regclass
+        AND    attname = 'tenant_id'
+        AND    NOT attisdropped
+    ) THEN
+        EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS tenant_id integer REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;', table_name);
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -95,26 +105,6 @@ SELECT migrate_add_tenant_id_frontend('global_state'); COMMIT AND CHAIN;
 SELECT migrate_add_tenant_id_frontend('insights_query_runner_jobs'); COMMIT AND CHAIN;
 SELECT migrate_add_tenant_id_frontend('insights_query_runner_jobs_dependencies'); COMMIT AND CHAIN;
 SELECT migrate_add_tenant_id_frontend('insights_settings_migration_jobs'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_configuration_policies'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_configuration_policies_repository_pattern_lookup'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_dependency_indexing_jobs'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_dependency_repos'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_dependency_syncing_jobs'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_dirty_repositories'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_index_configuration'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_indexes'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_last_index_scan'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_last_retention_scan'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_nearest_uploads'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_nearest_uploads_links'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_packages'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_references'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_retention_configuration'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_uploads'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_uploads_audit_logs'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_uploads_reference_counts'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_uploads_visible_at_tip'); COMMIT AND CHAIN;
-SELECT migrate_add_tenant_id_frontend('lsif_uploads_vulnerability_scan'); COMMIT AND CHAIN;
 SELECT migrate_add_tenant_id_frontend('names'); COMMIT AND CHAIN;
 SELECT migrate_add_tenant_id_frontend('namespace_permissions'); COMMIT AND CHAIN;
 SELECT migrate_add_tenant_id_frontend('notebook_stars'); COMMIT AND CHAIN;
@@ -197,5 +187,6 @@ SELECT migrate_add_tenant_id_frontend('zoekt_repos'); COMMIT AND CHAIN;
 -- migration_logs :: about DB
 -- tenants :: it is the foreign table
 -- versions :: about the instance not the tenant
+-- lsif_* :: many slow queries against them cause what looks like a deadlock
 
 DROP FUNCTION migrate_add_tenant_id_frontend(text);
