@@ -17,7 +17,7 @@ playwright_test_bin.playwright_test(
     ],
     data = glob(
         [
-            "src/**/*.spec.ts",
+            "tests/**/*.spec.ts",
         ],
     ) + [
         "playwright.config.ts",
