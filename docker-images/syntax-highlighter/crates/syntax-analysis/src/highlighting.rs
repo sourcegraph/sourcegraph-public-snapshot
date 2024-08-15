@@ -103,18 +103,11 @@ impl<'a> FileInfo<'a> {
             prefix_langs: Vec<(&'static str, &'static str)>,
             default: &'static str,
         }
-        let overrides = [
-            Override {
-                extension: "cls",
-                prefix_langs: vec![("%", "TeX"), ("\\", "TeX")],
-                default: "Apex",
-            },
-            Override {
-                extension: "xlsg",
-                prefix_langs: vec![],
-                default: "xlsg",
-            },
-        ];
+        let overrides = [Override {
+            extension: "cls",
+            prefix_langs: vec![("%", "TeX"), ("\\", "TeX")],
+            default: "Apex",
+        }];
 
         if let Some(extension) = extension {
             for override_ in overrides.iter() {

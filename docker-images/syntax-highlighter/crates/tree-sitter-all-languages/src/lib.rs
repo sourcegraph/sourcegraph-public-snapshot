@@ -26,7 +26,6 @@ pub enum ParserId {
     Rust,
     Scala,
     Sql,
-    Xlsg,
     Zig,
 
     // These two are special cases since we process them
@@ -61,7 +60,6 @@ impl ParserId {
             ParserId::Sql => tree_sitter_sequel::language(),
             ParserId::Typescript => tree_sitter_typescript::language_typescript(),
             ParserId::Tsx => tree_sitter_typescript::language_tsx(),
-            ParserId::Xlsg => tree_sitter_xlsg::language(),
             ParserId::Zig => tree_sitter_zig::language(),
         }
     }
@@ -97,7 +95,6 @@ impl ParserId {
             "sql" => Some(ParserId::Sql),
             "typescript" => Some(ParserId::Typescript),
             "tsx" => Some(ParserId::Tsx),
-            "xlsg" => Some(ParserId::Xlsg),
             "zig" => Some(ParserId::Zig),
             _ => None,
         }
@@ -128,7 +125,6 @@ impl ParserId {
             ParserId::Sql => "sql",
             ParserId::Typescript => "typescript",
             ParserId::Tsx => "tsx",
-            ParserId::Xlsg => "xlsg",
             ParserId::Zig => "zig",
         }
     }
@@ -174,7 +170,6 @@ impl ParserId {
             "sql" => Some(ParserId::Sql),
             "ts" => Some(ParserId::Typescript),
             "tsx" => Some(ParserId::Tsx),
-            "xlsg" => Some(ParserId::Xlsg),
             "zig" => Some(ParserId::Zig),
             _ => None,
         }

@@ -336,7 +336,6 @@ var SyntectLanguageMap = map[string]string{
 	"ts":                   "ts",
 	"typescriptreact":      "tsx",
 	"tsx":                  "tsx",
-	"xlsg":                 "xlsg",
 	"xml":                  "xml",
 	"xsd":                  "xsd",
 	"xslt":                 "xslt",

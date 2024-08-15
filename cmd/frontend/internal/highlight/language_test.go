@@ -73,11 +73,10 @@ func TestInitializeConfig(t *testing.T) {
 				},
 			}),
 			wantHighlightConfig: autogold.Expect(syntaxHighlightConfig[string]{Extensions: map[string]string{
-				"ncl":  "nickel",
-				"sbt":  "scala",
-				"sc":   "scala",
-				"tsx":  "tsx",
-				"xlsg": "xlsg",
+				"ncl": "nickel",
+				"sbt": "scala",
+				"sc":  "scala",
+				"tsx": "tsx",
 			}}),
 		},
 		{
@@ -95,11 +94,10 @@ func TestInitializeConfig(t *testing.T) {
 				"perl":   EngineScipSyntax,
 			}}),
 			wantHighlightConfig: autogold.Expect(syntaxHighlightConfig[string]{Extensions: map[string]string{
-				"ncl":  "nickel",
-				"sbt":  "scala",
-				"sc":   "scala",
-				"tsx":  "tsx",
-				"xlsg": "xlsg",
+				"ncl": "nickel",
+				"sbt": "scala",
+				"sc":  "scala",
+				"tsx": "tsx",
 			}}),
 		},
 		{

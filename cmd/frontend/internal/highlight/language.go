@@ -96,11 +96,10 @@ var globalHighlightConfig = syntaxHighlightConfig[*regexp.Regexp]{
 
 var baseHighlightConfig = syntaxHighlightConfig[*regexp.Regexp]{
 	Extensions: map[string]string{
-		"tsx":  "tsx", // default `getLanguage()` helper doesn't handle TSX
-		"ncl":  "nickel",
-		"sbt":  "scala",
-		"sc":   "scala",
-		"xlsg": "xlsg",
+		"tsx": "tsx", // default `getLanguage()` helper doesn't handle TSX
+		"ncl": "nickel",
+		"sbt": "scala",
+		"sc":  "scala",
 	},
 	Patterns: []languagePattern[*regexp.Regexp]{},
 }

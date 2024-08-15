@@ -36,6 +36,5 @@ tree-sitter-pod = { git = "https://github.com/sourcegraph/tree-sitter-pod", rev 
 # Not PR-ed, as there is a more comprehensive PR in the upstream repo: https://github.com/apple/tree-sitter-pkl/pull/8
 # My personal fork contains the minimal changes to make things build with the latest tree-sitter.
 tree-sitter-pkl = { git = "https://github.com/kritzcreek/tree-sitter-pkl", rev = "372ce76dfae3395fcf083df23328c4eb67cc0119" }
-tree-sitter-xlsg = { git = "https://github.com/sourcegraph/tree-sitter-xlsg", rev = "deb2a12e617ad5e3720a1464848949cc46b375be" }
 tree-sitter-zig = { git = "https://github.com/maxxnino/tree-sitter-zig", rev = "2bac4cc6c697d46a193905fef6d003bfa0bfabfd" }
 tree-sitter-hack = { git = "https://github.com/kritzcreek/tree-sitter-hack", rev = "2a1f331c3b43a2262823f788a222e15a264d1062" }

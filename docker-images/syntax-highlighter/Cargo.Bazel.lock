@@ -1,5 +1,5 @@
 {
-  "checksum": "51be39da52f2d4decf985f7807ab43d7b9e40c8ecdeecc38c1f7b4644f6c7da4",
+  "checksum": "e369f8802027971ab6775168ab59d334430b17e0898e7d944e04badb8353ba94",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -13525,10 +13525,6 @@
               "target": "tree_sitter_typescript"
             },
             {
-              "id": "tree-sitter-xlsg 0.0.1",
-              "target": "tree_sitter_xlsg"
-            },
-            {
               "id": "tree-sitter-zig 0.0.1",
               "target": "tree_sitter_zig"
             }
@@ -15238,83 +15234,6 @@
         },
         "edition": "2021",
         "version": "0.21.2"
-      },
-      "build_script_attrs": {
-        "data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "cc 1.0.106",
-              "target": "cc"
-            }
-          ],
-          "selects": {}
-        },
-        "link_deps": {
-          "common": [
-            {
-              "id": "tree-sitter 0.22.6",
-              "target": "tree_sitter"
-            }
-          ],
-          "selects": {}
-        }
-      },
-      "license": "MIT"
-    },
-    "tree-sitter-xlsg 0.0.1": {
-      "name": "tree-sitter-xlsg",
-      "version": "0.0.1",
-      "repository": {
-        "Git": {
-          "remote": "https://github.com/sourcegraph/tree-sitter-xlsg",
-          "commitish": {
-            "Rev": "deb2a12e617ad5e3720a1464848949cc46b375be"
-          }
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "tree_sitter_xlsg",
-            "crate_root": "bindings/rust/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        },
-        {
-          "BuildScript": {
-            "crate_name": "build_script_build",
-            "crate_root": "bindings/rust/build.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "tree_sitter_xlsg",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "tree-sitter 0.22.6",
-              "target": "tree_sitter"
-            },
-            {
-              "id": "tree-sitter-xlsg 0.0.1",
-              "target": "build_script_build"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "0.0.1"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -19064,7 +18983,6 @@
     "tree-sitter-scala 0.22.1",
     "tree-sitter-sequel 0.3.5",
     "tree-sitter-typescript 0.21.2",
-    "tree-sitter-xlsg 0.0.1",
     "tree-sitter-zig 0.0.1",
     "walkdir 2.3.3"
   ],

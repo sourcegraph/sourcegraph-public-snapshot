@@ -199,7 +199,6 @@ lazy_static::lazy_static! {
             (Sql, "sql"),
             // Skipping TypeScript and TSX here as they're handled
             // specially inside the macro implementation.
-            (Xlsg, "xlsg"),
             (Zig, "zig")
         )
     };

@@ -358,13 +358,6 @@ const stratoSpec: LanguageSpec = {
     commentStyles: [cStyleComment],
 }
 
-const xlsgSpec: LanguageSpec = {
-    languageID: 'xlsg',
-    stylized: 'XLSG',
-    fileExts: ['xlsg'],
-    commentStyles: [pythonStyleComment],
-}
-
 const zigSpec: LanguageSpec = {
     languageID: 'zig',
     stylized: 'Zig',
@@ -421,7 +414,6 @@ export const languageSpecs: LanguageSpec[] = [
     verilogSpec,
     vhdlSpec,
     zigSpec,
-    xlsgSpec,
 ]
 
 /**
