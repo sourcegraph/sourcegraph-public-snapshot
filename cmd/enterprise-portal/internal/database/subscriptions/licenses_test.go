@@ -242,6 +242,20 @@ func TestLicensesStore(t *testing.T) {
 			})
 		})
 
+		t.Run("list by license key hash token", func(t *testing.T) {
+			hash, err := license.ExtractLicenseKeyBasedAccessTokenContents(
+				license.GenerateLicenseKeyBasedAccessToken(signedKeyExample),
+			)
+			require.NoError(t, err)
+			listedLicenses, err := licenses.List(ctx, subscriptions.ListLicensesOpts{
+				LicenseType:    subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY,
+				LicenseKeyHash: []byte(hash),
+			})
+			require.NoError(t, err)
+			require.Len(t, listedLicenses, 1)
+			assert.Equal(t, subscriptionID1, listedLicenses[0].SubscriptionID)
+		})
+
 		t.Run("List by salesforce opportunity ID", func(t *testing.T) {
 			listedLicenses, err := licenses.List(ctx, subscriptions.ListLicensesOpts{
 				LicenseType:             subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY,
