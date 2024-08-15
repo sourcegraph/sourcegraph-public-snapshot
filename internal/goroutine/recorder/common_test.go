@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -19,6 +20,7 @@ func TestLoggerAndReaderHappyPaths(t *testing.T) {
 
 	// Create logger
 	c := rcache.NewWithTTL(redispool.Cache, keyPrefix, 1)
+	ctx := tenant.TestContext()
 	recorder := New(log.NoOp(), "test", c)
 
 	// Create routines
@@ -55,11 +57,11 @@ func TestLoggerAndReaderHappyPaths(t *testing.T) {
 	recorder.LogStart(routine1)
 	recorder.LogStart(routine2)
 	recorder.LogStart(routine3)
-	recorder.LogRun(routine1, 10*time.Millisecond, nil)
-	recorder.LogRun(routine1, 20*time.Millisecond, errors.New("test error"))
+	recorder.LogRun(ctx, routine1, 10*time.Millisecond, nil)
+	recorder.LogRun(ctx, routine1, 20*time.Millisecond, errors.New("test error"))
 	for range 100 { // Make sure int32 overflow doesn't happen
-		recorder.LogRun(routine2, 10*time.Hour, nil)
-		recorder.LogRun(routine2, 20*time.Hour, nil)
+		recorder.LogRun(ctx, routine2, 10*time.Hour, nil)
+		recorder.LogRun(ctx, routine2, 20*time.Hour, nil)
 	}
 	recorder.LogStop(routine3)
 

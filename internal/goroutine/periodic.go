@@ -378,7 +378,7 @@ func (r *PeriodicGoroutine) withRecorder(ctx context.Context, f func(ctx context
 
 	go func() {
 		r.recorder.SaveKnownRoutine(r)
-		r.recorder.LogRun(r, duration, errorFilter(ctx, err))
+		r.recorder.LogRun(ctx, r, duration, errorFilter(ctx, err))
 	}()
 
 	return err

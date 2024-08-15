@@ -400,7 +400,7 @@ func (w *Worker[T]) handle(ctx, workerContext context.Context, record T) (err er
 	}
 	duration := time.Since(start)
 	if w.recorder != nil {
-		go w.recorder.LogRun(w, duration, handleErr)
+		go w.recorder.LogRun(ctx, w, duration, handleErr)
 	}
 
 	if errcode.IsNonRetryable(handleErr) || handleErr != nil && w.isJobCanceled(record.RecordUID(), handleErr, ctx.Err()) {

@@ -75,7 +75,7 @@ func (s *Scheduler) Start() {
 
 				duration := time.Since(start)
 				if s.recorder != nil {
-					go s.recorder.LogRun(s, duration, nil)
+					go s.recorder.LogRun(context.Background(), s, duration, nil)
 				}
 
 			case <-validity.C:

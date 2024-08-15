@@ -173,7 +173,7 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 				Errors:    errFields,
 				Query:     queryString,
 			}
-			captureSlowRequest(t.logger, req)
+			captureSlowRequest(ctx, t.logger, req)
 		}
 	}
 }

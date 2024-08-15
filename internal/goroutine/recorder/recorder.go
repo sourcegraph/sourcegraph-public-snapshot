@@ -131,11 +131,11 @@ func (m *Recorder) LogStop(r Recordable) {
 	m.logger.Debug("" + r.Name() + " just stopped! 🛑")
 }
 
-func (m *Recorder) LogRun(r Recordable, duration time.Duration, runErr error) {
+func (m *Recorder) LogRun(ctx context.Context, r Recordable, duration time.Duration, runErr error) {
 	durationMs := int32(duration.Milliseconds())
 
 	// Save the run
-	err := m.saveRun(r.JobName(), r.Name(), m.hostName, durationMs, runErr)
+	err := m.saveRun(ctx, r.JobName(), r.Name(), m.hostName, durationMs, runErr)
 	if err != nil {
 		m.logger.Error("failed to save run", log.Error(err))
 	}
@@ -152,7 +152,7 @@ func (m *Recorder) LogRun(r Recordable, duration time.Duration, runErr error) {
 }
 
 // saveRun saves a run in the Redis list under the "*:recentRuns" key.
-func (m *Recorder) saveRun(jobName string, routineName string, hostName string, durationMs int32, err error) error {
+func (m *Recorder) saveRun(ctx context.Context, jobName string, routineName string, hostName string, durationMs int32, err error) error {
 	errorMessage := ""
 	if err != nil {
 		errorMessage = err.Error()
@@ -173,8 +173,7 @@ func (m *Recorder) saveRun(jobName string, routineName string, hostName string, 
 	}
 
 	// Save run
-	// TODO(multi-tenant): Remove context.Background()
-	err = getRecentRuns(m.rcache, jobName, routineName, hostName).Insert(context.Background(), runJson)
+	err = getRecentRuns(m.rcache, jobName, routineName, hostName).Insert(ctx, runJson)
 	if err != nil {
 		return errors.Wrap(err, "save run")
 	}

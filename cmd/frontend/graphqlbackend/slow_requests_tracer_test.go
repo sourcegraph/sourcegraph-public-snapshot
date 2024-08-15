@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -39,7 +40,7 @@ func Test_captureSlowRequest(t *testing.T) {
 			Errors:    []string{"something"},
 		}
 
-		captureSlowRequest(logger, &req)
+		captureSlowRequest(ctx, logger, &req)
 
 		raws, err := slowRequestRedisFIFOList.All(ctx)
 		if err != nil {

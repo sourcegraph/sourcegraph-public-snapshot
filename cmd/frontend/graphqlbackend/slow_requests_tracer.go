@@ -29,14 +29,13 @@ var slowRequestRedisFIFOList = rcache.NewFIFOListDynamic(redispool.Cache, "slow-
 })
 
 // captureSlowRequest stores in a redis cache slow GraphQL requests.
-func captureSlowRequest(logger log.Logger, req *types.SlowRequest) {
+func captureSlowRequest(ctx context.Context, logger log.Logger, req *types.SlowRequest) {
 	b, err := json.Marshal(req)
 	if err != nil {
 		logger.Warn("failed to marshal slowRequest", log.Error(err))
 		return
 	}
-	// TODO(multi-tenant): Remove context.Background()
-	if err := slowRequestRedisFIFOList.Insert(context.Background(), b); err != nil {
+	if err := slowRequestRedisFIFOList.Insert(ctx, b); err != nil {
 		logger.Warn("failed to capture slowRequest", log.Error(err))
 	}
 }
