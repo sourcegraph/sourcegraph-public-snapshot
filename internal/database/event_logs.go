@@ -19,9 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -233,6 +235,8 @@ func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
 
 const EventLogsSourcegraphOperatorKey = "sourcegraph_operator"
 
+var eventLogInsertLimiter = limiter.New(env.MustGetInt("SRC_EVENT_LOG_INSERT_LIMITER", 5, "the maximum number of concurrent inserts allowed by the event log store."))
+
 func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 	var tr trace.Trace
 	tr, ctx = trace.New(ctx, "eventLogs.BulkInsert",
@@ -320,6 +324,19 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 	// to make sure things don't get stuck in an unbounded manner.
 	insertCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Minute)
 	defer cancel()
+
+	// Event logs are a high request rate on dotcom and intentionally do not
+	// respect request cancellation. So if event log writing ever becomes slow
+	// (eg someone tries to get a lock on the table for a migration), we end
+	// up with 100s of concurrent attempts to insert data. This leads to
+	// exhausting the connection pool taking down the whole of sourcegraph for
+	// many minutes. So we minimize the number of active connections that can
+	// be involved.
+	err := eventLogInsertLimiter.AcquireContext(insertCtx)
+	if err != nil {
+		return errors.Wrap(err, "failed to acquire event log insert semaphore")
+	}
+	defer eventLogInsertLimiter.Release()
 
 	return batch.InsertValues(
 		insertCtx,
