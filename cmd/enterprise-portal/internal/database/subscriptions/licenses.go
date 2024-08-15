@@ -485,8 +485,6 @@ type SetDetectedInstanceOpts struct {
 func (s *LicensesStore) SetDetectedInstance(ctx context.Context, licenseID string, opts SetDetectedInstanceOpts) error {
 	if opts.Time == nil {
 		opts.Time = pointers.Ptr(utctime.Now())
-	} else if opts.Time.GetTime().After(time.Now()) {
-		return errors.New("revocation time cannot be in the future")
 	}
 
 	tx, err := s.db.Begin(ctx)
