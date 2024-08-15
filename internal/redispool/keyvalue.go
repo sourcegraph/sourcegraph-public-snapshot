@@ -297,7 +297,13 @@ func (r *redisKeyValue) Pool() *redis.Pool {
 }
 
 func (r *redisKeyValue) doWithoutContext(commandName string, keys []string, args []any) Value {
-	return r.do(context.Background(), commandName, keys, args)
+	// Fall back to the context field, or context.Background if it is not set.
+	// Note: we will remove this logic (including r.ctx) once all operations take context directly.
+	ctx := r.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return r.do(nil, commandName, keys, args)
 }
 
 func (r *redisKeyValue) do(ctx context.Context, commandName string, keys []string, args []any) Value {
