@@ -30,7 +30,7 @@ func (c *Config) Load() {
 	commitResolverMaximumCommitLagName := env.ChooseFallbackVariableName("CODEINTEL_UPLOADS_COMMIT_RESOLVER_MAXIMUM_COMMIT_LAG", "PRECISE_CODE_INTEL_COMMIT_RESOLVER_MAXIMUM_COMMIT_LAG")
 	uploadTimeoutName := env.ChooseFallbackVariableName("CODEINTEL_UPLOADS_UPLOAD_TIMEOUT", "PRECISE_CODE_INTEL_UPLOAD_TIMEOUT")
 
-	c.Interval = c.GetInterval("CODEINTEL_UPLOADS_CLEANUP_INTERVAL", "1m", "How frequently to run the updater janitor routine.")
+	c.Interval = c.GetInterval("CODEINTEL_UPLOADS_CLEANUP_INTERVAL", "30m", "How frequently to run the updater janitor routine.")
 	c.AbandonedSchemaVersionsInterval = c.GetInterval("CODEINTEL_UPLOADS_ABANDONED_SCHEMA_VERSIONS_CLEANUP_INTERVAL", "24h", "How frequently to run the query to clean up *_schema_version records that are not tracked by foreign key.")
 	c.MinimumTimeSinceLastCheck = c.GetInterval(minimumTimeSinceLastCheckName, "24h", "The minimum time the commit resolver will re-check an upload or index record.")
 	c.CommitResolverBatchSize = c.GetInt(commitResolverBatchSizeName, "100", "The maximum number of unique commits to resolve at a time.")
