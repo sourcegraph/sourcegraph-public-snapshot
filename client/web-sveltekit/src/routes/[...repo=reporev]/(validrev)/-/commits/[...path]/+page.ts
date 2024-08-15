@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit'
 
+import { resolveRoute } from '$app/paths'
 import { IncrementalRestoreStrategy, getGraphQLClient, infinityQuery } from '$lib/graphql'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
@@ -14,15 +15,6 @@ export const load: PageLoad = async ({ parent, params, url }) => {
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
     const path = params.path ? decodeURIComponent(params.path) : ''
     const resolvedRevision = resolveRevision(parent, revision)
-    const isPerforceDepot = await parent().then(p => p.isPerforceDepot)
-
-    if (isPerforceDepot) {
-        const redirectURL = new URL(url)
-        const pathItems = redirectURL.pathname.split('/')
-        pathItems[pathItems.length - 1] = 'changelists'
-        redirectURL.pathname = pathItems.join('/')
-        redirect(301, redirectURL)
-    }
 
     const commitsQuery = infinityQuery({
         client,
@@ -53,6 +45,13 @@ export const load: PageLoad = async ({ parent, params, url }) => {
                 n => ({ first: n.length })
             ),
     })
+
+    const isPerforceDepot = await parent().then(p => p.isPerforceDepot)
+    if (isPerforceDepot) {
+        const redirectURL = new URL(url)
+        redirectURL.pathname = resolveRoute('/[...repo=reporev]/(validrev)/-/changelists/[...path]', params)
+        redirect(301, redirectURL)
+    }
 
     return {
         commitsQuery,
