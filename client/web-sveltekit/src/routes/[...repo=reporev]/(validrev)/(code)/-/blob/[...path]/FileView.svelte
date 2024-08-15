@@ -224,13 +224,21 @@
 {/if}
 
 {#if revisionOverride}
+    {@const revID = revisionOverride.perforceChangelist
+        ? revisionOverride.perforceChangelist.cid
+        : revisionOverride.abbreviatedOID}
+    {@const revURL = revisionOverride.perforceChangelist
+        ? revisionOverride.perforceChangelist.canonicalURL
+        : revisionOverride.canonicalURL}
+    {@const revType = revisionOverride.perforceChangelist ? 'changelist' : 'commit'}
+
     <div class="revision-info">
         <Badge variant="link">
-            <a href={revisionOverride.canonicalURL}>{revisionOverride.abbreviatedOID}</a>
+            <a href={revURL}>changelist/{revID}</a>
         </Badge>
         <a href={SourcegraphURL.from($page.url).deleteSearchParameter('rev').toString()}>
             <Icon icon={ILucideX} inline aria-hidden />
-            <span>Close commit</span>
+            <span>Close {revType}</span>
         </a>
     </div>
 {:else if showFileModeSwitcher}
