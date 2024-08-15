@@ -11,6 +11,10 @@ fragment HistoryPanel_HistoryConnection on GitCommitConnection {
                 ...Avatar_Person
             }
         }
+        perforceChangelist {
+            cid
+            canonicalURL
+        }
         canonicalURL
     }
     pageInfo {
