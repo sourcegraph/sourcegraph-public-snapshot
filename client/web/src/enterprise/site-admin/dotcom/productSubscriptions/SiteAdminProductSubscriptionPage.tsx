@@ -257,9 +257,11 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                                         )}
                                         {!archived && (
                                             <EditAttributeButton
+                                                attribute="displayName"
                                                 label="Edit display name"
                                                 refetch={refetch}
                                                 disabled={isAnythingLoading}
+                                                telemetryRecorder={telemetryRecorder}
                                                 onClick={async () => {
                                                     const displayName = window.prompt(
                                                         'Enter instance display name to assign:',
@@ -293,9 +295,11 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                                         )}
                                         {!archived && (
                                             <EditAttributeButton
+                                                attribute="salesforceSubscriptionID"
                                                 label="Edit Salesforce subscription ID"
                                                 refetch={refetch}
                                                 disabled={isAnythingLoading}
+                                                telemetryRecorder={telemetryRecorder}
                                                 onClick={async () => {
                                                     const salesforceSubscriptionID = window.prompt(
                                                         'Enter the Salesforce subscription ID to assign:',
@@ -345,9 +349,11 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                                         )}
                                         {!archived && (
                                             <EditAttributeButton
+                                                attribute="instanceDomain"
                                                 label="Edit instance domain"
                                                 refetch={refetch}
                                                 disabled={isAnythingLoading}
+                                                telemetryRecorder={telemetryRecorder}
                                                 onClick={async () => {
                                                     const instanceDomain = window.prompt(
                                                         'Enter instance domain to assign (leave empty to unassign):',
@@ -390,9 +396,11 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemet
                                         )}
                                         {!archived && (
                                             <EditAttributeButton
+                                                attribute="instanceType"
                                                 label="Edit instance type"
                                                 refetch={refetch}
                                                 disabled={isAnythingLoading}
+                                                telemetryRecorder={telemetryRecorder}
                                                 onClick={async () => {
                                                     const types = [
                                                         EnterpriseSubscriptionInstanceType.PRIMARY,
@@ -703,7 +711,8 @@ const ConditionsTimeline: React.FunctionComponent<ConditionsTimelineProps> = ({
     return <Timeline showDurations={false} stages={stages} />
 }
 
-interface EditAttributeButtonProps {
+interface EditAttributeButtonProps extends TelemetryV2Props {
+    attribute: string
     label: string
     onClick: () => Promise<void>
     refetch: () => void
@@ -711,10 +720,12 @@ interface EditAttributeButtonProps {
 }
 
 const EditAttributeButton: React.FunctionComponent<EditAttributeButtonProps> = ({
+    attribute,
     label,
     onClick,
     refetch,
     disabled,
+    telemetryRecorder,
 }) => (
     <Button
         size="sm"
@@ -724,6 +735,9 @@ const EditAttributeButton: React.FunctionComponent<EditAttributeButtonProps> = (
         disabled={disabled}
         onClick={async () => {
             await onClick()
+            telemetryRecorder.recordEvent('admin.productSubscription', 'edit', {
+                privateMetadata: { attribute },
+            })
             refetch()
         }}
     >

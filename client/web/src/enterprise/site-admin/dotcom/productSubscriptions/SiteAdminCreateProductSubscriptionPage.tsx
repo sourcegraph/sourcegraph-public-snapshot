@@ -110,7 +110,17 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
             salesforceSubscriptionID,
             instanceType,
         }: FormData) => {
-            props.telemetryRecorder.recordEvent('admin.productSubscriptions', 'create')
+            props.telemetryRecorder.recordEvent('admin.productSubscriptions', 'create', {
+                version: 2,
+                metadata: {
+                    message: message ? 1 : 0,
+                    displayName: displayName ? 1 : 0,
+                    instanceDomain: instanceDomain ? 1 : 0,
+                    salesforceSubscriptionID: salesforceSubscriptionID ? 1 : 0,
+                    instanceType: instanceType ? 1 : 0,
+                },
+                privateMetadata: { env },
+            })
             await createSubscription({
                 message,
                 subscription: {

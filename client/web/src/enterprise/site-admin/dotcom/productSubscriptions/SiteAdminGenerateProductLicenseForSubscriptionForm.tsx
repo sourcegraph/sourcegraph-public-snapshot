@@ -135,6 +135,7 @@ const getTagsFromFormData = (formData: FormData): string[] =>
     )
 
 const getTagsForTelemetry = (formData: FormData): { [key: string]: number } => ({
+    salesforceOpportunityID: formData.salesforceOpportunityID ? 1 : 0,
     trueUp: formData.trueUp ? 1 : 0,
     trial: formData.trial ? 1 : 0,
     airGapped: formData.airGapped ? 1 : 0,
@@ -256,7 +257,9 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
         event => {
             event.preventDefault()
             telemetryRecorder.recordEvent('admin.productSubscription.license', 'generate', {
+                version: 2,
                 metadata: getTagsForTelemetry(formData),
+                privateMetadata: { env },
             })
             generateLicense(
                 {
@@ -285,7 +288,7 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                 }
             )
         },
-        [formData, telemetryRecorder, generateLicense, subscription, onGenerate]
+        [env, formData, telemetryRecorder, generateLicense, subscription, onGenerate]
     )
 
     const tags = useDebounce<string[]>(tagsFromString(formData.tags), 300)
