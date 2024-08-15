@@ -7,6 +7,10 @@ fragment DiffSummaryHeaderCommit on GitCommit {
             id
             abbreviatedOID
             canonicalURL
+            perforceChangelist {
+                cid
+                canonicalURL
+            }
         }
     }
     diff {
@@ -16,5 +20,9 @@ fragment DiffSummaryHeaderCommit on GitCommit {
                 deleted
             }
         }
+    }
+    perforceChangelist {
+        cid
+        canonicalURL
     }
 }

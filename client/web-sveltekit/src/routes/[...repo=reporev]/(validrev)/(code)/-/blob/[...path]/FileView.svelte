@@ -225,7 +225,7 @@
 
 {#if revisionOverride}
     {@const revID = revisionOverride.perforceChangelist
-        ? revisionOverride.perforceChangelist.cid
+        ? `changelist/${revisionOverride.perforceChangelist.cid}`
         : revisionOverride.abbreviatedOID}
     {@const revURL = revisionOverride.perforceChangelist
         ? revisionOverride.perforceChangelist.canonicalURL
@@ -234,7 +234,7 @@
 
     <div class="revision-info">
         <Badge variant="link">
-            <a href={revURL}>changelist/{revID}</a>
+            <a href={revURL}>{revID}</a>
         </Badge>
         <a href={SourcegraphURL.from($page.url).deleteSearchParameter('rev').toString()}>
             <Icon icon={ILucideX} inline aria-hidden />

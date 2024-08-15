@@ -10,19 +10,26 @@
 
     $: parent = commit.ancestors.nodes.at(1)
     $: diffStat = commit.diff.fileDiffs.diffStat
+    $: isPerforceDepot = commit.perforceChangelist !== null
+    $: revID = isPerforceDepot ? `changelist/${commit.perforceChangelist?.cid}` : commit.abbreviatedOID
+    $: revURL = isPerforceDepot ? commit.perforceChangelist?.canonicalURL : commit.canonicalURL
+    $: parentRevID = parent?.perforceChangelist
+        ? `changelist/${parent?.perforceChangelist.cid}`
+        : parent?.abbreviatedOID
+    $: parentRevURL = parent?.perforceChangelist ? parent?.perforceChangelist.canonicalURL : parent?.canonicalURL
 </script>
 
 <span class="root">
     <span class="label">
         <Badge variant="link">
-            <a href={commit.canonicalURL}>{commit.abbreviatedOID}</a>
+            <a href={revURL}>{revID}</a>
         </Badge>&nbsp;(selected)</span
     >
     <Icon icon={ILucideGitCompareArrows} inline aria-hidden />
     <span class="label">
         {#if parent}
             <Badge variant="link">
-                <a href={parent.canonicalURL}>{parent.abbreviatedOID}</a>
+                <a href={parentRevURL}>{parentRevID}</a>
             </Badge>&nbsp;(parent)
         {:else}
             (parent unavailable)

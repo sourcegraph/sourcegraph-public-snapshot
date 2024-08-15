@@ -24,8 +24,7 @@
 
     export let history: HistoryStore
     export let enableInlineDiff: boolean = false
-    // @TODO: set back to false before committing.
-    export let enableViewAtCommit: boolean = true
+    export let enableViewAtCommit: boolean = false
 
     export function capture(): Capture {
         return {
@@ -73,7 +72,7 @@
                         </td>
                         <td class="subject">
                             {#if enableInlineDiff}
-                                <a href={selected ? closeURL : `?rev=${revID}&diff=1`}>{commit.subject}</a>
+                                <a href={selected ? closeURL : `?rev=${commit.oid}&diff=1`}>{commit.subject}</a>
                             {:else}
                                 {commit.subject}
                             {/if}
@@ -91,7 +90,7 @@
                                     >
                                 </Tooltip>
                             {/if}
-                            <Tooltip tooltip={`Browse files at ${isPerforceDepot ? 'changelist' : 'commit'}`}>
+                            <Tooltip tooltip={`Browse files at ${revType}`}>
                                 <a
                                     href={replaceRevisionInURL(
                                         SourcegraphURL.from($page.url).deleteSearchParameter('rev', 'diff').toString(),
