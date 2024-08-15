@@ -23,7 +23,6 @@ go_library(
         "//lib/errors",
         "//lib/pointers",
         "@com_connectrpc_connect//:connect",
-        "@com_github_davecgh_go_spew//spew",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
         "@org_golang_x_crypto//ssh",
