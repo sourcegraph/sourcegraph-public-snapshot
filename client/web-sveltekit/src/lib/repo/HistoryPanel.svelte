@@ -61,13 +61,17 @@
             <tbody>
                 {#each $history.data as commit (commit.id)}
                     {@const selected = commit.abbreviatedOID === selectedRev || commit.oid === selectedRev}
+                    {@const isPerforceDepot = commit.perforceChangelist !== null}
+                    {@const revURL = isPerforceDepot ? commit.perforceChangelist?.canonicalURL : commit.canonicalURL}
+                    {@const revID = isPerforceDepot ? commit.perforceChangelist?.cid : commit.abbreviatedOID}
+
                     <tr class:selected use:scrollIntoViewOnMount={selected}>
                         <td class="revision">
-                            <Badge variant="link"><a href={commit.canonicalURL}>{commit.abbreviatedOID}</a></Badge>
+                            <Badge variant="link"><a href={revURL}>{revID}</a></Badge>
                         </td>
                         <td class="subject">
                             {#if enableInlineDiff}
-                                <a href={selected ? closeURL : `?rev=${commit.oid}&diff=1`}>{commit.subject}</a>
+                                <a href={selected ? closeURL : `?rev=${revID}&diff=1`}>{commit.subject}</a>
                             {:else}
                                 {commit.subject}
                             {/if}
@@ -78,7 +82,7 @@
                         </td>
                         <td class="timestamp"><Timestamp date={new Date(commit.author.date)} strict /></td>
                         <td class="actions">
-                            {#if enableViewAtCommit}
+                            {#if enableViewAtCommit && !isPerforceDepot}
                                 <Tooltip tooltip={selected && !diffEnabled ? 'Close commit' : 'View at commit'}>
                                     <a href={selected && !diffEnabled ? closeURL : `?rev=${commit.oid}`}
                                         ><Icon icon={ILucideFileText} inline aria-hidden /></a
@@ -89,7 +93,7 @@
                                 <a
                                     href={replaceRevisionInURL(
                                         SourcegraphURL.from($page.url).deleteSearchParameter('rev', 'diff').toString(),
-                                        commit.oid
+                                        isPerforceDepot ? `changelist/${revID}` : revID || ''
                                     )}><Icon icon={ILucideFolderGit} inline aria-hidden /></a
                                 >
                             </Tooltip>
