@@ -1408,6 +1408,12 @@ importers:
       '@sourcegraph/wildcard':
         specifier: workspace:*
         version: link:../wildcard
+      '@types/parsimmon':
+        specifier: ^1.10.9
+        version: 1.10.9
+      parsimmon:
+        specifier: ^1.18.1
+        version: 1.18.1
     devDependencies:
       '@sourcegraph/build-config':
         specifier: workspace:*
@@ -1785,21 +1791,6 @@ importers:
         specifier: ^9.12.4
         version: 9.12.4
 
-  internal/openapi:
-    devDependencies:
-      '@typespec/compiler':
-        specifier: 0.59.0
-        version: 0.59.0
-      '@typespec/http':
-        specifier: 0.59.0
-        version: 0.59.0(@typespec/compiler@0.59.0)
-      '@typespec/openapi3':
-        specifier: 0.59.0
-        version: 0.59.0(@typespec/compiler@0.59.0)(@typespec/http@0.59.0)(@typespec/openapi@0.59.0)(@typespec/versioning@0.59.0)(openapi-types@12.1.3)
-      '@typespec/rest':
-        specifier: 0.59.0
-        version: 0.59.0(@typespec/compiler@0.59.0)(@typespec/http@0.59.0)
-
   internal/appliance/frontend/maintenance:
     dependencies:
       '@emotion/react':
@@ -1860,6 +1851,21 @@ importers:
       vitest:
         specifier: 1.0.0-beta.4
         version: 1.0.0-beta.4(@types/node@20.8.0)(happy-dom@12.10.1)(jsdom@24.0.0)(sass@1.32.4)
+
+  internal/openapi:
+    devDependencies:
+      '@typespec/compiler':
+        specifier: 0.59.0
+        version: 0.59.0
+      '@typespec/http':
+        specifier: 0.59.0
+        version: 0.59.0(@typespec/compiler@0.59.0)
+      '@typespec/openapi3':
+        specifier: 0.59.0
+        version: 0.59.0(@typespec/compiler@0.59.0)(@typespec/http@0.59.0)(@typespec/openapi@0.59.0)(@typespec/versioning@0.59.0)(openapi-types@12.1.3)
+      '@typespec/rest':
+        specifier: 0.59.0
+        version: 0.59.0(@typespec/compiler@0.59.0)(@typespec/http@0.59.0)
 
   schema: {}
 
@@ -12552,6 +12558,10 @@ packages:
 
   /@types/parse-json@4.0.0:
     resolution: {integrity: sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==}
+
+  /@types/parsimmon@1.10.9:
+    resolution: {integrity: sha512-O2M2x1w+m7gWLen8i5DOy6tWRnbRcsW6Pke3j3HAsJUrPb4g0MgjksIUm2aqUtCYxy7Qjr3CzjjwQBzhiGn46A==}
+    dev: false
 
   /@types/pg-pool@2.0.4:
     resolution: {integrity: sha512-qZAvkv1K3QbmHHFYSNRYPkRjOWRLBYrL4B9c+wG0GSVGBw0NtJwPcgx/DSddeDJvRGMHCEQ4VMEVfuJ/0gZ3XQ==}
@@ -23293,6 +23303,10 @@ packages:
   /parseurl@1.3.3:
     resolution: {integrity: sha512-CiyeOxFT/JZyN5m0z9PfXw4SCBJ6Sygz1Dpl0wqjlhDEGGBP1GnsUVEL0p63hoG1fcj3fHynXi9NYO4nWOL+qQ==}
     engines: {node: '>= 0.8'}
+
+  /parsimmon@1.18.1:
+    resolution: {integrity: sha512-u7p959wLfGAhJpSDJVYXoyMCXWYwHia78HhRBWqk7AIbxdmlrfdp5wX0l3xv/iTSH5HvhN9K7o26hwwpgS5Nmw==}
+    dev: false
 
   /pascal-case@3.1.2:
     resolution: {integrity: sha512-uWlGT3YSnK9x3BQJaOdcZwrnV6hPpd8jFH1/ucpiLRPh/2zCVJKS19E4GvYHvaCcACn3foXZ0cLB9Wrx1KGe5g==}
