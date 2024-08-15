@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"regexp"
 	"strings"
 	"time"
 
@@ -17,6 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	completions "github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/modelconfig"
+	types "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/internal/openapi/goapi"
 )
 
@@ -71,16 +72,16 @@ func (h *chatCompletionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	serveJSON(w, r, h.logger, chatCompletionResponse)
 }
 
-var modelFormatRegex = regexp.MustCompile(`.+::.+::.+`)
-
+// Require client to use the new modelref syntax
 // (${ProviderID}::${APIVersionID}::${ModelID}). We don't validate that the
 // actual model exists because the underlying `/.api/completions/stream`
 // endpoint already does this validation and reports helpful error messages. We
 // just want to reject requests for models using the old non-modelref syntax
 // (example: anthropic/claude-3-haiku).
 func validateRequestedModel(chatCompletionRequest goapi.CreateChatCompletionRequest) string {
-	if !modelFormatRegex.MatchString(chatCompletionRequest.Model) {
-		return fmt.Sprintf("model %s is not in the correct format. Expected format: ${ProviderID}::${APIVersionID}::${ModelID}", chatCompletionRequest.Model)
+	maybeMRef := types.ModelRef(chatCompletionRequest.Model)
+	if err := modelconfig.ValidateModelRef(maybeMRef); err != nil {
+		return fmt.Sprintf("requested model '%s' failed validation: %s. Expected format '${ProviderID}::${APIVersionID}::${ModelID}'. To fix this problem, send a request to `GET /.api/llm/models` to see the list of supported models.", chatCompletionRequest.Model, err)
 	}
 	return ""
 }

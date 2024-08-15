@@ -57,7 +57,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 		// For now, we reject requests when the model is not using the new ModelRef format.
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 
-		assert.Equal(t, "model anthropic/claude-3-haiku-20240307 is not in the correct format. Expected format: ${ProviderID}::${APIVersionID}::${ModelID}\n", rr.Body.String())
+		assert.Equal(t, "requested model 'anthropic/claude-3-haiku-20240307' failed validation: modelRef syntax error. Expected format '${ProviderID}::${APIVersionID}::${ModelID}'. To fix this problem, send a request to `GET /.api/llm/models` to see the list of supported models.\n", rr.Body.String())
 	})
 
 	t.Run("/.api/llm/chat/completions (400 model is invalid model)", func(t *testing.T) {
