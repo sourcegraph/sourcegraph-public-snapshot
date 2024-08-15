@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/sourcegraph/log"
 	"golang.org/x/crypto/ssh"
 
@@ -91,7 +90,6 @@ func (s *storeV1) GetByLicenseKey(ctx context.Context, licenseKey string) (*subs
 		return nil, nil
 	}
 	if len(keys) > 1 {
-		spew.Dump(keys)
 		return nil, errors.New("found more than one matching license key")
 	}
 	return &keys[0].SubscriptionLicense, nil
