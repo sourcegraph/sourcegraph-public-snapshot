@@ -1,6 +1,21 @@
 query BlobDiffViewCommitQuery($repoName: String!, $revspec: String!, $path: String!) {
     repository(name: $repoName) {
         id
+        changelist(cid: $revspec) {
+            commit {
+                id
+                perforceChangelist {
+                    cid
+                    canonicalURL
+                }
+
+                blob(path: $path) {
+                    ...DiffViewGitBlob
+                }
+
+                ...DiffViewCommit
+            }
+        }
         commit(rev: $revspec) {
             id
             perforceChangelist {
