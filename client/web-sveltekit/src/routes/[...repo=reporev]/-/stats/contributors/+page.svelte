@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { pluralize } from '@sourcegraph/common'
+
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
     import Avatar from '$lib/Avatar.svelte'
@@ -87,7 +89,12 @@
                                 ><Timestamp date={new Date(commit.author.date)} strict />:
                                 <a href={commit.canonicalURL}>{commit.subject}</a></td
                             >
-                            <td>{contributor.count}&nbsp;commits</td>
+                            <td
+                                >{contributor.count}&nbsp;{pluralize(
+                                    data.isPerforceDepot ? 'changelist' : 'commit',
+                                    contributor.count
+                                )}</td
+                            >
                         </tr>
                     {:else}
                         <tr>
