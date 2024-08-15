@@ -303,7 +303,7 @@ func (r *redisKeyValue) doWithoutContext(commandName string, keys []string, args
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	return r.do(nil, commandName, keys, args)
+	return r.do(ctx, commandName, keys, args)
 }
 
 func (r *redisKeyValue) do(ctx context.Context, commandName string, keys []string, args []any) Value {
