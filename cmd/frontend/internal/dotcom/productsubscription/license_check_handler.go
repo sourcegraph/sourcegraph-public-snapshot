@@ -54,10 +54,19 @@ func getCustomerNameFromLicense(ctx context.Context, logger log.Logger, db datab
 
 // NewLicenseCheckHandler creates a new license check handler that uses the provided database.
 //
-// This handler receives requests from customer instances to check for license
-// validity.
+// This legacy handler receives requests from customer instances to check for license
+// validity. Newer versions of Sourcegraph will report license usage directly to
+// Enterprise Portal instead of this handler.
 //
-// TODO(@bobheadxi): Migrate to Enterprise Portal https://linear.app/sourcegraph/issue/CORE-227
+// To test this, set DOTCOM_ONLINE_LICENSE_CHECKS_ENTERPRISE_PORTAL_ADDR='http://127.0.0.1:6081'
+// and use `sg start dotcom`:
+//
+//	curl -i -H "Content-Type: application/json" \
+//		-H "Authorization: Bearer slk_..." \
+//		-X POST https://sourcegraph.test:3443/.api/license/check \
+//		-d '{"siteID":"site_id"}'
+//
+// TODO(@bobheadxi): Remove this in a future release.
 func NewLicenseCheckHandler(
 	db database.DB,
 	enabled bool,

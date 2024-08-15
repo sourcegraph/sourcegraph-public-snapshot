@@ -3,6 +3,7 @@ package dotcom
 import (
 	"context"
 	"net/http"
+	"net/url"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -22,6 +23,10 @@ import (
 var (
 	enableOnlineLicenseChecks = env.MustGetBool("DOTCOM_ENABLE_ONLINE_LICENSE_CHECKS", true,
 		"If false, online license checks from instances always return successfully.")
+
+	onlineLicenseChecksEnterprisePortal = env.Get("DOTCOM_ONLINE_LICENSE_CHECKS_ENTERPRISE_PORTAL_ADDR",
+		"https://enterprise-portal.sourcegraph.com",
+		"Enterprise Portal instance to target for the legacy dotcom online license check forwarding.")
 )
 
 // dotcomRootResolver implements the GraphQL types DotcomMutation and DotcomQuery.
@@ -68,10 +73,18 @@ func Init(
 			},
 		}
 		enterpriseServices.NewDotcomLicenseCheckHandler = func() http.Handler {
+			ep, err := url.Parse(onlineLicenseChecksEnterprisePortal)
+			if err == nil && ep.Host == "127.0.0.1" {
+				return productsubscription.NewLicenseCheckHandler(db, enableOnlineLicenseChecks,
+					subscriptionlicensechecksv1connect.NewSubscriptionLicenseChecksServiceClient(
+						httpcli.InternalDoer,
+						onlineLicenseChecksEnterprisePortal,
+					))
+			}
 			return productsubscription.NewLicenseCheckHandler(db, enableOnlineLicenseChecks,
 				subscriptionlicensechecksv1connect.NewSubscriptionLicenseChecksServiceClient(
-					httpcli.ExternalDoer,
-					"https://enterprise-portal.sourcegraph.com",
+					httpcli.UncachedExternalDoer,
+					onlineLicenseChecksEnterprisePortal,
 				))
 		}
 	}
