@@ -13,6 +13,7 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/completions/types",
+        "//internal/modelconfig",
         "//internal/modelconfig/types",
         "//internal/openapi/goapi",
         "//lib/errors",
