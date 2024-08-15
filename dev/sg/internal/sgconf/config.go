@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-func parseConfigFile(name string) (*Config, error) {
+func parseConfigFile(name string, isBaseConfig bool) (*Config, error) {
 	file, err := os.Open(name)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot open file %q", name)
@@ -27,11 +27,12 @@ func parseConfigFile(name string) (*Config, error) {
 		return nil, errors.Wrap(err, "reading configuration file")
 	}
 
-	return parseConfig(data)
+	return parseConfig(data, isBaseConfig)
 }
 
-func parseConfig(data []byte) (*Config, error) {
+func parseConfig(data []byte, isBaseConfig bool) (*Config, error) {
 	var conf Config
+	conf.isBaseConfig = isBaseConfig
 	if err := yaml.Unmarshal(data, &conf); err != nil {
 		return nil, err
 	}
@@ -161,6 +162,27 @@ type Config struct {
 	Commandsets       map[string]*Commandset        `yaml:"commandsets"`
 	DefaultCommandset string                        `yaml:"defaultCommandset"`
 	Tests             map[string]*run.Command       `yaml:"tests"`
+
+	isBaseConfig bool
+}
+
+func (c *Config) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	// We create an alias to avoid recursion
+	type alias Config
+	var temp alias
+	temp.isBaseConfig = c.isBaseConfig
+
+	if err := unmarshal(&temp); err != nil {
+		return err
+	}
+
+	*c = Config(temp)
+	c.populateEnvField()
+	return nil
+}
+
+func (c *Config) populateEnvField() {
+	c.PopulateNewEnv(c.isBaseConfig)
 }
 
 func (c *Config) PopulateNewEnv(isBaseConfig bool) {

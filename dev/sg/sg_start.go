@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/mitchellh/hashstructure/v2"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/env"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 
@@ -373,6 +374,7 @@ type Commands struct {
 	Checks   []string
 	Commands []run.SGConfigCommand
 	Env      map[string]string
+	NewEnv   map[string]env.EnvVar
 	ibazel   *run.IBazel
 }
 
@@ -422,7 +424,8 @@ func (cmds *Commands) start(ctx context.Context) error {
 		return err
 	}
 
-	if err := run.Install(ctx, cmds.Env, verbose, installers); err != nil {
+	e := env.ConvertToMap(cmds.NewEnv)
+	if err := run.Install(ctx, e, verbose, installers); err != nil {
 		return err
 	}
 
@@ -431,7 +434,7 @@ func (cmds *Commands) start(ctx context.Context) error {
 		defer cmds.ibazel.Close()
 	}
 
-	return run.Commands(ctx, cmds.Env, verbose, cmds.Commands)
+	return run.Commands(ctx, e, verbose, cmds.Commands)
 }
 
 func listToCommands(config *sgconf.Config, names []string) (*Commands, error) {
@@ -449,6 +452,7 @@ func listToCommands(config *sgconf.Config, names []string) (*Commands, error) {
 		}
 	}
 	cmds.Env = config.Env
+	cmds.NewEnv = config.NewEnv
 
 	return &cmds, nil
 }

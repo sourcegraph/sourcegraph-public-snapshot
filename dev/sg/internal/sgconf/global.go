@@ -80,22 +80,20 @@ func parseConf(confFile, overwriteFile string, noOverwrite bool) (*Config, error
 		confFile = filepath.Join(repoRoot, confFile)
 	}
 
-	conf, err := parseConfigFile(confFile)
+	conf, err := parseConfigFile(confFile, true)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to parse %q as configuration file", confFile)
 	}
-	conf.PopulateNewEnv(true)
 
 	if !noOverwrite {
 		if overwriteFile == DefaultOverwriteFile {
 			overwriteFile = filepath.Join(repoRoot, overwriteFile)
 		}
 		if ok, _ := fileExists(overwriteFile); ok {
-			overwriteConf, err := parseConfigFile(overwriteFile)
+			overwriteConf, err := parseConfigFile(overwriteFile, false)
 			if err != nil {
 				return nil, errors.Wrapf(err, "Failed to parse %q as configuration overwrite file", confFile)
 			}
-			overwriteConf.PopulateNewEnv(false)
 			conf = conf.Merge(overwriteConf)
 		}
 	}

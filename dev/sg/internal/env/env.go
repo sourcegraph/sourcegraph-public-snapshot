@@ -40,6 +40,14 @@ func ConvertEnvMap(ev map[string]string, priority Priority) map[string]EnvVar {
 	return em
 }
 
+func ConvertToMap(ev map[string]EnvVar) map[string]string {
+	em := make(map[string]string, len(ev))
+	for name, val := range ev {
+		em[name] = val.Value
+	}
+	return em
+}
+
 // CompareByPriority returns the EnvVar with the higher priority.
 func CompareByPriority(ev1 EnvVar, ev2 EnvVar) EnvVar {
 	if ev1.Priority > ev2.Priority {
