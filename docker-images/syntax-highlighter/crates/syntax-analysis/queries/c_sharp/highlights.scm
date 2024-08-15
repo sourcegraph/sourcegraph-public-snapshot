@@ -1,15 +1,100 @@
 (identifier) @variable
 
-;; Methods
+;; Type
+(generic_name (identifier) @type)
+(type_parameter (identifier) @property.definition)
+(type_argument_list (identifier) @type)
 
-(method_declaration name: (identifier) @method)
-(local_function_statement name: (identifier) @function)
+;; Tokens
+[
+  ";"
+  "."
+  ","] @punctuation.delimiter
+
+[
+  "--"
+  "-"
+  "-="
+  "&"
+  "&&"
+  "+"
+  "++"
+  "+="
+  "<"
+  "<<"
+  "="
+  "=="
+  "!"
+  "!="
+  "=>"
+  ">"
+  ">>"
+  "|"
+  "||"
+  "?"
+  "??"
+  "^"
+  "~"
+  "*"
+  "/"
+  "%"
+  ":"] @operator
+
+[
+  "("
+  ")"
+  "["
+  "]"
+  "{"
+  "}"] @punctuation.bracket
 
 (using_directive (identifier) @variable.module)
 (qualified_name (identifier) @variable.module)
 
-;; Types
+;; Preprocessors
+(if_directive (identifier) @identifier.constant) @keyword
+(endif_directive) @keyword
+(elif_directive (identifier) @identifier.constant) @keyword
+(else_directive) @keyword
+(error_directive "error" @keyword)
+(warning_directive "warning" @keyword)
+(preproc_message) @string
 
+;; Attributes
+(attribute name: (identifier) @type)
+(member_access_expression name: (identifier) @identifier.attribute)
+(property_declaration name: (identifier) @identifier.attribute)
+(initializer_expression (assignment_expression left: (identifier) @identifier.attribute))
+(attribute_argument (name_equals . (identifier) @identifier.attribute))
+(field_declaration (variable_declaration (variable_declarator . (identifier) @identifier.attribute)))
+
+;; Methods
+(method_declaration name: (identifier) @method)
+
+(invocation_expression
+      (identifier) @method)
+
+(invocation_expression
+  (member_access_expression
+    (generic_name
+      (identifier) @method)))
+
+(invocation_expression
+  (member_access_expression
+
+    name: (identifier) @method))
+
+(invocation_expression
+  function: (conditional_access_expression
+             (member_binding_expression
+               name: (identifier) @method)))
+
+(invocation_expression
+  function: (generic_name
+              . (identifier) @method))
+
+;; Types
+(variable_declaration type: (identifier) @type)
 (interface_declaration name: (identifier) @type)
 (class_declaration name: (identifier) @type)
 (enum_declaration name: (identifier) @type)
@@ -17,74 +102,19 @@
 (record_declaration (identifier) @type)
 (namespace_declaration name: (identifier) @type)
 (object_creation_expression type: (identifier) @type)
-(method_declaration returns: (identifier) @type)
-(variable_declaration type: (identifier) @type)
+(method_declaration type: (identifier) @type)
 (property_declaration type: (identifier) @type)
 
 (constructor_declaration name: (identifier) @type)
 (destructor_declaration name: (identifier) @type)
-
-
-;; Parameter
-
-(parameter (identifier) @variable.parameter)
-(parameter
- type: (identifier) @type
- name: (identifier) @variable.parameter)
-
 
 [
   (implicit_type)
   (nullable_type)
   (pointer_type)
   (function_pointer_type)
-  (predefined_type)
-] @type.builtin
-
-;; Class
-(base_list (identifier) @type)
-
-
-;; Preprocessors
-(preproc_if condition: (identifier) @identifier.constant)
-(preproc_elif condition: (identifier) @identifier.constant)
-(preproc_arg) @string
-
-;; Members
-
-; The constructor_declaration queries below assume that the left-hand side of
-; assignments assign to class fields.
-(constructor_declaration
-  body: (block (expression_statement (assignment_expression .
-    left: (identifier) @identifier.attribute))))
-(constructor_declaration
-  body: (arrow_expression_clause (assignment_expression .
-    left: (identifier) @identifier.attribute)))
-
-(member_access_expression name: (identifier) @identifier.attribute)
-(property_declaration name: (identifier) @identifier.attribute)
-
-
-(invocation_expression
-  (member_access_expression
-    (generic_name
-      (identifier) @identifier.function)))
-
-(invocation_expression
-  (member_access_expression
-    name: (identifier) @identifier.function))
-
-(invocation_expression
-  function: (conditional_access_expression
-             (member_binding_expression
-               name: (identifier) @identifier.function)))
-
-(invocation_expression
-      (identifier) @identifier.function)
-
-(invocation_expression
-  function: (generic_name
-              . (identifier) @identifier.function))
+  (predefined_type)]
+@type.builtin
 
 ;; Enum
 (enum_member_declaration (identifier) @identifier.constant)
@@ -92,19 +122,20 @@
 ;; Literals
 [
   (real_literal)
-  (integer_literal)
-] @number
+  (integer_literal)]
+@number
 
 [
   (character_literal)
   (string_literal)
-  (raw_string_literal)
   (verbatim_string_literal)
-  (interpolated_string_expression)
-  (interpolation_start)
-  (interpolation_quote)
-  (escape_sequence)
-]@string
+  (interpolated_string_text)
+  (interpolated_verbatim_string_text)
+  "\""
+  "$\""
+  "@$\""
+  "$@\""] @string
+(interpolation ["{" "}"] @string.escape)
 
 [
   (boolean_literal)
@@ -115,77 +146,15 @@
 (comment) @comment
 
 ;; Operator
-[
-  "--"
-  "-"
-  "-="
-  "&"
-  "&="
-  "&&"
-  "+"
-  "++"
-  "+="
-  "<"
-  "<="
-  "<<"
-  "<<="
-  "="
-  "=="
-  "!"
-  "!="
-  "=>"
-  ">"
-  ">="
-  ">>"
-  ">>="
-  ">>>"
-  ">>>="
-  "|"
-  "|="
-  "||"
-  "?"
-  "??"
-  "??="
-  "^"
-  "^="
-  "~"
-  "*"
-  "*="
-  "/"
-  "/="
-  "%"
-  "%="
-  ":"
-] @operator
 (operator_declaration ["+" "-" "true" "false" "==" "!="] @method)
 
-;; Tokens
-[
-  ";"
-  "."
-  ","
-] @punctuation.delimiter
-
-[
-  "("
-  ")"
-  "["
-  "]"
-  "{"
-  "}"
-  (interpolation_brace)
-] @punctuation.bracket
-
 ;; Keywords
-[
-  (modifier)
-  "this"
-  (implicit_type)
-] @keyword
+(modifier) @keyword
+(this_expression) @keyword
+(escape_sequence) @keyword
 
 [
   "as"
-  "await"
   "base"
   "break"
   "case"
@@ -198,86 +167,115 @@
   "do"
   "else"
   "enum"
-  "equals"
   "event"
   "explicit"
   "finally"
   "for"
   "foreach"
-  "from"
-  "get"
   "goto"
   "if"
   "implicit"
-  "in"
-  "init"
   "interface"
   "is"
-  "join"
-  "let"
   "lock"
   "namespace"
-  "new"
-  "notnull"
-  "on"
   "operator"
-  "out"
   "params"
-  "record"
-  "ref"
   "return"
-  "select"
-  "set"
   "sizeof"
   "stackalloc"
-  "static"
   "struct"
   "switch"
-  "this"
   "throw"
   "try"
   "typeof"
   "unchecked"
-  "unmanaged"
   "using"
-  "var"
-  "when"
-  "where"
   "while"
-  "with"
+  "new"
+  "await"
+  "in"
   "yield"
-  ] @keyword
+  "get"
+  "set"
+  "when"
+  "out"
+  "ref"
+  "from"
+  "join"
+  "on"
+  "equals"
+  "var"
+  "where"
+  "select"
+  "record"
+  "init"
+  "with"
+  "this"
+  "unmanaged"
+  "notnull"
+  "let"] @keyword
+
+
+;; Linq
+(from_clause (identifier) @variable)
+(group_clause)
+(order_by_clause)
+(select_clause (identifier) @variable)
+(query_continuation (identifier) @variable) @keyword
+
+;; Record
+(with_expression
+  (with_initializer_expression
+    (simple_assignment_expression
+      (identifier) @variable)))
 
 ;; event
 (event_declaration (accessor_list (accessor_declaration ["add" "remove"] @keyword)))
 
-; (initializer_expression (assignment_expression left: (identifier) @identifier.attribute))
-; (attribute_argument (name_equals . (identifier) @identifier.attribute))
-(field_declaration (variable_declaration (variable_declarator . (identifier) @identifier.attribute)))
+;; Class
+(base_list (identifier) @type)
 
-;; Lambda
-(lambda_expression) @variable
+;; Members
 
-;; Attribute
-(attribute name: (identifier) @type)
+; The constructor_declaration queries below assume that the left-hand side of
+; assignments assign to class fields.
+(constructor_declaration
+  body: (block (expression_statement (assignment_expression .
+    left: (identifier) @identifier.attribute))))
+(constructor_declaration
+  body: (arrow_expression_clause (assignment_expression .
+    left: (identifier) @identifier.attribute)))
+
+
+;; Parameter
+(parameter_modifier) @keyword
+(parameter (identifier) @variable.parameter)
+(parameter type: (identifier) @type name: (identifier) @variable.parameter)
 
 ;; Sunset restricted types
-"__makeref" @keyword
-"__refvalue" @keyword
-"__reftype" @keyword
+(make_ref_expression "__makeref" @keyword)
+(ref_value_expression "__refvalue" @keyword)
+(ref_type_expression "__reftype" @keyword)
 
 ;; Typeof
-; (type_of_expression (identifier) @type)
+(type_of_expression (identifier) @type)
 
-;; Type
-(generic_name (identifier) @type)
-(type_parameter (identifier) @property.definition)
-(type_argument_list (identifier) @type)
+;; Return
+(return_statement (identifier) @variable)
+(yield_statement (identifier) @variable)
 
 ;; Type constraints
 (type_parameter_constraints_clause (identifier) @property.definition)
-(type_parameter_constraint (identifier) @type)
+(type_constraint (identifier) @type)
 
 ;; Exception
 (catch_declaration (identifier) @type (identifier) @variable)
 (catch_declaration (identifier) @type)
+
+;; Switch
+(switch_statement (identifier) @variable)
+(switch_expression (identifier) @variable)
+
+;; Lock statement
+(lock_statement (identifier) @variable)

@@ -2510,9 +2510,8 @@ dependencies = [
 
 [[package]]
 name = "tree-sitter-c-sharp"
-version = "0.21.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8997ad04502208449025114e434c9024a33a74e700513c702a9d2cac6522a771"
+version = "0.20.0"
+source = "git+https://github.com/sourcegraph/tree-sitter-c-sharp?rev=8b2aae93bc4d958171da09a3c4687ac49f92ce4e#8b2aae93bc4d958171da09a3c4687ac49f92ce4e"
 dependencies = [
  "cc",
  "tree-sitter",

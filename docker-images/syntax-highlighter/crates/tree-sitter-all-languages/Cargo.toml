@@ -9,7 +9,6 @@ edition = "2021"
 tree-sitter.workspace = true
 
 tree-sitter-c = "0.21.4"
-tree-sitter-c-sharp = "0.21.3"
 tree-sitter-cpp = "0.22.3"
 tree-sitter-go = "0.21.0"
 tree-sitter-java = "0.21.0"
@@ -25,6 +24,7 @@ tree-sitter-kotlin = "0.3.8"
 # https://github.com/DerekStride/tree-sitter-sql
 tree-sitter-sequel = "0.3.5"
 
+tree-sitter-c-sharp = { git = "https://github.com/sourcegraph/tree-sitter-c-sharp", rev = "8b2aae93bc4d958171da09a3c4687ac49f92ce4e" }
 tree-sitter-dart = { git = "https://github.com/UserNobody14/tree-sitter-dart", rev = "cf72df5d4a623ca705e81bf9e9d264e1fe9d5da0" }
 tree-sitter-jsonnet = { git = "https://github.com/kritzcreek/tree-sitter-jsonnet", rev = "bc147652f72a14c9627deae5c9c33a81e452d391" }
 tree-sitter-magik = { git = "https://github.com/kritzcreek/tree-sitter-magik", rev = "d7614f9820563598b0e1e009b3e4707f60af405f" }

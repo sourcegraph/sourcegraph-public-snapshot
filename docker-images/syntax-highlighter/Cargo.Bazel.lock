@@ -1,5 +1,5 @@
 {
-  "checksum": "22197c646bcfc36715679bcea6355ce93962b547f8ba1015856e371014187176",
+  "checksum": "51be39da52f2d4decf985f7807ab43d7b9e40c8ecdeecc38c1f7b4644f6c7da4",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -13441,7 +13441,7 @@
               "target": "tree_sitter_c"
             },
             {
-              "id": "tree-sitter-c-sharp 0.21.3",
+              "id": "tree-sitter-c-sharp 0.20.0",
               "target": "tree_sitter_c_sharp"
             },
             {
@@ -13615,13 +13615,15 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-c-sharp 0.21.3": {
+    "tree-sitter-c-sharp 0.20.0": {
       "name": "tree-sitter-c-sharp",
-      "version": "0.21.3",
+      "version": "0.20.0",
       "repository": {
-        "Http": {
-          "url": "https://static.crates.io/crates/tree-sitter-c-sharp/0.21.3/download",
-          "sha256": "8997ad04502208449025114e434c9024a33a74e700513c702a9d2cac6522a771"
+        "Git": {
+          "remote": "https://github.com/sourcegraph/tree-sitter-c-sharp",
+          "commitish": {
+            "Rev": "8b2aae93bc4d958171da09a3c4687ac49f92ce4e"
+          }
         }
       },
       "targets": [
@@ -13656,14 +13658,14 @@
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-c-sharp 0.21.3",
+              "id": "tree-sitter-c-sharp 0.20.0",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
-        "edition": "2021",
-        "version": "0.21.3"
+        "edition": "2018",
+        "version": "0.20.0"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -19040,7 +19042,7 @@
     "tar 0.4.41",
     "tree-sitter 0.22.6",
     "tree-sitter-c 0.21.4",
-    "tree-sitter-c-sharp 0.21.3",
+    "tree-sitter-c-sharp 0.20.0",
     "tree-sitter-cpp 0.22.3",
     "tree-sitter-dart 0.0.1",
     "tree-sitter-go 0.21.0",
