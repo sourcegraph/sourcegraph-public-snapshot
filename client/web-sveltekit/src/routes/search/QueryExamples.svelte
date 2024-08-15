@@ -12,7 +12,7 @@
     import { showQueryExamplesForKeywordSearch } from '$lib/web'
     import ProductStatusBadge from '$lib/wildcard/ProductStatusBadge.svelte'
 
-    import { basicSyntaxColumns, exampleQueryColumns, type QueryExample } from './queryExamples'
+    import {getKeywordExamples, exampleQueryColumns, type QueryExample, getStandardExamples} from './queryExamples'
 
     export let showQueryPage = false
     export let queryExample: Readable<QueryExample | null>
@@ -21,16 +21,16 @@
     $: patternTypeForQueryLinks = queryExamplesForKeywordSearch
         ? SearchPatternType.keyword
         : SearchPatternType.standard
+    $: getQueryExamples = queryExamplesForKeywordSearch ? getKeywordExamples : getStandardExamples
 
     $: tabs = [
         $queryExample
             ? {
                   name: 'How to search',
-                  columns: basicSyntaxColumns(
+                  columns: getQueryExamples(
                       $queryExample.fileName,
                       $queryExample.repoName,
                       $queryExample.orgName,
-                      queryExamplesForKeywordSearch
                   ),
               }
             : null,
