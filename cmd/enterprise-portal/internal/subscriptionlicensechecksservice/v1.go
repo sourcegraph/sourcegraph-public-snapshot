@@ -100,6 +100,7 @@ func (h *handlerV1) CheckLicenseKey(ctx context.Context, req *connect.Request[su
 		return nil, connect.NewError(connect.CodeNotFound, errors.New("license not found"))
 	}
 
+	// Make sure our logging can act as audit logs with appropriate context
 	logger = logger.With(
 		log.String("check.type", checkType),
 		log.String("licenseID", lc.ID),
@@ -141,6 +142,7 @@ func (h *handlerV1) CheckLicenseKey(ctx context.Context, req *connect.Request[su
 	// Allow internal instance keys to be used more liberally.
 	if sub.InstanceType != nil &&
 		*sub.InstanceType == subscriptionsv1.EnterpriseSubscriptionInstanceType_ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_INTERNAL.String() {
+		logger.Info("detected internal instance usage, defaulting to allow")
 		return connect.NewResponse(&subscriptionlicensechecksv1.CheckLicenseKeyResponse{
 			Valid: true,
 		}), nil
