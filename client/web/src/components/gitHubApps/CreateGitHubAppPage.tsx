@@ -1,18 +1,19 @@
-import React, {type FC, useState, useCallback, useRef, useEffect} from 'react'
+import React, { type FC, useState, useCallback, useRef, useEffect } from 'react'
 
 import classNames from 'classnames'
-import {noop} from 'lodash'
-import {useNavigate} from 'react-router-dom'
+import { noop } from 'lodash'
+import { useNavigate } from 'react-router-dom'
 
-import type {TelemetryV2Props} from '@sourcegraph/shared/src/telemetry'
-import {EVENT_LOGGER} from '@sourcegraph/shared/src/telemetry/web/eventLogger'
-import {Alert, Container, Button, Input, Label, Text, PageHeader, Checkbox, Link, Badge} from '@sourcegraph/wildcard'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
+import { Alert, Container, Button, Input, Label, Text, PageHeader, Checkbox, Link, Badge } from '@sourcegraph/wildcard'
 
-import type {AuthenticatedUser} from '../../auth'
-import type {GitHubAppDomain, GitHubAppKind} from '../../graphql-operations'
-import {GitHubAppKind as AppKindEnum} from '../../graphql-operations'
-import {PageTitle} from '../PageTitle'
-import styles from '../fuzzyFinder/FuzzyModal.module.scss';
+import type { AuthenticatedUser } from '../../auth'
+import type { GitHubAppDomain, GitHubAppKind } from '../../graphql-operations'
+import { GitHubAppKind as AppKindEnum } from '../../graphql-operations'
+import { PageTitle } from '../PageTitle'
+
+import styles from '../fuzzyFinder/FuzzyModal.module.scss'
 
 interface StateResponse {
     state?: string
@@ -72,20 +73,20 @@ export interface CreateGitHubAppPageProps extends TelemetryV2Props {
  * Page for creating and connecting a new GitHub App.
  */
 export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
-                                                                      defaultEvents,
-                                                                      defaultPermissions,
-                                                                      pageTitle = 'Create GitHub App',
-                                                                      headerDescription,
-                                                                      headerAnnotation,
-                                                                      appDomain,
-                                                                      defaultAppName = 'Sourcegraph',
-                                                                      baseURL,
-                                                                      validateURL,
-                                                                      telemetryRecorder,
-                                                                      appKind,
-                                                                      authenticatedUser,
-                                                                      minimizedMode,
-                                                                  }) => {
+    defaultEvents,
+    defaultPermissions,
+    pageTitle = 'Create GitHub App',
+    headerDescription,
+    headerAnnotation,
+    appDomain,
+    defaultAppName = 'Sourcegraph',
+    baseURL,
+    validateURL,
+    telemetryRecorder,
+    appKind,
+    authenticatedUser,
+    minimizedMode,
+}) => {
     const navigate = useNavigate()
     const ref = useRef<HTMLFormElement>(null)
     const formInput = useRef<HTMLInputElement>(null)
@@ -108,7 +109,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
             JSON.stringify({
                 name: name.trim(),
                 url: originURL,
-                hook_attributes: webhookURL ? {url: webhookURL} : undefined,
+                hook_attributes: webhookURL ? { url: webhookURL } : undefined,
                 redirect_url: new URL('/githubapp/redirect', originURL).href,
                 setup_url: new URL('/githubapp/setup', originURL).href,
                 callback_urls: [new URL('/.auth/github/callback', originURL).href],
@@ -136,7 +137,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     )
 
     const submitForm = useCallback(
-        ({state, webhookURL, name}: FormOptions) => {
+        ({ state, webhookURL, name }: FormOptions) => {
             if (state && ref.current && formInput.current) {
                 const actionUrl = createActionUrl(state)
                 ref.current.action = actionUrl
@@ -173,7 +174,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
             if (!jsonResponse.state?.length) {
                 throw new Error('Response from server missing state parameter')
             }
-            submitForm({state: jsonResponse.state, webhookURL, name})
+            submitForm({ state: jsonResponse.state, webhookURL, name })
         } catch (error_) {
             if (error_ instanceof Error) {
                 setError(error_.message)
@@ -225,9 +226,9 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
         <>
             {!minimizedMode && (
                 <>
-                    <PageTitle title={pageTitle}/>
+                    <PageTitle title={pageTitle} />
                     <PageHeader
-                        path={[{text: pageTitle}]}
+                        path={[{ text: pageTitle }]}
                         headingElement="h2"
                         description={
                             headerDescription || (
@@ -246,15 +247,17 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
             )}
 
             <Container className="mb-3">
-                {(appKind === AppKindEnum.SITE_CREDENTIAL || appKind === AppKindEnum.USER_CREDENTIAL) && <div className="mb-3">
-                    <Badge
-                        variant="info"
-                        tooltip="Please reach out to our support team if you encounter problems or have questions."
-                        className={styles.experimentalBadge}
-                    >
-                        Experimental
-                    </Badge>
-                </div>}
+                {(appKind === AppKindEnum.SITE_CREDENTIAL || appKind === AppKindEnum.USER_CREDENTIAL) && (
+                    <div className="mb-3">
+                        <Badge
+                            variant="info"
+                            tooltip="Please reach out to our support team if you encounter problems or have questions."
+                            className={styles.experimentalBadge}
+                        >
+                            Experimental
+                        </Badge>
+                    </div>
+                )}
 
                 {error && <Alert variant="danger">Error creating GitHub App: {error}</Alert>}
                 <Text>
@@ -344,7 +347,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                 {/* eslint-disable-next-line react/forbid-elements */}
                 <form ref={ref} method="post">
                     {/* eslint-disable-next-line react/forbid-elements */}
-                    <input ref={formInput} name="manifest" onChange={noop} hidden={true}/>
+                    <input ref={formInput} name="manifest" onChange={noop} hidden={true} />
                 </form>
             </Container>
             <div
