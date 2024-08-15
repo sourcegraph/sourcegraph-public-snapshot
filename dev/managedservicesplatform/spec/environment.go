@@ -605,6 +605,13 @@ type EnvironmentJobScheduleSpec struct {
 	// than once a week.
 	//
 	// Protip: use https://crontab.guru
+	//
+	// Note that no GCP alert for missing job executions is provisioned if the
+	// cron has an interval of more than 23h30m, due to GCP alerts limitations.
+	// Instead, you should use the MSP job runtime and monitor Sentry
+	// alerts instead: https://develop.sentry.dev/sdk/telemetry/check-ins/
+	// The MSP job runtime automatically registers Sentry check-ins on each
+	// execution.
 	Cron string `yaml:"cron"`
 }
 
