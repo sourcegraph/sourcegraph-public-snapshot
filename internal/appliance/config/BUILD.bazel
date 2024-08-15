@@ -10,6 +10,7 @@ go_library(
         "dev_mode.go",
         "embed.go",
         "spec.go",
+        "utils.go",
     ],
     embedsrcs = [
         "postgres/codeintel.conf",
@@ -18,12 +19,15 @@ go_library(
         "postgres/codeinsights.conf",
         "grafana/default.yml.gotmpl",
         "otel/agent.yaml",
+        "otel/collector.yaml.gotmpl",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance/config",
     tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//lib/pointers",
+        "@com_github_masterminds_sprig//:sprig",
+        "@in_gopkg_yaml_v3//:yaml_v3",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
         "@io_k8s_sigs_controller_runtime//pkg/client",

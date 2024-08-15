@@ -142,6 +142,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err := r.reconcileOtelAgent(ctx, &sourcegraph, &applianceSpec); err != nil {
 		return ctrl.Result{}, errors.Newf("failed to reconcile OpenTelemetry Agent: %w", err)
 	}
+	if err := r.reconcileOtelCollector(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile OpenTelemetry Collector: %w", err)
+	}
 	if err := r.reconcileNodeExporter(ctx, &sourcegraph, &applianceSpec); err != nil {
 		return ctrl.Result{}, errors.Newf("failed to reconcile NodeExporter: %w", err)
 	}
