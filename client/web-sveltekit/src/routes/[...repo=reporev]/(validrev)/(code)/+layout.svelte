@@ -337,7 +337,7 @@
                         {#key data.filePath}
                             <HistoryPanel
                                 bind:this={historyPanel}
-                                history={data.commitHistory}
+                                historyPagination={data.historyPagination}
                                 enableInlineDiff={$page.data.enableInlineDiff}
                                 enableViewAtCommit={$page.data.enableViewAtCommit}
                             />

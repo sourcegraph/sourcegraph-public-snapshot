@@ -1,7 +1,7 @@
 <script lang="ts" context="module">
-    type HistoryStore = InfinityQueryStore<HistoryPanel_HistoryConnection['nodes'], { afterCursor: string | null }>
+    type HistoryPagination = Pagination<HistoryPanel_HistoryConnection['nodes'], { afterCursor: string | null }>
     export interface Capture {
-        history: ReturnType<HistoryStore['capture']>
+        historyPagination: ReturnType<HistoryPagination['capture']>
         scroller?: ScrollerCapture
     }
 </script>
@@ -11,7 +11,7 @@
     import Avatar from '$lib/Avatar.svelte'
     import { SourcegraphURL } from '$lib/common'
     import { scrollIntoViewOnMount } from '$lib/dom'
-    import type { InfinityQueryStore } from '$lib/graphql'
+    import type { Pagination } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
@@ -22,23 +22,23 @@
 
     import type { HistoryPanel_HistoryConnection } from './HistoryPanel.gql'
 
-    export let history: HistoryStore
+    export let historyPagination: HistoryPagination
     export let enableInlineDiff: boolean = false
     export let enableViewAtCommit: boolean = false
 
     export function capture(): Capture {
         return {
-            history: history.capture(),
+            historyPagination: historyPagination.capture(),
             scroller: scroller?.capture(),
         }
     }
 
     export async function restore(data: Capture) {
-        await history.restore(data.history)
+        await historyPagination.restore(data.historyPagination)
 
         // If the selected revision is not in the set of currently loaded commits, load more
         if (selectedRev) {
-            await history.fetchWhile(data => !data.find(commit => selectedRev?.startsWith(commit.abbreviatedOID)))
+            await historyPagination.fetchNextWhile(data => !data.find(commit => selectedRev?.startsWith(commit.abbreviatedOID)))
         }
 
         if (data.scroller) {
@@ -55,11 +55,11 @@
     $: closeURL = SourcegraphURL.from($page.url).deleteSearchParameter('rev', 'diff').toString()
 </script>
 
-<Scroller bind:this={scroller} margin={200} on:more={history.fetchMore}>
-    {#if $history.data}
+<Scroller bind:this={scroller} margin={200} on:more={historyPagination.fetchMore}>
+    {#if $historyPagination.data}
         <table>
             <tbody>
-                {#each $history.data as commit (commit.id)}
+                {#each $historyPagination.data as commit (commit.id)}
                     {@const selected = commit.abbreviatedOID === selectedRev || commit.oid === selectedRev}
                     <tr class:selected use:scrollIntoViewOnMount={selected}>
                         <td class="revision">
@@ -99,13 +99,13 @@
             </tbody>
         </table>
     {/if}
-    {#if $history.fetching}
+    {#if $historyPagination.loading}
         <div class="info">
             <LoadingSpinner />
         </div>
-    {:else if $history.error}
+    {:else if $historyPagination.error}
         <div class="info">
-            <Alert variant="danger">Unable to load history: {$history.error.message}</Alert>
+            <Alert variant="danger">Unable to load history: {$historyPagination.error.message}</Alert>
         </div>
     {/if}
 </Scroller>

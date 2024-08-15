@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit'
 
-import { IncrementalRestoreStrategy, getGraphQLClient, infinityQuery } from '$lib/graphql'
+import { IncrementalRestoreStrategy, createPagination, getGraphQLClient } from '$lib/graphql'
 
 import type { PageLoad } from './$types'
 import { ChangelistPage_ChangelistQuery, ChangelistPage_DiffQuery } from './page.gql'
@@ -28,9 +28,9 @@ export const load: PageLoad = async ({ params }) => {
     // parents is an empty array for the initial commit
     // We currently don't support diffs for the initial commit on the backend
 
-    const diff =
+    const diffPagination =
         changelist.cid && changelist?.commit.parents[0]?.parent?.cid
-            ? infinityQuery({
+            ? createPagination({
                   client,
                   query: ChangelistPage_DiffQuery,
                   variables: {
@@ -60,6 +60,6 @@ export const load: PageLoad = async ({ params }) => {
 
     return {
         changelist,
-        diff,
+        diffPagination,
     }
 }

@@ -1,4 +1,4 @@
-import { getGraphQLClient, infinityQuery, OverwriteRestoreStrategy } from '$lib/graphql'
+import { createPagination, getGraphQLClient, OverwriteRestoreStrategy } from '$lib/graphql'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
@@ -13,7 +13,7 @@ export const load: PageLoad = ({ params, url }) => {
 
     return {
         query,
-        branchesQuery: infinityQuery({
+        branchesPagination: createPagination({
             client,
             query: AllBranchesPage_BranchesQuery,
             variables: {

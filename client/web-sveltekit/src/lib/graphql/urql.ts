@@ -63,7 +63,9 @@ export function query<TData = any, TVariables extends AnyVariables = AnyVariable
     return getGraphQLClient().query<TData, TVariables>(query, variables).toPromise()
 }
 
-interface InfinityQueryArgs<TData, TPayload = any, TVariables extends AnyVariables = AnyVariables, TSnapshot = any> {
+type FetchKind = 'next' | 'prev' | 'last' | 'first'
+
+interface PaginationOptions<TData, TPayload = any, TVariables extends AnyVariables = AnyVariables, TSnapshot = any> {
     /**
      * The {@link Client} instance to use for the query.
      */
@@ -84,10 +86,9 @@ interface InfinityQueryArgs<TData, TPayload = any, TVariables extends AnyVariabl
      * and computes the next set of query variables, if any.
      *
      * @param result - The result of the query.
-     * @param previousResult - The previous result of the query.
      * @returns The new/combined result state.
      */
-    map: (result: OperationResult<TPayload, TVariables>) => InfinityStoreResult<TData, TVariables>
+    map: (result: OperationResult<TPayload, TVariables>) => Page<TData, TVariables>
 
     /**
      * Optional callback to merge the data from the previous result with the new data.
@@ -98,30 +99,23 @@ interface InfinityQueryArgs<TData, TPayload = any, TVariables extends AnyVariabl
     /**
      * Returns a strategy for restoring the data when navigating back to a page.
      */
-    createRestoreStrategy?: (api: InfinityAPI<TData, TVariables>) => RestoreStrategy<TSnapshot, TData>
-}
+    createRestoreStrategy?: (api: PaginationAPI<TData, TVariables>) => RestoreStrategy<TSnapshot, TData>
 
-/**
- * Internal API for the infinity query store. Used by restore strategies to control the store.
- */
-interface InfinityAPI<TData, TVariables extends AnyVariables = AnyVariables> {
     /**
-     * The internal store representing the current state of the query.
+     * The set of variables to use to fetch the first page.
      */
-    store: Writable<InfinityStoreResultState<TData, TVariables>>
+    firstPageVariables?: Partial<TVariables>
+
     /**
-     * Helper function for fetching and processing the next set of data.
+     * The set of variables to use to fetch the last page.
      */
-    fetch(
-        variables: Partial<TVariables>,
-        previous: InfinityStoreResult<TData, TVariables>
-    ): Promise<InfinityStoreResult<TData, TVariables>>
+    lastPageVariables?: Partial<TVariables>
 }
 
 /**
  * The processed/combined result of a GraphQL query.
  */
-export interface InfinityStoreResult<TData = any, TVariables extends AnyVariables = AnyVariables> {
+export interface Page<TData = any, TVariables extends AnyVariables = AnyVariables> {
     data?: TData
 
     /**
@@ -132,29 +126,32 @@ export interface InfinityStoreResult<TData = any, TVariables extends AnyVariable
     /**
      * The set of variables to use for the next fetch. If not set no more data will be fetched.
      */
+    prevVariables?: Partial<TVariables>
+
+    /**
+     * The set of variables to use for the next fetch.
+     */
     nextVariables?: Partial<TVariables>
 }
 
-/**
- * The state of the infinity query store.
- */
-interface InfinityStoreResultState<TData = any, TVariables extends AnyVariables = AnyVariables>
-    extends InfinityStoreResult<TData, TVariables> {
-    /**
-     * Whether a GraphQL request is currently in flight.
-     */
-    fetching: boolean
-}
-
 // This needs to be exported so that TS type inference can work in SvelteKit generated files.
-export interface InfinityQueryStore<TData = any, TVariables extends AnyVariables = AnyVariables, TSnapshot = any>
-    extends Readable<InfinityStoreResultState<TData, TVariables>> {
+export interface Pagination<TData = any, TVariables extends AnyVariables = AnyVariables, TSnapshot = any>
+    extends Readable<PaginationState<TData, TVariables>> {
     /**
-     * Reruns the query with the next set of query variables.
+     * Reruns the query with another set of query variables. Which set of variables is used
+     * depends on the kind of fetch.
+     *
+     * @param kind - The kind of fetch to perform.
+     * @param preload - Whether to fetch the data without updating the store state.
      *
      * @remarks
-     * A new query will only be executed if there is no query currently in flight and {@link InfinityStoreResult.nextVariables}
-     * is set.
+     * A new query will only be executed if there is no query currently in flight and the corresponding set
+     * of query variables in {@link Page} is set.
+     */
+    fetch: (kind: FetchKind, preload?: boolean) => void
+
+    /**
+     * Convenince wrapper for fetch('next').
      */
     fetchMore: () => void
 
@@ -163,7 +160,7 @@ export interface InfinityQueryStore<TData = any, TVariables extends AnyVariables
      * rom calling {@link fetchMore} in a loop, because it will set/unset the fetching state
      * only once.
      */
-    fetchWhile: (predicate: (data: TData) => boolean) => Promise<void>
+    fetchNextWhile: (predicate: (data: TData) => boolean) => Promise<void>
 
     /**
      * Restores the data state from a snapshot, which is returned by {@link capture}.
@@ -186,48 +183,71 @@ export interface InfinityQueryStore<TData = any, TVariables extends AnyVariables
 }
 
 /**
- * Function to create a store to manage "infinity scroll" style queries.
+ * The state of the pagination store.
+ */
+interface PaginationState<TData = any, TVariables extends AnyVariables = AnyVariables> extends Page<TData, TVariables> {
+    /**
+     * Whether a GraphQL request is currently in flight.
+     */
+    loading: boolean
+}
+
+/**
+ * Internal API for the infinity query store. Used by restore strategies to control the store.
+ */
+interface PaginationAPI<TData, TVariables extends AnyVariables = AnyVariables> {
+    /**
+     * The internal store representing the current state of the query.
+     */
+    store: Writable<PaginationState<TData, TVariables>>
+    /**
+     * Helper function for fetching and processing the next set of data.
+     */
+    fetch(variables: Partial<TVariables>, previous: Page<TData, TVariables>): Promise<Page<TData, TVariables>>
+}
+
+/**
+ * Function to create a store to manage paginated queries, including "infinity scroll" style queries.
  *
- * @param args - a {@link InfinityQueryArgs} object to pass a `query, `variables` and other options to manage infinity scroll.
- * @returns a {@link InfinityQueryStore} of query results.
+ * @param args - a {@link PaginationOptions} object to pass a `query, `variables` and other options to manage pagination.
+ * @returns a {@link Pagination} of query results.
  *
  * @remarks
- * `infinityQuery` uses {@link InfinityQueryArgs.client} to execute {@link InfinityQueryArgs.query}
- * with the given {@link InfinityQueryArgs.variables}.
+ * `createPagination` uses {@link PaginationOptions.client} to execute {@link PaginationOptions.query}
+ * with the given {@link PaginationOptions.variables}.
  *
- * The caller can call {@link InfinityQueryStore.fetchMore} to fetch more data. The store will
- * call {@link InfinityQueryArgs.mapResult} to process the query result, combine it with the previous result
- * and to compute the query variables for the next fetch, if any.
+ * The caller can call {@link PaginationOptions.fetch} to fetch more data. The store will call
+ * {@link PaginationOptions.map} to process the query result and compute the variables for the next fetch (if any).
+ * It optionally calls {@link PaginationOptions.merge} to combine the new with the previous result (important for infinite scrollstyle pagination).
  *
- * Calling this function will prefetch the initial data, i.e. the data is fetch before the store is
- * subscribed to.
+ * Calling this function will prefetch the initial data, i.e. the data is fetch before the store is subscribed to.
  */
-export function infinityQuery<
+export function createPagination<
     TData = any,
     TPayload = any,
     TVariables extends AnyVariables = AnyVariables,
     TSnapshot = void
->(args: InfinityQueryArgs<TData, TPayload, TVariables, TSnapshot>): InfinityQueryStore<TData, TVariables, TSnapshot> {
-    const initialVariables = Promise.resolve(args.variables)
+>(options: PaginationOptions<TData, TPayload, TVariables, TSnapshot>): Pagination<TData, TVariables, TSnapshot> {
+    const initialVariables = Promise.resolve(options.variables)
 
     async function fetch(
         variables: Partial<TVariables>,
-        previousResult: InfinityStoreResult<TData, TVariables>
-    ): Promise<InfinityStoreResult<TData, TVariables>> {
-        const result = args.map(
+        previousResult: Page<TData, TVariables>
+    ): Promise<Page<TData, TVariables>> {
+        const result = options.map(
             await initialVariables.then(initialVariables =>
-                args.client.query(args.query, { ...initialVariables, ...variables })
+                options.client.query(options.query, { ...initialVariables, ...variables })
             )
         )
-        if (args.merge) {
-            result.data = args.merge(previousResult.data, result.data)
+        if (options.merge) {
+            result.data = options.merge(previousResult.data, result.data)
         }
         return result
     }
 
-    const initialState: InfinityStoreResultState<TData, TVariables> = { fetching: true }
+    const initialState: PaginationState<TData, TVariables> = { loading: true }
     const store = writable(initialState)
-    const restoreStrategy = args.createRestoreStrategy?.({ store, fetch })
+    const restoreStrategy = options.createRestoreStrategy?.({ store, fetch })
 
     // Prefetch data. We don't want to wait until the store is subscribed to. That allows us to use this function
     // inside a data loader and the data will be prefetched before the component is rendered.
@@ -236,7 +256,7 @@ export function infinityQuery<
             // Only set the initial state if we haven't already started another fetch process,
             // e.g. when restoring the state.
             if (current === initialState) {
-                return { ...result, fetching: false }
+                return { ...result, loading: false }
             }
             return current
         })
@@ -249,50 +269,77 @@ export function infinityQuery<
         let unsubscribe: () => void
         return new Promise<void>(resolve => {
             unsubscribe = store.subscribe(current => {
-                if (!current.fetching) {
+                if (!current.loading) {
                     resolve()
                 }
             })
         }).finally(() => unsubscribe())
     }
 
+    function load(
+        variableAccessor: (result: PaginationState<TData, TVariables>) => Partial<TVariables> | undefined,
+        preload = false
+    ) {
+        const previous = get(store)
+
+        if (previous.loading) {
+            // When a fetch is already in progress, we don't want to start another one for the same variables.
+            return
+        }
+
+        const variables = variableAccessor(previous)
+
+        if (variables && !previous.error) {
+            if (!preload) {
+                store.set({ ...previous, loading: true })
+            }
+            fetch(variables, previous).then(result => {
+                if (!preload) {
+                    store.set({ ...result, loading: false })
+                }
+            })
+        }
+    }
+
     return {
         subscribe: store.subscribe,
-        fetchMore: () => {
-            const previous = get(store)
-
-            if (previous.fetching) {
-                // When a fetch is already in progress, we don't want to start another one for the same variables.
-                return
-            }
-
-            if (previous.nextVariables && !previous.error) {
-                store.set({ ...previous, fetching: true })
-                fetch(previous.nextVariables, previous).then(result => {
-                    store.update(current => {
-                        if (previous.nextVariables === current.nextVariables) {
-                            return { ...result, fetching: false }
-                        }
-                        return current
-                    })
-                })
+        fetch(kind, preload = false) {
+            switch (kind) {
+                case 'next':
+                    load(result => result.nextVariables, preload)
+                    break
+                case 'prev':
+                    load(result => result.prevVariables, preload)
+                    break
+                case 'last':
+                    load(() => options.lastPageVariables, preload)
+                    break
+                case 'first':
+                    load(() => options.firstPageVariables, preload)
+                    break
             }
         },
-        fetchWhile: async predicate => {
+
+        fetchMore() {
+            load(result => result.nextVariables)
+        },
+
+        fetchNextWhile: async predicate => {
             // We need to wait until the store is not fetching anymore to ensure that we don't start
             // another fetch process while one is already in progress.
             await waitTillReady()
             const current = get(store)
 
-            store.set({ ...current, fetching: true })
+            store.set({ ...current, loading: true })
 
-            let result: InfinityStoreResult<TData, TVariables> = current
+            let result: Page<TData, TVariables> = current
             while (!result.error && result.nextVariables && result.data && predicate(result.data)) {
                 result = await fetch(result.nextVariables, result)
             }
 
-            store.set({ ...result, fetching: false })
+            store.set({ ...result, loading: false })
         },
+
         capture: () => restoreStrategy?.capture(get(store)),
         restore: snapshot => {
             if (restoreStrategy && snapshot) {
@@ -308,7 +355,7 @@ export function infinityQuery<
  * A restore strategy captures and restores the data state of a query.
  */
 interface RestoreStrategy<TSnapshot, TData> {
-    capture(result: InfinityStoreResult<TData>): TSnapshot | undefined
+    capture(result: Page<TData>): TSnapshot | undefined
     restore(snapshot: TSnapshot): Promise<void>
 }
 
@@ -339,7 +386,7 @@ export class IncrementalRestoreStrategy<TData, TVariables extends AnyVariables>
     implements RestoreStrategy<IncrementalRestoreStrategySnapshot<TVariables>, TData>
 {
     constructor(
-        private api: InfinityAPI<TData, TVariables>,
+        private api: PaginationAPI<TData, TVariables>,
         /**
          * A function to map the data to a number. This number will be used to count the items.
          */
@@ -351,7 +398,7 @@ export class IncrementalRestoreStrategy<TData, TVariables extends AnyVariables>
         private variablesMapper?: (data: TData) => Partial<TVariables>
     ) {}
 
-    public capture(result: InfinityStoreResult<TData>): IncrementalRestoreStrategySnapshot<TVariables> | undefined {
+    public capture(result: Page<TData>): IncrementalRestoreStrategySnapshot<TVariables> | undefined {
         return result.data
             ? {
                   count: this.mapper(result.data),
@@ -362,17 +409,15 @@ export class IncrementalRestoreStrategy<TData, TVariables extends AnyVariables>
     }
 
     public async restore(snapshot: IncrementalRestoreStrategySnapshot<TVariables>): Promise<void> {
-        this.api.store.set({ fetching: true })
+        this.api.store.set({ loading: true })
         const result = await (snapshot.nonce !== NONCE && snapshot.variables
             ? this.api.fetch(snapshot.variables, {})
             : this.fetch(snapshot))
-        this.api.store.set({ ...result, fetching: false })
+        this.api.store.set({ ...result, loading: false })
     }
 
-    private async fetch(
-        snapshot: IncrementalRestoreStrategySnapshot<TVariables>
-    ): Promise<InfinityStoreResult<TData, TVariables>> {
-        let current: InfinityStoreResult<TData, TVariables> = { nextVariables: {} }
+    private async fetch(snapshot: IncrementalRestoreStrategySnapshot<TVariables>): Promise<Page<TData, TVariables>> {
+        let current: Page<TData, TVariables> = { nextVariables: {} }
         while (current.nextVariables && ((current.data && this.mapper(current.data)) || 0) < snapshot.count) {
             current = await this.api.fetch(current.nextVariables, current)
             if (current.error || !current.data) {
@@ -391,11 +436,11 @@ export class OverwriteRestoreStrategy<TData, TVariables extends AnyVariables>
     implements RestoreStrategy<{ variables: Partial<TVariables> }, TData>
 {
     constructor(
-        private api: InfinityAPI<TData, TVariables>,
+        private api: PaginationAPI<TData, TVariables>,
         private variablesMapper: (data: TData) => Partial<TVariables>
     ) {}
 
-    capture(result: InfinityStoreResult<TData, TVariables>): { variables: Partial<TVariables> } | undefined {
+    capture(result: Page<TData, TVariables>): { variables: Partial<TVariables> } | undefined {
         if (!result.data) {
             return undefined
         }
@@ -404,9 +449,9 @@ export class OverwriteRestoreStrategy<TData, TVariables extends AnyVariables>
     }
 
     async restore(snapshot: { variables: Partial<TVariables> }): Promise<void> {
-        this.api.store.set({ fetching: true })
+        this.api.store.set({ loading: true })
         const result = await this.api.fetch(snapshot.variables, {})
-        this.api.store.set({ ...result, fetching: false })
+        this.api.store.set({ ...result, loading: false })
     }
 }
 

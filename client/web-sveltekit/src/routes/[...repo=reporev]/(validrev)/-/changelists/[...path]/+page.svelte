@@ -17,31 +17,31 @@
     // position, so both can be restored when the user refreshes the page or navigates
     // back to it.
     export const snapshot: Snapshot<{
-        changelists: ReturnType<typeof data.changelistsQuery.capture>
+        changelistsPagination: ReturnType<PageData['changelistsPagination']['capture']>
         scroller: ScrollerCapture
     }> = {
         capture() {
             return {
-                changelists: changelistsQuery.capture(),
+                changelistsPagination: changelistsPagination.capture(),
                 scroller: scroller.capture(),
             }
         },
         async restore(snapshot) {
             if (get(navigating)?.type === 'popstate') {
-                await changelistsQuery?.restore(snapshot.changelists)
+                await changelistsPagination?.restore(snapshot.changelistsPagination)
             }
             scroller.restore(snapshot.scroller)
         },
     }
 
     function fetchMore() {
-        changelistsQuery?.fetchMore()
+        changelistsPagination?.fetchMore()
     }
 
     let scroller: Scroller
 
-    $: changelistsQuery = data.changelistsQuery
-    $: changelists = $changelistsQuery.data
+    $: changelistsPagination = data.changelistsPagination
+    $: changelists = $changelistsPagination.data
     $: pageTitle = (() => {
         const parts = ['Changelists']
         if (data.path) {
@@ -103,14 +103,14 @@
                 {/each}
             </ul>
         {/if}
-        {#if $changelistsQuery.fetching}
+        {#if $changelistsPagination.loading}
             <div class="footer">
                 <LoadingSpinner />
             </div>
-        {:else if !$changelistsQuery.fetching && $changelistsQuery.error}
+        {:else if !$changelistsPagination.loading && $changelistsPagination.error}
             <div class="footer">
                 <Alert variant="danger">
-                    Unable to fetch changelists: {$changelistsQuery.error.message}
+                    Unable to fetch changelists: {$changelistsPagination.error.message}
                 </Alert>
             </div>
         {/if}

@@ -1,4 +1,4 @@
-import { IncrementalRestoreStrategy, getGraphQLClient, infinityQuery } from '$lib/graphql'
+import { IncrementalRestoreStrategy, createPagination, getGraphQLClient } from '$lib/graphql'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 
@@ -13,7 +13,7 @@ export const load: PageLoad = ({ parent, params }) => {
     const path = params.path ? decodeURIComponent(params.path) : ''
     const resolvedRevision = resolveRevision(parent, revision)
 
-    const commitsQuery = infinityQuery({
+    const commitsPagination = createPagination({
         client,
         query: CommitsPage_CommitsQuery,
         variables: resolvedRevision.then(revision => ({
@@ -44,7 +44,7 @@ export const load: PageLoad = ({ parent, params }) => {
     })
 
     return {
-        commitsQuery,
+        commitsPagination,
         path,
     }
 }

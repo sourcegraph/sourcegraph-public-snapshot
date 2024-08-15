@@ -19,31 +19,31 @@
     // position, so both can be restored when the user refreshes the page or navigates
     // back to it.
     export const snapshot: Snapshot<{
-        commits: ReturnType<typeof data.commitsQuery.capture>
+        commits: ReturnType<PageData['commitsPagination']['capture']>
         scroller: ScrollerCapture
     }> = {
         capture() {
             return {
-                commits: commitsQuery.capture(),
+                commits: commitsPagination.capture(),
                 scroller: scroller.capture(),
             }
         },
         async restore(snapshot) {
             if (get(navigating)?.type === 'popstate') {
-                await commitsQuery?.restore(snapshot.commits)
+                await commitsPagination?.restore(snapshot.commits)
             }
             scroller.restore(snapshot.scroller)
         },
     }
 
     function fetchMore() {
-        commitsQuery?.fetchMore()
+        commitsPagination?.fetchMore()
     }
 
     let scroller: Scroller
 
-    $: commitsQuery = data.commitsQuery
-    $: commits = $commitsQuery.data
+    $: commitsPagination = data.commitsPagination
+    $: commits = $commitsPagination.data
     $: pageTitle = (() => {
         const parts = ['Commits']
         if (data.path) {
@@ -116,14 +116,14 @@
                 {/each}
             </ul>
         {/if}
-        {#if $commitsQuery.fetching}
+        {#if $commitsPagination.loading}
             <div class="footer">
                 <LoadingSpinner />
             </div>
-        {:else if !$commitsQuery.fetching && $commitsQuery.error}
+        {:else if !$commitsPagination.loading && $commitsPagination.error}
             <div class="footer">
                 <Alert variant="danger">
-                    Unable to fetch commits: {$commitsQuery.error.message}
+                    Unable to fetch commits: {$commitsPagination.error.message}
                 </Alert>
             </div>
         {/if}

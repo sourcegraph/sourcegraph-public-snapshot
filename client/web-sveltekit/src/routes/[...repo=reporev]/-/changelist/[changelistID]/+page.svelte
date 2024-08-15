@@ -18,7 +18,7 @@
 
     interface Capture {
         scroll: ScrollerCapture
-        diffs?: ReturnType<NonNullable<typeof data.diff>['capture']>
+        diffPagination?: ReturnType<NonNullable<PageData['diffPagination']>['capture']>
         expandedDiffs: Array<[number, boolean]>
     }
 
@@ -27,13 +27,13 @@
     export const snapshot: Snapshot<Capture> = {
         capture: () => ({
             scroll: scroller.capture(),
-            diffs: diffQuery?.capture(),
+            diffPagination: data.diffPagination?.capture(),
             expandedDiffs: expandedDiffsSnapshot,
         }),
         restore: async capture => {
             expandedDiffs = new Map(capture.expandedDiffs)
             if (get(navigating)?.type === 'popstate') {
-                await data.diff?.restore(capture.diffs)
+                await data.diffPagination?.restore(capture.diffPagination)
             }
             scroller.restore(capture.scroll)
         },
@@ -44,8 +44,8 @@
     let expandedDiffs = new Map<number, boolean>()
     let expandedDiffsSnapshot: Array<[number, boolean]> = []
 
-    $: diffQuery = data.diff
-    $: diffs = $diffQuery?.data
+    $: diffPagination = data.diffPagination
+    $: diffs = $diffPagination?.data
     $: cid = data.changelist.cid
 
     afterNavigate(() => {
@@ -65,7 +65,7 @@
 
 <section>
     {#if data.changelist}
-        <Scroller bind:this={scroller} margin={600} on:more={diffQuery?.fetchMore}>
+        <Scroller bind:this={scroller} margin={600} on:more={diffPagination?.fetchMore}>
             <div class="header">
                 <div class="info">
                     <Changelist changelist={data.changelist} alwaysExpanded={!$isViewportMobile} />
@@ -100,12 +100,12 @@
                     {/each}
                 </ul>
             {/if}
-            {#if $diffQuery?.fetching}
+            {#if $diffPagination?.loading}
                 <LoadingSpinner />
-            {:else if $diffQuery?.error}
+            {:else if $diffPagination?.error}
                 <div class="error">
                     <Alert variant="danger">
-                        Unable to fetch file diffs: {$diffQuery.error.message}
+                        Unable to fetch file diffs: {$diffPagination.error.message}
                     </Alert>
                 </div>
             {/if}

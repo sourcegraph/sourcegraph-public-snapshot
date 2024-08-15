@@ -1,6 +1,12 @@
 import { parseRepoRevision } from '@sourcegraph/shared/src/util/url'
 
-import { getGraphQLClient, infinityQuery, mapOrThrow, IncrementalRestoreStrategy } from '$lib/graphql'
+import {
+    getGraphQLClient,
+    mapOrThrow,
+    IncrementalRestoreStrategy,
+    createPagination,
+    OverwriteRestoreStrategy,
+} from '$lib/graphql'
 
 import type { PageLoad } from './$types'
 import { RepositoryComparison, RepositoryComparisonCommits, RepositoryComparisonDiffs } from './page.gql'
@@ -29,31 +35,44 @@ export const load: PageLoad = async ({ params, url }) => {
 
     const base = baseRevspec || null
     const head = headRevspec || null
-    // searchParams.get(...) can return null (hence the `?? 1`)
-    // but its value might also not be convertible to a number
-    // hence the `|| 1` to default to 1.
-    const commitPage = +(url.searchParams.get('p') ?? 1) || 1
 
     return {
-        commits: client
-            .query(RepositoryComparisonCommits, {
+        commitsPagination: createPagination({
+            client,
+            query: RepositoryComparisonCommits,
+            variables: {
                 repoName,
                 base,
                 head,
-                first: commitPage * PAGE_SIZE,
+                first: PAGE_SIZE,
                 path: filePath,
-            })
-            .then(
-                mapOrThrow(result => ({
-                    commits: (result.data?.repository?.comparison.commits.nodes || []).slice(
-                        (commitPage - 1) * PAGE_SIZE,
-                        commitPage * PAGE_SIZE
-                    ),
-                    nextPage: result.data?.repository?.comparison.commits.pageInfo.hasNextPage ? commitPage + 1 : null,
-                    previousPage: commitPage > 1 ? commitPage - 1 : null,
-                }))
-            ),
-        diffQuery: infinityQuery({
+            },
+            map: result => {
+                // The API doesn't implement real pagination. Instead we fetch the first N and then show the last
+                // PAGE_SIZE commits.
+                const commits = result.data?.repository?.comparison?.commits
+                const nodes = commits?.nodes ?? []
+                const page = Math.ceil(nodes.length / PAGE_SIZE)
+                const start = (page - 1) * PAGE_SIZE
+                const end = page * PAGE_SIZE
+
+                return {
+                    nextVariables: commits?.pageInfo.hasNextPage ? { first: (page + 1) * PAGE_SIZE } : undefined,
+                    prevVariables: page > 1 ? { first: (page - 1) * PAGE_SIZE } : undefined,
+                    data: {
+                        commits: nodes.slice(start, end),
+                        // Used for restoring the state when navigating back
+                        totalCount: nodes.length,
+                    },
+                    error: result.error,
+                }
+            },
+
+            createRestoreStrategy(api) {
+                return new OverwriteRestoreStrategy(api, data => ({ first: data.totalCount }))
+            },
+        }),
+        diffPagination: createPagination({
             client,
             query: RepositoryComparisonDiffs,
             variables: {

@@ -5,7 +5,7 @@ import { readable, derived, type Readable } from 'svelte/store'
 import { SourcegraphURL } from '@sourcegraph/common'
 
 import { CodyContextFiltersSchema, getFiltersFromCodyContextFilters } from '$lib/cody/config'
-import { getGraphQLClient, infinityQuery, type GraphQLClient, IncrementalRestoreStrategy } from '$lib/graphql'
+import { getGraphQLClient, type GraphQLClient, IncrementalRestoreStrategy, createPagination } from '$lib/graphql'
 import { ROOT_PATH, fetchSidebarFileTree } from '$lib/repo/api/tree'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
@@ -51,7 +51,7 @@ export const load: LayoutLoad = async ({ parent, params, url }) => {
             )
             .then(result => result.data?.repository?.lastCommit?.ancestors.nodes[0]),
         // Fetches the most recent commits for current blob, tree or repo root
-        commitHistory: infinityQuery({
+        historyPagination: createPagination({
             client,
             query: GitHistoryQuery,
             variables: resolvedRevision.then(revspec => ({

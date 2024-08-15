@@ -14,16 +14,16 @@
 
     export let data: PageData
 
-    export const snapshot: Snapshot<{ tags: ReturnType<typeof data.tagsQuery.capture>; scroller: ScrollerCapture }> = {
+    export const snapshot: Snapshot<{ tags: ReturnType<typeof data.tagsPagination.capture>; scroller: ScrollerCapture }> = {
         capture() {
             return {
-                tags: data.tagsQuery.capture(),
+                tags: data.tagsPagination.capture(),
                 scroller: scroller.capture(),
             }
         },
         async restore(snapshot) {
             if (snapshot?.tags && get(navigating)?.type === 'popstate') {
-                await data.tagsQuery?.restore(snapshot.tags)
+                await data.tagsPagination?.restore(snapshot.tags)
             }
             scroller.restore(snapshot.scroller)
         },
@@ -32,8 +32,8 @@
     let scroller: Scroller
 
     $: query = data.query
-    $: tagsQuery = data.tagsQuery
-    $: tags = $tagsQuery.data
+    $: tagsPagination = data.tagsPagination
+    $: tags = $tagsPagination.data
 </script>
 
 <svelte:head>
@@ -45,17 +45,17 @@
         <Input type="search" name="query" placeholder="Search tags" value={query} autofocus />
         <Button variant="primary" type="submit">Search</Button>
     </form>
-    <Scroller bind:this={scroller} margin={600} on:more={tagsQuery.fetchMore}>
+    <Scroller bind:this={scroller} margin={600} on:more={tagsPagination.fetchMore}>
         <div class="main">
             {#if tags && tags.nodes.length > 0}
                 <GitReferencesTable references={tags.nodes} referenceType={GitRefType.GIT_TAG} />
             {/if}
             <div>
-                {#if $tagsQuery.fetching}
+                {#if $tagsPagination.loading}
                     <LoadingSpinner />
-                {:else if $tagsQuery.error}
+                {:else if $tagsPagination.error}
                     <Alert variant="danger">
-                        Unable to load tags: {$tagsQuery.error.message}
+                        Unable to load tags: {$tagsPagination.error.message}
                     </Alert>
                 {:else if !tags || tags.nodes.length === 0}
                     <Alert variant="info">No tags found</Alert>

@@ -12,7 +12,6 @@
     import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
     import Scroller, { type Capture } from '$lib/Scroller.svelte'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
-    import { createPromiseStore } from '$lib/utils'
     import { Alert } from '$lib/wildcard'
     import Button from '$lib/wildcard/Button.svelte'
 
@@ -22,19 +21,24 @@
 
     export const snapshot: Snapshot<{
         scroller: Capture
-        diffs: ReturnType<NonNullable<PageData['diffQuery']>['capture']>
+        diffPagination: ReturnType<NonNullable<PageData['diffPagination']>['capture']>
+        commitsPagination: ReturnType<NonNullable<PageData['commitsPagination']>['capture']>
         expandedDiffs: Array<[number, boolean]>
     }> = {
         capture() {
             return {
                 scroller: scroller.capture(),
-                diffs: data.diffQuery?.capture(),
+                diffPagination: data.diffPagination?.capture(),
+                commitsPagination: data.commitsPagination?.capture(),
                 expandedDiffs: expandedDiffsSnapshot,
             }
         },
         async restore(snapshot) {
             expandedDiffs = new Map(snapshot.expandedDiffs)
-            await data.diffQuery?.restore(snapshot.diffs)
+            await Promise.all([
+                data.commitsPagination?.restore(snapshot.commitsPagination),
+                data.diffPagination?.restore(snapshot.diffPagination),
+            ])
             scroller.restore(snapshot.scroller)
         },
     }
@@ -46,12 +50,6 @@
                 rangeSpec: `${baseRevision}...${headRevision}`,
             })
         )
-    }
-
-    function handleCommitPage(page: number): void {
-        const url = new URL($page.url)
-        url.searchParams.set('p', page.toString())
-        goto(url)
     }
 
     onMount(() => {
@@ -68,8 +66,8 @@
             // (intentionally) blocking page rendering.
             // todo: consider removing this when we have a page wide solution
             // for showing that a navigation is in progress.
-            commits.reset()
-            diffQuery?.reset()
+            commitsPagination?.reset()
+            diffPagination?.reset()
         }
 
         expandedDiffsSnapshot = Array.from(expandedDiffs.entries())
@@ -79,11 +77,10 @@
     let scroller: Scroller
     let expandedDiffs = new Map<number, boolean>()
     let expandedDiffsSnapshot: Array<[number, boolean]> = []
-    let commits = createPromiseStore<Awaited<PageData['commits']>>()
 
-    $: commits.set(data.commits)
-    $: diffQuery = data.diffQuery
-    $: diffs = $diffQuery?.data
+    $: commitsPagination = data.commitsPagination
+    $: diffPagination = data.diffPagination
+    $: diffs = $diffPagination?.data
 </script>
 
 <svelte:head>
@@ -137,48 +134,64 @@
 <hr />
 
 <section>
-    <Scroller bind:this={scroller} on:more={diffQuery?.fetchMore} margin={400}>
+    <Scroller bind:this={scroller} on:more={diffPagination?.fetchMore} margin={400}>
         <div class="wrapper">
             {#if data.error}
                 <Alert variant="danger">{data.error.message}</Alert>
-            {:else if !$commits.pending && !$commits.error && (!$commits.value || $commits.value.commits.length === 0)}
+            {:else if !$commitsPagination || (!$commitsPagination.error && !$commitsPagination.loading && !$commitsPagination.data?.commits.length)}
                 <Alert variant="info">No commits found between the selected revisions.</Alert>
-            {:else}
+            {:else if $commitsPagination}
                 <div class="commits">
                     <h3>Commits</h3>
-                    {#if $commits.value}
-                        {@const previousPage = $commits.value.previousPage}
-                        {@const nextPage = $commits.value.nextPage}
+                    {#if $commitsPagination.data}
+                        {@const hasNextPage = !!$commitsPagination.nextVariables}
+                        {@const hasPrevPage = !!$commitsPagination.prevVariables}
 
                         <ul>
-                            {#each $commits.value.commits as commit}
+                            {#each $commitsPagination.data.commits as commit}
                                 <li>
                                     <Commit {commit} />
                                 </li>
                             {/each}
                         </ul>
-                        {#if previousPage || nextPage}
-                            <div class="controls">
-                                <Button
-                                    variant="secondary"
-                                    on:click={previousPage ? () => handleCommitPage(previousPage) : undefined}
-                                    disabled={!previousPage || $commits.pending}
+                        <div class="controls" class:hidden={!(hasNextPage || hasPrevPage)}>
+                            <Button variant="secondary">
+                                <button
+                                    slot="custom"
+                                    let:buttonClass
+                                    class={buttonClass}
+                                    on:focus={hasPrevPage ? () => commitsPagination?.fetch('prev', true) : undefined}
+                                    on:mouseover={hasPrevPage
+                                        ? () => commitsPagination?.fetch('prev', true)
+                                        : undefined}
+                                    on:click={hasPrevPage ? () => commitsPagination?.fetch('prev') : undefined}
+                                    disabled={!hasPrevPage || $commitsPagination.loading}
                                 >
                                     <Icon icon={ILucideChevronLeft} inline aria-hidden /> Previous
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    on:click={nextPage ? () => handleCommitPage(nextPage) : undefined}
-                                    disabled={!nextPage || $commits.pending}
+                                </button>
+                            </Button>
+                            <Button variant="secondary">
+                                <button
+                                    slot="custom"
+                                    let:buttonClass
+                                    class={buttonClass}
+                                    on:focus={hasNextPage ? () => commitsPagination?.fetch('next', true) : undefined}
+                                    on:mouseover={hasNextPage
+                                        ? () => commitsPagination?.fetch('next', true)
+                                        : undefined}
+                                    on:click={hasNextPage ? () => commitsPagination?.fetch('next') : undefined}
+                                    disabled={!hasNextPage || $commitsPagination.loading}
                                 >
                                     Next <Icon icon={ILucideChevronRight} inline aria-hidden />
-                                </Button>
-                            </div>
-                        {/if}
-                    {:else if $commits.pending}
+                                </button>
+                            </Button>
+                        </div>
+                    {:else if $commitsPagination.loading}
                         <LoadingSpinner />
-                    {:else if $commits.error}
-                        <Alert variant="warning">Unable to fetch commit information: {$commits.error.message}</Alert>
+                    {:else if $commitsPagination.error}
+                        <Alert variant="warning"
+                            >Unable to fetch commit information: {$commitsPagination.error.message}</Alert
+                        >
                     {/if}
                 </div>
             {/if}
@@ -200,12 +213,12 @@
                         {/each}
                     </ul>
                 {/if}
-                {#if $diffQuery?.fetching}
+                {#if $diffPagination?.loading}
                     <LoadingSpinner />
-                {:else if $diffQuery?.error}
+                {:else if $diffPagination?.error}
                     <div class="error">
                         <Alert variant="danger">
-                            Unable to fetch file diffs: {$diffQuery.error.message}
+                            Unable to fetch file diffs: {$diffPagination.error.message}
                         </Alert>
                     </div>
                 {/if}
@@ -273,5 +286,9 @@
         li {
             margin-bottom: 1rem;
         }
+    }
+
+    .hidden {
+        display: none;
     }
 </style>

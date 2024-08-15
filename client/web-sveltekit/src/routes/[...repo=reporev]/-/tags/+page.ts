@@ -1,4 +1,4 @@
-import { OverwriteRestoreStrategy, getGraphQLClient, infinityQuery } from '$lib/graphql'
+import { OverwriteRestoreStrategy, createPagination, getGraphQLClient } from '$lib/graphql'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
@@ -13,7 +13,7 @@ export const load: PageLoad = ({ params, url }) => {
 
     return {
         query,
-        tagsQuery: infinityQuery({
+        tagsPagination: createPagination({
             client,
             query: TagsPage_TagsQuery,
             variables: {

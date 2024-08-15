@@ -2,14 +2,14 @@ import { type AnyVariables, Client, type OperationResult, CombinedError, cacheEx
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
 import { pipe, filter, map, merge } from 'wonka'
 
-import { IncrementalRestoreStrategy, infinityQuery } from './urql'
+import { IncrementalRestoreStrategy, createPagination } from './urql'
 
-describe('infinityQuery', () => {
+describe('createPagination', () => {
     function getMockClient(responses: Partial<OperationResult<any, AnyVariables>>[]): Client {
         return new Client({
             url: '#testingonly',
             exchanges: [
-                cacheExchange, // This is required because infiniteQuery expects that a cache exchange is present
+                cacheExchange, // This is required because IncrementalRestoreStrategy expects that a cache exchange is present
                 ({ forward }) =>
                     operations$ => {
                         const mockResults$ = pipe(
@@ -66,8 +66,8 @@ describe('infinityQuery', () => {
         })
     }
 
-    function getQuery(client: Client) {
-        return infinityQuery({
+    function getPagination(client: Client) {
+        return createPagination({
             client,
             query: 'query { list { nodes { id } } pageInfo { hasNextPage, endCursor } } }',
             variables: {
@@ -92,7 +92,7 @@ describe('infinityQuery', () => {
         })
     }
 
-    let query: ReturnType<typeof getQuery>
+    let query: ReturnType<typeof getPagination>
 
     beforeEach(() => {
         vi.useFakeTimers()
@@ -131,7 +131,7 @@ describe('infinityQuery', () => {
                 },
             },
         ])
-        query = getQuery(client)
+        query = getPagination(client)
     })
 
     afterEach(() => {
@@ -144,7 +144,7 @@ describe('infinityQuery', () => {
 
         await vi.runAllTimersAsync()
 
-        // 1. call: fetching -> true
+        // 1. call: loading -> true
         // 2. call: result
         expect(subscribe).toHaveBeenCalledTimes(2)
         expect(subscribe.mock.calls[0][0]).toMatchObject({
@@ -159,10 +159,10 @@ describe('infinityQuery', () => {
         })
 
         // Fetch more data
-        query.fetchMore()
+        query.fetch('next')
         await vi.runAllTimersAsync()
 
-        // 3. call: fetching -> true
+        // 3. call: loading -> true
         // 4. call: result
         expect(subscribe).toHaveBeenCalledTimes(4)
         expect(subscribe.mock.calls[2][0]).toMatchObject({

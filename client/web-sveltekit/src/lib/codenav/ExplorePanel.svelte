@@ -194,7 +194,7 @@
             afterCursor: null,
         }
 
-        return infinityQuery({
+        return createPagination({
             client,
             query: ExplorePanel_Usages,
             variables: baseVariables,
@@ -240,7 +240,7 @@
     import { getContext, setContext } from 'svelte'
     import { type Writable } from 'svelte/store'
 
-    import { infinityQuery, type GraphQLClient, type InfinityQueryStore } from '$lib/graphql'
+    import { type GraphQLClient, createPagination, type Pagination } from '$lib/graphql'
     import { SymbolUsageKind } from '$lib/graphql-types'
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
@@ -260,7 +260,7 @@
     import ExplorePanelFileUsages from './ExplorePanelFileUsages.svelte'
 
     export let inputs: Writable<ExplorePanelInputs>
-    export let connection: InfinityQueryStore<ExplorePanel_Usage[], ExplorePanel_UsagesVariables> | undefined
+    export let connection: Pagination<ExplorePanel_Usage[], ExplorePanel_UsagesVariables> | undefined
     export let treeState: Writable<SingleSelectTreeState>
 
     $: setTreeContext(treeState)
@@ -279,7 +279,7 @@
         })
     }
 
-    $: loading = $connection?.fetching
+    $: loading = $connection?.loading
     $: usages = $connection?.data ?? []
     $: kindFilteredUsages = usages.filter(matchesUsageKind($inputs.usageKindFilter))
     $: pathGroups = groupUsages(kindFilteredUsages)

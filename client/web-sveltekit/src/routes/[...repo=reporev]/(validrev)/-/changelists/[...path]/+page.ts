@@ -1,6 +1,6 @@
 import { parseRepoRevision } from '@sourcegraph/shared/src/util/url'
 
-import { IncrementalRestoreStrategy, getGraphQLClient, infinityQuery } from '$lib/graphql'
+import { IncrementalRestoreStrategy, createPagination, getGraphQLClient } from '$lib/graphql'
 import { resolveRevision } from '$lib/repo/utils'
 
 import type { PageLoad } from './$types'
@@ -14,7 +14,7 @@ export const load: PageLoad = ({ parent, params }) => {
     const path = params.path ? decodeURIComponent(params.path) : ''
     const resolvedRevision = resolveRevision(parent, revision)
 
-    const changelistsQuery = infinityQuery({
+    const changelistsPagination = createPagination({
         client,
         query: ChangelistsPage_ChangelistsQuery,
         variables: resolvedRevision.then(revision => ({
@@ -45,7 +45,7 @@ export const load: PageLoad = ({ parent, params }) => {
     })
 
     return {
-        changelistsQuery,
+        changelistsPagination,
         path,
     }
 }

@@ -15,18 +15,18 @@
     export let data: PageData
 
     export const snapshot: Snapshot<{
-        branches: ReturnType<typeof data.branchesQuery.capture>
+        branchesPagination: ReturnType<PageData['branchesPagination']['capture']>
         scroller: ScrollerCapture
     }> = {
         capture() {
             return {
-                branches: data.branchesQuery.capture(),
+                branchesPagination: data.branchesPagination.capture(),
                 scroller: scroller.capture(),
             }
         },
         async restore(snapshot) {
             if (get(navigating)?.type === 'popstate') {
-                await data.branchesQuery?.restore(snapshot.branches)
+                await data.branchesPagination?.restore(snapshot.branchesPagination)
             }
             scroller.restore(snapshot.scroller)
         },
@@ -35,8 +35,8 @@
     let scroller: Scroller
 
     $: query = data.query
-    $: branchesQuery = data.branchesQuery
-    $: branches = $branchesQuery.data
+    $: branchesPagination = data.branchesPagination
+    $: branches = $branchesPagination.data
 </script>
 
 <svelte:head>
@@ -47,17 +47,17 @@
     <Input type="search" name="query" placeholder="Search branches" value={query} autofocus />
     <Button variant="primary" type="submit">Search</Button>
 </form>
-<Scroller bind:this={scroller} margin={600} on:more={branchesQuery.fetchMore}>
+<Scroller bind:this={scroller} margin={600} on:more={branchesPagination.fetchMore}>
     <div class="main">
         {#if branches && branches.nodes.length > 0}
             <GitReferencesTable references={branches.nodes} referenceType={GitRefType.GIT_BRANCH} />
         {/if}
         <div>
-            {#if $branchesQuery.fetching}
+            {#if $branchesPagination.loading}
                 <LoadingSpinner />
-            {:else if $branchesQuery.error}
+            {:else if $branchesPagination.error}
                 <Alert variant="danger">
-                    Unable to load branches: {$branchesQuery.error.message}
+                    Unable to load branches: {$branchesPagination.error.message}
                 </Alert>
             {:else if !branches || branches.nodes.length === 0}
                 <Alert variant="info">No branches found</Alert>
@@ -98,6 +98,7 @@
         color: var(--text-muted);
         // Unset `div` width: 100% to allow the footer to be centered
         width: initial;
+        align-self: center;
     }
 
     @media (--mobile) {
