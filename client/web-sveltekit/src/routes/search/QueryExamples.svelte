@@ -17,8 +17,8 @@
     export let showQueryPage = false
     export let queryExample: Readable<QueryExample | null>
 
-    const queryExamplesForKeywordSearch = showQueryExamplesForKeywordSearch({ final: $settings, subjects: [] })
-    const patternTypeForQueryLinks = queryExamplesForKeywordSearch
+    $: queryExamplesForKeywordSearch = showQueryExamplesForKeywordSearch({ final: $settings, subjects: [] })
+    $: patternTypeForQueryLinks = queryExamplesForKeywordSearch
         ? SearchPatternType.keyword
         : SearchPatternType.standard
 
