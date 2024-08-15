@@ -27,7 +27,8 @@
     "@sourcegraph/http-client": "workspace:*",
     "@sourcegraph/telemetry": "^0.16.0",
     "@sourcegraph/template-parser": "workspace:*",
-    "@sourcegraph/wildcard": "workspace:*"
+    "@sourcegraph/wildcard": "workspace:*",
+    "typescript-parsec": "^0.3.4"
   },
   "sideEffects": true
 }
