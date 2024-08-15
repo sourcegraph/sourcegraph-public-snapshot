@@ -69,5 +69,5 @@ msp_delivery(
     name = "msp_deploy",
     gcp_project = "pings-prod-2f4f73edf1db",
     msp_service_id = "pings",
-    repository = "index.docker.io/sourcegraph/pings",
+    repository = "us.gcr.io/sourcegraph-dev/pings",
 )
