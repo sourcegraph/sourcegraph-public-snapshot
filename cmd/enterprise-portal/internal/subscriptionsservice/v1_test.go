@@ -262,23 +262,23 @@ func TestHandlerV1_CreateEnterpriseSubscription(t *testing.T) {
 			},
 			wantError: autogold.Expect("invalid_argument: instance_type is required"),
 		},
-		// {
-		// 	name: "insufficient scopes",
-		// 	tokenScopes: scopes.Scopes{
-		// 		samsm2m.EnterprisePortalScope(
-		// 			scopes.PermissionEnterprisePortalSubscription,
-		// 			scopes.ActionRead,
-		// 		),
-		// 	},
-		// 	create: &subscriptionsv1.CreateEnterpriseSubscriptionRequest{
-		// 		Subscription: &subscriptionsv1.EnterpriseSubscription{
-		// 			Id:           "not-allowed",
-		// 			DisplayName:  t.Name(),
-		// 			InstanceType: subscriptionsv1.EnterpriseSubscriptionInstanceType_ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_INTERNAL,
-		// 		},
-		// 	},
-		// 	wantError: autogold.Expect("permission_denied: insufficient scope"),
-		// },
+		{
+			name: "insufficient scopes",
+			tokenScopes: scopes.Scopes{
+				samsm2m.EnterprisePortalScope(
+					scopes.PermissionEnterprisePortalSubscription,
+					scopes.ActionRead,
+				),
+			},
+			create: &subscriptionsv1.CreateEnterpriseSubscriptionRequest{
+				Subscription: &subscriptionsv1.EnterpriseSubscription{
+					Id:           "not-allowed",
+					DisplayName:  t.Name(),
+					InstanceType: subscriptionsv1.EnterpriseSubscriptionInstanceType_ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_INTERNAL,
+				},
+			},
+			wantError: autogold.Expect("permission_denied: insufficient scope"),
+		},
 		{
 			name: "with required params only",
 			create: &subscriptionsv1.CreateEnterpriseSubscriptionRequest{
@@ -350,10 +350,6 @@ func TestHandlerV1_CreateEnterpriseSubscription(t *testing.T) {
 			tc.tokenScopes = scopes.Scopes{
 				samsm2m.EnterprisePortalScope(
 					scopes.PermissionEnterprisePortalSubscription,
-					scopes.ActionRead,
-				),
-				samsm2m.EnterprisePortalScope(
-					scopes.PermissionEnterprisePortalSubscription,
 					scopes.ActionWrite,
 				),
 			}
@@ -402,22 +398,22 @@ func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 		wantUpdateOpts autogold.Value
 		wantError      autogold.Value
 	}{
-		// {
-		// 	name: "insufficient scopes",
-		// 	tokenScopes: scopes.Scopes{
-		// 		samsm2m.EnterprisePortalScope(
-		// 			scopes.PermissionEnterprisePortalSubscription,
-		// 			scopes.ActionRead,
-		// 		),
-		// 	},
-		// 	update: &subscriptionsv1.UpdateEnterpriseSubscriptionRequest{
-		// 		Subscription: &subscriptionsv1.EnterpriseSubscription{
-		// 			Id: mockSubscriptionID,
-		// 		},
-		// 		UpdateMask: nil,
-		// 	},
-		// 	wantError: autogold.Expect("permission_denied: insufficient scope"),
-		// },
+		{
+			name: "insufficient scopes",
+			tokenScopes: scopes.Scopes{
+				samsm2m.EnterprisePortalScope(
+					scopes.PermissionEnterprisePortalSubscription,
+					scopes.ActionRead,
+				),
+			},
+			update: &subscriptionsv1.UpdateEnterpriseSubscriptionRequest{
+				Subscription: &subscriptionsv1.EnterpriseSubscription{
+					Id: mockSubscriptionID,
+				},
+				UpdateMask: nil,
+			},
+			wantError: autogold.Expect("permission_denied: insufficient scope"),
+		},
 		{
 			name: "subscription ID is required",
 			update: &subscriptionsv1.UpdateEnterpriseSubscriptionRequest{
@@ -570,10 +566,6 @@ func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 						scopes.PermissionEnterprisePortalSubscription,
 						scopes.ActionWrite,
 					),
-					samsm2m.EnterprisePortalScope(
-						scopes.PermissionEnterprisePortalSubscription,
-						scopes.ActionRead,
-					),
 				}
 			}
 			h := newTestHandlerV1(t, tc.tokenScopes...)
@@ -620,17 +612,17 @@ func TestHandlerV1_ArchiveEnterpriseSubscription(t *testing.T) {
 		wantUpsertOpts autogold.Value
 		wantError      autogold.Value
 	}{
-		// {
-		// 	name: "insufficient scopes",
-		// 	tokenScopes: scopes.Scopes{
-		// 		samsm2m.EnterprisePortalScope(
-		// 			scopes.PermissionEnterprisePortalSubscription,
-		// 			scopes.ActionRead,
-		// 		),
-		// 	},
-		// 	archive:   &subscriptionsv1.ArchiveEnterpriseSubscriptionRequest{},
-		// 	wantError: autogold.Expect("permission_denied: insufficient scope"),
-		// },
+		{
+			name: "insufficient scopes",
+			tokenScopes: scopes.Scopes{
+				samsm2m.EnterprisePortalScope(
+					scopes.PermissionEnterprisePortalSubscription,
+					scopes.ActionRead,
+				),
+			},
+			archive:   &subscriptionsv1.ArchiveEnterpriseSubscriptionRequest{},
+			wantError: autogold.Expect("permission_denied: insufficient scope"),
+		},
 		{
 			name:      "subscription ID is required",
 			archive:   &subscriptionsv1.ArchiveEnterpriseSubscriptionRequest{},
@@ -667,10 +659,6 @@ func TestHandlerV1_ArchiveEnterpriseSubscription(t *testing.T) {
 					samsm2m.EnterprisePortalScope(
 						scopes.PermissionEnterprisePortalSubscription,
 						scopes.ActionWrite,
-					),
-					samsm2m.EnterprisePortalScope(
-						scopes.PermissionEnterprisePortalSubscription,
-						scopes.ActionRead,
 					),
 				}
 			}
@@ -750,17 +738,17 @@ func TestHandlerV1_CreateEnterpriseSubscriptionLicense(t *testing.T) {
 		wantKeyOpts autogold.Value
 		wantError   autogold.Value
 	}{
-		// {
-		// 	name: "insufficient scopes",
-		// 	tokenScopes: scopes.Scopes{
-		// 		samsm2m.EnterprisePortalScope(
-		// 			scopes.PermissionEnterprisePortalSubscription,
-		// 			scopes.ActionRead,
-		// 		),
-		// 	},
-		// 	create:    &subscriptionsv1.CreateEnterpriseSubscriptionLicenseRequest{},
-		// 	wantError: autogold.Expect("permission_denied: insufficient scope"),
-		// },
+		{
+			name: "insufficient scopes",
+			tokenScopes: scopes.Scopes{
+				samsm2m.EnterprisePortalScope(
+					scopes.PermissionEnterprisePortalSubscription,
+					scopes.ActionRead,
+				),
+			},
+			create:    &subscriptionsv1.CreateEnterpriseSubscriptionLicenseRequest{},
+			wantError: autogold.Expect("permission_denied: insufficient scope"),
+		},
 		{
 			name:      "subscription ID is required",
 			create:    &subscriptionsv1.CreateEnterpriseSubscriptionLicenseRequest{},
@@ -867,10 +855,6 @@ func TestHandlerV1_CreateEnterpriseSubscriptionLicense(t *testing.T) {
 						scopes.PermissionEnterprisePortalSubscription,
 						scopes.ActionWrite,
 					),
-					samsm2m.EnterprisePortalScope(
-						scopes.PermissionEnterprisePortalSubscription,
-						scopes.ActionRead,
-					),
 				}
 			}
 			h := newTestHandlerV1(t, tc.tokenScopes...)
@@ -945,17 +929,17 @@ func TestHandlerV1_RevokeEnterpriseSubscriptionLicense(t *testing.T) {
 		wantRevokeOpts autogold.Value
 		wantError      autogold.Value
 	}{
-		// {
-		// 	name: "insufficient scopes",
-		// 	tokenScopes: scopes.Scopes{
-		// 		samsm2m.EnterprisePortalScope(
-		// 			scopes.PermissionEnterprisePortalSubscription,
-		// 			scopes.ActionRead,
-		// 		),
-		// 	},
-		// 	revoke:    &subscriptionsv1.RevokeEnterpriseSubscriptionLicenseRequest{},
-		// 	wantError: autogold.Expect("permission_denied: insufficient scope"),
-		// },
+		{
+			name: "insufficient scopes",
+			tokenScopes: scopes.Scopes{
+				samsm2m.EnterprisePortalScope(
+					scopes.PermissionEnterprisePortalSubscription,
+					scopes.ActionRead,
+				),
+			},
+			revoke:    &subscriptionsv1.RevokeEnterpriseSubscriptionLicenseRequest{},
+			wantError: autogold.Expect("permission_denied: insufficient scope"),
+		},
 		{
 			name:      "license ID is required",
 			revoke:    &subscriptionsv1.RevokeEnterpriseSubscriptionLicenseRequest{},
@@ -995,10 +979,6 @@ func TestHandlerV1_RevokeEnterpriseSubscriptionLicense(t *testing.T) {
 					samsm2m.EnterprisePortalScope(
 						scopes.PermissionEnterprisePortalSubscription,
 						scopes.ActionWrite,
-					),
-					samsm2m.EnterprisePortalScope(
-						scopes.PermissionEnterprisePortalSubscription,
-						scopes.ActionRead,
 					),
 				}
 			}

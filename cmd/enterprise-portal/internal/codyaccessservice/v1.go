@@ -153,7 +153,7 @@ func (s *HandlerV1) UpdateCodyGatewayAccess(ctx context.Context, req *connect.Re
 
 	// 🚨 SECURITY: Require approrpiate M2M scope.
 	requiredScope := samsm2m.EnterprisePortalScope(
-		scopes.PermissionEnterprisePortalCodyAccess, scopes.ActionRead)
+		scopes.PermissionEnterprisePortalCodyAccess, scopes.ActionWrite)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
