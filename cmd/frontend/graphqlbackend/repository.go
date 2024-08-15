@@ -607,6 +607,10 @@ func (r *schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	URL string
 },
 ) (*EmptyResponse, error) {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	if args.Name != nil {
 		args.URI = args.Name
 	}
