@@ -2,16 +2,23 @@ package licensecheck
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+
+	subscriptionlicensechecksv1connect "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptionlicensechecks/v1/v1connect"
 )
+
+var baseUrl = env.Get("LICENSE_CHECK_API_URL", "https://enterprise-portal.sourcegraph.com", "Base URL for license check API")
 
 type licenseCheckJob struct{}
 
@@ -42,9 +49,29 @@ func (s *licenseCheckJob) Routines(_ context.Context, observationCtx *observatio
 	}
 
 	if !dotcom.SourcegraphDotComMode() {
+		var checks subscriptionlicensechecksv1connect.SubscriptionLicenseChecksServiceClient
+		ep, err := url.Parse(baseUrl)
+		if err == nil && ep.Host == "127.0.0.1" {
+			checks = subscriptionlicensechecksv1connect.NewSubscriptionLicenseChecksServiceClient(
+				httpcli.InternalDoer,
+				baseUrl,
+			)
+		} else {
+			checks = subscriptionlicensechecksv1connect.NewSubscriptionLicenseChecksServiceClient(
+				httpcli.ExternalDoer,
+				baseUrl,
+			)
+		}
 		routines = append(
 			routines,
-			newLicenseChecker(context.Background(), observationCtx.Logger, db, redispool.Store),
+			newLicenseChecker(
+				context.Background(),
+				observationCtx.Logger,
+				db,
+				redispool.Store,
+				conf.DefaultClient(),
+				checks,
+			),
 		)
 	}
 

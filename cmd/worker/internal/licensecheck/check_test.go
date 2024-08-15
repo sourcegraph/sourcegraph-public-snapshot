@@ -1,26 +1,29 @@
 package licensecheck
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"io"
-	"net/http"
-	"net/url"
 	"testing"
 	"time"
 
+	"connectrpc.com/connect"
 	"github.com/derision-test/glock"
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegraph/sourcegraph/schema"
+
+	subscriptionlicensechecksv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptionlicensechecks/v1"
 )
 
 func Test_calcDurationToWaitForNextHandle(t *testing.T) {
@@ -89,19 +92,6 @@ func Test_calcDurationToWaitForNextHandle(t *testing.T) {
 	}
 }
 
-func mockDotcomURL(t *testing.T, u *string) {
-	t.Helper()
-
-	origBaseURL := baseUrl
-	t.Cleanup(func() {
-		baseUrl = origBaseURL
-	})
-
-	if u != nil {
-		baseUrl = *u
-	}
-}
-
 func Test_licenseChecker(t *testing.T) {
 	kv := rcache.SetupForTest(t)
 
@@ -118,11 +108,6 @@ func Test_licenseChecker(t *testing.T) {
 		"skips check if license is air gapped": {
 			license: &license.Info{
 				Tags: []string{string(licensing.FeatureAllowAirGapped)},
-			},
-		},
-		"skips check on dev license": {
-			license: &license.Info{
-				Tags: []string{"dev"},
 			},
 		},
 		"skips check on free license": {
@@ -142,19 +127,16 @@ func Test_licenseChecker(t *testing.T) {
 				licensing.MockGetConfiguredProductLicenseInfo = defaultMockGetLicense
 			})
 
-			doer := &mockDoer{
-				status:   '1',
-				response: []byte(``),
-			}
 			mockDB := dbmocks.NewMockDB()
 			gs := dbmocks.NewMockGlobalStateStore()
 			mockDB.GlobalStateFunc.SetDefaultReturn(gs)
+			checks := NewMockSubscriptionLicenseChecksServiceClient()
 			gs.GetFunc.SetDefaultReturn(database.GlobalState{
 				SiteID: siteID,
 			}, nil)
 			handler := licenseChecker{
 				db:     mockDB,
-				doer:   doer,
+				checks: checks,
 				logger: logtest.NoOp(t),
 				kv:     kv,
 			}
@@ -163,7 +145,7 @@ func Test_licenseChecker(t *testing.T) {
 			require.NoError(t, err)
 
 			// check doer NOT called
-			require.False(t, doer.DoCalled)
+			mockrequire.NotCalled(t, checks.CheckLicenseKeyFunc)
 
 			// check result was set to true
 			valid, err := kv.Get(licensing.LicenseValidityStoreKey).Bool()
@@ -178,39 +160,35 @@ func Test_licenseChecker(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		response []byte
-		status   int
-		want     bool
-		err      bool
-		baseUrl  *string
-		reason   *string
+		response      *subscriptionlicensechecksv1.CheckLicenseKeyResponse
+		responseError error
+
+		wantValid bool
+		wantError autogold.Value
+		baseUrl   *string
+		reason    *string
 	}{
-		"returns error if unable to make a request to license server": {
-			response: []byte(`{"error": "some error"}`),
-			status:   http.StatusInternalServerError,
-			err:      true,
+		"returns error if unexpected error": {
+			responseError: errors.New("unexpected error"),
+			wantError:     autogold.Expect("unexpected error"),
 		},
-		"returns error if got error": {
-			response: []byte(`{"error": "some error"}`),
-			status:   http.StatusOK,
-			err:      true,
+		"is invalid if error CodeNotFound": {
+			responseError: connect.NewError(connect.CodeNotFound, errors.New("not found")),
+			wantValid:     false,
 		},
 		`returns correct result for "true"`: {
-			response: []byte(`{"data": {"is_valid": true}}`),
-			status:   http.StatusOK,
-			want:     true,
+			response: &subscriptionlicensechecksv1.CheckLicenseKeyResponse{
+				Valid: true,
+			},
+			wantValid: true,
 		},
 		`returns correct result for "false"`: {
-			response: []byte(`{"data": {"is_valid": false, "reason": "some reason"}}`),
-			status:   http.StatusOK,
-			want:     false,
-			reason:   pointers.Ptr("some reason"),
-		},
-		`uses sourcegraph baseURL from env`: {
-			response: []byte(`{"data": {"is_valid": true}}`),
-			status:   http.StatusOK,
-			want:     true,
-			baseUrl:  pointers.Ptr("https://foo.bar"),
+			response: &subscriptionlicensechecksv1.CheckLicenseKeyResponse{
+				Valid:  false,
+				Reason: "some reason",
+			},
+			wantValid: false,
+			reason:    pointers.Ptr("some reason"),
 		},
 	}
 
@@ -225,12 +203,16 @@ func Test_licenseChecker(t *testing.T) {
 				licensing.MockGetConfiguredProductLicenseInfo = defaultMockGetLicense
 			})
 
-			mockDotcomURL(t, test.baseUrl)
+			confClient := conf.MockClient()
+			confClient.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+				LicenseKey: "license-key",
+			}})
 
-			doer := &mockDoer{
-				status:   test.status,
-				response: test.response,
-			}
+			checks := NewMockSubscriptionLicenseChecksServiceClient()
+			checks.CheckLicenseKeyFunc.SetDefaultReturn(
+				connect.NewResponse(test.response),
+				test.responseError,
+			)
 			mockDB := dbmocks.NewMockDB()
 			gs := dbmocks.NewMockGlobalStateStore()
 			mockDB.GlobalStateFunc.SetDefaultReturn(gs)
@@ -239,14 +221,16 @@ func Test_licenseChecker(t *testing.T) {
 			}, nil)
 			checker := licenseChecker{
 				db:     mockDB,
-				doer:   doer,
+				checks: checks,
 				logger: logtest.NoOp(t),
 				kv:     kv,
+				conf:   confClient,
 			}
 
 			err := checker.Handle(context.Background())
-			if test.err {
+			if test.wantError != nil {
 				require.Error(t, err)
+				test.wantError.Equal(t, err.Error())
 
 				// check result was NOT set
 				require.True(t, kv.Get(licensing.LicenseValidityStoreKey).IsNil())
@@ -256,7 +240,7 @@ func Test_licenseChecker(t *testing.T) {
 				// check result was set
 				got, err := kv.Get(licensing.LicenseValidityStoreKey).Bool()
 				require.NoError(t, err)
-				require.Equal(t, test.want, got)
+				require.Equal(t, test.wantValid, got)
 
 				// check result reason was set
 				if test.reason != nil {
@@ -266,43 +250,20 @@ func Test_licenseChecker(t *testing.T) {
 				}
 			}
 
-			// check last called at was set
-			lastCalledAt, err := kv.Get(lastCalledAtStoreKey).String()
-			require.NoError(t, err)
-			require.NotEmpty(t, lastCalledAt)
+			// check last called at was set if client did not error
+			if test.responseError == nil {
+				lastCalledAt, err := kv.Get(lastCalledAtStoreKey).String()
+				require.NoError(t, err)
+				require.NotEmpty(t, lastCalledAt)
+			}
 
 			// check doer with proper parameters
-			rUrl, _ := url.JoinPath(baseUrl, "/.api/license/check")
-			require.True(t, doer.DoCalled)
-			require.Equal(t, "POST", doer.Request.Method)
-			require.Equal(t, rUrl, doer.Request.URL.String())
-			require.Equal(t, "application/json", doer.Request.Header.Get("Content-Type"))
+			mockrequire.Called(t, checks.CheckLicenseKeyFunc)
+
 			// The token for the license.
-			require.Equal(t, "Bearer slk_e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", doer.Request.Header.Get("Authorization"))
-			var body struct {
-				SiteID string `json:"siteID"`
-			}
-			err = json.NewDecoder(doer.Request.Body).Decode(&body)
-			require.NoError(t, err)
-			require.Equal(t, siteID, body.SiteID)
+			args := checks.CheckLicenseKeyFunc.History()[0].Arg1
+			require.Equal(t, "license-key", args.Msg.LicenseKey)
+			require.Equal(t, siteID, args.Msg.InstanceId)
 		})
 	}
-}
-
-type mockDoer struct {
-	DoCalled bool
-	Request  *http.Request
-
-	status   int
-	response []byte
-}
-
-func (d *mockDoer) Do(req *http.Request) (*http.Response, error) {
-	d.DoCalled = true
-	d.Request = req
-
-	return &http.Response{
-		StatusCode: d.status,
-		Body:       io.NopCloser(bytes.NewReader(d.response)),
-	}, nil
 }

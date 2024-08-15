@@ -133,5 +133,6 @@ write_source_files(
         "//cmd/enterprise-portal/internal/codyaccessservice:generate_mocks",
         "//cmd/enterprise-portal/internal/routines/licenseexpiration:generate_mocks",
         "//cmd/enterprise-portal/internal/subscriptionlicensechecksservice:generate_mocks",
+        "//cmd/worker/internal/licensecheck:generate_mocks",
     ],
 )

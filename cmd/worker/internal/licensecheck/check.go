@@ -1,42 +1,50 @@
 package licensecheck
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"net/http"
-	"net/url"
 	"time"
 
+	"connectrpc.com/connect"
 	"github.com/derision-test/glock"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	subscriptionlicensechecksv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptionlicensechecks/v1"
+	subscriptionlicensechecksv1connect "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptionlicensechecks/v1/v1connect"
 )
 
-var (
-	baseUrl = env.Get("SOURCEGRAPH_API_URL", "https://sourcegraph.com", "Base URL for license check API")
-)
+type ConfClient interface {
+	Get() *conf.Unified
+}
 
 // newLicenseChecker returns a goroutine that periodically checks license validity
 // from dotcom and stores the result in redis.
 // It re-runs the check if the license key changes.
-func newLicenseChecker(ctx context.Context, logger log.Logger, db database.DB, kv redispool.KeyValue) goroutine.BackgroundRoutine {
+func newLicenseChecker(
+	ctx context.Context,
+	logger log.Logger,
+	db database.DB,
+	kv redispool.KeyValue,
+	confClient ConfClient,
+	checks subscriptionlicensechecksv1connect.SubscriptionLicenseChecksServiceClient,
+) goroutine.BackgroundRoutine {
+	conf.MockClient()
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
 		&licenseChecker{
 			db:     db,
-			doer:   httpcli.ExternalDoer,
 			logger: logger.Scoped("licenseChecker"),
 			kv:     kv,
+			conf:   confClient,
+			checks: checks,
 		},
 		goroutine.WithName("licensing.check-license-validity"),
 		goroutine.WithDescription("check if license is valid from sourcegraph.com"),
@@ -52,123 +60,99 @@ const (
 
 type licenseChecker struct {
 	db     database.DB
-	doer   httpcli.Doer
 	logger log.Logger
 	kv     redispool.KeyValue
+
+	conf   ConfClient
+	checks subscriptionlicensechecksv1connect.SubscriptionLicenseChecksServiceClient
 }
 
-func (l *licenseChecker) Handle(ctx context.Context) error {
-	l.logger.Debug("starting license check")
-
+func (l *licenseChecker) Handle(ctx context.Context) (err error) {
 	gs, err := l.db.GlobalState().Get(ctx)
 	if err != nil {
 		return errors.Wrap(err, "error reading global state from DB")
 	}
 	siteID := gs.SiteID
 
+	logger := trace.Logger(ctx, l.logger).
+		With(log.String("siteID", siteID))
+	logger.Debug("starting license check")
+
 	// skip if has explicitly allowed air-gapped feature
 	if err := licensing.Check(licensing.FeatureAllowAirGapped); err == nil {
-		l.logger.Debug("license is air-gapped, skipping check", log.String("siteID", siteID))
-		if err := l.kv.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339)); err != nil {
-			return err
-		}
-		if err := l.kv.Set(licensing.LicenseValidityStoreKey, true); err != nil {
-			return err
-		}
-		return nil
+		logger.Debug("license is air-gapped, skipping check", log.String("siteID", siteID))
+		return l.setLicenseCheckResult(true)
 	}
 
 	info, err := licensing.GetConfiguredProductLicenseInfo()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "parse configured license")
 	}
-	if info.HasTag("dev") || info.HasTag("internal") || info.Plan().IsFreePlan() {
-		l.logger.Debug("internal, dev, or free license, skipping license verification check")
-		if err := l.kv.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339)); err != nil {
-			return err
-		}
-		if err := l.kv.Set(licensing.LicenseValidityStoreKey, true); err != nil {
-			return err
-		}
-		return nil
+	if info.Plan().IsFreePlan() {
+		logger.Debug("free plan, skipping license verification check")
+		return l.setLicenseCheckResult(true)
 	}
 
 	// Check if the license key has changed and generate an auth token for the request.
+	licenseKey := l.conf.Get().LicenseKey
 	prevLicenseToken, _ := l.kv.Get(prevLicenseTokenKey).String()
-	licenseToken := license.GenerateLicenseKeyBasedAccessToken(conf.Get().LicenseKey)
+	licenseToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
 	// If the key hasn't changed, let's make sure we only hit this endpoint about
 	// every 12 hours.
 	if prevLicenseToken == licenseToken {
 		if waitDuration, _ := calcDurationSinceLastCalled(l.kv, glock.NewRealClock()); waitDuration > 0 {
-			l.logger.Debug("license key check is not due, skipping check", log.String("siteID", siteID))
+			logger.Debug("license key check is not due, skipping check")
 			return nil
 		}
 	}
 
 	// Continue running with new license key.
 	if err := l.kv.Set(prevLicenseTokenKey, licenseToken); err != nil {
-		l.logger.Error("error storing license token in redis", log.Error(err))
+		logger.Error("error storing license token in redis", log.Error(err))
 	}
 
-	if err := l.kv.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339)); err != nil {
-		return err
-	}
-
-	payload, err := json.Marshal(struct {
-		ClientSiteID string `json:"siteID"`
-	}{ClientSiteID: siteID})
+	resp, err := l.checks.CheckLicenseKey(ctx, connect.NewRequest(&subscriptionlicensechecksv1.CheckLicenseKeyRequest{
+		LicenseKey: licenseKey,
+		InstanceId: siteID,
+	}))
 	if err != nil {
+		var connectErr *connect.Error
+		if errors.As(err, &connectErr) {
+			switch connectErr.Code() {
+			case connect.CodeNotFound:
+				return l.setLicenseCheckResult(false)
+			}
+		}
+		logger.Warn("unexpected error while checking license validity", log.Error(err))
 		return err
 	}
 
-	u, err := url.JoinPath(baseUrl, "/.api/license/check")
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, u, bytes.NewBuffer(payload))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Authorization", "Bearer "+licenseToken)
-	req.Header.Set("Content-Type", "application/json")
-
-	res, err := l.doer.Do(req)
-	if err != nil {
-		l.logger.Warn("error while checking license validity", log.Error(err), log.String("siteID", siteID))
-		return err
-	}
-	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		l.logger.Warn("invalid http response while checking license validity", log.String("httpStatus", res.Status), log.String("siteID", siteID))
-		return errors.Newf("Failed to check license, status code: %d", res.StatusCode)
-	}
-
-	var body licensing.LicenseCheckResponse
-	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
-		l.logger.Warn("error while decoding license check response", log.Error(err), log.String("siteID", siteID))
-		return err
-	}
-
-	if body.Error != "" {
-		l.logger.Warn("error in license check", log.String("responseError", body.Error), log.String("siteID", siteID))
-		return errors.New(body.Error)
-	}
-
-	if body.Data == nil {
-		l.logger.Warn("no data returned from license check", log.String("siteID", siteID))
+	if resp == nil || resp.Msg == nil {
+		logger.Warn("no data returned from license check")
 		return errors.New("No data returned from license check")
 	}
 
 	// best effort, ignore errors here
-	_ = l.kv.Set(licensing.LicenseInvalidReason, body.Data.Reason)
+	_ = l.kv.Set(licensing.LicenseInvalidReason, resp.Msg.Reason)
 
-	if err := l.kv.Set(licensing.LicenseValidityStoreKey, body.Data.IsValid); err != nil {
+	if err := l.setLicenseCheckResult(resp.Msg.Valid); err != nil {
+		logger.Warn("set license check result", log.Error(err))
 		return err
 	}
 
-	l.logger.Debug("finished license check", log.String("siteID", siteID))
+	logger.Debug("finished license check")
+	return nil
+}
+
+// setLicenseCheckResult updates the last called timestamp and license validity
+// status in the key-value store. It returns an error if either operation fails.
+func (l *licenseChecker) setLicenseCheckResult(isLicenseValid bool) error {
+	if err := l.kv.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339)); err != nil {
+		return errors.Wrap(err, "set last license check time")
+	}
+	if err := l.kv.Set(licensing.LicenseValidityStoreKey, isLicenseValid); err != nil {
+		return errors.Wrapf(err, "set license validity state to %v", isLicenseValid)
+	}
 	return nil
 }
 

@@ -420,3 +420,9 @@
     - path: github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionlicensechecksservice
       interfaces:
         - StoreV1
+- filename: cmd/worker/internal/licensecheck/mocks_test.go
+  package: licensecheck
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptionlicensechecks/v1/v1connect
+      interfaces:
+        - SubscriptionLicenseChecksServiceClient
