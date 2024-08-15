@@ -178,7 +178,8 @@ func (i *Importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 	// Construct the conditions we need to apply during the subscription
 	// update
 	var conditions []subscriptions.CreateSubscriptionConditionOptions
-	if epSub, err := i.subscriptions.Get(ctx, dotcomSub.ID); err == nil {
+	epSub, err := i.subscriptions.Get(ctx, dotcomSub.ID)
+	if err == nil {
 		// No error - this subscription already exists.
 		tr.SetAttributes(attribute.Bool("already_imported", true))
 		if epSub.ArchivedAt == nil && dotcomSub.ArchivedAt != nil {
@@ -220,36 +221,37 @@ func (i *Importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 			})
 	}
 
-	// Apply updates to the subscription, creating it if it does not
-	// exist yet.
-	activeLicense := dotcomLicenses[0]
-	if _, err := i.subscriptions.Upsert(ctx, dotcomSub.ID,
-		subscriptions.UpsertSubscriptionOptions{
-			DisplayName: func() *sql.NullString {
-				for _, t := range activeLicense.Tags {
-					parts := strings.SplitN(t, ":", 2)
-					if len(parts) != 2 {
-						continue
+	// Apply updates to the subscription only if it doesn't exist yet.
+	if epSub == nil {
+		activeLicense := dotcomLicenses[0]
+		if _, err := i.subscriptions.Upsert(ctx, dotcomSub.ID,
+			subscriptions.UpsertSubscriptionOptions{
+				DisplayName: func() *sql.NullString {
+					for _, t := range activeLicense.Tags {
+						parts := strings.SplitN(t, ":", 2)
+						if len(parts) != 2 {
+							continue
+						}
+						if parts[0] == "customer" && len(parts[1]) > 0 {
+							return database.NewNullString(fmt.Sprintf("%s - %s",
+								parts[1], dotcomSub.GenerateDisplayName()))
+						}
 					}
-					if parts[0] == "customer" && len(parts[1]) > 0 {
-						return database.NewNullString(fmt.Sprintf("%s - %s",
-							parts[1], dotcomSub.GenerateDisplayName()))
+					return database.NewNullString(dotcomSub.GenerateDisplayName())
+				}(),
+				CreatedAt: utctime.FromTime(dotcomSub.CreatedAt),
+				ArchivedAt: func() *utctime.Time {
+					if dotcomSub.ArchivedAt == nil {
+						return nil
 					}
-				}
-				return database.NewNullString(dotcomSub.GenerateDisplayName())
-			}(),
-			CreatedAt: utctime.FromTime(dotcomSub.CreatedAt),
-			ArchivedAt: func() *utctime.Time {
-				if dotcomSub.ArchivedAt == nil {
-					return nil
-				}
-				return pointers.Ptr(utctime.FromTime(*dotcomSub.ArchivedAt))
-			}(),
-			SalesforceSubscriptionID: database.NewNullStringPtr(activeLicense.SalesforceSubscriptionID),
-		},
-		conditions...,
-	); err != nil {
-		return errors.Wrap(err, "upsert subscription")
+					return pointers.Ptr(utctime.FromTime(*dotcomSub.ArchivedAt))
+				}(),
+				SalesforceSubscriptionID: database.NewNullStringPtr(activeLicense.SalesforceSubscriptionID),
+			},
+			conditions...,
+		); err != nil {
+			return errors.Wrap(err, "upsert subscription")
+		}
 	}
 
 	// Import licenses belonging to this subscription
@@ -260,20 +262,6 @@ func (i *Importer) importSubscription(ctx context.Context, dotcomSub *dotcomdb.S
 	}
 
 	return nil
-}
-
-func nullInt64IfValid(v *int64) *sql.NullInt64 {
-	if v == nil {
-		return &sql.NullInt64{}
-	}
-	return database.NewNullInt64(*v)
-}
-
-func nullInt32IfValid(v *int32) *sql.NullInt32 {
-	if v == nil {
-		return &sql.NullInt32{}
-	}
-	return database.NewNullInt32(*v)
 }
 
 func (i *Importer) importLicense(ctx context.Context, subscriptionID string, dotcomLicense *dotcomdb.LicenseAttributes) (err error) {

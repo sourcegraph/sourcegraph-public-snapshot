@@ -284,7 +284,6 @@ func (r *Reader) ListEnterpriseSubscriptionLicenses(
 		limit: pageSize,
 	}
 	var args []any
-	var hasRevokedFilter bool
 	for _, filter := range filters {
 		switch filter.GetFilter().(type) {
 		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_SubscriptionId:
@@ -292,7 +291,6 @@ func (r *Reader) ListEnterpriseSubscriptionLicenses(
 			args = append(args,
 				strings.TrimPrefix(filter.GetSubscriptionId(), subscriptionsv1.EnterpriseSubscriptionIDPrefix))
 		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsRevoked:
-			hasRevokedFilter = true
 			// We treat subscription archived and revoked license the same.
 			if filter.GetIsRevoked() {
 				conds.addWhere("(subscriptions.archived_at IS NOT NULL OR licenses.revoked_at IS NOT NULL)")
@@ -301,10 +299,6 @@ func (r *Reader) ListEnterpriseSubscriptionLicenses(
 				conds.addWhere("licenses.revoked_at IS NULL")
 			}
 		}
-	}
-	if !hasRevokedFilter {
-		conds.addWhere("subscriptions.archived_at IS NULL")
-		conds.addWhere("licenses.revoked_at IS NULL")
 	}
 
 	query := newLicensesQuery(conds, r.opts)
@@ -346,7 +340,6 @@ func (s SubscriptionAttributes) GenerateDisplayName() string {
 
 type ListEnterpriseSubscriptionsOptions struct {
 	SubscriptionIDs []string
-	IsArchived      bool
 }
 
 // ListEnterpriseSubscriptions returns a list of enterprise subscription
@@ -370,11 +363,6 @@ WHERE true`
 	if len(opts.SubscriptionIDs) > 0 {
 		query += "\nAND product_subscriptions.id = ANY(@ids)"
 		namedArgs["ids"] = opts.SubscriptionIDs
-	}
-	if opts.IsArchived {
-		query += "\nAND product_subscriptions.archived_at IS NOT NULL"
-	} else {
-		query += "\nAND product_subscriptions.archived_at IS NULL"
 	}
 	var licenseCond string
 	if r.opts.DevOnly {
