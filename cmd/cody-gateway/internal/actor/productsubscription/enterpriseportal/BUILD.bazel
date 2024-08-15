@@ -10,9 +10,9 @@ go_library(
         "//internal/grpc/defaults",
         "//internal/grpc/grpcoauth",
         "//lib/errors",
+        "//lib/managedservicesplatform/clients",
         "@com_github_sourcegraph_log//:log",
         "@org_golang_google_grpc//:go_default_library",
-        "@org_golang_google_grpc//keepalive",
         "@org_golang_x_oauth2//:oauth2",
     ],
 )
