@@ -24,7 +24,8 @@
 
     export let history: HistoryStore
     export let enableInlineDiff: boolean = false
-    export let enableViewAtCommit: boolean = false
+    // @TODO: set back to false before committing.
+    export let enableViewAtCommit: boolean = true
 
     export function capture(): Capture {
         return {
@@ -64,6 +65,7 @@
                     {@const isPerforceDepot = commit.perforceChangelist !== null}
                     {@const revURL = isPerforceDepot ? commit.perforceChangelist?.canonicalURL : commit.canonicalURL}
                     {@const revID = isPerforceDepot ? commit.perforceChangelist?.cid : commit.abbreviatedOID}
+                    {@const revType = isPerforceDepot ? 'changelist' : 'commit'}
 
                     <tr class:selected use:scrollIntoViewOnMount={selected}>
                         <td class="revision">
@@ -82,14 +84,14 @@
                         </td>
                         <td class="timestamp"><Timestamp date={new Date(commit.author.date)} strict /></td>
                         <td class="actions">
-                            {#if enableViewAtCommit && !isPerforceDepot}
-                                <Tooltip tooltip={selected && !diffEnabled ? 'Close commit' : 'View at commit'}>
+                            {#if enableViewAtCommit}
+                                <Tooltip tooltip={selected && !diffEnabled ? `Close ${revType}` : `View at ${revType}`}>
                                     <a href={selected && !diffEnabled ? closeURL : `?rev=${commit.oid}`}
                                         ><Icon icon={ILucideFileText} inline aria-hidden /></a
                                     >
                                 </Tooltip>
                             {/if}
-                            <Tooltip tooltip="Browse files at commit">
+                            <Tooltip tooltip={`Browse files at ${isPerforceDepot ? 'changelist' : 'commit'}`}>
                                 <a
                                     href={replaceRevisionInURL(
                                         SourcegraphURL.from($page.url).deleteSearchParameter('rev', 'diff').toString(),
