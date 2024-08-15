@@ -590,7 +590,7 @@ commands:
     cmd: |
       docker run --name=syntax-highlighter --rm -p9238:9238 \
       -e WORKERS=1 -e ROCKET_ADDRESS=0.0.0.0 \
-      sourcegraph/syntax-highlighter:insiders
+      us-docker.pkg.dev/sourcegraph-public-images/sourcegraph-public-images/syntax-highlighter:insiders
     install: |
       # Remove containers by the old name, too.
       docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
@@ -598,7 +598,7 @@ commands:
       # Pull syntax-highlighter latest insider image, only during install, but
       # skip if OFFLINE=true is set.
       if [[ "$OFFLINE" != "true" ]]; then
-          docker pull -q sourcegraph/syntax-highlighter:insiders
+          docker pull -q us-docker.pkg.dev/sourcegraph-public-images/sourcegraph-public-images/syntax-highlighter:insiders
       fi
 
   zoekt-indexserver-template: &zoekt_indexserver_template

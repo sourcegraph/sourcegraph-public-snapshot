@@ -58,7 +58,7 @@ func releasePromoteImages(c Config) operations.Operation {
 // releaseTestOperations runs the script defined in release.yaml that tests the release.
 func releaseTestOperation(c Config) operations.Operation {
 	devRegistry := images.SourcegraphDockerDevRegistry
-	prodRegistry := images.SourcegraphDockerPublishRegistry
+	prodRegistry := images.SourcegraphArtifactRegistryPublicRegistry
 
 	if c.RunType.Is(runtype.InternalRelease) {
 		prodRegistry = images.SourcegraphInternalReleaseRegistry
