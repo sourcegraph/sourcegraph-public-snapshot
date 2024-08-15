@@ -298,6 +298,40 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscription
 		assert.Equal(t, "My New Display Name", pointers.DerefZero(got.DisplayName))
 	})
 
+	t.Run("conflicts", func(t *testing.T) {
+		conflictSubscription, err := s.Upsert(
+			ctx,
+			uuid.New().String(),
+			subscriptions.UpsertSubscriptionOptions{
+				InstanceDomain: database.NewNullString("s2.sourcegraph.com"),
+				CreatedAt:      created,
+			},
+			// Represent the creation of this subscription
+			subscriptions.CreateSubscriptionConditionOptions{
+				Status:         subscriptionsv1.EnterpriseSubscriptionCondition_STATUS_CREATED,
+				Message:        t.Name(),
+				TransitionTime: created,
+			},
+		)
+		require.NoError(t, err)
+
+		t.Run("display name", func(t *testing.T) {
+			_, err = s.Upsert(ctx, conflictSubscription.ID, subscriptions.UpsertSubscriptionOptions{
+				DisplayName: database.NewNullString(*currentSubscription.DisplayName),
+			})
+			require.Error(t, err)
+			assert.ErrorIs(t, err, subscriptions.ErrInvalidArgument)
+		})
+
+		t.Run("instance domain", func(t *testing.T) {
+			_, err = s.Upsert(ctx, conflictSubscription.ID, subscriptions.UpsertSubscriptionOptions{
+				InstanceDomain: database.NewNullString(*currentSubscription.InstanceDomain),
+			})
+			require.Error(t, err)
+			assert.ErrorIs(t, err, subscriptions.ErrInvalidArgument)
+		})
+	})
+
 	t.Run("update only created at", func(t *testing.T) {
 		t.Cleanup(func() { currentSubscription = got })
 

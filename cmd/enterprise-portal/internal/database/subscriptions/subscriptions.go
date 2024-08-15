@@ -260,6 +260,25 @@ func (opts UpsertSubscriptionOptions) apply(ctx context.Context, db upsert.Exece
 
 var ErrInvalidArgument = errors.New("invalid argument")
 
+// wrapUpsertInvalidArgument wraps specific constraint errors with more user-friendly
+// error messages that can be checked for using ErrInvalidArgument. The original error
+// is retained as a safe detail that is not shown to the user.
+//
+// For other errors, it returns the original error unchanged.
+func wrapUpsertInvalidArgument(err error) error {
+	if pgxerrors.IsContraintError(err, "idx_enterprise_portal_subscriptions_display_name") {
+		return errors.WithSafeDetails(
+			errors.Wrapf(ErrInvalidArgument, "display_name is already in use"),
+			"%+v", err)
+	}
+	if pgxerrors.IsContraintError(err, "idx_enterprise_portal_subscriptions_instance_domain") {
+		return errors.WithSafeDetails(
+			errors.Wrapf(ErrInvalidArgument, "instance_domain is already assigned to another subscription"),
+			"%+v", err)
+	}
+	return err
+}
+
 // Upsert upserts a subscription record based on the given options. If the
 // operation has additional application meaning, conditions can be provided
 // for insert as well.
@@ -275,7 +294,7 @@ func (s *Store) Upsert(
 	if len(conditions) == 0 {
 		// No conditions to add, do a simple update
 		if err := opts.apply(ctx, s.db, subscriptionID); err != nil {
-			return nil, err
+			return nil, wrapUpsertInvalidArgument(err)
 		}
 
 		return s.Get(ctx, subscriptionID)
@@ -293,17 +312,7 @@ func (s *Store) Upsert(
 	}()
 
 	if err := opts.apply(ctx, tx, subscriptionID); err != nil {
-		if pgxerrors.IsContraintError(err, "idx_enterprise_portal_subscriptions_display_name") {
-			return nil, errors.WithSafeDetails(
-				errors.Wrapf(ErrInvalidArgument, "display_name %q is already in use", opts.DisplayName.String),
-				"%+v", err)
-		}
-		if pgxerrors.IsContraintError(err, "idx_enterprise_portal_subscriptions_instance_domain") {
-			return nil, errors.WithSafeDetails(
-				errors.Wrapf(ErrInvalidArgument, "instance_domain %q is assigned to another subscription", opts.DisplayName.String),
-				"%+v", err)
-		}
-		return nil, errors.Wrap(err, "upsert")
+		return nil, errors.Wrap(wrapUpsertInvalidArgument(err), "upsert")
 	}
 	for _, condition := range conditions {
 		err := newSubscriptionConditionsStore(tx).
