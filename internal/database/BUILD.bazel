@@ -131,6 +131,7 @@ go_library(
         "//internal/jsonc",
         "//internal/lazyregexp",
         "//internal/licensing",
+        "//internal/limiter",
         "//internal/own/codeowners/v1:codeowners",
         "//internal/own/types",
         "//internal/perforce",
