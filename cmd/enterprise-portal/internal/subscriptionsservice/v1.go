@@ -752,7 +752,8 @@ func (s *handlerV1) CreateEnterpriseSubscriptionLicense(ctx context.Context, req
 					s.store.Now(),
 					s.store.Env(),
 					sub.Subscription,
-					licenseKey),
+					licenseKey,
+					req.Msg.GetMessage()),
 			},
 		); err != nil {
 			logger.Info("failed to post license creation to Slack", log.Error(err))
@@ -986,6 +987,7 @@ A new license was created for subscription <https://sourcegraph.com/site-admin/d
 • *License tags*: %[8]s
 • *Salesforce subscription*: %[9]s
 • *Salesforce opportunity*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/%[10]s/view|%[10]s>
+• *Message*: %[11]s
 `
 
 func renderLicenseKeyCreationSlackMessage(
@@ -993,6 +995,7 @@ func renderLicenseKeyCreationSlackMessage(
 	env string,
 	sub subscriptions.Subscription,
 	key *subscriptions.DataLicenseKey,
+	creationMessage string,
 ) string {
 	pacificLoc, _ := time.LoadLocation("America/Los_Angeles")
 
@@ -1014,5 +1017,6 @@ func renderLicenseKeyCreationSlackMessage(
 		"`"+strings.Join(key.Info.Tags, "`, `")+"`",
 		sfSubscriptionID,
 		sfOpportunityID,
+		creationMessage,
 	))
 }
