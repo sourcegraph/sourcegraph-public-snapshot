@@ -1,5 +1,5 @@
 {
-  "checksum": "e369f8802027971ab6775168ab59d334430b17e0898e7d944e04badb8353ba94",
+  "checksum": "c5acb944da389065b5a21845eea12730ad6271b89d575ed5ee5039dec041bf0d",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -14201,9 +14201,9 @@
       "version": "0.0.1",
       "repository": {
         "Git": {
-          "remote": "https://github.com/kritzcreek/tree-sitter-jsonnet",
+          "remote": "https://github.com/sourcegraph/tree-sitter-jsonnet",
           "commitish": {
-            "Rev": "bc147652f72a14c9627deae5c9c33a81e452d391"
+            "Rev": "ddd075f1939aed8147b7aa67f042eda3fce22790"
           }
         }
       },
@@ -14430,9 +14430,9 @@
       "version": "1.0.2",
       "repository": {
         "Git": {
-          "remote": "https://github.com/kritzcreek/tree-sitter-matlab",
+          "remote": "https://github.com/acristoffers/tree-sitter-matlab",
           "commitish": {
-            "Rev": "762d3ac3daf68cff04c376a42fd793b0f81ab9c1"
+            "Rev": "ad1c471f30ba754578d4b2e27a4c4ec662a10e6f"
           }
         }
       },
@@ -14507,9 +14507,9 @@
       "version": "0.2.0",
       "repository": {
         "Git": {
-          "remote": "https://github.com/kritzcreek/tree-sitter-nickel",
+          "remote": "https://github.com/nickel-lang/tree-sitter-nickel",
           "commitish": {
-            "Rev": "46a808abaa3d0f460c859af3c3b9467641f13063"
+            "Rev": "88d836a24b3b11c8720874a1a9286b8ae838d30a"
           }
         }
       },

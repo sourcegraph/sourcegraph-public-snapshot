@@ -2588,7 +2588,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-jsonnet"
 version = "0.0.1"
-source = "git+https://github.com/kritzcreek/tree-sitter-jsonnet?rev=bc147652f72a14c9627deae5c9c33a81e452d391#bc147652f72a14c9627deae5c9c33a81e452d391"
+source = "git+https://github.com/sourcegraph/tree-sitter-jsonnet?rev=ddd075f1939aed8147b7aa67f042eda3fce22790#ddd075f1939aed8147b7aa67f042eda3fce22790"
 dependencies = [
  "cc",
  "tree-sitter",
@@ -2616,7 +2616,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-matlab"
 version = "1.0.2"
-source = "git+https://github.com/kritzcreek/tree-sitter-matlab?rev=762d3ac3daf68cff04c376a42fd793b0f81ab9c1#762d3ac3daf68cff04c376a42fd793b0f81ab9c1"
+source = "git+https://github.com/acristoffers/tree-sitter-matlab?rev=ad1c471f30ba754578d4b2e27a4c4ec662a10e6f#ad1c471f30ba754578d4b2e27a4c4ec662a10e6f"
 dependencies = [
  "cc",
  "tree-sitter",
@@ -2625,7 +2625,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-nickel"
 version = "0.2.0"
-source = "git+https://github.com/kritzcreek/tree-sitter-nickel?rev=46a808abaa3d0f460c859af3c3b9467641f13063#46a808abaa3d0f460c859af3c3b9467641f13063"
+source = "git+https://github.com/nickel-lang/tree-sitter-nickel?rev=88d836a24b3b11c8720874a1a9286b8ae838d30a#88d836a24b3b11c8720874a1a9286b8ae838d30a"
 dependencies = [
  "cc",
  "tree-sitter",
