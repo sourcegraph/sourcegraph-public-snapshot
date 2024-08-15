@@ -46,7 +46,11 @@ async function loadDiffView({ params, url }: PageLoadEvent) {
                 revspec: revisionOverride,
                 path: filePath,
             })
-            .then(mapOrThrow(result => result.data?.repository?.commit ?? null)),
+            .then(
+                mapOrThrow(
+                    result => result.data?.repository?.changelist?.commit ?? result.data?.repository?.commit ?? null
+                )
+            ),
     }
 }
 
