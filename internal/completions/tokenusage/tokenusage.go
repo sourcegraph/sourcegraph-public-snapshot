@@ -1,6 +1,7 @@
 package tokenusage
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -10,7 +11,7 @@ import (
 )
 
 type Manager struct {
-	cache *rcache.Cache
+	cache *rcache.RedisCache
 }
 
 type ModelData struct {
@@ -24,7 +25,7 @@ func NewManager() *Manager {
 	}
 }
 
-func NewManagerWithCache(cache *rcache.Cache) *Manager {
+func NewManagerWithCache(cache *rcache.RedisCache) *Manager {
 	return &Manager{
 		cache: cache,
 	}
@@ -40,27 +41,27 @@ const (
 	Anthropic        Provider = "anthropic"
 )
 
-func (m *Manager) UpdateTokenCountsFromModelUsage(inputTokens, outputTokens int, model, feature string, provider Provider) error {
+func (m *Manager) UpdateTokenCountsFromModelUsage(ctx context.Context, inputTokens, outputTokens int, model, feature string, provider Provider) error {
 	baseKey := fmt.Sprintf("%s:%s:%s:", provider, model, feature)
 
-	if err := m.updateTokenCounts(baseKey+"input", int64(inputTokens)); err != nil {
+	if err := m.updateTokenCounts(ctx, baseKey+"input", int64(inputTokens)); err != nil {
 		return errors.Newf("failed to update input token counts: %w", err)
 	}
-	if err := m.updateTokenCounts(baseKey+"output", int64(outputTokens)); err != nil {
+	if err := m.updateTokenCounts(ctx, baseKey+"output", int64(outputTokens)); err != nil {
 		return errors.Newf("failed to update output token counts: %w", err)
 	}
 	return nil
 }
 
-func (m *Manager) updateTokenCounts(key string, tokenCount int64) error {
-	if _, err := m.cache.IncrByInt64(key, tokenCount); err != nil {
+func (m *Manager) updateTokenCounts(ctx context.Context, key string, tokenCount int64) error {
+	if _, err := m.cache.IncrByInt64(ctx, key, tokenCount); err != nil {
 		return errors.Newf("failed to increment token count for key %s: %w", key, err)
 	}
 	return nil
 }
 
-func (m *Manager) RetrieveAndResetTokenUsageData() (map[string]interface{}, error) {
-	tokenUsageData, err := m.fetchTokenUsageData(true) // true to decrement counts
+func (m *Manager) RetrieveAndResetTokenUsageData(ctx context.Context) (map[string]interface{}, error) {
+	tokenUsageData, err := m.fetchTokenUsageData(ctx, true) // true to decrement counts
 	if err != nil {
 		return nil, err
 	}
@@ -82,17 +83,17 @@ func (m *Manager) RetrieveAndResetTokenUsageData() (map[string]interface{}, erro
 	return result, nil
 }
 
-func (m *Manager) FetchTokenUsageDataForAnalysis() (map[string]float64, error) {
-	return m.fetchTokenUsageData(false) // false means do not decrement counts
+func (m *Manager) FetchTokenUsageDataForAnalysis(ctx context.Context) (map[string]float64, error) {
+	return m.fetchTokenUsageData(ctx, false) // false means do not decrement counts
 }
 
 // fetchTokenUsageData retrieves token usage data, optionally decrementing token counts.
-func (m *Manager) fetchTokenUsageData(decrement bool) (map[string]float64, error) {
-	allKeys := m.cache.ListAllKeys()
+func (m *Manager) fetchTokenUsageData(ctx context.Context, decrement bool) (map[string]float64, error) {
+	allKeys := m.cache.ListAllKeys(ctx)
 	tokenUsageData := make(map[string]float64)
 
 	for _, key := range allKeys {
-		modelName, value, err := m.getModelNameAndValue(key, decrement)
+		modelName, value, err := m.getModelNameAndValue(ctx, key, decrement)
 		if err != nil {
 			continue // Skip keys with errors
 		}
@@ -104,20 +105,20 @@ func (m *Manager) fetchTokenUsageData(decrement bool) (map[string]float64, error
 }
 
 // getModelNameAndValue extracts the model name and value from a key, optionally decrementing the token count.
-func (m *Manager) getModelNameAndValue(key string, decrement bool) (string, int64, error) {
+func (m *Manager) getModelNameAndValue(ctx context.Context, key string, decrement bool) (string, int64, error) {
 	parts := strings.SplitN(key, "LLMUsage:", 2)
 	if len(parts) < 2 {
 		return "", 0, errors.New("invalid key format")
 	}
 	modelName := parts[1]
 
-	value, found, err := m.cache.GetInt64(modelName)
+	value, found, err := m.cache.GetInt64(ctx, modelName)
 	if err != nil || !found {
 		return "", 0, err // Skip keys that are not found or have conversion errors
 	}
 
 	if decrement {
-		if _, err := m.cache.DecrByInt64(modelName, value); err != nil {
+		if _, err := m.cache.DecrByInt64(ctx, modelName, value); err != nil {
 			return "", 0, err
 		}
 	}

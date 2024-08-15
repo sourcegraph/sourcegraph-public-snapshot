@@ -1,6 +1,7 @@
 package rcache
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -22,16 +23,16 @@ import (
 // is deployed.
 const dataVersion = "v2"
 
-// Cache implements httpcache.Cache
-type Cache struct {
+// RedisCache implements rcache.Cache
+type RedisCache struct {
 	keyPrefix  string
 	ttlSeconds int
 	_kv        redispool.KeyValue
 }
 
 // New creates a redis backed Cache
-func New(kv redispool.KeyValue, keyPrefix string) *Cache {
-	return &Cache{
+func New(kv redispool.KeyValue, keyPrefix string) *RedisCache {
+	return &RedisCache{
 		keyPrefix: keyPrefix,
 		_kv:       kv,
 	}
@@ -39,18 +40,18 @@ func New(kv redispool.KeyValue, keyPrefix string) *Cache {
 
 // NewWithTTL creates a redis backed Cache which expires values after
 // ttlSeconds.
-func NewWithTTL(kv redispool.KeyValue, keyPrefix string, ttlSeconds int) *Cache {
-	return &Cache{
+func NewWithTTL(kv redispool.KeyValue, keyPrefix string, ttlSeconds int) *RedisCache {
+	return &RedisCache{
 		keyPrefix:  keyPrefix,
 		ttlSeconds: ttlSeconds,
 		_kv:        kv,
 	}
 }
 
-func (r *Cache) TTL() time.Duration { return time.Duration(r.ttlSeconds) * time.Second }
+func (r *RedisCache) TTL() time.Duration { return time.Duration(r.ttlSeconds) * time.Second }
 
 // Get implements httpcache.Cache.Get
-func (r *Cache) Get(key string) ([]byte, bool) {
+func (r *RedisCache) Get(ctx context.Context, key string) ([]byte, bool) {
 	b, err := r.kv().Get(r.rkeyPrefix() + key).Bytes()
 	if err != nil && err != redis.ErrNil {
 		log15.Warn("failed to execute redis command", "cmd", "GET", "error", err)
@@ -60,7 +61,7 @@ func (r *Cache) Get(key string) ([]byte, bool) {
 }
 
 // Set implements httpcache.Cache.Set
-func (r *Cache) Set(key string, b []byte) {
+func (r *RedisCache) Set(ctx context.Context, key string, b []byte) {
 	if !utf8.Valid([]byte(key)) {
 		log15.Error("rcache: keys must be valid utf8", "key", []byte(key))
 	}
@@ -71,11 +72,11 @@ func (r *Cache) Set(key string, b []byte) {
 			log15.Warn("failed to execute redis command", "cmd", "SET", "error", err)
 		}
 	} else {
-		r.SetWithTTL(key, b, r.ttlSeconds)
+		r.SetWithTTL(ctx, key, b, r.ttlSeconds)
 	}
 }
 
-func (r *Cache) SetWithTTL(key string, b []byte, ttl int) {
+func (r *RedisCache) SetWithTTL(ctx context.Context, key string, b []byte, ttl int) {
 	if !utf8.Valid([]byte(key)) {
 		log15.Error("rcache: keys must be valid utf8", "key", []byte(key))
 	}
@@ -87,15 +88,15 @@ func (r *Cache) SetWithTTL(key string, b []byte, ttl int) {
 }
 
 // SetInt stores an integer value under the specified key in the cache
-func (r *Cache) SetInt(key string, value int64) {
+func (r *RedisCache) SetInt(ctx context.Context, key string, value int64) {
 	// Convert int to byte slice for storage
 	valueStr := strconv.FormatInt(value, 10) // 10 is the base for decimal
-	r.Set(key, []byte(valueStr))
+	r.Set(ctx, key, []byte(valueStr))
 }
 
 // GetInt gets an integer value by key. Returns the value and a boolean indicating if the key exists.
-func (r *Cache) GetInt64(key string) (int64, bool, error) {
-	b, found := r.Get(key)
+func (r *RedisCache) GetInt64(ctx context.Context, key string) (int64, bool, error) {
+	b, found := r.Get(ctx, key)
 	if !found {
 		return 0, false, nil
 	}
@@ -109,7 +110,7 @@ func (r *Cache) GetInt64(key string) (int64, bool, error) {
 
 // IncrByInt64 increments the integer value of a key by the given amount.
 // It returns the new value after the increment.
-func (r *Cache) IncrByInt64(key string, value int64) (int64, error) {
+func (r *RedisCache) IncrByInt64(ctx context.Context, key string, value int64) (int64, error) {
 	newValue, err := r.kv().IncrByInt64(r.rkeyPrefix()+key, value)
 	if err != nil {
 		return newValue, errors.Newf("failed to execute redis command", "cmd", "INCRBY", "error", err)
@@ -128,7 +129,7 @@ func (r *Cache) IncrByInt64(key string, value int64) (int64, error) {
 
 // DecrByInt64 increments the decrements value of a key by the given amount.
 // It returns the new value after the increment.
-func (r *Cache) DecrByInt64(key string, value int64) (int64, error) {
+func (r *RedisCache) DecrByInt64(ctx context.Context, key string, value int64) (int64, error) {
 	newValue, err := r.kv().DecrByInt64(r.rkeyPrefix()+key, value)
 	if err != nil {
 		return newValue, errors.Newf("failed to execute redis command", "cmd", "DECRBY", "error", err)
@@ -145,7 +146,7 @@ func (r *Cache) DecrByInt64(key string, value int64) (int64, error) {
 	return newValue, nil
 }
 
-func (r *Cache) Increase(key string) {
+func (r *RedisCache) Increase(ctx context.Context, key string) {
 	_, err := r.kv().Incr(r.rkeyPrefix() + key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "INCR", "error", err)
@@ -163,7 +164,7 @@ func (r *Cache) Increase(key string) {
 	}
 }
 
-func (r *Cache) KeyTTL(key string) (int, bool) {
+func (r *RedisCache) KeyTTL(ctx context.Context, key string) (int, bool) {
 	ttl, err := r.kv().TTL(r.rkeyPrefix() + key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "TTL", "error", err)
@@ -172,7 +173,7 @@ func (r *Cache) KeyTTL(key string) (int, bool) {
 	return ttl, ttl >= 0
 }
 
-func (r *Cache) ListAllKeys() []string {
+func (r *RedisCache) ListAllKeys(ctx context.Context) []string {
 	pattern := r.rkeyPrefix() + "*"
 	keys, err := r.kv().Keys(pattern)
 	if err != nil {
@@ -183,7 +184,7 @@ func (r *Cache) ListAllKeys() []string {
 }
 
 // FIFOList returns a FIFOList namespaced in r.
-func (r *Cache) FIFOList(key string, maxSize int) *FIFOList {
+func (r *RedisCache) FIFOList(ctx context.Context, key string, maxSize int) *FIFOList {
 	return NewFIFOList(r.kv(), r.rkeyPrefix()+key, maxSize)
 }
 
@@ -191,12 +192,12 @@ func (r *Cache) FIFOList(key string, maxSize int) *FIFOList {
 // If the HASH does not exist, it is created.
 // If the key already exists and is a different type, an error is returned.
 // If the hash key does not exist, it is created. If it exists, the value is overwritten.
-func (r *Cache) SetHashItem(key string, hashKey string, hashValue string) error {
+func (r *RedisCache) SetHashItem(ctx context.Context, key string, hashKey string, hashValue string) error {
 	return r.kv().HSet(r.rkeyPrefix()+key, hashKey, hashValue)
 }
 
 // GetHashItem gets a key in a HASH.
-func (r *Cache) GetHashItem(key string, hashKey string) (string, error) {
+func (r *RedisCache) GetHashItem(ctx context.Context, key string, hashKey string) (string, error) {
 	return r.kv().HGet(r.rkeyPrefix()+key, hashKey).String()
 }
 
@@ -205,17 +206,17 @@ func (r *Cache) GetHashItem(key string, hashKey string) (string, error) {
 // If the key exists and the hash key exists, it will return 1.
 // If the key exists but the hash key does not, it will return 0.
 // If the key does not exist, it will return 0.
-func (r *Cache) DeleteHashItem(key string, hashKey string) (int, error) {
+func (r *RedisCache) DeleteHashItem(ctx context.Context, key string, hashKey string) (int, error) {
 	return r.kv().HDel(r.rkeyPrefix()+key, hashKey).Int()
 }
 
 // GetHashAll returns the members of the HASH stored at `key`, in no particular order.
-func (r *Cache) GetHashAll(key string) (map[string]string, error) {
+func (r *RedisCache) GetHashAll(ctx context.Context, key string) (map[string]string, error) {
 	return r.kv().HGetAll(r.rkeyPrefix() + key).StringMap()
 }
 
 // Delete implements httpcache.Cache.Delete
-func (r *Cache) Delete(key string) {
+func (r *RedisCache) Delete(ctx context.Context, key string) {
 	err := r.kv().Del(r.rkeyPrefix() + key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "DEL", "error", err)
@@ -223,7 +224,7 @@ func (r *Cache) Delete(key string) {
 }
 
 // rkeyPrefix generates the actual key prefix we use on redis.
-func (r *Cache) rkeyPrefix() string {
+func (r *RedisCache) rkeyPrefix() string {
 	return fmt.Sprintf("%s:%s:", globalPrefix, r.keyPrefix)
 }
 
@@ -266,7 +267,7 @@ func SetupForTest(t testing.TB) redispool.KeyValue {
 
 var testStore redispool.KeyValue
 
-func (r *Cache) kv() redispool.KeyValue {
+func (r *RedisCache) kv() redispool.KeyValue {
 	// TODO: We should refactor the SetupForTest method to return a KV, not mock
 	// a global thing.
 	// That can only work when all tests pass the redis connection directly to the

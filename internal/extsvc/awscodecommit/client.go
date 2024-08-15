@@ -17,7 +17,7 @@ import (
 // Client is a AWS CodeCommit API client.
 type Client struct {
 	aws       aws.Config
-	repoCache *rcache.Cache
+	repoCache *rcache.RedisCache
 }
 
 // NewClient creates a new AWS CodeCommit API client.

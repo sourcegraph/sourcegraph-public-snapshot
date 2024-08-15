@@ -220,7 +220,7 @@ func doChatCompletionsAPIAutocomplete(
 	// Note: If we had an error calculating input/output tokens, that is unfortunate, the
 	// best thing we can do is record zero token usage which would be our hint to look at
 	// the logs for errors.
-	if err = recordTokenUsage(request, inputTokens, outputTokens); err != nil {
+	if err = recordTokenUsage(ctx, request, inputTokens, outputTokens); err != nil {
 		logger.Warn("Failed to count input tokens with the token manager %w ", log.Error(err))
 	}
 	return &types.CompletionResponse{
@@ -263,7 +263,7 @@ func doCompletionsAPIAutocomplete(
 	// Note: If we had an error calculating input/output tokens, that is unfortunate, the
 	// best thing we can do is record zero token usage which would be our hint to look at
 	// the logs for errors.
-	if err = recordTokenUsage(request, inputTokens, outputTokens); err != nil {
+	if err = recordTokenUsage(ctx, request, inputTokens, outputTokens); err != nil {
 		logger.Warn("Failed to count input tokens with the token manager %w ", log.Error(err))
 	}
 	// Text and FinishReason are documented as REQUIRED but checking just to be safe
@@ -311,7 +311,7 @@ func completeChat(
 	// Note: If we had an error calculating input/output tokens, that is unfortunate, the
 	// best thing we can do is record zero token usage which would be our hint to look at
 	// the logs for errors.
-	if err := recordTokenUsage(request, inputTokens, outputTokens); err != nil {
+	if err := recordTokenUsage(ctx, request, inputTokens, outputTokens); err != nil {
 		logger.Warn("Failed to count input tokens with the token manager %w ", log.Error(err))
 	}
 	return &types.CompletionResponse{
@@ -433,7 +433,7 @@ func doStreamChatCompletionsAPI(
 			// Note: If we had an error calculating input/output tokens, that is unfortunate, the
 			// best thing we can do is record zero token usage which would be our hint to look at
 			// the logs for errors.
-			if err = recordTokenUsage(request, inputTokens, outputTokens); err != nil {
+			if err = recordTokenUsage(ctx, request, inputTokens, outputTokens); err != nil {
 				logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 			}
 			return nil
@@ -498,7 +498,7 @@ func doStreamCompletionsAPI(
 			// Note: If we had an error calculating input/output tokens, that is unfortunate, the
 			// best thing we can do is record zero token usage which would be our hint to look at
 			// the logs for errors.
-			if err = recordTokenUsage(request, inputTokens, outputTokens); err != nil {
+			if err = recordTokenUsage(ctx, request, inputTokens, outputTokens); err != nil {
 				logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 			}
 			return nil
@@ -561,7 +561,7 @@ func streamChat(
 			// Note: If we had an error calculating input/output tokens, that is unfortunate, the
 			// best thing we can do is record zero token usage which would be our hint to look at
 			// the logs for errors.
-			if err = recordTokenUsage(request, inputTokens, outputTokens); err != nil {
+			if err = recordTokenUsage(ctx, request, inputTokens, outputTokens); err != nil {
 				logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 			}
 			return nil
@@ -713,7 +713,7 @@ func toStatusCodeError(err error) error {
 	return err
 }
 
-func recordTokenUsage(request types.CompletionRequest, inputTokens, outputTokens int) error {
+func recordTokenUsage(ctx context.Context, request types.CompletionRequest, inputTokens, outputTokens int) error {
 	// For Azure OpenAI the ModelName is tye Deployment ID, which isn't meaningful.
 	// So instead we use the model's ID, which is still opaque and user-defined. But will
 	// at least be more meaningful.
@@ -723,6 +723,7 @@ func recordTokenUsage(request types.CompletionRequest, inputTokens, outputTokens
 	label := tokenizer.AzureModel + "/" + string(modelID)
 	feature := string(request.Feature)
 	return tokenManager.UpdateTokenCountsFromModelUsage(
+		ctx,
 		inputTokens, outputTokens,
 		label, feature,
 		tokenusage.AzureOpenAI)

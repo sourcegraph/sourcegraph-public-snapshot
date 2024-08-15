@@ -28,6 +28,7 @@ go_library(
         "//internal/github_apps/auth",
         "//internal/github_apps/types",
         "//internal/gqlutil",
+        "//internal/httpcache",
         "//internal/httpcli",
         "//internal/observation",
         "//internal/rcache",

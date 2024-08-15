@@ -70,7 +70,7 @@ func (c *openAIChatCompletionStreamClient) Complete(
 	}
 
 	usage := response.Usage
-	if err = c.recordTokenUsage(request, usage.PromptTokens, usage.CompletionTokens); err != nil {
+	if err = c.recordTokenUsage(ctx, request, usage.PromptTokens, usage.CompletionTokens); err != nil {
 		logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 	}
 	return &types.CompletionResponse{
@@ -156,17 +156,18 @@ func (c *openAIChatCompletionStreamClient) Stream(
 		return dec.Err()
 	}
 
-	if err = c.recordTokenUsage(request, promptTokens, completionTokens); err != nil {
+	if err = c.recordTokenUsage(ctx, request, promptTokens, completionTokens); err != nil {
 		logger.Warn("Failed to count tokens with the token manager %w", log.Error(err))
 	}
 	return nil
 }
 
-func (c *openAIChatCompletionStreamClient) recordTokenUsage(request types.CompletionRequest, promptTokens, completionTokens int) error {
+func (c *openAIChatCompletionStreamClient) recordTokenUsage(ctx context.Context, request types.CompletionRequest, promptTokens, completionTokens int) error {
 	feature := string(request.Feature)
 	model := request.ModelConfigInfo.Model.ModelName
 	label := tokenizer.OpenAIModel + "/" + string(model)
 	return c.tokenManager.UpdateTokenCountsFromModelUsage(
+		ctx,
 		promptTokens, completionTokens,
 		label, feature, tokenusage.OpenAI)
 }

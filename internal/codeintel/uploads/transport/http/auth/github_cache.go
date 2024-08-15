@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -10,15 +11,15 @@ import (
 )
 
 type GitHubAuthCache struct {
-	cache *rcache.Cache
+	cache *rcache.RedisCache
 }
 
 var githubAuthCache = &GitHubAuthCache{
 	cache: rcache.NewWithTTL(redispool.Cache, "codeintel.github-authz:", 60 /* seconds */),
 }
 
-func (c *GitHubAuthCache) Get(key string) (authorized bool, _ bool) {
-	b, ok := c.cache.Get(key)
+func (c *GitHubAuthCache) Get(ctx context.Context, key string) (authorized bool, _ bool) {
+	b, ok := c.cache.Get(ctx, key)
 	if !ok {
 		return false, false
 	}
@@ -27,9 +28,9 @@ func (c *GitHubAuthCache) Get(key string) (authorized bool, _ bool) {
 	return authorized, err == nil
 }
 
-func (c *GitHubAuthCache) Set(key string, authorized bool) {
+func (c *GitHubAuthCache) Set(ctx context.Context, key string, authorized bool) {
 	b, _ := json.Marshal(authorized)
-	c.cache.Set(key, b)
+	c.cache.Set(ctx, key, b)
 }
 
 func makeGitHubAuthCacheKey(githubToken, repoName string) string {

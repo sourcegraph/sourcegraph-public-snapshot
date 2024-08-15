@@ -23,29 +23,29 @@ import (
 type LockoutStore interface {
 	// IsLockedOut returns true if the given user has been locked along with the
 	// reason.
-	IsLockedOut(userID int32) (reason string, locked bool)
+	IsLockedOut(ctx context.Context, userID int32) (reason string, locked bool)
 	// IncreaseFailedAttempt increases the failed login attempt count by 1.
-	IncreaseFailedAttempt(userID int32)
+	IncreaseFailedAttempt(ctx context.Context, userID int32)
 	// Reset clears the failed login attempt count and releases the lockout.
-	Reset(userID int32)
+	Reset(ctx context.Context, userID int32)
 	// GenerateUnlockAccountURL creates the URL to unlock account with a signet
 	// unlock token.
-	GenerateUnlockAccountURL(userID int32) (string, string, error)
+	GenerateUnlockAccountURL(ctx context.Context, userID int32) (string, string, error)
 	// VerifyUnlockAccountTokenAndReset verifies the provided unlock token is valid.
-	VerifyUnlockAccountTokenAndReset(urlToken string) (bool, error)
+	VerifyUnlockAccountTokenAndReset(ctx context.Context, urlToken string) (bool, error)
 	// SendUnlockAccountEmail sends an email to the locked account email providing a
 	// temporary unlock link.
 	SendUnlockAccountEmail(ctx context.Context, userID int32, userEmail string) error
 	// UnlockEmailSent returns true if the unlock account email has already been sent
-	UnlockEmailSent(userID int32) bool
+	UnlockEmailSent(ctx context.Context, userID int32) bool
 }
 
 type lockoutStore struct {
 	failedThreshold int
-	lockouts        *rcache.Cache
-	failedAttempts  *rcache.Cache
-	unlockToken     *rcache.Cache
-	unlockEmailSent *rcache.Cache
+	lockouts        *rcache.RedisCache
+	failedAttempts  *rcache.RedisCache
+	unlockToken     *rcache.RedisCache
+	unlockEmailSent *rcache.RedisCache
 	sendEmail       func(context.Context, string, txemail.Message) error
 }
 
@@ -80,23 +80,23 @@ func key(userID int32) string {
 	return strconv.Itoa(int(userID))
 }
 
-func (s *lockoutStore) IsLockedOut(userID int32) (reason string, locked bool) {
-	v, locked := s.lockouts.Get(key(userID))
+func (s *lockoutStore) IsLockedOut(ctx context.Context, userID int32) (reason string, locked bool) {
+	v, locked := s.lockouts.Get(ctx, key(userID))
 	return string(v), locked
 }
 
-func (s *lockoutStore) IncreaseFailedAttempt(userID int32) {
+func (s *lockoutStore) IncreaseFailedAttempt(ctx context.Context, userID int32) {
 	metricsAccountFailedSignInAttempts.Inc()
 
 	key := key(userID)
-	s.failedAttempts.Increase(key)
+	s.failedAttempts.Increase(ctx, key)
 
 	// Get right after Increase should make the key always exist
-	v, _ := s.failedAttempts.Get(key)
+	v, _ := s.failedAttempts.Get(ctx, key)
 	count, _ := strconv.Atoi(string(v))
 	if count >= s.failedThreshold {
 		metricsAccountLockouts.Inc()
-		s.lockouts.Set(key, []byte("too many failed attempts"))
+		s.lockouts.Set(ctx, key, []byte("too many failed attempts"))
 	}
 }
 
@@ -105,9 +105,9 @@ type unlockAccountClaims struct {
 	jwt.RegisteredClaims
 }
 
-func (s *lockoutStore) GenerateUnlockAccountURL(userID int32) (string, string, error) {
+func (s *lockoutStore) GenerateUnlockAccountURL(ctx context.Context, userID int32) (string, string, error) {
 	key := key(userID)
-	ttl, exists := s.lockouts.KeyTTL(key)
+	ttl, exists := s.lockouts.KeyTTL(ctx, key)
 
 	if !exists {
 		return "", "", errors.Newf("user with id %d is not locked out, cannot generate unlock url")
@@ -140,7 +140,7 @@ func (s *lockoutStore) GenerateUnlockAccountURL(userID int32) (string, string, e
 		return "", "", err
 	}
 
-	s.unlockToken.SetWithTTL(key, []byte(tokenString), effectiveTTL)
+	s.unlockToken.SetWithTTL(ctx, key, []byte(tokenString), effectiveTTL)
 
 	path := fmt.Sprintf("/unlock-account/%s", tokenString)
 
@@ -167,14 +167,14 @@ func formatExpiryTime(ttl int) string {
 
 func (s *lockoutStore) SendUnlockAccountEmail(ctx context.Context, userID int32, recipientEmail string) error {
 	key := key(userID)
-	ttl, exists := s.lockouts.KeyTTL(key)
+	ttl, exists := s.lockouts.KeyTTL(ctx, key)
 
-	if !exists || s.UnlockEmailSent(userID) {
+	if !exists || s.UnlockEmailSent(ctx, userID) {
 		return nil
 	}
 
 	effectiveTTL := effectiveUnlockTTL(ttl)
-	unlockUrl, _, err := s.GenerateUnlockAccountURL(userID)
+	unlockUrl, _, err := s.GenerateUnlockAccountURL(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -194,16 +194,16 @@ func (s *lockoutStore) SendUnlockAccountEmail(ctx context.Context, userID int32,
 		return err
 	}
 
-	s.unlockEmailSent.SetWithTTL(key, []byte("sent"), effectiveTTL)
+	s.unlockEmailSent.SetWithTTL(ctx, key, []byte("sent"), effectiveTTL)
 	return nil
 }
 
-func (s *lockoutStore) UnlockEmailSent(userID int32) bool {
-	_, locked := s.unlockEmailSent.Get(key(userID))
+func (s *lockoutStore) UnlockEmailSent(ctx context.Context, userID int32) bool {
+	_, locked := s.unlockEmailSent.Get(ctx, key(userID))
 	return locked
 }
 
-func (s *lockoutStore) VerifyUnlockAccountTokenAndReset(urlToken string) (bool, error) {
+func (s *lockoutStore) VerifyUnlockAccountTokenAndReset(ctx context.Context, urlToken string) (bool, error) {
 	signingKey := conf.SiteConfig().AuthUnlockAccountLinkSigningKey
 
 	if signingKey == "" {
@@ -219,25 +219,25 @@ func (s *lockoutStore) VerifyUnlockAccountTokenAndReset(urlToken string) (bool, 
 
 	if claims, ok := token.Claims.(*unlockAccountClaims); ok && token.Valid {
 		userIdKey := key(claims.UserID)
-		storedToken, found := s.unlockToken.Get(userIdKey)
+		storedToken, found := s.unlockToken.Get(ctx, userIdKey)
 
 		if !found || string(storedToken) != urlToken {
 			return false, errors.Newf("No previously generated token exists for the specified user")
 		}
 
-		s.Reset(claims.UserID)
+		s.Reset(ctx, claims.UserID)
 		return true, nil
 	}
 
 	return false, errors.Newf("provided token is invalid or expired")
 }
 
-func (s *lockoutStore) Reset(userID int32) {
+func (s *lockoutStore) Reset(ctx context.Context, userID int32) {
 	key := key(userID)
-	s.lockouts.Delete(key)
-	s.failedAttempts.Delete(key)
-	s.unlockToken.Delete(key)
-	s.unlockEmailSent.Delete(key)
+	s.lockouts.Delete(ctx, key)
+	s.failedAttempts.Delete(ctx, key)
+	s.unlockToken.Delete(ctx, key)
+	s.unlockEmailSent.Delete(ctx, key)
 }
 
 var emailTemplates = txemail.MustValidate(txtypes.Templates{

@@ -24,32 +24,32 @@ func Test_FIFOList_All_OK(t *testing.T) {
 		{
 			key:     "a",
 			size:    3,
-			inserts: bytes("a1", "a2", "a3"),
-			want:    bytes("a3", "a2", "a1"),
+			inserts: toBytes("a1", "a2", "a3"),
+			want:    toBytes("a3", "a2", "a1"),
 		},
 		{
 			key:     "b",
 			size:    3,
-			inserts: bytes("a1", "a2", "a3", "a4", "a5", "a6"),
-			want:    bytes("a6", "a5", "a4"),
+			inserts: toBytes("a1", "a2", "a3", "a4", "a5", "a6"),
+			want:    toBytes("a6", "a5", "a4"),
 		},
 		{
 			key:     "c",
 			size:    3,
-			inserts: bytes("a1", "a2"),
-			want:    bytes("a2", "a1"),
+			inserts: toBytes("a1", "a2"),
+			want:    toBytes("a2", "a1"),
 		},
 		{
 			key:     "d",
 			size:    0,
-			inserts: bytes("a1", "a2", "a3"),
-			want:    bytes(),
+			inserts: toBytes("a1", "a2", "a3"),
+			want:    toBytes(),
 		},
 		{
 			key:     "f",
 			size:    -1,
-			inserts: bytes("a1", "a2", "a3"),
-			want:    bytes(),
+			inserts: toBytes("a1", "a2", "a3"),
+			want:    toBytes(),
 		},
 	}
 
@@ -95,48 +95,48 @@ func Test_FIFOList_Slice_OK(t *testing.T) {
 		{
 			key:     "a",
 			size:    3,
-			inserts: bytes("a1", "a2", "a3"),
-			want:    bytes("a3", "a2", "a1"),
+			inserts: toBytes("a1", "a2", "a3"),
+			want:    toBytes("a3", "a2", "a1"),
 			from:    0,
 			to:      -1,
 		},
 		{
 			key:     "b",
 			size:    3,
-			inserts: bytes("a1", "a2", "a3"),
-			want:    bytes("a2", "a1"),
+			inserts: toBytes("a1", "a2", "a3"),
+			want:    toBytes("a2", "a1"),
 			from:    1,
 			to:      2,
 		},
 		{
 			key:     "c",
 			size:    3,
-			inserts: bytes("a1", "a2", "a3", "a4", "a5", "a6"),
-			want:    bytes("a5", "a4"),
+			inserts: toBytes("a1", "a2", "a3", "a4", "a5", "a6"),
+			want:    toBytes("a5", "a4"),
 			from:    1,
 			to:      2,
 		},
 		{
 			key:     "d",
 			size:    0,
-			inserts: bytes("a1", "a2", "a3"),
-			want:    bytes(),
+			inserts: toBytes("a1", "a2", "a3"),
+			want:    toBytes(),
 			from:    0,
 			to:      -1,
 		},
 		{
 			key:     "e",
 			size:    3,
-			inserts: bytes("a1", "a2", "a3", "a4", "a5", "a6"),
-			want:    bytes("a4"),
+			inserts: toBytes("a1", "a2", "a3", "a4", "a5", "a6"),
+			want:    toBytes("a4"),
 			from:    2,
 			to:      -1,
 		},
 		{
 			key:     "f",
 			size:    -1,
-			inserts: bytes("a1", "a2", "a3"),
-			want:    bytes(),
+			inserts: toBytes("a1", "a2", "a3"),
+			want:    toBytes(),
 			from:    0,
 			to:      -1,
 		},
@@ -176,7 +176,7 @@ func Test_NewFIFOListDynamic(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error, got %q", err)
 	}
-	if want := bytes("a", "a", "a"); !reflect.DeepEqual(want, got) {
+	if want := toBytes("a", "a", "a"); !reflect.DeepEqual(want, got) {
 		t.Errorf("expected %v, but got %v", str(want...), str(got...))
 	}
 
@@ -192,7 +192,7 @@ func Test_NewFIFOListDynamic(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error, got %q", err)
 	}
-	if want := bytes("b", "b"); !reflect.DeepEqual(want, got) {
+	if want := toBytes("b", "b"); !reflect.DeepEqual(want, got) {
 		t.Errorf("expected %v, but got %v", str(want...), str(got...))
 	}
 }

@@ -38,6 +38,7 @@ go_library(
         "//internal/errcode",
         "//internal/extsvc",
         "//internal/featureflag",
+        "//internal/httpcache",
         "//internal/lazyregexp",
         "//internal/rcache",
         "//internal/redispool",

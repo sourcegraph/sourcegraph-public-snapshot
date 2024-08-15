@@ -151,7 +151,7 @@ type Client struct {
 
 	baseURL             *url.URL
 	httpClient          httpcli.Doer
-	projCache           *rcache.Cache
+	projCache           *rcache.RedisCache
 	Auth                auth.Authenticator
 	externalRateLimiter *ratelimit.Monitor
 	internalRateLimiter *ratelimit.InstrumentedLimiter

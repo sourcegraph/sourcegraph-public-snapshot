@@ -63,7 +63,7 @@ func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, errors.Wrap(err, "decoding response")
 	}
-	if err := c.recordTokenUsage(request, response.Usage); err != nil {
+	if err := c.recordTokenUsage(ctx, request, response.Usage); err != nil {
 		return nil, err
 	}
 
@@ -157,7 +157,7 @@ func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 					InputTokens:  inputPromptTokens,
 					OutputTokens: event.Usage.OutputTokens,
 				}
-				if err := a.recordTokenUsage(request, usageData); err != nil {
+				if err := a.recordTokenUsage(ctx, request, usageData); err != nil {
 					logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 				}
 			}
@@ -175,9 +175,10 @@ func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 	}
 }
 
-func (c *awsBedrockAnthropicCompletionStreamClient) recordTokenUsage(request types.CompletionRequest, usage bedrockAnthropicMessagesResponseUsage) error {
+func (c *awsBedrockAnthropicCompletionStreamClient) recordTokenUsage(ctx context.Context, request types.CompletionRequest, usage bedrockAnthropicMessagesResponseUsage) error {
 	label := fmt.Sprintf("anthropic/%s", request.ModelConfigInfo.Model.ModelName)
 	return c.tokenManager.UpdateTokenCountsFromModelUsage(
+		ctx,
 		usage.InputTokens, usage.OutputTokens,
 		label, string(request.Feature),
 		tokenusage.AwsBedrock)

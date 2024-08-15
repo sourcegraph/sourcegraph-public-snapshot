@@ -74,7 +74,7 @@ const (
 
 const ttlSeconds = 604800 // 7 days
 
-func GetCache() *rcache.Cache {
+func GetCache() *rcache.RedisCache {
 	return rcache.NewWithTTL(redispool.Cache, keyPrefix, ttlSeconds)
 }
 

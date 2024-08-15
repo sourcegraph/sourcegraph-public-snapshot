@@ -10,11 +10,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // TestLoggerAndReaderHappyPaths tests pretty much everything in the happy path of both the logger and the log reader.
 func TestLoggerAndReaderHappyPaths(t *testing.T) {
+	ctx := tenant.TestContext()
 	rcache.SetupForTest(t)
 
 	// Create logger
@@ -33,10 +35,10 @@ func TestLoggerAndReaderHappyPaths(t *testing.T) {
 	recorder.Register(routine1)
 	recorder.Register(routine2)
 	recorder.Register(routine3)
-	recorder.RegistrationDone()
+	recorder.RegistrationDone(ctx)
 
 	// Get infos
-	jobInfos, err := GetBackgroundJobInfos(c, "", 5, 7)
+	jobInfos, err := GetBackgroundJobInfos(ctx, c, "", 5, 7)
 
 	// Assert
 	assert.NoError(t, err)
@@ -52,19 +54,19 @@ func TestLoggerAndReaderHappyPaths(t *testing.T) {
 	assertRoutineStats(t, jobInfos[1].Routines[0], "routine-3", false, false, 0, 0, 0, 0, 0, 0)
 
 	// Log some runs: 3x routine-1 (1x with error), 200x routine-2, 0x routine-3 (and stops)
-	recorder.LogStart(routine1)
-	recorder.LogStart(routine2)
-	recorder.LogStart(routine3)
-	recorder.LogRun(routine1, 10*time.Millisecond, nil)
-	recorder.LogRun(routine1, 20*time.Millisecond, errors.New("test error"))
+	recorder.LogStart(ctx, routine1)
+	recorder.LogStart(ctx, routine2)
+	recorder.LogStart(ctx, routine3)
+	recorder.LogRun(ctx, routine1, 10*time.Millisecond, nil)
+	recorder.LogRun(ctx, routine1, 20*time.Millisecond, errors.New("test error"))
 	for range 100 { // Make sure int32 overflow doesn't happen
-		recorder.LogRun(routine2, 10*time.Hour, nil)
-		recorder.LogRun(routine2, 20*time.Hour, nil)
+		recorder.LogRun(ctx, routine2, 10*time.Hour, nil)
+		recorder.LogRun(ctx, routine2, 20*time.Hour, nil)
 	}
-	recorder.LogStop(routine3)
+	recorder.LogStop(ctx, routine3)
 
 	// Get infos again
-	jobInfos, err = GetBackgroundJobInfos(c, "", 5, 7)
+	jobInfos, err = GetBackgroundJobInfos(ctx, c, "", 5, 7)
 
 	// Assert
 	assert.NoError(t, err)

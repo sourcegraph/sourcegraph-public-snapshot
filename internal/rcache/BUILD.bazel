@@ -30,6 +30,8 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//internal/httpcache",
+        "//internal/tenant",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

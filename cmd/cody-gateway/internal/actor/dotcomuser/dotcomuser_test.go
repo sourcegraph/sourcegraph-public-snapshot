@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/gregjones/httpcache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
+	"github.com/sourcegraph/sourcegraph/internal/httpcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 

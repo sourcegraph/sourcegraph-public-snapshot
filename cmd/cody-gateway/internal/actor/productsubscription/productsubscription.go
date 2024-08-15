@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
+	"github.com/sourcegraph/sourcegraph/internal/httpcache"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/productsubscription"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"

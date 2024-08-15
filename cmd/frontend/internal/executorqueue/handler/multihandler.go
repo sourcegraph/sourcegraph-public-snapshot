@@ -36,7 +36,7 @@ type MultiHandler struct {
 	metricsStore          metricsstore.DistributedStore
 	AutoIndexQueueHandler QueueHandler[uploadsshared.AutoIndexJob]
 	BatchesQueueHandler   QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]
-	DequeueCache          *rcache.Cache
+	DequeueCache          *rcache.RedisCache
 	dequeueCacheConfig    *schema.DequeueCacheConfig
 	logger                log.Logger
 }
@@ -122,7 +122,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		selectedQueue = nonEmptyQueues[0]
 	} else {
 		// multiple populated queues, discard queues at dequeue limit
-		candidateQueues, err := m.SelectEligibleQueues(nonEmptyQueues)
+		candidateQueues, err := m.SelectEligibleQueues(ctx, nonEmptyQueues)
 		if err != nil {
 			return executortypes.Job{}, false, err
 		}
@@ -216,7 +216,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	job.Token = token
 
 	// increment dequeue counter
-	err = m.DequeueCache.SetHashItem(selectedQueue, fmt.Sprint(time.Now().UnixNano()), job.Token)
+	err = m.DequeueCache.SetHashItem(ctx, selectedQueue, fmt.Sprint(time.Now().UnixNano()), job.Token)
 	if err != nil {
 		m.logger.Error("failed to increment dequeue count", log.String("queue", selectedQueue), log.Error(err))
 	}
@@ -251,10 +251,10 @@ var DoSelectQueueForDequeueing = func(candidateQueues []string, config *schema.D
 
 // SelectEligibleQueues returns a list of queues that have not yet reached the limit of dequeues in the
 // current time window.
-func (m *MultiHandler) SelectEligibleQueues(queues []string) ([]string, error) {
+func (m *MultiHandler) SelectEligibleQueues(ctx context.Context, queues []string) ([]string, error) {
 	var candidateQueues []string
 	for _, queue := range queues {
-		dequeues, err := m.DequeueCache.GetHashAll(queue)
+		dequeues, err := m.DequeueCache.GetHashAll(ctx, queue)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to check dequeue count for queue '%s'", queue)
 		}

@@ -12,12 +12,12 @@ import (
 	graphqltypes "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
-
-	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
 	"github.com/vektah/gqlparser/v2/gqlerror"
+
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
+	"github.com/sourcegraph/sourcegraph/internal/httpcache"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"

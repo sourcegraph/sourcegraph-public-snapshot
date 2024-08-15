@@ -17,7 +17,7 @@ import (
 
 type multiqueueCacheCleaner struct {
 	queueNames []string
-	cache      *rcache.Cache
+	cache      *rcache.RedisCache
 	windowSize time.Duration
 	logger     log.Logger
 }
@@ -27,7 +27,7 @@ var _ goroutine.Handler = &multiqueueCacheCleaner{}
 // NewMultiqueueCacheCleaner returns a PeriodicGoroutine that will check the cache for entries that are older than the configured
 // window size. A cache key is represented by a queue name; the value is a hash containing timestamps as the field key and the
 // job ID as the field value (which is not used for anything currently).
-func NewMultiqueueCacheCleaner(queueNames []string, cache *rcache.Cache, windowSize time.Duration, cleanupInterval time.Duration) goroutine.BackgroundRoutine {
+func NewMultiqueueCacheCleaner(queueNames []string, cache *rcache.RedisCache, windowSize time.Duration, cleanupInterval time.Duration) goroutine.BackgroundRoutine {
 	logger := log.Scoped("multiqueue-cache-cleaner")
 	observationCtx := observation.NewContext(logger)
 	handler := &multiqueueCacheCleaner{
@@ -52,7 +52,7 @@ func NewMultiqueueCacheCleaner(queueNames []string, cache *rcache.Cache, windowS
 // Handle loops over the configured queue names and deletes stale entries.
 func (m *multiqueueCacheCleaner) Handle(ctx context.Context) error {
 	for _, queueName := range m.queueNames {
-		all, err := m.cache.GetHashAll(queueName)
+		all, err := m.cache.GetHashAll(ctx, queueName)
 		if err != nil {
 			if errors.Is(err, redis.ErrNil) {
 				return nil
@@ -69,7 +69,7 @@ func (m *multiqueueCacheCleaner) Handle(ctx context.Context) error {
 			maxAge := timeNow().Add(-m.windowSize)
 			if t.Before(maxAge) {
 				// expired cache entry, delete
-				deletedItems, err := m.cache.DeleteHashItem(queueName, key)
+				deletedItems, err := m.cache.DeleteHashItem(ctx, queueName, key)
 				if err != nil {
 					return err
 				}
@@ -94,7 +94,7 @@ func (m *multiqueueCacheCleaner) initMetrics(observationCtx *observation.Context
 		Help:        "Current size of the executor dequeue cache",
 		ConstLabels: constLabels,
 	}, func() float64 {
-		all, err := m.cache.GetHashAll(queue)
+		all, err := m.cache.GetHashAll(context.Background(), queue)
 		if err != nil && !errors.Is(err, redis.ErrNil) {
 			logger.Error("Failed to get cache size", log.String("queue", queue), log.Error(err))
 			return 0

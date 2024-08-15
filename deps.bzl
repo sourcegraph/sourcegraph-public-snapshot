@@ -3098,13 +3098,6 @@ def go_dependencies():
         version = "v0.8.1",
     )
     go_repository(
-        name = "com_github_gregjones_httpcache",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/gregjones/httpcache",
-        sum = "h1:+ngKgrYPPJrOjhax5N+uePQ0Fh1Z7PheYoUI/0nzkPA=",
-        version = "v0.0.0-20190611155906-901d90724c79",
-    )
-    go_repository(
         name = "com_github_grpc_ecosystem_go_grpc_middleware",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/grpc-ecosystem/go-grpc-middleware",

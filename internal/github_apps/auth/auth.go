@@ -113,7 +113,7 @@ type InstallationAuthenticator struct {
 	installationAccessToken installationAccessToken
 	baseURL                 *url.URL
 	appAuthenticator        auth.Authenticator
-	cache                   *rcache.Cache
+	cache                   *rcache.RedisCache
 	encryptionKey           encryption.Key
 }
 
@@ -145,7 +145,7 @@ func (t *InstallationAuthenticator) cacheKey() string {
 // getFromCache returns a new installationAccessToken from the cache, and a boolean
 // indicating whether the fetch from cache was successful.
 func (t *InstallationAuthenticator) getFromCache(ctx context.Context) (iat installationAccessToken, ok bool) {
-	token, ok := t.cache.Get(t.cacheKey())
+	token, ok := t.cache.Get(ctx, t.cacheKey())
 	if !ok {
 		return
 	}
@@ -177,7 +177,7 @@ func (t *InstallationAuthenticator) storeInCache(ctx context.Context) error {
 		}
 	}
 
-	t.cache.Set(t.cacheKey(), res)
+	t.cache.Set(ctx, t.cacheKey(), res)
 	return nil
 }
 

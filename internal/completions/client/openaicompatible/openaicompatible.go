@@ -143,6 +143,7 @@ func (c *client) Complete(
 
 	modelID := request.ModelConfigInfo.Model.ModelRef.ModelID()
 	err = c.tokenManager.UpdateTokenCountsFromModelUsage(
+		ctx,
 		response.Usage.PromptTokens,
 		response.Usage.CompletionTokens,
 		tokenizer.OpenAIModel+"/"+string(modelID),
@@ -328,6 +329,7 @@ func (c *client) Stream(
 
 	modelID := request.ModelConfigInfo.Model.ModelRef.ModelID()
 	err = c.tokenManager.UpdateTokenCountsFromModelUsage(
+		ctx,
 		promptTokens,
 		completionTokens,
 		tokenizer.OpenAIModel+"/"+string(modelID),

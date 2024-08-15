@@ -35,7 +35,7 @@ import (
 const cacheTTLSeconds = 60 * 60 // 1 hour
 
 type gitHubAppServer struct {
-	cache *rcache.Cache
+	cache *rcache.RedisCache
 	db    database.DB
 }
 
@@ -83,7 +83,7 @@ func SetupGitHubAppRoutes(router *mux.Router, db database.DB) {
 
 // setupGitHubAppRoutesWithCache is the same as SetupGitHubAppRoutes but allows to pass a cache.
 // Useful for testing.
-func setupGitHubAppRoutesWithCache(router *mux.Router, db database.DB, cache *rcache.Cache) {
+func setupGitHubAppRoutesWithCache(router *mux.Router, db database.DB, cache *rcache.RedisCache) {
 	appServer := &gitHubAppServer{
 		cache: cache,
 		db:    db,
@@ -145,7 +145,7 @@ func (srv *gitHubAppServer) stateHandler(w http.ResponseWriter, r *http.Request)
 			http.Error(w, fmt.Sprintf("Unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
-		srv.cache.Set(s, stateDetails)
+		srv.cache.Set(r.Context(), s, stateDetails)
 
 		_, _ = w.Write([]byte(s))
 		return
@@ -166,7 +166,7 @@ func (srv *gitHubAppServer) stateHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	srv.cache.Set(s, stateDetails)
+	srv.cache.Set(r.Context(), s, stateDetails)
 
 	_, _ = w.Write([]byte(s))
 }
@@ -223,7 +223,7 @@ func (srv *gitHubAppServer) newAppStateHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	srv.cache.Set(s, stateDetails)
+	srv.cache.Set(r.Context(), s, stateDetails)
 
 	resp := struct {
 		State       string `json:"state"`
@@ -239,6 +239,7 @@ func (srv *gitHubAppServer) newAppStateHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	query := r.URL.Query()
 	state := query.Get("state")
 	code := query.Get("code")
@@ -253,7 +254,7 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	stateValue, ok := srv.cache.Get(state)
+	stateValue, ok := srv.cache.Get(ctx, state)
 	if !ok {
 		http.Error(w, "Bad request, state query param does not match", http.StatusBadRequest)
 		return
@@ -265,7 +266,7 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "Bad request, invalid state", http.StatusBadRequest)
 		return
 	}
-	srv.cache.Delete(state)
+	srv.cache.Delete(ctx, state)
 
 	webhookUUID, err := uuid.Parse(stateDetails.WebhookUUID)
 	if err != nil {
@@ -345,7 +346,7 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, fmt.Sprintf("unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
-	srv.cache.Set(state, newStateDetails)
+	srv.cache.Set(ctx, state, newStateDetails)
 
 	// The installations page often takes a few seconds to become available after the
 	// app is first created, so we sleep for a bit to give it time to load. The exact
@@ -360,6 +361,7 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	query := r.URL.Query()
 	state := query.Get("state")
 	instID := query.Get("installation_id")
@@ -377,7 +379,7 @@ func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	setupInfo, ok := srv.cache.Get(state)
+	setupInfo, ok := srv.cache.Get(ctx, state)
 	if !ok {
 		redirectURL := generateRedirectURL(gitHubAppStateDetails{}, nil, nil, errors.New("Bad request, state query param does not match"))
 		http.Redirect(w, r, redirectURL, http.StatusFound)
@@ -392,7 +394,7 @@ func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	// Wait until we've validated the type of state before deleting it from the cache.
-	srv.cache.Delete(state)
+	srv.cache.Delete(ctx, state)
 
 	kind, err := parseKind(&stateDetails.Kind)
 	if err != nil {

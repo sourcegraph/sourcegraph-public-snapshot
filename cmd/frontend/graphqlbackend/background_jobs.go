@@ -92,15 +92,15 @@ func (r *schemaResolver) backgroundJobByID(ctx context.Context, id graphql.ID) (
 	if err != nil {
 		return nil, err
 	}
-	item, err := recorder.GetBackgroundJobInfo(recorder.GetCache(), jobName, defaultRecentRunCount, dayCountForStats)
+	item, err := recorder.GetBackgroundJobInfo(ctx, recorder.GetCache(), jobName, defaultRecentRunCount, dayCountForStats)
 	if err != nil {
 		return nil, err
 	}
 	return &BackgroundJobResolver{jobInfo: item}, nil
 }
 
-func (r *backgroundJobConnectionResolver) Nodes(context.Context) ([]*BackgroundJobResolver, error) {
-	resolvers, err := r.compute()
+func (r *backgroundJobConnectionResolver) Nodes(ctx context.Context) ([]*BackgroundJobResolver, error) {
+	resolvers, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -112,16 +112,16 @@ func (r *backgroundJobConnectionResolver) Nodes(context.Context) ([]*BackgroundJ
 	return resolvers, nil
 }
 
-func (r *backgroundJobConnectionResolver) TotalCount(context.Context) (int32, error) {
-	resolvers, err := r.compute()
+func (r *backgroundJobConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	resolvers, err := r.compute(ctx)
 	if err != nil {
 		return 0, err
 	}
 	return int32(len(resolvers)), nil
 }
 
-func (r *backgroundJobConnectionResolver) PageInfo(context.Context) (*gqlutil.PageInfo, error) {
-	resolvers, err := r.compute()
+func (r *backgroundJobConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
+	resolvers, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -132,13 +132,13 @@ func (r *backgroundJobConnectionResolver) PageInfo(context.Context) (*gqlutil.Pa
 	return gqlutil.HasNextPage(false), nil
 }
 
-func (r *backgroundJobConnectionResolver) compute() ([]*BackgroundJobResolver, error) {
+func (r *backgroundJobConnectionResolver) compute(ctx context.Context) ([]*BackgroundJobResolver, error) {
 	recentRunCount := defaultRecentRunCount
 	if r.recentRunCount != nil {
 		recentRunCount = int(*r.recentRunCount)
 	}
 	r.once.Do(func() {
-		jobInfos, err := recorder.GetBackgroundJobInfos(recorder.GetCache(), r.after, recentRunCount, dayCountForStats)
+		jobInfos, err := recorder.GetBackgroundJobInfos(ctx, recorder.GetCache(), r.after, recentRunCount, dayCountForStats)
 		if err != nil {
 			r.resolvers, r.err = nil, err
 			return

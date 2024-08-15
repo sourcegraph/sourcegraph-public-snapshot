@@ -59,7 +59,7 @@ func (a *anthropicClient) Complete(
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
-	if err = a.recordTokenUsage(request, response.Usage); err != nil {
+	if err = a.recordTokenUsage(ctx, request, response.Usage); err != nil {
 		return nil, err
 	}
 
@@ -127,7 +127,7 @@ func (a *anthropicClient) Stream(
 					InputTokens:  inputPromptTokens,
 					OutputTokens: event.Usage.OutputTokens,
 				}
-				if err = a.recordTokenUsage(request, usageData); err != nil {
+				if err = a.recordTokenUsage(ctx, request, usageData); err != nil {
 					logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 				}
 			}
@@ -147,9 +147,10 @@ func (a *anthropicClient) Stream(
 	return dec.Err()
 }
 
-func (a *anthropicClient) recordTokenUsage(request types.CompletionRequest, usage anthropicMessagesResponseUsage) error {
+func (a *anthropicClient) recordTokenUsage(ctx context.Context, request types.CompletionRequest, usage anthropicMessagesResponseUsage) error {
 	label := fmt.Sprintf("%s/%s", tokenusage.Anthropic, request.ModelConfigInfo.Model.ModelName)
 	return a.tokenManager.UpdateTokenCountsFromModelUsage(
+		ctx,
 		usage.InputTokens, usage.OutputTokens,
 		label, string(request.Feature),
 		tokenusage.Anthropic)

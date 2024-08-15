@@ -3,9 +3,8 @@ package github
 import (
 	"encoding/json"
 
-	"github.com/gregjones/httpcache"
-
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/httpcache"
 )
 
 const cacheVersion = "v1"
