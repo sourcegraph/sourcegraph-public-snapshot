@@ -12,6 +12,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/sourcegraph/log"
@@ -133,10 +134,19 @@ func Update(ctx context.Context, logger log.Logger, repoName api.RepoName) error
 	return nil
 }
 
-func Get(ctx context.Context, logger log.Logger, repoName api.RepoName) (*StatsProvider, error) {
+func Get(ctx context.Context, logger log.Logger, repoName api.RepoName) (_ *StatsProvider, err error) {
 	if !featureflag.FromContext(ctx).GetBoolOr(featureFlagName, false) {
 		return nil, nil
 	}
+
+	start := time.Now()
+	defer func() {
+		if err == nil {
+			logger.Info("idf.Get", log.Duration("duration", time.Since(start)))
+		} else {
+			logger.Error("idf.Get failure", log.Error(err), log.Duration("duration", time.Since(start)))
+		}
+	}()
 
 	b, ok := redisCache.Get(fmt.Sprintf("repo:%v", repoName))
 	if !ok {
