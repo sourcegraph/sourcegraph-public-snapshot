@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import { type Symbol, formatSymbol, parseSymbol } from './scipSymbol'
+import { type SCIPSymbol, formatSymbol, parseSymbol } from './scipSymbol'
 
 describe('parseSymbolName', () => {
     test('roundtrip', () => {
@@ -23,9 +23,9 @@ describe('parseSymbolName', () => {
     })
 
     test('parse', () => {
-        type test = {
+        interface test {
             symbol: string
-            expected: Symbol
+            expected: SCIPSymbol
         }
         const tests: test[] = [
             { symbol: 'local a', expected: { kind: 'local', localID: 'a' } },
