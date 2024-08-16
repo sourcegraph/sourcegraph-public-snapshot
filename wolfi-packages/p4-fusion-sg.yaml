@@ -2,7 +2,7 @@
 
 package:
   name: p4-fusion-sg
-  version: 1.14.0
+  version: 1.14.1
   epoch: 0
   description: "A fast Perforce to Git conversion tool, Sourcegraph fork"
   target-architecture:
@@ -35,7 +35,7 @@ pipeline:
   # Download p4-fusion
   - uses: fetch
     with:
-      uri: https://github.com/sourcegraph/p4-fusion/archive/00c54b37be9cbf3b1b70a79fef55ce0e78945c06.tar.gz
+      uri: https://github.com/sourcegraph/p4-fusion/archive/da9080587bc40ef9cf40690f315bcd8137677fdd.tar.gz
       expected-sha256: 6f4fc7726537d934070af3d09b883de843e44ca0496952a1872af46e7449dbab
       extract: false
   - runs: |
